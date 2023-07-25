@@ -1,10 +1,16 @@
 import 'package:flutter/material.dart';
-import 'package:task_manager_flutter/ui/screens/email_verification_screeen.dart';
+import 'package:task_manager_flutter/ui/screens/auth_screens/otp_varification.dart';
 import 'package:task_manager_flutter/ui/widgets/screen_background.dart';
 
-class LoginScreen extends StatelessWidget {
-  const LoginScreen({super.key});
+class EmailVarificationScreeen extends StatefulWidget {
+  const EmailVarificationScreeen({Key? key}) : super(key: key);
 
+  @override
+  State<EmailVarificationScreeen> createState() =>
+      _EmailVarificationScreeenState();
+}
+
+class _EmailVarificationScreeenState extends State<EmailVarificationScreeen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -13,68 +19,65 @@ class LoginScreen extends StatelessWidget {
           child: Padding(
             padding: const EdgeInsets.all(40.0),
             child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const SizedBox(height: 80),
+                const SizedBox(
+                  height: 80,
+                ),
                 Text(
-                  "Getting Start With",
+                  "Your Email Adderess",
                   style: Theme.of(context).textTheme.titleLarge,
+                ),
+                const SizedBox(
+                  height: 5,
+                ),
+                Text(
+                  "A 6 digit code has been sent to your email address. Please enter it below to continue.",
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        color: Colors.grey,
+                      ),
                 ),
                 const SizedBox(height: 16),
                 const TextField(
                   decoration: InputDecoration(hintText: "Email"),
                 ),
                 const SizedBox(height: 12),
-                const TextField(
-                  obscureText: true,
-                  decoration: InputDecoration(hintText: "Password"),
-                ),
-                const SizedBox(
-                  height: 16,
-                ),
                 SizedBox(
                   width: double.infinity,
                   child: ElevatedButton(
-                    onPressed: () {},
-                    child: const Icon(
-                      Icons.arrow_circle_right_outlined,
-                      size: 25,
-                    ),
-                  ),
-                ),
-                const SizedBox(
-                  height: 40,
-                ),
-                Center(
-                  child: TextButton(
                     onPressed: () {
                       Navigator.push(
                           context,
                           MaterialPageRoute(
                               builder: (context) =>
-                                  const EmailVarificationScreeen()));
+                                  const OtpVarificationScreen()));
                     },
-                    child: const Text(
-                      "Forgate Password?",
-                      style: TextStyle(color: Colors.grey, letterSpacing: .7),
+                    child: const Icon(
+                      Icons.arrow_circle_right_outlined,
+                      size: 20,
                     ),
                   ),
+                ),
+                const SizedBox(
+                  height: 20,
                 ),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     const Text(
-                      "Don't Have an account?",
-                      style: TextStyle(
-                          fontWeight: FontWeight.w500, letterSpacing: .5),
+                      "Have an Account?",
+                      style: TextStyle(fontWeight: FontWeight.w500),
                     ),
                     const SizedBox(
-                      width: 3,
+                      width: 2,
                     ),
                     TextButton(
-                      onPressed: () {},
+                      onPressed: () {
+                        Navigator.pop(context);
+                      },
                       child: const Text(
-                        "Sign Up",
+                        "Login",
                         style: TextStyle(letterSpacing: .7),
                       ),
                     ),
