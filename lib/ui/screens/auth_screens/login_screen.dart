@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:task_manager_flutter/ui/screens/auth_screens/email_verification_screeen.dart';
+import 'package:task_manager_flutter/ui/screens/auth_screens/reset_screen.dart';
 import 'package:task_manager_flutter/ui/screens/auth_screens/signup_form_screen.dart';
+import 'package:task_manager_flutter/ui/widgets/custom_button.dart';
 import 'package:task_manager_flutter/ui/widgets/screen_background.dart';
+import 'package:task_manager_flutter/ui/widgets/signup_button.dart';
 
 class LoginScreen extends StatelessWidget {
   const LoginScreen({super.key});
@@ -33,15 +36,14 @@ class LoginScreen extends StatelessWidget {
                 const SizedBox(
                   height: 16,
                 ),
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton(
-                    onPressed: () {},
-                    child: const Icon(
-                      Icons.arrow_circle_right_outlined,
-                      size: 25,
-                    ),
-                  ),
+                CustomButton(
+                  onPresse: () {
+                    Navigator.pushAndRemoveUntil(
+                        context,
+                        MaterialPageRoute(
+                            builder: (context) => const ResetPasswordScreen()),
+                        (route) => false);
+                  },
                 ),
                 const SizedBox(
                   height: 40,
@@ -61,31 +63,16 @@ class LoginScreen extends StatelessWidget {
                     ),
                   ),
                 ),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const Text(
-                      "Don't Have an account?",
-                      style: TextStyle(
-                          fontWeight: FontWeight.w500, letterSpacing: .5),
-                    ),
-                    const SizedBox(
-                      width: 3,
-                    ),
-                    TextButton(
-                      onPressed: () {
-                        Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                                builder: (context) =>
-                                    const SignUpFormScreen()));
-                      },
-                      child: const Text(
-                        "Sign Up",
-                        style: TextStyle(letterSpacing: .7),
-                      ),
-                    ),
-                  ],
+                SignUpButton(
+                  text: "Have An Account?",
+                  onPresse: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                          builder: (context) => const SignUpFormScreen()),
+                    );
+                  },
+                  buttonText: 'Sign In',
                 ),
               ],
             ),

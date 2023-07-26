@@ -1,7 +1,12 @@
+// ignore_for_file: public_member_api_docs, sort_constructors_first
 import 'package:flutter/material.dart';
 import 'package:pin_code_fields/pin_code_fields.dart';
+
+import 'package:task_manager_flutter/ui/screens/auth_screens/login_screen.dart';
 import 'package:task_manager_flutter/ui/screens/auth_screens/reset_screen.dart';
+import 'package:task_manager_flutter/ui/widgets/custom_button.dart';
 import 'package:task_manager_flutter/ui/widgets/screen_background.dart';
+import 'package:task_manager_flutter/ui/widgets/signup_button.dart';
 
 class OtpVarificationScreen extends StatelessWidget {
   const OtpVarificationScreen({super.key});
@@ -52,46 +57,27 @@ class OtpVarificationScreen extends StatelessWidget {
                     activeFillColor: Colors.white,
                   ),
                 ),
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton(
-                    onPressed: () {
-                      Navigator.pushAndRemoveUntil(
-                          context,
-                          MaterialPageRoute(
-                              builder: (context) =>
-                                  const ResetPasswordScreen()),
-                          (route) => false);
-                    },
-                    child: const Icon(
-                      Icons.arrow_circle_right_outlined,
-                      size: 20,
-                    ),
-                  ),
+                CustomButton(
+                  onPresse: () {
+                    Navigator.pushAndRemoveUntil(
+                        context,
+                        MaterialPageRoute(
+                            builder: (context) => const ResetPasswordScreen()),
+                        (route) => false);
+                  },
                 ),
                 const SizedBox(
                   height: 16,
                 ),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const Text(
-                      "Have an Account?",
-                      style: TextStyle(fontWeight: FontWeight.w500),
-                    ),
-                    const SizedBox(
-                      width: 2,
-                    ),
-                    TextButton(
-                      onPressed: () {
-                        Navigator.pop(context);
-                      },
-                      child: const Text(
-                        "Login",
-                        style: TextStyle(letterSpacing: .7),
-                      ),
-                    ),
-                  ],
+                SignUpButton(
+                  text: "Have An Account?",
+                  onPresse: () {
+                    Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                            builder: (context) => const LoginScreen()));
+                  },
+                  buttonText: 'Sign In',
                 ),
               ],
             ),
@@ -101,3 +87,4 @@ class OtpVarificationScreen extends StatelessWidget {
     );
   }
 }
+

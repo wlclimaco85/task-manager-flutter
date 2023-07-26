@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:task_manager_flutter/ui/screens/auth_screens/otp_varification.dart';
 import 'package:task_manager_flutter/ui/widgets/screen_background.dart';
+import 'package:task_manager_flutter/ui/widgets/signup_button.dart';
 
 class EmailVarificationScreeen extends StatefulWidget {
   const EmailVarificationScreeen({Key? key}) : super(key: key);
@@ -62,26 +63,11 @@ class _EmailVarificationScreeenState extends State<EmailVarificationScreeen> {
                 const SizedBox(
                   height: 20,
                 ),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const Text(
-                      "Have an Account?",
-                      style: TextStyle(fontWeight: FontWeight.w500),
-                    ),
-                    const SizedBox(
-                      width: 2,
-                    ),
-                    TextButton(
-                      onPressed: () {
-                        Navigator.pop(context);
-                      },
-                      child: const Text(
-                        "Login",
-                        style: TextStyle(letterSpacing: .7),
-                      ),
-                    ),
-                  ],
+                SignUpButton(
+                  text: "Have An Account?",
+                  onPresse: () {
+                    Navigator.pop(context);
+                  }, buttonText: 'Sign In',
                 ),
               ],
             ),
