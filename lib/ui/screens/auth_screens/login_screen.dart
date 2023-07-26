@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:task_manager_flutter/ui/screens/auth_screens/email_verification_screeen.dart';
-import 'package:task_manager_flutter/ui/screens/auth_screens/reset_screen.dart';
 import 'package:task_manager_flutter/ui/screens/auth_screens/signup_form_screen.dart';
+import 'package:task_manager_flutter/ui/screens/bottom_navbar_screen.dart';
 import 'package:task_manager_flutter/ui/widgets/custom_button.dart';
 import 'package:task_manager_flutter/ui/widgets/screen_background.dart';
 import 'package:task_manager_flutter/ui/widgets/signup_button.dart';
@@ -41,7 +41,7 @@ class LoginScreen extends StatelessWidget {
                     Navigator.pushAndRemoveUntil(
                         context,
                         MaterialPageRoute(
-                            builder: (context) => const ResetPasswordScreen()),
+                            builder: (context) => const BottomNavBarScreen()),
                         (route) => false);
                   },
                 ),
