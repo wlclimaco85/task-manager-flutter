@@ -1,5 +1,3 @@
-import 'dart:math';
-
 import 'package:flutter/material.dart';
 import 'package:task_manager_flutter/ui/screens/cancelled_task_screen.dart';
 import 'package:task_manager_flutter/ui/screens/completed_task_screen.dart';

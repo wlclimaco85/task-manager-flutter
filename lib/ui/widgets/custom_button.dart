@@ -5,7 +5,7 @@ class CustomButton extends StatelessWidget {
   final VoidCallback onPresse;
   const CustomButton({
     Key? key,
-    required this.onPresse,
+    required this.onPresse, required String title,
   }) : super(key: key);
 
   @override
