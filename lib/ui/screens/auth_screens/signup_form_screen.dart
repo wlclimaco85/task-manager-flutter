@@ -3,6 +3,7 @@ import 'package:task_manager_flutter/data/models/network_response.dart';
 import 'package:task_manager_flutter/data/services/network_caller.dart';
 import 'package:task_manager_flutter/data/utils/api_links.dart';
 import 'package:task_manager_flutter/ui/screens/auth_screens/login_screen.dart';
+import 'package:task_manager_flutter/ui/widgets/custom_text_form_field.dart';
 import 'package:task_manager_flutter/ui/widgets/screen_background.dart';
 
 class SignUpFormScreen extends StatefulWidget {
@@ -22,12 +23,13 @@ class _SignUpFormScreenState extends State<SignUpFormScreen> {
   final TextEditingController _phoneNumberController = TextEditingController();
 
   final TextEditingController _passwordController = TextEditingController();
+
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
 
-  bool signUpInProgress = false;
+  bool _signUpInProgress = false;
 
   Future<void> userSignUp() async {
-    signUpInProgress = true;
+    _signUpInProgress = true;
     if (mounted) {
       setState(() {});
     }
@@ -42,7 +44,7 @@ class _SignUpFormScreenState extends State<SignUpFormScreen> {
 
     final NetworkResponse response =
         await NetworkCaller().postRequest(ApiLinks.regestration, requestBody);
-    signUpInProgress = false;
+    _signUpInProgress = false;
     if (mounted) {
       setState(() {});
     }
@@ -93,87 +95,87 @@ class _SignUpFormScreenState extends State<SignUpFormScreen> {
                 const SizedBox(
                   height: 8,
                 ),
-                TextFormField(
+                CustomTextFormField(
                   controller: _emailController,
-                  keyboardType: TextInputType.emailAddress,
-                  decoration: const InputDecoration(hintText: "Email"),
-                  validator: (String? value) {
+                  hintText: 'Email',
+                  validator: (value) {
                     if (value?.isEmpty ?? true) {
-                      return "Email is required";
+                      return 'Email is required';
                     }
                     return null;
                   },
+                  textInputType: TextInputType.emailAddress,
                 ),
                 const SizedBox(
                   height: 8,
                 ),
-                TextFormField(
+                CustomTextFormField(
                   controller: _firstNameController,
-                  keyboardType: TextInputType.text,
-                  decoration: const InputDecoration(hintText: "First Name"),
-                  validator: (String? value) {
+                  hintText: 'First Name',
+                  validator: (value) {
                     if (value?.isEmpty ?? true) {
-                      return "First Name is required";
+                      return 'Enter your first name';
                     }
                     return null;
                   },
+                  textInputType: TextInputType.text,
                 ),
                 const SizedBox(
                   height: 8,
                 ),
-                TextFormField(
+                CustomTextFormField(
                   controller: _lastNameController,
-                  keyboardType: TextInputType.text,
-                  decoration: const InputDecoration(hintText: "Last Name"),
-                  validator: (String? value) {
+                  hintText: 'Last Name',
+                  validator: (value) {
                     if (value?.isEmpty ?? true) {
-                      return "Last Name is required";
+                      return 'Enter your last name';
                     }
                     return null;
                   },
+                  textInputType: TextInputType.text,
                 ),
                 const SizedBox(
                   height: 8,
                 ),
-                TextFormField(
+                CustomTextFormField(
                   controller: _phoneNumberController,
-                  keyboardType: TextInputType.phone,
-                  decoration: const InputDecoration(hintText: "Phone Number"),
-                  validator: (String? value) {
-                    if ((value?.isEmpty ?? true) || value!.length < 11) {
-                      return "Valid phone number is required";
+                  hintText: 'Phone Number',
+                  validator: (value) {
+                    if (value?.isEmpty ?? true) {
+                      return 'Enter your Valid Phone Number';
                     }
                     return null;
                   },
+                  textInputType: TextInputType.number,
                 ),
                 const SizedBox(
                   height: 8,
                 ),
-                TextFormField(
-                  obscureText: true,
+                CustomTextFormField(
                   controller: _passwordController,
-                  decoration: const InputDecoration(hintText: "Password"),
-                  validator: (String? value) {
-                    if ((value?.isEmpty ?? true) || value!.length <= 5) {
-                      return "Enter a valid password (min 6 characters)";
+                  hintText: 'Password',
+                  validator: (value) {
+                    if (value?.isEmpty ?? true) {
+                      return 'Enter your password';
                     }
                     return null;
                   },
+                  textInputType: TextInputType.text,
+                  obscureText: true,
                 ),
                 const SizedBox(height: 12),
                 SizedBox(
                   width: double.infinity,
                   child: Visibility(
-                    visible: signUpInProgress == false,
+                    visible: _signUpInProgress == false,
                     replacement: const Center(
                       child: CircularProgressIndicator(),
                     ),
                     child: ElevatedButton(
                       onPressed: () {
                         if (_formKey.currentState!.validate()) {
-                          return;
+                          userSignUp();
                         }
-                        userSignUp();
                       },
                       child: const Icon(
                         Icons.arrow_circle_right_outlined,

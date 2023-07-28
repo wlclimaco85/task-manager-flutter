@@ -1,8 +1,11 @@
 import 'dart:convert';
 import 'dart:developer';
+import 'package:flutter/material.dart';
 import 'package:http/http.dart';
+import 'package:task_manager_flutter/app.dart';
 import 'package:task_manager_flutter/data/models/auth_utility.dart';
 import 'package:task_manager_flutter/data/models/network_response.dart';
+import 'package:task_manager_flutter/ui/screens/auth_screens/login_screen.dart';
 
 class NetworkCaller {
   Future<NetworkResponse> getRequest(String url) async {
@@ -29,7 +32,9 @@ class NetworkCaller {
   }
 
   Future<NetworkResponse> postRequest(
-      String url, Map<String, dynamic> body) async {
+    String url,
+    Map<String, dynamic>? body,
+  ) async {
     try {
       Response response = await post(
         Uri.parse(url),
@@ -58,4 +63,12 @@ class NetworkCaller {
       null,
     );
   }
+}
+
+void moveToLogin() async {
+  await AuthUtility.clearUserInfo();
+  Navigator.pushAndRemoveUntil(
+      TaskManagerApp.globalKey.currentState as BuildContext,
+      MaterialPageRoute(builder: (context) => const LoginScreen()),
+      (route) => false);
 }

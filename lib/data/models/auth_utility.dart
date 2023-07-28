@@ -6,16 +6,15 @@ import 'package:task_manager_flutter/data/models/login_model.dart';
 //*this is the utility class for authentication to store user data in shared preferences.
 //*shared preferences is used to store data locally in the device.
 
-
 class AuthUtility {
   static LoginModel userInfo = LoginModel();
 
   //*this method is used to store user data in shared preferences.
-  static Future<void> setUserInfo(LoginModel loginModel) async {
+  static Future<void> setUserInfo(LoginModel model) async {
     SharedPreferences _sharedPreferences =
         await SharedPreferences.getInstance();
-    await _sharedPreferences.setString(
-        "user_data", jsonEncode(userInfo.toJson()));
+    await _sharedPreferences.setString("user_data", jsonEncode(model.toJson()));
+    userInfo = model;
   }
 
   //*this method is used to get user data from shared preferences.
@@ -35,7 +34,7 @@ class AuthUtility {
   }
 
   //*this method is used to check if user is logged in or not.
-  
+
   static Future<bool> isUserLoggedIn() async {
     SharedPreferences _sharedPreferences =
         await SharedPreferences.getInstance();

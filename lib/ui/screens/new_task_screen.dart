@@ -20,9 +20,13 @@ class NewTaskScreen extends StatelessWidget {
               child: Row(
                 children: [
                   Expanded(child: SummeryCard(numberOfTasks: 4, title: "New")),
-                  Expanded(child: SummeryCard(numberOfTasks: 4, title: "New")),
-                  Expanded(child: SummeryCard(numberOfTasks: 4, title: "New")),
-                  Expanded(child: SummeryCard(numberOfTasks: 4, title: "New")),
+                  Expanded(
+                      child: SummeryCard(numberOfTasks: 4, title: "Completed")),
+                  Expanded(
+                      child: SummeryCard(numberOfTasks: 4, title: "Cancelled")),
+                  Expanded(
+                      child:
+                          SummeryCard(numberOfTasks: 4, title: "In Progress")),
                 ],
               ),
             ),

@@ -8,6 +8,7 @@ import 'package:task_manager_flutter/ui/screens/auth_screens/email_verification_
 import 'package:task_manager_flutter/ui/screens/auth_screens/signup_form_screen.dart';
 import 'package:task_manager_flutter/ui/screens/bottom_navbar_screen.dart';
 import 'package:task_manager_flutter/ui/widgets/custom_button.dart';
+import 'package:task_manager_flutter/ui/widgets/custom_text_form_field.dart';
 import 'package:task_manager_flutter/ui/widgets/screen_background.dart';
 import 'package:task_manager_flutter/ui/widgets/signup_button.dart';
 
@@ -19,25 +20,24 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
-  final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
+  final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
 
-  bool loginInProgress = false;
+  bool _loginInProgress = false;
 
-  Future<void> userLogin() async {
-    loginInProgress = true;
+  Future<void> login() async {
+    _loginInProgress = true;
     if (mounted) {
       setState(() {});
     }
     Map<String, dynamic> requestBody = {
       "email": _emailController.text.trim(),
-      "password": _passwordController.text,
+      "password": _passwordController.text
     };
-
     final NetworkResponse response =
         await NetworkCaller().postRequest(ApiLinks.login, requestBody);
-    loginInProgress = false;
+    _loginInProgress = false;
     if (mounted) {
       setState(() {});
     }
@@ -49,12 +49,11 @@ class _LoginScreenState extends State<LoginScreen> {
             context,
             MaterialPageRoute(builder: (context) => const BottomNavBarScreen()),
             (route) => false);
-      } else {
+      }
+    } else {
+      if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text("Login Failed, incorrect email or password"),
-          ),
-        );
+            const SnackBar(content: Text('Incorrect email or password')));
       }
     }
   }
@@ -75,25 +74,41 @@ class _LoginScreenState extends State<LoginScreen> {
                   style: Theme.of(context).textTheme.titleLarge,
                 ),
                 const SizedBox(height: 16),
-                TextFormField(
-                  controller: _emailController,
-                  keyboardType: TextInputType.emailAddress,
-                  decoration: const InputDecoration(hintText: "Email"),
-                ),
+                CustomTextFormField(
+                    hintText: "Email",
+                    controller: _emailController,
+                    textInputType: TextInputType.emailAddress,
+                    validator: (value) {
+                      if (value!.isEmpty) {
+                        return "Please enter email";
+                      }
+                      return null;
+                    }),
                 const SizedBox(height: 12),
-                TextFormField(
+                CustomTextFormField(
+                  hintText: "Password",
                   controller: _passwordController,
                   obscureText: true,
-                  decoration: const InputDecoration(hintText: "Password"),
+                  validator: (value) {
+                    if (value!.isEmpty) {
+                      return "Please enter password";
+                    }
+                    return null;
+                  },
+                  textInputType: TextInputType.visiblePassword,
                 ),
                 const SizedBox(
                   height: 16,
                 ),
-                CustomButton(
-                  onPresse: () {
-                    userLogin();
-                  },
-                  title: 'Login',
+                Visibility(
+                  visible: _loginInProgress == false,
+                  replacement: const Center(child: CircularProgressIndicator()),
+                  child: CustomButton(
+                    onPresse: () {
+                      login();
+                    },
+                    title: 'Login',
+                  ),
                 ),
                 const SizedBox(
                   height: 40,

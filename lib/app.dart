@@ -3,6 +3,7 @@ import 'package:task_manager_flutter/ui/screens/splash_screens.dart';
 
 class TaskManagerApp extends StatelessWidget {
   const TaskManagerApp({super.key});
+  static GlobalKey<NavigatorState> globalKey = GlobalKey<NavigatorState>();
 
   @override
   Widget build(BuildContext context) {

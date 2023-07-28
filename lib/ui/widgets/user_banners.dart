@@ -44,7 +44,7 @@ class UserBanners extends StatelessWidget {
                 ),
                 const SizedBox(height: 2),
                 Text(AuthUtility.userInfo.data?.email ?? "",
-                    style: TextStyle(fontSize: 14, color: Colors.white)),
+                    style: const TextStyle(fontSize: 14, color: Colors.white)),
               ],
             ),
           ],
