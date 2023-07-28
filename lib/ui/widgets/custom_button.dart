@@ -1,11 +1,10 @@
-
 import 'package:flutter/material.dart';
 
 class CustomButton extends StatelessWidget {
   final VoidCallback onPresse;
   const CustomButton({
     Key? key,
-    required this.onPresse, required String title,
+    required this.onPresse,
   }) : super(key: key);
 
   @override

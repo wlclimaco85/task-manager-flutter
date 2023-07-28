@@ -107,7 +107,6 @@ class _LoginScreenState extends State<LoginScreen> {
                     onPresse: () {
                       login();
                     },
-                    title: 'Login',
                   ),
                 ),
                 const SizedBox(

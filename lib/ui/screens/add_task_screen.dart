@@ -122,10 +122,10 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
                           child: CircularProgressIndicator(),
                         ),
                         child: CustomButton(
-                            onPresse: () {
-                              addNewTask();
-                            },
-                            title: 'Add Task')),
+                          onPresse: () {
+                            addNewTask();
+                          },
+                        )),
                   ],
                 )),
           ],

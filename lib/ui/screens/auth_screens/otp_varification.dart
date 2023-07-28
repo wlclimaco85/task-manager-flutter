@@ -64,7 +64,7 @@ class OtpVarificationScreen extends StatelessWidget {
                         MaterialPageRoute(
                             builder: (context) => const ResetPasswordScreen()),
                         (route) => false);
-                  }, title: 'Verify',
+                  },
                 ),
                 const SizedBox(
                   height: 16,
@@ -87,4 +87,3 @@ class OtpVarificationScreen extends StatelessWidget {
     );
   }
 }
-

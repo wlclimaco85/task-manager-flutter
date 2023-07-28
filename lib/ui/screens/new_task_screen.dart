@@ -6,6 +6,7 @@ import 'package:task_manager_flutter/ui/widgets/user_banners.dart';
 import 'add_task_screen.dart';
 
 class NewTaskScreen extends StatelessWidget {
+  
   const NewTaskScreen({super.key});
 
   @override

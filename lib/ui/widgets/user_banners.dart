@@ -23,7 +23,7 @@ class UserBanners extends StatelessWidget {
                 Navigator.push(
                     context,
                     MaterialPageRoute(
-                        builder: (context) => const UpdateProfileScreen()));
+                        builder: (context) => UpdateProfileScreen()));
               },
               child: const CircleAvatar(
                 radius: 25,
