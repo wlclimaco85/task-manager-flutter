@@ -13,10 +13,11 @@ class _CompleteTaskScreenState extends State<CompleteTaskScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      appBar: userBanner(context),
       body: ScreenBackground(
         child: Column(
           children: [
-            const UserBanners(),
+            
             Expanded(
                 child: Padding(
               padding: const EdgeInsets.all(8.0),

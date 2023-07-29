@@ -67,8 +67,9 @@ class NetworkCaller {
 
 void moveToLogin() async {
   await AuthUtility.clearUserInfo();
+  // ignore: use_build_context_synchronously
   Navigator.pushAndRemoveUntil(
-      TaskManagerApp.globalKey.currentState as BuildContext,
+      TaskManagerApp.globalKey.currentState!.context,
       MaterialPageRoute(builder: (context) => const LoginScreen()),
       (route) => false);
 }

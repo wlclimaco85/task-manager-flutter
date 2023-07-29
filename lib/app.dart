@@ -36,4 +36,5 @@ class TaskManagerApp extends StatelessWidget {
       home: const SplashScreen(),
     );
   }
+  
 }

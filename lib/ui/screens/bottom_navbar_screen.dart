@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:task_manager_flutter/ui/screens/cancelled_task_screen.dart';
 import 'package:task_manager_flutter/ui/screens/completed_task_screen.dart';
 import 'package:task_manager_flutter/ui/screens/new_task_screen.dart';
@@ -37,14 +38,14 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
             }
           },
           items: const [
-            BottomNavigationBarItem(icon: Icon(Icons.fiber_new), label: "New"),
             BottomNavigationBarItem(
-                icon: Icon(Icons.done_all_rounded), label: "Complete"),
+                icon: Icon(FontAwesomeIcons.shekelSign), label: "New"),
             BottomNavigationBarItem(
-                icon: Icon(Icons.cancel_presentation_outlined),
-                label: "Cancelled"),
+                icon: Icon(FontAwesomeIcons.checkToSlot), label: "Completed"),
             BottomNavigationBarItem(
-                icon: Icon(Icons.whatshot_rounded), label: "Progress"),
+                icon: Icon(FontAwesomeIcons.circleXmark), label: "Cancelled"),
+            BottomNavigationBarItem(
+                icon: Icon(FontAwesomeIcons.barsProgress), label: "Progress"),
           ]),
     );
   }

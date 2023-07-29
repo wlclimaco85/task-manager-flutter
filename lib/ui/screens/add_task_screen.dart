@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:http/http.dart';
 import 'package:task_manager_flutter/data/models/network_response.dart';
 import 'package:task_manager_flutter/data/services/network_caller.dart';
 import 'package:task_manager_flutter/data/utils/api_links.dart';
@@ -65,68 +64,74 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      appBar: userBanner(context),
       body: ScreenBackground(
           child: SingleChildScrollView(
         child: Column(
           children: [
-            const UserBanners(),
+            
             Padding(
                 padding: const EdgeInsets.all(20),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.start,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const SizedBox(
-                      height: 30,
-                    ),
-                    const Text(
-                      "Add Task",
-                      style:
-                          TextStyle(fontSize: 30, fontWeight: FontWeight.bold),
-                    ),
-                    const SizedBox(
-                      height: 16,
-                    ),
-                    CustomTextFormField(
-                      hintText: "Task Title",
-                      controller: _taskNameController,
-                      textInputType: TextInputType.text,
-                      validator: (value) {
-                        if (value!.isEmpty) {
-                          return "Please enter task title";
-                        }
-                        return null;
-                      },
-                    ),
-                    const SizedBox(
-                      height: 16,
-                    ),
-                    CustomTextFormField(
-                      maxLines: 4,
-                      hintText: "Description",
-                      controller: _taskDescriptionController,
-                      textInputType: TextInputType.text,
-                      validator: (value) {
-                        if (value!.isEmpty) {
-                          return "Please enter task description";
-                        }
-                        return null;
-                      },
-                    ),
-                    const SizedBox(
-                      height: 16,
-                    ),
-                    Visibility(
-                        visible: _addNewTaskLoading == false,
-                        replacement: const Center(
-                          child: CircularProgressIndicator(),
-                        ),
-                        child: CustomButton(
-                          onPresse: () {
-                            addNewTask();
-                          },
-                        )),
-                  ],
+                child: Form(
+                  key: _formKey,
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.start,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const SizedBox(
+                        height: 30,
+                      ),
+                      const Text(
+                        "Add Task",
+                        style: TextStyle(
+                            fontSize: 30, fontWeight: FontWeight.bold),
+                      ),
+                      const SizedBox(
+                        height: 16,
+                      ),
+                      CustomTextFormField(
+                        hintText: "Task Title",
+                        controller: _taskNameController,
+                        textInputType: TextInputType.text,
+                        validator: (value) {
+                          if (value?.isEmpty ?? true) {
+                            return "Please enter task title";
+                          }
+                          return null;
+                        },
+                      ),
+                      const SizedBox(
+                        height: 16,
+                      ),
+                      CustomTextFormField(
+                        maxLines: 4,
+                        hintText: "Description",
+                        controller: _taskDescriptionController,
+                        textInputType: TextInputType.text,
+                        validator: (value) {
+                          if (value?.isEmpty ?? true) {
+                            return "Please enter task description";
+                          }
+                          return null;
+                        },
+                      ),
+                      const SizedBox(
+                        height: 16,
+                      ),
+                      Visibility(
+                          visible: _addNewTaskLoading == false,
+                          replacement: const Center(
+                            child: CircularProgressIndicator(),
+                          ),
+                          child: CustomButton(
+                            onPresse: () {
+                              if (_formKey.currentState?.validate() ?? false) {
+                                addNewTask();
+                              }
+                            },
+                          )),
+                    ],
+                  ),
                 )),
           ],
         ),
