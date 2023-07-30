@@ -1,11 +1,14 @@
 // ignore_for_file: public_member_api_docs, sort_constructors_first
 import 'dart:convert';
+import 'dart:math';
 
 import 'package:flutter/material.dart';
 import 'package:task_manager_flutter/data/models/network_response.dart';
+import 'package:task_manager_flutter/data/models/summery_count_model.dart';
 import 'package:task_manager_flutter/data/models/task_model.dart';
 import 'package:task_manager_flutter/data/services/network_caller.dart';
 import 'package:task_manager_flutter/data/utils/api_links.dart';
+import 'package:task_manager_flutter/ui/screens/update_profile.dart';
 
 import 'package:task_manager_flutter/ui/widgets/screen_background.dart';
 import 'package:task_manager_flutter/ui/widgets/summery_card.dart';
@@ -23,27 +26,53 @@ class NewTaskScreen extends StatefulWidget {
 class _NewTaskScreenState extends State<NewTaskScreen> {
   @override
   void initState() {
-    getTasks("New");
     super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      statusCount();
+      getNewTasks();
+    });
   }
 
-  TaskModel newTaskModel = TaskModel();
+  StatusCountModel statusCountModel = StatusCountModel();
 
-  Future<void> getTasks(status) async {
+  Future<void> statusCount() async {
     final NetworkResponse response =
-        await NetworkCaller().getRequest(ApiLinks.listTaskByStatus(status));
+        await NetworkCaller().getRequest(ApiLinks.taskStatusCount);
     if (response.isSuccess) {
-      newTaskModel = TaskModel.fromJson(jsonDecode("${response.body}"));
-      if (mounted) {
-        setState(() {});
-      }
+      statusCountModel = StatusCountModel.fromJson(response.body!);
+    }
+    print(response.body);
+  }
+
+  TaskListModel newTaskModel = TaskListModel();
+  bool _loaderForNewTaskScreen = false;
+
+  Future<void> getNewTasks() async {
+    _loaderForNewTaskScreen = true;
+    if (mounted) {
+      setState(() {});
+    }
+    final NetworkResponse response =
+        await NetworkCaller().getRequest(ApiLinks.newTaskStatus);
+    if (response.isSuccess) {
+      newTaskModel = TaskListModel.fromJson(response.body!);
+    }
+    print(response.body);
+    _loaderForNewTaskScreen = false;
+    if (mounted) {
+      setState(() {});
     }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: userBanner(context),
+      appBar: userBanner(context, onTapped: () {
+        Navigator.push(
+            context,
+            MaterialPageRoute(
+                builder: (context) => const UpdateProfileScreen()));
+      }),
       body: ScreenBackground(
         child: Column(
           children: [
@@ -65,46 +94,61 @@ class _NewTaskScreenState extends State<NewTaskScreen> {
             Expanded(
                 child: Padding(
               padding: const EdgeInsets.all(8.0),
-              child: ListView.builder(
-                itemCount: newTaskModel.data?.length ?? 0,
-                itemBuilder: (context, int index) {
-                  return Card(
-                    elevation: 4,
-                    child: ListTile(
-                        title: Text(newTaskModel.data?[index].title ?? ""),
-                        subtitle: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(newTaskModel.data?[index].description ?? ""),
-                            Text(newTaskModel.data?[index].createdDate ??
-                                "unknown"),
-                            Row(
-                              children: [
-                                const CustomChip(
-                                  color: Colors.green,
-                                  text: 'New',
-                                ),
-                                const Spacer(),
-                                IconButton(
-                                  onPressed: () {},
-                                  icon: Icon(
-                                    Icons.edit,
-                                    color: Colors.red.shade300,
-                                  ),
-                                ),
-                                IconButton(
-                                  onPressed: () {},
-                                  icon: const Icon(
-                                    Icons.delete,
-                                    color: Colors.green,
-                                  ),
-                                ),
-                              ],
-                            )
-                          ],
-                        )),
-                  );
+              child: RefreshIndicator(
+                onRefresh: () async {
+                  getNewTasks();
                 },
+                child: _loaderForNewTaskScreen
+                    ? const Center(
+                        child: CircularProgressIndicator(),
+                      )
+                    : ListView.builder(
+                        itemCount: newTaskModel.data?.length ?? 0,
+                        itemBuilder: (context, int index) {
+                          return Card(
+                            elevation: 4,
+                            child: ListTile(
+                                title: Text(newTaskModel.data?[index].title ??
+                                    "Unknown"),
+                                subtitle: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                        newTaskModel.data?[index].description ??
+                                            ""),
+                                    Text(
+                                        newTaskModel.data?[index].createdDate ??
+                                            "unknown"),
+                                    Row(
+                                      children: [
+                                        CustomChip(
+                                          color: Colors.green,
+                                          text: newTaskModel
+                                                  .data?[index].status ??
+                                              "New",
+                                        ),
+                                        const Spacer(),
+                                        IconButton(
+                                          onPressed: () {},
+                                          icon: Icon(
+                                            Icons.edit,
+                                            color: Colors.red.shade300,
+                                          ),
+                                        ),
+                                        IconButton(
+                                          onPressed: () {},
+                                          icon: const Icon(
+                                            Icons.delete,
+                                            color: Colors.green,
+                                          ),
+                                        ),
+                                      ],
+                                    )
+                                  ],
+                                )),
+                          );
+                        },
+                      ),
               ),
             ))
           ],

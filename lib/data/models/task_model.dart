@@ -1,15 +1,15 @@
-class TaskModel {
+class TaskListModel {
   String? status;
-  List<Data>? data;
+  List<TaskData>? data;
 
-  TaskModel({this.status, this.data});
+  TaskListModel({this.status, this.data});
 
-  TaskModel.fromJson(Map<String, dynamic> json) {
+  TaskListModel.fromJson(Map<String, dynamic> json) {
     status = json['status'];
     if (json['data'] != null) {
-      data = <Data>[];
+      data = <TaskData>[];
       json['data'].forEach((v) {
-        data!.add(Data.fromJson(v));
+        data!.add(TaskData.fromJson(v));
       });
     }
   }
@@ -24,16 +24,16 @@ class TaskModel {
   }
 }
 
-class Data {
+class TaskData {
   String? sId;
   String? title;
   String? description;
   String? status;
   String? createdDate;
 
-  Data({this.sId, this.title, this.description, this.status, this.createdDate});
+  TaskData({this.sId, this.title, this.description, this.status, this.createdDate});
 
-  Data.fromJson(Map<String, dynamic> json) {
+  TaskData.fromJson(Map<String, dynamic> json) {
     sId = json['_id'];
     title = json['title'];
     description = json['description'];
