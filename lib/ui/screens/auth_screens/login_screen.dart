@@ -74,16 +74,19 @@ class _LoginScreenState extends State<LoginScreen> {
                   style: Theme.of(context).textTheme.titleLarge,
                 ),
                 const SizedBox(height: 16),
-                CustomTextFormField(
-                    hintText: "Email",
-                    controller: _emailController,
-                    textInputType: TextInputType.emailAddress,
-                    validator: (value) {
-                      if (value!.isEmpty) {
-                        return "Please enter email";
-                      }
-                      return null;
-                    }),
+                Form(
+                  key: _formKey,
+                  child: CustomTextFormField(
+                      hintText: "Email",
+                      controller: _emailController,
+                      textInputType: TextInputType.emailAddress,
+                      validator: (value) {
+                        if (value!.isEmpty) {
+                          return "Please enter email";
+                        }
+                        return null;
+                      }),
+                ),
                 const SizedBox(height: 12),
                 CustomTextFormField(
                   hintText: "Password",

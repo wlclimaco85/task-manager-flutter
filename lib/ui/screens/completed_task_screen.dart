@@ -15,10 +15,8 @@ class CompleteTaskScreen extends StatefulWidget {
 
 class _CompleteTaskScreenState extends State<CompleteTaskScreen> {
   TaskListModel _completedTaskModel = TaskListModel();
-  bool _loadingForCompletedTask = false;
 
   Future<void> getAllCompletedTaskFunction() async {
-    _loadingForCompletedTask = true;
     if (mounted) {
       setState(() {});
     }
@@ -36,7 +34,6 @@ class _CompleteTaskScreenState extends State<CompleteTaskScreen> {
         );
       }
     }
-    _loadingForCompletedTask = false;
     if (mounted) {
       setState(() {});
     }

@@ -2,8 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:task_manager_flutter/data/models/auth_utility.dart';
 import 'package:task_manager_flutter/ui/screens/auth_screens/login_screen.dart';
-import 'package:task_manager_flutter/ui/screens/update_profile.dart';
-
 AppBar userBanner(context, {VoidCallback? onTapped}) {
   return AppBar(
     // centerTitle: true,
