@@ -38,7 +38,6 @@ class _NewTaskScreenState extends State<NewTaskScreen> {
     if (response.isSuccess) {
       statusCountModel = StatusCountModel.fromJson(response.body!);
     }
-    print(response.body);
   }
 
   TaskListModel newTaskModel = TaskListModel();
@@ -54,7 +53,6 @@ class _NewTaskScreenState extends State<NewTaskScreen> {
     if (response.isSuccess) {
       newTaskModel = TaskListModel.fromJson(response.body!);
     }
-    print(response.body);
     _loaderForNewTaskScreen = false;
     if (mounted) {
       setState(() {});
