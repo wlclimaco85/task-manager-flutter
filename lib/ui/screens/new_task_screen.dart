@@ -9,6 +9,7 @@ import 'package:task_manager_flutter/ui/screens/update_profile.dart';
 
 import 'package:task_manager_flutter/ui/widgets/screen_background.dart';
 import 'package:task_manager_flutter/ui/widgets/summery_card.dart';
+import 'package:task_manager_flutter/ui/widgets/custom_task_card.dart';
 import 'package:task_manager_flutter/ui/widgets/user_banners.dart';
 
 import 'add_task_screen.dart';
@@ -41,6 +42,7 @@ class _NewTaskScreenState extends State<NewTaskScreen> {
   }
 
   TaskListModel newTaskModel = TaskListModel();
+
   bool _loaderForNewTaskScreen = false;
 
   Future<void> getNewTasks() async {
@@ -71,16 +73,19 @@ class _NewTaskScreenState extends State<NewTaskScreen> {
       body: ScreenBackground(
         child: Column(
           children: [
-            const Padding(
-              padding: EdgeInsets.all(8),
+            Padding(
+              padding: const EdgeInsets.all(8),
               child: Row(
                 children: [
-                  Expanded(child: SummeryCard(numberOfTasks: 4, title: "New")),
                   Expanded(
+                      child: SummeryCard(
+                          numberOfTasks: newTaskModel.data?.length ?? 0,
+                          title: "New")),
+                  const Expanded(
                       child: SummeryCard(numberOfTasks: 4, title: "Completed")),
-                  Expanded(
+                  const Expanded(
                       child: SummeryCard(numberOfTasks: 4, title: "Cancelled")),
-                  Expanded(
+                  const Expanded(
                       child:
                           SummeryCard(numberOfTasks: 4, title: "In Progress")),
                 ],
@@ -100,47 +105,16 @@ class _NewTaskScreenState extends State<NewTaskScreen> {
                     : ListView.builder(
                         itemCount: newTaskModel.data?.length ?? 0,
                         itemBuilder: (context, int index) {
-                          return Card(
-                            elevation: 4,
-                            child: ListTile(
-                                title: Text(newTaskModel.data?[index].title ??
-                                    "Unknown"),
-                                subtitle: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                        newTaskModel.data?[index].description ??
-                                            ""),
-                                    Text(
-                                        newTaskModel.data?[index].createdDate ??
-                                            "unknown"),
-                                    Row(
-                                      children: [
-                                        CustomChip(
-                                          color: Colors.green,
-                                          text: newTaskModel
-                                                  .data?[index].status ??
-                                              "New",
-                                        ),
-                                        const Spacer(),
-                                        IconButton(
-                                          onPressed: () {},
-                                          icon: Icon(
-                                            Icons.edit,
-                                            color: Colors.red.shade300,
-                                          ),
-                                        ),
-                                        IconButton(
-                                          onPressed: () {},
-                                          icon: const Icon(
-                                            Icons.delete,
-                                            color: Colors.green,
-                                          ),
-                                        ),
-                                      ],
-                                    )
-                                  ],
-                                )),
+                          return CustomTaskCard(
+                            title: newTaskModel.data?[index].title ?? "unknown",
+                            description:
+                                newTaskModel.data?[index].description ?? "",
+                            createdDate:
+                                newTaskModel.data?[index].createdDate ?? "",
+                            status: newTaskModel.data?[index].status ?? "New",
+                            onEditPressed: () {},
+                            onDeletePressed: () {},
+                            chipColor: Colors.blue,
                           );
                         },
                       ),

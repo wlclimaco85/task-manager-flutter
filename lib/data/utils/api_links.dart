@@ -5,8 +5,11 @@ class ApiLinks {
   static String profileUpdate = '$_baseUrl/profileUpdate';
   static String login = '$_baseUrl/login';
   static String createTask = '$_baseUrl/createTask';
-  static String newTaskStatus ='$_baseUrl/listTaskByStatus/New';
-  
-  static String completedTaskStatus ='$_baseUrl/listTaskByStatus/Completed';
-  static String taskStatusCount ='$_baseUrl/listTaskByStatus/taskStatusCount';
+  static String newTaskStatus = '$_baseUrl/listTaskByStatus/New';
+
+  static String completedTaskStatus = '$_baseUrl/listTaskByStatus/Completed';
+  static String inProgressTaskStatus = '$_baseUrl/listTaskByStatus/Progress';
+  static String cancelledTaskStatus = '$_baseUrl/listTaskByStatus/Canceled';
+
+  static String taskStatusCount = '$_baseUrl/listTaskByStatus/taskStatusCount';
 }

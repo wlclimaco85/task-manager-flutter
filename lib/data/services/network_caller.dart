@@ -10,7 +10,8 @@ import 'package:task_manager_flutter/ui/screens/auth_screens/login_screen.dart';
 class NetworkCaller {
   Future<NetworkResponse> getRequest(String url) async {
     try {
-      Response response = await get(Uri.parse(url));
+      Response response = await get(Uri.parse(url),
+          headers: {'token': AuthUtility.userInfo.token.toString()});
       if (response.statusCode == 200) {
         return NetworkResponse(
             true, response.statusCode, jsonDecode(response.body));
