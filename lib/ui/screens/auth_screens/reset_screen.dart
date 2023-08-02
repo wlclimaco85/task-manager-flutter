@@ -58,7 +58,7 @@ class ResetPasswordScreen extends StatelessWidget {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                          builder: (context) => SignUpFormScreen()),
+                          builder: (context) => const LoginScreen()),
                     );
                   },
                   child: const Icon(
