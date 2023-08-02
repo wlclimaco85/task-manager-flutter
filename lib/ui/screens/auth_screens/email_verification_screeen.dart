@@ -1,5 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:task_manager_flutter/data/models/network_response.dart';
+import 'package:task_manager_flutter/data/services/network_caller.dart';
+import 'package:task_manager_flutter/data/utils/api_links.dart';
 import 'package:task_manager_flutter/ui/screens/auth_screens/otp_varification.dart';
+import 'package:task_manager_flutter/ui/widgets/custom_text_form_field.dart';
 import 'package:task_manager_flutter/ui/widgets/screen_background.dart';
 import 'package:task_manager_flutter/ui/widgets/signup_button.dart';
 
@@ -12,6 +16,39 @@ class EmailVarificationScreeen extends StatefulWidget {
 }
 
 class _EmailVarificationScreeenState extends State<EmailVarificationScreeen> {
+  final TextEditingController _emailTEController = TextEditingController();
+  bool _isLoading = false;
+  GlobalKey<FormState> _emailFormKey = GlobalKey<FormState>();
+
+  Future<void> emailVerify() async {
+    _isLoading = true;
+    if (mounted) {
+      setState(() {});
+    }
+
+    final NetworkResponse response = await NetworkCaller().getRequest(
+        ApiLinks.recoverVerifyEmail(_emailTEController.text.trim()));
+    _isLoading = false;
+    if (mounted) {
+      setState(() {});
+    }
+    if (response.isSuccess) {
+      Navigator.push(
+          context,
+          MaterialPageRoute(
+              builder: (context) => OtpVarificationScreen(
+                    email: _emailTEController.text.trim(),
+                  )));
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("Please enter valid email address"),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -34,29 +71,37 @@ class _EmailVarificationScreeenState extends State<EmailVarificationScreeen> {
                   height: 5,
                 ),
                 Text(
-                  "A 6 digit code has been sent to your email address. Please enter it below to continue.",
+                  "Please enter your email address to receive a verification code",
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                         color: Colors.grey,
                       ),
                 ),
                 const SizedBox(height: 16),
-                const TextField(
-                  decoration: InputDecoration(hintText: "Email"),
-                ),
+                Form(
+                    key: _emailFormKey,
+                    child: CustomTextFormField(
+                      hintText: "Email",
+                      controller: _emailTEController,
+                      textInputType: TextInputType.emailAddress,
+                    )),
                 const SizedBox(height: 12),
                 SizedBox(
                   width: double.infinity,
-                  child: ElevatedButton(
-                    onPressed: () {
-                      Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                              builder: (context) =>
-                                  const OtpVarificationScreen()));
-                    },
-                    child: const Icon(
-                      Icons.arrow_circle_right_outlined,
-                      size: 20,
+                  child: Visibility(
+                    visible: _isLoading == false,
+                    replacement: const Center(
+                      child: CircularProgressIndicator(),
+                    ),
+                    child: ElevatedButton(
+                      onPressed: () {
+                        if (_emailFormKey.currentState!.validate()) {
+                          emailVerify();
+                        }
+                      },
+                      child: const Icon(
+                        Icons.arrow_circle_right_outlined,
+                        size: 20,
+                      ),
                     ),
                   ),
                 ),
@@ -67,7 +112,8 @@ class _EmailVarificationScreeenState extends State<EmailVarificationScreeen> {
                   text: "Have An Account?",
                   onPresse: () {
                     Navigator.pop(context);
-                  }, buttonText: 'Sign In',
+                  },
+                  buttonText: 'Sign In',
                 ),
               ],
             ),
