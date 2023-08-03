@@ -20,6 +20,8 @@ class _EmailVarificationScreeenState extends State<EmailVarificationScreeen> {
   bool _isLoading = false;
   GlobalKey<FormState> _emailFormKey = GlobalKey<FormState>();
 
+  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
+
   Future<void> emailVerify() async {
     _isLoading = true;
     if (mounted) {
@@ -28,6 +30,7 @@ class _EmailVarificationScreeenState extends State<EmailVarificationScreeen> {
 
     final NetworkResponse response = await NetworkCaller().getRequest(
         ApiLinks.recoverVerifyEmail(_emailTEController.text.trim()));
+
     _isLoading = false;
     if (mounted) {
       setState(() {});
@@ -50,8 +53,15 @@ class _EmailVarificationScreeenState extends State<EmailVarificationScreeen> {
   }
 
   @override
+  dispose() {
+    super.dispose();
+    _emailTEController.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
+      key: _scaffoldKey,
       body: ScreenBackground(
         child: SingleChildScrollView(
           child: Padding(

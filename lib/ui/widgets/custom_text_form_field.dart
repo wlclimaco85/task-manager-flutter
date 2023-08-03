@@ -11,6 +11,7 @@ class CustomTextFormField extends StatelessWidget {
     this.validator,
     this.readOnly,
     required this.textInputType,
+    this.icon,
   }) : super(key: key);
 
   final String hintText;
@@ -20,6 +21,7 @@ class CustomTextFormField extends StatelessWidget {
   final Function(String?)? validator;
   final bool? readOnly;
   final TextInputType textInputType;
+  final Icons? icon;
 
   @override
   Widget build(BuildContext context) {
@@ -40,6 +42,7 @@ class CustomTextFormField extends StatelessWidget {
         filled: true,
         border: const OutlineInputBorder(borderSide: BorderSide.none),
       ),
+      
     );
   }
 }

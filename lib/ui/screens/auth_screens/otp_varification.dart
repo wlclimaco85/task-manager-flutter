@@ -26,18 +26,14 @@ class _OtpVarificationScreenState extends State<OtpVarificationScreen> {
   final TextEditingController _otpTEController = TextEditingController();
   bool _isLoading = false;
   GlobalKey<FormState> _otpFormKey = GlobalKey<FormState>();
+  
+  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
 
   Future<void> otpVerify() async {}
-
-  @override
-  void dispose() {
-    _otpTEController.dispose();
-    super.dispose();
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      key: _scaffoldKey,
       body: ScreenBackground(
         child: SingleChildScrollView(
           child: Padding(

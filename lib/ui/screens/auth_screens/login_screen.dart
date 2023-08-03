@@ -8,6 +8,7 @@ import 'package:task_manager_flutter/ui/screens/auth_screens/email_verification_
 import 'package:task_manager_flutter/ui/screens/auth_screens/signup_form_screen.dart';
 import 'package:task_manager_flutter/ui/screens/bottom_navbar_screen.dart';
 import 'package:task_manager_flutter/ui/widgets/custom_button.dart';
+import 'package:task_manager_flutter/ui/widgets/custom_password_text_field.dart';
 import 'package:task_manager_flutter/ui/widgets/custom_text_form_field.dart';
 import 'package:task_manager_flutter/ui/widgets/screen_background.dart';
 import 'package:task_manager_flutter/ui/widgets/signup_button.dart';
@@ -23,6 +24,8 @@ class _LoginScreenState extends State<LoginScreen> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
+
+  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
 
   bool _loginInProgress = false;
 
@@ -52,6 +55,7 @@ class _LoginScreenState extends State<LoginScreen> {
       }
     } else {
       if (mounted) {
+        _passwordController.clear();
         ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('Incorrect email or password')));
       }
@@ -61,6 +65,7 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      key: _scaffoldKey,
       body: ScreenBackground(
         child: SingleChildScrollView(
           child: Padding(
@@ -88,7 +93,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       }),
                 ),
                 const SizedBox(height: 12),
-                CustomTextFormField(
+                CustomPasswordTextFormField(
                   hintText: "Password",
                   controller: _passwordController,
                   obscureText: true,

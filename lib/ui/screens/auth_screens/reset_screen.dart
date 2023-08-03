@@ -5,6 +5,7 @@ import 'package:task_manager_flutter/data/services/network_caller.dart';
 import 'package:task_manager_flutter/data/utils/api_links.dart';
 
 import 'package:task_manager_flutter/ui/screens/auth_screens/login_screen.dart';
+import 'package:task_manager_flutter/ui/widgets/custom_password_text_field.dart';
 import 'package:task_manager_flutter/ui/widgets/screen_background.dart';
 
 class ResetPasswordScreen extends StatefulWidget {
@@ -26,20 +27,15 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
   final TextEditingController _confirmPasswordTEController =
       TextEditingController();
   bool _isLoading = false;
-  GlobalKey<FormState> _resetFormKey = GlobalKey<FormState>();
+  final GlobalKey<FormState> _resetFormKey = GlobalKey<FormState>();
+  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
 
   Future<void> resetPassword() async {}
 
   @override
-  void dispose() {
-    _passwordTEController.dispose();
-    _confirmPasswordTEController.dispose();
-    super.dispose();
-  }
-
-  @override
   Widget build(BuildContext context) {
     return Scaffold(
+      key: _scaffoldKey,
       body: ScreenBackground(
           child: SingleChildScrollView(
         child: Padding(
@@ -67,20 +63,18 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                 const SizedBox(
                   height: 16,
                 ),
-                TextFormField(
+                CustomPasswordTextFormField(
                   controller: _passwordTEController,
-                  decoration: const InputDecoration(
-                    hintText: "Password",
-                  ),
+                  hintText: "Password",
+                  textInputType: TextInputType.text,
                 ),
                 const SizedBox(
                   height: 8,
                 ),
-                TextFormField(
+                CustomPasswordTextFormField(
                   controller: _confirmPasswordTEController,
-                  decoration: const InputDecoration(
-                    hintText: "Confirm Password",
-                  ),
+                  hintText: "Confirm Password",
+                  textInputType: TextInputType.text,
                 ),
                 const SizedBox(
                   height: 16,
@@ -102,19 +96,20 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                             setState(() {});
                           }
 
-                          Map<String, dynamic> _resetForm = {
+                          Map<String, dynamic> resetForm = {
                             'password': _passwordTEController.text,
                             'confirmPassword':
                                 _confirmPasswordTEController.text,
                           };
                           NetworkResponse response = await NetworkCaller()
                               .postRequest(
-                                  ApiLinks.recoverResetPassword, _resetForm);
+                                  ApiLinks.recoverResetPassword, resetForm);
                           _isLoading = false;
                           if (mounted) {
                             setState(() {});
                           }
                           if (response.isSuccess) {
+                            // ignore: use_build_context_synchronously
                             Navigator.pushAndRemoveUntil(
                                 context,
                                 MaterialPageRoute(

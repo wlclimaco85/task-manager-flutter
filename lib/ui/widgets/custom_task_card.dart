@@ -1,5 +1,6 @@
 // ignore_for_file: public_member_api_docs, sort_constructors_first
 import 'package:flutter/material.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
 class CustomTaskCard extends StatelessWidget {
   final String title;
@@ -44,17 +45,23 @@ class CustomTaskCard extends StatelessWidget {
                 ),
                 const Spacer(),
                 IconButton(
+                    onPressed: () {},
+                    icon: Icon(
+                      Icons.published_with_changes_outlined,
+                      color: Colors.purple.shade300,
+                    )),
+                IconButton(
                   onPressed: onEditPressed,
-                  icon: Icon(
+                  icon: const Icon(
                     Icons.edit,
-                    color: Colors.red.shade300,
+                    color: Colors.green,
                   ),
                 ),
                 IconButton(
                   onPressed: onDeletePressed,
                   icon: const Icon(
                     Icons.delete,
-                    color: Colors.green,
+                    color: Colors.redAccent,
                   ),
                 ),
               ],
