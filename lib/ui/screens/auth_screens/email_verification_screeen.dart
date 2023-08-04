@@ -1,3 +1,5 @@
+// ignore_for_file: use_build_context_synchronously
+
 import 'package:flutter/material.dart';
 import 'package:task_manager_flutter/data/models/network_response.dart';
 import 'package:task_manager_flutter/data/services/network_caller.dart';
@@ -18,18 +20,18 @@ class EmailVarificationScreeen extends StatefulWidget {
 class _EmailVarificationScreeenState extends State<EmailVarificationScreeen> {
   final TextEditingController _emailTEController = TextEditingController();
   bool _isLoading = false;
-  GlobalKey<FormState> _emailFormKey = GlobalKey<FormState>();
+  final GlobalKey<FormState> _emailFormKey = GlobalKey<FormState>();
 
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
 
-  Future<void> emailVerify() async {
+  Future<void> emailVerify(String email) async {
     _isLoading = true;
     if (mounted) {
       setState(() {});
     }
 
-    final NetworkResponse response = await NetworkCaller().getRequest(
-        ApiLinks.recoverVerifyEmail(_emailTEController.text.trim()));
+    final NetworkResponse response =
+        await NetworkCaller().getRequest(ApiLinks.recoverVerifyEmail(email));
 
     _isLoading = false;
     if (mounted) {
@@ -105,7 +107,7 @@ class _EmailVarificationScreeenState extends State<EmailVarificationScreeen> {
                     child: ElevatedButton(
                       onPressed: () {
                         if (_emailFormKey.currentState!.validate()) {
-                          emailVerify();
+                          emailVerify(_emailTEController.text.trim());
                         }
                       },
                       child: const Icon(

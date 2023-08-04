@@ -4,8 +4,9 @@ import 'package:task_manager_flutter/data/models/task_model.dart';
 import 'package:task_manager_flutter/data/services/network_caller.dart';
 import 'package:task_manager_flutter/data/utils/api_links.dart';
 import 'package:task_manager_flutter/ui/screens/update_profile.dart';
-import 'package:task_manager_flutter/ui/widgets/custom_task_card.dart';
+import 'package:task_manager_flutter/ui/widgets/task_card.dart';
 import 'package:task_manager_flutter/ui/widgets/screen_background.dart';
+import 'package:task_manager_flutter/ui/widgets/status_change_botom_sheet.dart';
 import 'package:task_manager_flutter/ui/widgets/user_banners.dart';
 
 class CancelledTaskScreen extends StatefulWidget {
@@ -20,14 +21,32 @@ class _CancelledTaskScreenState extends State<CancelledTaskScreen> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      getInProgressTaskFunction();
+      getCancelledTaskFunction();
     });
   }
 
   TaskListModel _cancelledTaskModel = TaskListModel();
   bool _loadingScreenForCancelledTaskScreen = false;
 
-  Future<void> getInProgressTaskFunction() async {
+  bool isLoadingForDeleteTask = false;
+
+  Future<void> deleteTask(String taskId) async {
+    isLoadingForDeleteTask = true;
+    if (mounted) {
+      setState(() {});
+    }
+    NetworkResponse response =
+        await NetworkCaller().getRequest(ApiLinks.deleteTask(taskId));
+    isLoadingForDeleteTask = false;
+    if (mounted) {
+      setState(() {});
+    }
+    if (response.isSuccess) {
+      _cancelledTaskModel.data!.removeWhere((element) => element.sId == taskId);
+    }
+  }
+
+  Future<void> getCancelledTaskFunction() async {
     _loadingScreenForCancelledTaskScreen = true;
     if (mounted) {
       setState(() {});
@@ -69,7 +88,7 @@ class _CancelledTaskScreenState extends State<CancelledTaskScreen> {
               padding: const EdgeInsets.all(8.0),
               child: RefreshIndicator(
                 onRefresh: () async {
-                  getInProgressTaskFunction();
+                  getCancelledTaskFunction();
                 },
                 child: _loadingScreenForCancelledTaskScreen
                     ? const Center(
@@ -89,8 +108,14 @@ class _CancelledTaskScreenState extends State<CancelledTaskScreen> {
                             status: _cancelledTaskModel.data?[index].status ??
                                 "New",
                             onEditPressed: () {},
-                            onDeletePressed: () {},
+                            onDeletePressed: () {
+                              deleteTask(_cancelledTaskModel.data![index].sId!);
+                            },
                             chipColor: Colors.red,
+                            onChangeStatusPressed: () {
+                              statusUpdateButtomSheet(
+                                  _cancelledTaskModel.data![index]);
+                            },
                           );
                         },
                         itemCount: _cancelledTaskModel.data?.length ?? 0),
@@ -100,5 +125,18 @@ class _CancelledTaskScreenState extends State<CancelledTaskScreen> {
         ),
       ),
     );
+  }
+
+  void statusUpdateButtomSheet(TaskData task) {
+    showModalBottomSheet(
+        context: context,
+        builder: (context) {
+          return UpdateStatus(
+            task: task,
+            onTaskComplete: () {
+              getCancelledTaskFunction();
+            },
+          );
+        });
   }
 }

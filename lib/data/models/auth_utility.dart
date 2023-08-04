@@ -1,3 +1,5 @@
+// ignore_for_file: no_leading_underscores_for_local_identifiers
+
 import 'dart:convert';
 
 import 'package:shared_preferences/shared_preferences.dart';
@@ -10,6 +12,7 @@ class AuthUtility {
   static LoginModel userInfo = LoginModel();
 
   //*this method is used to store user data in shared preferences.
+
   static Future<void> setUserInfo(LoginModel model) async {
     SharedPreferences _sharedPreferences =
         await SharedPreferences.getInstance();
@@ -18,6 +21,7 @@ class AuthUtility {
   }
 
   //*this method is used to get user data from shared preferences.
+  
   static Future<LoginModel> getUserInfo() async {
     SharedPreferences _sharedPreferences =
         await SharedPreferences.getInstance();

@@ -30,7 +30,41 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
   final GlobalKey<FormState> _resetFormKey = GlobalKey<FormState>();
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
 
-  Future<void> resetPassword() async {}
+  Future<void> resetPassword() async {
+    _isLoading = true;
+    if (mounted) {
+      setState(() {});
+    }
+
+    Map<String, dynamic> resetForm = {
+      'email': widget.email,
+      'otp': widget.otp,
+      'password': _passwordTEController.text,
+    };
+    NetworkResponse response = await NetworkCaller()
+        .postRequest(ApiLinks.recoverResetPassword, resetForm);
+    _isLoading = false;
+    if (mounted) {
+      setState(() {});
+    }
+    if (response.isSuccess) {
+      if (mounted) {
+        Navigator.pushAndRemoveUntil(
+            context,
+            MaterialPageRoute(builder: (context) => const LoginScreen()),
+            (route) => false);
+      }
+    } else {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text("Please enter valid password"),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -91,40 +125,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                         if (_resetFormKey.currentState!.validate() &&
                             _passwordTEController.text ==
                                 _confirmPasswordTEController.text) {
-                          _isLoading = true;
-                          if (mounted) {
-                            setState(() {});
-                          }
-
-                          Map<String, dynamic> resetForm = {
-                            'password': _passwordTEController.text,
-                            'confirmPassword':
-                                _confirmPasswordTEController.text,
-                          };
-                          NetworkResponse response = await NetworkCaller()
-                              .postRequest(
-                                  ApiLinks.recoverResetPassword, resetForm);
-                          _isLoading = false;
-                          if (mounted) {
-                            setState(() {});
-                          }
-                          if (response.isSuccess) {
-                            // ignore: use_build_context_synchronously
-                            Navigator.pushAndRemoveUntil(
-                                context,
-                                MaterialPageRoute(
-                                    builder: (context) => const LoginScreen()),
-                                (route) => false);
-                          } else {
-                            if (mounted) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                  content: Text("Please enter valid OTP"),
-                                  backgroundColor: Colors.red,
-                                ),
-                              );
-                            }
-                          }
+                          resetPassword();
                         } else {
                           ScaffoldMessenger.of(context).showSnackBar(
                             const SnackBar(

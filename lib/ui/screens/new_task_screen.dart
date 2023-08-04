@@ -6,10 +6,10 @@ import 'package:task_manager_flutter/data/models/task_model.dart';
 import 'package:task_manager_flutter/data/services/network_caller.dart';
 import 'package:task_manager_flutter/data/utils/api_links.dart';
 import 'package:task_manager_flutter/ui/screens/update_profile.dart';
-
+import 'package:task_manager_flutter/ui/widgets/task_card.dart';
 import 'package:task_manager_flutter/ui/widgets/screen_background.dart';
+import 'package:task_manager_flutter/ui/widgets/status_change_botom_sheet.dart';
 import 'package:task_manager_flutter/ui/widgets/summery_card.dart';
-import 'package:task_manager_flutter/ui/widgets/custom_task_card.dart';
 import 'package:task_manager_flutter/ui/widgets/user_banners.dart';
 
 import 'add_task_screen.dart';
@@ -44,6 +44,24 @@ class _NewTaskScreenState extends State<NewTaskScreen> {
   TaskListModel newTaskModel = TaskListModel();
 
   bool _loaderForNewTaskScreen = false;
+
+  bool isLoadingForDeleteTask = false;
+
+  Future<void> deleteTask(String taskId) async {
+    isLoadingForDeleteTask = true;
+    if (mounted) {
+      setState(() {});
+    }
+    NetworkResponse response =
+        await NetworkCaller().getRequest(ApiLinks.deleteTask(taskId));
+    isLoadingForDeleteTask = false;
+    if (mounted) {
+      setState(() {});
+    }
+    if (response.isSuccess) {
+      newTaskModel.data!.removeWhere((element) => element.sId == taskId);
+    }
+  }
 
   Future<void> getNewTasks() async {
     _loaderForNewTaskScreen = true;
@@ -113,8 +131,12 @@ class _NewTaskScreenState extends State<NewTaskScreen> {
                                 newTaskModel.data?[index].createdDate ?? "",
                             status: newTaskModel.data?[index].status ?? "New",
                             onEditPressed: () {},
-                            onDeletePressed: () {},
+                            onDeletePressed: () {deleteTask(newTaskModel.data![index].sId!);},
                             chipColor: Colors.blue,
+                            onChangeStatusPressed: () {
+                              statusUpdateButtomSheet(
+                                  newTaskModel.data![index]);
+                            },
                           );
                         },
                       ),
@@ -132,26 +154,18 @@ class _NewTaskScreenState extends State<NewTaskScreen> {
       ),
     );
   }
-}
 
-class CustomChip extends StatelessWidget {
-  const CustomChip({
-    Key? key,
-    required this.text,
-    required this.color,
-  }) : super(key: key);
-
-  final String text;
-  final Color color;
-
-  @override
-  Widget build(BuildContext context) {
-    return Chip(
-      label: Text(
-        text,
-        style: const TextStyle(color: Colors.white),
-      ),
-      backgroundColor: color,
-    );
+  void statusUpdateButtomSheet(TaskData task) {
+    showModalBottomSheet(
+        context: context,
+        builder: (context) {
+          return UpdateStatus(
+            task: task,
+            onTaskComplete: () {
+              getNewTasks();
+            },
+          );
+        });
   }
 }
+

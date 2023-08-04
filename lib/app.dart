@@ -8,6 +8,7 @@ class TaskManagerApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      navigatorKey: globalKey,
       debugShowCheckedModeBanner: false,
       title: "Task Manager",
       theme: ThemeData(

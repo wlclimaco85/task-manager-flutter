@@ -1,4 +1,3 @@
-// ignore_for_file: public_member_api_docs, sort_constructors_first
 import 'package:flutter/material.dart';
 import 'package:pin_code_fields/pin_code_fields.dart';
 import 'package:task_manager_flutter/data/models/network_response.dart';
@@ -25,11 +24,44 @@ class OtpVarificationScreen extends StatefulWidget {
 class _OtpVarificationScreenState extends State<OtpVarificationScreen> {
   final TextEditingController _otpTEController = TextEditingController();
   bool _isLoading = false;
-  GlobalKey<FormState> _otpFormKey = GlobalKey<FormState>();
-  
+  final GlobalKey<FormState> _otpFormKey = GlobalKey<FormState>();
+
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
 
-  Future<void> otpVerify() async {}
+  Future<void> otpVerify(String email, String otp) async {
+    _isLoading = true;
+    setState(() {});
+
+    NetworkResponse response =
+        await NetworkCaller().getRequest(ApiLinks.recoverVerifyOTP(email, otp));
+
+    _isLoading = false;
+    setState(() {});
+    final BuildContext context = this.context;
+    if (response.isSuccess) {
+      if (mounted) {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => ResetPasswordScreen(
+              email: widget.email,
+              otp: _otpTEController.text.trim(),
+            ),
+          ),
+        );
+      }
+    } else {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text("Please enter valid OTP"),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -86,41 +118,10 @@ class _OtpVarificationScreenState extends State<OtpVarificationScreen> {
                         child: CircularProgressIndicator(),
                       )
                     : CustomButton(
-                        onPresse: () async {
+                        onPresse: () {
                           if (_otpFormKey.currentState!.validate()) {
-                            _isLoading = true;
-                            setState(
-                                () {}); // No need to check mounted here since setState will handle it.
-
-                            // Capture the context before entering the async function.
-
-                            NetworkResponse response = await NetworkCaller()
-                                .getRequest(ApiLinks.recoverVerifyOTP(
-                                    widget.email,
-                                    _otpTEController.text.trim()));
-
-                            _isLoading = false;
-                            setState(
-                                () {}); // No need to check mounted here since setState will handle it.
-                            final BuildContext context = this.context;
-                            if (response.isSuccess) {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => ResetPasswordScreen(
-                                    email: widget.email,
-                                    otp: _otpTEController.text.trim(),
-                                  ),
-                                ),
-                              );
-                            } else {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                  content: Text("Please enter valid OTP"),
-                                  backgroundColor: Colors.red,
-                                ),
-                              );
-                            }
+                            otpVerify(
+                                widget.email, _otpTEController.text.trim());
                           }
                         },
                       ),

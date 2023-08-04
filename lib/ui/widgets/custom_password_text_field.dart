@@ -23,6 +23,7 @@ class CustomPasswordTextFormField extends StatefulWidget {
   final IconData? icon;
 
   @override
+  // ignore: library_private_types_in_public_api
   _CustomPasswordTextFormFieldState createState() =>
       _CustomPasswordTextFormFieldState();
 }

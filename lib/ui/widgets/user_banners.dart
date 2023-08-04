@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:task_manager_flutter/data/models/auth_utility.dart';
@@ -43,42 +45,49 @@ AppBar userBanner(context, {VoidCallback? onTapped}) {
         width: double.infinity,
         child: SingleChildScrollView(
           scrollDirection: Axis.horizontal,
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.start,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              GestureDetector(
-                onTap: onTapped,
-                child: CircleAvatar(
+          child: GestureDetector(
+            onTap: onTapped,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.start,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                CircleAvatar(
                   radius: 25,
-                  backgroundImage: const NetworkImage(
-                      "https://lh3.googleusercontent.com/a/AAcHTtcDcIjcAxYbE61EV4D7MPqUxP8TAu7elGBuYFxdmRYAa9M=s288-c-no"),
-                  onBackgroundImageError: (_, __) {
-                    const Icon(FontAwesomeIcons.solidCircleUser);
-                  },
-                ),
-              ),
-              const SizedBox(width: 15),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    "${AuthUtility.userInfo.data?.firstName ?? " "} ${AuthUtility.userInfo.data?.lastName}",
-                    style: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white),
+                  child: Image.memory(
+                    showBase64Image(AuthUtility.userInfo.data?.photo),
+                    errorBuilder: (_, __, ___) {
+                      return const Icon(Icons.person);
+                    },
                   ),
-                  const SizedBox(height: 2),
-                  Text(AuthUtility.userInfo.data?.email ?? "",
-                      style:
-                          const TextStyle(fontSize: 14, color: Colors.white)),
-                ],
-              ),
-            ],
+                ),
+                const SizedBox(width: 15),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      "${AuthUtility.userInfo.data?.firstName ?? " "} ${AuthUtility.userInfo.data?.lastName}",
+                      style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(AuthUtility.userInfo.data?.email ?? "",
+                        style:
+                            const TextStyle(fontSize: 14, color: Colors.white)),
+                  ],
+                ),
+              ],
+            ),
           ),
         ),
       ),
     ),
   );
+}
+
+showBase64Image(base64String) {
+  UriData? data = Uri.parse(base64String).data;
+  Uint8List myImage = data!.contentAsBytes();
+  return myImage;
 }
