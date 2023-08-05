@@ -13,32 +13,16 @@ class StatusCountModel {
       });
     }
   }
-
-  Map<String, dynamic> toJson() {
-    final Map<String, dynamic> data = <String, dynamic>{};
-    data['status'] = status;
-    if (this.data != null) {
-      data['data'] = this.data!.map((v) => v.toJson()).toList();
-    }
-    return data;
-  }
 }
 
 class Data {
-  String? sId;
-  int? sum;
+  String? statusId;
+  int? count;
 
-  Data({this.sId, this.sum});
+  Data({this.statusId, this.count});
 
   Data.fromJson(Map<String, dynamic> json) {
-    sId = json['_id'];
-    sum = json['sum'];
-  }
-
-  Map<String, dynamic> toJson() {
-    final Map<String, dynamic> data = <String, dynamic>{};
-    data['_id'] = sId;
-    data['sum'] = sum;
-    return data;
+    statusId = json['_id'];
+    count = json['sum'];
   }
 }
