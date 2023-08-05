@@ -71,14 +71,60 @@ class _TaskScreenState extends State<TaskScreen> {
   }
 
   StatusCountModel statusCountModel = StatusCountModel();
+  int count1 = 0;
+  int count2 = 0;
+  int count3 = 0;
+  int count4 = 0;
 
   Future<void> statusCount() async {
-    final NetworkResponse response =
-        await NetworkCaller().getRequest(ApiLinks.taskStatusCount);
-    if (response.isSuccess) {
+    isLoading = true;
+    if (mounted) {
+      setState(() {});
+    }
+    final NetworkResponse newTaskResponse =
+        await NetworkCaller().getRequest(ApiLinks.newTaskStatus);
+    final newTaskModel = TaskListModel.fromJson(newTaskResponse.body!);
+
+    if (mounted) {
       setState(() {
-        statusCountModel = StatusCountModel.fromJson(response.body!);
+        count1 = newTaskModel.data?.length ?? 0;
       });
+    }
+
+    final cancelledTaskResponse =
+        await NetworkCaller().getRequest(ApiLinks.cancelledTaskStatus);
+    final cancelledTaskModel =
+        TaskListModel.fromJson(cancelledTaskResponse.body!);
+    if (mounted) {
+      setState(() {
+        count2 = cancelledTaskModel.data?.length ?? 0;
+      });
+    }
+
+    final completedTaskResponse =
+        await NetworkCaller().getRequest(ApiLinks.completedTaskStatus);
+
+    final completedTaskModel =
+        TaskListModel.fromJson(completedTaskResponse.body!);
+    if (mounted) {
+      setState(() {
+        count3 = completedTaskModel.data?.length ?? 0;
+      });
+    }
+
+    final inProgressResponse =
+        await NetworkCaller().getRequest(ApiLinks.inProgressTaskStatus);
+    final inProgressTaskModel =
+        TaskListModel.fromJson(inProgressResponse.body!);
+    if (mounted) {
+      setState(() {
+        count4 = inProgressTaskModel.data?.length ?? 0;
+      });
+    }
+
+    isLoading = false;
+    if (mounted) {
+      setState(() {});
     }
   }
 
@@ -100,13 +146,13 @@ class _TaskScreenState extends State<TaskScreen> {
     }
   }
 
-  int getCountForStatus(String status) {
-    final Data? statusData = statusCountModel.data?.firstWhere(
-      (data) => data.statusId == status,
-      orElse: () => Data(statusId: status, count: 0),
-    );
-    return statusData?.count ?? 0;
-  }
+  // int getCountForStatus(String status) {
+  //   final Data? statusData = statusCountModel.data?.firstWhere(
+  //     (data) => data.statusId == status,
+  //     orElse: () => Data(statusId: status, count: 0),
+  //   );
+  //   return statusData?.count ?? 0;
+  // }
 
   @override
   Widget build(BuildContext context) {
@@ -126,54 +172,48 @@ class _TaskScreenState extends State<TaskScreen> {
             if (widget.showAllSummeryCard)
               Padding(
                   padding: const EdgeInsets.all(8),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: SummeryCard(
-                          numberOfTasks: _taskModel.data
-                                  ?.where((element) => element.status == "New")
-                                  .length ??
-                              0,
-                          title: "New",
+                  child: Visibility(
+                    visible: isLoading == false,
+                    replacement: const Center(
+                      child: LinearProgressIndicator(),
+                    ),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: SummeryCard(
+                            numberOfTasks: count1,
+                            title: "New",
+                          ),
                         ),
-                      ),
-                      Expanded(
-                        child: SummeryCard(
-                          numberOfTasks: _taskModel.data
-                                  ?.where(
-                                      (element) => element.status == "Complete")
-                                  .length ??
-                              0,
-                          title: "Completed",
+                        Expanded(
+                          child: SummeryCard(
+                            numberOfTasks: count2,
+                            title: "Completed",
+                          ),
                         ),
-                      ),
-                      Expanded(
-                        child: SummeryCard(
-                          numberOfTasks: _taskModel.data
-                                  ?.where((element) =>
-                                      element.status == "Cancelled")
-                                  .length ??
-                              0,
-                          title: "Cancelled",
+                        Expanded(
+                          child: SummeryCard(
+                            numberOfTasks: count3,
+                            title: "Cancelled",
+                          ),
                         ),
-                      ),
-                      Expanded(
-                        child: SummeryCard(
-                          numberOfTasks: _taskModel.data
-                                  ?.where(
-                                      (element) => element.title == "Progress")
-                                  .length ??
-                              0,
-                          title: "Progress",
+                        Expanded(
+                          child: SummeryCard(
+                            numberOfTasks: count4,
+                            title: "Progress",
+                          ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   )),
             Expanded(
               child: Padding(
                 padding: const EdgeInsets.all(8),
                 child: RefreshIndicator(
-                    onRefresh: () => getTask(),
+                    onRefresh: () async {
+                      getTask();
+                      statusCount();
+                    },
                     child: Visibility(
                       visible: isLoading == false,
                       replacement: const Center(
@@ -236,6 +276,14 @@ class _TaskScreenState extends State<TaskScreen> {
 
   void statusUpdateButtomSheet(TaskData task) {
     showModalBottomSheet(
+      shape: ShapeBorder.lerp(
+          RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(10),
+              side: const BorderSide(color: Colors.black)),
+          RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(10),
+              side: const BorderSide(color: Colors.black)),
+          1)!,
       context: context,
       builder: (context) {
         return UpdateStatus(
