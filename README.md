@@ -2,19 +2,20 @@
 
 A new Task Manager Flutter project.
 
-**_In this Apps, i use fvm. flutter version 3.10.6. kindly check the fvm config file_** 
+**_In this Apps, i use fvm. flutter version 3.10.6. kindly check the fvm config file_**
 
 **To get this apps, run this command in your terminal**
 
 ```bash
 git clone https://github.com/mostafejur21/task-manager-flutter.git 
 ```
-####Remember to run fvm command to get the flutter version 3.10.6
+
+#### Remember to run fvm command to get the flutter version 3.10.6
+
 ```bash
 fvm use 3.10.6
 flutter pub get
 ```
-
 
 ## Problems
 
