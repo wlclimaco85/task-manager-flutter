@@ -1,6 +1,5 @@
 // ignore_for_file: public_member_api_docs, sort_constructors_first
 import 'package:flutter/material.dart';
-
 import 'package:task_manager_flutter/data/models/network_response.dart';
 import 'package:task_manager_flutter/data/models/summery_count_model.dart';
 import 'package:task_manager_flutter/data/models/task_model.dart';
@@ -19,6 +18,7 @@ class TaskScreen extends StatefulWidget {
   final String apiLink;
   final bool showAllSummeryCard;
   final bool floatingActionButton;
+
   const TaskScreen({
     Key? key,
     required this.screenStatus,
@@ -83,7 +83,7 @@ class _TaskScreenState extends State<TaskScreen> {
     }
     final NetworkResponse newTaskResponse =
         await NetworkCaller().getRequest(ApiLinks.newTaskStatus);
-    final newTaskModel = TaskListModel.fromJson(newTaskResponse.body!);
+    TaskListModel newTaskModel = TaskListModel.fromJson(newTaskResponse.body!);
 
     if (mounted) {
       setState(() {
@@ -93,7 +93,7 @@ class _TaskScreenState extends State<TaskScreen> {
 
     final cancelledTaskResponse =
         await NetworkCaller().getRequest(ApiLinks.cancelledTaskStatus);
-    final cancelledTaskModel =
+    TaskListModel cancelledTaskModel =
         TaskListModel.fromJson(cancelledTaskResponse.body!);
     if (mounted) {
       setState(() {
@@ -104,7 +104,7 @@ class _TaskScreenState extends State<TaskScreen> {
     final completedTaskResponse =
         await NetworkCaller().getRequest(ApiLinks.completedTaskStatus);
 
-    final completedTaskModel =
+    TaskListModel completedTaskModel =
         TaskListModel.fromJson(completedTaskResponse.body!);
     if (mounted) {
       setState(() {
@@ -114,7 +114,7 @@ class _TaskScreenState extends State<TaskScreen> {
 
     final inProgressResponse =
         await NetworkCaller().getRequest(ApiLinks.inProgressTaskStatus);
-    final inProgressTaskModel =
+    TaskListModel inProgressTaskModel =
         TaskListModel.fromJson(inProgressResponse.body!);
     if (mounted) {
       setState(() {
@@ -138,6 +138,10 @@ class _TaskScreenState extends State<TaskScreen> {
         await NetworkCaller().getRequest(ApiLinks.deleteTask(taskId));
     if (response.isSuccess) {
       _taskModel.data!.removeWhere((element) => element.sId == taskId);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text("Task Deleted Successfully!")));
+      }
     }
     if (mounted) {
       setState(() {
@@ -187,13 +191,13 @@ class _TaskScreenState extends State<TaskScreen> {
                         ),
                         Expanded(
                           child: SummeryCard(
-                            numberOfTasks: count2,
+                            numberOfTasks: count3,
                             title: "Completed",
                           ),
                         ),
                         Expanded(
                           child: SummeryCard(
-                            numberOfTasks: count3,
+                            numberOfTasks: count2,
                             title: "Cancelled",
                           ),
                         ),

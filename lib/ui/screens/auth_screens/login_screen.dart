@@ -130,14 +130,14 @@ class _LoginScreenState extends State<LoginScreen> {
                                   const EmailVarificationScreeen()));
                     },
                     child: const Text(
-                      "Forgate Password?",
+                      "Forget Password?",
                       style: TextStyle(color: Colors.grey, letterSpacing: .7),
                     ),
                   ),
                 ),
                 Visibility(
                   child: SignUpButton(
-                    text: "Have An Account?",
+                    text: "Don't have An Account?",
                     onPresse: () {
                       Navigator.push(
                         context,
@@ -145,7 +145,7 @@ class _LoginScreenState extends State<LoginScreen> {
                             builder: (context) => const SignUpFormScreen()),
                       );
                     },
-                    buttonText: 'Sign In',
+                    buttonText: 'Sign Up',
                   ),
                 ),
               ],

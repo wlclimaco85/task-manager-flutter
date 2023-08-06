@@ -3,7 +3,6 @@ import 'package:pin_code_fields/pin_code_fields.dart';
 import 'package:task_manager_flutter/data/models/network_response.dart';
 import 'package:task_manager_flutter/data/services/network_caller.dart';
 import 'package:task_manager_flutter/data/utils/api_links.dart';
-
 import 'package:task_manager_flutter/ui/screens/auth_screens/login_screen.dart';
 import 'package:task_manager_flutter/ui/screens/auth_screens/reset_screen.dart';
 import 'package:task_manager_flutter/ui/widgets/custom_button.dart';
@@ -28,12 +27,12 @@ class _OtpVarificationScreenState extends State<OtpVarificationScreen> {
 
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
 
-  Future<void> otpVerify(String email, String otp) async {
+  Future<void> otpVerify() async {
     _isLoading = true;
     setState(() {});
 
-    NetworkResponse response =
-        await NetworkCaller().getRequest(ApiLinks.recoverVerifyOTP(email, otp));
+    NetworkResponse response = await NetworkCaller().getRequest(
+        ApiLinks.recoverVerifyOTP(widget.email, _otpTEController.text.trim()));
 
     _isLoading = false;
     setState(() {});
@@ -76,7 +75,7 @@ class _OtpVarificationScreenState extends State<OtpVarificationScreen> {
               children: [
                 const SizedBox(height: 80),
                 Text(
-                  "PIN VARIFICATION",
+                  "PIN VERIFICATION",
                   style: Theme.of(context).textTheme.titleLarge,
                 ),
                 const SizedBox(height: 4),
@@ -119,10 +118,7 @@ class _OtpVarificationScreenState extends State<OtpVarificationScreen> {
                       )
                     : CustomButton(
                         onPresse: () {
-                          if (_otpFormKey.currentState!.validate()) {
-                            otpVerify(
-                                widget.email, _otpTEController.text.trim());
-                          }
+                          otpVerify();
                         },
                       ),
                 const SizedBox(
@@ -136,7 +132,7 @@ class _OtpVarificationScreenState extends State<OtpVarificationScreen> {
                         MaterialPageRoute(
                             builder: (context) => const LoginScreen()));
                   },
-                  buttonText: 'Sign In',
+                  buttonText: 'Login',
                 ),
               ],
             ),

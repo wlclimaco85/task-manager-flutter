@@ -1,3 +1,4 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:task_manager_flutter/data/models/auth_utility.dart';
@@ -10,6 +11,8 @@ import 'package:task_manager_flutter/ui/widgets/custom_text_form_field.dart';
 import 'package:task_manager_flutter/ui/widgets/screen_background.dart';
 import 'package:task_manager_flutter/ui/widgets/user_banners.dart';
 
+import '../../data/models/login_model.dart';
+
 class UpdateProfileScreen extends StatefulWidget {
   const UpdateProfileScreen({super.key});
 
@@ -18,6 +21,7 @@ class UpdateProfileScreen extends StatefulWidget {
 }
 
 class _UpdateProfileScreenState extends State<UpdateProfileScreen> {
+  Data userInfo = AuthUtility.userInfo.data!;
   final TextEditingController _emailController = TextEditingController();
 
   final TextEditingController _firstNameController = TextEditingController();
@@ -52,10 +56,11 @@ class _UpdateProfileScreenState extends State<UpdateProfileScreen> {
       "firstName": _firstNameController.text.trim(),
       "lastName": _lastNameController.text.trim(),
       "phoneNumber": _phoneNumberController.text.trim(),
-      "password": _passwordController.text,
       "photos": ""
     };
-
+    if (_passwordController.text.isNotEmpty) {
+      requestBody["password"] = _passwordController.text;
+    }
     final NetworkResponse response =
         await NetworkCaller().postRequest(ApiLinks.profileUpdate, requestBody);
     _signUpInProgress = false;
@@ -63,10 +68,9 @@ class _UpdateProfileScreenState extends State<UpdateProfileScreen> {
       setState(() {});
     }
     if (response.isSuccess) {
-      _emailController.clear();
-      _firstNameController.clear();
-      _lastNameController.clear();
-      _phoneNumberController.clear();
+      userInfo.firstName = _firstNameController.text.trim();
+      userInfo.lastName = _lastNameController.text.trim();
+      userInfo.mobile = _phoneNumberController.text.trim();
       _passwordController.clear();
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -104,7 +108,7 @@ class _UpdateProfileScreenState extends State<UpdateProfileScreen> {
                 ),
                 const Text(
                   "Update Profile",
-                  style: TextStyle(fontSize: 30, fontWeight: FontWeight.bold),
+                  style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
                 ),
                 const SizedBox(
                   height: 16,
@@ -150,6 +154,7 @@ class _UpdateProfileScreenState extends State<UpdateProfileScreen> {
                 ),
                 CustomTextFormField(
                   hintText: "Email",
+                  readOnly: true,
                   controller: _emailController,
                   textInputType: TextInputType.text,
                   validator: (value) {
@@ -217,16 +222,15 @@ class _UpdateProfileScreenState extends State<UpdateProfileScreen> {
                   },
                 ),
                 const SizedBox(
-                  height: 8,
+                  height: 16,
                 ),
                 Visibility(
                   visible: _signUpInProgress == false,
-                  replacement: const Center(child: CircularProgressIndicator()),
+                  replacement:
+                      const Center(child: CupertinoActivityIndicator()),
                   child: CustomButton(
                     onPresse: () {
-                      if (_formKey.currentState?.validate() ?? false) {
-                        updateProfile();
-                      }
+                      updateProfile();
                     },
                   ),
                 ),

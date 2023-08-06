@@ -1,4 +1,3 @@
-// ignore_for_file: public_member_api_docs, sort_constructors_first
 import 'package:flutter/material.dart';
 import 'package:task_manager_flutter/data/models/network_response.dart';
 import 'package:task_manager_flutter/data/services/network_caller.dart';
@@ -28,7 +27,6 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
       TextEditingController();
   bool _isLoading = false;
   final GlobalKey<FormState> _resetFormKey = GlobalKey<FormState>();
-  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
 
   Future<void> resetPassword() async {
     _isLoading = true;
@@ -69,7 +67,6 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      key: _scaffoldKey,
       body: ScreenBackground(
           child: SingleChildScrollView(
         child: Padding(
@@ -106,6 +103,14 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                   height: 8,
                 ),
                 CustomPasswordTextFormField(
+                  validator: (String? value) {
+                    if (value?.isEmpty ?? true) {
+                      return "Please enter confirm password";
+                    } else if (value! != _passwordTEController.text) {
+                      return "Password does not match";
+                    }
+                    return null;
+                  },
                   controller: _confirmPasswordTEController,
                   hintText: "Confirm Password",
                   textInputType: TextInputType.text,
@@ -121,7 +126,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                       child: CircularProgressIndicator(),
                     ),
                     child: ElevatedButton(
-                      onPressed: () async {
+                      onPressed: () {
                         if (_resetFormKey.currentState!.validate() &&
                             _passwordTEController.text ==
                                 _confirmPasswordTEController.text) {
