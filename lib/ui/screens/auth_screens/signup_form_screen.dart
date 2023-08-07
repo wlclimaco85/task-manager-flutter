@@ -99,7 +99,9 @@ class _SignUpFormScreenState extends State<SignUpFormScreen> {
                   controller: _emailController,
                   hintText: 'Email',
                   validator: (value) {
-                    if (value?.isEmpty ?? true) {
+                    if (value!.isEmpty ||
+                        !RegExp(r'^[\w-.]+@([\w-]+\.)+\w{2,5}')
+                            .hasMatch(value)) {
                       return 'Email is required';
                     }
                     return null;

@@ -76,7 +76,7 @@ class _EmailVarificationScreeenState extends State<EmailVarificationScreeen> {
                   height: 80,
                 ),
                 Text(
-                  "Your Email Adderess",
+                  "Your Email Address",
                   style: Theme.of(context).textTheme.titleLarge,
                 ),
                 const SizedBox(
@@ -92,6 +92,15 @@ class _EmailVarificationScreeenState extends State<EmailVarificationScreeen> {
                 Form(
                     key: _emailFormKey,
                     child: CustomTextFormField(
+                      validator: (value) {
+                        if (value!.isEmpty ||
+                            !RegExp(r'^[\w-.]+@([\w-]+\.)+\w{2,5}')
+                                .hasMatch(value)) {
+                          return "please Enter your correct Email";
+                        } else {
+                          return null;
+                        }
+                      },
                       hintText: "Email",
                       controller: _emailTEController,
                       textInputType: TextInputType.emailAddress,

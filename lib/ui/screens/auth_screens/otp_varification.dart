@@ -17,10 +17,10 @@ class OtpVarificationScreen extends StatefulWidget {
   final String email;
 
   @override
-  State<OtpVarificationScreen> createState() => _OtpVarificationScreenState();
+  State<OtpVarificationScreen> createState() => _OtpVerificationScreenState();
 }
 
-class _OtpVarificationScreenState extends State<OtpVarificationScreen> {
+class _OtpVerificationScreenState extends State<OtpVarificationScreen> {
   final TextEditingController _otpTEController = TextEditingController();
   bool _isLoading = false;
   final GlobalKey<FormState> _otpFormKey = GlobalKey<FormState>();

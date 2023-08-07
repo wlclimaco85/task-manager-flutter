@@ -21,7 +21,7 @@ class AuthUtility {
   }
 
   //*this method is used to get user data from shared preferences.
-  
+
   static Future<LoginModel> getUserInfo() async {
     SharedPreferences _sharedPreferences =
         await SharedPreferences.getInstance();
@@ -43,8 +43,8 @@ class AuthUtility {
     SharedPreferences _sharedPreferences =
         await SharedPreferences.getInstance();
     bool isLogin = _sharedPreferences.containsKey("user_data");
-    if (isLogin) {
-      userInfo = await getUserInfo();
+    if (isLogin == false) {
+      userInfo = (await getUserInfo()) ?? LoginModel();
     }
     return isLogin;
   }
