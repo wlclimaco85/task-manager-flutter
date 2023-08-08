@@ -43,8 +43,8 @@ class AuthUtility {
     SharedPreferences _sharedPreferences =
         await SharedPreferences.getInstance();
     bool isLogin = _sharedPreferences.containsKey("user_data");
-    if (isLogin == false) {
-      userInfo = (await getUserInfo()) ?? LoginModel();
+    if (isLogin) {
+      userInfo = (await getUserInfo());
     }
     return isLogin;
   }
