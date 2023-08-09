@@ -9,18 +9,18 @@ import 'package:task_manager_flutter/ui/widgets/custom_button.dart';
 import 'package:task_manager_flutter/ui/widgets/screen_background.dart';
 import 'package:task_manager_flutter/ui/widgets/signup_button.dart';
 
-class OtpVarificationScreen extends StatefulWidget {
-  const OtpVarificationScreen({
+class OtpVerificationScreen extends StatefulWidget {
+  const OtpVerificationScreen({
     Key? key,
     required this.email,
   }) : super(key: key);
   final String email;
 
   @override
-  State<OtpVarificationScreen> createState() => _OtpVerificationScreenState();
+  State<OtpVerificationScreen> createState() => _OtpVerificationScreenState();
 }
 
-class _OtpVerificationScreenState extends State<OtpVarificationScreen> {
+class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
   final TextEditingController _otpTEController = TextEditingController();
   bool _isLoading = false;
   final GlobalKey<FormState> _otpFormKey = GlobalKey<FormState>();
@@ -37,7 +37,7 @@ class _OtpVerificationScreenState extends State<OtpVarificationScreen> {
     _isLoading = false;
     setState(() {});
     final BuildContext context = this.context;
-    if (response.isSuccess) {
+    if (response.statusCode == 200 && response.body?['status'] == 'success') {
       if (mounted) {
         Navigator.push(
           context,

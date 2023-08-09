@@ -41,7 +41,7 @@ class _EmailVarificationScreeenState extends State<EmailVarificationScreeen> {
       Navigator.push(
           context,
           MaterialPageRoute(
-              builder: (context) => OtpVarificationScreen(
+              builder: (context) => OtpVerificationScreen(
                     email: _emailTEController.text.trim(),
                   )));
     } else {
