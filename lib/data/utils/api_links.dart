@@ -1,9 +1,13 @@
 class ApiLinks {
   ApiLinks._();
   static const String _baseUrl = 'https://task.teamrabbil.com/api/v1';
+  //static const String _baseUrl = 'http://192.168.56.1:8088/boletobancos';
   static String regestration = '$_baseUrl/registration';
   static String profileUpdate = '$_baseUrl/profileUpdate';
-  static String login = '$_baseUrl/login';
+  // static String login = '$_baseUrl/login';
+  // static String login = '$_baseUrl/rest/auth/login';
+
+  static String login = 'http://192.168.56.1:8088/boletobancos/rest/auth/login';
   static String recoverVerifyEmail(String email) =>
       '$_baseUrl/RecoverVerifyEmail/$email';
   static String recoverVerifyOTP(String email, String otp) =>

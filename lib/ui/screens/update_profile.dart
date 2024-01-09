@@ -40,9 +40,12 @@ class _UpdateProfileScreenState extends State<UpdateProfileScreen> {
   @override
   void initState() {
     super.initState();
-    _emailController.text = AuthUtility.userInfo.data?.email ?? "";
-    _firstNameController.text = AuthUtility.userInfo.data?.firstName ?? "";
-    _lastNameController.text = AuthUtility.userInfo.data?.lastName ?? "";
+    _emailController.text =
+        AuthUtility.userInfo.data?.codDadosPessoal?.email ?? "";
+    _firstNameController.text =
+        AuthUtility.userInfo.data?.codDadosPessoal?.nome ?? "";
+    _lastNameController.text =
+        AuthUtility.userInfo.data?.codDadosPessoal?.cpf ?? "";
     _phoneNumberController.text = AuthUtility.userInfo.data?.mobile ?? "";
   }
 
