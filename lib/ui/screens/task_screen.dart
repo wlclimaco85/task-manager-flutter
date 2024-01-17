@@ -83,7 +83,8 @@ class _TaskScreenState extends State<TaskScreen> {
     }
     final NetworkResponse newTaskResponse =
         await NetworkCaller().getRequest(ApiLinks.newTaskStatus);
-    TaskListModel newTaskModel = TaskListModel.fromJson(newTaskResponse.body!);
+    TaskListModel newTaskModel = TaskListModel.fromJson(
+        (newTaskResponse != null ? newTaskResponse.body! : {}));
 
     if (mounted) {
       setState(() {
