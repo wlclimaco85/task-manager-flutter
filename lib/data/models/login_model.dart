@@ -56,25 +56,27 @@ class Data {
     data['lastName'] = lastName;
     data['mobile'] = mobile;
     data['photo'] = photo;
-    data['codDadosPessoal'].id = codDadosPessoal?.id;
-    data['codDadosPessoal'].nome = codDadosPessoal?.nome;
-    data['codDadosPessoal'].cpf = codDadosPessoal?.cpf;
-    data['codDadosPessoal'].telefone1 = codDadosPessoal?.telefone1;
-    data['codDadosPessoal'].telefone2 = codDadosPessoal?.telefone2;
-    data['codDadosPessoal'].logradouro = codDadosPessoal?.logradouro;
-    data['codDadosPessoal'].numero = codDadosPessoal?.numero;
-    data['codDadosPessoal'].cep = codDadosPessoal?.cep;
-    data['codDadosPessoal'].bairro = codDadosPessoal?.bairro;
-    data['codDadosPessoal'].cidade = codDadosPessoal?.cidade;
-    data['codDadosPessoal'].estado = codDadosPessoal?.estado;
-    data['codDadosPessoal'].pais = codDadosPessoal?.pais;
-    data['codDadosPessoal'].email = codDadosPessoal?.email;
-    data['codDadosPessoal'].fistName = codDadosPessoal?.fistName;
-    data['codDadosPessoal'].lastName = codDadosPessoal?.lastName;
-    data['codDadosPessoal'].photo = codDadosPessoal?.photo;
-    data['codDadosPessoal'].tipoAluno = codDadosPessoal?.tipoAluno;
-    data['codDadosPessoal'].parentId = codDadosPessoal?.parentId;
-    data['codDadosPessoal'].academia = codDadosPessoal?.academia;
+    data['codDadosPessoal'] = {
+      "id": codDadosPessoal?.id,
+      "nome": codDadosPessoal?.nome,
+      "cpf": codDadosPessoal?.cpf,
+      "telefone1": codDadosPessoal?.telefone1,
+      "telefone2": codDadosPessoal?.telefone2,
+      "logradouro": codDadosPessoal?.logradouro,
+      "numero": codDadosPessoal?.numero,
+      "cep": codDadosPessoal?.cep,
+      "bairro": codDadosPessoal?.bairro,
+      "cidade": codDadosPessoal?.cidade,
+      "estado": codDadosPessoal?.estado,
+      "pais": codDadosPessoal?.pais,
+      "email": codDadosPessoal?.email,
+      "fistName": codDadosPessoal?.fistName,
+      "lastName": codDadosPessoal?.lastName,
+      "photo": codDadosPessoal?.photo,
+      "tipoAluno": codDadosPessoal?.tipoAluno,
+      "parentId": codDadosPessoal?.parentId,
+      "academia": codDadosPessoal?.academia
+    };
 
     return data;
   }

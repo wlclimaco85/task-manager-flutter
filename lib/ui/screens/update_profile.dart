@@ -96,6 +96,7 @@ class _UpdateProfileScreenState extends State<UpdateProfileScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Color(0xFF3F1D9D),
       appBar: userBanner(context),
       body: ScreenBackground(
           child: SingleChildScrollView(
@@ -136,7 +137,7 @@ class _UpdateProfileScreenState extends State<UpdateProfileScreen> {
                       child: Container(
                         padding: const EdgeInsets.all(16),
                         decoration: const BoxDecoration(
-                          color: Colors.white,
+                          color: Color(0xFF3F1D9D),
                           borderRadius: BorderRadius.only(
                             topRight: Radius.circular(8),
                             bottomRight: Radius.circular(8),
@@ -232,10 +233,10 @@ class _UpdateProfileScreenState extends State<UpdateProfileScreen> {
                   replacement:
                       const Center(child: CupertinoActivityIndicator()),
                   child: CustomButton(
-                    onPresse: () {
-                      updateProfile();
-                    },
-                  ),
+                      onPresse: () {
+                        updateProfile();
+                      },
+                      labels: "teste"),
                 ),
               ],
             ),

@@ -87,10 +87,10 @@ class _UpdateStatusState extends State<UpdateStatus> {
                 child: CircularProgressIndicator(),
               ),
               child: CustomButton(
-                onPresse: () {
-                  updateTask(widget.task.sId!, _selectedTask);
-                },
-              )),
+                  onPresse: () {
+                    updateTask(widget.task.sId!, _selectedTask);
+                  },
+                  labels: "teste")),
         )
       ],
     );

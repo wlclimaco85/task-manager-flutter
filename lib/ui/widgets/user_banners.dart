@@ -70,7 +70,7 @@ AppBar userBanner(context, {VoidCallback? onTapped}) {
                       style: const TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.bold,
-                          color: Colors.white),
+                          color: Color(0xFF3F1D9D)),
                     ),
                     const SizedBox(height: 2),
                     Text(

@@ -120,6 +120,7 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
                         onPresse: () {
                           otpVerify();
                         },
+                        labels: "teste",
                       ),
                 const SizedBox(
                   height: 16,

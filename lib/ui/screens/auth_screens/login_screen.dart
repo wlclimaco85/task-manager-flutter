@@ -1,4 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:task_manager_flutter/ui/widgets/form_container.dart';
+import 'package:task_manager_flutter/ui/widgets/sign_up_button.dart';
+import 'package:task_manager_flutter/ui/widgets/stagger_animation.dart';
+import 'package:task_manager_flutter/ui/widgets/home_screen.dart';
 import 'package:task_manager_flutter/data/models/auth_utility.dart';
 import 'package:task_manager_flutter/data/models/login_model.dart';
 import 'package:task_manager_flutter/data/models/network_response.dart';
@@ -12,6 +16,8 @@ import 'package:task_manager_flutter/ui/widgets/custom_password_text_field.dart'
 import 'package:task_manager_flutter/ui/widgets/custom_text_form_field.dart';
 import 'package:task_manager_flutter/ui/widgets/screen_background.dart';
 import 'package:task_manager_flutter/ui/widgets/signup_button.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter/scheduler.dart' show timeDilation;
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -20,7 +26,8 @@ class LoginScreen extends StatefulWidget {
   State<LoginScreen> createState() => _LoginScreenState();
 }
 
-class _LoginScreenState extends State<LoginScreen> {
+class _LoginScreenState extends State<LoginScreen>
+    with SingleTickerProviderStateMixin {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
@@ -62,95 +69,147 @@ class _LoginScreenState extends State<LoginScreen> {
     }
   }
 
+  late AnimationController _animationController;
+
+  @override
+  void initState() {
+    _animationController =
+        AnimationController(vsync: this, duration: const Duration(seconds: 2))
+          ..addStatusListener((status) {
+            if (status == AnimationStatus.completed) {
+              Navigator.of(context).pushReplacement(
+                MaterialPageRoute(builder: (context) => const HomeScreen()),
+              );
+            }
+          });
+    super.initState();
+  }
+
+  @override
+  void dispose() {
+    _animationController.dispose();
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      key: _scaffoldKey,
-      body: ScreenBackground(
-        child: SingleChildScrollView(
-          child: Padding(
-            padding: const EdgeInsets.all(40.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+      backgroundColor: const Color(0xFF340A9C),
+      body: Container(
+        child: ListView(
+          padding: EdgeInsets.zero,
+          children: [
+            Stack(
+              alignment: Alignment.bottomCenter,
               children: [
-                const SizedBox(height: 80),
-                Text(
-                  "Getting Start With",
-                  style: Theme.of(context).textTheme.titleLarge,
-                ),
-                const SizedBox(height: 16),
-                Form(
-                  key: _formKey,
-                  child: CustomTextFormField(
-                      hintText: "Email",
-                      controller: _emailController,
-                      textInputType: TextInputType.emailAddress,
-                      validator: (value) {
-                        if (value!.isEmpty) {
-                          return "Please enter email";
-                        }
-                        return null;
-                      }),
-                ),
-                const SizedBox(height: 12),
-                CustomPasswordTextFormField(
-                  hintText: "Password",
-                  controller: _passwordController,
-                  obscureText: true,
-                  validator: (value) {
-                    if (value!.isEmpty) {
-                      return "Please enter password";
-                    }
-                    return null;
-                  },
-                  textInputType: TextInputType.visiblePassword,
-                ),
-                const SizedBox(
-                  height: 16,
-                ),
-                Visibility(
-                  visible: _loginInProgress == false,
-                  replacement: const Center(child: CircularProgressIndicator()),
-                  child: CustomButton(
-                    onPresse: () {
-                      login();
-                    },
-                  ),
-                ),
-                const SizedBox(
-                  height: 40,
-                ),
-                Center(
-                  child: TextButton(
-                    onPressed: () {
-                      Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                              builder: (context) =>
-                                  const EmailVarificationScreeen()));
-                    },
-                    child: const Text(
-                      "Forget Password?",
-                      style: TextStyle(color: Colors.grey, letterSpacing: .7),
+                Column(
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.only(
+                        top: 70,
+                        bottom: 32,
+                      ),
+                      child: Image.asset(
+                        "assets/images/logoforafitn1.png",
+                        height: 260,
+                        fit: BoxFit.contain,
+                      ),
                     ),
-                  ),
-                ),
-                Visibility(
-                  child: SignUpButton(
-                    text: "Don't have An Account?",
-                    onPresse: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                            builder: (context) => const SignUpFormScreen()),
-                      );
-                    },
-                    buttonText: 'Sign Up',
-                  ),
+                    Padding(
+                      padding: const EdgeInsets.all(40.0),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const SizedBox(height: 16),
+                          Form(
+                            key: _formKey,
+                            child: CustomTextFormField(
+                                hintText: "Email",
+                                controller: _emailController,
+                                textInputType: TextInputType.emailAddress,
+                                validator: (value) {
+                                  if (value!.isEmpty) {
+                                    return "Please enter email";
+                                  }
+                                  return null;
+                                }),
+                          ),
+                          const SizedBox(height: 12),
+                          CustomPasswordTextFormField(
+                            hintText: "Password",
+                            controller: _passwordController,
+                            obscureText: true,
+                            validator: (value) {
+                              if (value!.isEmpty) {
+                                return "Please enter password";
+                              }
+                              return null;
+                            },
+                            textInputType: TextInputType.visiblePassword,
+                          ),
+                          const SizedBox(
+                            height: 16,
+                          ),
+                          ElevatedButton(
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Color(0xFFFA903A),
+                              minimumSize: const Size.fromHeight(50), // NEW
+                            ),
+                            onPressed: () {
+                              login();
+                            },
+                            child: const Text(
+                              'Acessar',
+                              style:
+                                  TextStyle(fontSize: 24, color: Colors.white),
+                            ),
+                          ),
+                          const SizedBox(
+                            height: 10,
+                          ),
+                          ElevatedButton(
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Color(0xFFFA903A),
+                              minimumSize: const Size.fromHeight(50), // NEW
+                            ),
+                            onPressed: () {
+                              login();
+                            },
+                            child: const Text(
+                              'Criar Conta',
+                              style:
+                                  TextStyle(fontSize: 24, color: Colors.white),
+                            ),
+                          ),
+                          const SizedBox(
+                            height: 40,
+                          ),
+                          Center(
+                            child: TextButton(
+                              onPressed: () {
+                                Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                        builder: (context) =>
+                                            const EmailVarificationScreeen()));
+                              },
+                              child: const Text(
+                                "Esqueceu a Senha?",
+                                style: TextStyle(
+                                    color: Color(0xFFFA903A),
+                                    letterSpacing: .7,
+                                    fontSize: 20),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
                 ),
               ],
-            ),
-          ),
+            )
+          ],
         ),
       ),
     );

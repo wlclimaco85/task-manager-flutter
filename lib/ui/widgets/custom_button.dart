@@ -2,19 +2,48 @@ import 'package:flutter/material.dart';
 
 class CustomButton extends StatelessWidget {
   final VoidCallback onPresse;
+  final String labels;
+
   const CustomButton({
     Key? key,
     required this.onPresse,
+    required this.labels,
   }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
+    /* return SizedBox(
       width: double.infinity,
       child: ElevatedButton(
         onPressed: onPresse,
         child: const Icon(Icons.arrow_circle_right_outlined),
       ),
+    );*/
+    return ElevatedButton(
+      style: ElevatedButton.styleFrom(
+        backgroundColor: Color(0xFFFA903A),
+        minimumSize: const Size.fromHeight(50), // NEW
+      ),
+      onPressed: () {
+        onPresse();
+      },
+      child: const Text(
+        'Label',
+        style: TextStyle(fontSize: 24, color: Colors.white),
+      ),
     );
+
+    /*return Container(
+      IconButton(
+        icon: Icon(Icons.volume_up),
+        iconSize: 50,
+        color: Colors.brown,
+        tooltip: 'Increase volume by 5',
+        onPressed: () {  };
+        },
+        
+      ),
+      Text('Speaker Volume: $_speakervolume')
+    )*/
   }
 }

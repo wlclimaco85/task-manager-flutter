@@ -12,6 +12,7 @@ import 'package:task_manager_flutter/ui/widgets/status_change_botom_sheet.dart';
 import 'package:task_manager_flutter/ui/widgets/summery_card.dart';
 import 'package:task_manager_flutter/ui/widgets/task_card.dart';
 import 'package:task_manager_flutter/ui/widgets/user_banners.dart';
+import 'package:task_manager_flutter/ui/widgets/custom_menu_item.dart';
 
 class TaskScreen extends StatefulWidget {
   final String screenStatus;
@@ -83,8 +84,11 @@ class _TaskScreenState extends State<TaskScreen> {
     }
     final NetworkResponse newTaskResponse =
         await NetworkCaller().getRequest(ApiLinks.newTaskStatus);
-    TaskListModel newTaskModel = TaskListModel.fromJson(
-        (newTaskResponse != null ? newTaskResponse.body! : {}));
+    TaskListModel newTaskModel = TaskListModel.fromJson((newTaskResponse != null
+        ? newTaskResponse.body != null
+            ? newTaskResponse.body!
+            : {}
+        : {}));
 
     if (mounted) {
       setState(() {
@@ -95,7 +99,11 @@ class _TaskScreenState extends State<TaskScreen> {
     final cancelledTaskResponse =
         await NetworkCaller().getRequest(ApiLinks.cancelledTaskStatus);
     TaskListModel cancelledTaskModel =
-        TaskListModel.fromJson(cancelledTaskResponse.body!);
+        TaskListModel.fromJson(cancelledTaskResponse != null
+            ? cancelledTaskResponse.body != null
+                ? cancelledTaskResponse.body!
+                : {}
+            : {});
     if (mounted) {
       setState(() {
         count2 = cancelledTaskModel.data?.length ?? 0;
@@ -106,7 +114,11 @@ class _TaskScreenState extends State<TaskScreen> {
         await NetworkCaller().getRequest(ApiLinks.completedTaskStatus);
 
     TaskListModel completedTaskModel =
-        TaskListModel.fromJson(completedTaskResponse.body!);
+        TaskListModel.fromJson(completedTaskResponse != null
+            ? completedTaskResponse.body != null
+                ? completedTaskResponse.body!
+                : {}
+            : {});
     if (mounted) {
       setState(() {
         count3 = completedTaskModel.data?.length ?? 0;
@@ -116,7 +128,11 @@ class _TaskScreenState extends State<TaskScreen> {
     final inProgressResponse =
         await NetworkCaller().getRequest(ApiLinks.inProgressTaskStatus);
     TaskListModel inProgressTaskModel =
-        TaskListModel.fromJson(inProgressResponse.body!);
+        TaskListModel.fromJson(inProgressResponse != null
+            ? inProgressResponse.body != null
+                ? inProgressResponse.body!
+                : {}
+            : {});
     if (mounted) {
       setState(() {
         count4 = inProgressTaskModel.data?.length ?? 0;
@@ -158,10 +174,15 @@ class _TaskScreenState extends State<TaskScreen> {
   //   );
   //   return statusData?.count ?? 0;
   // }
+  bool standardSelected = false;
+  bool filledSelected = false;
+  bool tonalSelected = false;
+  bool outlinedSelected = false;
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: const Color(0xFF340A9C),
       appBar: userBanner(
         context,
         onTapped: () {
@@ -171,95 +192,84 @@ class _TaskScreenState extends State<TaskScreen> {
                   builder: (context) => const UpdateProfileScreen()));
         },
       ),
-      body: ScreenBackground(
-        child: Column(
-          children: [
-            if (widget.showAllSummeryCard)
-              Padding(
-                  padding: const EdgeInsets.all(8),
-                  child: Visibility(
-                    visible: isLoading == false,
-                    replacement: const Center(
-                      child: LinearProgressIndicator(),
-                    ),
-                    child: Row(
-                      children: [
-                        Expanded(
-                          child: SummeryCard(
-                            numberOfTasks: count1,
-                            title: "New",
-                          ),
-                        ),
-                        Expanded(
-                          child: SummeryCard(
-                            numberOfTasks: count3,
-                            title: "Completed",
-                          ),
-                        ),
-                        Expanded(
-                          child: SummeryCard(
-                            numberOfTasks: count2,
-                            title: "Cancelled",
-                          ),
-                        ),
-                        Expanded(
-                          child: SummeryCard(
-                            numberOfTasks: count4,
-                            title: "Progress",
-                          ),
-                        ),
-                      ],
-                    ),
-                  )),
-            Expanded(
-              child: Padding(
-                padding: const EdgeInsets.all(8),
-                child: RefreshIndicator(
-                    onRefresh: () async {
-                      getTask();
-                      statusCount();
-                    },
-                    child: Visibility(
-                      visible: isLoading == false,
-                      replacement: const Center(
-                        child: CircularProgressIndicator(),
-                      ),
-                      child: ListView.builder(
-                          itemCount: _taskModel.data?.length ?? 0,
-                          itemBuilder: (context, int index) {
-                            return CustomTaskCard(
-                                title:
-                                    _taskModel.data![index].title ?? "Unknown",
-                                description:
-                                    _taskModel.data![index].description ?? "",
-                                createdDate:
-                                    _taskModel.data![index].createdDate ?? "",
-                                status: _taskModel.data![index].status ?? "NEW",
-                                chipColor: _getChipColor(),
-                                onChangeStatusPressed: () {
-                                  statusUpdateButtomSheet(
-                                      _taskModel.data![index]);
-                                },
-                                onEditPressed: () {},
-                                onDeletePressed: () {
-                                  deleteTask(_taskModel.data![index].sId!);
-                                });
-                          }),
-                    )),
+      body: Column(
+        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+        children: <Widget>[
+          const Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: <Widget>[
+              IconButtonExample(text: 'Personal', color: 'Screenshot_2.png'),
+              IconButtonExample(text: 'Academias', color: 'images (1).png'),
+              IconButtonExample(text: 'Treinos', color: 'images.png'),
+            ],
+          ),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: <Widget>[
+              IconButton.filled(
+                isSelected: filledSelected,
+                icon: const Icon(Icons.settings_outlined),
+                selectedIcon: const Icon(Icons.settings),
+                onPressed: () {
+                  setState(() {
+                    filledSelected = !filledSelected;
+                  });
+                },
               ),
-            ),
-          ],
-        ),
-      ),
-      floatingActionButton: Visibility(
-        visible: widget.floatingActionButton == true,
-        child: FloatingActionButton(
-          onPressed: () {
-            Navigator.push(context,
-                MaterialPageRoute(builder: (context) => const AddTaskScreen()));
-          },
-          child: const Icon(Icons.add),
-        ),
+              const SizedBox(width: 10),
+              IconButton.filled(
+                isSelected: filledSelected,
+                icon: const Icon(Icons.settings_outlined),
+                selectedIcon: const Icon(Icons.settings),
+                onPressed: null,
+              ),
+            ],
+          ),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: <Widget>[
+              IconButton.filledTonal(
+                isSelected: tonalSelected,
+                icon: const Icon(Icons.settings_outlined),
+                selectedIcon: const Icon(Icons.settings),
+                onPressed: () {
+                  setState(() {
+                    tonalSelected = !tonalSelected;
+                  });
+                },
+              ),
+              const SizedBox(width: 10),
+              IconButton.filledTonal(
+                isSelected: tonalSelected,
+                icon: const Icon(Icons.settings_outlined),
+                selectedIcon: const Icon(Icons.settings),
+                onPressed: null,
+              ),
+            ],
+          ),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: <Widget>[
+              IconButton.outlined(
+                isSelected: outlinedSelected,
+                icon: const Icon(Icons.settings_outlined),
+                selectedIcon: const Icon(Icons.settings),
+                onPressed: () {
+                  setState(() {
+                    outlinedSelected = !outlinedSelected;
+                  });
+                },
+              ),
+              const SizedBox(width: 10),
+              IconButton.outlined(
+                isSelected: outlinedSelected,
+                icon: const Icon(Icons.settings_outlined),
+                selectedIcon: const Icon(Icons.settings),
+                onPressed: null,
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }
