@@ -27,79 +27,80 @@ class IconButtonExample extends StatelessWidget {
     Key? key,
     required this.text,
     required this.color,
+    required this.onPresse,
   }) : super(key: key);
 
   final String text;
   final String color;
+  final Function onPresse;
 
   @override
   Widget build(BuildContext context) {
-    return Center(
-      child: SizedBox(
-        width: 120,
-        height: 120,
-        child: Card(
-          elevation: 6,
-          color: Color(0xFF340A9C),
-          semanticContainer: true,
-          // Implement InkResponse
-          child: InkResponse(
-            containedInkWell: true,
-            highlightShape: BoxShape.rectangle,
-            onTap: () {
-              // Clear all showing snack bars
-              ScaffoldMessenger.of(context).clearSnackBars();
-              // Display a snack bar
-              ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-                content: Text(
-                  "Teste",
-                  style: const TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w500,
-                      color: Colors.white),
-                ),
-              ));
-            },
-            // Add image & text
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Image.asset(
-                  "assets/images/" + color,
-                  height: 50,
-                  width: 50,
-                  fit: BoxFit.contain,
-                ),
-                Container(
-                  padding: EdgeInsets.all(10),
-                  height: 40,
-                  width: 100,
-                  color: Colors.transparent,
-                  child: Container(
-                      alignment: Alignment.center,
-                      decoration: const BoxDecoration(
-                          color: Color(0xFFFA903A),
-                          borderRadius: BorderRadius.only(
-                            topLeft: Radius.circular(16.0),
-                            topRight: Radius.circular(16.0),
-                            bottomLeft: Radius.circular(16.0),
-                            bottomRight: Radius.circular(16.0),
+    return GestureDetector(
+      onTap: () {
+        onPresse();
+      },
+      child: Container(
+        /* width: 50.0,
+        padding: new EdgeInsets.fromLTRB(20.0, 40.0, 20.0, 40.0),
+        color: Colors.green,*/
+        child: Center(
+          child: SizedBox(
+            width: 120,
+            height: 120,
+            child: Card(
+              elevation: 6,
+              color: const Color(0xFF340A9C),
+              semanticContainer: true,
+              // Implement InkResponse
+              child: InkResponse(
+                containedInkWell: true,
+                highlightShape: BoxShape.rectangle,
+                // Add image & text
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(10.0),
+                      child: Image.asset(
+                        "assets/images/" + color,
+                        height: 60,
+                        width: 65,
+                        fit: BoxFit.contain,
+                      ),
+                    ),
+                    Container(
+                      padding: EdgeInsets.all(10),
+                      height: 40,
+                      width: 150,
+                      color: Colors.transparent,
+                      child: Container(
+                          alignment: Alignment.center,
+                          decoration: const BoxDecoration(
+                              color: Color(0xFFFA903A),
+                              borderRadius: BorderRadius.only(
+                                topLeft: Radius.circular(6.0),
+                                topRight: Radius.circular(6.0),
+                                bottomLeft: Radius.circular(6.0),
+                                bottomRight: Radius.circular(6.0),
+                              )),
+                          child: Column(
+                            children: <Widget>[
+                              Text(
+                                text,
+                                style: const TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w700,
+                                  color: Colors.white,
+                                ),
+                              ),
+                            ],
                           )),
-                      child: Column(
-                        children: <Widget>[
-                          Text(
-                            text,
-                            style: const TextStyle(
-                              fontSize: 12,
-                              fontWeight: FontWeight.w500,
-                              color: Colors.white,
-                            ),
-                          ),
-                        ],
-                      )),
+                    ),
+                    const SizedBox(height: 10)
+                  ],
                 ),
-                const SizedBox(height: 10)
-              ],
+              ),
             ),
           ),
         ),

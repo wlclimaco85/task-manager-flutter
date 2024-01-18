@@ -8,6 +8,7 @@ import 'package:task_manager_flutter/ui/screens/auth_screens/otp_varification.da
 import 'package:task_manager_flutter/ui/widgets/custom_text_form_field.dart';
 import 'package:task_manager_flutter/ui/widgets/screen_background.dart';
 import 'package:task_manager_flutter/ui/widgets/signup_button.dart';
+import 'package:task_manager_flutter/ui/widgets/custom_menu_item.dart';
 
 class EmailVarificationScreeen extends StatefulWidget {
   const EmailVarificationScreeen({Key? key}) : super(key: key);

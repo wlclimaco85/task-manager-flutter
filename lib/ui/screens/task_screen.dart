@@ -6,6 +6,7 @@ import 'package:task_manager_flutter/data/models/task_model.dart';
 import 'package:task_manager_flutter/data/services/network_caller.dart';
 import 'package:task_manager_flutter/data/utils/api_links.dart';
 import 'package:task_manager_flutter/ui/screens/add_task_screen.dart';
+import 'package:task_manager_flutter/ui/screens/auth_screens/personal_screen.dart';
 import 'package:task_manager_flutter/ui/screens/update_profile.dart';
 import 'package:task_manager_flutter/ui/widgets/screen_background.dart';
 import 'package:task_manager_flutter/ui/widgets/status_change_botom_sheet.dart';
@@ -13,6 +14,11 @@ import 'package:task_manager_flutter/ui/widgets/summery_card.dart';
 import 'package:task_manager_flutter/ui/widgets/task_card.dart';
 import 'package:task_manager_flutter/ui/widgets/user_banners.dart';
 import 'package:task_manager_flutter/ui/widgets/custom_menu_item.dart';
+import 'package:task_manager_flutter/ui/screens/task_screen.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:task_manager_flutter/data/models/auth_utility.dart';
+import 'package:task_manager_flutter/ui/screens/auth_screens/login_screen.dart';
+import 'package:flutter/src/widgets/navigator.dart';
 
 class TaskScreen extends StatefulWidget {
   final String screenStatus;
@@ -36,10 +42,6 @@ class _TaskScreenState extends State<TaskScreen> {
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      getTask();
-      statusCount();
-    });
   }
 
   TaskListModel _taskModel = TaskListModel();
@@ -178,6 +180,9 @@ class _TaskScreenState extends State<TaskScreen> {
   bool filledSelected = false;
   bool tonalSelected = false;
   bool outlinedSelected = false;
+  int count = 0;
+
+  void log(String message) => print(message);
 
   @override
   Widget build(BuildContext context) {
@@ -195,77 +200,90 @@ class _TaskScreenState extends State<TaskScreen> {
       body: Column(
         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
         children: <Widget>[
-          const Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: <Widget>[
-              IconButtonExample(text: 'Personal', color: 'Screenshot_2.png'),
-              IconButtonExample(text: 'Academias', color: 'images (1).png'),
-              IconButtonExample(text: 'Treinos', color: 'images.png'),
-            ],
-          ),
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: <Widget>[
-              IconButton.filled(
-                isSelected: filledSelected,
-                icon: const Icon(Icons.settings_outlined),
-                selectedIcon: const Icon(Icons.settings),
-                onPressed: () {
-                  setState(() {
-                    filledSelected = !filledSelected;
-                  });
+              IconButtonExample(
+                text: 'Personal',
+                color: 'Screenshot_2.png',
+                onPresse: () {
+                  Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                          builder: (context) => const PersonalScreen()));
                 },
               ),
               const SizedBox(width: 10),
-              IconButton.filled(
-                isSelected: filledSelected,
-                icon: const Icon(Icons.settings_outlined),
-                selectedIcon: const Icon(Icons.settings),
-                onPressed: null,
-              ),
-            ],
-          ),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: <Widget>[
-              IconButton.filledTonal(
-                isSelected: tonalSelected,
-                icon: const Icon(Icons.settings_outlined),
-                selectedIcon: const Icon(Icons.settings),
-                onPressed: () {
-                  setState(() {
-                    tonalSelected = !tonalSelected;
-                  });
+              IconButtonExample(
+                text: 'Academias',
+                color: 'images (1).png',
+                onPresse: () {
+                  print('Academias');
                 },
               ),
               const SizedBox(width: 10),
-              IconButton.filledTonal(
-                isSelected: tonalSelected,
-                icon: const Icon(Icons.settings_outlined),
-                selectedIcon: const Icon(Icons.settings),
-                onPressed: null,
+              IconButtonExample(
+                text: 'Treinos',
+                color: 'images.png',
+                onPresse: () {
+                  print('Treinos');
+                },
               ),
             ],
           ),
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: <Widget>[
-              IconButton.outlined(
-                isSelected: outlinedSelected,
-                icon: const Icon(Icons.settings_outlined),
-                selectedIcon: const Icon(Icons.settings),
-                onPressed: () {
-                  setState(() {
-                    outlinedSelected = !outlinedSelected;
-                  });
+              IconButtonExample(
+                text: 'Suplemento',
+                color: 'images (2).png',
+                onPresse: () {
+                  print('Suplemento');
                 },
               ),
               const SizedBox(width: 10),
-              IconButton.outlined(
-                isSelected: outlinedSelected,
-                icon: const Icon(Icons.settings_outlined),
-                selectedIcon: const Icon(Icons.settings),
-                onPressed: null,
+              IconButtonExample(
+                text: 'Exames',
+                color: 'images (3).png',
+                onPresse: () {
+                  print('Exames');
+                },
+              ),
+              const SizedBox(width: 10),
+              IconButtonExample(
+                text: 'Dieta',
+                color: 'images (4).png',
+                onPresse: () {
+                  print('Dieta');
+                },
+              ),
+            ],
+          ),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: <Widget>[
+              IconButtonExample(
+                text: 'Medicamento',
+                color: 'Screenshot_3.png',
+                onPresse: () {
+                  print('Medicamento');
+                },
+              ),
+              const SizedBox(width: 10),
+              IconButtonExample(
+                text: 'Avaliação Fisica',
+                color: 'Screenshot_4.png',
+                onPresse: () {
+                  print('Avaliação Fisica');
+                },
+              ),
+              const SizedBox(width: 10),
+              IconButtonExample(
+                text: 'Pagamentos',
+                color: 'Screenshot_5.png',
+                onPresse: () {
+                  print('Pagamentos');
+                },
               ),
             ],
           ),

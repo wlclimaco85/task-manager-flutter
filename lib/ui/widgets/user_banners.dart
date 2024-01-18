@@ -75,8 +75,8 @@ AppBar userBanner(context, {VoidCallback? onTapped}) {
                     const SizedBox(height: 2),
                     Text(
                         AuthUtility.userInfo.data?.codDadosPessoal?.email ?? "",
-                        style:
-                            const TextStyle(fontSize: 14, color: Colors.white)),
+                        style: const TextStyle(
+                            fontSize: 14, color: Color(0xFF3F1D9D))),
                   ],
                 ),
               ],
