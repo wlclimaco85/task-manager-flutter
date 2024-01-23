@@ -1,16 +1,34 @@
-class PersonalModel {
+class PersonalDtoModel {
+  dynamic data;
+
+  PersonalDtoModel({this.data});
+
+  PersonalDtoModel.fromJson(Map<String, dynamic> json) {
+    data = json['data'] != null ? json['data'] : null;
+  }
+
+  Map<String, dynamic> toJson() {
+    final Map<String, dynamic> data = <String, dynamic>{};
+    if (this.data != null) {
+      data['data'] = this.data!.toJson();
+    }
+    return data;
+  }
+}
+
+class PersonalDto {
   int? id;
   String? cref;
   double? vlrAula;
-  Data? data;
+  dynamic? data;
 
-  PersonalModel({this.id, this.cref, this.data});
+  PersonalDto({this.id, this.cref, this.data});
 
-  PersonalModel.fromJson(Map<String, dynamic> json) {
+  PersonalDto.fromJson(Map<String, dynamic> json) {
     cref = json['cref'];
     id = json['id'];
     vlrAula = json['vlrAula'];
-    data = json['data'] != null ? Data.fromJson(json['data']) : null;
+    data = json['data'] != null ? json['data'] : null;
   }
 
   Map<String, dynamic> toJson() {
@@ -24,7 +42,7 @@ class PersonalModel {
     return data;
   }
 }
-
+/*
 class Data {
   String? email;
   String? firstName;
@@ -172,4 +190,4 @@ class DadosPessoal {
     codDadosPessoal['academia'] = academia;
     return codDadosPessoal;
   }
-}
+}*/

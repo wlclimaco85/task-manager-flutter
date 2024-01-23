@@ -14,6 +14,7 @@ import 'package:task_manager_flutter/ui/widgets/screen_background.dart';
 import 'package:task_manager_flutter/ui/widgets/user_banners.dart';
 import 'package:task_manager_flutter/ui/screens/update_profile.dart';
 import 'package:task_manager_flutter/data/models/personal_model.dart';
+import 'package:task_manager_flutter/ui/widgets/input_field_busca.dart';
 
 class PersonalScreen extends StatefulWidget {
   const PersonalScreen({
@@ -27,7 +28,8 @@ class PersonalScreen extends StatefulWidget {
 final TextEditingController _taskNameController = TextEditingController();
 final TextEditingController _taskDescriptionController =
     TextEditingController();
-Row test = Row();
+List<Widget> mywidgets = [];
+bool _isLoading = false;
 
 class _PersonalScreenState extends State<PersonalScreen> {
   @override
@@ -47,6 +49,7 @@ class _PersonalScreenState extends State<PersonalScreen> {
   bool _addNewTaskLoading = false;
 
   Future<void> findAllPersonal() async {
+    _isLoading = true;
     _addNewTaskLoading = true;
     if (mounted) {
       setState(() {});
@@ -66,22 +69,30 @@ class _PersonalScreenState extends State<PersonalScreen> {
       _taskNameController.clear();
       _taskDescriptionController.clear();
       if (mounted) {
-        PersonalModel pm =
-            PersonalModel.fromJson(response.body.map((key, value) => null));
-        test = const Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: <Widget>[
-            ListItensExample(
-              nome: 'Pablo Personal',
-              cpf: '05790167',
-              cref: '05790167',
-              valor: 299.1,
-              foto: '05790167',
-              id: 1,
+        dynamic data = response.body?['data'];
+        List<dynamic> datas = data['personalDto'];
+        mywidgets = [];
+        mywidgets.add(const InputBuscarField(
+            hint: "Username", obscure: false, icon: Icons.person_outline));
+        for (var element in datas) {
+          mywidgets.add(
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: <Widget>[
+                ListItensExample(
+                  nome: element['codDadosPessoal']['nome'],
+                  cpf: element['codDadosPessoal']['cpf'],
+                  cref: element['cref'],
+                  valor: element['vlrAula'],
+                  foto: element['codDadosPessoal']['photo'],
+                  id: element['id'],
+                ),
+              ],
             ),
-          ],
-        );
+          );
+        }
+        _isLoading = false;
       }
     } else {
       if (mounted) {
@@ -90,6 +101,7 @@ class _PersonalScreenState extends State<PersonalScreen> {
             content: Text("Task Added Failed"),
           ),
         );
+        _isLoading = false;
       }
     }
   }
@@ -110,89 +122,9 @@ class _PersonalScreenState extends State<PersonalScreen> {
       body: SingleChildScrollView(
         child: ConstrainedBox(
           constraints: const BoxConstraints(minHeight: 50),
-          child: const Column(
+          child: Column(
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-            children: <Widget>[
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: <Widget>[
-                  ListItensExample(
-                    nome: 'Pablo Personal',
-                    cpf: '05790167',
-                    cref: '05790167',
-                    valor: 299.1,
-                    foto: '05790167',
-                    id: 1,
-                  ),
-                ],
-              ),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: <Widget>[
-                  ListItensExample(
-                    nome: 'Washington Luis',
-                    cpf: '05790167',
-                    cref: '05790167',
-                    valor: 100.1,
-                    foto: '05790167',
-                    id: 1,
-                  ),
-                ],
-              ),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: <Widget>[
-                  ListItensExample(
-                    nome: 'Pamela Cristina',
-                    cpf: '05790167',
-                    cref: '05790167',
-                    valor: 99.1,
-                    foto: '05790167',
-                    id: 1,
-                  ),
-                ],
-              ),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: <Widget>[
-                  ListItensExample(
-                    nome: 'Pamela Cristina',
-                    cpf: '05790167',
-                    cref: '05790167',
-                    valor: 99.1,
-                    foto: '05790167',
-                    id: 1,
-                  ),
-                ],
-              ),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: <Widget>[
-                  ListItensExample(
-                    nome: 'Pamela Cristina',
-                    cpf: '05790167',
-                    cref: '05790167',
-                    valor: 99.1,
-                    foto: '05790167',
-                    id: 1,
-                  ),
-                ],
-              ),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: <Widget>[
-                  ListItensExample(
-                    nome: 'Pamela Cristina',
-                    cpf: '05790167',
-                    cref: '05790167',
-                    valor: 99.1,
-                    foto: '05790167',
-                    id: 1,
-                  ),
-                ],
-              ),
-            ],
+            children: mywidgets,
           ),
         ),
       ),
