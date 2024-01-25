@@ -7,14 +7,12 @@ import 'package:task_manager_flutter/app.dart';
 import 'package:task_manager_flutter/data/models/auth_utility.dart';
 import 'package:task_manager_flutter/data/models/network_response.dart';
 import 'package:task_manager_flutter/ui/screens/auth_screens/login_screen.dart';
-import 'dart:convert';
 
 class NetworkCaller {
   Future<NetworkResponse> getRequest(String url) async {
     try {
-      Response response = await get(Uri.parse(url), headers: {
-        'Authorization': 'Bearer ' + AuthUtility.userInfo.token.toString()
-      });
+      Response response = await get(Uri.parse(url),
+          headers: {'Authorization': 'Bearer ${AuthUtility.userInfo.token}'});
       if (response.statusCode == 200) {
         return NetworkResponse(
             true, response.statusCode, jsonDecode(response.body));
@@ -44,7 +42,9 @@ class NetworkCaller {
         Uri.parse(url),
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': 'Bearer ' + AuthUtility.userInfo.token.toString(),
+          'Authorization': url.contains('login')
+              ? 'c2Fua2h5YTpzdXA='
+              : 'Bearer ${AuthUtility.userInfo.token}',
         },
         body: jsonEncode(body),
       );

@@ -1,20 +1,14 @@
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'dart:convert';
-import 'package:image_picker/image_picker.dart';
-import 'package:task_manager_flutter/data/models/auth_utility.dart';
 import 'package:task_manager_flutter/data/models/network_response.dart';
 import 'package:task_manager_flutter/data/services/network_caller.dart';
 import 'package:task_manager_flutter/data/utils/api_links.dart';
-import 'package:task_manager_flutter/ui/widgets/custom_button.dart';
 import 'package:task_manager_flutter/ui/widgets/itens_list_personal.dart';
-import 'package:task_manager_flutter/ui/widgets/custom_password_text_field.dart';
-import 'package:task_manager_flutter/ui/widgets/custom_text_form_field.dart';
-import 'package:task_manager_flutter/ui/widgets/screen_background.dart';
 import 'package:task_manager_flutter/ui/widgets/user_banners.dart';
 import 'package:task_manager_flutter/ui/screens/update_profile.dart';
-import 'package:task_manager_flutter/data/models/personal_model.dart';
 import 'package:task_manager_flutter/ui/widgets/input_field_busca.dart';
+import 'package:task_manager_flutter/ui/widgets/home_fab.dart';
+
+import 'package:task_manager_flutter/ui/widgets/home_list_model.dart';
 
 class PersonalScreen extends StatefulWidget {
   const PersonalScreen({
@@ -106,9 +100,28 @@ class _PersonalScreenState extends State<PersonalScreen> {
     }
   }
 
+  List<HomeListModel> listModels = [
+    HomeListModel(
+      title: "Academia - O Club",
+      assetIcon: "assets/icons/gym_icon.png",
+    ),
+    HomeListModel(
+      title: "Biometa Academia",
+      assetIcon: "assets/icons/gym_icon.png",
+    ),
+    HomeListModel(
+      title: "Academia Titanium Core",
+      assetIcon: "assets/icons/gym_icon.png",
+    )
+  ];
+  refreshPage() {
+    setState(() {});
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      floatingActionButton: getHomeFab(context, listModels, refreshPage),
       backgroundColor: const Color(0xFF340A9C),
       appBar: userBanner(
         context,

@@ -1,6 +1,5 @@
 import 'package:task_manager_flutter/ui/widgets/stagger_animation.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/scheduler.dart' show timeDilation;
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});

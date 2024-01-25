@@ -1,7 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:task_manager_flutter/ui/widgets/form_container.dart';
-import 'package:task_manager_flutter/ui/widgets/sign_up_button.dart';
-import 'package:task_manager_flutter/ui/widgets/stagger_animation.dart';
 import 'package:task_manager_flutter/ui/widgets/home_screen.dart';
 import 'package:task_manager_flutter/data/models/auth_utility.dart';
 import 'package:task_manager_flutter/data/models/login_model.dart';
@@ -9,15 +6,9 @@ import 'package:task_manager_flutter/data/models/network_response.dart';
 import 'package:task_manager_flutter/data/services/network_caller.dart';
 import 'package:task_manager_flutter/data/utils/api_links.dart';
 import 'package:task_manager_flutter/ui/screens/auth_screens/email_verification_screeen.dart';
-import 'package:task_manager_flutter/ui/screens/auth_screens/signup_form_screen.dart';
 import 'package:task_manager_flutter/ui/screens/bottom_navbar_screen.dart';
-import 'package:task_manager_flutter/ui/widgets/custom_button.dart';
 import 'package:task_manager_flutter/ui/widgets/custom_password_text_field.dart';
 import 'package:task_manager_flutter/ui/widgets/custom_text_form_field.dart';
-import 'package:task_manager_flutter/ui/widgets/screen_background.dart';
-import 'package:task_manager_flutter/ui/widgets/signup_button.dart';
-import 'package:flutter/material.dart';
-import 'package:flutter/scheduler.dart' show timeDilation;
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -152,7 +143,7 @@ class _LoginScreenState extends State<LoginScreen>
                           ),
                           ElevatedButton(
                             style: ElevatedButton.styleFrom(
-                              backgroundColor: Color(0xFFFA903A),
+                              backgroundColor: const Color(0xFFFA903A),
                               minimumSize: const Size.fromHeight(50), // NEW
                             ),
                             onPressed: () {
@@ -169,7 +160,7 @@ class _LoginScreenState extends State<LoginScreen>
                           ),
                           ElevatedButton(
                             style: ElevatedButton.styleFrom(
-                              backgroundColor: Color(0xFFFA903A),
+                              backgroundColor: const Color(0xFFFA903A),
                               minimumSize: const Size.fromHeight(50), // NEW
                             ),
                             onPressed: () {

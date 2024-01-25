@@ -15,7 +15,7 @@ class InputBuscarField extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       height: 50,
-      margin: EdgeInsets.all(8),
+      margin: const EdgeInsets.all(8),
       alignment: Alignment.center,
       decoration: const BoxDecoration(
           color: Color(0xFFFA903A),
@@ -32,7 +32,7 @@ class InputBuscarField extends StatelessWidget {
               Container(
                 height: 30,
                 width: 280,
-                margin: EdgeInsets.all(8),
+                margin: const EdgeInsets.all(8),
                 alignment: Alignment.topRight,
                 decoration: const BoxDecoration(
                     color: Color(0xFFFA903A),
@@ -49,13 +49,13 @@ class InputBuscarField extends StatelessWidget {
                         height: 50.0,
                         width: 50.0,
                         child: IconButton(
-                          padding: EdgeInsets.all(0.0),
-                          color: Color(0xFFFA903A),
+                          padding: const EdgeInsets.all(0.0),
+                          color: const Color(0xFFFA903A),
                           icon: Image.asset('assets/images/Buscar.ico'),
                           onPressed: null,
                         ),
                       ),
-                      contentPadding: EdgeInsets.all(10.0),
+                      contentPadding: const EdgeInsets.all(10.0),
                       hintText: 'Buscar Personal',
                       hintStyle: const TextStyle(
                         color: Colors.black,
@@ -77,22 +77,22 @@ class InputBuscarField extends StatelessWidget {
               height: 30,
               width: 20,
               alignment: Alignment.topRight,
-              color: Color(0xFFFA903A),
+              color: const Color(0xFFFA903A),
             ),
           ]),
           Column(children: <Widget>[
             Container(
               height: 30,
               width: 40,
-              margin: EdgeInsets.all(8),
+              margin: const EdgeInsets.all(8),
               alignment: Alignment.topRight,
-              color: Color(0xFFFA903A),
+              color: const Color(0xFFFA903A),
               child: SizedBox(
                 height: 40.0,
                 width: 40.0,
                 child: IconButton(
                   padding: const EdgeInsets.all(0.0),
-                  color: Color(0xFFFA903A),
+                  color: const Color(0xFFFA903A),
                   tooltip: 'Adicionar Personal',
                   icon: Image.asset('assets/images/adcionar.ico'),
                   onPressed: null,

@@ -5,20 +5,11 @@ import 'package:task_manager_flutter/data/models/summery_count_model.dart';
 import 'package:task_manager_flutter/data/models/task_model.dart';
 import 'package:task_manager_flutter/data/services/network_caller.dart';
 import 'package:task_manager_flutter/data/utils/api_links.dart';
-import 'package:task_manager_flutter/ui/screens/add_task_screen.dart';
 import 'package:task_manager_flutter/ui/screens/auth_screens/personal_screen.dart';
 import 'package:task_manager_flutter/ui/screens/update_profile.dart';
-import 'package:task_manager_flutter/ui/widgets/screen_background.dart';
 import 'package:task_manager_flutter/ui/widgets/status_change_botom_sheet.dart';
-import 'package:task_manager_flutter/ui/widgets/summery_card.dart';
-import 'package:task_manager_flutter/ui/widgets/task_card.dart';
 import 'package:task_manager_flutter/ui/widgets/user_banners.dart';
 import 'package:task_manager_flutter/ui/widgets/custom_menu_item.dart';
-import 'package:task_manager_flutter/ui/screens/task_screen.dart';
-import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-import 'package:task_manager_flutter/data/models/auth_utility.dart';
-import 'package:task_manager_flutter/ui/screens/auth_screens/login_screen.dart';
-import 'package:flutter/src/widgets/navigator.dart';
 
 class TaskScreen extends StatefulWidget {
   final String screenStatus;

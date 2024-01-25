@@ -1,7 +1,9 @@
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
-import 'package:task_manager_flutter/ui/screens/update_profile.dart';
-import 'package:task_manager_flutter/ui/utils/assets_utils.dart';
+import 'package:task_manager_flutter/ui/widgets/calendar_screen.dart';
+import 'package:task_manager_flutter/ui/screens/events_example.dart';
+import 'package:task_manager_flutter/ui/screens/range_example.dart';
+import 'package:task_manager_flutter/ui/screens/multi_example.dart';
 
 /// Flutter code sample for [IconButton].
 
@@ -58,9 +60,9 @@ class ListItensExample extends StatelessWidget {
                 width: 70,
                 height: 140,
                 padding: EdgeInsets.zero,
-                color: Color(0xFF5937B2),
+                color: const Color(0xFF5937B2),
                 child: Padding(
-                  padding: EdgeInsets.only(bottom: 60),
+                  padding: const EdgeInsets.only(bottom: 60),
                   child: CircleAvatar(
                     radius: 25,
                     child: Image.memory(
@@ -75,7 +77,7 @@ class ListItensExample extends StatelessWidget {
               Flexible(
                 child: Container(
                   height: 140,
-                  color: Color(0xFF5937B2),
+                  color: const Color(0xFF5937B2),
                   child: Column(
                     children: [
                       Column(
@@ -134,7 +136,7 @@ class ListItensExample extends StatelessWidget {
                           Container(
                             width: 50,
                             height: 50,
-                            padding: EdgeInsets.all(4.0),
+                            padding: const EdgeInsets.all(4.0),
                             decoration: const BoxDecoration(
                                 color: Color(0xFFFA903A),
                                 borderRadius: BorderRadius.only(
@@ -153,7 +155,7 @@ class ListItensExample extends StatelessWidget {
                                           context,
                                           MaterialPageRoute(
                                               builder: (context) =>
-                                                  const UpdateProfileScreen()));
+                                                  const TableComplexExample()));
                                     },
                                     child: ClipRRect(
                                       borderRadius: BorderRadius.circular(10.0),
@@ -176,7 +178,7 @@ class ListItensExample extends StatelessWidget {
                           Container(
                             width: 50,
                             height: 50,
-                            padding: EdgeInsets.all(4.0),
+                            padding: const EdgeInsets.all(4.0),
                             decoration: const BoxDecoration(
                                 color: Color(0xFFFA903A),
                                 borderRadius: BorderRadius.only(
@@ -193,7 +195,7 @@ class ListItensExample extends StatelessWidget {
                                         context,
                                         MaterialPageRoute(
                                             builder: (context) =>
-                                                const UpdateProfileScreen()));
+                                                const TableRangeExample()));
                                   },
                                   child: ClipRRect(
                                     borderRadius: BorderRadius.circular(10.0),
@@ -215,7 +217,7 @@ class ListItensExample extends StatelessWidget {
                           Container(
                             width: 50,
                             height: 50,
-                            padding: EdgeInsets.all(4.0),
+                            padding: const EdgeInsets.all(4.0),
                             decoration: const BoxDecoration(
                                 color: Color(0xFFFA903A),
                                 borderRadius: BorderRadius.only(
@@ -232,7 +234,7 @@ class ListItensExample extends StatelessWidget {
                                         context,
                                         MaterialPageRoute(
                                             builder: (context) =>
-                                                const UpdateProfileScreen()));
+                                                const TableEventsExample()));
                                   },
                                   child: ClipRRect(
                                     borderRadius: BorderRadius.circular(10.0),
@@ -254,7 +256,7 @@ class ListItensExample extends StatelessWidget {
                           Container(
                             width: 50,
                             height: 50,
-                            padding: EdgeInsets.all(4.0),
+                            padding: const EdgeInsets.all(4.0),
                             decoration: const BoxDecoration(
                                 color: Color(0xFFFA903A),
                                 borderRadius: BorderRadius.only(
@@ -271,7 +273,7 @@ class ListItensExample extends StatelessWidget {
                                         context,
                                         MaterialPageRoute(
                                             builder: (context) =>
-                                                const UpdateProfileScreen()));
+                                                const TableMultiExample()));
                                   },
                                   child: ClipRRect(
                                     borderRadius: BorderRadius.circular(10.0),

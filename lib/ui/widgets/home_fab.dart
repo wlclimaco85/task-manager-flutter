@@ -1,0 +1,42 @@
+import 'package:flutter/material.dart';
+
+import 'package:task_manager_flutter/ui/widgets/home_modal_add.dart';
+import 'home_list_model.dart';
+
+FloatingActionButton getHomeFab(
+  BuildContext context,
+  List<HomeListModel> listModels,
+  Function fncRefresh,
+) {
+  void configurandoModalBottomSheet2(context) {
+    showModalBottomSheet<void>(
+      context: context,
+      builder: (BuildContext context) {
+        return SizedBox(
+          height: 200,
+          child: Center(
+              child: ElevatedButton(
+            child: const Text('Adicionar Personal'),
+            onPressed: () => Navigator.push(
+                context,
+                MaterialPageRoute(
+                    builder: (context) => HomeModalAdd(
+                          listModels: listModels,
+                          fncRefresh: fncRefresh,
+                        ))),
+          )),
+        );
+      },
+    );
+  }
+
+  return FloatingActionButton(
+    child: const Text(
+      "+",
+      style: TextStyle(fontSize: 24),
+    ),
+    onPressed: () {
+      return configurandoModalBottomSheet2(context);
+    },
+  );
+}

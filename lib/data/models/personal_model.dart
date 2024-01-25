@@ -4,7 +4,7 @@ class PersonalDtoModel {
   PersonalDtoModel({this.data});
 
   PersonalDtoModel.fromJson(Map<String, dynamic> json) {
-    data = json['data'] != null ? json['data'] : null;
+    data = json['data'];
   }
 
   Map<String, dynamic> toJson() {
@@ -20,7 +20,7 @@ class PersonalDto {
   int? id;
   String? cref;
   double? vlrAula;
-  dynamic? data;
+  dynamic data;
 
   PersonalDto({this.id, this.cref, this.data});
 
@@ -28,7 +28,7 @@ class PersonalDto {
     cref = json['cref'];
     id = json['id'];
     vlrAula = json['vlrAula'];
-    data = json['data'] != null ? json['data'] : null;
+    data = json['data'];
   }
 
   Map<String, dynamic> toJson() {

@@ -63,14 +63,14 @@ class IconButtonExample extends StatelessWidget {
                     ClipRRect(
                       borderRadius: BorderRadius.circular(10.0),
                       child: Image.asset(
-                        "assets/images/" + color,
+                        "assets/images/$color",
                         height: 60,
                         width: 65,
                         fit: BoxFit.contain,
                       ),
                     ),
                     Container(
-                      padding: EdgeInsets.all(10),
+                      padding: const EdgeInsets.all(10),
                       height: 40,
                       width: 150,
                       color: Colors.transparent,
