@@ -10,7 +10,10 @@ import 'package:task_manager_flutter/ui/widgets/custom_password_text_field.dart'
 import 'package:task_manager_flutter/ui/widgets/custom_text_form_field.dart';
 import 'package:task_manager_flutter/ui/widgets/screen_background.dart';
 import 'package:task_manager_flutter/ui/widgets/user_banners.dart';
-
+import 'dart:convert';
+import 'dart:async';
+import 'dart:io';
+import 'package:http/http.dart' as http;
 import '../../data/models/login_model.dart';
 
 class UpdateProfileScreen extends StatefulWidget {
@@ -37,6 +40,9 @@ class _UpdateProfileScreenState extends State<UpdateProfileScreen> {
 
   XFile? pickImage;
   String? base64Image;
+  File? image;
+
+  //late List<XFile> = [];
   @override
   void initState() {
     super.initState();
@@ -47,6 +53,21 @@ class _UpdateProfileScreenState extends State<UpdateProfileScreen> {
     _lastNameController.text =
         AuthUtility.userInfo.data?.codDadosPessoal?.cpf ?? "";
     _phoneNumberController.text = AuthUtility.userInfo.data?.mobile ?? "";
+  }
+
+  Future<XFile?> getLostData() async {
+    final ImagePicker picker = ImagePicker();
+    final LostDataResponse response = await picker.retrieveLostData();
+    if (response.isEmpty) {
+      return null;
+    }
+    final XFile? files = response.file;
+    if (files != null) {
+      final XFile? photo = await pickImage;
+      return files;
+    } else {
+      print(response.exception);
+    }
   }
 
   Future<void> updateProfile() async {
@@ -96,7 +117,7 @@ class _UpdateProfileScreenState extends State<UpdateProfileScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF3F1D9D),
+      backgroundColor: Colors.white54,
       appBar: userBanner(context),
       body: ScreenBackground(
           child: SingleChildScrollView(

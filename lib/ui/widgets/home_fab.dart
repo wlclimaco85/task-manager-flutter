@@ -17,13 +17,8 @@ FloatingActionButton getHomeFab(
           child: Center(
               child: ElevatedButton(
             child: const Text('Adicionar Personal'),
-            onPressed: () => Navigator.push(
-                context,
-                MaterialPageRoute(
-                    builder: (context) => HomeModalAdd(
-                          listModels: listModels,
-                          fncRefresh: fncRefresh,
-                        ))),
+            onPressed: () => Navigator.push(context,
+                MaterialPageRoute(builder: (context) => HomeModalAdd())),
           )),
         );
       },

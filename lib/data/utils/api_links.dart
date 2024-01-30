@@ -3,6 +3,7 @@ class ApiLinks {
   static const String _baseUrl = 'https://task.teamrabbil.com/api/v1';
   static const String _baseUrlNew = 'http://192.168.56.1:8088/boletobancos';
   static const String allPersonal = '$_baseUrlNew/personal/findAll';
+  static const String insertPersonal = '$_baseUrlNew/personal/inserir';
   static String regestration = '$_baseUrl/registration';
   static String profileUpdate = '$_baseUrl/profileUpdate';
   // static String login = '$_baseUrl/login';

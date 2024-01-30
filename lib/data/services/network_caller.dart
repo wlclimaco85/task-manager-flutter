@@ -48,7 +48,7 @@ class NetworkCaller {
         },
         body: jsonEncode(body),
       );
-      if (response.statusCode == 200) {
+      if (response.statusCode == 200 || response.statusCode == 201) {
         return NetworkResponse(
             true, response.statusCode, jsonDecode(response.body));
       } else {

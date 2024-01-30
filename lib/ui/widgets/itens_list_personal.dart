@@ -4,6 +4,8 @@ import 'package:task_manager_flutter/ui/widgets/calendar_screen.dart';
 import 'package:task_manager_flutter/ui/screens/events_example.dart';
 import 'package:task_manager_flutter/ui/screens/range_example.dart';
 import 'package:task_manager_flutter/ui/screens/multi_example.dart';
+import 'package:task_manager_flutter/ui/screens/teste_form_imagem.dart';
+import 'package:task_manager_flutter/data/constants/custom_colors.dart';
 
 /// Flutter code sample for [IconButton].
 
@@ -60,7 +62,7 @@ class ListItensExample extends StatelessWidget {
                 width: 70,
                 height: 140,
                 padding: EdgeInsets.zero,
-                color: const Color(0xFF5937B2),
+                color: CustomColors().getAppFundoPage(),
                 child: Padding(
                   padding: const EdgeInsets.only(bottom: 60),
                   child: CircleAvatar(
@@ -160,8 +162,7 @@ class ListItensExample extends StatelessWidget {
                                     child: ClipRRect(
                                       borderRadius: BorderRadius.circular(10.0),
                                       child: Image.asset(
-                                        "assets/images/observacao.png",
-                                        height: 40,
+                                        "assets/images/info.ico",
                                         width: 40,
                                         fit: BoxFit.contain,
                                       ),
@@ -195,7 +196,7 @@ class ListItensExample extends StatelessWidget {
                                         context,
                                         MaterialPageRoute(
                                             builder: (context) =>
-                                                const TableRangeExample()));
+                                                const TestImagemApp()));
                                   },
                                   child: ClipRRect(
                                     borderRadius: BorderRadius.circular(10.0),
