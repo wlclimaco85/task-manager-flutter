@@ -45,6 +45,10 @@ class NetworkCaller {
           'Authorization': url.contains('login')
               ? 'c2Fua2h5YTpzdXA='
               : 'Bearer ${AuthUtility.userInfo.token}',
+          'Access-Control-Allow-Origin': '*',
+          'Access-Control-Allow-Credentials': 'true',
+          'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+          'Access-Control-Allow-Headers': 'Origin, Content-Type, Accept',
         },
         body: jsonEncode(body),
       );

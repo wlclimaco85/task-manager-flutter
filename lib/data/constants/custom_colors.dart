@@ -8,6 +8,9 @@ class CustomColors {
   final Color _appBarMainColor = const Color(0xff0A6D92);
   final Color _appFundoPage = const Color(0xFF5937B2);
   final Color _appFundoImput = const Color(0xFFffffff);
+  final Color _appFundoClaro = const Color(0xFF7859C9);
+  final Color _appBotton = const Color(0xFFFA903A);
+  final Color _appLabelBotton = const Color(0xFFffffff);
 
   Color getActivePrimaryButtonColor() {
     return _activePrimaryButton;
@@ -35,5 +38,17 @@ class CustomColors {
 
   Color getAppFundoImput() {
     return _appFundoImput;
+  }
+
+  Color getAppFundoClaro() {
+    return _appFundoClaro;
+  }
+
+  Color getAppBotton() {
+    return _appBotton;
+  }
+
+  Color getAppLabelBotton() {
+    return _appLabelBotton;
   }
 }

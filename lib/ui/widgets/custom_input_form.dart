@@ -32,7 +32,6 @@ class CustomInputForm extends StatelessWidget {
         child: TextFormField(
           controller: controller,
           key: Key(keyField),
-          focusNode: focusNode,
           keyboardType: type ?? TextInputType.text,
           decoration: InputDecoration(
             fillColor: CustomColors().getAppFundoImput(),

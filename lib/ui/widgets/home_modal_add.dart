@@ -10,7 +10,7 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:task_manager_flutter/ui/screens/update_profile.dart';
 import 'package:task_manager_flutter/ui/widgets/custom_input_form.dart';
-import 'package:task_manager_flutter/ui/widgets/custom_combo_box_form.dart';
+import 'package:task_manager_flutter/ui/widgets/custom_plano_box_form.dart';
 import 'package:task_manager_flutter/ui/widgets/custom_combo_box_form_2.dart';
 import 'package:task_manager_flutter/data/utils/personal_validation.dart';
 import 'package:task_manager_flutter/data/constants/custom_colors.dart';
@@ -22,6 +22,9 @@ import 'dart:convert';
 import 'dart:convert' show utf8;
 import 'dart:io' as io;
 import 'package:dropdown_button2/dropdown_button2.dart';
+import 'package:task_manager_flutter/ui/widgets/custom_horario_box_form.dart';
+import 'package:task_manager_flutter/ui/widgets/custom_plano_box_form.dart';
+import 'package:task_manager_flutter/ui/widgets/custom_check_box_form.dart';
 
 class HomeModalAdd extends StatefulWidget {
   HomeModalAdd({super.key});
@@ -43,18 +46,7 @@ class _HomeModalAddState extends State<HomeModalAdd> {
     'Feminino',
   ];
 
-  var dias = [
-    'Segunda',
-    'Terça',
-    'Quarta',
-    'Quinta',
-    'Sexta',
-    'Sabado',
-    'Domingo',
-  ];
   List<String> sexoSelectedItems = [];
-
-  List<String> diasSelectedItems = [];
 
   @override
   void initState() {
@@ -108,6 +100,11 @@ class _HomeModalAddState extends State<HomeModalAdd> {
       //String base64Images = base64Encode(imageBytes);
       base64Imagess = base64Encode(bytess);
     }
+    NumberToDay myObjectInstance = NumberToDay();
+    List<Map<String, dynamic>> dayName = myObjectInstance.test();
+
+    GetDiasSemana myObjectInstances = GetDiasSemana();
+    List<Map<String, dynamic>> dayNames = myObjectInstances.test();
 
     for (var element in sexoSelectedItems) {}
     Map<String, dynamic> requestBody = {
@@ -243,6 +240,11 @@ class _HomeModalAddState extends State<HomeModalAdd> {
                       ),
                     ]),
                   ),
+                  const LabeledCheckbox(
+                      value: true,
+                      label: "Sim",
+                      leadingCheckbox: false,
+                      onChanged: null),
                   Padding(
                     padding: const EdgeInsets.symmetric(vertical: 3),
                     child: Center(
@@ -256,7 +258,7 @@ class _HomeModalAddState extends State<HomeModalAdd> {
                                 'Escolha o sexo atendimento',
                                 style: TextStyle(
                                   fontSize: 14,
-                                  color: Theme.of(context).hintColor,
+                                  color: CustomColors().getAppLabelBotton(),
                                 ),
                               ),
                               items: dias.map((item) {
@@ -339,7 +341,7 @@ class _HomeModalAddState extends State<HomeModalAdd> {
                                   border: Border.all(
                                     color: Colors.black26,
                                   ),
-                                  color: Colors.redAccent,
+                                  color: CustomColors().getAppBotton(),
                                 ),
                                 elevation: 2,
                               ),
@@ -376,139 +378,8 @@ class _HomeModalAddState extends State<HomeModalAdd> {
                       ),
                     ),
                   ),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 3),
-                    child: Center(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          DropdownButtonHideUnderline(
-                            child: DropdownButton2<String>(
-                              isExpanded: true,
-                              hint: Text(
-                                'Select Items',
-                                style: TextStyle(
-                                  fontSize: 14,
-                                  color: Theme.of(context).hintColor,
-                                ),
-                              ),
-                              items: sexo.map((item) {
-                                return DropdownMenuItem(
-                                  value: item,
-                                  //disable default onTap to avoid closing menu when selecting an item
-                                  enabled: false,
-                                  child: StatefulBuilder(
-                                    builder: (context, menuSetState) {
-                                      final isSelected =
-                                          sexoSelectedItems.contains(item);
-                                      return InkWell(
-                                        onTap: () {
-                                          isSelected
-                                              ? sexoSelectedItems.remove(item)
-                                              : sexoSelectedItems.add(item);
-                                          //This rebuilds the StatefulWidget to update the button's text
-                                          setState(() {});
-                                          //This rebuilds the dropdownMenu Widget to update the check mark
-                                          menuSetState(() {});
-                                        },
-                                        child: Container(
-                                          height: double.infinity,
-                                          padding: const EdgeInsets.symmetric(
-                                              horizontal: 16.0),
-                                          child: Row(
-                                            children: [
-                                              if (isSelected)
-                                                const Icon(
-                                                    Icons.check_box_outlined)
-                                              else
-                                                const Icon(Icons
-                                                    .check_box_outline_blank),
-                                              const SizedBox(width: 16),
-                                              Expanded(
-                                                child: Text(
-                                                  item,
-                                                  style: const TextStyle(
-                                                    fontSize: 14,
-                                                  ),
-                                                ),
-                                              ),
-                                            ],
-                                          ),
-                                        ),
-                                      );
-                                    },
-                                  ),
-                                );
-                              }).toList(),
-                              //Use last selected item as the current value so if we've limited menu height, it scroll to last item.
-                              value: sexoSelectedItems.isEmpty
-                                  ? null
-                                  : sexoSelectedItems.last,
-                              onChanged: (value) {},
-                              selectedItemBuilder: (context) {
-                                return sexo.map(
-                                  (item) {
-                                    return Container(
-                                      alignment: AlignmentDirectional.center,
-                                      child: Text(
-                                        sexoSelectedItems.join(', '),
-                                        style: const TextStyle(
-                                          fontSize: 14,
-                                          overflow: TextOverflow.ellipsis,
-                                        ),
-                                        maxLines: 1,
-                                      ),
-                                    );
-                                  },
-                                ).toList();
-                              },
-                              buttonStyleData: ButtonStyleData(
-                                height: 50,
-                                width: 160,
-                                padding:
-                                    const EdgeInsets.only(left: 14, right: 14),
-                                decoration: BoxDecoration(
-                                  borderRadius: BorderRadius.circular(14),
-                                  border: Border.all(
-                                    color: Colors.black26,
-                                  ),
-                                  color: Colors.redAccent,
-                                ),
-                                elevation: 2,
-                              ),
-                              iconStyleData: const IconStyleData(
-                                icon: Icon(
-                                  Icons.arrow_forward_ios_outlined,
-                                ),
-                                iconSize: 14,
-                                iconEnabledColor: Colors.yellow,
-                                iconDisabledColor: Colors.grey,
-                              ),
-                              dropdownStyleData: DropdownStyleData(
-                                maxHeight: 200,
-                                width: 200,
-                                decoration: BoxDecoration(
-                                  borderRadius: BorderRadius.circular(14),
-                                  color: Colors.redAccent,
-                                ),
-                                offset: const Offset(-20, 0),
-                                scrollbarTheme: ScrollbarThemeData(
-                                  radius: const Radius.circular(40),
-                                  thickness: MaterialStateProperty.all(6),
-                                  thumbVisibility:
-                                      MaterialStateProperty.all(true),
-                                ),
-                              ),
-                              menuItemStyleData: const MenuItemStyleData(
-                                height: 40,
-                                padding: EdgeInsets.only(left: 14, right: 14),
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
+                  CustomComboBoxForm(),
+                  CustomDiasBoxForm(),
                 ],
               ),
             ),
