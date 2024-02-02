@@ -226,17 +226,17 @@ class _HomeModalAddState extends State<HomeModalAdd> {
     Map<String, dynamic> requestBody = {
       "cref": _numCREFController.text.trim(),
       "vlrAula": _vlrAulaController.text.trim(),
+      "fazAvaliacao": fazAval,
+      "sexoAtendimento": sexoSelectedItems.isNotEmpty
+          ? getChaveSexo(sexoSelectedItems.join(', ').toString())
+          : "",
       "codDadosPessoal": {
         "nome": _nomeController.text.trim(),
         "cpf": _numCPFController.text.trim(),
         "telefone1": _telefoneController.text.trim(),
         "email": _emailController.text.trim(),
         "tipoAluno": 2,
-        "fazAvaliacao": fazAval,
         "photo": "data:image/png;base64," + base64Imagess,
-        "sexo": sexoSelectedItems.isNotEmpty
-            ? getChaveSexo(sexoSelectedItems.join(', ').toString())
-            : ""
       },
       "planos": jsonDecode(aa),
       "horarios": jsonDecode(bb),
