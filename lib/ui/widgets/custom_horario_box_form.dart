@@ -52,7 +52,7 @@ class _CustomDiasBoxForm extends State<CustomDiasBoxForm> {
     super.dispose();
   }
 
-  void _onUpdate(int key, String value, chave) {
+  void _onUpdate(int key, String? value, chave) {
     void addData() {
       Map<String, dynamic> json = {
         'id': key,
@@ -129,9 +129,13 @@ class _CustomDiasBoxForm extends State<CustomDiasBoxForm> {
                                   ? diasSelectedItems.remove(item)
                                   : diasSelectedItems.add(item);
                               //This rebuilds the StatefulWidget to update the button's text
+                              _onUpdate(
+                                  key, diasSelectedItems.join(","), chave);
                               setState(() {});
                               //This rebuilds the dropdownMenu Widget to update the check mark
-                              menuSetState(() {});
+                              menuSetState(() {
+                                print(item);
+                              });
                             },
                             child: Container(
                               height: double.infinity,
@@ -163,7 +167,8 @@ class _CustomDiasBoxForm extends State<CustomDiasBoxForm> {
                   //Use last selected item as the current value so if we've limited menu height, it scroll to last item.
                   value:
                       diasSelectedItems.isEmpty ? null : diasSelectedItems.last,
-                  onChanged: (value) {},
+                  onChanged: (vale) => _onUpdate(key, vale, chave),
+
                   selectedItemBuilder: (context) {
                     return diasSelectedItems.map(
                       (item) {
@@ -269,9 +274,10 @@ class _CustomDiasBoxForm extends State<CustomDiasBoxForm> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: <Widget>[
-              selected(key, "Titulo Plano", null, TextInputType.text, 'titulo'),
-              imput(key, "Hora Inicio", null, TextInputType.text, 'titulo'),
-              imput(key, "Hora Final", null, TextInputType.number, 'qtdAula'),
+              selected(
+                  key, "Titulo Plano", null, TextInputType.text, 'diaAtene'),
+              imput(key, "Hora Inicio", null, TextInputType.text, 'dtInicio'),
+              imput(key, "Hora Final", null, TextInputType.number, 'dtFinal'),
             ],
           ),
         ),

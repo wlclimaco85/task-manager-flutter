@@ -3,7 +3,7 @@
     "activeCommit": 0,
     "commits": [
         {
-            "activePatchIndex": 4,
+            "activePatchIndex": 5,
             "patches": [
                 {
                     "date": 1706728723561,
@@ -24,6 +24,10 @@
                 {
                     "date": 1706728790589,
                     "content": "Index: \n===================================================================\n--- \n+++ \n@@ -187,9 +187,9 @@\n               const SizedBox(height: 19),\r\n               const Text('Planos',\r\n                   style: TextStyle(\r\n                       fontWeight: FontWeight.bold,\r\n-                      color: Colors.black45,\r\n+                      color: Colors.black87,\r\n                       fontSize: 22)),\r\n               const SizedBox(height: 20),\r\n               ...List.generate(_formCount, (index) => form(index)),\r\n               buttonRow(),\r\n"
+                },
+                {
+                    "date": 1706827916300,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -125,9 +125,9 @@\n           color: CustomColors().getAppFundoClaro(),\r\n           child: Column(\r\n             mainAxisAlignment: MainAxisAlignment.center,\r\n             children: <Widget>[\r\n-              imput(key, \"Titulo Plano\", null, TextInputType.text, 'titulo'),\r\n+              imput(key, \"Titulo Plano\", null, TextInputType.text, 'nome'),\r\n               imput(key, \"Detalhe do Plano\", 5, TextInputType.multiline,\r\n                   'descricao'),\r\n               imput(key, \"Qnt. Aula Mês *dias\", null, TextInputType.number,\r\n                   'qtdAula'),\r\n"
                 }
             ],
             "date": 1706728723561,

@@ -1,3 +1,4 @@
+import 'dart:ffi';
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
@@ -84,6 +85,116 @@ class _HomeModalAddState extends State<HomeModalAdd> {
     }
   }
 
+  String MapToJson(List<Map<String, dynamic>> map) {
+    String res = "";
+    bool isEntrou = false;
+    for (var s in map) {
+      res += "{";
+
+      for (String k in s.keys) {
+        //"[{"id":"0","diaAtene":"Segunda,Segunda,Terça","dtInicio":"10:00"
+        res += '"';
+        res += k;
+        res += '":"';
+        res += (k == "diaAtene"
+            ? getChaveDiasSemana(s[k].toString())
+            : s[k].toString());
+        res += '",';
+      }
+      res = res.substring(0, res.length - 1);
+
+      res += "},";
+      isEntrou = true;
+    }
+    if (isEntrou) {
+      res = "[" + res.substring(0, res.length - 1) + "]";
+    } else {
+      res = "";
+    }
+
+    return res;
+  }
+
+  int diasSemanaEnum(String diasd) {
+    late int _dias;
+    switch (diasd) {
+      case "Segunda":
+        _dias = 9;
+        break;
+      case "Terça":
+        _dias = 1;
+        break;
+      case "Quarta":
+        _dias = 2;
+        break;
+      case "Quinta":
+        _dias = 3;
+        break;
+      case "Sexta":
+        _dias = 4;
+        break;
+      case "Sabado":
+        _dias = 5;
+        break;
+      case "Domingo":
+        _dias = 6;
+        break;
+      case "Feriado":
+        _dias = 7;
+        break;
+      default:
+        _dias = 8;
+        break;
+    }
+    return _dias;
+  }
+
+  int sexoEnum(String diasd) {
+    late int _dias;
+    switch (diasd) {
+      case "Masculino":
+        _dias = 0;
+        break;
+      case "Feminino":
+        _dias = 1;
+        break;
+      default:
+        _dias = 3;
+        break;
+    }
+    return _dias;
+  }
+
+  int getChaveSexo(String disas) {
+    late int _diasSemana = 3;
+    late List<String> aa = disas.split(",");
+    if (aa.length > 1) {
+      return 2;
+    }
+    for (var element in aa) {
+      _diasSemana = sexoEnum(element);
+    }
+
+    return _diasSemana;
+  }
+
+  String getChaveDiasSemana(String disas) {
+    late String _diasSemana = "";
+    late List<String> aa = disas.split(",");
+    late bool entrou = false;
+    for (var element in aa) {
+      _diasSemana += diasSemanaEnum(element).toString() + ",";
+      entrou = true;
+    }
+    if (entrou) {
+      _diasSemana = "" + _diasSemana.substring(0, _diasSemana.length - 1) + "";
+    } else {
+      _diasSemana = "";
+    }
+
+    return _diasSemana.replaceAll(",", "");
+  }
+
   Future<void> updateProfile() async {
     _signUpInProgress = true;
     if (mounted) {
@@ -103,10 +214,15 @@ class _HomeModalAddState extends State<HomeModalAdd> {
     NumberToDay myObjectInstance = NumberToDay();
     List<Map<String, dynamic>> dayName = myObjectInstance.test();
 
+    String aa = MapToJson(dayName);
+
     GetDiasSemana myObjectInstances = GetDiasSemana();
     List<Map<String, dynamic>> dayNames = myObjectInstances.test();
 
-    for (var element in sexoSelectedItems) {}
+    GetFazAvaliacao myObjectInstancesd = GetFazAvaliacao();
+    int fazAval = myObjectInstancesd.test();
+    String bb = MapToJson(dayNames);
+
     Map<String, dynamic> requestBody = {
       "cref": _numCREFController.text.trim(),
       "vlrAula": _vlrAulaController.text.trim(),
@@ -116,12 +232,21 @@ class _HomeModalAddState extends State<HomeModalAdd> {
         "telefone1": _telefoneController.text.trim(),
         "email": _emailController.text.trim(),
         "tipoAluno": 2,
+        "fazAvaliacao": fazAval,
         "photo": "data:image/png;base64," + base64Imagess,
-        "sexo": sexoSelectedItems.join(', ').toString(),
-        "diaSemana": diasSelectedItems.join(', ').toString()
-      }
+        "sexo": sexoSelectedItems.isNotEmpty
+            ? getChaveSexo(sexoSelectedItems.join(', ').toString())
+            : ""
+      },
+      "planos": jsonDecode(aa),
+      "horarios": jsonDecode(bb),
+      /* {
+          "titulo": "titulo",
+          "descricao": "descricao",
+          "qtdAula": 1,
+          "valor": 1.99,
+        }*/
     };
-
     final NetworkResponse response =
         await NetworkCaller().postRequest(ApiLinks.insertPersonal, requestBody);
     _signUpInProgress = false;
@@ -261,7 +386,7 @@ class _HomeModalAddState extends State<HomeModalAdd> {
                                   color: CustomColors().getAppLabelBotton(),
                                 ),
                               ),
-                              items: dias.map((item) {
+                              items: sexo.map((item) {
                                 return DropdownMenuItem(
                                   value: item,
                                   //disable default onTap to avoid closing menu when selecting an item
@@ -269,12 +394,12 @@ class _HomeModalAddState extends State<HomeModalAdd> {
                                   child: StatefulBuilder(
                                     builder: (context, menuSetState) {
                                       final isSelected =
-                                          diasSelectedItems.contains(item);
+                                          sexoSelectedItems.contains(item);
                                       return InkWell(
                                         onTap: () {
                                           isSelected
-                                              ? diasSelectedItems.remove(item)
-                                              : diasSelectedItems.add(item);
+                                              ? sexoSelectedItems.remove(item)
+                                              : sexoSelectedItems.add(item);
                                           //This rebuilds the StatefulWidget to update the button's text
                                           setState(() {});
                                           //This rebuilds the dropdownMenu Widget to update the check mark
@@ -310,17 +435,17 @@ class _HomeModalAddState extends State<HomeModalAdd> {
                                 );
                               }).toList(),
                               //Use last selected item as the current value so if we've limited menu height, it scroll to last item.
-                              value: diasSelectedItems.isEmpty
+                              value: sexoSelectedItems.isEmpty
                                   ? null
-                                  : diasSelectedItems.last,
+                                  : sexoSelectedItems.last,
                               onChanged: (value) {},
                               selectedItemBuilder: (context) {
-                                return diasSelectedItems.map(
+                                return sexoSelectedItems.map(
                                   (item) {
                                     return Container(
                                       alignment: AlignmentDirectional.center,
                                       child: Text(
-                                        diasSelectedItems.join(', '),
+                                        sexoSelectedItems.join(', '),
                                         style: const TextStyle(
                                           fontSize: 14,
                                           overflow: TextOverflow.ellipsis,
@@ -333,7 +458,7 @@ class _HomeModalAddState extends State<HomeModalAdd> {
                               },
                               buttonStyleData: ButtonStyleData(
                                 height: 50,
-                                width: 160,
+                                width: 280,
                                 padding:
                                     const EdgeInsets.only(left: 14, right: 14),
                                 decoration: BoxDecoration(
@@ -358,7 +483,7 @@ class _HomeModalAddState extends State<HomeModalAdd> {
                                 width: 200,
                                 decoration: BoxDecoration(
                                   borderRadius: BorderRadius.circular(14),
-                                  color: Colors.redAccent,
+                                  color: CustomColors().getAppBotton(),
                                 ),
                                 offset: const Offset(-20, 0),
                                 scrollbarTheme: ScrollbarThemeData(

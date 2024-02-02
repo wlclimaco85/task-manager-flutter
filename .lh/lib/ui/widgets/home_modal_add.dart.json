@@ -3,7 +3,7 @@
     "activeCommit": 0,
     "commits": [
         {
-            "activePatchIndex": 5,
+            "activePatchIndex": 11,
             "patches": [
                 {
                     "date": 1706726694060,
@@ -28,6 +28,30 @@
                 {
                     "date": 1706728887363,
                     "content": "Index: \n===================================================================\n--- \n+++ \n@@ -47,10 +47,8 @@\n   ];\r\n \r\n   List<String> sexoSelectedItems = [];\r\n \r\n-\r\n-\r\n   @override\r\n   void initState() {\r\n     _formKey = GlobalKey<FormState>();\r\n     _focusNode = FocusNode();\r\n"
+                },
+                {
+                    "date": 1706825956742,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -83,8 +83,32 @@\n       print(response.exception);\r\n     }\r\n   }\r\n \r\n+  String MapToJson(List<Map<String, dynamic>> map) {\r\n+   String res = \"[\";\r\n+\r\n+  for (var s in map) {\r\n+   res += \"{\";\r\n+\r\n+    for (String k in s.keys) {\r\n+     res += '\"';\r\n+  res += k;\r\n+  res += '\":\"';\r\n+  res += s[k].toString();\r\n+  res += '\",';\r\n+}\r\n+res = res.substring(0, res.length - 1);\r\n+\r\n+res += \"},\";\r\n+res = res.substring(0, res.length - 1);\r\n+  }\r\n+\r\n+ res += \"]\";\r\n+\r\n+ return res;\r\n+   }\r\n+\r\n   Future<void> updateProfile() async {\r\n     _signUpInProgress = true;\r\n     if (mounted) {\r\n       setState(() {});\r\n"
+                },
+                {
+                    "date": 1706825999581,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -126,8 +126,10 @@\n     }\r\n     NumberToDay myObjectInstance = NumberToDay();\r\n     List<Map<String, dynamic>> dayName = myObjectInstance.test();\r\n \r\n+    String aa = MapToJson(dayName);\r\n+\r\n     GetDiasSemana myObjectInstances = GetDiasSemana();\r\n     List<Map<String, dynamic>> dayNames = myObjectInstances.test();\r\n \r\n     for (var element in sexoSelectedItems) {}\r\n"
+                },
+                {
+                    "date": 1706826014545,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -131,8 +131,10 @@\n \r\n     GetDiasSemana myObjectInstances = GetDiasSemana();\r\n     List<Map<String, dynamic>> dayNames = myObjectInstances.test();\r\n \r\n+    String bb = MapToJson(dayNames);\r\n+\r\n     for (var element in sexoSelectedItems) {}\r\n     Map<String, dynamic> requestBody = {\r\n       \"cref\": _numCREFController.text.trim(),\r\n       \"vlrAula\": _vlrAulaController.text.trim(),\r\n"
+                },
+                {
+                    "date": 1706826156370,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -145,9 +145,11 @@\n         \"email\": _emailController.text.trim(),\r\n         \"tipoAluno\": 2,\r\n         \"photo\": \"data:image/png;base64,\" + base64Imagess,\r\n         \"sexo\": sexoSelectedItems.join(', ').toString(),\r\n-        \"diaSemana\": diasSelectedItems.join(', ').toString()\r\n+        \"diaSemana\": diasSelectedItems.join(', ').toString(),\r\n+        \"horarios\" : bb,\r\n+        \"planos\" : aa\r\n       }\r\n     };\r\n \r\n     final NetworkResponse response =\r\n"
+                },
+                {
+                    "date": 1706826281966,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -146,11 +146,11 @@\n         \"tipoAluno\": 2,\r\n         \"photo\": \"data:image/png;base64,\" + base64Imagess,\r\n         \"sexo\": sexoSelectedItems.join(', ').toString(),\r\n         \"diaSemana\": diasSelectedItems.join(', ').toString(),\r\n-        \"horarios\": bb,\r\n+      },\r\n+      \"horarios\": bb,\r\n         \"planos\": aa\r\n-      }\r\n     };\r\n \r\n     final NetworkResponse response =\r\n         await NetworkCaller().postRequest(ApiLinks.insertPersonal, requestBody);\r\n"
+                },
+                {
+                    "date": 1706826663515,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -147,12 +147,12 @@\n         \"photo\": \"data:image/png;base64,\" + base64Imagess,\r\n         \"sexo\": sexoSelectedItems.join(', ').toString(),\r\n         \"diaSemana\": diasSelectedItems.join(', ').toString(),\r\n       },\r\n-      \"horarios\": bb,\r\n+\r\n       \"planos\": aa\r\n     };\r\n-\r\n+    //      \"horarios\": bb,\r\n     final NetworkResponse response =\r\n         await NetworkCaller().postRequest(ApiLinks.insertPersonal, requestBody);\r\n     _signUpInProgress = false;\r\n     if (mounted) {\r\n"
                 }
             ],
             "date": 1706726694060,

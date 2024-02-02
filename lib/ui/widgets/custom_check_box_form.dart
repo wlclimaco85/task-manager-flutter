@@ -1,6 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:task_manager_flutter/data/constants/custom_colors.dart';
 
+int? selectedOption = 0;
+
+class GetFazAvaliacao {
+  test() {
+    return selectedOption;
+  }
+}
+
 class LabeledCheckbox extends StatefulWidget {
   final bool? value;
   final String label;
@@ -21,7 +29,7 @@ class LabeledCheckbox extends StatefulWidget {
 
 class _LabeledCheckboxState extends State<LabeledCheckbox> {
   var value = false;
-  int? selectedOption = 1; // Set the default value here
+  // Set the default value here
   @override
   void initState() {
     super.initState();

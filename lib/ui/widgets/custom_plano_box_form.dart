@@ -126,7 +126,7 @@ class _CustomComboBoxForm extends State<CustomComboBoxForm> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: <Widget>[
-              imput(key, "Titulo Plano", null, TextInputType.text, 'titulo'),
+              imput(key, "Titulo Plano", null, TextInputType.text, 'nome'),
               imput(key, "Detalhe do Plano", 5, TextInputType.multiline,
                   'descricao'),
               imput(key, "Qnt. Aula Mês *dias", null, TextInputType.number,
