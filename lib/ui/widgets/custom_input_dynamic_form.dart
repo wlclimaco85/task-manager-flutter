@@ -10,7 +10,6 @@ class CustomInputForm extends StatelessWidget {
   late FocusNode focusNode;
   TextInputType? type;
   String keyField;
-  TextEditingController controller = TextEditingController();
   Function(String?)? onPressed;
 
 
@@ -20,7 +19,6 @@ class CustomInputForm extends StatelessWidget {
     required this.focusNode,
     this.type,
     required this.keyField,
-    required this.controller,
     required this.onPressed,
   }) : super(key: key);
 
@@ -34,7 +32,6 @@ class CustomInputForm extends StatelessWidget {
       child: EnsureVisibleWhenFocused(
         focusNode: focusNode,
         child: TextFormField(
-          controller: controller,
           key: Key(keyField),
           keyboardType: type ?? TextInputType.text,
           decoration: InputDecoration(

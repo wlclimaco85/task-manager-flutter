@@ -10,10 +10,8 @@ import 'package:task_manager_flutter/ui/widgets/custom_password_text_field.dart'
 import 'package:task_manager_flutter/ui/widgets/custom_text_form_field.dart';
 import 'package:task_manager_flutter/ui/widgets/screen_background.dart';
 import 'package:task_manager_flutter/ui/widgets/user_banners.dart';
-import 'dart:convert';
 import 'dart:async';
 import 'dart:io';
-import 'package:http/http.dart' as http;
 import '../../data/models/login_model.dart';
 
 class UpdateProfileScreen extends StatefulWidget {
@@ -63,11 +61,12 @@ class _UpdateProfileScreenState extends State<UpdateProfileScreen> {
     }
     final XFile? files = response.file;
     if (files != null) {
-      final XFile? photo = await pickImage;
+      final XFile? photo = pickImage;
       return files;
     } else {
       print(response.exception);
     }
+    return null;
   }
 
   Future<void> updateProfile() async {

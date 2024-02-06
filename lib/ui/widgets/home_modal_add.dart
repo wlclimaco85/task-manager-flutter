@@ -1,34 +1,23 @@
-import 'dart:ffi';
-import 'dart:typed_data';
-
-import 'package:flutter/material.dart';
-import 'package:task_manager_flutter/ui/widgets/custom_button.dart';
-import 'package:task_manager_flutter/ui/widgets/custom_text_form_field.dart';
-import 'package:task_manager_flutter/ui/widgets/screen_background.dart';
-import 'package:task_manager_flutter/ui/widgets/user_banners.dart';
-import 'home_list_model.dart';
+import 'dart:convert';
+import 'dart:io' as io;
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:dropdown_button2/dropdown_button2.dart';
+import 'package:task_manager_flutter/data/utils/api_links.dart';
+import 'package:task_manager_flutter/ui/widgets/user_banners.dart';
 import 'package:task_manager_flutter/ui/screens/update_profile.dart';
 import 'package:task_manager_flutter/ui/widgets/custom_input_form.dart';
-import 'package:task_manager_flutter/ui/widgets/custom_plano_box_form.dart';
-import 'package:task_manager_flutter/ui/widgets/custom_combo_box_form_2.dart';
-import 'package:task_manager_flutter/data/utils/personal_validation.dart';
 import 'package:task_manager_flutter/data/constants/custom_colors.dart';
 import 'package:task_manager_flutter/data/models/network_response.dart';
 import 'package:task_manager_flutter/data/services/network_caller.dart';
-import 'package:task_manager_flutter/data/utils/api_links.dart';
-import 'package:http/http.dart' as http;
-import 'dart:convert';
-import 'dart:convert' show utf8;
-import 'dart:io' as io;
-import 'package:dropdown_button2/dropdown_button2.dart';
-import 'package:task_manager_flutter/ui/widgets/custom_horario_box_form.dart';
+import 'package:task_manager_flutter/data/utils/personal_validation.dart';
 import 'package:task_manager_flutter/ui/widgets/custom_plano_box_form.dart';
 import 'package:task_manager_flutter/ui/widgets/custom_check_box_form.dart';
+import 'package:task_manager_flutter/ui/widgets/custom_horario_box_form.dart';
+
 
 class HomeModalAdd extends StatefulWidget {
-  HomeModalAdd({super.key});
+  const HomeModalAdd({super.key});
   @override
   State<HomeModalAdd> createState() => _HomeModalAddState();
 }
@@ -75,7 +64,7 @@ class _HomeModalAddState extends State<HomeModalAdd> {
     final XFile? files = response.file;
     final XFile? photo;
     if (files != null) {
-      photo = await pickImage;
+      photo = pickImage;
       return files.readAsBytes();
     } else {
       const asciiDecoder = AsciiDecoder();
@@ -107,7 +96,7 @@ class _HomeModalAddState extends State<HomeModalAdd> {
       isEntrou = true;
     }
     if (isEntrou) {
-      res = "[" + res.substring(0, res.length - 1) + "]";
+      res = "[${res.substring(0, res.length - 1)}]";
     } else {
       res = "";
     }
@@ -116,83 +105,83 @@ class _HomeModalAddState extends State<HomeModalAdd> {
   }
 
   int diasSemanaEnum(String diasd) {
-    late int _dias;
+    late int dias;
     switch (diasd) {
       case "Segunda":
-        _dias = 9;
+        dias = 9;
         break;
       case "Terça":
-        _dias = 1;
+        dias = 1;
         break;
       case "Quarta":
-        _dias = 2;
+        dias = 2;
         break;
       case "Quinta":
-        _dias = 3;
+        dias = 3;
         break;
       case "Sexta":
-        _dias = 4;
+        dias = 4;
         break;
       case "Sabado":
-        _dias = 5;
+        dias = 5;
         break;
       case "Domingo":
-        _dias = 6;
+        dias = 6;
         break;
       case "Feriado":
-        _dias = 7;
+        dias = 7;
         break;
       default:
-        _dias = 8;
+        dias = 8;
         break;
     }
-    return _dias;
+    return dias;
   }
 
   int sexoEnum(String diasd) {
-    late int _dias;
+    late int dias;
     switch (diasd) {
       case "Masculino":
-        _dias = 0;
+        dias = 0;
         break;
       case "Feminino":
-        _dias = 1;
+        dias = 1;
         break;
       default:
-        _dias = 3;
+        dias = 3;
         break;
     }
-    return _dias;
+    return dias;
   }
 
   int getChaveSexo(String disas) {
-    late int _diasSemana = 3;
+    late int diasSemana = 3;
     late List<String> aa = disas.split(",");
     if (aa.length > 1) {
       return 2;
     }
     for (var element in aa) {
-      _diasSemana = sexoEnum(element);
+      diasSemana = sexoEnum(element);
     }
 
-    return _diasSemana;
+    return diasSemana;
   }
 
   String getChaveDiasSemana(String disas) {
-    late String _diasSemana = "";
+    late String diasSemana = "";
     late List<String> aa = disas.split(",");
     late bool entrou = false;
     for (var element in aa) {
-      _diasSemana += diasSemanaEnum(element).toString() + ",";
+      diasSemana += "${diasSemanaEnum(element)},";
       entrou = true;
     }
     if (entrou) {
-      _diasSemana = "" + _diasSemana.substring(0, _diasSemana.length - 1) + "";
+      diasSemana = diasSemana.substring(0, diasSemana.length - 1);
     } else {
-      _diasSemana = "";
+      diasSemana = "";
     }
 
-    return _diasSemana.replaceAll(",", "");
+    return diasSemana.replaceAll(",", "");
   }
 
   Future<void> updateProfile() async {
@@ -236,7 +225,7 @@ class _HomeModalAddState extends State<HomeModalAdd> {
         "telefone1": _telefoneController.text.trim(),
         "email": _emailController.text.trim(),
         "tipoAluno": 2,
-        "photo": "data:image/png;base64," + base64Imagess,
+        "photo": "data:image/png;base64,$base64Imagess",
       },
       "planos": jsonDecode(aa),
       "horarios": jsonDecode(bb),
@@ -271,6 +260,52 @@ class _HomeModalAddState extends State<HomeModalAdd> {
       }
     }
   }
+    final List<Map<String, dynamic>> _dataArray = []; //add this
+  String? _data = ""; //add this
+  void _onUpdate(int key, String value, chave) {
+    void addData() {
+      Map<String, dynamic> json = {
+        'id': key,
+        chave: value,
+        chave: value,
+        chave: value,
+        chave: value
+      };
+      _dataArray.add(json);
+      setState(() {
+        _data = _dataArray.toString();
+      });
+    }
+
+    if (_dataArray.isEmpty) {
+      addData();
+    } else {
+      _dataArray.asMap().entries.map((entry) {
+        if (entry.key == key && entry.value == chave) {
+          _dataArray[key][chave] = value;
+        }
+        print(entry.key);
+        print(entry.value);
+      });
+
+      for (var map in _dataArray) {
+        if (map["id"] == key) {
+          _dataArray[key][chave] = value;
+          setState(() {
+            _data = _dataArray.toString();
+          });
+          break;
+        }
+      }
+
+      for (var map in _dataArray) {
+        if (map["id"] == key) {
+          return;
+        }
+      }
+      addData();
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -298,37 +333,44 @@ class _HomeModalAddState extends State<HomeModalAdd> {
                     type: TextInputType.text,
                     keyField: "Nome",
                     controller: _nomeController,
+                    onPressed: (vale) => _onUpdate(1, "Nome",vale),
                   ),
                   CustomInputForm(
                       validator: EmailValidator.validate,
                       focusNode: _focusNode,
                       type: TextInputType.number,
                       keyField: "Email",
-                      controller: _emailController),
+                      controller: _emailController,
+                      onPressed: (vale) => _onUpdate(1, "Email",vale),),
+                      
                   CustomInputForm(
                       validator: EmailValidator.validate,
                       focusNode: _focusNode,
                       type: TextInputType.number,
                       keyField: "CPF",
-                      controller: _numCPFController),
+                      controller: _numCPFController,
+                      onPressed: (vale) => _onUpdate(1, "CPF",vale),),
                   CustomInputForm(
                       validator: EmailValidator.validate,
                       focusNode: _focusNode,
                       type: TextInputType.number,
                       keyField: "Telefone",
-                      controller: _telefoneController),
+                      controller: _telefoneController,
+                      onPressed: (vale) => _onUpdate(1, "TELEFONE",vale),),
                   CustomInputForm(
                       validator: EmailValidator.validate,
                       focusNode: _focusNode,
                       type: TextInputType.number,
                       keyField: "Numero CREF",
-                      controller: _numCREFController),
+                      controller: _numCREFController,
+                      onPressed: (vale) => _onUpdate(1, "CREF",vale),),
                   CustomInputForm(
                       validator: EmailValidator.validate,
                       focusNode: _focusNode,
                       type: TextInputType.number,
                       keyField: "Vlr Aula",
-                      controller: _vlrAulaController),
+                      controller: _vlrAulaController,
+                      onPressed: (vale) => _onUpdate(1, "VLRAULA",vale),),
                   InkWell(
                     onTap: () {
                       imagePicked();
@@ -503,8 +545,8 @@ class _HomeModalAddState extends State<HomeModalAdd> {
                       ),
                     ),
                   ),
-                  CustomComboBoxForm(),
-                  CustomDiasBoxForm(),
+                  const CustomComboBoxForm(),
+                  const CustomDiasBoxForm(),
                 ],
               ),
             ),
@@ -513,12 +555,12 @@ class _HomeModalAddState extends State<HomeModalAdd> {
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () {
-          final _form = _formKey.currentState!;
-          _form.validate();
+          final form = _formKey.currentState!;
+          form.validate();
           _focusNode.requestFocus();
           updateProfile();
         },
-        child: Icon(Icons.check),
+        child: const Icon(Icons.check),
       ),
     );
   }

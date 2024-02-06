@@ -2,8 +2,6 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import 'package:flutter/material.dart';
-import 'package:task_manager_flutter/data/utils/ensure_visible_when_focused.dart';
-import 'package:task_manager_flutter/data/constants/custom_colors.dart';
 
 import 'package:dropdown_button2/dropdown_button2.dart';
 

@@ -28,17 +28,26 @@ class ResponseForm {
 class Fields {
   String? label;
   String? fieldType;
+  String? validationField;
+  String? jsonName;
+  String? type;
   List<Options>? options;
 
   Fields({
     this.label,
     this.fieldType,
     this.options,
+    this.validationField,
+    this.jsonName,
+    this.type,
   });
 
   Fields.fromJson(Map<String, dynamic> json) {
    
     label = json['label'];
+    validationField = json['validationField'];
+    jsonName = json['jsonName'];
+    type = json['type'];
     if (json['options'] != null) {
       options = <Options>[];
       json['options'].forEach((v) {
@@ -54,6 +63,9 @@ class Fields {
     final Map<String, dynamic> data = <String, dynamic>{};
     
     data['label'] = label;
+    data['validationField'] = validationField;
+    data['jsonName'] = jsonName;
+    data['type'] = type;
   
     if (options != null) {
       data['options'] = options!.map((v) => v.toJson()).toList();

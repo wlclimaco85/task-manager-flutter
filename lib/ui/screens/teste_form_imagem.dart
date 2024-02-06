@@ -135,8 +135,8 @@ class _TestImagemAppState extends State<TestImagemApp> {
     if (retrieveError != null) {
       return retrieveError;
     }
-    return Padding(
-      padding: const EdgeInsets.all(10.0),
+    return const Padding(
+      padding: EdgeInsets.all(10.0),
       child: AspectRatioVideo(),
     );
   }
@@ -191,7 +191,7 @@ class _TestImagemAppState extends State<TestImagemApp> {
 
   Widget _buildInlineVideoPlayer(int index) {
     const double volume = kIsWeb ? 0.0 : 1.0;
-    return Center(child: AspectRatioVideo());
+    return const Center(child: AspectRatioVideo());
   }
 
   Widget _handlePreview() {
@@ -230,7 +230,7 @@ class _TestImagemAppState extends State<TestImagemApp> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('teste'),
+        title: const Text('teste'),
       ),
       body: Center(
         child: !kIsWeb && defaultTargetPlatform == TargetPlatform.android

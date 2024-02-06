@@ -15,7 +15,7 @@ class CustomInputHorarioForm extends StatelessWidget {
   CustomInputHorarioForm({
     Key? key,
     required this.validator,
-    required FocusNode this.focusNode,
+    required this.focusNode,
     this.type,
     required this.keyField,
     required this.controller,

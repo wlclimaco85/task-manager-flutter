@@ -2,7 +2,6 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:task_manager_flutter/ui/widgets/calendar_screen.dart';
 import 'package:task_manager_flutter/ui/screens/events_example.dart';
-import 'package:task_manager_flutter/ui/screens/range_example.dart';
 import 'package:task_manager_flutter/ui/screens/multi_example.dart';
 import 'package:task_manager_flutter/ui/screens/teste_form_imagem.dart';
 import 'package:task_manager_flutter/data/constants/custom_colors.dart';

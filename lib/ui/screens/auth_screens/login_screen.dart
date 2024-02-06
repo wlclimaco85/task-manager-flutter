@@ -9,7 +9,6 @@ import 'package:task_manager_flutter/ui/screens/auth_screens/email_verification_
 import 'package:task_manager_flutter/ui/screens/bottom_navbar_screen.dart';
 import 'package:task_manager_flutter/ui/widgets/custom_password_text_field.dart';
 import 'package:task_manager_flutter/ui/widgets/custom_text_form_field.dart';
-import 'package:task_manager_flutter/ui/widgets/signup_button.dart';
 import 'package:task_manager_flutter/ui/screens/auth_screens/signup_form_screen.dart';
 
 class LoginScreen extends StatefulWidget {

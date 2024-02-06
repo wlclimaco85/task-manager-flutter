@@ -1,0 +1,18 @@
+{
+    "sourceFile": "lib/ui/widgets/custom_input_dynamic_form.dart",
+    "activeCommit": 0,
+    "commits": [
+        {
+            "activePatchIndex": 0,
+            "patches": [
+                {
+                    "date": 1707243452422,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n"
+                }
+            ],
+            "date": 1707243452422,
+            "name": "Commit-0",
+            "content": "import 'package:flutter/material.dart';\r\nimport 'package:task_manager_flutter/data/constants/custom_colors.dart';\r\nimport 'package:task_manager_flutter/data/utils/ensure_visible_when_focused.dart';\r\n// Copyright 2019 Aleksander Woźniak\r\n// SPDX-License-Identifier: Apache-2.0\r\n\r\n\r\nclass CustomInputForm extends StatelessWidget {\r\n  String? Function(String?)? validator;\r\n  late FocusNode focusNode;\r\n  TextInputType? type;\r\n  String keyField;\r\n  Function(String?)? onPressed;\r\n\r\n\r\n  CustomInputForm({\r\n    Key? key,\r\n    required this.validator,\r\n    required this.focusNode,\r\n    this.type,\r\n    required this.keyField,\r\n    required this.onPressed,\r\n  }) : super(key: key);\r\n\r\n  @override\r\n  Widget build(BuildContext context) {\r\n    final platform = Theme.of(context).platform;\r\n    \r\n\r\n    return Padding(\r\n      padding: const EdgeInsets.symmetric(vertical: 3),\r\n      child: EnsureVisibleWhenFocused(\r\n        focusNode: focusNode,\r\n        child: TextFormField(\r\n          key: Key(keyField),\r\n          keyboardType: type ?? TextInputType.text,\r\n          decoration: InputDecoration(\r\n            fillColor: CustomColors().getAppFundoImput(),\r\n            filled: true,\r\n            border: const OutlineInputBorder(\r\n              borderRadius: BorderRadius.all(\r\n                Radius.circular(8.0),\r\n              ),\r\n              borderSide: BorderSide(\r\n                color: Colors.yellow,\r\n                width: 3.0,\r\n              ),\r\n            ),\r\n            labelStyle: TextStyle(color: CustomColors().getAppFundoImput(), fontSize: 16.0),\r\n            hintText: keyField,\r\n          ),\r\n          onChanged:onPressed,\r\n      //    onChanged: (value) => title = value,\r\n          validator: validator,\r\n        ),\r\n      ),\r\n    );\r\n  }\r\n}\r\n"
+        }
+    ]
+}

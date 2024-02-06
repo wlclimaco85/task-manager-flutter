@@ -1,9 +1,14 @@
 import 'dart:convert';
-
-import 'package:flutter/material.dart';
-
 import 'form_model.dart';
+import 'package:flutter/material.dart';
+import 'package:task_manager_flutter/data/utils/api_links.dart';
+import 'package:task_manager_flutter/data/models/network_response.dart';
+import 'package:task_manager_flutter/data/services/network_caller.dart';
+import 'package:task_manager_flutter/data/utils/personal_validation.dart';
+import 'package:task_manager_flutter/ui/widgets/custom_input_dynamic_form.dart';
+import 'package:task_manager_flutter/ui/screens/auth_screens/login_screen.dart';
 
+final List<Map<String, dynamic>> _dataArray = []; //add this
 class DynamicForm extends StatefulWidget {
   const DynamicForm({super.key});
 
@@ -11,18 +16,148 @@ class DynamicForm extends StatefulWidget {
   State<DynamicForm> createState() => _DynamicFormState();
 }
 
+class GetDynamicForm {
+  test() {
+    return _dataArray;
+  }
+}
+
 class _DynamicFormState extends State<DynamicForm> {
   List<ResponseForm> formResponse = [];
   bool isLoading = true;
+  late FocusNode _focusNode;
   var dropdownvalue;
   var dateController = TextEditingController();
   bool switchValue = false;
+  String? _data = ""; //add this
+
+
+  void _onUpdate(int key, String value, chave) {
+    void addData() {
+      Map<String, dynamic> json = {
+        'id': key,
+        chave: value,
+        chave: value,
+        chave: value,
+        chave: value
+      };
+      _dataArray.add(json);
+      setState(() {
+        _data = _dataArray.toString();
+      });
+    }
+
+    if (_dataArray.isEmpty) {
+      addData();
+    } else {
+      _dataArray.asMap().entries.map((entry) {
+        if (entry.key == key && entry.value == chave) {
+          _dataArray[key][chave] = value;
+        }
+        print(entry.key);
+        print(entry.value);
+      });
+
+      for (var map in _dataArray) {
+        if (map["id"] == key) {
+          _dataArray[key][chave] = value;
+          setState(() {
+            _data =  _dataArray.toString();
+          });
+          break;
+        }
+      }
+
+      for (var map in _dataArray) {
+        if (map["id"] == key) {
+          return;
+        }
+      }
+      addData();
+    }
+  }
+  String MapToJson(List<Map<String, dynamic>> map) {
+    String res = "";
+    bool isEntrou = false;
+    for (var s in map) {
+      res += "{";
+
+      for (String k in s.keys) {
+        //"[{"id":"0","diaAtene":"Segunda,Segunda,Terça","dtInicio":"10:00"
+        res += '"';
+        res += k;
+        res += '":"';
+        res += s[k].toString();
+        res += '",';
+      }
+      res = res.substring(0, res.length - 1);
+
+      res += "},";
+      isEntrou = true;
+    }
+    if (isEntrou) {
+      res = "${res.substring(0, res.length - 1)}";
+    } else {
+      res = "";
+    }
+
+    return res;
+  }
+
+    Future<void> insertAluno() async {
+   // isLoading = true;
+    if (mounted) {
+      setState(() {});
+    }
+    GetDynamicForm myObjectInstance = GetDynamicForm();
+    List<Map<String, dynamic>> dayName = myObjectInstance.test();
+
+    String aa = MapToJson(dayName);
+
+
+    Map<String, dynamic> requestBody = {
+      "aluno": jsonDecode(aa),
+    };
+    print(aa);
+    final NetworkResponse response =
+        await NetworkCaller().postRequest(ApiLinks.insertAluno, requestBody);
+    isLoading = false;
+    if (mounted) {
+      setState(() {});
+    }
+    if (response.isSuccess) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text("Profile update Successful"),
+          ),
+        );
+      }
+    } else {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text("Profile update Failed"),
+          ),
+        );
+      }
+    }
+  }
+
+
   @override
   void initState() {
+    _focusNode = FocusNode();
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       await getFromJson();
     });
+  }
+
+  @override
+  void dispose() {
+    _focusNode.dispose();
+    super.dispose();
   }
 
   getFromJson() async {
@@ -50,28 +185,104 @@ class _DynamicFormState extends State<DynamicForm> {
           ? const Center(
               child: CircularProgressIndicator(),
             )
-          : Padding(
-              padding: const EdgeInsets.all(8.0),
-              child: ListView.builder(
-                  itemCount: formResponse.length,
-                  shrinkWrap: true,
-                  itemBuilder: (context, index) {
-                    return Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          formResponse[index].title!,
-                          style: const TextStyle(
-                              fontSize: 16, fontWeight: FontWeight.bold),
-                        ),
-                        const SizedBox(height: 20),
-                        myFormType(index)
-                      ],
-                    );
-                  }),
+          : SingleChildScrollView(
+              child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: <Widget>[
+                    Container(
+                      color: const Color(0xFF5937B2),
+                      child: Padding(
+                        padding: const EdgeInsets.all(8.0),
+                        child: ListView.builder(
+                            itemCount: formResponse.length,
+                            shrinkWrap: true,
+                            itemBuilder: (context, index) {
+                              return Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    formResponse[index].title!,
+                                    style: const TextStyle(
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.bold),
+                                  ),
+                                  const SizedBox(height: 20),
+                                  myFormType(index),
+                                  Row(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      const Text(
+                                        "Have an Account?",
+                                        style: TextStyle(
+                                            fontWeight: FontWeight.w500),
+                                      ),
+                                      const SizedBox(
+                                        width: 2,
+                                      ),
+                                      TextButton(
+                                        onPressed: () {
+                                          Navigator.push(
+                                              context,
+                                              MaterialPageRoute(
+                                                  builder: (context) =>
+                                                      const LoginScreen()));
+                                        },
+                                        child: const Text(
+                                          "Login",
+                                          style: TextStyle(letterSpacing: .7),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ],
+                              );
+                            }),
+                      ),
+                    ),
+                  ]),
             ),
+            floatingActionButton: FloatingActionButton(
+            onPressed: () {
+              insertAluno();
+        },
+        child: const Icon(Icons.check),
+      ),
     );
   }
+
+  String? Function(String?)? validatord(String nameValidation){
+    switch (nameValidation){
+      case 'EMAIL':
+       return EmailValidator.validate;
+      break;
+      case 'TELEFONE':
+       return EmailValidator.validate;
+      break;
+      case 'CPF':
+       return EmailValidator.validate;
+      break;
+      case 'OBRIGATORIO':
+       return EmailValidator.validate;
+      break;
+      case 'NADA':
+       return EmailValidator.validate;
+      break;
+    }
+  } 
+
+  TextInputType? textInputType(String nameValidation){
+    switch (nameValidation){
+      case 'string':
+       return TextInputType.text;
+      break;
+      case 'email':
+       return TextInputType.emailAddress;
+      break;
+      case 'number':
+       return TextInputType.number;
+      break;
+    }
+  } 
 
   myFormType(index) {
     return ListView.separated(
@@ -80,18 +291,18 @@ class _DynamicFormState extends State<DynamicForm> {
       itemBuilder: (context, innerIndex) {
         return formResponse[index].fields![innerIndex].fieldType ==
                 "DatetimePicker"
-            ? myDatePicker()
+            ? myDatePicker(formResponse[index].fields![innerIndex].jsonName?? "Field")
             : formResponse[index].fields![innerIndex].fieldType == "TextInput"
-                ? TextField(
-                    decoration: InputDecoration(
-                      border: const OutlineInputBorder(),
-                      hintText: formResponse[index].fields![innerIndex].label,
-                    ),
-                  )
+                ? CustomInputForm(
+                      validator: validatord(formResponse[index].fields![innerIndex].label?? "NADA"),
+                      onPressed: (vale) => _onUpdate(0, vale?? "Field", formResponse[index].fields![innerIndex].jsonName?? "Field"),
+                      focusNode: _focusNode,
+                      type: textInputType(formResponse[index].fields![innerIndex].type?? "NADA"),
+                      keyField: formResponse[index].fields![innerIndex].label?? "Field")
                 : formResponse[index].fields![innerIndex].fieldType ==
                         "SelectList"
                     ? dropDownWidget(
-                        formResponse[index].fields![innerIndex].options)
+                        formResponse[index].fields![innerIndex].options, formResponse[index].fields![innerIndex].jsonName?? "Field")
                     : formResponse[index].fields![innerIndex].fieldType ==
                             "SwitchInput"
                         ? SwitchListTile(
@@ -101,6 +312,7 @@ class _DynamicFormState extends State<DynamicForm> {
                             onChanged: (value) {
                               setState(() {
                                 switchValue = !switchValue;
+                                _onUpdate(0, switchValue.toString(), formResponse[index].fields![innerIndex].jsonName?? "Field");
                               });
                             })
                         : const Text("Other type");
@@ -111,7 +323,7 @@ class _DynamicFormState extends State<DynamicForm> {
     );
   }
 
-  Widget myDatePicker() {
+  Widget myDatePicker(String field) {
     return GestureDetector(
         onTap: () {
           FocusScope.of(context).requestFocus(FocusNode());
@@ -119,7 +331,9 @@ class _DynamicFormState extends State<DynamicForm> {
         },
         child: AbsorbPointer(
           child: TextFormField(
-            onChanged: (value) {},
+            onChanged: (value) {
+              _onUpdate(0, value, field);
+            },
             controller: dateController,
             obscureText: false,
             cursorColor: Theme.of(context).primaryColor,
@@ -167,7 +381,7 @@ class _DynamicFormState extends State<DynamicForm> {
     }
   }
 
-  dropDownWidget(List<Options>? items) {
+  dropDownWidget(List<Options>? items,String value) {
     return DropdownButtonFormField<Options>(
       // Initial Value
       value: dropdownvalue,
@@ -182,7 +396,6 @@ class _DynamicFormState extends State<DynamicForm> {
         hintText: items!.first.optionLabel!,
       ),
       borderRadius: BorderRadius.circular(10),
-
 
       // Down Arrow Icon
       icon: const Icon(Icons.keyboard_arrow_down),
@@ -199,6 +412,7 @@ class _DynamicFormState extends State<DynamicForm> {
       onChanged: (newValue) {
         setState(() {
           dropdownvalue = newValue!;
+          _onUpdate(0, dropdownvalue.optionValue, value);
         });
       },
     );

@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:task_manager_flutter/data/utils/api_links.dart';
+import 'package:task_manager_flutter/ui/widgets/dynamic_form.dart';
 import 'package:task_manager_flutter/data/models/network_response.dart';
 import 'package:task_manager_flutter/data/services/network_caller.dart';
-import 'package:task_manager_flutter/data/utils/api_links.dart';
-import 'package:task_manager_flutter/ui/screens/auth_screens/login_screen.dart';
-import 'package:task_manager_flutter/ui/widgets/custom_text_form_field.dart';
 import 'package:task_manager_flutter/ui/widgets/screen_background.dart';
+import 'package:task_manager_flutter/ui/widgets/custom_text_form_field.dart';
+import 'package:task_manager_flutter/ui/screens/auth_screens/login_screen.dart';
 
 class SignUpFormScreen extends StatefulWidget {
   const SignUpFormScreen({super.key});
@@ -74,7 +75,18 @@ class _SignUpFormScreenState extends State<SignUpFormScreen> {
 
   @override
   Widget build(BuildContext context) {
+    return MaterialApp(
+      title: 'Flutter Demo',
+      theme: ThemeData(
+      
+        primarySwatch: Colors.blue,
+      ),
+      home: const DynamicForm(),
+    );
+  }
+/*  Widget build(BuildContext context) {
     return Scaffold(
+      
       body: ScreenBackground(
           child: SingleChildScrollView(
         child: Padding(
@@ -218,6 +230,6 @@ class _SignUpFormScreenState extends State<SignUpFormScreen> {
           ),
         ),
       )),
-    );
-  }
-}
+    ); 
+  } */
+} 

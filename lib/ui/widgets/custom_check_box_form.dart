@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:task_manager_flutter/data/constants/custom_colors.dart';
 
 int? selectedOption = 0;
 
@@ -48,7 +47,7 @@ class _LabeledCheckboxState extends State<LabeledCheckbox> {
         widgets.insert(0, _buildLabel(context));
       }
     }
-    String _selectedTransport = '';
+    String selectedTransport = '';
     return Padding(
       padding: const EdgeInsets.all(8.0),
       child: Center(
@@ -69,7 +68,7 @@ class _LabeledCheckboxState extends State<LabeledCheckbox> {
             Expanded(
               child: Card(
                 elevation: 5.0, // add this
-                child: Container(
+                child: SizedBox(
                   height: 100,
                   width: 40,
                   child: Column(
@@ -85,7 +84,7 @@ class _LabeledCheckboxState extends State<LabeledCheckbox> {
                           });
                         },
                       ),
-                      Text('Sim'),
+                      const Text('Sim'),
                     ],
                   ),
                 ),
@@ -115,7 +114,7 @@ class _LabeledCheckboxState extends State<LabeledCheckbox> {
                           });
                         },
                       ),
-                      Text('Não'),
+                      const Text('Não'),
                     ],
                   ),
                 ),
@@ -124,7 +123,7 @@ class _LabeledCheckboxState extends State<LabeledCheckbox> {
             Expanded(
               child: Card(
                 elevation: 5.0, // add this
-                child: Container(
+                child: SizedBox(
                   height: 100,
                   width: 40,
                   child: Column(
@@ -140,7 +139,7 @@ class _LabeledCheckboxState extends State<LabeledCheckbox> {
                           });
                         },
                       ),
-                      Text(
+                      const Text(
                         'Apenas Alunos',
                         textAlign: TextAlign.center,
                       ),
