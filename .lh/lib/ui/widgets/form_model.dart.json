@@ -1,0 +1,18 @@
+{
+    "sourceFile": "lib/ui/widgets/form_model.dart",
+    "activeCommit": 0,
+    "commits": [
+        {
+            "activePatchIndex": 0,
+            "patches": [
+                {
+                    "date": 1707188241909,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n"
+                }
+            ],
+            "date": 1707188241909,
+            "name": "Commit-0",
+            "content": "class ResponseForm {\r\n  String? title;\r\n  List<Fields>? fields;\r\n\r\n  ResponseForm({this.title, this.fields});\r\n\r\n  ResponseForm.fromJson(Map<String, dynamic> json) {\r\n    title = json['title'];\r\n    if (json['fields'] != null) {\r\n      fields = <Fields>[];\r\n      json['fields'].forEach((v) {\r\n        fields!.add(Fields.fromJson(v));\r\n      });\r\n    }\r\n  }\r\n\r\n  Map<String, dynamic> toJson() {\r\n    final Map<String, dynamic> data = <String, dynamic>{};\r\n    data['title'] = title;\r\n    if (fields != null) {\r\n      data['fields'] = fields!.map((v) => v.toJson()).toList();\r\n    }\r\n\r\n    return data;\r\n  }\r\n}\r\n\r\nclass Fields {\r\n  String? label;\r\n  String? fieldType;\r\n  List<Options>? options;\r\n\r\n  Fields({\r\n    this.label,\r\n    this.fieldType,\r\n    this.options,\r\n  });\r\n\r\n  Fields.fromJson(Map<String, dynamic> json) {\r\n   \r\n    label = json['label'];\r\n    if (json['options'] != null) {\r\n      options = <Options>[];\r\n      json['options'].forEach((v) {\r\n        options!.add(Options.fromJson(v));\r\n      });\r\n    }\r\n    \r\n    fieldType = json['fieldType'];\r\n  \r\n  }\r\n\r\n  Map<String, dynamic> toJson() {\r\n    final Map<String, dynamic> data = <String, dynamic>{};\r\n    \r\n    data['label'] = label;\r\n  \r\n    if (options != null) {\r\n      data['options'] = options!.map((v) => v.toJson()).toList();\r\n    }\r\n   \r\n    \r\n    data['fieldType'] = fieldType;\r\n\r\n    return data;\r\n  }\r\n}\r\n\r\nclass Options {\r\n  String? color;\r\n  bool? isFaulty;\r\n  String? optionLabel;\r\n  String? optionValue;\r\n\r\n  Options({this.color, this.isFaulty, this.optionLabel, this.optionValue});\r\n\r\n  Options.fromJson(Map<String, dynamic> json) {\r\n    color = json['color'];\r\n    isFaulty = json['is_faulty'];\r\n    optionLabel = json['optionLabel'];\r\n    optionValue = json['optionValue'];\r\n  }\r\n\r\n  Map<String, dynamic> toJson() {\r\n    final Map<String, dynamic> data = <String, dynamic>{};\r\n    data['optionLabel'] = optionLabel;\r\n    data['optionValue'] = optionValue;\r\n    return data;\r\n  }\r\n}"
+        }
+    ]
+}

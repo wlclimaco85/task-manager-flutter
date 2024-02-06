@@ -1,0 +1,18 @@
+{
+    "sourceFile": "assets/json/form.json",
+    "activeCommit": 0,
+    "commits": [
+        {
+            "activePatchIndex": 0,
+            "patches": [
+                {
+                    "date": 1707188407061,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n"
+                }
+            ],
+            "date": 1707188407061,
+            "name": "Commit-0",
+            "content": "[\r\n    {\r\n        \"title\": \"Title 1\",\r\n        \"fields\": [\r\n            {\r\n                \"label\": \"Text\",\r\n                \"fieldType\": \"TextInput\"\r\n            }\r\n        ]\r\n    },\r\n    {\r\n        \"title\": \"Title 2\",\r\n        \"fields\": [\r\n            {\r\n                \"label\": \"Date time\",\r\n                \"fieldType\": \"DatetimePicker\"\r\n            },\r\n            {\r\n                \"label\": \"T&C\",\r\n                \"fieldType\": \"SwitchInput\"\r\n            },\r\n            {\r\n                \"label\": \"Select\",\r\n                \"fieldType\": \"SelectList\",\r\n                \"options\": [\r\n                    {\r\n                        \"color\": \"#FFFFFF\",\r\n                        \"is_faulty\": false,\r\n                        \"optionLabel\": \"Option Label 1\",\r\n                        \"optionValue\": \"Option 1\"\r\n                    },\r\n                    {\r\n                        \"color\": \"#FFFFFF\",\r\n                        \"is_faulty\": false,\r\n                        \"optionLabel\": \"Option Label 2\",\r\n                        \"optionValue\": \"Option 2\"\r\n                    },\r\n                    {\r\n                        \"color\": \"#FFFFFF\",\r\n                        \"is_faulty\": false,\r\n                        \"optionLabel\": \"Option Label 3\",\r\n                        \"optionValue\": \"Option 3\"\r\n                    }\r\n                ]\r\n            }\r\n        ]\r\n    }\r\n]"
+        }
+    ]
+}
