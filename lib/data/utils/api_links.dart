@@ -1,6 +1,10 @@
 class ApiLinks {
   ApiLinks._();
+<<<<<<< HEAD
   static const String _baseIp = "http://192.168.12.23"; // "http://192.168.56.1"; //"http://192.168.12.23"; 
+=======
+  static const String _baseIp = "http://192.168.56.1"; //"http://192.168.12.23";
+>>>>>>> 5ed84be6304aca9a625da4ffddb5956bb3eddd8b
   static const String _baseUrl = 'https://task.teamrabbil.com/api/v1';
   static const String _baseUrlNew = '$_baseIp:8088/boletobancos';
   //static const String _baseUrlNew =
