@@ -1,13 +1,13 @@
 class ApiLinks {
   ApiLinks._();
-  static const String _baseIp = "http://192.168.12.23"; //http://192.168.56.1
+  static const String _baseIp = "http://192.168.56.1"; //"http://192.168.12.23";
   static const String _baseUrl = 'https://task.teamrabbil.com/api/v1';
   static const String _baseUrlNew = '$_baseIp:8088/boletobancos';
   //static const String _baseUrlNew =
   //    'https://academia-app-919f42758cd6.herokuapp.com/boletobancos';
   static const String allPersonal = '$_baseUrlNew/personal/findAll';
   static const String insertPersonal = '$_baseUrlNew/personal/inserir';
-  static const String insertAluno = '$_baseUrlNew/rest/auth/insert';
+  static const String insertAluno = '$_baseUrlNew/aluno/insert';
   static String regestration = '$_baseUrl/registration';
   static String profileUpdate = '$_baseUrl/profileUpdate';
   // static String login = '$_baseUrl/login';
