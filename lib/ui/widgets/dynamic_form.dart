@@ -96,7 +96,7 @@ class _DynamicFormState extends State<DynamicForm> {
       isEntrou = true;
     }
     if (isEntrou) {
-      res = "${res.substring(0, res.length - 1)}";
+      res = res.substring(0, res.length - 1);
     } else {
       res = "";
     }
@@ -116,9 +116,9 @@ class _DynamicFormState extends State<DynamicForm> {
 
 
     Map<String, dynamic> requestBody = {
-      "aluno": jsonDecode(aa),
+      "aluno" : jsonDecode(aa),
     };
-    print(aa);
+    print(jsonEncode(requestBody));
     final NetworkResponse response =
         await NetworkCaller().postRequest(ApiLinks.insertAluno, requestBody);
     isLoading = false;
@@ -268,6 +268,7 @@ class _DynamicFormState extends State<DynamicForm> {
        return EmailValidator.validate;
       break;
     }
+    return null;
   } 
 
   TextInputType? textInputType(String nameValidation){
@@ -282,6 +283,7 @@ class _DynamicFormState extends State<DynamicForm> {
        return TextInputType.number;
       break;
     }
+    return null;
   } 
 
   myFormType(index) {

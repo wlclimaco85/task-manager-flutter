@@ -41,9 +41,9 @@ class NetworkCaller {
       Response response = await post(
         Uri.parse(url),
         headers: {
-          'Content-Type': 'application/json',
-          'Authorization': (url.contains('login') || url.contains('aluno/insert'))
-              ? 'c2Fua2h5YTpzdXA='
+          'Content-Type': 'application/json;charset=ISO-8859-1',
+          'Authorization': url.contains('login') 
+             ? 'c2Fua2h5YTpzdXA='
               : 'Bearer ${AuthUtility.userInfo.token}',
           'Access-Control-Allow-Origin': '*',
           'Access-Control-Allow-Credentials': 'true',
