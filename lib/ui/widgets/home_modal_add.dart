@@ -15,7 +15,6 @@ import 'package:task_manager_flutter/ui/widgets/custom_plano_box_form.dart';
 import 'package:task_manager_flutter/ui/widgets/custom_check_box_form.dart';
 import 'package:task_manager_flutter/ui/widgets/custom_horario_box_form.dart';
 
-
 class HomeModalAdd extends StatefulWidget {
   const HomeModalAdd({super.key});
   @override
@@ -260,7 +259,8 @@ class _HomeModalAddState extends State<HomeModalAdd> {
       }
     }
   }
-    final List<Map<String, dynamic>> _dataArray = []; //add this
+
+  final List<Map<String, dynamic>> _dataArray = []; //add this
   String? _data = ""; //add this
   void _onUpdate(int key, String value, chave) {
     void addData() {
@@ -333,44 +333,48 @@ class _HomeModalAddState extends State<HomeModalAdd> {
                     type: TextInputType.text,
                     keyField: "Nome",
                     controller: _nomeController,
-                    onPressed: (vale) => _onUpdate(1, "Nome",vale),
+                    onPressed: (vale) => _onUpdate(0, "Nome", vale),
                   ),
                   CustomInputForm(
-                      validator: EmailValidator.validate,
-                      focusNode: _focusNode,
-                      type: TextInputType.number,
-                      keyField: "Email",
-                      controller: _emailController,
-                      onPressed: (vale) => _onUpdate(1, "Email",vale),),
-                      
+                    validator: EmailValidator.validate,
+                    focusNode: _focusNode,
+                    type: TextInputType.number,
+                    keyField: "Email",
+                    controller: _emailController,
+                    onPressed: (vale) => _onUpdate(0, "Email", vale),
+                  ),
                   CustomInputForm(
-                      validator: EmailValidator.validate,
-                      focusNode: _focusNode,
-                      type: TextInputType.number,
-                      keyField: "CPF",
-                      controller: _numCPFController,
-                      onPressed: (vale) => _onUpdate(1, "CPF",vale),),
+                    validator: EmailValidator.validate,
+                    focusNode: _focusNode,
+                    type: TextInputType.number,
+                    keyField: "CPF",
+                    controller: _numCPFController,
+                    onPressed: (vale) => _onUpdate(0, "CPF", vale),
+                  ),
                   CustomInputForm(
-                      validator: EmailValidator.validate,
-                      focusNode: _focusNode,
-                      type: TextInputType.number,
-                      keyField: "Telefone",
-                      controller: _telefoneController,
-                      onPressed: (vale) => _onUpdate(1, "TELEFONE",vale),),
+                    validator: EmailValidator.validate,
+                    focusNode: _focusNode,
+                    type: TextInputType.number,
+                    keyField: "Telefone",
+                    controller: _telefoneController,
+                    onPressed: (vale) => _onUpdate(0, "TELEFONE", vale),
+                  ),
                   CustomInputForm(
-                      validator: EmailValidator.validate,
-                      focusNode: _focusNode,
-                      type: TextInputType.number,
-                      keyField: "Numero CREF",
-                      controller: _numCREFController,
-                      onPressed: (vale) => _onUpdate(1, "CREF",vale),),
+                    validator: EmailValidator.validate,
+                    focusNode: _focusNode,
+                    type: TextInputType.number,
+                    keyField: "Numero CREF",
+                    controller: _numCREFController,
+                    onPressed: (vale) => _onUpdate(0, "CREF", vale),
+                  ),
                   CustomInputForm(
-                      validator: EmailValidator.validate,
-                      focusNode: _focusNode,
-                      type: TextInputType.number,
-                      keyField: "Vlr Aula",
-                      controller: _vlrAulaController,
-                      onPressed: (vale) => _onUpdate(1, "VLRAULA",vale),),
+                    validator: EmailValidator.validate,
+                    focusNode: _focusNode,
+                    type: TextInputType.number,
+                    keyField: "Vlr Aula",
+                    controller: _vlrAulaController,
+                    onPressed: (vale) => _onUpdate(0, "VLRAULA", vale),
+                  ),
                   InkWell(
                     onTap: () {
                       imagePicked();

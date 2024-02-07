@@ -3,7 +3,7 @@
     "activeCommit": 0,
     "commits": [
         {
-            "activePatchIndex": 10,
+            "activePatchIndex": 13,
             "patches": [
                 {
                     "date": 1707252363953,
@@ -48,6 +48,18 @@
                 {
                     "date": 1707313552472,
                     "content": "Index: \n===================================================================\n--- \n+++ \n@@ -41,15 +41,15 @@\n       Response response = await post(\r\n         Uri.parse(url),\r\n         headers: {\r\n           'Content-Type': 'application/json;charset=ISO-8859-1',\r\n-       //   'Authorization': url.contains('login') \r\n-       //       ? 'c2Fua2h5YTpzdXA='\r\n-       //       : 'Bearer ${AuthUtility.userInfo.token}',\r\n-        //  'Access-Control-Allow-Origin': '*',\r\n-       //   'Access-Control-Allow-Credentials': 'true',\r\n-        //  'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',\r\n-        //  'Access-Control-Allow-Headers': 'Origin, Content-Type, Accept',\r\n+          'Authorization': url.contains('login') \r\n+             ? 'c2Fua2h5YTpzdXA='\r\n+              : 'Bearer ${AuthUtility.userInfo.token}',\r\n+          'Access-Control-Allow-Origin': '*',\r\n+          'Access-Control-Allow-Credentials': 'true',\r\n+          'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',\r\n+          'Access-Control-Allow-Headers': 'Origin, Content-Type, Accept',\r\n         },\r\n         body: jsonEncode(body),\r\n       );\r\n       if (response.statusCode == 200 || response.statusCode == 201) {\r\n"
+                },
+                {
+                    "date": 1707317433515,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -41,11 +41,11 @@\n       Response response = await post(\r\n         Uri.parse(url),\r\n         headers: {\r\n           'Content-Type': 'application/json;charset=ISO-8859-1',\r\n-          'Authorization': url.contains('login') \r\n-             ? 'c2Fua2h5YTpzdXA='\r\n-              : 'Bearer ${AuthUtility.userInfo.token}',\r\n+      //    'Authorization': url.contains('login') \r\n+     //        ? 'c2Fua2h5YTpzdXA='\r\n+     //         : 'Bearer ${AuthUtility.userInfo.token}',\r\n           'Access-Control-Allow-Origin': '*',\r\n           'Access-Control-Allow-Credentials': 'true',\r\n           'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',\r\n           'Access-Control-Allow-Headers': 'Origin, Content-Type, Accept',\r\n"
+                },
+                {
+                    "date": 1707317964681,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -40,8 +40,9 @@\n       Response response = await post(\r\n         Uri.parse(url),\r\n         headers: {\r\n           'Content-Type': 'application/json;charset=ISO-8859-1',\r\n+          'Authorization' : 'c2Fua2h5YTpzdXA=',\r\n           //    'Authorization': url.contains('login')\r\n           //        ? 'c2Fua2h5YTpzdXA='\r\n           //         : 'Bearer ${AuthUtility.userInfo.token}',\r\n           'Access-Control-Allow-Origin': '*',\r\n"
+                },
+                {
+                    "date": 1707318262676,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -40,9 +40,9 @@\n       Response response = await post(\r\n         Uri.parse(url),\r\n         headers: {\r\n           'Content-Type': 'application/json;charset=ISO-8859-1',\r\n-          'Authorization': 'c2Fua2h5YTpzdXA=',\r\n+          'Authorization': 'Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ3bGNsaW1hY29AZ21haWwuY29tIiwiZmlyc3ROYW1lIjoid2xjbGltYWNvQGdtYWlsLmNvbSIsImxhc3ROYW1lIjoid2xjbGltYWNvQGdtYWlsLmNvbSIsImV4cCI6MTkxNzgxMjg2Nn0._M1meDtyoQOMh3m30S4clJXu42SD-kGrjxkJ-4xeLVI',\r\n           //    'Authorization': url.contains('login')\r\n           //        ? 'c2Fua2h5YTpzdXA='\r\n           //         : 'Bearer ${AuthUtility.userInfo.token}',\r\n           'Access-Control-Allow-Origin': '*',\r\n"
                 }
             ],
             "date": 1707252363953,

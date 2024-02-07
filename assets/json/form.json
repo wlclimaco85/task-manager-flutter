@@ -95,8 +95,8 @@
             },
             {
                 "label": "Senha",
-                "jsonName" : "objetivo",
-                "fieldType": "senha",
+                "jsonName" : "Senha",
+                "fieldType": "TextInput",
                 "type" : "string"
             },
             {

@@ -9,6 +9,7 @@ import 'package:task_manager_flutter/ui/widgets/custom_input_dynamic_form.dart';
 import 'package:task_manager_flutter/ui/screens/auth_screens/login_screen.dart';
 
 final List<Map<String, dynamic>> _dataArray = []; //add this
+
 class DynamicForm extends StatefulWidget {
   const DynamicForm({super.key});
 
@@ -30,7 +31,6 @@ class _DynamicFormState extends State<DynamicForm> {
   var dateController = TextEditingController();
   bool switchValue = false;
   String? _data = ""; //add this
-
 
   void _onUpdate(int key, String value, chave) {
     void addData() {
@@ -62,7 +62,7 @@ class _DynamicFormState extends State<DynamicForm> {
         if (map["id"] == key) {
           _dataArray[key][chave] = value;
           setState(() {
-            _data =  _dataArray.toString();
+            _data = _dataArray.toString();
           });
           break;
         }
@@ -76,6 +76,7 @@ class _DynamicFormState extends State<DynamicForm> {
       addData();
     }
   }
+
   String MapToJson(List<Map<String, dynamic>> map) {
     String res = "";
     bool isEntrou = false;
@@ -104,8 +105,8 @@ class _DynamicFormState extends State<DynamicForm> {
     return res;
   }
 
-    Future<void> insertAluno() async {
-   // isLoading = true;
+  Future<void> insertAluno() async {
+    isLoading = true;
     if (mounted) {
       setState(() {});
     }
@@ -114,9 +115,8 @@ class _DynamicFormState extends State<DynamicForm> {
 
     String aa = MapToJson(dayName);
 
-
     Map<String, dynamic> requestBody = {
-      "aluno" : jsonDecode(aa),
+      "aluno": jsonDecode(aa),
     };
     print(jsonEncode(requestBody));
     final NetworkResponse response =
@@ -143,7 +143,6 @@ class _DynamicFormState extends State<DynamicForm> {
       }
     }
   }
-
 
   @override
   void initState() {
@@ -241,50 +240,50 @@ class _DynamicFormState extends State<DynamicForm> {
                     ),
                   ]),
             ),
-            floatingActionButton: FloatingActionButton(
-            onPressed: () {
-              insertAluno();
+      floatingActionButton: FloatingActionButton(
+        onPressed: () {
+          insertAluno();
         },
         child: const Icon(Icons.check),
       ),
     );
   }
 
-  String? Function(String?)? validatord(String nameValidation){
-    switch (nameValidation){
+  String? Function(String?)? validatord(String nameValidation) {
+    switch (nameValidation) {
       case 'EMAIL':
-       return EmailValidator.validate;
-      break;
+        return EmailValidator.validate;
+        break;
       case 'TELEFONE':
-       return EmailValidator.validate;
-      break;
+        return EmailValidator.validate;
+        break;
       case 'CPF':
-       return EmailValidator.validate;
-      break;
+        return EmailValidator.validate;
+        break;
       case 'OBRIGATORIO':
-       return EmailValidator.validate;
-      break;
+        return EmailValidator.validate;
+        break;
       case 'NADA':
-       return EmailValidator.validate;
-      break;
+        return EmailValidator.validate;
+        break;
     }
     return null;
-  } 
+  }
 
-  TextInputType? textInputType(String nameValidation){
-    switch (nameValidation){
+  TextInputType? textInputType(String nameValidation) {
+    switch (nameValidation) {
       case 'string':
-       return TextInputType.text;
-      break;
+        return TextInputType.text;
+        break;
       case 'email':
-       return TextInputType.emailAddress;
-      break;
+        return TextInputType.emailAddress;
+        break;
       case 'number':
-       return TextInputType.number;
-      break;
+        return TextInputType.number;
+        break;
     }
     return null;
-  } 
+  }
 
   myFormType(index) {
     return ListView.separated(
@@ -293,18 +292,29 @@ class _DynamicFormState extends State<DynamicForm> {
       itemBuilder: (context, innerIndex) {
         return formResponse[index].fields![innerIndex].fieldType ==
                 "DatetimePicker"
-            ? myDatePicker(formResponse[index].fields![innerIndex].jsonName?? "Field")
+            ? myDatePicker(
+                formResponse[index].fields![innerIndex].jsonName ?? "Field")
             : formResponse[index].fields![innerIndex].fieldType == "TextInput"
                 ? CustomInputForm(
-                      validator: validatord(formResponse[index].fields![innerIndex].label?? "NADA"),
-                      onPressed: (vale) => _onUpdate(0, vale?? "Field", formResponse[index].fields![innerIndex].jsonName?? "Field"),
-                      focusNode: _focusNode,
-                      type: textInputType(formResponse[index].fields![innerIndex].type?? "NADA"),
-                      keyField: formResponse[index].fields![innerIndex].label?? "Field")
+                    validator: validatord(
+                        formResponse[index].fields![innerIndex].label ??
+                            "NADA"),
+                    onPressed: (vale) => _onUpdate(
+                        0,
+                        vale ?? "Field",
+                        formResponse[index].fields![innerIndex].jsonName ??
+                            "Field"),
+                    focusNode: _focusNode,
+                    type: textInputType(
+                        formResponse[index].fields![innerIndex].type ?? "NADA"),
+                    keyField: formResponse[index].fields![innerIndex].label ??
+                        "Field")
                 : formResponse[index].fields![innerIndex].fieldType ==
                         "SelectList"
                     ? dropDownWidget(
-                        formResponse[index].fields![innerIndex].options, formResponse[index].fields![innerIndex].jsonName?? "Field")
+                        formResponse[index].fields![innerIndex].options,
+                        formResponse[index].fields![innerIndex].jsonName ??
+                            "Field")
                     : formResponse[index].fields![innerIndex].fieldType ==
                             "SwitchInput"
                         ? SwitchListTile(
@@ -314,7 +324,13 @@ class _DynamicFormState extends State<DynamicForm> {
                             onChanged: (value) {
                               setState(() {
                                 switchValue = !switchValue;
-                                _onUpdate(0, switchValue.toString(), formResponse[index].fields![innerIndex].jsonName?? "Field");
+                                _onUpdate(
+                                    0,
+                                    switchValue.toString(),
+                                    formResponse[index]
+                                            .fields![innerIndex]
+                                            .jsonName ??
+                                        "Field");
                               });
                             })
                         : const Text("Other type");
@@ -383,7 +399,7 @@ class _DynamicFormState extends State<DynamicForm> {
     }
   }
 
-  dropDownWidget(List<Options>? items,String value) {
+  dropDownWidget(List<Options>? items, String value) {
     return DropdownButtonFormField<Options>(
       // Initial Value
       value: dropdownvalue,
