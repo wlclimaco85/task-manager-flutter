@@ -5,12 +5,14 @@ class InputBuscarField extends StatelessWidget {
       {super.key,
       required this.hint,
       required this.obscure,
-      required this.icon});
+      required this.icon,
+      required this.onPresseds
+      });
 
   final String hint;
   final bool obscure;
   final IconData icon;
-
+  final void Function()? onPresseds;
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -56,7 +58,7 @@ class InputBuscarField extends StatelessWidget {
                         ),
                       ),
                       contentPadding: const EdgeInsets.all(10.0),
-                      hintText: 'Buscar Personal',
+                      hintText: hint,
                       hintStyle: const TextStyle(
                         color: Colors.black,
                         fontSize: 15.0,
@@ -94,8 +96,8 @@ class InputBuscarField extends StatelessWidget {
                   padding: const EdgeInsets.all(0.0),
                   color: const Color(0xFFFA903A),
                   tooltip: 'Adicionar Personal',
-                  icon: Image.asset('assets/images/adcionar.ico'),
-                  onPressed: null,
+                  icon: Image.asset('assets/images/adcionarNew.ico'),
+                  onPressed: onPresseds,
                 ),
               ),
             ),

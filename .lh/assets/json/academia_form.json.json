@@ -1,0 +1,46 @@
+{
+    "sourceFile": "assets/json/academia_form.json",
+    "activeCommit": 0,
+    "commits": [
+        {
+            "activePatchIndex": 7,
+            "patches": [
+                {
+                    "date": 1708035107986,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n"
+                },
+                {
+                    "date": 1708039740843,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -49,9 +49,15 @@\n             {\r\n                 \"label\": \"Cidade\",\r\n                 \"jsonName\" : \"cidade\",\r\n                 \"fieldType\": \"TextInput\",\r\n-                \"type\" : \"foto\"\r\n+                \"type\" : \"string\"\r\n+            },\r\n+            {\r\n+                \"label\": \"foto\",\r\n+                \"jsonName\" : \"foto\",\r\n+                \"fieldType\": \"foto\",\r\n+                \"type\" : \"string\"\r\n             }\r\n         ]\r\n     }\r\n ]\n\\ No newline at end of file\n"
+                },
+                {
+                    "date": 1708040316027,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -52,12 +52,24 @@\n                 \"fieldType\": \"TextInput\",\r\n                 \"type\" : \"string\"\r\n             },\r\n             {\r\n-                \"label\": \"foto\",\r\n+                \"label\": \"Foto\",\r\n                 \"jsonName\" : \"foto\",\r\n                 \"fieldType\": \"foto\",\r\n                 \"type\" : \"string\"\r\n+            },\r\n+            {\r\n+                \"label\": \"Planos\",\r\n+                \"jsonName\" : \"planos\",\r\n+                \"fieldType\": \"Plano\",\r\n+                \"type\" : \"string\"\r\n+            },\r\n+            {\r\n+                \"label\": \"Horarios\",\r\n+                \"jsonName\" : \"horarios\",\r\n+                \"fieldType\": \"Agenda\",\r\n+                \"type\" : \"string\"\r\n             }\r\n         ]\r\n     }\r\n ]\n\\ No newline at end of file\n"
+                },
+                {
+                    "date": 1708041106001,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -68,8 +68,13 @@\n                 \"label\": \"Horarios\",\r\n                 \"jsonName\" : \"horarios\",\r\n                 \"fieldType\": \"Agenda\",\r\n                 \"type\" : \"string\"\r\n+            },{\r\n+                \"label\": \"Cidade\",\r\n+                \"jsonName\" : \"cidade\",\r\n+                \"fieldType\": \"TextInput\",\r\n+                \"type\" : \"string\"\r\n             }\r\n         ]\r\n     }\r\n ]\n\\ No newline at end of file\n"
+                },
+                {
+                    "date": 1708041181367,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -69,10 +69,10 @@\n                 \"jsonName\" : \"horarios\",\r\n                 \"fieldType\": \"Agenda\",\r\n                 \"type\" : \"string\"\r\n             },{\r\n-                \"label\": \"Cidade\",\r\n-                \"jsonName\" : \"cidade\",\r\n+                \"label\": \"Cidades\",\r\n+                \"jsonName\" : \"cidades\",\r\n                 \"fieldType\": \"TextInput\",\r\n                 \"type\" : \"string\"\r\n             }\r\n         ]\r\n"
+                },
+                {
+                    "date": 1708041839180,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -2,9 +2,9 @@\n     {\r\n         \"title\": \"Cadastro Pessoal\",\r\n         \"fields\": [\r\n             {\r\n-                \"label\": \"Nome\",\r\n+                \"label\": \"Nomes\",\r\n                 \"fieldType\": \"TextInput\",\r\n                 \"validationField\": \"EmailValidator\",\r\n                 \"jsonName\" : \"nome\" ,\r\n                 \"type\" : \"string\"\r\n"
+                },
+                {
+                    "date": 1708041915053,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -56,8 +56,18 @@\n                 \"label\": \"Foto\",\r\n                 \"jsonName\" : \"foto\",\r\n                 \"fieldType\": \"foto\",\r\n                 \"type\" : \"string\"\r\n+            },{\r\n+                \"label\": \"Cidadess\",\r\n+                \"jsonName\" : \"cidadess\",\r\n+                \"fieldType\": \"TextInput\",\r\n+                \"type\" : \"string\"\r\n+            },{\r\n+                \"label\": \"Cidadesss\",\r\n+                \"jsonName\" : \"cidadesss\",\r\n+                \"fieldType\": \"TextInput\",\r\n+                \"type\" : \"string\"\r\n             },\r\n             {\r\n                 \"label\": \"Planos\",\r\n                 \"jsonName\" : \"planos\",\r\n@@ -68,13 +78,8 @@\n                 \"label\": \"Horarios\",\r\n                 \"jsonName\" : \"horarios\",\r\n                 \"fieldType\": \"Agenda\",\r\n                 \"type\" : \"string\"\r\n-            },{\r\n-                \"label\": \"Cidades\",\r\n-                \"jsonName\" : \"cidades\",\r\n-                \"fieldType\": \"TextInput\",\r\n-                \"type\" : \"string\"\r\n             }\r\n         ]\r\n     }\r\n ]\n\\ No newline at end of file\n"
+                },
+                {
+                    "date": 1708042609116,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -28,8 +28,14 @@\n                 \"fieldType\": \"TextInput\",\r\n                 \"type\" : \"string\"\r\n             },\r\n             {\r\n+                \"label\": \"Horarios\",\r\n+                \"jsonName\" : \"horarios\",\r\n+                \"fieldType\": \"Agenda\",\r\n+                \"type\" : \"string\"\r\n+            },\r\n+            {\r\n                 \"label\": \"Endereço\",\r\n                 \"jsonName\" : \"logradouro\",\r\n                 \"fieldType\": \"TextInput\",\r\n                 \"type\" : \"string\"\r\n@@ -72,14 +78,8 @@\n                 \"label\": \"Planos\",\r\n                 \"jsonName\" : \"planos\",\r\n                 \"fieldType\": \"Plano\",\r\n                 \"type\" : \"string\"\r\n-            },\r\n-            {\r\n-                \"label\": \"Horarios\",\r\n-                \"jsonName\" : \"horarios\",\r\n-                \"fieldType\": \"Agenda\",\r\n-                \"type\" : \"string\"\r\n             }\r\n         ]\r\n     }\r\n ]\n\\ No newline at end of file\n"
+                }
+            ],
+            "date": 1708035107986,
+            "name": "Commit-0",
+            "content": "[\r\n    {\r\n        \"title\": \"Cadastro Pessoal\",\r\n        \"fields\": [\r\n            {\r\n                \"label\": \"Nome\",\r\n                \"fieldType\": \"TextInput\",\r\n                \"validationField\": \"EmailValidator\",\r\n                \"jsonName\" : \"nome\" ,\r\n                \"type\" : \"string\"\r\n\r\n            },\r\n            {\r\n                \"label\": \"Email\",\r\n                \"fieldType\": \"TextInput\",\r\n                \"jsonName\" : \"email\" ,\r\n                \"type\" : \"email\"\r\n            },\r\n            {\r\n                \"label\": \"CNPJ\",\r\n                \"fieldType\": \"TextInput\",\r\n                \"jsonName\" : \"cpf\" ,\r\n                \"type\" : \"string\"\r\n            },\r\n            {\r\n                \"label\": \"Telefone\",\r\n                \"jsonName\" : \"telefone\",\r\n                \"fieldType\": \"TextInput\",\r\n                \"type\" : \"string\"\r\n            },\r\n            {\r\n                \"label\": \"Endereço\",\r\n                \"jsonName\" : \"logradouro\",\r\n                \"fieldType\": \"TextInput\",\r\n                \"type\" : \"string\"\r\n            },\r\n            {\r\n                \"label\": \"Numero\",\r\n                \"jsonName\" : \"numero\",\r\n                \"fieldType\": \"TextInput\",\r\n                \"type\" : \"string\"\r\n            },\r\n            {\r\n                \"label\": \"Bairro\",\r\n                \"jsonName\" : \"bairro\",\r\n                \"fieldType\": \"TextInput\",\r\n                \"type\" : \"string\"\r\n            },\r\n            {\r\n                \"label\": \"Cidade\",\r\n                \"jsonName\" : \"cidade\",\r\n                \"fieldType\": \"TextInput\",\r\n                \"type\" : \"foto\"\r\n            }\r\n        ]\r\n    }\r\n]"
+        }
+    ]
+}

@@ -3,20 +3,21 @@ import 'package:task_manager_flutter/ui/widgets/home_fab.dart';
 import 'package:task_manager_flutter/data/utils/api_links.dart';
 import 'package:task_manager_flutter/ui/widgets/user_banners.dart';
 import 'package:task_manager_flutter/ui/screens/update_profile.dart';
-import 'package:task_manager_flutter/ui/widgets/home_modal_add.dart';
 import 'package:task_manager_flutter/ui/widgets/home_list_model.dart';
 import 'package:task_manager_flutter/data/models/network_response.dart';
 import 'package:task_manager_flutter/data/services/network_caller.dart';
 import 'package:task_manager_flutter/ui/widgets/input_field_busca.dart';
-import 'package:task_manager_flutter/ui/widgets/itens_list_personal.dart';
+import 'package:task_manager_flutter/ui/widgets/itens_list_academia.dart';
+import 'package:task_manager_flutter/ui/widgets/academia_dynamic_form.dart';
 
-class PersonalScreen extends StatefulWidget {
-  const PersonalScreen({
+
+class AcademiaScreen extends StatefulWidget {
+  const AcademiaScreen({
     Key? key,
   }) : super(key: key);
 
   @override
-  State<PersonalScreen> createState() => _PersonalScreenState();
+  State<AcademiaScreen> createState() => _AcademiaScreenState();
 }
 
 final TextEditingController _taskNameController = TextEditingController();
@@ -25,10 +26,10 @@ final TextEditingController _taskDescriptionController =
 List<Widget> mywidgets = [];
 bool _isLoading = false;
 
-class _PersonalScreenState extends State<PersonalScreen> {
+class _AcademiaScreenState extends State<AcademiaScreen> {
   @override
   void initState() {
-    findAllPersonal();
+    findAllAcademia();
     super.initState();
   }
 
@@ -42,10 +43,7 @@ class _PersonalScreenState extends State<PersonalScreen> {
 
   bool _addNewTaskLoading = false;
 
-  void onPresseds() => Navigator.push(context,
-            MaterialPageRoute(builder: (context) => const HomeModalAdd()));
-
-  Future<void> findAllPersonal() async {
+  Future<void> findAllAcademia() async {
     _isLoading = true;
     _addNewTaskLoading = true;
     if (mounted) {
@@ -56,8 +54,11 @@ class _PersonalScreenState extends State<PersonalScreen> {
       "id": 1,
     };
 
+    void onPressedss() => Navigator.push(context,
+                MaterialPageRoute(builder: (context) => const AcademiaDynamicForm()));
+
     final NetworkResponse response =
-        await NetworkCaller().postRequest(ApiLinks.allPersonal, requestBody);
+        await NetworkCaller().postRequest(ApiLinks.allAcademia, requestBody);
     _addNewTaskLoading = false;
     if (mounted) {
       setState(() {});
@@ -67,10 +68,10 @@ class _PersonalScreenState extends State<PersonalScreen> {
       _taskDescriptionController.clear();
       if (mounted) {
         dynamic data = response.body?['data'];
-        List<dynamic> datas = data['personalDto'];
+        List<dynamic> datas = data['academiaDto'];
         mywidgets = [];
         mywidgets.add(InputBuscarField(
-            hint: "Buscar Personal ", obscure: false, icon: Icons.person_outline, onPresseds: onPresseds));
+            hint: "Buscar Academia", obscure: false, icon: Icons.person_outline, onPresseds: onPressedss));
         for (var element in datas) {
           mywidgets.add(
             Row(
@@ -93,9 +94,12 @@ class _PersonalScreenState extends State<PersonalScreen> {
       }
     } else {
       if (mounted) {
+        mywidgets = [];
+        mywidgets.add(InputBuscarField(
+            hint: "Buscar Academia", obscure: false, icon: Icons.person_outline, onPresseds: onPressedss));
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text("Task Added Failed"),
+            content: Text("Nenhuma academia cadastrada!"),
           ),
         );
         _isLoading = false;

@@ -94,6 +94,12 @@
                 "fieldType": "SwitchInput"
             },
             {
+                "label": "foto",
+                "jsonName" : "foto",
+                "fieldType": "foto",
+                "type" : "string"
+            },
+            {
                 "label": "Senha",
                 "jsonName" : "Senha",
                 "fieldType": "TextInput",
