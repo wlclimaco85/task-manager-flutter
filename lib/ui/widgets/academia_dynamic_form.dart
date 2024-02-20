@@ -1,12 +1,8 @@
 import 'dart:convert';
-import 'dart:convert';
-import 'dart:io' as io;
 import 'form_model.dart';
-import 'package:flutter/material.dart';
+import 'dart:io' as io;
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:image_picker/image_picker.dart';
-import 'package:dropdown_button2/dropdown_button2.dart';
 import 'package:task_manager_flutter/data/utils/api_links.dart';
 import 'package:task_manager_flutter/data/models/network_response.dart';
 import 'package:task_manager_flutter/data/services/network_caller.dart';
@@ -14,9 +10,10 @@ import 'package:task_manager_flutter/data/constants/custom_colors.dart';
 import 'package:task_manager_flutter/data/utils/personal_validation.dart';
 import 'package:task_manager_flutter/ui/widgets/custom_plano_box_form.dart';
 import 'package:task_manager_flutter/ui/widgets/custom_check_box_form.dart';
+import 'package:task_manager_flutter/ui/widgets/custom_selected_padrao.dart';
 import 'package:task_manager_flutter/ui/widgets/custom_horario_box_form.dart';
 import 'package:task_manager_flutter/ui/widgets/custom_input_dynamic_form.dart';
-import 'package:task_manager_flutter/ui/screens/auth_screens/login_screen.dart';
+import 'package:task_manager_flutter/ui/widgets/custom_horario_box_form.dart';
 
 final List<Map<String, dynamic>> _dataArray = []; //add this
 
@@ -118,21 +115,57 @@ class _AcademiaDynamicFormState extends State<AcademiaDynamicForm> {
   }
 
   Future<void> insertAluno() async {
-    isLoading = true;
+    //isLoading = true;
     if (mounted) {
       setState(() {});
     }
+
+    String base64Imagess = "";
+    if (pickImage != null) {
+      // var bytes = File(pickImage!.path).readAsBytesSync();
+      // String base64Image = base64Encode(bytes);
+      print('upload proccess started');
+      final bytess = io.File(pickImage!.path).readAsBytesSync();
+      //  List<int> imageBytes = pickImage?.readAsBytesSync();
+      // print(imageBytes);
+      //String base64Images = base64Encode(imageBytes);
+      base64Imagess = base64Encode(bytess);
+    }
+
+    Map<String, dynamic> requestBodys = new Map();
+    ;
+
+    NumberToDay myObjectInstanced = NumberToDay();
+    List<Map<String, dynamic>> dayNamed = myObjectInstanced.test();
+
+    String aad = MapToJson(dayNamed);
+
+    GetDiasSemana myObjectInstances = GetDiasSemana();
+    List<Map<String, dynamic>> dayNames = myObjectInstances.test();
+
+    String bb = MapToJson(dayNames);
+
+    GetModalidade myObjectInstanceddd = GetModalidade();
+    List<Map<String, dynamic>> dayNamer = myObjectInstanceddd.test();
+
+    String bbs = MapToJson(dayNamer);
+
     GetAcademiaDynamicForm myObjectInstance = GetAcademiaDynamicForm();
     List<Map<String, dynamic>> dayName = myObjectInstance.test();
 
+    requestBodys["codDadosPessoal"] = dayName.last;
+    requestBodys["horarios"] = dayNames;
+    requestBodys["planos"] = dayNamed;
+    requestBodys["modalidades"] = dayNamer;
     String aa = MapToJson(dayName);
 
     Map<String, dynamic> requestBody = {
       "aluno": jsonDecode(aa),
     };
-    print(jsonEncode(requestBody));
-    final NetworkResponse response =
-        await NetworkCaller().postRequest(ApiLinks.insertAluno, requestBody);
+    print(jsonEncode(requestBodys));
+
+    final NetworkResponse response = await NetworkCaller()
+        .postRequest(ApiLinks.insertAcademia, requestBodys);
     isLoading = false;
     if (mounted) {
       setState(() {});
@@ -197,42 +230,41 @@ class _AcademiaDynamicFormState extends State<AcademiaDynamicForm> {
               child: CircularProgressIndicator(),
             )
           : SingleChildScrollView(
-            clipBehavior: Clip.antiAlias,
+              clipBehavior: Clip.antiAlias,
               child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: <Widget>[
-                    ListView(
-              shrinkWrap: true,
-              children: <Widget>[
-                    Container(
-                      color: CustomColors().getAppFundoPage(),
-                      child: Padding(
-                        padding: const EdgeInsets.all(8.0),
-                        child: ListView.builder(
-                            itemCount: formResponse.length,
-                            physics: const AlwaysScrollableScrollPhysics(),
-                            shrinkWrap: true,
-                            itemBuilder: (context, index) {
-                              return Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    formResponse[index].title!,
-                                    style: const TextStyle(
-                                        fontSize: 16,
-                                        fontWeight: FontWeight.bold),
-                                  ),
-                                  const SizedBox(height: 20),
-                                  myFormType(index),
-                                ],
-                              );
-                            }),
-                      ),
-                    )]),
+                    ListView(shrinkWrap: true, children: <Widget>[
+                      Container(
+                        color: CustomColors().getAppFundoPage(),
+                        child: Padding(
+                          padding: const EdgeInsets.all(8.0),
+                          child: ListView.builder(
+                              itemCount: formResponse.length,
+                              physics: const AlwaysScrollableScrollPhysics(),
+                              shrinkWrap: true,
+                              itemBuilder: (context, index) {
+                                return Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      formResponse[index].title!,
+                                      style: const TextStyle(
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.bold),
+                                    ),
+                                    const SizedBox(height: 20),
+                                    myFormType(index),
+                                  ],
+                                );
+                              }),
+                        ),
+                      )
+                    ]),
                   ]),
             ),
       floatingActionButton: FloatingActionButton(
-        backgroundColor : CustomColors().getAppBotton(),
+        backgroundColor: CustomColors().getAppBotton(),
         onPressed: () {
           insertAluno();
         },
@@ -302,48 +334,43 @@ class _AcademiaDynamicFormState extends State<AcademiaDynamicForm> {
                     keyField: formResponse[index].fields![innerIndex].label ??
                         "Field")
                 : formResponse[index].fields![innerIndex].fieldType ==
-                        "SelectList"
-                    ? dropDownWidget(
-                        formResponse[index].fields![innerIndex].options,
-                        formResponse[index].fields![innerIndex].jsonName ??
-                            "Field")
-                : formResponse[index].fields![innerIndex].fieldType ==
-                        "foto"
-                    ? fotoWidget(
-                        formResponse[index].fields![innerIndex].options,
-                        formResponse[index].fields![innerIndex].jsonName ??
-                            "Field")
-                : formResponse[index].fields![innerIndex].fieldType ==
-                        "Plano"
-                    ? myComboPlanos(
-                        formResponse[index].fields![innerIndex].options,
-                        formResponse[index].fields![innerIndex].jsonName ??
-                            "Field")
-                : formResponse[index].fields![innerIndex].fieldType ==
-                        "Agenda"
-                    ? myComboCalendario(
+                        "SelectDB"
+                    ? myComboDB(
                         formResponse[index].fields![innerIndex].options,
                         formResponse[index].fields![innerIndex].jsonName ??
                             "Field")
                     : formResponse[index].fields![innerIndex].fieldType ==
-                            "SwitchInput"
-                        ? SwitchListTile(
-                            value: switchValue,
-                            title: Text(
-                                formResponse[index].fields![innerIndex].label!),
-                            onChanged: (value) {
-                              setState(() {
-                                switchValue = !switchValue;
-                                _onUpdate(
-                                    0,
-                                    switchValue.toString(),
-                                    formResponse[index]
-                                            .fields![innerIndex]
-                                            .jsonName ??
-                                        "Field");
-                              });
-                            })
-                        : const Text("Other type");
+                            "SelectList"
+                        ? dropDownWidget(
+                            formResponse[index].fields![innerIndex].options,
+                            formResponse[index].fields![innerIndex].jsonName ??
+                                "Field")
+                        : formResponse[index].fields![innerIndex].fieldType ==
+                                "foto"
+                            ? fotoWidget(
+                                formResponse[index].fields![innerIndex].options,
+                                formResponse[index].fields![innerIndex].jsonName ?? "Field")
+                            : formResponse[index].fields![innerIndex].fieldType == "Plano"
+                                ? myComboPlanos(formResponse[index].fields![innerIndex].options, formResponse[index].fields![innerIndex].jsonName ?? "Field")
+                                : formResponse[index].fields![innerIndex].fieldType == "Agenda"
+                                    ? myComboCalendario(formResponse[index].fields![innerIndex].options, formResponse[index].fields![innerIndex].jsonName ?? "Field")
+                                    : formResponse[index].fields![innerIndex].fieldType == "SwitchInput"
+                                        ? SwitchListTile(
+                                            value: switchValue,
+                                            title: Text(formResponse[index].fields![innerIndex].label!),
+                                            onChanged: (value) {
+                                              setState(() {
+                                                switchValue = !switchValue;
+                                                _onUpdate(
+                                                    0,
+                                                    switchValue.toString(),
+                                                    formResponse[index]
+                                                            .fields![innerIndex]
+                                                            .jsonName ??
+                                                        "Field");
+                                              });
+                                            })
+                                        : const Text("Other type");
       },
       separatorBuilder: (BuildContext context, int index) {
         return const SizedBox(height: 10);
@@ -352,11 +379,15 @@ class _AcademiaDynamicFormState extends State<AcademiaDynamicForm> {
   }
 
   Widget myComboPlanos(List<Options>? items, String value) {
-     return CustomComboBoxForm();
+    return CustomComboBoxForm();
   }
 
   Widget myComboCalendario(List<Options>? items, String value) {
-     return CustomDiasBoxForm();
+    return CustomDiasBoxForm();
+  }
+
+  Widget myComboDB(List<Options>? items, String value) {
+    return SelectedForm();
   }
 
   Widget myDatePicker(String field) {
@@ -456,44 +487,43 @@ class _AcademiaDynamicFormState extends State<AcademiaDynamicForm> {
 
   fotoWidget(List<Options>? items, String value) {
     return InkWell(
-                    onTap: () {
-                      imagePicked();
-                    },
-                    child: Row(children: [
-                      Container(
-                        padding: const EdgeInsets.all(18),
-                        decoration: const BoxDecoration(
-                          color: Colors.grey,
-                          borderRadius: BorderRadius.only(
-                            topLeft: Radius.circular(8),
-                            bottomLeft: Radius.circular(8),
-                          ),
-                        ),
-                        child: const Text("Foto"),
-                      ),
-                      Expanded(
-                        child: Container(
-                          padding: const EdgeInsets.all(18),
-                          decoration: BoxDecoration(
-                            color: CustomColors().getAppFundoImput(),
-                            borderRadius: const BorderRadius.only(
-                              topRight: Radius.circular(8),
-                              bottomRight: Radius.circular(8),
-                            ),
-                          ),
-                          child: Text(
-                            pickImage?.name ?? "",
-                            maxLines: 1,
-                            style: const TextStyle(
-                                overflow: TextOverflow.ellipsis),
-                          ),
-                        ),
-                      ),
-                    ]),
-                  );
+      onTap: () {
+        imagePicked();
+      },
+      child: Row(children: [
+        Container(
+          padding: const EdgeInsets.all(18),
+          decoration: const BoxDecoration(
+            color: Colors.grey,
+            borderRadius: BorderRadius.only(
+              topLeft: Radius.circular(8),
+              bottomLeft: Radius.circular(8),
+            ),
+          ),
+          child: const Text("Foto"),
+        ),
+        Expanded(
+          child: Container(
+            padding: const EdgeInsets.all(18),
+            decoration: BoxDecoration(
+              color: CustomColors().getAppFundoImput(),
+              borderRadius: const BorderRadius.only(
+                topRight: Radius.circular(8),
+                bottomRight: Radius.circular(8),
+              ),
+            ),
+            child: Text(
+              pickImage?.name ?? "",
+              maxLines: 1,
+              style: const TextStyle(overflow: TextOverflow.ellipsis),
+            ),
+          ),
+        ),
+      ]),
+    );
   }
 
-    void imagePicked() async {
+  void imagePicked() async {
     showDialog(
         context: context,
         builder: (context) {

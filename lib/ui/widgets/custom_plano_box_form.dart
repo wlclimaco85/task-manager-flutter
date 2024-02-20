@@ -4,7 +4,6 @@
 import 'package:flutter/material.dart';
 import 'package:task_manager_flutter/data/constants/custom_colors.dart';
 
-
 final List<Map<String, dynamic>> _dataArray = []; //add this
 String? _data = ""; //add this
 
@@ -22,7 +21,7 @@ class CustomComboBoxForm extends StatefulWidget {
 }
 
 class _CustomComboBoxForm extends State<CustomComboBoxForm> {
-  int _formCount = 0; //add this
+  int _formCount = 1; //add this
 
   late FocusNode _focusNode;
 

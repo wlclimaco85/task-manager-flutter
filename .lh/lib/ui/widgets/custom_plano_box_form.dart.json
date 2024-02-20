@@ -3,7 +3,7 @@
     "activeCommit": 0,
     "commits": [
         {
-            "activePatchIndex": 5,
+            "activePatchIndex": 6,
             "patches": [
                 {
                     "date": 1706728723561,
@@ -28,6 +28,10 @@
                 {
                     "date": 1706827916300,
                     "content": "Index: \n===================================================================\n--- \n+++ \n@@ -125,9 +125,9 @@\n           color: CustomColors().getAppFundoClaro(),\r\n           child: Column(\r\n             mainAxisAlignment: MainAxisAlignment.center,\r\n             children: <Widget>[\r\n-              imput(key, \"Titulo Plano\", null, TextInputType.text, 'titulo'),\r\n+              imput(key, \"Titulo Plano\", null, TextInputType.text, 'nome'),\r\n               imput(key, \"Detalhe do Plano\", 5, TextInputType.multiline,\r\n                   'descricao'),\r\n               imput(key, \"Qnt. Aula Mês *dias\", null, TextInputType.number,\r\n                   'qtdAula'),\r\n"
+                },
+                {
+                    "date": 1708379594416,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -21,9 +21,9 @@\n   State<CustomComboBoxForm> createState() => _CustomComboBoxForm();\r\n }\r\n \r\n class _CustomComboBoxForm extends State<CustomComboBoxForm> {\r\n-  int _formCount = 0; //add this\r\n+  int _formCount = 1; //add this\r\n \r\n   late FocusNode _focusNode;\r\n \r\n   @override\r\n"
                 }
             ],
             "date": 1706728723561,

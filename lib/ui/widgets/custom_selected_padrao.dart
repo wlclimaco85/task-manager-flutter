@@ -3,39 +3,33 @@
 
 import 'package:flutter/material.dart';
 import 'package:task_manager_flutter/data/constants/custom_colors.dart';
-
+import 'dart:convert';
 import 'package:dropdown_button2/dropdown_button2.dart';
+import 'package:task_manager_flutter/data/utils/api_links.dart';
+import 'package:task_manager_flutter/data/models/network_response.dart';
+import 'package:task_manager_flutter/data/services/network_caller.dart';
 
 final List<Map<String, dynamic>> _dataArray = []; //add this
 String? _data = ""; //add this
-
-var dias = [
-  'Segunda',
-  'Terça',
-  'Quarta',
-  'Quinta',
-  'Sexta',
-  'Sabado',
-  'Domingo',
-];
-
 List<String> diasSelectedItems = [];
+List<String> dias = [];
 
-class GetDiasSemana {
+class GetModalidade {
   test() {
     return _dataArray;
   }
 }
 
-class CustomDiasBoxForm extends StatefulWidget {
-  const CustomDiasBoxForm({super.key});
+class SelectedForm extends StatefulWidget {
+  const SelectedForm({super.key});
 
   @override
-  State<CustomDiasBoxForm> createState() => _CustomDiasBoxForm();
+  State<SelectedForm> createState() => _SelectedForm();
 }
 
-class _CustomDiasBoxForm extends State<CustomDiasBoxForm> {
+class _SelectedForm extends State<SelectedForm> {
   int _formCount = 1; //add this
+  bool isLoading = true;
 
   late FocusNode _focusNode;
 
@@ -43,12 +37,56 @@ class _CustomDiasBoxForm extends State<CustomDiasBoxForm> {
   void initState() {
     _focusNode = FocusNode();
     super.initState();
+    getSelected();
   }
 
   @override
   void dispose() {
     _focusNode.dispose();
     super.dispose();
+  }
+
+  Future<List<String>> getSelected() async {
+    isLoading = true;
+    List<String> modalidadeList = [];
+    if (mounted) {
+      setState(() {});
+    }
+    Map<String, dynamic> requestBody = {};
+    final NetworkResponse response =
+        await NetworkCaller().postRequest(ApiLinks.allModalidade, requestBody);
+    isLoading = false;
+
+    if (mounted) {
+      setState(() {
+        dias = ['Deu Certo'];
+      });
+    }
+    final decoded = (response.body) as Map;
+
+    if (response.isSuccess) {
+      if (mounted) {
+        // final datass = json.decode(response.body);
+        final data = decoded['data'];
+        print(data[0]['nome']); // prints 3.672940
+        dias = [];
+        for (final name in data) {
+          final value = name['nome'];
+          modalidadeList.add(value);
+          dias.add(value);
+          print('$name,$value'); // prints entries like "AED,3.672940"
+        }
+      }
+    } else {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text("Profile update Failed"),
+          ),
+        );
+      }
+    }
+    return modalidadeList;
   }
 
   void _onUpdate(int key, String? value, chave) {
@@ -231,40 +269,6 @@ class _CustomDiasBoxForm extends State<CustomDiasBoxForm> {
         ),
       );
 
-  Widget imput(int key, String hit, int? maxLine, TextInputType tipo, chave) =>
-      Padding(
-        padding: const EdgeInsets.symmetric(vertical: 2, horizontal: 10),
-        child: Column(
-          children: <Widget>[
-            TextFormField(
-              //    controller: controller,
-              maxLines: maxLine,
-              key: Key('$hit ${key + 1}'),
-              //    focusNode: _focusNode,
-              keyboardType: tipo ?? TextInputType.text,
-              decoration: InputDecoration(
-                fillColor: CustomColors().getAppFundoImput(),
-                filled: true,
-                border: const OutlineInputBorder(
-                  borderRadius: BorderRadius.all(
-                    Radius.circular(8.0),
-                  ),
-                  borderSide: BorderSide(
-                    color: Colors.yellow,
-                    width: 3.0,
-                  ),
-                ),
-                labelStyle:
-                    const TextStyle(color: Colors.black, fontSize: 16.0),
-                hintText: ' $hit ',
-              ),
-              onChanged: (val) => _onUpdate(key, val, chave),
-              //validator: validator,
-            ),
-          ],
-        ),
-      );
-
   Widget form(int key) => Padding(
         padding: const EdgeInsets.only(bottom: 15.0),
         child: Container(
@@ -275,48 +279,11 @@ class _CustomDiasBoxForm extends State<CustomDiasBoxForm> {
             children: <Widget>[
               selected(
                   key, "Titulo Plano", null, TextInputType.text, 'diaAtene'),
-              imput(key, "Hora Inicio", null, TextInputType.text, 'dtInicio'),
-              imput(key, "Hora Final", null, TextInputType.number, 'dtFinal'),
             ],
           ),
         ),
       );
 
-  Widget buttonRow() => Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          Visibility(
-            visible: _formCount > 0,
-            child: IconButton(
-                onPressed: () {
-                  if (_dataArray.isNotEmpty) {
-                    _dataArray.removeAt(_dataArray.length - 1);
-                  }
-                  setState(() {
-                    _data = _dataArray.toString();
-                    _formCount--;
-                  });
-                },
-                icon: CircleAvatar(
-                  backgroundColor: CustomColors().getAppBotton(),
-                  child: const Icon(
-                    Icons.remove,
-                  ),
-                )),
-          ),
-          IconButton(
-              onPressed: () {
-                setState(() => _formCount++);
-              },
-              icon: CircleAvatar(
-                backgroundColor: CustomColors().getAppBotton(),
-                child: const Icon(
-                  Icons.add,
-                ),
-              )),
-        ],
-      );
   @override
   Widget build(BuildContext context) {
     final platform = Theme.of(context).platform;
@@ -330,14 +297,13 @@ class _CustomDiasBoxForm extends State<CustomDiasBoxForm> {
             crossAxisAlignment: CrossAxisAlignment.center,
             children: <Widget>[
               const SizedBox(height: 19),
-              const Text('Horarios',
+              const Text('Modalidade',
                   style: TextStyle(
                       fontWeight: FontWeight.bold,
                       color: Colors.black87,
                       fontSize: 22)),
               const SizedBox(height: 20),
               ...List.generate(_formCount, (index) => form(index)),
-              buttonRow(),
               const SizedBox(height: 10),
               //   Visibility(visible: _dataArray.isNotEmpty, child: Text(_data!)),
               const SizedBox(height: 30),

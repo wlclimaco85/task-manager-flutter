@@ -10,7 +10,7 @@
                 "type" : "string"
 
             },
-            {
+            { 
                 "label": "Email",
                 "fieldType": "TextInput",
                 "jsonName" : "email" ,
@@ -78,6 +78,12 @@
                 "label": "Planos",
                 "jsonName" : "planos",
                 "fieldType": "Plano",
+                "type" : "string"
+            },
+            { 
+                "label": "Modalidade",
+                "fieldType": "SelectDB",
+                "jsonName" : "modalidade" ,
                 "type" : "string"
             }
         ]

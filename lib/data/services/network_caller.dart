@@ -7,7 +7,6 @@ import 'package:task_manager_flutter/data/models/auth_utility.dart';
 import 'package:task_manager_flutter/data/models/network_response.dart';
 import 'package:task_manager_flutter/ui/screens/auth_screens/login_screen.dart';
 
-
 class NetworkCaller {
   Future<NetworkResponse> getRequest(String url) async {
     try {
@@ -38,12 +37,16 @@ class NetworkCaller {
     Map<String, dynamic>? body,
   ) async {
     try {
+      //  if (url.contains('inserirAluno') && AuthUtility.userInfo.token == null) {
+      //   AuthUtility.userInfo.token =
+      //        "Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ3bGNsaW1hY29AZ21haWwuY29tIiwiZmlyc3ROYW1lIjoid2xjbGltYWNvQGdtYWlsLmNvbSIsImxhc3ROYW1lIjoid2xjbGltYWNvQGdtYWlsLmNvbSIsImV4cCI6MTkxNzgxMjg2Nn0._M1meDtyoQOMh3m30S4clJXu42SD-kGrjxkJ-4xeLVI";
+      //  }
       Response response = await post(
         Uri.parse(url),
         headers: {
           'Content-Type': 'application/json;charset=ISO-8859-1',
-          'Authorization': url.contains('login') 
-             ? 'c2Fua2h5YTpzdXA='
+          'Authorization': url.contains('login') || url.contains('inserirAluno')
+              ? 'c2Fua2h5YTpzdXA='
               : 'Bearer ${AuthUtility.userInfo.token}',
           'Access-Control-Allow-Origin': '*',
           'Access-Control-Allow-Credentials': 'true',
