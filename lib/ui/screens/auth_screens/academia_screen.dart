@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:task_manager_flutter/ui/widgets/home_fab.dart';
 import 'package:task_manager_flutter/data/utils/api_links.dart';
 import 'package:task_manager_flutter/ui/widgets/user_banners.dart';
 import 'package:task_manager_flutter/ui/screens/update_profile.dart';
@@ -9,7 +8,6 @@ import 'package:task_manager_flutter/data/services/network_caller.dart';
 import 'package:task_manager_flutter/ui/widgets/input_field_busca.dart';
 import 'package:task_manager_flutter/ui/widgets/itens_list_academia.dart';
 import 'package:task_manager_flutter/ui/widgets/academia_dynamic_form.dart';
-
 
 class AcademiaScreen extends StatefulWidget {
   const AcademiaScreen({
@@ -55,7 +53,7 @@ class _AcademiaScreenState extends State<AcademiaScreen> {
     };
 
     void onPressedss() => Navigator.push(context,
-                MaterialPageRoute(builder: (context) => const AcademiaDynamicForm()));
+        MaterialPageRoute(builder: (context) => const AcademiaDynamicForm()));
 
     final NetworkResponse response =
         await NetworkCaller().postRequest(ApiLinks.allAcademia, requestBody);
@@ -68,21 +66,28 @@ class _AcademiaScreenState extends State<AcademiaScreen> {
       _taskDescriptionController.clear();
       if (mounted) {
         dynamic data = response.body?['data'];
-        List<dynamic> datas = data['academiaDto'];
+        List<dynamic> datas = data;
         mywidgets = [];
         mywidgets.add(InputBuscarField(
-            hint: "Buscar Academia", obscure: false, icon: Icons.person_outline, onPresseds: onPressedss));
+            hint: "Buscar Academia",
+            obscure: false,
+            icon: Icons.person_outline,
+            onPresseds: onPressedss));
         for (var element in datas) {
           mywidgets.add(
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: <Widget>[
-                ListItensExample(
+                ListItensAcademia(
                   nome: element['codDadosPessoal']['nome'],
                   cpf: element['codDadosPessoal']['cpf'],
-                  cref: element['cref'],
-                  valor: element['vlrAula'],
+                  endereco: element['codDadosPessoal']['logradouro'] +
+                      ", " +
+                      element['codDadosPessoal']['numero'],
+                  endereco1: element['codDadosPessoal']['bairro'] +
+                      ", " +
+                      element['codDadosPessoal']['cidade'],
                   foto: element['codDadosPessoal']['photo'],
                   id: element['id'],
                 ),
@@ -96,7 +101,10 @@ class _AcademiaScreenState extends State<AcademiaScreen> {
       if (mounted) {
         mywidgets = [];
         mywidgets.add(InputBuscarField(
-            hint: "Buscar Academia", obscure: false, icon: Icons.person_outline, onPresseds: onPressedss));
+            hint: "Buscar Academia",
+            obscure: false,
+            icon: Icons.person_outline,
+            onPresseds: onPressedss));
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text("Nenhuma academia cadastrada!"),
@@ -128,7 +136,7 @@ class _AcademiaScreenState extends State<AcademiaScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-    //  floatingActionButton: getHomeFab(context, listModels, refreshPage),
+      //  floatingActionButton: getHomeFab(context, listModels, refreshPage),
       backgroundColor: const Color(0xFF340A9C),
       appBar: userBanner(
         context,

@@ -8,10 +8,10 @@ import 'package:task_manager_flutter/data/constants/custom_colors.dart';
 
 /// Flutter code sample for [IconButton].
 
-/*void main() => runApp(const ListItensExampleApp());
+/*void main() => runApp(const ListItensAcademiaApp());
 
-class ListItensExampleApp extends StatelessWidget {
-  const ListItensExampleApp({super.key});
+class ListItensAcademiaApp extends StatelessWidget {
+  const ListItensAcademiaApp({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -19,7 +19,7 @@ class ListItensExampleApp extends StatelessWidget {
       home: Scaffold(
         appBar: AppBar(title: const Text('IconButton Sample')),
         body: const Center(
-          child: ListItensExample(),
+          child: ListItensAcademia(),
         ),
       ),
     );
@@ -28,21 +28,21 @@ class ListItensExampleApp extends StatelessWidget {
 
 double _volume = 0.0;*/
 
-class ListItensExample extends StatelessWidget {
-  const ListItensExample({
+class ListItensAcademia extends StatelessWidget {
+  const ListItensAcademia({
     Key? key,
     required this.nome,
     required this.cpf,
-    required this.cref,
-    required this.valor,
+    required this.endereco,
+    required this.endereco1,
     required this.foto,
     required this.id,
   }) : super(key: key);
 
   final String nome;
   final String cpf;
-  final String cref;
-  final double valor;
+  final String endereco;
+  final String endereco1;
   final String foto;
   final int id;
 
@@ -94,7 +94,7 @@ class ListItensExample extends StatelessWidget {
                       Column(
                         children: <Widget>[
                           (Text(
-                            'CPF: $cpf...    CREF: $cref',
+                            'CNPJ: $cpf...',
                             textAlign: TextAlign.center,
                             overflow: TextOverflow.ellipsis,
                             style: const TextStyle(fontWeight: FontWeight.bold),
@@ -104,12 +104,26 @@ class ListItensExample extends StatelessWidget {
                       Column(
                         children: <Widget>[
                           (Text(
-                            'Vlr Aula: R $valor',
+                            'Endereço: $endereco',
                             textAlign: TextAlign.end,
                             overflow: TextOverflow.ellipsis,
                             style: const TextStyle(
                               fontWeight: FontWeight.w900,
-                              fontSize: 22,
+                              fontSize: 12,
+                              color: Color.fromARGB(255, 14, 13, 13),
+                            ),
+                          )), // <-- Wrapped in Flexible.
+                        ],
+                      ),
+                      Column(
+                        children: <Widget>[
+                          (Text(
+                            ' $endereco1',
+                            textAlign: TextAlign.end,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              fontWeight: FontWeight.w900,
+                              fontSize: 12,
                               color: Color.fromARGB(255, 14, 13, 13),
                             ),
                           )), // <-- Wrapped in Flexible.

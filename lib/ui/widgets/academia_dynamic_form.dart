@@ -9,11 +9,9 @@ import 'package:task_manager_flutter/data/services/network_caller.dart';
 import 'package:task_manager_flutter/data/constants/custom_colors.dart';
 import 'package:task_manager_flutter/data/utils/personal_validation.dart';
 import 'package:task_manager_flutter/ui/widgets/custom_plano_box_form.dart';
-import 'package:task_manager_flutter/ui/widgets/custom_check_box_form.dart';
 import 'package:task_manager_flutter/ui/widgets/custom_selected_padrao.dart';
 import 'package:task_manager_flutter/ui/widgets/custom_horario_box_form.dart';
 import 'package:task_manager_flutter/ui/widgets/custom_input_dynamic_form.dart';
-import 'package:task_manager_flutter/ui/widgets/custom_horario_box_form.dart';
 
 final List<Map<String, dynamic>> _dataArray = []; //add this
 
@@ -132,8 +130,7 @@ class _AcademiaDynamicFormState extends State<AcademiaDynamicForm> {
       base64Imagess = base64Encode(bytess);
     }
 
-    Map<String, dynamic> requestBodys = new Map();
-    ;
+    Map<String, dynamic> requestBodys = {};
 
     NumberToDay myObjectInstanced = NumberToDay();
     List<Map<String, dynamic>> dayNamed = myObjectInstanced.test();
@@ -379,15 +376,15 @@ class _AcademiaDynamicFormState extends State<AcademiaDynamicForm> {
   }
 
   Widget myComboPlanos(List<Options>? items, String value) {
-    return CustomComboBoxForm();
+    return const CustomComboBoxForm();
   }
 
   Widget myComboCalendario(List<Options>? items, String value) {
-    return CustomDiasBoxForm();
+    return const CustomDiasBoxForm();
   }
 
   Widget myComboDB(List<Options>? items, String value) {
-    return SelectedForm();
+    return const SelectedForm();
   }
 
   Widget myDatePicker(String field) {
