@@ -36,10 +36,21 @@ class _AcademiaScreenState extends State<AcademiaScreen> {
   bool tonalSelected = false;
   bool outlinedSelected = false;
   int count = 0;
+  final List<String> modalidadeList = ['Musculação'];
 
   void log(String message) => print(message);
 
   bool _addNewTaskLoading = false;
+
+  List<String> getList(List<dynamic> newMap) {
+    late List<String> modList = [];
+    for (var v in newMap) {
+      Map<String, dynamic> request = v;
+      modList.add(v['nome']);
+    }
+
+    return modList;
+  }
 
   Future<void> findAllAcademia() async {
     _isLoading = true;
@@ -80,17 +91,23 @@ class _AcademiaScreenState extends State<AcademiaScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: <Widget>[
                 ListItensAcademia(
-                  nome: element['codDadosPessoal']['nome'],
-                  cpf: element['codDadosPessoal']['cpf'],
-                  endereco: element['codDadosPessoal']['logradouro'] +
-                      ", " +
-                      element['codDadosPessoal']['numero'],
-                  endereco1: element['codDadosPessoal']['bairro'] +
-                      ", " +
-                      element['codDadosPessoal']['cidade'],
-                  foto: element['codDadosPessoal']['photo'],
-                  id: element['id'],
-                ),
+                    nome: element['codDadosPessoal']['nome'],
+                    cpf: element['codDadosPessoal']['cpf'],
+                    endereco: element['codDadosPessoal']['logradouro'] +
+                        ", " +
+                        element['codDadosPessoal']['numero'],
+                    endereco1: element['codDadosPessoal']['bairro'] +
+                        ", " +
+                        element['codDadosPessoal']['cidade'],
+                    telefone: element['codDadosPessoal']['telefone'] != null
+                        ? element['codDadosPessoal']['telefone']
+                        : "",
+                    foto: element['codDadosPessoal']['photo'],
+                    id: element['id'],
+                    listModadelidades: element['modalidaList'] != null &&
+                            element['modalidaList'].length > 0
+                        ? getList(element['modalidaList'])
+                        : modalidadeList),
               ],
             ),
           );

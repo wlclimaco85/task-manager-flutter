@@ -3,11 +3,39 @@
     "activeCommit": 0,
     "commits": [
         {
-            "activePatchIndex": 0,
+            "activePatchIndex": 7,
             "patches": [
                 {
                     "date": 1707188005314,
                     "content": "Index: \n===================================================================\n--- \n+++ \n"
+                },
+                {
+                    "date": 1708610964136,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -46,9 +46,11 @@\n   intl: ^0.18.0\r\n   simple_gesture_detector: ^0.2.0\r\n   modal_bottom_sheet: ^2.0.0\r\n   dropdown_button2: ^2.3.8\r\n+  flutter_tags: \"^0.4.9+1\"\r\n \r\n+  mime: any\r\n dev_dependencies:\r\n   flutter_test:\r\n     sdk: flutter\r\n \r\n"
+                },
+                {
+                    "date": 1708611656148,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -46,9 +46,9 @@\n   intl: ^0.18.0\r\n   simple_gesture_detector: ^0.2.0\r\n   modal_bottom_sheet: ^2.0.0\r\n   dropdown_button2: ^2.3.8\r\n-  flutter_tags: \"^0.4.9+1\"\r\n+  flutter_tags: ^0.4.9+1\r\n \r\n   mime: any\r\n dev_dependencies:\r\n   flutter_test:\r\n"
+                },
+                {
+                    "date": 1708611709239,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -46,9 +46,10 @@\n   intl: ^0.18.0\r\n   simple_gesture_detector: ^0.2.0\r\n   modal_bottom_sheet: ^2.0.0\r\n   dropdown_button2: ^2.3.8\r\n-  flutter_tags: ^0.4.9+1\r\n+  flutter_tags:\r\n+    path: ../\r\n \r\n   mime: any\r\n dev_dependencies:\r\n   flutter_test:\r\n"
+                },
+                {
+                    "date": 1708611779992,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -46,10 +46,9 @@\n   intl: ^0.18.0\r\n   simple_gesture_detector: ^0.2.0\r\n   modal_bottom_sheet: ^2.0.0\r\n   dropdown_button2: ^2.3.8\r\n-  flutter_tags:\r\n-    path: ../\r\n+  flutter_tags: 0.4.9+1\r\n \r\n   mime: any\r\n dev_dependencies:\r\n   flutter_test:\r\n"
+                },
+                {
+                    "date": 1708611791656,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -46,9 +46,9 @@\n   intl: ^0.18.0\r\n   simple_gesture_detector: ^0.2.0\r\n   modal_bottom_sheet: ^2.0.0\r\n   dropdown_button2: ^2.3.8\r\n-  flutter_tags: 0.4.9+1\r\n+  flutter_tags: ^0.4.9+1\r\n \r\n   mime: any\r\n dev_dependencies:\r\n   flutter_test:\r\n"
+                },
+                {
+                    "date": 1708611845922,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -46,9 +46,9 @@\n   intl: ^0.18.0\r\n   simple_gesture_detector: ^0.2.0\r\n   modal_bottom_sheet: ^2.0.0\r\n   dropdown_button2: ^2.3.8\r\n-  flutter_tags: ^0.4.9+1\r\n+  flutter_tags_x: ^1.1.0\r\n \r\n   mime: any\r\n dev_dependencies:\r\n   flutter_test:\r\n"
+                },
+                {
+                    "date": 1708612104505,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -46,9 +46,9 @@\n   intl: ^0.18.0\r\n   simple_gesture_detector: ^0.2.0\r\n   modal_bottom_sheet: ^2.0.0\r\n   dropdown_button2: ^2.3.8\r\n-  flutter_tags_x: ^1.1.0\r\n+  simple_tags: ^0.0.6\r\n \r\n   mime: any\r\n dev_dependencies:\r\n   flutter_test:\r\n"
                 }
             ],
             "date": 1707188005314,

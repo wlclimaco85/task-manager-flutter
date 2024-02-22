@@ -84,6 +84,113 @@ class _AcademiaDynamicFormState extends State<AcademiaDynamicForm> {
     }
   }
 
+  String MapToJsonModalidade(List<Map<String, dynamic>> map) {
+    String res = "";
+    bool isEntrou = false;
+    res += "[";
+    for (var s in map) {
+      List<String> aqui = s["diaAtene"].toString().split(",");
+      for (String k in aqui) {
+        res += "{";
+        res += '"';
+        res += "nome";
+        res += '":"';
+        res += k;
+        res += '"},';
+      }
+      isEntrou = true;
+    }
+    if (isEntrou) {
+      res = res.substring(0, res.length - 1);
+      res += "]";
+    } else {
+      res = "";
+    }
+
+    return res;
+  }
+
+  int diasSemanaEnum(String diasd) {
+    late int dias;
+    switch (diasd) {
+      case "Segunda":
+        dias = 9;
+        break;
+      case "Terça":
+        dias = 1;
+        break;
+      case "Quarta":
+        dias = 2;
+        break;
+      case "Quinta":
+        dias = 3;
+        break;
+      case "Sexta":
+        dias = 4;
+        break;
+      case "Sabado":
+        dias = 5;
+        break;
+      case "Domingo":
+        dias = 6;
+        break;
+      case "Feriado":
+        dias = 7;
+        break;
+      default:
+        dias = 8;
+        break;
+    }
+    return dias;
+  }
+
+  String getChaveDiasSemana(String disas) {
+    late String diasSemana = "";
+    late List<String> aa = disas.split(",");
+    late bool entrou = false;
+    for (var element in aa) {
+      diasSemana += "${diasSemanaEnum(element)},";
+      entrou = true;
+    }
+    if (entrou) {
+      diasSemana = diasSemana.substring(0, diasSemana.length - 1);
+    } else {
+      diasSemana = "";
+    }
+
+    return diasSemana.replaceAll(",", "");
+  }
+
+  String MapToJsonHorario(List<Map<String, dynamic>> map) {
+    String res = "";
+    bool isEntrou = false;
+    for (var s in map) {
+      res += "{";
+
+      for (String k in s.keys) {
+        //"[{"id":"0","diaAtene":"Segunda,Segunda,Terça","dtInicio":"10:00"
+        res += '"';
+        res += k;
+        res += '":"';
+        res += (k == "diaAtene"
+            ? getChaveDiasSemana(s[k].toString())
+            : s[k].toString());
+        res += '",';
+      }
+      res = res.substring(0, res.length - 1);
+
+      res += "},";
+      isEntrou = true;
+    }
+    if (isEntrou) {
+      res = "[${res.substring(0, res.length - 1)}]";
+    } else {
+      res = "";
+    }
+
+    return res;
+  }
+
   String MapToJson(List<Map<String, dynamic>> map) {
     String res = "";
     bool isEntrou = false;
@@ -140,7 +247,7 @@ class _AcademiaDynamicFormState extends State<AcademiaDynamicForm> {
     GetDiasSemana myObjectInstances = GetDiasSemana();
     List<Map<String, dynamic>> dayNames = myObjectInstances.test();
 
-    String bb = MapToJson(dayNames);
+    String bb = MapToJsonHorario(dayNames);
 
     GetModalidade myObjectInstanceddd = GetModalidade();
     List<Map<String, dynamic>> dayNamer = myObjectInstanceddd.test();
@@ -150,10 +257,14 @@ class _AcademiaDynamicFormState extends State<AcademiaDynamicForm> {
     GetAcademiaDynamicForm myObjectInstance = GetAcademiaDynamicForm();
     List<Map<String, dynamic>> dayName = myObjectInstance.test();
 
+    String modalidadeList = MapToJsonModalidade(dayNamer);
+
+    dayName.last["photo"] = "data:image/png;base64,$base64Imagess";
+    dayName.last["id"] = null;
     requestBodys["codDadosPessoal"] = dayName.last;
-    requestBodys["horarios"] = dayNames;
+    requestBodys["horarios"] = jsonDecode(bb);
     requestBodys["planos"] = dayNamed;
-    requestBodys["modalidades"] = dayNamer;
+    requestBodys["modalidades"] = jsonDecode(modalidadeList);
     String aa = MapToJson(dayName);
 
     Map<String, dynamic> requestBody = {

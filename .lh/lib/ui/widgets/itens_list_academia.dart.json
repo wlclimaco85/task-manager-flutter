@@ -3,7 +3,7 @@
     "activeCommit": 0,
     "commits": [
         {
-            "activePatchIndex": 3,
+            "activePatchIndex": 8,
             "patches": [
                 {
                     "date": 1708536576013,
@@ -20,6 +20,26 @@
                 {
                     "date": 1708537348068,
                     "content": "Index: \n===================================================================\n--- \n+++ \n@@ -108,9 +108,9 @@\n                             textAlign: TextAlign.end,\r\n                             overflow: TextOverflow.ellipsis,\r\n                             style: const TextStyle(\r\n                               fontWeight: FontWeight.w900,\r\n-                              fontSize: 14,\r\n+                              fontSize: 12,\r\n                               color: Color.fromARGB(255, 14, 13, 13),\r\n                             ),\r\n                           )), // <-- Wrapped in Flexible.\r\n                         ],\r\n@@ -122,9 +122,9 @@\n                             textAlign: TextAlign.end,\r\n                             overflow: TextOverflow.ellipsis,\r\n                             style: const TextStyle(\r\n                               fontWeight: FontWeight.w900,\r\n-                              fontSize: 14,\r\n+                              fontSize: 12,\r\n                               color: Color.fromARGB(255, 14, 13, 13),\r\n                             ),\r\n                           )), // <-- Wrapped in Flexible.\r\n                         ],\r\n"
+                },
+                {
+                    "date": 1708612230073,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -305,8 +305,40 @@\n                           const SizedBox(\r\n                             height: 5,\r\n                             width: 5,\r\n                           ),\r\n+                          SimpleTags(\r\n+        content: widget.content,\r\n+        wrapSpacing: 4,\r\n+        wrapRunSpacing: 4,\r\n+        onTagPress: (tag) {\r\n+          print('pressed $tag');\r\n+        },\r\n+        onTagLongPress: (tag) {\r\n+          print('long pressed $tag');\r\n+        },\r\n+        onTagDoubleTap: (tag) {\r\n+          print('double tapped $tag');\r\n+        },\r\n+        tagContainerPadding: EdgeInsets.all(6),\r\n+        tagTextStyle: TextStyle(color: Colors.deepPurple),\r\n+        tagIcon: Icon(Icons.clear, size: 12),\r\n+        tagContainerDecoration: BoxDecoration(\r\n+          color: Colors.white,\r\n+          border: Border.all(color: Colors.grey),\r\n+          borderRadius: BorderRadius.all(\r\n+            Radius.circular(20),\r\n+          ),\r\n+          boxShadow: [\r\n+            BoxShadow(\r\n+              color: Color.fromRGBO(139, 139, 142, 0.16),\r\n+              spreadRadius: 1,\r\n+              blurRadius: 1,\r\n+              offset: Offset(1.75, 3.5), // c\r\n+            )\r\n+          ],\r\n+        ), // This trailing comma makes auto-formatting nicer for build methods.\r\n+      ),\r\n                         ],\r\n                       ),\r\n                     ],\r\n                   ),\r\n"
+                },
+                {
+                    "date": 1708612254912,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -4,8 +4,9 @@\n import 'package:task_manager_flutter/ui/screens/events_example.dart';\r\n import 'package:task_manager_flutter/ui/screens/multi_example.dart';\r\n import 'package:task_manager_flutter/ui/screens/teste_form_imagem.dart';\r\n import 'package:task_manager_flutter/data/constants/custom_colors.dart';\r\n+import 'package:simple_tags/simple_tags.dart';\r\n \r\n /// Flutter code sample for [IconButton].\r\n \r\n /*void main() => runApp(const ListItensAcademiaApp());\r\n"
+                },
+                {
+                    "date": 1708612301729,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -46,8 +46,23 @@\n   final String endereco1;\r\n   final String foto;\r\n   final int id;\r\n \r\n+  final String title;\r\n+  final List<String> content = [\r\n+    'Apple',\r\n+    'Banana',\r\n+    'Orange',\r\n+    'Pomme',\r\n+    'Carambola',\r\n+    'Cherries',\r\n+    'Date Fruit',\r\n+    'A Fruit with a really long name',\r\n+    'A Fruit with a really, really, really, really, very, very, very, very long name',\r\n+    'Durian',\r\n+    'Grapefruit'\r\n+  ];\r\n+\r\n   @override\r\n   Widget build(BuildContext context) {\r\n     return Container(\r\n       width: 350,\r\n"
+                },
+                {
+                    "date": 1708612313921,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -322,9 +322,9 @@\n                             height: 5,\r\n                             width: 5,\r\n                           ),\r\n                           SimpleTags(\r\n-                            content: widget.content,\r\n+                            content: content,\r\n                             wrapSpacing: 4,\r\n                             wrapRunSpacing: 4,\r\n                             onTagPress: (tag) {\r\n                               print('pressed $tag');\r\n"
+                },
+                {
+                    "date": 1708612382153,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -46,10 +46,11 @@\n   final String endereco1;\r\n   final String foto;\r\n   final int id;\r\n \r\n-  final String title;\r\n-  final List<String> content = [\r\n+  final String title = \"\";\r\n+\r\n+    final List<String> content = [\r\n     'Apple',\r\n     'Banana',\r\n     'Orange',\r\n     'Pomme',\r\n@@ -61,8 +62,9 @@\n     'Durian',\r\n     'Grapefruit'\r\n   ];\r\n \r\n+\r\n   @override\r\n   Widget build(BuildContext context) {\r\n     return Container(\r\n       width: 350,\r\n"
                 }
             ],
             "date": 1708536576013,

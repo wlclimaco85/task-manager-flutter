@@ -47,6 +47,7 @@ dependencies:
   simple_gesture_detector: ^0.2.0
   modal_bottom_sheet: ^2.0.0
   dropdown_button2: ^2.3.8
+  simple_tags: ^0.0.6
 
   mime: any
 dev_dependencies:

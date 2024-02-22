@@ -1,10 +1,10 @@
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:task_manager_flutter/ui/widgets/calendar_screen.dart';
+import 'package:task_manager_flutter/ui/widgets/simple_tag.dart';
 import 'package:task_manager_flutter/ui/screens/events_example.dart';
-import 'package:task_manager_flutter/ui/screens/multi_example.dart';
-import 'package:task_manager_flutter/ui/screens/teste_form_imagem.dart';
 import 'package:task_manager_flutter/data/constants/custom_colors.dart';
+import 'package:simple_tags/simple_tags.dart';
 
 /// Flutter code sample for [IconButton].
 
@@ -29,28 +29,36 @@ class ListItensAcademiaApp extends StatelessWidget {
 double _volume = 0.0;*/
 
 class ListItensAcademia extends StatelessWidget {
-  const ListItensAcademia({
+  ListItensAcademia({
     Key? key,
     required this.nome,
     required this.cpf,
     required this.endereco,
     required this.endereco1,
+    required this.telefone,
     required this.foto,
     required this.id,
+    required this.listModadelidades,
   }) : super(key: key);
 
   final String nome;
   final String cpf;
   final String endereco;
   final String endereco1;
+  final String telefone;
   final String foto;
   final int id;
+  final List<String> listModadelidades;
+
+  final String title = "";
+
+  final List<String> content = [];
 
   @override
   Widget build(BuildContext context) {
     return Container(
       width: 350,
-      height: 160,
+      height: 250,
       alignment: Alignment.topCenter,
       color: Colors.transparent,
       child: Column(
@@ -59,7 +67,7 @@ class ListItensAcademia extends StatelessWidget {
             children: <Widget>[
               Container(
                 width: 70,
-                height: 140,
+                height: 220,
                 padding: EdgeInsets.zero,
                 color: CustomColors().getAppFundoPage(),
                 child: Padding(
@@ -77,8 +85,8 @@ class ListItensAcademia extends StatelessWidget {
               ),
               Flexible(
                 child: Container(
-                  height: 140,
-                  color: const Color(0xFF5937B2),
+                  height: 220,
+                  color: CustomColors().getAppFundoPage(),
                   child: Column(
                     children: [
                       Column(
@@ -129,6 +137,25 @@ class ListItensAcademia extends StatelessWidget {
                           )), // <-- Wrapped in Flexible.
                         ],
                       ),
+                      Column(
+                        children: <Widget>[
+                          (Text(
+                            'Tel : $telefone',
+                            textAlign: TextAlign.end,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              fontWeight: FontWeight.w900,
+                              fontSize: 12,
+                              color: Color.fromARGB(255, 14, 13, 13),
+                            ),
+                          )), // <-- Wrapped in Flexible.
+                        ],
+                      ),
+                      const SizedBox(
+                        height: 10,
+                        width: 10,
+                      ),
+                      SimpleTag(content: listModadelidades),
                       const SizedBox(
                         height: 10,
                         width: double.infinity,
@@ -209,45 +236,6 @@ class ListItensAcademia extends StatelessWidget {
                                         context,
                                         MaterialPageRoute(
                                             builder: (context) =>
-                                                const TestImagemApp()));
-                                  },
-                                  child: ClipRRect(
-                                    borderRadius: BorderRadius.circular(10.0),
-                                    child: Image.asset(
-                                      "assets/images/carrinho.png",
-                                      height: 40,
-                                      width: 40,
-                                      fit: BoxFit.contain,
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          const SizedBox(
-                            height: 10,
-                            width: 10,
-                          ),
-                          Container(
-                            width: 50,
-                            height: 50,
-                            padding: const EdgeInsets.all(4.0),
-                            decoration: const BoxDecoration(
-                                color: Color(0xFFFA903A),
-                                borderRadius: BorderRadius.only(
-                                  topLeft: Radius.circular(6.0),
-                                  topRight: Radius.circular(6.0),
-                                  bottomLeft: Radius.circular(6.0),
-                                  bottomRight: Radius.circular(6.0),
-                                )),
-                            child: Column(
-                              children: <Widget>[
-                                GestureDetector(
-                                  onTap: () {
-                                    Navigator.push(
-                                        context,
-                                        MaterialPageRoute(
-                                            builder: (context) =>
                                                 const TableEventsExample()));
                                   },
                                   child: ClipRRect(
@@ -266,41 +254,6 @@ class ListItensAcademia extends StatelessWidget {
                           const SizedBox(
                             height: 10,
                             width: 10,
-                          ),
-                          Container(
-                            width: 50,
-                            height: 50,
-                            padding: const EdgeInsets.all(4.0),
-                            decoration: const BoxDecoration(
-                                color: Color(0xFFFA903A),
-                                borderRadius: BorderRadius.only(
-                                  topLeft: Radius.circular(6.0),
-                                  topRight: Radius.circular(6.0),
-                                  bottomLeft: Radius.circular(6.0),
-                                  bottomRight: Radius.circular(6.0),
-                                )),
-                            child: Column(
-                              children: <Widget>[
-                                GestureDetector(
-                                  onTap: () {
-                                    Navigator.push(
-                                        context,
-                                        MaterialPageRoute(
-                                            builder: (context) =>
-                                                const TableMultiExample()));
-                                  },
-                                  child: ClipRRect(
-                                    borderRadius: BorderRadius.circular(10.0),
-                                    child: Image.asset(
-                                      "assets/images/chat.png",
-                                      height: 40,
-                                      width: 40,
-                                      fit: BoxFit.contain,
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
                           ),
                           const SizedBox(
                             height: 5,
