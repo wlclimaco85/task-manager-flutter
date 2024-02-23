@@ -48,6 +48,9 @@ dependencies:
   modal_bottom_sheet: ^2.0.0
   dropdown_button2: ^2.3.8
   simple_tags: ^0.0.6
+  easy_pdf_viewer: ^1.0.6 
+  cloud_firestore: ^4.8.2 
+  file_picker: ^5.3.2 
 
   mime: any
 dev_dependencies:

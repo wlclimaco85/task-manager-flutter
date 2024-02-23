@@ -23,6 +23,7 @@ class LoginModel {
 }
 
 class Data {
+  int? id;
   String? email;
   String? firstName;
   String? lastName;
@@ -31,7 +32,8 @@ class Data {
   DadosPessoal? codDadosPessoal;
 
   Data(
-      {this.email,
+      {this.id,
+      this.email,
       this.firstName,
       this.lastName,
       this.mobile,
@@ -39,6 +41,7 @@ class Data {
       this.codDadosPessoal});
 
   Data.fromJson(Map<String, dynamic> json) {
+    id = json['id'];
     email = json['email'];
     firstName = json['firstName'];
     lastName = json['lastName'];
@@ -51,6 +54,7 @@ class Data {
 
   Map<String, dynamic> toJson() {
     final Map<String, dynamic> data = <String, dynamic>{};
+    data['id'] = id;
     data['email'] = email;
     data['firstName'] = firstName;
     data['lastName'] = lastName;

@@ -58,20 +58,16 @@
                 "fieldType": "TextInput",
                 "type" : "string"
             },
+            { 
+                "label": "Modalidade",
+                "fieldType": "SelectDB",
+                "jsonName" : "modalidade" ,
+                "type" : "string"
+            },
             {
                 "label": "Foto",
                 "jsonName" : "foto",
                 "fieldType": "foto",
-                "type" : "string"
-            },{
-                "label": "Cidadess",
-                "jsonName" : "cidadess",
-                "fieldType": "TextInput",
-                "type" : "string"
-            },{
-                "label": "Cidadesss",
-                "jsonName" : "cidadesss",
-                "fieldType": "TextInput",
                 "type" : "string"
             },
             {
@@ -79,13 +75,8 @@
                 "jsonName" : "planos",
                 "fieldType": "Plano",
                 "type" : "string"
-            },
-            { 
-                "label": "Modalidade",
-                "fieldType": "SelectDB",
-                "jsonName" : "modalidade" ,
-                "type" : "string"
             }
+            
         ]
     }
 ]

@@ -19,7 +19,7 @@ class SimpleTag extends StatelessWidget {
           content: content,
           wrapSpacing: 4,
           wrapRunSpacing: 4,
-          tagContainerPadding: EdgeInsets.all(6),
+          tagContainerPadding: const EdgeInsets.all(6),
           tagTextStyle: const TextStyle(
             color: Color.fromARGB(255, 14, 13, 13),
           ),

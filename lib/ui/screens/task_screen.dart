@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:task_manager_flutter/data/utils/api_links.dart';
 import 'package:task_manager_flutter/data/models/task_model.dart';
+import 'package:task_manager_flutter/ui/screens/exames_screen.dart';
 import 'package:task_manager_flutter/ui/widgets/user_banners.dart';
 import 'package:task_manager_flutter/ui/screens/update_profile.dart';
 import 'package:task_manager_flutter/ui/widgets/custom_menu_item.dart';
@@ -8,9 +9,9 @@ import 'package:task_manager_flutter/data/models/network_response.dart';
 import 'package:task_manager_flutter/data/services/network_caller.dart';
 import 'package:task_manager_flutter/data/models/summery_count_model.dart';
 import 'package:task_manager_flutter/ui/widgets/status_change_botom_sheet.dart';
-import 'package:task_manager_flutter/ui/screens/auth_screens/personal_screen.dart';
-import 'package:task_manager_flutter/ui/screens/auth_screens/academia_screen.dart';
-// ignore_for_file: public_member_api_docs, sort_constructors_first
+import 'package:task_manager_flutter/ui/screens/personal_screen.dart';
+import 'package:task_manager_flutter/ui/screens/academia_screen.dart';
+import 'package:task_manager_flutter/ui/screens/suplemento_screen.dart';
 
 class TaskScreen extends StatefulWidget {
   final String screenStatus;
@@ -210,7 +211,7 @@ class _TaskScreenState extends State<TaskScreen> {
                 text: 'Academias',
                 color: 'images (1).png',
                 onPresse: () {
-                   Navigator.push(
+                  Navigator.push(
                       context,
                       MaterialPageRoute(
                           builder: (context) => const AcademiaScreen()));
@@ -233,7 +234,10 @@ class _TaskScreenState extends State<TaskScreen> {
                 text: 'Suplemento',
                 color: 'images (2).png',
                 onPresse: () {
-                  print('Suplemento');
+                  Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                          builder: (context) => const SuplementoScreen()));
                 },
               ),
               const SizedBox(width: 10),
@@ -241,7 +245,10 @@ class _TaskScreenState extends State<TaskScreen> {
                 text: 'Exames',
                 color: 'images (3).png',
                 onPresse: () {
-                  print('Exames');
+                  Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                          builder: (context) => const ExameScreen()));
                 },
               ),
               const SizedBox(width: 10),

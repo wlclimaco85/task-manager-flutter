@@ -3,7 +3,7 @@
     "activeCommit": 0,
     "commits": [
         {
-            "activePatchIndex": 7,
+            "activePatchIndex": 10,
             "patches": [
                 {
                     "date": 1707188005314,
@@ -36,6 +36,18 @@
                 {
                     "date": 1708612104505,
                     "content": "Index: \n===================================================================\n--- \n+++ \n@@ -46,9 +46,9 @@\n   intl: ^0.18.0\r\n   simple_gesture_detector: ^0.2.0\r\n   modal_bottom_sheet: ^2.0.0\r\n   dropdown_button2: ^2.3.8\r\n-  flutter_tags_x: ^1.1.0\r\n+  simple_tags: ^0.0.6\r\n \r\n   mime: any\r\n dev_dependencies:\r\n   flutter_test:\r\n"
+                },
+                {
+                    "date": 1708726284991,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -47,8 +47,10 @@\n   simple_gesture_detector: ^0.2.0\r\n   modal_bottom_sheet: ^2.0.0\r\n   dropdown_button2: ^2.3.8\r\n   simple_tags: ^0.0.6\r\n+  pdf: ^3.5.0\r\n+  file_picker: ^4.0.0\r\n \r\n   mime: any\r\n dev_dependencies:\r\n   flutter_test:\r\n"
+                },
+                {
+                    "date": 1708727442848,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -47,10 +47,10 @@\n   simple_gesture_detector: ^0.2.0\r\n   modal_bottom_sheet: ^2.0.0\r\n   dropdown_button2: ^2.3.8\r\n   simple_tags: ^0.0.6\r\n-  pdf: ^3.5.0\r\n-  file_picker: ^4.0.0\r\n+  file_picker: ^2.0.3  \r\n+  flutter_full_pdf_viewer: ^1.0.6\r\n \r\n   mime: any\r\n dev_dependencies:\r\n   flutter_test:\r\n"
+                },
+                {
+                    "date": 1708727761769,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -47,10 +47,11 @@\n   simple_gesture_detector: ^0.2.0\r\n   modal_bottom_sheet: ^2.0.0\r\n   dropdown_button2: ^2.3.8\r\n   simple_tags: ^0.0.6\r\n-  file_picker: ^2.0.3  \r\n-  flutter_full_pdf_viewer: ^1.0.6\r\n+  easy_pdf_viewer: ^1.0.6 \r\n+  cloud_firestore: ^4.8.2 \r\n+  file_picker: ^5.3.2 \r\n \r\n   mime: any\r\n dev_dependencies:\r\n   flutter_test:\r\n"
                 }
             ],
             "date": 1707188005314,

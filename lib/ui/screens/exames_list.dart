@@ -5,93 +5,53 @@ import 'package:task_manager_flutter/ui/widgets/simple_tag.dart';
 import 'package:task_manager_flutter/ui/screens/events_example.dart';
 import 'package:task_manager_flutter/data/constants/custom_colors.dart';
 
-/// Flutter code sample for [IconButton].
-
-/*void main() => runApp(const ListItensAcademiaApp());
-
-class ListItensAcademiaApp extends StatelessWidget {
-  const ListItensAcademiaApp({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      home: Scaffold(
-        appBar: AppBar(title: const Text('IconButton Sample')),
-        body: const Center(
-          child: ListItensAcademia(),
-        ),
-      ),
-    );
-  }
-} 
-
-double _volume = 0.0;*/
-
-class ListItensAcademia extends StatelessWidget {
-  ListItensAcademia({
+class ListItensExames extends StatelessWidget {
+  ListItensExames({
     Key? key,
     required this.nome,
-    required this.cpf,
-    required this.endereco,
-    required this.endereco1,
-    required this.telefone,
-    required this.foto,
-    required this.id,
-    required this.listModadelidades,
+    required this.medico,
+    required this.dataExame,
+    required this.dataEntrega,
+    required this.dataConsulta,
+    required this.laudo,
   }) : super(key: key);
 
   final String nome;
-  final String cpf;
-  final String endereco;
-  final String endereco1;
-  final String telefone;
-  final String foto;
-  final int id;
-  final List<String> listModadelidades;
-
+  final String dataExame;
+  final String laudo;
+  final String medico;
+  final String dataEntrega;
+  final String dataConsulta;
   final String title = "";
 
-  final List<String> content = [];
+  final List<String> listModadelidades = [];
+
+  @override
+  void initState() {
+    listModadelidades.add(dataEntrega);
+  }
 
   @override
   Widget build(BuildContext context) {
     return Container(
       width: 350,
-      height: 250,
+      height: 200,
       alignment: Alignment.topCenter,
       color: Colors.transparent,
       child: Column(
         children: <Widget>[
           Row(
             children: <Widget>[
-              Container(
-                width: 70,
-                height: 220,
-                padding: EdgeInsets.zero,
-                color: CustomColors().getAppFundoPage(),
-                child: Padding(
-                  padding: const EdgeInsets.only(bottom: 60),
-                  child: CircleAvatar(
-                    radius: 25,
-                    child: Image.memory(
-                      showBase64ImageDefald(foto),
-                      errorBuilder: (_, __, ___) {
-                        return const Icon(Icons.person);
-                      },
-                    ),
-                  ),
-                ),
-              ),
               Flexible(
                 child: Container(
-                  height: 220,
+                  height: 180,
                   color: CustomColors().getAppFundoPage(),
                   child: Column(
                     children: [
                       Column(
                         children: <Widget>[
                           (Text(
-                            'Nome : $nome',
+                            'Exame: $nome ',
                             textAlign: TextAlign.start,
                             overflow: TextOverflow.ellipsis,
                             style: const TextStyle(fontWeight: FontWeight.bold),
@@ -101,7 +61,7 @@ class ListItensAcademia extends StatelessWidget {
                       Column(
                         children: <Widget>[
                           (Text(
-                            'CNPJ: $cpf...',
+                            'Medico: $medico',
                             textAlign: TextAlign.center,
                             overflow: TextOverflow.ellipsis,
                             style: const TextStyle(fontWeight: FontWeight.bold),
@@ -111,7 +71,7 @@ class ListItensAcademia extends StatelessWidget {
                       Column(
                         children: <Widget>[
                           (Text(
-                            'Endereço: $endereco',
+                            'Data Exame: $dataExame  Data Entrega: $dataEntrega',
                             textAlign: TextAlign.end,
                             overflow: TextOverflow.ellipsis,
                             style: const TextStyle(
@@ -125,7 +85,7 @@ class ListItensAcademia extends StatelessWidget {
                       Column(
                         children: <Widget>[
                           (Text(
-                            ' $endereco1',
+                            'Data Consulta: $dataConsulta ',
                             textAlign: TextAlign.end,
                             overflow: TextOverflow.ellipsis,
                             style: const TextStyle(
@@ -139,7 +99,7 @@ class ListItensAcademia extends StatelessWidget {
                       Column(
                         children: <Widget>[
                           (Text(
-                            'Tel : $telefone',
+                            'Resultado Exame/Consulta: $laudo',
                             textAlign: TextAlign.end,
                             overflow: TextOverflow.ellipsis,
                             style: const TextStyle(
@@ -240,7 +200,46 @@ class ListItensAcademia extends StatelessWidget {
                                   child: ClipRRect(
                                     borderRadius: BorderRadius.circular(10.0),
                                     child: Image.asset(
-                                      "assets/images/horarios_new.ico",
+                                      "assets/images/fimSuple.ico",
+                                      height: 40,
+                                      width: 40,
+                                      fit: BoxFit.contain,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(
+                            height: 10,
+                            width: 10,
+                          ),
+                          Container(
+                            width: 50,
+                            height: 50,
+                            padding: const EdgeInsets.all(4.0),
+                            decoration: const BoxDecoration(
+                                color: Color(0xFFFA903A),
+                                borderRadius: BorderRadius.only(
+                                  topLeft: Radius.circular(6.0),
+                                  topRight: Radius.circular(6.0),
+                                  bottomLeft: Radius.circular(6.0),
+                                  bottomRight: Radius.circular(6.0),
+                                )),
+                            child: Column(
+                              children: <Widget>[
+                                GestureDetector(
+                                  onTap: () {
+                                    Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                            builder: (context) =>
+                                                const TableEventsExample()));
+                                  },
+                                  child: ClipRRect(
+                                    borderRadius: BorderRadius.circular(10.0),
+                                    child: Image.asset(
+                                      "assets/images/remove_new.ico",
                                       height: 40,
                                       width: 40,
                                       fit: BoxFit.contain,

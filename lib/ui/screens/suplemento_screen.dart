@@ -6,16 +6,16 @@ import 'package:task_manager_flutter/ui/widgets/home_list_model.dart';
 import 'package:task_manager_flutter/data/models/network_response.dart';
 import 'package:task_manager_flutter/data/services/network_caller.dart';
 import 'package:task_manager_flutter/ui/widgets/input_field_busca.dart';
-import 'package:task_manager_flutter/ui/widgets/itens_list_academia.dart';
-import 'package:task_manager_flutter/ui/widgets/academia_dynamic_form.dart';
+import 'package:task_manager_flutter/ui/screens/suplemento_list.dart';
+import 'package:task_manager_flutter/ui/screens/suplemento_add.dart';
 
-class AcademiaScreen extends StatefulWidget {
-  const AcademiaScreen({
+class SuplementoScreen extends StatefulWidget {
+  const SuplementoScreen({
     Key? key,
   }) : super(key: key);
 
   @override
-  State<AcademiaScreen> createState() => _AcademiaScreenState();
+  State<SuplementoScreen> createState() => _SuplementoScreenState();
 }
 
 final TextEditingController _taskNameController = TextEditingController();
@@ -24,7 +24,7 @@ final TextEditingController _taskDescriptionController =
 List<Widget> mywidgets = [];
 bool _isLoading = false;
 
-class _AcademiaScreenState extends State<AcademiaScreen> {
+class _SuplementoScreenState extends State<SuplementoScreen> {
   @override
   void initState() {
     findAllAcademia();
@@ -59,15 +59,14 @@ class _AcademiaScreenState extends State<AcademiaScreen> {
       setState(() {});
     }
     Map<String, dynamic> requestBody = {
-      "cref": '',
-      "id": 1,
+      "codAluno": {"id": 1},
     };
 
     void onPressedss() => Navigator.push(context,
-        MaterialPageRoute(builder: (context) => const AcademiaDynamicForm()));
+        MaterialPageRoute(builder: (context) => const SuplementoModalAdd()));
 
-    final NetworkResponse response =
-        await NetworkCaller().postRequest(ApiLinks.allAcademia, requestBody);
+    final NetworkResponse response = await NetworkCaller()
+        .postRequest(ApiLinks.allSuplementoAluno, requestBody);
     _addNewTaskLoading = false;
     if (mounted) {
       setState(() {});
@@ -80,7 +79,7 @@ class _AcademiaScreenState extends State<AcademiaScreen> {
         List<dynamic> datas = data;
         mywidgets = [];
         mywidgets.add(InputBuscarField(
-            hint: "Buscar Academia",
+            hint: "Buscar Suplemento",
             obscure: false,
             icon: Icons.person_outline,
             onPresseds: onPressedss));
@@ -90,24 +89,22 @@ class _AcademiaScreenState extends State<AcademiaScreen> {
               mainAxisAlignment: MainAxisAlignment.center,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: <Widget>[
-                ListItensAcademia(
-                    nome: element['codDadosPessoal']['nome'],
-                    cpf: element['codDadosPessoal']['cpf'],
-                    endereco: element['codDadosPessoal']['logradouro'] +
-                        ", " +
-                        element['codDadosPessoal']['numero'],
-                    endereco1: element['codDadosPessoal']['bairro'] +
-                        ", " +
-                        element['codDadosPessoal']['cidade'],
-                    telefone: element['codDadosPessoal']['telefone'] != null
-                        ? element['codDadosPessoal']['telefone']
-                        : "",
-                    foto: element['codDadosPessoal']['photo'],
+                ListItensSuplemento(
+                    nome: element['nome'] ?? "",
+                    marca: element['marca'] ?? "",
+                    dataIni:
+                        element['dtInicio'] ?? "",
+                    dataFin:
+                        element['dtFinal'] ?? "",
+                    dataVal: element['dtVal'] ?? "",
+                    porcao:
+                        element['dosagem'] ?? "",
+                    foto: element['foto'],
                     id: element['id'],
-                    listModadelidades: element['modalidaList'] != null &&
-                            element['modalidaList'].length > 0
-                        ? getList(element['modalidaList'])
-                        : modalidadeList),
+                    valor: element['valor'] ?? "",
+                    sabor: element['sabor'] ?? "",
+                    tamanho:
+                        element['tamanho'] ?? ""),
               ],
             ),
           );
@@ -118,13 +115,13 @@ class _AcademiaScreenState extends State<AcademiaScreen> {
       if (mounted) {
         mywidgets = [];
         mywidgets.add(InputBuscarField(
-            hint: "Buscar Academia",
+            hint: "Buscar Suplemento",
             obscure: false,
             icon: Icons.person_outline,
             onPresseds: onPressedss));
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text("Nenhuma academia cadastrada!"),
+            content: Text("Nenhuma suplemento cadastrado!"),
           ),
         );
         _isLoading = false;
