@@ -13,9 +13,8 @@ import 'package:task_manager_flutter/data/utils/personal_validation.dart';
 import '../../data/models/login_model.dart';
 import 'package:task_manager_flutter/data/models/auth_utility.dart';
 import 'dart:io';
-import 'package:file_picker/file_picker.dart';
 import 'package:intl/intl.dart';
-import 'package:task_manager_flutter/ui/widgets/pdf_viewer.dart';
+import 'package:task_manager_flutter/ui/widgets/custom_insert_list_foto.dart';
 
 class ExamesModalAdd extends StatefulWidget {
   const ExamesModalAdd({super.key});
@@ -45,17 +44,13 @@ class _ExamesModalAddState extends State<ExamesModalAdd> {
     super.dispose();
   }
 
-  List<Map<String, dynamic>> pdfData = [];
-  final TextEditingController _nomeController = TextEditingController();
-  final TextEditingController _marcaController = TextEditingController();
-  final TextEditingController _dataIniController = TextEditingController();
-  final TextEditingController _dataFinController = TextEditingController();
-  final TextEditingController _dataValController = TextEditingController();
-  final TextEditingController _porcaoController = TextEditingController();
-  final TextEditingController _idController = TextEditingController();
-  final TextEditingController _valorController = TextEditingController();
-  final TextEditingController _saborController = TextEditingController();
-  final TextEditingController _tamanhoController = TextEditingController();
+  final TextEditingController _nomeExController = TextEditingController();
+  final TextEditingController _descricaoController = TextEditingController();
+  final TextEditingController _medicoIniController = TextEditingController();
+  final TextEditingController _laboratorioController = TextEditingController();
+  final TextEditingController _resultadoController = TextEditingController();
+  final TextEditingController _dtExameController = TextEditingController();
+  final TextEditingController _dtEntregaController = TextEditingController();
 
   Future<List<int>> getLostData() async {
     final ImagePicker picker = ImagePicker();
@@ -74,25 +69,6 @@ class _ExamesModalAddState extends State<ExamesModalAdd> {
   }
 
   Future<String?> uploadPdf(String fileName, File file) async {}
-
-  void pickFile() async {
-    final pickedFile = await FilePicker.platform.pickFiles(
-      type: FileType.custom,
-      allowedExtensions: ['pdf'],
-    );
-
-    if (pickedFile != null) {
-      String fileName = pickedFile.files[0].name;
-      File file = File(pickedFile.files[0].path!);
-      final downloadLink = await uploadPdf(fileName, file);
-
-      print('Pdf Uploaded Successfully');
-    }
-  }
-
-  void getAllPdf() async {
-    setState(() {});
-  }
 
   Future<void> updateProfile() async {
     _signUpInProgress = true;
@@ -116,17 +92,14 @@ class _ExamesModalAddState extends State<ExamesModalAdd> {
     af["id"] = userInfo.id;
 
     Map<String, dynamic> requestBody = {
-      "codAluno": af,
-      "nome": _nomeController.text.trim(),
-      "marca": _marcaController.text.trim(),
-      "dtInicio": _dataIniController.text.trim(),
-      "dtFinal": _dataFinController.text.trim(),
-      "dataVal": _dataValController.text.trim(),
-      "tamanho": _tamanhoController.text.trim(),
-      "dosagem": _porcaoController.text.trim(),
-      "id": _idController.text.trim(),
-      "valor": _valorController.text.trim(),
-      "sabor": _saborController.text.trim(),
+      "idaluno": af,
+      "nome": _nomeExController.text.trim(),
+      "descricao": _descricaoController.text.trim(),
+      "medico": _medicoIniController.text.trim(),
+      "laboratorio": _laboratorioController.text.trim(),
+      "resultado": _resultadoController.text.trim(),
+      "dtExame": _dtExameController.text.trim(),
+      "dtEntregaResulExame": _dtEntregaController.text.trim(),
       "foto": "data:image/png;base64,$base64Imagess",
     };
 
@@ -226,124 +199,61 @@ class _ExamesModalAddState extends State<ExamesModalAdd> {
                     validator: EmailValidator.validate,
                     focusNode: _focusNode,
                     type: TextInputType.text,
-                    keyField: "Nome",
-                    controller: _nomeController,
+                    keyField: "Nome Exame",
+                    controller: _nomeExController,
                     onPressed: (vale) => _onUpdate(0, "Nome", vale),
                   ),
                   CustomInputForm(
                     validator: EmailValidator.validate,
                     focusNode: _focusNode,
                     type: TextInputType.text,
-                    keyField: "Marca",
-                    controller: _marcaController,
-                    onPressed: (vale) => _onUpdate(0, "Marca", vale),
+                    keyField: "Nome Laboratorio",
+                    controller: _laboratorioController,
+                    onPressed: (vale) => _onUpdate(0, "laboratorio", vale),
                   ),
                   CustomInputForm(
                     validator: EmailValidator.validate,
                     focusNode: _focusNode,
                     type: TextInputType.text,
-                    keyField: "Sabor",
-                    controller: _saborController,
-                    onPressed: (vale) => _onUpdate(0, "Sabor", vale),
+                    keyField: "Descrição ('Porque do exame')",
+                    controller: _descricaoController,
+                    onPressed: (vale) => _onUpdate(0, "descricao", vale),
                   ),
                   CustomInputForm(
                     validator: EmailValidator.validate,
                     focusNode: _focusNode,
                     type: TextInputType.text,
-                    keyField: "Tamanho",
-                    controller: _tamanhoController,
-                    onPressed: (vale) => _onUpdate(0, "Sabor", vale),
+                    keyField:
+                        "Resultado do exame ('Conforme o medico dizer na consulta')",
+                    controller: _resultadoController,
+                    onPressed: (vale) => _onUpdate(0, "resultado", vale),
                   ),
                   CustomInputForm(
                     validator: EmailValidator.validate,
                     focusNode: _focusNode,
                     type: TextInputType.datetime,
-                    keyField: "Data Começou a Tomar",
-                    controller: _dataIniController,
-                    onPressed: (vale) => _onUpdate(0, "TELEFONE", vale),
+                    keyField: "Data Exame",
+                    controller: _dtExameController,
+                    onPressed: (vale) => _onUpdate(0, "dtExame", vale),
                   ),
                   CustomInputForm(
                     validator: EmailValidator.validate,
                     focusNode: _focusNode,
                     type: TextInputType.datetime,
-                    keyField: "Data que acabou de Tomar",
-                    controller: _dataFinController,
-                    onPressed: (vale) => _onUpdate(0, "CREF", vale),
+                    keyField: "Data Entrega Exame",
+                    controller: _dtEntregaController,
+                    onPressed: (vale) =>
+                        _onUpdate(0, "dtEntregaResulExame", vale),
                   ),
                   CustomInputForm(
                     validator: EmailValidator.validate,
                     focusNode: _focusNode,
-                    type: TextInputType.datetime,
-                    keyField: "Data Validade",
-                    controller: _dataValController,
-                    onPressed: (vale) => _onUpdate(0, "VLRAULA", vale),
+                    type: TextInputType.text,
+                    keyField: "Medico Solicitante",
+                    controller: _medicoIniController,
+                    onPressed: (vale) => _onUpdate(0, "medico", vale),
                   ),
-                  GridView.builder(
-                    gridDelegate:
-                        const SliverGridDelegateWithFixedCrossAxisCount(
-                            crossAxisCount: 2),
-                    itemCount: pdfData.length,
-                    itemBuilder: (context, index) {
-                      return Padding(
-                        padding: const EdgeInsets.all(8.0),
-                        child: InkWell(
-                          onTap: () {
-                            Navigator.of(context).push(MaterialPageRoute(
-                              builder: (context) => PdfViewerScreen(
-                                  pdfUrl: pdfData[index]['url']),
-                            ));
-                          },
-                          child: Container(
-                            decoration: BoxDecoration(
-                              border: Border.all(),
-                            ),
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                              crossAxisAlignment: CrossAxisAlignment.center,
-                              children: [
-                                const Icon(
-                                  Icons.picture_as_pdf,
-                                  color: Colors.red,
-                                  size: 50,
-                                ),
-                                Text(
-                                  pdfData[index]['name'],
-                                  style: const TextStyle(fontSize: 18),
-                                ),
-                                Padding(
-                                  padding: const EdgeInsets.symmetric(
-                                      horizontal: 8.0),
-                                  child: Text(
-                                    'Yüklenme tarihi: ' +
-                                        DateFormat('dd.mm.yyyy').format(
-                                            pdfData[index]['uploadDate']),
-                                    style: const TextStyle(
-                                        fontSize: 16, color: Colors.black),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                      );
-                    },
-                  ),
-                  CustomInputForm(
-                    validator: EmailValidator.validate,
-                    focusNode: _focusNode,
-                    type: TextInputType.datetime,
-                    keyField: "Dosagem/Dia",
-                    controller: _porcaoController,
-                    onPressed: (vale) => _onUpdate(0, "PORCAO", vale),
-                  ),
-                  CustomInputForm(
-                    validator: EmailValidator.validate,
-                    focusNode: _focusNode,
-                    type: TextInputType.datetime,
-                    keyField: "Valor",
-                    controller: _valorController,
-                    onPressed: (vale) => _onUpdate(0, "PORCAO", vale),
-                  ),
+                  ListFotoForm(),
                 ],
               ),
             ),

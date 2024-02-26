@@ -3,7 +3,7 @@
     "activeCommit": 0,
     "commits": [
         {
-            "activePatchIndex": 10,
+            "activePatchIndex": 11,
             "patches": [
                 {
                     "date": 1707188005314,
@@ -48,6 +48,10 @@
                 {
                     "date": 1708727761769,
                     "content": "Index: \n===================================================================\n--- \n+++ \n@@ -47,10 +47,11 @@\n   simple_gesture_detector: ^0.2.0\r\n   modal_bottom_sheet: ^2.0.0\r\n   dropdown_button2: ^2.3.8\r\n   simple_tags: ^0.0.6\r\n-  file_picker: ^2.0.3  \r\n-  flutter_full_pdf_viewer: ^1.0.6\r\n+  easy_pdf_viewer: ^1.0.6 \r\n+  cloud_firestore: ^4.8.2 \r\n+  file_picker: ^5.3.2 \r\n \r\n   mime: any\r\n dev_dependencies:\r\n   flutter_test:\r\n"
+                },
+                {
+                    "date": 1708964940514,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -47,11 +47,8 @@\n   simple_gesture_detector: ^0.2.0\r\n   modal_bottom_sheet: ^2.0.0\r\n   dropdown_button2: ^2.3.8\r\n   simple_tags: ^0.0.6\r\n-  easy_pdf_viewer: ^1.0.6 \r\n-  cloud_firestore: ^4.8.2 \r\n-  file_picker: ^5.3.2 \r\n \r\n   mime: any\r\n dev_dependencies:\r\n   flutter_test:\r\n"
                 }
             ],
             "date": 1707188005314,
