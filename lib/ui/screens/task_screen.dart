@@ -12,6 +12,7 @@ import 'package:task_manager_flutter/ui/widgets/status_change_botom_sheet.dart';
 import 'package:task_manager_flutter/ui/screens/personal_screen.dart';
 import 'package:task_manager_flutter/ui/screens/academia_screen.dart';
 import 'package:task_manager_flutter/ui/screens/suplemento_screen.dart';
+import 'package:task_manager_flutter/ui/screens/medicamento_screen.dart';
 
 class TaskScreen extends StatefulWidget {
   final String screenStatus;
@@ -268,7 +269,10 @@ class _TaskScreenState extends State<TaskScreen> {
                 text: 'Medicamento',
                 color: 'Screenshot_3.png',
                 onPresse: () {
-                  print('Medicamento');
+                  Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                          builder: (context) => const Medicamentoscreen()));
                 },
               ),
               const SizedBox(width: 10),

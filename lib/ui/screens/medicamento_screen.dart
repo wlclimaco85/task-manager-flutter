@@ -6,18 +6,18 @@ import 'package:task_manager_flutter/ui/widgets/home_list_model.dart';
 import 'package:task_manager_flutter/data/models/network_response.dart';
 import 'package:task_manager_flutter/data/services/network_caller.dart';
 import 'package:task_manager_flutter/ui/widgets/input_field_busca.dart';
-import 'package:task_manager_flutter/ui/screens/exames_add.dart';
-import 'package:task_manager_flutter/ui/screens/exames_list.dart';
+import 'package:task_manager_flutter/ui/screens/Medicamento_add.dart';
+import 'package:task_manager_flutter/ui/screens/Medicamento_list.dart';
 import 'package:task_manager_flutter/data/models/auth_utility.dart';
 import '../../data/models/login_model.dart';
 
-class ExameScreen extends StatefulWidget {
-  const ExameScreen({
+class Medicamentoscreen extends StatefulWidget {
+  const Medicamentoscreen({
     Key? key,
   }) : super(key: key);
 
   @override
-  State<ExameScreen> createState() => _ExameScreenState();
+  State<Medicamentoscreen> createState() => _MedicamentoscreenState();
 }
 
 final TextEditingController _taskNameController = TextEditingController();
@@ -26,7 +26,7 @@ final TextEditingController _taskDescriptionController =
 List<Widget> mywidgets = [];
 bool _isLoading = false;
 
-class _ExameScreenState extends State<ExameScreen> {
+class _MedicamentoscreenState extends State<Medicamentoscreen> {
   @override
   void initState() {
     findAllAcademia();
@@ -69,7 +69,7 @@ class _ExameScreenState extends State<ExameScreen> {
     };
 
     void onPressedss() => Navigator.push(context,
-        MaterialPageRoute(builder: (context) => const ExamesModalAdd()));
+        MaterialPageRoute(builder: (context) => const MedicamentosModalAdd()));
 
     final NetworkResponse response =
         await NetworkCaller().postRequest(ApiLinks.findByIdAluno, requestBody);
@@ -85,7 +85,7 @@ class _ExameScreenState extends State<ExameScreen> {
         List<dynamic> datas = data;
         mywidgets = [];
         mywidgets.add(InputBuscarField(
-            hint: "Buscar Exames",
+            hint: "Buscar Medicamentos",
             obscure: false,
             icon: Icons.person_outline,
             onPresseds: onPressedss));
@@ -95,7 +95,7 @@ class _ExameScreenState extends State<ExameScreen> {
               mainAxisAlignment: MainAxisAlignment.center,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: <Widget>[
-                ListItensExames(
+                ListItensMedicamentos(
                     nome: element['nome'] ?? "",
                     medico: element['medico'] ?? "",
                     dataExame: element['dataExame'] ?? "",
@@ -112,7 +112,7 @@ class _ExameScreenState extends State<ExameScreen> {
       if (mounted) {
         mywidgets = [];
         mywidgets.add(InputBuscarField(
-            hint: "Buscar Exames",
+            hint: "Buscar Medicamentos",
             obscure: false,
             icon: Icons.person_outline,
             onPresseds: onPressedss));
@@ -126,20 +126,6 @@ class _ExameScreenState extends State<ExameScreen> {
     }
   }
 
-  List<HomeListModel> listModels = [
-    HomeListModel(
-      title: "Academia - O Club",
-      assetIcon: "assets/icons/gym_icon.png",
-    ),
-    HomeListModel(
-      title: "Biometa Academia",
-      assetIcon: "assets/icons/gym_icon.png",
-    ),
-    HomeListModel(
-      title: "Academia Titanium Core",
-      assetIcon: "assets/icons/gym_icon.png",
-    )
-  ];
   refreshPage() {
     setState(() {});
   }

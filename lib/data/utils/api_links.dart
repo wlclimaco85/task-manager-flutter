@@ -1,10 +1,11 @@
 class ApiLinks {
   ApiLinks._();
-  static const String _baseIp = "http://192.168.12.19";
-  // "http://192.168.12.23"; // "http://192.168.56.1"; // ; // //"http://192.168.12.23";
-  //static const String _baseIp = "http://192.168.56.1"; //"http://192.168.12.23";
+  static const String _baseIp = "http://192.168.12.19:8088"; //
+  //'https://academia-app-919f42758cd6.herokuapp.com'; // "http://192.168.12.19:8088";
+  // "http://192.168.12.23:8088"; // "http://192.168.56.1:8088"; // ; // //"http://192.168.12.23:8088";
+  //static const String _baseIp = "http://192.168.56.1:8088"; //"http://192.168.12.23:8088";
   static const String _baseUrl = 'https://task.teamrabbil.com/api/v1';
-  static const String _baseUrlNew = '$_baseIp:8088/boletobancos';
+  static const String _baseUrlNew = '$_baseIp/boletobancos';
   //static const String _baseUrlNew =
   //    'https://academia-app-919f42758cd6.herokuapp.com/boletobancos';
   static const String allPersonal = '$_baseUrlNew/personal/findAll';
@@ -18,6 +19,8 @@ class ApiLinks {
   static const String insertAluno = '$_baseUrlNew/rest/auth/inserirAluno';
   static String regestration = '$_baseUrl/registration';
   static String profileUpdate = '$_baseUrl/profileUpdate';
+  static const String insertExame = '$_baseUrlNew/exame/inserir';
+  static const String findByIdAluno = '$_baseUrlNew/exame/findByParceiros';
   // static String login = '$_baseUrl/login';
   // static String login = '$_baseUrl/rest/auth/login';
 
