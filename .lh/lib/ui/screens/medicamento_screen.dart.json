@@ -3,7 +3,7 @@
     "activeCommit": 0,
     "commits": [
         {
-            "activePatchIndex": 1,
+            "activePatchIndex": 14,
             "patches": [
                 {
                     "date": 1709045567348,
@@ -12,6 +12,58 @@
                 {
                     "date": 1709045581903,
                     "content": "Index: \n===================================================================\n--- \n+++ \n@@ -124,23 +124,8 @@\n         _isLoading = false;\r\n       }\r\n     }\r\n   }\r\n-\r\n-  List<HomeListModel> listModels = [\r\n-    HomeListModel(\r\n-      title: \"Academia - O Club\",\r\n-      assetIcon: \"assets/icons/gym_icon.png\",\r\n-    ),\r\n-    HomeListModel(\r\n-      title: \"Biometa Academia\",\r\n-      assetIcon: \"assets/icons/gym_icon.png\",\r\n-    ),\r\n-    HomeListModel(\r\n-      title: \"Academia Titanium Core\",\r\n-      assetIcon: \"assets/icons/gym_icon.png\",\r\n-    )\r\n-  ];\r\n   refreshPage() {\r\n     setState(() {});\r\n   }\r\n \r\n"
+                },
+                {
+                    "date": 1709057236026,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -71,9 +71,9 @@\n     void onPressedss() => Navigator.push(context,\r\n         MaterialPageRoute(builder: (context) => const MedicamentosModalAdd()));\r\n \r\n     final NetworkResponse response =\r\n-        await NetworkCaller().postRequest(ApiLinks.findByIdAluno, requestBody);\r\n+        await NetworkCaller().postRequest(ApiLinks.findByAlunoByMedicamento, requestBody);\r\n     _addNewTaskLoading = false;\r\n     if (mounted) {\r\n       setState(() {});\r\n     }\r\n"
+                },
+                {
+                    "date": 1709057744417,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -95,14 +95,17 @@\n               mainAxisAlignment: MainAxisAlignment.center,\r\n               crossAxisAlignment: CrossAxisAlignment.start,\r\n               children: <Widget>[\r\n                 ListItensMedicamentos(\r\n-                    nome: element['nome'] ?? \"\",\r\n-                    medico: element['medico'] ?? \"\",\r\n-                    dataExame: element['dataExame'] ?? \"\",\r\n-                    dataEntrega: element['dataEntrega'] ?? \"\",\r\n-                    dataConsulta: element['dataConsulta'] ?? \"\",\r\n-                    laudo: element['resultado'] ?? \"\"),\r\n+                    medicamento: element['medicamento'] ?? \"\",\r\n+                    laboratorio: element['laboratorio'] ?? \"\",\r\n+                    medicoReceitou: element['medicoReceitou'] ?? \"\",\r\n+                    dosagem: element['dosagem'] ?? \"\",\r\n+                    descricao: element['descricao'] ?? \"\",\r\n+                    valor: element['valor'] ?? \"\"\r\n+                    dtInicio: element['valor'] ?? \"\"\r\n+                    dtFinal: element['valor'] ?? \"\"\r\n+                    nota: element['valor'] ?? \"\"),\r\n               ],\r\n             ),\r\n           );\r\n         }\r\n"
+                },
+                {
+                    "date": 1709057808657,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -70,10 +70,10 @@\n \r\n     void onPressedss() => Navigator.push(context,\r\n         MaterialPageRoute(builder: (context) => const MedicamentosModalAdd()));\r\n \r\n-    final NetworkResponse response =\r\n-        await NetworkCaller().postRequest(ApiLinks.findByAlunoByMedicamento, requestBody);\r\n+    final NetworkResponse response = await NetworkCaller()\r\n+        .postRequest(ApiLinks.findByAlunoByMedicamento, requestBody);\r\n     _addNewTaskLoading = false;\r\n     if (mounted) {\r\n       setState(() {});\r\n     }\r\n@@ -127,8 +127,9 @@\n         _isLoading = false;\r\n       }\r\n     }\r\n   }\r\n+\r\n   refreshPage() {\r\n     setState(() {});\r\n   }\r\n \r\n"
+                },
+                {
+                    "date": 1709057862002,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -100,11 +100,11 @@\n                     laboratorio: element['laboratorio'] ?? \"\",\r\n                     medicoReceitou: element['medicoReceitou'] ?? \"\",\r\n                     dosagem: element['dosagem'] ?? \"\",\r\n                     descricao: element['descricao'] ?? \"\",\r\n-                    valor: element['valor'] ?? \"\"\r\n-                    dtInicio: element['valor'] ?? \"\"\r\n-                    dtFinal: element['valor'] ?? \"\"\r\n+                    valor: element['valor'] ?? \"\",\r\n+                    dtInicio: element['valor'] ?? \"\",\r\n+                    dtFinal: element['valor'] ?? \"\",\r\n                     nota: element['valor'] ?? \"\"),\r\n               ],\r\n             ),\r\n           );\r\n"
+                },
+                {
+                    "date": 1709058770099,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -99,12 +99,12 @@\n                     laboratorio: element['laboratorio'] ?? \"\",\r\n                     medicoReceitou: element['medicoReceitou'] ?? \"\",\r\n                     dosagem: element['dosagem'] ?? \"\",\r\n                     descricao: element['descricao'] ?? \"\",\r\n-                    valor: element['valor'] ?? \"\",\r\n-                    dtInicio: element['valor'] ?? \"\",\r\n-                    dtFinal: element['valor'] ?? \"\",\r\n-                    nota: element['valor'] ?? \"\"),\r\n+                    valor: element['valor'] ?? 0,\r\n+                    dtInicio: element['dtInicio'] ?? \"\",\r\n+                    dtFinal: element['dtFinal'] ?? \"\",\r\n+                    nota: element['nota'] ?? \"\"),\r\n               ],\r\n             ),\r\n           );\r\n         }\r\n"
+                },
+                {
+                    "date": 1709058867646,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -1,9 +1,8 @@\n import 'package:flutter/material.dart';\r\n import 'package:task_manager_flutter/data/utils/api_links.dart';\r\n import 'package:task_manager_flutter/ui/widgets/user_banners.dart';\r\n import 'package:task_manager_flutter/ui/screens/update_profile.dart';\r\n-import 'package:task_manager_flutter/ui/widgets/home_list_model.dart';\r\n import 'package:task_manager_flutter/data/models/network_response.dart';\r\n import 'package:task_manager_flutter/data/services/network_caller.dart';\r\n import 'package:task_manager_flutter/ui/widgets/input_field_busca.dart';\r\n import 'package:task_manager_flutter/ui/screens/Medicamento_add.dart';\r\n"
+                },
+                {
+                    "date": 1709059313306,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -102,9 +102,10 @@\n                     descricao: element['descricao'] ?? \"\",\r\n                     valor: element['valor'] ?? 0,\r\n                     dtInicio: element['dtInicio'] ?? \"\",\r\n                     dtFinal: element['dtFinal'] ?? \"\",\r\n-                    nota: element['nota'] ?? \"\"),\r\n+                    nota: element['nota'] ?? \"\",\r\n+                    nota: element['fotos'][0]['foto'] ?? \"\"),\r\n               ],\r\n             ),\r\n           );\r\n         }\r\n"
+                },
+                {
+                    "date": 1709059323643,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -103,9 +103,9 @@\n                     valor: element['valor'] ?? 0,\r\n                     dtInicio: element['dtInicio'] ?? \"\",\r\n                     dtFinal: element['dtFinal'] ?? \"\",\r\n                     nota: element['nota'] ?? \"\",\r\n-                    nota: element['fotos'][0]['foto'] ?? \"\"),\r\n+                    foto: element['fotos'][0]['foto'] ?? \"\"),\r\n               ],\r\n             ),\r\n           );\r\n         }\r\n"
+                },
+                {
+                    "date": 1709061761065,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -103,9 +103,9 @@\n                     valor: element['valor'] ?? 0,\r\n                     dtInicio: element['dtInicio'] ?? \"\",\r\n                     dtFinal: element['dtFinal'] ?? \"\",\r\n                     nota: element['nota'] ?? \"\",\r\n-                    foto: element['fotos'][0]['foto'] ?? \"\"),\r\n+                    foto: element['fotos'] != null ? verificFoto(element['fotos'] [0]) : showBase64ImageDefald(null),\r\n               ],\r\n             ),\r\n           );\r\n         }\r\n"
+                },
+                {
+                    "date": 1709061783321,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -1,6 +1,7 @@\n import 'package:flutter/material.dart';\r\n import 'package:task_manager_flutter/data/utils/api_links.dart';\r\n+import 'package:task_manager_flutter/data/utils/fotos_util.dart';\r\n import 'package:task_manager_flutter/ui/widgets/user_banners.dart';\r\n import 'package:task_manager_flutter/ui/screens/update_profile.dart';\r\n import 'package:task_manager_flutter/data/models/network_response.dart';\r\n import 'package:task_manager_flutter/data/services/network_caller.dart';\r\n"
+                },
+                {
+                    "date": 1709061794148,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -104,9 +104,9 @@\n                     valor: element['valor'] ?? 0,\r\n                     dtInicio: element['dtInicio'] ?? \"\",\r\n                     dtFinal: element['dtFinal'] ?? \"\",\r\n                     nota: element['nota'] ?? \"\",\r\n-                    foto: element['fotos'] != null ? verificFoto(element['fotos'] [0]) : showBase64ImageDefald(null),\r\n+                    foto: element['fotos'] != null ? verificFoto(element['fotos'] [0]) : showBase64ImageDefald(null)),\r\n               ],\r\n             ),\r\n           );\r\n         }\r\n"
+                },
+                {
+                    "date": 1709062337799,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -106,9 +106,9 @@\n                   dtFinal: element['dtFinal'] ?? \"\",\r\n                   nota: element['nota'] ?? \"\",\r\n                   foto: element['fotos'] != null\r\n                       ? verificFoto(element['fotos'][0])\r\n-                      : showBase64ImageDefald(null),\r\n+                      : getImagepadrao(),\r\n                 ),\r\n               ],\r\n             ),\r\n           );\r\n"
+                },
+                {
+                    "date": 1709063458186,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -103,9 +103,9 @@\n                   descricao: element['descricao'] ?? \"\",\r\n                   valor: element['valor'] ?? 0,\r\n                   dtInicio: element['dtInicio'] ?? \"\",\r\n                   dtFinal: element['dtFinal'] ?? \"\",\r\n-                  nota: element['nota'] ?? \"\",\r\n+                  nota: element['nota'] != null ? element['nota'] : 0,\r\n                   foto: element['fotos'] != null\r\n                       ? verificFoto(element['fotos'][0])\r\n                       : getImagepadrao(),\r\n                 ),\r\n"
                 }
             ],
             "date": 1709045567348,

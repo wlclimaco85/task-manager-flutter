@@ -5,8 +5,8 @@ import 'package:task_manager_flutter/ui/widgets/simple_tag.dart';
 import 'package:task_manager_flutter/ui/screens/events_example.dart';
 import 'package:task_manager_flutter/data/constants/custom_colors.dart';
 
-class ListItensMedicamentos extends StatelessWidget {
-  ListItensMedicamentos({
+class ListItensDieta extends StatelessWidget {
+  ListItensDieta({
     Key? key,
     required this.medicamento,
     required this.laboratorio,

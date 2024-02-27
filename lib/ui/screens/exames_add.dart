@@ -67,7 +67,9 @@ class _ExamesModalAddState extends State<ExamesModalAdd> {
     }
   }
 
-  Future<String?> uploadPdf(String fileName, File file) async {}
+  Future<String?> uploadPdf(String fileName, File file) async {
+    return null;
+  }
 
   Future<void> updateProfile() async {
     _signUpInProgress = true;
@@ -252,7 +254,7 @@ class _ExamesModalAddState extends State<ExamesModalAdd> {
                     controller: _medicoIniController,
                     onPressed: (vale) => _onUpdate(0, "medico", vale),
                   ),
-                  ListFotoForm(),
+                  const ListFotoForm(),
                 ],
               ),
             ),

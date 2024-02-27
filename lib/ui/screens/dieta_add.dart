@@ -15,13 +15,13 @@ import 'package:task_manager_flutter/data/models/auth_utility.dart';
 import 'dart:io';
 import 'package:task_manager_flutter/ui/widgets/custom_insert_list_foto.dart';
 
-class MedicamentosModalAdd extends StatefulWidget {
-  const MedicamentosModalAdd({super.key});
+class DietaModalAdd extends StatefulWidget {
+  const DietaModalAdd({super.key});
   @override
-  State<MedicamentosModalAdd> createState() => _MedicamentosModalAddState();
+  State<DietaModalAdd> createState() => _DietaModalAddState();
 }
 
-class _MedicamentosModalAddState extends State<MedicamentosModalAdd> {
+class _DietaModalAddState extends State<DietaModalAdd> {
   final TextEditingController _nameController = TextEditingController();
 
   late GlobalKey<FormState> _formKey;

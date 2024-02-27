@@ -3,11 +3,55 @@
     "activeCommit": 0,
     "commits": [
         {
-            "activePatchIndex": 0,
+            "activePatchIndex": 11,
             "patches": [
                 {
                     "date": 1709045532764,
                     "content": "Index: \n===================================================================\n--- \n+++ \n"
+                },
+                {
+                    "date": 1709057362032,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -7,14 +7,16 @@\n \r\n class ListItensMedicamentos extends StatelessWidget {\r\n   ListItensMedicamentos({\r\n     Key? key,\r\n-    required this.nome,\r\n-    required this.medico,\r\n-    required this.dataExame,\r\n-    required this.dataEntrega,\r\n-    required this.dataConsulta,\r\n-    required this.laudo,\r\n+    required this.medicamento,\r\n+    required this.laboratorio,\r\n+    required this.medicoReceitou,\r\n+    required this.dosagem,\r\n+    required this.descricao,\r\n+    required this.valor,\r\n+    required this.dtInicio,\r\n+    required this.dtFinal,\r\n   }) : super(key: key);\r\n \r\n   final String nome;\r\n   final String dataExame;\r\n"
+                },
+                {
+                    "date": 1709057404835,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -17,14 +17,16 @@\n     required this.dtInicio,\r\n     required this.dtFinal,\r\n   }) : super(key: key);\r\n \r\n-  final String nome;\r\n-  final String dataExame;\r\n-  final String laudo;\r\n-  final String medico;\r\n-  final String dataEntrega;\r\n-  final String dataConsulta;\r\n+  final String medicamento;\r\n+  final String laboratorio;\r\n+  final String medicoReceitou;\r\n+  final String dosagem;\r\n+  final String descricao;\r\n+  final String valor;\r\n+  final String dtInicio;\r\n+  final String dtFinal;\r\n   final String title = \"\";\r\n \r\n   final List<String> listModadelidades = [];\r\n \r\n"
+                },
+                {
+                    "date": 1709057433040,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -15,8 +15,9 @@\n     required this.descricao,\r\n     required this.valor,\r\n     required this.dtInicio,\r\n     required this.dtFinal,\r\n+    required this.nota,\r\n   }) : super(key: key);\r\n \r\n   final String medicamento;\r\n   final String laboratorio;\r\n@@ -25,15 +26,16 @@\n   final String descricao;\r\n   final String valor;\r\n   final String dtInicio;\r\n   final String dtFinal;\r\n+  final String nota;\r\n   final String title = \"\";\r\n \r\n   final List<String> listModadelidades = [];\r\n \r\n   @override\r\n   void initState() {\r\n-    listModadelidades.add(dataEntrega);\r\n+    listModadelidades.add(dtFinal);\r\n   }\r\n \r\n   @override\r\n   Widget build(BuildContext context) {\r\n"
+                },
+                {
+                    "date": 1709057459415,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -33,9 +33,9 @@\n   final List<String> listModadelidades = [];\r\n \r\n   @override\r\n   void initState() {\r\n-    listModadelidades.add(dtFinal);\r\n+    listModadelidades.add(nota);\r\n   }\r\n \r\n   @override\r\n   Widget build(BuildContext context) {\r\n@@ -56,9 +56,9 @@\n                     children: [\r\n                       Column(\r\n                         children: <Widget>[\r\n                           (Text(\r\n-                            'Exame: $nome ',\r\n+                            'Medicamanto: $medicamento ',\r\n                             textAlign: TextAlign.start,\r\n                             overflow: TextOverflow.ellipsis,\r\n                             style: const TextStyle(fontWeight: FontWeight.bold),\r\n                           )), // <-- Wrapped in Flexible.\r\n"
+                },
+                {
+                    "date": 1709057554706,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -66,9 +66,9 @@\n                       ),\r\n                       Column(\r\n                         children: <Widget>[\r\n                           (Text(\r\n-                            'Medico: $medico',\r\n+                            'Medico: $medicoReceitou',\r\n                             textAlign: TextAlign.center,\r\n                             overflow: TextOverflow.ellipsis,\r\n                             style: const TextStyle(fontWeight: FontWeight.bold),\r\n                           )), // <-- Wrapped in Flexible.\r\n@@ -76,9 +76,19 @@\n                       ),\r\n                       Column(\r\n                         children: <Widget>[\r\n                           (Text(\r\n-                            'Data Exame: $dataExame  Data Entrega: $dataEntrega',\r\n+                            'Laboratorio: $laboratorio',\r\n+                            textAlign: TextAlign.center,\r\n+                            overflow: TextOverflow.ellipsis,\r\n+                            style: const TextStyle(fontWeight: FontWeight.bold),\r\n+                          )), // <-- Wrapped in Flexible.\r\n+                        ],\r\n+                      ),\r\n+                      Column(\r\n+                        children: <Widget>[\r\n+                          (Text(\r\n+                            'Data Inicio: $dtInicio  Data Fim: $dtFinal',\r\n                             textAlign: TextAlign.end,\r\n                             overflow: TextOverflow.ellipsis,\r\n                             style: const TextStyle(\r\n                               fontWeight: FontWeight.w900,\r\n@@ -90,9 +100,9 @@\n                       ),\r\n                       Column(\r\n                         children: <Widget>[\r\n                           (Text(\r\n-                            'Data Consulta: $dataConsulta ',\r\n+                            'Dosagem: $dosagem ',\r\n                             textAlign: TextAlign.end,\r\n                             overflow: TextOverflow.ellipsis,\r\n                             style: const TextStyle(\r\n                               fontWeight: FontWeight.w900,\r\n"
+                },
+                {
+                    "date": 1709057585472,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -100,9 +100,9 @@\n                       ),\r\n                       Column(\r\n                         children: <Widget>[\r\n                           (Text(\r\n-                            'Dosagem: $dosagem ',\r\n+                            'Dosagem: $dosagem , Valor R$valor',\r\n                             textAlign: TextAlign.end,\r\n                             overflow: TextOverflow.ellipsis,\r\n                             style: const TextStyle(\r\n                               fontWeight: FontWeight.w900,\r\n"
+                },
+                {
+                    "date": 1709057639681,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -114,9 +114,9 @@\n                       ),\r\n                       Column(\r\n                         children: <Widget>[\r\n                           (Text(\r\n-                            'Resultado Exame/Consulta: $laudo',\r\n+                            'Descrição Motivo: $descricao',\r\n                             textAlign: TextAlign.end,\r\n                             overflow: TextOverflow.ellipsis,\r\n                             style: const TextStyle(\r\n                               fontWeight: FontWeight.w900,\r\n"
+                },
+                {
+                    "date": 1709058837837,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -23,12 +23,12 @@\n   final String laboratorio;\r\n   final String medicoReceitou;\r\n   final String dosagem;\r\n   final String descricao;\r\n-  final String valor;\r\n+  final double valor;\r\n   final String dtInicio;\r\n   final String dtFinal;\r\n-  final String nota;\r\n+  final int nota;\r\n   final String title = \"\";\r\n \r\n   final List<String> listModadelidades = [];\r\n \r\n"
+                },
+                {
+                    "date": 1709058886058,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -33,9 +33,9 @@\n   final List<String> listModadelidades = [];\r\n \r\n   @override\r\n   void initState() {\r\n-    listModadelidades.add(nota);\r\n+    listModadelidades.add(nota.toString());\r\n   }\r\n \r\n   @override\r\n   Widget build(BuildContext context) {\r\n"
+                },
+                {
+                    "date": 1709059270844,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -16,8 +16,9 @@\n     required this.valor,\r\n     required this.dtInicio,\r\n     required this.dtFinal,\r\n     required this.nota,\r\n+    required this.foto,\r\n   }) : super(key: key);\r\n \r\n   final String medicamento;\r\n   final String laboratorio;\r\n@@ -47,8 +48,26 @@\n       child: Column(\r\n         children: <Widget>[\r\n           Row(\r\n             children: <Widget>[\r\n+              Container(\r\n+                width: 70,\r\n+                height: 180,\r\n+                padding: EdgeInsets.zero,\r\n+                color: CustomColors().getAppFundoPage(),\r\n+                child: Padding(\r\n+                  padding: const EdgeInsets.only(bottom: 60),\r\n+                  child: CircleAvatar(\r\n+                    radius: 25,\r\n+                    child: Image.memory(\r\n+                      showBase64ImageDefald(foto),\r\n+                      errorBuilder: (_, __, ___) {\r\n+                        return const Icon(Icons.person);\r\n+                      },\r\n+                    ),\r\n+                  ),\r\n+                ),\r\n+              ),\r\n               Flexible(\r\n                 child: Container(\r\n                   height: 180,\r\n                   color: CustomColors().getAppFundoPage(),\r\n"
+                },
+                {
+                    "date": 1709059279603,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -28,9 +28,9 @@\n   final double valor;\r\n   final String dtInicio;\r\n   final String dtFinal;\r\n   final int nota;\r\n-  final String title = \"\";\r\n+  final String foto;\r\n \r\n   final List<String> listModadelidades = [];\r\n \r\n   @override\r\n"
                 }
             ],
             "date": 1709045532764,

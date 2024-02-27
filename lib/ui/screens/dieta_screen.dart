@@ -6,18 +6,18 @@ import 'package:task_manager_flutter/ui/screens/update_profile.dart';
 import 'package:task_manager_flutter/data/models/network_response.dart';
 import 'package:task_manager_flutter/data/services/network_caller.dart';
 import 'package:task_manager_flutter/ui/widgets/input_field_busca.dart';
-import 'package:task_manager_flutter/ui/screens/Medicamento_add.dart';
-import 'package:task_manager_flutter/ui/screens/Medicamento_list.dart';
+import 'package:task_manager_flutter/ui/screens/Dieta_add.dart';
+import 'package:task_manager_flutter/ui/screens/Dieta_list.dart';
 import 'package:task_manager_flutter/data/models/auth_utility.dart';
 import '../../data/models/login_model.dart';
 
-class Medicamentoscreen extends StatefulWidget {
-  const Medicamentoscreen({
+class Dietacreen extends StatefulWidget {
+  const Dietacreen({
     Key? key,
   }) : super(key: key);
 
   @override
-  State<Medicamentoscreen> createState() => _MedicamentoscreenState();
+  State<Dietacreen> createState() => _DietacreenState();
 }
 
 final TextEditingController _taskNameController = TextEditingController();
@@ -26,7 +26,7 @@ final TextEditingController _taskDescriptionController =
 List<Widget> mywidgets = [];
 bool _isLoading = false;
 
-class _MedicamentoscreenState extends State<Medicamentoscreen> {
+class _DietacreenState extends State<Dietacreen> {
   @override
   void initState() {
     findAllAcademia();
@@ -69,10 +69,10 @@ class _MedicamentoscreenState extends State<Medicamentoscreen> {
     };
 
     void onPressedss() => Navigator.push(context,
-        MaterialPageRoute(builder: (context) => const MedicamentosModalAdd()));
+        MaterialPageRoute(builder: (context) => const DietaModalAdd()));
 
     final NetworkResponse response = await NetworkCaller()
-        .postRequest(ApiLinks.findByAlunoByMedicamento, requestBody);
+        .postRequest(ApiLinks.findByAlunoByDieta, requestBody);
     _addNewTaskLoading = false;
     if (mounted) {
       setState(() {});
@@ -85,7 +85,7 @@ class _MedicamentoscreenState extends State<Medicamentoscreen> {
         List<dynamic> datas = data;
         mywidgets = [];
         mywidgets.add(InputBuscarField(
-            hint: "Buscar Medicamentos",
+            hint: "Buscar Dieta",
             obscure: false,
             icon: Icons.person_outline,
             onPresseds: onPressedss));
@@ -95,7 +95,7 @@ class _MedicamentoscreenState extends State<Medicamentoscreen> {
               mainAxisAlignment: MainAxisAlignment.center,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: <Widget>[
-                ListItensMedicamentos(
+                ListItensDieta(
                   medicamento: element['medicamento'] ?? "",
                   laboratorio: element['laboratorio'] ?? "",
                   medicoReceitou: element['medicoReceitou'] ?? "",
@@ -119,7 +119,7 @@ class _MedicamentoscreenState extends State<Medicamentoscreen> {
       if (mounted) {
         mywidgets = [];
         mywidgets.add(InputBuscarField(
-            hint: "Buscar Medicamentos",
+            hint: "Buscar Dieta",
             obscure: false,
             icon: Icons.person_outline,
             onPresseds: onPressedss));
