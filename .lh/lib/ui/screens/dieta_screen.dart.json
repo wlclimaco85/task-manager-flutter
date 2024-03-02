@@ -3,7 +3,7 @@
     "activeCommit": 0,
     "commits": [
         {
-            "activePatchIndex": 1,
+            "activePatchIndex": 3,
             "patches": [
                 {
                     "date": 1709066652459,
@@ -12,6 +12,14 @@
                 {
                     "date": 1709066667131,
                     "content": "Index: \n===================================================================\n--- \n+++ \n@@ -5,10 +5,10 @@\n import 'package:task_manager_flutter/ui/screens/update_profile.dart';\r\n import 'package:task_manager_flutter/data/models/network_response.dart';\r\n import 'package:task_manager_flutter/data/services/network_caller.dart';\r\n import 'package:task_manager_flutter/ui/widgets/input_field_busca.dart';\r\n-import 'package:task_manager_flutter/ui/screens/Medicamento_add.dart';\r\n-import 'package:task_manager_flutter/ui/screens/Medicamento_list.dart';\r\n+import 'package:task_manager_flutter/ui/screens/Dieta_add.dart';\r\n+import 'package:task_manager_flutter/ui/screens/Dieta_list.dart';\r\n import 'package:task_manager_flutter/data/models/auth_utility.dart';\r\n import '../../data/models/login_model.dart';\r\n \r\n class Dietacreen extends StatefulWidget {\r\n@@ -71,9 +71,9 @@\n     void onPressedss() => Navigator.push(context,\r\n         MaterialPageRoute(builder: (context) => const DietaModalAdd()));\r\n \r\n     final NetworkResponse response = await NetworkCaller()\r\n-        .postRequest(ApiLinks.findByAlunoByMedicamento, requestBody);\r\n+        .postRequest(ApiLinks.findByAlunoByDieta, requestBody);\r\n     _addNewTaskLoading = false;\r\n     if (mounted) {\r\n       setState(() {});\r\n     }\r\n"
+                },
+                {
+                    "date": 1709209604181,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -95,14 +95,13 @@\n               mainAxisAlignment: MainAxisAlignment.center,\r\n               crossAxisAlignment: CrossAxisAlignment.start,\r\n               children: <Widget>[\r\n                 ListItensDieta(\r\n-                  medicamento: element['medicamento'] ?? \"\",\r\n-                  laboratorio: element['laboratorio'] ?? \"\",\r\n-                  medicoReceitou: element['medicoReceitou'] ?? \"\",\r\n-                  dosagem: element['dosagem'] ?? \"\",\r\n+                  nutricionista: element['nutricionista'] ?? \"\",\r\n+                  objetivo: element['objetivo'] ?? \"\",\r\n+                  dtConsulta: element['dtConsulta'] ?? \"\",\r\n                   descricao: element['descricao'] ?? \"\",\r\n-                  valor: element['valor'] ?? 0,\r\n+                  oQueAchou: element['oQueAchou'] ?? \"\",\r\n                   dtInicio: element['dtInicio'] ?? \"\",\r\n                   dtFinal: element['dtFinal'] ?? \"\",\r\n                   nota: element['nota'] != null ? element['nota'] : 0,\r\n                   foto: element['fotos'] != null\r\n"
+                },
+                {
+                    "date": 1709243509467,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -64,9 +64,9 @@\n \r\n     Map<String, dynamic> af = {};\r\n     af[\"id\"] = userInfo.id;\r\n     Map<String, dynamic> requestBody = {\r\n-      \"idaluno\": {\"id\": 1},\r\n+      \"codAluno\": {\"id\": 1},\r\n     };\r\n \r\n     void onPressedss() => Navigator.push(context,\r\n         MaterialPageRoute(builder: (context) => const DietaModalAdd()));\r\n"
                 }
             ],
             "date": 1709066652459,

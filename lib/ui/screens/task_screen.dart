@@ -13,6 +13,7 @@ import 'package:task_manager_flutter/ui/screens/personal_screen.dart';
 import 'package:task_manager_flutter/ui/screens/academia_screen.dart';
 import 'package:task_manager_flutter/ui/screens/suplemento_screen.dart';
 import 'package:task_manager_flutter/ui/screens/medicamento_screen.dart';
+import 'package:task_manager_flutter/ui/screens/dieta_screen.dart';
 
 class TaskScreen extends StatefulWidget {
   final String screenStatus;
@@ -257,7 +258,10 @@ class _TaskScreenState extends State<TaskScreen> {
                 text: 'Dieta',
                 color: 'images (4).png',
                 onPresse: () {
-                  print('Dieta');
+                  Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                          builder: (context) => const Dietacreen()));
                 },
               ),
             ],

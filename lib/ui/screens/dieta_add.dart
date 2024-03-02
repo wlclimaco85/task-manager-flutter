@@ -13,7 +13,7 @@ import 'package:task_manager_flutter/data/utils/personal_validation.dart';
 import '../../data/models/login_model.dart';
 import 'package:task_manager_flutter/data/models/auth_utility.dart';
 import 'dart:io';
-import 'package:task_manager_flutter/ui/widgets/custom_insert_list_foto.dart';
+import 'package:task_manager_flutter/ui/widgets/data_picker_core_date.dart';
 
 class DietaModalAdd extends StatefulWidget {
   const DietaModalAdd({super.key});
@@ -43,14 +43,11 @@ class _DietaModalAddState extends State<DietaModalAdd> {
     super.dispose();
   }
 
-  final TextEditingController _medicamentoController = TextEditingController();
-  final TextEditingController _laboratorioController = TextEditingController();
-  final TextEditingController _medicoReceitouController =
+  final TextEditingController _nutricionistaController =
       TextEditingController();
-  final TextEditingController _dosagemController = TextEditingController();
+  final TextEditingController _objetivoController = TextEditingController();
   final TextEditingController _descricaoController = TextEditingController();
-  final TextEditingController _observacaoController = TextEditingController();
-  final TextEditingController _valorController = TextEditingController();
+  final TextEditingController _dtConsultaController = TextEditingController();
   final TextEditingController _dtInicioController = TextEditingController();
   final TextEditingController _dtFinalController = TextEditingController();
 
@@ -100,13 +97,10 @@ class _DietaModalAddState extends State<DietaModalAdd> {
 
     Map<String, dynamic> requestBody = {
       "idaluno": af,
-      "medicamento": _medicamentoController.text.trim(),
-      "laboratorio": _laboratorioController.text.trim(),
-      "medicoReceitou": _medicoReceitouController.text.trim(),
-      "dosagem": _dosagemController.text.trim(),
+      "nutricionista": _nutricionistaController.text.trim(),
+      "objetivo": _objetivoController.text.trim(),
       "descricao": _descricaoController.text.trim(),
-      "observacao": _observacaoController.text.trim(),
-      "valor": _valorController.text.trim(),
+      "dtConsulta": _dtConsultaController.text.trim(),
       "dtInicio": _dtInicioController.text.trim(),
       "dtFinal": _dtFinalController.text.trim(),
       "fotos": [fotos],
@@ -208,25 +202,25 @@ class _DietaModalAddState extends State<DietaModalAdd> {
                     validator: EmailValidator.validate,
                     focusNode: _focusNode,
                     type: TextInputType.text,
-                    keyField: "Medicamanto",
-                    controller: _medicamentoController,
-                    onPressed: (vale) => _onUpdate(0, "Nome", vale),
+                    keyField: "Nutricionista",
+                    controller: _nutricionistaController,
+                    onPressed: (vale) => _onUpdate(0, "Nutricionista", vale),
                   ),
                   CustomInputForm(
                     validator: EmailValidator.validate,
                     focusNode: _focusNode,
                     type: TextInputType.text,
-                    keyField: "Nome Laboratorio",
-                    controller: _laboratorioController,
-                    onPressed: (vale) => _onUpdate(0, "laboratorio", vale),
+                    keyField: "Objetivo",
+                    controller: _objetivoController,
+                    onPressed: (vale) => _onUpdate(0, "Objetivo", vale),
                   ),
                   CustomInputForm(
                     validator: EmailValidator.validate,
                     focusNode: _focusNode,
                     type: TextInputType.text,
-                    keyField: "Nome Medico que receitou",
-                    controller: _medicoReceitouController,
-                    onPressed: (vale) => _onUpdate(0, "laboratorio", vale),
+                    keyField: "Descrição",
+                    controller: _descricaoController,
+                    onPressed: (vale) => _onUpdate(0, "descricao", vale),
                   ),
                   CustomInputForm(
                     validator: EmailValidator.validate,
@@ -236,47 +230,9 @@ class _DietaModalAddState extends State<DietaModalAdd> {
                     controller: _descricaoController,
                     onPressed: (vale) => _onUpdate(0, "descricao", vale),
                   ),
-                  CustomInputForm(
-                    validator: EmailValidator.validate,
-                    focusNode: _focusNode,
-                    type: TextInputType.text,
-                    keyField: "Dosagem",
-                    controller: _dosagemController,
-                    onPressed: (vale) => _onUpdate(0, "resultado", vale),
-                  ),
-                  CustomInputForm(
-                    validator: EmailValidator.validate,
-                    focusNode: _focusNode,
-                    type: TextInputType.text,
-                    keyField: "Observações",
-                    controller: _observacaoController,
-                    onPressed: (vale) => _onUpdate(0, "dtExame", vale),
-                  ),
-                  CustomInputForm(
-                    validator: EmailValidator.validate,
-                    focusNode: _focusNode,
-                    type: TextInputType.number,
-                    keyField: "Valor",
-                    controller: _valorController,
-                    onPressed: (vale) => _onUpdate(0, "dtExame", vale),
-                  ),
-                  CustomInputForm(
-                    validator: EmailValidator.validate,
-                    focusNode: _focusNode,
-                    type: TextInputType.datetime,
-                    keyField: "Data de quando começou a tomar",
-                    controller: _dtInicioController,
-                    onPressed: (vale) =>
-                        _onUpdate(0, "dtEntregaResulExame", vale),
-                  ),
-                  CustomInputForm(
-                    validator: EmailValidator.validate,
-                    focusNode: _focusNode,
-                    type: TextInputType.datetime,
-                    keyField: "Data de quando terminou de tomar",
-                    controller: _dtFinalController,
-                    onPressed: (vale) => _onUpdate(0, "medico", vale),
-                  ),
+                  DatePickerExample(labels: "Data Consulta"),
+                  DatePickerExample(labels: "Data Ini dieta"),
+                  DatePickerExample(labels: "Data Fim dieta"),
                   InkWell(
                     onTap: () {
                       imagePicked();

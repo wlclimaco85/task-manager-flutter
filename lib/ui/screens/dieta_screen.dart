@@ -65,7 +65,7 @@ class _DietacreenState extends State<Dietacreen> {
     Map<String, dynamic> af = {};
     af["id"] = userInfo.id;
     Map<String, dynamic> requestBody = {
-      "idaluno": {"id": 1},
+      "codAluno": {"id": 1},
     };
 
     void onPressedss() => Navigator.push(context,
@@ -96,12 +96,11 @@ class _DietacreenState extends State<Dietacreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: <Widget>[
                 ListItensDieta(
-                  medicamento: element['medicamento'] ?? "",
-                  laboratorio: element['laboratorio'] ?? "",
-                  medicoReceitou: element['medicoReceitou'] ?? "",
-                  dosagem: element['dosagem'] ?? "",
+                  nutricionista: element['nutricionista'] ?? "",
+                  objetivo: element['objetivo'] ?? "",
+                  dtConsulta: element['dtConsulta'] ?? "",
                   descricao: element['descricao'] ?? "",
-                  valor: element['valor'] ?? 0,
+                  oQueAchou: element['oQueAchou'] ?? "",
                   dtInicio: element['dtInicio'] ?? "",
                   dtFinal: element['dtFinal'] ?? "",
                   nota: element['nota'] != null ? element['nota'] : 0,

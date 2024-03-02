@@ -8,24 +8,22 @@ import 'package:task_manager_flutter/data/constants/custom_colors.dart';
 class ListItensDieta extends StatelessWidget {
   ListItensDieta({
     Key? key,
-    required this.medicamento,
-    required this.laboratorio,
-    required this.medicoReceitou,
-    required this.dosagem,
+    required this.nutricionista,
+    required this.objetivo,
+    required this.dtConsulta,
     required this.descricao,
-    required this.valor,
+    required this.oQueAchou,
     required this.dtInicio,
     required this.dtFinal,
     required this.nota,
     required this.foto,
   }) : super(key: key);
 
-  final String medicamento;
-  final String laboratorio;
-  final String medicoReceitou;
-  final String dosagem;
+  final String nutricionista;
+  final String objetivo;
+  final String dtConsulta;
+  final String oQueAchou;
   final String descricao;
-  final double valor;
   final String dtInicio;
   final String dtFinal;
   final int nota;
@@ -76,7 +74,7 @@ class ListItensDieta extends StatelessWidget {
                       Column(
                         children: <Widget>[
                           (Text(
-                            'Medicamanto: $medicamento ',
+                            'Nutricionista: $nutricionista ',
                             textAlign: TextAlign.start,
                             overflow: TextOverflow.ellipsis,
                             style: const TextStyle(fontWeight: FontWeight.bold),
@@ -86,7 +84,7 @@ class ListItensDieta extends StatelessWidget {
                       Column(
                         children: <Widget>[
                           (Text(
-                            'Medico: $medicoReceitou',
+                            'Objetivo: $objetivo',
                             textAlign: TextAlign.center,
                             overflow: TextOverflow.ellipsis,
                             style: const TextStyle(fontWeight: FontWeight.bold),
@@ -96,7 +94,7 @@ class ListItensDieta extends StatelessWidget {
                       Column(
                         children: <Widget>[
                           (Text(
-                            'Laboratorio: $laboratorio',
+                            'Data Consulta: $dtConsulta',
                             textAlign: TextAlign.center,
                             overflow: TextOverflow.ellipsis,
                             style: const TextStyle(fontWeight: FontWeight.bold),
@@ -107,20 +105,6 @@ class ListItensDieta extends StatelessWidget {
                         children: <Widget>[
                           (Text(
                             'Data Inicio: $dtInicio  Data Fim: $dtFinal',
-                            textAlign: TextAlign.end,
-                            overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(
-                              fontWeight: FontWeight.w900,
-                              fontSize: 12,
-                              color: Color.fromARGB(255, 14, 13, 13),
-                            ),
-                          )), // <-- Wrapped in Flexible.
-                        ],
-                      ),
-                      Column(
-                        children: <Widget>[
-                          (Text(
-                            'Dosagem: $dosagem , Valor R$valor',
                             textAlign: TextAlign.end,
                             overflow: TextOverflow.ellipsis,
                             style: const TextStyle(

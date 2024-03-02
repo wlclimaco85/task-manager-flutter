@@ -306,7 +306,7 @@ class ListItensExample extends StatelessWidget {
   }
 
   showBase64ImageDefald(base64String) {
-    if (base64String != null) {
+    if (base64String != null && base64String.trim() != '') {
       UriData? data = Uri.parse(base64String).data;
       Uint8List myImage = data!.contentAsBytes();
       return myImage;
