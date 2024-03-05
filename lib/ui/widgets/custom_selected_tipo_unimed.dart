@@ -4,39 +4,31 @@
 import 'package:flutter/material.dart';
 import 'package:task_manager_flutter/data/constants/custom_colors.dart';
 import 'package:dropdown_button2/dropdown_button2.dart';
-import 'package:task_manager_flutter/ui/widgets/custom_selected_tipo_refeicao.dart';
-import 'package:task_manager_flutter/ui/widgets/custom_dieta_box_itens_form.dart';
-
-var dias = [
-  'Segunda',
-  'Terça',
-  'Quarta',
-  'Quinta',
-  'Sexta',
-  'Sabado',
-  'Domingo',
-];
-
-List<String> diasSelectedItems = [];
+import 'package:task_manager_flutter/data/utils/api_links.dart';
+import 'package:task_manager_flutter/data/models/network_response.dart';
+import 'package:task_manager_flutter/data/services/network_caller.dart';
 
 final List<Map<String, dynamic>> _dataArray = []; //add this
 String? _data = ""; //add this
+List<String> diasSelectedItems = [];
+List<String> dias = [];
 
-class NumberToDay {
+class GetModalidade {
   test() {
     return _dataArray;
   }
 }
 
-class CustomDietaBoxForm extends StatefulWidget {
-  const CustomDietaBoxForm({super.key});
+class SelectedFormUniMed extends StatefulWidget {
+  const SelectedFormUniMed({super.key});
 
   @override
-  State<CustomDietaBoxForm> createState() => _CustomDietaBoxForm();
+  State<SelectedFormUniMed> createState() => _SelectedFormUniMed();
 }
 
-class _CustomDietaBoxForm extends State<CustomDietaBoxForm> {
-  int _formCount = 1; //add this
+class _SelectedFormUniMed extends State<SelectedFormUniMed> {
+  final int _formCount = 1; //add this
+  bool isLoading = true;
 
   late FocusNode _focusNode;
 
@@ -44,12 +36,57 @@ class _CustomDietaBoxForm extends State<CustomDietaBoxForm> {
   void initState() {
     _focusNode = FocusNode();
     super.initState();
+    getSelected();
   }
 
   @override
   void dispose() {
     _focusNode.dispose();
     super.dispose();
+  }
+
+  Future<List<String>> getSelected() async {
+    isLoading = true;
+    List<String> modalidadeList = [];
+    if (mounted) {
+      setState(() {});
+    }
+    Map<String, dynamic> requestBody = {};
+    final NetworkResponse response =
+        await NetworkCaller().postRequest(ApiLinks.allUniMeds, requestBody);
+    isLoading = false;
+
+    if (mounted) {
+      setState(() {
+        dias = ['Deu Certo'];
+      });
+    }
+    final decoded = (response.body) as Map;
+
+    if (response.isSuccess) {
+      if (mounted) {
+        // final datass = json.decode(response.body);
+        final data = decoded['data'];
+        print(data[0]['nome']); // prints 3.672940
+        dias = [];
+        for (final name in data) {
+          final value = name['id'];
+          final nome = name['nome'];
+          modalidadeList.add(nome);
+          dias.add(nome);
+          print('$value,$nome'); // prints entries like "AED,3.672940"
+        }
+      }
+    } else {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text("Profile update Failed"),
+          ),
+        );
+      }
+    }
+    return modalidadeList;
   }
 
   void _onUpdate(int key, String? value, chave) {
@@ -97,122 +134,6 @@ class _CustomDietaBoxForm extends State<CustomDietaBoxForm> {
     }
   }
 
-  Widget imput(int key, String hit, int? maxLine, TextInputType tipo, chave) =>
-      Padding(
-        padding: const EdgeInsets.symmetric(vertical: 2, horizontal: 10),
-        child: Column(
-          children: <Widget>[
-            TextFormField(
-              //    controller: controller,
-              maxLines: maxLine,
-              key: Key('$hit ${key + 1}'),
-              //    focusNode: _focusNode,
-              keyboardType: tipo ?? TextInputType.text,
-              decoration: InputDecoration(
-                fillColor: CustomColors().getAppFundoImput(),
-                filled: true,
-                border: const OutlineInputBorder(
-                  borderRadius: BorderRadius.all(
-                    Radius.circular(8.0),
-                  ),
-                  borderSide: BorderSide(
-                    color: Colors.yellow,
-                    width: 3.0,
-                  ),
-                ),
-                labelStyle: const TextStyle(color: Colors.red, fontSize: 16.0),
-                hintText: ' $hit ',
-              ),
-              onChanged: (val) => _onUpdate(key, val, chave),
-              //validator: validator,
-            ),
-          ],
-        ),
-      );
-
-  Widget form(int key) => Padding(
-        padding: const EdgeInsets.only(bottom: 15.0),
-        child: Container(
-          padding: EdgeInsets.zero,
-          color: CustomColors().getAppFundoClaro(),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: <Widget>[
-              selected(
-                  key, "Titulo Plano", null, TextInputType.text, 'diaAtene'),
-              SelectedFormRefeicao(),
-              CustomComboBoxDietaitensForm(),
-            ],
-          ),
-        ),
-      );
-
-  Widget buttonRow() => Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          Visibility(
-            visible: _formCount > 0,
-            child: IconButton(
-                onPressed: () {
-                  if (_dataArray.isNotEmpty) {
-                    _dataArray.removeAt(_dataArray.length - 1);
-                  }
-                  setState(() {
-                    _data = _dataArray.toString();
-                    _formCount--;
-                  });
-                },
-                icon: CircleAvatar(
-                  backgroundColor: CustomColors().getAppBotton(),
-                  child: const Icon(
-                    Icons.remove,
-                  ),
-                )),
-          ),
-          IconButton(
-              onPressed: () {
-                setState(() => _formCount++);
-              },
-              icon: CircleAvatar(
-                backgroundColor: CustomColors().getAppBotton(),
-                child: const Icon(
-                  Icons.add,
-                ),
-              )),
-        ],
-      );
-  @override
-  Widget build(BuildContext context) {
-    final platform = Theme.of(context).platform;
-
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 3),
-      child: SingleChildScrollView(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 25.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: <Widget>[
-              const SizedBox(height: 19),
-              const Text('Planos',
-                  style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      color: Colors.black87,
-                      fontSize: 22)),
-              const SizedBox(height: 20),
-              ...List.generate(_formCount, (index) => form(index)),
-              buttonRow(),
-              const SizedBox(height: 10),
-              //   Visibility(visible: _dataArray.isNotEmpty, child: Text(_data!)),
-              const SizedBox(height: 30),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
   Widget selected(
           int key, String hit, int? maxLine, TextInputType tipo, chave) =>
       Padding(
@@ -225,7 +146,7 @@ class _CustomDietaBoxForm extends State<CustomDietaBoxForm> {
                 child: DropdownButton2<String>(
                   isExpanded: true,
                   hint: Text(
-                    'Escolha Dia Semana',
+                    'Tipo Refeição',
                     style: TextStyle(
                       fontSize: 14,
                       color: CustomColors().getAppLabelBotton(),
@@ -283,7 +204,7 @@ class _CustomDietaBoxForm extends State<CustomDietaBoxForm> {
                   //Use last selected item as the current value so if we've limited menu height, it scroll to last item.
                   value:
                       diasSelectedItems.isEmpty ? null : diasSelectedItems.last,
-                  onChanged: (vales) => _onUpdate(key, vales, chave),
+                  onChanged: (vale) => _onUpdate(key, vale, chave),
 
                   selectedItemBuilder: (context) {
                     return diasSelectedItems.map(
@@ -347,4 +268,39 @@ class _CustomDietaBoxForm extends State<CustomDietaBoxForm> {
           ),
         ),
       );
+
+  Widget form(int key) => Padding(
+        padding: const EdgeInsets.only(bottom: 15.0),
+        child: Container(
+          padding: EdgeInsets.zero,
+          color: CustomColors().getAppFundoClaro(),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: <Widget>[
+              selected(
+                  key, "Tipo Refeição", null, TextInputType.text, 'diaAtene'),
+            ],
+          ),
+        ),
+      );
+
+  @override
+  Widget build(BuildContext context) {
+    final platform = Theme.of(context).platform;
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 3),
+      child: SingleChildScrollView(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 25.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: <Widget>[
+              ...List.generate(_formCount, (index) => form(index)),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
 }

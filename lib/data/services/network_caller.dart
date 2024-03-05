@@ -44,7 +44,7 @@ class NetworkCaller {
       Response response = await post(
         Uri.parse(url),
         headers: {
-          'Content-Type': 'application/json;charset=ISO-8859-1',
+          'Content-Type': 'application/json;charset=UTF-8',
           'Authorization': url.contains('login') || url.contains('inserirAluno')
               ? 'c2Fua2h5YTpzdXA='
               : 'Bearer ${AuthUtility.userInfo.token}',

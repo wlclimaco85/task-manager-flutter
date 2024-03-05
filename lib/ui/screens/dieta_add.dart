@@ -14,6 +14,7 @@ import '../../data/models/login_model.dart';
 import 'package:task_manager_flutter/data/models/auth_utility.dart';
 import 'dart:io';
 import 'package:task_manager_flutter/ui/widgets/data_picker_core_date.dart';
+import 'package:task_manager_flutter/ui/widgets/custom_dieta_box_form.dart';
 
 class DietaModalAdd extends StatefulWidget {
   const DietaModalAdd({super.key});
@@ -233,42 +234,7 @@ class _DietaModalAddState extends State<DietaModalAdd> {
                   DatePickerExample(labels: "Data Consulta"),
                   DatePickerExample(labels: "Data Ini dieta"),
                   DatePickerExample(labels: "Data Fim dieta"),
-                  InkWell(
-                    onTap: () {
-                      imagePicked();
-                    },
-                    child: Row(children: [
-                      Container(
-                        padding: const EdgeInsets.all(18),
-                        decoration: const BoxDecoration(
-                          color: Colors.grey,
-                          borderRadius: BorderRadius.only(
-                            topLeft: Radius.circular(8),
-                            bottomLeft: Radius.circular(8),
-                          ),
-                        ),
-                        child: const Text("Foto"),
-                      ),
-                      Expanded(
-                        child: Container(
-                          padding: const EdgeInsets.all(18),
-                          decoration: BoxDecoration(
-                            color: CustomColors().getAppFundoImput(),
-                            borderRadius: const BorderRadius.only(
-                              topRight: Radius.circular(8),
-                              bottomRight: Radius.circular(8),
-                            ),
-                          ),
-                          child: Text(
-                            pickImage?.name ?? "",
-                            maxLines: 1,
-                            style: const TextStyle(
-                                overflow: TextOverflow.ellipsis),
-                          ),
-                        ),
-                      ),
-                    ]),
-                  ),
+                  CustomDietaBoxForm(),
                 ],
               ),
             ),

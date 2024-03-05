@@ -11,6 +11,8 @@ class ApiLinks {
   static const String allPersonal = '$_baseUrlNew/personal/findAll';
   static const String allAcademia = '$_baseUrlNew/academia/findAll';
   static const String allModalidade = '$_baseUrlNew/modalidade/findAll';
+  static const String allTipoRefeicao = '$_baseUrlNew/dieta/findByRefeicao';
+  static const String allUniMeds = '$_baseUrlNew/unidade/findAll';
   static const String insertPersonal = '$_baseUrlNew/personal/inserir';
   static const String insertSuplemento = '$_baseUrlNew/suplemento/insert';
   static const String insertAcademia = '$_baseUrlNew/academia/inserir';
