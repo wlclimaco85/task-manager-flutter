@@ -1,5 +1,4 @@
 import 'package:flutter/cupertino.dart';
-import 'package:flutter/material.dart';
 
 class DatePickerExample extends StatelessWidget {
   DatePickerExample({
@@ -12,7 +11,7 @@ class DatePickerExample extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return CupertinoApp(
-      theme: CupertinoThemeData(brightness: Brightness.light),
+      theme: const CupertinoThemeData(brightness: Brightness.light),
       home: DatePickerDateTimerExample(label: labels),
     );
   }
@@ -74,12 +73,12 @@ class _DatePickerDateTimerExampleState
             children: <Widget>[
               _DatePickerItem(
                 children: <Widget>[
-                  Text('$labels'),
+                  Text(labels),
                   CupertinoButton(
                     // Display a CupertinoDatePicker in date picker mode.
                     onPressed: () => _showDialog(
                       CupertinoDatePicker(
-                        backgroundColor: Color(0xFFFA903A),
+                        backgroundColor: const Color(0xFFFA903A),
                         initialDateTime: date,
                         mode: CupertinoDatePickerMode.date,
                         use24hFormat: true,

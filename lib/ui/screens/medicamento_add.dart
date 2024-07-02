@@ -13,7 +13,6 @@ import 'package:task_manager_flutter/data/utils/personal_validation.dart';
 import '../../data/models/login_model.dart';
 import 'package:task_manager_flutter/data/models/auth_utility.dart';
 import 'dart:io';
-import 'package:task_manager_flutter/ui/widgets/custom_insert_list_foto.dart';
 
 class MedicamentosModalAdd extends StatefulWidget {
   const MedicamentosModalAdd({super.key});

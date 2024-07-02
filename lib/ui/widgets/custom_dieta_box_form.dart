@@ -148,9 +148,13 @@ class _CustomDietaBoxForm extends State<CustomDietaBoxForm> {
               selected(
                   key, "Titulo Plano", null, TextInputType.text, 'diaAtene'),
               const SelectedFormRefeicao(),
+<<<<<<< HEAD
               buildItens(context),
               //CustomComboBoxDietaitensForm(
               //  parentId: key, dataArray: _dataArrayMain),
+=======
+              const CustomComboBoxDietaitensForm(),
+>>>>>>> 9b735aa89bcba0e01ebefb5db433f3bfeceb73d9
             ],
           ),
         ),

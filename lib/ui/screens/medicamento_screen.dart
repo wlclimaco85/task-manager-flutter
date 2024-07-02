@@ -104,7 +104,7 @@ class _MedicamentoscreenState extends State<Medicamentoscreen> {
                   valor: element['valor'] ?? 0,
                   dtInicio: element['dtInicio'] ?? "",
                   dtFinal: element['dtFinal'] ?? "",
-                  nota: element['nota'] != null ? element['nota'] : 0,
+                  nota: element['nota'] ?? 0,
                   foto: element['fotos'] != null
                       ? verificFoto(element['fotos'][0])
                       : getImagepadrao(),

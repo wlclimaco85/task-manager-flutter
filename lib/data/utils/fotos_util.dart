@@ -1,7 +1,7 @@
 import 'dart:typed_data';
 
 String verificFoto(Map<String, dynamic> fotos) {
-  if (fotos != null && fotos['foto'] != null) {
+  if (fotos['foto'] != null) {
     return fotos['foto'];
   } else {
     return getImagepadrao();

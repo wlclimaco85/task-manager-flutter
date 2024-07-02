@@ -1,5 +1,4 @@
 import 'package:flutter/cupertino.dart';
-import 'package:flutter/material.dart';
 
 String labelNew = "";
 
@@ -69,7 +68,7 @@ class _DatePickerExample extends State<DatePickerExample> {
                     onPressed: () => _showDialog(
                       context,
                       CupertinoDatePicker(
-                        backgroundColor: Color(0xFFFA903A),
+                        backgroundColor: const Color(0xFFFA903A),
                         initialDateTime: date,
                         mode: CupertinoDatePickerMode.date,
                         use24hFormat: true,

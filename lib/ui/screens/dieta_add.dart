@@ -1,18 +1,18 @@
+import 'dart:io';
 import 'dart:convert';
 import 'dart:io' as io;
 import 'package:flutter/material.dart';
+import '../../data/models/login_model.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:task_manager_flutter/data/utils/api_links.dart';
 import 'package:task_manager_flutter/ui/widgets/user_banners.dart';
+import 'package:task_manager_flutter/data/models/auth_utility.dart';
 import 'package:task_manager_flutter/ui/screens/update_profile.dart';
 import 'package:task_manager_flutter/ui/widgets/custom_input_form.dart';
 import 'package:task_manager_flutter/data/constants/custom_colors.dart';
 import 'package:task_manager_flutter/data/models/network_response.dart';
 import 'package:task_manager_flutter/data/services/network_caller.dart';
 import 'package:task_manager_flutter/data/utils/personal_validation.dart';
-import '../../data/models/login_model.dart';
-import 'package:task_manager_flutter/data/models/auth_utility.dart';
-import 'dart:io';
 import 'package:task_manager_flutter/ui/widgets/data_picker_core_date.dart';
 import 'package:task_manager_flutter/ui/widgets/custom_dieta_box_form.dart';
 

@@ -103,7 +103,7 @@ class _DietacreenState extends State<Dietacreen> {
                   oQueAchou: element['oQueAchou'] ?? "",
                   dtInicio: element['dtInicio'] ?? "",
                   dtFinal: element['dtFinal'] ?? "",
-                  nota: element['nota'] != null ? element['nota'] : 0,
+                  nota: element['nota'] ?? 0,
                   foto: element['fotos'] != null
                       ? verificFoto(element['fotos'][0])
                       : getImagepadrao(),

@@ -1,7 +1,7 @@
 class ApiLinks {
   ApiLinks._();
-  static const String _baseIp = "http://192.168.12.19:8088"; //
-  //'https://academia-app-919f42758cd6.herokuapp.com'; // "http://192.168.12.19:8088";
+  static const String _baseIp = "http://192.168.12.28:8088";// "http://192.168.12.19:8088"; //
+  //'https://academia-app-919f42758cd6.herokuapp.com'; // "http://192.168.12.28:8088";
   // "http://192.168.12.23:8088"; // "http://192.168.56.1:8088"; // ; // //"http://192.168.12.23:8088";
   //static const String _baseIp = "http://192.168.56.1:8088"; //"http://192.168.12.23:8088";
   static const String _baseUrl = 'https://task.teamrabbil.com/api/v1';
