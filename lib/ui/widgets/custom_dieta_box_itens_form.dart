@@ -4,19 +4,27 @@
 import 'package:flutter/material.dart';
 import 'package:task_manager_flutter/data/constants/custom_colors.dart';
 import 'package:task_manager_flutter/ui/widgets/custom_selected_tipo_unimed.dart';
+import 'package:task_manager_flutter/data/utils/api_links.dart';
+import 'package:task_manager_flutter/data/models/network_response.dart';
+import 'package:task_manager_flutter/data/services/network_caller.dart';
+import 'package:dropdown_button2/dropdown_button2.dart';
 
-final List<Map<String, dynamic>> _dataArray = []; //add this
+List<Map<String, dynamic>> _dataArrays = []; //add this
 String? _data = ""; //add this
+int ddd = 0;
 
-class NumberToDay {
+class NumberToDietaItens {
   test() {
-    return _dataArray;
+    return _dataArrays;
   }
 }
 
 class CustomComboBoxDietaitensForm extends StatefulWidget {
-  const CustomComboBoxDietaitensForm({super.key});
-
+  CustomComboBoxDietaitensForm(
+      {Key? key, required this.parentId, required this.dataArray})
+      : super(key: key);
+  int parentId = 0;
+  List<Map<String, dynamic>> dataArray = [];
   @override
   State<CustomComboBoxDietaitensForm> createState() =>
       _CustomComboBoxDietaitensForm();
@@ -25,13 +33,16 @@ class CustomComboBoxDietaitensForm extends StatefulWidget {
 class _CustomComboBoxDietaitensForm
     extends State<CustomComboBoxDietaitensForm> {
   int _formCount = 1; //add this
-
+  bool isLoading = true;
   late FocusNode _focusNode;
 
   @override
   void initState() {
     _focusNode = FocusNode();
     super.initState();
+    getSelected();
+    ddd = widget.parentId;
+    _dataArrays = widget.dataArray;
   }
 
   @override
@@ -40,43 +51,88 @@ class _CustomComboBoxDietaitensForm
     super.dispose();
   }
 
-  void _onUpdate(int key, String value, chave) {
+  Future<List<String>> getSelected() async {
+    isLoading = true;
+    List<String> modalidadeList = [];
+    if (mounted) {
+      setState(() {});
+    }
+    Map<String, dynamic> requestBody = {};
+    final NetworkResponse response =
+        await NetworkCaller().postRequest(ApiLinks.allUniMeds, requestBody);
+    isLoading = false;
+
+    if (mounted) {
+      setState(() {
+        dias = ['Deu Certo'];
+      });
+    }
+    final decoded = (response.body) as Map;
+
+    if (response.isSuccess) {
+      if (mounted) {
+        // final datass = json.decode(response.body);
+        final data = decoded['data'];
+        print(data[0]['descricao']); // prints 3.672940
+        dias = [];
+        for (final name in data) {
+          final value = name['id'];
+          final nome = name['descricao'];
+          modalidadeList.add(nome);
+          dias.add(nome);
+          print('$value,$nome'); // prints entries like "AED,3.672940"
+        }
+      }
+    } else {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text("Profile update Failed"),
+          ),
+        );
+      }
+    }
+    return modalidadeList;
+  }
+
+  void _onUpdate(int key, String? value, chave) {
     void addData() {
       Map<String, dynamic> json = {
         'id': key,
+        'parentId': ddd,
         chave: value,
         chave: value,
         chave: value,
         chave: value
       };
-      _dataArray.add(json);
+      _dataArrays.add(json);
       setState(() {
-        _data = _dataArray.toString();
+        _data = _dataArrays.toString();
       });
     }
 
-    if (_dataArray.isEmpty) {
+    if (_dataArrays.isEmpty) {
       addData();
     } else {
-      _dataArray.asMap().entries.map((entry) {
+      _dataArrays.asMap().entries.map((entry) {
         if (entry.key == key && entry.value == chave) {
-          _dataArray[key][chave] = value;
+          _dataArrays[key][chave] = value;
         }
         print(entry.key);
         print(entry.value);
       });
 
-      for (var map in _dataArray) {
+      for (var map in _dataArrays) {
         if (map["id"] == key) {
-          _dataArray[key][chave] = value;
+          _dataArrays[key][chave] = value;
           setState(() {
-            _data = _dataArray.toString();
+            _data = _dataArrays.toString();
           });
           break;
         }
       }
 
-      for (var map in _dataArray) {
+      for (var map in _dataArrays) {
         if (map["id"] == key) {
           return;
         }
@@ -126,9 +182,12 @@ class _CustomComboBoxDietaitensForm
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: <Widget>[
-              imput(key, "Refeição", null, TextInputType.text, 'refeicao'),
-              imput(key, "Quantidade", null, TextInputType.number, 'qtdAula'),
-              SelectedFormUniMed(),
+              imput(key, "Refeição", null, TextInputType.text, 'nome'),
+              imput(
+                  key, "Quantidade", null, TextInputType.number, 'quantidade'),
+              //const SelectedFormUniMed(),
+              selected(
+                  key, "Unidade Medida", null, TextInputType.text, 'diaAtene'),
             ],
           ),
         ),
@@ -142,11 +201,11 @@ class _CustomComboBoxDietaitensForm
             visible: _formCount > 0,
             child: IconButton(
                 onPressed: () {
-                  if (_dataArray.isNotEmpty) {
-                    _dataArray.removeAt(_dataArray.length - 1);
+                  if (_dataArrays.isNotEmpty) {
+                    _dataArrays.removeAt(_dataArrays.length - 1);
                   }
                   setState(() {
-                    _data = _dataArray.toString();
+                    _data = _dataArrays.toString();
                     _formCount--;
                   });
                 },
@@ -159,7 +218,15 @@ class _CustomComboBoxDietaitensForm
           ),
           IconButton(
               onPressed: () {
-                setState(() => _formCount++);
+                setState(() {
+                  _formCount++;
+                  //   NumberToDietaItens myObjectInstanceds = NumberToDietaItens();
+                  //   List<Map<String, dynamic>> dayNameds =
+                  //      myObjectInstanceds.test();
+
+                  //   _dataArraysB.addAll(_dataArrays);
+                  print(_dataArrays);
+                });
               },
               icon: CircleAvatar(
                 backgroundColor: CustomColors().getAppBotton(),
@@ -191,7 +258,7 @@ class _CustomComboBoxDietaitensForm
               ...List.generate(_formCount, (index) => form(index)),
               buttonRow(),
               const SizedBox(height: 5),
-              //   Visibility(visible: _dataArray.isNotEmpty, child: Text(_data!)),
+              //   Visibility(visible: _dataArrays.isNotEmpty, child: Text(_data!)),
               const SizedBox(height: 5),
             ],
           ),
@@ -199,4 +266,139 @@ class _CustomComboBoxDietaitensForm
       ),
     );
   }
+
+  Widget selected(
+          int key, String hit, int? maxLine, TextInputType tipo, chave) =>
+      Padding(
+        padding: const EdgeInsets.symmetric(vertical: 3),
+        child: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              DropdownButtonHideUnderline(
+                child: DropdownButton2<String>(
+                  isExpanded: true,
+                  hint: Text(
+                    'Unidade Medida',
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: CustomColors().getAppLabelBotton(),
+                    ),
+                  ),
+                  items: dias.map((item) {
+                    return DropdownMenuItem(
+                      value: item,
+                      //disable default onTap to avoid closing menu when selecting an item
+                      enabled: false,
+                      child: StatefulBuilder(
+                        builder: (context, menuSetState) {
+                          final isSelected = diasSelectedItems.contains(item);
+                          return InkWell(
+                            onTap: () {
+                              isSelected
+                                  ? diasSelectedItems.remove(item)
+                                  : diasSelectedItems.add(item);
+                              //This rebuilds the StatefulWidget to update the button's text
+                              _onUpdate(
+                                  key, diasSelectedItems.join(","), chave);
+                              setState(() {});
+                              //This rebuilds the dropdownMenu Widget to update the check mark
+                              menuSetState(() {
+                                print(item);
+                              });
+                            },
+                            child: Container(
+                              height: double.infinity,
+                              padding:
+                                  const EdgeInsets.symmetric(horizontal: 16.0),
+                              child: Row(
+                                children: [
+                                  if (isSelected)
+                                    const Icon(Icons.check_box_outlined)
+                                  else
+                                    const Icon(Icons.check_box_outline_blank),
+                                  const SizedBox(width: 16),
+                                  Expanded(
+                                    child: Text(
+                                      item,
+                                      style: const TextStyle(
+                                        fontSize: 14,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                    );
+                  }).toList(),
+                  //Use last selected item as the current value so if we've limited menu height, it scroll to last item.
+                  value:
+                      diasSelectedItems.isEmpty ? null : diasSelectedItems.last,
+                  onChanged: (vale) => _onUpdate(key, vale, chave),
+
+                  selectedItemBuilder: (context) {
+                    return diasSelectedItems.map(
+                      (item) {
+                        return Container(
+                          alignment: AlignmentDirectional.center,
+                          child: Text(
+                            diasSelectedItems.join(', '),
+                            style: const TextStyle(
+                              fontSize: 14,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            maxLines: 1,
+                          ),
+                        );
+                      },
+                    ).toList();
+                  },
+                  buttonStyleData: ButtonStyleData(
+                    height: 50,
+                    width: 280,
+                    padding: const EdgeInsets.only(left: 14, right: 14),
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(14),
+                      border: Border.all(
+                        color: Colors.black26,
+                      ),
+                      color: CustomColors().getAppBotton(),
+                    ),
+                    elevation: 2,
+                  ),
+                  iconStyleData: const IconStyleData(
+                    icon: Icon(
+                      Icons.arrow_forward_ios_outlined,
+                    ),
+                    iconSize: 14,
+                    iconEnabledColor: Colors.yellow,
+                    iconDisabledColor: Colors.grey,
+                  ),
+                  dropdownStyleData: DropdownStyleData(
+                    maxHeight: 200,
+                    width: 200,
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(14),
+                      color: CustomColors().getAppBotton(),
+                    ),
+                    offset: const Offset(-20, 0),
+                    scrollbarTheme: ScrollbarThemeData(
+                      radius: const Radius.circular(40),
+                      thickness: MaterialStateProperty.all(6),
+                      thumbVisibility: MaterialStateProperty.all(true),
+                    ),
+                  ),
+                  menuItemStyleData: const MenuItemStyleData(
+                    height: 40,
+                    padding: EdgeInsets.only(left: 14, right: 14),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
 }

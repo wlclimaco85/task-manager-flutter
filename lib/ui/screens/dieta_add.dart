@@ -30,6 +30,7 @@ class _DietaModalAddState extends State<DietaModalAdd> {
   XFile? pickImage;
   String? base64Image;
   bool _signUpInProgress = false;
+  List<Map<String, dynamic>> _dataArrayMain = []; //add this
 
   @override
   void initState() {
@@ -89,6 +90,9 @@ class _DietaModalAddState extends State<DietaModalAdd> {
       base64Imagess = base64Encode(bytess);
     }
     Data userInfo = AuthUtility.userInfo.data!;
+
+    NumberToDieta myObjectInstanced = NumberToDieta();
+    List<Map<String, dynamic>> dayNamed = myObjectInstanced.test();
 
     Map<String, dynamic> af = {};
     af["id"] = userInfo.id;
@@ -234,7 +238,7 @@ class _DietaModalAddState extends State<DietaModalAdd> {
                   DatePickerExample(labels: "Data Consulta"),
                   DatePickerExample(labels: "Data Ini dieta"),
                   DatePickerExample(labels: "Data Fim dieta"),
-                  CustomDietaBoxForm(),
+                  CustomDietaBoxForm(dataArray: _dataArrayMain),
                 ],
               ),
             ),

@@ -67,11 +67,11 @@ class _SelectedFormUniMed extends State<SelectedFormUniMed> {
       if (mounted) {
         // final datass = json.decode(response.body);
         final data = decoded['data'];
-        print(data[0]['nome']); // prints 3.672940
+        print(data[0]['descricao']); // prints 3.672940
         dias = [];
         for (final name in data) {
           final value = name['id'];
-          final nome = name['nome'];
+          final nome = name['descricao'];
           modalidadeList.add(nome);
           dias.add(nome);
           print('$value,$nome'); // prints entries like "AED,3.672940"
