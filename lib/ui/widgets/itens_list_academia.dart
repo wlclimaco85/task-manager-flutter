@@ -1,7 +1,5 @@
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
-import 'package:task_manager_flutter/ui/widgets/calendar_screen.dart';
-import 'package:task_manager_flutter/ui/widgets/simple_tag.dart';
 import 'package:task_manager_flutter/ui/screens/events_example.dart';
 import 'package:task_manager_flutter/data/constants/custom_colors.dart';
 
@@ -154,7 +152,6 @@ class ListItensAcademia extends StatelessWidget {
                         height: 10,
                         width: 10,
                       ),
-                      SimpleTag(content: listModadelidades),
                       const SizedBox(
                         height: 10,
                         width: double.infinity,
@@ -188,7 +185,7 @@ class ListItensAcademia extends StatelessWidget {
                                 )),
                             child: Column(
                               children: <Widget>[
-                                Tooltip(
+                                /*    Tooltip(
                                   message: 'this is something',
                                   child: GestureDetector(
                                     onTap: () {
@@ -207,7 +204,7 @@ class ListItensAcademia extends StatelessWidget {
                                       ),
                                     ),
                                   ),
-                                ),
+                                ), */
                               ],
                             ),
                           ),
