@@ -14,6 +14,7 @@ import 'package:task_manager_flutter/ui/screens/academia_screen.dart';
 import 'package:task_manager_flutter/ui/screens/suplemento_screen.dart';
 import 'package:task_manager_flutter/ui/screens/medicamento_screen.dart';
 import 'package:task_manager_flutter/ui/screens/dieta_screen.dart';
+import 'package:task_manager_flutter/data/constants/custom_colors.dart';
 
 class TaskScreen extends StatefulWidget {
   final String screenStatus;
@@ -79,88 +80,10 @@ class _TaskScreenState extends State<TaskScreen> {
     if (mounted) {
       setState(() {});
     }
-    final NetworkResponse newTaskResponse =
-        await NetworkCaller().getRequest(ApiLinks.newTaskStatus);
-    TaskListModel newTaskModel = TaskListModel.fromJson((newTaskResponse != null
-        ? newTaskResponse.body != null
-            ? newTaskResponse.body!
-            : {}
-        : {}));
-
-    if (mounted) {
-      setState(() {
-        count1 = newTaskModel.data?.length ?? 0;
-      });
-    }
-
-    final cancelledTaskResponse =
-        await NetworkCaller().getRequest(ApiLinks.cancelledTaskStatus);
-    TaskListModel cancelledTaskModel =
-        TaskListModel.fromJson(cancelledTaskResponse != null
-            ? cancelledTaskResponse.body != null
-                ? cancelledTaskResponse.body!
-                : {}
-            : {});
-    if (mounted) {
-      setState(() {
-        count2 = cancelledTaskModel.data?.length ?? 0;
-      });
-    }
-
-    final completedTaskResponse =
-        await NetworkCaller().getRequest(ApiLinks.completedTaskStatus);
-
-    TaskListModel completedTaskModel =
-        TaskListModel.fromJson(completedTaskResponse != null
-            ? completedTaskResponse.body != null
-                ? completedTaskResponse.body!
-                : {}
-            : {});
-    if (mounted) {
-      setState(() {
-        count3 = completedTaskModel.data?.length ?? 0;
-      });
-    }
-
-    final inProgressResponse =
-        await NetworkCaller().getRequest(ApiLinks.inProgressTaskStatus);
-    TaskListModel inProgressTaskModel =
-        TaskListModel.fromJson(inProgressResponse != null
-            ? inProgressResponse.body != null
-                ? inProgressResponse.body!
-                : {}
-            : {});
-    if (mounted) {
-      setState(() {
-        count4 = inProgressTaskModel.data?.length ?? 0;
-      });
-    }
 
     isLoading = false;
     if (mounted) {
       setState(() {});
-    }
-  }
-
-  Future<void> deleteTask(String taskId) async {
-    if (mounted) {
-      setState(() {
-        isLoading = true;
-      });
-    }
-    final NetworkResponse response =
-        await NetworkCaller().getRequest(ApiLinks.deleteTask(taskId));
-    if (response.isSuccess) {
-      _taskModel.data!.removeWhere((element) => element.sId == taskId);
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text("Task Deleted Successfully!")));
-      }
-    }
-    if (mounted) {
-      setState(() {
-        isLoading = false;
-      });
     }
   }
 
@@ -182,7 +105,7 @@ class _TaskScreenState extends State<TaskScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF340A9C),
+      backgroundColor: CustomColors().getAppFundoPage(),
       appBar: userBanner(
         context,
         onTapped: () {
@@ -199,8 +122,8 @@ class _TaskScreenState extends State<TaskScreen> {
             mainAxisAlignment: MainAxisAlignment.center,
             children: <Widget>[
               IconButtonExample(
-                text: 'Personal',
-                color: 'Screenshot_2.png',
+                text: 'Calendario',
+                color: 'calendario.png',
                 onPresse: () {
                   Navigator.push(
                       context,
@@ -210,8 +133,8 @@ class _TaskScreenState extends State<TaskScreen> {
               ),
               const SizedBox(width: 10),
               IconButtonExample(
-                text: 'Academias',
-                color: 'images (1).png',
+                text: 'Solicitações',
+                color: 'solicitacao.png',
                 onPresse: () {
                   Navigator.push(
                       context,
@@ -220,21 +143,14 @@ class _TaskScreenState extends State<TaskScreen> {
                 },
               ),
               const SizedBox(width: 10),
-              IconButtonExample(
-                text: 'Treinos',
-                color: 'images.png',
-                onPresse: () {
-                  print('Treinos');
-                },
-              ),
             ],
           ),
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: <Widget>[
               IconButtonExample(
-                text: 'Suplemento',
-                color: 'images (2).png',
+                text: 'GED',
+                color: 'pngwing.png',
                 onPresse: () {
                   Navigator.push(
                       context,
@@ -244,8 +160,8 @@ class _TaskScreenState extends State<TaskScreen> {
               ),
               const SizedBox(width: 10),
               IconButtonExample(
-                text: 'Exames',
-                color: 'images (3).png',
+                text: 'Comunicados',
+                color: 'anuncio.png',
                 onPresse: () {
                   Navigator.push(
                       context,
@@ -254,24 +170,14 @@ class _TaskScreenState extends State<TaskScreen> {
                 },
               ),
               const SizedBox(width: 10),
-              IconButtonExample(
-                text: 'Dieta',
-                color: 'images (4).png',
-                onPresse: () {
-                  Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                          builder: (context) => const Dietacreen()));
-                },
-              ),
             ],
           ),
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: <Widget>[
               IconButtonExample(
-                text: 'Medicamento',
-                color: 'Screenshot_3.png',
+                text: 'Processos',
+                color: 'processo.png',
                 onPresse: () {
                   Navigator.push(
                       context,
@@ -281,40 +187,18 @@ class _TaskScreenState extends State<TaskScreen> {
               ),
               const SizedBox(width: 10),
               IconButtonExample(
-                text: 'Avaliação Fisica',
-                color: 'Screenshot_4.png',
+                text: 'Dashboard',
+                color: 'clipart998502.png',
                 onPresse: () {
                   print('Avaliação Fisica');
                 },
               ),
               const SizedBox(width: 10),
-              IconButtonExample(
-                text: 'Pagamentos',
-                color: 'Screenshot_5.png',
-                onPresse: () {
-                  print('Pagamentos');
-                },
-              ),
             ],
           ),
         ],
       ),
     );
-  }
-
-  Color _getChipColor() {
-    switch (widget.screenStatus) {
-      case "New":
-        return Colors.blue;
-      case "Completed":
-        return Colors.green;
-      case "Cancelled":
-        return Colors.red;
-      case "In Progress":
-        return Colors.pink.shade400;
-      default:
-        return Colors.grey;
-    }
   }
 
   void statusUpdateButtomSheet(TaskData task) {

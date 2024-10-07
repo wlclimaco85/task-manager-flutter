@@ -3,7 +3,7 @@
     "activeCommit": 0,
     "commits": [
         {
-            "activePatchIndex": 1,
+            "activePatchIndex": 9,
             "patches": [
                 {
                     "date": 1709228643443,
@@ -12,6 +12,38 @@
                 {
                     "date": 1709228921889,
                     "content": "Index: \n===================================================================\n--- \n+++ \n@@ -88,9 +88,9 @@\n   );\r\n }\r\n \r\n showBase64Image(base64String) {\r\n-  if (base64String != null || base64String.trim() != '') {\r\n+  if (base64String != null && base64String.trim() != '') {\r\n     UriData? data = Uri.parse(base64String).data;\r\n     Uint8List myImage = data!.contentAsBytes();\r\n     return myImage;\r\n   } else {\r\n"
+                },
+                {
+                    "date": 1728332851376,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -6,9 +6,9 @@\n import 'package:task_manager_flutter/ui/screens/auth_screens/login_screen.dart';\r\n \r\n AppBar userBanner(context, {VoidCallback? onTapped}) {\r\n   return AppBar(\r\n-    // centerTitle: true,\r\n+    centerTitle: true,\r\n     actions: [\r\n       IconButton(\r\n         icon: const Icon(FontAwesomeIcons.powerOff),\r\n         onPressed: () {\r\n"
+                },
+                {
+                    "date": 1728332879766,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -3,12 +3,14 @@\n import 'package:flutter/material.dart';\r\n import 'package:font_awesome_flutter/font_awesome_flutter.dart';\r\n import 'package:task_manager_flutter/data/models/auth_utility.dart';\r\n import 'package:task_manager_flutter/ui/screens/auth_screens/login_screen.dart';\r\n+import 'package:task_manager_flutter/data/constants/custom_colors.dart';\r\n \r\n AppBar userBanner(context, {VoidCallback? onTapped}) {\r\n   return AppBar(\r\n     centerTitle: true,\r\n+    backgroundColor: CustomColors().getAppBotton(),\r\n     actions: [\r\n       IconButton(\r\n         icon: const Icon(FontAwesomeIcons.powerOff),\r\n         onPressed: () {\r\n"
+                },
+                {
+                    "date": 1728332914500,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -71,9 +71,9 @@\n                       \"${AuthUtility.userInfo.data?.codDadosPessoal?.nome ?? \" \"} ${AuthUtility.userInfo.data?.codDadosPessoal?.cpf}\",\r\n                       style: const TextStyle(\r\n                           fontSize: 16,\r\n                           fontWeight: FontWeight.bold,\r\n-                          color: Color(0xFF3F1D9D)),\r\n+                          color: Color(0x00000000)),\r\n                     ),\r\n                     const SizedBox(height: 2),\r\n                     Text(\r\n                         AuthUtility.userInfo.data?.codDadosPessoal?.email ?? \"\",\r\n"
+                },
+                {
+                    "date": 1728332937239,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -71,9 +71,9 @@\n                       \"${AuthUtility.userInfo.data?.codDadosPessoal?.nome ?? \" \"} ${AuthUtility.userInfo.data?.codDadosPessoal?.cpf}\",\r\n                       style: const TextStyle(\r\n                           fontSize: 16,\r\n                           fontWeight: FontWeight.bold,\r\n-                          color: Color(0x00000000)),\r\n+                          color: Color.fromARGB(0, 0, 0, 0))),\r\n                     ),\r\n                     const SizedBox(height: 2),\r\n                     Text(\r\n                         AuthUtility.userInfo.data?.codDadosPessoal?.email ?? \"\",\r\n"
+                },
+                {
+                    "date": 1728332945509,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -71,9 +71,9 @@\n                       \"${AuthUtility.userInfo.data?.codDadosPessoal?.nome ?? \" \"} ${AuthUtility.userInfo.data?.codDadosPessoal?.cpf}\",\r\n                       style: const TextStyle(\r\n                           fontSize: 16,\r\n                           fontWeight: FontWeight.bold,\r\n-                          color: Color.fromARGB(0, 0, 0, 0))),\r\n+                          color: Color.fromARGB(0, 0, 0, 0)),\r\n                     ),\r\n                     const SizedBox(height: 2),\r\n                     Text(\r\n                         AuthUtility.userInfo.data?.codDadosPessoal?.email ?? \"\",\r\n"
+                },
+                {
+                    "date": 1728332961531,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -71,9 +71,9 @@\n                       \"${AuthUtility.userInfo.data?.codDadosPessoal?.nome ?? \" \"} ${AuthUtility.userInfo.data?.codDadosPessoal?.cpf}\",\r\n                       style: const TextStyle(\r\n                           fontSize: 16,\r\n                           fontWeight: FontWeight.bold,\r\n-                          color: Color.fromARGB(0, 0, 0, 0)),\r\n+                          color: Color(0xFF3F1D9D)),\r\n                     ),\r\n                     const SizedBox(height: 2),\r\n                     Text(\r\n                         AuthUtility.userInfo.data?.codDadosPessoal?.email ?? \"\",\r\n"
+                },
+                {
+                    "date": 1728333002469,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -71,9 +71,9 @@\n                       \"${AuthUtility.userInfo.data?.codDadosPessoal?.nome ?? \" \"} ${AuthUtility.userInfo.data?.codDadosPessoal?.cpf}\",\r\n                       style: const TextStyle(\r\n                           fontSize: 16,\r\n                           fontWeight: FontWeight.bold,\r\n-                          color: Color(0xFF3F1D9D)),\r\n+                          color: Color(0xFFffffff)),\r\n                     ),\r\n                     const SizedBox(height: 2),\r\n                     Text(\r\n                         AuthUtility.userInfo.data?.codDadosPessoal?.email ?? \"\",\r\n"
+                },
+                {
+                    "date": 1728333009910,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -71,15 +71,17 @@\n                       \"${AuthUtility.userInfo.data?.codDadosPessoal?.nome ?? \" \"} ${AuthUtility.userInfo.data?.codDadosPessoal?.cpf}\",\r\n                       style: const TextStyle(\r\n                           fontSize: 16,\r\n                           fontWeight: FontWeight.bold,\r\n-                          color: Color(0xFFffffff)),\r\n+                          color: Color(0xFFffffff\r\n+                          )),\r\n                     ),\r\n                     const SizedBox(height: 2),\r\n                     Text(\r\n                         AuthUtility.userInfo.data?.codDadosPessoal?.email ?? \"\",\r\n                         style: const TextStyle(\r\n-                            fontSize: 14, color: Color(0xFF3F1D9D))),\r\n+                            fontSize: 14, color: Color(0xFFffffff\r\n+                            ))),\r\n                   ],\r\n                 ),\r\n               ],\r\n             ),\r\n"
                 }
             ],
             "date": 1709228643443,

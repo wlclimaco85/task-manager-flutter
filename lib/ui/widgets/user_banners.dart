@@ -4,10 +4,12 @@ import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:task_manager_flutter/data/models/auth_utility.dart';
 import 'package:task_manager_flutter/ui/screens/auth_screens/login_screen.dart';
+import 'package:task_manager_flutter/data/constants/custom_colors.dart';
 
 AppBar userBanner(context, {VoidCallback? onTapped}) {
   return AppBar(
-    // centerTitle: true,
+    centerTitle: true,
+    backgroundColor: CustomColors().getAppBotton(),
     actions: [
       IconButton(
         icon: const Icon(FontAwesomeIcons.powerOff),
@@ -70,13 +72,13 @@ AppBar userBanner(context, {VoidCallback? onTapped}) {
                       style: const TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.bold,
-                          color: Color(0xFF3F1D9D)),
+                          color: Color(0xFFffffff)),
                     ),
                     const SizedBox(height: 2),
                     Text(
                         AuthUtility.userInfo.data?.codDadosPessoal?.email ?? "",
                         style: const TextStyle(
-                            fontSize: 14, color: Color(0xFF3F1D9D))),
+                            fontSize: 14, color: Color(0xFFffffff))),
                   ],
                 ),
               ],

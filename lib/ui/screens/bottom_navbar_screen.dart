@@ -22,31 +22,6 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
   ];
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: screens[selectedIndex],
-      bottomNavigationBar: BottomNavigationBar(
-          currentIndex: selectedIndex,
-          unselectedItemColor: Colors.grey,
-          unselectedLabelStyle: const TextStyle(color: Colors.grey),
-          selectedItemColor: Colors.green,
-          showSelectedLabels: true,
-          type: BottomNavigationBarType.fixed,
-          onTap: (int index) {
-            selectedIndex = index;
-            if (mounted) {
-              setState(() {});
-            }
-          },
-          items: const [
-            BottomNavigationBarItem(
-                icon: Icon(FontAwesomeIcons.shekelSign), label: "New"),
-            BottomNavigationBarItem(
-                icon: Icon(FontAwesomeIcons.checkToSlot), label: "Completed"),
-            BottomNavigationBarItem(
-                icon: Icon(FontAwesomeIcons.circleXmark), label: "Cancelled"),
-            BottomNavigationBarItem(
-                icon: Icon(FontAwesomeIcons.barsProgress), label: "Progress"),
-          ]),
-    );
+    return Scaffold(body: screens[selectedIndex]);
   }
 }

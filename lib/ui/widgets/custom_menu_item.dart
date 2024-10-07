@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:task_manager_flutter/data/constants/custom_colors.dart';
 
 /// Flutter code sample for [IconButton].
 
@@ -46,11 +47,11 @@ class IconButtonExample extends StatelessWidget {
         color: Colors.green,*/
         child: Center(
           child: SizedBox(
-            width: 120,
-            height: 120,
+            width: 140,
+            height: 140,
             child: Card(
               elevation: 6,
-              color: const Color(0xFF340A9C),
+              color: CustomColors().getActivePrimaryButtonColor2(),
               semanticContainer: true,
               // Implement InkResponse
               child: InkResponse(
@@ -76,9 +77,9 @@ class IconButtonExample extends StatelessWidget {
                       color: Colors.transparent,
                       child: Container(
                           alignment: Alignment.center,
-                          decoration: const BoxDecoration(
-                              color: Color(0xFFFA903A),
-                              borderRadius: BorderRadius.only(
+                          decoration: BoxDecoration(
+                              color: CustomColors().getAppBotton(),
+                              borderRadius: const BorderRadius.only(
                                 topLeft: Radius.circular(6.0),
                                 topRight: Radius.circular(6.0),
                                 bottomLeft: Radius.circular(6.0),

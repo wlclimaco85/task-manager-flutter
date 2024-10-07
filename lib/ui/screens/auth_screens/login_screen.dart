@@ -10,6 +10,7 @@ import 'package:task_manager_flutter/ui/screens/bottom_navbar_screen.dart';
 import 'package:task_manager_flutter/ui/widgets/custom_password_text_field.dart';
 import 'package:task_manager_flutter/ui/widgets/custom_text_form_field.dart';
 import 'package:task_manager_flutter/ui/screens/auth_screens/signup_form_screen.dart';
+import 'package:task_manager_flutter/data/constants/custom_colors.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -46,12 +47,6 @@ class _LoginScreenState extends State<LoginScreen>
     if (response.isSuccess) {
       LoginModel model = LoginModel.fromJson(response.body!);
       await AuthUtility.setUserInfo(model);
-      if (mounted) {
-        Navigator.pushAndRemoveUntil(
-            context,
-            MaterialPageRoute(builder: (context) => const BottomNavBarScreen()),
-            (route) => false);
-      }
     } else {
       if (mounted) {
         _passwordController.clear();
@@ -86,7 +81,8 @@ class _LoginScreenState extends State<LoginScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF340A9C),
+      backgroundColor:
+          CustomColors().getAppFundoPage(), // const Color(0xFF340A9C),
       body: Container(
         child: ListView(
           padding: EdgeInsets.zero,
@@ -98,15 +94,40 @@ class _LoginScreenState extends State<LoginScreen>
                   children: [
                     Padding(
                       padding: const EdgeInsets.only(
+                          top: 70.0, bottom: 32), // Espaçamento de 20px acima
+                      child: ClipRRect(
+                        borderRadius:
+                            BorderRadius.circular(10), // Define o raio de borda
+                        child: Image.asset(
+                          'assets/images/logoDamiao_transparent.png', // Caminho da imagem
+                          //  width: 400, // Largura da imagem
+                          height: 310, // Altura da imagem
+                          fit: BoxFit.cover, // Ajuste da imagem
+                        ),
+                      ),
+                    ),
+                    /* ClipRRect(
+                      borderRadius:
+                          BorderRadius.circular(20), // Define o raio de borda
+
+                      child: Image.asset(
+                        'assets/images/logoDamiao_transparent.png', // Caminho da imagem no assets
+                        //    width: 200, // Definir largura da imagem
+                        height: 300, // Definir altura da imagem
+                        fit: BoxFit.cover, // Como a imagem deve se ajustar
+                      ),
+                    ),
+                         Padding(
+                      padding: const EdgeInsets.only(
                         top: 70,
                         bottom: 32,
                       ),
                       child: Image.asset(
-                        "assets/images/logoforafitn1.png",
+                        "assets/images/logoDamiao_transparent.png",
                         height: 260,
-                        fit: BoxFit.contain,
+                        fit: BoxFit.cover, // Como a imagem deve se ajustar
                       ),
-                    ),
+                    ), */
                     Padding(
                       padding: const EdgeInsets.all(40.0),
                       child: Column(
@@ -144,7 +165,7 @@ class _LoginScreenState extends State<LoginScreen>
                           ),
                           ElevatedButton(
                             style: ElevatedButton.styleFrom(
-                              backgroundColor: const Color(0xFFFA903A),
+                              backgroundColor: CustomColors().getAppBotton(),
                               minimumSize: const Size.fromHeight(50), // NEW
                             ),
                             onPressed: () {
@@ -159,25 +180,6 @@ class _LoginScreenState extends State<LoginScreen>
                           const SizedBox(
                             height: 10,
                           ),
-                          ElevatedButton(
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: const Color(0xFFFA903A),
-                              minimumSize: const Size.fromHeight(50), // NEW
-                            ),
-                            onPressed: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                    builder: (context) =>
-                                        const SignUpFormScreen()),
-                              );
-                            },
-                            child: const Text(
-                              'Criar Conta',
-                              style:
-                                  TextStyle(fontSize: 24, color: Colors.white),
-                            ),
-                          ),
                           const SizedBox(
                             height: 40,
                           ),
@@ -190,10 +192,10 @@ class _LoginScreenState extends State<LoginScreen>
                                         builder: (context) =>
                                             const EmailVarificationScreeen()));
                               },
-                              child: const Text(
+                              child: Text(
                                 "Esqueceu a Senha?",
                                 style: TextStyle(
-                                    color: Color(0xFFFA903A),
+                                    color: CustomColors().getAppBotton(),
                                     letterSpacing: .7,
                                     fontSize: 20),
                               ),

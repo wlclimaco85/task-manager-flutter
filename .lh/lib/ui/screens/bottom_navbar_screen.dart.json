@@ -1,0 +1,30 @@
+{
+    "sourceFile": "lib/ui/screens/bottom_navbar_screen.dart",
+    "activeCommit": 0,
+    "commits": [
+        {
+            "activePatchIndex": 3,
+            "patches": [
+                {
+                    "date": 1728331891567,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n"
+                },
+                {
+                    "date": 1728331997795,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -38,15 +38,15 @@\n             }\r\n           },\r\n           items: const [\r\n             BottomNavigationBarItem(\r\n-                icon: Icon(FontAwesomeIcons.shekelSign), label: \"News\"),\r\n+                icon: Icon(FontAwesomeIcons.shekelSign), label: \"Calendario\"),\r\n             BottomNavigationBarItem(\r\n-                icon: Icon(FontAwesomeIcons.checkToSlot), label: \"Completed\"),\r\n+                icon: Icon(FontAwesomeIcons.checkToSlot), label: \"Solicitações\"),\r\n             BottomNavigationBarItem(\r\n-                icon: Icon(FontAwesomeIcons.circleXmark), label: \"Cancelled\"),\r\n+                icon: Icon(FontAwesomeIcons.circleXmark), label: \"GED\"),\r\n             BottomNavigationBarItem(\r\n-                icon: Icon(FontAwesomeIcons.barsProgress), label: \"Progress\"),\r\n+                icon: Icon(FontAwesomeIcons.barsProgress), label: \"Comunicados\"),\r\n           ]),\r\n     );\r\n   }\r\n }\r\n"
+                },
+                {
+                    "date": 1728332011747,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -44,8 +44,12 @@\n                 icon: Icon(FontAwesomeIcons.checkToSlot),\r\n                 label: \"Solicitações\"),\r\n             BottomNavigationBarItem(\r\n                 icon: Icon(FontAwesomeIcons.circleXmark), label: \"GED\"),\r\n+                BottomNavigationBarItem(\r\n+                icon: Icon(FontAwesomeIcons.circleXmark), label: \"GED\"),\r\n+                BottomNavigationBarItem(\r\n+                icon: Icon(FontAwesomeIcons.circleXmark), label: \"GED\"),\r\n             BottomNavigationBarItem(\r\n                 icon: Icon(FontAwesomeIcons.barsProgress),\r\n                 label: \"Comunicados\"),\r\n           ]),\r\n"
+                },
+                {
+                    "date": 1728332219653,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -36,23 +36,8 @@\n             if (mounted) {\r\n               setState(() {});\r\n             }\r\n           },\r\n-          items: const [\r\n-            BottomNavigationBarItem(\r\n-                icon: Icon(FontAwesomeIcons.shekelSign), label: \"Calendario\"),\r\n-            BottomNavigationBarItem(\r\n-                icon: Icon(FontAwesomeIcons.checkToSlot),\r\n-                label: \"Solicitações\"),\r\n-            BottomNavigationBarItem(\r\n-                icon: Icon(FontAwesomeIcons.circleXmark), label: \"GED\"),\r\n-            BottomNavigationBarItem(\r\n-                icon: Icon(FontAwesomeIcons.circleXmark), label: \"GED\"),\r\n-            BottomNavigationBarItem(\r\n-                icon: Icon(FontAwesomeIcons.circleXmark), label: \"GED\"),\r\n-            BottomNavigationBarItem(\r\n-                icon: Icon(FontAwesomeIcons.barsProgress),\r\n-                label: \"Comunicados\"),\r\n-          ]),\r\n+         ),\r\n     );\r\n   }\r\n }\r\n"
+                }
+            ],
+            "date": 1728331891567,
+            "name": "Commit-0",
+            "content": "import 'package:flutter/material.dart';\r\nimport 'package:font_awesome_flutter/font_awesome_flutter.dart';\r\nimport 'package:task_manager_flutter/ui/screens/cancelled_task_screen.dart';\r\nimport 'package:task_manager_flutter/ui/screens/completed_task_screen.dart';\r\nimport 'package:task_manager_flutter/ui/screens/new_task_screen.dart';\r\nimport 'package:task_manager_flutter/ui/screens/progress_task_screen.dart';\r\n\r\nclass BottomNavBarScreen extends StatefulWidget {\r\n  const BottomNavBarScreen({super.key});\r\n\r\n  @override\r\n  State<BottomNavBarScreen> createState() => _BottomNavBarScreenState();\r\n}\r\n\r\nclass _BottomNavBarScreenState extends State<BottomNavBarScreen> {\r\n  int selectedIndex = 0;\r\n  final List<Widget> screens = [\r\n    const NewTaskScreen(),\r\n    const CompleteTaskScreen(),\r\n    const CancelledTaskScreen(),\r\n    const ProgressTaskScreen(),\r\n  ];\r\n  @override\r\n  Widget build(BuildContext context) {\r\n    return Scaffold(\r\n      body: screens[selectedIndex],\r\n      bottomNavigationBar: BottomNavigationBar(\r\n          currentIndex: selectedIndex,\r\n          unselectedItemColor: Colors.grey,\r\n          unselectedLabelStyle: const TextStyle(color: Colors.grey),\r\n          selectedItemColor: Colors.green,\r\n          showSelectedLabels: true,\r\n          type: BottomNavigationBarType.fixed,\r\n          onTap: (int index) {\r\n            selectedIndex = index;\r\n            if (mounted) {\r\n              setState(() {});\r\n            }\r\n          },\r\n          items: const [\r\n            BottomNavigationBarItem(\r\n                icon: Icon(FontAwesomeIcons.shekelSign), label: \"News\"),\r\n            BottomNavigationBarItem(\r\n                icon: Icon(FontAwesomeIcons.checkToSlot), label: \"Completed\"),\r\n            BottomNavigationBarItem(\r\n                icon: Icon(FontAwesomeIcons.circleXmark), label: \"Cancelled\"),\r\n            BottomNavigationBarItem(\r\n                icon: Icon(FontAwesomeIcons.barsProgress), label: \"Progress\"),\r\n          ]),\r\n    );\r\n  }\r\n}\r\n"
+        }
+    ]
+}

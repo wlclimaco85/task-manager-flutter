@@ -1,0 +1,34 @@
+{
+    "sourceFile": "lib/data/constants/custom_colors.dart",
+    "activeCommit": 0,
+    "commits": [
+        {
+            "activePatchIndex": 4,
+            "patches": [
+                {
+                    "date": 1728306443741,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n"
+                },
+                {
+                    "date": 1728306488412,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -5,11 +5,11 @@\n   final Color _activeSecondaryButton = const Color.fromARGB(255, 230, 230, 255);\r\n   final Color _gradientMainColor = const Color(0xff00ADFA);\r\n   final Color _gradientSecColor = const Color(0xff00E6FD);\r\n   final Color _appBarMainColor = const Color(0xff0A6D92);\r\n-  final Color _appFundoPage = const Color(0xFF5937B2);\r\n+  final Color _appFundoPage = const Color.fromARGB(255, 0, 88, 38);\r\n   final Color _appFundoImput = const Color(0xFFffffff);\r\n-  final Color _appFundoClaro = const Color(0xFF7859C9);\r\n+  final Color _appFundoClaro = const Color.fromARGB(255, 0, 88, 38);\r\n   final Color _appBotton = const Color(0xFFFA903A);\r\n   final Color _appLabelBotton = const Color(0xFFffffff);\r\n \r\n   Color getActivePrimaryButtonColor() {\r\n"
+                },
+                {
+                    "date": 1728306554699,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -8,9 +8,9 @@\n   final Color _appBarMainColor = const Color(0xff0A6D92);\r\n   final Color _appFundoPage = const Color.fromARGB(255, 0, 88, 38);\r\n   final Color _appFundoImput = const Color(0xFFffffff);\r\n   final Color _appFundoClaro = const Color.fromARGB(255, 0, 88, 38);\r\n-  final Color _appBotton = const Color(0xFFFA903A);\r\n+  final Color _appBotton = const Color.fromARGB(255,147,7,10);\r\n   final Color _appLabelBotton = const Color(0xFFffffff);\r\n \r\n   Color getActivePrimaryButtonColor() {\r\n     return _activePrimaryButton;\r\n"
+                },
+                {
+                    "date": 1728325329594,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -1,8 +1,9 @@\n import 'package:flutter/material.dart';\r\n \r\n class CustomColors {\r\n   final Color _activePrimaryButton = const Color.fromARGB(255, 0, 88, 38);\r\n+  final Color _activePrimaryButton2 = Color.fromARGB(255, 2, 121, 53);\r\n   final Color _activeSecondaryButton = const Color.fromARGB(255, 230, 230, 255);\r\n   final Color _gradientMainColor = const Color(0xff00ADFA);\r\n   final Color _gradientSecColor = const Color(0xff00E6FD);\r\n   final Color _appBarMainColor = const Color(0xff0A6D92);\r\n"
+                },
+                {
+                    "date": 1728325368046,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -16,8 +16,12 @@\n   Color getActivePrimaryButtonColor() {\r\n     return _activePrimaryButton;\r\n   }\r\n \r\n+  Color getActivePrimaryButtonColor2() {\r\n+    return _activePrimaryButton2;\r\n+  }\r\n+\r\n   Color getActiveSecondaryButton() {\r\n     return _activeSecondaryButton;\r\n   }\r\n \r\n"
+                }
+            ],
+            "date": 1728306443741,
+            "name": "Commit-0",
+            "content": "import 'package:flutter/material.dart';\r\n\r\nclass CustomColors {\r\n  final Color _activePrimaryButton = const Color.fromARGB(255, 0, 88, 38);\r\n  final Color _activeSecondaryButton = const Color.fromARGB(255, 230, 230, 255);\r\n  final Color _gradientMainColor = const Color(0xff00ADFA);\r\n  final Color _gradientSecColor = const Color(0xff00E6FD);\r\n  final Color _appBarMainColor = const Color(0xff0A6D92);\r\n  final Color _appFundoPage = const Color(0xFF5937B2);\r\n  final Color _appFundoImput = const Color(0xFFffffff);\r\n  final Color _appFundoClaro = const Color(0xFF7859C9);\r\n  final Color _appBotton = const Color(0xFFFA903A);\r\n  final Color _appLabelBotton = const Color(0xFFffffff);\r\n\r\n  Color getActivePrimaryButtonColor() {\r\n    return _activePrimaryButton;\r\n  }\r\n\r\n  Color getActiveSecondaryButton() {\r\n    return _activeSecondaryButton;\r\n  }\r\n\r\n  Color getGradientMainColor() {\r\n    return _gradientMainColor;\r\n  }\r\n\r\n  Color getGradientSecondaryColor() {\r\n    return _gradientSecColor;\r\n  }\r\n\r\n  Color getAppBarMainColor() {\r\n    return _appBarMainColor;\r\n  }\r\n\r\n  Color getAppFundoPage() {\r\n    return _appFundoPage;\r\n  }\r\n\r\n  Color getAppFundoImput() {\r\n    return _appFundoImput;\r\n  }\r\n\r\n  Color getAppFundoClaro() {\r\n    return _appFundoClaro;\r\n  }\r\n\r\n  Color getAppBotton() {\r\n    return _appBotton;\r\n  }\r\n\r\n  Color getAppLabelBotton() {\r\n    return _appLabelBotton;\r\n  }\r\n}\r\n"
+        }
+    ]
+}
