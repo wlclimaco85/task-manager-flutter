@@ -3,6 +3,14 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:task_manager_flutter/data/models/cotacao_model.dart';
 import 'package:task_manager_flutter/data/services/cotacao_caller.dart';
 import 'package:task_manager_flutter/data/models/grafico_LineChartData.dart';
+import 'package:flutter/material.dart';
+import 'package:fl_chart/fl_chart.dart';
+import 'package:task_manager_flutter/data/models/cotacao_model.dart';
+import 'package:task_manager_flutter/data/services/cotacao_caller.dart';
+import 'package:flutter/material.dart';
+import 'package:fl_chart/fl_chart.dart';
+import 'package:task_manager_flutter/data/models/cotacao_model.dart';
+import 'package:task_manager_flutter/data/services/cotacao_caller.dart';
 
 class CotacaoScreen extends StatefulWidget {
   @override
@@ -16,6 +24,13 @@ class _CotacaoScreenState extends State<CotacaoScreen> {
   @override
   void initState() {
     super.initState();
+    _fetchCotacoes();
+  }
+
+  void _fetchCotacoes() {
+    setState(() {
+      isLoading = true;
+    });
     CotacaoCaller().fetchCotacoes().then((data) {
       setState(() {
         cotacoes = data;
@@ -26,58 +41,15 @@ class _CotacaoScreenState extends State<CotacaoScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // Última cotação
-    Cotacao ultimaCotacao = cotacoes.last;
-
     return Scaffold(
       appBar: AppBar(
         title: Text('Gráfico de Cotações'),
-      ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(16.0),
-              decoration: BoxDecoration(
-                border: Border.all(color: Colors.amber, width: 2),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Column(
-                children: [
-                  Text(
-                    'Última Cotação',
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                  ),
-                  SizedBox(height: 8),
-                  Text(
-                    'Data: ${ultimaCotacao.dtCotacao?.day}/${ultimaCotacao.dtCotacao?.month}/${ultimaCotacao.dtCotacao?.year}',
-                    style: TextStyle(fontSize: 14),
-                  ),
-                  Text(
-                    'Valor: R\$ ${ultimaCotacao.valor?.toStringAsFixed(2)}',
-                    style: TextStyle(fontSize: 14),
-                  ),
-                ],
-              ),
-            ),
-            SizedBox(height: 20),
-            Expanded(
-              child: CotacaoChart(cotacoes: cotacoes),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-/*
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text('Cotações'),
+        actions: [
+          IconButton(
+            icon: Icon(Icons.refresh),
+            onPressed: _fetchCotacoes,
+          ),
+        ],
       ),
       body: isLoading
           ? Center(child: CircularProgressIndicator())
@@ -85,45 +57,84 @@ class _CotacaoScreenState extends State<CotacaoScreen> {
               padding: const EdgeInsets.all(16.0),
               child: Column(
                 children: [
-                  const Text(
-                    'Cotações de Ações',
-                    style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-                  ),
-                  SizedBox(height: 20),
-                  Expanded(
-                    child: LineChart(
-                      LineChartData(
-                        gridData: FlGridData(show: false),
-                        titlesData: FlTitlesData(
-                          leftTitles: SideTitles(showTitles: true),
-                          bottomTitles: SideTitles(showTitles: true),
+                  Container(
+                    padding: const EdgeInsets.all(16.0),
+                    decoration: BoxDecoration(
+                      border: Border.all(color: Colors.amber, width: 2),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Column(
+                      children: [
+                        const Text(
+                          'Últimas 5 Cotações',
+                          style: TextStyle(
+                              fontSize: 16, fontWeight: FontWeight.bold),
                         ),
-                        borderData: FlBorderData(show: true),
-                        minX: 0,
-                        maxX: cotacoes.length.toDouble() - 1,
-                        minY: 0,
-                        maxY: cotacoes
-                            .map((c) => c.valor!)
-                            .reduce((a, b) => a > b ? a : b),
-                        lineBarsData: [
-                          LineChartBarData(
-                            spots: cotacoes.asMap().entries.map((entry) {
-                              int index = entry.key;
-                              Cotacao cotacao = entry.value;
-                              return FlSpot(index.toDouble(), cotacao.valor!);
+                        const SizedBox(height: 8),
+                        Table(
+                          border: TableBorder.all(),
+                          columnWidths: const {
+                            0: FlexColumnWidth(),
+                            1: FlexColumnWidth(),
+                          },
+                          children: [
+                            const TableRow(
+                              children: [
+                                Padding(
+                                  padding: EdgeInsets.all(8.0),
+                                  child: Text(
+                                    'Data',
+                                    style:
+                                        TextStyle(fontWeight: FontWeight.bold),
+                                  ),
+                                ),
+                                Padding(
+                                  padding: EdgeInsets.all(8.0),
+                                  child: Text(
+                                    'Valor (R\$)',
+                                    style:
+                                        TextStyle(fontWeight: FontWeight.bold),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            // Mostra apenas as 5 últimas cotações
+                            ...cotacoes.take(5).map((cotacao) {
+                              return TableRow(
+                                children: [
+                                  Padding(
+                                    padding: const EdgeInsets.all(8.0),
+                                    child: Text(
+                                      '${cotacao.dtCotacao?.day}/${cotacao.dtCotacao?.month}/${cotacao.dtCotacao?.year}',
+                                      style: const TextStyle(fontSize: 14),
+                                    ),
+                                  ),
+                                  Padding(
+                                    padding: const EdgeInsets.all(8.0),
+                                    child: Text(
+                                      'R\$ ${cotacao.valor?.toStringAsFixed(2)}',
+                                      style: const TextStyle(fontSize: 14),
+                                    ),
+                                  ),
+                                ],
+                              );
                             }).toList(),
-                            isCurved: true,
-                            colors: [Colors.blue],
-                            dotData: FlDotData(show: true),
-                            belowBarData: BarAreaData(show: false),
-                          ),
-                        ],
-                      ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                  Expanded(
+                    child: Stack(
+                      children: [
+                        CotacaoChart(cotacoes: cotacoes),
+                      ],
                     ),
                   ),
                 ],
               ),
             ),
     );
-  } */
-
+  }
+}
