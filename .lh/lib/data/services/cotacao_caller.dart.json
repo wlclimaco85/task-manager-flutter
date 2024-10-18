@@ -1,0 +1,26 @@
+{
+    "sourceFile": "lib/data/services/cotacao_caller.dart",
+    "activeCommit": 0,
+    "commits": [
+        {
+            "activePatchIndex": 2,
+            "patches": [
+                {
+                    "date": 1729010391015,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n"
+                },
+                {
+                    "date": 1729010472361,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -5,8 +5,9 @@\n import 'package:task_manager_flutter/app.dart';\r\n import 'package:task_manager_flutter/data/models/auth_utility.dart';\r\n import 'package:task_manager_flutter/data/models/network_response.dart';\r\n import 'package:task_manager_flutter/ui/screens/auth_screens/login_screen.dart';\r\n+import 'package:task_manager_flutter/data/models/cotacao_model.dart';\r\n \r\n class CotacaoCaller {\r\n   Future<List<CotacaoDTO>> fetchCotacoes() async {\r\n     final response =\r\n"
+                },
+                {
+                    "date": 1729010498985,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -1,12 +1,6 @@\n import 'dart:convert';\r\n-import 'dart:developer';\r\n-import 'package:http/http.dart';\r\n-import 'package:flutter/material.dart';\r\n-import 'package:task_manager_flutter/app.dart';\r\n-import 'package:task_manager_flutter/data/models/auth_utility.dart';\r\n-import 'package:task_manager_flutter/data/models/network_response.dart';\r\n-import 'package:task_manager_flutter/ui/screens/auth_screens/login_screen.dart';\r\n+import 'package:http/http.dart' as http;\r\n import 'package:task_manager_flutter/data/models/cotacao_model.dart';\r\n \r\n class CotacaoCaller {\r\n   Future<List<CotacaoDTO>> fetchCotacoes() async {\r\n"
+                }
+            ],
+            "date": 1729010391015,
+            "name": "Commit-0",
+            "content": "import 'dart:convert';\r\nimport 'dart:developer';\r\nimport 'package:http/http.dart';\r\nimport 'package:flutter/material.dart';\r\nimport 'package:task_manager_flutter/app.dart';\r\nimport 'package:task_manager_flutter/data/models/auth_utility.dart';\r\nimport 'package:task_manager_flutter/data/models/network_response.dart';\r\nimport 'package:task_manager_flutter/ui/screens/auth_screens/login_screen.dart';\r\n\r\nclass CotacaoCaller {\r\n  Future<List<CotacaoDTO>> fetchCotacoes() async {\r\n  final response = await http.get(Uri.parse('https://suaapi.com/api/cotacoes'));\r\n\r\n  if (response.statusCode == 200) {\r\n    final List<dynamic> jsonData = json.decode(response.body);\r\n    return jsonData.map((json) => CotacaoDTO.fromJson(json)).toList();\r\n  } else {\r\n    throw Exception('Falha ao carregar cotações');\r\n  }\r\n}\r\n}\r\n"
+        }
+    ]
+}

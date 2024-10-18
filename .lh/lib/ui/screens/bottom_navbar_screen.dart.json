@@ -1,0 +1,34 @@
+{
+    "sourceFile": "lib/ui/screens/bottom_navbar_screen.dart",
+    "activeCommit": 0,
+    "commits": [
+        {
+            "activePatchIndex": 4,
+            "patches": [
+                {
+                    "date": 1729002710630,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n"
+                },
+                {
+                    "date": 1729002721913,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -40,9 +40,9 @@\n           items: const [\r\n             BottomNavigationBarItem(\r\n                 icon: Icon(FontAwesomeIcons.shekelSign), label: \"Noticias\"),\r\n             BottomNavigationBarItem(\r\n-                icon: Icon(FontAwesomeIcons.checkToSlot), label: \"Completed\"),\r\n+                icon: Icon(FontAwesomeIcons.checkToSlot), label: \"Cotação\"),\r\n             BottomNavigationBarItem(\r\n                 icon: Icon(FontAwesomeIcons.circleXmark), label: \"Cancelled\"),\r\n             BottomNavigationBarItem(\r\n                 icon: Icon(FontAwesomeIcons.barsProgress), label: \"Progress\"),\r\n"
+                },
+                {
+                    "date": 1729002728152,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -42,9 +42,9 @@\n                 icon: Icon(FontAwesomeIcons.shekelSign), label: \"Noticias\"),\r\n             BottomNavigationBarItem(\r\n                 icon: Icon(FontAwesomeIcons.checkToSlot), label: \"Cotação\"),\r\n             BottomNavigationBarItem(\r\n-                icon: Icon(FontAwesomeIcons.circleXmark), label: \"Cancelled\"),\r\n+                icon: Icon(FontAwesomeIcons.circleXmark), label: \"Comprar\"),\r\n             BottomNavigationBarItem(\r\n                 icon: Icon(FontAwesomeIcons.barsProgress), label: \"Progress\"),\r\n           ]),\r\n     );\r\n"
+                },
+                {
+                    "date": 1729002746325,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -45,8 +45,10 @@\n             BottomNavigationBarItem(\r\n                 icon: Icon(FontAwesomeIcons.circleXmark), label: \"Comprar\"),\r\n             BottomNavigationBarItem(\r\n                 icon: Icon(FontAwesomeIcons.barsProgress), label: \"Vender\"),\r\n+            BottomNavigationBarItem(\r\n+                icon: Icon(FontAwesomeIcons.barsProgress), label: \"Entrar\"),\r\n           ]),\r\n     );\r\n   }\r\n }\r\n"
+                },
+                {
+                    "date": 1729019093437,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -1,9 +1,9 @@\n import 'package:flutter/material.dart';\r\n import 'package:font_awesome_flutter/font_awesome_flutter.dart';\r\n import 'package:task_manager_flutter/ui/screens/cancelled_task_screen.dart';\r\n import 'package:task_manager_flutter/ui/screens/completed_task_screen.dart';\r\n-import 'package:task_manager_flutter/ui/screens/new_task_screen.dart';\r\n+import 'package:task_manager_flutter/ui/screens/cotacao_grafico_screen.dart';\r\n import 'package:task_manager_flutter/ui/screens/progress_task_screen.dart';\r\n \r\n class BottomNavBarScreen extends StatefulWidget {\r\n   const BottomNavBarScreen({super.key});\r\n@@ -14,9 +14,9 @@\n \r\n class _BottomNavBarScreenState extends State<BottomNavBarScreen> {\r\n   int selectedIndex = 0;\r\n   final List<Widget> screens = [\r\n-    const NewTaskScreen(),\r\n+    const CotacaoScreen(),\r\n     const CompleteTaskScreen(),\r\n     const CancelledTaskScreen(),\r\n     const ProgressTaskScreen(),\r\n   ];\r\n"
+                }
+            ],
+            "date": 1729002710630,
+            "name": "Commit-0",
+            "content": "import 'package:flutter/material.dart';\r\nimport 'package:font_awesome_flutter/font_awesome_flutter.dart';\r\nimport 'package:task_manager_flutter/ui/screens/cancelled_task_screen.dart';\r\nimport 'package:task_manager_flutter/ui/screens/completed_task_screen.dart';\r\nimport 'package:task_manager_flutter/ui/screens/new_task_screen.dart';\r\nimport 'package:task_manager_flutter/ui/screens/progress_task_screen.dart';\r\n\r\nclass BottomNavBarScreen extends StatefulWidget {\r\n  const BottomNavBarScreen({super.key});\r\n\r\n  @override\r\n  State<BottomNavBarScreen> createState() => _BottomNavBarScreenState();\r\n}\r\n\r\nclass _BottomNavBarScreenState extends State<BottomNavBarScreen> {\r\n  int selectedIndex = 0;\r\n  final List<Widget> screens = [\r\n    const NewTaskScreen(),\r\n    const CompleteTaskScreen(),\r\n    const CancelledTaskScreen(),\r\n    const ProgressTaskScreen(),\r\n  ];\r\n  @override\r\n  Widget build(BuildContext context) {\r\n    return Scaffold(\r\n      body: screens[selectedIndex],\r\n      bottomNavigationBar: BottomNavigationBar(\r\n          currentIndex: selectedIndex,\r\n          unselectedItemColor: Colors.grey,\r\n          unselectedLabelStyle: const TextStyle(color: Colors.grey),\r\n          selectedItemColor: Colors.green,\r\n          showSelectedLabels: true,\r\n          type: BottomNavigationBarType.fixed,\r\n          onTap: (int index) {\r\n            selectedIndex = index;\r\n            if (mounted) {\r\n              setState(() {});\r\n            }\r\n          },\r\n          items: const [\r\n            BottomNavigationBarItem(\r\n                icon: Icon(FontAwesomeIcons.shekelSign), label: \"Noticias\"),\r\n            BottomNavigationBarItem(\r\n                icon: Icon(FontAwesomeIcons.checkToSlot), label: \"Completed\"),\r\n            BottomNavigationBarItem(\r\n                icon: Icon(FontAwesomeIcons.circleXmark), label: \"Cancelled\"),\r\n            BottomNavigationBarItem(\r\n                icon: Icon(FontAwesomeIcons.barsProgress), label: \"Progress\"),\r\n          ]),\r\n    );\r\n  }\r\n}\r\n"
+        }
+    ]
+}

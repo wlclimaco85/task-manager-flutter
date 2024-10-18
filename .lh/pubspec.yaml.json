@@ -3,7 +3,7 @@
     "activeCommit": 0,
     "commits": [
         {
-            "activePatchIndex": 11,
+            "activePatchIndex": 13,
             "patches": [
                 {
                     "date": 1707188005314,
@@ -52,6 +52,14 @@
                 {
                     "date": 1708964940514,
                     "content": "Index: \n===================================================================\n--- \n+++ \n@@ -47,11 +47,8 @@\n   simple_gesture_detector: ^0.2.0\r\n   modal_bottom_sheet: ^2.0.0\r\n   dropdown_button2: ^2.3.8\r\n   simple_tags: ^0.0.6\r\n-  easy_pdf_viewer: ^1.0.6 \r\n-  cloud_firestore: ^4.8.2 \r\n-  file_picker: ^5.3.2 \r\n \r\n   mime: any\r\n dev_dependencies:\r\n   flutter_test:\r\n"
+                },
+                {
+                    "date": 1729010755225,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -42,14 +42,14 @@\n   shared_preferences: ^2.2.0\r\n   image_picker: ^1.0.1\r\n   font_awesome_flutter: ^10.5.0\r\n   fluttertoast: ^8.2.2\r\n-  intl: ^0.18.0\r\n+  intl: ^0.19.0\r\n   simple_gesture_detector: ^0.2.0\r\n-  modal_bottom_sheet: ^2.0.0\r\n+  modal_bottom_sheet: ^3.0.0\r\n   dropdown_button2: ^2.3.8\r\n   simple_tags: ^0.0.6\r\n-\r\n+  fl_chart: ^0.40.0\r\n   mime: any\r\n dev_dependencies:\r\n   flutter_test:\r\n     sdk: flutter\r\n@@ -58,9 +58,9 @@\n   # encourage good coding practices. The lint set provided by the package is\r\n   # activated in the `analysis_options.yaml` file located at the root of your\r\n   # package. See that file for information about deactivating specific lint\r\n   # rules and activating additional ones.\r\n-  flutter_lints: ^2.0.0\r\n+  flutter_lints: ^4.0.0\r\n \r\n # For information on the generic Dart part of this file, see the\r\n # following page: https://dart.dev/tools/pub/pubspec\r\n \r\n"
+                },
+                {
+                    "date": 1729028466144,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -47,9 +47,9 @@\n   simple_gesture_detector: ^0.2.0\r\n   modal_bottom_sheet: ^3.0.0\r\n   dropdown_button2: ^2.3.8\r\n   simple_tags: ^0.0.6\r\n-  fl_chart: ^0.40.0\r\n+  fl_chart: ^0.50.1\r\n   mime: any\r\n dev_dependencies:\r\n   flutter_test:\r\n     sdk: flutter\r\n"
                 }
             ],
             "date": 1707188005314,

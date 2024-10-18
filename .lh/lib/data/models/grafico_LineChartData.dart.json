@@ -1,0 +1,22 @@
+{
+    "sourceFile": "lib/data/models/grafico_LineChartData.dart",
+    "activeCommit": 0,
+    "commits": [
+        {
+            "activePatchIndex": 1,
+            "patches": [
+                {
+                    "date": 1729032445440,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n"
+                },
+                {
+                    "date": 1729032574456,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -53,9 +53,9 @@\n               Cotacao cotacao = entry.value;\r\n               return FlSpot(index.toDouble(), cotacao.valor ?? 0);\r\n             }).toList(),\r\n             isCurved: true,\r\n-            colors: [Colors.blue],\r\n+            color: Colors.blue, // Atualização da cor\r\n             dotData: FlDotData(show: true), // Mostrar pontos\r\n             belowBarData: BarAreaData(show: false),\r\n           ),\r\n         ],\r\n"
+                }
+            ],
+            "date": 1729032445440,
+            "name": "Commit-0",
+            "content": "import 'package:flutter/material.dart';\r\nimport 'package:fl_chart/fl_chart.dart';\r\nimport 'package:task_manager_flutter/data/models/cotacao_model.dart';\r\n\r\nclass CotacaoChart extends StatelessWidget {\r\n  final List<Cotacao> cotacoes;\r\n\r\n  const CotacaoChart({Key? key, required this.cotacoes}) : super(key: key);\r\n\r\n @override\r\n  Widget build(BuildContext context) {\r\n    return LineChart(\r\n      LineChartData(\r\n        gridData: FlGridData(show: true),\r\n        titlesData: FlTitlesData(\r\n          bottomTitles: AxisTitles(\r\n            sideTitles: SideTitles(\r\n              showTitles: true,\r\n              reservedSize: 38,\r\n              getTitlesWidget: (value, meta) {\r\n                final index = value.toInt();\r\n                if (index >= 0 && index < cotacoes.length) {\r\n                  return Text(\r\n                    '${cotacoes[index].dtCotacao?.day}/${cotacoes[index].dtCotacao?.month}',\r\n                    style: const TextStyle(fontSize: 10),\r\n                  );\r\n                }\r\n                return const SizedBox.shrink();\r\n              },\r\n            ),\r\n          ),\r\n          leftTitles: AxisTitles(\r\n            sideTitles: SideTitles(\r\n              showTitles: true,\r\n              reservedSize: 40,\r\n              getTitlesWidget: (value, meta) {\r\n                return Text(\r\n                  value.toString(),\r\n                  style: const TextStyle(fontSize: 10),\r\n                );\r\n              },\r\n            ),\r\n          ),\r\n        ),\r\n        borderData: FlBorderData(\r\n          show: true,\r\n          border: Border.all(color: Colors.blue, width: 1),\r\n        ),\r\n        lineBarsData: [\r\n          LineChartBarData(\r\n            spots: cotacoes.asMap().entries.map((entry) {\r\n              int index = entry.key;\r\n              Cotacao cotacao = entry.value;\r\n              return FlSpot(index.toDouble(), cotacao.valor ?? 0);\r\n            }).toList(),\r\n            isCurved: true,\r\n            colors: [Colors.blue],\r\n            dotData: FlDotData(show: true), // Mostrar pontos\r\n            belowBarData: BarAreaData(show: false),\r\n          ),\r\n        ],\r\n        minX: 0,\r\n        maxX: cotacoes.length.toDouble() - 1,\r\n        minY: 0,\r\n        maxY: cotacoes.map((c) => c.valor ?? 0).reduce((a, b) => a > b ? a : b),\r\n      ),\r\n    );\r\n  }\r\n}\r\n"
+        }
+    ]
+}

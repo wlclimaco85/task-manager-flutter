@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:task_manager_flutter/ui/screens/cancelled_task_screen.dart';
 import 'package:task_manager_flutter/ui/screens/completed_task_screen.dart';
-import 'package:task_manager_flutter/ui/screens/new_task_screen.dart';
+import 'package:task_manager_flutter/ui/screens/cotacao_grafico_screen.dart';
 import 'package:task_manager_flutter/ui/screens/progress_task_screen.dart';
 
 class BottomNavBarScreen extends StatefulWidget {
@@ -15,7 +15,7 @@ class BottomNavBarScreen extends StatefulWidget {
 class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
   int selectedIndex = 0;
   final List<Widget> screens = [
-    const NewTaskScreen(),
+    CotacaoScreen(),
     const CompleteTaskScreen(),
     const CancelledTaskScreen(),
     const ProgressTaskScreen(),
@@ -39,13 +39,15 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
           },
           items: const [
             BottomNavigationBarItem(
-                icon: Icon(FontAwesomeIcons.shekelSign), label: "New"),
+                icon: Icon(FontAwesomeIcons.shekelSign), label: "Noticias"),
             BottomNavigationBarItem(
-                icon: Icon(FontAwesomeIcons.checkToSlot), label: "Completed"),
+                icon: Icon(FontAwesomeIcons.checkToSlot), label: "Cotação"),
             BottomNavigationBarItem(
-                icon: Icon(FontAwesomeIcons.circleXmark), label: "Cancelled"),
+                icon: Icon(FontAwesomeIcons.circleXmark), label: "Comprar"),
             BottomNavigationBarItem(
-                icon: Icon(FontAwesomeIcons.barsProgress), label: "Progress"),
+                icon: Icon(FontAwesomeIcons.barsProgress), label: "Vender"),
+            BottomNavigationBarItem(
+                icon: Icon(FontAwesomeIcons.barsProgress), label: "Entrar"),
           ]),
     );
   }

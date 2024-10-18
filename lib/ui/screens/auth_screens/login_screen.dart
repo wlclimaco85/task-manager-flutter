@@ -10,12 +10,59 @@ import 'package:task_manager_flutter/ui/screens/bottom_navbar_screen.dart';
 import 'package:task_manager_flutter/ui/widgets/custom_password_text_field.dart';
 import 'package:task_manager_flutter/ui/widgets/custom_text_form_field.dart';
 import 'package:task_manager_flutter/ui/screens/auth_screens/signup_form_screen.dart';
+import 'dart:convert'; // Para converter JSON
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
 
   @override
   State<LoginScreen> createState() => _LoginScreenState();
+}
+
+class News {
+  final String title;
+  final String summary;
+  final String source;
+  final String date;
+
+  News(
+      {required this.title,
+      required this.summary,
+      required this.source,
+      required this.date});
+
+  factory News.fromJson(Map<String, dynamic> json) {
+    return News(
+      title: json['title'],
+      summary: json['summary'],
+      source: json['source'],
+      date: json['date'],
+    );
+  }
+}
+
+class NoticiaModel {
+  String? status;
+  String? token;
+  Data? data;
+
+  NoticiaModel({this.status, this.token, this.data});
+
+  NoticiaModel.fromJson(Map<String, dynamic> json) {
+    status = json['status'];
+    token = json['token'];
+    data = json['data'] != null ? Data.fromJson(json['data']) : null;
+  }
+
+  Map<String, dynamic> toJson() {
+    final Map<String, dynamic> data = <String, dynamic>{};
+    data['status'] = status;
+    data['token'] = token;
+    if (this.data != null) {
+      data['data'] = this.data!.toJson();
+    }
+    return data;
+  }
 }
 
 class _LoginScreenState extends State<LoginScreen>
@@ -28,14 +75,87 @@ class _LoginScreenState extends State<LoginScreen>
 
   bool _loginInProgress = false;
 
+  List<News> newsList = []; // Lista de notícias
+  bool isLoading = false; // Flag de carregamento
+  int page = 1; // Controle de paginação
+
+  // Função para buscar notícias do backend
+  Future<void> fetchNews({bool isRefresh = false}) async {
+    if (isRefresh) {
+      setState(() {
+        page = 1;
+        newsList.clear();
+      });
+    }
+
+    setState(() {
+      isLoading = true;
+    });
+
+    final NetworkResponse response =
+        await NetworkCaller().getRequest(ApiLinks.allNoticias);
+
+    if (response.isSuccess) {
+      NoticiaModel model = NoticiaModel.fromJson(response.body!);
+      var x = 10;
+
+      //   Map<dynamic>? newsJson = json.decode(response.body);
+      setState(() {
+        // newsList.addAll(newsJson.map((json) => News.fromJson(json)).toList());
+        page++;
+        isLoading = false;
+      });
+    } else {
+      throw Exception('Falha ao carregar as notícias');
+    }
+  }
+
+  Future<void> fetchNews2() async {
+    setState(() {
+      isLoading = true;
+    });
+
+    Map<String, dynamic> requestBody = {};
+
+    final NetworkResponse response =
+        await NetworkCaller().getRequest(ApiLinks.allNoticias);
+    _loginInProgress = false;
+    if (mounted) {
+      setState(() {});
+    }
+
+    if (response.isSuccess) {
+      LoginModel model = LoginModel.fromJson(response.body!);
+      await AuthUtility.setUserInfo(model);
+      // List<dynamic> newsJson = json.decode(response.body);
+      setState(() {
+        //  newsList.addAll(newsJson.map((json) => News.fromJson(json)).toList());
+        page++; // Incrementar página para buscar a próxima
+        isLoading = false;
+      });
+      if (mounted) {
+        Navigator.pushAndRemoveUntil(
+            context,
+            MaterialPageRoute(builder: (context) => const BottomNavBarScreen()),
+            (route) => false);
+      }
+    } else {
+      if (mounted) {
+        _passwordController.clear();
+        ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Incorrect email or password')));
+      }
+    }
+  }
+
   Future<void> login() async {
     _loginInProgress = true;
     if (mounted) {
       setState(() {});
     }
     Map<String, dynamic> requestBody = {
-      "email": _emailController.text.trim(),
-      "password": _passwordController.text
+      "email": 'wlclimaco@gmail.com',
+      "password": '123456'
     };
     final NetworkResponse response =
         await NetworkCaller().postRequest(ApiLinks.login, requestBody);
@@ -47,10 +167,11 @@ class _LoginScreenState extends State<LoginScreen>
       LoginModel model = LoginModel.fromJson(response.body!);
       await AuthUtility.setUserInfo(model);
       if (mounted) {
-        Navigator.pushAndRemoveUntil(
-            context,
-            MaterialPageRoute(builder: (context) => const BottomNavBarScreen()),
-            (route) => false);
+        fetchNews();
+        //Navigator.pushAndRemoveUntil(
+        //   context,
+        //   MaterialPageRoute(builder: (context) => const BottomNavBarScreen()),
+        //   (route) => false);
       }
     } else {
       if (mounted) {
@@ -75,17 +196,121 @@ class _LoginScreenState extends State<LoginScreen>
             }
           });
     super.initState();
+    login();
   }
+
+/*
+  // Função para detectar scroll no final da lista
+  void _onScroll() {
+    if (!_controller.hasClients || isLoading) return;
+
+    final thresholdReached = _controller.position.extentAfter <
+        500; // Se o usuário está a 500px do fim
+
+    if (thresholdReached) {
+      fetchNews(); // Carregar mais notícias
+    }
+  }
+*/
+  final ScrollController _controller =
+      ScrollController(); // Controlador de scroll
 
   @override
   void dispose() {
     _animationController.dispose();
+    _controller.dispose();
     super.dispose();
+  }
+
+  // Função para detectar o fim da lista e carregar mais notícias
+  void _onScroll() {
+    if (_controller.position.pixels == _controller.position.maxScrollExtent &&
+        !isLoading) {
+      fetchNews();
+    }
+  }
+
+  // Função para o "Pull-to-Refresh"
+  Future<void> _refreshNews() async {
+    await fetchNews(isRefresh: true);
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      appBar: AppBar(
+        title: Text('Notícias'),
+        actions: [
+          IconButton(
+            icon: Icon(Icons.refresh),
+            onPressed: () => _refreshNews(),
+          ),
+        ],
+      ),
+      body: RefreshIndicator(
+        onRefresh: _refreshNews,
+        child: ListView.builder(
+          controller: _controller,
+          itemCount: newsList.length + 1,
+          itemBuilder: (context, index) {
+            if (index == newsList.length) {
+              return isLoading
+                  ? Center(child: CircularProgressIndicator())
+                  : SizedBox.shrink();
+            }
+
+            final news = newsList[index];
+            return Card(
+              margin: EdgeInsets.all(8.0),
+              child: ListTile(
+                title: Text(news.title),
+                subtitle: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(news.summary),
+                    SizedBox(height: 4),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text('teste',
+                            style: TextStyle(
+                                fontSize: 12, fontWeight: FontWeight.bold)),
+                        Text('010101', style: TextStyle(fontSize: 12)),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+        ),
+      ),
+      bottomNavigationBar: BottomNavigationBar(
+        items: const [
+          BottomNavigationBarItem(
+            icon: Icon(Icons.article),
+            label: 'Notícias',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.show_chart),
+            label: 'Cotações',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.shopping_cart),
+            label: 'Comprar',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.sell),
+            label: 'Vender',
+          ),
+        ],
+        onTap: (index) {
+          // Lógica de navegação aqui
+          // Exemplo: navegar entre páginas dependendo do index selecionado
+        },
+      ),
+    );
+/*    return Scaffold(
       backgroundColor: const Color(0xFF340A9C),
       body: Container(
         child: ListView(
@@ -209,6 +434,6 @@ class _LoginScreenState extends State<LoginScreen>
           ],
         ),
       ),
-    );
+    ); */
   }
 }

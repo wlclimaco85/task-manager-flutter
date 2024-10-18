@@ -1,0 +1,30 @@
+{
+    "sourceFile": "lib/data/models/cotacao_model.dart",
+    "activeCommit": 0,
+    "commits": [
+        {
+            "activePatchIndex": 3,
+            "patches": [
+                {
+                    "date": 1729010316474,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n"
+                },
+                {
+                    "date": 1729023774471,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -13,5 +13,63 @@\n       dtCotacao: DateTime.parse(json['dtCotacao']),\r\n       valor: json['valor'].toDouble(),\r\n     );\r\n   }\r\n+  // Método para converter uma lista de JSON para uma lista de objetos Data\r\n+  static List<CotacaoDTO> fromJsonList(List<dynamic> jsonList) {\r\n+    return jsonList\r\n+        .map((item) => CotacaoDTO.fromJson(Map<String, dynamic>.from(item)))\r\n+        .toList();\r\n+  }\r\n }\r\n+\r\n+class CotacaoModel {\r\n+  String? status;\r\n+  String? token;\r\n+  List<CotacaoDTO>? data;\r\n+\r\n+  CotacaoModel({this.status, this.token, this.data});\r\n+\r\n+  CotacaoModel.fromJson(Map<String, dynamic> json) {\r\n+    status = json['status'];\r\n+    token = json['token'];\r\n+\r\n+    // Verifica se 'data' é uma lista de listas\r\n+    if (json['data'] != null) {\r\n+      /*  data = [];\r\n+    // Itera sobre cada lista no 'data'\r\n+    for (var list in json['data']) {\r\n+      // Adiciona à lista de 'data' uma lista de Map<String, dynamic>\r\n+      data.add(List<Map<String, dynamic>>.from(list.map((item) => Map<String, dynamic>.from(item))));\r\n+    } */\r\n+      //  List<Data> dataList = Data.fromJsonList2(json['data']['noticiasDTO']);\r\n+      List<CotacaoModel> dataList = CotacaoModel.fromJsonList(json['data']['noticiasDTO']);\r\n+      data =\r\n+          dataList; //json['data'] != null ? Data.fromJson(json['data']) : null;\r\n+    } else {\r\n+      data = null;\r\n+    }\r\n+\r\n+    //data = json['data'] != null ? Data.fromJson(json['data']) : null;\r\n+  }\r\n+\r\n+  /* Map<String, dynamic> toJson() {\r\n+    final Map<String, dynamic> data = <String, dynamic>{};\r\n+    data['status'] = status;\r\n+    data['token'] = token;\r\n+    if (this.data != null) {\r\n+      data['data'] = this.data!.toJson();\r\n+    }\r\n+    return data;\r\n+  }*/\r\n+\r\n+  Map<String, dynamic> toJson() {\r\n+    final Map<String, dynamic> data = <String, dynamic>{};\r\n+    data['status'] = status;\r\n+    data['token'] = token;\r\n+    if (this.data != null) {\r\n+      // Mapeia cada item da lista 'data' para o formato JSON\r\n+      data['data'] = this.data!.map((item) => item.toJson()).toList();\r\n+    }\r\n+    return data;\r\n+  }\r\n+}\r\n"
+                },
+                {
+                    "date": 1729024036606,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -19,8 +19,10 @@\n     return jsonList\r\n         .map((item) => CotacaoDTO.fromJson(Map<String, dynamic>.from(item)))\r\n         .toList();\r\n   }\r\n+\r\n+  \r\n }\r\n \r\n class CotacaoModel {\r\n   String? status;\r\n@@ -42,9 +44,9 @@\n       data.add(List<Map<String, dynamic>>.from(list.map((item) => Map<String, dynamic>.from(item))));\r\n     } */\r\n       //  List<Data> dataList = Data.fromJsonList2(json['data']['noticiasDTO']);\r\n       List<CotacaoModel> dataList =\r\n-          CotacaoModel.fromJsonList(json['data']['noticiasDTO']);\r\n+          CotacaoModel.fromJsonList(json['data']['cotacaoDTO']);\r\n       data =\r\n           dataList; //json['data'] != null ? Data.fromJson(json['data']) : null;\r\n     } else {\r\n       data = null;\r\n"
+                },
+                {
+                    "date": 1729024098310,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -14,13 +14,9 @@\n       valor: json['valor'].toDouble(),\r\n     );\r\n   }\r\n   // Método para converter uma lista de JSON para uma lista de objetos Data\r\n-  static List<CotacaoDTO> fromJsonList(List<dynamic> jsonList) {\r\n-    return jsonList\r\n-        .map((item) => CotacaoDTO.fromJson(Map<String, dynamic>.from(item)))\r\n-        .toList();\r\n-  }\r\n+  \r\n }\r\n \r\n class CotacaoModel {\r\n   String? status;\r\n@@ -28,8 +24,14 @@\n   List<CotacaoDTO>? data;\r\n \r\n   CotacaoModel({this.status, this.token, this.data});\r\n \r\n+  static List<CotacaoDTO> fromJsonList(List<dynamic> jsonList) {\r\n+    return jsonList\r\n+        .map((item) => CotacaoDTO.fromJson(Map<String, dynamic>.from(item)))\r\n+        .toList();\r\n+  }\r\n+\r\n   CotacaoModel.fromJson(Map<String, dynamic> json) {\r\n     status = json['status'];\r\n     token = json['token'];\r\n \r\n"
+                }
+            ],
+            "date": 1729010316474,
+            "name": "Commit-0",
+            "content": "class CotacaoDTO {\r\n  final int? id;\r\n  final String? ativo;\r\n  final DateTime? dtCotacao;\r\n  final double? valor;\r\n\r\n  CotacaoDTO({this.id, this.ativo, this.dtCotacao, this.valor});\r\n\r\n  factory CotacaoDTO.fromJson(Map<String, dynamic> json) {\r\n    return CotacaoDTO(\r\n      id: json['id'],\r\n      ativo: json['ativo'],\r\n      dtCotacao: DateTime.parse(json['dtCotacao']),\r\n      valor: json['valor'].toDouble(),\r\n    );\r\n  }\r\n}"
+        }
+    ]
+}

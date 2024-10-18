@@ -1,0 +1,30 @@
+{
+    "sourceFile": "lib/ui/screens/newsDetailScreen.dart",
+    "activeCommit": 0,
+    "commits": [
+        {
+            "activePatchIndex": 3,
+            "patches": [
+                {
+                    "date": 1729001228390,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n"
+                },
+                {
+                    "date": 1729001367995,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -6,8 +6,9 @@\n import 'package:task_manager_flutter/data/models/summery_count_model.dart';\r\n import 'package:task_manager_flutter/ui/widgets/status_change_botom_sheet.dart';\r\n import 'package:intl/intl.dart';\r\n import 'dart:convert';\r\n+import 'task_screen.dart';\r\n \r\n class NewsDetailScreen extends StatelessWidget {\r\n   final Data news;\r\n \r\n"
+                },
+                {
+                    "date": 1729001840890,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -1,14 +1,8 @@\n import 'package:flutter/material.dart';\r\n-import 'package:task_manager_flutter/data/utils/api_links.dart';\r\n-import 'package:task_manager_flutter/data/models/task_model.dart';\r\n-import 'package:task_manager_flutter/data/models/network_response.dart';\r\n-import 'package:task_manager_flutter/data/services/network_caller.dart';\r\n import 'package:task_manager_flutter/data/models/summery_count_model.dart';\r\n-import 'package:task_manager_flutter/ui/widgets/status_change_botom_sheet.dart';\r\n import 'package:intl/intl.dart';\r\n-import 'dart:convert';\r\n-import 'task_screen.dart';\r\n+import 'package:task_manager_flutter/data/models/noticias_model.dart';\r\n \r\n class NewsDetailScreen extends StatelessWidget {\r\n   final Data news;\r\n \r\n"
+                },
+                {
+                    "date": 1729001849096,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -1,6 +1,5 @@\n import 'package:flutter/material.dart';\r\n-import 'package:task_manager_flutter/data/models/summery_count_model.dart';\r\n import 'package:intl/intl.dart';\r\n import 'package:task_manager_flutter/data/models/noticias_model.dart';\r\n \r\n class NewsDetailScreen extends StatelessWidget {\r\n"
+                }
+            ],
+            "date": 1729001228390,
+            "name": "Commit-0",
+            "content": "import 'package:flutter/material.dart';\r\nimport 'package:task_manager_flutter/data/utils/api_links.dart';\r\nimport 'package:task_manager_flutter/data/models/task_model.dart';\r\nimport 'package:task_manager_flutter/data/models/network_response.dart';\r\nimport 'package:task_manager_flutter/data/services/network_caller.dart';\r\nimport 'package:task_manager_flutter/data/models/summery_count_model.dart';\r\nimport 'package:task_manager_flutter/ui/widgets/status_change_botom_sheet.dart';\r\nimport 'package:intl/intl.dart';\r\nimport 'dart:convert';\r\n\r\nclass NewsDetailScreen extends StatelessWidget {\r\n  final Data news;\r\n\r\n  const NewsDetailScreen({Key? key, required this.news}) : super(key: key);\r\n\r\n  @override\r\n  Widget build(BuildContext context) {\r\n    return Scaffold(\r\n      appBar: AppBar(\r\n        title: Text(news.titulo ?? 'Detalhes da Notícia'),\r\n      ),\r\n      body: Padding(\r\n        padding: const EdgeInsets.all(16.0),\r\n        child: SingleChildScrollView(\r\n          child: Column(\r\n            crossAxisAlignment: CrossAxisAlignment.start,\r\n            children: [\r\n              Text(\r\n                news.titulo ?? 'Título não disponível',\r\n                style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),\r\n              ),\r\n              SizedBox(height: 10),\r\n              Text(\r\n                news.fonte != null ? \"Fonte: ${news.fonte}\" : '',\r\n                style: TextStyle(fontSize: 16, fontStyle: FontStyle.italic),\r\n              ),\r\n              SizedBox(height: 10),\r\n              Text(\r\n                news.dtNoticia != null\r\n                    ? \"Data: ${DateFormat('dd/MM/yyyy HH:mm').format(news.dtNoticia!.toLocal())}\"\r\n                    : '',\r\n                style: TextStyle(fontSize: 14, color: Colors.grey),\r\n              ),\r\n              SizedBox(height: 20),\r\n              Text(\r\n                news.noticia ?? 'Notícia não disponível',\r\n                style: TextStyle(fontSize: 16),\r\n              ),\r\n            ],\r\n          ),\r\n        ),\r\n      ),\r\n    );\r\n  }\r\n}\r\n"
+        }
+    ]
+}

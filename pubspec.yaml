@@ -43,12 +43,12 @@ dependencies:
   image_picker: ^1.0.1
   font_awesome_flutter: ^10.5.0
   fluttertoast: ^8.2.2
-  intl: ^0.18.0
+  intl: ^0.19.0
   simple_gesture_detector: ^0.2.0
-  modal_bottom_sheet: ^2.0.0
+  modal_bottom_sheet: ^3.0.0
   dropdown_button2: ^2.3.8
   simple_tags: ^0.0.6
-
+  fl_chart: ^0.50.1
   mime: any
 dev_dependencies:
   flutter_test:
@@ -59,7 +59,7 @@ dev_dependencies:
   # activated in the `analysis_options.yaml` file located at the root of your
   # package. See that file for information about deactivating specific lint
   # rules and activating additional ones.
-  flutter_lints: ^2.0.0
+  flutter_lints: ^4.0.0
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
