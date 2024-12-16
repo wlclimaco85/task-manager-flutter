@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 
 class CustomTextFormField extends StatelessWidget {
   const CustomTextFormField({
-    Key? key,
+    super.key,
     required this.hintText,
     required this.controller,
     this.obscureText,
@@ -12,7 +12,7 @@ class CustomTextFormField extends StatelessWidget {
     this.readOnly,
     required this.textInputType,
     this.icon,
-  }) : super(key: key);
+  });
 
   final String hintText;
   final TextEditingController controller;
@@ -42,7 +42,6 @@ class CustomTextFormField extends StatelessWidget {
         filled: true,
         border: const OutlineInputBorder(borderSide: BorderSide.none),
       ),
-      
     );
   }
 }

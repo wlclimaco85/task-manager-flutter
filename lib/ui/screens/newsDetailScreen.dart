@@ -5,7 +5,7 @@ import 'package:task_manager_flutter/data/models/noticias_model.dart';
 class NewsDetailScreen extends StatelessWidget {
   final Data news;
 
-  const NewsDetailScreen({Key? key, required this.news}) : super(key: key);
+  const NewsDetailScreen({super.key, required this.news});
 
   @override
   Widget build(BuildContext context) {
@@ -21,24 +21,26 @@ class NewsDetailScreen extends StatelessWidget {
             children: [
               Text(
                 news.titulo ?? 'Título não disponível',
-                style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+                style:
+                    const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
               ),
-              SizedBox(height: 10),
+              const SizedBox(height: 10),
               Text(
                 news.fonte != null ? "Fonte: ${news.fonte}" : '',
-                style: TextStyle(fontSize: 16, fontStyle: FontStyle.italic),
+                style:
+                    const TextStyle(fontSize: 16, fontStyle: FontStyle.italic),
               ),
-              SizedBox(height: 10),
+              const SizedBox(height: 10),
               Text(
                 news.dtNoticia != null
                     ? "Data: ${DateFormat('dd/MM/yyyy HH:mm').format(news.dtNoticia!.toLocal())}"
                     : '',
-                style: TextStyle(fontSize: 14, color: Colors.grey),
+                style: const TextStyle(fontSize: 14, color: Colors.grey),
               ),
-              SizedBox(height: 20),
+              const SizedBox(height: 20),
               Text(
                 news.noticia ?? 'Notícia não disponível',
-                style: TextStyle(fontSize: 16),
+                style: const TextStyle(fontSize: 16),
               ),
             ],
           ),

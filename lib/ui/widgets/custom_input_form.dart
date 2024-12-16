@@ -4,7 +4,6 @@ import 'package:task_manager_flutter/data/utils/ensure_visible_when_focused.dart
 // Copyright 2019 Aleksander Woźniak
 // SPDX-License-Identifier: Apache-2.0
 
-
 class CustomInputForm extends StatelessWidget {
   String? Function(String?)? validator;
   late FocusNode focusNode;
@@ -13,21 +12,19 @@ class CustomInputForm extends StatelessWidget {
   TextEditingController controller = TextEditingController();
   Function(String?)? onPressed;
 
-
   CustomInputForm({
-    Key? key,
+    super.key,
     required this.validator,
     required this.focusNode,
     this.type,
     required this.keyField,
     required this.controller,
     required this.onPressed,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
     final platform = Theme.of(context).platform;
-    
 
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 3),
@@ -49,11 +46,12 @@ class CustomInputForm extends StatelessWidget {
                 width: 3.0,
               ),
             ),
-            labelStyle: TextStyle(color: CustomColors().getAppFundoImput(), fontSize: 16.0),
+            labelStyle: TextStyle(
+                color: CustomColors().getAppFundoImput(), fontSize: 16.0),
             hintText: keyField,
           ),
-          onChanged:onPressed,
-      //    onChanged: (value) => title = value,
+          onChanged: onPressed,
+          //    onChanged: (value) => title = value,
           validator: validator,
         ),
       ),

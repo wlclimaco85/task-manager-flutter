@@ -5,10 +5,10 @@ class CustomButton extends StatelessWidget {
   final String labels;
 
   const CustomButton({
-    Key? key,
+    super.key,
     required this.onPresse,
     required this.labels,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

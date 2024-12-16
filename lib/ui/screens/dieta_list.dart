@@ -7,7 +7,7 @@ import 'package:task_manager_flutter/data/constants/custom_colors.dart';
 
 class ListItensDieta extends StatelessWidget {
   ListItensDieta({
-    Key? key,
+    super.key,
     required this.nutricionista,
     required this.objetivo,
     required this.dtConsulta,
@@ -17,7 +17,7 @@ class ListItensDieta extends StatelessWidget {
     required this.dtFinal,
     required this.nota,
     required this.foto,
-  }) : super(key: key);
+  });
 
   final String nutricionista;
   final String objetivo;

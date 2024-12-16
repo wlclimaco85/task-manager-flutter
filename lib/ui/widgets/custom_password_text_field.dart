@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 class CustomPasswordTextFormField extends StatefulWidget {
   const CustomPasswordTextFormField({
-    Key? key,
+    super.key,
     required this.hintText,
     required this.controller,
     this.obscureText,
@@ -11,7 +11,7 @@ class CustomPasswordTextFormField extends StatefulWidget {
     this.readOnly,
     required this.textInputType,
     this.icon,
-  }) : super(key: key);
+  });
 
   final String hintText;
   final TextEditingController controller;

@@ -3,7 +3,7 @@
     "activeCommit": 0,
     "commits": [
         {
-            "activePatchIndex": 8,
+            "activePatchIndex": 9,
             "patches": [
                 {
                     "date": 1707239592404,
@@ -40,6 +40,10 @@
                 {
                     "date": 1707242828816,
                     "content": "Index: \n===================================================================\n--- \n+++ \n@@ -10,9 +10,9 @@\n   late FocusNode focusNode;\r\n   TextInputType? type;\r\n   String keyField;\r\n   TextEditingController controller = TextEditingController();\r\n-  String? Function(String?)? onPressed;\r\n+  Function(String?)? onPressed;\r\n \r\n \r\n   CustomInputForm({\r\n     Key? key,\r\n"
+                },
+                {
+                    "date": 1733243862224,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -14,16 +14,16 @@\n   Function(String?)? onPressed;\r\n \r\n \r\n   CustomInputForm({\r\n-    Key? key,\r\n+    super.key,\r\n     required this.validator,\r\n     required this.focusNode,\r\n     this.type,\r\n     required this.keyField,\r\n     required this.controller,\r\n     required this.onPressed,\r\n-  }) : super(key: key);\r\n+  });\r\n \r\n   @override\r\n   Widget build(BuildContext context) {\r\n     final platform = Theme.of(context).platform;\r\n"
                 }
             ],
             "date": 1707239592404,

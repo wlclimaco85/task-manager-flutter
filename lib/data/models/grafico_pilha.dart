@@ -5,7 +5,7 @@ import 'package:task_manager_flutter/data/models/cotacao_model.dart';
 class CotacaoChart extends StatelessWidget {
   final List<Cotacao> cotacoes;
 
-  const CotacaoChart({Key? key, required this.cotacoes}) : super(key: key);
+  const CotacaoChart({super.key, required this.cotacoes});
 
   @override
   Widget build(BuildContext context) {

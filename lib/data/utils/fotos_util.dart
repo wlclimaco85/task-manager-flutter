@@ -1,4 +1,5 @@
 import 'dart:typed_data';
+import 'dart:convert';
 
 String verificFoto(Map<String, dynamic> fotos) {
   if (fotos['foto'] != null) {
@@ -20,6 +21,14 @@ showBase64ImageDefald(base64String) {
     Uint8List myImage = data!.contentAsBytes();
     return myImage;
   }
+}
+
+Uint8List decodeBase64Image(String base64String) {
+  // Verifica e remove o prefixo, se existir
+  if (base64String.startsWith("data:image")) {
+    base64String = base64String.split(',').last;
+  }
+  return base64Decode(base64String);
 }
 
 String getImagepadrao() {

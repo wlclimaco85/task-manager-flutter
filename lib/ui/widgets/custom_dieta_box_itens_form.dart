@@ -21,8 +21,7 @@ class NumberToDietaItens {
 
 class CustomComboBoxDietaitensForm extends StatefulWidget {
   CustomComboBoxDietaitensForm(
-      {Key? key, required this.parentId, required this.dataArray})
-      : super(key: key);
+      {super.key, required this.parentId, required this.dataArray});
   int parentId = 0;
   List<Map<String, dynamic>> dataArray = [];
   @override
@@ -390,8 +389,8 @@ class _CustomComboBoxDietaitensForm
                     offset: const Offset(-20, 0),
                     scrollbarTheme: ScrollbarThemeData(
                       radius: const Radius.circular(40),
-                      thickness: MaterialStateProperty.all(6),
-                      thumbVisibility: MaterialStateProperty.all(true),
+                      thickness: WidgetStateProperty.all(6),
+                      thumbVisibility: WidgetStateProperty.all(true),
                     ),
                   ),
                   menuItemStyleData: const MenuItemStyleData(

@@ -30,14 +30,14 @@ double _volume = 0.0;*/
 
 class ListItensExample extends StatelessWidget {
   const ListItensExample({
-    Key? key,
+    super.key,
     required this.nome,
     required this.cpf,
     required this.cref,
     required this.valor,
     required this.foto,
     required this.id,
-  }) : super(key: key);
+  });
 
   final String nome;
   final String cpf;

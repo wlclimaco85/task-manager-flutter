@@ -7,9 +7,9 @@ class SimpleTag extends StatelessWidget {
   final List<String> content;
 
   const SimpleTag({
-    Key? key,
+    super.key,
     required this.content,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

@@ -1,5 +1,3 @@
-import 'dart:convert';
-
 class Cotacao {
   int? id;
   String? ativo;

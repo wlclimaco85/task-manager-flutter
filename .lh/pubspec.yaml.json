@@ -3,7 +3,7 @@
     "activeCommit": 0,
     "commits": [
         {
-            "activePatchIndex": 13,
+            "activePatchIndex": 16,
             "patches": [
                 {
                     "date": 1707188005314,
@@ -60,6 +60,18 @@
                 {
                     "date": 1729028466144,
                     "content": "Index: \n===================================================================\n--- \n+++ \n@@ -47,9 +47,9 @@\n   simple_gesture_detector: ^0.2.0\r\n   modal_bottom_sheet: ^3.0.0\r\n   dropdown_button2: ^2.3.8\r\n   simple_tags: ^0.0.6\r\n-  fl_chart: ^0.40.0\r\n+  fl_chart: ^0.50.1\r\n   mime: any\r\n dev_dependencies:\r\n   flutter_test:\r\n     sdk: flutter\r\n"
+                },
+                {
+                    "date": 1733244786319,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -47,9 +47,9 @@\n   simple_gesture_detector: ^0.2.0\r\n   modal_bottom_sheet: ^3.0.0\r\n   dropdown_button2: ^2.3.8\r\n   simple_tags: ^0.0.6\r\n-  fl_chart: ^0.50.1\r\n+  fl_chart: ^latest_version\r\n   mime: any\r\n dev_dependencies:\r\n   flutter_test:\r\n     sdk: flutter\r\n"
+                },
+                {
+                    "date": 1733245190146,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -47,10 +47,11 @@\n   simple_gesture_detector: ^0.2.0\r\n   modal_bottom_sheet: ^3.0.0\r\n   dropdown_button2: ^2.3.8\r\n   simple_tags: ^0.0.6\r\n-  fl_chart: ^latest_version\r\n+  fl_chart: ^0.69.2\r\n   mime: any\r\n+  fl_chart: \r\n dev_dependencies:\r\n   flutter_test:\r\n     sdk: flutter\r\n \r\n"
+                },
+                {
+                    "date": 1733245195401,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -49,9 +49,8 @@\n   dropdown_button2: ^2.3.8\r\n   simple_tags: ^0.0.6\r\n   fl_chart: ^0.69.2\r\n   mime: any\r\n-  fl_chart: \r\n dev_dependencies:\r\n   flutter_test:\r\n     sdk: flutter\r\n \r\n"
                 }
             ],
             "date": 1707188005314,

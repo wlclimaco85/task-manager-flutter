@@ -7,7 +7,7 @@ import 'package:task_manager_flutter/data/constants/custom_colors.dart';
 
 class ListItensMedicamentos extends StatelessWidget {
   ListItensMedicamentos({
-    Key? key,
+    super.key,
     required this.medicamento,
     required this.laboratorio,
     required this.medicoReceitou,
@@ -18,7 +18,7 @@ class ListItensMedicamentos extends StatelessWidget {
     required this.dtFinal,
     required this.nota,
     required this.foto,
-  }) : super(key: key);
+  });
 
   final String medicamento;
   final String laboratorio;

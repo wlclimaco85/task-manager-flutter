@@ -6,7 +6,7 @@ import 'package:intl/intl.dart';
 class CotacaoChart extends StatefulWidget {
   final List<Cotacao> cotacoes;
 
-  const CotacaoChart({Key? key, required this.cotacoes}) : super(key: key);
+  const CotacaoChart({super.key, required this.cotacoes});
 
   @override
   _CotacaoChartState createState() => _CotacaoChartState();

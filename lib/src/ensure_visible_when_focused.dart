@@ -29,14 +29,14 @@ import 'package:flutter/rendering.dart';
 ///
 class EnsureVisibleWhenFocused extends StatefulWidget {
   const EnsureVisibleWhenFocused({
-    Key? key,
+    super.key,
     required this.child,
     required this.focusNode,
     this.curve = Curves.easeIn,
     this.duration = const Duration(milliseconds: 100),
     this.alignment,
     this.alwaysAlign = false,
-  }) : super(key: key);
+  });
 
   /// The node we will monitor to determine if the child is focused
   final FocusNode focusNode;

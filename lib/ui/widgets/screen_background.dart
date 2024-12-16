@@ -6,9 +6,9 @@ import 'package:task_manager_flutter/ui/utils/assets_utils.dart';
 class ScreenBackground extends StatelessWidget {
   final Widget child;
   const ScreenBackground({
-    Key? key,
+    super.key,
     required this.child,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

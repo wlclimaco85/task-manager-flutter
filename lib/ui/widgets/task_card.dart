@@ -1,7 +1,6 @@
 // ignore_for_file: public_member_api_docs, sort_constructors_first
 import 'package:flutter/material.dart';
 
-
 class CustomTaskCard extends StatelessWidget {
   final String title;
   final String description;
@@ -13,7 +12,7 @@ class CustomTaskCard extends StatelessWidget {
   final VoidCallback onDeletePressed;
 
   const CustomTaskCard({
-    Key? key,
+    super.key,
     required this.title,
     required this.description,
     required this.createdDate,
@@ -22,7 +21,7 @@ class CustomTaskCard extends StatelessWidget {
     required this.onChangeStatusPressed,
     required this.onEditPressed,
     required this.onDeletePressed,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

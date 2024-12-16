@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-import 'package:task_manager_flutter/ui/screens/cancelled_task_screen.dart';
-import 'package:task_manager_flutter/ui/screens/completed_task_screen.dart';
 import 'package:task_manager_flutter/ui/screens/cotacao_grafico_screen.dart';
+import 'package:task_manager_flutter/ui/screens/vendas_screen.dart';
 import 'package:task_manager_flutter/ui/screens/progress_task_screen.dart';
+import 'package:task_manager_flutter/ui/screens/task_screen.dart';
 
 class BottomNavBarScreen extends StatefulWidget {
   const BottomNavBarScreen({super.key});
@@ -15,9 +15,9 @@ class BottomNavBarScreen extends StatefulWidget {
 class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
   int selectedIndex = 0;
   final List<Widget> screens = [
-    CotacaoScreen(),
-    const CompleteTaskScreen(),
-    const CancelledTaskScreen(),
+    const CotacaoScreen(),
+    const CotacaoScreen(),
+    const ProductCatalog(),
     const ProgressTaskScreen(),
   ];
   @override

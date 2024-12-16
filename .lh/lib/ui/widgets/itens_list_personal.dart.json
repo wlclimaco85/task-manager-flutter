@@ -3,7 +3,7 @@
     "activeCommit": 0,
     "commits": [
         {
-            "activePatchIndex": 1,
+            "activePatchIndex": 2,
             "patches": [
                 {
                     "date": 1709242338172,
@@ -12,6 +12,10 @@
                 {
                     "date": 1709242353930,
                     "content": "Index: \n===================================================================\n--- \n+++ \n@@ -305,9 +305,9 @@\n     );\r\n   }\r\n \r\n   showBase64ImageDefald(base64String) {\r\n-    if (base64String != null && base64String.data.trim() != '') {\r\n+    if (base64String != null && base64String.trim() != '') {\r\n       UriData? data = Uri.parse(base64String).data;\r\n       Uint8List myImage = data!.contentAsBytes();\r\n       return myImage;\r\n     } else {\r\n"
+                },
+                {
+                    "date": 1733243862209,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -29,16 +29,16 @@\n double _volume = 0.0;*/\r\n \r\n class ListItensExample extends StatelessWidget {\r\n   const ListItensExample({\r\n-    Key? key,\r\n+    super.key,\r\n     required this.nome,\r\n     required this.cpf,\r\n     required this.cref,\r\n     required this.valor,\r\n     required this.foto,\r\n     required this.id,\r\n-  }) : super(key: key);\r\n+  });\r\n \r\n   final String nome;\r\n   final String cpf;\r\n   final String cref;\r\n"
                 }
             ],
             "date": 1709242338172,

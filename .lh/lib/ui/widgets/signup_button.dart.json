@@ -1,0 +1,18 @@
+{
+    "sourceFile": "lib/ui/widgets/signup_button.dart",
+    "activeCommit": 0,
+    "commits": [
+        {
+            "activePatchIndex": 0,
+            "patches": [
+                {
+                    "date": 1733243862171,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n"
+                }
+            ],
+            "date": 1733243862171,
+            "name": "Commit-0",
+            "content": "// ignore_for_file: public_member_api_docs, sort_constructors_first\r\nimport 'package:flutter/material.dart';\r\n\r\nclass SignUpButton extends StatelessWidget {\r\n  final String text;\r\n  final VoidCallback onPresse;\r\n  final String buttonText;\r\n  const SignUpButton({\r\n    super.key,\r\n    required this.text,\r\n    required this.onPresse,\r\n    required this.buttonText,\r\n  });\r\n\r\n  @override\r\n  Widget build(BuildContext context) {\r\n    return Row(\r\n      mainAxisAlignment: MainAxisAlignment.center,\r\n      children: [\r\n        Text(\r\n          text,\r\n          style:\r\n              const TextStyle(fontWeight: FontWeight.w500, letterSpacing: 0.5),\r\n        ),\r\n        const SizedBox(\r\n          width: 4,\r\n        ),\r\n        TextButton(\r\n          onPressed: onPresse,\r\n          child: Text(\r\n            buttonText,\r\n            style: const TextStyle(letterSpacing: 0.7),\r\n          ),\r\n        ),\r\n      ],\r\n    );\r\n  }\r\n}\r\n"
+        }
+    ]
+}

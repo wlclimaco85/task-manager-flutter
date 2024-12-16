@@ -30,7 +30,7 @@ class _DietaModalAddState extends State<DietaModalAdd> {
   XFile? pickImage;
   String? base64Image;
   bool _signUpInProgress = false;
-  List<Map<String, dynamic>> _dataArrayMain = []; //add this
+  final List<Map<String, dynamic>> _dataArrayMain = []; //add this
 
   @override
   void initState() {

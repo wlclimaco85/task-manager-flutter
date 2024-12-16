@@ -13,13 +13,13 @@ class CustomInputHorarioForm extends StatelessWidget {
   TextEditingController controller = TextEditingController();
 
   CustomInputHorarioForm({
-    Key? key,
+    super.key,
     required this.validator,
     required this.focusNode,
     this.type,
     required this.keyField,
     required this.controller,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

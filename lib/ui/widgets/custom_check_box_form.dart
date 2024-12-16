@@ -15,12 +15,12 @@ class LabeledCheckbox extends StatefulWidget {
   final ValueChanged<bool?>? onChanged;
 
   const LabeledCheckbox({
-    Key? key,
+    super.key,
     this.value,
     this.onChanged,
     this.label = '',
     this.leadingCheckbox = true,
-  }) : super(key: key);
+  });
 
   @override
   State<StatefulWidget> createState() => _LabeledCheckboxState();

@@ -2,10 +2,10 @@ import 'package:flutter/material.dart';
 
 class CustomChip extends StatelessWidget {
   const CustomChip({
-    Key? key,
+    super.key,
     required this.text,
     required this.color,
-  }) : super(key: key);
+  });
 
   final String text;
   final Color color;

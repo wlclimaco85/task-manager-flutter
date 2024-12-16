@@ -1,0 +1,18 @@
+{
+    "sourceFile": "lib/ui/widgets/format_button.dart",
+    "activeCommit": 0,
+    "commits": [
+        {
+            "activePatchIndex": 0,
+            "patches": [
+                {
+                    "date": 1733243862180,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n"
+                }
+            ],
+            "date": 1733243862180,
+            "name": "Commit-0",
+            "content": "// Copyright 2019 Aleksander Woźniak\r\n// SPDX-License-Identifier: Apache-2.0\r\n\r\nimport 'package:flutter/cupertino.dart';\r\nimport 'package:flutter/foundation.dart';\r\nimport 'package:flutter/material.dart';\r\n\r\nimport 'package:task_manager_flutter/data/utils/utils.dart' show CalendarFormat;\r\n\r\nclass FormatButton extends StatelessWidget {\r\n  final CalendarFormat calendarFormat;\r\n  final ValueChanged<CalendarFormat> onTap;\r\n  final TextStyle textStyle;\r\n  final BoxDecoration decoration;\r\n  final EdgeInsets padding;\r\n  final bool showsNextFormat;\r\n  final Map<CalendarFormat, String> availableCalendarFormats;\r\n\r\n  const FormatButton({\r\n    super.key,\r\n    required this.calendarFormat,\r\n    required this.onTap,\r\n    required this.textStyle,\r\n    required this.decoration,\r\n    required this.padding,\r\n    required this.showsNextFormat,\r\n    required this.availableCalendarFormats,\r\n  });\r\n\r\n  @override\r\n  Widget build(BuildContext context) {\r\n    final child = Container(\r\n      decoration: decoration,\r\n      padding: padding,\r\n      child: Text(\r\n        _formatButtonText,\r\n        style: textStyle,\r\n      ),\r\n    );\r\n\r\n    final platform = Theme.of(context).platform;\r\n\r\n    return !kIsWeb &&\r\n            (platform == TargetPlatform.iOS || platform == TargetPlatform.macOS)\r\n        ? CupertinoButton(\r\n            onPressed: () => onTap(_nextFormat()),\r\n            padding: EdgeInsets.zero,\r\n            child: child,\r\n          )\r\n        : InkWell(\r\n            borderRadius:\r\n                decoration.borderRadius?.resolve(Directionality.of(context)),\r\n            onTap: () => onTap(_nextFormat()),\r\n            child: child,\r\n          );\r\n  }\r\n\r\n  String get _formatButtonText => showsNextFormat\r\n      ? availableCalendarFormats[_nextFormat()]!\r\n      : availableCalendarFormats[calendarFormat]!;\r\n\r\n  CalendarFormat _nextFormat() {\r\n    final formats = availableCalendarFormats.keys.toList();\r\n    int id = formats.indexOf(calendarFormat);\r\n    id = (id + 1) % formats.length;\r\n\r\n    return formats[id];\r\n  }\r\n}\r\n"
+        }
+    ]
+}

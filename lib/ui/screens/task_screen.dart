@@ -16,12 +16,12 @@ class TaskScreen extends StatefulWidget {
   final bool floatingActionButton;
 
   const TaskScreen({
-    Key? key,
+    super.key,
     required this.screenStatus,
     required this.apiLink,
     this.showAllSummeryCard = false,
     this.floatingActionButton = true,
-  }) : super(key: key);
+  });
 
   @override
   State<TaskScreen> createState() => _TaskScreenState();
@@ -114,7 +114,7 @@ class _TaskScreenState extends State<TaskScreen> {
       if (response.body != null) {
         jsonString = json.encode(response.body);
         model = NoticiaModel.fromJson(response.body!);
-        if (model != null && model.data != null) {
+        if (model.data != null) {
           newsList.addAll(model.data!);
         }
         // Use jsonString conforme necessário
@@ -284,13 +284,14 @@ class _TaskScreenState extends State<TaskScreen> {
 
   void log(String message) => print(message);
 
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Notícias'),
+        title: const Text('Notícias'),
         actions: [
           IconButton(
-            icon: Icon(Icons.refresh),
+            icon: const Icon(Icons.refresh),
             onPressed: () => _refreshNews(),
           ),
         ],
@@ -313,7 +314,7 @@ class _TaskScreenState extends State<TaskScreen> {
                                 strokeWidth: 6.0), // Indicador maior
                           ),
                         )
-                      : SizedBox.shrink();
+                      : const SizedBox.shrink();
                 }
 
                 final news = newsList[index];

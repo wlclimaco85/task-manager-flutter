@@ -5,12 +5,8 @@ import 'package:task_manager_flutter/data/models/login_model.dart';
 import 'package:task_manager_flutter/data/models/network_response.dart';
 import 'package:task_manager_flutter/data/services/network_caller.dart';
 import 'package:task_manager_flutter/data/utils/api_links.dart';
-import 'package:task_manager_flutter/ui/screens/auth_screens/email_verification_screeen.dart';
 import 'package:task_manager_flutter/ui/screens/bottom_navbar_screen.dart';
-import 'package:task_manager_flutter/ui/widgets/custom_password_text_field.dart';
-import 'package:task_manager_flutter/ui/widgets/custom_text_form_field.dart';
-import 'package:task_manager_flutter/ui/screens/auth_screens/signup_form_screen.dart';
-import 'dart:convert'; // Para converter JSON
+// Para converter JSON
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -239,10 +235,10 @@ class _LoginScreenState extends State<LoginScreen>
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Notícias'),
+        title: const Text('Notícias'),
         actions: [
           IconButton(
-            icon: Icon(Icons.refresh),
+            icon: const Icon(Icons.refresh),
             onPressed: () => _refreshNews(),
           ),
         ],
@@ -255,21 +251,21 @@ class _LoginScreenState extends State<LoginScreen>
           itemBuilder: (context, index) {
             if (index == newsList.length) {
               return isLoading
-                  ? Center(child: CircularProgressIndicator())
-                  : SizedBox.shrink();
+                  ? const Center(child: CircularProgressIndicator())
+                  : const SizedBox.shrink();
             }
 
             final news = newsList[index];
             return Card(
-              margin: EdgeInsets.all(8.0),
+              margin: const EdgeInsets.all(8.0),
               child: ListTile(
                 title: Text(news.title),
                 subtitle: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(news.summary),
-                    SizedBox(height: 4),
-                    Row(
+                    const SizedBox(height: 4),
+                    const Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Text('teste',

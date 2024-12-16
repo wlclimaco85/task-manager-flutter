@@ -29,7 +29,7 @@ double _volume = 0.0;*/
 
 class ListItensAcademia extends StatelessWidget {
   ListItensAcademia({
-    Key? key,
+    super.key,
     required this.nome,
     required this.cpf,
     required this.endereco,
@@ -38,7 +38,7 @@ class ListItensAcademia extends StatelessWidget {
     required this.foto,
     required this.id,
     required this.listModadelidades,
-  }) : super(key: key);
+  });
 
   final String nome;
   final String cpf;

@@ -7,7 +7,7 @@ import 'package:task_manager_flutter/data/constants/custom_colors.dart';
 
 class ListItensSuplemento extends StatelessWidget {
   ListItensSuplemento({
-    Key? key,
+    super.key,
     required this.nome,
     required this.marca,
     required this.dataIni,
@@ -19,7 +19,7 @@ class ListItensSuplemento extends StatelessWidget {
     required this.valor,
     required this.sabor,
     required this.tamanho,
-  }) : super(key: key);
+  });
 
   final String nome;
   final String marca;

@@ -1,0 +1,18 @@
+{
+    "sourceFile": "lib/ui/widgets/summery_card.dart",
+    "activeCommit": 0,
+    "commits": [
+        {
+            "activePatchIndex": 0,
+            "patches": [
+                {
+                    "date": 1733243862178,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n"
+                }
+            ],
+            "date": 1733243862178,
+            "name": "Commit-0",
+            "content": "// ignore_for_file: public_member_api_docs, sort_constructors_first\r\nimport 'package:flutter/material.dart';\r\n\r\nclass SummeryCard extends StatelessWidget {\r\n  final int numberOfTasks;\r\n  final String title;\r\n  const SummeryCard({\r\n    super.key,\r\n    required this.numberOfTasks,\r\n    required this.title,\r\n  });\r\n\r\n  @override\r\n  Widget build(BuildContext context) {\r\n    return Card(\r\n      elevation: 4,\r\n      child: Padding(\r\n        padding: const EdgeInsets.all(8),\r\n        child: Column(\r\n          children: [\r\n            Text(\r\n              \"$numberOfTasks\",\r\n              style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w500),\r\n            ),\r\n            Text(title),\r\n          ],\r\n        ),\r\n      ),\r\n    );\r\n  }\r\n}\r\n"
+        }
+    ]
+}

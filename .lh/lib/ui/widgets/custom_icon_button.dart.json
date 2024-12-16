@@ -1,0 +1,18 @@
+{
+    "sourceFile": "lib/ui/widgets/custom_icon_button.dart",
+    "activeCommit": 0,
+    "commits": [
+        {
+            "activePatchIndex": 0,
+            "patches": [
+                {
+                    "date": 1733243862180,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n"
+                }
+            ],
+            "date": 1733243862180,
+            "name": "Commit-0",
+            "content": "// Copyright 2019 Aleksander Woźniak\r\n// SPDX-License-Identifier: Apache-2.0\r\n\r\nimport 'package:flutter/cupertino.dart';\r\nimport 'package:flutter/foundation.dart';\r\nimport 'package:flutter/material.dart';\r\n\r\nclass CustomIconButton extends StatelessWidget {\r\n  final Widget icon;\r\n  final VoidCallback onTap;\r\n  final EdgeInsets margin;\r\n  final EdgeInsets padding;\r\n\r\n  const CustomIconButton({\r\n    super.key,\r\n    required this.icon,\r\n    required this.onTap,\r\n    this.margin = const EdgeInsets.all(0.0),\r\n    this.padding = const EdgeInsets.all(8.0),\r\n  });\r\n\r\n  @override\r\n  Widget build(BuildContext context) {\r\n    final platform = Theme.of(context).platform;\r\n\r\n    return Padding(\r\n      padding: margin,\r\n      child: !kIsWeb &&\r\n              (platform == TargetPlatform.iOS ||\r\n                  platform == TargetPlatform.macOS)\r\n          ? CupertinoButton(\r\n              onPressed: onTap,\r\n              padding: padding,\r\n              child: icon,\r\n            )\r\n          : InkWell(\r\n              onTap: onTap,\r\n              borderRadius: BorderRadius.circular(100.0),\r\n              child: Padding(\r\n                padding: padding,\r\n                child: icon,\r\n              ),\r\n            ),\r\n    );\r\n  }\r\n}\r\n"
+        }
+    ]
+}

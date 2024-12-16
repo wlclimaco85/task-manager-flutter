@@ -4,9 +4,9 @@ String labelNew = "";
 
 class DatePickerExample extends StatefulWidget {
   const DatePickerExample({
-    Key? key,
+    super.key,
     required this.label,
-  }) : super(key: key);
+  });
 
   final String label;
 

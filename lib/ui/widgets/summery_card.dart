@@ -5,10 +5,10 @@ class SummeryCard extends StatelessWidget {
   final int numberOfTasks;
   final String title;
   const SummeryCard({
-    Key? key,
+    super.key,
     required this.numberOfTasks,
     required this.title,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

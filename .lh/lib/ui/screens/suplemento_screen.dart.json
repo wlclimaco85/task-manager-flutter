@@ -3,7 +3,7 @@
     "activeCommit": 0,
     "commits": [
         {
-            "activePatchIndex": 10,
+            "activePatchIndex": 11,
             "patches": [
                 {
                     "date": 1708715741181,
@@ -48,6 +48,10 @@
                 {
                     "date": 1708722025923,
                     "content": "Index: \n===================================================================\n--- \n+++ \n@@ -89,19 +89,19 @@\n               mainAxisAlignment: MainAxisAlignment.center,\r\n               crossAxisAlignment: CrossAxisAlignment.start,\r\n               children: <Widget>[\r\n                 ListItensSuplemento(\r\n-                    nome: element['nome'] ? element['nome'] : \"\",\r\n-                    marca: element['marca'] ? element['marca'] : \"\",\r\n-                    dataIni: element['dtInicio'] ? element['dtInicio'] : \"\",\r\n-                    dataFin: element['dtFinal'] ? element['dtFinal'] : \"\",\r\n-                    dataVal: element['dtVal'] ? element['dtVal'] : \"\",\r\n-                    porcao: element['dosagem'] ? element['dosagem'] : \"\",\r\n+                    nome: element['nome'] != null ? element['nome'] : \"\",\r\n+                    marca: element['marca'] != null ? element['marca'] : \"\",\r\n+                    dataIni: element['dtInicio'] != null ? element['dtInicio'] : \"\",\r\n+                    dataFin: element['dtFinal'] != null ? element['dtFinal'] : \"\",\r\n+                    dataVal: element['dtVal'] != null ? element['dtVal'] : \"\",\r\n+                    porcao: element['dosagem'] != null ? element['dosagem'] : \"\",\r\n                     foto: element['foto'],\r\n                     id: element['id'],\r\n-                    valor: element['valor'] ? element['valor'] : \"\",\r\n-                    sabor: element['sabor'] ? element['sabor'] : \"\",\r\n-                    tamanho: element['tamanho'] ? element['tamanho'] : \"\"),\r\n+                    valor: element['valor'] != null ? element['valor'] : \"\",\r\n+                    sabor: element['sabor'] != null ? element['sabor'] : \"\",\r\n+                    tamanho: element['tamanho'] != null ? element['tamanho'] : \"\"),\r\n               ],\r\n             ),\r\n           );\r\n         }\r\n"
+                },
+                {
+                    "date": 1733243862226,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -10,10 +10,10 @@\n import 'package:task_manager_flutter/ui/screens/suplemento_add.dart';\r\n \r\n class SuplementoScreen extends StatefulWidget {\r\n   const SuplementoScreen({\r\n-    Key? key,\r\n-  }) : super(key: key);\r\n+    super.key,\r\n+  });\r\n \r\n   @override\r\n   State<SuplementoScreen> createState() => _SuplementoScreenState();\r\n }\r\n"
                 }
             ],
             "date": 1708715741181,

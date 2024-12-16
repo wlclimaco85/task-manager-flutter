@@ -11,8 +11,8 @@ import 'package:task_manager_flutter/ui/widgets/academia_dynamic_form.dart';
 
 class AcademiaScreen extends StatefulWidget {
   const AcademiaScreen({
-    Key? key,
-  }) : super(key: key);
+    super.key,
+  });
 
   @override
   State<AcademiaScreen> createState() => _AcademiaScreenState();

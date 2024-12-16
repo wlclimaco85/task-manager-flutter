@@ -24,11 +24,11 @@ double _volume = 0.0;*/
 
 class IconButtonExample extends StatelessWidget {
   const IconButtonExample({
-    Key? key,
+    super.key,
     required this.text,
     required this.color,
     required this.onPresse,
-  }) : super(key: key);
+  });
 
   final String text;
   final String color;

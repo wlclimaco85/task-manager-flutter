@@ -3,7 +3,7 @@
     "activeCommit": 0,
     "commits": [
         {
-            "activePatchIndex": 2,
+            "activePatchIndex": 3,
             "patches": [
                 {
                     "date": 1709679597314,
@@ -16,6 +16,10 @@
                 {
                     "date": 1709743163315,
                     "content": "Index: \n===================================================================\n--- \n+++ \n@@ -66,13 +66,13 @@\n     if (response.isSuccess) {\r\n       if (mounted) {\r\n         // final datass = json.decode(response.body);\r\n         final data = decoded['data'];\r\n-        print(data[0]['nome']); // prints 3.672940\r\n+        print(data[0]['descricao']); // prints 3.672940\r\n         dias = [];\r\n         for (final name in data) {\r\n           final value = name['id'];\r\n-          final nome = name['nome'];\r\n+          final nome = name['descricao'];\r\n           modalidadeList.add(nome);\r\n           dias.add(nome);\r\n           print('$value,$nome'); // prints entries like \"AED,3.672940\"\r\n         }\r\n"
+                },
+                {
+                    "date": 1733244287777,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -253,10 +253,10 @@\n                     ),\r\n                     offset: const Offset(-20, 0),\r\n                     scrollbarTheme: ScrollbarThemeData(\r\n                       radius: const Radius.circular(40),\r\n-                      thickness: MaterialStateProperty.all(6),\r\n-                      thumbVisibility: MaterialStateProperty.all(true),\r\n+                      thickness: WidgetStateProperty.all(6),\r\n+                      thumbVisibility: WidgetStateProperty.all(true),\r\n                     ),\r\n                   ),\r\n                   menuItemStyleData: const MenuItemStyleData(\r\n                     height: 40,\r\n"
                 }
             ],
             "date": 1709679597314,

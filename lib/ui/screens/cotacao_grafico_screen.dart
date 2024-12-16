@@ -1,18 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:fl_chart/fl_chart.dart';
 import 'package:task_manager_flutter/data/models/cotacao_model.dart';
 import 'package:task_manager_flutter/data/services/cotacao_caller.dart';
 import 'package:task_manager_flutter/data/models/grafico_LineChartData.dart';
-import 'package:flutter/material.dart';
-import 'package:fl_chart/fl_chart.dart';
-import 'package:task_manager_flutter/data/models/cotacao_model.dart';
-import 'package:task_manager_flutter/data/services/cotacao_caller.dart';
-import 'package:flutter/material.dart';
-import 'package:fl_chart/fl_chart.dart';
-import 'package:task_manager_flutter/data/models/cotacao_model.dart';
-import 'package:task_manager_flutter/data/services/cotacao_caller.dart';
 
 class CotacaoScreen extends StatefulWidget {
+  const CotacaoScreen({super.key});
+
   @override
   _CotacaoScreenState createState() => _CotacaoScreenState();
 }
@@ -43,16 +36,16 @@ class _CotacaoScreenState extends State<CotacaoScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Gráfico de Cotações'),
+        title: const Text('Gráfico de Cotações'),
         actions: [
           IconButton(
-            icon: Icon(Icons.refresh),
+            icon: const Icon(Icons.refresh),
             onPressed: _fetchCotacoes,
           ),
         ],
       ),
       body: isLoading
-          ? Center(child: CircularProgressIndicator())
+          ? const Center(child: CircularProgressIndicator())
           : Padding(
               padding: const EdgeInsets.all(16.0),
               child: Column(
@@ -118,7 +111,7 @@ class _CotacaoScreenState extends State<CotacaoScreen> {
                                   ),
                                 ],
                               );
-                            }).toList(),
+                            }),
                           ],
                         ),
                       ],

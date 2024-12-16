@@ -13,8 +13,8 @@ import '../../data/models/login_model.dart';
 
 class ExameScreen extends StatefulWidget {
   const ExameScreen({
-    Key? key,
-  }) : super(key: key);
+    super.key,
+  });
 
   @override
   State<ExameScreen> createState() => _ExameScreenState();

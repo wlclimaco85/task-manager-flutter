@@ -13,8 +13,8 @@ import '../../data/models/login_model.dart';
 
 class Medicamentoscreen extends StatefulWidget {
   const Medicamentoscreen({
-    Key? key,
-  }) : super(key: key);
+    super.key,
+  });
 
   @override
   State<Medicamentoscreen> createState() => _MedicamentoscreenState();

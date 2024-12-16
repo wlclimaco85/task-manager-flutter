@@ -13,8 +13,8 @@ import '../../data/models/login_model.dart';
 
 class Dietacreen extends StatefulWidget {
   const Dietacreen({
-    Key? key,
-  }) : super(key: key);
+    super.key,
+  });
 
   @override
   State<Dietacreen> createState() => _DietacreenState();
