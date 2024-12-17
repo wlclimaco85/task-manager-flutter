@@ -1,7 +1,7 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:task_manager_flutter/data/models/venda_model.dart';
 import 'package:task_manager_flutter/data/services/vendas_caller.dart';
-import 'dart:convert';
 import 'package:task_manager_flutter/data/utils/fotos_util.dart';
 
 class ProductCatalog extends StatefulWidget {
@@ -25,25 +25,34 @@ class _ProductCatalogState extends State<ProductCatalog> {
     _fetchProducts();
   }
 
-  void _fetchProducts() {
+  void _fetchProducts() async {
     setState(() {
       isLoading = true;
     });
-    VendasCaller().fetchCotacoes().then((data) {
+    try {
+      final data = await VendasCaller().fetchCotacoes();
       setState(() {
         allProducts = data;
+        filteredProducts = data; // Inicializa com todos os produtos
         isLoading = false;
       });
-    });
+    } catch (e) {
+      setState(() {
+        isLoading = false;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Erro ao carregar produtos: $e')),
+      );
+    }
   }
 
   void applyFilters() {
     setState(() {
       filteredProducts = allProducts.where((product) {
         final stateMatch = selectedState == "Estado" ||
-            (product.parceiro?.endereco?.estado.toString() ?? '') ==
+            (product.parceiro?.endereco?.estado?.toString() ?? '') ==
                 selectedState;
-        final cityMatch = selectedCity == "Estado" ||
+        final cityMatch = selectedCity == "Cidade" ||
             (product.parceiro?.endereco?.cidade?.toString() ?? '') ==
                 selectedCity;
 
@@ -74,7 +83,6 @@ class _ProductCatalogState extends State<ProductCatalog> {
       ),
       body: Column(
         children: [
-          // Filtros
           Padding(
             padding: const EdgeInsets.all(8.0),
             child: Row(
@@ -119,28 +127,30 @@ class _ProductCatalogState extends State<ProductCatalog> {
               ],
             ),
           ),
-          // Lista de Produtos
           Expanded(
-            child: filteredProducts.isEmpty
-                ? const Center(child: Text('Nenhum produto encontrado'))
-                : ListView.builder(
-                    itemCount: filteredProducts.length,
-                    itemBuilder: (context, index) {
-                      final product = filteredProducts[index];
-                      return ProductCard(
-                        product: product,
-                        onDetails: () => showProductDetails(context, product),
-                        onBuy: () => showBuyPopup(context, product),
-                      );
-                    },
-                  ),
+            child: isLoading
+                ? const Center(child: CircularProgressIndicator())
+                : filteredProducts.isEmpty
+                    ? const Center(child: Text('Nenhum produto encontrado'))
+                    : ListView.builder(
+                        itemCount: filteredProducts.length,
+                        itemBuilder: (context, index) {
+                          final product = filteredProducts[index];
+                          return ProductCard(
+                            product: product,
+                            onDetails: () =>
+                                showProductDetails(context, product),
+                            onBuy: () => showBuyPopup(context, product),
+                          );
+                        },
+                      ),
           ),
         ],
       ),
     );
   }
 
-  void showProductDetails(BuildContext context, dynamic product) {
+  void showProductDetails(BuildContext context, Produto product) {
     showDialog(
       context: context,
       builder: (_) => AlertDialog(
@@ -150,13 +160,13 @@ class _ProductCatalogState extends State<ProductCatalog> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-                'Estado: ${product?.parceiro?.endereco?.estado ?? "Não informado"}'),
+                'Estado: ${product.parceiro?.endereco?.estado ?? "Não informado"}'),
             Text(
-                'Cidade:  ${product?.parceiro.endereco?.cidade ?? "Não informado"}'),
-            Text('Quantidade de sacos: ${product.qtdSacos}'),
-            Text('Valor por saco: R\$${product.vlrSacos}'),
+                'Cidade: ${product.parceiro?.endereco?.cidade ?? "Não informado"}'),
+            Text('Quantidade de sacos: ${product.qtdSacos ?? 0}'),
+            Text('Valor por saco: R\$${product.vlrSacos ?? 0.0}'),
             const Text('Classificação:'),
-            ...product?.classificacao.map<Widget>((c) {
+            ...product.classificacao!.map<Widget>((c) {
               return Text('${c.descricao}: ${c.valor}');
             }).toList(),
           ],
@@ -171,7 +181,7 @@ class _ProductCatalogState extends State<ProductCatalog> {
     );
   }
 
-  void showBuyPopup(BuildContext context, dynamic product) {
+  void showBuyPopup(BuildContext context, Produto product) {
     showDialog(
       context: context,
       builder: (_) => AlertDialog(
@@ -184,11 +194,10 @@ class _ProductCatalogState extends State<ProductCatalog> {
                 'Estado: ${product.parceiro?.endereco?.estado ?? "Não informado"}'),
             Text(
                 'Cidade: ${product.parceiro?.endereco?.cidade ?? "Não informado"}'),
-            Text('Quantidade de sacos: ${product.qtdSacos}'),
-            Text('Valor por saco: R\$${product.vlrSacos}'),
-            Text('Data de retirada: Informe o vendedor'),
-            Text('Classificação:'),
-            ...product.classificacao.map<Widget>((c) {
+            Text('Quantidade de sacos: ${product.qtdSacos ?? 0}'),
+            Text('Valor por saco: R\$${product.vlrSacos ?? 0.0}'),
+            const Text('Classificação:'),
+            ...product.classificacao!.map<Widget>((c) {
               return Text('${c.descricao}: ${c.valor}');
             }).toList(),
           ],
@@ -200,7 +209,6 @@ class _ProductCatalogState extends State<ProductCatalog> {
           ),
           ElevatedButton(
             onPressed: () {
-              // Aqui você pode implementar a funcionalidade de impressão de contrato
               print('Contrato impresso para o produto ${product.descricao}');
             },
             child: const Text('Imprimir Contrato'),
@@ -212,7 +220,7 @@ class _ProductCatalogState extends State<ProductCatalog> {
 }
 
 class ProductCard extends StatelessWidget {
-  final dynamic product;
+  final Produto product;
   final VoidCallback onDetails;
   final VoidCallback onBuy;
 
@@ -225,7 +233,6 @@ class ProductCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    //final imageBase64 = showBase64ImageDefald(product['listFotos'][0]['foto']);
     final imageBase64 = decodeBase64Image(getImagepadrao());
     final image = imageBase64.isNotEmpty
         ? Image.memory(
@@ -265,18 +272,28 @@ class ProductCard extends StatelessWidget {
             ),
           ),
           Column(
+            mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              TextButton(
-                onPressed: onDetails,
-                child: const Text('Detalhes'),
+              Tooltip(
+                message: "Detalhes",
+                child: IconButton(
+                  icon: const Icon(Icons.info, color: Colors.blue),
+                  onPressed: onDetails,
+                ),
               ),
-              ElevatedButton(
-                onPressed: onBuy,
-                child: const Text('Abrir Negociação'),
+              Tooltip(
+                message: "Negociar",
+                child: IconButton(
+                  icon: const Icon(Icons.handshake, color: Colors.green),
+                  onPressed: onBuy,
+                ),
               ),
-              ElevatedButton(
-                onPressed: onBuy,
-                child: const Text('Comprar'),
+              Tooltip(
+                message: "Comprar",
+                child: IconButton(
+                  icon: const Icon(Icons.shopping_cart, color: Colors.orange),
+                  onPressed: onBuy,
+                ),
               ),
             ],
           ),
@@ -285,3 +302,4 @@ class ProductCard extends StatelessWidget {
     );
   }
 }
+//aqui e o errado
