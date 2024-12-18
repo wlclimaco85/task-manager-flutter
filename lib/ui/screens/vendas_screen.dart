@@ -1,8 +1,12 @@
-import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:task_manager_flutter/data/models/venda_model.dart';
 import 'package:task_manager_flutter/data/services/vendas_caller.dart';
 import 'package:task_manager_flutter/data/utils/fotos_util.dart';
+import '../../data/models/login_model.dart';
+import 'package:task_manager_flutter/data/models/auth_utility.dart';
+import 'package:task_manager_flutter/data/utils/api_links.dart';
+import 'package:task_manager_flutter/data/models/network_response.dart';
+import 'package:task_manager_flutter/data/services/network_caller.dart';
 
 class ProductCatalog extends StatefulWidget {
   const ProductCatalog({Key? key}) : super(key: key);
@@ -141,6 +145,8 @@ class _ProductCatalogState extends State<ProductCatalog> {
                             onDetails: () =>
                                 showProductDetails(context, product),
                             onBuy: () => showBuyPopup(context, product),
+                            onNegotiate: () =>
+                                showNegotiationPopup(context, product),
                           );
                         },
                       ),
@@ -208,14 +214,181 @@ class _ProductCatalogState extends State<ProductCatalog> {
             child: const Text('Fechar'),
           ),
           ElevatedButton(
-            onPressed: () {
-              print('Contrato impresso para o produto ${product.descricao}');
+            onPressed: () async {
+              final response = await renegotiate(
+                  vendaId: product.id!,
+                  vendedorId: product.parceiro!.id!,
+                  compradorId: 5, // Substitua com ID do comprador
+                  qtdSacos: product.qtdSacos! ?? 0,
+                  vlrSacos: product.vlrSacos ?? 0.0,
+                  qtdDisponivel: product.qtdSacos!);
+              if (response) {
+                Navigator.of(context).pop();
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                      content: Text('Compra realizada com sucesso!')),
+                );
+              } else {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Erro ao Comprar')),
+                );
+              }
             },
-            child: const Text('Imprimir Contrato'),
+            child: const Text('Comprar'),
           ),
         ],
       ),
     );
+  }
+
+  void showNegotiationPopup(BuildContext context, Produto product) {
+    final qtdController = TextEditingController();
+    final valorController = TextEditingController();
+
+    showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: Text('Renegociar - ${product.descricao}'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text('Quantidade atual: ${product.qtdSacos ?? 0}'),
+            TextField(
+              controller: qtdController,
+              keyboardType: TextInputType.number,
+              decoration: const InputDecoration(labelText: 'Nova quantidade'),
+            ),
+            Text('Valor atual por saco: R\$${product.vlrSacos ?? 0.0}'),
+            TextField(
+              controller: valorController,
+              keyboardType: TextInputType.number,
+              decoration:
+                  const InputDecoration(labelText: 'Novo valor por saco'),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Cancelar'),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              final response = await renegotiate(
+                  vendaId: product.id!,
+                  vendedorId: product.parceiro!.id!,
+                  compradorId: 5, // Substitua com ID do comprador
+                  qtdSacos: int.tryParse(qtdController.text) ?? 0,
+                  vlrSacos: double.tryParse(valorController.text) ?? 0.0,
+                  qtdDisponivel: product.qtdSacos!);
+              if (response) {
+                Navigator.of(context).pop();
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                      content: Text('Renegociação realizada com sucesso!')),
+                );
+              } else {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Erro ao renegociar')),
+                );
+              }
+            },
+            child: const Text('Enviar Proposta'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void showSnackBar({required String message, required bool isError}) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          message,
+          style: const TextStyle(color: Colors.white), // Texto sempre branco
+        ),
+        backgroundColor: isError
+            ? Colors.red
+            : Colors.green, // Vermelho para erro, verde para sucesso
+        duration: const Duration(seconds: 3),
+      ),
+    );
+  }
+
+  Future<bool> renegotiate({
+    required int vendaId,
+    required int compradorId,
+    required int vendedorId,
+    required int qtdSacos,
+    required double vlrSacos,
+    required int qtdDisponivel,
+  }) async {
+    // Exibe o loader
+    showDialog(
+      context: context,
+      barrierDismissible:
+          false, // Impede que o usuário feche o diálogo manualmente
+      builder: (_) => const Center(child: CircularProgressIndicator()),
+    );
+
+    try {
+      // Validações iniciais
+      if (qtdSacos > qtdDisponivel) {
+        Navigator.of(context).pop(); // Fecha o loader
+        showSnackBar(
+          message:
+              "A quantidade de sacos solicitada ($qtdSacos) excede o disponível ($qtdDisponivel).",
+          isError: true,
+        );
+        return false;
+      }
+
+      if (vlrSacos <= 0) {
+        Navigator.of(context).pop(); // Fecha o loader
+        showSnackBar(
+          message: "O valor por saco deve ser maior que zero.",
+          isError: true,
+        );
+        return false;
+      }
+
+      // Corpo da requisição
+      Map<String, dynamic> requestBody = {
+        "vendaId": vendaId,
+        "compradorId": compradorId,
+        "vendedorId": vendedorId,
+        "qtdSacos": qtdSacos,
+        "vlrSacos": vlrSacos,
+      };
+
+      // Faz a chamada à API
+      final NetworkResponse response = await NetworkCaller()
+          .postRequest(ApiLinks.insertNegociacao, requestBody);
+
+      Navigator.of(context).pop(); // Fecha o loader
+
+      // Verifica o resultado da requisição
+      if (response.isSuccess) {
+        showSnackBar(
+          message: "Proposta enviada com sucesso!",
+          isError: false,
+        );
+        return true;
+      } else {
+        showSnackBar(
+          message: "Erro ao enviar proposta.",
+          isError: true,
+        );
+        return false;
+      }
+    } catch (e) {
+      Navigator.of(context).pop(); // Fecha o loader
+      showSnackBar(
+        message: "Erro: ${e.toString()}",
+        isError: true,
+      );
+      return false;
+    }
   }
 }
 
@@ -223,12 +396,14 @@ class ProductCard extends StatelessWidget {
   final Produto product;
   final VoidCallback onDetails;
   final VoidCallback onBuy;
+  final VoidCallback onNegotiate;
 
   const ProductCard({
     Key? key,
     required this.product,
     required this.onDetails,
     required this.onBuy,
+    required this.onNegotiate,
   }) : super(key: key);
 
   @override
@@ -285,7 +460,7 @@ class ProductCard extends StatelessWidget {
                 message: "Negociar",
                 child: IconButton(
                   icon: const Icon(Icons.handshake, color: Colors.green),
-                  onPressed: onBuy,
+                  onPressed: onNegotiate,
                 ),
               ),
               Tooltip(
@@ -302,4 +477,3 @@ class ProductCard extends StatelessWidget {
     );
   }
 }
-//aqui e o errado

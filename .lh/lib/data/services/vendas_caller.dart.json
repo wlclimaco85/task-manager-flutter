@@ -3,7 +3,7 @@
     "activeCommit": 0,
     "commits": [
         {
-            "activePatchIndex": 4,
+            "activePatchIndex": 5,
             "patches": [
                 {
                     "date": 1734354746647,
@@ -24,6 +24,10 @@
                 {
                     "date": 1734378642106,
                     "content": "Index: \n===================================================================\n--- \n+++ \n@@ -13,8 +13,9 @@\n           await NetworkCaller().getRequest(ApiLinks.allVendas);\r\n       String jsonString;\r\n \r\n       if (response.statusCode == 200 && response.body != null) {\r\n+        \r\n         jsonString = json.encode(response.body);\r\n         models = ProdutoModel.fromJson(response.body!);\r\n         model.addAll(models.produtos ?? []);\r\n \r\n"
+                },
+                {
+                    "date": 1734463642216,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -30,5 +30,6 @@\n       throw Exception('Erro ao carregar cotações: $e');\r\n     }\r\n     return model;\r\n   }\r\n+  \r\n }\r\n"
                 }
             ],
             "date": 1734354746647,

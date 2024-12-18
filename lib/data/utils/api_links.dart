@@ -52,4 +52,5 @@ class ApiLinks {
   static String allNoticias = '$_baseUrlNew/api/noticias';
   static String allCotacoes = '$_baseUrlNew/api/cotacoes';
   static String allVendas = '$_baseUrlNew/api/produtos';
+  static String insertNegociacao = '$_baseUrlNew/api/negociacao';
 }
