@@ -29,7 +29,7 @@ class _ProductCatalogState extends State<ProductCatalog> {
     _fetchProducts();
   }
 
-  void _fetchProducts() async {
+  Future<void> _fetchProducts() async {
     setState(() {
       isLoading = true;
     });
@@ -38,15 +38,15 @@ class _ProductCatalogState extends State<ProductCatalog> {
       setState(() {
         allProducts = data;
         filteredProducts = data; // Inicializa com todos os produtos
-        isLoading = false;
       });
     } catch (e) {
-      setState(() {
-        isLoading = false;
-      });
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Erro ao carregar produtos: $e')),
       );
+    } finally {
+      setState(() {
+        isLoading = false;
+      });
     }
   }
 
@@ -83,7 +83,29 @@ class _ProductCatalogState extends State<ProductCatalog> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Catálogo de Grãos'),
+        title: Row(
+          children: [
+            const Text('Catálogo de Grãos'),
+            if (isLoading)
+              const SizedBox(
+                width: 20,
+                height: 20,
+                child: CircularProgressIndicator(
+                  color: Colors.white,
+                  strokeWidth: 2,
+                ),
+              ),
+          ],
+        ),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.refresh),
+            tooltip: 'Atualizar',
+            onPressed: () async {
+              await _fetchProducts();
+            },
+          ),
+        ],
       ),
       body: Column(
         children: [
@@ -216,21 +238,21 @@ class _ProductCatalogState extends State<ProductCatalog> {
           ElevatedButton(
             onPressed: () async {
               final response = await renegotiate(
-                  vendaId: product.id!,
-                  vendedorId: product.parceiro!.id!,
-                  compradorId: 5, // Substitua com ID do comprador
-                  qtdSacos: product.qtdSacos! ?? 0,
-                  vlrSacos: product.vlrSacos ?? 0.0,
-                  qtdDisponivel: product.qtdSacos!);
+                vendaId: product.id!,
+                vendedorId: product.parceiro!.id!,
+                compradorId: 5, // Substitua com ID do comprador
+                qtdSacos: product.qtdSacos! ?? 0,
+                vlrSacos: product.vlrSacos ?? 0.0,
+                qtdDisponivel: product.qtdSacos!,
+              );
+              Navigator.of(context).pop();
               if (response) {
-                Navigator.of(context).pop();
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                      content: Text('Compra realizada com sucesso!')),
-                );
+                _fetchProducts(); // Refresh automático após sucesso
               } else {
                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Erro ao Comprar')),
+                  const SnackBar(
+                    content: Text('Erro ao Comprar'),
+                  ),
                 );
               }
             },
@@ -275,21 +297,26 @@ class _ProductCatalogState extends State<ProductCatalog> {
           ElevatedButton(
             onPressed: () async {
               final response = await renegotiate(
-                  vendaId: product.id!,
-                  vendedorId: product.parceiro!.id!,
-                  compradorId: 5, // Substitua com ID do comprador
-                  qtdSacos: int.tryParse(qtdController.text) ?? 0,
-                  vlrSacos: double.tryParse(valorController.text) ?? 0.0,
-                  qtdDisponivel: product.qtdSacos!);
+                vendaId: product.id!,
+                vendedorId: product.parceiro!.id!,
+                compradorId: 5, // Substitua com ID do comprador
+                qtdSacos: int.tryParse(qtdController.text) ?? 0,
+                vlrSacos: double.tryParse(valorController.text) ?? 0.0,
+                qtdDisponivel: product.qtdSacos!,
+              );
+              Navigator.of(context).pop();
               if (response) {
-                Navigator.of(context).pop();
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(
-                      content: Text('Renegociação realizada com sucesso!')),
+                    content: Text('Renegociação realizada com sucesso!'),
+                  ),
                 );
+                _fetchProducts(); // Refresh automático após sucesso
               } else {
                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Erro ao renegociar')),
+                  const SnackBar(
+                    content: Text('Erro ao renegociar'),
+                  ),
                 );
               }
             },

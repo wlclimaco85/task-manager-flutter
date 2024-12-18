@@ -4,6 +4,7 @@ import 'package:task_manager_flutter/ui/screens/cotacao_grafico_screen.dart';
 import 'package:task_manager_flutter/ui/screens/vendas_screen.dart';
 import 'package:task_manager_flutter/ui/screens/progress_task_screen.dart';
 import 'package:task_manager_flutter/ui/screens/task_screen.dart';
+import 'package:task_manager_flutter/ui/screens/product_register_screen.dart';
 
 class BottomNavBarScreen extends StatefulWidget {
   const BottomNavBarScreen({super.key});
@@ -18,7 +19,7 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
     const CotacaoScreen(),
     const CotacaoScreen(),
     const ProductCatalog(),
-    const ProgressTaskScreen(),
+    const ProductRegisterScreen(),
   ];
   @override
   Widget build(BuildContext context) {

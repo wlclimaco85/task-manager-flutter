@@ -31,4 +31,31 @@ class VendasCaller {
     }
     return model;
   }
+
+  Future<List<Account>> fetchClassificacao() async {
+    List<Account>? model = [];
+    ClassificacaoResponse models;
+    try {
+      final NetworkResponse response =
+          await NetworkCaller().getRequest(ApiLinks.allClassificacao);
+      String jsonString;
+
+      if (response.statusCode == 200 && response.body != null) {
+        jsonString = json.encode(response.body);
+        models = ClassificacaoResponse.fromJson(response.body!);
+        model.addAll(models.data ?? []);
+
+        // if (model != null && model.data != null) {
+        //   newsList.addAll(model.data!);
+        // }
+        // Use jsonString conforme necessário
+      } else {
+        // Trate o caso onde o data é nulo
+      }
+    } catch (e) {
+      print('Erro: $e'); // Log do erro
+      throw Exception('Erro ao carregar cotações: $e');
+    }
+    return model;
+  }
 }

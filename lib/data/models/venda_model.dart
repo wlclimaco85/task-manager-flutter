@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:task_manager_flutter/data/models/parceiro_model.dart';
 
 class Produto {
   int? id;
@@ -109,6 +110,26 @@ class Foto {
   }
 }
 
+// Classe para "TipoProduto"
+class TipoProduto {
+  int? id;
+  String? tipoProduto;
+
+  TipoProduto({this.id, this.tipoProduto});
+
+  TipoProduto.fromJson(Map<String, dynamic> json) {
+    id = json['id'];
+    tipoProduto = json['tipoProduto'];
+  }
+
+  Map<String, dynamic> toJson() {
+    final Map<String, dynamic> data = <String, dynamic>{};
+    data['id'] = id;
+    data['tipoProduto'] = tipoProduto;
+    return data;
+  }
+}
+
 // Classe para "Classificacao"
 class Classificacao {
   int? id;
@@ -133,78 +154,77 @@ class Classificacao {
     data['parentId'] = parentId;
     return data;
   }
+
+  static List<Classificacao> fromJsonList(List<dynamic> jsonList) {
+    return jsonList
+        .map((item) => Classificacao.fromJson(Map<String, dynamic>.from(item)))
+        .toList();
+  }
 }
 
-class Parceiro {
+// Classe para representar a conta principal que contém "tipoProduto" e "valores"
+class Account {
   int? id;
-  String? nome;
-  String? cpf;
-  String? codProdutor;
-  Endereco? endereco;
+  TipoProduto? tipoProduto;
+  List<Classificacao>? valores;
 
-  Parceiro({this.id, this.nome, this.cpf, this.codProdutor, this.endereco});
+  Account({this.id, this.tipoProduto, this.valores});
 
-  Parceiro.fromJson(Map<String, dynamic> json) {
+  Account.fromJson(Map<String, dynamic> json) {
     id = json['id'];
-    nome = json['nome'];
-    cpf = json['cpf'];
-    codProdutor = json['codProdutor'];
-    endereco = Endereco.fromJson(json['endereco']);
+    tipoProduto = json['tipoProduto'] != null
+        ? TipoProduto.fromJson(json['tipoProduto'])
+        : null;
+    if (json['valores'] != null) {
+      valores = Classificacao.fromJsonList(json['valores']);
+    }
   }
 
   Map<String, dynamic> toJson() {
     final Map<String, dynamic> data = <String, dynamic>{};
     data['id'] = id;
-    data['nome'] = nome;
-    data['cpf'] = cpf;
-    data['codProdutor'] = codProdutor;
-    data['endereco'] = endereco;
-
+    if (tipoProduto != null) {
+      data['tipoProduto'] = tipoProduto!.toJson();
+    }
+    if (valores != null) {
+      data['valores'] = valores!.map((v) => v.toJson()).toList();
+    }
     return data;
   }
+
+  static List<Account> fromJsonList(List<dynamic> jsonList) {
+    return jsonList.map((item) => Account.fromJson(item)).toList();
+  }
 }
 
-class Endereco {
-  int? id;
-  String? rua;
-  String? numero;
-  String? bairro;
-  String? cidade;
-  String? estado;
-  String? cep;
-  int? parceiroId;
+// Classe principal para representar a resposta do JSON
+class ClassificacaoResponse {
+  List<Account>? data;
+  bool? error;
+  String? message;
+  int? status;
 
-  Endereco(
-      {this.id,
-      this.rua,
-      this.numero,
-      this.bairro,
-      this.cidade,
-      this.estado,
-      this.cep,
-      this.parceiroId});
+  ClassificacaoResponse({this.data, this.error, this.message, this.status});
 
-  Endereco.fromJson(Map<String, dynamic> json) {
-    id = json['id'];
-    rua = json['rua'];
-    numero = json['numero'];
-    bairro = json['bairro'];
-    cidade = json['cidade'];
-    estado = json['estado'];
-    cep = json['cep'];
-    parceiroId = json['parceiroId'];
+  ClassificacaoResponse.fromJson(Map<String, dynamic> json) {
+    if (json['data'] != null && json['data']['account'] != null) {
+      data = Account.fromJsonList(json['data']['account']);
+    }
+    error = json['response']['error'];
+    message = json['response']['message'];
+    status = json['response']['status'];
   }
 
   Map<String, dynamic> toJson() {
     final Map<String, dynamic> data = <String, dynamic>{};
-    data['id'] = id;
-    data['rua'] = rua;
-    data['numero'] = numero;
-    data['bairro'] = bairro;
-    data['cidade'] = cidade;
-    data['estado'] = estado;
-    data['cep'] = cep;
-    data['parceiroId'] = parceiroId;
+    if (this.data != null) {
+      data['data'] = this.data!.map((v) => v.toJson()).toList();
+    }
+    data['response'] = {
+      'error': error,
+      'message': message,
+      'status': status,
+    };
     return data;
   }
 }
@@ -231,6 +251,32 @@ class ProdutoModel {
     data['token'] = token;
     if (produtos != null) {
       data['data'] = produtos!.map((produto) => produto.toJson()).toList();
+    }
+    return data;
+  }
+}
+
+class ClassificacaoModel {
+  String? status;
+  String? token;
+  List<Classificacao>? classificacao;
+
+  ClassificacaoModel({this.status, this.token, this.classificacao});
+
+  ClassificacaoModel.fromJson(Map<String, dynamic> json) {
+    status = json['status'];
+    token = json['token'];
+    classificacao = json['data'] != null
+        ? Classificacao.fromJsonList(json['data']['account'])
+        : [];
+  }
+
+  Map<String, dynamic> toJson() {
+    final Map<String, dynamic> data = <String, dynamic>{};
+    data['status'] = status;
+    data['token'] = token;
+    if (classificacao != null) {
+      data['data'] = classificacao!.map((produto) => produto.toJson()).toList();
     }
     return data;
   }
