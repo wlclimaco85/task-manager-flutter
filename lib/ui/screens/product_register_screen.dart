@@ -18,14 +18,23 @@ class _ProductRegisterScreenState extends State<ProductRegisterScreen> {
   bool isLoading = true;
   bool isSubmitting = false;
 
+  bool useCustomAddress = false;
+
   String vendedorEndereco = '';
-  String compradorEndereco = '';
   List<Map<String, dynamic>> classificacoes = [];
 
   final TextEditingController descricaoController = TextEditingController();
   final TextEditingController qtdSacosController = TextEditingController();
   final TextEditingController vlrSacosController = TextEditingController();
   final List<TextEditingController> classificacaoControllers = [];
+
+  // Campos para endereço customizado
+  final TextEditingController ruaController = TextEditingController();
+  final TextEditingController numeroController = TextEditingController();
+  final TextEditingController bairroController = TextEditingController();
+  final TextEditingController cidadeController = TextEditingController();
+  final TextEditingController estadoController = TextEditingController();
+  final TextEditingController cepController = TextEditingController();
 
   @override
   void initState() {
@@ -84,6 +93,15 @@ class _ProductRegisterScreenState extends State<ProductRegisterScreen> {
       });
     }
 
+    final Map<String, dynamic> customAddress = {
+      'rua': ruaController.text,
+      'numero': numeroController.text,
+      'bairro': bairroController.text,
+      'cidade': cidadeController.text,
+      'estado': estadoController.text,
+      'cep': cepController.text,
+    };
+
     final Map<String, dynamic> requestBody = {
       'tipoProdutoId': 1,
       'produtoId': 1,
@@ -97,6 +115,7 @@ class _ProductRegisterScreenState extends State<ProductRegisterScreen> {
       'parceiro': {'id': 4},
       'status': 'A',
       'classificacao': classificacaoList,
+      if (customAddress != null) 'enderecoRetirada': customAddress,
     };
 
     try {
@@ -115,6 +134,12 @@ class _ProductRegisterScreenState extends State<ProductRegisterScreen> {
         qtdSacosController.clear();
         vlrSacosController.clear();
         classificacaoControllers.forEach((controller) => controller.clear());
+        ruaController.clear();
+        numeroController.clear();
+        bairroController.clear();
+        cidadeController.clear();
+        estadoController.clear();
+        cepController.clear();
       } else {
         throw Exception('Erro ao cadastrar produto.');
       }
@@ -171,61 +196,88 @@ class _ProductRegisterScreenState extends State<ProductRegisterScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text('Retirada: $vendedorEndereco'),
-                        const SizedBox(height: 16),
-
-                        // Descrição
-                        TextFormField(
-                          controller: descricaoController,
-                          decoration:
-                              customInputDecoration('Descrição do Produto'),
-                          validator: (value) => value == null || value.isEmpty
-                              ? 'Campo obrigatório'
-                              : null,
-                        ),
-
-                        const SizedBox(height: 16),
-
-                        // Quantidade de sacos
-                        TextFormField(
-                          controller: qtdSacosController,
-                          decoration:
-                              customInputDecoration('Quantidade de Sacos'),
-                          keyboardType: TextInputType.number,
-                          validator: (value) =>
-                              value == null || int.tryParse(value) == null
-                                  ? 'Número inválido'
-                                  : null,
-                        ),
-
-                        const SizedBox(height: 16),
-
-                        // Valor por saco
-                        TextFormField(
-                          controller: vlrSacosController,
-                          decoration: customInputDecoration('Valor por Saco'),
-                          keyboardType: TextInputType.number,
-                          validator: (value) =>
-                              value == null || double.tryParse(value) == null
-                                  ? 'Valor inválido'
-                                  : null,
-                        ),
-
-                        const SizedBox(height: 16),
-
-                        // Classificações
-                        const Text(
-                          'Classificações',
-                          style: TextStyle(fontWeight: FontWeight.bold),
-                        ),
-                        for (int i = 0; i < classificacoes.length; i++)
-                          Padding(
-                            padding: const EdgeInsets.symmetric(vertical: 8.0),
-                            child: TextFormField(
-                              controller: classificacaoControllers[i],
-                              decoration: customInputDecoration(
-                                  classificacoes[i]['descricao']),
-                              keyboardType: TextInputType.number,
+                        Row(
+                          children: [
+                            const Text('Usar endereço personalizado?'),
+                            Checkbox(
+                              value: useCustomAddress,
+                              onChanged: (value) {
+                                setState(() {
+                                  useCustomAddress = value!;
+                                });
+                              },
                             ),
+                          ],
+                        ),
+                        if (useCustomAddress)
+                          Column(
+                            children: [
+                              TextFormField(
+                                controller: ruaController,
+                                decoration: customInputDecoration('Rua'),
+                                validator: (value) =>
+                                    value == null || value.isEmpty
+                                        ? 'Campo obrigatório'
+                                        : null,
+                              ),
+                              const SizedBox(height: 8),
+                              TextFormField(
+                                controller: descricaoController,
+                                decoration: customInputDecoration(
+                                    'Descrição do Produto'),
+                                validator: (value) =>
+                                    value == null || value.isEmpty
+                                        ? 'Campo obrigatório'
+                                        : null,
+                              ),
+
+                              const SizedBox(height: 16),
+
+                              // Quantidade de sacos
+                              TextFormField(
+                                controller: qtdSacosController,
+                                decoration: customInputDecoration(
+                                    'Quantidade de Sacos'),
+                                keyboardType: TextInputType.number,
+                                validator: (value) =>
+                                    value == null || int.tryParse(value) == null
+                                        ? 'Número inválido'
+                                        : null,
+                              ),
+
+                              const SizedBox(height: 16),
+
+                              // Valor por saco
+                              TextFormField(
+                                controller: vlrSacosController,
+                                decoration:
+                                    customInputDecoration('Valor por Saco'),
+                                keyboardType: TextInputType.number,
+                                validator: (value) => value == null ||
+                                        double.tryParse(value) == null
+                                    ? 'Valor inválido'
+                                    : null,
+                              ),
+
+                              const SizedBox(height: 16),
+
+                              // Classificações
+                              const Text(
+                                'Classificações',
+                                style: TextStyle(fontWeight: FontWeight.bold),
+                              ),
+                              for (int i = 0; i < classificacoes.length; i++)
+                                Padding(
+                                  padding:
+                                      const EdgeInsets.symmetric(vertical: 8.0),
+                                  child: TextFormField(
+                                    controller: classificacaoControllers[i],
+                                    decoration: customInputDecoration(
+                                        classificacoes[i]['descricao']),
+                                    keyboardType: TextInputType.number,
+                                  ),
+                                ),
+                            ],
                           ),
                       ],
                     ),
