@@ -1,5 +1,7 @@
 import 'dart:convert';
+import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:http/http.dart' as http;
 import 'package:task_manager_flutter/data/models/venda_model.dart';
 import 'package:task_manager_flutter/data/services/vendas_caller.dart';
@@ -20,8 +22,11 @@ class _ProductRegisterScreenState extends State<ProductRegisterScreen> {
 
   bool useCustomAddress = false;
 
+  String selectedTipoProduto = "Arroz em Casca";
   String vendedorEndereco = '';
   List<Map<String, dynamic>> classificacoes = [];
+  List<File> selectedImages = [];
+  File? principalImage;
 
   final TextEditingController descricaoController = TextEditingController();
   final TextEditingController qtdSacosController = TextEditingController();
@@ -78,6 +83,23 @@ class _ProductRegisterScreenState extends State<ProductRegisterScreen> {
     }
   }
 
+  Future<void> pickImages() async {
+    final ImagePicker picker = ImagePicker();
+    final List<XFile>? images = await picker.pickMultiImage();
+
+    if (images != null && images.isNotEmpty) {
+      setState(() {
+        selectedImages.addAll(images.map((image) => File(image.path)));
+      });
+    }
+  }
+
+  void setPrincipalImage(File image) {
+    setState(() {
+      principalImage = image;
+    });
+  }
+
   Future<void> submitForm() async {
     if (!_formKey.currentState!.validate()) return;
 
@@ -93,6 +115,14 @@ class _ProductRegisterScreenState extends State<ProductRegisterScreen> {
       });
     }
 
+    final List<Map<String, dynamic>> imageList = selectedImages.map((image) {
+      final String base64Image = base64Encode(image.readAsBytesSync());
+      return {
+        'foto': base64Image,
+        'isPrincipal': image == principalImage,
+      };
+    }).toList();
+
     final Map<String, dynamic> customAddress = {
       'rua': ruaController.text,
       'numero': numeroController.text,
@@ -103,19 +133,17 @@ class _ProductRegisterScreenState extends State<ProductRegisterScreen> {
     };
 
     final Map<String, dynamic> requestBody = {
-      'tipoProdutoId': 1,
+      'tipoProdutoId': 1, // Exemplo: ID para "Arroz em Casca"
       'produtoId': 1,
       'descricao': descricaoController.text,
-      'listFotos': [
-        {'foto': 'sdfsdfsdfsdf', 'isPrincipal': true}
-      ],
+      'listFotos': imageList,
       'qtdSacos': int.tryParse(qtdSacosController.text) ?? 0,
       'vlrSacos': double.tryParse(vlrSacosController.text) ?? 0,
       'isCargaFechada': true,
       'parceiro': {'id': 4},
       'status': 'A',
       'classificacao': classificacaoList,
-      if (customAddress != null) 'enderecoRetirada': customAddress,
+      if (useCustomAddress) 'enderecoRetirada': customAddress,
     };
 
     try {
@@ -140,6 +168,8 @@ class _ProductRegisterScreenState extends State<ProductRegisterScreen> {
         cidadeController.clear();
         estadoController.clear();
         cepController.clear();
+        selectedImages.clear();
+        principalImage = null;
       } else {
         throw Exception('Erro ao cadastrar produto.');
       }
@@ -176,7 +206,7 @@ class _ProductRegisterScreenState extends State<ProductRegisterScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFE8F5E9), // Fundo verde clarinho
+      backgroundColor: const Color(0xFFE8F5E9),
       appBar: AppBar(
         title: const Text('Cadastro de Produto'),
         actions: [
@@ -198,7 +228,7 @@ class _ProductRegisterScreenState extends State<ProductRegisterScreen> {
                         Text('Retirada: $vendedorEndereco'),
                         Row(
                           children: [
-                            const Text('Usar endereço personalizado?'),
+                            const Text('Usar outro endereço para retirada?'),
                             Checkbox(
                               value: useCustomAddress,
                               onChanged: (value) {
@@ -209,133 +239,158 @@ class _ProductRegisterScreenState extends State<ProductRegisterScreen> {
                             ),
                           ],
                         ),
-                        Column(
-                          children: [
-                            if (useCustomAddress)
-                              TextFormField(
-                                controller: ruaController,
-                                decoration: customInputDecoration('Rua'),
-                                validator: (value) =>
-                                    value == null || value.isEmpty
-                                        ? 'Campo obrigatório'
-                                        : null,
-                              ),
-                            if (useCustomAddress) const SizedBox(height: 8),
-                            if (useCustomAddress)
-                              TextFormField(
-                                controller: numeroController,
-                                decoration: customInputDecoration('Número'),
-                                validator: (value) =>
-                                    value == null || value.isEmpty
-                                        ? 'Campo obrigatório'
-                                        : null,
-                              ),
-                            if (useCustomAddress) const SizedBox(height: 8),
-                            if (useCustomAddress)
-                              TextFormField(
-                                controller: bairroController,
-                                decoration: customInputDecoration('Bairro'),
-                                validator: (value) =>
-                                    value == null || value.isEmpty
-                                        ? 'Campo obrigatório'
-                                        : null,
-                              ),
-                            if (useCustomAddress) const SizedBox(height: 8),
-                            if (useCustomAddress)
-                              TextFormField(
-                                controller: cidadeController,
-                                decoration: customInputDecoration('Cidade'),
-                                validator: (value) =>
-                                    value == null || value.isEmpty
-                                        ? 'Campo obrigatório'
-                                        : null,
-                              ),
-                            if (useCustomAddress) const SizedBox(height: 8),
-                            if (useCustomAddress)
-                              TextFormField(
-                                controller: estadoController,
-                                decoration: customInputDecoration('Estado'),
-                                validator: (value) =>
-                                    value == null || value.isEmpty
-                                        ? 'Campo obrigatório'
-                                        : null,
-                              ),
-                            if (useCustomAddress) const SizedBox(height: 8),
-                            if (useCustomAddress)
-                              TextFormField(
-                                controller: cepController,
-                                decoration: customInputDecoration('CEP'),
-                                validator: (value) =>
-                                    value == null || value.isEmpty
-                                        ? 'Campo obrigatório'
-                                        : null,
-                              ),
-                            const SizedBox(height: 8),
-                            TextFormField(
-                              controller: descricaoController,
-                              decoration:
-                                  customInputDecoration('Descrição do Produto'),
-                              validator: (value) =>
-                                  value == null || value.isEmpty
-                                      ? 'Campo obrigatório'
-                                      : null,
-                            ),
+                        if (useCustomAddress) ...[
+                          TextFormField(
+                            controller: ruaController,
+                            decoration: customInputDecoration('Rua'),
+                            validator: (value) => value == null || value.isEmpty
+                                ? 'Campo obrigatório'
+                                : null,
+                          ),
+                          const SizedBox(height: 8),
+                          TextFormField(
+                            controller: numeroController,
+                            decoration: customInputDecoration('Número'),
+                            validator: (value) => value == null || value.isEmpty
+                                ? 'Campo obrigatório'
+                                : null,
+                          ),
+                          const SizedBox(height: 8),
+                          TextFormField(
+                            controller: bairroController,
+                            decoration: customInputDecoration('Bairro'),
+                            validator: (value) => value == null || value.isEmpty
+                                ? 'Campo obrigatório'
+                                : null,
+                          ),
+                          const SizedBox(height: 8),
+                          TextFormField(
+                            controller: cidadeController,
+                            decoration: customInputDecoration('Cidade'),
+                            validator: (value) => value == null || value.isEmpty
+                                ? 'Campo obrigatório'
+                                : null,
+                          ),
+                          const SizedBox(height: 8),
+                          TextFormField(
+                            controller: estadoController,
+                            decoration: customInputDecoration('Estado'),
+                            validator: (value) => value == null || value.isEmpty
+                                ? 'Campo obrigatório'
+                                : null,
+                          ),
+                          const SizedBox(height: 8),
+                          TextFormField(
+                            controller: cepController,
+                            decoration: customInputDecoration('CEP'),
+                            validator: (value) => value == null || value.isEmpty
+                                ? 'Campo obrigatório'
+                                : null,
+                          ),
+                        ],
 
-                            const SizedBox(height: 16),
-
-                            // Quantidade de sacos
-                            TextFormField(
-                              controller: qtdSacosController,
-                              decoration:
-                                  customInputDecoration('Quantidade de Sacos'),
-                              keyboardType: TextInputType.number,
-                              validator: (value) =>
-                                  value == null || int.tryParse(value) == null
-                                      ? 'Número inválido'
-                                      : null,
-                            ),
-
-                            const SizedBox(height: 16),
-
-                            // Valor por saco
-                            TextFormField(
-                              controller: vlrSacosController,
-                              decoration:
-                                  customInputDecoration('Valor por Saco'),
-                              keyboardType: TextInputType.number,
-                              validator: (value) => value == null ||
-                                      double.tryParse(value) == null
+                        const SizedBox(height: 16),
+                        // Dropdown para tipo de produto
+                        DropdownButtonFormField<String>(
+                          value: selectedTipoProduto,
+                          decoration: customInputDecoration('Tipo de Produto'),
+                          items: ['Arroz em Casca', 'Outro Produto']
+                              .map((tipo) => DropdownMenuItem<String>(
+                                    value: tipo,
+                                    child: Text(tipo),
+                                  ))
+                              .toList(),
+                          onChanged: (value) {
+                            setState(() {
+                              selectedTipoProduto = value!;
+                            });
+                          },
+                        ),
+                        const SizedBox(height: 16),
+                        // Upload de Fotos
+                        ElevatedButton.icon(
+                          onPressed: pickImages,
+                          icon: const Icon(Icons.photo),
+                          label: const Text("Adicionar Fotos"),
+                        ),
+                        Wrap(
+                          spacing: 8,
+                          children: selectedImages.map((image) {
+                            return GestureDetector(
+                              onTap: () => setPrincipalImage(image),
+                              child: Stack(
+                                children: [
+                                  Image.file(
+                                    image,
+                                    width: 100,
+                                    height: 100,
+                                    fit: BoxFit.cover,
+                                  ),
+                                  if (principalImage == image)
+                                    const Positioned(
+                                      top: 0,
+                                      right: 0,
+                                      child: Icon(
+                                        Icons.check_circle,
+                                        color: Colors.green,
+                                        size: 24,
+                                      ),
+                                    ),
+                                ],
+                              ),
+                            );
+                          }).toList(),
+                        ),
+                        const SizedBox(height: 16),
+                        // Restante do formulário
+                        TextFormField(
+                          controller: descricaoController,
+                          decoration:
+                              customInputDecoration('Descrição do Produto'),
+                          validator: (value) => value == null || value.isEmpty
+                              ? 'Campo obrigatório'
+                              : null,
+                        ),
+                        const SizedBox(height: 16),
+                        TextFormField(
+                          controller: qtdSacosController,
+                          decoration:
+                              customInputDecoration('Quantidade de Sacos'),
+                          keyboardType: TextInputType.number,
+                          validator: (value) =>
+                              value == null || int.tryParse(value) == null
+                                  ? 'Número inválido'
+                                  : null,
+                        ),
+                        const SizedBox(height: 16),
+                        TextFormField(
+                          controller: vlrSacosController,
+                          decoration: customInputDecoration('Valor por Saco'),
+                          keyboardType: TextInputType.number,
+                          validator: (value) =>
+                              value == null || double.tryParse(value) == null
                                   ? 'Valor inválido'
                                   : null,
-                            ),
-
-                            const SizedBox(height: 16),
-
-                            // Classificações
-                            const Text(
-                              'Classificações',
-                              style: TextStyle(fontWeight: FontWeight.bold),
-                            ),
-
-                            for (int i = 0; i < classificacoes.length; i++)
-                              Padding(
-                                padding:
-                                    const EdgeInsets.symmetric(vertical: 8.0),
-                                child: TextFormField(
-                                  controller: classificacaoControllers[i],
-                                  decoration: customInputDecoration(
-                                      classificacoes[i]['descricao']),
-                                  keyboardType: TextInputType.number,
-                                ),
-                              ),
-                          ],
                         ),
+                        const SizedBox(height: 16),
+                        const Text(
+                          'Classificações',
+                          style: TextStyle(fontWeight: FontWeight.bold),
+                        ),
+                        for (int i = 0; i < classificacoes.length; i++)
+                          Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 8.0),
+                            child: TextFormField(
+                              controller: classificacaoControllers[i],
+                              decoration: customInputDecoration(
+                                  classificacoes[i]['descricao']),
+                              keyboardType: TextInputType.number,
+                            ),
+                          ),
                       ],
                     ),
                   ),
                 ),
-
-                // Botão Flutuante no Canto Inferior Direito
                 Align(
                   alignment: Alignment.bottomRight,
                   child: Padding(
