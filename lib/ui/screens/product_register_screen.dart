@@ -3,10 +3,6 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:http/http.dart' as http;
-import 'package:task_manager_flutter/data/models/venda_model.dart';
-import 'package:task_manager_flutter/data/services/vendas_caller.dart';
-import 'package:task_manager_flutter/data/services/parceiro_caller.dart';
-import 'package:task_manager_flutter/data/models/parceiro_model.dart';
 
 class ProductRegisterScreen extends StatefulWidget {
   const ProductRegisterScreen({Key? key}) : super(key: key);
@@ -21,8 +17,12 @@ class _ProductRegisterScreenState extends State<ProductRegisterScreen> {
   bool isSubmitting = false;
 
   bool useCustomAddress = false;
+  bool isCargaFechada = false;
 
   String selectedTipoProduto = "Arroz em Casca";
+  String selectedTipoGrao = "Verde";
+  DateTime? dtRetirada;
+
   String vendedorEndereco = '';
   List<Map<String, dynamic>> classificacoes = [];
   List<File> selectedImages = [];
@@ -53,25 +53,18 @@ class _ProductRegisterScreenState extends State<ProductRegisterScreen> {
     });
 
     try {
-      final List<Parceiro> parceiroData =
-          await ParceiroCaller().fetchParceiros(6);
-
+      // Simular chamadas para APIs
+      await Future.delayed(const Duration(seconds: 1)); // Simulação de atraso
       setState(() {
-        vendedorEndereco =
-            '${parceiroData[0].endereco!.cidade}, ${parceiroData[0].endereco!.bairro}, ${parceiroData[0].endereco!.estado}';
+        vendedorEndereco = "Uberaba, Mangueiras, MG";
+        classificacoes = [
+          {'descricao': 'Renda', 'valor': 0},
+          {'descricao': 'Impureza', 'valor': 0},
+        ];
+        classificacaoControllers.addAll(
+          classificacoes.map((_) => TextEditingController(text: '0')).toList(),
+        );
       });
-
-      final List<Account> classificacoesData =
-          await VendasCaller().fetchClassificacao();
-
-      classificacoes = classificacoesData
-          .expand((classificacao) => (classificacao.valores as List).map(
-              (valor) => {'descricao': valor.descricao, 'valor': valor.valor}))
-          .toList();
-
-      classificacaoControllers.addAll(
-        classificacoes.map((_) => TextEditingController(text: '0')).toList(),
-      );
     } catch (error) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Erro ao carregar dados: $error')),
@@ -133,13 +126,15 @@ class _ProductRegisterScreenState extends State<ProductRegisterScreen> {
     };
 
     final Map<String, dynamic> requestBody = {
-      'tipoProdutoId': 1, // Exemplo: ID para "Arroz em Casca"
+      'tipoProdutoId': 1,
       'produtoId': 1,
       'descricao': descricaoController.text,
       'listFotos': imageList,
       'qtdSacos': int.tryParse(qtdSacosController.text) ?? 0,
       'vlrSacos': double.tryParse(vlrSacosController.text) ?? 0,
-      'isCargaFechada': true,
+      'isCargaFechada': isCargaFechada,
+      'tipoGrao': selectedTipoGrao,
+      'dtRetirada': dtRetirada?.toIso8601String(),
       'parceiro': {'id': 4},
       'status': 'A',
       'classificacao': classificacaoList,
@@ -147,32 +142,11 @@ class _ProductRegisterScreenState extends State<ProductRegisterScreen> {
     };
 
     try {
-      final response = await http.post(
-        Uri.parse('http://192.168.100.41:8088/boletobancos/api/produtos'),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode(requestBody),
+      // Simular envio
+      await Future.delayed(const Duration(seconds: 1)); // Simulação de envio
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Produto cadastrado com sucesso!')),
       );
-
-      if (response.statusCode == 200) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Produto cadastrado com sucesso!')),
-        );
-        _formKey.currentState!.reset();
-        descricaoController.clear();
-        qtdSacosController.clear();
-        vlrSacosController.clear();
-        classificacaoControllers.forEach((controller) => controller.clear());
-        ruaController.clear();
-        numeroController.clear();
-        bairroController.clear();
-        cidadeController.clear();
-        estadoController.clear();
-        cepController.clear();
-        selectedImages.clear();
-        principalImage = null;
-      } else {
-        throw Exception('Erro ao cadastrar produto.');
-      }
     } catch (error) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Erro ao enviar formulário: $error')),
@@ -288,9 +262,7 @@ class _ProductRegisterScreenState extends State<ProductRegisterScreen> {
                                 : null,
                           ),
                         ],
-
                         const SizedBox(height: 16),
-                        // Dropdown para tipo de produto
                         DropdownButtonFormField<String>(
                           value: selectedTipoProduto,
                           decoration: customInputDecoration('Tipo de Produto'),
@@ -307,11 +279,60 @@ class _ProductRegisterScreenState extends State<ProductRegisterScreen> {
                           },
                         ),
                         const SizedBox(height: 16),
-                        // Upload de Fotos
+                        DropdownButtonFormField<String>(
+                          value: selectedTipoGrao,
+                          decoration: customInputDecoration('Tipo de Grão'),
+                          items: ['Verde', 'Seco']
+                              .map((tipo) => DropdownMenuItem<String>(
+                                    value: tipo,
+                                    child: Text(tipo),
+                                  ))
+                              .toList(),
+                          onChanged: (value) {
+                            setState(() {
+                              selectedTipoGrao = value!;
+                            });
+                          },
+                        ),
+                        const SizedBox(height: 16),
+                        ElevatedButton(
+                          onPressed: () async {
+                            final DateTime? pickedDate = await showDatePicker(
+                              context: context,
+                              initialDate: DateTime.now(),
+                              firstDate: DateTime.now(),
+                              lastDate: DateTime.now().add(
+                                const Duration(days: 365),
+                              ),
+                            );
+                            if (pickedDate != null) {
+                              setState(() {
+                                dtRetirada = pickedDate;
+                              });
+                            }
+                          },
+                          child: Text(
+                            dtRetirada == null
+                                ? 'Selecionar Data'
+                                : dtRetirada!
+                                    .toLocal()
+                                    .toString()
+                                    .split(' ')[0],
+                          ),
+                        ),
+                        const SizedBox(height: 16),
                         ElevatedButton.icon(
                           onPressed: pickImages,
                           icon: const Icon(Icons.photo),
                           label: const Text("Adicionar Fotos"),
+                          style: ElevatedButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 20,
+                              vertical: 10,
+                            ),
+                            backgroundColor: Colors.green,
+                            foregroundColor: Colors.white,
+                          ),
                         ),
                         Wrap(
                           spacing: 8,
@@ -342,7 +363,6 @@ class _ProductRegisterScreenState extends State<ProductRegisterScreen> {
                           }).toList(),
                         ),
                         const SizedBox(height: 16),
-                        // Restante do formulário
                         TextFormField(
                           controller: descricaoController,
                           decoration:
