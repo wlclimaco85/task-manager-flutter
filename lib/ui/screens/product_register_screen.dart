@@ -382,6 +382,14 @@ class _ProductRegisterScreenState extends State<ProductRegisterScreen> {
                                     .toString()
                                     .split(' ')[0],
                           ),
+                          style: ElevatedButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 20,
+                              vertical: 10,
+                            ),
+                            backgroundColor: Colors.green,
+                            foregroundColor: Colors.white,
+                          ),
                         ),
                         const SizedBox(height: 16),
                         ElevatedButton.icon(
