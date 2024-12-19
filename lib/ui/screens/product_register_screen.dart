@@ -209,9 +209,9 @@ class _ProductRegisterScreenState extends State<ProductRegisterScreen> {
                             ),
                           ],
                         ),
-                        if (useCustomAddress)
-                          Column(
-                            children: [
+                        Column(
+                          children: [
+                            if (useCustomAddress)
                               TextFormField(
                                 controller: ruaController,
                                 decoration: customInputDecoration('Rua'),
@@ -220,65 +220,116 @@ class _ProductRegisterScreenState extends State<ProductRegisterScreen> {
                                         ? 'Campo obrigatório'
                                         : null,
                               ),
-                              const SizedBox(height: 8),
+                            if (useCustomAddress) const SizedBox(height: 8),
+                            if (useCustomAddress)
                               TextFormField(
-                                controller: descricaoController,
-                                decoration: customInputDecoration(
-                                    'Descrição do Produto'),
+                                controller: numeroController,
+                                decoration: customInputDecoration('Número'),
                                 validator: (value) =>
                                     value == null || value.isEmpty
                                         ? 'Campo obrigatório'
                                         : null,
                               ),
-
-                              const SizedBox(height: 16),
-
-                              // Quantidade de sacos
+                            if (useCustomAddress) const SizedBox(height: 8),
+                            if (useCustomAddress)
                               TextFormField(
-                                controller: qtdSacosController,
-                                decoration: customInputDecoration(
-                                    'Quantidade de Sacos'),
-                                keyboardType: TextInputType.number,
+                                controller: bairroController,
+                                decoration: customInputDecoration('Bairro'),
                                 validator: (value) =>
-                                    value == null || int.tryParse(value) == null
-                                        ? 'Número inválido'
+                                    value == null || value.isEmpty
+                                        ? 'Campo obrigatório'
                                         : null,
                               ),
-
-                              const SizedBox(height: 16),
-
-                              // Valor por saco
+                            if (useCustomAddress) const SizedBox(height: 8),
+                            if (useCustomAddress)
                               TextFormField(
-                                controller: vlrSacosController,
-                                decoration:
-                                    customInputDecoration('Valor por Saco'),
-                                keyboardType: TextInputType.number,
-                                validator: (value) => value == null ||
-                                        double.tryParse(value) == null
-                                    ? 'Valor inválido'
-                                    : null,
+                                controller: cidadeController,
+                                decoration: customInputDecoration('Cidade'),
+                                validator: (value) =>
+                                    value == null || value.isEmpty
+                                        ? 'Campo obrigatório'
+                                        : null,
                               ),
-
-                              const SizedBox(height: 16),
-
-                              // Classificações
-                              const Text(
-                                'Classificações',
-                                style: TextStyle(fontWeight: FontWeight.bold),
+                            if (useCustomAddress) const SizedBox(height: 8),
+                            if (useCustomAddress)
+                              TextFormField(
+                                controller: estadoController,
+                                decoration: customInputDecoration('Estado'),
+                                validator: (value) =>
+                                    value == null || value.isEmpty
+                                        ? 'Campo obrigatório'
+                                        : null,
                               ),
-                              for (int i = 0; i < classificacoes.length; i++)
-                                Padding(
-                                  padding:
-                                      const EdgeInsets.symmetric(vertical: 8.0),
-                                  child: TextFormField(
-                                    controller: classificacaoControllers[i],
-                                    decoration: customInputDecoration(
-                                        classificacoes[i]['descricao']),
-                                    keyboardType: TextInputType.number,
-                                  ),
+                            if (useCustomAddress) const SizedBox(height: 8),
+                            if (useCustomAddress)
+                              TextFormField(
+                                controller: cepController,
+                                decoration: customInputDecoration('CEP'),
+                                validator: (value) =>
+                                    value == null || value.isEmpty
+                                        ? 'Campo obrigatório'
+                                        : null,
+                              ),
+                            const SizedBox(height: 8),
+                            TextFormField(
+                              controller: descricaoController,
+                              decoration:
+                                  customInputDecoration('Descrição do Produto'),
+                              validator: (value) =>
+                                  value == null || value.isEmpty
+                                      ? 'Campo obrigatório'
+                                      : null,
+                            ),
+
+                            const SizedBox(height: 16),
+
+                            // Quantidade de sacos
+                            TextFormField(
+                              controller: qtdSacosController,
+                              decoration:
+                                  customInputDecoration('Quantidade de Sacos'),
+                              keyboardType: TextInputType.number,
+                              validator: (value) =>
+                                  value == null || int.tryParse(value) == null
+                                      ? 'Número inválido'
+                                      : null,
+                            ),
+
+                            const SizedBox(height: 16),
+
+                            // Valor por saco
+                            TextFormField(
+                              controller: vlrSacosController,
+                              decoration:
+                                  customInputDecoration('Valor por Saco'),
+                              keyboardType: TextInputType.number,
+                              validator: (value) => value == null ||
+                                      double.tryParse(value) == null
+                                  ? 'Valor inválido'
+                                  : null,
+                            ),
+
+                            const SizedBox(height: 16),
+
+                            // Classificações
+                            const Text(
+                              'Classificações',
+                              style: TextStyle(fontWeight: FontWeight.bold),
+                            ),
+
+                            for (int i = 0; i < classificacoes.length; i++)
+                              Padding(
+                                padding:
+                                    const EdgeInsets.symmetric(vertical: 8.0),
+                                child: TextFormField(
+                                  controller: classificacaoControllers[i],
+                                  decoration: customInputDecoration(
+                                      classificacoes[i]['descricao']),
+                                  keyboardType: TextInputType.number,
                                 ),
-                            ],
-                          ),
+                              ),
+                          ],
+                        ),
                       ],
                     ),
                   ),
