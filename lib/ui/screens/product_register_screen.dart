@@ -1,7 +1,13 @@
 import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
+import 'package:intl/date_symbol_data_local.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:task_manager_flutter/data/models/venda_model.dart';
+import 'package:task_manager_flutter/data/services/vendas_caller.dart';
+import 'package:task_manager_flutter/data/services/parceiro_caller.dart';
+import 'package:task_manager_flutter/data/models/parceiro_model.dart';
 import 'package:http/http.dart' as http;
 
 class ProductRegisterScreen extends StatefulWidget {
@@ -22,6 +28,7 @@ class _ProductRegisterScreenState extends State<ProductRegisterScreen> {
   String selectedTipoProduto = "Arroz em Casca";
   String selectedTipoGrao = "Verde";
   DateTime? dtRetirada;
+  final TextEditingController dtRetiradaController = TextEditingController();
 
   String vendedorEndereco = '';
   List<Map<String, dynamic>> classificacoes = [];
@@ -44,7 +51,10 @@ class _ProductRegisterScreenState extends State<ProductRegisterScreen> {
   @override
   void initState() {
     super.initState();
-    fetchInitialData();
+    // Inicializar dados de formatação de data
+    initializeDateFormatting('pt_BR', null).then((_) {
+      fetchInitialData();
+    });
   }
 
   Future<void> fetchInitialData() async {
@@ -53,6 +63,21 @@ class _ProductRegisterScreenState extends State<ProductRegisterScreen> {
     });
 
     try {
+      final List<Parceiro> parceiroData =
+          await ParceiroCaller().fetchParceiros(6);
+
+      setState(() {
+        vendedorEndereco =
+            '${parceiroData[0].endereco!.cidade}, ${parceiroData[0].endereco!.bairro}, ${parceiroData[0].endereco!.estado}';
+      });
+
+      final List<Account> classificacoesData =
+          await VendasCaller().fetchClassificacao();
+
+      classificacoes = classificacoesData
+          .expand((classificacao) => (classificacao.valores as List).map(
+              (valor) => {'descricao': valor.descricao, 'valor': valor.valor}))
+          .toList();
       // Simular chamadas para APIs
       await Future.delayed(const Duration(seconds: 1)); // Simulação de atraso
       setState(() {
@@ -142,11 +167,32 @@ class _ProductRegisterScreenState extends State<ProductRegisterScreen> {
     };
 
     try {
-      // Simular envio
-      await Future.delayed(const Duration(seconds: 1)); // Simulação de envio
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Produto cadastrado com sucesso!')),
+      final response = await http.post(
+        Uri.parse('http://192.168.100.41:8088/boletobancos/api/produtos'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode(requestBody),
       );
+
+      if (response.statusCode == 200) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Produto cadastrado com sucesso!')),
+        );
+        _formKey.currentState!.reset();
+        descricaoController.clear();
+        qtdSacosController.clear();
+        vlrSacosController.clear();
+        classificacaoControllers.forEach((controller) => controller.clear());
+        ruaController.clear();
+        numeroController.clear();
+        bairroController.clear();
+        cidadeController.clear();
+        estadoController.clear();
+        cepController.clear();
+        selectedImages.clear();
+        principalImage = null;
+      } else {
+        throw Exception('Erro ao cadastrar produto.');
+      }
     } catch (error) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Erro ao enviar formulário: $error')),
@@ -154,6 +200,23 @@ class _ProductRegisterScreenState extends State<ProductRegisterScreen> {
     } finally {
       setState(() {
         isSubmitting = false;
+      });
+    }
+  }
+
+  Future<void> _selectDate(BuildContext context) async {
+    final DateTime? picked = await showDatePicker(
+      context: context,
+      initialDate: dtRetirada ?? DateTime.now(),
+      firstDate: DateTime.now(),
+      lastDate: DateTime.now().add(const Duration(days: 365)),
+      locale: const Locale('pt', 'BR'),
+    );
+    if (picked != null && picked != dtRetirada) {
+      setState(() {
+        dtRetirada = picked;
+        dtRetiradaController.text =
+            DateFormat('dd/MM/yyyy', 'pt_BR').format(picked);
       });
     }
   }
