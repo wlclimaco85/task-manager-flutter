@@ -8,7 +8,9 @@ import 'package:task_manager_flutter/data/models/venda_model.dart';
 import 'package:task_manager_flutter/data/services/vendas_caller.dart';
 import 'package:task_manager_flutter/data/services/parceiro_caller.dart';
 import 'package:task_manager_flutter/data/models/parceiro_model.dart';
-import 'package:http/http.dart' as http;
+import 'package:task_manager_flutter/data/models/network_response.dart';
+import 'package:task_manager_flutter/data/services/network_caller.dart';
+import 'package:task_manager_flutter/data/utils/api_links.dart';
 
 class ProductRegisterScreen extends StatefulWidget {
   const ProductRegisterScreen({Key? key}) : super(key: key);
@@ -51,7 +53,6 @@ class _ProductRegisterScreenState extends State<ProductRegisterScreen> {
   @override
   void initState() {
     super.initState();
-    // Inicializar dados de formatação de data
     initializeDateFormatting('pt_BR', null).then((_) {
       fetchInitialData();
     });
@@ -68,7 +69,7 @@ class _ProductRegisterScreenState extends State<ProductRegisterScreen> {
 
       setState(() {
         vendedorEndereco =
-            '${parceiroData[0].endereco!.cidade}, ${parceiroData[0].endereco!.bairro}, ${parceiroData[0].endereco!.estado}';
+            '${parceiroData[0].endereco!.bairro},  ${parceiroData[0].endereco!.cidade},  ${parceiroData[0].endereco!.estado}';
       });
 
       final List<Account> classificacoesData =
@@ -78,14 +79,9 @@ class _ProductRegisterScreenState extends State<ProductRegisterScreen> {
           .expand((classificacao) => (classificacao.valores as List).map(
               (valor) => {'descricao': valor.descricao, 'valor': valor.valor}))
           .toList();
-      // Simular chamadas para APIs
+
       await Future.delayed(const Duration(seconds: 1)); // Simulação de atraso
       setState(() {
-        vendedorEndereco = "Uberaba, Mangueiras, MG";
-        classificacoes = [
-          {'descricao': 'Renda', 'valor': 0},
-          {'descricao': 'Impureza', 'valor': 0},
-        ];
         classificacaoControllers.addAll(
           classificacoes.map((_) => TextEditingController(text: '0')).toList(),
         );
@@ -116,6 +112,21 @@ class _ProductRegisterScreenState extends State<ProductRegisterScreen> {
     setState(() {
       principalImage = image;
     });
+  }
+
+  void showSnackBar({required String message, required bool isError}) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          message,
+          style: const TextStyle(color: Colors.white), // Texto sempre branco
+        ),
+        backgroundColor: isError
+            ? Colors.red
+            : Colors.green, // Vermelho para erro, verde para sucesso
+        duration: const Duration(seconds: 3),
+      ),
+    );
   }
 
   Future<void> submitForm() async {
@@ -150,30 +161,35 @@ class _ProductRegisterScreenState extends State<ProductRegisterScreen> {
       'cep': cepController.text,
     };
 
-    final Map<String, dynamic> requestBody = {
-      'tipoProdutoId': 1,
-      'produtoId': 1,
-      'descricao': descricaoController.text,
-      'listFotos': imageList,
-      'qtdSacos': int.tryParse(qtdSacosController.text) ?? 0,
-      'vlrSacos': double.tryParse(vlrSacosController.text) ?? 0,
-      'isCargaFechada': isCargaFechada,
-      'tipoGrao': selectedTipoGrao,
-      'dtRetirada': dtRetirada?.toIso8601String(),
-      'parceiro': {'id': 4},
-      'status': 'A',
-      'classificacao': classificacaoList,
-      if (useCustomAddress) 'enderecoRetirada': customAddress,
-    };
-
     try {
-      final response = await http.post(
-        Uri.parse('http://192.168.100.41:8088/boletobancos/api/produtos'),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode(requestBody),
-      );
+      final Map<String, dynamic> requestBody = {
+        'tipoProdutoId': 1,
+        'produtoId': 1,
+        'descricao': descricaoController.text,
+        'listFotos': imageList,
+        'qtdSacos': int.tryParse(qtdSacosController.text) ?? 0,
+        'vlrSacos': double.tryParse(vlrSacosController.text) ?? 0,
+        'isCargaFechada': isCargaFechada,
+        'tipoGrao': selectedTipoGrao,
+        'dtRetirada': dtRetirada?.toIso8601String(),
+        'parceiro': {'id': 4},
+        'status': 'A',
+        'classificacao': classificacaoList,
+        if (useCustomAddress) 'enderecoRetirada': customAddress,
+      };
 
-      if (response.statusCode == 200) {
+      // Faz a chamada à API
+      final NetworkResponse response = await NetworkCaller()
+          .postRequest(ApiLinks.insertProduto, requestBody);
+
+      // Navigator.of(context).pop(); // Fecha o loader
+
+      // Verifica o resultado da requisição
+      if (response.isSuccess) {
+        showSnackBar(
+          message: "Proposta enviada com sucesso!",
+          isError: false,
+        );
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Produto cadastrado com sucesso!')),
         );
@@ -191,7 +207,10 @@ class _ProductRegisterScreenState extends State<ProductRegisterScreen> {
         selectedImages.clear();
         principalImage = null;
       } else {
-        throw Exception('Erro ao cadastrar produto.');
+        showSnackBar(
+          message: "Erro ao enviar proposta.",
+          isError: true,
+        );
       }
     } catch (error) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -210,7 +229,6 @@ class _ProductRegisterScreenState extends State<ProductRegisterScreen> {
       initialDate: dtRetirada ?? DateTime.now(),
       firstDate: DateTime.now(),
       lastDate: DateTime.now().add(const Duration(days: 365)),
-      locale: const Locale('pt', 'BR'),
     );
     if (picked != null && picked != dtRetirada) {
       setState(() {
@@ -263,6 +281,7 @@ class _ProductRegisterScreenState extends State<ProductRegisterScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text('Retirada: $vendedorEndereco'),
+                        const SizedBox(height: 16),
                         Row(
                           children: [
                             const Text('Usar outro endereço para retirada?'),
@@ -326,6 +345,58 @@ class _ProductRegisterScreenState extends State<ProductRegisterScreen> {
                           ),
                         ],
                         const SizedBox(height: 16),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: Text(
+                                'Data para Retirada',
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.black,
+                                  fontSize: 16,
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: ElevatedButton(
+                                onPressed: () async {
+                                  final DateTime? pickedDate =
+                                      await showDatePicker(
+                                    context: context,
+                                    initialDate: DateTime.now(),
+                                    firstDate: DateTime.now(),
+                                    lastDate: DateTime.now().add(
+                                      const Duration(days: 365),
+                                    ),
+                                    locale: const Locale(
+                                        'pt', 'BR'), // Idioma em português
+                                  );
+                                  if (pickedDate != null) {
+                                    setState(() {
+                                      dtRetirada = pickedDate;
+                                    });
+                                  }
+                                },
+                                child: Text(
+                                  dtRetirada == null
+                                      ? 'Data para Retirada'
+                                      : DateFormat('dd/MM/yyyy', 'pt_BR')
+                                          .format(dtRetirada!),
+                                ),
+                                style: ElevatedButton.styleFrom(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 20,
+                                    vertical: 10,
+                                  ),
+                                  backgroundColor: Colors.green,
+                                  foregroundColor: Colors.white,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 16),
                         DropdownButtonFormField<String>(
                           value: selectedTipoProduto,
                           decoration: customInputDecoration('Tipo de Produto'),
@@ -356,40 +427,6 @@ class _ProductRegisterScreenState extends State<ProductRegisterScreen> {
                               selectedTipoGrao = value!;
                             });
                           },
-                        ),
-                        const SizedBox(height: 16),
-                        ElevatedButton(
-                          onPressed: () async {
-                            final DateTime? pickedDate = await showDatePicker(
-                              context: context,
-                              initialDate: DateTime.now(),
-                              firstDate: DateTime.now(),
-                              lastDate: DateTime.now().add(
-                                const Duration(days: 365),
-                              ),
-                            );
-                            if (pickedDate != null) {
-                              setState(() {
-                                dtRetirada = pickedDate;
-                              });
-                            }
-                          },
-                          child: Text(
-                            dtRetirada == null
-                                ? 'Selecionar Data'
-                                : dtRetirada!
-                                    .toLocal()
-                                    .toString()
-                                    .split(' ')[0],
-                          ),
-                          style: ElevatedButton.styleFrom(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 20,
-                              vertical: 10,
-                            ),
-                            backgroundColor: Colors.green,
-                            foregroundColor: Colors.white,
-                          ),
                         ),
                         const SizedBox(height: 16),
                         ElevatedButton.icon(

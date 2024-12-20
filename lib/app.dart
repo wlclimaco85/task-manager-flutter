@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:task_manager_flutter/ui/screens/splash_screens.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:intl/intl.dart';
 
 class TaskManagerApp extends StatelessWidget {
   const TaskManagerApp({super.key});
@@ -33,9 +35,17 @@ class TaskManagerApp extends StatelessWidget {
           ),
         ),
       ),
+      localizationsDelegates: const [
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
+      supportedLocales: const [
+        Locale('en', 'US'), // Inglês
+        Locale('pt', 'BR'), // Português
+      ],
       themeMode: ThemeMode.light,
       home: const SplashScreen(),
     );
   }
-  
 }
