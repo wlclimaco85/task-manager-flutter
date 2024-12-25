@@ -254,8 +254,8 @@ class _SelectedFormRefeicao extends State<SelectedFormRefeicao> {
                     offset: const Offset(-20, 0),
                     scrollbarTheme: ScrollbarThemeData(
                       radius: const Radius.circular(40),
-                      thickness: WidgetStateProperty.all(6),
-                      thumbVisibility: WidgetStateProperty.all(true),
+                      thickness: MaterialStateProperty.all(6),
+                      thumbVisibility: MaterialStateProperty.all(true),
                     ),
                   ),
                   menuItemStyleData: const MenuItemStyleData(

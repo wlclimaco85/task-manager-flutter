@@ -6,6 +6,11 @@ import 'package:task_manager_flutter/data/utils/api_links.dart';
 import 'package:task_manager_flutter/data/models/network_response.dart';
 import 'package:task_manager_flutter/data/services/network_caller.dart';
 
+// Define theme colors
+const Color lightGreenBackground = Color(0xFFE8F5E9);
+const Color darkGreenBorder = Color(0xFF388E3C);
+const Color buttonBackground = Color(0xFF4CAF50);
+
 class ProductCatalog extends StatefulWidget {
   const ProductCatalog({Key? key}) : super(key: key);
 
@@ -35,7 +40,7 @@ class _ProductCatalogState extends State<ProductCatalog> {
       final data = await VendasCaller().fetchCotacoes();
       setState(() {
         allProducts = data;
-        filteredProducts = data; // Inicializa com todos os produtos
+        filteredProducts = data;
       });
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -105,73 +110,76 @@ class _ProductCatalogState extends State<ProductCatalog> {
           ),
         ],
       ),
-      body: Column(
-        children: [
-          Padding(
-            padding: const EdgeInsets.all(8.0),
-            child: Row(
-              children: [
-                Expanded(
-                  child: DropdownButton<String>(
-                    isExpanded: true,
-                    value: selectedState,
-                    onChanged: (value) {
-                      setState(() {
-                        selectedState = value!;
-                        applyFilters();
-                      });
-                    },
-                    items: states.map<DropdownMenuItem<String>>((state) {
-                      return DropdownMenuItem<String>(
-                        value: state,
-                        child: Text(state),
-                      );
-                    }).toList(),
+      body: Container(
+        color: lightGreenBackground,
+        child: Column(
+          children: [
+            Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: DropdownButton<String>(
+                      isExpanded: true,
+                      value: selectedState,
+                      onChanged: (value) {
+                        setState(() {
+                          selectedState = value!;
+                          applyFilters();
+                        });
+                      },
+                      items: states.map<DropdownMenuItem<String>>((state) {
+                        return DropdownMenuItem<String>(
+                          value: state,
+                          child: Text(state),
+                        );
+                      }).toList(),
+                    ),
                   ),
-                ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: DropdownButton<String>(
-                    isExpanded: true,
-                    value: selectedCity,
-                    onChanged: (value) {
-                      setState(() {
-                        selectedCity = value!;
-                        applyFilters();
-                      });
-                    },
-                    items: cities.map<DropdownMenuItem<String>>((city) {
-                      return DropdownMenuItem<String>(
-                        value: city,
-                        child: Text(city),
-                      );
-                    }).toList(),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: DropdownButton<String>(
+                      isExpanded: true,
+                      value: selectedCity,
+                      onChanged: (value) {
+                        setState(() {
+                          selectedCity = value!;
+                          applyFilters();
+                        });
+                      },
+                      items: cities.map<DropdownMenuItem<String>>((city) {
+                        return DropdownMenuItem<String>(
+                          value: city,
+                          child: Text(city),
+                        );
+                      }).toList(),
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
-          ),
-          Expanded(
-            child: isLoading
-                ? const Center(child: CircularProgressIndicator())
-                : filteredProducts.isEmpty
-                    ? const Center(child: Text('Nenhum produto encontrado'))
-                    : ListView.builder(
-                        itemCount: filteredProducts.length,
-                        itemBuilder: (context, index) {
-                          final product = filteredProducts[index];
-                          return ProductCard(
-                            product: product,
-                            onDetails: () =>
-                                showProductDetails(context, product),
-                            onBuy: () => showBuyPopup(context, product),
-                            onNegotiate: () =>
-                                showNegotiationPopup(context, product),
-                          );
-                        },
-                      ),
-          ),
-        ],
+            Expanded(
+              child: isLoading
+                  ? const Center(child: CircularProgressIndicator())
+                  : filteredProducts.isEmpty
+                      ? const Center(child: Text('Nenhum produto encontrado'))
+                      : ListView.builder(
+                          itemCount: filteredProducts.length,
+                          itemBuilder: (context, index) {
+                            final product = filteredProducts[index];
+                            return ProductCard(
+                              product: product,
+                              onDetails: () =>
+                                  showProductDetails(context, product),
+                              onBuy: () => showBuyPopup(context, product),
+                              onNegotiate: () =>
+                                  showNegotiationPopup(context, product),
+                            );
+                          },
+                        ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -180,6 +188,7 @@ class _ProductCatalogState extends State<ProductCatalog> {
     showDialog(
       context: context,
       builder: (_) => AlertDialog(
+        backgroundColor: lightGreenBackground,
         title: Text(product.descricao ?? "SEM DESCRIÇÂO"),
         content: Column(
           mainAxisSize: MainAxisSize.min,
@@ -211,6 +220,7 @@ class _ProductCatalogState extends State<ProductCatalog> {
     showDialog(
       context: context,
       builder: (_) => AlertDialog(
+        backgroundColor: lightGreenBackground,
         title: Text('Comprar - ${product.descricao}'),
         content: Column(
           mainAxisSize: MainAxisSize.min,
@@ -445,6 +455,11 @@ class ProductCard extends StatelessWidget {
 
     return Card(
       margin: const EdgeInsets.all(10),
+      color: lightGreenBackground,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(8.0),
+        side: BorderSide(color: darkGreenBorder, width: 2),
+      ),
       child: Row(
         children: [
           Expanded(
@@ -501,4 +516,117 @@ class ProductCard extends StatelessWidget {
       ),
     );
   }
+/*
+  void showNegotiationPopup(BuildContext context, Produto product) {
+    final TextEditingController qtdController = TextEditingController();
+    final TextEditingController valorController = TextEditingController();
+
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          backgroundColor: lightGreenBackground, // Cor do fundo
+          title: Text(
+            'Renegociar - ${product.descricao ?? "Sem descrição"}',
+            style: const TextStyle(fontWeight: FontWeight.bold),
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                'Quantidade atual: ${product.qtdSacos ?? 0}',
+                style: const TextStyle(fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 8),
+              TextField(
+                controller: qtdController,
+                keyboardType: TextInputType.number,
+                decoration: InputDecoration(
+                  labelText: 'Nova quantidade',
+                  labelStyle: const TextStyle(fontWeight: FontWeight.bold),
+                  enabledBorder: OutlineInputBorder(
+                    borderSide: BorderSide(color: darkGreenBorder, width: 2),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderSide: BorderSide(color: darkGreenBorder, width: 2),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Valor atual por saco: R\$${product.vlrSacos ?? 0.0}',
+                style: const TextStyle(fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 8),
+              TextField(
+                controller: valorController,
+                keyboardType: TextInputType.number,
+                decoration: InputDecoration(
+                  labelText: 'Novo valor por saco',
+                  labelStyle: const TextStyle(fontWeight: FontWeight.bold),
+                  enabledBorder: OutlineInputBorder(
+                    borderSide: BorderSide(color: darkGreenBorder, width: 2),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderSide: BorderSide(color: darkGreenBorder, width: 2),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Cancelar'),
+            ),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: buttonBackground,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                  side: BorderSide(color: darkGreenBorder, width: 2),
+                ),
+              ),
+              onPressed: () async {
+                final int qtdSacos =
+                    int.tryParse(qtdController.text.trim()) ?? 0;
+                final double vlrSacos =
+                    double.tryParse(valorController.text.trim()) ?? 0.0;
+
+                final bool response = await renegotiate(
+                  vendaId: product.id!,
+                  compradorId:
+                      5, // ID do comprador (ajuste conforme necessário)
+                  vendedorId: product.parceiro?.id ?? 0,
+                  qtdSacos: qtdSacos,
+                  vlrSacos: vlrSacos,
+                  qtdDisponivel: product.qtdSacos!,
+                );
+
+                Navigator.of(context).pop();
+
+                if (response) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Renegociação realizada com sucesso!'),
+                      backgroundColor: Colors.green,
+                    ),
+                  );
+                  _fetchProducts(); // Atualiza os produtos
+                } else {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Erro ao renegociar.'),
+                      backgroundColor: Colors.red,
+                    ),
+                  );
+                }
+              },
+              child: const Text('Enviar Proposta'),
+            ),
+          ],
+        );
+      },
+    );
+  } */
 }

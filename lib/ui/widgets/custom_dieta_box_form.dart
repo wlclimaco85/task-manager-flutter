@@ -6,6 +6,7 @@ import 'package:task_manager_flutter/data/constants/custom_colors.dart';
 import 'package:dropdown_button2/dropdown_button2.dart';
 import 'package:task_manager_flutter/ui/widgets/custom_selected_tipo_refeicao.dart';
 import 'package:task_manager_flutter/ui/widgets/custom_dieta_box_itens_form.dart';
+import 'package:flutter/material.dart';
 
 var dias = [
   'Segunda',
@@ -344,8 +345,8 @@ class _CustomDietaBoxForm extends State<CustomDietaBoxForm> {
                     offset: const Offset(-20, 0),
                     scrollbarTheme: ScrollbarThemeData(
                       radius: const Radius.circular(40),
-                      thickness: WidgetStateProperty.all(6),
-                      thumbVisibility: WidgetStateProperty.all(true),
+                      thickness: MaterialStateProperty.all(6),
+                      thumbVisibility: MaterialStateProperty.all(true),
                     ),
                   ),
                   menuItemStyleData: const MenuItemStyleData(
@@ -574,8 +575,8 @@ class _CustomDietaBoxForm extends State<CustomDietaBoxForm> {
                     offset: const Offset(-20, 0),
                     scrollbarTheme: ScrollbarThemeData(
                       radius: const Radius.circular(40),
-                      thickness: WidgetStateProperty.all(6),
-                      thumbVisibility: WidgetStateProperty.all(true),
+                      thickness: MaterialStateProperty.all(6),
+                      thumbVisibility: MaterialStateProperty.all(true),
                     ),
                   ),
                   menuItemStyleData: const MenuItemStyleData(
