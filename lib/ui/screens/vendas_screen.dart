@@ -7,9 +7,9 @@ import 'package:task_manager_flutter/data/models/network_response.dart';
 import 'package:task_manager_flutter/data/services/network_caller.dart';
 
 // Define theme colors
-const Color lightGreenBackground = Color(0xFFE8F5E9);
-const Color darkGreenBorder = Color(0xFF388E3C);
-const Color buttonBackground = Color(0xFF4CAF50);
+const Color lightGreenBackground = Color.fromARGB(255, 231, 247, 233);
+const Color darkGreenBorder = Color.fromARGB(255, 1, 247, 14);
+const Color buttonBackground = Color.fromARGB(255, 128, 202, 132);
 
 class ProductCatalog extends StatefulWidget {
   const ProductCatalog({Key? key}) : super(key: key);
@@ -272,66 +272,115 @@ class _ProductCatalogState extends State<ProductCatalog> {
   }
 
   void showNegotiationPopup(BuildContext context, Produto product) {
-    final qtdController = TextEditingController();
-    final valorController = TextEditingController();
+    final TextEditingController qtdController = TextEditingController();
+    final TextEditingController valorController = TextEditingController();
 
     showDialog(
       context: context,
-      builder: (_) => AlertDialog(
-        title: Text('Renegociar - ${product.descricao}'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text('Quantidade atual: ${product.qtdSacos ?? 0}'),
-            TextField(
-              controller: qtdController,
-              keyboardType: TextInputType.number,
-              decoration: const InputDecoration(labelText: 'Nova quantidade'),
+      builder: (BuildContext context) {
+        return AlertDialog(
+          backgroundColor: lightGreenBackground, // Cor do fundo
+          title: Text(
+            'Renegociar - ${product.descricao ?? "Sem descrição"}',
+            style: const TextStyle(fontWeight: FontWeight.bold),
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                'Quantidade atual: ${product.qtdSacos ?? 0}',
+                style: const TextStyle(fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 8),
+              TextField(
+                controller: qtdController,
+                keyboardType: TextInputType.number,
+                decoration: InputDecoration(
+                  labelText: 'Nova quantidade',
+                  labelStyle: const TextStyle(fontWeight: FontWeight.bold),
+                  enabledBorder: OutlineInputBorder(
+                    borderSide: BorderSide(color: darkGreenBorder, width: 2),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderSide: BorderSide(color: darkGreenBorder, width: 2),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Valor atual por saco: R\$${product.vlrSacos ?? 0.0}',
+                style: const TextStyle(fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 8),
+              TextField(
+                controller: valorController,
+                keyboardType: TextInputType.number,
+                decoration: InputDecoration(
+                  labelText: 'Novo valor por saco',
+                  labelStyle: const TextStyle(fontWeight: FontWeight.bold),
+                  enabledBorder: OutlineInputBorder(
+                    borderSide: BorderSide(color: darkGreenBorder, width: 2),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderSide: BorderSide(color: darkGreenBorder, width: 2),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Cancelar'),
             ),
-            Text('Valor atual por saco: R\$${product.vlrSacos ?? 0.0}'),
-            TextField(
-              controller: valorController,
-              keyboardType: TextInputType.number,
-              decoration:
-                  const InputDecoration(labelText: 'Novo valor por saco'),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: buttonBackground,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                  side: BorderSide(color: darkGreenBorder, width: 2),
+                ),
+              ),
+              onPressed: () async {
+                final int qtdSacos =
+                    int.tryParse(qtdController.text.trim()) ?? 0;
+                final double vlrSacos =
+                    double.tryParse(valorController.text.trim()) ?? 0.0;
+
+                final bool response = await renegotiate(
+                  vendaId: product.id!,
+                  compradorId:
+                      5, // ID do comprador (ajuste conforme necessário)
+                  vendedorId: product.parceiro?.id ?? 0,
+                  qtdSacos: qtdSacos,
+                  vlrSacos: vlrSacos,
+                  qtdDisponivel: product.qtdSacos!,
+                );
+
+                Navigator.of(context).pop();
+
+                if (response) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Renegociação realizada com sucesso!'),
+                      backgroundColor: Colors.green,
+                    ),
+                  );
+                  _fetchProducts(); // Atualiza os produtos
+                } else {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Erro ao renegociar.'),
+                      backgroundColor: Colors.red,
+                    ),
+                  );
+                }
+              },
+              child: const Text('Enviar Proposta'),
             ),
           ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Cancelar'),
-          ),
-          ElevatedButton(
-            onPressed: () async {
-              final response = await renegotiate(
-                vendaId: product.id!,
-                vendedorId: product.parceiro!.id!,
-                compradorId: 5, // Substitua com ID do comprador
-                qtdSacos: int.tryParse(qtdController.text) ?? 0,
-                vlrSacos: double.tryParse(valorController.text) ?? 0.0,
-                qtdDisponivel: product.qtdSacos!,
-              );
-              Navigator.of(context).pop();
-              if (response) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('Renegociação realizada com sucesso!'),
-                  ),
-                );
-                _fetchProducts(); // Refresh automático após sucesso
-              } else {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('Erro ao renegociar'),
-                  ),
-                );
-              }
-            },
-            child: const Text('Enviar Proposta'),
-          ),
-        ],
-      ),
+        );
+      },
     );
   }
 

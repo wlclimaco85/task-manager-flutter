@@ -6,6 +6,10 @@ import 'package:task_manager_flutter/ui/screens/progress_task_screen.dart';
 import 'package:task_manager_flutter/ui/screens/task_screen.dart';
 import 'package:task_manager_flutter/ui/screens/product_register_screen.dart';
 
+// Define theme colors
+const Color lightGreenBackground = Color.fromARGB(255, 231, 247, 233);
+const Color darkGreenBorder = Color.fromARGB(255, 1, 247, 14);
+
 class BottomNavBarScreen extends StatefulWidget {
   const BottomNavBarScreen({super.key});
 
@@ -21,11 +25,50 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
     const ProductCatalog(),
     const ProductRegisterScreen(),
   ];
+
+  void onMenuOptionSelected(String option) {
+    switch (option) {
+      case "Itens Comprados":
+        // Navegar para a tela de Itens Comprados
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => const ProductCatalog()),
+        );
+        break;
+      case "Itens a Venda":
+        // Navegar para a tela de Itens a Venda
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => const ProductCatalog()),
+        );
+        break;
+      case "Itens em Negociação":
+        // Navegar para a tela de Itens em Negociação
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => const ProgressTaskScreen()),
+        );
+        break;
+      case "Sair":
+        // Implementar lógica para sair
+        Navigator.pop(context);
+        break;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       body: screens[selectedIndex],
-      bottomNavigationBar: BottomNavigationBar(
+      bottomNavigationBar: Container(
+        decoration: BoxDecoration(
+          color: lightGreenBackground,
+          border: Border(
+            top: BorderSide(color: darkGreenBorder, width: 2),
+          ),
+        ),
+        child: BottomNavigationBar(
+          backgroundColor: lightGreenBackground,
           currentIndex: selectedIndex,
           unselectedItemColor: Colors.grey,
           unselectedLabelStyle: const TextStyle(color: Colors.grey),
@@ -33,23 +76,65 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
           showSelectedLabels: true,
           type: BottomNavigationBarType.fixed,
           onTap: (int index) {
-            selectedIndex = index;
-            if (mounted) {
-              setState(() {});
+            if (index == 4) {
+              _showMenuOptions(context);
+            } else {
+              setState(() {
+                selectedIndex = index;
+              });
             }
           },
           items: const [
             BottomNavigationBarItem(
-                icon: Icon(FontAwesomeIcons.shekelSign), label: "Noticias"),
+                icon: Icon(FontAwesomeIcons.newspaper), label: "Notícias"),
             BottomNavigationBarItem(
-                icon: Icon(FontAwesomeIcons.checkToSlot), label: "Cotação"),
+                icon: Icon(FontAwesomeIcons.chartLine), label: "Cotação"),
             BottomNavigationBarItem(
-                icon: Icon(FontAwesomeIcons.circleXmark), label: "Comprar"),
+                icon: Icon(FontAwesomeIcons.cartShopping), label: "Comprar"),
             BottomNavigationBarItem(
-                icon: Icon(FontAwesomeIcons.barsProgress), label: "Vender"),
+                icon: Icon(FontAwesomeIcons.tags), label: "Vender"),
             BottomNavigationBarItem(
-                icon: Icon(FontAwesomeIcons.barsProgress), label: "Entrar"),
-          ]),
+                icon: Icon(FontAwesomeIcons.bars), label: "Menu"),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showMenuOptions(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      backgroundColor: lightGreenBackground,
+      builder: (BuildContext context) {
+        return Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(FontAwesomeIcons.shoppingBag),
+              title: const Text('Itens Comprados'),
+              onTap: () => onMenuOptionSelected('Itens Comprados'),
+            ),
+            ListTile(
+              leading: const Icon(FontAwesomeIcons.store),
+              title: const Text('Itens a Venda'),
+              onTap: () => onMenuOptionSelected('Itens a Venda'),
+            ),
+            ListTile(
+              leading: const Icon(FontAwesomeIcons.handshake),
+              title: const Text('Itens em Negociação'),
+              onTap: () => onMenuOptionSelected('Itens em Negociação'),
+            ),
+            ListTile(
+              leading: const Icon(FontAwesomeIcons.signOutAlt),
+              title: const Text('Sair'),
+              onTap: () => onMenuOptionSelected('Sair'),
+            ),
+          ],
+        );
+      },
     );
   }
 }
