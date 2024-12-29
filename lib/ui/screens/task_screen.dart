@@ -9,6 +9,11 @@ import 'dart:convert';
 import 'package:task_manager_flutter/data/models/noticias_model.dart';
 import 'package:task_manager_flutter/ui/screens/NewsDetailScreen.dart';
 
+// Define cores
+const Color lightGreenBackground = Color.fromARGB(255, 231, 247, 233);
+const Color mediumGreenBackground = Color.fromARGB(255, 200, 230, 200);
+const Color darkGreenBorder = Color.fromARGB(255, 1, 247, 14);
+
 class TaskScreen extends StatefulWidget {
   final String screenStatus;
   final String apiLink;
@@ -93,7 +98,6 @@ class _TaskScreenState extends State<TaskScreen> {
     _controller.addListener(_onScroll);
   }
 
-  // Função para buscar notícias do backend
   Future<void> fetchNews({bool isRefresh = false}) async {
     if (isRefresh) {
       setState(() {
@@ -105,35 +109,30 @@ class _TaskScreenState extends State<TaskScreen> {
     setState(() {
       isLoading = true;
     });
-    String jsonString;
-    NoticiaModel model;
+
     final NetworkResponse response =
         await NetworkCaller().getRequest(ApiLinks.allNoticias);
 
     if (response.statusCode == 200) {
       if (response.body != null) {
-        jsonString = json.encode(response.body);
-        model = NoticiaModel.fromJson(response.body!);
+        final jsonString = json.encode(response.body);
+        final model = NoticiaModel.fromJson(response.body!);
         if (model.data != null) {
-          newsList.addAll(model.data!);
+          setState(() {
+            newsList.addAll(model.data!);
+            page++;
+          });
         }
-        // Use jsonString conforme necessário
-      } else {
-        // Trate o caso onde o data é nulo
       }
-
-      // Map<String, dynamic> newsJson = json.decode(response.body);
-
-      setState(() {
-        page++;
-        isLoading = false;
-      });
     } else {
       throw Exception('Falha ao carregar as notícias');
     }
+
+    setState(() {
+      isLoading = false;
+    });
   }
 
-  // Função para detectar o fim da lista e carregar mais notícias
   void _onScroll() {
     if (_controller.position.pixels == _controller.position.maxScrollExtent &&
         !isLoading) {
@@ -141,7 +140,6 @@ class _TaskScreenState extends State<TaskScreen> {
     }
   }
 
-  // Função para o "Pull-to-Refresh"
   Future<void> _refreshNews() async {
     await fetchNews(isRefresh: true);
   }
@@ -296,241 +294,86 @@ class _TaskScreenState extends State<TaskScreen> {
           ),
         ],
       ),
-      body: RefreshIndicator(
-        onRefresh: _refreshNews,
-        child: Stack(
-          children: [
-            ListView.builder(
-              controller: _controller,
-              itemCount: newsList.length + 1,
-              itemBuilder: (context, index) {
-                if (index == newsList.length) {
-                  return isLoading
-                      ? const Center(
-                          child: SizedBox(
-                            width: 60, // Tamanho maior
-                            height: 60, // Tamanho maior
-                            child: CircularProgressIndicator(
-                                strokeWidth: 6.0), // Indicador maior
-                          ),
-                        )
-                      : const SizedBox.shrink();
-                }
+      body: Container(
+        color: lightGreenBackground, // Cor de fundo da tela
+        child: RefreshIndicator(
+          onRefresh: _refreshNews,
+          child: Stack(
+            children: [
+              ListView.builder(
+                controller: _controller,
+                itemCount: newsList.length + (isLoading ? 1 : 0),
+                itemBuilder: (context, index) {
+                  if (index == newsList.length) {
+                    return isLoading
+                        ? const Center(
+                            child: SizedBox(
+                              width: 60,
+                              height: 60,
+                              child:
+                                  CircularProgressIndicator(strokeWidth: 6.0),
+                            ),
+                          )
+                        : const SizedBox.shrink();
+                  }
 
-                final news = newsList[index];
-                return Card(
-                  margin: const EdgeInsets.all(8.0),
-                  child: ListTile(
-                    title: Text(
-                      news.tituloResu != null
-                          ? news.tituloResu!
-                          : 'Título não disponível',
-                      style: const TextStyle(
-                        fontSize: 16, // Define o tamanho da fonte para 16
-                        fontWeight: FontWeight
-                            .bold, // Define o estilo da fonte como negrito
+                  final news = newsList[index];
+                  return Card(
+                    margin: const EdgeInsets.all(8.0),
+                    color: index % 2 == 0
+                        ? mediumGreenBackground // Cor alternada
+                        : lightGreenBackground, // Cor alternada
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8.0),
+                      side: BorderSide(
+                          color: darkGreenBorder,
+                          width: 2), // Borda verde escura
+                    ),
+                    child: ListTile(
+                      title: Text(
+                        news.tituloResu ?? 'Título não disponível',
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
-                    ),
-                    subtitle: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(news.resumo != null
-                            ? news.resumo!
-                            : 'Título não disponível'),
-                        const SizedBox(height: 4),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Text(
-                                '${news.fonte ?? 'Título'}     ${news.dtNoticia != null ? DateFormat('dd/MM/yyyy HH:mm').format(news.dtNoticia!.toLocal()) : '   '}',
+                      subtitle: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(news.resumo ?? 'Resumo não disponível'),
+                          const SizedBox(height: 4),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text(
+                                '${news.fonte ?? 'Fonte não disponível'}     ${news.dtNoticia != null ? DateFormat('dd/MM/yyyy HH:mm').format(news.dtNoticia!.toLocal()) : ''}',
                                 style: const TextStyle(
-                                    fontSize: 10, fontWeight: FontWeight.bold)),
-                            Text(
-                                news.autor != null
-                                    ? news.autor!
-                                    : 'Título não disponível',
-                                style: const TextStyle(fontSize: 10)),
-                          ],
-                        ),
-                      ],
+                                    fontSize: 10, fontWeight: FontWeight.bold),
+                              ),
+                              Text(
+                                news.autor ?? 'Autor não disponível',
+                                style: const TextStyle(fontSize: 10),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => NewsDetailScreen(news: news),
+                          ),
+                        );
+                      },
                     ),
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => NewsDetailScreen(news: news),
-                        ),
-                      );
-                    },
-                  ),
-                );
-              },
-            ),
-          ],
+                  );
+                },
+              ),
+            ],
+          ),
         ),
       ),
-    );
-  }
-
-  /* @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xFF340A9C),
-      appBar: userBanner(
-        context,
-        onTapped: () {
-          Navigator.push(
-              context,
-              MaterialPageRoute(
-                  builder: (context) => const UpdateProfileScreen()));
-        },
-      ),
-      body: Column(
-        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-        children: <Widget>[
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: <Widget>[
-              IconButtonExample(
-                text: 'Personal',
-                color: 'Screenshot_2.png',
-                onPresse: () {
-                  Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                          builder: (context) => const PersonalScreen()));
-                },
-              ),
-              const SizedBox(width: 10),
-              IconButtonExample(
-                text: 'Academias',
-                color: 'images (1).png',
-                onPresse: () {
-                  Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                          builder: (context) => const AcademiaScreen()));
-                },
-              ),
-              const SizedBox(width: 10),
-              IconButtonExample(
-                text: 'Treinos',
-                color: 'images.png',
-                onPresse: () {
-                  print('Treinos');
-                },
-              ),
-            ],
-          ),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: <Widget>[
-              IconButtonExample(
-                text: 'Suplemento',
-                color: 'images (2).png',
-                onPresse: () {
-                  Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                          builder: (context) => const SuplementoScreen()));
-                },
-              ),
-              const SizedBox(width: 10),
-              IconButtonExample(
-                text: 'Exames',
-                color: 'images (3).png',
-                onPresse: () {
-                  Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                          builder: (context) => const ExameScreen()));
-                },
-              ),
-              const SizedBox(width: 10),
-              IconButtonExample(
-                text: 'Dieta',
-                color: 'images (4).png',
-                onPresse: () {
-                  Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                          builder: (context) => const Dietacreen()));
-                },
-              ),
-            ],
-          ),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: <Widget>[
-              IconButtonExample(
-                text: 'Medicamento',
-                color: 'Screenshot_3.png',
-                onPresse: () {
-                  Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                          builder: (context) => const Medicamentoscreen()));
-                },
-              ),
-              const SizedBox(width: 10),
-              IconButtonExample(
-                text: 'Avaliação Fisica',
-                color: 'Screenshot_4.png',
-                onPresse: () {
-                  print('Avaliação Fisica');
-                },
-              ),
-              const SizedBox(width: 10),
-              IconButtonExample(
-                text: 'Pagamentos',
-                color: 'Screenshot_5.png',
-                onPresse: () {
-                  print('Pagamentos');
-                },
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  } */
-
-  Color _getChipColor() {
-    switch (widget.screenStatus) {
-      case "Noticias":
-        return Colors.blue;
-      case "Cotação":
-        return Colors.green;
-      case "Compra":
-        return Colors.red;
-      case "Venda":
-        return Colors.pink.shade400;
-      case "Entrar":
-        return Colors.pink.shade400;
-      default:
-        return Colors.grey;
-    }
-  }
-
-  void statusUpdateButtomSheet(TaskData task) {
-    showModalBottomSheet(
-      shape: ShapeBorder.lerp(
-          RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(10),
-              side: const BorderSide(color: Colors.black)),
-          RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(10),
-              side: const BorderSide(color: Colors.black)),
-          1)!,
-      context: context,
-      builder: (context) {
-        return UpdateStatus(
-          task: task,
-          onTaskComplete: () {
-            getTask();
-          },
-        );
-      },
     );
   }
 }

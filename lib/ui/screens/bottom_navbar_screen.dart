@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:task_manager_flutter/ui/screens/cotacao_grafico_screen.dart';
 import 'package:task_manager_flutter/ui/screens/vendas_screen.dart';
-import 'package:task_manager_flutter/ui/screens/task_screen.dart';
+import 'package:task_manager_flutter/ui/screens/negociacao_screen.dart';
 import 'package:task_manager_flutter/ui/screens/progress_task_screen.dart';
 import 'package:task_manager_flutter/ui/screens/task_screen.dart';
 import 'package:task_manager_flutter/ui/screens/carrinho_compras_screen.dart';
@@ -35,7 +35,7 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
         Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (context) => const ProductCatalogPageVendas(
+            builder: (context) => const ProductCatalogPageCompras(
               title: 'Produtos Comprados',
               apiUrl:
                   'http://192.168.146.1:8088/boletobancos/api/produtos/comprador/5',
@@ -62,7 +62,15 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
       case "Itens em Negociação":
         Navigator.push(
           context,
-          MaterialPageRoute(builder: (context) => const ProgressTaskScreen()),
+          MaterialPageRoute(
+            builder: (context) => const NegociacaoCatalogPage(
+              title: 'Negociação',
+              apiUrl:
+                  'http://192.168.146.1:8088/boletobancos/api/produtos/vendedor/4',
+              actionIcon: Icons.edit,
+              actionTooltip: 'Editar Produto',
+            ),
+          ),
         );
         break;
       case "Sair":

@@ -281,7 +281,7 @@ class _ProductCatalogState extends State<ProductCatalog> {
         return AlertDialog(
           backgroundColor: lightGreenBackground, // Cor do fundo
           title: Text(
-            'Renegociar - ${product.descricao ?? "Sem descrição"}',
+            'Renegociar Arroz em Casca LOTE - ${product.id ?? "Sem descrição"}',
             style: const TextStyle(fontWeight: FontWeight.bold),
           ),
           content: Column(
@@ -335,10 +335,13 @@ class _ProductCatalogState extends State<ProductCatalog> {
             ),
             ElevatedButton(
               style: ElevatedButton.styleFrom(
-                backgroundColor: buttonBackground,
+                backgroundColor: Colors.green, // Cor do botão
+                minimumSize:
+                    const Size(150, 50), // Largura e altura mínimas do botão
+                padding: const EdgeInsets.symmetric(
+                    horizontal: 16, vertical: 12), // Margens internas
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
-                  side: BorderSide(color: darkGreenBorder, width: 2),
+                  borderRadius: BorderRadius.circular(8), // Bordas arredondadas
                 ),
               ),
               onPressed: () async {
@@ -362,7 +365,7 @@ class _ProductCatalogState extends State<ProductCatalog> {
                 if (response) {
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(
-                      content: Text('Renegociação realizada com sucesso!'),
+                      content: Text('Proposta enviada com sucesso!'),
                       backgroundColor: Colors.green,
                     ),
                   );
@@ -523,14 +526,43 @@ class ProductCard extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    product.descricao ?? 'Sem descrição',
+                    'Arroz em Casca - Lote : ' + product.id.toString(),
                     style: const TextStyle(
-                      fontSize: 16,
+                      fontSize: 14,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
+                  Text(
+                      'Estado: ${product.parceiro?.endereco?.estado ?? "Não informado"}'),
+                  Text(
+                      'Cidade: ${product.parceiro?.endereco?.cidade ?? "Não informado"}'),
                   Text('Quantidade: ${product.qtdSacos} sacos'),
                   Text('Valor por saco: R\$${product.vlrSacos}'),
+                  Text('Observação: ${product.descricao ?? "Não informado"}'),
+                  const Text('Classificação:'),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: product.classificacao!.map<Widget>((c) {
+                      return Container(
+                        margin: const EdgeInsets.only(
+                            left: 16, top: 4), // Margem personalizada
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Icon(Icons.circle,
+                                size: 8, color: Colors.black), // Marcador
+                            const SizedBox(
+                                width: 8), // Espaço entre o marcador e o texto
+                            Expanded(
+                              child: Text('${c.descricao}: ${c.valor}',
+                                  style: const TextStyle(
+                                      fontSize: 12)), // Texto da classificação
+                            ),
+                          ],
+                        ),
+                      );
+                    }).toList(),
+                  ),
                 ],
               ),
             ),

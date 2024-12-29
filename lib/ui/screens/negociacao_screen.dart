@@ -9,13 +9,13 @@ const Color lightGreenBackground = Color.fromARGB(255, 231, 247, 233);
 const Color darkGreenBorder = Color.fromARGB(255, 1, 247, 14);
 const Color buttonBackground = Color.fromARGB(255, 128, 202, 132);
 
-class ProductCatalogPageCompras extends StatefulWidget {
+class NegociacaoCatalogPage extends StatefulWidget {
   final String title;
   final String apiUrl;
   final IconData actionIcon;
   final String actionTooltip;
 
-  const ProductCatalogPageCompras({
+  const NegociacaoCatalogPage({
     Key? key,
     required this.title,
     required this.apiUrl,
@@ -24,11 +24,10 @@ class ProductCatalogPageCompras extends StatefulWidget {
   }) : super(key: key);
 
   @override
-  _ProductCatalogPageComprasState createState() =>
-      _ProductCatalogPageComprasState();
+  _NegociacaoCatalogPageState createState() => _NegociacaoCatalogPageState();
 }
 
-class _ProductCatalogPageComprasState extends State<ProductCatalogPageCompras> {
+class _NegociacaoCatalogPageState extends State<NegociacaoCatalogPage> {
   List<dynamic> products = [];
   bool isLoading = true;
 
@@ -286,7 +285,7 @@ String getStatusText(String status) {
 void main() {
   runApp(MaterialApp(
     theme: ThemeData(primarySwatch: Colors.green),
-    home: const ProductCatalogPageCompras(
+    home: const NegociacaoCatalogPage(
       title: 'Produtos do Vendedor',
       apiUrl: 'http://192.168.146.1:8088/boletobancos/api/produtos/vendedor/4',
       actionIcon: Icons.edit,
