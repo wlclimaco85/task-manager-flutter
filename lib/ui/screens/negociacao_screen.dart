@@ -200,69 +200,106 @@ class ProductCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(8.0),
         side: BorderSide(color: darkGreenBorder, width: 2),
       ),
-      child: Row(
-        children: [
-          Expanded(
-            flex: 2,
-            child: image,
-          ),
-          Expanded(
-            flex: 3,
-            child: Padding(
-              padding: const EdgeInsets.all(8.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    product.tipo ?? 'Sem descrição',
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                    ),
+      child: Padding(
+        padding: const EdgeInsets.all(8.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Expanded(flex: 2, child: image),
+                Expanded(
+                  flex: 3,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        product.tipo ?? 'Sem descrição',
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      Text(
+                        'Lote: ${product.id}',
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      Text('Quantidade: ${product.qtdSacos} sacos'),
+                      Text('Data Retirada: ${product.dtRetirada}'),
+                      Text('Descrição: ${product.descricao}'),
+                    ],
                   ),
-                  Text(
-                    'Lote: ${product.id}',
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  Text('Quantidade: ${product.qtdSacos} sacos'),
-                  Text('Data Retirada: ${product.dtRetirada}'),
-                  Text('Descrição: ${product.descricao}'),
-                  const SizedBox(height: 8),
-                  const Text('Negociações:',
-                      style: TextStyle(fontWeight: FontWeight.bold)),
-                  ...List.generate((product.negociacoes as List).length, (i) {
-                    final negotiation = product.negociacoes[i];
-                    return Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text('Comprador ID: ${negotiation.compradorId}'),
-                        Text('Quantidade: ${negotiation.qtdSacos}'),
-                        Text('Valor por saco: R\$${negotiation.vlrSacos}'),
-                        Text('Status: ${getStatusText(negotiation.status)}'),
-                        const SizedBox(height: 8),
-                      ],
-                    );
-                  }),
-                ],
-              ),
-            ),
-          ),
-          Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Tooltip(
-                message: actionTooltip,
-                child: IconButton(
-                  icon: Icon(actionIcon, color: Colors.green),
-                  onPressed: onAction,
                 ),
-              ),
-            ],
-          ),
-        ],
+              ],
+            ),
+            const SizedBox(height: 8),
+            const Text('Negociações:',
+                style: TextStyle(fontWeight: FontWeight.bold)),
+            ...List.generate((product.negociacoes as List).length, (i) {
+              final negotiation = product.negociacoes[i];
+              return Card(
+                margin: const EdgeInsets.symmetric(vertical: 4.0),
+                color: const Color.fromARGB(255, 214, 239, 222),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8.0),
+                  side: BorderSide(color: darkGreenBorder, width: 1.5),
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.all(8.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('Comprador ID: ${negotiation.compradorId}'),
+                      Text('Quantidade: ${negotiation.qtdSacos}'),
+                      Text('Valor por saco: R\$${negotiation.vlrSacos}'),
+                      Text('Status: ${getStatusText(negotiation.status)}'),
+                      const SizedBox(height: 8),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                        children: [
+                          IconButton(
+                            icon: const Icon(Icons.check, color: Colors.green),
+                            tooltip: 'Aceitar',
+                            onPressed: () {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                    content: Text('Negociação aceita')),
+                              );
+                            },
+                          ),
+                          IconButton(
+                            icon: const Icon(Icons.close, color: Colors.red),
+                            tooltip: 'Recusar',
+                            onPressed: () {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                    content: Text('Negociação recusada')),
+                              );
+                            },
+                          ),
+                          IconButton(
+                            icon: const Icon(Icons.handshake,
+                                color: Colors.green),
+                            tooltip: 'Fazer contraproposta',
+                            onPressed: () {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                    content: Text('Contraproposta enviada')),
+                              );
+                            },
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            }),
+          ],
+        ),
       ),
     );
   }
