@@ -1,0 +1,18 @@
+{
+    "sourceFile": "lib/data/models/new_model copy.dart",
+    "activeCommit": 0,
+    "commits": [
+        {
+            "activePatchIndex": 0,
+            "patches": [
+                {
+                    "date": 1735169021511,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n"
+                }
+            ],
+            "date": 1735169021511,
+            "name": "Commit-0",
+            "content": "import 'dart:convert';\r\nimport 'package:task_manager_flutter/data/models/parceiro_model.dart';\r\nimport 'package:task_manager_flutter/data/models/login_model.dart';\r\n\r\nclass News {\r\n  final String title;\r\n  final String summary;\r\n  final String source;\r\n  final String date;\r\n\r\n  News(\r\n      {required this.title,\r\n      required this.summary,\r\n      required this.source,\r\n      required this.date});\r\n\r\n  factory News.fromJson(Map<String, dynamic> json) {\r\n    return News(\r\n      title: json['title'],\r\n      summary: json['summary'],\r\n      source: json['source'],\r\n      date: json['date'],\r\n    );\r\n  }\r\n}"
+        }
+    ]
+}

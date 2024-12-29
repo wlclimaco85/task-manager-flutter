@@ -1,0 +1,223 @@
+class Negotiation {
+  final int compradorId;
+  final int vendedorId;
+  final int qtdSacos;
+  final double vlrSacos;
+  final String dataNegociacao;
+  final String status;
+  final String bairroEntr;
+  final String cidadeEntr;
+  final String estadoEntr;
+  final String bairroSaida;
+  final String cidadeSaida;
+  final String estadoSaida;
+
+  Negotiation({
+    required this.compradorId,
+    required this.vendedorId,
+    required this.qtdSacos,
+    required this.vlrSacos,
+    required this.dataNegociacao,
+    required this.status,
+    required this.bairroEntr,
+    required this.cidadeEntr,
+    required this.estadoEntr,
+    required this.bairroSaida,
+    required this.cidadeSaida,
+    required this.estadoSaida,
+  });
+
+  factory Negotiation.fromJson(Map<String, dynamic> json) {
+    return Negotiation(
+      compradorId: json['compradorId'],
+      vendedorId: json['vendedorId'],
+      qtdSacos: json['qtdSacos'],
+      vlrSacos: json['vlrSacos'],
+      dataNegociacao: json['dataNegociacao'],
+      status: json['status'],
+      bairroEntr: json['bairroEntr'],
+      cidadeEntr: json['cidadeEntr'],
+      estadoEntr: json['estadoEntr'],
+      bairroSaida: json['bairroSaida'],
+      cidadeSaida: json['cidadeSaida'],
+      estadoSaida: json['estadoSaida'],
+    );
+  }
+  // Método para converter Produto para JSON
+  Map<String, dynamic> toJson() {
+    final Map<String, dynamic> data = <String, dynamic>{};
+    data['compradorId'] = compradorId;
+    data['vendedorId'] = vendedorId;
+    data['qtdSacos'] = qtdSacos;
+    data['vlrSacos'] = vlrSacos;
+    data['dataNegociacao'] = dataNegociacao;
+    data['status'] = status;
+    data['bairroEntr'] = bairroEntr;
+    data['cidadeEntr'] = cidadeEntr;
+    data['estadoEntr'] = estadoEntr;
+    data['bairroSaida'] = bairroSaida;
+    data['cidadeSaida'] = cidadeSaida;
+    data['estadoSaida'] = estadoSaida;
+    return data;
+  }
+
+  // Método para converter uma lista de JSON para uma lista de objetos Produto
+  static List<Negotiation> fromJsonList(List<dynamic> jsonList) {
+    return jsonList
+        .map((item) => Negotiation.fromJson(Map<String, dynamic>.from(item)))
+        .toList();
+  }
+}
+
+class Product {
+  final int id;
+  final String tipo;
+  final String descricao;
+  final double vlrSacos;
+  final int qtdSacos;
+  final String dtRetirada;
+  final String? foto;
+  final List<Negotiation> negociacoes;
+
+  Product({
+    required this.id,
+    required this.tipo,
+    required this.descricao,
+    required this.vlrSacos,
+    required this.qtdSacos,
+    required this.dtRetirada,
+    this.foto,
+    required this.negociacoes,
+  });
+
+  factory Product.fromJson(Map<String, dynamic> json) {
+    return Product(
+      id: json['id'],
+      tipo: json['tipo'],
+      descricao: json['descricao'],
+      vlrSacos: json['vlrSacos'],
+      qtdSacos: json['qtdSacos'],
+      dtRetirada: json['dtRetirada'],
+      foto: json['foto'],
+      negociacoes: (json['negociacoes'] as List)
+          .map((n) => Negotiation.fromJson(n))
+          .toList(),
+    );
+  }
+
+  // Método para converter uma lista de JSON para uma lista de objetos Produto
+  static List<Product> fromJsonList(List<dynamic> jsonList) {
+    return jsonList
+        .map((item) => Product.fromJson(Map<String, dynamic>.from(item)))
+        .toList();
+  }
+
+  // Método para converter Produto para JSON
+  Map<String, dynamic> toJson() {
+    final Map<String, dynamic> data = <String, dynamic>{};
+    data['id'] = id;
+    data['tipo'] = tipo;
+    data['descricao'] = descricao;
+    data['vlrSacos'] = vlrSacos;
+    data['qtdSacos'] = qtdSacos;
+    data['dtRetirada'] = dtRetirada;
+    data['foto'] = foto;
+    if (negociacoes != null) {
+      data['negociacoes'] = negociacoes!.map((item) => item.toJson()).toList();
+    }
+    return data;
+  }
+}
+
+class ProductResponse {
+  final List<Product> account;
+  final ResponseStatus response;
+
+  ProductResponse({
+    required this.account,
+    required this.response,
+  });
+
+  factory ProductResponse.fromJson(Map<String, dynamic> json) {
+    return ProductResponse(
+      account: (json['data']['account'] as List)
+          .map((p) => Product.fromJson(p))
+          .toList(),
+      response: ResponseStatus.fromJson(json['response']),
+    );
+  }
+}
+
+// Classe principal para agrupar a lista de produtos e outros dados
+class ProductModel {
+  String? status;
+  String? token;
+  List<Product>? produtos;
+
+  ProductModel({this.status, this.token, this.produtos});
+
+  ProductModel.fromJson(Map<String, dynamic> json) {
+    status = json['status'];
+    token = json['token'];
+    produtos = json['data'] != null
+        ? Product.fromJsonList(json['data']['account'])
+        : [];
+  }
+
+  Map<String, dynamic> toJson() {
+    final Map<String, dynamic> data = <String, dynamic>{};
+    data['status'] = status;
+    data['token'] = token;
+    if (produtos != null) {
+      data['data'] = produtos!.map((produto) => produto.toJson()).toList();
+    }
+    return data;
+  }
+}
+
+class ResponseStatus {
+  final bool error;
+  final String message;
+  final int status;
+
+  ResponseStatus({
+    required this.error,
+    required this.message,
+    required this.status,
+  });
+
+  factory ResponseStatus.fromJson(Map<String, dynamic> json) {
+    return ResponseStatus(
+      error: json['error'],
+      message: json['message'],
+      status: json['status'],
+    );
+  }
+}
+
+class RenegotiationModel {
+  String? status;
+  String? token;
+  List<Negotiation>? negotiation;
+
+  RenegotiationModel({this.status, this.token, this.negotiation});
+
+  RenegotiationModel.fromJson(Map<String, dynamic> json) {
+    status = json['status'];
+    token = json['token'];
+    negotiation = json['data'] != null
+        ? Negotiation.fromJsonList(json['data']['account'])
+        : [];
+  }
+
+  Map<String, dynamic> toJson() {
+    final Map<String, dynamic> data = <String, dynamic>{};
+    data['status'] = status;
+    data['token'] = token;
+    if (negotiation != null) {
+      data['data'] =
+          negotiation!.map((negotiation) => negotiation.toJson()).toList();
+    }
+    return data;
+  }
+}

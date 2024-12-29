@@ -2,8 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:task_manager_flutter/ui/screens/cotacao_grafico_screen.dart';
 import 'package:task_manager_flutter/ui/screens/vendas_screen.dart';
+import 'package:task_manager_flutter/ui/screens/task_screen.dart';
 import 'package:task_manager_flutter/ui/screens/progress_task_screen.dart';
 import 'package:task_manager_flutter/ui/screens/task_screen.dart';
+import 'package:task_manager_flutter/ui/screens/carrinho_compras_screen.dart';
+import 'package:task_manager_flutter/ui/screens/carrinho_vendas_screen.dart';
 import 'package:task_manager_flutter/ui/screens/product_register_screen.dart';
 
 // Define theme colors
@@ -20,7 +23,7 @@ class BottomNavBarScreen extends StatefulWidget {
 class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
   int selectedIndex = 0;
   final List<Widget> screens = [
-    const CotacaoScreen(),
+    const ProgressTaskScreen(),
     const CotacaoScreen(),
     const ProductCatalog(),
     const ProductRegisterScreen(),
@@ -29,29 +32,44 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
   void onMenuOptionSelected(String option) {
     switch (option) {
       case "Itens Comprados":
-        // Navegar para a tela de Itens Comprados
         Navigator.push(
           context,
-          MaterialPageRoute(builder: (context) => const ProductCatalog()),
+          MaterialPageRoute(
+            builder: (context) => const ProductCatalogPageVendas(
+              title: 'Produtos Comprados',
+              apiUrl:
+                  'http://192.168.146.1:8088/boletobancos/api/produtos/comprador/5',
+              actionIcon: Icons.edit,
+              actionTooltip: 'Editar Produto',
+            ),
+          ),
         );
         break;
       case "Itens a Venda":
-        // Navegar para a tela de Itens a Venda
         Navigator.push(
           context,
-          MaterialPageRoute(builder: (context) => const ProductCatalog()),
+          MaterialPageRoute(
+            builder: (context) => const ProductCatalogPageVendas(
+              title: 'Produtos do Vendedor',
+              apiUrl:
+                  'http://192.168.146.1:8088/boletobancos/api/produtos/vendedor/4',
+              actionIcon: Icons.edit,
+              actionTooltip: 'Editar Produto',
+            ),
+          ),
         );
         break;
       case "Itens em Negociação":
-        // Navegar para a tela de Itens em Negociação
         Navigator.push(
           context,
           MaterialPageRoute(builder: (context) => const ProgressTaskScreen()),
         );
         break;
       case "Sair":
-        // Implementar lógica para sair
         Navigator.pop(context);
+        break;
+      case "Voltar":
+        Navigator.pop(context); // Fecha o menu
         break;
     }
   }
@@ -131,6 +149,11 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
               leading: const Icon(FontAwesomeIcons.signOutAlt),
               title: const Text('Sair'),
               onTap: () => onMenuOptionSelected('Sair'),
+            ),
+            ListTile(
+              leading: const Icon(FontAwesomeIcons.arrowLeft),
+              title: const Text('Voltar'),
+              onTap: () => onMenuOptionSelected('Voltar'),
             ),
           ],
         );

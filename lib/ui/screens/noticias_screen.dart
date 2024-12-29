@@ -1,21 +1,19 @@
 import 'package:flutter/material.dart';
-import 'package:task_manager_flutter/data/models/negotiation_model.dart';
+import 'package:http/http.dart' as http;
 import 'dart:convert';
-import 'package:task_manager_flutter/data/services/vendas_caller.dart';
-import 'package:task_manager_flutter/data/utils/fotos_util.dart';
 
 // Define theme colors
 const Color lightGreenBackground = Color.fromARGB(255, 231, 247, 233);
 const Color darkGreenBorder = Color.fromARGB(255, 1, 247, 14);
 const Color buttonBackground = Color.fromARGB(255, 128, 202, 132);
 
-class ProductCatalogPageVendas extends StatefulWidget {
+class ProductCatalogPage extends StatefulWidget {
   final String title;
   final String apiUrl;
   final IconData actionIcon;
   final String actionTooltip;
 
-  const ProductCatalogPageVendas({
+  const ProductCatalogPage({
     Key? key,
     required this.title,
     required this.apiUrl,
@@ -24,11 +22,10 @@ class ProductCatalogPageVendas extends StatefulWidget {
   }) : super(key: key);
 
   @override
-  _ProductCatalogPageVendasState createState() =>
-      _ProductCatalogPageVendasState();
+  _ProductCatalogPageState createState() => _ProductCatalogPageState();
 }
 
-class _ProductCatalogPageVendasState extends State<ProductCatalogPageVendas> {
+class _ProductCatalogPageState extends State<ProductCatalogPage> {
   List<dynamic> products = [];
   bool isLoading = true;
 
@@ -42,14 +39,20 @@ class _ProductCatalogPageVendasState extends State<ProductCatalogPageVendas> {
     setState(() {
       isLoading = true;
     });
+
     try {
-      final data = await VendasCaller().fetchItensAVenda();
-      setState(() {
-        products = data;
-      });
-    } catch (e) {
+      final response = await http.get(Uri.parse(widget.apiUrl));
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        setState(() {
+          products = data['data']['account'];
+        });
+      } else {
+        throw Exception('Failed to load products');
+      }
+    } catch (error) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Erro ao carregar produtos: $e')),
+        SnackBar(content: Text('Erro ao carregar produtos: $error')),
       );
     } finally {
       setState(() {
@@ -107,30 +110,30 @@ class _ProductCatalogPageVendasState extends State<ProductCatalogPageVendas> {
       builder: (_) => AlertDialog(
         backgroundColor: lightGreenBackground,
         title: Text(
-          product.descricao ?? 'Sem descrição',
+          product['descricao'] ?? 'Sem descrição',
           style: const TextStyle(fontWeight: FontWeight.bold),
         ),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Tipo: ${product.tipo ?? 'Não especificado'}'),
-            Text('Quantidade de sacos: ${product.qtdSacos ?? 0}'),
-            Text('Valor por saco: R\$${product.vlrSacos ?? 0.0}'),
+            Text('Tipo: ${product['tipo'] ?? 'Não especificado'}'),
+            Text('Quantidade de sacos: ${product['qtdSacos'] ?? 0}'),
+            Text('Valor por saco: R\$${product['vlrSacos'] ?? 0.0}'),
             Text(
-                'Data de retirada: ${product.dtRetirada ?? 'Não especificado'}'),
+                'Data de retirada: ${product['dtRetirada'] ?? 'Não especificado'}'),
             const SizedBox(height: 8),
             const Text('Negociações:',
                 style: TextStyle(fontWeight: FontWeight.bold)),
-            ...List.generate((product.negociacoes as List).length, (i) {
-              final negotiation = product.negociacoes[i];
+            ...List.generate((product['negociacoes'] as List).length, (i) {
+              final negotiation = product['negociacoes'][i];
               return Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('Comprador ID: ${negotiation.compradorId}'),
-                  Text('Quantidade: ${negotiation.qtdSacos}'),
-                  Text('Valor por saco: R\$${negotiation.vlrSacos}'),
-                  Text('Status: ${negotiation.status}'),
+                  Text('Comprador ID: ${negotiation['compradorId']}'),
+                  Text('Quantidade: ${negotiation['qtdSacos']}'),
+                  Text('Valor por saco: R\$${negotiation['vlrSacos']}'),
+                  Text('Status: ${negotiation['status']}'),
                   const SizedBox(height: 8),
                 ],
               );
@@ -180,14 +183,10 @@ class ProductCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final imageBase64 = product.foto != null
-        ? decodeBase64Image(product.foto)
-        : decodeBase64Image(getImagepadrao());
-
-    // final imageBase64 = decodeBase64Image(getImagepadrao());
+    final String imageBase64 = product['foto'] ?? '';
     final Widget image = imageBase64.isNotEmpty
         ? Image.memory(
-            imageBase64,
+            base64Decode(imageBase64),
             width: 100,
             height: 100,
             fit: BoxFit.cover,
@@ -215,38 +214,14 @@ class ProductCard extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    product.tipo ?? 'Sem descrição',
+                    product['descricao'] ?? 'Sem descrição',
                     style: const TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
-                  Text(
-                    'Lote: ${product.id}',
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  Text('Quantidade: ${product.qtdSacos} sacos'),
-                  Text('Data Retirada: ${product.dtRetirada}'),
-                  Text('Descrição: ${product.descricao}'),
-                  const SizedBox(height: 8),
-                  const Text('Negociações:',
-                      style: TextStyle(fontWeight: FontWeight.bold)),
-                  ...List.generate((product.negociacoes as List).length, (i) {
-                    final negotiation = product.negociacoes[i];
-                    return Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text('Comprador ID: ${negotiation.compradorId}'),
-                        Text('Quantidade: ${negotiation.qtdSacos}'),
-                        Text('Valor por saco: R\$${negotiation.vlrSacos}'),
-                        Text('Status: ${getStatusText(negotiation.status)}'),
-                        const SizedBox(height: 8),
-                      ],
-                    );
-                  }),
+                  Text('Quantidade: ${product['qtdSacos']} sacos'),
+                  Text('Valor por saco: R\$${product['vlrSacos']}'),
                 ],
               ),
             ),
@@ -269,26 +244,12 @@ class ProductCard extends StatelessWidget {
   }
 }
 
-// Função para mapear status para texto
-String getStatusText(String status) {
-  switch (status) {
-    case 'A':
-      return 'Aguardando';
-    case 'F':
-      return 'Finalizado';
-    case 'P':
-      return 'Pendente';
-    default:
-      return 'Desconhecido';
-  }
-}
-
 void main() {
   runApp(MaterialApp(
     theme: ThemeData(primarySwatch: Colors.green),
-    home: const ProductCatalogPageVendas(
+    home: const ProductCatalogPage(
       title: 'Produtos do Vendedor',
-      apiUrl: 'http://192.168.146.1:8088/boletobancos/api/produtos/vendedor/4',
+      apiUrl: 'http://192.168.146.1:8088/boletobancos/api/produtos/comprador/5',
       actionIcon: Icons.edit,
       actionTooltip: 'Editar Produto',
     ),

@@ -3,7 +3,7 @@
     "activeCommit": 0,
     "commits": [
         {
-            "activePatchIndex": 1,
+            "activePatchIndex": 3,
             "patches": [
                 {
                     "date": 1735167783330,
@@ -12,6 +12,14 @@
                 {
                     "date": 1735167836248,
                     "content": "Index: \n===================================================================\n--- \n+++ \n@@ -246,10 +246,10 @@\n \r\n void main() {\r\n   runApp(MaterialApp(\r\n     theme: ThemeData(primarySwatch: Colors.green),\r\n-    home: ProductCatalogPage(\r\n-      title: 'Produtos do Vendedor',\r\n+    home: const ProductCatalogPage(\r\n+      title:  'Produtos do Vendedor',\r\n       apiUrl: 'http://192.168.146.1:8088/boletobancos/api/produtos/vendedor/4',\r\n       actionIcon: Icons.edit,\r\n       actionTooltip: 'Editar Produto',\r\n     ),\r\n"
+                },
+                {
+                    "date": 1735171111797,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -6,27 +6,27 @@\n const Color lightGreenBackground = Color.fromARGB(255, 231, 247, 233);\r\n const Color darkGreenBorder = Color.fromARGB(255, 1, 247, 14);\r\n const Color buttonBackground = Color.fromARGB(255, 128, 202, 132);\r\n \r\n-class ProductCatalogPage extends StatefulWidget {\r\n+class ProductCatalogPageVendas extends StatefulWidget {\r\n   final String title;\r\n   final String apiUrl;\r\n   final IconData actionIcon;\r\n   final String actionTooltip;\r\n \r\n-  const ProductCatalogPage({\r\n+  const ProductCatalogPageVendas({\r\n     Key? key,\r\n     required this.title,\r\n     required this.apiUrl,\r\n     required this.actionIcon,\r\n     required this.actionTooltip,\r\n   }) : super(key: key);\r\n \r\n   @override\r\n-  _ProductCatalogPageState createState() => _ProductCatalogPageState();\r\n+  _ProductCatalogPageVendasState createState() => _ProductCatalogPageVendasState();\r\n }\r\n \r\n-class _ProductCatalogPageState extends State<ProductCatalogPage> {\r\n+class _ProductCatalogPageVendasState extends State<ProductCatalogPageVendas> {\r\n   List<dynamic> products = [];\r\n   bool isLoading = true;\r\n \r\n   @override\r\n@@ -246,9 +246,9 @@\n \r\n void main() {\r\n   runApp(MaterialApp(\r\n     theme: ThemeData(primarySwatch: Colors.green),\r\n-    home: const ProductCatalogPage(\r\n+    home: const ProductCatalogPageVendas(\r\n       title: 'Produtos do Vendedor',\r\n       apiUrl: 'http://192.168.146.1:8088/boletobancos/api/produtos/vendedor/4',\r\n       actionIcon: Icons.edit,\r\n       actionTooltip: 'Editar Produto',\r\n"
+                },
+                {
+                    "date": 1735171187080,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -7,19 +7,12 @@\n const Color darkGreenBorder = Color.fromARGB(255, 1, 247, 14);\r\n const Color buttonBackground = Color.fromARGB(255, 128, 202, 132);\r\n \r\n class ProductCatalogPageVendas extends StatefulWidget {\r\n-  final String title;\r\n-  final String apiUrl;\r\n-  final IconData actionIcon;\r\n-  final String actionTooltip;\r\n \r\n+\r\n   const ProductCatalogPageVendas({\r\n     Key? key,\r\n-    required this.title,\r\n-    required this.apiUrl,\r\n-    required this.actionIcon,\r\n-    required this.actionTooltip,\r\n   }) : super(key: key);\r\n \r\n   @override\r\n   _ProductCatalogPageVendasState createState() =>\r\n"
                 }
             ],
             "date": 1735167783330,
