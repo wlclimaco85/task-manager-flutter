@@ -60,6 +60,60 @@ class VendasCaller {
     return model;
   }
 
+  Future<List<Product>> fetchItensACompra() async {
+    List<Product>? model = [];
+    ProductModel models;
+    try {
+      final NetworkResponse response =
+          await NetworkCaller().getRequest(ApiLinks.fecthItensACompra + "4");
+      String jsonString;
+
+      if (response.statusCode == 200 && response.body != null) {
+        jsonString = json.encode(response.body);
+        models = ProductModel.fromJson(response.body!);
+        model.addAll(models.produtos ?? []);
+
+        // if (model != null && model.data != null) {
+        //   newsList.addAll(model.data!);
+        // }
+        // Use jsonString conforme necessário
+      } else {
+        // Trate o caso onde o data é nulo
+      }
+    } catch (e) {
+      print('Erro: $e'); // Log do erro
+      throw Exception('Erro ao carregar cotações: $e');
+    }
+    return model;
+  }
+
+  Future<List<Product>> fetchItensANegocias() async {
+    List<Product>? model = [];
+    ProductModel models;
+    try {
+      final NetworkResponse response =
+          await NetworkCaller().getRequest(ApiLinks.fecthItensANegociar + "4");
+      String jsonString;
+
+      if (response.statusCode == 200 && response.body != null) {
+        jsonString = json.encode(response.body);
+        models = ProductModel.fromJson(response.body!);
+        model.addAll(models.produtos ?? []);
+
+        // if (model != null && model.data != null) {
+        //   newsList.addAll(model.data!);
+        // }
+        // Use jsonString conforme necessário
+      } else {
+        // Trate o caso onde o data é nulo
+      }
+    } catch (e) {
+      print('Erro: $e'); // Log do erro
+      throw Exception('Erro ao carregar cotações: $e');
+    }
+    return model;
+  }
+
   Future<List<Account>> fetchClassificacao() async {
     List<Account>? model = [];
     ClassificacaoResponse models;

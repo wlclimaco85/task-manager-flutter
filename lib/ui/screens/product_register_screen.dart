@@ -400,7 +400,7 @@ class _ProductRegisterScreenState extends State<ProductRegisterScreen> {
                         DropdownButtonFormField<String>(
                           value: selectedTipoProduto,
                           decoration: customInputDecoration('Tipo de Produto'),
-                          items: ['Arroz em Casca', 'Outro Produto']
+                          items: ['Arroz em Casca', 'Arroz Esbramado']
                               .map((tipo) => DropdownMenuItem<String>(
                                     value: tipo,
                                     child: Text(tipo),

@@ -65,10 +65,18 @@ class Data {
       link = json['link'];
       noticia = utf8.decode(latin1.encode(json['noticia']));
       titulo = utf8.decode(latin1.encode(json['titulo']));
-      tituloResu = utf8.decode(latin1.encode(json['tituloResu']));
-      fonte = utf8.decode(latin1.encode(json['fonte']));
-      autor = json['autor'];
-      resumo = utf8.decode(latin1.encode(json['resumo']));
+      tituloResu = json['tituloResu'] != null
+          ? utf8.decode(latin1.encode(json['tituloResu']))
+          : 'Título não disponível';
+      fonte = json['fonte'] != null
+          ? utf8.decode(latin1.encode(json['fonte']))
+          : 'Fonte desconhecida';
+      autor = json['autor'] != null
+          ? utf8.decode(latin1.encode(json['autor']))
+          : 'autor desconhecido';
+      resumo = json['resumo'] != null
+          ? utf8.decode(latin1.encode(json['resumo']))
+          : utf8.decode(latin1.encode(json['noticia']));
       dtImport =
           DateTime.parse(json['dtImport']); // Converter string para DateTime
       dtNoticia =

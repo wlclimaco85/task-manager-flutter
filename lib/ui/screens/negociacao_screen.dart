@@ -42,7 +42,7 @@ class _NegociacaoCatalogPageState extends State<NegociacaoCatalogPage> {
       isLoading = true;
     });
     try {
-      final data = await VendasCaller().fetchItensAVenda();
+      final data = await VendasCaller().fetchItensANegocias();
       setState(() {
         products = data;
       });

@@ -121,7 +121,7 @@ class _CotacaoScreenState extends State<CotacaoScreen> {
                   Expanded(
                     child: Stack(
                       children: [
-                        CotacaoChart(cotacoes: cotacoes),
+                        //CotacaoChart(cotacoes: cotacoes),
                       ],
                     ),
                   ),

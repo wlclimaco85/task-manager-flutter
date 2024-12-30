@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 class Negotiation {
   final int compradorId;
   final int vendedorId;
@@ -75,7 +77,7 @@ class Product {
   final String descricao;
   final double vlrSacos;
   final int qtdSacos;
-  final String dtRetirada;
+  final String? dtRetirada;
   final String? foto;
   final List<Negotiation> negociacoes;
 
@@ -85,7 +87,7 @@ class Product {
     required this.descricao,
     required this.vlrSacos,
     required this.qtdSacos,
-    required this.dtRetirada,
+    this.dtRetirada,
     this.foto,
     required this.negociacoes,
   });
@@ -94,7 +96,7 @@ class Product {
     return Product(
       id: json['id'],
       tipo: json['tipo'],
-      descricao: json['descricao'],
+      descricao: utf8.decode(latin1.encode(json['descricao'])),
       vlrSacos: json['vlrSacos'],
       qtdSacos: json['qtdSacos'],
       dtRetirada: json['dtRetirada'],

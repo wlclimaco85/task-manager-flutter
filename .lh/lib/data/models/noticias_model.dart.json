@@ -3,7 +3,7 @@
     "activeCommit": 0,
     "commits": [
         {
-            "activePatchIndex": 2,
+            "activePatchIndex": 3,
             "patches": [
                 {
                     "date": 1729001551657,
@@ -16,6 +16,10 @@
                 {
                     "date": 1729001594601,
                     "content": "Index: \n===================================================================\n--- \n+++ \n@@ -1,12 +1,4 @@\n-import 'package:flutter/material.dart';\r\n-import 'package:task_manager_flutter/data/utils/api_links.dart';\r\n-import 'package:task_manager_flutter/data/models/task_model.dart';\r\n-import 'package:task_manager_flutter/data/models/network_response.dart';\r\n-import 'package:task_manager_flutter/data/services/network_caller.dart';\r\n-import 'package:task_manager_flutter/data/models/summery_count_model.dart';\r\n-import 'package:task_manager_flutter/ui/widgets/status_change_botom_sheet.dart';\r\n-import 'package:intl/intl.dart';\r\n import 'dart:convert';\r\n \r\n class Data {\r\n   int? id;\r\n"
+                },
+                {
+                    "date": 1735564944602,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -64,12 +64,12 @@\n       codApp = json['codApp'];\r\n       link = json['link'];\r\n       noticia = utf8.decode(latin1.encode(json['noticia']));\r\n       titulo = utf8.decode(latin1.encode(json['titulo']));\r\n-      tituloResu = utf8.decode(latin1.encode(json['tituloResu']));\r\n-      fonte = utf8.decode(latin1.encode(json['fonte']));\r\n-      autor = json['autor'];\r\n-      resumo = utf8.decode(latin1.encode(json['resumo']));\r\n+      tituloResu = json['tituloResu'] != null ? utf8.decode(latin1.encode(json['tituloResu']))     : 'Título não disponível';\r\n+      fonte = json['fonte'] != null ? utf8.decode(latin1.encode(json['fonte']))     : 'Fonte desconhecida';\r\n+      autor = json['autor'] != null ? utf8.decode(latin1.encode(json['autor']))     : 'autor desconhecido';\r\n+      resumo = json['resumo'] != null ? utf8.decode(latin1.encode(json['resumo']))     : utf8.decode(latin1.encode(json['noticia']));\r\n       dtImport =\r\n           DateTime.parse(json['dtImport']); // Converter string para DateTime\r\n       dtNoticia =\r\n           DateTime.parse(json['dtNoticia']); // Converter string para DateTime\r\n"
                 }
             ],
             "date": 1729001551657,

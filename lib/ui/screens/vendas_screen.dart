@@ -32,6 +32,38 @@ class _ProductCatalogState extends State<ProductCatalog> {
     _fetchProducts();
   }
 
+  // Função para chamar o serviço de cotação de frete
+  Future<void> onTransporte(BuildContext context, Produto product) async {
+    final Map<String, dynamic> requestBody = {
+      "idProduto": 13,
+      "qtdSacos": 10,
+    };
+
+    try {
+      // Faz a chamada à API
+      final NetworkResponse response = await NetworkCaller()
+          .postRequest(ApiLinks.insertCotacaoFrete, requestBody);
+
+      if (response.statusCode == 200) {
+        // Sucesso na requisição
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Solicitação enviada com sucesso!")),
+        );
+      } else {
+        // Falha na requisição
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text("Erro ao enviar solicitação: ${response.statusCode}"),
+          ),
+        );
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Erro ao enviar solicitação: $e")),
+      );
+    }
+  }
+
   Future<void> _fetchProducts() async {
     setState(() {
       isLoading = true;
@@ -174,6 +206,8 @@ class _ProductCatalogState extends State<ProductCatalog> {
                               onBuy: () => showBuyPopup(context, product),
                               onNegotiate: () =>
                                   showNegotiationPopup(context, product),
+                              onTransporte: () =>
+                                  onTransporte(context, product),
                             );
                           },
                         ),
@@ -281,7 +315,7 @@ class _ProductCatalogState extends State<ProductCatalog> {
         return AlertDialog(
           backgroundColor: lightGreenBackground, // Cor do fundo
           title: Text(
-            'Renegociar Arroz em Casca LOTE - ${product.id ?? "Sem descrição"}',
+            'Negociar Arroz em Casca LOTE - ${product.id ?? "Sem descrição"}',
             style: const TextStyle(fontWeight: FontWeight.bold),
           ),
           content: Column(
@@ -295,9 +329,9 @@ class _ProductCatalogState extends State<ProductCatalog> {
               TextField(
                 controller: qtdController,
                 keyboardType: TextInputType.number,
-                decoration: InputDecoration(
+                decoration: const InputDecoration(
                   labelText: 'Nova quantidade',
-                  labelStyle: const TextStyle(fontWeight: FontWeight.bold),
+                  labelStyle: TextStyle(fontWeight: FontWeight.bold),
                   enabledBorder: OutlineInputBorder(
                     borderSide: BorderSide(color: darkGreenBorder, width: 2),
                   ),
@@ -315,9 +349,9 @@ class _ProductCatalogState extends State<ProductCatalog> {
               TextField(
                 controller: valorController,
                 keyboardType: TextInputType.number,
-                decoration: InputDecoration(
+                decoration: const InputDecoration(
                   labelText: 'Novo valor por saco',
-                  labelStyle: const TextStyle(fontWeight: FontWeight.bold),
+                  labelStyle: TextStyle(fontWeight: FontWeight.bold),
                   enabledBorder: OutlineInputBorder(
                     borderSide: BorderSide(color: darkGreenBorder, width: 2),
                   ),
@@ -484,6 +518,7 @@ class ProductCard extends StatelessWidget {
   final VoidCallback onDetails;
   final VoidCallback onBuy;
   final VoidCallback onNegotiate;
+  final VoidCallback onTransporte;
 
   const ProductCard({
     Key? key,
@@ -491,6 +526,7 @@ class ProductCard extends StatelessWidget {
     required this.onDetails,
     required this.onBuy,
     required this.onNegotiate,
+    required this.onTransporte,
   }) : super(key: key);
 
   @override
@@ -589,6 +625,38 @@ class ProductCard extends StatelessWidget {
                 child: IconButton(
                   icon: const Icon(Icons.shopping_cart, color: Colors.orange),
                   onPressed: onBuy,
+                ),
+              ),
+              Tooltip(
+                message: "Cotar Transporte",
+                child: IconButton(
+                  icon: const Icon(Icons.local_shipping, color: Colors.purple),
+                  onPressed: () async {
+                    await showDialog(
+                      context: context,
+                      builder: (BuildContext context) {
+                        return AlertDialog(
+                          title: const Text("Cotação de Transporte"),
+                          content: const Text(
+                              "Vamos enviar suas informações para nossa transportadora parceira e o mais breve possível será enviado o valor do frete."),
+                          actions: [
+                            TextButton(
+                              child: const Text("Cancelar"),
+                              onPressed: () {
+                                Navigator.of(context).pop();
+                              },
+                            ),
+                            ElevatedButton(
+                              child: const Text("Confirmar"),
+                              onPressed: () async {
+                                Navigator.of(context).pop();
+                              },
+                            ),
+                          ],
+                        );
+                      },
+                    );
+                  },
                 ),
               ),
             ],
