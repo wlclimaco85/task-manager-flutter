@@ -1,13 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:task_manager_flutter/data/models/negotiation_model.dart';
-import 'dart:convert';
+import 'package:task_manager_flutter/data/models/auth_utility.dart';
 import 'package:task_manager_flutter/data/services/vendas_caller.dart';
 import 'package:task_manager_flutter/data/utils/fotos_util.dart';
+import 'package:task_manager_flutter/data/constants/custom_colors.dart';
 
 // Define theme colors
-const Color lightGreenBackground = Color.fromARGB(255, 231, 247, 233);
-const Color darkGreenBorder = Color.fromARGB(255, 1, 247, 14);
-const Color buttonBackground = Color.fromARGB(255, 128, 202, 132);
 
 class ProductCatalogPageVendas extends StatefulWidget {
   final String title;
@@ -80,7 +77,7 @@ class _ProductCatalogPageVendasState extends State<ProductCatalogPageVendas> {
         ],
       ),
       body: Container(
-        color: lightGreenBackground,
+        color: CustomColors().getLightGreenBackground(),
         child: isLoading
             ? const Center(child: CircularProgressIndicator())
             : products.isEmpty
@@ -105,7 +102,7 @@ class _ProductCatalogPageVendasState extends State<ProductCatalogPageVendas> {
     showDialog(
       context: context,
       builder: (_) => AlertDialog(
-        backgroundColor: lightGreenBackground,
+        backgroundColor: CustomColors().getLightGreenBackground(),
         title: Text(
           product.descricao ?? 'Sem descrição',
           style: const TextStyle(fontWeight: FontWeight.bold),
@@ -150,10 +147,11 @@ class _ProductCatalogPageVendasState extends State<ProductCatalogPageVendas> {
               );
             },
             style: ElevatedButton.styleFrom(
-              backgroundColor: buttonBackground,
+              backgroundColor: CustomColors().getButtonBackground(),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(8),
-                side: BorderSide(color: darkGreenBorder, width: 2),
+                side: BorderSide(
+                    color: CustomColors().getDarkGreenBorder(), width: 2),
               ),
             ),
             child: const Text('Confirmar Ação'),
@@ -196,10 +194,10 @@ class ProductCard extends StatelessWidget {
 
     return Card(
       margin: const EdgeInsets.all(10),
-      color: lightGreenBackground,
+      color: CustomColors().getLightGreenBackground(),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(8.0),
-        side: BorderSide(color: darkGreenBorder, width: 2),
+        side: BorderSide(color: CustomColors().getDarkGreenBorder(), width: 2),
       ),
       child: Row(
         children: [
@@ -286,9 +284,10 @@ String getStatusText(String status) {
 void main() {
   runApp(MaterialApp(
     theme: ThemeData(primarySwatch: Colors.green),
-    home: const ProductCatalogPageVendas(
+    home: ProductCatalogPageVendas(
       title: 'Produtos do Vendedor',
-      apiUrl: 'http://192.168.146.1:8088/boletobancos/api/produtos/vendedor/4',
+      apiUrl:
+          'http://192.168.146.1:8088/boletobancos/api/produtos/vendedor/${AuthUtility.userInfo?.data?.id}',
       actionIcon: Icons.edit,
       actionTooltip: 'Editar Produto',
     ),

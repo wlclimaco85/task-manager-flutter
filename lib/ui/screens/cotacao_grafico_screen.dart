@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:task_manager_flutter/data/models/cotacao_model.dart';
 import 'package:task_manager_flutter/data/services/cotacao_caller.dart';
-import 'package:task_manager_flutter/data/models/grafico_LineChartData.dart';
+import 'package:task_manager_flutter/ui/widgets/user_banners.dart';
+import 'package:task_manager_flutter/ui/screens/update_profile.dart';
 
 class CotacaoScreen extends StatefulWidget {
   const CotacaoScreen({super.key});
@@ -35,15 +36,12 @@ class _CotacaoScreenState extends State<CotacaoScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Gráfico de Cotações'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh),
-            onPressed: _fetchCotacoes,
-          ),
-        ],
-      ),
+      appBar: userBanner(context, onTapped: () {
+        Navigator.push(
+            context,
+            MaterialPageRoute(
+                builder: (context) => const UpdateProfileScreen()));
+      }),
       body: isLoading
           ? const Center(child: CircularProgressIndicator())
           : Padding(

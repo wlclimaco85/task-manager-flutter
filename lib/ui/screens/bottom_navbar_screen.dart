@@ -4,7 +4,6 @@ import 'package:task_manager_flutter/ui/screens/cotacao_grafico_screen.dart';
 import 'package:task_manager_flutter/ui/screens/vendas_screen.dart';
 import 'package:task_manager_flutter/ui/screens/negociacao_screen.dart';
 import 'package:task_manager_flutter/ui/screens/progress_task_screen.dart';
-import 'package:task_manager_flutter/ui/screens/task_screen.dart';
 import 'package:task_manager_flutter/ui/screens/carrinho_compras_screen.dart';
 import 'package:task_manager_flutter/ui/screens/carrinho_vendas_screen.dart';
 import 'package:task_manager_flutter/ui/screens/product_register_screen.dart';

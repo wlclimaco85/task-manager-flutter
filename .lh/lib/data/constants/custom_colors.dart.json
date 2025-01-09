@@ -1,0 +1,30 @@
+{
+    "sourceFile": "lib/data/constants/custom_colors.dart",
+    "activeCommit": 0,
+    "commits": [
+        {
+            "activePatchIndex": 3,
+            "patches": [
+                {
+                    "date": 1736441316920,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n"
+                },
+                {
+                    "date": 1736441332156,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -22,9 +22,9 @@\n   Color getDarkGreenBorder() {\r\n     return _activeSecondaryButton;\r\n   }\r\n \r\n-  Color getButtonBackground() {\r\n+  Color getLightGreenBackground() {\r\n     return _gradientMainColor;\r\n   }\r\n \r\n   Color getActivePrimaryButtonColor() {\r\n"
+                },
+                {
+                    "date": 1736441356954,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -10,11 +10,11 @@\n   final Color _appFundoImput = const Color(0xFFffffff);\r\n   final Color _appFundoClaro = const Color(0xFF7859C9);\r\n   final Color _appBotton = const Color(0xFFFA903A);\r\n   final Color _appLabelBotton = const Color(0xFFffffff);\r\n-  final Color lightGreenBackground = Color.fromARGB(255, 231, 247, 233);\r\n-  final Color darkGreenBorder = Color.fromARGB(255, 1, 247, 14);\r\n-  final Color buttonBackground = Color.fromARGB(255, 128, 202, 132);\r\n+  final Color lightGreenBackground = const Color.fromARGB(255, 231, 247, 233);\r\n+  final Color darkGreenBorder = const Color.fromARGB(255, 1, 247, 14);\r\n+  final Color buttonBackground = const Color.fromARGB(255, 128, 202, 132);\r\n \r\n   Color getButtonBackground() {\r\n     return _activePrimaryButton;\r\n   }\r\n"
+                },
+                {
+                    "date": 1736442910381,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -10,22 +10,22 @@\n   final Color _appFundoImput = const Color(0xFFffffff);\r\n   final Color _appFundoClaro = const Color(0xFF7859C9);\r\n   final Color _appBotton = const Color(0xFFFA903A);\r\n   final Color _appLabelBotton = const Color(0xFFffffff);\r\n-  final Color lightGreenBackground = const Color.fromARGB(255, 231, 247, 233);\r\n-  final Color darkGreenBorder = const Color.fromARGB(255, 1, 247, 14);\r\n-  final Color buttonBackground = const Color.fromARGB(255, 128, 202, 132);\r\n+  final Color _lightGreenBackground = const Color.fromARGB(255, 231, 247, 233);\r\n+  final Color _darkGreenBorder = const Color.fromARGB(255, 1, 247, 14);\r\n+  final Color _buttonBackground = const Color.fromARGB(255, 128, 202, 132);\r\n \r\n   Color getButtonBackground() {\r\n-    return _activePrimaryButton;\r\n+    return _buttonBackground;\r\n   }\r\n \r\n   Color getDarkGreenBorder() {\r\n-    return _activeSecondaryButton;\r\n+    return _darkGreenBorder;\r\n   }\r\n \r\n   Color getLightGreenBackground() {\r\n-    return _gradientMainColor;\r\n+    return _lightGreenBackground;\r\n   }\r\n \r\n   Color getActivePrimaryButtonColor() {\r\n     return _activePrimaryButton;\r\n"
+                }
+            ],
+            "date": 1736441316920,
+            "name": "Commit-0",
+            "content": "import 'package:flutter/material.dart';\r\n\r\nclass CustomColors {\r\n  final Color _activePrimaryButton = const Color.fromARGB(255, 63, 81, 181);\r\n  final Color _activeSecondaryButton = const Color.fromARGB(255, 230, 230, 255);\r\n  final Color _gradientMainColor = const Color(0xff00ADFA);\r\n  final Color _gradientSecColor = const Color(0xff00E6FD);\r\n  final Color _appBarMainColor = const Color(0xff0A6D92);\r\n  final Color _appFundoPage = const Color(0xFF5937B2);\r\n  final Color _appFundoImput = const Color(0xFFffffff);\r\n  final Color _appFundoClaro = const Color(0xFF7859C9);\r\n  final Color _appBotton = const Color(0xFFFA903A);\r\n  final Color _appLabelBotton = const Color(0xFFffffff);\r\n  final Color lightGreenBackground = Color.fromARGB(255, 231, 247, 233);\r\n  final Color darkGreenBorder = Color.fromARGB(255, 1, 247, 14);\r\n  final Color buttonBackground = Color.fromARGB(255, 128, 202, 132);\r\n\r\n  Color getButtonBackground() {\r\n    return _activePrimaryButton;\r\n  }\r\n\r\n  Color getDarkGreenBorder() {\r\n    return _activeSecondaryButton;\r\n  }\r\n\r\n  Color getButtonBackground() {\r\n    return _gradientMainColor;\r\n  }\r\n\r\n  Color getActivePrimaryButtonColor() {\r\n    return _activePrimaryButton;\r\n  }\r\n\r\n  Color getActiveSecondaryButton() {\r\n    return _activeSecondaryButton;\r\n  }\r\n\r\n  Color getGradientMainColor() {\r\n    return _gradientMainColor;\r\n  }\r\n\r\n  Color getGradientSecondaryColor() {\r\n    return _gradientSecColor;\r\n  }\r\n\r\n  Color getAppBarMainColor() {\r\n    return _appBarMainColor;\r\n  }\r\n\r\n  Color getAppFundoPage() {\r\n    return _appFundoPage;\r\n  }\r\n\r\n  Color getAppFundoImput() {\r\n    return _appFundoImput;\r\n  }\r\n\r\n  Color getAppFundoClaro() {\r\n    return _appFundoClaro;\r\n  }\r\n\r\n  Color getAppBotton() {\r\n    return _appBotton;\r\n  }\r\n\r\n  Color getAppLabelBotton() {\r\n    return _appLabelBotton;\r\n  }\r\n}\r\n"
+        }
+    ]
+}

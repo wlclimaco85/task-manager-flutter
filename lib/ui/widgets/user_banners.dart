@@ -1,43 +1,127 @@
 import 'dart:typed_data';
-
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
+
 import 'package:task_manager_flutter/data/models/auth_utility.dart';
 import 'package:task_manager_flutter/ui/screens/auth_screens/login_screen.dart';
 
+const Color lightGreenBackground = Color.fromARGB(255, 231, 247, 233);
+const Color borderColor = Color.fromARGB(255, 1, 247, 14);
+
 AppBar userBanner(context, {VoidCallback? onTapped}) {
+  int unreadAlerts = 0;
+
+  Future<void> fetchAlerts() async {
+    try {
+      final response = await http.get(Uri.parse(
+          "https://appacademia-production-be7e.up.railway.app/boletobancos/api/produtos/avisos/2"));
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        unreadAlerts = data['unreadCount'] ?? 0;
+      }
+    } catch (e) {
+      debugPrint('Error fetching alerts: $e');
+    }
+  }
+
   return AppBar(
-    // centerTitle: true,
+    backgroundColor: lightGreenBackground,
+    shape: const RoundedRectangleBorder(
+      side: BorderSide(color: borderColor, width: 2.0),
+    ),
     actions: [
-      IconButton(
-        icon: const Icon(FontAwesomeIcons.powerOff),
-        onPressed: () {
-          showDialog(
-              context: context,
-              builder: (context) {
-                return AlertDialog(
-                  title: const Text("Are you sure you want to logout?"),
-                  actions: [
-                    TextButton(
-                        onPressed: () {
-                          Navigator.pop(context);
-                        },
-                        child: const Text("No")),
-                    TextButton(
-                        onPressed: () {
-                          AuthUtility.clearUserInfo();
-                          Navigator.pushAndRemoveUntil(
-                              context,
-                              MaterialPageRoute(
-                                  builder: (context) => const LoginScreen()),
-                              (route) => false);
-                        },
-                        child: const Text("Yes")),
-                  ],
-                );
-              });
-        },
+      // Alert Icon with unread count
+      Stack(
+        alignment: Alignment.center,
+        children: [
+          IconButton(
+            icon: const Icon(Icons.notifications, color: Colors.black),
+            onPressed: () async {
+              await fetchAlerts();
+              showDialog(
+                  context: context,
+                  builder: (context) {
+                    return AlertDialog(
+                      title: const Text(
+                        "Alerts",
+                        style: TextStyle(
+                            fontWeight: FontWeight.bold, color: Colors.black),
+                      ),
+                      content: const Text("You have unread alerts."),
+                      actions: [
+                        TextButton(
+                            onPressed: () {
+                              Navigator.pop(context);
+                            },
+                            child: const Text("Close")),
+                      ],
+                    );
+                  });
+            },
+          ),
+          if (unreadAlerts > 0)
+            Positioned(
+              right: 8,
+              top: 8,
+              child: Container(
+                padding: const EdgeInsets.all(2),
+                decoration: const BoxDecoration(
+                  color: Colors.red,
+                  shape: BoxShape.circle,
+                ),
+                constraints: const BoxConstraints(
+                  minWidth: 18,
+                  minHeight: 18,
+                ),
+                child: Text(
+                  '$unreadAlerts',
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 12,
+                    fontWeight: FontWeight.bold,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              ),
+            ),
+        ],
       ),
+      // Logout button
+      if (AuthUtility.userInfo?.data?.id != null &&
+          AuthUtility.userInfo!.data!.id! > 1)
+        IconButton(
+          icon: const Icon(FontAwesomeIcons.powerOff, color: Colors.black),
+          onPressed: () {
+            showDialog(
+                context: context,
+                builder: (context) {
+                  return AlertDialog(
+                    title: const Text("Are you sure you want to logout?",
+                        style: TextStyle(
+                            fontWeight: FontWeight.bold, color: Colors.black)),
+                    actions: [
+                      TextButton(
+                          onPressed: () {
+                            Navigator.pop(context);
+                          },
+                          child: const Text("No")),
+                      TextButton(
+                          onPressed: () {
+                            AuthUtility.clearUserInfo();
+                            Navigator.pushAndRemoveUntil(
+                                context,
+                                MaterialPageRoute(
+                                    builder: (context) => const LoginScreen()),
+                                (route) => false);
+                          },
+                          child: const Text("Yes")),
+                    ],
+                  );
+                });
+          },
+        ),
     ],
     title: Center(
       child: SizedBox(
@@ -51,34 +135,42 @@ AppBar userBanner(context, {VoidCallback? onTapped}) {
               mainAxisAlignment: MainAxisAlignment.start,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                CircleAvatar(
-                  radius: 25,
-                  child: Image.memory(
-                    showBase64Image(
-                        AuthUtility.userInfo.data?.codDadosPessoal?.photo),
-                    errorBuilder: (_, __, ___) {
-                      return const Icon(Icons.person);
-                    },
-                  ),
-                ),
-                const SizedBox(width: 15),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      "${AuthUtility.userInfo.data?.codDadosPessoal?.nome ?? " "} ${AuthUtility.userInfo.data?.codDadosPessoal?.cpf}",
-                      style: const TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                          color: Color(0xFF3F1D9D)),
+                // Show user info only if the user ID is greater than 1
+                if (AuthUtility.userInfo?.data?.id != null &&
+                    AuthUtility.userInfo!.data!.id! > 1)
+                  CircleAvatar(
+                    radius: 25,
+                    child: Image.memory(
+                      showBase64Image(
+                          AuthUtility.userInfo.data?.codDadosPessoal?.photo),
+                      errorBuilder: (_, __, ___) {
+                        return const Icon(Icons.person);
+                      },
                     ),
-                    const SizedBox(height: 2),
-                    Text(
-                        AuthUtility.userInfo.data?.codDadosPessoal?.email ?? "",
+                  ),
+                if (AuthUtility.userInfo?.data?.id != null &&
+                    AuthUtility.userInfo!.data!.id! > 1)
+                  const SizedBox(width: 15),
+                if (AuthUtility.userInfo?.data?.id != null &&
+                    AuthUtility.userInfo!.data!.id! > 1)
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        "${AuthUtility.userInfo.data?.codDadosPessoal?.nome ?? " "} ",
                         style: const TextStyle(
-                            fontSize: 14, color: Color(0xFF3F1D9D))),
-                  ],
-                ),
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.black),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                          AuthUtility.userInfo.data?.codDadosPessoal?.email ??
+                              "",
+                          style: const TextStyle(
+                              fontSize: 14, color: Colors.black)),
+                    ],
+                  ),
               ],
             ),
           ),

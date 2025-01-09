@@ -1,13 +1,15 @@
 import 'package:flutter/material.dart';
-import 'package:task_manager_flutter/data/models/negotiation_model.dart';
-import 'dart:convert';
 import 'package:task_manager_flutter/data/services/vendas_caller.dart';
 import 'package:task_manager_flutter/data/utils/fotos_util.dart';
+import 'package:task_manager_flutter/data/models/auth_utility.dart';
+import 'package:task_manager_flutter/data/constants/custom_colors.dart';
+import 'package:task_manager_flutter/ui/widgets/user_banners.dart';
+import 'package:task_manager_flutter/ui/screens/update_profile.dart';
 
 // Define theme colors
-const Color lightGreenBackground = Color.fromARGB(255, 231, 247, 233);
-const Color darkGreenBorder = Color.fromARGB(255, 1, 247, 14);
-const Color buttonBackground = Color.fromARGB(255, 128, 202, 132);
+Color lightGreenBackground = CustomColors().getLightGreenBackground();
+Color darkGreenBorder = CustomColors().getDarkGreenBorder();
+Color buttonBackground = CustomColors().getButtonBackground();
 
 class ProductCatalogPageCompras extends StatefulWidget {
   final String title;
@@ -35,6 +37,21 @@ class _ProductCatalogPageComprasState extends State<ProductCatalogPageCompras> {
   @override
   void initState() {
     super.initState();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+
+    // // Mova o código que depende do BuildContext para este método.
+    // if (AuthUtility.userInfo == null) {
+    //   WidgetsBinding.instance.addPostFrameCallback((_) {
+    //     showDialog(
+    //       context: context,
+    //       builder: (context) => LoginPopup(onLoginSuccess: fetchData),
+    //     );
+    //   });
+    // }
     fetchProducts();
   }
 
@@ -61,24 +78,12 @@ class _ProductCatalogPageComprasState extends State<ProductCatalogPageCompras> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text(widget.title),
-        actions: [
-          if (isLoading)
-            const Padding(
-              padding: EdgeInsets.only(right: 16),
-              child: CircularProgressIndicator(
-                color: Colors.white,
-                strokeWidth: 2,
-              ),
-            ),
-          IconButton(
-            icon: const Icon(Icons.refresh),
-            tooltip: 'Atualizar',
-            onPressed: fetchProducts,
-          ),
-        ],
-      ),
+      appBar: userBanner(context, onTapped: () {
+        Navigator.push(
+            context,
+            MaterialPageRoute(
+                builder: (context) => const UpdateProfileScreen()));
+      }),
       body: Container(
         color: lightGreenBackground,
         child: isLoading
@@ -286,9 +291,10 @@ String getStatusText(String status) {
 void main() {
   runApp(MaterialApp(
     theme: ThemeData(primarySwatch: Colors.green),
-    home: const ProductCatalogPageCompras(
+    home: ProductCatalogPageCompras(
       title: 'Produtos do Vendedor',
-      apiUrl: 'http://192.168.146.1:8088/boletobancos/api/produtos/vendedor/4',
+      apiUrl:
+          'http://192.168.146.1:8088/boletobancos/api/produtos/vendedor/${AuthUtility.userInfo?.data?.id}',
       actionIcon: Icons.edit,
       actionTooltip: 'Editar Produto',
     ),

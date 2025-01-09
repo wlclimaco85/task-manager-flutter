@@ -5,6 +5,7 @@ import 'package:task_manager_flutter/data/models/negotiation_model.dart';
 import 'package:task_manager_flutter/data/utils/api_links.dart';
 import 'package:task_manager_flutter/data/models/network_response.dart';
 import 'package:task_manager_flutter/data/services/network_caller.dart';
+import 'package:task_manager_flutter/data/models/auth_utility.dart';
 
 class VendasCaller {
   Future<List<Produto>> fetchCotacoes(BuildContext context) async {
@@ -33,8 +34,9 @@ class VendasCaller {
     List<Product>? model = [];
     ProductModel models;
     try {
-      final NetworkResponse response = await NetworkCaller()
-          .getRequests(ApiLinks.fecthItensAVenda + "4", context);
+      final NetworkResponse response = await NetworkCaller().getRequests(
+          ApiLinks.fecthItensAVenda + '${AuthUtility.userInfo?.data?.id}',
+          context);
       String jsonString;
 
       if (response.statusCode == 200 && response.body != null) {
@@ -55,8 +57,9 @@ class VendasCaller {
     List<Product>? model = [];
     ProductModel models;
     try {
-      final NetworkResponse response = await NetworkCaller()
-          .getRequests(ApiLinks.fecthItensACompra + "4", context);
+      final NetworkResponse response = await NetworkCaller().getRequests(
+          ApiLinks.fecthItensACompra + '${AuthUtility.userInfo?.data?.id}',
+          context);
       String jsonString;
 
       if (response.statusCode == 200 && response.body != null) {
@@ -77,8 +80,9 @@ class VendasCaller {
     List<Product>? model = [];
     ProductModel models;
     try {
-      final NetworkResponse response = await NetworkCaller()
-          .getRequests(ApiLinks.fecthItensANegociar + "4", context);
+      final NetworkResponse response = await NetworkCaller().getRequests(
+          ApiLinks.fecthItensANegociar + '${AuthUtility.userInfo?.data?.id}',
+          context);
       String jsonString;
 
       if (response.statusCode == 200 && response.body != null) {

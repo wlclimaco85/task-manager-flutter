@@ -11,6 +11,13 @@ import 'package:task_manager_flutter/data/models/parceiro_model.dart';
 import 'package:task_manager_flutter/data/models/network_response.dart';
 import 'package:task_manager_flutter/data/services/network_caller.dart';
 import 'package:task_manager_flutter/data/utils/api_links.dart';
+import 'package:task_manager_flutter/data/constants/custom_colors.dart';
+import 'package:task_manager_flutter/data/models/auth_utility.dart';
+
+// Define theme colors
+Color lightGreenBackground = CustomColors().getLightGreenBackground();
+Color darkGreenBorder = CustomColors().getDarkGreenBorder();
+Color buttonBackground = CustomColors().getButtonBackground();
 
 class ProductRegisterScreen extends StatefulWidget {
   const ProductRegisterScreen({Key? key}) : super(key: key);
@@ -64,8 +71,8 @@ class _ProductRegisterScreenState extends State<ProductRegisterScreen> {
     });
 
     try {
-      final List<Parceiro> parceiroData =
-          await ParceiroCaller().fetchParceiros(6);
+      final List<Parceiro> parceiroData = await ParceiroCaller()
+          .fetchParceiros(AuthUtility.userInfo?.data?.id ?? 0);
 
       setState(() {
         vendedorEndereco =
@@ -172,8 +179,9 @@ class _ProductRegisterScreenState extends State<ProductRegisterScreen> {
         'isCargaFechada': isCargaFechada,
         'tipoGrao': selectedTipoGrao,
         'dtRetirada': dtRetirada?.toIso8601String(),
-        'parceiro': {'id': 4},
+        'parceiro': {'id': AuthUtility.userInfo?.data?.id},
         'status': 'A',
+        'qtdsacosoriginal': int.tryParse(qtdSacosController.text) ?? 0,
         'classificacao': classificacaoList,
         if (useCustomAddress) 'enderecoRetirada': customAddress,
       };
@@ -187,7 +195,7 @@ class _ProductRegisterScreenState extends State<ProductRegisterScreen> {
       // Verifica o resultado da requisição
       if (response.isSuccess) {
         showSnackBar(
-          message: "Proposta enviada com sucesso!",
+          message: "Venda enviada com sucesso!",
           isError: false,
         );
         ScaffoldMessenger.of(context).showSnackBar(
@@ -261,7 +269,7 @@ class _ProductRegisterScreenState extends State<ProductRegisterScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFE8F5E9),
+      backgroundColor: lightGreenBackground,
       appBar: AppBar(
         title: const Text('Cadastro de Produto'),
         actions: [
@@ -347,10 +355,10 @@ class _ProductRegisterScreenState extends State<ProductRegisterScreen> {
                         const SizedBox(height: 16),
                         Row(
                           children: [
-                            Expanded(
+                            const Expanded(
                               child: Text(
                                 'Data para Retirada',
-                                style: const TextStyle(
+                                style: TextStyle(
                                   fontWeight: FontWeight.bold,
                                   color: Colors.black,
                                   fontSize: 16,

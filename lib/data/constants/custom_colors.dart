@@ -11,6 +11,21 @@ class CustomColors {
   final Color _appFundoClaro = const Color(0xFF7859C9);
   final Color _appBotton = const Color(0xFFFA903A);
   final Color _appLabelBotton = const Color(0xFFffffff);
+  final Color _lightGreenBackground = const Color.fromARGB(255, 231, 247, 233);
+  final Color _darkGreenBorder = const Color.fromARGB(255, 1, 247, 14);
+  final Color _buttonBackground = const Color.fromARGB(255, 128, 202, 132);
+
+  Color getButtonBackground() {
+    return _buttonBackground;
+  }
+
+  Color getDarkGreenBorder() {
+    return _darkGreenBorder;
+  }
+
+  Color getLightGreenBackground() {
+    return _lightGreenBackground;
+  }
 
   Color getActivePrimaryButtonColor() {
     return _activePrimaryButton;

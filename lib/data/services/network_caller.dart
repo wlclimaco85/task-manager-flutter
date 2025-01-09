@@ -11,8 +11,10 @@ import 'package:task_manager_flutter/ui/screens/LoginPopup_screens.dart';
 class NetworkCaller {
   Future<NetworkResponse> getRequest(String url) async {
     try {
-      Response response = await get(Uri.parse(url),
-          headers: {'Authorization': 'Bearer ${AuthUtility.userInfo.token}'});
+      Response response = await get(
+        Uri.parse(url),
+        headers: {'Authorization': 'Bearer ${AuthUtility.userInfo.token}'},
+      );
       if (response.statusCode == 200) {
         return NetworkResponse(
             true, response.statusCode, jsonDecode(response.body));
@@ -36,11 +38,41 @@ class NetworkCaller {
   Future<NetworkResponse> getRequests(String url, BuildContext context) async {
     try {
       if (AuthUtility.userInfo?.data?.id != 1) {
-        Response response = await get(Uri.parse(url),
-            headers: {'Authorization': 'Bearer ${AuthUtility.userInfo.token}'});
+        Response response = await get(
+          Uri.parse(url),
+          headers: {'Authorization': 'Bearer ${AuthUtility.userInfo.token}'},
+        );
         if (response.statusCode == 200) {
           return NetworkResponse(
               true, response.statusCode, jsonDecode(response.body));
+        } else if (response.statusCode == 403) {
+          // Mostrar LoginPopup
+          final result = await showDialog(
+            context: context,
+            builder: (BuildContext context) => LoginPopup(),
+          );
+
+          if (result == true) {
+            // Tenta novamente após login bem-sucedido
+            if (AuthUtility.userInfo?.data?.id != 1) {
+              Response response = await get(
+                Uri.parse(url),
+                headers: {
+                  'Authorization': 'Bearer ${AuthUtility.userInfo.token}'
+                },
+              );
+              if (response.statusCode == 200) {
+                return NetworkResponse(
+                    true, response.statusCode, jsonDecode(response.body));
+              } else {
+                return NetworkResponse(
+                  false,
+                  response.statusCode,
+                  null,
+                );
+              }
+            }
+          }
         } else {
           return NetworkResponse(
             false,
@@ -49,28 +81,33 @@ class NetworkCaller {
           );
         }
       } else {
-        // AQUI CHAMAR O LOGIN
-        await showDialog(
+        // Mostrar LoginPopup
+        final result = await showDialog(
           context: context,
           builder: (BuildContext context) => LoginPopup(),
         );
-/*
-        // Verifica novamente após o login
-        if (AuthUtility.userInfo?.data?.id != 1) {
-          Response response = await get(Uri.parse(url), headers: {
-            'Authorization': 'Bearer ${AuthUtility.userInfo.token}'
-          });
-          if (response.statusCode == 200) {
-            return NetworkResponse(
-                true, response.statusCode, jsonDecode(response.body));
-          } else {
-            return NetworkResponse(
-              false,
-              response.statusCode,
-              null,
+
+        if (result == true) {
+          // Tenta novamente após login bem-sucedido
+          if (AuthUtility.userInfo?.data?.id != 1) {
+            Response response = await get(
+              Uri.parse(url),
+              headers: {
+                'Authorization': 'Bearer ${AuthUtility.userInfo.token}'
+              },
             );
+            if (response.statusCode == 200) {
+              return NetworkResponse(
+                  true, response.statusCode, jsonDecode(response.body));
+            } else {
+              return NetworkResponse(
+                false,
+                response.statusCode,
+                null,
+              );
+            }
           }
-        } */
+        }
       }
     } catch (e) {
       log(e.toString());
@@ -87,10 +124,6 @@ class NetworkCaller {
     Map<String, dynamic>? body,
   ) async {
     try {
-      //  if (url.contains('inserirAluno') && AuthUtility.userInfo.token == null) {
-      //   AuthUtility.userInfo.token =
-      //        "Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ3bGNsaW1hY29AZ21haWwuY29tIiwiZmlyc3ROYW1lIjoid2xjbGltYWNvQGdtYWlsLmNvbSIsImxhc3ROYW1lIjoid2xjbGltYWNvQGdtYWlsLmNvbSIsImV4cCI6MTkxNzgxMjg2Nn0._M1meDtyoQOMh3m30S4clJXu42SD-kGrjxkJ-4xeLVI";
-      //  }
       Response response = await post(
         Uri.parse(url),
         headers: {
@@ -128,9 +161,9 @@ class NetworkCaller {
 
 void moveToLogin() async {
   await AuthUtility.clearUserInfo();
-  // ignore: use_build_context_synchronously
   Navigator.pushAndRemoveUntil(
-      TaskManagerApp.globalKey.currentState!.context,
-      MaterialPageRoute(builder: (context) => const LoginScreen()),
-      (route) => false);
+    TaskManagerApp.globalKey.currentState!.context,
+    MaterialPageRoute(builder: (context) => const LoginScreen()),
+    (route) => false,
+  );
 }

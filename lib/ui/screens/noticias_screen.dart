@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import 'package:task_manager_flutter/ui/widgets/user_banners.dart';
+import 'package:task_manager_flutter/ui/screens/update_profile.dart';
 
 // Define theme colors
 const Color lightGreenBackground = Color.fromARGB(255, 231, 247, 233);
@@ -64,24 +66,12 @@ class _ProductCatalogPageState extends State<ProductCatalogPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text(widget.title),
-        actions: [
-          if (isLoading)
-            const Padding(
-              padding: EdgeInsets.only(right: 16),
-              child: CircularProgressIndicator(
-                color: Colors.white,
-                strokeWidth: 2,
-              ),
-            ),
-          IconButton(
-            icon: const Icon(Icons.refresh),
-            tooltip: 'Atualizar',
-            onPressed: fetchProducts,
-          ),
-        ],
-      ),
+      appBar: userBanner(context, onTapped: () {
+        Navigator.push(
+            context,
+            MaterialPageRoute(
+                builder: (context) => const UpdateProfileScreen()));
+      }),
       body: Container(
         color: lightGreenBackground,
         child: isLoading
