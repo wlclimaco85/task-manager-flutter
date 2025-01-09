@@ -43,7 +43,7 @@ class _ProductCatalogPageComprasState extends State<ProductCatalogPageCompras> {
       isLoading = true;
     });
     try {
-      final data = await VendasCaller().fetchItensACompra();
+      final data = await VendasCaller().fetchItensACompra(context);
       setState(() {
         products = data;
       });

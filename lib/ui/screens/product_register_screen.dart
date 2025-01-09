@@ -73,7 +73,7 @@ class _ProductRegisterScreenState extends State<ProductRegisterScreen> {
       });
 
       final List<Account> classificacoesData =
-          await VendasCaller().fetchClassificacao();
+          await VendasCaller().fetchClassificacao(context);
 
       classificacoes = classificacoesData
           .expand((classificacao) => (classificacao.valores as List).map(

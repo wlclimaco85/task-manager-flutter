@@ -6,6 +6,7 @@ import 'package:task_manager_flutter/app.dart';
 import 'package:task_manager_flutter/data/models/auth_utility.dart';
 import 'package:task_manager_flutter/data/models/network_response.dart';
 import 'package:task_manager_flutter/ui/screens/auth_screens/login_screen.dart';
+import 'package:task_manager_flutter/ui/screens/LoginPopup_screens.dart';
 
 class NetworkCaller {
   Future<NetworkResponse> getRequest(String url) async {
@@ -21,6 +22,55 @@ class NetworkCaller {
           response.statusCode,
           null,
         );
+      }
+    } catch (e) {
+      log(e.toString());
+    }
+    return NetworkResponse(
+      false,
+      -1,
+      null,
+    );
+  }
+
+  Future<NetworkResponse> getRequests(String url, BuildContext context) async {
+    try {
+      if (AuthUtility.userInfo?.data?.id != 1) {
+        Response response = await get(Uri.parse(url),
+            headers: {'Authorization': 'Bearer ${AuthUtility.userInfo.token}'});
+        if (response.statusCode == 200) {
+          return NetworkResponse(
+              true, response.statusCode, jsonDecode(response.body));
+        } else {
+          return NetworkResponse(
+            false,
+            response.statusCode,
+            null,
+          );
+        }
+      } else {
+        // AQUI CHAMAR O LOGIN
+        await showDialog(
+          context: context,
+          builder: (BuildContext context) => LoginPopup(),
+        );
+/*
+        // Verifica novamente após o login
+        if (AuthUtility.userInfo?.data?.id != 1) {
+          Response response = await get(Uri.parse(url), headers: {
+            'Authorization': 'Bearer ${AuthUtility.userInfo.token}'
+          });
+          if (response.statusCode == 200) {
+            return NetworkResponse(
+                true, response.statusCode, jsonDecode(response.body));
+          } else {
+            return NetworkResponse(
+              false,
+              response.statusCode,
+              null,
+            );
+          }
+        } */
       }
     } catch (e) {
       log(e.toString());

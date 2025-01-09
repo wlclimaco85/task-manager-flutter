@@ -69,7 +69,7 @@ class _ProductCatalogState extends State<ProductCatalog> {
       isLoading = true;
     });
     try {
-      final data = await VendasCaller().fetchCotacoes();
+      final data = await VendasCaller().fetchCotacoes(context);
       setState(() {
         allProducts = data;
         filteredProducts = data;
