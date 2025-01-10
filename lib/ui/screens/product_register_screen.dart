@@ -72,7 +72,7 @@ class _ProductRegisterScreenState extends State<ProductRegisterScreen> {
 
     try {
       final List<Parceiro> parceiroData = await ParceiroCaller()
-          .fetchParceiros(AuthUtility.userInfo?.data?.id ?? 0);
+          .fetchParceiros(context, AuthUtility.userInfo?.data?.id ?? 0);
 
       setState(() {
         vendedorEndereco =

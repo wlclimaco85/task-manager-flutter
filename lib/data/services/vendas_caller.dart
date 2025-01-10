@@ -6,6 +6,7 @@ import 'package:task_manager_flutter/data/utils/api_links.dart';
 import 'package:task_manager_flutter/data/models/network_response.dart';
 import 'package:task_manager_flutter/data/services/network_caller.dart';
 import 'package:task_manager_flutter/data/models/auth_utility.dart';
+import 'package:task_manager_flutter/ui/screens/LoginPopup_screens.dart';
 
 class VendasCaller {
   Future<List<Produto>> fetchCotacoes(BuildContext context) async {
@@ -13,7 +14,7 @@ class VendasCaller {
     ProdutoModel models;
     try {
       final NetworkResponse response =
-          await NetworkCaller().getRequests(ApiLinks.allVendas, context);
+          await NetworkCaller().getRequest(ApiLinks.allVendas);
       String jsonString;
 
       if (response.statusCode == 200 && response.body != null) {
@@ -57,17 +58,34 @@ class VendasCaller {
     List<Product>? model = [];
     ProductModel models;
     try {
-      final NetworkResponse response = await NetworkCaller().getRequests(
-          ApiLinks.fecthItensACompra + '${AuthUtility.userInfo?.data?.id}',
-          context);
-      String jsonString;
-
-      if (response.statusCode == 200 && response.body != null) {
-        jsonString = json.encode(response.body);
-        models = ProductModel.fromJson(response.body!);
-        model.addAll(models.produtos ?? []);
+      if (AuthUtility.userInfo?.data?.id == 1) {
+        // AQUI CHAMAR O LOGIN
+        await showDialog(
+          context: context,
+          builder: (BuildContext context) => LoginPopup(),
+        );
       } else {
-        print('Erro: Nenhum dado retornado');
+        final NetworkResponse response = await NetworkCaller().getRequests(
+            ApiLinks.fecthItensACompra + '${AuthUtility.userInfo?.data?.id}',
+            context);
+        String jsonString;
+
+        if (response.statusCode == 200 && response.body != null) {
+          jsonString = json.encode(response.body);
+          models = ProductModel.fromJson(response.body!);
+          model.addAll(models.produtos ?? []);
+        } else if (response.statusCode == 403) {
+          // Mova o código que depende do BuildContext para este método.
+          if (AuthUtility.userInfo == null) {
+            // AQUI CHAMAR O LOGIN
+            await showDialog(
+              context: context,
+              builder: (BuildContext context) => LoginPopup(),
+            );
+          }
+        } else {
+          print('Erro: Nenhum dado retornado');
+        }
       }
     } catch (e) {
       print('Erro: $e'); // Log do erro

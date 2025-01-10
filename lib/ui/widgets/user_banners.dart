@@ -1,46 +1,71 @@
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-import 'package:http/http.dart' as http;
-import 'dart:convert';
-
 import 'package:task_manager_flutter/data/models/auth_utility.dart';
-import 'package:task_manager_flutter/ui/screens/auth_screens/login_screen.dart';
+import 'package:task_manager_flutter/data/models/alert_model.dart';
+import 'package:task_manager_flutter/ui/screens/bottom_navbar_screen.dart';
+import 'package:task_manager_flutter/data/services/alert_caller.dart';
+import 'package:task_manager_flutter/data/models/login_model.dart';
 
 const Color lightGreenBackground = Color.fromARGB(255, 231, 247, 233);
 const Color borderColor = Color.fromARGB(255, 1, 247, 14);
 
-AppBar userBanner(context, {VoidCallback? onTapped}) {
+class UserBannerAppBar extends StatefulWidget implements PreferredSizeWidget {
+  final VoidCallback? onTapped;
+
+  const UserBannerAppBar({Key? key, this.onTapped}) : super(key: key);
+
+  @override
+  _UserBannerAppBarState createState() => _UserBannerAppBarState();
+
+  @override
+  Size get preferredSize => const Size.fromHeight(kToolbarHeight);
+}
+
+class _UserBannerAppBarState extends State<UserBannerAppBar> {
   int unreadAlerts = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    fetchAlerts();
+  }
 
   Future<void> fetchAlerts() async {
     try {
-      final response = await http.get(Uri.parse(
-          "https://appacademia-production-be7e.up.railway.app/boletobancos/api/produtos/avisos/2"));
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        unreadAlerts = data['unreadCount'] ?? 0;
-      }
+      final List<Alert> alertData =
+          await AlertCaller().fetchItensAVenda(context);
+
+      setState(() {
+        unreadAlerts = alertData.length;
+      });
     } catch (e) {
       debugPrint('Error fetching alerts: $e');
     }
   }
 
-  return AppBar(
-    backgroundColor: lightGreenBackground,
-    shape: const RoundedRectangleBorder(
-      side: BorderSide(color: borderColor, width: 2.0),
-    ),
-    actions: [
-      // Alert Icon with unread count
-      Stack(
-        alignment: Alignment.center,
-        children: [
-          IconButton(
-            icon: const Icon(Icons.notifications, color: Colors.black),
-            onPressed: () async {
-              await fetchAlerts();
-              showDialog(
+  void clearUserData() {
+    AuthUtility.clearUserInfo();
+    debugPrint("User data cleared");
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AppBar(
+      backgroundColor: lightGreenBackground,
+      shape: const RoundedRectangleBorder(
+        side: BorderSide(color: borderColor, width: 2.0),
+      ),
+      actions: [
+        // Alert Icon with unread count
+        Stack(
+          alignment: Alignment.center,
+          children: [
+            IconButton(
+              icon: const Icon(Icons.notifications, color: Colors.black),
+              onPressed: () async {
+                await fetchAlerts();
+                showDialog(
                   context: context,
                   builder: (context) {
                     return AlertDialog(
@@ -49,52 +74,56 @@ AppBar userBanner(context, {VoidCallback? onTapped}) {
                         style: TextStyle(
                             fontWeight: FontWeight.bold, color: Colors.black),
                       ),
-                      content: const Text("You have unread alerts."),
+                      content: Text(unreadAlerts > 0
+                          ? "You have $unreadAlerts unread alerts."
+                          : "No alerts available."),
                       actions: [
                         TextButton(
-                            onPressed: () {
-                              Navigator.pop(context);
-                            },
-                            child: const Text("Close")),
+                          onPressed: () {
+                            Navigator.pop(context);
+                          },
+                          child: const Text("Close"),
+                        ),
                       ],
                     );
-                  });
-            },
-          ),
-          if (unreadAlerts > 0)
-            Positioned(
-              right: 8,
-              top: 8,
-              child: Container(
-                padding: const EdgeInsets.all(2),
-                decoration: const BoxDecoration(
-                  color: Colors.red,
-                  shape: BoxShape.circle,
-                ),
-                constraints: const BoxConstraints(
-                  minWidth: 18,
-                  minHeight: 18,
-                ),
-                child: Text(
-                  '$unreadAlerts',
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 12,
-                    fontWeight: FontWeight.bold,
+                  },
+                );
+              },
+            ),
+            if (unreadAlerts > 0)
+              Positioned(
+                right: 8,
+                top: 8,
+                child: Container(
+                  padding: const EdgeInsets.all(2),
+                  decoration: const BoxDecoration(
+                    color: Colors.red,
+                    shape: BoxShape.circle,
                   ),
-                  textAlign: TextAlign.center,
+                  constraints: const BoxConstraints(
+                    minWidth: 18,
+                    minHeight: 18,
+                  ),
+                  child: Text(
+                    '$unreadAlerts',
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 12,
+                      fontWeight: FontWeight.bold,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
                 ),
               ),
-            ),
-        ],
-      ),
-      // Logout button
-      if (AuthUtility.userInfo?.data?.id != null &&
-          AuthUtility.userInfo!.data!.id! > 1)
-        IconButton(
-          icon: const Icon(FontAwesomeIcons.powerOff, color: Colors.black),
-          onPressed: () {
-            showDialog(
+          ],
+        ),
+        // Logout button
+        if (AuthUtility.userInfo?.data?.id != null &&
+            AuthUtility.userInfo!.data!.id! > 1)
+          IconButton(
+            icon: const Icon(FontAwesomeIcons.powerOff, color: Colors.black),
+            onPressed: () {
+              showDialog(
                 context: context,
                 builder: (context) {
                   return AlertDialog(
@@ -103,81 +132,93 @@ AppBar userBanner(context, {VoidCallback? onTapped}) {
                             fontWeight: FontWeight.bold, color: Colors.black)),
                     actions: [
                       TextButton(
-                          onPressed: () {
-                            Navigator.pop(context);
-                          },
-                          child: const Text("No")),
+                        onPressed: () {
+                          Navigator.pop(context);
+                        },
+                        child: const Text("No"),
+                      ),
                       TextButton(
-                          onPressed: () {
-                            AuthUtility.clearUserInfo();
-                            Navigator.pushAndRemoveUntil(
-                                context,
-                                MaterialPageRoute(
-                                    builder: (context) => const LoginScreen()),
-                                (route) => false);
-                          },
-                          child: const Text("Yes")),
+                        onPressed: () {
+                          AuthUtility.clearUserInfo();
+                          AuthUtility.setUserInfo(LoginModel(
+                            data: null,
+                            token: '',
+                            status: '',
+                          ));
+
+                          Navigator.pushAndRemoveUntil(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => const BottomNavBarScreen(),
+                            ),
+                            (route) => false,
+                          );
+                        },
+                        child: const Text("Yes"),
+                      ),
                     ],
                   );
-                });
-          },
-        ),
-    ],
-    title: Center(
-      child: SizedBox(
-        height: 40,
-        width: double.infinity,
-        child: SingleChildScrollView(
-          scrollDirection: Axis.horizontal,
-          child: GestureDetector(
-            onTap: onTapped,
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.start,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Show user info only if the user ID is greater than 1
-                if (AuthUtility.userInfo?.data?.id != null &&
-                    AuthUtility.userInfo!.data!.id! > 1)
-                  CircleAvatar(
-                    radius: 25,
-                    child: Image.memory(
-                      showBase64Image(
-                          AuthUtility.userInfo.data?.codDadosPessoal?.photo),
-                      errorBuilder: (_, __, ___) {
-                        return const Icon(Icons.person);
-                      },
-                    ),
-                  ),
-                if (AuthUtility.userInfo?.data?.id != null &&
-                    AuthUtility.userInfo!.data!.id! > 1)
-                  const SizedBox(width: 15),
-                if (AuthUtility.userInfo?.data?.id != null &&
-                    AuthUtility.userInfo!.data!.id! > 1)
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        "${AuthUtility.userInfo.data?.codDadosPessoal?.nome ?? " "} ",
-                        style: const TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.black),
+                },
+              );
+            },
+          ),
+      ],
+      title: Center(
+        child: SizedBox(
+          height: 40,
+          width: double.infinity,
+          child: SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: GestureDetector(
+              onTap: widget.onTapped,
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.start,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Show user info only if the user ID is greater than 1
+                  if (AuthUtility.userInfo?.data?.id != null &&
+                      AuthUtility.userInfo!.data!.id! > 1)
+                    CircleAvatar(
+                      radius: 25,
+                      child: Image.memory(
+                        showBase64Image(
+                            AuthUtility.userInfo.data?.codDadosPessoal?.photo),
+                        errorBuilder: (_, __, ___) {
+                          return const Icon(Icons.person);
+                        },
                       ),
-                      const SizedBox(height: 2),
-                      Text(
-                          AuthUtility.userInfo.data?.codDadosPessoal?.email ??
-                              "",
+                    ),
+                  if (AuthUtility.userInfo?.data?.id != null &&
+                      AuthUtility.userInfo!.data!.id! > 1)
+                    const SizedBox(width: 15),
+                  if (AuthUtility.userInfo?.data?.id != null &&
+                      AuthUtility.userInfo!.data!.id! > 1)
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          "${AuthUtility.userInfo.data?.codDadosPessoal?.nome ?? " "} ",
                           style: const TextStyle(
-                              fontSize: 14, color: Colors.black)),
-                    ],
-                  ),
-              ],
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.black),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                            AuthUtility.userInfo.data?.codDadosPessoal?.email ??
+                                "",
+                            style: const TextStyle(
+                                fontSize: 14, color: Colors.black)),
+                      ],
+                    ),
+                ],
+              ),
             ),
           ),
         ),
       ),
-    ),
-  );
+    );
+  }
 }
 
 showBase64Image(base64String) {

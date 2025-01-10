@@ -1,0 +1,22 @@
+{
+    "sourceFile": "lib/data/services/login_caller.dart",
+    "activeCommit": 0,
+    "commits": [
+        {
+            "activePatchIndex": 1,
+            "patches": [
+                {
+                    "date": 1736528873625,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n"
+                },
+                {
+                    "date": 1736529485045,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -1,13 +1,8 @@\n-import 'dart:convert';\r\n+\r\n import 'package:flutter/material.dart';\r\n-import 'package:task_manager_flutter/data/models/venda_model.dart';\r\n-import 'package:task_manager_flutter/data/models/negotiation_model.dart';\r\n-import 'package:task_manager_flutter/data/utils/api_links.dart';\r\n-import 'package:task_manager_flutter/data/models/network_response.dart';\r\n-import 'package:task_manager_flutter/data/services/network_caller.dart';\r\n-import 'package:task_manager_flutter/data/models/auth_utility.dart';\r\n \r\n+\r\n // Certifique-se de que esta classe inclui o parâmetro `onLoginSuccess`.\r\n class LoginPopup extends StatelessWidget {\r\n   final VoidCallback? onLoginSuccess;\r\n \r\n"
+                }
+            ],
+            "date": 1736528873625,
+            "name": "Commit-0",
+            "content": "import 'dart:convert';\r\nimport 'package:flutter/material.dart';\r\nimport 'package:task_manager_flutter/data/models/venda_model.dart';\r\nimport 'package:task_manager_flutter/data/models/negotiation_model.dart';\r\nimport 'package:task_manager_flutter/data/utils/api_links.dart';\r\nimport 'package:task_manager_flutter/data/models/network_response.dart';\r\nimport 'package:task_manager_flutter/data/services/network_caller.dart';\r\nimport 'package:task_manager_flutter/data/models/auth_utility.dart';\r\n\r\n// Certifique-se de que esta classe inclui o parâmetro `onLoginSuccess`.\r\nclass LoginPopup extends StatelessWidget {\r\n  final VoidCallback? onLoginSuccess;\r\n\r\n  const LoginPopup({Key? key, this.onLoginSuccess}) : super(key: key);\r\n\r\n  @override\r\n  Widget build(BuildContext context) {\r\n    return AlertDialog(\r\n      title: const Text('Login'),\r\n      content: const Text('Por favor, faça login para continuar.'),\r\n      actions: [\r\n        TextButton(\r\n          onPressed: () {\r\n            Navigator.of(context).pop();\r\n          },\r\n          child: const Text('Cancelar'),\r\n        ),\r\n        ElevatedButton(\r\n          onPressed: () {\r\n            // Simulação de login bem-sucedido\r\n            if (onLoginSuccess != null) {\r\n              onLoginSuccess!();\r\n            }\r\n            Navigator.of(context).pop();\r\n          },\r\n          child: const Text('Login'),\r\n        ),\r\n      ],\r\n    );\r\n  }\r\n}\r\n"
+        }
+    ]
+}

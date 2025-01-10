@@ -1,0 +1,30 @@
+{
+    "sourceFile": "lib/data/services/alert_caller.dart",
+    "activeCommit": 0,
+    "commits": [
+        {
+            "activePatchIndex": 3,
+            "patches": [
+                {
+                    "date": 1736526830059,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n"
+                },
+                {
+                    "date": 1736526887497,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -28,21 +28,21 @@\n     }\r\n     return model;\r\n   }\r\n \r\n-  Future<List<Product>> fetchItensAVenda(BuildContext context) async {\r\n-    List<Product>? model = [];\r\n-    ProductModel models;\r\n+  Future<List<Alert>> fetchItensAVenda(BuildContext context) async {\r\n+    List<Alert>? model = [];\r\n+    AlertResponse models;\r\n     try {\r\n       final NetworkResponse response = await NetworkCaller().getRequests(\r\n-          ApiLinks.fecthItensAVenda + '${AuthUtility.userInfo?.data?.id}',\r\n+          ApiLinks.alertFindByUser + '${AuthUtility.userInfo?.data?.id}',\r\n           context);\r\n       String jsonString;\r\n \r\n       if (response.statusCode == 200 && response.body != null) {\r\n         jsonString = json.encode(response.body);\r\n-        models = ProductModel.fromJson(response.body!);\r\n-        model.addAll(models.produtos ?? []);\r\n+        models = AlertResponse.fromJson(response.body!);\r\n+        model.addAll(models.account ?? []);\r\n       } else {\r\n         print('Erro: Nenhum dado retornado');\r\n       }\r\n     } catch (e) {\r\n"
+                },
+                {
+                    "date": 1736526907941,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -50,6 +50,5 @@\n       throw Exception('Erro ao carregar itens à venda: $e');\r\n     }\r\n     return model;\r\n   }\r\n-\r\n- \r\n+}\r\n"
+                },
+                {
+                    "date": 1736527371739,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -5,9 +5,9 @@\n import 'package:task_manager_flutter/data/models/network_response.dart';\r\n import 'package:task_manager_flutter/data/services/network_caller.dart';\r\n import 'package:task_manager_flutter/data/models/auth_utility.dart';\r\n \r\n-class VendasCaller {\r\n+class AlertCaller {\r\n   Future<List<Alert>> fetchAllAlerts(BuildContext context) async {\r\n     List<Alert>? model = [];\r\n     AlertResponse models;\r\n     try {\r\n"
+                }
+            ],
+            "date": 1736526830059,
+            "name": "Commit-0",
+            "content": "import 'dart:convert';\r\nimport 'package:flutter/material.dart';\r\nimport 'package:task_manager_flutter/data/models/alert_model.dart';\r\nimport 'package:task_manager_flutter/data/utils/api_links.dart';\r\nimport 'package:task_manager_flutter/data/models/network_response.dart';\r\nimport 'package:task_manager_flutter/data/services/network_caller.dart';\r\nimport 'package:task_manager_flutter/data/models/auth_utility.dart';\r\n\r\nclass VendasCaller {\r\n  Future<List<Alert>> fetchAllAlerts(BuildContext context) async {\r\n    List<Alert>? model = [];\r\n    AlertResponse models;\r\n    try {\r\n      final NetworkResponse response =\r\n          await NetworkCaller().getRequests(ApiLinks.allAlerts, context);\r\n      String jsonString;\r\n\r\n      if (response.statusCode == 200 && response.body != null) {\r\n        jsonString = json.encode(response.body);\r\n        models = AlertResponse.fromJson(response.body!);\r\n        model.addAll(models.account ?? []);\r\n      } else {\r\n        print('Erro: Nenhum dado retornado');\r\n      }\r\n    } catch (e) {\r\n      print('Erro: $e'); // Log do erro\r\n      throw Exception('Erro ao carregar cotações: $e');\r\n    }\r\n    return model;\r\n  }\r\n\r\n  Future<List<Product>> fetchItensAVenda(BuildContext context) async {\r\n    List<Product>? model = [];\r\n    ProductModel models;\r\n    try {\r\n      final NetworkResponse response = await NetworkCaller().getRequests(\r\n          ApiLinks.fecthItensAVenda + '${AuthUtility.userInfo?.data?.id}',\r\n          context);\r\n      String jsonString;\r\n\r\n      if (response.statusCode == 200 && response.body != null) {\r\n        jsonString = json.encode(response.body);\r\n        models = ProductModel.fromJson(response.body!);\r\n        model.addAll(models.produtos ?? []);\r\n      } else {\r\n        print('Erro: Nenhum dado retornado');\r\n      }\r\n    } catch (e) {\r\n      print('Erro: $e'); // Log do erro\r\n      throw Exception('Erro ao carregar itens à venda: $e');\r\n    }\r\n    return model;\r\n  }\r\n\r\n \r\n"
+        }
+    ]
+}

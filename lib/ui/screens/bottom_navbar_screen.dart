@@ -7,6 +7,8 @@ import 'package:task_manager_flutter/ui/screens/progress_task_screen.dart';
 import 'package:task_manager_flutter/ui/screens/carrinho_compras_screen.dart';
 import 'package:task_manager_flutter/ui/screens/carrinho_vendas_screen.dart';
 import 'package:task_manager_flutter/ui/screens/product_register_screen.dart';
+import 'package:task_manager_flutter/data/utils/api_links.dart';
+import 'package:task_manager_flutter/data/models/auth_utility.dart';
 
 // Define theme colors
 const Color lightGreenBackground = Color.fromARGB(255, 231, 247, 233);
@@ -34,10 +36,10 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
         Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (context) => const ProductCatalogPageCompras(
+            builder: (context) => ProductCatalogPageCompras(
               title: 'Produtos Comprados',
               apiUrl:
-                  'http://192.168.146.1:8088/boletobancos/api/produtos/comprador/5',
+                  '${ApiLinks.vendedorFindByUser}${AuthUtility.userInfo?.data?.id}',
               actionIcon: Icons.edit,
               actionTooltip: 'Editar Produto',
             ),
@@ -48,10 +50,10 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
         Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (context) => const ProductCatalogPageVendas(
+            builder: (context) => ProductCatalogPageVendas(
               title: 'Produtos do Vendedor',
               apiUrl:
-                  'http://192.168.146.1:8088/boletobancos/api/produtos/vendedor/4',
+                  '${ApiLinks.vendedorFindByUser}${AuthUtility.userInfo?.data?.id}',
               actionIcon: Icons.edit,
               actionTooltip: 'Editar Produto',
             ),
@@ -62,10 +64,10 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
         Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (context) => const NegociacaoCatalogPage(
+            builder: (context) => NegociacaoCatalogPage(
               title: 'Negociação',
               apiUrl:
-                  'http://192.168.146.1:8088/boletobancos/api/produtos/vendedor/4',
+                  '${ApiLinks.negociacaoFindByUser}${AuthUtility.userInfo?.data?.id}',
               actionIcon: Icons.edit,
               actionTooltip: 'Editar Produto',
             ),
@@ -86,7 +88,7 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
     return Scaffold(
       body: screens[selectedIndex],
       bottomNavigationBar: Container(
-        decoration: BoxDecoration(
+        decoration: const BoxDecoration(
           color: lightGreenBackground,
           border: Border(
             top: BorderSide(color: darkGreenBorder, width: 2),

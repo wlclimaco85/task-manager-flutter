@@ -1,6 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:task_manager_flutter/data/models/negotiation_model.dart';
-import 'dart:convert';
 import 'package:task_manager_flutter/data/services/vendas_caller.dart';
 import 'package:task_manager_flutter/data/utils/fotos_util.dart';
 

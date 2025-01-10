@@ -63,4 +63,9 @@ class ApiLinks {
   static String fecthItensACompra = '$_baseUrlNew/api/produtos/comprador/';
   static String fecthItensANegociar = '$_baseUrlNew/api/produtos/negociacoes/';
   static String insertCotacaoFrete = '$_baseUrlNew/api/cotacaofrete';
+  static String allAlerts = '$_baseUrlNew/api/alert';
+  static String alertFindByUser = '$_baseUrlNew/api/alert/byUser/';
+  static String compradorFindByUser = '$_baseUrlNew/api/produtos/comprador/';
+  static String vendedorFindByUser = '$_baseUrlNew/api/produtos/vendedor/';
+  static String negociacaoFindByUser = '$_baseUrlNew/produtos/negociacoes/';
 }

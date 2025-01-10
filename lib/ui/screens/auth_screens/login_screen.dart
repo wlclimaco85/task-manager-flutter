@@ -2,12 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:task_manager_flutter/ui/widgets/home_screen.dart';
 import 'package:task_manager_flutter/data/models/auth_utility.dart';
 import 'package:task_manager_flutter/data/models/login_model.dart';
-import 'package:task_manager_flutter/data/models/noticia_model.dart';
-import 'package:task_manager_flutter/data/models/new_model.dart';
 import 'package:task_manager_flutter/data/models/network_response.dart';
 import 'package:task_manager_flutter/data/services/network_caller.dart';
 import 'package:task_manager_flutter/data/utils/api_links.dart';
-import 'package:task_manager_flutter/ui/screens/bottom_navbar_screen.dart'; // Corrigida a importação
+import 'package:task_manager_flutter/ui/screens/auth_screens/email_verification_screeen.dart';
+import 'package:task_manager_flutter/ui/screens/bottom_navbar_screen.dart';
+import 'package:task_manager_flutter/ui/widgets/custom_password_text_field.dart';
+import 'package:task_manager_flutter/ui/widgets/custom_text_form_field.dart';
+import 'package:task_manager_flutter/ui/screens/auth_screens/signup_form_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -26,81 +28,14 @@ class _LoginScreenState extends State<LoginScreen>
 
   bool _loginInProgress = false;
 
-  List<News> newsList = [];
-  bool isLoading = false;
-  int page = 1;
-
-  Future<void> fetchNews({bool isRefresh = false}) async {
-    if (isRefresh) {
-      setState(() {
-        page = 1;
-        newsList.clear();
-      });
-    }
-
-    setState(() {
-      isLoading = true;
-    });
-
-    final NetworkResponse response =
-        await NetworkCaller().getRequest(ApiLinks.allNoticias);
-
-    if (response.isSuccess) {
-      NoticiaModel model = NoticiaModel.fromJson(response.body!);
-      setState(() {
-        page++;
-        isLoading = false;
-      });
-    } else {
-      throw Exception('Falha ao carregar as notícias');
-    }
-  }
-
-  Future<void> fetchNews2() async {
-    setState(() {
-      isLoading = true;
-    });
-
-    final NetworkResponse response =
-        await NetworkCaller().getRequest(ApiLinks.allNoticias);
-
-    _loginInProgress = false;
-    if (mounted) {
-      setState(() {});
-    }
-
-    if (response.isSuccess) {
-      LoginModel model = LoginModel.fromJson(response.body!);
-      await AuthUtility.setUserInfo(model);
-      setState(() {
-        page++;
-        isLoading = false;
-      });
-      if (mounted) {
-        Navigator.pushAndRemoveUntil(
-          context,
-          MaterialPageRoute(builder: (context) => const BottomNavBarScreen()),
-          (route) => false,
-        );
-      }
-    } else {
-      if (mounted) {
-        _passwordController.clear();
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Incorrect email or password')),
-        );
-      }
-    }
-  }
-
   Future<void> login() async {
     _loginInProgress = true;
     if (mounted) {
       setState(() {});
     }
     Map<String, dynamic> requestBody = {
-      "email": 'wlclimaco@gmail.com',
-      "password": '123456'
+      "email": _emailController.text.trim(),
+      "password": _passwordController.text
     };
     final NetworkResponse response =
         await NetworkCaller().postRequest(ApiLinks.login, requestBody);
@@ -112,14 +47,16 @@ class _LoginScreenState extends State<LoginScreen>
       LoginModel model = LoginModel.fromJson(response.body!);
       await AuthUtility.setUserInfo(model);
       if (mounted) {
-        fetchNews();
+        Navigator.pushAndRemoveUntil(
+            context,
+            MaterialPageRoute(builder: (context) => const BottomNavBarScreen()),
+            (route) => false);
       }
     } else {
       if (mounted) {
         _passwordController.clear();
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Incorrect email or password')),
-        );
+            const SnackBar(content: Text('Incorrect email or password')));
       }
     }
   }
@@ -138,103 +75,139 @@ class _LoginScreenState extends State<LoginScreen>
             }
           });
     super.initState();
-    login();
   }
-
-  final ScrollController _controller = ScrollController();
 
   @override
   void dispose() {
     _animationController.dispose();
-    _controller.dispose();
     super.dispose();
-  }
-
-  void _onScroll() {
-    if (_controller.position.pixels == _controller.position.maxScrollExtent &&
-        !isLoading) {
-      fetchNews();
-    }
-  }
-
-  Future<void> _refreshNews() async {
-    await fetchNews(isRefresh: true);
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Notícias'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh),
-            onPressed: _refreshNews,
-          ),
-        ],
-      ),
-      body: RefreshIndicator(
-        onRefresh: _refreshNews,
-        child: ListView.builder(
-          controller: _controller,
-          itemCount: newsList.length + 1,
-          itemBuilder: (context, index) {
-            if (index == newsList.length) {
-              return isLoading
-                  ? const Center(child: CircularProgressIndicator())
-                  : const SizedBox.shrink();
-            }
-
-            final news = newsList[index];
-            return Card(
-              margin: const EdgeInsets.all(8.0),
-              child: ListTile(
-                title: Text(news.title),
-                subtitle: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+      backgroundColor: const Color(0xFF340A9C),
+      body: Container(
+        child: ListView(
+          padding: EdgeInsets.zero,
+          children: [
+            Stack(
+              alignment: Alignment.bottomCenter,
+              children: [
+                Column(
                   children: [
-                    Text(news.summary),
-                    const SizedBox(height: 4),
-                    const Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          'Fonte',
-                          style: TextStyle(
-                              fontSize: 12, fontWeight: FontWeight.bold),
-                        ),
-                        Text('Data', style: TextStyle(fontSize: 12)),
-                      ],
+                    Padding(
+                      padding: const EdgeInsets.only(
+                        top: 70,
+                        bottom: 32,
+                      ),
+                      child: Image.asset(
+                        "assets/images/logoforafitn1.png",
+                        height: 260,
+                        fit: BoxFit.contain,
+                      ),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.all(40.0),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const SizedBox(height: 16),
+                          Form(
+                            key: _formKey,
+                            child: CustomTextFormField(
+                                hintText: "Email",
+                                controller: _emailController,
+                                textInputType: TextInputType.emailAddress,
+                                validator: (value) {
+                                  if (value!.isEmpty) {
+                                    return "Please enter email";
+                                  }
+                                  return null;
+                                }),
+                          ),
+                          const SizedBox(height: 12),
+                          CustomPasswordTextFormField(
+                            hintText: "Password",
+                            controller: _passwordController,
+                            obscureText: true,
+                            validator: (value) {
+                              if (value!.isEmpty) {
+                                return "Please enter password";
+                              }
+                              return null;
+                            },
+                            textInputType: TextInputType.visiblePassword,
+                          ),
+                          const SizedBox(
+                            height: 16,
+                          ),
+                          ElevatedButton(
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xFFFA903A),
+                              minimumSize: const Size.fromHeight(50), // NEW
+                            ),
+                            onPressed: () {
+                              login();
+                            },
+                            child: const Text(
+                              'Acessar',
+                              style:
+                                  TextStyle(fontSize: 24, color: Colors.white),
+                            ),
+                          ),
+                          const SizedBox(
+                            height: 10,
+                          ),
+                          ElevatedButton(
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xFFFA903A),
+                              minimumSize: const Size.fromHeight(50), // NEW
+                            ),
+                            onPressed: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                    builder: (context) =>
+                                        const SignUpFormScreen()),
+                              );
+                            },
+                            child: const Text(
+                              'Criar Conta',
+                              style:
+                                  TextStyle(fontSize: 24, color: Colors.white),
+                            ),
+                          ),
+                          const SizedBox(
+                            height: 40,
+                          ),
+                          Center(
+                            child: TextButton(
+                              onPressed: () {
+                                Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                        builder: (context) =>
+                                            const EmailVarificationScreeen()));
+                              },
+                              child: const Text(
+                                "Esqueceu a Senha?",
+                                style: TextStyle(
+                                    color: Color(0xFFFA903A),
+                                    letterSpacing: .7,
+                                    fontSize: 20),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ],
                 ),
-              ),
-            );
-          },
+              ],
+            )
+          ],
         ),
-      ),
-      bottomNavigationBar: BottomNavigationBar(
-        items: const [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.article),
-            label: 'Notícias',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.show_chart),
-            label: 'Cotações',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.shopping_cart),
-            label: 'Comprar',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.sell),
-            label: 'Vender',
-          ),
-        ],
-        onTap: (index) {
-          // Lógica de navegação
-        },
       ),
     );
   }

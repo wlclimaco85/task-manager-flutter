@@ -7,6 +7,8 @@ import 'package:task_manager_flutter/data/models/auth_utility.dart';
 import 'package:task_manager_flutter/data/models/network_response.dart';
 import 'package:task_manager_flutter/ui/screens/auth_screens/login_screen.dart';
 import 'package:task_manager_flutter/ui/screens/LoginPopup_screens.dart';
+import 'package:task_manager_flutter/data/models/login_model.dart';
+import 'package:task_manager_flutter/data/utils/api_links.dart';
 
 class NetworkCaller {
   Future<NetworkResponse> getRequest(String url) async {
@@ -18,6 +20,23 @@ class NetworkCaller {
       if (response.statusCode == 200) {
         return NetworkResponse(
             true, response.statusCode, jsonDecode(response.body));
+      } else if (AuthUtility.userInfo?.data?.id == null ||
+          AuthUtility.userInfo?.data?.id == 1 && response.statusCode == 403) {
+        loginPadrao();
+        Response response = await get(
+          Uri.parse(url),
+          headers: {'Authorization': 'Bearer ${AuthUtility.userInfo.token}'},
+        );
+        if (response.statusCode == 200) {
+          return NetworkResponse(
+              true, response.statusCode, jsonDecode(response.body));
+        } else {
+          return NetworkResponse(
+            false,
+            response.statusCode,
+            null,
+          );
+        }
       } else {
         return NetworkResponse(
           false,
@@ -117,6 +136,26 @@ class NetworkCaller {
       -1,
       null,
     );
+  }
+
+  Future<void> loginPadrao() async {
+    Map<String, dynamic> requestBody = {
+      "email": 'wlclimaco@gmail.com',
+      "password": '123456'
+    };
+    final NetworkResponse response =
+        await NetworkCaller().postRequest(ApiLinks.login, requestBody);
+
+    if (response.isSuccess) {
+      LoginModel model = LoginModel.fromJson(response.body!);
+      await AuthUtility.setUserInfo(model);
+    } else {
+      if (response.statusCode == 400) {
+        print('Senha ou usuário inválido');
+      } else {
+        print('Erro: ${response.statusCode}');
+      }
+    }
   }
 
   Future<NetworkResponse> postRequest(

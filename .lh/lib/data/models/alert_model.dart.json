@@ -1,0 +1,18 @@
+{
+    "sourceFile": "lib/data/models/alert_model.dart",
+    "activeCommit": 0,
+    "commits": [
+        {
+            "activePatchIndex": 0,
+            "patches": [
+                {
+                    "date": 1736526482426,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n"
+                }
+            ],
+            "date": 1736526482426,
+            "name": "Commit-0",
+            "content": "import 'dart:convert';\r\n\r\nclass Alert {\r\n  final int id;\r\n  final int idUserDestino;\r\n  final String? data;\r\n  final String texto;\r\n  final String status;\r\n\r\n  Alert({\r\n    required this.id,\r\n    required this.idUserDestino,\r\n    this.data,\r\n    required this.texto,\r\n    required this.status,\r\n  });\r\n\r\n  factory Alert.fromJson(Map<String, dynamic> json) {\r\n    return Alert(\r\n      id: json['id'],\r\n      idUserDestino: json['idUserDestino'],\r\n      data: json['data'],\r\n      texto: json['texto'],\r\n      status: json['status'],\r\n    );\r\n  }\r\n\r\n  Map<String, dynamic> toJson() {\r\n    return {\r\n      'id': id,\r\n      'idUserDestino': idUserDestino,\r\n      'data': data,\r\n      'texto': texto,\r\n      'status': status,\r\n    };\r\n  }\r\n\r\n  static List<Alert> fromJsonList(List<dynamic> jsonList) {\r\n    return jsonList\r\n        .map((item) => Alert.fromJson(Map<String, dynamic>.from(item)))\r\n        .toList();\r\n  }\r\n}\r\n\r\nclass AlertResponse {\r\n  final List<Alert> account;\r\n  final ResponseStatus response;\r\n\r\n  AlertResponse({\r\n    required this.account,\r\n    required this.response,\r\n  });\r\n\r\n  factory AlertResponse.fromJson(Map<String, dynamic> json) {\r\n    return AlertResponse(\r\n      account: (json['data']['account'] as List)\r\n          .map((alert) => Alert.fromJson(alert))\r\n          .toList(),\r\n      response: ResponseStatus.fromJson(json['response']),\r\n    );\r\n  }\r\n\r\n  Map<String, dynamic> toJson() {\r\n    return {\r\n      'data': {\r\n        'account': account.map((alert) => alert.toJson()).toList(),\r\n      },\r\n      'response': response.toJson(),\r\n    };\r\n  }\r\n}\r\n\r\nclass ResponseStatus {\r\n  final bool error;\r\n  final String message;\r\n  final int status;\r\n\r\n  ResponseStatus({\r\n    required this.error,\r\n    required this.message,\r\n    required this.status,\r\n  });\r\n\r\n  factory ResponseStatus.fromJson(Map<String, dynamic> json) {\r\n    return ResponseStatus(\r\n      error: json['error'],\r\n      message: json['message'],\r\n      status: json['status'],\r\n    );\r\n  }\r\n\r\n  Map<String, dynamic> toJson() {\r\n    return {\r\n      'error': error,\r\n      'message': message,\r\n      'status': status,\r\n    };\r\n  }\r\n}\r\n"
+        }
+    ]
+}
