@@ -27,7 +27,7 @@ class UserBannerAppBar extends StatefulWidget implements PreferredSizeWidget {
 class _UserBannerAppBarState extends State<UserBannerAppBar> {
   int unreadAlerts = 0;
   List<Alert> notifications = [];
-  bool isDropdownOpen = false;
+  OverlayEntry? notificationOverlay;
 
   @override
   void initState() {
@@ -45,7 +45,7 @@ class _UserBannerAppBarState extends State<UserBannerAppBar> {
           unreadAlerts = notifications.length;
         });
       } else {
-        debugPrint('Failed to fetch notifications');
+        debugPrint('No notifications available');
       }
     } catch (e) {
       debugPrint('Error fetching notifications: $e');
@@ -73,9 +73,76 @@ class _UserBannerAppBarState extends State<UserBannerAppBar> {
     }
   }
 
+  void showNotificationDropdown(BuildContext context) {
+    if (notificationOverlay != null) {
+      notificationOverlay!.remove();
+      notificationOverlay = null;
+      return;
+    }
+
+    final overlay = Overlay.of(context);
+    final renderBox = context.findRenderObject() as RenderBox;
+    final size = renderBox.size;
+    final offset = renderBox.localToGlobal(Offset.zero);
+
+    notificationOverlay = OverlayEntry(
+      builder: (context) => Positioned(
+        top: offset.dy + size.height,
+        right: 8,
+        child: Material(
+          elevation: 4,
+          child: Container(
+            width: 300,
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(4),
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: notifications.isNotEmpty
+                  ? notifications.map((notification) {
+                      final String date = notification.data ??
+                          DateTime.now().toLocal().toIso8601String();
+                      return ListTile(
+                        title: Text(notification.texto),
+                        subtitle: Text(
+                          date,
+                          style: const TextStyle(fontSize: 12),
+                        ),
+                        trailing: IconButton(
+                          icon: const Icon(Icons.check_circle,
+                              color: Colors.green),
+                          onPressed: () {
+                            markNotificationAsRead(notification.id);
+                          },
+                        ),
+                      );
+                    }).toList()
+                  : [
+                      const Text(
+                        "No notifications",
+                        style: TextStyle(color: Colors.grey),
+                      )
+                    ],
+            ),
+          ),
+        ),
+      ),
+    );
+
+    overlay.insert(notificationOverlay!);
+  }
+
   void clearUserData() {
     AuthUtility.clearUserInfo();
     debugPrint("User data cleared");
+  }
+
+  @override
+  void dispose() {
+    notificationOverlay?.remove();
+    super.dispose();
   }
 
   @override
@@ -92,11 +159,7 @@ class _UserBannerAppBarState extends State<UserBannerAppBar> {
           children: [
             IconButton(
               icon: const Icon(Icons.notifications, color: Colors.black),
-              onPressed: () {
-                setState(() {
-                  isDropdownOpen = !isDropdownOpen;
-                });
-              },
+              onPressed: () => showNotificationDropdown(context),
             ),
             if (unreadAlerts > 0)
               Positioned(
@@ -120,49 +183,6 @@ class _UserBannerAppBarState extends State<UserBannerAppBar> {
                       fontWeight: FontWeight.bold,
                     ),
                     textAlign: TextAlign.center,
-                  ),
-                ),
-              ),
-            if (isDropdownOpen)
-              Positioned(
-                right: 0,
-                top: 48,
-                child: Material(
-                  elevation: 4,
-                  child: Container(
-                    width: 300,
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(4),
-                    ),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: notifications.isNotEmpty
-                          ? notifications.map((notification) {
-                              final String date = notification.data ??
-                                  DateTime.now().toLocal().toIso8601String();
-                              return ListTile(
-                                title: Text(notification.texto),
-                                subtitle: Text(
-                                  date,
-                                  style: const TextStyle(fontSize: 12),
-                                ),
-                                trailing: IconButton(
-                                  icon: const Icon(Icons.check_circle,
-                                      color: Colors.green),
-                                  onPressed: () =>
-                                      markNotificationAsRead(notification.id),
-                                ),
-                              );
-                            }).toList()
-                          : [
-                              const Text(
-                                "No notifications",
-                                style: TextStyle(color: Colors.grey),
-                              )
-                            ],
-                    ),
                   ),
                 ),
               ),

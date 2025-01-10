@@ -121,7 +121,7 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
             BottomNavigationBarItem(
                 icon: Icon(FontAwesomeIcons.tags), label: "Vender"),
             BottomNavigationBarItem(
-                icon: Icon(FontAwesomeIcons.bars), label: "Menu"),
+                icon: Icon(FontAwesomeIcons.bars), label: "Mais"),
           ],
         ),
       ),
