@@ -179,7 +179,7 @@ class _SuplementoModalAddState extends State<SuplementoModalAdd> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: userBanner(context, onTapped: () {
+      appBar: UserBannerAppBar(onTapped: () {
         Navigator.push(
             context,
             MaterialPageRoute(

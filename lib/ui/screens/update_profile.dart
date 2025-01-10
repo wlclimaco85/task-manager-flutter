@@ -117,7 +117,7 @@ class _UpdateProfileScreenState extends State<UpdateProfileScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white54,
-      appBar: userBanner(context),
+      appBar: UserBannerAppBar(),
       body: ScreenBackground(
           child: SingleChildScrollView(
         child: Padding(

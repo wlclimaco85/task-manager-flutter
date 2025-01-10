@@ -78,7 +78,7 @@ class _ProductCatalogPageComprasState extends State<ProductCatalogPageCompras> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: userBanner(context, onTapped: () {
+      appBar: UserBannerAppBar(onTapped: () {
         Navigator.push(
             context,
             MaterialPageRoute(

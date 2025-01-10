@@ -62,7 +62,7 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: userBanner(context, onTapped: () {
+      appBar: UserBannerAppBar(onTapped: () {
         Navigator.push(
             context,
             MaterialPageRoute(

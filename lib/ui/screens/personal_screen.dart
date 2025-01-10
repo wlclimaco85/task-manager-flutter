@@ -128,8 +128,7 @@ class _PersonalScreenState extends State<PersonalScreen> {
     return Scaffold(
       //  floatingActionButton: getHomeFab(context, listModels, refreshPage),
       backgroundColor: const Color(0xFF340A9C),
-      appBar: userBanner(
-        context,
+      appBar: UserBannerAppBar(
         onTapped: () {
           Navigator.push(
               context,

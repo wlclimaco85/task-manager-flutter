@@ -1,4 +1,5 @@
 import 'dart:typed_data';
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:task_manager_flutter/data/models/auth_utility.dart';
@@ -6,6 +7,7 @@ import 'package:task_manager_flutter/data/models/alert_model.dart';
 import 'package:task_manager_flutter/ui/screens/bottom_navbar_screen.dart';
 import 'package:task_manager_flutter/data/services/alert_caller.dart';
 import 'package:task_manager_flutter/data/models/login_model.dart';
+import 'package:http/http.dart' as http;
 
 const Color lightGreenBackground = Color.fromARGB(255, 231, 247, 233);
 const Color borderColor = Color.fromARGB(255, 1, 247, 14);
@@ -24,6 +26,8 @@ class UserBannerAppBar extends StatefulWidget implements PreferredSizeWidget {
 
 class _UserBannerAppBarState extends State<UserBannerAppBar> {
   int unreadAlerts = 0;
+  List<Alert> notifications = [];
+  bool isDropdownOpen = false;
 
   @override
   void initState() {
@@ -35,12 +39,37 @@ class _UserBannerAppBarState extends State<UserBannerAppBar> {
     try {
       final List<Alert> alertData =
           await AlertCaller().fetchItensAVenda(context);
-
-      setState(() {
-        unreadAlerts = alertData.length;
-      });
+      if (alertData.isNotEmpty) {
+        setState(() {
+          notifications = alertData;
+          unreadAlerts = notifications.length;
+        });
+      } else {
+        debugPrint('Failed to fetch notifications');
+      }
     } catch (e) {
-      debugPrint('Error fetching alerts: $e');
+      debugPrint('Error fetching notifications: $e');
+    }
+  }
+
+  Future<void> markNotificationAsRead(int id) async {
+    try {
+      final response = await http.post(
+        Uri.parse(
+            'https://appacademia-production-be7e.up.railway.app/boletobancos/api/alert'),
+        body: jsonEncode({"id": id}),
+        headers: {"Content-Type": "application/json"},
+      );
+      if (response.statusCode == 200) {
+        setState(() {
+          notifications.removeWhere((notification) => notification.id == id);
+          unreadAlerts = notifications.length;
+        });
+      } else {
+        debugPrint('Failed to mark notification as read');
+      }
+    } catch (e) {
+      debugPrint('Error marking notification as read: $e');
     }
   }
 
@@ -63,31 +92,10 @@ class _UserBannerAppBarState extends State<UserBannerAppBar> {
           children: [
             IconButton(
               icon: const Icon(Icons.notifications, color: Colors.black),
-              onPressed: () async {
-                await fetchAlerts();
-                showDialog(
-                  context: context,
-                  builder: (context) {
-                    return AlertDialog(
-                      title: const Text(
-                        "Alerts",
-                        style: TextStyle(
-                            fontWeight: FontWeight.bold, color: Colors.black),
-                      ),
-                      content: Text(unreadAlerts > 0
-                          ? "You have $unreadAlerts unread alerts."
-                          : "No alerts available."),
-                      actions: [
-                        TextButton(
-                          onPressed: () {
-                            Navigator.pop(context);
-                          },
-                          child: const Text("Close"),
-                        ),
-                      ],
-                    );
-                  },
-                );
+              onPressed: () {
+                setState(() {
+                  isDropdownOpen = !isDropdownOpen;
+                });
               },
             ),
             if (unreadAlerts > 0)
@@ -112,6 +120,49 @@ class _UserBannerAppBarState extends State<UserBannerAppBar> {
                       fontWeight: FontWeight.bold,
                     ),
                     textAlign: TextAlign.center,
+                  ),
+                ),
+              ),
+            if (isDropdownOpen)
+              Positioned(
+                right: 0,
+                top: 48,
+                child: Material(
+                  elevation: 4,
+                  child: Container(
+                    width: 300,
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: notifications.isNotEmpty
+                          ? notifications.map((notification) {
+                              final String date = notification.data ??
+                                  DateTime.now().toLocal().toIso8601String();
+                              return ListTile(
+                                title: Text(notification.texto),
+                                subtitle: Text(
+                                  date,
+                                  style: const TextStyle(fontSize: 12),
+                                ),
+                                trailing: IconButton(
+                                  icon: const Icon(Icons.check_circle,
+                                      color: Colors.green),
+                                  onPressed: () =>
+                                      markNotificationAsRead(notification.id),
+                                ),
+                              );
+                            }).toList()
+                          : [
+                              const Text(
+                                "No notifications",
+                                style: TextStyle(color: Colors.grey),
+                              )
+                            ],
+                    ),
                   ),
                 ),
               ),
