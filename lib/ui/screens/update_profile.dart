@@ -2,22 +2,15 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:task_manager_flutter/data/models/auth_utility.dart';
-import 'package:task_manager_flutter/data/models/network_response.dart';
-import 'package:task_manager_flutter/data/services/network_caller.dart';
-import 'package:task_manager_flutter/data/utils/api_links.dart';
-import 'package:task_manager_flutter/ui/widgets/custom_button.dart';
-import 'package:task_manager_flutter/ui/widgets/custom_password_text_field.dart';
-import 'package:task_manager_flutter/ui/widgets/custom_text_form_field.dart';
-import 'package:task_manager_flutter/ui/widgets/screen_background.dart';
-import 'package:task_manager_flutter/ui/widgets/user_banners.dart';
 import '../../data/models/login_model.dart';
 import 'dart:async';
 import 'dart:io';
+import 'dart:convert';
 import 'package:http/http.dart' as http;
 
 // Define as cores no início do documento
 const Color lightGreenBackground = Color.fromARGB(255, 231, 247, 233);
-const Color darkGreenBorder = Color.fromARGB(255, 1, 247, 14);
+const Color darkGreenBorder = Color.fromARGB(255, 230, 243, 231);
 
 class UpdateProfileScreen extends StatefulWidget {
   const UpdateProfileScreen({super.key});
@@ -89,6 +82,12 @@ class _UpdateProfileScreenState extends State<UpdateProfileScreen> {
       _isSubmitting = true;
     });
 
+    // Convert image to base64 if selected
+    if (pickImage != null) {
+      final bytes = await File(pickImage!.path).readAsBytes();
+      base64Image = base64Encode(bytes);
+    }
+
     Map<String, dynamic> requestBody = {
       "nome": _nomeController.text.trim(),
       "cpf": _cpfController.text.trim(),
@@ -99,7 +98,7 @@ class _UpdateProfileScreenState extends State<UpdateProfileScreen> {
       "razaoSocial": _razaoSocialController.text.trim(),
       "incrMun": _incrMunController.text.trim(),
       "status": _statusController.text.trim(),
-      "foto": _fotoController.text.trim(),
+      "foto": base64Image ?? "",
       "endereco": {
         "rua": _ruaController.text.trim(),
         "numero": _numeroController.text.trim(),
@@ -114,7 +113,7 @@ class _UpdateProfileScreenState extends State<UpdateProfileScreen> {
     try {
       final response = await http.post(
         Uri.parse('http://localhost:8088/boletobancos/api/parceiro/insert'),
-        //body: jsonEncode(requestBody),
+        body: jsonEncode(requestBody),
         headers: {"Content-Type": "application/json"},
       );
 
