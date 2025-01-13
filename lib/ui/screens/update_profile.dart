@@ -6,11 +6,12 @@ import '../../data/models/login_model.dart';
 import 'dart:async';
 import 'dart:io';
 import 'dart:convert';
-import 'package:http/http.dart' as http;
+import 'package:task_manager_flutter/data/services/parceiro_caller.dart';
 
 // Define as cores no início do documento
 const Color lightGreenBackground = Color.fromARGB(255, 231, 247, 233);
 const Color darkGreenBorder = Color.fromARGB(255, 230, 243, 231);
+const Color darkGreen = Colors.green;
 
 class UpdateProfileScreen extends StatefulWidget {
   const UpdateProfileScreen({super.key});
@@ -40,14 +41,11 @@ class _UpdateProfileScreenState extends State<UpdateProfileScreen> {
   final TextEditingController _senhaController = TextEditingController();
 
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
-  bool _signUpInProgress = false;
+  bool _isSubmitting = false;
 
   XFile? pickImage;
   String? base64Image;
-  File? image;
-  bool _isSubmitting = false;
 
-  //late List<XFile> = [];
   @override
   void initState() {
     super.initState();
@@ -82,7 +80,6 @@ class _UpdateProfileScreenState extends State<UpdateProfileScreen> {
       _isSubmitting = true;
     });
 
-    // Convert image to base64 if selected
     if (pickImage != null) {
       final bytes = await File(pickImage!.path).readAsBytes();
       base64Image = base64Encode(bytes);
@@ -111,19 +108,15 @@ class _UpdateProfileScreenState extends State<UpdateProfileScreen> {
     };
 
     try {
-      final response = await http.post(
-        Uri.parse('http://localhost:8088/boletobancos/api/parceiro/insert'),
-        body: jsonEncode(requestBody),
-        headers: {"Content-Type": "application/json"},
-      );
+      bool result = await ParceiroCaller().insertParceiro(context, requestBody);
 
-      if (response.statusCode == 200) {
+      if (result) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text("Profile inserted successfully")),
         );
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("Failed to insert profile: ${response.body}")),
+          const SnackBar(content: Text("Failed to insert profile")),
         );
       }
     } catch (e) {
@@ -143,7 +136,7 @@ class _UpdateProfileScreenState extends State<UpdateProfileScreen> {
       backgroundColor: lightGreenBackground,
       appBar: AppBar(
         title: const Text("Update Profile"),
-        backgroundColor: darkGreenBorder,
+        backgroundColor: darkGreen,
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),
@@ -177,32 +170,22 @@ class _UpdateProfileScreenState extends State<UpdateProfileScreen> {
                     ? "Telefone1 obrigatório"
                     : null,
               ),
-              const SizedBox(
-                height: 16,
-              ),
+              const SizedBox(height: 16),
               CustomTextFormField(
-                hintText: "Telefone",
+                hintText: "Telefone2",
                 controller: _telefone2Controller,
               ),
-              const SizedBox(
-                height: 16,
-              ),
+              const SizedBox(height: 16),
               CustomTextFormField(
                 hintText: "Cod. Produtor",
                 controller: _codProdutorController,
               ),
-              const SizedBox(
-                height: 16,
-              ),
+              const SizedBox(height: 16),
               CustomTextFormField(
                   hintText: "Razão Social", controller: _razaoSocialController),
-              const SizedBox(
-                height: 16,
-              ),
+              const SizedBox(height: 16),
               InkWell(
-                onTap: () {
-                  imagePicked();
-                },
+                onTap: imagePicked,
                 child: Row(children: [
                   Container(
                     padding: const EdgeInsets.all(16),
@@ -219,7 +202,7 @@ class _UpdateProfileScreenState extends State<UpdateProfileScreen> {
                     child: Container(
                       padding: const EdgeInsets.all(16),
                       decoration: const BoxDecoration(
-                        color: Color(0xFF3F1D9D),
+                        color: darkGreen,
                         borderRadius: BorderRadius.only(
                           topRight: Radius.circular(8),
                           bottomRight: Radius.circular(8),
@@ -234,15 +217,10 @@ class _UpdateProfileScreenState extends State<UpdateProfileScreen> {
                   ),
                 ]),
               ),
-              const SizedBox(
-                height: 16,
-              ),
+              const SizedBox(height: 16),
               CustomTextFormField(
                 hintText: "Inscr. Municipal",
                 controller: _incrMunController,
-              ),
-              const SizedBox(
-                height: 16,
               ),
               CustomTextFormField(
                 hintText: "CEP",
@@ -278,63 +256,65 @@ class _UpdateProfileScreenState extends State<UpdateProfileScreen> {
                     : null,
               ),
               const SizedBox(height: 16),
-              ElevatedButton(
-                onPressed: _isSubmitting ? null : sendProfileData,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: darkGreenBorder,
-                ),
-                child: _isSubmitting
-                    ? const CupertinoActivityIndicator()
-                    : const Text("Submit"),
-              ),
             ],
           ),
         ),
+      ),
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: _isSubmitting ? null : sendProfileData,
+        label: _isSubmitting
+            ? const CircularProgressIndicator(
+                color: Colors.white,
+              )
+            : const Text('Gravar'),
+        icon: const Icon(Icons.save),
+        backgroundColor: _isSubmitting ? Colors.grey : Colors.green,
       ),
     );
   }
 
   void imagePicked() async {
     showDialog(
-        context: context,
-        builder: (context) {
-          return AlertDialog(
-            title: const Text('Pick Image From:'),
-            content: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                ListTile(
-                  onTap: () async {
-                    pickImage = await ImagePicker()
-                        .pickImage(source: ImageSource.camera);
-                    if (pickImage != null) {
-                      setState(() {});
-                      if (mounted) {
-                        Navigator.pop(context);
-                      }
-                    } else {}
-                  },
-                  leading: const Icon(Icons.camera),
-                  title: const Text('Camera'),
-                ),
-                ListTile(
-                  leading: const Icon(Icons.image),
-                  onTap: () async {
-                    pickImage = await ImagePicker()
-                        .pickImage(source: ImageSource.gallery);
-                    if (pickImage != null) {
-                      setState(() {});
-                      if (mounted) {
-                        Navigator.pop(context);
-                      }
-                    } else {}
-                  },
-                  title: const Text('Gallery'),
-                )
-              ],
-            ),
-          );
-        });
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Pick Image From:'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ListTile(
+                onTap: () async {
+                  pickImage =
+                      await ImagePicker().pickImage(source: ImageSource.camera);
+                  if (pickImage != null) {
+                    setState(() {});
+                    if (mounted) {
+                      Navigator.pop(context);
+                    }
+                  }
+                },
+                leading: const Icon(Icons.camera),
+                title: const Text('Camera'),
+              ),
+              ListTile(
+                leading: const Icon(Icons.image),
+                onTap: () async {
+                  pickImage = await ImagePicker()
+                      .pickImage(source: ImageSource.gallery);
+                  if (pickImage != null) {
+                    setState(() {});
+                    if (mounted) {
+                      Navigator.pop(context);
+                    }
+                  }
+                },
+                title: const Text('Gallery'),
+              )
+            ],
+          ),
+        );
+      },
+    );
   }
 }
 

@@ -1,5 +1,5 @@
 import 'dart:convert';
-import 'package:flutter/material.dart'; // Necessário para BuildContext e showDialog
+import 'package:flutter/material.dart';
 import 'package:task_manager_flutter/data/models/parceiro_model.dart';
 import 'package:task_manager_flutter/data/utils/api_links.dart';
 import 'package:task_manager_flutter/data/models/network_response.dart';
@@ -38,5 +38,36 @@ class ParceiroCaller {
       throw Exception('Erro ao carregar cotações: $e');
     }
     return model;
+  }
+
+  Future<bool> insertParceiro(
+      BuildContext context, Map<String, dynamic> parceiroData) async {
+    try {
+      if (AuthUtility.userInfo?.data?.id != null &&
+          AuthUtility.userInfo?.data?.id == 1) {
+        // AQUI CHAMAR O LOGIN
+        await showDialog(
+          context: context,
+          builder: (BuildContext context) => LoginPopup(),
+        );
+        return false;
+      } else {
+        final NetworkResponse response = await NetworkCaller().postRequest(
+          'http://localhost:8088/boletobancos/api/parceiro/insert',
+          parceiroData,
+        );
+
+        if (response.statusCode == 200) {
+          print("Parceiro inserido com sucesso.");
+          return true;
+        } else {
+          print("Erro ao inserir parceiro: ${response.body}");
+          return false;
+        }
+      }
+    } catch (e) {
+      print('Erro ao inserir parceiro: $e');
+      throw Exception('Erro ao inserir parceiro: $e');
+    }
   }
 }

@@ -3,11 +3,23 @@
     "activeCommit": 0,
     "commits": [
         {
-            "activePatchIndex": 0,
+            "activePatchIndex": 3,
             "patches": [
                 {
                     "date": 1736538272190,
                     "content": "Index: \n===================================================================\n--- \n+++ \n"
+                },
+                {
+                    "date": 1736800993795,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -135,4 +135,41 @@\n       )),\r\n     );\r\n   }\r\n }\r\n+class CustomTextFormField extends StatelessWidget {\r\n+  final String hintText;\r\n+  final TextEditingController controller;\r\n+  final FormFieldValidator<String>? validator;\r\n+\r\n+  const CustomTextFormField({\r\n+    Key? key,\r\n+    required this.hintText,\r\n+    required this.controller,\r\n+    this.validator,\r\n+  }) : super(key: key);\r\n+\r\n+  @override\r\n+  Widget build(BuildContext context) {\r\n+    return Padding(\r\n+      padding: const EdgeInsets.only(bottom: 8.0),\r\n+      child: TextFormField(\r\n+        controller: controller,\r\n+        decoration: InputDecoration(\r\n+          hintText: hintText,\r\n+          filled: true,\r\n+          fillColor: Colors.white,\r\n+          border: OutlineInputBorder(\r\n+            borderSide: BorderSide(color: darkGreenBorder, width: 2.0),\r\n+          ),\r\n+          enabledBorder: OutlineInputBorder(\r\n+            borderSide: BorderSide(color: darkGreenBorder, width: 2.0),\r\n+          ),\r\n+          focusedBorder: OutlineInputBorder(\r\n+            borderSide: BorderSide(color: darkGreenBorder, width: 2.0),\r\n+          ),\r\n+        ),\r\n+        validator: validator,\r\n+      ),\r\n+    );\r\n+  }\r\n+}\r\n"
+                },
+                {
+                    "date": 1736801006863,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -158,12 +158,12 @@\n         decoration: InputDecoration(\r\n           hintText: hintText,\r\n           filled: true,\r\n           fillColor: Colors.white,\r\n-          border: OutlineInputBorder(\r\n+          border: const OutlineInputBorder(\r\n             borderSide: BorderSide(color: darkGreenBorder, width: 2.0),\r\n           ),\r\n-          enabledBorder: OutlineInputBorder(\r\n+          enabledBorder: const OutlineInputBorder(\r\n             borderSide: BorderSide(color: darkGreenBorder, width: 2.0),\r\n           ),\r\n           focusedBorder: OutlineInputBorder(\r\n             borderSide: BorderSide(color: darkGreenBorder, width: 2.0),\r\n"
+                },
+                {
+                    "date": 1736801058966,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -91,9 +91,8 @@\n                     ),\r\n                     CustomTextFormField(\r\n                       hintText: \"Task Title\",\r\n                       controller: _taskNameController,\r\n-                      textInputType: TextInputType.text,\r\n                       // validator: (value) {\r\n                       //   if (value?.isEmpty ?? true) {\r\n                       //     return \"Please enter task title\";\r\n                       //   }\r\n@@ -103,12 +102,10 @@\n                     const SizedBox(\r\n                       height: 16,\r\n                     ),\r\n                     CustomTextFormField(\r\n-                      maxLines: 4,\r\n                       hintText: \"Description\",\r\n                       controller: _taskDescriptionController,\r\n-                      textInputType: TextInputType.text,\r\n                       // validator: (value) {\r\n                       //   if (value?.isEmpty ?? true) {\r\n                       //     return \"Please enter task description\";\r\n                       //   }\r\n"
                 }
             ],
             "date": 1736538272190,

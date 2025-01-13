@@ -92,7 +92,6 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
                     CustomTextFormField(
                       hintText: "Task Title",
                       controller: _taskNameController,
-                      textInputType: TextInputType.text,
                       // validator: (value) {
                       //   if (value?.isEmpty ?? true) {
                       //     return "Please enter task title";
@@ -104,10 +103,8 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
                       height: 16,
                     ),
                     CustomTextFormField(
-                      maxLines: 4,
                       hintText: "Description",
                       controller: _taskDescriptionController,
-                      textInputType: TextInputType.text,
                       // validator: (value) {
                       //   if (value?.isEmpty ?? true) {
                       //     return "Please enter task description";
@@ -133,6 +130,44 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
           ],
         ),
       )),
+    );
+  }
+}
+
+class CustomTextFormField extends StatelessWidget {
+  final String hintText;
+  final TextEditingController controller;
+  final FormFieldValidator<String>? validator;
+
+  const CustomTextFormField({
+    Key? key,
+    required this.hintText,
+    required this.controller,
+    this.validator,
+  }) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8.0),
+      child: TextFormField(
+        controller: controller,
+        decoration: InputDecoration(
+          hintText: hintText,
+          filled: true,
+          fillColor: Colors.white,
+          border: const OutlineInputBorder(
+            borderSide: BorderSide(color: darkGreenBorder, width: 2.0),
+          ),
+          enabledBorder: const OutlineInputBorder(
+            borderSide: BorderSide(color: darkGreenBorder, width: 2.0),
+          ),
+          focusedBorder: const OutlineInputBorder(
+            borderSide: BorderSide(color: darkGreenBorder, width: 2.0),
+          ),
+        ),
+        validator: validator,
+      ),
     );
   }
 }
