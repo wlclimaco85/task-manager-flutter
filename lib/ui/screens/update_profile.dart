@@ -15,6 +15,10 @@ import 'dart:async';
 import 'dart:io';
 import 'package:http/http.dart' as http;
 
+// Define as cores no início do documento
+const Color lightGreenBackground = Color.fromARGB(255, 231, 247, 233);
+const Color darkGreenBorder = Color.fromARGB(255, 1, 247, 14);
+
 class UpdateProfileScreen extends StatefulWidget {
   const UpdateProfileScreen({super.key});
 
@@ -110,7 +114,7 @@ class _UpdateProfileScreenState extends State<UpdateProfileScreen> {
     try {
       final response = await http.post(
         Uri.parse('http://localhost:8088/boletobancos/api/parceiro/insert'),
-        //  body: jsonEncode(requestBody),
+        //body: jsonEncode(requestBody),
         headers: {"Content-Type": "application/json"},
       );
 
@@ -137,8 +141,11 @@ class _UpdateProfileScreenState extends State<UpdateProfileScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white54,
-      appBar: AppBar(title: const Text("Update Profile")),
+      backgroundColor: lightGreenBackground,
+      appBar: AppBar(
+        title: const Text("Update Profile"),
+        backgroundColor: darkGreenBorder,
+      ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),
         child: Form(
@@ -165,7 +172,7 @@ class _UpdateProfileScreenState extends State<UpdateProfileScreen> {
                     value == null || value.isEmpty ? "Email obrigatório" : null,
               ),
               CustomTextFormField(
-                hintText: "Telefone1",
+                hintText: "Telefone",
                 controller: _telefone1Controller,
                 validator: (value) => value == null || value.isEmpty
                     ? "Telefone1 obrigatório"
@@ -175,12 +182,21 @@ class _UpdateProfileScreenState extends State<UpdateProfileScreen> {
                 height: 16,
               ),
               CustomTextFormField(
-                hintText: "Telefone1",
+                hintText: "Telefone",
                 controller: _telefone2Controller,
-                validator: (value) => value == null || value.isEmpty
-                    ? "Telefone1 obrigatório"
-                    : null,
               ),
+              const SizedBox(
+                height: 16,
+              ),
+              CustomTextFormField(
+                hintText: "Cod. Produtor",
+                controller: _codProdutorController,
+              ),
+              const SizedBox(
+                height: 16,
+              ),
+              CustomTextFormField(
+                  hintText: "Razão Social", controller: _razaoSocialController),
               const SizedBox(
                 height: 16,
               ),
@@ -223,44 +239,17 @@ class _UpdateProfileScreenState extends State<UpdateProfileScreen> {
                 height: 16,
               ),
               CustomTextFormField(
-                hintText: "Telefone1",
-                controller: _telefone1Controller,
-                validator: (value) => value == null || value.isEmpty
-                    ? "Telefone1 obrigatório"
-                    : null,
+                hintText: "Inscr. Municipal",
+                controller: _incrMunController,
               ),
               const SizedBox(
                 height: 16,
               ),
               CustomTextFormField(
-                hintText: "Telefone1",
-                controller: _telefone1Controller,
-                validator: (value) => value == null || value.isEmpty
-                    ? "Telefone1 obrigatório"
-                    : null,
-              ),
-              const SizedBox(
-                height: 16,
-              ),
-              CustomTextFormField(
-                hintText: "Telefone1",
-                controller: _telefone1Controller,
-                validator: (value) => value == null || value.isEmpty
-                    ? "Telefone1 obrigatório"
-                    : null,
-              ),
-              const SizedBox(
-                height: 16,
-              ),
-              CustomTextFormField(
-                hintText: "Telefone1",
-                controller: _telefone1Controller,
-                validator: (value) => value == null || value.isEmpty
-                    ? "Telefone1 obrigatório"
-                    : null,
-              ),
-              const SizedBox(
-                height: 16,
+                hintText: "CEP",
+                controller: _cepController,
+                validator: (value) =>
+                    value == null || value.isEmpty ? "CEP obrigatório" : null,
               ),
               CustomTextFormField(
                 hintText: "Rua",
@@ -289,15 +278,12 @@ class _UpdateProfileScreenState extends State<UpdateProfileScreen> {
                     ? "Estado obrigatório"
                     : null,
               ),
-              CustomTextFormField(
-                hintText: "CEP",
-                controller: _cepController,
-                validator: (value) =>
-                    value == null || value.isEmpty ? "CEP obrigatório" : null,
-              ),
               const SizedBox(height: 16),
               ElevatedButton(
                 onPressed: _isSubmitting ? null : sendProfileData,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: darkGreenBorder,
+                ),
                 child: _isSubmitting
                     ? const CupertinoActivityIndicator()
                     : const Text("Submit"),
@@ -373,7 +359,17 @@ class CustomTextFormField extends StatelessWidget {
         controller: controller,
         decoration: InputDecoration(
           hintText: hintText,
-          border: const OutlineInputBorder(),
+          filled: true,
+          fillColor: Colors.white,
+          border: OutlineInputBorder(
+            borderSide: BorderSide(color: darkGreenBorder, width: 2.0),
+          ),
+          enabledBorder: OutlineInputBorder(
+            borderSide: BorderSide(color: darkGreenBorder, width: 2.0),
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderSide: BorderSide(color: darkGreenBorder, width: 2.0),
+          ),
         ),
         validator: validator,
       ),
