@@ -12,6 +12,7 @@ import 'package:task_manager_flutter/data/services/parceiro_caller.dart';
 const Color lightGreenBackground = Color.fromARGB(255, 231, 247, 233);
 const Color darkGreenBorder = Color.fromARGB(255, 230, 243, 231);
 const Color darkGreen = Colors.green;
+int idParceiro = AuthUtility.userInfo.data!.id!;
 
 class UpdateProfileScreen extends StatefulWidget {
   const UpdateProfileScreen({super.key});
@@ -39,9 +40,13 @@ class _UpdateProfileScreenState extends State<UpdateProfileScreen> {
   final TextEditingController _estadoController = TextEditingController();
   final TextEditingController _cepController = TextEditingController();
   final TextEditingController _senhaController = TextEditingController();
+  final TextEditingController _confirmSenhaController = TextEditingController();
+  final TextEditingController _parceiroIdController = TextEditingController();
 
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
   bool _isSubmitting = false;
+  bool _senhaVisible = false;
+  bool _confirmSenhaVisible = false;
 
   XFile? pickImage;
   String? base64Image;
@@ -55,6 +60,34 @@ class _UpdateProfileScreenState extends State<UpdateProfileScreen> {
         AuthUtility.userInfo.data?.codDadosPessoal?.nome ?? "";
     _cpfController.text = AuthUtility.userInfo.data?.codDadosPessoal?.cpf ?? "";
     _telefone1Controller.text = AuthUtility.userInfo.data?.mobile ?? "";
+    _telefone2Controller.text =
+        AuthUtility.userInfo.data?.codDadosPessoal?.telefone2 ?? "";
+    _parceiroIdController.text =
+        AuthUtility.userInfo.data?.id?.toString() ?? "";
+
+    _cpfController.text = AuthUtility.userInfo.data?.codDadosPessoal?.cpf ?? "";
+    ;
+    _codProdutorController.text =
+        AuthUtility.userInfo.data?.codDadosPessoal?.codProdutor ?? "";
+    _razaoSocialController.text =
+        AuthUtility.userInfo.data?.codDadosPessoal?.razaoSocial ?? "";
+    _incrMunController.text =
+        AuthUtility.userInfo.data?.codDadosPessoal?.incrMun ?? "";
+    _fotoController.text =
+        AuthUtility.userInfo.data?.codDadosPessoal?.photo ?? "";
+    _ruaController.text = utf8.decode(
+        (AuthUtility.userInfo.data?.codDadosPessoal?.logradouro ?? "")
+            .runes
+            .toList());
+    _numeroController.text =
+        AuthUtility.userInfo.data?.codDadosPessoal?.numero ?? "";
+    _bairroController.text =
+        AuthUtility.userInfo.data?.codDadosPessoal?.bairro ?? "";
+    _cidadeController.text =
+        AuthUtility.userInfo.data?.codDadosPessoal?.cidade ?? "";
+    _estadoController.text =
+        AuthUtility.userInfo.data?.codDadosPessoal?.estado ?? "";
+    _cepController.text = AuthUtility.userInfo.data?.codDadosPessoal?.cep ?? "";
   }
 
   Future<XFile?> getLostData() async {
@@ -86,6 +119,7 @@ class _UpdateProfileScreenState extends State<UpdateProfileScreen> {
     }
 
     Map<String, dynamic> requestBody = {
+      "id": 2, //_parceiroIdController.text.trim(),
       "nome": _nomeController.text.trim(),
       "cpf": _cpfController.text.trim(),
       "codProdutor": _codProdutorController.text.trim(),
@@ -108,17 +142,7 @@ class _UpdateProfileScreenState extends State<UpdateProfileScreen> {
     };
 
     try {
-      bool result = await ParceiroCaller().insertParceiro(context, requestBody);
-
-      if (result) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("Profile inserted successfully")),
-        );
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("Failed to insert profile")),
-        );
-      }
+      bool result = await ParceiroCaller().updateParceiro(context, requestBody);
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text("Error: $e")),
@@ -167,7 +191,7 @@ class _UpdateProfileScreenState extends State<UpdateProfileScreen> {
                 hintText: "Telefone",
                 controller: _telefone1Controller,
                 validator: (value) => value == null || value.isEmpty
-                    ? "Telefone1 obrigatório"
+                    ? "Telefone obrigatório"
                     : null,
               ),
               const SizedBox(height: 16),
@@ -256,6 +280,33 @@ class _UpdateProfileScreenState extends State<UpdateProfileScreen> {
                     : null,
               ),
               const SizedBox(height: 16),
+              CustomPasswordTextFormField(
+                hintText: "Senha",
+                controller: _senhaController,
+                obscureText: !_senhaVisible,
+                togglePasswordVisibility: () {
+                  setState(() {
+                    _senhaVisible = !_senhaVisible;
+                  });
+                },
+              ),
+              CustomPasswordTextFormField(
+                hintText: "Repetir Senha",
+                controller: _confirmSenhaController,
+                obscureText: !_confirmSenhaVisible,
+                togglePasswordVisibility: () {
+                  setState(() {
+                    _confirmSenhaVisible = !_confirmSenhaVisible;
+                  });
+                },
+                validator: (value) {
+                  if (value != _senhaController.text) {
+                    return "As senhas não coincidem";
+                  }
+                  return null;
+                },
+              ),
+              const SizedBox(height: 16),
             ],
           ),
         ),
@@ -340,14 +391,58 @@ class CustomTextFormField extends StatelessWidget {
           hintText: hintText,
           filled: true,
           fillColor: Colors.white,
-          border: OutlineInputBorder(
+          border: const OutlineInputBorder(
             borderSide: BorderSide(color: darkGreenBorder, width: 2.0),
           ),
-          enabledBorder: OutlineInputBorder(
+          enabledBorder: const OutlineInputBorder(
             borderSide: BorderSide(color: darkGreenBorder, width: 2.0),
           ),
-          focusedBorder: OutlineInputBorder(
+          focusedBorder: const OutlineInputBorder(
             borderSide: BorderSide(color: darkGreenBorder, width: 2.0),
+          ),
+        ),
+        validator: validator,
+      ),
+    );
+  }
+}
+
+class CustomPasswordTextFormField extends StatelessWidget {
+  final String hintText;
+  final TextEditingController controller;
+  final bool obscureText;
+  final VoidCallback togglePasswordVisibility;
+  final FormFieldValidator<String>? validator;
+
+  const CustomPasswordTextFormField({
+    Key? key,
+    required this.hintText,
+    required this.controller,
+    required this.obscureText,
+    required this.togglePasswordVisibility,
+    this.validator,
+  }) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8.0),
+      child: TextFormField(
+        controller: controller,
+        obscureText: obscureText,
+        decoration: InputDecoration(
+          hintText: hintText,
+          filled: true,
+          fillColor: Colors.white,
+          border: const OutlineInputBorder(
+            borderSide: BorderSide(color: darkGreenBorder, width: 2.0),
+          ),
+          suffixIcon: IconButton(
+            icon: Icon(
+              obscureText ? Icons.visibility_off : Icons.visibility,
+              color: Colors.grey,
+            ),
+            onPressed: togglePasswordVisibility,
           ),
         ),
         validator: validator,

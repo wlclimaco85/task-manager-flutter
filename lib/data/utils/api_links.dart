@@ -68,4 +68,6 @@ class ApiLinks {
   static String compradorFindByUser = '$_baseUrlNew/api/produtos/comprador/';
   static String vendedorFindByUser = '$_baseUrlNew/api/produtos/vendedor/';
   static String negociacaoFindByUser = '$_baseUrlNew/produtos/negociacoes/';
+  static String insertParceiro = '$_baseUrlNew/api/parceiro/insert';
+  static String updateParceiro = '$_baseUrlNew/api/parceiro/update';
 }

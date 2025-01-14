@@ -79,7 +79,10 @@ class Data {
       "photo": codDadosPessoal?.photo,
       "tipoAluno": codDadosPessoal?.tipoAluno,
       "parentId": codDadosPessoal?.parentId,
-      "academia": codDadosPessoal?.academia
+      "academia": codDadosPessoal?.academia,
+      "codProdutor": codDadosPessoal?.codProdutor,
+      "incrMun": codDadosPessoal?.incrMun,
+      "razaoSocial": codDadosPessoal?.razaoSocial
     };
 
     return data;
@@ -106,6 +109,9 @@ class DadosPessoal {
   String? tipoAluno;
   int? parentId;
   String? academia;
+  String? codProdutor;
+  String? incrMun;
+  String? razaoSocial;
 
   DadosPessoal(
       {this.id,
@@ -126,7 +132,10 @@ class DadosPessoal {
       this.photo,
       this.tipoAluno,
       this.parentId,
-      this.academia});
+      this.academia,
+      this.codProdutor,
+      this.incrMun,
+      this.razaoSocial});
 
   DadosPessoal.fromJson(Map<String, dynamic> json) {
     id = json['id'];
@@ -148,6 +157,9 @@ class DadosPessoal {
     tipoAluno = json['tipoAluno'];
     parentId = json['parentId'];
     academia = json['academia'];
+    codProdutor = json['codProdutor'];
+    incrMun = json['incrMun'];
+    razaoSocial = json['razaoSocial'];
   }
 
   Map<String, dynamic> toJson() {
@@ -171,6 +183,9 @@ class DadosPessoal {
     codDadosPessoal['tipoAluno'] = tipoAluno;
     codDadosPessoal['parentId'] = parentId;
     codDadosPessoal['academia'] = academia;
+    codDadosPessoal['codProdutor'] = codProdutor;
+    codDadosPessoal['incrMun'] = incrMun;
+    codDadosPessoal['razaoSocial'] = razaoSocial;
     return codDadosPessoal;
   }
 }

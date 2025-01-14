@@ -3,7 +3,7 @@
     "activeCommit": 0,
     "commits": [
         {
-            "activePatchIndex": 2,
+            "activePatchIndex": 6,
             "patches": [
                 {
                     "date": 1708720049585,
@@ -16,6 +16,22 @@
                 {
                     "date": 1708720075657,
                     "content": "Index: \n===================================================================\n--- \n+++ \n@@ -53,8 +53,9 @@\n   }\r\n \r\n   Map<String, dynamic> toJson() {\r\n     final Map<String, dynamic> data = <String, dynamic>{};\r\n+    data['id'] = id;\r\n     data['email'] = email;\r\n     data['firstName'] = firstName;\r\n     data['lastName'] = lastName;\r\n     data['mobile'] = mobile;\r\n"
+                },
+                {
+                    "date": 1736876472270,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -78,9 +78,12 @@\n       \"lastName\": codDadosPessoal?.lastName,\r\n       \"photo\": codDadosPessoal?.photo,\r\n       \"tipoAluno\": codDadosPessoal?.tipoAluno,\r\n       \"parentId\": codDadosPessoal?.parentId,\r\n-      \"academia\": codDadosPessoal?.academia\r\n+      \"academia\": codDadosPessoal?.academia,\r\n+      \"codProduto\": codDadosPessoal?.codProduto,\r\n+      \"incrMun\": codDadosPessoal?.incrMun,\r\n+      \"razaoSocial\": codDadosPessoal?.razaoSocial\r\n     };\r\n \r\n     return data;\r\n   }\r\n@@ -105,8 +108,11 @@\n   String? photo;\r\n   String? tipoAluno;\r\n   int? parentId;\r\n   String? academia;\r\n+  String? codProduto;\r\n+  String? incrMun;\r\n+  String? razaoSocial;\r\n \r\n   DadosPessoal(\r\n       {this.id,\r\n       this.nome,\r\n@@ -125,9 +131,12 @@\n       this.lastName,\r\n       this.photo,\r\n       this.tipoAluno,\r\n       this.parentId,\r\n-      this.academia});\r\n+      this.academia,\r\n+      this.codProduto,\r\n+      this.incrMun,\r\n+      this.razaoSocial});\r\n \r\n   DadosPessoal.fromJson(Map<String, dynamic> json) {\r\n     id = json['id'];\r\n     nome = json['nome'];\r\n@@ -147,8 +156,11 @@\n     photo = json['photo'];\r\n     tipoAluno = json['tipoAluno'];\r\n     parentId = json['parentId'];\r\n     academia = json['academia'];\r\n+    codProduto = json['academia'];\r\n+    incrMun = json['academia'];\r\n+    razaoSocial = json['academia'];\r\n   }\r\n \r\n   Map<String, dynamic> toJson() {\r\n     final Map<String, dynamic> codDadosPessoal = <String, dynamic>{};\r\n"
+                },
+                {
+                    "date": 1736876520931,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -182,7 +182,10 @@\n     codDadosPessoal['photo'] = photo;\r\n     codDadosPessoal['tipoAluno'] = tipoAluno;\r\n     codDadosPessoal['parentId'] = parentId;\r\n     codDadosPessoal['academia'] = academia;\r\n+    codDadosPessoal['codProduto'] = codProduto;\r\n+    codDadosPessoal['incrMun'] = incrMun;\r\n+    codDadosPessoal['razaoSocial'] = razaoSocial;\r\n     return codDadosPessoal;\r\n   }\r\n }\r\n"
+                },
+                {
+                    "date": 1736876565859,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -79,9 +79,9 @@\n       \"photo\": codDadosPessoal?.photo,\r\n       \"tipoAluno\": codDadosPessoal?.tipoAluno,\r\n       \"parentId\": codDadosPessoal?.parentId,\r\n       \"academia\": codDadosPessoal?.academia,\r\n-      \"codProduto\": codDadosPessoal?.codProduto,\r\n+      \"codProdutor\": codDadosPessoal?.codProdutor,\r\n       \"incrMun\": codDadosPessoal?.incrMun,\r\n       \"razaoSocial\": codDadosPessoal?.razaoSocial\r\n     };\r\n \r\n@@ -108,9 +108,9 @@\n   String? photo;\r\n   String? tipoAluno;\r\n   int? parentId;\r\n   String? academia;\r\n-  String? codProduto;\r\n+  String? codProdutor;\r\n   String? incrMun;\r\n   String? razaoSocial;\r\n \r\n   DadosPessoal(\r\n@@ -132,9 +132,9 @@\n       this.photo,\r\n       this.tipoAluno,\r\n       this.parentId,\r\n       this.academia,\r\n-      this.codProduto,\r\n+      this.codProdutor,\r\n       this.incrMun,\r\n       this.razaoSocial});\r\n \r\n   DadosPessoal.fromJson(Map<String, dynamic> json) {\r\n@@ -156,11 +156,11 @@\n     photo = json['photo'];\r\n     tipoAluno = json['tipoAluno'];\r\n     parentId = json['parentId'];\r\n     academia = json['academia'];\r\n-    codProduto = json['academia'];\r\n-    incrMun = json['academia'];\r\n-    razaoSocial = json['academia'];\r\n+    codProdutor = json['codProdutor'];\r\n+    incrMun = json['incrMun'];\r\n+    razaoSocial = json['razaoSocial'];\r\n   }\r\n \r\n   Map<String, dynamic> toJson() {\r\n     final Map<String, dynamic> codDadosPessoal = <String, dynamic>{};\r\n@@ -182,9 +182,9 @@\n     codDadosPessoal['photo'] = photo;\r\n     codDadosPessoal['tipoAluno'] = tipoAluno;\r\n     codDadosPessoal['parentId'] = parentId;\r\n     codDadosPessoal['academia'] = academia;\r\n-    codDadosPessoal['codProduto'] = codProduto;\r\n+    codDadosPessoal['codProdutor'] = codProdutorr;\r\n     codDadosPessoal['incrMun'] = incrMun;\r\n     codDadosPessoal['razaoSocial'] = razaoSocial;\r\n     return codDadosPessoal;\r\n   }\r\n"
+                },
+                {
+                    "date": 1736876571235,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -182,9 +182,9 @@\n     codDadosPessoal['photo'] = photo;\r\n     codDadosPessoal['tipoAluno'] = tipoAluno;\r\n     codDadosPessoal['parentId'] = parentId;\r\n     codDadosPessoal['academia'] = academia;\r\n-    codDadosPessoal['codProdutor'] = codProdutorr;\r\n+    codDadosPessoal['codProdutor'] = codProdutor;\r\n     codDadosPessoal['incrMun'] = incrMun;\r\n     codDadosPessoal['razaoSocial'] = razaoSocial;\r\n     return codDadosPessoal;\r\n   }\r\n"
                 }
             ],
             "date": 1708720049585,

@@ -44,19 +44,109 @@ class ParceiroCaller {
       BuildContext context, Map<String, dynamic> parceiroData) async {
     try {
       final NetworkResponse response = await NetworkCaller().postRequest(
-        'http://localhost:8088/boletobancos/api/parceiro/insert',
+        '${ApiLinks.insertParceiro}',
         parceiroData,
       );
 
-      if (response.statusCode == 200) {
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        // Analisar o JSON retornado para verificar se contém erros
+        final Map<String, dynamic> responseBody =
+            response.body as Map<String, dynamic>;
+        final responseError = responseBody['response']['error'] as bool?;
+        final responseMessage = responseBody['response']['message'];
+        String sanitizedMessage = responseMessage != null
+            ? utf8.decode(responseMessage.runes.toList())
+            : "Erro desconhecido.";
+
+        if (responseError == true) {
+          // Mostra a mensagem de erro do servidor
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(sanitizedMessage),
+              backgroundColor: Colors.red,
+            ),
+          );
+          return false;
+        }
+
         print("Parceiro inserido com sucesso.");
         return true;
       } else {
         print("Erro ao inserir parceiro: ${response.body}");
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text("Erro ao inserir parceiro: ${response.body}"),
+            backgroundColor: Colors.red,
+          ),
+        );
         return false;
       }
     } catch (e) {
       print('Erro ao inserir parceiro: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text("Erro ao inserir parceiro: $e"),
+          backgroundColor: Colors.red,
+        ),
+      );
+      throw Exception('Erro ao inserir parceiro: $e');
+    }
+  }
+
+  Future<bool> updateParceiro(
+      BuildContext context, Map<String, dynamic> parceiroData) async {
+    try {
+      final NetworkResponse response = await NetworkCaller().postRequest(
+        '${ApiLinks.updateParceiro}',
+        parceiroData,
+      );
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        // Analisar o JSON retornado para verificar se contém erros
+        final Map<String, dynamic> responseBody =
+            response.body as Map<String, dynamic>;
+        final responseError = responseBody['response']['error'] as bool?;
+        final responseMessage = responseBody['response']['message'];
+        String sanitizedMessage = responseMessage != null
+            ? utf8.decode(responseMessage.runes.toList())
+            : "Erro desconhecido.";
+
+        if (responseError == true) {
+          // Mostra a mensagem de erro do servidor
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(sanitizedMessage),
+              backgroundColor: Colors.red,
+            ),
+          );
+          return false;
+        }
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(sanitizedMessage),
+            backgroundColor: Colors.green,
+          ),
+        );
+        return true;
+      } else {
+        print("Erro ao inserir parceiro: ${response.body}");
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text("Erro ao inserir parceiro: ${response.body}"),
+            backgroundColor: Colors.red,
+          ),
+        );
+        return false;
+      }
+    } catch (e) {
+      print('Erro ao inserir parceiro: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text("Erro ao inserir parceiro: $e"),
+          backgroundColor: Colors.red,
+        ),
+      );
       throw Exception('Erro ao inserir parceiro: $e');
     }
   }
