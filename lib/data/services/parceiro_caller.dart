@@ -43,27 +43,17 @@ class ParceiroCaller {
   Future<bool> insertParceiro(
       BuildContext context, Map<String, dynamic> parceiroData) async {
     try {
-      if (AuthUtility.userInfo?.data?.id != null &&
-          AuthUtility.userInfo?.data?.id == 1) {
-        // AQUI CHAMAR O LOGIN
-        await showDialog(
-          context: context,
-          builder: (BuildContext context) => LoginPopup(),
-        );
-        return false;
-      } else {
-        final NetworkResponse response = await NetworkCaller().postRequest(
-          'http://localhost:8088/boletobancos/api/parceiro/insert',
-          parceiroData,
-        );
+      final NetworkResponse response = await NetworkCaller().postRequest(
+        'http://localhost:8088/boletobancos/api/parceiro/insert',
+        parceiroData,
+      );
 
-        if (response.statusCode == 200) {
-          print("Parceiro inserido com sucesso.");
-          return true;
-        } else {
-          print("Erro ao inserir parceiro: ${response.body}");
-          return false;
-        }
+      if (response.statusCode == 200) {
+        print("Parceiro inserido com sucesso.");
+        return true;
+      } else {
+        print("Erro ao inserir parceiro: ${response.body}");
+        return false;
       }
     } catch (e) {
       print('Erro ao inserir parceiro: $e');
