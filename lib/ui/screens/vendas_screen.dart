@@ -5,6 +5,8 @@ import 'package:task_manager_flutter/data/utils/fotos_util.dart';
 import 'package:task_manager_flutter/data/utils/api_links.dart';
 import 'package:task_manager_flutter/data/models/network_response.dart';
 import 'package:task_manager_flutter/data/services/network_caller.dart';
+import 'package:task_manager_flutter/ui/screens/update_profile.dart';
+import 'package:task_manager_flutter/ui/widgets/user_banners.dart';
 
 // Define theme colors
 const Color lightGreenBackground = Color.fromARGB(255, 231, 247, 233);
@@ -117,31 +119,16 @@ class _ProductCatalogState extends State<ProductCatalog> {
     cities.insert(0, "Cidade");
 
     return Scaffold(
-      appBar: AppBar(
-        title: Row(
-          children: [
-            const Text('Catálogo de Grãos'),
-            if (isLoading)
-              const SizedBox(
-                width: 20,
-                height: 20,
-                child: CircularProgressIndicator(
-                  color: Colors.white,
-                  strokeWidth: 2,
-                ),
-              ),
-          ],
-        ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh),
-            tooltip: 'Atualizar',
-            onPressed: () async {
-              await _fetchProducts();
-            },
-          ),
-        ],
-      ),
+      appBar: UserBannerAppBar(
+          screenTitle: "Catálogo de Grãos",
+          isLoading: isLoading,
+          onRefresh: _fetchProducts,
+          onTapped: () {
+            Navigator.push(
+                context,
+                MaterialPageRoute(
+                    builder: (context) => const UpdateProfileScreen()));
+          }),
       body: Container(
         color: lightGreenBackground,
         child: Column(
@@ -548,68 +535,74 @@ class ProductCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(8.0),
         side: BorderSide(color: darkGreenBorder, width: 2),
       ),
-      child: Row(
+      child: Column(
         children: [
-          Expanded(
-            flex: 2,
-            child: image,
-          ),
-          Expanded(
-            flex: 3,
-            child: Padding(
-              padding: const EdgeInsets.all(8.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Arroz em Casca - Lote : ' + product.id.toString(),
-                    style: const TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  Text(
-                      'Estado: ${product.parceiro?.endereco?.estado ?? "Não informado"}'),
-                  Text(
-                      'Cidade: ${product.parceiro?.endereco?.cidade ?? "Não informado"}'),
-                  Text('Quantidade: ${product.qtdSacos} sacos'),
-                  Text('Valor por saco: R\$${product.vlrSacos}'),
-                  Text('Observação: ${product.descricao ?? "Não informado"}'),
-                  const Text('Classificação:'),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: product.classificacao!.map<Widget>((c) {
-                      return Container(
-                        margin: const EdgeInsets.only(
-                            left: 16, top: 4), // Margem personalizada
-                        child: Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const Icon(Icons.circle,
-                                size: 8, color: Colors.black), // Marcador
-                            const SizedBox(
-                                width: 8), // Espaço entre o marcador e o texto
-                            Expanded(
-                              child: Text('${c.descricao}: ${c.valor}',
-                                  style: const TextStyle(
-                                      fontSize: 12)), // Texto da classificação
-                            ),
-                          ],
-                        ),
-                      );
-                    }).toList(),
-                  ),
-                ],
-              ),
-            ),
-          ),
-          Column(
-            mainAxisAlignment: MainAxisAlignment.center,
+          Row(
             children: [
-              // Botão Detalhes
-              Tooltip(
-                message: "Detalhes",
-                child: Column(
+              Expanded(
+                flex: 2,
+                child: image,
+              ),
+              Expanded(
+                flex: 3,
+                child: Padding(
+                  padding: const EdgeInsets.all(8.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Arroz em Casca - Lote : ' + product.id.toString(),
+                        style: const TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      Text(
+                          'Estado: ${product.parceiro?.endereco?.estado ?? "Não informado"}'),
+                      Text(
+                          'Cidade: ${product.parceiro?.endereco?.cidade ?? "Não informado"}'),
+                      Text('Quantidade: ${product.qtdSacos} sacos'),
+                      Text('Valor por saco: R\$${product.vlrSacos}'),
+                      Text(
+                          'Observação: ${product.descricao ?? "Não informado"}'),
+                      const Text('Classificação:'),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: product.classificacao!.map<Widget>((c) {
+                          return Container(
+                            margin: const EdgeInsets.only(
+                                left: 16, top: 4), // Margem personalizada
+                            child: Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const Icon(Icons.circle,
+                                    size: 8, color: Colors.black), // Marcador
+                                const SizedBox(
+                                    width:
+                                        8), // Espaço entre o marcador e o texto
+                                Expanded(
+                                  child: Text('${c.descricao}: ${c.valor}',
+                                      style: const TextStyle(fontSize: 12)),
+                                ),
+                              ],
+                            ),
+                          );
+                        }).toList(),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const Divider(color: Colors.grey), // Linha divisória
+          Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                // Botão Detalhes
+                Column(
                   children: [
                     IconButton(
                       icon: const Icon(Icons.info, color: Colors.blue),
@@ -621,13 +614,15 @@ class ProductCard extends StatelessWidget {
                     ),
                   ],
                 ),
-              ),
-              const SizedBox(height: 16),
-
-              // Botão Negociar
-              Tooltip(
-                message: "Negociar",
-                child: Column(
+                const SizedBox(width: 8),
+                const VerticalDivider(
+                  width: 1,
+                  thickness: 1,
+                  color: Colors.grey,
+                ),
+                const SizedBox(width: 8),
+                // Botão Negociar
+                Column(
                   children: [
                     IconButton(
                       icon: const Icon(Icons.handshake, color: Colors.green),
@@ -639,13 +634,15 @@ class ProductCard extends StatelessWidget {
                     ),
                   ],
                 ),
-              ),
-              const SizedBox(height: 16),
-
-              // Botão Comprar
-              Tooltip(
-                message: "Comprar",
-                child: Column(
+                const SizedBox(width: 8),
+                const VerticalDivider(
+                  width: 1,
+                  thickness: 1,
+                  color: Colors.grey,
+                ),
+                const SizedBox(width: 8),
+                // Botão Comprar
+                Column(
                   children: [
                     IconButton(
                       icon:
@@ -658,13 +655,15 @@ class ProductCard extends StatelessWidget {
                     ),
                   ],
                 ),
-              ),
-              const SizedBox(height: 16),
-
-              // Botão Cotar Transporte
-              Tooltip(
-                message: "Cotar Transporte",
-                child: Column(
+                const SizedBox(width: 8),
+                const VerticalDivider(
+                  width: 1,
+                  thickness: 1,
+                  color: Colors.grey,
+                ),
+                const SizedBox(width: 8),
+                // Botão Cotar Transporte
+                Column(
                   children: [
                     IconButton(
                       icon: const Icon(Icons.local_shipping,
@@ -697,18 +696,19 @@ class ProductCard extends StatelessWidget {
                       },
                     ),
                     const Text(
-                      "Cotar Transporte ",
+                      "Cotar Transporte",
                       style: TextStyle(fontSize: 12, color: Colors.black),
                     ),
                   ],
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ],
       ),
     );
   }
+
 /*
   void showNegotiationPopup(BuildContext context, Produto product) {
     final TextEditingController qtdController = TextEditingController();

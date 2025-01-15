@@ -24,6 +24,11 @@ class _CotacaoScreenState extends State<CotacaoScreen> {
     _fetchCotacoesDollares();
   }
 
+  void refresh() {
+    _fetchCotacoes();
+    _fetchCotacoesDollares();
+  }
+
   void _fetchCotacoes() {
     setState(() {
       isLoading = true;
@@ -51,12 +56,16 @@ class _CotacaoScreenState extends State<CotacaoScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: UserBannerAppBar(onTapped: () {
-        Navigator.push(
-            context,
-            MaterialPageRoute(
-                builder: (context) => const UpdateProfileScreen()));
-      }),
+      appBar: UserBannerAppBar(
+          screenTitle: "Cotaçoes",
+          isLoading: isLoading,
+          onRefresh: refresh,
+          onTapped: () {
+            Navigator.push(
+                context,
+                MaterialPageRoute(
+                    builder: (context) => const UpdateProfileScreen()));
+          }),
       body: isLoading
           ? const Center(child: CircularProgressIndicator())
           : Padding(

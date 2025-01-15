@@ -8,6 +8,8 @@ import 'package:intl/intl.dart';
 import 'dart:convert';
 import 'package:task_manager_flutter/data/models/noticias_model.dart';
 import 'package:task_manager_flutter/ui/screens/NewsDetailScreen.dart';
+import 'package:task_manager_flutter/ui/widgets/user_banners.dart';
+import 'package:task_manager_flutter/ui/screens/update_profile.dart';
 
 // Define cores
 const Color lightGreenBackground = Color.fromARGB(255, 231, 247, 233);
@@ -285,15 +287,16 @@ class _TaskScreenState extends State<TaskScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Notícias'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh),
-            onPressed: () => _refreshNews(),
-          ),
-        ],
-      ),
+      appBar: UserBannerAppBar(
+          screenTitle: "Notícias",
+          isLoading: isLoading,
+          onRefresh: _refreshNews,
+          onTapped: () {
+            Navigator.push(
+                context,
+                MaterialPageRoute(
+                    builder: (context) => const UpdateProfileScreen()));
+          }),
       body: Container(
         color: lightGreenBackground, // Cor de fundo da tela
         child: RefreshIndicator(

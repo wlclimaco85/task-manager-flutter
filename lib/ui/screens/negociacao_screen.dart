@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:task_manager_flutter/data/services/vendas_caller.dart';
 import 'package:task_manager_flutter/data/utils/fotos_util.dart';
+import 'package:task_manager_flutter/ui/screens/update_profile.dart';
+import 'package:task_manager_flutter/ui/widgets/user_banners.dart';
 
 // Define theme colors
 const Color lightGreenBackground = Color.fromARGB(255, 231, 247, 233);
@@ -58,24 +60,16 @@ class _NegociacaoCatalogPageState extends State<NegociacaoCatalogPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text(widget.title),
-        actions: [
-          if (isLoading)
-            const Padding(
-              padding: EdgeInsets.only(right: 16),
-              child: CircularProgressIndicator(
-                color: Colors.white,
-                strokeWidth: 2,
-              ),
-            ),
-          IconButton(
-            icon: const Icon(Icons.refresh),
-            tooltip: 'Atualizar',
-            onPressed: fetchProducts,
-          ),
-        ],
-      ),
+      appBar: UserBannerAppBar(
+          screenTitle: "Vendas",
+          onRefresh: fetchProducts,
+          isLoading: isLoading,
+          onTapped: () {
+            Navigator.push(
+                context,
+                MaterialPageRoute(
+                    builder: (context) => const UpdateProfileScreen()));
+          }),
       body: Container(
         color: lightGreenBackground,
         child: isLoading

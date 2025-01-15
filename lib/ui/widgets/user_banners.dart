@@ -14,8 +14,17 @@ const Color borderColor = Color.fromARGB(255, 1, 247, 14);
 
 class UserBannerAppBar extends StatefulWidget implements PreferredSizeWidget {
   final VoidCallback? onTapped;
+  final String? screenTitle;
+  final VoidCallback? onRefresh;
+  final bool? isLoading;
 
-  const UserBannerAppBar({Key? key, this.onTapped}) : super(key: key);
+  const UserBannerAppBar({
+    Key? key,
+    this.onTapped,
+    this.screenTitle,
+    this.onRefresh,
+    this.isLoading,
+  }) : super(key: key);
 
   @override
   _UserBannerAppBarState createState() => _UserBannerAppBarState();
@@ -147,50 +156,59 @@ class _UserBannerAppBarState extends State<UserBannerAppBar> {
 
   @override
   Widget build(BuildContext context) {
-    return AppBar(
-      backgroundColor: lightGreenBackground,
-      shape: const RoundedRectangleBorder(
-        side: BorderSide(color: borderColor, width: 2.0),
-      ),
-      actions: [
-        // Alert Icon with unread count
-        Stack(
-          alignment: Alignment.center,
-          children: [
-            IconButton(
-              icon: const Icon(Icons.notifications, color: Colors.black),
-              onPressed: () => showNotificationDropdown(context),
+    // Condição para exibir o AppBar principal ou o alternativo
+    if (AuthUtility.userInfo?.data?.id != null &&
+        AuthUtility.userInfo!.data!.id! > 1) {
+      return AppBar(
+        backgroundColor: lightGreenBackground,
+        shape: const RoundedRectangleBorder(
+          side: BorderSide(color: borderColor, width: 2.0),
+        ),
+        actions: [
+          if (widget?.isLoading ?? false)
+            const Padding(
+              padding: EdgeInsets.only(right: 16),
+              child: CircularProgressIndicator(
+                color: Colors.white,
+                strokeWidth: 2,
+              ),
             ),
-            if (unreadAlerts > 0)
-              Positioned(
-                right: 8,
-                top: 8,
-                child: Container(
-                  padding: const EdgeInsets.all(2),
-                  decoration: const BoxDecoration(
-                    color: Colors.red,
-                    shape: BoxShape.circle,
-                  ),
-                  constraints: const BoxConstraints(
-                    minWidth: 18,
-                    minHeight: 18,
-                  ),
-                  child: Text(
-                    '$unreadAlerts',
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 12,
-                      fontWeight: FontWeight.bold,
+          // Alert Icon with unread count
+          Stack(
+            alignment: Alignment.center,
+            children: [
+              IconButton(
+                icon: const Icon(Icons.notifications, color: Colors.black),
+                onPressed: () => showNotificationDropdown(context),
+              ),
+              if (unreadAlerts > 0)
+                Positioned(
+                  right: 8,
+                  top: 8,
+                  child: Container(
+                    padding: const EdgeInsets.all(2),
+                    decoration: const BoxDecoration(
+                      color: Colors.red,
+                      shape: BoxShape.circle,
                     ),
-                    textAlign: TextAlign.center,
+                    constraints: const BoxConstraints(
+                      minWidth: 18,
+                      minHeight: 18,
+                    ),
+                    child: Text(
+                      '$unreadAlerts',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
                   ),
                 ),
-              ),
-          ],
-        ),
-        // Logout button
-        if (AuthUtility.userInfo?.data?.id != null &&
-            AuthUtility.userInfo!.data!.id! > 1)
+            ],
+          ),
+          // Logout button
           IconButton(
             icon: const Icon(FontAwesomeIcons.powerOff, color: Colors.black),
             onPressed: () {
@@ -233,22 +251,19 @@ class _UserBannerAppBarState extends State<UserBannerAppBar> {
               );
             },
           ),
-      ],
-      title: Center(
-        child: SizedBox(
-          height: 40,
-          width: double.infinity,
-          child: SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            child: GestureDetector(
-              onTap: widget.onTapped,
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.start,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Show user info only if the user ID is greater than 1
-                  if (AuthUtility.userInfo?.data?.id != null &&
-                      AuthUtility.userInfo!.data!.id! > 1)
+        ],
+        title: Center(
+          child: SizedBox(
+            height: 40,
+            width: double.infinity,
+            child: SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: GestureDetector(
+                onTap: widget.onTapped,
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.start,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
                     CircleAvatar(
                       radius: 25,
                       child: Image.memory(
@@ -259,11 +274,7 @@ class _UserBannerAppBarState extends State<UserBannerAppBar> {
                         },
                       ),
                     ),
-                  if (AuthUtility.userInfo?.data?.id != null &&
-                      AuthUtility.userInfo!.data!.id! > 1)
                     const SizedBox(width: 15),
-                  if (AuthUtility.userInfo?.data?.id != null &&
-                      AuthUtility.userInfo!.data!.id! > 1)
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -282,13 +293,43 @@ class _UserBannerAppBarState extends State<UserBannerAppBar> {
                                 fontSize: 14, color: Colors.black)),
                       ],
                     ),
-                ],
+                  ],
+                ),
               ),
             ),
           ),
         ),
-      ),
-    );
+      );
+    } else {
+      // AppBar alternativo
+      return AppBar(
+        backgroundColor: lightGreenBackground,
+        shape: const RoundedRectangleBorder(
+          side: BorderSide(color: borderColor, width: 2.0),
+        ),
+        title: Text(
+          widget.screenTitle ?? "Screen",
+          style: const TextStyle(
+            color: Colors.black,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        actions: [
+          if (widget?.isLoading ?? false)
+            const Padding(
+              padding: EdgeInsets.only(right: 16),
+              child: CircularProgressIndicator(
+                color: Colors.white,
+                strokeWidth: 2,
+              ),
+            ),
+          IconButton(
+            icon: const Icon(Icons.refresh, color: Colors.black),
+            onPressed: widget.onRefresh,
+          ),
+        ],
+      );
+    }
   }
 }
 

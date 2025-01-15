@@ -13,6 +13,8 @@ import 'package:task_manager_flutter/data/services/network_caller.dart';
 import 'package:task_manager_flutter/data/utils/api_links.dart';
 import 'package:task_manager_flutter/data/constants/custom_colors.dart';
 import 'package:task_manager_flutter/data/models/auth_utility.dart';
+import 'package:task_manager_flutter/ui/screens/update_profile.dart';
+import 'package:task_manager_flutter/ui/widgets/user_banners.dart';
 
 // Define theme colors
 Color lightGreenBackground = CustomColors().getLightGreenBackground();
@@ -270,12 +272,18 @@ class _ProductRegisterScreenState extends State<ProductRegisterScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: lightGreenBackground,
-      appBar: AppBar(
-        title: const Text('Cadastro de Produto'),
-        actions: [
-          if (isLoading)
-            const Center(child: CircularProgressIndicator(color: Colors.white)),
-        ],
+      appBar: UserBannerAppBar(
+        screenTitle: "Cadastro de Produto",
+        isLoading: isLoading,
+        onRefresh: () {
+          fetchInitialData();
+        },
+        onTapped: () {
+          Navigator.push(
+              context,
+              MaterialPageRoute(
+                  builder: (context) => const UpdateProfileScreen()));
+        },
       ),
       body: isLoading
           ? const Center(child: CircularProgressIndicator())
