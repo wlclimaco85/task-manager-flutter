@@ -91,6 +91,16 @@ class _ProductCatalogPageVendasState extends State<ProductCatalogPageVendas> {
                         actionIcon: widget.actionIcon,
                         actionTooltip: widget.actionTooltip,
                         onAction: () => showActionPopup(context, product),
+                        onDelete: () {
+                          setState(() {
+                            products.removeAt(index);
+                          });
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('Produto excluído com sucesso'),
+                            ),
+                          );
+                        },
                       );
                     },
                   ),
@@ -111,23 +121,20 @@ class _ProductCatalogPageVendasState extends State<ProductCatalogPageVendas> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Tipo: ${product.tipo ?? 'Não especificado'}'),
+            Text('Tipos: ${product.tipo ?? 'Não especificado'}'),
             Text('Quantidade de sacos: ${product.qtdSacos ?? 0}'),
             Text('Valor por saco: R\$${product.vlrSacos ?? 0.0}'),
             Text(
                 'Data de retirada: ${product.dtRetirada ?? 'Não especificado'}'),
             const SizedBox(height: 8),
-            const Text('Negociações:',
-                style: TextStyle(fontWeight: FontWeight.bold)),
             ...List.generate((product.negociacoes as List).length, (i) {
               final negotiation = product.negociacoes[i];
               return Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('Comprador ID: ${negotiation.compradorId}'),
-                  Text('Quantidade: ${negotiation.qtdSacos}'),
-                  Text('Valor por saco: R\$${negotiation.vlrSacos}'),
-                  Text('Status: ${negotiation.status}'),
+                  Text('Bairro: ${negotiation.bairroEntr}'),
+                  Text('Cidade: ${negotiation.cidadeEntr}'),
+                  Text('Estado: ${negotiation.estadoEntr}'),
                   const SizedBox(height: 8),
                 ],
               );
@@ -167,6 +174,7 @@ class ProductCard extends StatelessWidget {
   final IconData actionIcon;
   final String actionTooltip;
   final VoidCallback onAction;
+  final VoidCallback onDelete;
 
   const ProductCard({
     Key? key,
@@ -174,6 +182,7 @@ class ProductCard extends StatelessWidget {
     required this.actionIcon,
     required this.actionTooltip,
     required this.onAction,
+    required this.onDelete,
   }) : super(key: key);
 
   @override
@@ -230,17 +239,16 @@ class ProductCard extends StatelessWidget {
                   Text('Data Retirada: ${product.dtRetirada}'),
                   Text('Descrição: ${product.descricao}'),
                   const SizedBox(height: 8),
-                  const Text('Negociações:',
+                  const Text('Endereço Retirada:',
                       style: TextStyle(fontWeight: FontWeight.bold)),
                   ...List.generate((product.negociacoes as List).length, (i) {
                     final negotiation = product.negociacoes[i];
                     return Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text('Comprador ID: ${negotiation.compradorId}'),
-                        Text('Quantidade: ${negotiation.qtdSacos}'),
-                        Text('Valor por saco: R\$${negotiation.vlrSacos}'),
-                        Text('Status: ${getStatusText(negotiation.status)}'),
+                        Text('Bairro: ${negotiation.bairroEntr}'),
+                        Text('Cidade: ${negotiation.cidadeEntr}'),
+                        Text('Estado: ${negotiation.estadoEntr}'),
                         const SizedBox(height: 8),
                       ],
                     );
@@ -252,11 +260,38 @@ class ProductCard extends StatelessWidget {
           Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
+              // Botão Editar
               Tooltip(
-                message: actionTooltip,
-                child: IconButton(
-                  icon: Icon(actionIcon, color: Colors.green),
-                  onPressed: onAction,
+                message: 'Editar',
+                child: Column(
+                  children: [
+                    IconButton(
+                      icon: Icon(Icons.edit, color: Colors.green),
+                      onPressed: onAction, // Callback para ação de edição
+                    ),
+                    const Text(
+                      'Editar',
+                      style: TextStyle(fontSize: 12, color: Colors.black),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 16), // Espaçamento entre os botões
+
+              // Botão Excluir
+              Tooltip(
+                message: 'Excluir',
+                child: Column(
+                  children: [
+                    IconButton(
+                      icon: Icon(Icons.delete, color: Colors.red),
+                      onPressed: onDelete, // Callback para ação de exclusão
+                    ),
+                    const Text(
+                      'Excluir',
+                      style: TextStyle(fontSize: 12, color: Colors.black),
+                    ),
+                  ],
                 ),
               ),
             ],

@@ -606,57 +606,101 @@ class ProductCard extends StatelessWidget {
           Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
+              // Botão Detalhes
               Tooltip(
                 message: "Detalhes",
-                child: IconButton(
-                  icon: const Icon(Icons.info, color: Colors.blue),
-                  onPressed: onDetails,
+                child: Column(
+                  children: [
+                    IconButton(
+                      icon: const Icon(Icons.info, color: Colors.blue),
+                      onPressed: onDetails,
+                    ),
+                    const Text(
+                      "Detalhes",
+                      style: TextStyle(fontSize: 12, color: Colors.black),
+                    ),
+                  ],
                 ),
               ),
+              const SizedBox(height: 16),
+
+              // Botão Negociar
               Tooltip(
                 message: "Negociar",
-                child: IconButton(
-                  icon: const Icon(Icons.handshake, color: Colors.green),
-                  onPressed: onNegotiate,
+                child: Column(
+                  children: [
+                    IconButton(
+                      icon: const Icon(Icons.handshake, color: Colors.green),
+                      onPressed: onNegotiate,
+                    ),
+                    const Text(
+                      "Negociar",
+                      style: TextStyle(fontSize: 12, color: Colors.black),
+                    ),
+                  ],
                 ),
               ),
+              const SizedBox(height: 16),
+
+              // Botão Comprar
               Tooltip(
                 message: "Comprar",
-                child: IconButton(
-                  icon: const Icon(Icons.shopping_cart, color: Colors.orange),
-                  onPressed: onBuy,
+                child: Column(
+                  children: [
+                    IconButton(
+                      icon:
+                          const Icon(Icons.shopping_cart, color: Colors.orange),
+                      onPressed: onBuy,
+                    ),
+                    const Text(
+                      "Comprar",
+                      style: TextStyle(fontSize: 12, color: Colors.black),
+                    ),
+                  ],
                 ),
               ),
+              const SizedBox(height: 16),
+
+              // Botão Cotar Transporte
               Tooltip(
                 message: "Cotar Transporte",
-                child: IconButton(
-                  icon: const Icon(Icons.local_shipping, color: Colors.purple),
-                  onPressed: () async {
-                    await showDialog(
-                      context: context,
-                      builder: (BuildContext context) {
-                        return AlertDialog(
-                          title: const Text("Cotação de Transporte"),
-                          content: const Text(
-                              "Vamos enviar suas informações para nossa transportadora parceira e o mais breve possível será enviado o valor do frete."),
-                          actions: [
-                            TextButton(
-                              child: const Text("Cancelar"),
-                              onPressed: () {
-                                Navigator.of(context).pop();
-                              },
-                            ),
-                            ElevatedButton(
-                              child: const Text("Confirmar"),
-                              onPressed: () async {
-                                Navigator.of(context).pop();
-                              },
-                            ),
-                          ],
+                child: Column(
+                  children: [
+                    IconButton(
+                      icon: const Icon(Icons.local_shipping,
+                          color: Colors.purple),
+                      onPressed: () async {
+                        await showDialog(
+                          context: context,
+                          builder: (BuildContext context) {
+                            return AlertDialog(
+                              title: const Text("Cotação de Transporte"),
+                              content: const Text(
+                                  "Vamos enviar suas informações para nossa transportadora parceira e o mais breve possível será enviado o valor do frete."),
+                              actions: [
+                                TextButton(
+                                  child: const Text("Cancelar"),
+                                  onPressed: () {
+                                    Navigator.of(context).pop();
+                                  },
+                                ),
+                                ElevatedButton(
+                                  child: const Text("Confirmar"),
+                                  onPressed: () async {
+                                    Navigator.of(context).pop();
+                                  },
+                                ),
+                              ],
+                            );
+                          },
                         );
                       },
-                    );
-                  },
+                    ),
+                    const Text(
+                      "Cotar Transporte ",
+                      style: TextStyle(fontSize: 12, color: Colors.black),
+                    ),
+                  ],
                 ),
               ),
             ],

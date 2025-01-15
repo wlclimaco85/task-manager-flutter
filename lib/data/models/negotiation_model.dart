@@ -30,21 +30,30 @@ class Negotiation {
   });
 
   factory Negotiation.fromJson(Map<String, dynamic> json) {
+    // Helper function to safely parse fields with default values
+    T safeParse<T>(dynamic value, T defaultValue) {
+      if (value == null || value is! T) {
+        return defaultValue;
+      }
+      return value;
+    }
+
     return Negotiation(
-      compradorId: json['compradorId'],
-      vendedorId: json['vendedorId'],
-      qtdSacos: json['qtdSacos'],
-      vlrSacos: json['vlrSacos'],
-      dataNegociacao: json['dataNegociacao'],
-      status: json['status'],
-      bairroEntr: json['bairroEntr'],
-      cidadeEntr: json['cidadeEntr'],
-      estadoEntr: json['estadoEntr'],
-      bairroSaida: json['bairroSaida'],
-      cidadeSaida: json['cidadeSaida'],
-      estadoSaida: json['estadoSaida'],
+      compradorId: safeParse<int>(json['compradorId'], 0),
+      vendedorId: safeParse<int>(json['vendedorId'], 0),
+      qtdSacos: safeParse<int>(json['qtdSacos'], 0),
+      vlrSacos: safeParse<double>(json['vlrSacos'], 0.0),
+      dataNegociacao: safeParse<String>(json['dataNegociacao'], ''),
+      status: safeParse<String>(json['status'], ''),
+      bairroEntr: safeParse<String>(json['bairroEntr'], ''),
+      cidadeEntr: safeParse<String>(json['cidadeEntr'], ''),
+      estadoEntr: safeParse<String>(json['estadoEntr'], ''),
+      bairroSaida: safeParse<String>(json['bairroSaida'], ''),
+      cidadeSaida: safeParse<String>(json['cidadeSaida'], ''),
+      estadoSaida: safeParse<String>(json['estadoSaida'], ''),
     );
   }
+
   // Método para converter Produto para JSON
   Map<String, dynamic> toJson() {
     final Map<String, dynamic> data = <String, dynamic>{};

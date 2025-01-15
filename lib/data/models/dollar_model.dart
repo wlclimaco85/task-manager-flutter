@@ -1,51 +1,47 @@
-class Cotacao {
+class Dollar {
   int? id;
-  String? ativo;
-  DateTime? dtCotacao;
-  double? valor;
+  DateTime? date;
+  double? rate;
 
-  Cotacao({this.id, this.ativo, this.dtCotacao, this.valor});
+  Dollar({this.id, this.date, this.rate});
 
   Map<String, dynamic> toJson() {
     final Map<String, dynamic> data = <String, dynamic>{};
-    data['cotacaoDTO']['id'] = id;
-    data['cotacaoDTO']['ativo'] = ativo;
-    data['cotacaoDTO']['dtCotacao'] = dtCotacao?.toIso8601String();
-    data['cotacaoDTO']['valor'] = valor;
+    data['DollarDTO']['id'] = id;
+    data['DollarDTO']['date'] = date?.toIso8601String();
+    data['DollarDTO']['rate'] = rate;
     return data;
   }
 
   // Método para converter de JSON para a classe Data
-  Cotacao.fromJson(Map<String, dynamic> json) {
+  Dollar.fromJson(Map<String, dynamic> json) {
     if (json.isNotEmpty) {
       id = json['id'];
-      ativo = json['ativo'];
-      dtCotacao = DateTime.parse(json['dtCotacao']);
-      valor = json['valor'];
+      date = DateTime.parse(json['date']);
+      rate = json['rate'];
     }
   }
 
   // Método para converter uma lista de JSON para uma lista de objetos Data
-  static List<Cotacao> fromJsonList(List<dynamic> jsonList) {
+  static List<Dollar> fromJsonList(List<dynamic> jsonList) {
     return jsonList
-        .map((item) => Cotacao.fromJson(Map<String, dynamic>.from(item)))
+        .map((item) => Dollar.fromJson(Map<String, dynamic>.from(item)))
         .toList();
   }
 
   // Método para converter de JSON para a classe Data
-  Cotacao.fromJson2(Map<String, dynamic> json) {
-    if (json['cotacaoDTO'] != null && json['cotacaoDTO'].isNotEmpty) {
-      var noticiasDTO = json['cotacaoDTO'][0];
+  Dollar.fromJson2(Map<String, dynamic> json) {
+    if (json['DollarDTO'] != null && json['DollarDTO'].isNotEmpty) {
+      var noticiasDTO = json['DollarDTO'][0];
       id = noticiasDTO['id'];
-      ativo = noticiasDTO['ativo'];
-      dtCotacao = DateTime.parse(noticiasDTO['dtCotacao']);
-      valor = noticiasDTO['valor'];
+      date = DateTime.parse(noticiasDTO['date']);
+      rate = noticiasDTO['rate'];
     }
   }
 
   // Método para converter uma lista de JSON para uma lista de objetos Data
-  static List<Cotacao> fromJsonList2(List<Map<String, dynamic>> jsonList) {
-    List<Cotacao> dataList = [];
+  static List<Dollar> fromJsonList2(List<Map<String, dynamic>> jsonList) {
+    List<Dollar> dataList = [];
     for (var json in jsonList) {
       // dataList.add(Data.fromJson(json));
     }
@@ -53,14 +49,14 @@ class Cotacao {
   }
 }
 
-class CotacaoModel {
+class DollarModel {
   String? status;
   String? token;
-  List<Cotacao>? data;
+  List<Dollar>? data;
 
-  CotacaoModel({this.status, this.token, this.data});
+  DollarModel({this.status, this.token, this.data});
 
-  CotacaoModel.fromJson(Map<String, dynamic> json) {
+  DollarModel.fromJson(Map<String, dynamic> json) {
     status = json['status'];
     token = json['token'];
 
@@ -73,8 +69,7 @@ class CotacaoModel {
       data.add(List<Map<String, dynamic>>.from(list.map((item) => Map<String, dynamic>.from(item))));
     } */
       //  List<Data> dataList = Data.fromJsonList2(json['data']['noticiasDTO']);
-      List<Cotacao> dataList =
-          Cotacao.fromJsonList(json['data']['cotacoesDTO']);
+      List<Dollar> dataList = Dollar.fromJsonList(json['data']['cotacoesDTO']);
       data =
           dataList; //json['data'] != null ? Data.fromJson(json['data']) : null;
     } else {
