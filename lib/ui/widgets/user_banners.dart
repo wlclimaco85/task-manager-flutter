@@ -8,6 +8,7 @@ import 'package:task_manager_flutter/ui/screens/bottom_navbar_screen.dart';
 import 'package:task_manager_flutter/data/services/alert_caller.dart';
 import 'package:task_manager_flutter/data/models/login_model.dart';
 import 'package:http/http.dart' as http;
+import 'dart:async';
 
 const Color lightGreenBackground = Color.fromARGB(255, 231, 247, 233);
 const Color borderColor = Color.fromARGB(255, 1, 247, 14);
@@ -41,7 +42,13 @@ class _UserBannerAppBarState extends State<UserBannerAppBar> {
   @override
   void initState() {
     super.initState();
-    fetchAlerts();
+    _startPeriodicFetch();
+  }
+
+  void _startPeriodicFetch() {
+    Timer.periodic(const Duration(minutes: 1), (timer) {
+      fetchAlerts();
+    });
   }
 
   Future<void> fetchAlerts() async {
@@ -82,21 +89,24 @@ class _UserBannerAppBarState extends State<UserBannerAppBar> {
     }
   }
 
-  void showNotificationDropdown(BuildContext context) {
+  void closeNotificationDropdown() {
     if (notificationOverlay != null) {
       notificationOverlay!.remove();
       notificationOverlay = null;
+    }
+  }
+
+  void showNotificationDropdown(BuildContext context) {
+    if (notificationOverlay != null) {
+      closeNotificationDropdown();
       return;
     }
 
     final overlay = Overlay.of(context);
-    final renderBox = context.findRenderObject() as RenderBox;
-    final size = renderBox.size;
-    final offset = renderBox.localToGlobal(Offset.zero);
 
     notificationOverlay = OverlayEntry(
       builder: (context) => Positioned(
-        top: offset.dy + size.height,
+        top: 50, // Ajustar conforme a posição desejada
         right: 8,
         child: Material(
           elevation: 4,
@@ -104,36 +114,60 @@ class _UserBannerAppBarState extends State<UserBannerAppBar> {
             width: 300,
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(4),
+              color: const Color(0xFFE6F7E6), // Fundo verde claro
+              border: Border.all(
+                  color: const Color(0xFF006400),
+                  width: 2), // Borda verde escuro
+              borderRadius: BorderRadius.circular(8),
             ),
             child: Column(
               mainAxisSize: MainAxisSize.min,
-              children: notifications.isNotEmpty
-                  ? notifications.map((notification) {
-                      final String date = notification.data ??
-                          DateTime.now().toLocal().toIso8601String();
-                      return ListTile(
-                        title: Text(notification.texto),
-                        subtitle: Text(
-                          date,
-                          style: const TextStyle(fontSize: 12),
-                        ),
-                        trailing: IconButton(
-                          icon: const Icon(Icons.check_circle,
-                              color: Colors.green),
-                          onPressed: () {
-                            markNotificationAsRead(notification.id);
-                          },
-                        ),
-                      );
-                    }).toList()
-                  : [
-                      const Text(
-                        "No notifications",
-                        style: TextStyle(color: Colors.grey),
-                      )
-                    ],
+              children: [
+                // Botão de fechar no topo
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text(
+                      "Notificações",
+                      style:
+                          TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.close, color: Colors.red),
+                      onPressed: closeNotificationDropdown,
+                    ),
+                  ],
+                ),
+                const Divider(color: Colors.green, thickness: 1),
+                ...notifications.isNotEmpty
+                    ? notifications.map((notification) {
+                        final DateTime parsedDate =
+                            DateTime.parse(notification.data!);
+                        final String formattedDate =
+                            "${parsedDate.day.toString().padLeft(2, '0')}/${parsedDate.month.toString().padLeft(2, '0')}/${parsedDate.year} ${parsedDate.hour.toString().padLeft(2, '0')}:${parsedDate.minute.toString().padLeft(2, '0')}";
+
+                        return ListTile(
+                          title: Text(notification.texto),
+                          subtitle: Text(
+                            formattedDate,
+                            style: const TextStyle(fontSize: 12),
+                          ),
+                          trailing: IconButton(
+                            icon: const Icon(Icons.check_circle,
+                                color: Colors.green),
+                            onPressed: () {
+                              markNotificationAsRead(notification.id);
+                            },
+                          ),
+                        );
+                      }).toList()
+                    : [
+                        const Text(
+                          "No notifications",
+                          style: TextStyle(color: Colors.grey),
+                        )
+                      ],
+              ],
             ),
           ),
         ),
