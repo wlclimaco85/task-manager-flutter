@@ -10,6 +10,25 @@ import 'package:task_manager_flutter/data/models/login_model.dart';
 import 'package:http/http.dart' as http;
 import 'dart:async';
 
+import 'dart:async';
+import 'dart:convert';
+import 'dart:typed_data';
+import 'package:flutter/material.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:http/http.dart' as http;
+
+// Definição de cores
+class AppColors {
+  static const Color lightGreenBackground = Color.fromARGB(255, 231, 247, 233);
+  static const Color borderColor = Color.fromARGB(255, 1, 247, 14);
+  static const Color notificationBackground = Color(0xFFE6F7E6); // Verde claro
+  static const Color notificationBorder = Color(0xFF006400); // Verde escuro
+  static const Color notificationIcon = Colors.green;
+  static const Color notificationDeleteIcon = Colors.red;
+  static const Color notificationText = Colors.black;
+  static const Color notificationSubtitle = Colors.grey;
+}
+
 const Color lightGreenBackground = Color.fromARGB(255, 231, 247, 233);
 const Color borderColor = Color.fromARGB(255, 1, 247, 14);
 
@@ -89,6 +108,13 @@ class _UserBannerAppBarState extends State<UserBannerAppBar> {
     }
   }
 
+  void deleteNotification(int id) {
+    setState(() {
+      notifications.removeWhere((notification) => notification.id == id);
+      unreadAlerts = notifications.length;
+    });
+  }
+
   void closeNotificationDropdown() {
     if (notificationOverlay != null) {
       notificationOverlay!.remove();
@@ -106,7 +132,7 @@ class _UserBannerAppBarState extends State<UserBannerAppBar> {
 
     notificationOverlay = OverlayEntry(
       builder: (context) => Positioned(
-        top: 50, // Ajustar conforme a posição desejada
+        top: 50,
         right: 8,
         child: Material(
           elevation: 4,
@@ -114,10 +140,11 @@ class _UserBannerAppBarState extends State<UserBannerAppBar> {
             width: 300,
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: const Color(0xFFE6F7E6), // Fundo verde claro
+              color: AppColors.notificationBackground,
               border: Border.all(
-                  color: const Color(0xFF006400),
-                  width: 2), // Borda verde escuro
+                color: AppColors.notificationBorder,
+                width: 2,
+              ),
               borderRadius: BorderRadius.circular(8),
             ),
             child: Column(
@@ -129,8 +156,11 @@ class _UserBannerAppBarState extends State<UserBannerAppBar> {
                   children: [
                     const Text(
                       "Notificações",
-                      style:
-                          TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                        color: AppColors.notificationText,
+                      ),
                     ),
                     IconButton(
                       icon: const Icon(Icons.close, color: Colors.red),
@@ -147,17 +177,36 @@ class _UserBannerAppBarState extends State<UserBannerAppBar> {
                             "${parsedDate.day.toString().padLeft(2, '0')}/${parsedDate.month.toString().padLeft(2, '0')}/${parsedDate.year} ${parsedDate.hour.toString().padLeft(2, '0')}:${parsedDate.minute.toString().padLeft(2, '0')}";
 
                         return ListTile(
-                          title: Text(notification.texto),
+                          title: Text(
+                            notification.texto,
+                            style: const TextStyle(
+                                color: AppColors.notificationText),
+                          ),
                           subtitle: Text(
                             formattedDate,
-                            style: const TextStyle(fontSize: 12),
+                            style: const TextStyle(
+                              fontSize: 12,
+                              color: AppColors.notificationSubtitle,
+                            ),
                           ),
-                          trailing: IconButton(
-                            icon: const Icon(Icons.check_circle,
-                                color: Colors.green),
-                            onPressed: () {
-                              markNotificationAsRead(notification.id);
-                            },
+                          trailing: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              IconButton(
+                                icon: const Icon(Icons.check_circle,
+                                    color: AppColors.notificationIcon),
+                                onPressed: () {
+                                  markNotificationAsRead(notification.id);
+                                },
+                              ),
+                              IconButton(
+                                icon: const Icon(Icons.delete,
+                                    color: AppColors.notificationDeleteIcon),
+                                onPressed: () {
+                                  deleteNotification(notification.id);
+                                },
+                              ),
+                            ],
                           ),
                         );
                       }).toList()
