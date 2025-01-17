@@ -23,7 +23,8 @@ class SignUpScreen extends StatefulWidget {
 }
 
 class _SignUpScreenState extends State<SignUpScreen> {
-  Data userInfo = AuthUtility.userInfo.data!;
+  Data userInfo =
+      AuthUtility.userInfo != null ? AuthUtility.userInfo.data! : Data();
   final TextEditingController _nomeController = TextEditingController();
   final TextEditingController _cpfController = TextEditingController();
   final TextEditingController _codProdutorController = TextEditingController();

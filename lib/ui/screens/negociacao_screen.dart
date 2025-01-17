@@ -252,36 +252,69 @@ class ProductCard extends StatelessWidget {
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                         children: [
-                          IconButton(
-                            icon: const Icon(Icons.check, color: Colors.green),
-                            tooltip: 'Aceitar',
-                            onPressed: () {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                    content: Text('Negociação aceita')),
-                              );
-                            },
+                          Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              IconButton(
+                                icon: const Icon(Icons.check,
+                                    color: Colors.green),
+                                tooltip: 'Aceitar',
+                                onPressed: () {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(
+                                        content: Text('Negociação aceita')),
+                                  );
+                                },
+                              ),
+                              const Text(
+                                'Aceitar',
+                                style: TextStyle(
+                                    fontSize: 12, color: Colors.black),
+                              ),
+                            ],
                           ),
-                          IconButton(
-                            icon: const Icon(Icons.close, color: Colors.red),
-                            tooltip: 'Recusar',
-                            onPressed: () {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                    content: Text('Negociação recusada')),
-                              );
-                            },
+                          Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              IconButton(
+                                icon:
+                                    const Icon(Icons.close, color: Colors.red),
+                                tooltip: 'Recusar',
+                                onPressed: () {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(
+                                        content: Text('Negociação recusada')),
+                                  );
+                                },
+                              ),
+                              const Text(
+                                'Recusar',
+                                style: TextStyle(
+                                    fontSize: 12, color: Colors.black),
+                              ),
+                            ],
                           ),
-                          IconButton(
-                            icon: const Icon(Icons.handshake,
-                                color: Colors.green),
-                            tooltip: 'Fazer contraproposta',
-                            onPressed: () {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                    content: Text('Contraproposta enviada')),
-                              );
-                            },
+                          Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              IconButton(
+                                icon: const Icon(Icons.handshake,
+                                    color: Colors.green),
+                                tooltip: 'Fazer contraproposta',
+                                onPressed: () {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(
+                                        content:
+                                            Text('Contraproposta enviada')),
+                                  );
+                                },
+                              ),
+                              const Text(
+                                'Contraproposta',
+                                style: TextStyle(
+                                    fontSize: 12, color: Colors.black),
+                              ),
+                            ],
                           ),
                         ],
                       ),

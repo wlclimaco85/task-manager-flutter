@@ -57,7 +57,7 @@ class ApiLinks {
   static String allVendas = '$_baseUrlNew/api/produtos';
   static String insertNegociacao = '$_baseUrlNew/api/negociacao';
   static String allClassificacao = '$_baseUrlNew/api/classificacoes';
-  static String parceiroById = '$_baseUrlNew/api/parceiro';
+  static String parceiroById = '$_baseUrlNew/api/parceiro/parceiro';
   static String insertProduto = '$_baseUrlNew/api/produtos';
   static String fecthItensAVenda = '$_baseUrlNew/api/produtos/vendedor/';
   static String fecthItensACompra = '$_baseUrlNew/api/produtos/comprador/';

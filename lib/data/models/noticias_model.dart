@@ -63,8 +63,12 @@ class Data {
       id = json['id'];
       codApp = json['codApp'];
       link = json['link'];
-      noticia = utf8.decode(latin1.encode(json['noticia']));
-      titulo = utf8.decode(latin1.encode(json['titulo']));
+      noticia = json['noticia'] != null
+          ? utf8.decode(latin1.encode(json['noticia']))
+          : 'noticia não disponível';
+      titulo = json['titulo'] != null
+          ? utf8.decode(latin1.encode(json['titulo']))
+          : 'Título não disponível';
       tituloResu = json['tituloResu'] != null
           ? utf8.decode(latin1.encode(json['tituloResu']))
           : 'Título não disponível';

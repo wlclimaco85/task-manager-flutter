@@ -216,7 +216,7 @@ class _UserBannerAppBarState extends State<UserBannerAppBar> {
                 context: context,
                 builder: (context) {
                   return AlertDialog(
-                    title: const Text("Are you sure you want to logout?",
+                    title: const Text("Deseja realmente sair ?",
                         style: TextStyle(
                             fontWeight: FontWeight.bold, color: Colors.black)),
                     actions: [
@@ -224,7 +224,7 @@ class _UserBannerAppBarState extends State<UserBannerAppBar> {
                         onPressed: () {
                           Navigator.pop(context);
                         },
-                        child: const Text("No"),
+                        child: const Text("Não"),
                       ),
                       TextButton(
                         onPressed: () {
@@ -243,7 +243,7 @@ class _UserBannerAppBarState extends State<UserBannerAppBar> {
                             (route) => false,
                           );
                         },
-                        child: const Text("Yes"),
+                        child: const Text("Sim"),
                       ),
                     ],
                   );
@@ -335,7 +335,10 @@ class _UserBannerAppBarState extends State<UserBannerAppBar> {
 
 showBase64Image(base64String) {
   if (base64String != null && base64String.trim() != '') {
-    UriData? data = Uri.parse(base64String).data;
+    // UriData? data = Uri.parse(base64String).data;
+    //  Uint8List myImage = data!.contentAsBytes();
+    String? image = "data:image/png;base64," + base64String;
+    UriData? data = Uri.parse(image).data;
     Uint8List myImage = data!.contentAsBytes();
     return myImage;
   } else {
