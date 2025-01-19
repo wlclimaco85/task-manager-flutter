@@ -9,8 +9,8 @@ import 'package:task_manager_flutter/data/models/dollar_model.dart';
 class AppColors {
   static const Color lightGreenBackground = Color.fromARGB(255, 231, 247, 233);
   static const Color borderColor = Color.fromARGB(255, 1, 247, 14);
-  static const Color tableBorderColor = Color(0xFF006400); // Verde escuro
-  static const Color tableTitleBackground = Color.fromARGB(255, 231, 247, 233);
+  static const Color tableBorderColor =
+      Color.fromARGB(255, 1, 247, 14); // Verde escuro
   static const Color tableText = Colors.black;
   static const Color tableSubtitleText = Colors.grey;
 }
@@ -67,7 +67,7 @@ class _CotacaoScreenState extends State<CotacaoScreen> {
     return Container(
       padding: const EdgeInsets.all(16.0),
       decoration: BoxDecoration(
-        color: AppColors.tableTitleBackground,
+        color: AppColors.lightGreenBackground, // Fundo verde claro
         border: Border.all(color: AppColors.tableBorderColor, width: 2),
         borderRadius: BorderRadius.circular(8),
       ),
@@ -83,7 +83,7 @@ class _CotacaoScreenState extends State<CotacaoScreen> {
           ),
           const SizedBox(height: 8),
           Table(
-            border: TableBorder.all(color: AppColors.tableBorderColor),
+            border: TableBorder.all(color: AppColors.tableText),
             columnWidths: const {
               0: FlexColumnWidth(),
               1: FlexColumnWidth(),
@@ -188,6 +188,7 @@ class _CotacaoScreenState extends State<CotacaoScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: AppColors.lightGreenBackground, // Fundo da tela
       appBar: UserBannerAppBar(
         screenTitle: "Cotações",
         isLoading: isLoading,

@@ -9,6 +9,7 @@ import 'package:task_manager_flutter/ui/screens/carrinho_vendas_screen.dart';
 import 'package:task_manager_flutter/ui/screens/product_register_screen.dart';
 import 'package:task_manager_flutter/data/utils/api_links.dart';
 import 'package:task_manager_flutter/data/models/auth_utility.dart';
+import 'package:task_manager_flutter/ui/screens/LoginPopup_screens.dart';
 
 // Define theme colors
 const Color lightGreenBackground = Color.fromARGB(255, 231, 247, 233);
@@ -102,6 +103,101 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
           selectedItemColor: Colors.green,
           showSelectedLabels: true,
           type: BottomNavigationBarType.fixed,
+          items: [
+            const BottomNavigationBarItem(
+                icon: Icon(FontAwesomeIcons.newspaper), label: "Notícias"),
+            const BottomNavigationBarItem(
+                icon: Icon(FontAwesomeIcons.chartLine), label: "Cotação"),
+            const BottomNavigationBarItem(
+                icon: Icon(FontAwesomeIcons.cartShopping), label: "Comprar"),
+            const BottomNavigationBarItem(
+                icon: Icon(FontAwesomeIcons.tags), label: "Vender"),
+            if (AuthUtility.userInfo?.data?.id != null &&
+                AuthUtility.userInfo!.data!.id! > 1)
+              const BottomNavigationBarItem(
+                icon: Icon(FontAwesomeIcons.bars),
+                label: "Mais",
+              )
+            else
+              const BottomNavigationBarItem(
+                icon: Icon(FontAwesomeIcons.signInAlt),
+                label: "Login",
+              ),
+            const BottomNavigationBarItem(
+              icon: Icon(Icons.help_outline),
+              label: "Ajuda",
+            ),
+          ],
+          onTap: (index) {
+            // Atualiza o índice selecionado
+            setState(() {
+              selectedIndex = index;
+            });
+
+            // Lógica para navegação com base no índice
+            switch (index) {
+              case 0: // Notícias
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const ProgressTaskScreen(),
+                  ),
+                );
+                break;
+              case 1: // Cotação
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const CotacaoScreen(),
+                  ),
+                );
+                break;
+              case 2: // Comprar
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const ProductCatalog(),
+                  ),
+                );
+                break;
+              case 3: // Vender
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const ProductRegisterScreen(),
+                  ),
+                );
+                break;
+              case 4: // Mais ou Login
+                if (AuthUtility.userInfo?.data?.id == null ||
+                    AuthUtility.userInfo!.data!.id! <= 1) {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => LoginPopup(),
+                    ),
+                  );
+                } else {
+                  debugPrint("Botão 'Mais' pressionado");
+                }
+                break;
+              case 5: // Ajuda
+                debugPrint("Botão 'Ajuda' pressionado");
+                break;
+              default:
+                debugPrint("Índice desconhecido: $index");
+            }
+          },
+        ),
+
+        /*    child: BottomNavigationBar(
+          backgroundColor: lightGreenBackground,
+          currentIndex: selectedIndex,
+          unselectedItemColor: Colors.grey,
+          unselectedLabelStyle: const TextStyle(color: Colors.grey),
+          selectedItemColor: Colors.green,
+          showSelectedLabels: true,
+          type: BottomNavigationBarType.fixed,
           onTap: (int index) {
             if (index == 4) {
               _showMenuOptions(context);
@@ -123,7 +219,7 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
             BottomNavigationBarItem(
                 icon: Icon(FontAwesomeIcons.bars), label: "Mais"),
           ],
-        ),
+        ), */
       ),
     );
   }
