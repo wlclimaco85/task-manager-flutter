@@ -24,12 +24,20 @@ class BottomNavBarScreen extends StatefulWidget {
 
 class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
   int selectedIndex = 0;
-  final List<Widget> screens = [
-    const ProgressTaskScreen(),
-    const CotacaoScreen(),
-    const ProductCatalog(),
-    const ProductRegisterScreen(),
-  ];
+  List<Widget> get screens {
+    final isLoggedIn = AuthUtility.userInfo?.data?.id != null &&
+        AuthUtility.userInfo!.data!.id! > 1;
+
+    return [
+      const ProgressTaskScreen(),
+      const CotacaoScreen(),
+      const ProductCatalog(),
+      const ProductRegisterScreen(),
+      isLoggedIn
+          ? const ProductRegisterScreen() // Substitua com a tela desejada para "Mais"
+          : LoginPopup(), // Substitua com a tela desejada para "Login"
+    ];
+  }
 
   void onMenuOptionSelected(String option) {
     switch (option) {
@@ -86,6 +94,117 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isLoggedIn = AuthUtility.userInfo?.data?.id != null &&
+        AuthUtility.userInfo!.data!.id! > 1;
+
+    return Scaffold(
+      body: screens[selectedIndex],
+      bottomNavigationBar: Container(
+        decoration: const BoxDecoration(
+          color: lightGreenBackground,
+          border: Border(
+            top: BorderSide(color: darkGreenBorder, width: 2),
+          ),
+        ),
+        /*
+        child: BottomNavigationBar(
+          backgroundColor: lightGreenBackground,
+          currentIndex: selectedIndex,
+          unselectedItemColor: Colors.grey,
+          unselectedLabelStyle: const TextStyle(color: Colors.grey),
+          selectedItemColor: Colors.green,
+          showSelectedLabels: true,
+          type: BottomNavigationBarType.fixed,
+          items: [
+            const BottomNavigationBarItem(
+                icon: Icon(FontAwesomeIcons.newspaper), label: "Notícias"),
+            const BottomNavigationBarItem(
+                icon: Icon(FontAwesomeIcons.chartLine), label: "Cotação"),
+            const BottomNavigationBarItem(
+                icon: Icon(FontAwesomeIcons.cartShopping), label: "Comprar"),
+            const BottomNavigationBarItem(
+                icon: Icon(FontAwesomeIcons.tags), label: "Vender"),
+            if (isLoggedIn)
+              const BottomNavigationBarItem(
+                icon: Icon(FontAwesomeIcons.bars),
+                label: "Mais",
+              )
+            else
+              const BottomNavigationBarItem(
+                icon: Icon(FontAwesomeIcons.signInAlt),
+                label: "Login",
+              ),
+            BottomNavigationBarItem(
+              icon: Icon(isLoggedIn ? Icons.help_outline : Icons.help),
+              label: "Ajuda",
+            ),
+          ],
+          onTap: (index) {
+            setState(() {
+              selectedIndex = index;
+            });
+
+            // Lógica para navegação
+            switch (index) {
+              case 0:
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const ProgressTaskScreen(),
+                  ),
+                );
+                break;
+              case 1:
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const CotacaoScreen(),
+                  ),
+                );
+                break;
+              case 2:
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const ProductCatalog(),
+                  ),
+                );
+                break;
+              case 3:
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const ProductRegisterScreen(),
+                  ),
+                );
+                break;
+              case 4:
+                if (!isLoggedIn) {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => LoginPopup(),
+                    ),
+                  );
+                } else {
+                  debugPrint("Botão 'Mais' pressionado");
+                }
+                break;
+              case 5:
+                debugPrint("Botão 'Ajuda' pressionado");
+                break;
+              default:
+                debugPrint("Índice desconhecido: $index");
+            }
+          },
+        ),
+      ),
+    );
+  }
+
+
+  @override
+  Widget build(BuildContext context) {
     return Scaffold(
       body: screens[selectedIndex],
       bottomNavigationBar: Container(
@@ -124,7 +243,11 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
                 label: "Login",
               ),
             const BottomNavigationBarItem(
-              icon: Icon(Icons.help_outline),
+              icon: if (AuthUtility.userInfo?.data?.id != null && AuthUtility.userInfo!.data!.id! > 1) 
+                      Icon(Icons.help_outline),
+                    else 
+                      Icon(Icons.help),
+                      
               label: "Ajuda",
             ),
           ],
@@ -188,9 +311,9 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
                 debugPrint("Índice desconhecido: $index");
             }
           },
-        ),
+        ), */
 
-        /*    child: BottomNavigationBar(
+        child: BottomNavigationBar(
           backgroundColor: lightGreenBackground,
           currentIndex: selectedIndex,
           unselectedItemColor: Colors.grey,
@@ -207,19 +330,22 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
               });
             }
           },
-          items: const [
-            BottomNavigationBarItem(
+          items: [
+            const BottomNavigationBarItem(
                 icon: Icon(FontAwesomeIcons.newspaper), label: "Notícias"),
-            BottomNavigationBarItem(
+            const BottomNavigationBarItem(
                 icon: Icon(FontAwesomeIcons.chartLine), label: "Cotação"),
-            BottomNavigationBarItem(
+            const BottomNavigationBarItem(
                 icon: Icon(FontAwesomeIcons.cartShopping), label: "Comprar"),
-            BottomNavigationBarItem(
+            const BottomNavigationBarItem(
                 icon: Icon(FontAwesomeIcons.tags), label: "Vender"),
             BottomNavigationBarItem(
-                icon: Icon(FontAwesomeIcons.bars), label: "Mais"),
+                icon: Icon(isLoggedIn
+                    ? FontAwesomeIcons.bars
+                    : FontAwesomeIcons.signInAlt),
+                label: (isLoggedIn ? "Mais" : 'Login')),
           ],
-        ), */
+        ),
       ),
     );
   }

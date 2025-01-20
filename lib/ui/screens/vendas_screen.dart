@@ -7,6 +7,8 @@ import 'package:task_manager_flutter/data/models/network_response.dart';
 import 'package:task_manager_flutter/data/services/network_caller.dart';
 import 'package:task_manager_flutter/ui/screens/update_profile.dart';
 import 'package:task_manager_flutter/ui/widgets/user_banners.dart';
+import 'dart:typed_data';
+import 'dart:convert';
 
 // Define theme colors
 const Color lightGreenBackground = Color.fromARGB(255, 231, 247, 233);
@@ -516,18 +518,39 @@ class ProductCard extends StatelessWidget {
     required this.onTransporte,
   }) : super(key: key);
 
+  /// Retorna a imagem decodificada ou um ícone padrão.
+  Widget getFirstImageOrDefault(String photosBase64) {
+    if (photosBase64.isNotEmpty) {
+      try {
+        // Decodifica a primeira imagem da lista
+        final Uint8List imageBytes = base64Decode(photosBase64);
+        return Image.memory(
+          imageBytes,
+          width: 100,
+          height: 100,
+          fit: BoxFit.cover,
+        );
+      } catch (e) {
+        // Caso a decodificação falhe
+        debugPrint('Erro ao decodificar a imagem: $e');
+      }
+    }
+
+    // Retorna o ícone padrão caso a lista esteja vazia ou ocorra erro
+    return const Icon(Icons.image, size: 100);
+  }
+
+  List<String> getValidImageList(Produto product) {
+    if (product?.listFotos != null &&
+        product!.listFotos!.isNotEmpty &&
+        product.listFotos!.first.foto != null) {
+      return [product.listFotos!.first.foto!];
+    }
+    return [getImagepadrao()];
+  }
+
   @override
   Widget build(BuildContext context) {
-    final imageBase64 = decodeBase64Image(getImagepadrao());
-    final image = imageBase64.isNotEmpty
-        ? Image.memory(
-            imageBase64,
-            width: 100,
-            height: 100,
-            fit: BoxFit.cover,
-          )
-        : const Icon(Icons.image, size: 100);
-
     return Card(
       margin: const EdgeInsets.all(10),
       color: lightGreenBackground,
@@ -541,7 +564,7 @@ class ProductCard extends StatelessWidget {
             children: [
               Expanded(
                 flex: 2,
-                child: image,
+                child: getFirstImageOrDefault(getValidImageList(product).first),
               ),
               Expanded(
                 flex: 3,

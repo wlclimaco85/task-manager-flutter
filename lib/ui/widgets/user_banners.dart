@@ -65,13 +65,18 @@ class _UserBannerAppBarState extends State<UserBannerAppBar> {
 
   Future<void> fetchAlerts() async {
     try {
-      final List<Alert> alertData =
-          await AlertCaller().fetchItensAVenda(context);
-      if (alertData.isNotEmpty) {
-        setState(() {
-          notifications = alertData;
-          unreadAlerts = notifications.length;
-        });
+      if (AuthUtility.userInfo?.data?.id == null ||
+          AuthUtility.userInfo!.data!.id! > 1) {
+        final List<Alert> alertData =
+            await AlertCaller().fetchItensAVenda(context);
+        if (alertData.isNotEmpty) {
+          setState(() {
+            notifications = alertData;
+            unreadAlerts = notifications.length;
+          });
+        } else {
+          debugPrint('No notifications available');
+        }
       } else {
         debugPrint('No notifications available');
       }

@@ -15,7 +15,10 @@ class NetworkCaller {
     try {
       Response response = await get(
         Uri.parse(url),
-        headers: {'Authorization': 'Bearer ${AuthUtility.userInfo.token}'},
+        headers: {
+          'Authorization': 'Bearer ${AuthUtility.userInfo.token}',
+          'Accept-Encoding': 'gzip'
+        },
       );
       if (response.statusCode == 200) {
         return NetworkResponse(
