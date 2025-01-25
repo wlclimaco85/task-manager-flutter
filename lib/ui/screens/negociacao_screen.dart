@@ -169,6 +169,33 @@ class ProductCard extends StatelessWidget {
     required this.onAction,
   }) : super(key: key);
 
+  Future<void> fetchProducts(BuildContext context) async {
+    try {
+      final data = await VendasCaller().fetchItensANegocias(context);
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Erro ao carregar produtos: $e')),
+      );
+    } finally {}
+  }
+
+  Future<Map<String, dynamic>?> finalizarNegociacao(
+      BuildContext context,
+      int vendaId,
+      int quantidade,
+      double vlrSaco,
+      String lote,
+      Function onLoad) async {
+    try {
+      final data = await VendasCaller().confirmarNegociacao(context, vendaId);
+      onLoad();
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Erro ao carregar produtos: $e')),
+      );
+    } finally {}
+  }
+
   @override
   Widget build(BuildContext context) {
     final imageBase64 = product.foto != null
@@ -260,9 +287,118 @@ class ProductCard extends StatelessWidget {
                                     color: Colors.green),
                                 tooltip: 'Aceitar',
                                 onPressed: () {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    const SnackBar(
-                                        content: Text('Negociação aceita')),
+                                  showDialog(
+                                    context: context,
+                                    builder: (context) {
+                                      return AlertDialog(
+                                        backgroundColor: const Color.fromARGB(
+                                            255, 231, 247, 233), // Verde claro
+                                        title:
+                                            const Text('Confirmar Negociação'),
+                                        content: Column(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            Container(
+                                              padding: const EdgeInsets.all(8),
+                                              decoration: BoxDecoration(
+                                                color: Colors.white,
+                                                borderRadius:
+                                                    BorderRadius.circular(4),
+                                              ),
+                                              child: Row(
+                                                mainAxisAlignment:
+                                                    MainAxisAlignment
+                                                        .spaceBetween,
+                                                children: [
+                                                  const Text(
+                                                    'Quantidade:',
+                                                    style: TextStyle(
+                                                        fontWeight:
+                                                            FontWeight.bold),
+                                                  ),
+                                                  Text(
+                                                      '${negotiation.qtdSacos} sacos'),
+                                                ],
+                                              ),
+                                            ),
+                                            const SizedBox(height: 16),
+                                            Container(
+                                              padding: const EdgeInsets.all(8),
+                                              decoration: BoxDecoration(
+                                                color: Colors.white,
+                                                borderRadius:
+                                                    BorderRadius.circular(4),
+                                              ),
+                                              child: Row(
+                                                mainAxisAlignment:
+                                                    MainAxisAlignment
+                                                        .spaceBetween,
+                                                children: [
+                                                  const Text(
+                                                    'Valor:',
+                                                    style: TextStyle(
+                                                        fontWeight:
+                                                            FontWeight.bold),
+                                                  ),
+                                                  Text(
+                                                      'R\$ ${negotiation.vlrSacos!.toString()}'),
+                                                ], //'valor: ${negotiation.vlrSacos}''quantidade : ${negotiation.qtdSacos}'
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                        actions: [
+                                          TextButton(
+                                            style: TextButton.styleFrom(
+                                              foregroundColor: Colors
+                                                  .red, // Botão Cancelar em vermelho
+                                            ),
+                                            onPressed: () =>
+                                                Navigator.pop(context),
+                                            child: const Text('Cancelar'),
+                                          ),
+                                          ElevatedButton(
+                                            style: ElevatedButton.styleFrom(
+                                              backgroundColor:
+                                                  const Color.fromARGB(255, 1,
+                                                      95, 15), // Verde escuro
+                                            ),
+                                            onPressed: () async {
+                                              final response =
+                                                  await finalizarNegociacao(
+                                                      context,
+                                                      negotiation.id!,
+                                                      negotiation.qtdSacos!,
+                                                      negotiation.vlrSacos!,
+                                                      negotiation.id!
+                                                          .toString(),
+                                                      fetchProducts);
+
+                                              if (response != null &&
+                                                  response['status'] == 'A') {
+                                                ScaffoldMessenger.of(context)
+                                                    .showSnackBar(
+                                                  const SnackBar(
+                                                    content: Text(
+                                                        'Negociação aceita com sucesso!'),
+                                                  ),
+                                                );
+                                                Navigator.pop(context);
+                                              } else {
+                                                ScaffoldMessenger.of(context)
+                                                    .showSnackBar(
+                                                  const SnackBar(
+                                                    content: Text(
+                                                        'Erro ao finalizar negociação.'),
+                                                  ),
+                                                );
+                                              }
+                                            },
+                                            child: const Text('Confirmar'),
+                                          ),
+                                        ],
+                                      );
+                                    },
                                   );
                                 },
                               ),

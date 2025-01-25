@@ -1,8 +1,8 @@
 class ApiLinks {
   ApiLinks._();
   static const String _baseIp =
-      "https://appacademia-production-be7e.up.railway.app";
-  // "http://192.168.100.41:8088";
+      //  "https://appacademia-production-be7e.up.railway.app";
+      "http://192.168.100.41:8088";
   //   "http://192.168.146.1:8088"; // "http://192.168.100.41:8088";
   // "http://192.168.100.41:8088"; // "http://192.168.12.19:8088"; //
   //'https://academia-app-919f42758cd6.herokuapp.com'; // "http://192.168.12.28:8088";
@@ -71,4 +71,5 @@ class ApiLinks {
   static String insertParceiro = '$_baseUrlNew/api/parceiro/insert';
   static String updateParceiro = '$_baseUrlNew/api/parceiro/update';
   static String fecthAllCotacaoDollar = '$_baseUrlNew/api/cotacoes/dollar';
+  static String confirmarNegociacao = '$_baseUrlNew/api/negociacao/finalizar';
 }

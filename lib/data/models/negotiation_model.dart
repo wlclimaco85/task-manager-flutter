@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 class Negotiation {
+  final int id;
   final int compradorId;
   final int vendedorId;
   final int qtdSacos;
@@ -15,6 +16,7 @@ class Negotiation {
   final String estadoSaida;
 
   Negotiation({
+    required this.id,
     required this.compradorId,
     required this.vendedorId,
     required this.qtdSacos,
@@ -39,6 +41,7 @@ class Negotiation {
     }
 
     return Negotiation(
+      id: safeParse<int>(json['id'], 0),
       compradorId: safeParse<int>(json['compradorId'], 0),
       vendedorId: safeParse<int>(json['vendedorId'], 0),
       qtdSacos: safeParse<int>(json['qtdSacos'], 0),
@@ -57,6 +60,7 @@ class Negotiation {
   // Método para converter Produto para JSON
   Map<String, dynamic> toJson() {
     final Map<String, dynamic> data = <String, dynamic>{};
+    data['id'] = id;
     data['compradorId'] = compradorId;
     data['vendedorId'] = vendedorId;
     data['qtdSacos'] = qtdSacos;
