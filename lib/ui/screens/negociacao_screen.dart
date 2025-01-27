@@ -339,10 +339,38 @@ class ProductCard extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text('Comprador ID: ${negotiation.compradorId}'),
-                      Text('Quantidade: ${negotiation.qtdSacos}'),
-                      Text('Valor por saco: R\$${negotiation.vlrSacos}'),
-                      Text('Status: ${getStatusText(negotiation.status)}'),
+                      // Comprador ID
+                      SizedBox(
+                        width: double.infinity, // Garante que a borda seja fixa
+                        child: Text(
+                          'Comprador ID: ${negotiation.compradorId}',
+                          style: const TextStyle(fontSize: 14),
+                        ),
+                      ),
+                      // Quantidade
+                      SizedBox(
+                        width: double.infinity, // Garante que a borda seja fixa
+                        child: Text(
+                          'Quantidade: ${negotiation.qtdSacos}',
+                          style: const TextStyle(fontSize: 14),
+                        ),
+                      ),
+                      // Valor por saco
+                      SizedBox(
+                        width: double.infinity, // Garante que a borda seja fixa
+                        child: Text(
+                          'Valor por saco: R\$${negotiation.vlrSacos}',
+                          style: const TextStyle(fontSize: 14),
+                        ),
+                      ),
+                      // Status
+                      SizedBox(
+                        width: double.infinity, // Garante que a borda seja fixa
+                        child: Text(
+                          'Status: ${getStatusText(negotiation.status)}',
+                          style: const TextStyle(fontSize: 14),
+                        ),
+                      ),
                       const SizedBox(height: 8),
                       if (negotiation.status == 'P' ||
                           negotiation.status == 'C') ...[
