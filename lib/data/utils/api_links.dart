@@ -72,4 +72,5 @@ class ApiLinks {
   static String updateParceiro = '$_baseUrlNew/api/parceiro/update';
   static String fecthAllCotacaoDollar = '$_baseUrlNew/api/cotacoes/dollar';
   static String confirmarNegociacao = '$_baseUrlNew/api/negociacao/finalizar';
+  static String confirmarRecusar = '$_baseUrlNew/api/negociacao/recusar';
 }

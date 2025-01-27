@@ -180,20 +180,88 @@ class ProductCard extends StatelessWidget {
   }
 
   Future<Map<String, dynamic>?> finalizarNegociacao(
-      BuildContext context,
-      int vendaId,
-      int quantidade,
-      double vlrSaco,
-      String lote,
-      Function onLoad) async {
+    BuildContext context,
+    int vendaId,
+    int quantidade,
+    double vlrSaco,
+    String lote,
+    Function onLoad,
+  ) async {
     try {
-      final data = await VendasCaller().confirmarNegociacao(context, vendaId);
-      onLoad();
+      // Chamada para a API com tratamento de erros mais detalhado
+      final response =
+          await VendasCaller().confirmarNegociacao(context, vendaId);
+
+      // Verificar se a resposta é válida e se a negociação foi concluída com sucesso
+      if (response != null) {
+        // Mostrar Snackbar de sucesso e fechar o diálogo
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Negociação aceita com sucesso!'),
+          ),
+        );
+
+        // Fechar o diálogo
+        Navigator.pop(context);
+      } else {
+        // Mostrar Snackbar de erro com mensagem mais específica
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Erro ao finalizar negociação ??'),
+          ),
+        );
+      }
     } catch (e) {
+      // Tratar outras exceções que possam ocorrer
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Erro ao carregar produtos: $e')),
+        SnackBar(content: Text('Erro inesperado: $e')),
       );
-    } finally {}
+    } finally {
+      // Chamar a função onLoad para atualizar a interface, se necessário
+      onLoad(context);
+    }
+  }
+
+  Future<Map<String, dynamic>?> recusarNegociacao(
+    BuildContext context,
+    int vendaId,
+    int quantidade,
+    double vlrSaco,
+    String lote,
+    Function onLoad,
+  ) async {
+    try {
+      // Chamada para a API com tratamento de erros mais detalhado
+      final response = await VendasCaller().confirmarRecusar(context, vendaId);
+
+      // Verificar se a resposta é válida e se a negociação foi concluída com sucesso
+      if (response != null) {
+        // Mostrar Snackbar de sucesso e fechar o diálogo
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Sua Negociação foi recusada!'),
+          ),
+        );
+
+        // Fechar o diálogo
+        Navigator.pop(context);
+      } else {
+        // Mostrar Snackbar de erro com mensagem mais específica
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Erro ao recusar negociação ??'),
+          ),
+        );
+      }
+    } catch (e) {
+      // Tratar outras exceções que possam ocorrer
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Erro inesperado: $e')),
+      );
+    } finally {
+      // Chamar a função onLoad para atualizar a interface, se necessário
+      onLoad(context);
+    }
   }
 
   @override
@@ -417,9 +485,118 @@ class ProductCard extends StatelessWidget {
                                     const Icon(Icons.close, color: Colors.red),
                                 tooltip: 'Recusar',
                                 onPressed: () {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    const SnackBar(
-                                        content: Text('Negociação recusada')),
+                                  showDialog(
+                                    context: context,
+                                    builder: (context) {
+                                      return AlertDialog(
+                                        backgroundColor: const Color.fromARGB(
+                                            255, 231, 247, 233), // Verde claro
+                                        title:
+                                            const Text('Confirmar Negociação'),
+                                        content: Column(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            Container(
+                                              padding: const EdgeInsets.all(8),
+                                              decoration: BoxDecoration(
+                                                color: Colors.white,
+                                                borderRadius:
+                                                    BorderRadius.circular(4),
+                                              ),
+                                              child: Row(
+                                                mainAxisAlignment:
+                                                    MainAxisAlignment
+                                                        .spaceBetween,
+                                                children: [
+                                                  const Text(
+                                                    'Quantidade:',
+                                                    style: TextStyle(
+                                                        fontWeight:
+                                                            FontWeight.bold),
+                                                  ),
+                                                  Text(
+                                                      '${negotiation.qtdSacos} sacos'),
+                                                ],
+                                              ),
+                                            ),
+                                            const SizedBox(height: 16),
+                                            Container(
+                                              padding: const EdgeInsets.all(8),
+                                              decoration: BoxDecoration(
+                                                color: Colors.white,
+                                                borderRadius:
+                                                    BorderRadius.circular(4),
+                                              ),
+                                              child: Row(
+                                                mainAxisAlignment:
+                                                    MainAxisAlignment
+                                                        .spaceBetween,
+                                                children: [
+                                                  const Text(
+                                                    'Valor:',
+                                                    style: TextStyle(
+                                                        fontWeight:
+                                                            FontWeight.bold),
+                                                  ),
+                                                  Text(
+                                                      'R\$ ${negotiation.vlrSacos!.toString()}'),
+                                                ], //'valor: ${negotiation.vlrSacos}''quantidade : ${negotiation.qtdSacos}'
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                        actions: [
+                                          TextButton(
+                                            style: TextButton.styleFrom(
+                                              foregroundColor: Colors
+                                                  .red, // Botão Cancelar em vermelho
+                                            ),
+                                            onPressed: () =>
+                                                Navigator.pop(context),
+                                            child: const Text('Cancelar'),
+                                          ),
+                                          ElevatedButton(
+                                            style: ElevatedButton.styleFrom(
+                                              backgroundColor:
+                                                  const Color.fromARGB(255, 1,
+                                                      95, 15), // Verde escuro
+                                            ),
+                                            onPressed: () async {
+                                              final response =
+                                                  await recusarNegociacao(
+                                                      context,
+                                                      negotiation.id!,
+                                                      negotiation.qtdSacos!,
+                                                      negotiation.vlrSacos!,
+                                                      negotiation.id!
+                                                          .toString(),
+                                                      fetchProducts);
+
+                                              if (response != null &&
+                                                  response['status'] == 'A') {
+                                                ScaffoldMessenger.of(context)
+                                                    .showSnackBar(
+                                                  const SnackBar(
+                                                    content: Text(
+                                                        'Negociação aceita com sucesso!'),
+                                                  ),
+                                                );
+                                                Navigator.pop(context);
+                                              } else {
+                                                ScaffoldMessenger.of(context)
+                                                    .showSnackBar(
+                                                  const SnackBar(
+                                                    content: Text(
+                                                        'Erro ao finalizar negociação.'),
+                                                  ),
+                                                );
+                                              }
+                                            },
+                                            child: const Text('Confirmar'),
+                                          ),
+                                        ],
+                                      );
+                                    },
                                   );
                                 },
                               ),

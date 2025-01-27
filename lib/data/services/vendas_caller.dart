@@ -163,4 +163,28 @@ class VendasCaller {
     }
     return model;
   }
+
+  Future<List<Product>> confirmarRecusar(
+      BuildContext context, int negociacaoId) async {
+    List<Product>? model = [];
+    ProductModel models;
+    try {
+      final NetworkResponse response = await NetworkCaller().getRequests(
+          ApiLinks.confirmarRecusar + "/" + negociacaoId.toString(), context);
+      String jsonString;
+
+      if (response.statusCode == 200 && response.body != null) {
+        jsonString = json.encode(response.body);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Sucesso!!!')),
+        );
+      } else {
+        print('Erro: Nenhum dado retornado');
+      }
+    } catch (e) {
+      print('Erro: $e'); // Log do erro
+      throw Exception('Erro ao carregar itens à venda: $e');
+    }
+    return model;
+  }
 }
