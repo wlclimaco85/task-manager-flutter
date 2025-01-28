@@ -120,6 +120,12 @@ class _UserBannerAppBarState extends State<UserBannerAppBar> {
     }
   }
 
+  void deleteAllNotifications() {
+    setState(() {
+      notifications.clear(); // Limpa a lista de notificações
+    });
+  }
+
   void showNotificationDropdown(BuildContext context) {
     if (notificationOverlay != null) {
       closeNotificationDropdown();
@@ -134,102 +140,120 @@ class _UserBannerAppBarState extends State<UserBannerAppBar> {
         right: 8,
         child: Material(
           elevation: 4,
-          child: ConstrainedBox(
-            constraints: BoxConstraints(
-              maxHeight: MediaQuery.of(context).size.height *
-                  0.6, // 60% da altura da tela
-              minHeight: 100, // Altura mínima
-              maxWidth: 300, // Largura máxima
+          child: Container(
+            width: 300, // Largura fixa
+            height: 400, // Altura fixa (ajuste conforme necessário)
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: AppColors.notificationBackground,
+              border: Border.all(
+                color: AppColors.notificationBorder,
+                width: 2,
+              ),
+              borderRadius: BorderRadius.circular(8),
             ),
-            child: Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: AppColors.notificationBackground,
-                border: Border.all(
-                  color: AppColors.notificationBorder,
-                  width: 2,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Botão de fechar no topo
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text(
+                      "Notificações",
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                        color: AppColors.notificationText,
+                      ),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.close, color: Colors.red),
+                      onPressed: closeNotificationDropdown,
+                    ),
+                  ],
                 ),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  // Botão de fechar no topo
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      const Text(
-                        "Notificações",
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 16,
-                          color: AppColors.notificationText,
-                        ),
-                      ),
-                      IconButton(
-                        icon: const Icon(Icons.close, color: Colors.red),
-                        onPressed: closeNotificationDropdown,
-                      ),
-                    ],
-                  ),
-                  const Divider(color: Colors.green, thickness: 1),
-                  Expanded(
-                    child: notifications.isNotEmpty
-                        ? ListView.builder(
-                            shrinkWrap: true,
-                            itemCount: notifications.length,
-                            itemBuilder: (context, index) {
-                              final notification = notifications[index];
-                              final DateTime parsedDate =
-                                  DateTime.parse(notification.data!);
-                              final String formattedDate =
-                                  "${parsedDate.day.toString().padLeft(2, '0')}/${parsedDate.month.toString().padLeft(2, '0')}/${parsedDate.year} ${parsedDate.hour.toString().padLeft(2, '0')}:${parsedDate.minute.toString().padLeft(2, '0')}";
+                const Divider(color: Colors.green, thickness: 1),
 
-                              return ListTile(
-                                title: Text(
-                                  notification.texto,
-                                  style: const TextStyle(
-                                      color: AppColors.notificationText),
-                                ),
-                                subtitle: Text(
-                                  formattedDate,
-                                  style: const TextStyle(
-                                    fontSize: 12,
-                                    color: AppColors.notificationSubtitle,
-                                  ),
-                                ),
-                                trailing: Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    IconButton(
-                                      icon: const Icon(Icons.check_circle,
-                                          color: AppColors.notificationIcon),
-                                      onPressed: () {
-                                        markNotificationAsRead(notification.id);
-                                      },
-                                    ),
-                                    IconButton(
-                                      icon: const Icon(Icons.delete,
-                                          color:
-                                              AppColors.notificationDeleteIcon),
-                                      onPressed: () {
-                                        deleteNotification(notification.id);
-                                      },
-                                    ),
-                                  ],
-                                ),
-                              );
-                            },
-                          )
-                        : const Center(
-                            child: Text(
-                              "No notifications",
-                              style: TextStyle(color: Colors.grey),
-                            ),
-                          ),
+                // Linha com a opção "Deletar Tudo"
+                ListTile(
+                  dense: true, // Torna o ListTile mais compacto
+                  visualDensity:
+                      VisualDensity.compact, // Reduz o espaçamento interno
+                  title: const Text(
+                    "Deletar Tudo",
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: Colors.red, // Cor vermelha para destacar
+                    ),
                   ),
-                ],
-              ),
+                  trailing: const Icon(
+                    Icons.delete_forever,
+                    color: Colors.red, // Ícone vermelho
+                    size: 20, // Tamanho menor do ícone
+                  ),
+                  onTap: () {
+                    // Função para deletar todas as notificações
+                    deleteAllNotifications();
+                  },
+                ),
+                const Divider(color: Colors.green, thickness: 1),
+
+                // Lista de notificações
+                Expanded(
+                  child: notifications.isNotEmpty
+                      ? ListView.builder(
+                          shrinkWrap: true,
+                          itemCount: notifications.length,
+                          itemBuilder: (context, index) {
+                            final notification = notifications[index];
+                            final DateTime parsedDate =
+                                DateTime.parse(notification.data!);
+                            final String formattedDate =
+                                "${parsedDate.day.toString().padLeft(2, '0')}/${parsedDate.month.toString().padLeft(2, '0')}/${parsedDate.year} ${parsedDate.hour.toString().padLeft(2, '0')}:${parsedDate.minute.toString().padLeft(2, '0')}";
+
+                            return ListTile(
+                              contentPadding: const EdgeInsets.symmetric(
+                                horizontal: 8,
+                                vertical: 4,
+                              ),
+                              title: Text(
+                                notification.texto,
+                                style: const TextStyle(
+                                  fontSize: 14, // Texto maior
+                                  color: AppColors.notificationText,
+                                  fontWeight:
+                                      FontWeight.w500, // Texto mais destacado
+                                ),
+                              ),
+                              subtitle: Text(
+                                formattedDate,
+                                style: const TextStyle(
+                                  fontSize: 12,
+                                  color: AppColors.notificationSubtitle,
+                                ),
+                              ),
+                              trailing: IconButton(
+                                icon: const Icon(
+                                  Icons.delete,
+                                  color: Colors.red, // Ícone vermelho
+                                  size: 20, // Tamanho menor do ícone
+                                ),
+                                onPressed: () {
+                                  deleteNotification(notification.id);
+                                },
+                              ),
+                            );
+                          },
+                        )
+                      : const Center(
+                          child: Text(
+                            "No notifications",
+                            style: TextStyle(color: Colors.grey),
+                          ),
+                        ),
+                ),
+              ],
             ),
           ),
         ),
