@@ -8,6 +8,7 @@ class Negotiation {
   final double vlrSacos;
   final String dataNegociacao;
   final String status;
+  final String tipo;
   final String bairroEntr;
   final String cidadeEntr;
   final String estadoEntr;
@@ -23,6 +24,7 @@ class Negotiation {
     required this.vlrSacos,
     required this.dataNegociacao,
     required this.status,
+    required this.tipo,
     required this.bairroEntr,
     required this.cidadeEntr,
     required this.estadoEntr,
@@ -48,6 +50,7 @@ class Negotiation {
       vlrSacos: safeParse<double>(json['vlrSacos'], 0.0),
       dataNegociacao: safeParse<String>(json['dataNegociacao'], ''),
       status: safeParse<String>(json['status'], ''),
+      tipo: safeParse<String>(json['tipo'], ''),
       bairroEntr: safeParse<String>(json['bairroEntr'], ''),
       cidadeEntr: safeParse<String>(json['cidadeEntr'], ''),
       estadoEntr: safeParse<String>(json['estadoEntr'], ''),
@@ -67,6 +70,7 @@ class Negotiation {
     data['vlrSacos'] = vlrSacos;
     data['dataNegociacao'] = dataNegociacao;
     data['status'] = status;
+    data['tipo'] = tipo;
     data['bairroEntr'] = bairroEntr;
     data['cidadeEntr'] = cidadeEntr;
     data['estadoEntr'] = estadoEntr;

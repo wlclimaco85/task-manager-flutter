@@ -134,87 +134,102 @@ class _UserBannerAppBarState extends State<UserBannerAppBar> {
         right: 8,
         child: Material(
           elevation: 4,
-          child: Container(
-            width: 300,
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: AppColors.notificationBackground,
-              border: Border.all(
-                color: AppColors.notificationBorder,
-                width: 2,
-              ),
-              borderRadius: BorderRadius.circular(8),
+          child: ConstrainedBox(
+            constraints: BoxConstraints(
+              maxHeight: MediaQuery.of(context).size.height *
+                  0.6, // 60% da altura da tela
+              minHeight: 100, // Altura mínima
+              maxWidth: 300, // Largura máxima
             ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                // Botão de fechar no topo
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    const Text(
-                      "Notificações",
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 16,
-                        color: AppColors.notificationText,
-                      ),
-                    ),
-                    IconButton(
-                      icon: const Icon(Icons.close, color: Colors.red),
-                      onPressed: closeNotificationDropdown,
-                    ),
-                  ],
+            child: Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: AppColors.notificationBackground,
+                border: Border.all(
+                  color: AppColors.notificationBorder,
+                  width: 2,
                 ),
-                const Divider(color: Colors.green, thickness: 1),
-                ...notifications.isNotEmpty
-                    ? notifications.map((notification) {
-                        final DateTime parsedDate =
-                            DateTime.parse(notification.data!);
-                        final String formattedDate =
-                            "${parsedDate.day.toString().padLeft(2, '0')}/${parsedDate.month.toString().padLeft(2, '0')}/${parsedDate.year} ${parsedDate.hour.toString().padLeft(2, '0')}:${parsedDate.minute.toString().padLeft(2, '0')}";
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // Botão de fechar no topo
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text(
+                        "Notificações",
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                          color: AppColors.notificationText,
+                        ),
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.close, color: Colors.red),
+                        onPressed: closeNotificationDropdown,
+                      ),
+                    ],
+                  ),
+                  const Divider(color: Colors.green, thickness: 1),
+                  Expanded(
+                    child: notifications.isNotEmpty
+                        ? ListView.builder(
+                            shrinkWrap: true,
+                            itemCount: notifications.length,
+                            itemBuilder: (context, index) {
+                              final notification = notifications[index];
+                              final DateTime parsedDate =
+                                  DateTime.parse(notification.data!);
+                              final String formattedDate =
+                                  "${parsedDate.day.toString().padLeft(2, '0')}/${parsedDate.month.toString().padLeft(2, '0')}/${parsedDate.year} ${parsedDate.hour.toString().padLeft(2, '0')}:${parsedDate.minute.toString().padLeft(2, '0')}";
 
-                        return ListTile(
-                          title: Text(
-                            notification.texto,
-                            style: const TextStyle(
-                                color: AppColors.notificationText),
-                          ),
-                          subtitle: Text(
-                            formattedDate,
-                            style: const TextStyle(
-                              fontSize: 12,
-                              color: AppColors.notificationSubtitle,
+                              return ListTile(
+                                title: Text(
+                                  notification.texto,
+                                  style: const TextStyle(
+                                      color: AppColors.notificationText),
+                                ),
+                                subtitle: Text(
+                                  formattedDate,
+                                  style: const TextStyle(
+                                    fontSize: 12,
+                                    color: AppColors.notificationSubtitle,
+                                  ),
+                                ),
+                                trailing: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    IconButton(
+                                      icon: const Icon(Icons.check_circle,
+                                          color: AppColors.notificationIcon),
+                                      onPressed: () {
+                                        markNotificationAsRead(notification.id);
+                                      },
+                                    ),
+                                    IconButton(
+                                      icon: const Icon(Icons.delete,
+                                          color:
+                                              AppColors.notificationDeleteIcon),
+                                      onPressed: () {
+                                        deleteNotification(notification.id);
+                                      },
+                                    ),
+                                  ],
+                                ),
+                              );
+                            },
+                          )
+                        : const Center(
+                            child: Text(
+                              "No notifications",
+                              style: TextStyle(color: Colors.grey),
                             ),
                           ),
-                          trailing: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              IconButton(
-                                icon: const Icon(Icons.check_circle,
-                                    color: AppColors.notificationIcon),
-                                onPressed: () {
-                                  markNotificationAsRead(notification.id);
-                                },
-                              ),
-                              IconButton(
-                                icon: const Icon(Icons.delete,
-                                    color: AppColors.notificationDeleteIcon),
-                                onPressed: () {
-                                  deleteNotification(notification.id);
-                                },
-                              ),
-                            ],
-                          ),
-                        );
-                      }).toList()
-                    : [
-                        const Text(
-                          "No notifications",
-                          style: TextStyle(color: Colors.grey),
-                        )
-                      ],
-              ],
+                  ),
+                ],
+              ),
             ),
           ),
         ),
