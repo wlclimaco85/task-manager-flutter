@@ -20,11 +20,15 @@ class AppColors {
   static const Color notificationDeleteIcon = Colors.red;
   static const Color notificationText = Colors.black;
   static const Color notificationSubtitle = Colors.grey;
+  static const Color refreshIconColor = Colors.black;
+  static const Color logoutIconColor = Colors.black;
+  static const Color closeIconColor = Colors.red;
+  static const Color unreadBadgeColor = Colors.red;
+  static const Color unreadBadgeTextColor = Colors.white;
+  static const Color appBarTitleColor = Colors.black;
 }
 
-const Color lightGreenBackground = Color.fromARGB(255, 231, 247, 233);
-const Color borderColor = Color.fromARGB(255, 1, 247, 14);
-
+// AppBar personalizado
 class UserBannerAppBar extends StatefulWidget implements PreferredSizeWidget {
   final VoidCallback? onTapped;
   final String? screenTitle;
@@ -168,7 +172,8 @@ class _UserBannerAppBarState extends State<UserBannerAppBar> {
                       ),
                     ),
                     IconButton(
-                      icon: const Icon(Icons.close, color: Colors.red),
+                      icon: const Icon(Icons.close,
+                          color: AppColors.closeIconColor),
                       onPressed: closeNotificationDropdown,
                     ),
                   ],
@@ -184,18 +189,15 @@ class _UserBannerAppBarState extends State<UserBannerAppBar> {
                     "Deletar Tudo",
                     style: TextStyle(
                       fontSize: 14,
-                      color: Colors.red, // Cor vermelha para destacar
+                      color: AppColors.notificationDeleteIcon,
                     ),
                   ),
                   trailing: const Icon(
                     Icons.delete_forever,
-                    color: Colors.red, // Ícone vermelho
-                    size: 20, // Tamanho menor do ícone
+                    color: AppColors.notificationDeleteIcon,
+                    size: 20,
                   ),
-                  onTap: () {
-                    // Função para deletar todas as notificações
-                    deleteAllNotifications();
-                  },
+                  onTap: deleteAllNotifications,
                 ),
                 const Divider(color: Colors.green, thickness: 1),
 
@@ -220,10 +222,9 @@ class _UserBannerAppBarState extends State<UserBannerAppBar> {
                               title: Text(
                                 notification.texto,
                                 style: const TextStyle(
-                                  fontSize: 14, // Texto maior
+                                  fontSize: 14,
                                   color: AppColors.notificationText,
-                                  fontWeight:
-                                      FontWeight.w500, // Texto mais destacado
+                                  fontWeight: FontWeight.w500,
                                 ),
                               ),
                               subtitle: Text(
@@ -236,8 +237,8 @@ class _UserBannerAppBarState extends State<UserBannerAppBar> {
                               trailing: IconButton(
                                 icon: const Icon(
                                   Icons.delete,
-                                  color: Colors.red, // Ícone vermelho
-                                  size: 20, // Tamanho menor do ícone
+                                  color: AppColors.notificationDeleteIcon,
+                                  size: 20,
                                 ),
                                 onPressed: () {
                                   deleteNotification(notification.id);
@@ -249,7 +250,8 @@ class _UserBannerAppBarState extends State<UserBannerAppBar> {
                       : const Center(
                           child: Text(
                             "No notifications",
-                            style: TextStyle(color: Colors.grey),
+                            style: TextStyle(
+                                color: AppColors.notificationSubtitle),
                           ),
                         ),
                 ),
@@ -280,9 +282,9 @@ class _UserBannerAppBarState extends State<UserBannerAppBar> {
     if (AuthUtility.userInfo?.data?.id != null &&
         AuthUtility.userInfo!.data!.id! > 1) {
       return AppBar(
-        backgroundColor: lightGreenBackground,
+        backgroundColor: AppColors.lightGreenBackground,
         shape: const RoundedRectangleBorder(
-          side: BorderSide(color: borderColor, width: 2.0),
+          side: BorderSide(color: AppColors.borderColor, width: 2.0),
         ),
         actions: [
           if (widget?.isLoading ?? false)
@@ -425,7 +427,7 @@ class _UserBannerAppBarState extends State<UserBannerAppBar> {
       return AppBar(
         backgroundColor: lightGreenBackground,
         shape: const RoundedRectangleBorder(
-          side: BorderSide(color: borderColor, width: 2.0),
+          side: BorderSide(color: AppColors.borderColor, width: 2.0),
         ),
         title: Text(
           widget.screenTitle ?? "Screen",

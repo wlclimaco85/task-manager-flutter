@@ -8,6 +8,9 @@ import 'package:task_manager_flutter/ui/widgets/user_banners.dart';
 const Color lightGreenBackground = Color.fromARGB(255, 231, 247, 233);
 const Color darkGreenBorder = Color.fromARGB(255, 1, 247, 14);
 const Color buttonBackground = Color.fromARGB(255, 128, 202, 132);
+const Color negotiationCardBackground = Color.fromARGB(255, 214, 239, 222);
+const Color confirmButtonColor = Color.fromARGB(255, 1, 95, 15);
+const Color cancelButtonColor = Colors.red;
 
 class NegociacaoCatalogPage extends StatefulWidget {
   final String title;
@@ -61,15 +64,18 @@ class _NegociacaoCatalogPageState extends State<NegociacaoCatalogPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: UserBannerAppBar(
-          screenTitle: "Vendas",
-          onRefresh: fetchProducts,
-          isLoading: isLoading,
-          onTapped: () {
-            Navigator.push(
-                context,
-                MaterialPageRoute(
-                    builder: (context) => const UpdateProfileScreen()));
-          }),
+        screenTitle: "Vendas",
+        onRefresh: fetchProducts,
+        isLoading: isLoading,
+        onTapped: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => const UpdateProfileScreen(),
+            ),
+          );
+        },
+      ),
       body: Container(
         color: lightGreenBackground,
         child: isLoading
@@ -329,7 +335,7 @@ class ProductCard extends StatelessWidget {
               final negotiation = product.negociacoes[i];
               return Card(
                 margin: const EdgeInsets.symmetric(vertical: 4.0),
-                color: const Color.fromARGB(255, 214, 239, 222),
+                color: negotiationCardBackground,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(8.0),
                   side: BorderSide(color: darkGreenBorder, width: 1.5),
@@ -367,7 +373,7 @@ class ProductCard extends StatelessWidget {
                       SizedBox(
                         width: double.infinity, // Garante que a borda seja fixa
                         child: Text(
-                          'Status: ${getStatusText(negotiation.status)}',
+                          'Status: ${getStatusText(negotiation.status)} / ${getTipoText(negotiation.tipo)}',
                           style: const TextStyle(fontSize: 14),
                         ),
                       ),
@@ -663,6 +669,11 @@ class ProductCard extends StatelessWidget {
                                     );
                                   },
                                 ),
+                                const Text(
+                                  'Fazer Contra Proposta',
+                                  style: TextStyle(
+                                      fontSize: 12, color: Colors.black),
+                                ),
                               ],
                             )
                           ],
@@ -672,29 +683,120 @@ class ProductCard extends StatelessWidget {
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                           children: [
-                            ElevatedButton(
-                              onPressed: () async {
-                                await handleSignContract(context, negotiation);
-                              },
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor:
-                                    const Color.fromARGB(255, 1, 95, 15),
-                              ),
-                              child: const Text('Assinar Contrato'),
+                            Column(
+                              children: [
+                                IconButton(
+                                  onPressed: () async {
+                                    await handleSignContract(
+                                        context, negotiation);
+                                  },
+                                  icon: const Icon(
+                                    Icons.edit_document,
+                                  ), // Choose an appropriate icon
+                                  color: const Color.fromARGB(255, 1, 95, 15),
+                                ),
+                                const Text('Assinar Contrato'),
+                              ],
                             ),
-                            ElevatedButton(
-                              onPressed: () async {
-                                await handleWithdraw(context, negotiation);
-                              },
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: Colors.red,
-                              ),
-                              child: const Text('Desistir'),
+                            Column(
+                              children: [
+                                IconButton(
+                                  onPressed: () async {
+                                    await handleWithdraw(context, negotiation);
+                                  },
+                                  icon: const Icon(Icons
+                                      .cancel), // Choose an appropriate icon
+                                  color: Colors.red,
+                                ),
+                                const Text('Desistir'),
+                              ],
                             ),
                           ],
                         )
                       ] else if (negotiation.tipo == 'X') ...[
-                        // Nenhum botão para Recusada
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                          children: [
+                            Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                IconButton(
+                                  icon: const Icon(Icons.handshake,
+                                      color: Colors.green),
+                                  tooltip: 'Fazer Contra Proposta',
+                                  onPressed: () {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(
+                                        content: Text('Contraproposta enviada'),
+                                      ),
+                                    );
+                                  },
+                                ),
+                                const Text(
+                                  'Fazer Contra Proposta',
+                                  style: TextStyle(
+                                      fontSize: 12, color: Colors.black),
+                                ),
+                              ],
+                            )
+                          ],
+                        )
+                      ] else if (negotiation.tipo == 'F') ...[
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment
+                              .spaceEvenly, // Or .spaceBetween, etc.
+                          children: [
+                            Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                IconButton(
+                                  icon: const Icon(Icons.download,
+                                      color: Colors.green), // Download icon
+                                  tooltip: 'Download Contrato',
+                                  onPressed: () {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(
+                                        content: Text(
+                                            'Download do contrato iniciado...'), // More appropriate message
+                                      ),
+                                    );
+                                    // Add your download logic here
+                                  },
+                                ),
+                                const Text(
+                                  'Download Contrato',
+                                  style: TextStyle(
+                                      fontSize: 12, color: Colors.black),
+                                ),
+                              ],
+                            ),
+                            Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                IconButton(
+                                  icon: const Icon(Icons.star,
+                                      color:
+                                          Colors.orange), // Rating/Review icon
+                                  tooltip: 'Avaliar Vendedor/Comprador',
+                                  onPressed: () {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(
+                                        content: Text(
+                                            'Abrindo tela de avaliação...'), // More appropriate message
+                                      ),
+                                    );
+                                    // Navigate to your rating screen or logic here
+                                  },
+                                ),
+                                const Text(
+                                  'Avaliar Vendedor/Comprador',
+                                  style: TextStyle(
+                                      fontSize: 12, color: Colors.black),
+                                ),
+                              ],
+                            ),
+                          ],
+                        )
                       ],
                     ],
                   ),
@@ -716,6 +818,24 @@ class ProductCard extends StatelessWidget {
         return 'Finalizado';
       case 'P':
         return 'Pendente';
+      default:
+        return 'Desconhecido';
+    }
+  }
+
+  // Função para mapear status para texto private String tipo; // P = Proposta, C = Contra Proposta, A Aceita, X Recusada, F Finaliado;
+  String getTipoText(String status) {
+    switch (status) {
+      case 'P':
+        return 'Proposta';
+      case 'C':
+        return 'Contra Proposta';
+      case 'A':
+        return 'Aceita';
+      case 'X':
+        return 'Rejeitada';
+      case 'F':
+        return 'Finalizado';
       default:
         return 'Desconhecido';
     }
