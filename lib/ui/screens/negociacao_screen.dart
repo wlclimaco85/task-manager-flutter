@@ -372,8 +372,8 @@ class ProductCard extends StatelessWidget {
                         ),
                       ),
                       const SizedBox(height: 8),
-                      if (negotiation.status == 'P' ||
-                          negotiation.status == 'C') ...[
+                      if (negotiation.tipo == 'P' ||
+                          negotiation.tipo == 'C') ...[
                         // Botões para Proposta ou Contra Proposta
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -667,7 +667,7 @@ class ProductCard extends StatelessWidget {
                             )
                           ],
                         ),
-                      ] else if (negotiation.status == 'A') ...[
+                      ] else if (negotiation.tipo == 'A') ...[
                         // Botões para Aceita
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -693,7 +693,7 @@ class ProductCard extends StatelessWidget {
                             ),
                           ],
                         )
-                      ] else if (negotiation.status == 'X') ...[
+                      ] else if (negotiation.tipo == 'X') ...[
                         // Nenhum botão para Recusada
                       ],
                     ],
