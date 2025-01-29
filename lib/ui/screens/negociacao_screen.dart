@@ -305,6 +305,25 @@ class ProductCard extends StatelessWidget {
     }
   }
 
+  InputDecoration customInputDecoration(String labelText) {
+    return InputDecoration(
+      labelText: labelText,
+      labelStyle: const TextStyle(
+        color: Colors.black,
+        fontWeight: FontWeight.bold,
+      ),
+      enabledBorder: const OutlineInputBorder(
+        borderSide: BorderSide(color: Colors.green, width: 2),
+      ),
+      focusedBorder: const OutlineInputBorder(
+        borderSide: BorderSide(color: Colors.green, width: 2),
+      ),
+      errorBorder: const OutlineInputBorder(
+        borderSide: BorderSide(color: Colors.red, width: 2),
+      ),
+    );
+  }
+
   void showContraPropostaPopup(BuildContext context, dynamic negotiation) {
     final _formKey = GlobalKey<FormState>();
     final _qtdSacosController = TextEditingController();
@@ -315,35 +334,45 @@ class ProductCard extends StatelessWidget {
       builder: (context) {
         return AlertDialog(
           backgroundColor: lightGreenBackground,
-          title: const Text('Fazer Contra Proposta'),
+          title: const Text(
+            'Fazer Contra Proposta',
+            style: TextStyle(fontWeight: FontWeight.bold),
+          ),
           content: Form(
             key: _formKey,
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                TextFormField(
-                  controller: _qtdSacosController,
-                  decoration:
-                      const InputDecoration(labelText: 'Quantidade de Sacos'),
-                  keyboardType: TextInputType.number,
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Por favor, insira a quantidade de sacos';
-                    }
-                    return null;
-                  },
+                // Input para Quantidade de Sacos
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8),
+                  child: TextFormField(
+                    controller: _qtdSacosController,
+                    decoration: customInputDecoration('Quantidade de Sacos'),
+                    keyboardType: TextInputType.number,
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'Por favor, insira a quantidade de sacos';
+                      }
+                      return null;
+                    },
+                  ),
                 ),
-                TextFormField(
-                  controller: _vlrSacosController,
-                  decoration:
-                      const InputDecoration(labelText: 'Valor por Saco'),
-                  keyboardType: TextInputType.number,
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Por favor, insira o valor por saco';
-                    }
-                    return null;
-                  },
+                const SizedBox(height: 16), // Espaçamento entre os inputs
+                // Input para Valor por Saco
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8),
+                  child: TextFormField(
+                    controller: _vlrSacosController,
+                    decoration: customInputDecoration('Valor por Saco'),
+                    keyboardType: TextInputType.number,
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'Por favor, insira o valor por saco';
+                      }
+                      return null;
+                    },
+                  ),
                 ),
               ],
             ),
@@ -351,7 +380,10 @@ class ProductCard extends StatelessWidget {
           actions: [
             TextButton(
               onPressed: () => Navigator.of(context).pop(),
-              child: const Text('Cancelar'),
+              child: const Text(
+                'Cancelar',
+                style: TextStyle(color: cancelButtonColor),
+              ),
             ),
             ElevatedButton(
               onPressed: () async {
@@ -386,6 +418,10 @@ class ProductCard extends StatelessWidget {
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: confirmButtonColor,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                  side: BorderSide(color: darkGreenBorder, width: 2),
+                ),
               ),
               child: const Text('Enviar Proposta'),
             ),
