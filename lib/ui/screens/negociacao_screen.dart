@@ -228,6 +228,41 @@ class ProductCard extends StatelessWidget {
     }
   }
 
+  Future<Map<String, dynamic>?> enviarContraProposta(
+    BuildContext context,
+    int negociacaoId,
+    int vendaId,
+    int compradorId,
+    int vendedorId,
+    double qtdSacos,
+    double vlrSacos,
+  ) async {
+    try {
+      final response = await VendasCaller().enviarContraProposta(
+        context,
+        negociacaoId,
+        vendaId,
+        compradorId,
+        vendedorId,
+        qtdSacos,
+        vlrSacos,
+      );
+
+      if (response != null) {
+        return response;
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Erro ao enviar contraproposta.')),
+        );
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Erro inesperado: $e')),
+      );
+    }
+    return null;
+  }
+
   Future<Map<String, dynamic>?> recusarNegociacao(
     BuildContext context,
     int vendaId,
@@ -268,6 +303,96 @@ class ProductCard extends StatelessWidget {
       // Chamar a função onLoad para atualizar a interface, se necessário
       onLoad(context);
     }
+  }
+
+  void showContraPropostaPopup(BuildContext context, dynamic negotiation) {
+    final _formKey = GlobalKey<FormState>();
+    final _qtdSacosController = TextEditingController();
+    final _vlrSacosController = TextEditingController();
+
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          backgroundColor: lightGreenBackground,
+          title: const Text('Fazer Contra Proposta'),
+          content: Form(
+            key: _formKey,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextFormField(
+                  controller: _qtdSacosController,
+                  decoration:
+                      const InputDecoration(labelText: 'Quantidade de Sacos'),
+                  keyboardType: TextInputType.number,
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Por favor, insira a quantidade de sacos';
+                    }
+                    return null;
+                  },
+                ),
+                TextFormField(
+                  controller: _vlrSacosController,
+                  decoration:
+                      const InputDecoration(labelText: 'Valor por Saco'),
+                  keyboardType: TextInputType.number,
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Por favor, insira o valor por saco';
+                    }
+                    return null;
+                  },
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Cancelar'),
+            ),
+            ElevatedButton(
+              onPressed: () async {
+                if (_formKey.currentState!.validate()) {
+                  final qtdSacos = double.parse(_qtdSacosController.text);
+                  final vlrSacos = double.parse(_vlrSacosController.text);
+
+                  // Aqui você pode chamar o endpoint para enviar a proposta
+                  final response = await enviarContraProposta(
+                    context,
+                    negotiation.id,
+                    negotiation.vendaId,
+                    negotiation.compradorId,
+                    negotiation.vendedorId,
+                    qtdSacos,
+                    vlrSacos,
+                  );
+
+                  if (response != null && response['status'] == 'success') {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                          content: Text('Contraproposta enviada com sucesso!')),
+                    );
+                    Navigator.of(context).pop();
+                  } else {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                          content: Text('Erro ao enviar contraproposta.')),
+                    );
+                  }
+                }
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: confirmButtonColor,
+              ),
+              child: const Text('Enviar Proposta'),
+            ),
+          ],
+        );
+      },
+    );
   }
 
   @override
@@ -662,11 +787,8 @@ class ProductCard extends StatelessWidget {
                                       color: Colors.green),
                                   tooltip: 'Fazer Contra Proposta',
                                   onPressed: () {
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      const SnackBar(
-                                        content: Text('Contraproposta enviada'),
-                                      ),
-                                    );
+                                    showContraPropostaPopup(
+                                        context, negotiation);
                                   },
                                 ),
                                 const Text(
@@ -725,11 +847,8 @@ class ProductCard extends StatelessWidget {
                                       color: Colors.green),
                                   tooltip: 'Fazer Contra Proposta',
                                   onPressed: () {
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      const SnackBar(
-                                        content: Text('Contraproposta enviada'),
-                                      ),
-                                    );
+                                    showContraPropostaPopup(
+                                        context, negotiation);
                                   },
                                 ),
                                 const Text(

@@ -187,4 +187,41 @@ class VendasCaller {
     }
     return model;
   }
+
+  Future<Map<String, dynamic>?> enviarContraProposta(
+    BuildContext context,
+    int negociacaoId,
+    int vendaId,
+    int compradorId,
+    int vendedorId,
+    double qtdSacos,
+    double vlrSacos,
+  ) async {
+    final body = {
+      'negociacaoId': negociacaoId,
+      'vendaId': vendaId,
+      'compradorId': compradorId,
+      'vendedorId': vendedorId,
+      'qtdSacos': qtdSacos,
+      'vlrSacos': vlrSacos,
+    };
+
+    try {
+      final NetworkResponse response =
+          await NetworkCaller().getRequests(ApiLinks.contraProposta, context);
+      String jsonString;
+
+      if (response.statusCode == 200 && response.body != null) {
+        jsonString = json.encode(response.body);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Sucesso!!!')),
+        );
+      } else {
+        print('Erro: Nenhum dado retornado');
+      }
+    } catch (e) {
+      print('Erro: $e'); // Log do erro
+      throw Exception('Erro ao carregar itens à venda: $e');
+    }
+  }
 }
