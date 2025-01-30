@@ -7,6 +7,10 @@ import 'package:task_manager_flutter/data/models/network_response.dart';
 import 'package:task_manager_flutter/data/services/network_caller.dart';
 import 'package:task_manager_flutter/data/models/auth_utility.dart';
 import 'package:task_manager_flutter/ui/screens/LoginPopup_screens.dart';
+import 'dart:io';
+import 'package:path_provider/path_provider.dart';
+import 'package:open_filex/open_filex.dart';
+import 'package:http/http.dart' as http;
 
 class VendasCaller {
   Future<List<Produto>> fetchCotacoes(BuildContext context) async {
@@ -137,6 +141,62 @@ class VendasCaller {
       throw Exception('Erro ao carregar classificações: $e');
     }
     return model;
+  }
+
+  void downloadContrato(int contratoId, BuildContext context) async {
+    final url = ApiLinks.downloadContrato + "/" + contratoId.toString();
+
+    // Get the token (replace with your actual AuthUtility method)
+    final token =
+        AuthUtility.userInfo.token; // Assuming userInfo.token is available
+
+    try {
+      final response = await http.get(
+        Uri.parse(url),
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Accept': 'application/json', // Important: Add Accept header
+        },
+      );
+
+      if (response.statusCode == 200) {
+        // ... (rest of your download and open file logic)
+
+        final tempDir = await getTemporaryDirectory();
+        final file = File('${tempDir.path}/contrato_$contratoId.pdf');
+        await file
+            .writeAsBytes(response.bodyBytes); // Write the bytes to the file
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+              content: Text('Download concluído! Abrindo o contrato...')),
+        );
+
+        OpenFilex.open(file.path); // Open the file
+      } else {
+        print(
+            'Error: ${response.statusCode} - ${response.body}'); // Print error details
+        // Try to decode the error response body (if it's JSON)
+        try {
+          final errorData = jsonDecode(response.body);
+          print('Error Data: $errorData'); // Print decoded error data
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+                content: Text(
+                    'Erro ao baixar contrato: ${errorData['message'] ?? 'Erro desconhecido'}')),
+          );
+        } catch (e) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Erro ao baixar contrato')),
+          );
+        }
+      }
+    } catch (e) {
+      print('Error during download: $e'); // Catch and log any exceptions
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Erro ao baixar contrato')),
+      );
+    }
   }
 
   Future<List<Product>> confirmarNegociacao(

@@ -3,6 +3,7 @@ import 'package:task_manager_flutter/data/services/vendas_caller.dart';
 import 'package:task_manager_flutter/data/utils/fotos_util.dart';
 import 'package:task_manager_flutter/ui/screens/update_profile.dart';
 import 'package:task_manager_flutter/ui/widgets/user_banners.dart';
+import 'package:http/http.dart' as http;
 
 // Define theme colors
 const Color lightGreenBackground = Color.fromARGB(255, 231, 247, 233);
@@ -431,6 +432,10 @@ class ProductCard extends StatelessWidget {
     );
   }
 
+  void downloadContrato(int contratoId, BuildContext context) async {
+    VendasCaller().downloadContrato(contratoId, context);
+  }
+
   @override
   Widget build(BuildContext context) {
     final imageBase64 = product.foto != null
@@ -446,6 +451,8 @@ class ProductCard extends StatelessWidget {
             fit: BoxFit.cover,
           )
         : const Icon(Icons.image, size: 100);
+
+    final int contratoId;
 
     return Card(
       margin: const EdgeInsets.all(10),
@@ -911,10 +918,10 @@ class ProductCard extends StatelessWidget {
                                   onPressed: () {
                                     ScaffoldMessenger.of(context).showSnackBar(
                                       const SnackBar(
-                                        content: Text(
-                                            'Download do contrato iniciado...'), // More appropriate message
-                                      ),
+                                          content: Text(
+                                              'Download do contrato iniciado...')),
                                     );
+                                    downloadContrato(negotiation.id, context);
                                     // Add your download logic here
                                   },
                                 ),

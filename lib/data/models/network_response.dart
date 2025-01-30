@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 class NetworkResponse {
   final int statusCode;
   final bool isSuccess;
