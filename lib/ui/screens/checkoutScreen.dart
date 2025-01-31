@@ -22,6 +22,10 @@ class CheckoutScreen extends StatefulWidget {
 class _CheckoutScreenState extends State<CheckoutScreen> {
   bool _termsAccepted = false;
   String _termsText = "Carregando termos...";
+  final Color lightGreenBackground = Color.fromARGB(255, 231, 247, 233);
+  final Color darkGreenBorder = Color.fromARGB(255, 0, 100, 0);
+
+  // ... (mantenha os métodos existentes _fetchTerms, _downloadContract, etc)
 
   @override
   void initState() {
@@ -154,62 +158,142 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     }
   }
 
+  void _showTermsPopup() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: lightGreenBackground,
+        title: const Text('Termos da Compra',
+            style: TextStyle(fontWeight: FontWeight.bold)),
+        content: SingleChildScrollView(
+          child:
+              Text(_termsText, style: TextStyle(fontWeight: FontWeight.bold)),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Fechar',
+                style: TextStyle(fontWeight: FontWeight.bold)),
+          ),
+        ],
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(10),
+          side: BorderSide(color: darkGreenBorder, width: 2),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
+    final totalValue = widget.productQnt * widget.productValue;
+
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Finalizar Compra'),
+        title: const Text('Finalizar Compra',
+            style: TextStyle(fontWeight: FontWeight.bold)),
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Produto: ${widget.productName}',
-              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 10),
-            Text(
-              'Valor: R\$ ${widget.productValue.toStringAsFixed(2)}',
-              style: const TextStyle(fontSize: 16),
-            ),
-            const SizedBox(height: 20),
-            const Text(
-              'Termos da Compra:',
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 10),
-            Text(
-              _termsText,
-              style: const TextStyle(fontSize: 14),
-            ),
-            const SizedBox(height: 10),
-            Row(
-              children: [
-                Checkbox(
-                  value: _termsAccepted,
-                  onChanged: (value) {
-                    setState(() {
-                      _termsAccepted = value ?? false;
-                    });
-                  },
-                ),
-                const Text('Aceito os termos'),
-              ],
-            ),
-            const SizedBox(height: 20),
-            Center(
-              child: ElevatedButton(
-                onPressed: _termsAccepted
-                    ? () {
-                        _showDownloadAndUploadButtons();
-                      }
-                    : null,
-                child: const Text('Finalizar Compra'),
+      body: Container(
+        color: lightGreenBackground,
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Seção de Informações do Produto
+              Text('Produto: ${widget.productName}',
+                  style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.green[800])),
+              SizedBox(height: 10),
+              Text('Quantidade de Sacos: ${widget.productQnt}',
+                  style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.green[800])),
+              SizedBox(height: 10),
+              Text(
+                  'Valor por Saco: R\$ ${widget.productValue.toStringAsFixed(2)}',
+                  style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.green[800])),
+              SizedBox(height: 20),
+              Text(
+                'Produto: ${widget.productName}',
+                style:
+                    const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
               ),
-            ),
-          ],
+              const SizedBox(height: 10),
+              Text(
+                'Valor: R\$ ${widget.productValue.toStringAsFixed(2)}',
+                style: const TextStyle(fontSize: 16),
+              ),
+              const SizedBox(height: 20),
+              // Valor Total
+              Container(
+                padding: EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  border: Border.all(color: darkGreenBorder, width: 2),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Text(
+                  'Valor Total: R\$ ${totalValue.toStringAsFixed(2)}',
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.green[900],
+                  ),
+                ),
+              ),
+              SizedBox(height: 20),
+
+              // Termos e Condições
+              Row(
+                children: [
+                  Checkbox(
+                    value: _termsAccepted,
+                    onChanged: (value) {
+                      setState(() {
+                        _termsAccepted = value ?? false;
+                      });
+                    },
+                    activeColor: Colors.green[800],
+                  ),
+                  const Text('Aceito os termos',
+                      style: TextStyle(fontWeight: FontWeight.bold)),
+                  TextButton(
+                    onPressed: _showTermsPopup,
+                    child: Text('Ler Termo',
+                        style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            color: Colors.blue[800],
+                            decoration: TextDecoration.underline)),
+                  ),
+                ],
+              ),
+
+              // Botão Finalizar
+              Center(
+                child: ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.green[800],
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 30, vertical: 15),
+                  ),
+                  onPressed: _termsAccepted
+                      ? () => _showDownloadAndUploadButtons()
+                      : null,
+                  child: const Text('Finalizar Compra',
+                      style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white)),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
