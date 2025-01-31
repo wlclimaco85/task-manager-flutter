@@ -94,37 +94,70 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
       context: context,
       builder: (context) {
         return AlertDialog(
-          title: const Text('Contrato'),
+          backgroundColor: _fundoVerdeClaro,
+          title: Text('Contrato',
+              style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  color: _bordaVerdeEscuro)), // Cor verde principal
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              ElevatedButton.icon(
-                onPressed: () {
-                  // Lógica para download do contrato
-                  _downloadContract();
-                },
-                icon: const Icon(Icons.download),
-                label: const Text('Baixar Contrato'),
+              // Botão de Download
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton.icon(
+                  icon: Icon(Icons.download, size: 24),
+                  label: Text('Baixar Contrato Modelo',
+                      style: TextStyle(fontSize: 16)),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: _bordaVerdeEscuro, // Verde principal
+                    foregroundColor: Colors.white,
+                    padding: EdgeInsets.symmetric(vertical: 15),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                      side: BorderSide(
+                          color: _bordaVerdeEscuro), // Borda consistente
+                    ),
+                  ),
+                  onPressed: _downloadContract,
+                ),
               ),
-              const SizedBox(height: 10),
-              ElevatedButton.icon(
-                onPressed: () {
-                  // Lógica para upload do contrato
-                  _uploadContract();
-                },
-                icon: const Icon(Icons.upload),
-                label: const Text('Enviar Contrato Assinado'),
+              SizedBox(height: 15),
+              // Botão de Upload
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton.icon(
+                  icon: Icon(Icons.upload, size: 24),
+                  label: Text('Enviar Contrato Assinado',
+                      style: TextStyle(fontSize: 16)),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: _bordaVerdeEscuro, // Mesma cor do tema
+                    foregroundColor: Colors.white,
+                    padding: EdgeInsets.symmetric(vertical: 15),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                      side: BorderSide(color: _bordaVerdeEscuro),
+                    ),
+                  ),
+                  onPressed: _uploadContract,
+                ),
               ),
             ],
           ),
           actions: [
+            // Botão Fechar
             TextButton(
-              onPressed: () {
-                Navigator.pop(context);
-              },
-              child: const Text('Fechar'),
+              onPressed: () => Navigator.pop(context),
+              child: Text('Fechar',
+                  style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: _bordaVerdeEscuro)), // Cor verde principal
             ),
           ],
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(15),
+            side: BorderSide(color: _bordaVerdeEscuro, width: 2), // Borda verde
+          ),
         );
       },
     );
