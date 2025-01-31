@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:file_picker/file_picker.dart'; // Para FilePickerResult
-import 'dart:io'; // Para File
-import 'package:dio/dio.dart'; // Para FormData e envio de arquivos
+import 'package:file_picker/file_picker.dart';
+import 'dart:io';
+import 'package:dio/dio.dart';
 
 class CheckoutScreen extends StatefulWidget {
   final String productName;
@@ -22,15 +22,28 @@ class CheckoutScreen extends StatefulWidget {
 class _CheckoutScreenState extends State<CheckoutScreen> {
   bool _termsAccepted = false;
   String _termsText = "Carregando termos...";
-  final Color lightGreenBackground = Color.fromARGB(255, 231, 247, 233);
-  final Color darkGreenBorder = Color.fromARGB(255, 0, 100, 0);
-
-  // ... (mantenha os métodos existentes _fetchTerms, _downloadContract, etc)
+  final Color _fundoVerdeClaro = const Color.fromARGB(255, 240, 255, 241);
+  final Color _bordaVerdeEscuro = const Color(0xFF2E7D32);
 
   @override
   void initState() {
     super.initState();
-    _fetchTerms(); // Busca os termos ao iniciar a tela
+    _carregarTermos();
+  }
+
+  Future<void> _carregarTermos() async {
+    try {
+      final response = await Dio().get('https://seuservidor.com/api/termos');
+      if (response.statusCode == 200) {
+        setState(() {
+          _termsText = response.data['termos'] ?? "Termos não disponíveis";
+        });
+      }
+    } catch (e) {
+      setState(() {
+        _termsText = "Erro ao carregar termos: $e";
+      });
+    }
   }
 
   void _downloadContract() async {
@@ -162,7 +175,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        backgroundColor: lightGreenBackground,
+        backgroundColor: _fundoVerdeClaro,
         title: const Text('Termos da Compra',
             style: TextStyle(fontWeight: FontWeight.bold)),
         content: SingleChildScrollView(
@@ -178,122 +191,188 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
         ],
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(10),
-          side: BorderSide(color: darkGreenBorder, width: 2),
+          side: BorderSide(color: _bordaVerdeEscuro, width: 2),
         ),
+      ),
+    );
+  }
+
+  void _exibirTermos() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Termos da Compra',
+            style: TextStyle(fontWeight: FontWeight.bold)),
+        content: SingleChildScrollView(
+          child: Text(_termsText,
+              style: const TextStyle(fontWeight: FontWeight.w500)),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Fechar'),
+          ),
+        ],
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(15),
+          side: BorderSide(color: _bordaVerdeEscuro, width: 2),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildCardInformacao(String titulo, String valor) {
+    return Container(
+      padding: const EdgeInsets.all(15),
+      margin: const EdgeInsets.only(bottom: 10),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: _bordaVerdeEscuro.withOpacity(0.3)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.withOpacity(0.1),
+            spreadRadius: 2,
+            blurRadius: 5,
+          ),
+        ],
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(titulo,
+              style: const TextStyle(
+                  fontWeight: FontWeight.bold, color: Colors.black87)),
+          Text(valor,
+              style: const TextStyle(
+                  fontWeight: FontWeight.w600, color: Colors.green)),
+        ],
       ),
     );
   }
 
   @override
   Widget build(BuildContext context) {
-    final totalValue = widget.productQnt * widget.productValue;
+    final valorTotal = widget.productQnt * widget.productValue;
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Finalizar Compra',
+        title: const Text('Finalização da Compra',
             style: TextStyle(fontWeight: FontWeight.bold)),
+        centerTitle: true,
       ),
       body: Container(
-        color: lightGreenBackground,
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Seção de Informações do Produto
-              Text('Produto: ${widget.productName}',
-                  style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.green[800])),
-              SizedBox(height: 10),
-              Text('Quantidade de Sacos: ${widget.productQnt}',
-                  style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.green[800])),
-              SizedBox(height: 10),
-              Text(
-                  'Valor por Saco: R\$ ${widget.productValue.toStringAsFixed(2)}',
-                  style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.green[800])),
-              SizedBox(height: 20),
-              Text(
-                'Produto: ${widget.productName}',
-                style:
-                    const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+        color: _fundoVerdeClaro,
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          children: [
+            // Seção de Informações do Produto
+            Card(
+              elevation: 3,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(15),
+                side: BorderSide(color: _bordaVerdeEscuro, width: 1),
               ),
-              const SizedBox(height: 10),
-              Text(
-                'Valor: R\$ ${widget.productValue.toStringAsFixed(2)}',
-                style: const TextStyle(fontSize: 16),
-              ),
-              const SizedBox(height: 20),
-              // Valor Total
-              Container(
-                padding: EdgeInsets.all(10),
-                decoration: BoxDecoration(
-                  border: Border.all(color: darkGreenBorder, width: 2),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Text(
-                  'Valor Total: R\$ ${totalValue.toStringAsFixed(2)}',
-                  style: TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.green[900],
-                  ),
+              child: Padding(
+                padding: const EdgeInsets.all(15),
+                child: Column(
+                  children: [
+                    _buildCardInformacao('Produto:', widget.productName),
+                    _buildCardInformacao(
+                        'Quantidade:', '${widget.productQnt} sacos'),
+                    _buildCardInformacao('Valor Unitário:',
+                        'R\$ ${widget.productValue.toStringAsFixed(2)}'),
+                    const SizedBox(height: 15),
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: Colors.green[50],
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(color: _bordaVerdeEscuro),
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          const Text('VALOR TOTAL:',
+                              style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 16,
+                                  color: Colors.green)),
+                          Text('R\$ ${valorTotal.toStringAsFixed(2)}',
+                              style: const TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 18,
+                                  color: Colors.green)),
+                        ],
+                      ),
+                    ),
+                  ],
                 ),
               ),
-              SizedBox(height: 20),
+            ),
 
-              // Termos e Condições
-              Row(
+            const SizedBox(height: 25),
+
+            // Seção de Termos
+            Container(
+              padding: const EdgeInsets.all(15),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(15),
+                border: Border.all(color: _bordaVerdeEscuro.withOpacity(0.3)),
+              ),
+              child: Row(
                 children: [
                   Checkbox(
                     value: _termsAccepted,
-                    onChanged: (value) {
-                      setState(() {
-                        _termsAccepted = value ?? false;
-                      });
-                    },
-                    activeColor: Colors.green[800],
+                    onChanged: (v) =>
+                        setState(() => _termsAccepted = v ?? false),
+                    activeColor: _bordaVerdeEscuro,
                   ),
-                  const Text('Aceito os termos',
-                      style: TextStyle(fontWeight: FontWeight.bold)),
-                  TextButton(
-                    onPressed: _showTermsPopup,
-                    child: Text('Ler Termo',
-                        style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            color: Colors.blue[800],
-                            decoration: TextDecoration.underline)),
+                  Expanded(
+                    child: Wrap(
+                      children: [
+                        const Text('Li e aceito os ',
+                            style: TextStyle(fontWeight: FontWeight.bold)),
+                        GestureDetector(
+                          onTap: _exibirTermos,
+                          child: const Text('termos de compra',
+                              style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.blue,
+                                  decoration: TextDecoration.underline)),
+                        ),
+                      ],
+                    ),
                   ),
                 ],
               ),
+            ),
 
-              // Botão Finalizar
-              Center(
-                child: ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.green[800],
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 30, vertical: 15),
+            const SizedBox(height: 25),
+
+            // Botão Finalizar
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton.icon(
+                icon: const Icon(Icons.shopping_cart_checkout, size: 24),
+                label: const Text('CONFIRMAR COMPRA',
+                    style:
+                        TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: _bordaVerdeEscuro,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 15),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
                   ),
-                  onPressed: _termsAccepted
-                      ? () => _showDownloadAndUploadButtons()
-                      : null,
-                  child: const Text('Finalizar Compra',
-                      style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white)),
                 ),
+                onPressed: _termsAccepted
+                    ? () => _showDownloadAndUploadButtons()
+                    : null,
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
