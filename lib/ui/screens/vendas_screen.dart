@@ -6,6 +6,7 @@ import 'package:task_manager_flutter/data/utils/api_links.dart';
 import 'package:task_manager_flutter/data/models/network_response.dart';
 import 'package:task_manager_flutter/data/services/network_caller.dart';
 import 'package:task_manager_flutter/ui/screens/update_profile.dart';
+import 'package:task_manager_flutter/ui/screens/checkoutscreen.dart';
 import 'package:task_manager_flutter/ui/widgets/user_banners.dart';
 import 'dart:typed_data';
 import 'dart:convert';
@@ -192,7 +193,20 @@ class _ProductCatalogState extends State<ProductCatalog> {
                               product: product,
                               onDetails: () =>
                                   showProductDetails(context, product),
-                              onBuy: () => showBuyPopup(context, product),
+                              onBuy: () => Navigator.push(
+                                // Alteração aqui
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => CheckoutScreen(
+                                    productName:
+                                        'Arroz em Casca', // Verifique o nome correto do campo
+                                    productValue: product.vlrSacos ??
+                                        0.0, // Verifique o nome correto do campo
+                                    productQnt: product.qtdSacos ??
+                                        0, // Verifique o nome correto do campo
+                                  ),
+                                ),
+                              ),
                               onNegotiate: () =>
                                   showNegotiationPopup(context, product),
                               onTransporte: () =>

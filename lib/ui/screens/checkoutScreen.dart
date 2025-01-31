@@ -6,11 +6,13 @@ import 'package:dio/dio.dart'; // Para FormData e envio de arquivos
 class CheckoutScreen extends StatefulWidget {
   final String productName;
   final double productValue;
+  final int productQnt;
 
   const CheckoutScreen({
     Key? key,
     required this.productName,
     required this.productValue,
+    required this.productQnt,
   }) : super(key: key);
 
   @override
@@ -219,6 +221,7 @@ void main() {
     home: CheckoutScreen(
       productName: 'Produto Exemplo',
       productValue: 100.00,
+      productQnt: 1,
     ),
   ));
 }
