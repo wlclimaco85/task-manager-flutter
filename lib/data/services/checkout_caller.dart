@@ -21,6 +21,11 @@ class CheckoutCaller {
 
       if (response.statusCode == 200 && response.body != null) {
         jsonString = json.encode(response.body?['texto']);
+        jsonString = jsonString != null
+            ? utf8.decode(latin1.encode(jsonString))
+            : 'noticia não disponível';
+        jsonString =
+            jsonString.trim().replaceAll(RegExp(r'(\n|\r|\t|\\n|\\r)'), '');
       } else {
         // Trate o caso onde o data é nulo
       }

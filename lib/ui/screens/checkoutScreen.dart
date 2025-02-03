@@ -159,51 +159,33 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
   void _exibirTermos() {
     print("Starting _exibirTermos");
 
-    final unescape = HtmlUnescape();
-    // final textoDecodificado = unescape.convert(_termsText);
-    String textoDecodificado = _termsText;
-
-    // Tenta decodificar as entidades HTML, mas verifica se o texto já não está decodificado
-    if (_termsText.contains('&')) {
-      final unescape = HtmlUnescape();
-      textoDecodificado = unescape.convert(_termsText);
-    }
-
-    // Decodifica caracteres especiais (UTF-8)
-    textoDecodificado = utf8.decode(utf8.encode(textoDecodificado));
-
-    // Tenta decodificar as entidades HTML, mas verifica se o texto já não está decodificado
-    if (_termsText.contains('&')) {
-      final unescape = HtmlUnescape();
-      textoDecodificado = unescape.convert(_termsText);
-    }
-
-    // Decodifica caracteres especiais (UTF-8)
-    textoDecodificado = utf8.decode(utf8.encode(textoDecodificado));
-    print("Decoded text: $textoDecodificado");
-
-    print("About to show dialog");
-
-    if (textoDecodificado == null || textoDecodificado.isEmpty) {
-      print("_termsText is null or empty. Not showing dialog.");
+    if (_termsText.isEmpty) {
+      print("_termsText is empty. Not showing dialog.");
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Termos não encontrados.')),
       );
       return;
     }
 
+    final unescape = HtmlUnescape();
+    String textoDecodificado =
+        _termsText.contains('&') ? unescape.convert(_termsText) : _termsText;
+    print("Decoded text: $textoDecodificado");
+
+    print("About to show dialog");
+
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
         backgroundColor: _fundoVerdeClaro,
-        title: Text('Termos da Compra',
-            style: TextStyle(
-                fontWeight: FontWeight.bold, color: _bordaVerdeEscuro)),
+        title: Text(
+          'Termos da Compra',
+          style:
+              TextStyle(fontWeight: FontWeight.bold, color: _bordaVerdeEscuro),
+        ),
         content: SizedBox(
-          height: MediaQuery.of(context).size.height *
-              0.6, // Ajuste a altura conforme necessário
-          width: MediaQuery.of(context).size.width *
-              0.9, // Largura adicionada (CRUCIAL)
+          height: MediaQuery.of(context).size.height * 0.6,
+          width: MediaQuery.of(context).size.width * 0.9,
           child: SingleChildScrollView(
             child: Html(
               data: textoDecodificado,
