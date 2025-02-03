@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
 import 'dart:io';
 import 'package:dio/dio.dart';
+import 'package:task_manager_flutter/data/services/checkout_caller.dart';
 
 class CheckoutScreen extends StatefulWidget {
   final String productName;
@@ -33,59 +34,47 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
 
   Future<void> _carregarTermos() async {
     try {
-      final response = await Dio().get('https://seuservidor.com/api/termos');
-      if (response.statusCode == 200) {
+      final termos = await CheckoutCaller.carregarTermos();
+
+      if (mounted) {
         setState(() {
-          _termsText = response.data['termos'] ?? "Termos não disponíveis";
+          _termsText = termos;
         });
       }
     } catch (e) {
-      setState(() {
-        _termsText = "Erro ao carregar termos: $e";
-      });
+      if (mounted) {
+        setState(() {
+          _termsText = "Falha ao carregar termos: ${e.toString()}";
+        });
+      }
     }
   }
 
-  void _downloadContract() async {
-    final url = 'https://seuservidor.com/api/contract.pdf';
-    final response = await Dio().download(url, 'contrato.pdf');
-    print('Contrato baixado: ${response.data}');
-  }
-
-  void _uploadContract2() async {
-    FilePickerResult? result = await FilePicker.platform.pickFiles();
-    if (result != null) {
-      File file = File(result.files.single.path!);
-      FormData formData = FormData.fromMap({
-        'file': await MultipartFile.fromFile(file.path),
-      });
-      final response = await Dio()
-          .post('https://seuservidor.com/api/upload', data: formData);
-      print('Contrato enviado: ${response.data}');
-    }
-  }
-
-  Future<void> _fetchTerms() async {
-    final dio = Dio();
-    final url =
-        'https://seuservidor.com/api/terms'; // Substitua pelo seu endpoint
-
+  Future<void> _downloadContract() async {
     try {
-      final response = await dio.get(url);
-      if (response.statusCode == 200) {
+      CheckoutCaller.downloadContract();
+
+      if (mounted) {}
+    } catch (e) {
+      if (mounted) {
         setState(() {
-          _termsText = response.data[
-              'terms']; // Supondo que o endpoint retorne um JSON com a chave "terms"
-        });
-      } else {
-        setState(() {
-          _termsText = "Erro ao carregar os termos.";
+          _termsText = "Falha ao carregar termos: ${e.toString()}";
         });
       }
+    }
+  }
+
+  Future<void> _uploadContract() async {
+    try {
+      CheckoutCaller.uploadContract();
+
+      if (mounted) {}
     } catch (e) {
-      setState(() {
-        _termsText = "Erro ao carregar os termos: $e";
-      });
+      if (mounted) {
+        setState(() {
+          _termsText = "Falha ao carregar termos: ${e.toString()}";
+        });
+      }
     }
   }
 
@@ -106,13 +95,13 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton.icon(
-                  icon: Icon(Icons.download, size: 24),
-                  label: Text('Baixar Contrato Modelo',
+                  icon: const Icon(Icons.download, size: 24),
+                  label: const Text('Baixar Contrato Modelo',
                       style: TextStyle(fontSize: 16)),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: _bordaVerdeEscuro, // Verde principal
                     foregroundColor: Colors.white,
-                    padding: EdgeInsets.symmetric(vertical: 15),
+                    padding: const EdgeInsets.symmetric(vertical: 15),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(10),
                       side: BorderSide(
@@ -127,13 +116,13 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton.icon(
-                  icon: Icon(Icons.upload, size: 24),
-                  label: Text('Enviar Contrato Assinado',
+                  icon: const Icon(Icons.upload, size: 24),
+                  label: const Text('Enviar Contrato Assinado',
                       style: TextStyle(fontSize: 16)),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: _bordaVerdeEscuro, // Mesma cor do tema
                     foregroundColor: Colors.white,
-                    padding: EdgeInsets.symmetric(vertical: 15),
+                    padding: const EdgeInsets.symmetric(vertical: 15),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(10),
                       side: BorderSide(color: _bordaVerdeEscuro),
@@ -161,47 +150,6 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
         );
       },
     );
-  }
-
-  Future<void> _uploadContract() async {
-    try {
-      // Abre o seletor de arquivos
-      FilePickerResult? result = await FilePicker.platform.pickFiles(
-        type: FileType.custom,
-        allowedExtensions: ['pdf'],
-      );
-
-      if (result != null) {
-        // Obtém o arquivo selecionado
-        PlatformFile file = result.files.first;
-        File uploadedFile = File(file.path!);
-
-        // Exibe o nome do arquivo selecionado
-        print('Arquivo selecionado: ${file.name}');
-
-        // Envia o arquivo para o backend
-        final dio = Dio();
-        final url =
-            'https://seuservidor.com/api/upload'; // Substitua pelo seu endpoint
-
-        FormData formData = FormData.fromMap({
-          'file': await MultipartFile.fromFile(uploadedFile.path,
-              filename: file.name),
-        });
-
-        final response = await dio.post(url, data: formData);
-
-        if (response.statusCode == 200) {
-          print('Contrato enviado com sucesso!');
-        } else {
-          print('Erro ao enviar o contrato: ${response.statusCode}');
-        }
-      } else {
-        print('Nenhum arquivo selecionado.');
-      }
-    } catch (e) {
-      print('Erro ao selecionar o arquivo: $e');
-    }
   }
 
   void _showTermsPopup() {
