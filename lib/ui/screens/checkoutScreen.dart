@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:file_picker/file_picker.dart';
-import 'dart:io';
-import 'package:dio/dio.dart';
+import 'package:flutter_html/flutter_html.dart';
 import 'package:task_manager_flutter/data/services/checkout_caller.dart';
+import 'package:html_unescape/html_unescape.dart';
+import 'dart:convert'; // Importe o pacote dart:convert
 
 class CheckoutScreen extends StatefulWidget {
   final String productName;
@@ -153,53 +153,94 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
   }
 
   void _showTermsPopup() {
+    return _exibirTermos();
+  }
+
+  void _exibirTermos() {
+    print("Starting _exibirTermos");
+
+    final unescape = HtmlUnescape();
+    // final textoDecodificado = unescape.convert(_termsText);
+    String textoDecodificado = _termsText;
+
+    // Tenta decodificar as entidades HTML, mas verifica se o texto já não está decodificado
+    if (_termsText.contains('&')) {
+      final unescape = HtmlUnescape();
+      textoDecodificado = unescape.convert(_termsText);
+    }
+
+    // Decodifica caracteres especiais (UTF-8)
+    textoDecodificado = utf8.decode(utf8.encode(textoDecodificado));
+
+    // Tenta decodificar as entidades HTML, mas verifica se o texto já não está decodificado
+    if (_termsText.contains('&')) {
+      final unescape = HtmlUnescape();
+      textoDecodificado = unescape.convert(_termsText);
+    }
+
+    // Decodifica caracteres especiais (UTF-8)
+    textoDecodificado = utf8.decode(utf8.encode(textoDecodificado));
+    print("Decoded text: $textoDecodificado");
+
+    print("About to show dialog");
+
+    if (textoDecodificado == null || textoDecodificado.isEmpty) {
+      print("_termsText is null or empty. Not showing dialog.");
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Termos não encontrados.')),
+      );
+      return;
+    }
+
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
         backgroundColor: _fundoVerdeClaro,
-        title: const Text('Termos da Compra',
-            style: TextStyle(fontWeight: FontWeight.bold)),
-        content: SingleChildScrollView(
-          child:
-              Text(_termsText, style: TextStyle(fontWeight: FontWeight.bold)),
+        title: Text('Termos da Compra',
+            style: TextStyle(
+                fontWeight: FontWeight.bold, color: _bordaVerdeEscuro)),
+        content: SizedBox(
+          height: MediaQuery.of(context).size.height *
+              0.6, // Ajuste a altura conforme necessário
+          width: MediaQuery.of(context).size.width *
+              0.9, // Largura adicionada (CRUCIAL)
+          child: SingleChildScrollView(
+            child: Html(
+              data: textoDecodificado,
+              style: {
+                "p": Style(
+                  fontSize: FontSize(16.0),
+                  lineHeight: LineHeight(1.8),
+                  margin: Margins.only(bottom: 10),
+                ),
+                "ul": Style(
+                  margin: Margins.only(left: 20, top: 10, bottom: 10),
+                ),
+                "li": Style(
+                  margin: Margins.only(bottom: 8),
+                  display: Display.listItem,
+                ),
+                "hr": Style(
+                  height: Height(1),
+                  color: Colors.grey[400],
+                  margin: Margins.symmetric(vertical: 15),
+                ),
+              },
+            ),
+          ),
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Fechar',
-                style: TextStyle(fontWeight: FontWeight.bold)),
+            onPressed: () {
+              print("Closing dialog");
+              Navigator.pop(context);
+            },
+            child: Text('Fechar', style: TextStyle(color: _bordaVerdeEscuro)),
           ),
         ],
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(10),
-          side: BorderSide(color: _bordaVerdeEscuro, width: 2),
-        ),
       ),
     );
-  }
-
-  void _exibirTermos() {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Termos da Compra',
-            style: TextStyle(fontWeight: FontWeight.bold)),
-        content: SingleChildScrollView(
-          child: Text(_termsText,
-              style: const TextStyle(fontWeight: FontWeight.w500)),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Fechar'),
-          ),
-        ],
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(15),
-          side: BorderSide(color: _bordaVerdeEscuro, width: 2),
-        ),
-      ),
-    );
+    print("showDialog finished");
   }
 
   Widget _buildCardInformacao(String titulo, String valor) {

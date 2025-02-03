@@ -3,7 +3,7 @@
     "activeCommit": 0,
     "commits": [
         {
-            "activePatchIndex": 27,
+            "activePatchIndex": 31,
             "patches": [
                 {
                     "date": 1707188005314,
@@ -116,6 +116,22 @@
                 {
                     "date": 1738614634417,
                     "content": "Index: \n===================================================================\n--- \n+++ \n@@ -54,8 +54,9 @@\n   flutter_slidable: ^0.6.0\r\n   open_filex: any\r\n   mime: any\r\n   file_picker: ^5.3.3 # Para selecionar arquivos\r\n+  html_editor_enhanced: ^3.0.0\r\n   dio: ^5.3.2 # Para enviar arquivos (opcional, mas recomendado)\r\n dev_dependencies:\r\n   flutter_test:\r\n     sdk: flutter\r\n"
+                },
+                {
+                    "date": 1738615527960,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -55,8 +55,9 @@\n   open_filex: any\r\n   mime: any\r\n   file_picker: ^5.3.3 # Para selecionar arquivos\r\n   html_editor_enhanced: ^3.0.0\r\n+  flutter_html: ^3.0.0\r\n   dio: ^5.3.2 # Para enviar arquivos (opcional, mas recomendado)\r\n dev_dependencies:\r\n   flutter_test:\r\n     sdk: flutter\r\n"
+                },
+                {
+                    "date": 1738615564017,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -55,9 +55,9 @@\n   open_filex: any\r\n   mime: any\r\n   file_picker: ^5.3.3 # Para selecionar arquivos\r\n   html_editor_enhanced: ^3.0.0\r\n-  flutter_html: ^3.0.0\r\n+  flutter_html: any\r\n   dio: ^5.3.2 # Para enviar arquivos (opcional, mas recomendado)\r\n dev_dependencies:\r\n   flutter_test:\r\n     sdk: flutter\r\n"
+                },
+                {
+                    "date": 1738615569593,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -54,9 +54,9 @@\n   flutter_slidable: ^0.6.0\r\n   open_filex: any\r\n   mime: any\r\n   file_picker: ^5.3.3 # Para selecionar arquivos\r\n-  html_editor_enhanced: ^3.0.0\r\n+  html_editor_enhanced: any\r\n   flutter_html: any\r\n   dio: ^5.3.2 # Para enviar arquivos (opcional, mas recomendado)\r\n dev_dependencies:\r\n   flutter_test:\r\n"
+                },
+                {
+                    "date": 1738616878565,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -56,8 +56,9 @@\n   mime: any\r\n   file_picker: ^5.3.3 # Para selecionar arquivos\r\n   html_editor_enhanced: any\r\n   flutter_html: any\r\n+  html_unescape: any\r\n   dio: ^5.3.2 # Para enviar arquivos (opcional, mas recomendado)\r\n dev_dependencies:\r\n   flutter_test:\r\n     sdk: flutter\r\n"
                 }
             ],
             "date": 1707188005314,
