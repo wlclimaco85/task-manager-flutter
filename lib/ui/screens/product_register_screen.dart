@@ -38,15 +38,19 @@ class _ProductRegisterScreenState extends State<ProductRegisterScreen> {
 
   String selectedTipoProduto = "Arroz em Casca";
   String selectedTipoGrao = "Verde";
+  String selectedSafra = "2023/2024"; // Novo campo
+  String selectedTipoNegociacao =
+      "Adicionar valor e aceitar propostas"; // Novo campo
   DateTime? dtRetirada;
   final TextEditingController dtRetiradaController = TextEditingController();
+  final TextEditingController sementeController =
+      TextEditingController(); // Novo campo
 
   String vendedorEndereco = '';
   List<Map<String, dynamic>> classificacoes = [];
   List<File> selectedImages = [];
   File? principalImage;
 
-  final TextEditingController descricaoController = TextEditingController();
   final TextEditingController qtdSacosController = TextEditingController();
   final TextEditingController vlrSacosController = TextEditingController();
   final List<TextEditingController> classificacaoControllers = [];
@@ -128,11 +132,9 @@ class _ProductRegisterScreenState extends State<ProductRegisterScreen> {
       SnackBar(
         content: Text(
           message,
-          style: const TextStyle(color: Colors.white), // Texto sempre branco
+          style: const TextStyle(color: Colors.white),
         ),
-        backgroundColor: isError
-            ? Colors.red
-            : Colors.green, // Vermelho para erro, verde para sucesso
+        backgroundColor: isError ? Colors.red : Colors.green,
         duration: const Duration(seconds: 3),
       ),
     );
@@ -174,7 +176,10 @@ class _ProductRegisterScreenState extends State<ProductRegisterScreen> {
       final Map<String, dynamic> requestBody = {
         'tipoProdutoId': 1,
         'produtoId': 1,
-        'descricao': descricaoController.text,
+        'descricao': selectedSafra + ' - ' + selectedTipoProduto,
+        'safra': selectedSafra, // Novo campo
+        'semente': sementeController.text, // Novo campo
+        'tiposNegociacoes': selectedTipoNegociacao, // Novo campo
         'listFotos': imageList,
         'qtdSacos': int.tryParse(qtdSacosController.text) ?? 0,
         'vlrSacos': double.tryParse(vlrSacosController.text) ?? 0,
@@ -188,23 +193,15 @@ class _ProductRegisterScreenState extends State<ProductRegisterScreen> {
         if (useCustomAddress) 'enderecoRetirada': customAddress,
       };
 
-      // Faz a chamada à API
       final NetworkResponse response = await NetworkCaller()
           .postRequest(ApiLinks.insertProduto, requestBody);
 
-      // Navigator.of(context).pop(); // Fecha o loader
-
-      // Verifica o resultado da requisição
       if (response.isSuccess) {
         showSnackBar(
           message: "Venda enviada com sucesso!",
           isError: false,
         );
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Produto cadastrado com sucesso!')),
-        );
         _formKey.currentState!.reset();
-        descricaoController.clear();
         qtdSacosController.clear();
         vlrSacosController.clear();
         classificacaoControllers.forEach((controller) => controller.clear());
@@ -216,6 +213,7 @@ class _ProductRegisterScreenState extends State<ProductRegisterScreen> {
         cepController.clear();
         selectedImages.clear();
         principalImage = null;
+        sementeController.clear(); // Limpar campo semente
       } else {
         showSnackBar(
           message: "Erro ao enviar proposta.",
@@ -385,8 +383,7 @@ class _ProductRegisterScreenState extends State<ProductRegisterScreen> {
                                     lastDate: DateTime.now().add(
                                       const Duration(days: 365),
                                     ),
-                                    locale: const Locale(
-                                        'pt', 'BR'), // Idioma em português
+                                    locale: const Locale('pt', 'BR'),
                                   );
                                   if (pickedDate != null) {
                                     setState(() {
@@ -445,6 +442,51 @@ class _ProductRegisterScreenState extends State<ProductRegisterScreen> {
                           },
                         ),
                         const SizedBox(height: 16),
+                        DropdownButtonFormField<String>(
+                          value: selectedSafra,
+                          decoration: customInputDecoration('Safra'),
+                          items: ['2023/2024', '2024/2025']
+                              .map((safra) => DropdownMenuItem<String>(
+                                    value: safra,
+                                    child: Text(safra),
+                                  ))
+                              .toList(),
+                          onChanged: (value) {
+                            setState(() {
+                              selectedSafra = value!;
+                            });
+                          },
+                        ),
+                        const SizedBox(height: 16),
+                        TextFormField(
+                          controller: sementeController,
+                          decoration: customInputDecoration('Semente'),
+                          validator: (value) => value == null || value.isEmpty
+                              ? 'Campo obrigatório'
+                              : null,
+                        ),
+                        const SizedBox(height: 16),
+                        DropdownButtonFormField<String>(
+                          value: selectedTipoNegociacao,
+                          decoration:
+                              customInputDecoration('Tipo de Negociação'),
+                          items: [
+                            'Adicionar valor e aceitar propostas',
+                            'Sem valor, só negociar valor',
+                            'Adicionar valor e não aceitar proposta'
+                          ]
+                              .map((tipo) => DropdownMenuItem<String>(
+                                    value: tipo,
+                                    child: Text(tipo),
+                                  ))
+                              .toList(),
+                          onChanged: (value) {
+                            setState(() {
+                              selectedTipoNegociacao = value!;
+                            });
+                          },
+                        ),
+                        const SizedBox(height: 16),
                         ElevatedButton.icon(
                           onPressed: pickImages,
                           icon: const Icon(Icons.photo),
@@ -485,15 +527,6 @@ class _ProductRegisterScreenState extends State<ProductRegisterScreen> {
                               ),
                             );
                           }).toList(),
-                        ),
-                        const SizedBox(height: 16),
-                        TextFormField(
-                          controller: descricaoController,
-                          decoration:
-                              customInputDecoration('Descrição do Produto'),
-                          validator: (value) => value == null || value.isEmpty
-                              ? 'Campo obrigatório'
-                              : null,
                         ),
                         const SizedBox(height: 16),
                         TextFormField(

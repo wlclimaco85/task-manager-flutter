@@ -63,7 +63,8 @@ class _CotacaoScreenState extends State<CotacaoScreen> {
     });
   }
 
-  Widget _buildTable(String title, List<TableRow> rows) {
+  Widget _buildTable(String title, List<TableRow> rows,
+      {String? footer, String? source}) {
     return Container(
       padding: const EdgeInsets.all(16.0),
       decoration: BoxDecoration(
@@ -72,6 +73,7 @@ class _CotacaoScreenState extends State<CotacaoScreen> {
         borderRadius: BorderRadius.circular(8),
       ),
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
             title,
@@ -90,6 +92,26 @@ class _CotacaoScreenState extends State<CotacaoScreen> {
             },
             children: rows,
           ),
+          if (footer != null) ...[
+            const SizedBox(height: 8),
+            Text(
+              footer,
+              style: const TextStyle(
+                fontSize: 12,
+                color: AppColors.tableSubtitleText,
+              ),
+            ),
+          ],
+          if (source != null) ...[
+            const SizedBox(height: 8),
+            Text(
+              "Fonte: $source",
+              style: const TextStyle(
+                fontSize: 12,
+                color: AppColors.tableSubtitleText,
+              ),
+            ),
+          ],
         ],
       ),
     );
@@ -202,23 +224,23 @@ class _CotacaoScreenState extends State<CotacaoScreen> {
       ),
       body: isLoading
           ? const Center(child: CircularProgressIndicator())
-          : Padding(
+          : ListView(
               padding: const EdgeInsets.all(16.0),
-              child: Column(
-                children: [
-                  _buildTable(
-                    'Últimas 5 Cotações',
-                    _buildCotacoesRows(cotacoes.take(5).toList()),
-                  ),
-                  const SizedBox(height: 20),
-                  Expanded(
-                    child: _buildTable(
-                      'Últimas Cotações do Dólar',
-                      _buildDollarRows(dollarCotacoes),
-                    ),
-                  ),
-                ],
-              ),
+              children: [
+                _buildTable(
+                  'INDICADOR DO ARROZ EM CASCA CEPEA/IRGA-RS',
+                  _buildCotacoesRows(cotacoes.take(5).toList()),
+                  footer:
+                      '* Nota: Reais por saca de 50 kg, tipo 1, 58/10, posto indústria Rio Grande do Sul, à vista (Prazo de Pagamento descontado pela taxa CDI/CETIP).',
+                  source: 'CEPEA',
+                ),
+                const SizedBox(height: 20),
+                _buildTable(
+                  'Últimas Cotações do Dólar',
+                  _buildDollarRows(dollarCotacoes),
+                  source: 'Yahoo Finance',
+                ),
+              ],
             ),
     );
   }
