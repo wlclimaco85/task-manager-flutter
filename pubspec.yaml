@@ -55,6 +55,9 @@ dependencies:
   open_filex: any
   mime: any
   file_picker: ^5.3.3 # Para selecionar arquivos
+  html_editor_enhanced: any
+  flutter_html: any
+  html_unescape: any
   dio: ^5.3.2 # Para enviar arquivos (opcional, mas recomendado)
 dev_dependencies:
   flutter_test:

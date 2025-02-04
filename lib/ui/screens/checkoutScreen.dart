@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:file_picker/file_picker.dart';
-import 'dart:io';
-import 'package:dio/dio.dart';
+import 'package:flutter_html/flutter_html.dart';
+import 'package:task_manager_flutter/data/services/checkout_caller.dart';
+import 'package:html_unescape/html_unescape.dart';
+import 'dart:convert'; // Importe o pacote dart:convert
 
 class CheckoutScreen extends StatefulWidget {
   final String productName;
@@ -33,59 +34,47 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
 
   Future<void> _carregarTermos() async {
     try {
-      final response = await Dio().get('https://seuservidor.com/api/termos');
-      if (response.statusCode == 200) {
+      final termos = await CheckoutCaller.carregarTermos();
+
+      if (mounted) {
         setState(() {
-          _termsText = response.data['termos'] ?? "Termos não disponíveis";
+          _termsText = termos;
         });
       }
     } catch (e) {
-      setState(() {
-        _termsText = "Erro ao carregar termos: $e";
-      });
+      if (mounted) {
+        setState(() {
+          _termsText = "Falha ao carregar termos: ${e.toString()}";
+        });
+      }
     }
   }
 
-  void _downloadContract() async {
-    final url = 'https://seuservidor.com/api/contract.pdf';
-    final response = await Dio().download(url, 'contrato.pdf');
-    print('Contrato baixado: ${response.data}');
-  }
-
-  void _uploadContract2() async {
-    FilePickerResult? result = await FilePicker.platform.pickFiles();
-    if (result != null) {
-      File file = File(result.files.single.path!);
-      FormData formData = FormData.fromMap({
-        'file': await MultipartFile.fromFile(file.path),
-      });
-      final response = await Dio()
-          .post('https://seuservidor.com/api/upload', data: formData);
-      print('Contrato enviado: ${response.data}');
-    }
-  }
-
-  Future<void> _fetchTerms() async {
-    final dio = Dio();
-    final url =
-        'https://seuservidor.com/api/terms'; // Substitua pelo seu endpoint
-
+  Future<void> _downloadContract() async {
     try {
-      final response = await dio.get(url);
-      if (response.statusCode == 200) {
+      CheckoutCaller.downloadContract();
+
+      if (mounted) {}
+    } catch (e) {
+      if (mounted) {
         setState(() {
-          _termsText = response.data[
-              'terms']; // Supondo que o endpoint retorne um JSON com a chave "terms"
-        });
-      } else {
-        setState(() {
-          _termsText = "Erro ao carregar os termos.";
+          _termsText = "Falha ao carregar termos: ${e.toString()}";
         });
       }
+    }
+  }
+
+  Future<void> _uploadContract() async {
+    try {
+      CheckoutCaller.uploadContract();
+
+      if (mounted) {}
     } catch (e) {
-      setState(() {
-        _termsText = "Erro ao carregar os termos: $e";
-      });
+      if (mounted) {
+        setState(() {
+          _termsText = "Falha ao carregar termos: ${e.toString()}";
+        });
+      }
     }
   }
 
@@ -106,13 +95,13 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton.icon(
-                  icon: Icon(Icons.download, size: 24),
-                  label: Text('Baixar Contrato Modelo',
+                  icon: const Icon(Icons.download, size: 24),
+                  label: const Text('Baixar Contrato Modelo',
                       style: TextStyle(fontSize: 16)),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: _bordaVerdeEscuro, // Verde principal
                     foregroundColor: Colors.white,
-                    padding: EdgeInsets.symmetric(vertical: 15),
+                    padding: const EdgeInsets.symmetric(vertical: 15),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(10),
                       side: BorderSide(
@@ -127,13 +116,13 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton.icon(
-                  icon: Icon(Icons.upload, size: 24),
-                  label: Text('Enviar Contrato Assinado',
+                  icon: const Icon(Icons.upload, size: 24),
+                  label: const Text('Enviar Contrato Assinado',
                       style: TextStyle(fontSize: 16)),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: _bordaVerdeEscuro, // Mesma cor do tema
                     foregroundColor: Colors.white,
-                    padding: EdgeInsets.symmetric(vertical: 15),
+                    padding: const EdgeInsets.symmetric(vertical: 15),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(10),
                       side: BorderSide(color: _bordaVerdeEscuro),
@@ -163,95 +152,77 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     );
   }
 
-  Future<void> _uploadContract() async {
-    try {
-      // Abre o seletor de arquivos
-      FilePickerResult? result = await FilePicker.platform.pickFiles(
-        type: FileType.custom,
-        allowedExtensions: ['pdf'],
-      );
-
-      if (result != null) {
-        // Obtém o arquivo selecionado
-        PlatformFile file = result.files.first;
-        File uploadedFile = File(file.path!);
-
-        // Exibe o nome do arquivo selecionado
-        print('Arquivo selecionado: ${file.name}');
-
-        // Envia o arquivo para o backend
-        final dio = Dio();
-        final url =
-            'https://seuservidor.com/api/upload'; // Substitua pelo seu endpoint
-
-        FormData formData = FormData.fromMap({
-          'file': await MultipartFile.fromFile(uploadedFile.path,
-              filename: file.name),
-        });
-
-        final response = await dio.post(url, data: formData);
-
-        if (response.statusCode == 200) {
-          print('Contrato enviado com sucesso!');
-        } else {
-          print('Erro ao enviar o contrato: ${response.statusCode}');
-        }
-      } else {
-        print('Nenhum arquivo selecionado.');
-      }
-    } catch (e) {
-      print('Erro ao selecionar o arquivo: $e');
-    }
+  void _showTermsPopup() {
+    return _exibirTermos();
   }
 
-  void _showTermsPopup() {
+  void _exibirTermos() {
+    print("Starting _exibirTermos");
+
+    if (_termsText.isEmpty) {
+      print("_termsText is empty. Not showing dialog.");
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Termos não encontrados.')),
+      );
+      return;
+    }
+
+    final unescape = HtmlUnescape();
+    String textoDecodificado =
+        _termsText.contains('&') ? unescape.convert(_termsText) : _termsText;
+    print("Decoded text: $textoDecodificado");
+
+    print("About to show dialog");
+
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
         backgroundColor: _fundoVerdeClaro,
-        title: const Text('Termos da Compra',
-            style: TextStyle(fontWeight: FontWeight.bold)),
-        content: SingleChildScrollView(
-          child:
-              Text(_termsText, style: TextStyle(fontWeight: FontWeight.bold)),
+        title: Text(
+          'Termos da Compra',
+          style:
+              TextStyle(fontWeight: FontWeight.bold, color: _bordaVerdeEscuro),
+        ),
+        content: SizedBox(
+          height: MediaQuery.of(context).size.height * 0.6,
+          width: MediaQuery.of(context).size.width * 0.9,
+          child: SingleChildScrollView(
+            child: Html(
+              data: textoDecodificado,
+              style: {
+                "p": Style(
+                  fontSize: FontSize(16.0),
+                  lineHeight: LineHeight(1.8),
+                  margin: Margins.only(bottom: 10),
+                ),
+                "ul": Style(
+                  margin: Margins.only(left: 20, top: 10, bottom: 10),
+                ),
+                "li": Style(
+                  margin: Margins.only(bottom: 8),
+                  display: Display.listItem,
+                ),
+                "hr": Style(
+                  height: Height(1),
+                  color: Colors.grey[400],
+                  margin: Margins.symmetric(vertical: 15),
+                ),
+              },
+            ),
+          ),
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Fechar',
-                style: TextStyle(fontWeight: FontWeight.bold)),
+            onPressed: () {
+              print("Closing dialog");
+              Navigator.pop(context);
+            },
+            child: Text('Fechar', style: TextStyle(color: _bordaVerdeEscuro)),
           ),
         ],
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(10),
-          side: BorderSide(color: _bordaVerdeEscuro, width: 2),
-        ),
       ),
     );
-  }
-
-  void _exibirTermos() {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Termos da Compra',
-            style: TextStyle(fontWeight: FontWeight.bold)),
-        content: SingleChildScrollView(
-          child: Text(_termsText,
-              style: const TextStyle(fontWeight: FontWeight.w500)),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Fechar'),
-          ),
-        ],
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(15),
-          side: BorderSide(color: _bordaVerdeEscuro, width: 2),
-        ),
-      ),
-    );
+    print("showDialog finished");
   }
 
   Widget _buildCardInformacao(String titulo, String valor) {

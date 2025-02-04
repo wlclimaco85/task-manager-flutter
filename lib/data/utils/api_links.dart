@@ -76,4 +76,5 @@ class ApiLinks {
   static String confirmarRecusar = '$_baseUrlNew/api/negociacao/recusar';
   static String contraProposta = '$_baseUrlNew/api/negociacao/contraposta';
   static String downloadContrato = '$_baseUrlNew/api/contrato/download';
+  static String fecthUltimoTermo = '$_baseUrlNew/api/termos';
 }
