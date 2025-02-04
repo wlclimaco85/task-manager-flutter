@@ -182,7 +182,9 @@ class _ProductRegisterScreenState extends State<ProductRegisterScreen> {
         'tiposNegociacoes': selectedTipoNegociacao, // Novo campo
         'listFotos': imageList,
         'qtdSacos': int.tryParse(qtdSacosController.text) ?? 0,
-        'vlrSacos': double.tryParse(vlrSacosController.text) ?? 0,
+        'vlrSacos': selectedTipoNegociacao == "Sem valor, só negociar valor"
+            ? 0
+            : double.tryParse(vlrSacosController.text) ?? 0,
         'isCargaFechada': isCargaFechada,
         'tipoGrao': selectedTipoGrao,
         'dtRetirada': dtRetirada?.toIso8601String(),
@@ -409,6 +411,11 @@ class _ProductRegisterScreenState extends State<ProductRegisterScreen> {
                             ),
                           ],
                         ),
+                        if (dtRetirada == null)
+                          const Text(
+                            'Data para Retirada é obrigatória',
+                            style: TextStyle(color: Colors.red),
+                          ),
                         const SizedBox(height: 16),
                         DropdownButtonFormField<String>(
                           value: selectedTipoProduto,
@@ -456,6 +463,8 @@ class _ProductRegisterScreenState extends State<ProductRegisterScreen> {
                               selectedSafra = value!;
                             });
                           },
+                          validator: (value) =>
+                              value == null ? 'Selecione uma safra' : null,
                         ),
                         const SizedBox(height: 16),
                         TextFormField(
@@ -483,8 +492,14 @@ class _ProductRegisterScreenState extends State<ProductRegisterScreen> {
                           onChanged: (value) {
                             setState(() {
                               selectedTipoNegociacao = value!;
+                              if (value == "Sem valor, só negociar valor") {
+                                vlrSacosController.text = '0';
+                              }
                             });
                           },
+                          validator: (value) => value == null
+                              ? 'Selecione um tipo de negociação'
+                              : null,
                         ),
                         const SizedBox(height: 16),
                         ElevatedButton.icon(
@@ -544,10 +559,18 @@ class _ProductRegisterScreenState extends State<ProductRegisterScreen> {
                           controller: vlrSacosController,
                           decoration: customInputDecoration('Valor por Saco'),
                           keyboardType: TextInputType.number,
-                          validator: (value) =>
-                              value == null || double.tryParse(value) == null
+                          enabled: selectedTipoNegociacao !=
+                              "Sem valor, só negociar valor",
+                          validator: (value) {
+                            if (selectedTipoNegociacao !=
+                                "Sem valor, só negociar valor") {
+                              return value == null ||
+                                      double.tryParse(value) == null
                                   ? 'Valor inválido'
-                                  : null,
+                                  : null;
+                            }
+                            return null;
+                          },
                         ),
                         const SizedBox(height: 16),
                         const Text(
