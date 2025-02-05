@@ -639,7 +639,7 @@ class ProductCard extends StatelessWidget {
                         context,
                         MaterialPageRoute(
                           builder: (context) =>
-                              ProdutoDetailsScreen(produtoId: 17),
+                              ProdutoDetailsScreen(produtoId: product.id!),
                         ),
                       ),
                     ),
