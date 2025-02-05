@@ -505,7 +505,7 @@ class _ProductRegisterScreenState extends State<ProductRegisterScreen> {
                         ElevatedButton.icon(
                           onPressed: pickImages,
                           icon: const Icon(Icons.photo),
-                          label: const Text("Adicionar Fotos"),
+                          label: const Text("Adicionar Fotos da Amostra"),
                           style: ElevatedButton.styleFrom(
                             padding: const EdgeInsets.symmetric(
                               horizontal: 20,

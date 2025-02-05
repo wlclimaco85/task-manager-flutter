@@ -143,6 +143,20 @@ class VendasCaller {
     return model;
   }
 
+  Future<Map<String, dynamic>> fetchProdutoDetails(
+      BuildContext context, int id) async {
+    final response = await NetworkCaller().getRequests(
+      ApiLinks.fecthProdutosById + '${id}',
+      context,
+    );
+
+    if (response.statusCode == 200 && response.body != null) {
+      return response.body!;
+    } else {
+      throw Exception('Falha ao carregar detalhes do produto');
+    }
+  }
+
   void downloadContrato(int contratoId, BuildContext context) async {
     final url = ApiLinks.downloadContrato + "/" + contratoId.toString();
 

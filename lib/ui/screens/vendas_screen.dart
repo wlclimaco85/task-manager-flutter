@@ -7,6 +7,7 @@ import 'package:task_manager_flutter/data/models/network_response.dart';
 import 'package:task_manager_flutter/data/services/network_caller.dart';
 import 'package:task_manager_flutter/ui/screens/update_profile.dart';
 import 'package:task_manager_flutter/ui/screens/checkoutscreen.dart';
+import 'package:task_manager_flutter/ui/screens/ProdutoDetailsScreen.dart';
 import 'package:task_manager_flutter/ui/widgets/user_banners.dart';
 import 'dart:typed_data';
 import 'dart:convert';
@@ -629,11 +630,18 @@ class ProductCard extends StatelessWidget {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
+                // Modificação no botão original para navegação
                 Column(
                   children: [
                     IconButton(
                       icon: const Icon(Icons.info, color: Colors.blue),
-                      onPressed: onDetails,
+                      onPressed: () => Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) =>
+                              ProdutoDetailsScreen(produtoId: 17),
+                        ),
+                      ),
                     ),
                     const Text(
                       "Detalhes",
@@ -648,46 +656,55 @@ class ProductCard extends StatelessWidget {
                   color: Colors.grey,
                 ),
                 const SizedBox(width: 8),
+                if (product.tipoNegociacao !=
+                    "Adicionar valor e nao aceitar proposta") ...[
+                  // Condição para Negociar
+                  Column(
+                    children: [
+                      IconButton(
+                        icon: const Icon(Icons.handshake, color: Colors.green),
+                        onPressed: onNegotiate,
+                      ),
+                      const Text(
+                        "Negociar",
+                        style: TextStyle(fontSize: 12, color: Colors.black),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(width: 8),
+                  const VerticalDivider(
+                    width: 1,
+                    thickness: 1,
+                    color: Colors.grey,
+                  ),
+                  const SizedBox(width: 8),
+                ],
+                if (product.tipoNegociacao !=
+                    "Sem valor, só negociar valor") ...[
+                  // Condição para Comprar
+                  Column(
+                    children: [
+                      IconButton(
+                        icon: const Icon(Icons.shopping_cart,
+                            color: Colors.orange),
+                        onPressed: onBuy,
+                      ),
+                      const Text(
+                        "Comprar",
+                        style: TextStyle(fontSize: 12, color: Colors.black),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(width: 8),
+                  const VerticalDivider(
+                    width: 1,
+                    thickness: 1,
+                    color: Colors.grey,
+                  ),
+                  const SizedBox(width: 8),
+                ],
                 Column(
-                  children: [
-                    IconButton(
-                      icon: const Icon(Icons.handshake, color: Colors.green),
-                      onPressed: onNegotiate,
-                    ),
-                    const Text(
-                      "Negociar",
-                      style: TextStyle(fontSize: 12, color: Colors.black),
-                    ),
-                  ],
-                ),
-                const SizedBox(width: 8),
-                const VerticalDivider(
-                  width: 1,
-                  thickness: 1,
-                  color: Colors.grey,
-                ),
-                const SizedBox(width: 8),
-                Column(
-                  children: [
-                    IconButton(
-                      icon:
-                          const Icon(Icons.shopping_cart, color: Colors.orange),
-                      onPressed: onBuy,
-                    ),
-                    const Text(
-                      "Comprar",
-                      style: TextStyle(fontSize: 12, color: Colors.black),
-                    ),
-                  ],
-                ),
-                const SizedBox(width: 8),
-                const VerticalDivider(
-                  width: 1,
-                  thickness: 1,
-                  color: Colors.grey,
-                ),
-                const SizedBox(width: 8),
-                Column(
+                  // Cotar Transporte sempre visível
                   children: [
                     IconButton(
                       icon: const Icon(Icons.local_shipping,

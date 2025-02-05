@@ -51,10 +51,14 @@ class Produto {
     vendedorId = json['vendedorId'];
     cargaFechada = json['cargaFechada'];
     safra = json['safra'];
-    semente = json['semente'];
+    semente = json['semente'] != null
+        ? utf8.decode(latin1.encode(json['semente']))
+        : "";
     tipoGrao = json['tipoGrao'];
     dataRetirada = json['dtRetirada'];
-    tipoNegociacao = json['tipoNegociacao'];
+    tipoNegociacao = json['tiposNegociacoes'] != null
+        ? utf8.decode(latin1.encode(json['tiposNegociacoes']))
+        : "";
     parceiro = Parceiro.fromJson(json['parceiro']);
     listFotos = json['listFotos'] != null
         ? (json['listFotos'] as List)
