@@ -1,8 +1,8 @@
 class ApiLinks {
   ApiLinks._();
   static const String _baseIp =
-      //  "https://appacademia-production-be7e.up.railway.app";
-      "http://192.168.100.41:8088";
+      "https://appacademia-production-be7e.up.railway.app";
+  //   "http://192.168.100.41:8088";
   // "http://192.168.146.1:8088";
   // // "http://192.168.100.41:8088";
   // "http://192.168.100.41:8088"; // "http://192.168.12.19:8088"; //

@@ -3,6 +3,8 @@ import 'package:task_manager_flutter/data/utils/api_links.dart';
 import 'package:task_manager_flutter/data/services/network_caller.dart';
 import 'dart:convert';
 import 'dart:typed_data';
+import 'package:task_manager_flutter/data/services/vendas_caller.dart';
+import 'package:task_manager_flutter/data/models/venda_model.dart';
 
 // Define cores
 const Color lightGreenBackground = Color.fromARGB(255, 231, 247, 233);
@@ -20,33 +22,40 @@ class ProdutoDetailsScreen extends StatefulWidget {
 }
 
 class _ProdutoDetailsScreenState extends State<ProdutoDetailsScreen> {
-  late Future<Map<String, dynamic>> _futureProduto;
+  Future<List<Produto>> _futureProduto = Future.value([]);
   final PageController _pageController = PageController();
   int _currentPage = 0;
+  bool isLoading = true;
 
   @override
   void initState() {
     super.initState();
-    _futureProduto = _fetchProdutoDetails();
+    _fetchProdutoDetails();
   }
 
-  Future<Map<String, dynamic>> _fetchProdutoDetails() async {
-    final response = await NetworkCaller().getRequests(
-      ApiLinks.fecthProdutosById + '${widget.produtoId}',
-      context,
-    );
-
-    if (response.statusCode == 200 && response.body != null) {
-      return response.body!;
-    } else {
-      throw Exception('Falha ao carregar detalhes do produto');
+  Future<void> _fetchProdutoDetails() async {
+    setState(() {
+      isLoading = true; // Show loading indicator
+    });
+    try {
+      final produto =
+          await VendasCaller().fetchProdutoDetails(context, widget.produtoId);
+      setState(() {
+        _futureProduto = Future.value(produto); // Assign the Produto object
+      });
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Erro ao carregar produto: $e')),
+      );
+    } finally {
+      setState(() {
+        isLoading = false; // Hide loading indicator
+      });
     }
   }
 
   void _refresh() {
-    setState(() {
-      _futureProduto = _fetchProdutoDetails();
-    });
+    _fetchProdutoDetails(); // Call the same function for refresh
   }
 
   void _previousPage() {
@@ -78,7 +87,7 @@ class _ProdutoDetailsScreenState extends State<ProdutoDetailsScreen> {
         ],
       ),
       backgroundColor: lightGreenBackground,
-      body: FutureBuilder<Map<String, dynamic>>(
+      body: FutureBuilder<List<Produto>>(
         future: _futureProduto,
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
@@ -98,8 +107,9 @@ class _ProdutoDetailsScreenState extends State<ProdutoDetailsScreen> {
             );
           }
 
-          final account = snapshot.data!['data']['account'][0];
-          final listFotos = account['listFotos'] as List;
+          final account =
+              snapshot.data == null ? Produto() : snapshot.data!.first;
+          final listFotos = account.listFotos as List;
 
           return SingleChildScrollView(
             padding: const EdgeInsets.all(16),
@@ -132,8 +142,8 @@ class _ProdutoDetailsScreenState extends State<ProdutoDetailsScreen> {
                               });
                             },
                             itemBuilder: (context, index) {
-                              final imageData = listFotos[index]
-                                  ['foto']; // Get the base64 string
+                              final imageData = listFotos[index]!
+                                  .foto; // Get the base64 string
 
                               // Check if imageData is a valid base64 string
                               try {
@@ -210,44 +220,47 @@ class _ProdutoDetailsScreenState extends State<ProdutoDetailsScreen> {
                   const SizedBox(height: 20),
                   // Informações do Produto
                   _buildSectionTitle('Informações do Produto'),
-                  _buildInfoItem('Descrição', account['descricao']),
+                  _buildInfoItem('Descrição', account.descricao),
                   _buildInfoItem(
-                      'Quantidade de Sacos', account['qtdSacos'].toString()),
-                  _buildInfoItem(
-                      'Valor por Saco', 'R\$ ${account['vlrSacos']}'),
-                  _buildInfoItem('Data de Retirada', account['dtRetirada']),
-                  _buildInfoItem('Safra', account['safra']),
-                  _buildInfoItem('Semente', account['semente']),
-                  _buildInfoItem('Tipo de Grão', account['tipoGrao']),
+                      'Quantidade de Sacos', account.qtdSacos.toString()),
+                  _buildInfoItem('Valor por Saco', 'R\$ ${account.vlrSacos}'),
+                  _buildInfoItem('Data de Retirada', account.dataRetirada),
+                  _buildInfoItem('Safra', account.safra),
+                  _buildInfoItem('Semente', account.semente),
+                  _buildInfoItem('Tipo de Grão', account.tipoGrao),
 
                   // Informações do Parceiro
                   const Padding(
                     padding: EdgeInsets.symmetric(vertical: 8),
                     child: Text(
-                      'Parceiro:',
-                      style:
-                          TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                      'Vendedor:',
+                      style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.black),
                     ),
                   ),
-                  _buildInfoItem('Nome', account['parceiro']['nome']),
+                  _buildInfoItem('Nome', account.parceiro!.nome),
                   _buildInfoItem(
                       'Endereço',
-                      '${account['parceiro']['endereco']['bairro']}, '
-                          '${account['parceiro']['endereco']['cidade']}/${account['parceiro']['endereco']['estado']}'),
+                      '${account.parceiro!.endereco!.bairro}, '
+                          '${account.parceiro!.endereco!.cidade}/${account.parceiro!.endereco!.estado}'),
 
                   // Classificações
                   const Padding(
                     padding: EdgeInsets.symmetric(vertical: 8),
                     child: Text(
                       'Classificações:',
-                      style:
-                          TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                      style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.black),
                     ),
                   ),
-                  ...account['classificacao']
+                  ...account.classificacao!
                       .map<Widget>((classificacao) => _buildInfoItem(
-                          classificacao['descricao'],
-                          classificacao['valor'].toString()))
+                          classificacao.descricao!,
+                          classificacao.valor!.toString()))
                       .toList(),
                 ],
               ),
@@ -266,7 +279,7 @@ class _ProdutoDetailsScreenState extends State<ProdutoDetailsScreen> {
         style: const TextStyle(
           fontSize: 18,
           fontWeight: FontWeight.bold,
-          color: darkGreenBorder,
+          color: Colors.black87,
         ),
       ),
     );

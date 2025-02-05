@@ -143,18 +143,28 @@ class VendasCaller {
     return model;
   }
 
-  Future<Map<String, dynamic>> fetchProdutoDetails(
+  Future<List<Produto>> fetchProdutoDetails(
       BuildContext context, int id) async {
-    final response = await NetworkCaller().getRequests(
-      ApiLinks.fecthProdutosById + '${id}',
-      context,
-    );
+    List<Produto>? model = [];
+    ProdutoModel models;
+    try {
+      final NetworkResponse response = await NetworkCaller().getRequest(
+        ApiLinks.fecthProdutosById + '${id}',
+      );
+      String jsonString;
 
-    if (response.statusCode == 200 && response.body != null) {
-      return response.body!;
-    } else {
-      throw Exception('Falha ao carregar detalhes do produto');
+      if (response.statusCode == 200 && response.body != null) {
+        jsonString = json.encode(response.body);
+        models = ProdutoModel.fromJson(response.body!);
+        model.addAll(models.produtos ?? []);
+      } else {
+        print('Erro: Nenhum dado retornado');
+      }
+    } catch (e) {
+      print('Erro: $e'); // Log do erro
+      throw Exception('Erro ao carregar cotações: $e');
     }
+    return model;
   }
 
   void downloadContrato(int contratoId, BuildContext context) async {
