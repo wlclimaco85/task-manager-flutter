@@ -56,6 +56,16 @@ class _ProdutoDetailsScreenState extends State<ProdutoDetailsScreen> {
     });
   }
 
+  void _previousPage() {
+    _pageController.previousPage(
+        duration: const Duration(milliseconds: 300), curve: Curves.easeInOut);
+  }
+
+  void _nextPage() {
+    _pageController.nextPage(
+        duration: const Duration(milliseconds: 300), curve: Curves.easeInOut);
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -69,8 +79,7 @@ class _ProdutoDetailsScreenState extends State<ProdutoDetailsScreen> {
         ],
       ),
       body: Container(
-        // Cor de fundo para o body
-        color: lightGreenBackground, // Aplica a cor de fundo verde claro
+        color: lightGreenBackground,
         child: FutureBuilder<Map<String, dynamic>>(
           future: _futureProduto,
           builder: (context, snapshot) {
@@ -85,106 +94,126 @@ class _ProdutoDetailsScreenState extends State<ProdutoDetailsScreen> {
             final account = snapshot.data!['data']['account'][0];
             final listFotos = account['listFotos'] as List;
 
-            return SingleChildScrollView(
-              // Scroll habilitado
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Carrossel de Fotos
-                  SizedBox(
-                    height: 200,
-                    child: Stack(
+            return LayoutBuilder(
+              builder: (context, constraints) {
+                return SingleChildScrollView(
+                  padding: const EdgeInsets.all(16),
+                  child: ConstrainedBox(
+                    constraints:
+                        BoxConstraints(minHeight: constraints.maxHeight),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        PageView.builder(
-                          controller: _pageController,
-                          itemCount: listFotos.length,
-                          onPageChanged: (index) {
-                            setState(() {
-                              _currentPage = index;
-                            });
-                          },
-                          itemBuilder: (context, index) {
-                            return Container(
-                              margin: const EdgeInsets.symmetric(horizontal: 8),
-                              decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(8),
-                                image: DecorationImage(
-                                  image: NetworkImage(listFotos[index]['foto']),
-                                  fit: BoxFit.cover,
+                        // Carrossel de Fotos
+                        SizedBox(
+                          height: 200,
+                          child: Stack(
+                            children: [
+                              PageView.builder(
+                                controller: _pageController,
+                                itemCount: listFotos.length,
+                                onPageChanged: (index) {
+                                  setState(() {
+                                    _currentPage = index;
+                                  });
+                                },
+                                itemBuilder: (context, index) {
+                                  return Container(
+                                    margin: const EdgeInsets.symmetric(
+                                        horizontal: 8),
+                                    decoration: BoxDecoration(
+                                      borderRadius: BorderRadius.circular(8),
+                                      image: DecorationImage(
+                                        image: NetworkImage(
+                                            listFotos[index]['foto']),
+                                        fit: BoxFit.cover,
+                                      ),
+                                    ),
+                                  );
+                                },
+                              ),
+                              Positioned(
+                                bottom: 10,
+                                left: 0,
+                                right: 0,
+                                child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    IconButton(
+                                      icon: const Icon(Icons.arrow_back_ios),
+                                      onPressed: _previousPage,
+                                    ),
+                                    ...List.generate(
+                                      listFotos.length,
+                                      (index) => Container(
+                                        width: 8,
+                                        height: 8,
+                                        margin: const EdgeInsets.symmetric(
+                                            horizontal: 4),
+                                        decoration: BoxDecoration(
+                                          shape: BoxShape.circle,
+                                          color: _currentPage == index
+                                              ? Colors.white
+                                              : Colors.grey,
+                                        ),
+                                      ),
+                                    ),
+                                    IconButton(
+                                      icon: const Icon(Icons.arrow_forward_ios),
+                                      onPressed: _nextPage,
+                                    ),
+                                  ],
                                 ),
                               ),
-                            );
-                          },
-                        ),
-                        Positioned(
-                          bottom: 10,
-                          left: 0,
-                          right: 0,
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: List.generate(
-                              listFotos.length,
-                              (index) => Container(
-                                width: 8,
-                                height: 8,
-                                margin:
-                                    const EdgeInsets.symmetric(horizontal: 4),
-                                decoration: BoxDecoration(
-                                  shape: BoxShape.circle,
-                                  color: _currentPage == index
-                                      ? Colors.white
-                                      : Colors.grey,
-                                ),
-                              ),
-                            ),
+                            ],
                           ),
                         ),
+                        const SizedBox(height: 20),
+
+                        // Informações do Produto
+                        _buildInfoItem('Descrição', account['descricao']),
+                        _buildInfoItem('Quantidade de Sacos',
+                            account['qtdSacos'].toString()),
+                        _buildInfoItem(
+                            'Valor por Saco', 'R\$ ${account['vlrSacos']}'),
+                        _buildInfoItem(
+                            'Data de Retirada', account['dtRetirada']),
+                        _buildInfoItem('Safra', account['safra']),
+                        _buildInfoItem('Semente', account['semente']),
+                        _buildInfoItem('Tipo de Grão', account['tipoGrao']),
+
+                        // Informações do Parceiro
+                        const Padding(
+                          padding: EdgeInsets.symmetric(vertical: 8),
+                          child: Text(
+                            'Parceiro:',
+                            style: TextStyle(
+                                fontSize: 16, fontWeight: FontWeight.bold),
+                          ),
+                        ),
+                        _buildInfoItem('Nome', account['parceiro']['nome']),
+                        _buildInfoItem('CPF', account['parceiro']['cpf']),
+                        _buildInfoItem('Email', account['parceiro']['email']),
+
+                        // Classificações
+                        const Padding(
+                          padding: EdgeInsets.symmetric(vertical: 8),
+                          child: Text(
+                            'Classificações:',
+                            style: TextStyle(
+                                fontSize: 16, fontWeight: FontWeight.bold),
+                          ),
+                        ),
+                        ...account['classificacao']
+                            .map<Widget>((classificacao) => _buildInfoItem(
+                                classificacao['descricao'],
+                                classificacao['valor'].toString()))
+                            .toList(),
                       ],
                     ),
                   ),
-                  const SizedBox(height: 20),
-
-                  // Informações do Produto
-                  _buildInfoItem('Descrição', account['descricao']),
-                  _buildInfoItem(
-                      'Quantidade de Sacos', account['qtdSacos'].toString()),
-                  _buildInfoItem(
-                      'Valor por Saco', 'R\$ ${account['vlrSacos']}'),
-                  _buildInfoItem('Data de Retirada', account['dtRetirada']),
-                  _buildInfoItem('Safra', account['safra']),
-                  _buildInfoItem('Semente', account['semente']),
-                  _buildInfoItem('Tipo de Grão', account['tipoGrao']),
-
-                  // Informações do Parceiro
-                  const Padding(
-                    padding: EdgeInsets.symmetric(vertical: 8),
-                    child: Text(
-                      'Parceiro:',
-                      style:
-                          TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                    ),
-                  ),
-                  _buildInfoItem('Nome', account['parceiro']['nome']),
-                  _buildInfoItem('CPF', account['parceiro']['cpf']),
-                  _buildInfoItem('Email', account['parceiro']['email']),
-
-                  // Classificações
-                  const Padding(
-                    padding: EdgeInsets.symmetric(vertical: 8),
-                    child: Text(
-                      'Classificações:',
-                      style:
-                          TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                    ),
-                  ),
-                  ...account['classificacao']
-                      .map<Widget>((classificacao) => _buildInfoItem(
-                          classificacao['descricao'],
-                          classificacao['valor'].toString()))
-                      .toList(),
-                ],
-              ),
+                );
+              },
             );
           },
         ),
