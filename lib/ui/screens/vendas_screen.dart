@@ -195,6 +195,7 @@ class _ProductCatalogState extends State<ProductCatalog> {
                                     productName: 'Arroz em Casca',
                                     productValue: product.vlrSacos ?? 0.0,
                                     productQnt: product.qtdSacos ?? 0,
+                                    idVenda: product.id ?? 0,
                                   ),
                                 ),
                               ),

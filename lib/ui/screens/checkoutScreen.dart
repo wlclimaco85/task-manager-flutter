@@ -8,12 +8,14 @@ class CheckoutScreen extends StatefulWidget {
   final String productName;
   final double productValue;
   final int productQnt;
+  final int idVenda;
 
   const CheckoutScreen({
     Key? key,
     required this.productName,
     required this.productValue,
     required this.productQnt,
+    required this.idVenda,
   }) : super(key: key);
 
   @override
@@ -50,9 +52,9 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     }
   }
 
-  Future<void> _downloadContract() async {
+  Future<void> _downloadContract(int contratoId, BuildContext context) async {
     try {
-      CheckoutCaller.downloadContract();
+      CheckoutCaller().downloadContrato(contratoId, context);
 
       if (mounted) {}
     } catch (e) {
@@ -108,7 +110,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                           color: _bordaVerdeEscuro), // Borda consistente
                     ),
                   ),
-                  onPressed: _downloadContract,
+                  onPressed: () => _downloadContract(widget.idVenda, context),
                 ),
               ),
               SizedBox(height: 15),
@@ -389,6 +391,7 @@ void main() {
       productName: 'Produto Exemplo',
       productValue: 100.00,
       productQnt: 1,
+      idVenda: 1,
     ),
   ));
 }

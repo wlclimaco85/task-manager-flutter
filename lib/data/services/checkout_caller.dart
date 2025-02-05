@@ -1,14 +1,15 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:task_manager_flutter/data/models/parceiro_model.dart';
 import 'package:task_manager_flutter/data/utils/api_links.dart';
 import 'package:task_manager_flutter/data/models/network_response.dart';
 import 'package:task_manager_flutter/data/services/network_caller.dart';
 import 'package:task_manager_flutter/data/models/auth_utility.dart';
-import 'package:task_manager_flutter/ui/screens/LoginPopup_screens.dart';
 import 'package:file_picker/file_picker.dart';
 import 'dart:io';
 import 'package:dio/dio.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:open_filex/open_filex.dart';
+import 'package:http/http.dart' as http;
 
 class CheckoutCaller {
   static final Dio _dio = Dio();
@@ -97,146 +98,59 @@ class CheckoutCaller {
     }
   }
 
-  Future<List<Parceiro>> fetchParceiros(
-      BuildContext context, int idParceiro) async {
-    List<Parceiro>? model = [];
-    ParceiroModel models;
-    try {
-      if (AuthUtility.userInfo?.data?.id != null &&
-          AuthUtility.userInfo?.data?.id == 1) {
-        // AQUI CHAMAR O LOGIN
-        await showDialog(
-          context: context,
-          builder: (BuildContext context) => LoginPopup(),
-        );
-      } else {
-        final NetworkResponse response = await NetworkCaller()
-            .getRequest('${ApiLinks.parceiroById}/$idParceiro');
-        String jsonString;
+  void downloadContrato(int contratoId, BuildContext context) async {
+    final url = ApiLinks.downloadContrato + "/" + contratoId.toString();
 
-        if (response.statusCode == 200 && response.body != null) {
-          jsonString = json.encode(response.body);
-          models = ParceiroModel.fromJson(response.body!);
-          model.addAll(models.parceiros ?? []);
-        } else {
-          // Trate o caso onde o data é nulo
-        }
-      }
-    } catch (e) {
-      print('Erro: $e'); // Log do erro
-      throw Exception('Erro ao carregar cotações: $e');
-    }
-    return model;
-  }
+    // Get the token (replace with your actual AuthUtility method)
+    final token =
+        AuthUtility.userInfo.token; // Assuming userInfo.token is available
 
-  Future<bool> insertParceiro(
-      BuildContext context, Map<String, dynamic> parceiroData) async {
     try {
-      final NetworkResponse response = await NetworkCaller().postRequest(
-        '${ApiLinks.insertParceiro}',
-        parceiroData,
+      final response = await http.get(
+        Uri.parse(url),
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Accept': 'application/json', // Important: Add Accept header
+        },
       );
 
-      if (response.statusCode == 200 || response.statusCode == 201) {
-        // Analisar o JSON retornado para verificar se contém erros
-        final Map<String, dynamic> responseBody =
-            response.body as Map<String, dynamic>;
-        final responseError = responseBody['response']['error'] as bool?;
-        final responseMessage = responseBody['response']['message'];
-        String sanitizedMessage = responseMessage != null
-            ? utf8.decode(responseMessage.runes.toList())
-            : "Erro desconhecido.";
+      if (response.statusCode == 200) {
+        // ... (rest of your download and open file logic)
 
-        if (responseError == true) {
-          // Mostra a mensagem de erro do servidor
+        final tempDir = await getTemporaryDirectory();
+        final file = File('${tempDir.path}/contrato_$contratoId.pdf');
+        await file
+            .writeAsBytes(response.bodyBytes); // Write the bytes to the file
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+              content: Text('Download concluído! Abrindo o contrato...')),
+        );
+
+        OpenFilex.open(file.path); // Open the file
+      } else {
+        print(
+            'Error: ${response.statusCode} - ${response.body}'); // Print error details
+        // Try to decode the error response body (if it's JSON)
+        try {
+          final errorData = jsonDecode(response.body);
+          print('Error Data: $errorData'); // Print decoded error data
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text(sanitizedMessage),
-              backgroundColor: Colors.red,
-            ),
+                content: Text(
+                    'Erro ao baixar contrato: ${errorData['message'] ?? 'Erro desconhecido'}')),
           );
-          return false;
-        }
-
-        print("Parceiro inserido com sucesso.");
-        return true;
-      } else {
-        print("Erro ao inserir parceiro: ${response.body}");
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text("Erro ao inserir parceiro: ${response.body}"),
-            backgroundColor: Colors.red,
-          ),
-        );
-        return false;
-      }
-    } catch (e) {
-      print('Erro ao inserir parceiro: $e');
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text("Erro ao inserir parceiro: $e"),
-          backgroundColor: Colors.red,
-        ),
-      );
-      throw Exception('Erro ao inserir parceiro: $e');
-    }
-  }
-
-  Future<bool> updateParceiro(
-      BuildContext context, Map<String, dynamic> parceiroData) async {
-    try {
-      final NetworkResponse response = await NetworkCaller().postRequest(
-        '${ApiLinks.updateParceiro}',
-        parceiroData,
-      );
-
-      if (response.statusCode == 200 || response.statusCode == 201) {
-        // Analisar o JSON retornado para verificar se contém erros
-        final Map<String, dynamic> responseBody =
-            response.body as Map<String, dynamic>;
-        final responseError = responseBody['response']['error'] as bool?;
-        final responseMessage = responseBody['response']['message'];
-        String sanitizedMessage = responseMessage != null
-            ? utf8.decode(responseMessage.runes.toList())
-            : "Erro desconhecido.";
-
-        if (responseError == true) {
-          // Mostra a mensagem de erro do servidor
+        } catch (e) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(sanitizedMessage),
-              backgroundColor: Colors.red,
-            ),
+            const SnackBar(content: Text('Erro ao baixar contrato')),
           );
-          return false;
         }
-
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(sanitizedMessage),
-            backgroundColor: Colors.green,
-          ),
-        );
-        return true;
-      } else {
-        print("Erro ao inserir parceiro: ${response.body}");
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text("Erro ao inserir parceiro: ${response.body}"),
-            backgroundColor: Colors.red,
-          ),
-        );
-        return false;
       }
     } catch (e) {
-      print('Erro ao inserir parceiro: $e');
+      print('Error during download: $e'); // Catch and log any exceptions
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text("Erro ao inserir parceiro: $e"),
-          backgroundColor: Colors.red,
-        ),
+        const SnackBar(content: Text('Erro ao baixar contrato')),
       );
-      throw Exception('Erro ao inserir parceiro: $e');
     }
   }
 }
