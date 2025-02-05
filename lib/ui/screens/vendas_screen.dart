@@ -11,7 +11,6 @@ import 'package:task_manager_flutter/ui/widgets/user_banners.dart';
 import 'dart:typed_data';
 import 'dart:convert';
 
-// Define theme colors
 const Color lightGreenBackground = Color.fromARGB(255, 231, 247, 233);
 const Color darkGreenBorder = Color.fromARGB(255, 1, 247, 14);
 const Color buttonBackground = Color.fromARGB(255, 128, 202, 132);
@@ -37,7 +36,6 @@ class _ProductCatalogState extends State<ProductCatalog> {
     _fetchProducts();
   }
 
-  // Função para chamar o serviço de cotação de frete
   Future<void> onTransporte(BuildContext context, Produto product) async {
     final Map<String, dynamic> requestBody = {
       "idProduto": 13,
@@ -45,17 +43,14 @@ class _ProductCatalogState extends State<ProductCatalog> {
     };
 
     try {
-      // Faz a chamada à API
       final NetworkResponse response = await NetworkCaller()
           .postRequest(ApiLinks.insertCotacaoFrete, requestBody);
 
       if (response.statusCode == 200) {
-        // Sucesso na requisição
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text("Solicitação enviada com sucesso!")),
         );
       } else {
-        // Falha na requisição
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text("Erro ao enviar solicitação: ${response.statusCode}"),
@@ -194,16 +189,12 @@ class _ProductCatalogState extends State<ProductCatalog> {
                               onDetails: () =>
                                   showProductDetails(context, product),
                               onBuy: () => Navigator.push(
-                                // Alteração aqui
                                 context,
                                 MaterialPageRoute(
                                   builder: (context) => CheckoutScreen(
-                                    productName:
-                                        'Arroz em Casca', // Verifique o nome correto do campo
-                                    productValue: product.vlrSacos ??
-                                        0.0, // Verifique o nome correto do campo
-                                    productQnt: product.qtdSacos ??
-                                        0, // Verifique o nome correto do campo
+                                    productName: 'Arroz em Casca',
+                                    productValue: product.vlrSacos ?? 0.0,
+                                    productQnt: product.qtdSacos ?? 0,
                                   ),
                                 ),
                               ),
@@ -231,6 +222,13 @@ class _ProductCatalogState extends State<ProductCatalog> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            Text('Safra: ${product.safra ?? "Não informado"}'),
+            Text('Semente: ${product.semente ?? "Não informado"}'),
+            Text('Tipo do Grão: ${product.tipoGrao ?? "Não informado"}'),
+            Text(
+                'Data de Retirada: ${product.dataRetirada ?? "Não informado"}'),
+            Text(
+                'Tipo de Negociação: ${product.tipoNegociacao ?? "Não informado"}'),
             Text(
                 'Estado: ${product.parceiro?.endereco?.estado ?? "Não informado"}'),
             Text(
@@ -316,7 +314,7 @@ class _ProductCatalogState extends State<ProductCatalog> {
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          backgroundColor: lightGreenBackground, // Cor do fundo
+          backgroundColor: lightGreenBackground,
           title: Text(
             'Negociar Arroz em Casca LOTE - ${product.id ?? "Sem descrição"}',
             style: const TextStyle(fontWeight: FontWeight.bold),
@@ -378,7 +376,7 @@ class _ProductCatalogState extends State<ProductCatalog> {
                 padding: const EdgeInsets.symmetric(
                     horizontal: 16, vertical: 12), // Margens internas
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8), // Bordas arredondadas
+                  borderRadius: BorderRadius.circular(8),
                 ),
               ),
               onPressed: () async {
@@ -389,8 +387,7 @@ class _ProductCatalogState extends State<ProductCatalog> {
 
                 final bool response = await renegotiate(
                   vendaId: product.id!,
-                  compradorId:
-                      5, // ID do comprador (ajuste conforme necessário)
+                  compradorId: 5,
                   vendedorId: product.parceiro?.id ?? 0,
                   qtdSacos: qtdSacos,
                   vlrSacos: vlrSacos,
@@ -406,7 +403,7 @@ class _ProductCatalogState extends State<ProductCatalog> {
                       backgroundColor: Colors.green,
                     ),
                   );
-                  _fetchProducts(); // Atualiza os produtos
+                  _fetchProducts();
                 } else {
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(
@@ -447,18 +444,15 @@ class _ProductCatalogState extends State<ProductCatalog> {
     required double vlrSacos,
     required int qtdDisponivel,
   }) async {
-    // Exibe o loader
     showDialog(
       context: context,
-      barrierDismissible:
-          false, // Impede que o usuário feche o diálogo manualmente
+      barrierDismissible: false,
       builder: (_) => const Center(child: CircularProgressIndicator()),
     );
 
     try {
-      // Validações iniciais
       if (qtdSacos > qtdDisponivel) {
-        Navigator.of(context).pop(); // Fecha o loader
+        Navigator.of(context).pop();
         showSnackBar(
           message:
               "A quantidade de sacos solicitada ($qtdSacos) excede o disponível ($qtdDisponivel).",
@@ -468,7 +462,7 @@ class _ProductCatalogState extends State<ProductCatalog> {
       }
 
       if (vlrSacos <= 0) {
-        Navigator.of(context).pop(); // Fecha o loader
+        Navigator.of(context).pop();
         showSnackBar(
           message: "O valor por saco deve ser maior que zero.",
           isError: true,
@@ -476,7 +470,6 @@ class _ProductCatalogState extends State<ProductCatalog> {
         return false;
       }
 
-      // Corpo da requisição
       Map<String, dynamic> requestBody = {
         "vendaId": vendaId,
         "compradorId": compradorId,
@@ -485,13 +478,11 @@ class _ProductCatalogState extends State<ProductCatalog> {
         "vlrSacos": vlrSacos,
       };
 
-      // Faz a chamada à API
       final NetworkResponse response = await NetworkCaller()
           .postRequest(ApiLinks.insertNegociacao, requestBody);
 
-      Navigator.of(context).pop(); // Fecha o loader
+      Navigator.of(context).pop();
 
-      // Verifica o resultado da requisição
       if (response.isSuccess) {
         showSnackBar(
           message: "Proposta enviada com sucesso!",
@@ -506,7 +497,7 @@ class _ProductCatalogState extends State<ProductCatalog> {
         return false;
       }
     } catch (e) {
-      Navigator.of(context).pop(); // Fecha o loader
+      Navigator.of(context).pop();
       showSnackBar(
         message: "Erro: ${e.toString()}",
         isError: true,
@@ -532,11 +523,9 @@ class ProductCard extends StatelessWidget {
     required this.onTransporte,
   }) : super(key: key);
 
-  /// Retorna a imagem decodificada ou um ícone padrão.
   Widget getFirstImageOrDefault(String photosBase64) {
     if (photosBase64.isNotEmpty) {
       try {
-        // Decodifica a primeira imagem da lista
         final Uint8List imageBytes = base64Decode(photosBase64);
         return Image.memory(
           imageBytes,
@@ -545,12 +534,10 @@ class ProductCard extends StatelessWidget {
           fit: BoxFit.cover,
         );
       } catch (e) {
-        // Caso a decodificação falhe
         debugPrint('Erro ao decodificar a imagem: $e');
       }
     }
 
-    // Retorna o ícone padrão caso a lista esteja vazia ou ocorra erro
     return const Icon(Icons.image, size: 100);
   }
 
@@ -600,23 +587,26 @@ class ProductCard extends StatelessWidget {
                           'Cidade: ${product.parceiro?.endereco?.cidade ?? "Não informado"}'),
                       Text('Quantidade: ${product.qtdSacos} sacos'),
                       Text('Valor por saco: R\$${product.vlrSacos}'),
+                      Text('Safra: ${product.safra ?? "Não informado"}'),
+                      Text('Semente: ${product.semente ?? "Não informado"}'),
                       Text(
-                          'Observação: ${product.descricao ?? "Não informado"}'),
+                          'Tipo do Grão: ${product.tipoGrao ?? "Não informado"}'),
+                      Text(
+                          'Data de Retirada: ${product.dataRetirada ?? "Não informado"}'),
+                      Text(
+                          'Tipo de Negociação: ${product.tipoNegociacao ?? "Não informado"}'),
                       const Text('Classificação:'),
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: product.classificacao!.map<Widget>((c) {
                           return Container(
-                            margin: const EdgeInsets.only(
-                                left: 16, top: 4), // Margem personalizada
+                            margin: const EdgeInsets.only(left: 16, top: 4),
                             child: Row(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 const Icon(Icons.circle,
-                                    size: 8, color: Colors.black), // Marcador
-                                const SizedBox(
-                                    width:
-                                        8), // Espaço entre o marcador e o texto
+                                    size: 8, color: Colors.black),
+                                const SizedBox(width: 8),
                                 Expanded(
                                   child: Text('${c.descricao}: ${c.valor}',
                                       style: const TextStyle(fontSize: 12)),
@@ -632,13 +622,12 @@ class ProductCard extends StatelessWidget {
               ),
             ],
           ),
-          const Divider(color: Colors.grey), // Linha divisória
+          const Divider(color: Colors.grey),
           Padding(
             padding: const EdgeInsets.all(8.0),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                // Botão Detalhes
                 Column(
                   children: [
                     IconButton(
@@ -658,7 +647,6 @@ class ProductCard extends StatelessWidget {
                   color: Colors.grey,
                 ),
                 const SizedBox(width: 8),
-                // Botão Negociar
                 Column(
                   children: [
                     IconButton(
@@ -678,7 +666,6 @@ class ProductCard extends StatelessWidget {
                   color: Colors.grey,
                 ),
                 const SizedBox(width: 8),
-                // Botão Comprar
                 Column(
                   children: [
                     IconButton(
@@ -699,7 +686,6 @@ class ProductCard extends StatelessWidget {
                   color: Colors.grey,
                 ),
                 const SizedBox(width: 8),
-                // Botão Cotar Transporte
                 Column(
                   children: [
                     IconButton(
@@ -745,118 +731,4 @@ class ProductCard extends StatelessWidget {
       ),
     );
   }
-
-/*
-  void showNegotiationPopup(BuildContext context, Produto product) {
-    final TextEditingController qtdController = TextEditingController();
-    final TextEditingController valorController = TextEditingController();
-
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          backgroundColor: lightGreenBackground, // Cor do fundo
-          title: Text(
-            'Renegociar - ${product.descricao ?? "Sem descrição"}',
-            style: const TextStyle(fontWeight: FontWeight.bold),
-          ),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                'Quantidade atual: ${product.qtdSacos ?? 0}',
-                style: const TextStyle(fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(height: 8),
-              TextField(
-                controller: qtdController,
-                keyboardType: TextInputType.number,
-                decoration: InputDecoration(
-                  labelText: 'Nova quantidade',
-                  labelStyle: const TextStyle(fontWeight: FontWeight.bold),
-                  enabledBorder: OutlineInputBorder(
-                    borderSide: BorderSide(color: darkGreenBorder, width: 2),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderSide: BorderSide(color: darkGreenBorder, width: 2),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                'Valor atual por saco: R\$${product.vlrSacos ?? 0.0}',
-                style: const TextStyle(fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(height: 8),
-              TextField(
-                controller: valorController,
-                keyboardType: TextInputType.number,
-                decoration: InputDecoration(
-                  labelText: 'Novo valor por saco',
-                  labelStyle: const TextStyle(fontWeight: FontWeight.bold),
-                  enabledBorder: OutlineInputBorder(
-                    borderSide: BorderSide(color: darkGreenBorder, width: 2),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderSide: BorderSide(color: darkGreenBorder, width: 2),
-                  ),
-                ),
-              ),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: const Text('Cancelar'),
-            ),
-            ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: buttonBackground,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
-                  side: BorderSide(color: darkGreenBorder, width: 2),
-                ),
-              ),
-              onPressed: () async {
-                final int qtdSacos =
-                    int.tryParse(qtdController.text.trim()) ?? 0;
-                final double vlrSacos =
-                    double.tryParse(valorController.text.trim()) ?? 0.0;
-
-                final bool response = await renegotiate(
-                  vendaId: product.id!,
-                  compradorId:
-                      5, // ID do comprador (ajuste conforme necessário)
-                  vendedorId: product.parceiro?.id ?? 0,
-                  qtdSacos: qtdSacos,
-                  vlrSacos: vlrSacos,
-                  qtdDisponivel: product.qtdSacos!,
-                );
-
-                Navigator.of(context).pop();
-
-                if (response) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Renegociação realizada com sucesso!'),
-                      backgroundColor: Colors.green,
-                    ),
-                  );
-                  _fetchProducts(); // Atualiza os produtos
-                } else {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Erro ao renegociar.'),
-                      backgroundColor: Colors.red,
-                    ),
-                  );
-                }
-              },
-              child: const Text('Enviar Proposta'),
-            ),
-          ],
-        );
-      },
-    );
-  } */
 }

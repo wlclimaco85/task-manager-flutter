@@ -14,6 +14,11 @@ class Produto {
   List<String>? fotos;
   bool? cargaFechada;
   Parceiro? parceiro;
+  String? safra;
+  String? semente;
+  String? tipoGrao;
+  String? dataRetirada;
+  String? tipoNegociacao;
 
   Produto({
     this.id,
@@ -28,6 +33,11 @@ class Produto {
     this.fotos,
     this.cargaFechada,
     this.parceiro,
+    this.safra,
+    this.semente,
+    this.tipoGrao,
+    this.dataRetirada,
+    this.tipoNegociacao,
   });
 
   // Método para converter de JSON para a classe Produto
@@ -40,6 +50,11 @@ class Produto {
     vlrSacos = json['vlrSacos']?.toDouble();
     vendedorId = json['vendedorId'];
     cargaFechada = json['cargaFechada'];
+    safra = json['safra'];
+    semente = json['semente'];
+    tipoGrao = json['tipoGrao'];
+    dataRetirada = json['dtRetirada'];
+    tipoNegociacao = json['tipoNegociacao'];
     parceiro = Parceiro.fromJson(json['parceiro']);
     listFotos = json['listFotos'] != null
         ? (json['listFotos'] as List)
@@ -68,6 +83,11 @@ class Produto {
     data['vlrSacos'] = vlrSacos;
     data['vendedorId'] = vendedorId;
     data['cargaFechada'] = cargaFechada;
+    data['safra'] = safra;
+    data['semente'] = semente;
+    data['tipoGrao'] = tipoGrao;
+    data['dataRetirada'] = dataRetirada;
+    data['tipoNegociacao'] = tipoNegociacao;
     if (listFotos != null) {
       data['listFotos'] = listFotos!.map((foto) => foto.toJson()).toList();
     }
