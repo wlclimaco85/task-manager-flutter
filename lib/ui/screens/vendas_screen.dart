@@ -9,6 +9,7 @@ import 'package:task_manager_flutter/ui/screens/update_profile.dart';
 import 'package:task_manager_flutter/ui/screens/checkoutscreen.dart';
 import 'package:task_manager_flutter/ui/screens/ProdutoDetailsScreen.dart';
 import 'package:task_manager_flutter/ui/widgets/user_banners.dart';
+import 'package:task_manager_flutter/ui/widgets/negotiationDialog.dart';
 import 'dart:typed_data';
 import 'dart:convert';
 
@@ -200,8 +201,13 @@ class _ProductCatalogState extends State<ProductCatalog> {
                                   ),
                                 ),
                               ),
-                              onNegotiate: () =>
-                                  showNegotiationPopup(context, product),
+                              onNegotiate: () => showDialog(
+                                context: context,
+                                builder: (context) => NegotiationDialog(
+                                  product: product,
+                                  compradorId: 5, // ID do usuário logado
+                                ),
+                              ),
                               onTransporte: () =>
                                   onTransporte(context, product),
                             );
@@ -250,176 +256,6 @@ class _ProductCatalogState extends State<ProductCatalog> {
           ),
         ],
       ),
-    );
-  }
-
-  void showBuyPopup(BuildContext context, Produto product) {
-    showDialog(
-      context: context,
-      builder: (_) => AlertDialog(
-        backgroundColor: lightGreenBackground,
-        title: Text('Comprar - ${product.descricao}'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-                'Estado: ${product.parceiro?.endereco?.estado ?? "Não informado"}'),
-            Text(
-                'Cidade: ${product.parceiro?.endereco?.cidade ?? "Não informado"}'),
-            Text('Quantidade de sacos: ${product.qtdSacos ?? 0}'),
-            Text('Valor por saco: R\$${product.vlrSacos ?? 0.0}'),
-            const Text('Classificação:'),
-            ...product.classificacao!.map<Widget>((c) {
-              return Text('${c.descricao}: ${c.valor}');
-            }).toList(),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Fechar'),
-          ),
-          ElevatedButton(
-            onPressed: () async {
-              final response = await renegotiate(
-                vendaId: product.id!,
-                vendedorId: product.parceiro!.id!,
-                compradorId: 5, // Substitua com ID do comprador
-                qtdSacos: product.qtdSacos! ?? 0,
-                vlrSacos: product.vlrSacos ?? 0.0,
-                qtdDisponivel: product.qtdSacos!,
-              );
-              Navigator.of(context).pop();
-              if (response) {
-                _fetchProducts(); // Refresh automático após sucesso
-              } else {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('Erro ao Comprar'),
-                  ),
-                );
-              }
-            },
-            child: const Text('Comprar'),
-          ),
-        ],
-      ),
-    );
-  }
-
-  void showNegotiationPopup(BuildContext context, Produto product) {
-    final TextEditingController qtdController = TextEditingController();
-    final TextEditingController valorController = TextEditingController();
-
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          backgroundColor: lightGreenBackground,
-          title: Text(
-            'Negociar Arroz em Casca LOTE - ${product.id ?? "Sem descrição"}',
-            style: const TextStyle(fontWeight: FontWeight.bold),
-          ),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                'Quantidade atual: ${product.qtdSacos ?? 0}',
-                style: const TextStyle(fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(height: 8),
-              TextField(
-                controller: qtdController,
-                keyboardType: TextInputType.number,
-                decoration: const InputDecoration(
-                  labelText: 'Nova quantidade',
-                  labelStyle: TextStyle(fontWeight: FontWeight.bold),
-                  enabledBorder: OutlineInputBorder(
-                    borderSide: BorderSide(color: darkGreenBorder, width: 2),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderSide: BorderSide(color: darkGreenBorder, width: 2),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                'Valor atual por saco: R\$${product.vlrSacos ?? 0.0}',
-                style: const TextStyle(fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(height: 8),
-              TextField(
-                controller: valorController,
-                keyboardType: TextInputType.number,
-                decoration: const InputDecoration(
-                  labelText: 'Novo valor por saco',
-                  labelStyle: TextStyle(fontWeight: FontWeight.bold),
-                  enabledBorder: OutlineInputBorder(
-                    borderSide: BorderSide(color: darkGreenBorder, width: 2),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderSide: BorderSide(color: darkGreenBorder, width: 2),
-                  ),
-                ),
-              ),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: const Text('Cancelar'),
-            ),
-            ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.green, // Cor do botão
-                minimumSize:
-                    const Size(150, 50), // Largura e altura mínimas do botão
-                padding: const EdgeInsets.symmetric(
-                    horizontal: 16, vertical: 12), // Margens internas
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
-              ),
-              onPressed: () async {
-                final int qtdSacos =
-                    int.tryParse(qtdController.text.trim()) ?? 0;
-                final double vlrSacos =
-                    double.tryParse(valorController.text.trim()) ?? 0.0;
-
-                final bool response = await renegotiate(
-                  vendaId: product.id!,
-                  compradorId: 5,
-                  vendedorId: product.parceiro?.id ?? 0,
-                  qtdSacos: qtdSacos,
-                  vlrSacos: vlrSacos,
-                  qtdDisponivel: product.qtdSacos!,
-                );
-
-                Navigator.of(context).pop();
-
-                if (response) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Proposta enviada com sucesso!'),
-                      backgroundColor: Colors.green,
-                    ),
-                  );
-                  _fetchProducts();
-                } else {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Erro ao renegociar.'),
-                      backgroundColor: Colors.red,
-                    ),
-                  );
-                }
-              },
-              child: const Text('Enviar Proposta'),
-            ),
-          ],
-        );
-      },
     );
   }
 
@@ -507,6 +343,61 @@ class _ProductCatalogState extends State<ProductCatalog> {
       return false;
     }
   }
+
+  void showBuyPopup(BuildContext context, Produto product) {
+    showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        backgroundColor: lightGreenBackground,
+        title: Text('Comprar - ${product.descricao}'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+                'Estado: ${product.parceiro?.endereco?.estado ?? "Não informado"}'),
+            Text(
+                'Cidade: ${product.parceiro?.endereco?.cidade ?? "Não informado"}'),
+            Text('Quantidade de sacos: ${product.qtdSacos ?? 0}'),
+            Text('Valor por saco: R\$${product.vlrSacos ?? 0.0}'),
+            const Text('Classificação:'),
+            ...product.classificacao!.map<Widget>((c) {
+              return Text('${c.descricao}: ${c.valor}');
+            }).toList(),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Fechar'),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              final response = await renegotiate(
+                vendaId: product.id!,
+                vendedorId: product.parceiro!.id!,
+                compradorId: 5, // Substitua com ID do comprador
+                qtdSacos: product.qtdSacos! ?? 0,
+                vlrSacos: product.vlrSacos ?? 0.0,
+                qtdDisponivel: product.qtdSacos!,
+              );
+              Navigator.of(context).pop();
+              if (response) {
+                _fetchProducts(); // Refresh automático após sucesso
+              } else {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Erro ao Comprar'),
+                  ),
+                );
+              }
+            },
+            child: const Text('Comprar'),
+          ),
+        ],
+      ),
+    );
+  }
 }
 
 class ProductCard extends StatelessWidget {
@@ -559,7 +450,7 @@ class ProductCard extends StatelessWidget {
       color: lightGreenBackground,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(8.0),
-        side: BorderSide(color: darkGreenBorder, width: 2),
+        side: const BorderSide(color: darkGreenBorder, width: 2),
       ),
       child: Column(
         children: [

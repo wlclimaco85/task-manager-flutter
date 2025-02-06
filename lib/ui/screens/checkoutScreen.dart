@@ -27,6 +27,8 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
   String _termsText = "Carregando termos...";
   final Color _fundoVerdeClaro = const Color.fromARGB(255, 240, 255, 241);
   final Color _bordaVerdeEscuro = const Color(0xFF2E7D32);
+  bool contratarFrete = false;
+  double valorFrete = 50.0; // Valor estimado do frete
 
   @override
   void initState() {
@@ -257,6 +259,25 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     );
   }
 
+  void _showFretePopup() {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text("Estimativa de Frete"),
+          content: const Text(
+              "Este é o valor estimado de frete. Será feita uma nova cotação junto aos motoristas parceiros para verificar se conseguiremos manter o preço."),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text("OK"),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final valorTotal = widget.productQnt * widget.productValue;
@@ -354,7 +375,48 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                 ],
               ),
             ),
+            const SizedBox(height: 25),
 
+            // Seção de Termos
+            Container(
+              padding: const EdgeInsets.all(15),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(15),
+                border: Border.all(color: _bordaVerdeEscuro.withOpacity(0.3)),
+              ),
+              child: Row(
+                children: [
+                  Checkbox(
+                    value: contratarFrete,
+                    onChanged: (bool? value) {
+                      setState(() {
+                        contratarFrete = value ?? false;
+                      });
+                      if (contratarFrete) {
+                        _showFretePopup();
+                      }
+                    },
+                    activeColor: _bordaVerdeEscuro,
+                  ),
+                  const Expanded(
+                    child: Wrap(
+                      children: [
+                        Expanded(
+                          child: Wrap(
+                            children: [
+                              Text("Contratar Frete - R\$ 20.000,00",
+                                  style:
+                                      TextStyle(fontWeight: FontWeight.bold)),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
             const SizedBox(height: 25),
 
             // Botão Finalizar

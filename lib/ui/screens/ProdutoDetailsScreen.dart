@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:task_manager_flutter/data/utils/api_links.dart';
-import 'package:task_manager_flutter/data/services/network_caller.dart';
 import 'dart:convert';
 import 'dart:typed_data';
 import 'package:task_manager_flutter/data/services/vendas_caller.dart';
 import 'package:task_manager_flutter/data/models/venda_model.dart';
+import 'package:task_manager_flutter/ui/screens/checkoutscreen.dart';
+import 'package:task_manager_flutter/ui/widgets/negotiationDialog.dart';
 
 // Define cores
 const Color lightGreenBackground = Color.fromARGB(255, 231, 247, 233);
@@ -107,8 +107,11 @@ class _ProdutoDetailsScreenState extends State<ProdutoDetailsScreen> {
             );
           }
 
-          final account =
-              snapshot.data == null ? Produto() : snapshot.data!.first;
+          final account = snapshot.data == null
+              ? Produto()
+              : snapshot.data!.isNotEmpty
+                  ? snapshot.data!.first
+                  : Produto();
           final listFotos = account.listFotos as List;
 
           return SingleChildScrollView(
@@ -142,40 +145,32 @@ class _ProdutoDetailsScreenState extends State<ProdutoDetailsScreen> {
                               });
                             },
                             itemBuilder: (context, index) {
-                              final imageData = listFotos[index]!
-                                  .foto; // Get the base64 string
-
-                              // Check if imageData is a valid base64 string
+                              final imageData = listFotos[index]!.foto;
                               try {
-                                Uint8List bytes = base64.decode(
-                                    imageData); // Decode the base64 string
-
+                                Uint8List bytes = base64.decode(imageData);
                                 return Container(
                                   margin:
                                       const EdgeInsets.symmetric(horizontal: 8),
                                   decoration: BoxDecoration(
                                     borderRadius: BorderRadius.circular(8),
                                     image: DecorationImage(
-                                      image: MemoryImage(
-                                          bytes), // Use MemoryImage to display the image
+                                      image: MemoryImage(bytes),
                                       fit: BoxFit.cover,
                                     ),
                                   ),
                                 );
                               } catch (e) {
-                                // Handle invalid base64 data, e.g., display a placeholder or error message
                                 print('Error decoding base64 image: $e');
                                 return Container(
                                   margin:
                                       const EdgeInsets.symmetric(horizontal: 8),
                                   decoration: BoxDecoration(
                                     borderRadius: BorderRadius.circular(8),
-                                    color: Colors.grey, // Placeholder color
+                                    color: Colors.grey,
                                   ),
                                   child: const Center(
                                       child: Icon(Icons.error,
-                                          color: Colors
-                                              .white)), // Placeholder icon
+                                          color: Colors.white)),
                                 );
                               }
                             },
@@ -262,6 +257,128 @@ class _ProdutoDetailsScreenState extends State<ProdutoDetailsScreen> {
                           classificacao.descricao!,
                           classificacao.valor!.toString()))
                       .toList(),
+
+                  // Botões de Ação
+                  const Divider(color: Colors.grey),
+                  Padding(
+                    padding: const EdgeInsets.all(8.0),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const SizedBox(width: 8),
+                        const VerticalDivider(
+                          width: 1,
+                          thickness: 1,
+                          color: Colors.grey,
+                        ),
+                        const SizedBox(width: 8),
+                        if (account.tipoNegociacao !=
+                            "Adicionar valor e nao aceitar proposta") ...[
+                          Column(
+                            children: [
+                              IconButton(
+                                icon: const Icon(Icons.handshake,
+                                    color: Colors.green),
+                                onPressed: () => showDialog(
+                                  context: context,
+                                  builder: (context) => NegotiationDialog(
+                                    product: account,
+                                    compradorId: 5, // ID do usuário logado
+                                  ),
+                                ),
+                              ),
+                              const Text(
+                                "Negociar",
+                                style: TextStyle(
+                                    fontSize: 12, color: Colors.black),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(width: 8),
+                          const VerticalDivider(
+                            width: 1,
+                            thickness: 1,
+                            color: Colors.grey,
+                          ),
+                          const SizedBox(width: 8),
+                        ],
+                        if (account.tipoNegociacao !=
+                            "Sem valor, só negociar valor") ...[
+                          Column(
+                            children: [
+                              IconButton(
+                                icon: const Icon(Icons.shopping_cart,
+                                    color: Colors.orange),
+                                onPressed: () => Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => CheckoutScreen(
+                                      productName: "teste",
+                                      productValue: 10.0,
+                                      productQnt: 1,
+                                      idVenda: account.id!,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                              const Text(
+                                "Comprar",
+                                style: TextStyle(
+                                    fontSize: 12, color: Colors.black),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(width: 8),
+                          const VerticalDivider(
+                            width: 1,
+                            thickness: 1,
+                            color: Colors.grey,
+                          ),
+                          const SizedBox(width: 8),
+                        ],
+                        Column(
+                          children: [
+                            IconButton(
+                              icon: const Icon(Icons.local_shipping,
+                                  color: Colors.purple),
+                              onPressed: () async {
+                                await showDialog(
+                                  context: context,
+                                  builder: (BuildContext context) {
+                                    return AlertDialog(
+                                      title:
+                                          const Text("Cotação de Transporte"),
+                                      content: const Text(
+                                          "Vamos enviar suas informações para nossa transportadora parceira e o mais breve possível será enviado o valor do frete."),
+                                      actions: [
+                                        TextButton(
+                                          child: const Text("Cancelar"),
+                                          onPressed: () {
+                                            Navigator.of(context).pop();
+                                          },
+                                        ),
+                                        ElevatedButton(
+                                          child: const Text("Confirmar"),
+                                          onPressed: () async {
+                                            Navigator.of(context).pop();
+                                          },
+                                        ),
+                                      ],
+                                    );
+                                  },
+                                );
+                              },
+                            ),
+                            const Text(
+                              "Cotar Transporte",
+                              style:
+                                  TextStyle(fontSize: 12, color: Colors.black),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
                 ],
               ),
             ),

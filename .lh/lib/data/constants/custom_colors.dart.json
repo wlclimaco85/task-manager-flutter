@@ -3,7 +3,7 @@
     "activeCommit": 0,
     "commits": [
         {
-            "activePatchIndex": 3,
+            "activePatchIndex": 4,
             "patches": [
                 {
                     "date": 1736441316920,
@@ -20,6 +20,10 @@
                 {
                     "date": 1736442910381,
                     "content": "Index: \n===================================================================\n--- \n+++ \n@@ -10,22 +10,22 @@\n   final Color _appFundoImput = const Color(0xFFffffff);\r\n   final Color _appFundoClaro = const Color(0xFF7859C9);\r\n   final Color _appBotton = const Color(0xFFFA903A);\r\n   final Color _appLabelBotton = const Color(0xFFffffff);\r\n-  final Color lightGreenBackground = const Color.fromARGB(255, 231, 247, 233);\r\n-  final Color darkGreenBorder = const Color.fromARGB(255, 1, 247, 14);\r\n-  final Color buttonBackground = const Color.fromARGB(255, 128, 202, 132);\r\n+  final Color _lightGreenBackground = const Color.fromARGB(255, 231, 247, 233);\r\n+  final Color _darkGreenBorder = const Color.fromARGB(255, 1, 247, 14);\r\n+  final Color _buttonBackground = const Color.fromARGB(255, 128, 202, 132);\r\n \r\n   Color getButtonBackground() {\r\n-    return _activePrimaryButton;\r\n+    return _buttonBackground;\r\n   }\r\n \r\n   Color getDarkGreenBorder() {\r\n-    return _activeSecondaryButton;\r\n+    return _darkGreenBorder;\r\n   }\r\n \r\n   Color getLightGreenBackground() {\r\n-    return _gradientMainColor;\r\n+    return _lightGreenBackground;\r\n   }\r\n \r\n   Color getActivePrimaryButtonColor() {\r\n     return _activePrimaryButton;\r\n"
+                },
+                {
+                    "date": 1738863247993,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -14,8 +14,9 @@\n   final Color _lightGreenBackground = const Color.fromARGB(255, 231, 247, 233);\r\n   final Color _darkGreenBorder = const Color.fromARGB(255, 1, 247, 14);\r\n   final Color _buttonBackground = const Color.fromARGB(255, 128, 202, 132);\r\n \r\n+\r\n   Color getButtonBackground() {\r\n     return _buttonBackground;\r\n   }\r\n \r\n"
                 }
             ],
             "date": 1736441316920,
