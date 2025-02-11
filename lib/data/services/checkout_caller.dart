@@ -57,30 +57,27 @@ class CheckoutCaller {
     }
   }
 
-  static Future<void> uploadContract() async {
+  static Future<void> uploadContract(int vendaID) async {
+    // Adicione o parâmetro vendaID
     try {
-      // Abre o seletor de arquivos
       FilePickerResult? result = await FilePicker.platform.pickFiles(
         type: FileType.custom,
         allowedExtensions: ['pdf'],
       );
 
       if (result != null) {
-        // Obtém o arquivo selecionado
         PlatformFile file = result.files.first;
         File uploadedFile = File(file.path!);
 
-        // Exibe o nome do arquivo selecionado
-        print('Arquivo selecionado: ${file.name}');
-
-        // Envia o arquivo para o backend
         final dio = Dio();
-        final url = ApiLinks.upLoadContrato; // Substitua pelo seu endpoint
-        //   'https://seuservidor.com/api/upload'; // Substitua pelo seu endpoint
+        final url = ApiLinks.upLoadContrato;
 
+        // Adicione o vendaID ao FormData
         FormData formData = FormData.fromMap({
           'file': await MultipartFile.fromFile(uploadedFile.path,
               filename: file.name),
+          'vendaID': vendaID
+              .toString(), // Envie como String ou int (depende do backend)
         });
 
         final response = await dio.post(
@@ -88,8 +85,7 @@ class CheckoutCaller {
           data: formData,
           options: Options(
             headers: {
-              'Authorization':
-                  'Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ3bGNsaW1hY29AZ21haWwuY29tIiwiZmlyc3ROYW1lIjoid2xjbGltYWNvQGdtYWlsLmNvbSIsImxhc3ROYW1lIjoid2xjbGltYWNvQGdtYWlsLmNvbSIsImV4cCI6MTkxNzgxMjg2Nn0._M1meDtyoQOMh3m30S4clJXu42SD-kGrjxkJ-4xeLVI',
+              'Authorization': 'Bearer SEU_TOKEN',
             },
           ),
         );
@@ -99,11 +95,9 @@ class CheckoutCaller {
         } else {
           print('Erro ao enviar o contrato: ${response.statusCode}');
         }
-      } else {
-        print('Nenhum arquivo selecionado.');
       }
     } catch (e) {
-      print('Erro ao selecionar o arquivo: $e');
+      print('Erro ao enviar contrato: $e');
     }
   }
 

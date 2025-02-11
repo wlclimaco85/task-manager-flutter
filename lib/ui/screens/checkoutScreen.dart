@@ -68,9 +68,9 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     }
   }
 
-  Future<void> _uploadContract() async {
+  Future<void> _uploadContract(int negociacaoID) async {
     try {
-      CheckoutCaller.uploadContract();
+      CheckoutCaller.uploadContract(negociacaoID);
 
       if (mounted) {}
     } catch (e) {
@@ -132,7 +132,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                       side: BorderSide(color: _bordaVerdeEscuro),
                     ),
                   ),
-                  onPressed: _uploadContract,
+                  onPressed: _uploadContract(widget.idVenda),
                 ),
               ),
             ],
