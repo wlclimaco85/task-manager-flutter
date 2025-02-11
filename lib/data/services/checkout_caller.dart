@@ -75,15 +75,24 @@ class CheckoutCaller {
 
         // Envia o arquivo para o backend
         final dio = Dio();
-        final url =
-            'https://seuservidor.com/api/upload'; // Substitua pelo seu endpoint
+        final url = ApiLinks.upLoadContrato; // Substitua pelo seu endpoint
+        //   'https://seuservidor.com/api/upload'; // Substitua pelo seu endpoint
 
         FormData formData = FormData.fromMap({
           'file': await MultipartFile.fromFile(uploadedFile.path,
               filename: file.name),
         });
 
-        final response = await dio.post(url, data: formData);
+        final response = await dio.post(
+          url,
+          data: formData,
+          options: Options(
+            headers: {
+              'Authorization':
+                  'Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ3bGNsaW1hY29AZ21haWwuY29tIiwiZmlyc3ROYW1lIjoid2xjbGltYWNvQGdtYWlsLmNvbSIsImxhc3ROYW1lIjoid2xjbGltYWNvQGdtYWlsLmNvbSIsImV4cCI6MTkxNzgxMjg2Nn0._M1meDtyoQOMh3m30S4clJXu42SD-kGrjxkJ-4xeLVI',
+            },
+          ),
+        );
 
         if (response.statusCode == 200) {
           print('Contrato enviado com sucesso!');

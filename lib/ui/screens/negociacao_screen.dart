@@ -3,7 +3,7 @@ import 'package:task_manager_flutter/data/services/vendas_caller.dart';
 import 'package:task_manager_flutter/data/utils/fotos_util.dart';
 import 'package:task_manager_flutter/ui/screens/update_profile.dart';
 import 'package:task_manager_flutter/ui/widgets/user_banners.dart';
-import 'package:http/http.dart' as http;
+import 'package:task_manager_flutter/ui/screens/checkoutscreen.dart';
 
 // Define theme colors
 const Color lightGreenBackground = Color.fromARGB(255, 231, 247, 233);
@@ -851,10 +851,17 @@ class ProductCard extends StatelessWidget {
                             Column(
                               children: [
                                 IconButton(
-                                  onPressed: () async {
-                                    await handleSignContract(
-                                        context, negotiation);
-                                  },
+                                  onPressed: () => Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) => CheckoutScreen(
+                                        productName: "teste",
+                                        productValue: 10.0,
+                                        productQnt: 1,
+                                        idVenda: negotiation.id!,
+                                      ),
+                                    ),
+                                  ),
                                   icon: const Icon(
                                     Icons.edit_document,
                                   ), // Choose an appropriate icon
