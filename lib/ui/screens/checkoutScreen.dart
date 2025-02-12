@@ -132,7 +132,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                       side: BorderSide(color: _bordaVerdeEscuro),
                     ),
                   ),
-                  onPressed: _uploadContract(widget.idVenda),
+                  onPressed: () => _uploadContract(widget.idVenda),
                 ),
               ),
             ],
