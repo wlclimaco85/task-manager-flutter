@@ -7,6 +7,7 @@ import 'dart:async';
 import 'dart:io';
 import 'dart:convert';
 import 'package:task_manager_flutter/data/services/parceiro_caller.dart';
+import 'package:task_manager_flutter/ui/widgets/localizacao_screen.dart';
 
 // Define as cores no início do documento
 const Color lightGreenBackground = Color.fromARGB(255, 231, 247, 233);
@@ -154,6 +155,10 @@ class _UpdateProfileScreenState extends State<UpdateProfileScreen> {
     }
   }
 
+  Pais? paisSelecionado;
+  Estado? estadoSelecionado;
+  Cidade? cidadeSelecionada;
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -169,6 +174,14 @@ class _UpdateProfileScreenState extends State<UpdateProfileScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              LocalizacaoWidget(
+                required: true,
+                onSaved: (pais, estado, cidade) {
+                  paisSelecionado = pais;
+                  estadoSelecionado = estado;
+                  cidadeSelecionada = cidade;
+                },
+              ),
               CustomTextFormField(
                 hintText: "Nome",
                 controller: _nomeController,
