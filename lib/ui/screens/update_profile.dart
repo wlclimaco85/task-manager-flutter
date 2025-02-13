@@ -120,7 +120,7 @@ class _UpdateProfileScreenState extends State<UpdateProfileScreen> {
     }
 
     Map<String, dynamic> requestBody = {
-      "id": 2, //_parceiroIdController.text.trim(),
+      "id": _parceiroIdController.text.trim(),
       "nome": _nomeController.text.trim(),
       "cpf": _cpfController.text.trim(),
       "codProdutor": _codProdutorController.text.trim(),
@@ -135,8 +135,9 @@ class _UpdateProfileScreenState extends State<UpdateProfileScreen> {
         "rua": _ruaController.text.trim(),
         "numero": _numeroController.text.trim(),
         "bairro": _bairroController.text.trim(),
-        "cidade": _cidadeController.text.trim(),
-        "estado": _estadoController.text.trim(),
+        "pais": {"id": paisSelecionado!.id ?? 0},
+        "cidade": {"id": cidadeSelecionada!.id ?? 0},
+        "estado": {"id": estadoSelecionado!.id ?? 0},
         "cep": _cepController.text.trim(),
       },
       "senha": _senhaController.text.trim(),
@@ -174,14 +175,6 @@ class _UpdateProfileScreenState extends State<UpdateProfileScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              LocalizacaoWidget(
-                required: true,
-                onSaved: (pais, estado, cidade) {
-                  paisSelecionado = pais;
-                  estadoSelecionado = estado;
-                  cidadeSelecionada = cidade;
-                },
-              ),
               CustomTextFormField(
                 hintText: "Nome",
                 controller: _nomeController,
@@ -278,19 +271,14 @@ class _UpdateProfileScreenState extends State<UpdateProfileScreen> {
                     ? "Número obrigatório"
                     : null,
               ),
-              CustomTextFormField(
-                hintText: "Cidade",
-                controller: _cidadeController,
-                validator: (value) => value == null || value.isEmpty
-                    ? "Cidade obrigatória"
-                    : null,
-              ),
-              CustomTextFormField(
-                hintText: "Estado",
-                controller: _estadoController,
-                validator: (value) => value == null || value.isEmpty
-                    ? "Estado obrigatório"
-                    : null,
+              const SizedBox(height: 16),
+              LocalizacaoWidget(
+                required: true,
+                onSaved: (pais, estado, cidade) {
+                  paisSelecionado = pais;
+                  estadoSelecionado = estado;
+                  cidadeSelecionada = cidade;
+                },
               ),
               const SizedBox(height: 16),
               CustomPasswordTextFormField(

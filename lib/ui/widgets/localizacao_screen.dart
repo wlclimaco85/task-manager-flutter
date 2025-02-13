@@ -31,6 +31,10 @@ class _LocalizacaoWidgetState extends State<LocalizacaoWidget> {
   List<Estado> estados = [];
   List<Cidade> cidades = [];
 
+  bool isLoadingPaises = false;
+  bool isLoadingEstados = false;
+  bool isLoadingCidades = false;
+
   @override
   void initState() {
     super.initState();
@@ -39,6 +43,7 @@ class _LocalizacaoWidgetState extends State<LocalizacaoWidget> {
   }
 
   Future<void> fetchPaises() async {
+    setState(() => isLoadingPaises = true);
     //  final NetworkResponse response =
     //     await NetworkCaller().getRequest(ApiLinks.fecthAllPaises);
     // if (response.statusCode == 200 && response.body != null) {
@@ -50,13 +55,14 @@ class _LocalizacaoWidgetState extends State<LocalizacaoWidget> {
           iso2: "BR",
           iso3: "BRA",
           bacen: 1058));
+      isLoadingPaises = false;
     });
     // }
   }
 
   Future<void> fetchEstados(String? paisId) async {
     if (paisId == null) return;
-
+    setState(() => isLoadingEstados = true);
     final NetworkResponse response =
         await NetworkCaller().getRequest(ApiLinks.fecthEstadoByPais + paisId);
     EstadoModel model;
@@ -66,13 +72,14 @@ class _LocalizacaoWidgetState extends State<LocalizacaoWidget> {
         estados.addAll(model.estados ?? []);
         selectedEstado = null;
         selectedCidade = null;
+        isLoadingEstados = false;
       });
     }
   }
 
   Future<void> fetchCidades(String? estadoId) async {
     if (estadoId == null) return;
-
+    setState(() => isLoadingCidades = true);
     final NetworkResponse response = await NetworkCaller()
         .getRequest(ApiLinks.fecthCidadeByEstado + estadoId);
     CidadeModel model;
@@ -81,6 +88,7 @@ class _LocalizacaoWidgetState extends State<LocalizacaoWidget> {
         model = CidadeModel.fromJson(response.body!);
         cidades.addAll(model.estados ?? []);
         selectedCidade = null;
+        isLoadingCidades = false;
       });
     }
   }
@@ -88,6 +96,18 @@ class _LocalizacaoWidgetState extends State<LocalizacaoWidget> {
   @override
   Widget build(BuildContext context) {
     return Column(
+      children: [
+        _buildPaisDropdown(),
+        const SizedBox(height: 16),
+        _buildEstadoDropdown(),
+        const SizedBox(height: 16),
+        _buildCidadeDropdown(),
+      ],
+    );
+  }
+
+  Widget _buildPaisDropdown() {
+    return Stack(
       children: [
         DropdownButtonFormField<Pais>(
           decoration: const InputDecoration(
@@ -101,22 +121,39 @@ class _LocalizacaoWidgetState extends State<LocalizacaoWidget> {
                     child: Text(pais.nomePt),
                   ))
               .toList(),
-          onChanged: (Pais? newValue) {
-            setState(() {
-              selectedPais = newValue;
-              estados = [];
-              cidades = [];
-              selectedEstado = null;
-              selectedCidade = null;
-            });
-            if (newValue != null) {
-              fetchEstados(newValue.id.toString());
-            }
-          },
+          onChanged: isLoadingPaises
+              ? null
+              : (Pais? newValue) {
+                  setState(() {
+                    selectedPais = newValue;
+                    estados = [];
+                    cidades = [];
+                    selectedEstado = null;
+                    selectedCidade = null;
+                  });
+                  if (newValue != null) {
+                    fetchEstados(newValue.id.toString());
+                  }
+                },
           validator: (value) =>
               widget.required && value == null ? 'Selecione um país' : null,
         ),
         const SizedBox(height: 16),
+        if (isLoadingPaises)
+          Positioned.fill(
+            child: Container(
+              color: Colors.white.withOpacity(0.7),
+              child: const Center(child: CircularProgressIndicator()),
+            ),
+          ),
+      ],
+    );
+  }
+
+// Repita o mesmo padrão para os outros dropdowns
+  Widget _buildEstadoDropdown() {
+    return Stack(
+      children: [
         DropdownButtonFormField<Estado>(
           decoration: const InputDecoration(
             labelText: 'Estado',
@@ -129,20 +166,36 @@ class _LocalizacaoWidgetState extends State<LocalizacaoWidget> {
                     child: Text('${estado.nome} (${estado.uf})'),
                   ))
               .toList(),
-          onChanged: (Estado? newValue) {
-            setState(() {
-              selectedEstado = newValue;
-              cidades = [];
-              selectedCidade = null;
-            });
-            if (newValue != null) {
-              fetchCidades(newValue.id.toString());
-            }
-          },
+          onChanged: isLoadingEstados
+              ? null
+              : (Estado? newValue) {
+                  setState(() {
+                    selectedEstado = newValue;
+                    cidades = [];
+                    selectedCidade = null;
+                  });
+                  if (newValue != null) {
+                    fetchCidades(newValue.id.toString());
+                  }
+                },
           validator: (value) =>
               widget.required && value == null ? 'Selecione um estado' : null,
         ),
         SizedBox(height: 16),
+        if (isLoadingEstados)
+          Positioned.fill(
+            child: Container(
+              color: Colors.white.withOpacity(0.7),
+              child: const Center(child: CircularProgressIndicator()),
+            ),
+          ),
+      ],
+    );
+  }
+
+  Widget _buildCidadeDropdown() {
+    return Stack(
+      children: [
         DropdownButtonFormField<Cidade>(
           decoration: const InputDecoration(
             labelText: 'Cidade',
@@ -155,14 +208,23 @@ class _LocalizacaoWidgetState extends State<LocalizacaoWidget> {
                     child: Text(cidade.nome),
                   ))
               .toList(),
-          onChanged: (Cidade? newValue) {
-            setState(() {
-              selectedCidade = newValue;
-            });
-          },
+          onChanged: isLoadingCidades
+              ? null
+              : (Cidade? newValue) {
+                  setState(() {
+                    selectedCidade = newValue;
+                  });
+                },
           validator: (value) =>
               widget.required && value == null ? 'Selecione uma cidade' : null,
         ),
+        if (isLoadingCidades)
+          Positioned.fill(
+            child: Container(
+              color: Colors.white.withOpacity(0.7),
+              child: const Center(child: CircularProgressIndicator()),
+            ),
+          ),
       ],
     );
   }
