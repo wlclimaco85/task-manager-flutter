@@ -41,7 +41,6 @@ class _LocalizacaoWidgetState extends State<LocalizacaoWidget> {
   Future<void> fetchPaises() async {
     //  final NetworkResponse response =
     //     await NetworkCaller().getRequest(ApiLinks.fecthAllPaises);
-    List<Pais>? paises = [];
     // if (response.statusCode == 200 && response.body != null) {
     setState(() {
       paises.add(Pais(
@@ -61,11 +60,10 @@ class _LocalizacaoWidgetState extends State<LocalizacaoWidget> {
     final NetworkResponse response =
         await NetworkCaller().getRequest(ApiLinks.fecthEstadoByPais + paisId);
     EstadoModel model;
-    List<Estado>? paises = [];
     if (response.statusCode == 200 && response.body != null) {
       setState(() {
         model = EstadoModel.fromJson(response.body!);
-        paises.addAll(model.estados ?? []);
+        estados.addAll(model.estados ?? []);
         selectedEstado = null;
         selectedCidade = null;
       });
@@ -78,7 +76,6 @@ class _LocalizacaoWidgetState extends State<LocalizacaoWidget> {
     final NetworkResponse response = await NetworkCaller()
         .getRequest(ApiLinks.fecthCidadeByEstado + estadoId);
     CidadeModel model;
-    List<Cidade>? cidades = [];
     if (response.statusCode == 200) {
       setState(() {
         model = CidadeModel.fromJson(response.body!);
@@ -269,10 +266,10 @@ class Pais {
   factory Pais.fromJson(Map<String, dynamic> json) {
     return Pais(
       id: json['id'],
-      nome: json['nome'],
-      nomePt: json['nome_pt'],
+      nome: utf8.decode(latin1.encode(json['nome'])),
+      nomePt: json['nomePt'],
       iso2: json['iso2'],
-      iso3: json['iso3'],
+      iso3: json['iso3'] ?? '',
       bacen: json['bacen'],
     );
   }
@@ -282,7 +279,7 @@ class Pais {
     final Map<String, dynamic> data = <String, dynamic>{};
     data['id'] = id;
     data['nome'] = nome;
-    data['nome_pt'] = nomePt;
+    data['nomePt'] = nomePt;
     data['iso2'] = iso2;
     data['iso3'] = iso3;
     data['bacen'] = bacen;
@@ -301,7 +298,7 @@ class Estado {
   final String nome;
   final String uf;
   final int ibge;
-  final int pais;
+  final Pais pais;
 
   Estado({
     required this.id,
@@ -314,10 +311,18 @@ class Estado {
   factory Estado.fromJson(Map<String, dynamic> json) {
     return Estado(
       id: json['id'],
-      nome: json['nome'],
+      nome: utf8.decode(latin1.encode(json['nome'])),
       uf: json['uf'],
       ibge: json['ibge'],
-      pais: json['pais'],
+      pais: (json['pais'] != null && json['pais'] is Map<String, dynamic>)
+          ? Pais.fromJson(json['pais'] as Map<String, dynamic>)
+          : Pais(
+              id: 0,
+              nome: 'Brasil',
+              nomePt: 'Brasil',
+              iso2: 'BR',
+              iso3: 'BRA',
+              bacen: 1058), // Criar um objeto padrão
     );
   }
   // Método para serializar o objeto Parceiro em JSON
@@ -341,14 +346,14 @@ class Estado {
 class Cidade {
   final int id;
   final String nome;
-  final int uf;
+  // final int uf;
   final int ibge;
   final String latLon;
 
   Cidade({
     required this.id,
     required this.nome,
-    required this.uf,
+    //  required this.uf,
     required this.ibge,
     required this.latLon,
   });
@@ -356,10 +361,10 @@ class Cidade {
   factory Cidade.fromJson(Map<String, dynamic> json) {
     return Cidade(
       id: json['id'],
-      nome: json['nome'],
-      uf: json['uf'],
+      nome: utf8.decode(latin1.encode(json['nome'])),
+      //   uf: json['uf'],
       ibge: json['ibge'],
-      latLon: json['lat_lon'],
+      latLon: json['latLon'] ?? '',
     );
   }
 
@@ -368,9 +373,9 @@ class Cidade {
     final Map<String, dynamic> data = <String, dynamic>{};
     data['id'] = id;
     data['nome'] = nome;
-    data['uf'] = uf;
+    // data['uf'] = uf;
     data['ibge'] = ibge;
-    data['lat_lon'] = latLon;
+    data['latLon'] = latLon;
     return data;
   }
 

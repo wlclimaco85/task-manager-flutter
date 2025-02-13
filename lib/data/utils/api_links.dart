@@ -81,5 +81,5 @@ class ApiLinks {
   static String fecthProdutosById = '$_baseUrlNew/api/produtos/';
   static String fecthAllPaises = '$_baseUrlNew/api/paises';
   static String fecthEstadoByPais = '$_baseUrlNew/api/estados/by-pais/';
-  static String fecthCidadeByEstado = '$_baseUrlNew/api/cidades/by-estado/';
+  static String fecthCidadeByEstado = '$_baseUrlNew/api/cidade/by-estado/';
 }
