@@ -7,6 +7,7 @@ import 'dart:async';
 import 'dart:io';
 import 'dart:convert';
 import 'package:task_manager_flutter/data/services/parceiro_caller.dart';
+import 'package:task_manager_flutter/data/models/parceiro_model.dart';
 import 'package:task_manager_flutter/ui/widgets/localizacao_screen.dart';
 
 // Define as cores no início do documento
@@ -274,7 +275,7 @@ class _UpdateProfileScreenState extends State<UpdateProfileScreen> {
               const SizedBox(height: 16),
               LocalizacaoWidget(
                 required: true,
-                onSaved: (pais, estado, cidade) {
+                onChanged: (pais, estado, cidade) {
                   paisSelecionado = pais;
                   estadoSelecionado = estado;
                   cidadeSelecionada = cidade;

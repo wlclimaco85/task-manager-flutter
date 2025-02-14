@@ -19,10 +19,8 @@ class VendasCaller {
     try {
       final NetworkResponse response =
           await NetworkCaller().getRequest(ApiLinks.allVendas);
-      String jsonString;
 
       if (response.statusCode == 200 && response.body != null) {
-        jsonString = json.encode(response.body);
         models = ProdutoModel.fromJson(response.body!);
         model.addAll(models.produtos ?? []);
       } else {

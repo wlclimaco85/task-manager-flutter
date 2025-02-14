@@ -2,19 +2,19 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
+import 'package:task_manager_flutter/data/models/parceiro_model.dart';
 import 'dart:convert';
 import 'package:task_manager_flutter/data/utils/api_links.dart';
 import 'package:task_manager_flutter/data/models/network_response.dart';
 import 'package:task_manager_flutter/data/services/network_caller.dart';
 
 class LocalizacaoWidget extends StatefulWidget {
-  final Function(Pais?, Estado?, Cidade?) onSaved;
+  final Function(Pais?, Estado?, Cidade?) onChanged; // Renomeado para onChanged
   final bool required;
 
   const LocalizacaoWidget({
     Key? key,
-    required this.onSaved,
+    required this.onChanged, // Alterado para onChanged
     this.required = false,
   }) : super(key: key);
 
@@ -134,6 +134,9 @@ class _LocalizacaoWidgetState extends State<LocalizacaoWidget> {
                   if (newValue != null) {
                     fetchEstados(newValue.id.toString());
                   }
+                  // Chama onChanged aqui, passando os objetos
+                  widget.onChanged(
+                      selectedPais, selectedEstado, selectedCidade);
                 },
           validator: (value) =>
               widget.required && value == null ? 'Selecione um país' : null,
@@ -150,7 +153,6 @@ class _LocalizacaoWidgetState extends State<LocalizacaoWidget> {
     );
   }
 
-// Repita o mesmo padrão para os outros dropdowns
   Widget _buildEstadoDropdown() {
     return Stack(
       children: [
@@ -177,7 +179,11 @@ class _LocalizacaoWidgetState extends State<LocalizacaoWidget> {
                   if (newValue != null) {
                     fetchCidades(newValue.id.toString());
                   }
+                  // Chama onChanged aqui, passando os objetos
+                  widget.onChanged(
+                      selectedPais, selectedEstado, selectedCidade);
                 },
+          // ... (seu código existente)
           validator: (value) =>
               widget.required && value == null ? 'Selecione um estado' : null,
         ),
@@ -189,6 +195,7 @@ class _LocalizacaoWidgetState extends State<LocalizacaoWidget> {
               child: const Center(child: CircularProgressIndicator()),
             ),
           ),
+        // ... (seu código existente)
       ],
     );
   }
@@ -214,7 +221,11 @@ class _LocalizacaoWidgetState extends State<LocalizacaoWidget> {
                   setState(() {
                     selectedCidade = newValue;
                   });
+                  // Chama onChanged aqui, passando os objetos
+                  widget.onChanged(
+                      selectedPais, selectedEstado, selectedCidade);
                 },
+          // ... (seu código existente)
           validator: (value) =>
               widget.required && value == null ? 'Selecione uma cidade' : null,
         ),
@@ -225,225 +236,48 @@ class _LocalizacaoWidgetState extends State<LocalizacaoWidget> {
               child: const Center(child: CircularProgressIndicator()),
             ),
           ),
+        // ... (seu código existente)
       ],
     );
   }
 }
 
-class PaisModel {
-  String? status;
-  String? token;
-  List<Pais>? pais;
-
-  PaisModel({this.status, this.token, this.pais});
-
-  PaisModel.fromJson(Map<String, dynamic> json) {
-    status = json['status'];
-    token = json['token'];
-    pais =
-        json['data'] != null ? Pais.fromJsonList(json['data']['account']) : [];
-  }
-
-  Map<String, dynamic> toJson() {
-    final Map<String, dynamic> data = <String, dynamic>{};
-    data['status'] = status;
-    data['token'] = token;
-    if (pais != null) {
-      data['data'] = pais!.map((produto) => produto.toJson()).toList();
-    }
-    return data;
-  }
+// Exemplo de uso no widget pai:
+class MeuWidgetPai extends StatefulWidget {
+  @override
+  _MeuWidgetPaiState createState() => _MeuWidgetPaiState();
 }
 
-class EstadoModel {
-  String? status;
-  String? token;
-  List<Estado>? estados;
+class _MeuWidgetPaiState extends State<MeuWidgetPai> {
+  Pais? paisSelecionado;
+  Estado? estadoSelecionado;
+  Cidade? cidadeSelecionada;
 
-  EstadoModel({this.status, this.token, this.estados});
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        LocalizacaoWidget(
+          onChanged: (pais, estado, cidade) {
+            paisSelecionado = pais;
+            estadoSelecionado = estado;
+            cidadeSelecionada = cidade;
 
-  EstadoModel.fromJson(Map<String, dynamic> json) {
-    status = json['status'];
-    token = json['token'];
-    estados = json['data'] != null
-        ? Estado.fromJsonList(json['data']['account'])
-        : [];
-  }
-
-  Map<String, dynamic> toJson() {
-    final Map<String, dynamic> data = <String, dynamic>{};
-    data['status'] = status;
-    data['token'] = token;
-    if (estados != null) {
-      data['data'] = estados!.map((produto) => produto.toJson()).toList();
-    }
-    return data;
-  }
-}
-
-class CidadeModel {
-  String? status;
-  String? token;
-  List<Cidade>? estados;
-
-  CidadeModel({this.status, this.token, this.estados});
-
-  CidadeModel.fromJson(Map<String, dynamic> json) {
-    status = json['status'];
-    token = json['token'];
-    estados = json['data'] != null
-        ? Cidade.fromJsonList(json['data']['account'])
-        : [];
-  }
-
-  Map<String, dynamic> toJson() {
-    final Map<String, dynamic> data = <String, dynamic>{};
-    data['status'] = status;
-    data['token'] = token;
-    if (estados != null) {
-      data['data'] = estados!.map((produto) => produto.toJson()).toList();
-    }
-    return data;
-  }
-}
-
-// Model classes
-class Pais {
-  final int id;
-  final String nome;
-  final String nomePt;
-  final String iso2;
-  final String iso3;
-  final int bacen;
-
-  Pais({
-    required this.id,
-    required this.nome,
-    required this.nomePt,
-    required this.iso2,
-    required this.iso3,
-    required this.bacen,
-  });
-
-  factory Pais.fromJson(Map<String, dynamic> json) {
-    return Pais(
-      id: json['id'],
-      nome: utf8.decode(latin1.encode(json['nome'])),
-      nomePt: json['nomePt'],
-      iso2: json['iso2'],
-      iso3: json['iso3'] ?? '',
-      bacen: json['bacen'],
+            // Use os objetos selecionados aqui
+            if (paisSelecionado != null) {
+              print("País selecionado: ${paisSelecionado!.nome}");
+            }
+            if (estadoSelecionado != null) {
+              print("Estado selecionado: ${estadoSelecionado!.nome}");
+            }
+            if (cidadeSelecionada != null) {
+              print("Cidade selecionada: ${cidadeSelecionada!.nome}");
+            }
+          },
+          required: true,
+        ),
+        // ... (resto do seu widget)
+      ],
     );
-  }
-
-  // Método para serializar o objeto Parceiro em JSON
-  Map<String, dynamic> toJson() {
-    final Map<String, dynamic> data = <String, dynamic>{};
-    data['id'] = id;
-    data['nome'] = nome;
-    data['nomePt'] = nomePt;
-    data['iso2'] = iso2;
-    data['iso3'] = iso3;
-    data['bacen'] = bacen;
-    return data;
-  }
-
-  static List<Pais> fromJsonList(List<dynamic> jsonList) {
-    return jsonList
-        .map((item) => Pais.fromJson(Map<String, dynamic>.from(item)))
-        .toList();
-  }
-}
-
-class Estado {
-  final int id;
-  final String nome;
-  final String uf;
-  final int ibge;
-  final Pais pais;
-
-  Estado({
-    required this.id,
-    required this.nome,
-    required this.uf,
-    required this.ibge,
-    required this.pais,
-  });
-
-  factory Estado.fromJson(Map<String, dynamic> json) {
-    return Estado(
-      id: json['id'],
-      nome: utf8.decode(latin1.encode(json['nome'])),
-      uf: json['uf'],
-      ibge: json['ibge'],
-      pais: (json['pais'] != null && json['pais'] is Map<String, dynamic>)
-          ? Pais.fromJson(json['pais'] as Map<String, dynamic>)
-          : Pais(
-              id: 0,
-              nome: 'Brasil',
-              nomePt: 'Brasil',
-              iso2: 'BR',
-              iso3: 'BRA',
-              bacen: 1058), // Criar um objeto padrão
-    );
-  }
-  // Método para serializar o objeto Parceiro em JSON
-  Map<String, dynamic> toJson() {
-    final Map<String, dynamic> data = <String, dynamic>{};
-    data['id'] = id;
-    data['nome'] = nome;
-    data['uf'] = uf;
-    data['ibge'] = ibge;
-    data['pais'] = pais;
-    return data;
-  }
-
-  static List<Estado> fromJsonList(List<dynamic> jsonList) {
-    return jsonList
-        .map((item) => Estado.fromJson(Map<String, dynamic>.from(item)))
-        .toList();
-  }
-}
-
-class Cidade {
-  final int id;
-  final String nome;
-  // final int uf;
-  final int ibge;
-  final String latLon;
-
-  Cidade({
-    required this.id,
-    required this.nome,
-    //  required this.uf,
-    required this.ibge,
-    required this.latLon,
-  });
-
-  factory Cidade.fromJson(Map<String, dynamic> json) {
-    return Cidade(
-      id: json['id'],
-      nome: utf8.decode(latin1.encode(json['nome'])),
-      //   uf: json['uf'],
-      ibge: json['ibge'],
-      latLon: json['latLon'] ?? '',
-    );
-  }
-
-  // Método para serializar o objeto Parceiro em JSON
-  Map<String, dynamic> toJson() {
-    final Map<String, dynamic> data = <String, dynamic>{};
-    data['id'] = id;
-    data['nome'] = nome;
-    // data['uf'] = uf;
-    data['ibge'] = ibge;
-    data['latLon'] = latLon;
-    return data;
-  }
-
-  static List<Cidade> fromJsonList(List<dynamic> jsonList) {
-    return jsonList
-        .map((item) => Cidade.fromJson(Map<String, dynamic>.from(item)))
-        .toList();
   }
 }
