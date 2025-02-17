@@ -112,7 +112,18 @@ class _ProdutoDetailsScreenState extends State<ProdutoDetailsScreen> {
               : snapshot.data!.isNotEmpty
                   ? snapshot.data!.first
                   : Produto();
-          final listFotos = account.listFotos as List;
+          final listFotos = (account.listFotos as List?) ?? [];
+
+          final parceiro = account.parceiro;
+          final endereco = parceiro?.endereco;
+
+          final bairro = endereco?.bairro ?? "Bairro não informado";
+          final cidade = endereco?.cidade?.nome ?? "Cidade não informada";
+          final estado = endereco?.estado?.nome ?? "Estado não informado";
+
+          final enderecoCompleto = endereco != null
+              ? '$bairro, $cidade/$estado'
+              : 'Endereço não disponível';
 
           return SingleChildScrollView(
             padding: const EdgeInsets.all(16),
@@ -213,6 +224,7 @@ class _ProdutoDetailsScreenState extends State<ProdutoDetailsScreen> {
                     ),
                   ),
                   const SizedBox(height: 20),
+
                   // Informações do Produto
                   _buildSectionTitle('Informações do Produto'),
                   _buildInfoItem('Descrição', account.descricao),
@@ -235,11 +247,8 @@ class _ProdutoDetailsScreenState extends State<ProdutoDetailsScreen> {
                           color: Colors.black),
                     ),
                   ),
-                  _buildInfoItem('Nome', account.parceiro!.nome),
-                  _buildInfoItem(
-                      'Endereço',
-                      '${account.parceiro!.endereco!.bairro}, '
-                          '${account.parceiro!.endereco!.cidade}/${account.parceiro!.endereco!.estado}'),
+                  _buildInfoItem('Nome', account.parceiro?.nome ?? 'N/A'),
+                  _buildInfoItem('Endereço', '${enderecoCompleto}'),
 
                   // Classificações
                   const Padding(
@@ -252,11 +261,16 @@ class _ProdutoDetailsScreenState extends State<ProdutoDetailsScreen> {
                           color: Colors.black),
                     ),
                   ),
-                  ...account.classificacao!
-                      .map<Widget>((classificacao) => _buildInfoItem(
-                          classificacao.descricao!,
-                          classificacao.valor!.toString()))
-                      .toList(),
+                  if (account.classificacao?.isNotEmpty ?? false)
+                    Column(
+                      children: account.classificacao!
+                          .map<Widget>((classificacao) => _buildInfoItem(
+                              classificacao.descricao ?? "Sem descrição",
+                              classificacao.valor?.toString() ?? "0"))
+                          .toList(),
+                    )
+                  else
+                    const SizedBox.shrink(), // Não exibe nada
 
                   // Botões de Ação
                   const Divider(color: Colors.grey),

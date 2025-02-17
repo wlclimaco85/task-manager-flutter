@@ -32,22 +32,26 @@ class AlertCaller {
   Future<List<Alert>> fetchItensAVenda(BuildContext context) async {
     List<Alert>? model = [];
     AlertResponse models;
-    try {
-      final NetworkResponse response = await NetworkCaller().getRequests(
-          ApiLinks.alertFindByUser + '${AuthUtility.userInfo?.data?.id}',
-          context);
-      String jsonString;
+    if (AuthUtility.userInfo != null &&
+        AuthUtility.userInfo?.data?.id != null) {
+      try {
+        final NetworkResponse response = await NetworkCaller().getRequests(
+            ApiLinks.alertFindByUser + '${AuthUtility.userInfo?.data?.id}',
+            context);
+        String jsonString;
 
-      if (response.statusCode == 200 && response.body != null) {
-        jsonString = json.encode(response.body);
-        models = AlertResponse.fromJson(response.body!);
-        model.addAll(models.account ?? []);
-      } else {
-        print('Erro: Nenhum dado retornado');
+        if (response.statusCode == 200 && response.body != null) {
+          jsonString = json.encode(response.body);
+          models = AlertResponse.fromJson(response.body!);
+          model.addAll(models.account ?? []);
+        } else {
+          print('Erro: Nenhum dado retornado');
+        }
+      } catch (e) {
+        print('Erro: $e'); // Log do erro
+        throw Exception('Erro ao carregar itens à venda: $e');
       }
-    } catch (e) {
-      print('Erro: $e'); // Log do erro
-      throw Exception('Erro ao carregar itens à venda: $e');
+      return model;
     }
     return model;
   }

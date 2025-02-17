@@ -2,7 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_html/flutter_html.dart';
 import 'package:task_manager_flutter/data/services/checkout_caller.dart';
 import 'package:html_unescape/html_unescape.dart';
-import 'dart:convert'; // Importe o pacote dart:convert
+import 'package:intl/intl.dart';
+import 'package:task_manager_flutter/data/models/auth_utility.dart';
 
 class CheckoutScreen extends StatefulWidget {
   final String productName;
@@ -29,11 +30,33 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
   final Color _bordaVerdeEscuro = const Color(0xFF2E7D32);
   bool contratarFrete = false;
   double valorFrete = 50.0; // Valor estimado do frete
+  Future<double> _freteFuture = Future.value(0.0);
 
   @override
   void initState() {
     super.initState();
     _carregarTermos();
+    _freteFuture = _calcularFrete(
+        widget.idVenda, AuthUtility.userInfo.data!.id ?? 0, widget.productQnt);
+  }
+
+  Future<double> _calcularFrete(int vendaId, int compradorId, int peso) async {
+    Map<String, dynamic> requestBody = {
+      "vendaId": vendaId,
+      "compradorId": compradorId,
+      "peso": peso,
+      "isNegociacao": false,
+    };
+    try {
+      return await CheckoutCaller.carregarVlrFrete(context, requestBody);
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _termsText = "Falha ao carregar termos: ${e.toString()}";
+        });
+      }
+      return 0.0;
+    }
   }
 
   Future<void> _carregarTermos() async {
@@ -337,9 +360,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                 ),
               ),
             ),
-
             const SizedBox(height: 25),
-
             // Seção de Termos
             Container(
               padding: const EdgeInsets.all(15),
@@ -376,43 +397,50 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
               ),
             ),
             const SizedBox(height: 25),
-
-            // Seção de Termos
             Container(
               padding: const EdgeInsets.all(15),
               decoration: BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(15),
-                border: Border.all(color: _bordaVerdeEscuro.withOpacity(0.3)),
+                border: Border.all(color: Colors.green[800]!.withOpacity(0.3)),
               ),
               child: Row(
                 children: [
                   Checkbox(
                     value: contratarFrete,
                     onChanged: (bool? value) {
-                      setState(() {
-                        contratarFrete = value ?? false;
-                      });
-                      if (contratarFrete) {
-                        _showFretePopup();
-                      }
+                      setState(() => contratarFrete = value ?? false);
+                      if (contratarFrete) _showFretePopup();
                     },
-                    activeColor: _bordaVerdeEscuro,
+                    activeColor: Colors.green[800],
                   ),
-                  const Expanded(
-                    child: Wrap(
-                      children: [
-                        Expanded(
-                          child: Wrap(
-                            children: [
-                              Text("Contratar Frete - R\$ 20.000,00",
-                                  style:
-                                      TextStyle(fontWeight: FontWeight.bold)),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
+                  Expanded(
+                    child: FutureBuilder<double>(
+                        future: _freteFuture,
+                        builder: (context, snapshot) {
+                          if (snapshot.connectionState ==
+                              ConnectionState.waiting) {
+                            return const Text('Calculando frete...',
+                                style: TextStyle(color: Colors.grey));
+                          }
+
+                          if (snapshot.hasError) {
+                            return const Text('Frete não disponível',
+                                style: TextStyle(color: Colors.red));
+                          }
+
+                          final formatter = NumberFormat.currency(
+                            locale: 'pt_BR',
+                            symbol: 'R\$',
+                            decimalDigits: 2,
+                          );
+
+                          return Text(
+                              'Contratar Frete - ${formatter.format(snapshot.data!)}',
+                              style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.green[800]));
+                        }),
                   ),
                 ],
               ),

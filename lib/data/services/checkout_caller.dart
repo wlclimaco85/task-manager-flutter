@@ -10,6 +10,7 @@ import 'package:dio/dio.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:open_filex/open_filex.dart';
 import 'package:http/http.dart' as http;
+import 'dart:convert'; // Importe o pacote dart:convert
 
 class CheckoutCaller {
   static final Dio _dio = Dio();
@@ -34,6 +35,43 @@ class CheckoutCaller {
       return "Erro de conexão: ${e.toString()}";
     }
     return jsonString;
+  }
+
+  static Future<double> carregarVlrFrete(
+      BuildContext context, Map<String, dynamic> parceiroData) async {
+    try {
+      final NetworkResponse response = await NetworkCaller()
+          .postRequest(ApiLinks.fecthCalcFrete, parceiroData);
+
+      if (response.statusCode == 200 && response.body != null) {
+        final List<Map<String, dynamic>> data =
+            (response.body?['data']['account'] as List)
+                .map((item) => item as Map<String, dynamic>)
+                .toList();
+        return _calcularMediaFrete(data);
+      }
+      throw Exception('Erro na resposta: ${response.statusCode}');
+    } catch (e) {
+      throw Exception('Erro ao calcular frete: $e');
+    }
+    return 0.0;
+  }
+
+  static double _calcularMediaFrete(List<dynamic> data) {
+    final filtered = data
+        .where((item) =>
+            item['tipoCarga'] == 'GRANEL_SOLIDO' &&
+            item['lotacao']?['semCargaRetorno'] != null)
+        .toList();
+
+    if (filtered.isEmpty) return 0.0;
+
+    final total = filtered.fold<double>(
+        0.0,
+        (sum, item) =>
+            sum + (item['lotacao']['semCargaRetorno'] as num).toDouble());
+
+    return total / filtered.length;
   }
 
   static Future<String> downloadContract() async {

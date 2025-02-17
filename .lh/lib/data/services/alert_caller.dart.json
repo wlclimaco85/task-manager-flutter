@@ -3,7 +3,7 @@
     "activeCommit": 0,
     "commits": [
         {
-            "activePatchIndex": 3,
+            "activePatchIndex": 4,
             "patches": [
                 {
                     "date": 1736526830059,
@@ -20,6 +20,10 @@
                 {
                     "date": 1736527371739,
                     "content": "Index: \n===================================================================\n--- \n+++ \n@@ -5,9 +5,9 @@\n import 'package:task_manager_flutter/data/models/network_response.dart';\r\n import 'package:task_manager_flutter/data/services/network_caller.dart';\r\n import 'package:task_manager_flutter/data/models/auth_utility.dart';\r\n \r\n-class VendasCaller {\r\n+class AlertCaller {\r\n   Future<List<Alert>> fetchAllAlerts(BuildContext context) async {\r\n     List<Alert>? model = [];\r\n     AlertResponse models;\r\n     try {\r\n"
+                },
+                {
+                    "date": 1739811225914,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -31,8 +31,9 @@\n \r\n   Future<List<Alert>> fetchItensAVenda(BuildContext context) async {\r\n     List<Alert>? model = [];\r\n     AlertResponse models;\r\n+    if (AuthUtility.userInfo != null && AuthUtility.userInfo?.data?.id != null) {\r\n     try {\r\n       final NetworkResponse response = await NetworkCaller().getRequests(\r\n           ApiLinks.alertFindByUser + '${AuthUtility.userInfo?.data?.id}',\r\n           context);\r\n@@ -50,5 +51,7 @@\n       throw Exception('Erro ao carregar itens à venda: $e');\r\n     }\r\n     return model;\r\n   }\r\n+    return model;\r\n+  }\r\n }\r\n"
                 }
             ],
             "date": 1736526830059,
