@@ -4,6 +4,8 @@ import 'package:task_manager_flutter/data/services/checkout_caller.dart';
 import 'package:html_unescape/html_unescape.dart';
 import 'package:intl/intl.dart';
 import 'package:task_manager_flutter/data/models/auth_utility.dart';
+import 'package:task_manager_flutter/ui/widgets/negociacao_core.dart';
+import 'package:task_manager_flutter/ui/widgets/envio_contrato_core.dart';
 
 class CheckoutScreen extends StatefulWidget {
   final String productName;
@@ -75,108 +77,6 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
         });
       }
     }
-  }
-
-  Future<void> _downloadContract(int contratoId, BuildContext context) async {
-    try {
-      CheckoutCaller().downloadContrato(contratoId, context);
-
-      if (mounted) {}
-    } catch (e) {
-      if (mounted) {
-        setState(() {
-          _termsText = "Falha ao carregar termos: ${e.toString()}";
-        });
-      }
-    }
-  }
-
-  Future<void> _uploadContract(int negociacaoID) async {
-    try {
-      CheckoutCaller.uploadContract(negociacaoID);
-
-      if (mounted) {}
-    } catch (e) {
-      if (mounted) {
-        setState(() {
-          _termsText = "Falha ao carregar termos: ${e.toString()}";
-        });
-      }
-    }
-  }
-
-  void _showDownloadAndUploadButtons() {
-    showDialog(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          backgroundColor: _fundoVerdeClaro,
-          title: Text('Contrato',
-              style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  color: _bordaVerdeEscuro)), // Cor verde principal
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              // Botão de Download
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton.icon(
-                  icon: const Icon(Icons.download, size: 24),
-                  label: const Text('Baixar Contrato Modelo',
-                      style: TextStyle(fontSize: 16)),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: _bordaVerdeEscuro, // Verde principal
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 15),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10),
-                      side: BorderSide(
-                          color: _bordaVerdeEscuro), // Borda consistente
-                    ),
-                  ),
-                  onPressed: () => _downloadContract(widget.idVenda, context),
-                ),
-              ),
-              SizedBox(height: 15),
-              // Botão de Upload
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton.icon(
-                  icon: const Icon(Icons.upload, size: 24),
-                  label: const Text('Enviar Contrato Assinado',
-                      style: TextStyle(fontSize: 16)),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: _bordaVerdeEscuro, // Mesma cor do tema
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 15),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10),
-                      side: BorderSide(color: _bordaVerdeEscuro),
-                    ),
-                  ),
-                  onPressed: () => _uploadContract(widget.idVenda),
-                ),
-              ),
-            ],
-          ),
-          actions: [
-            // Botão Fechar
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: Text('Fechar',
-                  style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      color: _bordaVerdeEscuro)), // Cor verde principal
-            ),
-          ],
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(15),
-            side: BorderSide(color: _bordaVerdeEscuro, width: 2), // Borda verde
-          ),
-        );
-      },
-    );
   }
 
   void _showTermsPopup() {
@@ -463,9 +363,36 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                     borderRadius: BorderRadius.circular(12),
                   ),
                 ),
-                onPressed: _termsAccepted
-                    ? () => _showDownloadAndUploadButtons()
-                    : null,
+                onPressed: () async {
+                  if (_termsAccepted) {
+                    final response = await RenegotiationHandler.renegotiate(
+                      context: context, // Contexto do widget atual
+                      vendaId: widget.idVenda, // ID da venda
+                      vendedorId: 1,
+                      compradorId: AuthUtility.userInfo?.data?.id ??
+                          0, // Substitua com ID do comprador
+                      qtdSacos: widget.productQnt ?? 0,
+                      vlrSacos: widget.productValue ?? 0.0,
+                      qtdDisponivel:
+                          widget.productQnt!, // Quantidade disponível
+                    );
+                    Navigator.of(context).pop();
+                    if (response) {
+                      final response = await RenegotiationMovimentoContratosHandler
+                          .renegotiates(
+                              context: context, // Contexto do widget atual
+                              vendaId: widget.idVenda,
+                              status:
+                                  'download'); // Refresh automático após sucesso
+                    } else {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('Erro ao Comprar'),
+                        ),
+                      );
+                    }
+                  }
+                },
               ),
             ),
           ],
@@ -473,15 +400,4 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
       ),
     );
   }
-}
-
-void main() {
-  runApp(const MaterialApp(
-    home: CheckoutScreen(
-      productName: 'Produto Exemplo',
-      productValue: 100.00,
-      productQnt: 1,
-      idVenda: 1,
-    ),
-  ));
 }

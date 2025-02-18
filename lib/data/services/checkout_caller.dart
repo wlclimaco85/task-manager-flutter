@@ -139,7 +139,7 @@ class CheckoutCaller {
     }
   }
 
-  void downloadContrato(int contratoId, BuildContext context) async {
+  Future<bool> downloadContrato(int contratoId, BuildContext context) async {
     final url = ApiLinks.downloadContrato + "/" + contratoId.toString();
 
     // Get the token (replace with your actual AuthUtility method)
@@ -169,6 +169,7 @@ class CheckoutCaller {
         );
 
         OpenFilex.open(file.path); // Open the file
+        return true;
       } else {
         print(
             'Error: ${response.statusCode} - ${response.body}'); // Print error details
@@ -181,10 +182,12 @@ class CheckoutCaller {
                 content: Text(
                     'Erro ao baixar contrato: ${errorData['message'] ?? 'Erro desconhecido'}')),
           );
+          return false;
         } catch (e) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('Erro ao baixar contrato')),
           );
+          return false;
         }
       }
     } catch (e) {
@@ -192,6 +195,7 @@ class CheckoutCaller {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Erro ao baixar contrato')),
       );
+      return false;
     }
   }
 }

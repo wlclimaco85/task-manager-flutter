@@ -5,6 +5,7 @@ import 'package:task_manager_flutter/data/services/vendas_caller.dart';
 import 'package:task_manager_flutter/data/models/venda_model.dart';
 import 'package:task_manager_flutter/ui/screens/checkoutscreen.dart';
 import 'package:task_manager_flutter/ui/widgets/negotiationDialog.dart';
+import 'package:task_manager_flutter/data/models/auth_utility.dart';
 
 // Define cores
 const Color lightGreenBackground = Color.fromARGB(255, 231, 247, 233);
@@ -297,7 +298,9 @@ class _ProdutoDetailsScreenState extends State<ProdutoDetailsScreen> {
                                   context: context,
                                   builder: (context) => NegotiationDialog(
                                     product: account,
-                                    compradorId: 5, // ID do usuário logado
+                                    compradorId:
+                                        AuthUtility.userInfo?.data?.id ??
+                                            0, // ID do usuário logado
                                   ),
                                 ),
                               ),
@@ -327,10 +330,13 @@ class _ProdutoDetailsScreenState extends State<ProdutoDetailsScreen> {
                                   context,
                                   MaterialPageRoute(
                                     builder: (context) => CheckoutScreen(
-                                      productName: "teste",
-                                      productValue: 10.0,
-                                      productQnt: 1,
-                                      idVenda: account.id!,
+                                      productName:
+                                          account.descricao!, // Nome do produto
+                                      productValue:
+                                          account.vlrSacos!, // Valor do produto
+                                      productQnt: account
+                                          .qtdSacos!, // Quantidade do produto
+                                      idVenda: account.id!, // ID da venda
                                     ),
                                   ),
                                 ),

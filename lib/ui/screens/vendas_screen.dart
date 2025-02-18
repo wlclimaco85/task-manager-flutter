@@ -10,6 +10,7 @@ import 'package:task_manager_flutter/ui/screens/checkoutscreen.dart';
 import 'package:task_manager_flutter/ui/screens/ProdutoDetailsScreen.dart';
 import 'package:task_manager_flutter/ui/widgets/user_banners.dart';
 import 'package:task_manager_flutter/ui/widgets/negotiationDialog.dart';
+import 'package:task_manager_flutter/ui/widgets/negociacao_core.dart';
 import 'dart:typed_data';
 import 'dart:convert';
 
@@ -91,10 +92,10 @@ class _ProductCatalogState extends State<ProductCatalog> {
     setState(() {
       filteredProducts = allProducts.where((product) {
         final stateMatch = selectedState == "Estado" ||
-            (product.parceiro?.endereco?.estado?.toString() ?? '') ==
+            (product.parceiro?.endereco?.estado?.nome.toString() ?? '') ==
                 selectedState;
         final cityMatch = selectedCity == "Cidade" ||
-            (product.parceiro?.endereco?.cidade?.toString() ?? '') ==
+            (product.parceiro?.endereco?.cidade?.nome.toString() ?? '') ==
                 selectedCity;
 
         return stateMatch && cityMatch;
@@ -106,14 +107,14 @@ class _ProductCatalogState extends State<ProductCatalog> {
   Widget build(BuildContext context) {
     final states = allProducts
         .map<String>((p) =>
-            p.parceiro?.endereco?.estado?.toString() ?? 'Não especificado')
+            p.parceiro?.endereco?.estado?.nome.toString() ?? 'Não especificado')
         .toSet()
         .toList();
     states.insert(0, "Estado");
 
     final cities = allProducts
         .map<String>((p) =>
-            p.parceiro?.endereco?.cidade?.toString() ?? 'Não especificado')
+            p.parceiro?.endereco?.cidade?.nome.toString() ?? 'Não especificado')
         .toSet()
         .toList();
     cities.insert(0, "Cidade");
@@ -238,9 +239,9 @@ class _ProductCatalogState extends State<ProductCatalog> {
             Text(
                 'Tipo de Negociação: ${product.tipoNegociacao ?? "Não informado"}'),
             Text(
-                'Estado: ${product.parceiro?.endereco?.estado ?? "Não informado"}'),
+                'Estado: ${product.parceiro?.endereco?.estado?.nome ?? "Não informado"}'),
             Text(
-                'Cidade: ${product.parceiro?.endereco?.cidade ?? "Não informado"}'),
+                'Cidade: ${product.parceiro?.endereco?.cidade?.nome ?? "Não informado"}'),
             Text('Quantidade de sacos: ${product.qtdSacos ?? 0}'),
             Text('Valor por saco: R\$${product.vlrSacos ?? 0.0}'),
             const Text('Classificação:'),
@@ -274,76 +275,6 @@ class _ProductCatalogState extends State<ProductCatalog> {
     );
   }
 
-  Future<bool> renegotiate({
-    required int vendaId,
-    required int compradorId,
-    required int vendedorId,
-    required int qtdSacos,
-    required double vlrSacos,
-    required int qtdDisponivel,
-  }) async {
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (_) => const Center(child: CircularProgressIndicator()),
-    );
-
-    try {
-      if (qtdSacos > qtdDisponivel) {
-        Navigator.of(context).pop();
-        showSnackBar(
-          message:
-              "A quantidade de sacos solicitada ($qtdSacos) excede o disponível ($qtdDisponivel).",
-          isError: true,
-        );
-        return false;
-      }
-
-      if (vlrSacos <= 0) {
-        Navigator.of(context).pop();
-        showSnackBar(
-          message: "O valor por saco deve ser maior que zero.",
-          isError: true,
-        );
-        return false;
-      }
-
-      Map<String, dynamic> requestBody = {
-        "vendaId": vendaId,
-        "compradorId": compradorId,
-        "vendedorId": vendedorId,
-        "qtdSacos": qtdSacos,
-        "vlrSacos": vlrSacos,
-      };
-
-      final NetworkResponse response = await NetworkCaller()
-          .postRequest(ApiLinks.insertNegociacao, requestBody);
-
-      Navigator.of(context).pop();
-
-      if (response.isSuccess) {
-        showSnackBar(
-          message: "Proposta enviada com sucesso!",
-          isError: false,
-        );
-        return true;
-      } else {
-        showSnackBar(
-          message: "Erro ao enviar proposta.",
-          isError: true,
-        );
-        return false;
-      }
-    } catch (e) {
-      Navigator.of(context).pop();
-      showSnackBar(
-        message: "Erro: ${e.toString()}",
-        isError: true,
-      );
-      return false;
-    }
-  }
-
   void showBuyPopup(BuildContext context, Produto product) {
     showDialog(
       context: context,
@@ -355,9 +286,9 @@ class _ProductCatalogState extends State<ProductCatalog> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-                'Estado: ${product.parceiro?.endereco?.estado ?? "Não informado"}'),
+                'Estado: ${product.parceiro?.endereco?.estado?.nome ?? "Não informado"}'),
             Text(
-                'Cidade: ${product.parceiro?.endereco?.cidade ?? "Não informado"}'),
+                'Cidade: ${product.parceiro?.endereco?.cidade?.nome ?? "Não informado"}'),
             Text('Quantidade de sacos: ${product.qtdSacos ?? 0}'),
             Text('Valor por saco: R\$${product.vlrSacos ?? 0.0}'),
             const Text('Classificação:'),
@@ -373,13 +304,14 @@ class _ProductCatalogState extends State<ProductCatalog> {
           ),
           ElevatedButton(
             onPressed: () async {
-              final response = await renegotiate(
+              final response = await RenegotiationHandler.renegotiate(
+                context: context, // Contexto do widget atual
                 vendaId: product.id!,
                 vendedorId: product.parceiro!.id!,
                 compradorId: 5, // Substitua com ID do comprador
                 qtdSacos: product.qtdSacos! ?? 0,
                 vlrSacos: product.vlrSacos ?? 0.0,
-                qtdDisponivel: product.qtdSacos!,
+                qtdDisponivel: product.qtdSacos!, // Quantidade disponível
               );
               Navigator.of(context).pop();
               if (response) {
@@ -475,9 +407,9 @@ class ProductCard extends StatelessWidget {
                         ),
                       ),
                       Text(
-                          'Estado: ${product.parceiro?.endereco?.estado ?? "Não informado"}'),
+                          'Estado: ${product.parceiro?.endereco?.estado?.nome ?? "Não informado"}'),
                       Text(
-                          'Cidade: ${product.parceiro?.endereco?.cidade ?? "Não informado"}'),
+                          'Cidade: ${product.parceiro?.endereco?.cidade?.nome ?? "Não informado"}'),
                       Text('Quantidade: ${product.qtdSacos} sacos'),
                       Text('Valor por saco: R\$${product.vlrSacos}'),
                       Text('Safra: ${product.safra ?? "Não informado"}'),
