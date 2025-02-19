@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/cupertino.dart';
-import 'package:flutter/material.dart';
+import 'package:task_manager_flutter/ui/widgets/localizacao_screen.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:task_manager_flutter/data/models/auth_utility.dart';
 import '../../data/models/login_model.dart';
@@ -8,6 +7,7 @@ import 'dart:async';
 import 'dart:io';
 import 'dart:convert';
 import 'package:task_manager_flutter/data/services/parceiro_caller.dart';
+import 'package:task_manager_flutter/data/models/parceiro_model.dart';
 
 // Define as cores no início do documento
 const Color lightGreenBackground = Color.fromARGB(255, 231, 247, 233);
@@ -52,6 +52,10 @@ class _SignUpScreenState extends State<SignUpScreen> {
 
   XFile? pickImage;
   String? base64Image;
+
+  Pais? paisSelecionado;
+  Estado? estadoSelecionado;
+  Cidade? cidadeSelecionada;
 
   @override
   void initState() {
@@ -102,8 +106,9 @@ class _SignUpScreenState extends State<SignUpScreen> {
         "rua": _ruaController.text.trim(),
         "numero": _numeroController.text.trim(),
         "bairro": _bairroController.text.trim(),
-        "cidade": _cidadeController.text.trim(),
-        "estado": _estadoController.text.trim(),
+        "pais": {"id": paisSelecionado!.id ?? 0},
+        "cidade": {"id": cidadeSelecionada!.id ?? 0},
+        "estado": {"id": estadoSelecionado!.id ?? 0},
         "cep": _cepController.text.trim(),
       },
       "senha": _senhaController.text.trim(),
@@ -233,19 +238,14 @@ class _SignUpScreenState extends State<SignUpScreen> {
                     ? "Número obrigatório"
                     : null,
               ),
-              CustomTextFormField(
-                hintText: "Cidade",
-                controller: _cidadeController,
-                validator: (value) => value == null || value.isEmpty
-                    ? "Cidade obrigatória"
-                    : null,
-              ),
-              CustomTextFormField(
-                hintText: "Estado",
-                controller: _estadoController,
-                validator: (value) => value == null || value.isEmpty
-                    ? "Estado obrigatório"
-                    : null,
+              const SizedBox(height: 16),
+              LocalizacaoWidget(
+                required: true,
+                onChanged: (pais, estado, cidade) {
+                  paisSelecionado = pais;
+                  estadoSelecionado = estado;
+                  cidadeSelecionada = cidade;
+                },
               ),
               const SizedBox(height: 16),
               CustomPasswordTextFormField(

@@ -82,7 +82,7 @@ class _ProductRegisterScreenState extends State<ProductRegisterScreen> {
 
       setState(() {
         vendedorEndereco =
-            '${parceiroData[0].endereco!.bairro},  ${parceiroData[0].endereco!.cidade},  ${parceiroData[0].endereco!.estado}';
+            '${parceiroData[0].endereco!.bairro},  ${parceiroData[0].endereco!.cidade!.nome},  ${parceiroData[0].endereco!.estado!.nome}';
       });
 
       final List<Account> classificacoesData =

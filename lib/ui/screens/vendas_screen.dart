@@ -11,6 +11,7 @@ import 'package:task_manager_flutter/ui/screens/ProdutoDetailsScreen.dart';
 import 'package:task_manager_flutter/ui/widgets/user_banners.dart';
 import 'package:task_manager_flutter/ui/widgets/negotiationDialog.dart';
 import 'package:task_manager_flutter/ui/widgets/negociacao_core.dart';
+import 'package:task_manager_flutter/data/models/auth_utility.dart';
 import 'dart:typed_data';
 import 'dart:convert';
 
@@ -206,7 +207,8 @@ class _ProductCatalogState extends State<ProductCatalog> {
                                 context: context,
                                 builder: (context) => NegotiationDialog(
                                   product: product,
-                                  compradorId: 5, // ID do usuário logado
+                                  compradorId: AuthUtility.userInfo?.data?.id ??
+                                      0, // ID do usuário logado
                                 ),
                               ),
                               onTransporte: () =>
@@ -308,7 +310,8 @@ class _ProductCatalogState extends State<ProductCatalog> {
                 context: context, // Contexto do widget atual
                 vendaId: product.id!,
                 vendedorId: product.parceiro!.id!,
-                compradorId: 5, // Substitua com ID do comprador
+                compradorId: AuthUtility.userInfo?.data?.id ??
+                    0, // Substitua com ID do comprador
                 qtdSacos: product.qtdSacos! ?? 0,
                 vlrSacos: product.vlrSacos ?? 0.0,
                 qtdDisponivel: product.qtdSacos!, // Quantidade disponível

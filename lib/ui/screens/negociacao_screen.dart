@@ -396,7 +396,7 @@ class ProductCard extends StatelessWidget {
                   final response = await enviarContraProposta(
                     context,
                     negotiation.id,
-                    negotiation.vendaId,
+                    negotiation.id, // TODO
                     negotiation.compradorId,
                     negotiation.vendedorId,
                     qtdSacos,
