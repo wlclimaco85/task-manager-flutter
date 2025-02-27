@@ -9,24 +9,7 @@ import 'package:task_manager_flutter/data/services/alert_caller.dart';
 import 'package:task_manager_flutter/data/models/login_model.dart';
 import 'package:http/http.dart' as http;
 import 'dart:async';
-
-// Definição de cores
-class AppColors {
-  static const Color lightGreenBackground = Color.fromARGB(255, 231, 247, 233);
-  static const Color borderColor = Color.fromARGB(255, 1, 247, 14);
-  static const Color notificationBackground = Color(0xFFE6F7E6); // Verde claro
-  static const Color notificationBorder = Color(0xFF006400); // Verde escuro
-  static const Color notificationIcon = Colors.green;
-  static const Color notificationDeleteIcon = Colors.red;
-  static const Color notificationText = Colors.black;
-  static const Color notificationSubtitle = Colors.grey;
-  static const Color refreshIconColor = Colors.black;
-  static const Color logoutIconColor = Colors.black;
-  static const Color closeIconColor = Colors.red;
-  static const Color unreadBadgeColor = Colors.red;
-  static const Color unreadBadgeTextColor = Colors.white;
-  static const Color appBarTitleColor = Colors.black;
-}
+import 'package:task_manager_flutter/data/constants/custom_colors.dart';
 
 // AppBar personalizado
 class UserBannerAppBar extends StatefulWidget implements PreferredSizeWidget {
@@ -149,9 +132,9 @@ class _UserBannerAppBarState extends State<UserBannerAppBar> {
             height: 400, // Altura fixa (ajuste conforme necessário)
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: AppColors.notificationBackground,
+              color: CustomColors().getLightGreenBackground(),
               border: Border.all(
-                color: AppColors.notificationBorder,
+                color: CustomColors().getDarkGreenBorder(),
                 width: 2,
               ),
               borderRadius: BorderRadius.circular(8),
@@ -163,17 +146,17 @@ class _UserBannerAppBarState extends State<UserBannerAppBar> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const Text(
+                    Text(
                       "Notificações",
                       style: TextStyle(
                         fontWeight: FontWeight.bold,
                         fontSize: 16,
-                        color: AppColors.notificationText,
+                        color: CustomColors().getTextColor(),
                       ),
                     ),
                     IconButton(
-                      icon: const Icon(Icons.close,
-                          color: AppColors.closeIconColor),
+                      icon: Icon(Icons.close,
+                          color: CustomColors().getCancelButtonColor()),
                       onPressed: closeNotificationDropdown,
                     ),
                   ],
@@ -185,16 +168,16 @@ class _UserBannerAppBarState extends State<UserBannerAppBar> {
                   dense: true, // Torna o ListTile mais compacto
                   visualDensity:
                       VisualDensity.compact, // Reduz o espaçamento interno
-                  title: const Text(
+                  title: Text(
                     "Deletar Tudo",
                     style: TextStyle(
                       fontSize: 14,
-                      color: AppColors.notificationDeleteIcon,
+                      color: CustomColors().getCancelButtonColor(),
                     ),
                   ),
-                  trailing: const Icon(
+                  trailing: Icon(
                     Icons.delete_forever,
-                    color: AppColors.notificationDeleteIcon,
+                    color: CustomColors().getCancelButtonColor(),
                     size: 20,
                   ),
                   onTap: deleteAllNotifications,
@@ -221,23 +204,23 @@ class _UserBannerAppBarState extends State<UserBannerAppBar> {
                               ),
                               title: Text(
                                 notification.texto,
-                                style: const TextStyle(
+                                style: TextStyle(
                                   fontSize: 14,
-                                  color: AppColors.notificationText,
+                                  color: CustomColors().getButtonTextColor(),
                                   fontWeight: FontWeight.w500,
                                 ),
                               ),
                               subtitle: Text(
                                 formattedDate,
-                                style: const TextStyle(
+                                style: TextStyle(
                                   fontSize: 12,
-                                  color: AppColors.notificationSubtitle,
+                                  color: CustomColors().getButtonTextColor(),
                                 ),
                               ),
                               trailing: IconButton(
-                                icon: const Icon(
+                                icon: Icon(
                                   Icons.delete,
-                                  color: AppColors.notificationDeleteIcon,
+                                  color: CustomColors().getCancelButtonColor(),
                                   size: 20,
                                 ),
                                 onPressed: () {
@@ -247,11 +230,11 @@ class _UserBannerAppBarState extends State<UserBannerAppBar> {
                             );
                           },
                         )
-                      : const Center(
+                      : Center(
                           child: Text(
                             "No notifications",
                             style: TextStyle(
-                                color: AppColors.notificationSubtitle),
+                                color: CustomColors().getButtonTextColor()),
                           ),
                         ),
                 ),
@@ -282,9 +265,10 @@ class _UserBannerAppBarState extends State<UserBannerAppBar> {
     if (AuthUtility.userInfo?.data?.id != null &&
         AuthUtility.userInfo!.data!.id! > 1) {
       return AppBar(
-        backgroundColor: AppColors.lightGreenBackground,
-        shape: const RoundedRectangleBorder(
-          side: BorderSide(color: AppColors.borderColor, width: 2.0),
+        backgroundColor: CustomColors().getLightGreenBackground(),
+        shape: RoundedRectangleBorder(
+          side: BorderSide(
+              color: CustomColors().getDarkGreenBorder(), width: 2.0),
         ),
         actions: [
           if (widget?.isLoading ?? false)
@@ -426,8 +410,9 @@ class _UserBannerAppBarState extends State<UserBannerAppBar> {
       // AppBar alternativo
       return AppBar(
         backgroundColor: lightGreenBackground,
-        shape: const RoundedRectangleBorder(
-          side: BorderSide(color: AppColors.borderColor, width: 2.0),
+        shape: RoundedRectangleBorder(
+          side: BorderSide(
+              color: CustomColors().getDarkGreenBorder(), width: 2.0),
         ),
         title: Text(
           widget.screenTitle ?? "Screen",

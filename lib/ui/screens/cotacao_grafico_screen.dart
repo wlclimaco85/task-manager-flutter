@@ -257,7 +257,8 @@ class _CotacaoScreenState extends State<CotacaoScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.lightGreenBackground, // Fundo da tela
+      backgroundColor:
+          CustomColors().getLightGreenBackground(), // Fundo da tela
       appBar: UserBannerAppBar(
         screenTitle: "Cotações",
         isLoading: isLoading,
