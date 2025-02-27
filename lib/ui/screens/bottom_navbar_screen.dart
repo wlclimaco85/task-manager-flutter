@@ -10,10 +10,7 @@ import 'package:task_manager_flutter/ui/screens/product_register_screen.dart';
 import 'package:task_manager_flutter/data/utils/api_links.dart';
 import 'package:task_manager_flutter/data/models/auth_utility.dart';
 import 'package:task_manager_flutter/ui/screens/LoginPopup_screens.dart';
-
-// Define theme colors
-const Color lightGreenBackground = Color.fromARGB(255, 231, 247, 233);
-const Color darkGreenBorder = Color.fromARGB(255, 1, 247, 14);
+import 'package:task_manager_flutter/data/constants/custom_colors.dart';
 
 class BottomNavBarScreen extends StatefulWidget {
   const BottomNavBarScreen({super.key});
@@ -100,10 +97,11 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
     return Scaffold(
       body: screens[selectedIndex],
       bottomNavigationBar: Container(
-        decoration: const BoxDecoration(
-          color: lightGreenBackground,
+        decoration: BoxDecoration(
+          color: CustomColors().getLightGreenBackground(),
           border: Border(
-            top: BorderSide(color: darkGreenBorder, width: 2),
+            top: BorderSide(
+                color: CustomColors().getDarkGreenBorder(), width: 2),
           ),
         ),
         /*
@@ -314,7 +312,7 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
         ), */
 
         child: BottomNavigationBar(
-          backgroundColor: lightGreenBackground,
+          backgroundColor: CustomColors().getLightGreenBackground(),
           currentIndex: selectedIndex,
           unselectedItemColor: Colors.grey,
           unselectedLabelStyle: const TextStyle(color: Colors.grey),
@@ -356,7 +354,7 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
-      backgroundColor: lightGreenBackground,
+      backgroundColor: CustomColors().getLightGreenBackground(),
       builder: (BuildContext context) {
         return Column(
           mainAxisSize: MainAxisSize.min,

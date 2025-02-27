@@ -266,9 +266,12 @@ class _UserBannerAppBarState extends State<UserBannerAppBar> {
         AuthUtility.userInfo!.data!.id! > 1) {
       return AppBar(
         backgroundColor: CustomColors().getLightGreenBackground(),
-        shape: RoundedRectangleBorder(
-          side: BorderSide(
-              color: CustomColors().getDarkGreenBorder(), width: 2.0),
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(1),
+          child: Container(
+            height: 1,
+            color: CustomColors().getDarkGreenBorder(),
+          ),
         ),
         actions: [
           if (widget?.isLoading ?? false)
@@ -280,6 +283,7 @@ class _UserBannerAppBarState extends State<UserBannerAppBar> {
               ),
             ),
           // Alert Icon with unread count
+
           Stack(
             alignment: Alignment.center,
             children: [
@@ -314,23 +318,25 @@ class _UserBannerAppBarState extends State<UserBannerAppBar> {
                 ),
             ],
           ),
+
           // Logout button
           IconButton(
-            icon: const Icon(FontAwesomeIcons.powerOff, color: Colors.black),
+            icon: const Icon(Icons.logout, color: Colors.black),
             onPressed: () {
               showDialog(
                 context: context,
                 builder: (context) {
                   return AlertDialog(
-                    title: const Text("Deseja realmente sair ?",
+                    title: Text("Deseja realmente sair ?",
                         style: TextStyle(
-                            fontWeight: FontWeight.bold, color: Colors.black)),
+                            fontWeight: FontWeight.bold,
+                            color: CustomColors().getTextColor())),
                     actions: [
                       TextButton(
-                        onPressed: () {
-                          Navigator.pop(context);
-                        },
-                        child: const Text("Não"),
+                        onPressed: () => Navigator.pop(context),
+                        child: Text("Não",
+                            style: TextStyle(
+                                color: CustomColors().getTextColor())),
                       ),
                       TextButton(
                         onPressed: () {
@@ -340,7 +346,6 @@ class _UserBannerAppBarState extends State<UserBannerAppBar> {
                             token: '',
                             status: '',
                           ));
-
                           Navigator.pushAndRemoveUntil(
                             context,
                             MaterialPageRoute(
@@ -349,7 +354,9 @@ class _UserBannerAppBarState extends State<UserBannerAppBar> {
                             (route) => false,
                           );
                         },
-                        child: const Text("Sim"),
+                        child: Text("Sim",
+                            style: TextStyle(
+                                color: CustomColors().getTextColor())),
                       ),
                     ],
                   );
@@ -360,7 +367,7 @@ class _UserBannerAppBarState extends State<UserBannerAppBar> {
         ],
         title: Center(
           child: SizedBox(
-            height: 40,
+            height: 60,
             width: double.infinity,
             child: SingleChildScrollView(
               scrollDirection: Axis.horizontal,
@@ -370,6 +377,15 @@ class _UserBannerAppBarState extends State<UserBannerAppBar> {
                   mainAxisAlignment: MainAxisAlignment.start,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    // Logo do App
+                    Padding(
+                      padding: const EdgeInsets.only(right: 15),
+                      child: Image.asset(
+                        'assets/images/iconApp.png',
+                        width: 60,
+                        height: 60,
+                      ),
+                    ),
                     CircleAvatar(
                       radius: 25,
                       child: Image.memory(
@@ -386,17 +402,18 @@ class _UserBannerAppBarState extends State<UserBannerAppBar> {
                       children: [
                         Text(
                           "${AuthUtility.userInfo.data?.codDadosPessoal?.nome ?? " "} ",
-                          style: const TextStyle(
+                          style: TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.bold,
-                              color: Colors.black),
+                              color: CustomColors().getTextColor()),
                         ),
                         const SizedBox(height: 2),
                         Text(
                             AuthUtility.userInfo.data?.codDadosPessoal?.email ??
                                 "",
-                            style: const TextStyle(
-                                fontSize: 14, color: Colors.black)),
+                            style: TextStyle(
+                                fontSize: 14,
+                                color: CustomColors().getTextColor())),
                       ],
                     ),
                   ],
@@ -409,17 +426,31 @@ class _UserBannerAppBarState extends State<UserBannerAppBar> {
     } else {
       // AppBar alternativo
       return AppBar(
-        backgroundColor: lightGreenBackground,
-        shape: RoundedRectangleBorder(
-          side: BorderSide(
-              color: CustomColors().getDarkGreenBorder(), width: 2.0),
-        ),
-        title: Text(
-          widget.screenTitle ?? "Screen",
-          style: const TextStyle(
-            color: Colors.black,
-            fontWeight: FontWeight.bold,
+        backgroundColor: CustomColors().getLightGreenBackground(),
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(1),
+          child: Container(
+            height: 1,
+            color: CustomColors().getDarkGreenBorder(),
           ),
+        ),
+        title: Row(
+          children: [
+            // Logo do App
+            Image.asset(
+              'assets/images/iconApp.png', // Verifique o caminho correto
+              width: 80,
+              height: 80,
+            ),
+            const SizedBox(width: 10),
+            Text(
+              widget.screenTitle ?? "Screen",
+              style: TextStyle(
+                color: CustomColors().getTextColor(), // Cor #002E18
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ],
         ),
         actions: [
           if (widget?.isLoading ?? false)
@@ -433,6 +464,12 @@ class _UserBannerAppBarState extends State<UserBannerAppBar> {
           IconButton(
             icon: const Icon(Icons.refresh, color: Colors.black),
             onPressed: widget.onRefresh,
+          ),
+          IconButton(
+            icon: Icon(Icons.login, color: CustomColors().getTextColor()),
+            onPressed: () {
+              // Adicione a navegação para a tela de login aqui
+            },
           ),
         ],
       );
