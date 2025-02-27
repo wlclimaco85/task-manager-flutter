@@ -32,7 +32,7 @@ class CustomInputForm extends StatelessWidget {
           key: Key(keyField),
           keyboardType: type ?? TextInputType.text,
           decoration: InputDecoration(
-            fillColor: CustomColors().getAppFundoImput(),
+            fillColor: CustomColors().getLightGreenBackground(),
             filled: true,
             border: const OutlineInputBorder(
               borderRadius: BorderRadius.all(
@@ -44,7 +44,8 @@ class CustomInputForm extends StatelessWidget {
               ),
             ),
             labelStyle: TextStyle(
-                color: CustomColors().getAppFundoImput(), fontSize: 16.0),
+                color: CustomColors().getLightGreenBackground(),
+                fontSize: 16.0),
             hintText: keyField,
           ),
           onChanged: onPressed,

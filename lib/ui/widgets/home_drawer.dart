@@ -21,7 +21,7 @@ Drawer getHomeDrawer() {
         ListTile(
           leading: Icon(
             Icons.settings,
-            color: CustomColors().getAppBarMainColor(),
+            color: CustomColors().getLightGreenBackground(),
           ),
           title: const Text(
             "Configurações",
@@ -30,7 +30,7 @@ Drawer getHomeDrawer() {
         ListTile(
           leading: Icon(
             Icons.arrow_back_sharp,
-            color: CustomColors().getAppBarMainColor(),
+            color: CustomColors().getLightGreenBackground(),
           ),
           title: const Text(
             "Sair",

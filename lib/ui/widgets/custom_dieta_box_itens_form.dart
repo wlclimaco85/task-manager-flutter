@@ -152,7 +152,7 @@ class _CustomComboBoxDietaitensForm
               //    focusNode: _focusNode,
               keyboardType: tipo ?? TextInputType.text,
               decoration: InputDecoration(
-                fillColor: CustomColors().getAppFundoImput(),
+                fillColor: CustomColors().getLightGreenBackground(),
                 filled: true,
                 border: const OutlineInputBorder(
                   borderRadius: BorderRadius.all(
@@ -177,7 +177,7 @@ class _CustomComboBoxDietaitensForm
         padding: const EdgeInsets.only(bottom: 15.0),
         child: Container(
           padding: EdgeInsets.zero,
-          color: CustomColors().getAppFundoClaro(),
+          color: CustomColors().getLightGreenBackground(),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: <Widget>[
@@ -212,7 +212,7 @@ class _CustomComboBoxDietaitensForm
                   });
                 },
                 icon: CircleAvatar(
-                  backgroundColor: CustomColors().getAppBotton(),
+                  backgroundColor: CustomColors().getLightGreenBackground(),
                   child: const Icon(
                     Icons.remove,
                   ),
@@ -231,7 +231,7 @@ class _CustomComboBoxDietaitensForm
                 });
               },
               icon: CircleAvatar(
-                backgroundColor: CustomColors().getAppBotton(),
+                backgroundColor: CustomColors().getLightGreenBackground(),
                 child: const Icon(
                   Icons.add,
                 ),
@@ -284,7 +284,7 @@ class _CustomComboBoxDietaitensForm
                     'Unidade Medida',
                     style: TextStyle(
                       fontSize: 14,
-                      color: CustomColors().getAppLabelBotton(),
+                      color: CustomColors().getLightGreenBackground(),
                     ),
                   ),
                   items: dias.map((item) {
@@ -367,7 +367,7 @@ class _CustomComboBoxDietaitensForm
                       border: Border.all(
                         color: Colors.black26,
                       ),
-                      color: CustomColors().getAppBotton(),
+                      color: CustomColors().getLightGreenBackground(),
                     ),
                     elevation: 2,
                   ),
@@ -384,7 +384,7 @@ class _CustomComboBoxDietaitensForm
                     width: 200,
                     decoration: BoxDecoration(
                       borderRadius: BorderRadius.circular(14),
-                      color: CustomColors().getAppBotton(),
+                      color: CustomColors().getLightGreenBackground(),
                     ),
                     offset: const Offset(-20, 0),
                     scrollbarTheme: ScrollbarThemeData(

@@ -198,7 +198,7 @@ class _MedicamentosModalAddState extends State<MedicamentosModalAdd> {
           padding: const EdgeInsets.all(18),
           child: Container(
             alignment: Alignment.topCenter,
-            color: CustomColors().getAppFundoPage(),
+            color: CustomColors().getLightGreenBackground(),
             child: SingleChildScrollView(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -296,7 +296,7 @@ class _MedicamentosModalAddState extends State<MedicamentosModalAdd> {
                         child: Container(
                           padding: const EdgeInsets.all(18),
                           decoration: BoxDecoration(
-                            color: CustomColors().getAppFundoImput(),
+                            color: CustomColors().getLightGreenBackground(),
                             borderRadius: const BorderRadius.only(
                               topRight: Radius.circular(8),
                               bottomRight: Radius.circular(8),

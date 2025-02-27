@@ -44,7 +44,7 @@ class ListItensExames extends StatelessWidget {
               Flexible(
                 child: Container(
                   height: 180,
-                  color: CustomColors().getAppFundoPage(),
+                  color: CustomColors().getLightGreenBackground(),
                   child: Column(
                     children: [
                       Column(

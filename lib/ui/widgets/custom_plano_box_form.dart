@@ -94,7 +94,7 @@ class _CustomComboBoxForm extends State<CustomComboBoxForm> {
               //    focusNode: _focusNode,
               keyboardType: tipo ?? TextInputType.text,
               decoration: InputDecoration(
-                fillColor: CustomColors().getAppFundoImput(),
+                fillColor: CustomColors().getLightGreenBackground(),
                 filled: true,
                 border: const OutlineInputBorder(
                   borderRadius: BorderRadius.all(
@@ -119,7 +119,7 @@ class _CustomComboBoxForm extends State<CustomComboBoxForm> {
         padding: const EdgeInsets.only(bottom: 15.0),
         child: Container(
           padding: EdgeInsets.zero,
-          color: CustomColors().getAppFundoClaro(),
+          color: CustomColors().getLightGreenBackground(),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: <Widget>[
@@ -151,7 +151,7 @@ class _CustomComboBoxForm extends State<CustomComboBoxForm> {
                   });
                 },
                 icon: CircleAvatar(
-                  backgroundColor: CustomColors().getAppBotton(),
+                  backgroundColor: CustomColors().getLightGreenBackground(),
                   child: const Icon(
                     Icons.remove,
                   ),
@@ -162,7 +162,7 @@ class _CustomComboBoxForm extends State<CustomComboBoxForm> {
                 setState(() => _formCount++);
               },
               icon: CircleAvatar(
-                backgroundColor: CustomColors().getAppBotton(),
+                backgroundColor: CustomColors().getLightGreenBackground(),
                 child: const Icon(
                   Icons.add,
                 ),

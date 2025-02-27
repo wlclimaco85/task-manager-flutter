@@ -1,6 +1,63 @@
 import 'package:flutter/material.dart';
 
 class CustomColors {
+  final Color _lightGreenBackground = Colors.white;
+  final Color _darkGreenBorder = Color(0xff002E18);
+  final Color _buttonBackground = Color.fromARGB(255, 255, 255, 23);
+  final Color _textColorDesc = Color(0xFF38180E);
+  final Color _textColor = Color(0xFF002E18);
+  final Color _negotiationCardBackground = Color.fromARGB(255, 255, 255, 250);
+  final Color _confirmButtonColor = Color.fromARGB(255, 1, 95, 15);
+  final Color _cancelButtonColor = Colors.red;
+  final Color _buttonTextColor = Color.fromARGB(255, 255, 255, 255);
+  final Color _darkBlue = Color(0xff002E18);
+  final Color _headerTable = Color(0xff8C8C8C);
+
+  getLightGreenBackground() {
+    return _lightGreenBackground;
+  }
+
+  getDarkBlue() {
+    return _darkBlue;
+  }
+
+  getDarkGreenBorder() {
+    return _darkGreenBorder;
+  }
+
+  getButtonBackground() {
+    return _buttonBackground;
+  }
+
+  getTextColorDesc() {
+    return _textColorDesc;
+  }
+
+  getTextColor() {
+    return _textColor;
+  }
+
+  getNegotiationCardBackground() {
+    return _negotiationCardBackground;
+  }
+
+  getConfirmButtonColor() {
+    return _confirmButtonColor;
+  }
+
+  getCancelButtonColor() {
+    return _cancelButtonColor;
+  }
+
+  getButtonTextColor() {
+    return _buttonTextColor;
+  }
+
+  getHeaderTable() {
+    return _headerTable;
+  }
+
+  /*
   final Color _activePrimaryButton = const Color.fromARGB(255, 63, 81, 181);
   final Color _activeSecondaryButton = const Color.fromARGB(255, 230, 230, 255);
   final Color _gradientMainColor = const Color(0xff00ADFA);
@@ -66,4 +123,5 @@ class CustomColors {
   Color getAppLabelBotton() {
     return _appLabelBotton;
   }
+  */
 }

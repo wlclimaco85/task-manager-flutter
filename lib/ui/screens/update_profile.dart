@@ -1,4 +1,3 @@
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:task_manager_flutter/data/models/auth_utility.dart';
@@ -9,11 +8,8 @@ import 'dart:convert';
 import 'package:task_manager_flutter/data/services/parceiro_caller.dart';
 import 'package:task_manager_flutter/data/models/parceiro_model.dart';
 import 'package:task_manager_flutter/ui/widgets/localizacao_screen.dart';
+import 'package:task_manager_flutter/data/constants/custom_colors.dart';
 
-// Define as cores no início do documento
-const Color lightGreenBackground = Color.fromARGB(255, 231, 247, 233);
-const Color darkGreenBorder = Color.fromARGB(255, 230, 243, 231);
-const Color darkGreen = Colors.green;
 int idParceiro = AuthUtility.userInfo.data!.id!;
 
 class UpdateProfileScreen extends StatefulWidget {
@@ -164,10 +160,10 @@ class _UpdateProfileScreenState extends State<UpdateProfileScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: lightGreenBackground,
+      backgroundColor: CustomColors().getLightGreenBackground(),
       appBar: AppBar(
         title: const Text("Update Profile"),
-        backgroundColor: darkGreen,
+        backgroundColor: CustomColors().getLightGreenBackground(),
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),
@@ -232,9 +228,9 @@ class _UpdateProfileScreenState extends State<UpdateProfileScreen> {
                   Expanded(
                     child: Container(
                       padding: const EdgeInsets.all(16),
-                      decoration: const BoxDecoration(
-                        color: darkGreen,
-                        borderRadius: BorderRadius.only(
+                      decoration: BoxDecoration(
+                        color: CustomColors().getLightGreenBackground(),
+                        borderRadius: const BorderRadius.only(
                           topRight: Radius.circular(8),
                           bottomRight: Radius.circular(8),
                         ),
@@ -393,14 +389,17 @@ class CustomTextFormField extends StatelessWidget {
           hintText: hintText,
           filled: true,
           fillColor: Colors.white,
-          border: const OutlineInputBorder(
-            borderSide: BorderSide(color: darkGreenBorder, width: 2.0),
+          border: OutlineInputBorder(
+            borderSide: BorderSide(
+                color: CustomColors().getDarkGreenBorder(), width: 2.0),
           ),
-          enabledBorder: const OutlineInputBorder(
-            borderSide: BorderSide(color: darkGreenBorder, width: 2.0),
+          enabledBorder: OutlineInputBorder(
+            borderSide: BorderSide(
+                color: CustomColors().getDarkGreenBorder(), width: 2.0),
           ),
-          focusedBorder: const OutlineInputBorder(
-            borderSide: BorderSide(color: darkGreenBorder, width: 2.0),
+          focusedBorder: OutlineInputBorder(
+            borderSide: BorderSide(
+                color: CustomColors().getDarkGreenBorder(), width: 2.0),
           ),
         ),
         validator: validator,
@@ -436,8 +435,9 @@ class CustomPasswordTextFormField extends StatelessWidget {
           hintText: hintText,
           filled: true,
           fillColor: Colors.white,
-          border: const OutlineInputBorder(
-            borderSide: BorderSide(color: darkGreenBorder, width: 2.0),
+          border: OutlineInputBorder(
+            borderSide: BorderSide(
+                color: CustomColors().getDarkGreenBorder(), width: 2.0),
           ),
           suffixIcon: IconButton(
             icon: Icon(

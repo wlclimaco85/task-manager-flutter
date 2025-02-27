@@ -27,8 +27,8 @@ class _HomePageContentState extends State<HomePageContent> {
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
           colors: [
-            CustomColors().getGradientMainColor(),
-            CustomColors().getGradientSecondaryColor(),
+            CustomColors().getLightGreenBackground(),
+            CustomColors().getLightGreenBackground(),
           ],
         ),
       ),

@@ -3,7 +3,7 @@
     "activeCommit": 0,
     "commits": [
         {
-            "activePatchIndex": 3,
+            "activePatchIndex": 5,
             "patches": [
                 {
                     "date": 1736538272190,
@@ -20,6 +20,14 @@
                 {
                     "date": 1736801058966,
                     "content": "Index: \n===================================================================\n--- \n+++ \n@@ -91,9 +91,8 @@\n                     ),\r\n                     CustomTextFormField(\r\n                       hintText: \"Task Title\",\r\n                       controller: _taskNameController,\r\n-                      textInputType: TextInputType.text,\r\n                       // validator: (value) {\r\n                       //   if (value?.isEmpty ?? true) {\r\n                       //     return \"Please enter task title\";\r\n                       //   }\r\n@@ -103,12 +102,10 @@\n                     const SizedBox(\r\n                       height: 16,\r\n                     ),\r\n                     CustomTextFormField(\r\n-                      maxLines: 4,\r\n                       hintText: \"Description\",\r\n                       controller: _taskDescriptionController,\r\n-                      textInputType: TextInputType.text,\r\n                       // validator: (value) {\r\n                       //   if (value?.isEmpty ?? true) {\r\n                       //     return \"Please enter task description\";\r\n                       //   }\r\n"
+                },
+                {
+                    "date": 1740663484580,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -3,9 +3,9 @@\n import 'package:task_manager_flutter/data/services/network_caller.dart';\r\n import 'package:task_manager_flutter/data/utils/api_links.dart';\r\n import 'package:task_manager_flutter/ui/screens/update_profile.dart';\r\n import 'package:task_manager_flutter/ui/widgets/custom_button.dart';\r\n-import 'package:task_manager_flutter/ui/widgets/custom_text_form_field.dart';\r\n+import 'package:task_manager_flutter/data/constants/custom_colors.dart';\r\n import 'package:task_manager_flutter/ui/widgets/screen_background.dart';\r\n import 'package:task_manager_flutter/ui/widgets/user_banners.dart';\r\n \r\n class AddTaskScreen extends StatefulWidget {\r\n@@ -156,15 +156,15 @@\n           hintText: hintText,\r\n           filled: true,\r\n           fillColor: Colors.white,\r\n           border: const OutlineInputBorder(\r\n-            borderSide: BorderSide(color: darkGreenBorder, width: 2.0),\r\n+            borderSide: BorderSide(color: CustomColors().getDarkGreenBorder(), width: 2.0),\r\n           ),\r\n           enabledBorder: const OutlineInputBorder(\r\n-            borderSide: BorderSide(color: darkGreenBorder, width: 2.0),\r\n+            borderSide: BorderSide(color: CustomColors().getDarkGreenBorder(), width: 2.0),\r\n           ),\r\n           focusedBorder: const OutlineInputBorder(\r\n-            borderSide: BorderSide(color: darkGreenBorder, width: 2.0),\r\n+            borderSide: BorderSide(color: CustomColors().getDarkGreenBorder(), width: 2.0),\r\n           ),\r\n         ),\r\n         validator: validator,\r\n       ),\r\n"
+                },
+                {
+                    "date": 1740663495783,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -155,17 +155,17 @@\n         decoration: InputDecoration(\r\n           hintText: hintText,\r\n           filled: true,\r\n           fillColor: Colors.white,\r\n-          border: const OutlineInputBorder(\r\n+          border: OutlineInputBorder(\r\n             borderSide: BorderSide(\r\n                 color: CustomColors().getDarkGreenBorder(), width: 2.0),\r\n           ),\r\n-          enabledBorder: const OutlineInputBorder(\r\n+          enabledBorder: OutlineInputBorder(\r\n             borderSide: BorderSide(\r\n                 color: CustomColors().getDarkGreenBorder(), width: 2.0),\r\n           ),\r\n-          focusedBorder: const OutlineInputBorder(\r\n+          focusedBorder: OutlineInputBorder(\r\n             borderSide: BorderSide(\r\n                 color: CustomColors().getDarkGreenBorder(), width: 2.0),\r\n           ),\r\n         ),\r\n"
                 }
             ],
             "date": 1736538272190,

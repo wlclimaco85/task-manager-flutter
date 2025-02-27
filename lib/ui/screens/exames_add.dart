@@ -191,7 +191,7 @@ class _ExamesModalAddState extends State<ExamesModalAdd> {
           padding: const EdgeInsets.all(18),
           child: Container(
             alignment: Alignment.topCenter,
-            color: CustomColors().getAppFundoPage(),
+            color: CustomColors().getLightGreenBackground(),
             child: SingleChildScrollView(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,

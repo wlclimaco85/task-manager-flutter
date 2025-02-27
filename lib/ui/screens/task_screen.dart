@@ -3,18 +3,13 @@ import 'package:task_manager_flutter/data/utils/api_links.dart';
 import 'package:task_manager_flutter/data/models/task_model.dart';
 import 'package:task_manager_flutter/data/models/network_response.dart';
 import 'package:task_manager_flutter/data/services/network_caller.dart';
-import 'package:task_manager_flutter/ui/widgets/status_change_botom_sheet.dart';
 import 'package:intl/intl.dart';
 import 'dart:convert';
 import 'package:task_manager_flutter/data/models/noticias_model.dart';
 import 'package:task_manager_flutter/ui/screens/NewsDetailScreen.dart';
 import 'package:task_manager_flutter/ui/widgets/user_banners.dart';
 import 'package:task_manager_flutter/ui/screens/update_profile.dart';
-
-// Define cores
-const Color lightGreenBackground = Color.fromARGB(255, 231, 247, 233);
-const Color mediumGreenBackground = Color.fromARGB(255, 200, 230, 200);
-const Color darkGreenBorder = Color.fromARGB(255, 1, 247, 14);
+import 'package:task_manager_flutter/data/constants/custom_colors.dart';
 
 class TaskScreen extends StatefulWidget {
   final String screenStatus;
@@ -298,7 +293,7 @@ class _TaskScreenState extends State<TaskScreen> {
                     builder: (context) => const UpdateProfileScreen()));
           }),
       body: Container(
-        color: lightGreenBackground, // Cor de fundo da tela
+        color: CustomColors().getLightGreenBackground(), // Cor de fundo da tela
         child: RefreshIndicator(
           onRefresh: _refreshNews,
           child: Stack(
@@ -322,53 +317,72 @@ class _TaskScreenState extends State<TaskScreen> {
 
                   final news = newsList[index];
                   return Card(
-                    margin: const EdgeInsets.all(8.0),
-                    color: index % 2 == 0
-                        ? mediumGreenBackground // Cor alternada
-                        : lightGreenBackground, // Cor alternada
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8.0),
-                      side: BorderSide(
-                          color: darkGreenBorder,
-                          width: 2), // Borda verde escura
+                    elevation: 0, // Remove a sombra padrão do Card
+                    color: Colors.transparent, // Remove a cor de fundo
+                    shape: const RoundedRectangleBorder(
+                      borderRadius: BorderRadius.zero, // Bordas retas
+                      side: BorderSide.none, // Remove qualquer borda
                     ),
-                    child: ListTile(
-                      title: Text(
-                        news.tituloResu ?? 'Título não disponível',
-                        style: const TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      subtitle: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(news.resumo ?? 'Resumo não disponível'),
-                          const SizedBox(height: 4),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    child: Column(
+                      children: [
+                        ListTile(
+                          title: Text(
+                            news.tituloResu ?? 'Título não disponível',
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                              color: CustomColors().getTextColor(),
+                            ),
+                          ),
+                          subtitle: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                '${news.fonte ?? 'Fonte não disponível'}     ${news.dtNoticia != null ? DateFormat('dd/MM/yyyy HH:mm').format(news.dtNoticia!.toLocal()) : ''}',
-                                style: const TextStyle(
-                                    fontSize: 10, fontWeight: FontWeight.bold),
+                                news.resumo ?? 'Resumo não disponível',
+                                style: TextStyle(
+                                    color: CustomColors().getTextColor()),
                               ),
-                              Text(
-                                news.autor ?? 'Autor não disponível',
-                                style: const TextStyle(fontSize: 10),
+                              const SizedBox(height: 4),
+                              Row(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Text(
+                                    '${news.fonte ?? 'Fonte não disponível'}     ${news.dtNoticia != null ? DateFormat('dd/MM/yyyy HH:mm').format(news.dtNoticia!.toLocal()) : ''}',
+                                    style: TextStyle(
+                                        fontSize: 10,
+                                        fontWeight: FontWeight.bold,
+                                        color: CustomColors().getTextColor()),
+                                  ),
+                                  Text(
+                                    news.autor ?? 'Autor não disponível',
+                                    style: TextStyle(
+                                        fontSize: 10,
+                                        color: CustomColors().getTextColor()),
+                                  ),
+                                ],
                               ),
                             ],
                           ),
-                        ],
-                      ),
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => NewsDetailScreen(news: news),
-                          ),
-                        );
-                      },
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) =>
+                                    NewsDetailScreen(news: news),
+                              ),
+                            );
+                          },
+                        ),
+                        const Divider(
+                          height: 1,
+                          thickness: 1,
+                          color: Colors
+                              .grey, // Ou use CustomColors().getTextColor()
+                          indent: 16,
+                          endIndent: 16,
+                        ),
+                      ],
                     ),
                   );
                 },

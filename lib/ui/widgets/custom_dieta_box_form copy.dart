@@ -117,7 +117,7 @@ class _CustomDietaBoxForm extends State<CustomDietaBoxForm> {
               //    focusNode: _focusNode,
               keyboardType: tipo ?? TextInputType.text,
               decoration: InputDecoration(
-                fillColor: CustomColors().getAppFundoImput(),
+                fillColor: CustomColors().getLightGreenBackground(),
                 filled: true,
                 border: const OutlineInputBorder(
                   borderRadius: BorderRadius.all(
@@ -142,7 +142,7 @@ class _CustomDietaBoxForm extends State<CustomDietaBoxForm> {
         padding: const EdgeInsets.only(bottom: 15.0),
         child: Container(
           padding: EdgeInsets.zero,
-          color: CustomColors().getAppFundoClaro(),
+          color: CustomColors().getLightGreenBackground(),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: <Widget>[
@@ -174,7 +174,7 @@ class _CustomDietaBoxForm extends State<CustomDietaBoxForm> {
                   });
                 },
                 icon: CircleAvatar(
-                  backgroundColor: CustomColors().getAppBotton(),
+                  backgroundColor: CustomColors().getLightGreenBackground(),
                   child: const Icon(
                     Icons.remove,
                   ),
@@ -187,7 +187,7 @@ class _CustomDietaBoxForm extends State<CustomDietaBoxForm> {
                 });
               },
               icon: CircleAvatar(
-                backgroundColor: CustomColors().getAppBotton(),
+                backgroundColor: CustomColors().getLightGreenBackground(),
                 child: const Icon(
                   Icons.add,
                 ),
@@ -240,7 +240,7 @@ class _CustomDietaBoxForm extends State<CustomDietaBoxForm> {
                     'Escolha Dia Semana',
                     style: TextStyle(
                       fontSize: 14,
-                      color: CustomColors().getAppLabelBotton(),
+                      color: CustomColors().getLightGreenBackground(),
                     ),
                   ),
                   items: dias.map((item) {
@@ -323,7 +323,7 @@ class _CustomDietaBoxForm extends State<CustomDietaBoxForm> {
                       border: Border.all(
                         color: Colors.black26,
                       ),
-                      color: CustomColors().getAppBotton(),
+                      color: CustomColors().getLightGreenBackground(),
                     ),
                     elevation: 2,
                   ),
@@ -340,7 +340,7 @@ class _CustomDietaBoxForm extends State<CustomDietaBoxForm> {
                     width: 200,
                     decoration: BoxDecoration(
                       borderRadius: BorderRadius.circular(14),
-                      color: CustomColors().getAppBotton(),
+                      color: CustomColors().getLightGreenBackground(),
                     ),
                     offset: const Offset(-20, 0),
                     scrollbarTheme: ScrollbarThemeData(
@@ -366,7 +366,7 @@ class _CustomDietaBoxForm extends State<CustomDietaBoxForm> {
         padding: const EdgeInsets.only(bottom: 15.0),
         child: Container(
           padding: EdgeInsets.zero,
-          color: CustomColors().getAppFundoClaro(),
+          color: CustomColors().getLightGreenBackground(),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: <Widget>[
@@ -398,7 +398,7 @@ class _CustomDietaBoxForm extends State<CustomDietaBoxForm> {
                   });
                 },
                 icon: CircleAvatar(
-                  backgroundColor: CustomColors().getAppBotton(),
+                  backgroundColor: CustomColors().getLightGreenBackground(),
                   child: const Icon(
                     Icons.remove,
                   ),
@@ -417,7 +417,7 @@ class _CustomDietaBoxForm extends State<CustomDietaBoxForm> {
                 });
               },
               icon: CircleAvatar(
-                backgroundColor: CustomColors().getAppBotton(),
+                backgroundColor: CustomColors().getLightGreenBackground(),
                 child: const Icon(
                   Icons.add,
                 ),
@@ -470,7 +470,7 @@ class _CustomDietaBoxForm extends State<CustomDietaBoxForm> {
                     'Unidade Medida',
                     style: TextStyle(
                       fontSize: 14,
-                      color: CustomColors().getAppLabelBotton(),
+                      color: CustomColors().getLightGreenBackground(),
                     ),
                   ),
                   items: dias.map((item) {
@@ -553,7 +553,7 @@ class _CustomDietaBoxForm extends State<CustomDietaBoxForm> {
                       border: Border.all(
                         color: Colors.black26,
                       ),
-                      color: CustomColors().getAppBotton(),
+                      color: CustomColors().getLightGreenBackground(),
                     ),
                     elevation: 2,
                   ),
@@ -570,7 +570,7 @@ class _CustomDietaBoxForm extends State<CustomDietaBoxForm> {
                     width: 200,
                     decoration: BoxDecoration(
                       borderRadius: BorderRadius.circular(14),
-                      color: CustomColors().getAppBotton(),
+                      color: CustomColors().getLightGreenBackground(),
                     ),
                     offset: const Offset(-20, 0),
                     scrollbarTheme: ScrollbarThemeData(

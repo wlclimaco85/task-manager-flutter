@@ -344,7 +344,7 @@ class _AcademiaDynamicFormState extends State<AcademiaDynamicForm> {
                   children: <Widget>[
                     ListView(shrinkWrap: true, children: <Widget>[
                       Container(
-                        color: CustomColors().getAppFundoPage(),
+                        color: CustomColors().getLightGreenBackground(),
                         child: Padding(
                           padding: const EdgeInsets.all(8.0),
                           child: ListView.builder(
@@ -372,7 +372,7 @@ class _AcademiaDynamicFormState extends State<AcademiaDynamicForm> {
                   ]),
             ),
       floatingActionButton: FloatingActionButton(
-        backgroundColor: CustomColors().getAppBotton(),
+        backgroundColor: CustomColors().getLightGreenBackground(),
         onPressed: () {
           insertAluno();
         },
@@ -614,7 +614,7 @@ class _AcademiaDynamicFormState extends State<AcademiaDynamicForm> {
           child: Container(
             padding: const EdgeInsets.all(18),
             decoration: BoxDecoration(
-              color: CustomColors().getAppFundoImput(),
+              color: CustomColors().getLightGreenBackground(),
               borderRadius: const BorderRadius.only(
                 topRight: Radius.circular(8),
                 bottomRight: Radius.circular(8),

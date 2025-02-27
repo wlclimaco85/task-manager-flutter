@@ -149,7 +149,7 @@ class _SelectedFormRefeicao extends State<SelectedFormRefeicao> {
                     'Tipo Refeição',
                     style: TextStyle(
                       fontSize: 14,
-                      color: CustomColors().getAppLabelBotton(),
+                      color: CustomColors().getLightGreenBackground(),
                     ),
                   ),
                   items: dias.map((item) {
@@ -232,7 +232,7 @@ class _SelectedFormRefeicao extends State<SelectedFormRefeicao> {
                       border: Border.all(
                         color: Colors.black26,
                       ),
-                      color: CustomColors().getAppBotton(),
+                      color: CustomColors().getLightGreenBackground(),
                     ),
                     elevation: 2,
                   ),
@@ -249,7 +249,7 @@ class _SelectedFormRefeicao extends State<SelectedFormRefeicao> {
                     width: 200,
                     decoration: BoxDecoration(
                       borderRadius: BorderRadius.circular(14),
-                      color: CustomColors().getAppBotton(),
+                      color: CustomColors().getLightGreenBackground(),
                     ),
                     offset: const Offset(-20, 0),
                     scrollbarTheme: ScrollbarThemeData(
@@ -273,7 +273,7 @@ class _SelectedFormRefeicao extends State<SelectedFormRefeicao> {
         padding: const EdgeInsets.only(bottom: 15.0),
         child: Container(
           padding: EdgeInsets.zero,
-          color: CustomColors().getAppFundoClaro(),
+          color: CustomColors().getLightGreenBackground(),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: <Widget>[

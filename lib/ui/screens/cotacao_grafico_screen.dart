@@ -4,16 +4,7 @@ import 'package:task_manager_flutter/data/services/cotacao_caller.dart';
 import 'package:task_manager_flutter/ui/widgets/user_banners.dart';
 import 'package:task_manager_flutter/ui/screens/update_profile.dart';
 import 'package:task_manager_flutter/data/models/dollar_model.dart';
-
-// Definição de cores
-class AppColors {
-  static const Color lightGreenBackground = Color.fromARGB(255, 231, 247, 233);
-  static const Color borderColor = Color.fromARGB(255, 1, 247, 14);
-  static const Color tableBorderColor =
-      Color.fromARGB(255, 1, 247, 14); // Verde escuro
-  static const Color tableText = Colors.black;
-  static const Color tableSubtitleText = Colors.grey;
-}
+import 'package:task_manager_flutter/data/constants/custom_colors.dart';
 
 class CotacaoScreen extends StatefulWidget {
   const CotacaoScreen({super.key});
@@ -65,76 +56,131 @@ class _CotacaoScreenState extends State<CotacaoScreen> {
 
   Widget _buildTable(String title, List<TableRow> rows,
       {String? footer, String? source}) {
-    return Container(
-      padding: const EdgeInsets.all(16.0),
-      decoration: BoxDecoration(
-        color: AppColors.lightGreenBackground, // Fundo verde claro
-        border: Border.all(color: AppColors.tableBorderColor, width: 2),
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            title,
-            style: const TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
-              color: AppColors.tableText,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Table(
-            border: TableBorder.all(color: AppColors.tableText),
-            columnWidths: const {
-              0: FlexColumnWidth(),
-              1: FlexColumnWidth(),
-            },
-            children: rows,
-          ),
-          if (footer != null) ...[
-            const SizedBox(height: 8),
-            Text(
-              footer,
-              style: const TextStyle(
-                fontSize: 12,
-                color: AppColors.tableSubtitleText,
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        // Container principal que envolve tudo
+        Padding(
+          padding: const EdgeInsets.symmetric(
+              horizontal: 16.0), // Mesmo padding horizontal da tabela
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              // Primeira caixa azul
+              Container(
+                width: double.infinity, // Força largura total
+                padding: const EdgeInsets.all(8),
+                color: CustomColors().getDarkBlue(),
+                child: const Text(
+                  "Indicador do Arroz em Casca CEPEA/IRGA-RS",
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
               ),
-            ),
-          ],
-          if (source != null) ...[
-            const SizedBox(height: 8),
-            Text(
-              "Fonte: $source",
-              style: const TextStyle(
-                fontSize: 12,
-                color: AppColors.tableSubtitleText,
+              const SizedBox(height: 8),
+              // Segunda caixa azul
+
+              const SizedBox(height: 8),
+              // Tabela
+              Container(
+                decoration: BoxDecoration(
+                  border: Border.all(
+                    color: CustomColors().getDarkGreenBorder(),
+                    width: 1,
+                  ),
+                ),
+                child: Table(
+                  border: TableBorder.all(
+                    color: CustomColors().getDarkGreenBorder(),
+                    width: 1,
+                  ),
+                  columnWidths: const {
+                    0: FlexColumnWidth(),
+                    1: FlexColumnWidth(),
+                  },
+                  children: [
+                    // Cabeçalho com fundo cinza
+                    TableRow(
+                      decoration: BoxDecoration(
+                        color: CustomColors().getHeaderTable(), // Cinza escuro
+                      ),
+                      children: const [
+                        Padding(
+                          padding: const EdgeInsets.all(8.0),
+                          child: Text(
+                            "Cabeçalho 1",
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                        Padding(
+                          padding: const EdgeInsets.all(8.0),
+                          child: Text(
+                            "Cabeçalho 2",
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    ...rows,
+                  ],
+                ),
               ),
-            ),
-          ],
-        ],
-      ),
+              // Footer e fonte
+              if (footer != null) ...[
+                const SizedBox(height: 8),
+                Text(
+                  footer,
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: CustomColors().getTextColorDesc(),
+                  ),
+                ),
+              ],
+              if (source != null) ...[
+                const SizedBox(height: 8),
+                Text(
+                  "Fonte: $source",
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: CustomColors().getTextColorDesc(),
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ),
+      ],
     );
   }
 
   List<TableRow> _buildCotacoesRows(List<Cotacao> cotacoes) {
     return [
-      const TableRow(
+      TableRow(
         children: [
           Padding(
-            padding: EdgeInsets.all(8.0),
+            padding: const EdgeInsets.all(8.0),
             child: Text(
               'Data',
               style: TextStyle(
-                  fontWeight: FontWeight.bold, color: AppColors.tableText),
+                  fontWeight: FontWeight.bold,
+                  color: CustomColors().getTextColor()),
             ),
           ),
           Padding(
-            padding: EdgeInsets.all(8.0),
+            padding: const EdgeInsets.all(8.0),
             child: Text(
               'Valor (R\$)',
               style: TextStyle(
-                  fontWeight: FontWeight.bold, color: AppColors.tableText),
+                  fontWeight: FontWeight.bold,
+                  color: CustomColors().getTextColor()),
             ),
           ),
         ],
@@ -146,14 +192,14 @@ class _CotacaoScreenState extends State<CotacaoScreen> {
               padding: const EdgeInsets.all(8.0),
               child: Text(
                 '${cotacao.dtCotacao?.day}/${cotacao.dtCotacao?.month}/${cotacao.dtCotacao?.year}',
-                style: const TextStyle(color: AppColors.tableText),
+                style: TextStyle(color: CustomColors().getTextColor()),
               ),
             ),
             Padding(
               padding: const EdgeInsets.all(8.0),
               child: Text(
                 'R\$ ${cotacao.valor?.toStringAsFixed(2)}',
-                style: const TextStyle(color: AppColors.tableText),
+                style: TextStyle(color: CustomColors().getTextColor()),
               ),
             ),
           ],
@@ -164,22 +210,24 @@ class _CotacaoScreenState extends State<CotacaoScreen> {
 
   List<TableRow> _buildDollarRows(List<Dollar> cotacoes) {
     return [
-      const TableRow(
+      TableRow(
         children: [
           Padding(
-            padding: EdgeInsets.all(8.0),
+            padding: const EdgeInsets.all(8.0),
             child: Text(
               'Data',
               style: TextStyle(
-                  fontWeight: FontWeight.bold, color: AppColors.tableText),
+                  fontWeight: FontWeight.bold,
+                  color: CustomColors().getTextColor()),
             ),
           ),
           Padding(
-            padding: EdgeInsets.all(8.0),
+            padding: const EdgeInsets.all(8.0),
             child: Text(
               'Valor (R\$)',
               style: TextStyle(
-                  fontWeight: FontWeight.bold, color: AppColors.tableText),
+                  fontWeight: FontWeight.bold,
+                  color: CustomColors().getTextColor()),
             ),
           ),
         ],
@@ -191,14 +239,14 @@ class _CotacaoScreenState extends State<CotacaoScreen> {
               padding: const EdgeInsets.all(8.0),
               child: Text(
                 '${cotacao.date?.day}/${cotacao.date?.month}/${cotacao.date?.year}',
-                style: const TextStyle(color: AppColors.tableText),
+                style: TextStyle(color: CustomColors().getTextColor()),
               ),
             ),
             Padding(
               padding: const EdgeInsets.all(8.0),
               child: Text(
                 'R\$ ${cotacao.rate?.toStringAsFixed(2)}',
-                style: const TextStyle(color: AppColors.tableText),
+                style: TextStyle(color: CustomColors().getTextColor()),
               ),
             ),
           ],

@@ -111,7 +111,7 @@ class _CustomDiasBoxForm extends State<CustomDiasBoxForm> {
                     'Escolha Dia Semana',
                     style: TextStyle(
                       fontSize: 14,
-                      color: CustomColors().getAppLabelBotton(),
+                      color: CustomColors().getLightGreenBackground(),
                     ),
                   ),
                   items: dias.map((item) {
@@ -194,7 +194,7 @@ class _CustomDiasBoxForm extends State<CustomDiasBoxForm> {
                       border: Border.all(
                         color: Colors.black26,
                       ),
-                      color: CustomColors().getAppBotton(),
+                      color: CustomColors().getLightGreenBackground(),
                     ),
                     elevation: 2,
                   ),
@@ -211,7 +211,7 @@ class _CustomDiasBoxForm extends State<CustomDiasBoxForm> {
                     width: 200,
                     decoration: BoxDecoration(
                       borderRadius: BorderRadius.circular(14),
-                      color: CustomColors().getAppBotton(),
+                      color: CustomColors().getLightGreenBackground(),
                     ),
                     offset: const Offset(-20, 0),
                     scrollbarTheme: ScrollbarThemeData(
@@ -243,7 +243,7 @@ class _CustomDiasBoxForm extends State<CustomDiasBoxForm> {
               //    focusNode: _focusNode,
               keyboardType: tipo ?? TextInputType.text,
               decoration: InputDecoration(
-                fillColor: CustomColors().getAppFundoImput(),
+                fillColor: CustomColors().getLightGreenBackground(),
                 filled: true,
                 border: const OutlineInputBorder(
                   borderRadius: BorderRadius.all(
@@ -269,7 +269,7 @@ class _CustomDiasBoxForm extends State<CustomDiasBoxForm> {
         padding: const EdgeInsets.only(bottom: 15.0),
         child: Container(
           padding: EdgeInsets.zero,
-          color: CustomColors().getAppFundoClaro(),
+          color: CustomColors().getLightGreenBackground(),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: <Widget>[
@@ -299,7 +299,7 @@ class _CustomDiasBoxForm extends State<CustomDiasBoxForm> {
                   });
                 },
                 icon: CircleAvatar(
-                  backgroundColor: CustomColors().getAppBotton(),
+                  backgroundColor: CustomColors().getLightGreenBackground(),
                   child: const Icon(
                     Icons.remove,
                   ),
@@ -310,7 +310,7 @@ class _CustomDiasBoxForm extends State<CustomDiasBoxForm> {
                 setState(() => _formCount++);
               },
               icon: CircleAvatar(
-                backgroundColor: CustomColors().getAppBotton(),
+                backgroundColor: CustomColors().getLightGreenBackground(),
                 child: const Icon(
                   Icons.add,
                 ),

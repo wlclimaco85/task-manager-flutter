@@ -4,14 +4,7 @@ import 'package:task_manager_flutter/data/utils/fotos_util.dart';
 import 'package:task_manager_flutter/ui/screens/update_profile.dart';
 import 'package:task_manager_flutter/ui/widgets/user_banners.dart';
 import 'package:task_manager_flutter/ui/screens/checkoutscreen.dart';
-
-// Define theme colors
-const Color lightGreenBackground = Color.fromARGB(255, 231, 247, 233);
-const Color darkGreenBorder = Color.fromARGB(255, 1, 247, 14);
-const Color buttonBackground = Color.fromARGB(255, 128, 202, 132);
-const Color negotiationCardBackground = Color.fromARGB(255, 214, 239, 222);
-const Color confirmButtonColor = Color.fromARGB(255, 1, 95, 15);
-const Color cancelButtonColor = Colors.red;
+import 'package:task_manager_flutter/data/constants/custom_colors.dart';
 
 class NegociacaoCatalogPage extends StatefulWidget {
   final String title;
@@ -78,7 +71,7 @@ class _NegociacaoCatalogPageState extends State<NegociacaoCatalogPage> {
         },
       ),
       body: Container(
-        color: lightGreenBackground,
+        color: CustomColors().getLightGreenBackground(),
         child: isLoading
             ? const Center(child: CircularProgressIndicator())
             : products.isEmpty
@@ -103,7 +96,7 @@ class _NegociacaoCatalogPageState extends State<NegociacaoCatalogPage> {
     showDialog(
       context: context,
       builder: (_) => AlertDialog(
-        backgroundColor: lightGreenBackground,
+        backgroundColor: CustomColors().getLightGreenBackground(),
         title: Text(
           product.descricao ?? 'Sem descrição',
           style: const TextStyle(fontWeight: FontWeight.bold),
@@ -148,10 +141,11 @@ class _NegociacaoCatalogPageState extends State<NegociacaoCatalogPage> {
               );
             },
             style: ElevatedButton.styleFrom(
-              backgroundColor: buttonBackground,
+              backgroundColor: CustomColors().getButtonBackground(),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(8),
-                side: BorderSide(color: darkGreenBorder, width: 2),
+                side: BorderSide(
+                    color: CustomColors().getDarkGreenBorder(), width: 2),
               ),
             ),
             child: const Text('Confirmar Ação'),
@@ -334,7 +328,7 @@ class ProductCard extends StatelessWidget {
       context: context,
       builder: (context) {
         return AlertDialog(
-          backgroundColor: lightGreenBackground,
+          backgroundColor: CustomColors().getLightGreenBackground(),
           title: const Text(
             'Fazer Contra Proposta',
             style: TextStyle(fontWeight: FontWeight.bold),
@@ -381,9 +375,9 @@ class ProductCard extends StatelessWidget {
           actions: [
             TextButton(
               onPressed: () => Navigator.of(context).pop(),
-              child: const Text(
+              child: Text(
                 'Cancelar',
-                style: TextStyle(color: cancelButtonColor),
+                style: TextStyle(color: CustomColors().getCancelButtonColor()),
               ),
             ),
             ElevatedButton(
@@ -418,10 +412,11 @@ class ProductCard extends StatelessWidget {
                 }
               },
               style: ElevatedButton.styleFrom(
-                backgroundColor: confirmButtonColor,
+                backgroundColor: CustomColors().getConfirmButtonColor(),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(8),
-                  side: BorderSide(color: darkGreenBorder, width: 2),
+                  side: BorderSide(
+                      color: CustomColors().getDarkGreenBorder(), width: 2),
                 ),
               ),
               child: const Text('Enviar Proposta'),
@@ -456,10 +451,10 @@ class ProductCard extends StatelessWidget {
 
     return Card(
       margin: const EdgeInsets.all(10),
-      color: lightGreenBackground,
+      color: CustomColors().getLightGreenBackground(),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(8.0),
-        side: BorderSide(color: darkGreenBorder, width: 2),
+        side: BorderSide(color: CustomColors().getDarkGreenBorder(), width: 2),
       ),
       child: Padding(
         padding: const EdgeInsets.all(8.0),
@@ -468,7 +463,11 @@ class ProductCard extends StatelessWidget {
           children: [
             Row(
               children: [
-                Expanded(flex: 2, child: image),
+                Expanded(
+                  flex: 2,
+                  child: image,
+                ),
+                const SizedBox(width: 6), // Espaço entre a foto e o texto
                 Expanded(
                   flex: 3,
                   child: Column(
@@ -476,37 +475,103 @@ class ProductCard extends StatelessWidget {
                     children: [
                       Text(
                         product.tipo ?? 'Sem descrição',
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.bold,
+                          color: CustomColors().getTextColor(),
                         ),
                       ),
-                      Text(
-                        'Lote: ${product.id}',
-                        style: const TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
+                      RichText(
+                        text: TextSpan(
+                          style:
+                              TextStyle(color: CustomColors().getTextColor()),
+                          children: [
+                            const TextSpan(
+                              text: 'Lote: ',
+                              style: TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            TextSpan(
+                              text: product.id!.toString(),
+                              style: const TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.normal,
+                              ),
+                            ),
+                          ],
                         ),
                       ),
-                      Text('Quantidade: ${product.qtdSacos} sacos'),
-                      Text('Data Retirada: ${product.dtRetirada}'),
-                      Text('Descrição: ${product.descricao}'),
+                      RichText(
+                        text: TextSpan(
+                          style: TextStyle(
+                              color: CustomColors().getTextColorDesc()),
+                          children: [
+                            const TextSpan(
+                              text: 'Quantidade: ',
+                              style: TextStyle(fontWeight: FontWeight.bold),
+                            ),
+                            TextSpan(
+                              text: '${product.qtdSacos} sacos',
+                            ),
+                          ],
+                        ),
+                      ),
+                      RichText(
+                        text: TextSpan(
+                          style: TextStyle(
+                              color: CustomColors().getTextColorDesc()),
+                          children: [
+                            const TextSpan(
+                              text: 'Data Retirada: ',
+                              style: TextStyle(fontWeight: FontWeight.bold),
+                            ),
+                            TextSpan(
+                              text: product.dtRetirada,
+                            ),
+                          ],
+                        ),
+                      ),
+                      RichText(
+                        text: TextSpan(
+                          style: TextStyle(
+                              color: CustomColors().getTextColorDesc()),
+                          children: [
+                            const TextSpan(
+                              text: 'Descrição: ',
+                              style: TextStyle(fontWeight: FontWeight.bold),
+                            ),
+                            TextSpan(
+                              text: product.descricao,
+                            ),
+                          ],
+                        ),
+                      ),
                     ],
                   ),
                 ),
               ],
             ),
             const SizedBox(height: 8),
-            const Text('Negociações:',
-                style: TextStyle(fontWeight: FontWeight.bold)),
+
+// No seu widget
+            Text('Negociações:',
+                style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    color: CustomColors().getTextColor(),
+                    fontSize:
+                        16)), // Aumentei o tamanho para combinar com o estilo anterior
+            const SizedBox(height: 8), // Espaço após o título
             ...List.generate((product.negociacoes as List).length, (i) {
               final negotiation = product.negociacoes[i];
               return Card(
                 margin: const EdgeInsets.symmetric(vertical: 4.0),
-                color: negotiationCardBackground,
+                color: CustomColors().getNegotiationCardBackground(),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(8.0),
-                  side: BorderSide(color: darkGreenBorder, width: 1.5),
+                  side: BorderSide(
+                      color: CustomColors().getDarkGreenBorder(), width: 1.5),
                 ),
                 child: Padding(
                   padding: const EdgeInsets.all(8.0),
@@ -515,37 +580,95 @@ class ProductCard extends StatelessWidget {
                     children: [
                       // Comprador ID
                       SizedBox(
-                        width: double.infinity, // Garante que a borda seja fixa
-                        child: Text(
-                          'Comprador ID: ${negotiation.compradorId}',
-                          style: const TextStyle(fontSize: 14),
+                        width: double.infinity,
+                        child: RichText(
+                          text: TextSpan(
+                            style: TextStyle(
+                                fontSize: 14,
+                                color: CustomColors().getTextColor()),
+                            children: [
+                              const TextSpan(
+                                text: 'Comprador ID: ',
+                                style: TextStyle(fontWeight: FontWeight.bold),
+                              ),
+                              TextSpan(
+                                text: negotiation.compradorId!.toString(),
+                                style: const TextStyle(
+                                    fontWeight: FontWeight.normal),
+                              ),
+                            ],
+                          ),
                         ),
                       ),
                       // Quantidade
                       SizedBox(
-                        width: double.infinity, // Garante que a borda seja fixa
-                        child: Text(
-                          'Quantidade: ${negotiation.qtdSacos}',
-                          style: const TextStyle(fontSize: 14),
+                        width: double.infinity,
+                        child: RichText(
+                          text: TextSpan(
+                            style: TextStyle(
+                                fontSize: 14,
+                                color: CustomColors().getTextColor()),
+                            children: [
+                              const TextSpan(
+                                text: 'Quantidade: ',
+                                style: TextStyle(fontWeight: FontWeight.bold),
+                              ),
+                              TextSpan(
+                                text: negotiation.qtdSacos!.toString(),
+                                style: const TextStyle(
+                                    fontWeight: FontWeight.normal),
+                              ),
+                            ],
+                          ),
                         ),
                       ),
                       // Valor por saco
                       SizedBox(
-                        width: double.infinity, // Garante que a borda seja fixa
-                        child: Text(
-                          'Valor por saco: R\$${negotiation.vlrSacos}',
-                          style: const TextStyle(fontSize: 14),
+                        width: double.infinity,
+                        child: RichText(
+                          text: TextSpan(
+                            style: TextStyle(
+                                fontSize: 14,
+                                color: CustomColors().getTextColor()),
+                            children: [
+                              const TextSpan(
+                                text: 'Valor por saco: ',
+                                style: TextStyle(fontWeight: FontWeight.bold),
+                              ),
+                              TextSpan(
+                                text: 'R\$${negotiation.vlrSacos}',
+                                style: const TextStyle(
+                                    fontWeight: FontWeight.normal),
+                              ),
+                            ],
+                          ),
                         ),
                       ),
                       // Status
                       SizedBox(
-                        width: double.infinity, // Garante que a borda seja fixa
-                        child: Text(
-                          'Status: ${getStatusText(negotiation.status)} / ${getTipoText(negotiation.tipo)}',
-                          style: const TextStyle(fontSize: 14),
+                        width: double.infinity,
+                        child: RichText(
+                          text: TextSpan(
+                            style: TextStyle(
+                                fontSize: 14,
+                                color: CustomColors().getTextColor()),
+                            children: [
+                              const TextSpan(
+                                text: 'Status: ',
+                                style: TextStyle(fontWeight: FontWeight.bold),
+                              ),
+                              TextSpan(
+                                text:
+                                    '${getStatusText(negotiation.status)} / ${getTipoText(negotiation.tipo)}',
+                                style: const TextStyle(
+                                    fontWeight: FontWeight.normal),
+                              ),
+                            ],
+                          ),
                         ),
                       ),
                       const SizedBox(height: 8),
+                      // Botões de ação
                       if (negotiation.tipo == 'P' ||
                           negotiation.tipo == 'C') ...[
                         // Botões para Proposta ou Contra Proposta
@@ -558,7 +681,7 @@ class ProductCard extends StatelessWidget {
                                 IconButton(
                                   icon: const Icon(Icons.check,
                                       color: Colors.green),
-                                  tooltip: 'Aceitar',
+                                  tooltip: 'Aceitarrer',
                                   onPressed: () {
                                     showDialog(
                                       context: context,
@@ -681,7 +804,7 @@ class ProductCard extends StatelessWidget {
                                   },
                                 ),
                                 const Text(
-                                  'Aceitar',
+                                  'Aceitare',
                                   style: TextStyle(
                                       fontSize: 12, color: Colors.black),
                                 ),
@@ -855,13 +978,14 @@ class ProductCard extends StatelessWidget {
                                     context,
                                     MaterialPageRoute(
                                       builder: (context) => CheckoutScreen(
-                                        productName: "teste",
-                                        productValue: 10.0,
-                                        productQnt: 1,
+                                        productName: negotiation.descricao!,
+                                        productValue: negotiation.vlrSacos!,
+                                        productQnt: negotiation.qtdSacos!,
                                         idVenda: negotiation.id!,
                                       ),
                                     ),
                                   ),
+
                                   icon: const Icon(
                                     Icons.edit_document,
                                   ), // Choose an appropriate icon

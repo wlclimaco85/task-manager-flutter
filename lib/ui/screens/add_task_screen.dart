@@ -4,7 +4,7 @@ import 'package:task_manager_flutter/data/services/network_caller.dart';
 import 'package:task_manager_flutter/data/utils/api_links.dart';
 import 'package:task_manager_flutter/ui/screens/update_profile.dart';
 import 'package:task_manager_flutter/ui/widgets/custom_button.dart';
-import 'package:task_manager_flutter/ui/widgets/custom_text_form_field.dart';
+import 'package:task_manager_flutter/data/constants/custom_colors.dart';
 import 'package:task_manager_flutter/ui/widgets/screen_background.dart';
 import 'package:task_manager_flutter/ui/widgets/user_banners.dart';
 
@@ -156,14 +156,17 @@ class CustomTextFormField extends StatelessWidget {
           hintText: hintText,
           filled: true,
           fillColor: Colors.white,
-          border: const OutlineInputBorder(
-            borderSide: BorderSide(color: darkGreenBorder, width: 2.0),
+          border: OutlineInputBorder(
+            borderSide: BorderSide(
+                color: CustomColors().getDarkGreenBorder(), width: 2.0),
           ),
-          enabledBorder: const OutlineInputBorder(
-            borderSide: BorderSide(color: darkGreenBorder, width: 2.0),
+          enabledBorder: OutlineInputBorder(
+            borderSide: BorderSide(
+                color: CustomColors().getDarkGreenBorder(), width: 2.0),
           ),
-          focusedBorder: const OutlineInputBorder(
-            borderSide: BorderSide(color: darkGreenBorder, width: 2.0),
+          focusedBorder: OutlineInputBorder(
+            borderSide: BorderSide(
+                color: CustomColors().getDarkGreenBorder(), width: 2.0),
           ),
         ),
         validator: validator,

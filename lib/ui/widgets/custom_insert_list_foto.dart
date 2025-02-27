@@ -110,7 +110,7 @@ class _ListFotoForm extends State<ListFotoForm> {
                   child: Container(
                     padding: const EdgeInsets.all(18),
                     decoration: BoxDecoration(
-                      color: CustomColors().getAppFundoImput(),
+                      color: CustomColors().getLightGreenBackground(),
                       borderRadius: const BorderRadius.only(
                         topRight: Radius.circular(8),
                         bottomRight: Radius.circular(8),
@@ -133,7 +133,7 @@ class _ListFotoForm extends State<ListFotoForm> {
         padding: const EdgeInsets.only(bottom: 15.0),
         child: Container(
           padding: EdgeInsets.zero,
-          color: CustomColors().getAppFundoClaro(),
+          color: CustomColors().getLightGreenBackground(),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: <Widget>[
@@ -161,7 +161,7 @@ class _ListFotoForm extends State<ListFotoForm> {
                   });
                 },
                 icon: CircleAvatar(
-                  backgroundColor: CustomColors().getAppBotton(),
+                  backgroundColor: CustomColors().getLightGreenBackground(),
                   child: const Icon(
                     Icons.remove,
                   ),
@@ -173,7 +173,7 @@ class _ListFotoForm extends State<ListFotoForm> {
                 keys++;
               },
               icon: CircleAvatar(
-                backgroundColor: CustomColors().getAppBotton(),
+                backgroundColor: CustomColors().getLightGreenBackground(),
                 child: const Icon(
                   Icons.add,
                 ),

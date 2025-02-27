@@ -322,7 +322,7 @@ class _HomeModalAddState extends State<HomeModalAdd> {
           padding: const EdgeInsets.all(18),
           child: Container(
             alignment: Alignment.topCenter,
-            color: CustomColors().getAppFundoPage(),
+            color: CustomColors().getLightGreenBackground(),
             child: SingleChildScrollView(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -395,7 +395,7 @@ class _HomeModalAddState extends State<HomeModalAdd> {
                         child: Container(
                           padding: const EdgeInsets.all(18),
                           decoration: BoxDecoration(
-                            color: CustomColors().getAppFundoImput(),
+                            color: CustomColors().getLightGreenBackground(),
                             borderRadius: const BorderRadius.only(
                               topRight: Radius.circular(8),
                               bottomRight: Radius.circular(8),
@@ -429,7 +429,8 @@ class _HomeModalAddState extends State<HomeModalAdd> {
                                 'Escolha o sexo atendimento',
                                 style: TextStyle(
                                   fontSize: 14,
-                                  color: CustomColors().getAppLabelBotton(),
+                                  color:
+                                      CustomColors().getLightGreenBackground(),
                                 ),
                               ),
                               items: sexo.map((item) {
@@ -512,7 +513,8 @@ class _HomeModalAddState extends State<HomeModalAdd> {
                                   border: Border.all(
                                     color: Colors.black26,
                                   ),
-                                  color: CustomColors().getAppBotton(),
+                                  color:
+                                      CustomColors().getLightGreenBackground(),
                                 ),
                                 elevation: 2,
                               ),
@@ -529,7 +531,8 @@ class _HomeModalAddState extends State<HomeModalAdd> {
                                 width: 200,
                                 decoration: BoxDecoration(
                                   borderRadius: BorderRadius.circular(14),
-                                  color: CustomColors().getAppBotton(),
+                                  color:
+                                      CustomColors().getLightGreenBackground(),
                                 ),
                                 offset: const Offset(-20, 0),
                                 scrollbarTheme: ScrollbarThemeData(

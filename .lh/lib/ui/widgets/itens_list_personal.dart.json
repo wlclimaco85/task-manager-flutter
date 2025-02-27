@@ -3,7 +3,7 @@
     "activeCommit": 0,
     "commits": [
         {
-            "activePatchIndex": 2,
+            "activePatchIndex": 3,
             "patches": [
                 {
                     "date": 1709242338172,
@@ -16,6 +16,10 @@
                 {
                     "date": 1733243862209,
                     "content": "Index: \n===================================================================\n--- \n+++ \n@@ -29,16 +29,16 @@\n double _volume = 0.0;*/\r\n \r\n class ListItensExample extends StatelessWidget {\r\n   const ListItensExample({\r\n-    Key? key,\r\n+    super.key,\r\n     required this.nome,\r\n     required this.cpf,\r\n     required this.cref,\r\n     required this.valor,\r\n     required this.foto,\r\n     required this.id,\r\n-  }) : super(key: key);\r\n+  });\r\n \r\n   final String nome;\r\n   final String cpf;\r\n   final String cref;\r\n"
+                },
+                {
+                    "date": 1740664207169,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -60,9 +60,9 @@\n               Container(\r\n                 width: 70,\r\n                 height: 140,\r\n                 padding: EdgeInsets.zero,\r\n-                color: CustomColors().getAppFundoPage(),\r\n+                color: CustomColors().getLightGreenBackground(),\r\n                 child: Padding(\r\n                   padding: const EdgeInsets.only(bottom: 60),\r\n                   child: CircleAvatar(\r\n                     radius: 25,\r\n"
                 }
             ],
             "date": 1709242338172,

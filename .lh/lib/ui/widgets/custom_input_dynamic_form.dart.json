@@ -3,7 +3,7 @@
     "activeCommit": 0,
     "commits": [
         {
-            "activePatchIndex": 1,
+            "activePatchIndex": 2,
             "patches": [
                 {
                     "date": 1707243452422,
@@ -12,6 +12,10 @@
                 {
                     "date": 1733243862217,
                     "content": "Index: \n===================================================================\n--- \n+++ \n@@ -13,15 +13,15 @@\n   Function(String?)? onPressed;\r\n \r\n \r\n   CustomInputForm({\r\n-    Key? key,\r\n+    super.key,\r\n     required this.validator,\r\n     required this.focusNode,\r\n     this.type,\r\n     required this.keyField,\r\n     required this.onPressed,\r\n-  }) : super(key: key);\r\n+  });\r\n \r\n   @override\r\n   Widget build(BuildContext context) {\r\n     final platform = Theme.of(context).platform;\r\n"
+                },
+                {
+                    "date": 1740663862244,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -31,9 +31,9 @@\n         child: TextFormField(\r\n           key: Key(keyField),\r\n           keyboardType: type ?? TextInputType.text,\r\n           decoration: InputDecoration(\r\n-            fillColor: CustomColors().getAppFundoImput(),\r\n+            fillColor: CustomColors().getLightGreenBackground(),\r\n             filled: true,\r\n             border: const OutlineInputBorder(\r\n               borderRadius: BorderRadius.all(\r\n                 Radius.circular(8.0),\r\n@@ -43,9 +43,9 @@\n                 width: 3.0,\r\n               ),\r\n             ),\r\n             labelStyle: TextStyle(\r\n-                color: CustomColors().getAppFundoImput(), fontSize: 16.0),\r\n+                color: CustomColors().getLightGreenBackground(), fontSize: 16.0),\r\n             hintText: keyField,\r\n           ),\r\n           onChanged: onPressed,\r\n           //    onChanged: (value) => title = value,\r\n"
                 }
             ],
             "date": 1707243452422,

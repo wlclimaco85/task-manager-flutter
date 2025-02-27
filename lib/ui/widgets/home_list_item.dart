@@ -20,7 +20,7 @@ class _HomeListItemState extends State<HomeListItem> {
           Container(
             height: 15,
             decoration: BoxDecoration(
-              color: CustomColors().getAppBarMainColor(),
+              color: CustomColors().getLightGreenBackground(),
               borderRadius: const BorderRadius.only(
                 topLeft: Radius.circular(7),
                 topRight: Radius.circular(7),
@@ -47,7 +47,7 @@ class _HomeListItemState extends State<HomeListItem> {
                       Text(
                         widget.homeListModel.title,
                         style: TextStyle(
-                          color: CustomColors().getAppBarMainColor(),
+                          color: CustomColors().getLightGreenBackground(),
                           fontWeight: FontWeight.bold,
                         ),
                       ),

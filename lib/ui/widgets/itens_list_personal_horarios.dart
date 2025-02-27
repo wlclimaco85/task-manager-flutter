@@ -35,7 +35,7 @@ class CustomInputHorarioForm extends StatelessWidget {
           focusNode: focusNode,
           keyboardType: type ?? TextInputType.text,
           decoration: InputDecoration(
-            fillColor: CustomColors().getAppFundoImput(),
+            fillColor: CustomColors().getLightGreenBackground(),
             filled: true,
             border: const OutlineInputBorder(
               borderRadius: BorderRadius.all(

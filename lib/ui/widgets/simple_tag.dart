@@ -24,8 +24,8 @@ class SimpleTag extends StatelessWidget {
             color: Color.fromARGB(255, 14, 13, 13),
           ),
           tagContainerDecoration: BoxDecoration(
-            color: CustomColors().getAppBotton(),
-            border: Border.all(color: CustomColors().getAppBotton()),
+            color: CustomColors().getLightGreenBackground(),
+            border: Border.all(color: CustomColors().getLightGreenBackground()),
             borderRadius: const BorderRadius.all(
               Radius.circular(20),
             ),

@@ -61,7 +61,7 @@ class ListItensExample extends StatelessWidget {
                 width: 70,
                 height: 140,
                 padding: EdgeInsets.zero,
-                color: CustomColors().getAppFundoPage(),
+                color: CustomColors().getLightGreenBackground(),
                 child: Padding(
                   padding: const EdgeInsets.only(bottom: 60),
                   child: CircleAvatar(

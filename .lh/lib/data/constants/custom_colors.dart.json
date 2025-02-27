@@ -3,7 +3,7 @@
     "activeCommit": 0,
     "commits": [
         {
-            "activePatchIndex": 4,
+            "activePatchIndex": 9,
             "patches": [
                 {
                     "date": 1736441316920,
@@ -24,6 +24,26 @@
                 {
                     "date": 1738863247993,
                     "content": "Index: \n===================================================================\n--- \n+++ \n@@ -14,8 +14,9 @@\n   final Color _lightGreenBackground = const Color.fromARGB(255, 231, 247, 233);\r\n   final Color _darkGreenBorder = const Color.fromARGB(255, 1, 247, 14);\r\n   final Color _buttonBackground = const Color.fromARGB(255, 128, 202, 132);\r\n \r\n+\r\n   Color getButtonBackground() {\r\n     return _buttonBackground;\r\n   }\r\n \r\n"
+                },
+                {
+                    "date": 1740661742228,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -1,7 +1,8 @@\n import 'package:flutter/material.dart';\r\n \r\n class CustomColors {\r\n+  /*\r\n   final Color _activePrimaryButton = const Color.fromARGB(255, 63, 81, 181);\r\n   final Color _activeSecondaryButton = const Color.fromARGB(255, 230, 230, 255);\r\n   final Color _gradientMainColor = const Color(0xff00ADFA);\r\n   final Color _gradientSecColor = const Color(0xff00E6FD);\r\n@@ -65,5 +66,6 @@\n \r\n   Color getAppLabelBotton() {\r\n     return _appLabelBotton;\r\n   }\r\n+  */\r\n }\r\n"
+                },
+                {
+                    "date": 1740661824854,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -1,7 +1,12 @@\n import 'package:flutter/material.dart';\r\n \r\n class CustomColors {\r\n+\r\n+final Color _lightGreenBackground();\r\n+final Color _darkGreenBorder();\r\n+final Color _buttonBackground();\r\n+\r\n   /*\r\n   final Color _activePrimaryButton = const Color.fromARGB(255, 63, 81, 181);\r\n   final Color _activeSecondaryButton = const Color.fromARGB(255, 230, 230, 255);\r\n   final Color _gradientMainColor = const Color(0xff00ADFA);\r\n"
+                },
+                {
+                    "date": 1740662042803,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -1,11 +1,17 @@\n import 'package:flutter/material.dart';\r\n \r\n class CustomColors {\r\n \r\n-final Color _lightGreenBackground();\r\n-final Color _darkGreenBorder();\r\n-final Color _buttonBackground();\r\n+final Color _lightGreenBackground = Color.fromARGB(255, 255, 255, 255);\r\n+final Color _darkGreenBorder = Color(0xff002E18);\r\n+final Color _buttonBackground = Color.fromARGB(255, 255, 255, 23);\r\n+final  Color _textColorDesc = Color(0xFF38180E);\r\n+final Color _textColor = Color(0xFF002E18);\r\n+final Color _negotiationCardBackground = Color.fromARGB(255, 255, 255, 250);\r\n+final Color _confirmButtonColor = Color.fromARGB(255, 1, 95, 15);\r\n+final Color _cancelButtonColor = Colors.red;\r\n+final Color _buttonTextColor = Color.fromARGB(255, 255, 255, 255);\r\n \r\n   /*\r\n   final Color _activePrimaryButton = const Color.fromARGB(255, 63, 81, 181);\r\n   final Color _activeSecondaryButton = const Color.fromARGB(255, 230, 230, 255);\r\n"
+                },
+                {
+                    "date": 1740662125601,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -10,8 +10,44 @@\n   final Color _confirmButtonColor = Color.fromARGB(255, 1, 95, 15);\r\n   final Color _cancelButtonColor = Colors.red;\r\n   final Color _buttonTextColor = Color.fromARGB(255, 255, 255, 255);\r\n \r\n+  _lightGreenBackground() {\r\n+    return _lightGreenBackground;\r\n+  }\r\n+  _darkGreenBorder  () {\r\n+    return _darkGreenBorder;\r\n+  }\r\n+\r\n+  _buttonBackground () {\r\n+    return _buttonBackground;\r\n+  }\r\n+\r\n+  _textColorDesc () {\r\n+    return _textColorDesc;\r\n+  }\r\n+\r\n+  _textColor () {\r\n+    return _textColor;\r\n+  }\r\n+\r\n+  _negotiationCardBackground   () {\r\n+    return _negotiationCardBackground;\r\n+  }\r\n+\r\n+  _confirmButtonColor () {\r\n+    return _confirmButtonColor;\r\n+  }\r\n+\r\n+  _cancelButtonColor  () {\r\n+    return _cancelButtonColor;\r\n+  }\r\n+\r\n+  _buttonTextColor  () {\r\n+    return _buttonTextColor;\r\n+  }\r\n+\r\n+\r\n   /*\r\n   final Color _activePrimaryButton = const Color.fromARGB(255, 63, 81, 181);\r\n   final Color _activeSecondaryButton = const Color.fromARGB(255, 230, 230, 255);\r\n   final Color _gradientMainColor = const Color(0xff00ADFA);\r\n"
+                },
+                {
+                    "date": 1740662183311,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -10,41 +10,41 @@\n   final Color _confirmButtonColor = Color.fromARGB(255, 1, 95, 15);\r\n   final Color _cancelButtonColor = Colors.red;\r\n   final Color _buttonTextColor = Color.fromARGB(255, 255, 255, 255);\r\n \r\n-  _lightGreenBackground() {\r\n+  getLightGreenBackground() {\r\n     return _lightGreenBackground;\r\n   }\r\n \r\n-  _darkGreenBorder() {\r\n+  getDarkGreenBorder() {\r\n     return _darkGreenBorder;\r\n   }\r\n \r\n-  _buttonBackground() {\r\n+  getButtonBackground() {\r\n     return _buttonBackground;\r\n   }\r\n \r\n-  _textColorDesc() {\r\n+  getTextColorDesc() {\r\n     return _textColorDesc;\r\n   }\r\n \r\n-  _textColor() {\r\n+  getTextColor() {\r\n     return _textColor;\r\n   }\r\n \r\n-  _negotiationCardBackground() {\r\n+  getNegotiationCardBackground() {\r\n     return _negotiationCardBackground;\r\n   }\r\n \r\n-  _confirmButtonColor() {\r\n+  getConfirmButtonColor() {\r\n     return _confirmButtonColor;\r\n   }\r\n \r\n-  _cancelButtonColor() {\r\n+  getCancelButtonColor() {\r\n     return _cancelButtonColor;\r\n   }\r\n \r\n-  _buttonTextColor() {\r\n+  getButtonTextColor() {\r\n     return _buttonTextColor;\r\n   }\r\n \r\n   /*\r\n"
                 }
             ],
             "date": 1736441316920,

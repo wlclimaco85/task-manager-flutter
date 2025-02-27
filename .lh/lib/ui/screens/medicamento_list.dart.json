@@ -3,7 +3,7 @@
     "activeCommit": 0,
     "commits": [
         {
-            "activePatchIndex": 12,
+            "activePatchIndex": 14,
             "patches": [
                 {
                     "date": 1709045532764,
@@ -56,6 +56,14 @@
                 {
                     "date": 1733243862234,
                     "content": "Index: \n===================================================================\n--- \n+++ \n@@ -6,9 +6,9 @@\n import 'package:task_manager_flutter/data/constants/custom_colors.dart';\r\n \r\n class ListItensMedicamentos extends StatelessWidget {\r\n   ListItensMedicamentos({\r\n-    Key? key,\r\n+    super.key,\r\n     required this.medicamento,\r\n     required this.laboratorio,\r\n     required this.medicoReceitou,\r\n     required this.dosagem,\r\n@@ -17,9 +17,9 @@\n     required this.dtInicio,\r\n     required this.dtFinal,\r\n     required this.nota,\r\n     required this.foto,\r\n-  }) : super(key: key);\r\n+  });\r\n \r\n   final String medicamento;\r\n   final String laboratorio;\r\n   final String medicoReceitou;\r\n"
+                },
+                {
+                    "date": 1740663599660,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -52,9 +52,9 @@\n               Container(\r\n                 width: 70,\r\n                 height: 180,\r\n                 padding: EdgeInsets.zero,\r\n-                color: CustomColors().getAppFundoPage(),\r\n+                color: CustomColors().getLightGreenBackground(),\r\n                 child: Padding(\r\n                   padding: const EdgeInsets.only(bottom: 60),\r\n                   child: CircleAvatar(\r\n                     radius: 25,\r\n"
+                },
+                {
+                    "date": 1740663604821,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -69,9 +69,9 @@\n               ),\r\n               Flexible(\r\n                 child: Container(\r\n                   height: 180,\r\n-                  color: CustomColors().getAppFundoPage(),\r\n+                  color: CustomColors().getLightGreenBackground(),\r\n                   child: Column(\r\n                     children: [\r\n                       Column(\r\n                         children: <Widget>[\r\n"
                 }
             ],
             "date": 1709045532764,

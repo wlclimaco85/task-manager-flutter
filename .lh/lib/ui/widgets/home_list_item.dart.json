@@ -1,0 +1,18 @@
+{
+    "sourceFile": "lib/ui/widgets/home_list_item.dart",
+    "activeCommit": 0,
+    "commits": [
+        {
+            "activePatchIndex": 0,
+            "patches": [
+                {
+                    "date": 1740664160175,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n"
+                }
+            ],
+            "date": 1740664160175,
+            "name": "Commit-0",
+            "content": "import 'package:flutter/material.dart';\r\nimport 'package:task_manager_flutter/ui/widgets/home_list_model.dart';\r\nimport 'package:task_manager_flutter/data/constants/custom_colors.dart';\r\n\r\nclass HomeListItem extends StatefulWidget {\r\n  final HomeListModel homeListModel;\r\n  const HomeListItem({super.key, required this.homeListModel});\r\n\r\n  @override\r\n  _HomeListItemState createState() => _HomeListItemState();\r\n}\r\n\r\nclass _HomeListItemState extends State<HomeListItem> {\r\n  @override\r\n  Widget build(BuildContext context) {\r\n    return Container(\r\n      margin: const EdgeInsets.only(bottom: 15),\r\n      child: Column(\r\n        children: [\r\n          Container(\r\n            height: 15,\r\n            decoration: BoxDecoration(\r\n              color: CustomColors().getLightGreenBackground(),\r\n              borderRadius: const BorderRadius.only(\r\n                topLeft: Radius.circular(7),\r\n                topRight: Radius.circular(7),\r\n              ),\r\n            ),\r\n          ),\r\n          Container(\r\n            decoration: const BoxDecoration(\r\n              color: Colors.white,\r\n              borderRadius: BorderRadius.only(\r\n                bottomLeft: Radius.circular(7),\r\n                bottomRight: Radius.circular(7),\r\n              ),\r\n            ),\r\n            child: Container(\r\n              padding: const EdgeInsets.all(12),\r\n              child: Row(\r\n                mainAxisAlignment: MainAxisAlignment.spaceBetween,\r\n                children: [\r\n                  Row(\r\n                    children: [\r\n                      Image.asset(widget.homeListModel.assetIcon),\r\n                      const Padding(padding: EdgeInsets.only(left: 15)),\r\n                      Text(\r\n                        widget.homeListModel.title,\r\n                        style: TextStyle(\r\n                          color: CustomColors().getLightGreenBackground(),\r\n                          fontWeight: FontWeight.bold,\r\n                        ),\r\n                      ),\r\n                    ],\r\n                  ),\r\n                  const Icon(\r\n                    Icons.delete,\r\n                    color: Colors.red,\r\n                  )\r\n                ],\r\n              ),\r\n            ),\r\n          ),\r\n        ],\r\n      ),\r\n    );\r\n  }\r\n}\r\n"
+        }
+    ]
+}
