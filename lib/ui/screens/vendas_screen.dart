@@ -383,194 +383,204 @@ class ProductCard extends StatelessWidget {
       shape: RoundedRectangleBorder(
         side: BorderSide(color: CustomColors().getDarkGreenBorder(), width: 1),
       ),
-      child: Column(
-        children: [
-          Column(
-            children: [
-              // Título acima de tudo
-              Padding(
-                padding: const EdgeInsets.only(bottom: 0.0),
-                child: Text(
-                  'Arroz em Casca - Lote : ${product.id.toString()}',
-                  style: TextStyle(
-                    color: CustomColors().getDarkGreenBorder(), // Cor do título
-                    fontSize: 22,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
-
-              // Conteúdo principal
-              Row(
-                children: [
-                  Expanded(
-                    flex: 2,
-                    child: getFirstImageOrDefault(
-                        getValidImageList(product).first),
-                  ),
-                  Expanded(
-                    flex: 3,
-                    child: Padding(
-                      padding: const EdgeInsets.all(8.0),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          _buildInfoRow('Estado',
-                              product.parceiro?.endereco?.estado?.nome),
-                          _buildInfoRow('Cidade',
-                              product.parceiro?.endereco?.cidade?.nome),
-                          _buildInfoRow(
-                              'Quantidade', '${product.qtdSacos} sacos'),
-                          _buildInfoRow(
-                              'Valor por saco', 'R\$${product.vlrSacos}'),
-                          _buildInfoRow('Safra', product.safra),
-                          _buildInfoRow('Semente', product.semente),
-                          _buildInfoRow('Tipo do Grão', product.tipoGrao),
-                          _buildInfoRow(
-                              'Data de Retirada', product.dataRetirada),
-                          _buildInfoRow(
-                              'Tipo de Negociação', product.tipoNegociacao),
-                          const SizedBox(height: 8),
-                          const Text(
-                            'Classificação:',
-                            style: TextStyle(
-                              color: Color(0xFF38180E), // Cor do label
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          ...product.classificacao!
-                              .map((c) => _buildClassificationItem(c))
-                              .toList(),
-                        ],
-                      ),
+      child: Container(
+        color: Colors.white, // Define o fundo branco para todo o componente
+        child: Column(
+          children: [
+            Column(
+              children: [
+                // Título acima de tudo
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 0.0),
+                  child: Text(
+                    'Arroz em Casca - Lote : ${product.id.toString()}',
+                    style: TextStyle(
+                      color:
+                          CustomColors().getDarkGreenBorder(), // Cor do título
+                      fontSize: 22,
+                      fontWeight: FontWeight.bold,
                     ),
                   ),
-                ],
-              ),
-            ],
-          ),
-          const Divider(color: Colors.grey),
-          Padding(
-            padding: const EdgeInsets.all(8.0),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                // Modificação no botão original para navegação
-                Column(
+                ),
+
+                // Conteúdo principal
+                Row(
                   children: [
-                    IconButton(
-                      icon: const Icon(Icons.info, color: Colors.blue),
-                      onPressed: () => Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) =>
-                              ProdutoDetailsScreen(produtoId: product.id!),
+                    Expanded(
+                      flex: 2,
+                      child: getFirstImageOrDefault(
+                          getValidImageList(product).first),
+                    ),
+                    Expanded(
+                      flex: 3,
+                      child: Padding(
+                        padding: const EdgeInsets.all(8.0),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            _buildInfoRow('Estado',
+                                product.parceiro?.endereco?.estado?.nome),
+                            _buildInfoRow('Cidade',
+                                product.parceiro?.endereco?.cidade?.nome),
+                            _buildInfoRow(
+                                'Quantidade', '${product.qtdSacos} sacos'),
+                            _buildInfoRow(
+                                'Valor por saco', 'R\$${product.vlrSacos}'),
+                            _buildInfoRow('Safra', product.safra),
+                            _buildInfoRow('Semente', product.semente),
+                            _buildInfoRow('Tipo do Grão', product.tipoGrao),
+                            _buildInfoRow(
+                                'Data de Retirada', product.dataRetirada),
+                            _buildInfoRow(
+                                'Tipo de Negociação', product.tipoNegociacao),
+                            const SizedBox(height: 8),
+                            const Text(
+                              'Classificação:',
+                              style: TextStyle(
+                                color: Color(0xFF38180E), // Cor do label
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            ...product.classificacao!
+                                .map((c) => _buildClassificationItem(c))
+                                .toList(),
+                          ],
                         ),
                       ),
-                    ),
-                    const Text(
-                      "Detalhes",
-                      style: TextStyle(fontSize: 12, color: Colors.black),
-                    ),
-                  ],
-                ),
-                const SizedBox(width: 8),
-                const VerticalDivider(
-                  width: 1,
-                  thickness: 1,
-                  color: Colors.grey,
-                ),
-                const SizedBox(width: 8),
-                if (product.tipoNegociacao !=
-                    "Adicionar valor e nao aceitar proposta") ...[
-                  // Condição para Negociar
-                  Column(
-                    children: [
-                      IconButton(
-                        icon: const Icon(Icons.handshake, color: Colors.green),
-                        onPressed: onNegotiate,
-                      ),
-                      const Text(
-                        "Negociar",
-                        style: TextStyle(fontSize: 12, color: Colors.black),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(width: 8),
-                  const VerticalDivider(
-                    width: 1,
-                    thickness: 1,
-                    color: Colors.grey,
-                  ),
-                  const SizedBox(width: 8),
-                ],
-                if (product.tipoNegociacao !=
-                    "Sem valor, só negociar valor") ...[
-                  // Condição para Comprar
-                  Column(
-                    children: [
-                      IconButton(
-                        icon: const Icon(Icons.shopping_cart,
-                            color: Colors.orange),
-                        onPressed: onBuy,
-                      ),
-                      const Text(
-                        "Comprar",
-                        style: TextStyle(fontSize: 12, color: Colors.black),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(width: 8),
-                  const VerticalDivider(
-                    width: 1,
-                    thickness: 1,
-                    color: Colors.grey,
-                  ),
-                  const SizedBox(width: 8),
-                ],
-                Column(
-                  // Cotar Transporte sempre visível
-                  children: [
-                    IconButton(
-                      icon: const Icon(Icons.local_shipping,
-                          color: Colors.purple),
-                      onPressed: () async {
-                        await showDialog(
-                          context: context,
-                          builder: (BuildContext context) {
-                            return AlertDialog(
-                              title: const Text("Cotação de Transporte"),
-                              content: const Text(
-                                  "Vamos enviar suas informações para nossa transportadora parceira e o mais breve possível será enviado o valor do frete."),
-                              actions: [
-                                TextButton(
-                                  child: const Text("Cancelar"),
-                                  onPressed: () {
-                                    Navigator.of(context).pop();
-                                  },
-                                ),
-                                ElevatedButton(
-                                  child: const Text("Confirmar"),
-                                  onPressed: () async {
-                                    Navigator.of(context).pop();
-                                  },
-                                ),
-                              ],
-                            );
-                          },
-                        );
-                      },
-                    ),
-                    const Text(
-                      "Cotar Transporte",
-                      style: TextStyle(fontSize: 12, color: Colors.black),
                     ),
                   ],
                 ),
               ],
             ),
-          ),
-        ],
+            const Divider(
+              // Divider modificado
+              height: 0.5, // Altura total do espaço ocupado
+              thickness: 0.5, // Espessura da linha
+              color: Colors.grey,
+            ),
+            Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  // Modificação no botão original para navegação
+                  Column(
+                    children: [
+                      IconButton(
+                        icon: const Icon(Icons.info, color: Colors.blue),
+                        onPressed: () => Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) =>
+                                ProdutoDetailsScreen(produtoId: product.id!),
+                          ),
+                        ),
+                      ),
+                      const Text(
+                        "Detalhes",
+                        style: TextStyle(fontSize: 12, color: Colors.black),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(width: 8),
+                  const VerticalDivider(
+                    width: 1,
+                    thickness: 1,
+                    color: Colors.grey,
+                  ),
+                  const SizedBox(width: 8),
+                  if (product.tipoNegociacao !=
+                      "Adicionar valor e nao aceitar proposta") ...[
+                    // Condição para Negociar
+                    Column(
+                      children: [
+                        IconButton(
+                          icon:
+                              const Icon(Icons.handshake, color: Colors.green),
+                          onPressed: onNegotiate,
+                        ),
+                        const Text(
+                          "Negociar",
+                          style: TextStyle(fontSize: 12, color: Colors.black),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(width: 8),
+                    const VerticalDivider(
+                      width: 1,
+                      thickness: 1,
+                      color: Colors.grey,
+                    ),
+                    const SizedBox(width: 8),
+                  ],
+                  if (product.tipoNegociacao !=
+                      "Sem valor, só negociar valor") ...[
+                    // Condição para Comprar
+                    Column(
+                      children: [
+                        IconButton(
+                          icon: const Icon(Icons.shopping_cart,
+                              color: Colors.orange),
+                          onPressed: onBuy,
+                        ),
+                        const Text(
+                          "Comprar",
+                          style: TextStyle(fontSize: 12, color: Colors.black),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(width: 8),
+                    const VerticalDivider(
+                      width: 1,
+                      thickness: 1,
+                      color: Colors.grey,
+                    ),
+                    const SizedBox(width: 8),
+                  ],
+                  Column(
+                    // Cotar Transporte sempre visível
+                    children: [
+                      IconButton(
+                        icon: const Icon(Icons.local_shipping,
+                            color: Colors.purple),
+                        onPressed: () async {
+                          await showDialog(
+                            context: context,
+                            builder: (BuildContext context) {
+                              return AlertDialog(
+                                title: const Text("Cotação de Transporte"),
+                                content: const Text(
+                                    "Vamos enviar suas informações para nossa transportadora parceira e o mais breve possível será enviado o valor do frete."),
+                                actions: [
+                                  TextButton(
+                                    child: const Text("Cancelar"),
+                                    onPressed: () {
+                                      Navigator.of(context).pop();
+                                    },
+                                  ),
+                                  ElevatedButton(
+                                    child: const Text("Confirmar"),
+                                    onPressed: () async {
+                                      Navigator.of(context).pop();
+                                    },
+                                  ),
+                                ],
+                              );
+                            },
+                          );
+                        },
+                      ),
+                      const Text(
+                        "Cotar Transporte",
+                        style: TextStyle(fontSize: 12, color: Colors.black),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
