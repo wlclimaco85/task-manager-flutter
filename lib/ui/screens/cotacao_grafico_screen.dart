@@ -64,35 +64,21 @@ class _CotacaoScreenState extends State<CotacaoScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              // Primeira caixa azul
+              // CABEÇALHO AZUL DA TABELA
               Container(
                 width: double.infinity,
                 padding: const EdgeInsets.all(8),
                 color: CustomColors().getDarkBlue(),
-                child: const Text(
-                  "Indicador do Arroz em Casca CEPEA/IRGA-RS",
-                  style: TextStyle(
+                child: Text(
+                  title, // Texto variável pelo parâmetro
+                  style: const TextStyle(
                     color: Colors.white,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
               ),
               const SizedBox(height: 8),
-              // Segunda caixa azul
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(8),
-                color: CustomColors().getDarkBlue(),
-                child: const Text(
-                  "Ultimas Cotação Dollar",
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
-              const SizedBox(height: 8),
-              // Tabela
+              // TABELA
               Container(
                 decoration: BoxDecoration(
                   border: Border.all(
@@ -118,7 +104,7 @@ class _CotacaoScreenState extends State<CotacaoScreen> {
                         Padding(
                           padding: EdgeInsets.all(8.0),
                           child: Text(
-                            "Cabeçalho 1",
+                            "Data",
                             style: TextStyle(
                               color: Colors.white,
                               fontWeight: FontWeight.bold,
@@ -128,7 +114,7 @@ class _CotacaoScreenState extends State<CotacaoScreen> {
                         Padding(
                           padding: EdgeInsets.all(8.0),
                           child: Text(
-                            "Cabeçalho 2",
+                            "Valor (R\$)",
                             style: TextStyle(
                               color: Colors.white,
                               fontWeight: FontWeight.bold,
@@ -141,7 +127,7 @@ class _CotacaoScreenState extends State<CotacaoScreen> {
                   ],
                 ),
               ),
-              // Footer e fonte
+              // FOOTER E FONTE
               if (footer != null) ...[
                 const SizedBox(height: 8),
                 Text(
@@ -155,7 +141,7 @@ class _CotacaoScreenState extends State<CotacaoScreen> {
               if (source != null) ...[
                 const SizedBox(height: 8),
                 Row(
-                  mainAxisAlignment: MainAxisAlignment.end, // Alinha à direita
+                  mainAxisAlignment: MainAxisAlignment.end,
                   children: [
                     Text(
                       "Fonte: $source",
