@@ -6,11 +6,7 @@ import 'package:task_manager_flutter/data/models/venda_model.dart';
 import 'package:task_manager_flutter/ui/screens/checkoutscreen.dart';
 import 'package:task_manager_flutter/ui/widgets/negotiationDialog.dart';
 import 'package:task_manager_flutter/data/models/auth_utility.dart';
-
-// Define cores
-const Color lightGreenBackground = Color.fromARGB(255, 231, 247, 233);
-const Color mediumGreenBackground = Color.fromARGB(255, 200, 230, 200);
-const Color darkGreenBorder = Color.fromARGB(255, 1, 247, 14);
+import 'package:task_manager_flutter/data/constants/custom_colors.dart';
 
 // Tela de Detalhes
 class ProdutoDetailsScreen extends StatefulWidget {
@@ -73,7 +69,7 @@ class _ProdutoDetailsScreenState extends State<ProdutoDetailsScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: mediumGreenBackground,
+        backgroundColor: CustomColors().getLightGreenBackground(),
         elevation: 0,
         iconTheme: const IconThemeData(color: Colors.black),
         title: const Text(
@@ -87,14 +83,15 @@ class _ProdutoDetailsScreenState extends State<ProdutoDetailsScreen> {
           ),
         ],
       ),
-      backgroundColor: lightGreenBackground,
+      backgroundColor: CustomColors().getLightGreenBackground(),
       body: FutureBuilder<List<Produto>>(
         future: _futureProduto,
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(
+            return Center(
               child: CircularProgressIndicator(
-                valueColor: AlwaysStoppedAnimation<Color>(darkGreenBorder),
+                valueColor: AlwaysStoppedAnimation<Color>(
+                    CustomColors().getDarkGreenBorder()),
               ),
             );
           }
@@ -130,9 +127,10 @@ class _ProdutoDetailsScreenState extends State<ProdutoDetailsScreen> {
             padding: const EdgeInsets.all(16),
             child: Container(
               decoration: BoxDecoration(
-                color: mediumGreenBackground,
+                color: CustomColors().getLightGreenBackground(),
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: darkGreenBorder, width: 2),
+                border: Border.all(
+                    color: CustomColors().getDarkGreenBorder(), width: 2),
               ),
               padding: const EdgeInsets.all(16),
               child: Column(
@@ -142,7 +140,8 @@ class _ProdutoDetailsScreenState extends State<ProdutoDetailsScreen> {
                   Container(
                     decoration: BoxDecoration(
                       borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: darkGreenBorder, width: 2),
+                      border: Border.all(
+                          color: CustomColors().getDarkGreenBorder(), width: 2),
                     ),
                     child: SizedBox(
                       height: 250,
@@ -208,7 +207,7 @@ class _ProdutoDetailsScreenState extends State<ProdutoDetailsScreen> {
                                     decoration: BoxDecoration(
                                       shape: BoxShape.circle,
                                       color: _currentPage == index
-                                          ? darkGreenBorder
+                                          ? CustomColors().getDarkGreenBorder()
                                           : Colors.grey,
                                     ),
                                   ),
@@ -427,9 +426,10 @@ class _ProdutoDetailsScreenState extends State<ProdutoDetailsScreen> {
       margin: const EdgeInsets.symmetric(vertical: 6),
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: lightGreenBackground,
+        color: CustomColors().getLightGreenBackground(),
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: darkGreenBorder, width: 1),
+        border:
+            Border.all(color: CustomColors().getDarkGreenBorder(), width: 1),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,

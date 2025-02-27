@@ -16,11 +16,6 @@ import 'package:task_manager_flutter/data/models/auth_utility.dart';
 import 'package:task_manager_flutter/ui/screens/update_profile.dart';
 import 'package:task_manager_flutter/ui/widgets/user_banners.dart';
 
-// Define theme colors
-Color lightGreenBackground = CustomColors().getLightGreenBackground();
-Color darkGreenBorder = CustomColors().getDarkGreenBorder();
-Color buttonBackground = CustomColors().getButtonBackground();
-
 class ProductRegisterScreen extends StatefulWidget {
   const ProductRegisterScreen({Key? key}) : super(key: key);
 
@@ -271,7 +266,7 @@ class _ProductRegisterScreenState extends State<ProductRegisterScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: lightGreenBackground,
+      backgroundColor: CustomColors().getLightGreenBackground(),
       appBar: UserBannerAppBar(
         screenTitle: "Cadastro de Produto",
         isLoading: isLoading,

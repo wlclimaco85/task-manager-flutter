@@ -8,11 +8,8 @@ import 'dart:io';
 import 'dart:convert';
 import 'package:task_manager_flutter/data/services/parceiro_caller.dart';
 import 'package:task_manager_flutter/data/models/parceiro_model.dart';
+import 'package:task_manager_flutter/data/constants/custom_colors.dart';
 
-// Define as cores no início do documento
-const Color lightGreenBackground = Color.fromARGB(255, 231, 247, 233);
-const Color darkGreenBorder = Color.fromARGB(255, 230, 243, 231);
-const Color darkGreen = Colors.green;
 int idParceiro = AuthUtility.userInfo.data!.id!;
 
 class SignUpScreen extends StatefulWidget {
@@ -130,10 +127,10 @@ class _SignUpScreenState extends State<SignUpScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: lightGreenBackground,
+      backgroundColor: CustomColors().getLightGreenBackground(),
       appBar: AppBar(
         title: const Text("Cadastro Produtores"),
-        backgroundColor: darkGreen,
+        backgroundColor: CustomColors().getDarkGreenBorder(),
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),
@@ -198,9 +195,9 @@ class _SignUpScreenState extends State<SignUpScreen> {
                   Expanded(
                     child: Container(
                       padding: const EdgeInsets.all(16),
-                      decoration: const BoxDecoration(
-                        color: darkGreen,
-                        borderRadius: BorderRadius.only(
+                      decoration: BoxDecoration(
+                        color: CustomColors().getDarkGreenBorder(),
+                        borderRadius: const BorderRadius.only(
                           topRight: Radius.circular(8),
                           bottomRight: Radius.circular(8),
                         ),
@@ -359,14 +356,17 @@ class CustomTextFormField extends StatelessWidget {
           hintText: hintText,
           filled: true,
           fillColor: Colors.white,
-          border: const OutlineInputBorder(
-            borderSide: BorderSide(color: darkGreenBorder, width: 2.0),
+          border: OutlineInputBorder(
+            borderSide: BorderSide(
+                color: CustomColors().getDarkGreenBorder(), width: 2.0),
           ),
-          enabledBorder: const OutlineInputBorder(
-            borderSide: BorderSide(color: darkGreenBorder, width: 2.0),
+          enabledBorder: OutlineInputBorder(
+            borderSide: BorderSide(
+                color: CustomColors().getDarkGreenBorder(), width: 2.0),
           ),
-          focusedBorder: const OutlineInputBorder(
-            borderSide: BorderSide(color: darkGreenBorder, width: 2.0),
+          focusedBorder: OutlineInputBorder(
+            borderSide: BorderSide(
+                color: CustomColors().getDarkGreenBorder(), width: 2.0),
           ),
         ),
         validator: validator,
@@ -402,8 +402,9 @@ class CustomPasswordTextFormField extends StatelessWidget {
           hintText: hintText,
           filled: true,
           fillColor: Colors.white,
-          border: const OutlineInputBorder(
-            borderSide: BorderSide(color: darkGreenBorder, width: 2.0),
+          border: OutlineInputBorder(
+            borderSide: BorderSide(
+                color: CustomColors().getDarkGreenBorder(), width: 2.0),
           ),
           suffixIcon: IconButton(
             icon: Icon(

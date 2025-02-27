@@ -5,14 +5,7 @@ import 'package:task_manager_flutter/data/models/auth_utility.dart';
 import 'package:task_manager_flutter/ui/widgets/user_banners.dart';
 import 'package:task_manager_flutter/ui/screens/update_profile.dart';
 import 'package:task_manager_flutter/ui/screens/checkoutscreen.dart';
-
-// Define theme colors
-const Color lightGreenBackground = Color.fromARGB(255, 231, 247, 233);
-const Color darkGreenBorder = Color.fromARGB(255, 1, 247, 14);
-const Color buttonBackground = Color.fromARGB(255, 128, 202, 132);
-const Color negotiationCardBackground = Color.fromARGB(255, 214, 239, 222);
-const Color confirmButtonColor = Color.fromARGB(255, 1, 95, 15);
-const Color cancelButtonColor = Colors.red;
+import 'package:task_manager_flutter/data/constants/custom_colors.dart';
 
 class ProductCatalogPageCompras extends StatefulWidget {
   final String title;
@@ -80,7 +73,7 @@ class _ProductCatalogPageComprasState extends State<ProductCatalogPageCompras> {
         },
       ),
       body: Container(
-        color: lightGreenBackground,
+        color: CustomColors().getLightGreenBackground(),
         child: isLoading
             ? const Center(child: CircularProgressIndicator())
             : products.isEmpty
@@ -105,7 +98,7 @@ class _ProductCatalogPageComprasState extends State<ProductCatalogPageCompras> {
     showDialog(
       context: context,
       builder: (_) => AlertDialog(
-        backgroundColor: lightGreenBackground,
+        backgroundColor: CustomColors().getLightGreenBackground(),
         title: Text(
           product.descricao ?? 'Sem descrição',
           style: const TextStyle(fontWeight: FontWeight.bold),
@@ -150,10 +143,11 @@ class _ProductCatalogPageComprasState extends State<ProductCatalogPageCompras> {
               );
             },
             style: ElevatedButton.styleFrom(
-              backgroundColor: buttonBackground,
+              backgroundColor: CustomColors().getButtonBackground(),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(8),
-                side: BorderSide(color: darkGreenBorder, width: 2),
+                side: BorderSide(
+                    color: CustomColors().getDarkGreenBorder(), width: 2),
               ),
             ),
             child: const Text('Confirmar Ação'),
@@ -336,7 +330,7 @@ class ProductCard extends StatelessWidget {
       context: context,
       builder: (context) {
         return AlertDialog(
-          backgroundColor: lightGreenBackground,
+          backgroundColor: CustomColors().getLightGreenBackground(),
           title: const Text(
             'Fazer Contra Proposta',
             style: TextStyle(fontWeight: FontWeight.bold),
@@ -383,9 +377,9 @@ class ProductCard extends StatelessWidget {
           actions: [
             TextButton(
               onPressed: () => Navigator.of(context).pop(),
-              child: const Text(
+              child: Text(
                 'Cancelar',
-                style: TextStyle(color: cancelButtonColor),
+                style: TextStyle(color: CustomColors().getCancelButtonColor()),
               ),
             ),
             ElevatedButton(
@@ -420,10 +414,11 @@ class ProductCard extends StatelessWidget {
                 }
               },
               style: ElevatedButton.styleFrom(
-                backgroundColor: confirmButtonColor,
+                backgroundColor: CustomColors().getConfirmButtonColor(),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(8),
-                  side: BorderSide(color: darkGreenBorder, width: 2),
+                  side: BorderSide(
+                      color: CustomColors().getDarkGreenBorder(), width: 2),
                 ),
               ),
               child: const Text('Enviar Proposta'),
@@ -458,10 +453,10 @@ class ProductCard extends StatelessWidget {
 
     return Card(
       margin: const EdgeInsets.all(10),
-      color: lightGreenBackground,
+      color: CustomColors().getLightGreenBackground(),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(8.0),
-        side: BorderSide(color: darkGreenBorder, width: 2),
+        side: BorderSide(color: CustomColors().getDarkGreenBorder(), width: 2),
       ),
       child: Padding(
         padding: const EdgeInsets.all(8.0),
@@ -505,10 +500,11 @@ class ProductCard extends StatelessWidget {
               final negotiation = product.negociacoes[i];
               return Card(
                 margin: const EdgeInsets.symmetric(vertical: 4.0),
-                color: negotiationCardBackground,
+                color: CustomColors().getNegotiationCardBackground(),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(8.0),
-                  side: BorderSide(color: darkGreenBorder, width: 1.5),
+                  side: BorderSide(
+                      color: CustomColors().getDarkGreenBorder(), width: 1.5),
                 ),
                 child: Padding(
                   padding: const EdgeInsets.all(8.0),

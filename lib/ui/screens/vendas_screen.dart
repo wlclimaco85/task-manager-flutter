@@ -14,10 +14,7 @@ import 'package:task_manager_flutter/ui/widgets/negociacao_core.dart';
 import 'package:task_manager_flutter/data/models/auth_utility.dart';
 import 'dart:typed_data';
 import 'dart:convert';
-
-const Color lightGreenBackground = Color.fromARGB(255, 231, 247, 233);
-const Color darkGreenBorder = Color.fromARGB(255, 1, 247, 14);
-const Color buttonBackground = Color.fromARGB(255, 128, 202, 132);
+import 'package:task_manager_flutter/data/constants/custom_colors.dart';
 
 class ProductCatalog extends StatefulWidget {
   const ProductCatalog({Key? key}) : super(key: key);
@@ -132,7 +129,7 @@ class _ProductCatalogState extends State<ProductCatalog> {
                     builder: (context) => const UpdateProfileScreen()));
           }),
       body: Container(
-        color: lightGreenBackground,
+        color: CustomColors().getLightGreenBackground(),
         child: Column(
           children: [
             Padding(
@@ -227,7 +224,7 @@ class _ProductCatalogState extends State<ProductCatalog> {
     showDialog(
       context: context,
       builder: (_) => AlertDialog(
-        backgroundColor: lightGreenBackground,
+        backgroundColor: CustomColors().getLightGreenBackground(),
         title: Text(product.descricao ?? "SEM DESCRIÇÂO"),
         content: Column(
           mainAxisSize: MainAxisSize.min,
@@ -281,7 +278,7 @@ class _ProductCatalogState extends State<ProductCatalog> {
     showDialog(
       context: context,
       builder: (_) => AlertDialog(
-        backgroundColor: lightGreenBackground,
+        backgroundColor: CustomColors().getLightGreenBackground(),
         title: Text('Comprar - ${product.descricao}'),
         content: Column(
           mainAxisSize: MainAxisSize.min,
@@ -382,71 +379,73 @@ class ProductCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Card(
       margin: const EdgeInsets.all(10),
-      color: lightGreenBackground,
+      color: CustomColors().getLightGreenBackground(),
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(8.0),
-        side: const BorderSide(color: darkGreenBorder, width: 2),
+        side: BorderSide(color: CustomColors().getDarkGreenBorder(), width: 1),
       ),
       child: Column(
         children: [
-          Row(
+          Column(
             children: [
-              Expanded(
-                flex: 2,
-                child: getFirstImageOrDefault(getValidImageList(product).first),
-              ),
-              Expanded(
-                flex: 3,
-                child: Padding(
-                  padding: const EdgeInsets.all(8.0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Arroz em Casca - Lote : ' + product.id.toString(),
-                        style: const TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      Text(
-                          'Estado: ${product.parceiro?.endereco?.estado?.nome ?? "Não informado"}'),
-                      Text(
-                          'Cidade: ${product.parceiro?.endereco?.cidade?.nome ?? "Não informado"}'),
-                      Text('Quantidade: ${product.qtdSacos} sacos'),
-                      Text('Valor por saco: R\$${product.vlrSacos}'),
-                      Text('Safra: ${product.safra ?? "Não informado"}'),
-                      Text('Semente: ${product.semente ?? "Não informado"}'),
-                      Text(
-                          'Tipo do Grão: ${product.tipoGrao ?? "Não informado"}'),
-                      Text(
-                          'Data de Retirada: ${product.dataRetirada ?? "Não informado"}'),
-                      Text(
-                          'Tipo de Negociação: ${product.tipoNegociacao ?? "Não informado"}'),
-                      const Text('Classificação:'),
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: product.classificacao!.map<Widget>((c) {
-                          return Container(
-                            margin: const EdgeInsets.only(left: 16, top: 4),
-                            child: Row(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                const Icon(Icons.circle,
-                                    size: 8, color: Colors.black),
-                                const SizedBox(width: 8),
-                                Expanded(
-                                  child: Text('${c.descricao}: ${c.valor}',
-                                      style: const TextStyle(fontSize: 12)),
-                                ),
-                              ],
-                            ),
-                          );
-                        }).toList(),
-                      ),
-                    ],
+              // Título acima de tudo
+              Padding(
+                padding: const EdgeInsets.only(bottom: 0.0),
+                child: Text(
+                  'Arroz em Casca - Lote : ${product.id.toString()}',
+                  style: TextStyle(
+                    color: CustomColors().getDarkGreenBorder(), // Cor do título
+                    fontSize: 22,
+                    fontWeight: FontWeight.bold,
                   ),
                 ),
+              ),
+
+              // Conteúdo principal
+              Row(
+                children: [
+                  Expanded(
+                    flex: 2,
+                    child: getFirstImageOrDefault(
+                        getValidImageList(product).first),
+                  ),
+                  Expanded(
+                    flex: 3,
+                    child: Padding(
+                      padding: const EdgeInsets.all(8.0),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          _buildInfoRow('Estado',
+                              product.parceiro?.endereco?.estado?.nome),
+                          _buildInfoRow('Cidade',
+                              product.parceiro?.endereco?.cidade?.nome),
+                          _buildInfoRow(
+                              'Quantidade', '${product.qtdSacos} sacos'),
+                          _buildInfoRow(
+                              'Valor por saco', 'R\$${product.vlrSacos}'),
+                          _buildInfoRow('Safra', product.safra),
+                          _buildInfoRow('Semente', product.semente),
+                          _buildInfoRow('Tipo do Grão', product.tipoGrao),
+                          _buildInfoRow(
+                              'Data de Retirada', product.dataRetirada),
+                          _buildInfoRow(
+                              'Tipo de Negociação', product.tipoNegociacao),
+                          const SizedBox(height: 8),
+                          const Text(
+                            'Classificação:',
+                            style: TextStyle(
+                              color: Color(0xFF38180E), // Cor do label
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          ...product.classificacao!
+                              .map((c) => _buildClassificationItem(c))
+                              .toList(),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ],
           ),
@@ -569,6 +568,71 @@ class ProductCard extends StatelessWidget {
                   ],
                 ),
               ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // Método auxiliar para construir linhas de informação
+  Widget _buildInfoRow(String label, String? value) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4.0),
+      child: RichText(
+        text: TextSpan(
+          style: const TextStyle(fontSize: 14),
+          children: [
+            TextSpan(
+              text: '$label: ',
+              style: const TextStyle(
+                color: Color(0xFF38180E), // Cor do label
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            TextSpan(
+              text: value ?? "Não informado",
+              style: const TextStyle(
+                color: Color(0xFF38180E), // Cor da descrição
+                fontWeight: FontWeight.normal, // Descrição em negrito
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+// Método auxiliar para itens de classificação
+  Widget _buildClassificationItem(Classificacao c) {
+    return Container(
+      margin: const EdgeInsets.only(left: 16, top: 4),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Icon(Icons.circle, size: 8, color: Colors.black),
+          const SizedBox(width: 8),
+          Expanded(
+            child: RichText(
+              text: TextSpan(
+                style: const TextStyle(fontSize: 12),
+                children: [
+                  TextSpan(
+                    text: '${c.descricao}: ',
+                    style: const TextStyle(
+                      color: Color(0xFF38180E), // Cor do label
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  TextSpan(
+                    text: '${c.valor}',
+                    style: const TextStyle(
+                      color: Colors.black, // Cor da descrição
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
         ],

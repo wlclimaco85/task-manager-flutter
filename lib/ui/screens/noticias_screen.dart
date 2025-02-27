@@ -3,11 +3,7 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:task_manager_flutter/ui/widgets/user_banners.dart';
 import 'package:task_manager_flutter/ui/screens/update_profile.dart';
-
-// Define theme colors
-const Color lightGreenBackground = Color.fromARGB(255, 231, 247, 233);
-const Color darkGreenBorder = Color.fromARGB(255, 1, 247, 14);
-const Color buttonBackground = Color.fromARGB(255, 128, 202, 132);
+import 'package:task_manager_flutter/data/constants/custom_colors.dart';
 
 class ProductCatalogPage extends StatefulWidget {
   final String title;
@@ -73,7 +69,7 @@ class _ProductCatalogPageState extends State<ProductCatalogPage> {
                 builder: (context) => const UpdateProfileScreen()));
       }),
       body: Container(
-        color: lightGreenBackground,
+        color: CustomColors().getLightGreenBackground(),
         child: isLoading
             ? const Center(child: CircularProgressIndicator())
             : products.isEmpty
@@ -98,7 +94,7 @@ class _ProductCatalogPageState extends State<ProductCatalogPage> {
     showDialog(
       context: context,
       builder: (_) => AlertDialog(
-        backgroundColor: lightGreenBackground,
+        backgroundColor: CustomColors().getLightGreenBackground(),
         title: Text(
           product['descricao'] ?? 'Sem descrição',
           style: const TextStyle(fontWeight: FontWeight.bold),
@@ -143,10 +139,11 @@ class _ProductCatalogPageState extends State<ProductCatalogPage> {
               );
             },
             style: ElevatedButton.styleFrom(
-              backgroundColor: buttonBackground,
+              backgroundColor: CustomColors().getButtonBackground(),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(8),
-                side: BorderSide(color: darkGreenBorder, width: 2),
+                side: BorderSide(
+                    color: CustomColors().getDarkGreenBorder(), width: 2),
               ),
             ),
             child: const Text('Confirmar Ação'),
@@ -185,10 +182,10 @@ class ProductCard extends StatelessWidget {
 
     return Card(
       margin: const EdgeInsets.all(10),
-      color: lightGreenBackground,
+      color: CustomColors().getLightGreenBackground(),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(8.0),
-        side: BorderSide(color: darkGreenBorder, width: 2),
+        side: BorderSide(color: CustomColors().getDarkGreenBorder(), width: 2),
       ),
       child: Row(
         children: [
@@ -232,16 +229,4 @@ class ProductCard extends StatelessWidget {
       ),
     );
   }
-}
-
-void main() {
-  runApp(MaterialApp(
-    theme: ThemeData(primarySwatch: Colors.green),
-    home: const ProductCatalogPage(
-      title: 'Produtos do Vendedor',
-      apiUrl: 'http://192.168.146.1:8088/boletobancos/api/produtos/comprador/5',
-      actionIcon: Icons.edit,
-      actionTooltip: 'Editar Produto',
-    ),
-  ));
 }

@@ -3,11 +3,7 @@ import 'package:task_manager_flutter/data/services/checkout_caller.dart';
 import 'package:task_manager_flutter/ui/screens/negociacao_screen.dart';
 import 'package:task_manager_flutter/data/utils/api_links.dart';
 import 'package:task_manager_flutter/data/models/auth_utility.dart';
-
-// Define cores
-const Color lightGreenBackground = Color.fromARGB(255, 231, 247, 233);
-const Color mediumGreenBackground = Color.fromARGB(255, 200, 230, 200);
-const Color darkGreenBorder = Color(0xFF2E7D32);
+import 'package:task_manager_flutter/data/constants/custom_colors.dart';
 
 class RenegotiationMovimentoContratosHandler {
   static Future<bool> renegotiates({
@@ -82,10 +78,11 @@ class RenegotiationMovimentoContratosHandler {
             context: context,
             builder: (context) {
               return AlertDialog(
-                backgroundColor: lightGreenBackground,
-                title: const Text('Contrato',
+                backgroundColor: CustomColors().getLightGreenBackground(),
+                title: Text('Contrato',
                     style: TextStyle(
-                        fontWeight: FontWeight.bold, color: darkGreenBorder)),
+                        fontWeight: FontWeight.bold,
+                        color: CustomColors().getDarkGreenBorder())),
                 content: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
@@ -97,12 +94,14 @@ class RenegotiationMovimentoContratosHandler {
                           label: const Text('Baixar Contrato Modelo',
                               style: TextStyle(fontSize: 16)),
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: darkGreenBorder,
+                            backgroundColor:
+                                CustomColors().getDarkGreenBorder(),
                             foregroundColor: Colors.white,
                             padding: const EdgeInsets.symmetric(vertical: 15),
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(10),
-                              side: BorderSide(color: darkGreenBorder),
+                              side: BorderSide(
+                                  color: CustomColors().getDarkGreenBorder()),
                             ),
                           ),
                           onPressed: () => _downloadContract(vendaId, context),
@@ -118,12 +117,14 @@ class RenegotiationMovimentoContratosHandler {
                           label: const Text('Enviar Contrato Assinado',
                               style: TextStyle(fontSize: 16)),
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: darkGreenBorder,
+                            backgroundColor:
+                                CustomColors().getDarkGreenBorder(),
                             foregroundColor: Colors.white,
                             padding: const EdgeInsets.symmetric(vertical: 15),
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(10),
-                              side: BorderSide(color: darkGreenBorder),
+                              side: BorderSide(
+                                  color: CustomColors().getDarkGreenBorder()),
                             ),
                           ),
                           onPressed: () => _uploadContract(vendaId),
@@ -134,15 +135,16 @@ class RenegotiationMovimentoContratosHandler {
                 actions: [
                   TextButton(
                     onPressed: () => Navigator.pop(context),
-                    child: const Text('Fechar',
+                    child: Text('Fechar',
                         style: TextStyle(
                             fontWeight: FontWeight.bold,
-                            color: darkGreenBorder)),
+                            color: CustomColors().getDarkGreenBorder())),
                   ),
                 ],
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(15),
-                  side: const BorderSide(color: darkGreenBorder, width: 2),
+                  side: BorderSide(
+                      color: CustomColors().getDarkGreenBorder(), width: 2),
                 ),
               );
             },
