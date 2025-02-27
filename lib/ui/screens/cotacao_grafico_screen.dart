@@ -59,16 +59,14 @@ class _CotacaoScreenState extends State<CotacaoScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        // Container principal que envolve tudo
         Padding(
-          padding: const EdgeInsets.symmetric(
-              horizontal: 16.0), // Mesmo padding horizontal da tabela
+          padding: const EdgeInsets.symmetric(horizontal: 16.0),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               // Primeira caixa azul
               Container(
-                width: double.infinity, // Força largura total
+                width: double.infinity,
                 padding: const EdgeInsets.all(8),
                 color: CustomColors().getDarkBlue(),
                 child: const Text(
@@ -81,7 +79,18 @@ class _CotacaoScreenState extends State<CotacaoScreen> {
               ),
               const SizedBox(height: 8),
               // Segunda caixa azul
-
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(8),
+                color: CustomColors().getDarkBlue(),
+                child: const Text(
+                  "Ultimas Cotação Dollar",
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
               const SizedBox(height: 8),
               // Tabela
               Container(
@@ -101,14 +110,13 @@ class _CotacaoScreenState extends State<CotacaoScreen> {
                     1: FlexColumnWidth(),
                   },
                   children: [
-                    // Cabeçalho com fundo cinza
                     TableRow(
                       decoration: BoxDecoration(
-                        color: CustomColors().getHeaderTable(), // Cinza escuro
+                        color: CustomColors().getHeaderTable(),
                       ),
                       children: const [
                         Padding(
-                          padding: const EdgeInsets.all(8.0),
+                          padding: EdgeInsets.all(8.0),
                           child: Text(
                             "Cabeçalho 1",
                             style: TextStyle(
@@ -118,7 +126,7 @@ class _CotacaoScreenState extends State<CotacaoScreen> {
                           ),
                         ),
                         Padding(
-                          padding: const EdgeInsets.all(8.0),
+                          padding: EdgeInsets.all(8.0),
                           child: Text(
                             "Cabeçalho 2",
                             style: TextStyle(
@@ -146,12 +154,17 @@ class _CotacaoScreenState extends State<CotacaoScreen> {
               ],
               if (source != null) ...[
                 const SizedBox(height: 8),
-                Text(
-                  "Fonte: $source",
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: CustomColors().getTextColorDesc(),
-                  ),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.end, // Alinha à direita
+                  children: [
+                    Text(
+                      "Fonte: $source",
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: CustomColors().getTextColorDesc(),
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ],
