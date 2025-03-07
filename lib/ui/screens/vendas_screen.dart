@@ -259,21 +259,6 @@ class _ProductCatalogState extends State<ProductCatalog> {
     );
   }
 
-  void showSnackBar({required String message, required bool isError}) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          message,
-          style: const TextStyle(color: Colors.white), // Texto sempre branco
-        ),
-        backgroundColor: isError
-            ? Colors.red
-            : Colors.green, // Vermelho para erro, verde para sucesso
-        duration: const Duration(seconds: 3),
-      ),
-    );
-  }
-
   void showBuyPopup(BuildContext context, Produto product) {
     showDialog(
       context: context,

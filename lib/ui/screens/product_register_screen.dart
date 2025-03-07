@@ -15,6 +15,7 @@ import 'package:task_manager_flutter/data/constants/custom_colors.dart';
 import 'package:task_manager_flutter/data/models/auth_utility.dart';
 import 'package:task_manager_flutter/ui/screens/update_profile.dart';
 import 'package:task_manager_flutter/ui/widgets/user_banners.dart';
+import 'package:task_manager_flutter/ui/utils/showSnackBar.dart';
 
 class ProductRegisterScreen extends StatefulWidget {
   const ProductRegisterScreen({Key? key}) : super(key: key);
@@ -122,19 +123,6 @@ class _ProductRegisterScreenState extends State<ProductRegisterScreen> {
     });
   }
 
-  void showSnackBar({required String message, required bool isError}) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          message,
-          style: const TextStyle(color: Colors.white),
-        ),
-        backgroundColor: isError ? Colors.red : Colors.green,
-        duration: const Duration(seconds: 3),
-      ),
-    );
-  }
-
   Future<void> submitForm() async {
     if (!_formKey.currentState!.validate()) return;
 
@@ -195,9 +183,10 @@ class _ProductRegisterScreenState extends State<ProductRegisterScreen> {
 
       if (response.isSuccess) {
         showSnackBar(
-          message: "Venda enviada com sucesso!",
-          isError: false,
-        );
+            message: "Venda enviada com sucesso!",
+            isError: false,
+            context: context);
+
         _formKey.currentState!.reset();
         qtdSacosController.clear();
         vlrSacosController.clear();
@@ -213,9 +202,9 @@ class _ProductRegisterScreenState extends State<ProductRegisterScreen> {
         sementeController.clear(); // Limpar campo semente
       } else {
         showSnackBar(
-          message: "Erro ao enviar proposta.",
-          isError: true,
-        );
+            message: "Erro ao enviar proposta.",
+            isError: true,
+            context: context);
       }
     } catch (error) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -251,11 +240,13 @@ class _ProductRegisterScreenState extends State<ProductRegisterScreen> {
         color: Colors.black,
         fontWeight: FontWeight.bold,
       ),
-      enabledBorder: const OutlineInputBorder(
-        borderSide: BorderSide(color: Colors.green, width: 2),
+      enabledBorder: OutlineInputBorder(
+        borderSide:
+            BorderSide(color: CustomColors().getBorderInput(), width: 2),
       ),
-      focusedBorder: const OutlineInputBorder(
-        borderSide: BorderSide(color: Colors.green, width: 2),
+      focusedBorder: OutlineInputBorder(
+        borderSide:
+            BorderSide(color: CustomColors().getBorderInput(), width: 2),
       ),
       errorBorder: const OutlineInputBorder(
         borderSide: BorderSide(color: Colors.red, width: 2),
@@ -506,7 +497,7 @@ class _ProductRegisterScreenState extends State<ProductRegisterScreen> {
                               horizontal: 20,
                               vertical: 10,
                             ),
-                            backgroundColor: Colors.green,
+                            backgroundColor: CustomColors().getTextColor(),
                             foregroundColor: Colors.white,
                           ),
                         ),
@@ -524,12 +515,12 @@ class _ProductRegisterScreenState extends State<ProductRegisterScreen> {
                                     fit: BoxFit.cover,
                                   ),
                                   if (principalImage == image)
-                                    const Positioned(
+                                    Positioned(
                                       top: 0,
                                       right: 0,
                                       child: Icon(
                                         Icons.check_circle,
-                                        color: Colors.green,
+                                        color: CustomColors().getTextColor(),
                                         size: 24,
                                       ),
                                     ),
@@ -598,8 +589,9 @@ class _ProductRegisterScreenState extends State<ProductRegisterScreen> {
                             )
                           : const Text('Gravar'),
                       icon: const Icon(Icons.save),
-                      backgroundColor:
-                          isSubmitting ? Colors.grey : Colors.green,
+                      backgroundColor: isSubmitting
+                          ? Colors.grey
+                          : CustomColors().getTextColor(),
                     ),
                   ),
                 ),

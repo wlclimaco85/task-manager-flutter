@@ -4,6 +4,7 @@ import 'package:task_manager_flutter/data/constants/custom_colors.dart';
 import 'package:task_manager_flutter/data/utils/api_links.dart';
 import 'package:task_manager_flutter/data/models/network_response.dart';
 import 'package:task_manager_flutter/data/services/network_caller.dart';
+import 'package:task_manager_flutter/ui/utils/showSnackBar.dart';
 
 class NegotiationDialog extends StatefulWidget {
   final Produto product;
@@ -139,21 +140,6 @@ class _NegotiationDialogState extends State<NegotiationDialog> {
     );
   }
 
-  void showSnackBar({required String message, required bool isError}) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          message,
-          style: const TextStyle(color: Colors.white), // Texto sempre branco
-        ),
-        backgroundColor: isError
-            ? Colors.red
-            : Colors.green, // Vermelho para erro, verde para sucesso
-        duration: const Duration(seconds: 3),
-      ),
-    );
-  }
-
   Future<bool> renegotiate({
     required int vendaId,
     required int compradorId,
@@ -175,6 +161,7 @@ class _NegotiationDialogState extends State<NegotiationDialog> {
           message:
               "A quantidade de sacos solicitada ($qtdSacos) excede o disponível ($qtdDisponivel).",
           isError: true,
+          context: context,
         );
         return false;
       }
@@ -184,6 +171,7 @@ class _NegotiationDialogState extends State<NegotiationDialog> {
         showSnackBar(
           message: "O valor por saco deve ser maior que zero.",
           isError: true,
+          context: context,
         );
         return false;
       }
@@ -205,12 +193,14 @@ class _NegotiationDialogState extends State<NegotiationDialog> {
         showSnackBar(
           message: "Proposta enviada com sucesso!",
           isError: false,
+          context: context,
         );
         return true;
       } else {
         showSnackBar(
           message: "Erro ao enviar proposta.",
           isError: true,
+          context: context,
         );
         return false;
       }
@@ -219,6 +209,7 @@ class _NegotiationDialogState extends State<NegotiationDialog> {
       showSnackBar(
         message: "Erro: ${e.toString()}",
         isError: true,
+        context: context,
       );
       return false;
     }

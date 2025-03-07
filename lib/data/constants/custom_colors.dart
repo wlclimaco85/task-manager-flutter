@@ -5,6 +5,7 @@ class CustomColors {
   final Color _darkGreenBorder = Color(0xff002E18);
   final Color _buttonBackground = Color.fromARGB(255, 255, 255, 23);
   final Color _textColorDesc = Color(0xFF38180E);
+  final Color _borderInput = Color(0xFF38180E);
   final Color _textColor = Color(0xFF002E18);
   final Color _negotiationCardBackground = Color.fromARGB(255, 255, 255, 250);
   final Color _confirmButtonColor = Color.fromARGB(255, 1, 95, 15);
@@ -12,6 +13,35 @@ class CustomColors {
   final Color _buttonTextColor = Color.fromARGB(255, 255, 255, 255);
   final Color _darkBlue = Color(0xff002E18);
   final Color _headerTable = Color(0xff8C8C8C);
+  final Color _showSnackBarError = Colors.red;
+  final Color _showSnackBarSuccess = Colors.green;
+  final Color _showSnackBarWarning = Colors.yellow;
+  final Color _showSnackBarInfo = Colors.blue;
+  final Color _showSnackBarText = Colors.white;
+
+  Color getShowSnackBarText() {
+    return _showSnackBarText;
+  }
+
+  Color getShowSnackBarInfo() {
+    return _showSnackBarInfo;
+  }
+
+  Color getShowSnackBarWarning() {
+    return _showSnackBarWarning;
+  }
+
+  Color getShowSnackBarSuccess() {
+    return _showSnackBarSuccess;
+  }
+
+  Color getShowSnackBarError() {
+    return _showSnackBarError;
+  }
+
+  getBorderInput() {
+    return _borderInput;
+  }
 
   getLightGreenBackground() {
     return _lightGreenBackground;
