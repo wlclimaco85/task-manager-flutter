@@ -15,6 +15,7 @@ import 'package:task_manager_flutter/data/models/auth_utility.dart';
 import 'dart:typed_data';
 import 'dart:convert';
 import 'package:task_manager_flutter/data/constants/custom_colors.dart';
+import 'package:task_manager_flutter/ui/widgets/freteWidget.dart';
 
 class ProductCatalog extends StatefulWidget {
   const ProductCatalog({Key? key}) : super(key: key);
@@ -528,32 +529,16 @@ class ProductCard extends StatelessWidget {
                       IconButton(
                         icon: const Icon(Icons.local_shipping,
                             color: Colors.purple),
-                        onPressed: () async {
-                          await showDialog(
-                            context: context,
-                            builder: (BuildContext context) {
-                              return AlertDialog(
-                                title: const Text("Cotação de Transporte"),
-                                content: const Text(
-                                    "Vamos enviar suas informações para nossa transportadora parceira e o mais breve possível será enviado o valor do frete."),
-                                actions: [
-                                  TextButton(
-                                    child: const Text("Cancelar"),
-                                    onPressed: () {
-                                      Navigator.of(context).pop();
-                                    },
-                                  ),
-                                  ElevatedButton(
-                                    child: const Text("Confirmar"),
-                                    onPressed: () async {
-                                      Navigator.of(context).pop();
-                                    },
-                                  ),
-                                ],
-                              );
-                            },
-                          );
-                        },
+                        onPressed: () => FreteWidget(
+                          context: context,
+                          vendaId: 123,
+                          compradorId: 456,
+                          peso: 1500,
+                          cidadeOrigem: "São Paulo",
+                          cidadeDestino: "Rio de Janeiro",
+                          bairroOrigem: "Centro",
+                          bairroDestino: "Centro",
+                        ),
                       ),
                       const Text(
                         "Cotar Transporte",

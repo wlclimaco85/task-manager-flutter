@@ -978,7 +978,7 @@ class ProductCard extends StatelessWidget {
                                     context,
                                     MaterialPageRoute(
                                       builder: (context) => CheckoutScreen(
-                                        productName: negotiation.descricao!,
+                                        productName: 'Arroz em Casca',
                                         productValue: negotiation.vlrSacos!,
                                         productQnt: negotiation.qtdSacos!,
                                         idVenda: negotiation.id!,

@@ -51,12 +51,18 @@ class Negotiation {
       dataNegociacao: safeParse<String>(json['dataNegociacao'], ''),
       status: safeParse<String>(json['status'], ''),
       tipo: safeParse<String>(json['tipo'], ''),
-      bairroEntr: safeParse<String>(json['bairroEntr'], ''),
-      cidadeEntr: safeParse<String>(json['cidadeEntr'], ''),
+      bairroEntr:
+          safeParse<String>(utf8.decode(latin1.encode(json['bairroEntr'])), ''),
+      cidadeEntr:
+          safeParse<String>(utf8.decode(latin1.encode(json['cidadeEntr'])), ''),
       estadoEntr: safeParse<String>(json['estadoEntr'], ''),
-      bairroSaida: safeParse<String>(json['bairroSaida'], ''),
-      cidadeSaida: safeParse<String>(json['cidadeSaida'], ''),
-      estadoSaida: safeParse<String>(json['estadoSaida'], ''),
+      bairroSaida: safeParse<String>(
+          utf8.decode(latin1
+              .encode(json['bairroSaida'] != null ? json['bairroSaida'] : '')),
+          ''),
+      cidadeSaida: safeParse<String>(
+          utf8.decode(latin1.encode(json['cidadeSaida'] ?? '')), ''),
+      estadoSaida: safeParse<String>(json['estadoSaida'] ?? '', ''),
     );
   }
 
