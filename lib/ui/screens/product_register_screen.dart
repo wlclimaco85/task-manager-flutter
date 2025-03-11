@@ -390,7 +390,8 @@ class _ProductRegisterScreenState extends State<ProductRegisterScreen> {
                                     horizontal: 20,
                                     vertical: 10,
                                   ),
-                                  backgroundColor: Colors.green,
+                                  backgroundColor:
+                                      CustomColors().getDarkGreenBorder(),
                                   foregroundColor: Colors.white,
                                 ),
                               ),
@@ -585,13 +586,15 @@ class _ProductRegisterScreenState extends State<ProductRegisterScreen> {
                       onPressed: isSubmitting ? null : submitForm,
                       label: isSubmitting
                           ? const CircularProgressIndicator(
-                              color: Colors.white,
+                              color: Colors
+                                  .white, // Consider changing if background is white
                             )
                           : const Text('Gravar'),
                       icon: const Icon(Icons.save),
                       backgroundColor: isSubmitting
-                          ? Colors.grey
-                          : CustomColors().getTextColor(),
+                          ? Colors.white
+                          : CustomColors().getBorderInput(),
+                      foregroundColor: Colors.white, // Add this line
                     ),
                   ),
                 ),

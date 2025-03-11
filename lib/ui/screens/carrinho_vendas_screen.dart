@@ -208,95 +208,121 @@ class ProductCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(8.0),
         side: BorderSide(color: CustomColors().getDarkGreenBorder(), width: 2),
       ),
-      child: Row(
-        children: [
-          Expanded(
-            flex: 2,
-            child: image,
-          ),
-          Expanded(
-            flex: 3,
-            child: Padding(
-              padding: const EdgeInsets.all(8.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+      child: SizedBox(
+        height: 400, // Altura fixa para evitar erro
+        child: Column(
+          children: [
+            Text(
+              product.tipo ?? 'Sem descrição',
+              style: const TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            Expanded(
+              // Isso agora está dentro de um espaço limitado
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start, // Alinha ao topo
                 children: [
-                  Text(
-                    product.tipo ?? 'Sem descrição',
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
+                  Expanded(
+                    flex: 2,
+                    child: image,
+                  ),
+                  Expanded(
+                    flex: 3,
+                    child: Padding(
+                      padding: const EdgeInsets.all(8.0),
+                      child: SingleChildScrollView(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Lote: ${product.id}',
+                              style: const TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            Text('Quantidade: ${product.qtdSacos} sacos'),
+                            Text('Data Retirada: ${product.dtRetirada}'),
+                            Text('Descrição: ${product.descricao}'),
+                            const SizedBox(height: 8),
+                            const Text('Endereço Retirada:',
+                                style: TextStyle(fontWeight: FontWeight.bold)),
+                            ...List.generate(
+                              (product.negociacoes as List).length,
+                              (i) {
+                                final negotiation = product.negociacoes[i];
+                                return Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text('Bairro: ${negotiation.bairroEntr}'),
+                                    Text('Cidade: ${negotiation.cidadeEntr}'),
+                                    Text('Estado: ${negotiation.estadoEntr}'),
+                                    const SizedBox(height: 8),
+                                  ],
+                                );
+                              },
+                            ),
+                          ],
+                        ),
+                      ),
                     ),
                   ),
-                  Text(
-                    'Lote: ${product.id}',
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  Text('Quantidade: ${product.qtdSacos} sacos'),
-                  Text('Data Retirada: ${product.dtRetirada}'),
-                  Text('Descrição: ${product.descricao}'),
-                  const SizedBox(height: 8),
-                  const Text('Endereço Retirada:',
-                      style: TextStyle(fontWeight: FontWeight.bold)),
-                  ...List.generate((product.negociacoes as List).length, (i) {
-                    final negotiation = product.negociacoes[i];
-                    return Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+
+                  // Botões agora ficarão empilhados corretamente
+                  Expanded(
+                    flex: 1,
+                    child: Column(
+                      mainAxisAlignment:
+                          MainAxisAlignment.center, // Centraliza na vertical
                       children: [
-                        Text('Bairro: ${negotiation.bairroEntr}'),
-                        Text('Cidade: ${negotiation.cidadeEntr}'),
-                        Text('Estado: ${negotiation.estadoEntr}'),
-                        const SizedBox(height: 8),
+                        Tooltip(
+                          message: 'Editar',
+                          child: Column(
+                            children: [
+                              IconButton(
+                                icon:
+                                    const Icon(Icons.edit, color: Colors.green),
+                                onPressed: onAction,
+                              ),
+                              const Text(
+                                'Editar',
+                                style: TextStyle(
+                                    fontSize: 12, color: Colors.black),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(
+                            height: 24), // Maior espaçamento entre os botões
+                        Tooltip(
+                          message: 'Excluir',
+                          child: Column(
+                            children: [
+                              IconButton(
+                                icon:
+                                    const Icon(Icons.delete, color: Colors.red),
+                                onPressed: onDelete,
+                              ),
+                              const Text(
+                                'Excluir',
+                                style: TextStyle(
+                                    fontSize: 12, color: Colors.black),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(
+                            height: 16), // Pequeno espaçamento antes de acabar
                       ],
-                    );
-                  }),
+                    ),
+                  ),
                 ],
               ),
             ),
-          ),
-          Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              // Botão Editar
-              Tooltip(
-                message: 'Editar',
-                child: Column(
-                  children: [
-                    IconButton(
-                      icon: Icon(Icons.edit, color: Colors.green),
-                      onPressed: onAction, // Callback para ação de edição
-                    ),
-                    const Text(
-                      'Editar',
-                      style: TextStyle(fontSize: 12, color: Colors.black),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 16), // Espaçamento entre os botões
-
-              // Botão Excluir
-              Tooltip(
-                message: 'Excluir',
-                child: Column(
-                  children: [
-                    IconButton(
-                      icon: Icon(Icons.delete, color: Colors.red),
-                      onPressed: onDelete, // Callback para ação de exclusão
-                    ),
-                    const Text(
-                      'Excluir',
-                      style: TextStyle(fontSize: 12, color: Colors.black),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
