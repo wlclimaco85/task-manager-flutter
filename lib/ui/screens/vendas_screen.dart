@@ -524,13 +524,12 @@ class ProductCard extends StatelessWidget {
                     const SizedBox(width: 8),
                   ],
                   Column(
-                    // Cotar Transporte sempre visível
                     children: [
                       IconButton(
                         icon: const Icon(Icons.local_shipping,
                             color: Colors.purple),
-                        onPressed: () => FreteWidget(
-                          context: context,
+                        onPressed: () => FreteService.mostrarPopupFrete(
+                          context: context, // ESSE CONTEXT É IMPORTANTE!
                           vendaId: 123,
                           compradorId: 456,
                           peso: 1500,
