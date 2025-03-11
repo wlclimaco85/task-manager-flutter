@@ -530,13 +530,20 @@ class ProductCard extends StatelessWidget {
                             color: Colors.purple),
                         onPressed: () => FreteService.mostrarPopupFrete(
                           context: context, // ESSE CONTEXT É IMPORTANTE!
-                          vendaId: 123,
-                          compradorId: 456,
-                          peso: 1500,
-                          cidadeOrigem: "São Paulo",
-                          cidadeDestino: "Rio de Janeiro",
-                          bairroOrigem: "Centro",
-                          bairroDestino: "Centro",
+                          vendaId: product?.id ?? 0,
+                          compradorId: AuthUtility.userInfo?.data?.id ??
+                              0, // ID do usuário logado
+                          peso: product.qtdSacos ?? 0 * 60, // Peso total
+                          cidadeOrigem:
+                              product?.parceiro?.endereco?.cidade?.nome ?? "",
+                          cidadeDestino: AuthUtility
+                                  .userInfo?.data?.codDadosPessoal?.cidade ??
+                              "",
+                          bairroOrigem:
+                              product?.parceiro?.endereco?.bairro ?? "",
+                          bairroDestino: AuthUtility
+                                  .userInfo?.data?.codDadosPessoal?.bairro ??
+                              "",
                         ),
                       ),
                       const Text(

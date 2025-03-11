@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:task_manager_flutter/data/services/checkout_caller.dart';
+import 'package:task_manager_flutter/data/constants/custom_colors.dart';
 
 class FreteService {
   static void mostrarPopupFrete({
@@ -42,6 +43,7 @@ class FreteService {
       context: context,
       builder: (context) {
         return AlertDialog(
+          backgroundColor: Colors.white,
           title: const Text('Detalhes do Frete'),
           content: FutureBuilder<double>(
             future: _calcularFrete(),
@@ -68,13 +70,15 @@ class FreteService {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text('Origem: $bairroDestino - $cidadeOrigem',
-                      style: const TextStyle(color: Colors.red)),
+                      style:
+                          TextStyle(color: CustomColors().getTextColorDesc())),
                   Text('Destino: $bairroOrigem - $cidadeDestino',
-                      style: const TextStyle(color: Colors.red)),
+                      style:
+                          TextStyle(color: CustomColors().getTextColorDesc())),
                   const SizedBox(height: 12),
                   Text('Valor Total: ${_formatter.format(snapshot.data!)}',
                       style: TextStyle(
-                          color: Colors.green[800],
+                          color: CustomColors().getTextColorDesc(),
                           fontWeight: FontWeight.bold)),
                   Text('Peso: ${peso} kg'),
                   const SizedBox(height: 16),
