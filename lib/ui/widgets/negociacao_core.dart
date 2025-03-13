@@ -12,6 +12,7 @@ class RenegotiationHandler {
     required int qtdSacos,
     required double vlrSacos,
     required int qtdDisponivel,
+    required int negociacaoId,
   }) async {
     showDialog(
       context: context,
@@ -47,6 +48,7 @@ class RenegotiationHandler {
         "vendedorId": vendedorId,
         "qtdSacos": qtdSacos,
         "vlrSacos": vlrSacos,
+        "negociacaoId": negociacaoId,
       };
 
       // Substitua NetworkCaller e ApiLinks por suas implementações reais

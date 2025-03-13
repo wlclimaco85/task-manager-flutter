@@ -565,6 +565,7 @@ class ProductCard extends StatelessWidget {
             const SizedBox(height: 8), // Espaço após o título
             ...List.generate((product.negociacoes as List).length, (i) {
               final negotiation = product.negociacoes[i];
+              final vendaId = product.id!;
               return Card(
                 margin: const EdgeInsets.symmetric(vertical: 4.0),
                 color: CustomColors().getNegotiationCardBackground(),
@@ -981,7 +982,7 @@ class ProductCard extends StatelessWidget {
                                         productName: 'Arroz em Casca',
                                         productValue: negotiation.vlrSacos!,
                                         productQnt: negotiation.qtdSacos!,
-                                        idVenda: negotiation.id!,
+                                        idVenda: vendaId,
                                       ),
                                     ),
                                   ),

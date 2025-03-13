@@ -297,6 +297,7 @@ class _ProductCatalogState extends State<ProductCatalog> {
                     0, // Substitua com ID do comprador
                 qtdSacos: product.qtdSacos! ?? 0,
                 vlrSacos: product.vlrSacos ?? 0.0,
+                negociacaoId: product.id!, // Substitua com ID da negociação
                 qtdDisponivel: product.qtdSacos!, // Quantidade disponível
               );
               Navigator.of(context).pop();
@@ -523,6 +524,7 @@ class ProductCard extends StatelessWidget {
                     ),
                     const SizedBox(width: 8),
                   ],
+
                   Column(
                     children: [
                       IconButton(

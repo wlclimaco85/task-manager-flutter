@@ -12,6 +12,7 @@ class CheckoutScreen extends StatefulWidget {
   final double productValue;
   final int productQnt;
   final int idVenda;
+  final int negociacaoId;
 
   const CheckoutScreen({
     Key? key,
@@ -19,6 +20,7 @@ class CheckoutScreen extends StatefulWidget {
     required this.productValue,
     required this.productQnt,
     required this.idVenda,
+    required this.negociacaoId,
   }) : super(key: key);
 
   @override
@@ -373,6 +375,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                           0, // Substitua com ID do comprador
                       qtdSacos: widget.productQnt ?? 0,
                       vlrSacos: widget.productValue ?? 0.0,
+                      negociacaoId: widget.negociacaoId,
                       qtdDisponivel:
                           widget.productQnt!, // Quantidade disponível
                     );
