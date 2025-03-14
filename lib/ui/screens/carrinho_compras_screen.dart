@@ -857,6 +857,7 @@ class ProductCard extends StatelessWidget {
                                         productValue: 10.0,
                                         productQnt: 1,
                                         idVenda: negotiation.id!,
+                                        negociacaoId: negotiation.id!,
                                       ),
                                     ),
                                   ),

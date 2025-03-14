@@ -336,6 +336,8 @@ class _ProdutoDetailsScreenState extends State<ProdutoDetailsScreen> {
                                       productQnt: account
                                           .qtdSacos!, // Quantidade do produto
                                       idVenda: account.id!, // ID da venda
+                                      negociacaoId:
+                                          account.id!, // ID da negociação
                                     ),
                                   ),
                                 ),

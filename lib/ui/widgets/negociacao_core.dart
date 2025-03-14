@@ -13,6 +13,10 @@ class RenegotiationHandler {
     required double vlrSacos,
     required int qtdDisponivel,
     required int negociacaoId,
+    // Novo parâmetro: callback opcional
+    VoidCallback? onSuccess, // Callback sem argumentos
+    // Function(NetworkResponse)? onSuccessWithResponse, // Callback com resposta
+    // Function(dynamic)? onError, // Callback para erros
   }) async {
     showDialog(
       context: context,
@@ -48,10 +52,9 @@ class RenegotiationHandler {
         "vendedorId": vendedorId,
         "qtdSacos": qtdSacos,
         "vlrSacos": vlrSacos,
-        "negociacaoId": negociacaoId,
+        "id": negociacaoId,
       };
 
-      // Substitua NetworkCaller e ApiLinks por suas implementações reais
       final NetworkResponse response = await NetworkCaller()
           .postRequest(ApiLinks.insertNegociacao, requestBody);
 
@@ -63,6 +66,9 @@ class RenegotiationHandler {
           message: "Proposta enviada com sucesso!",
           isError: false,
         );
+        // Executa o callback (se fornecido)
+        onSuccess?.call();
+        //   onSuccessWithResponse?.call(response);
         return true;
       } else {
         _showSnackBar(
@@ -70,6 +76,8 @@ class RenegotiationHandler {
           message: "Erro ao enviar proposta.",
           isError: true,
         );
+        // Callback de erro (se fornecido)
+        //  onError?.call(response.statusCode);
         return false;
       }
     } catch (e) {
@@ -79,6 +87,8 @@ class RenegotiationHandler {
         message: "Erro: ${e.toString()}",
         isError: true,
       );
+      // Callback de erro (se fornecido)
+      //   onError?.call(e);
       return false;
     }
   }

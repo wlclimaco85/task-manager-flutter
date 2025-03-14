@@ -805,7 +805,7 @@ class ProductCard extends StatelessWidget {
                                   },
                                 ),
                                 const Text(
-                                  'Aceitare',
+                                  'Aceitar',
                                   style: TextStyle(
                                       fontSize: 12, color: Colors.black),
                                 ),
@@ -983,6 +983,7 @@ class ProductCard extends StatelessWidget {
                                         productValue: negotiation.vlrSacos!,
                                         productQnt: negotiation.qtdSacos!,
                                         idVenda: vendaId,
+                                        negociacaoId: negotiation.id!,
                                       ),
                                     ),
                                   ),

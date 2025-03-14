@@ -198,6 +198,7 @@ class _ProductCatalogState extends State<ProductCatalog> {
                                     productValue: product.vlrSacos ?? 0.0,
                                     productQnt: product.qtdSacos ?? 0,
                                     idVenda: product.id ?? 0,
+                                    negociacaoId: product.id ?? 0,
                                   ),
                                 ),
                               ),
