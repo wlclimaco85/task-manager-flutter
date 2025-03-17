@@ -13,12 +13,12 @@ class NegociacaoCatalogPage extends StatefulWidget {
   final String actionTooltip;
 
   const NegociacaoCatalogPage({
-    Key? key,
+    super.key,
     required this.title,
     required this.apiUrl,
     required this.actionIcon,
     required this.actionTooltip,
-  }) : super(key: key);
+  });
 
   @override
   _NegociacaoCatalogPageState createState() => _NegociacaoCatalogPageState();
@@ -163,12 +163,12 @@ class ProductCard extends StatelessWidget {
   final VoidCallback onAction;
 
   const ProductCard({
-    Key? key,
+    super.key,
     required this.product,
     required this.actionIcon,
     required this.actionTooltip,
     required this.onAction,
-  }) : super(key: key);
+  });
 
   Future<void> fetchProducts(BuildContext context) async {
     try {
@@ -194,25 +194,16 @@ class ProductCard extends StatelessWidget {
           await VendasCaller().confirmarNegociacao(context, vendaId);
 
       // Verificar se a resposta é válida e se a negociação foi concluída com sucesso
-      if (response != null) {
-        // Mostrar Snackbar de sucesso e fechar o diálogo
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Negociação aceita com sucesso!'),
-          ),
-        );
+      // Mostrar Snackbar de sucesso e fechar o diálogo
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Negociação aceita com sucesso!'),
+        ),
+      );
 
-        // Fechar o diálogo
-        Navigator.pop(context);
-      } else {
-        // Mostrar Snackbar de erro com mensagem mais específica
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Erro ao finalizar negociação ??'),
-          ),
-        );
-      }
-    } catch (e) {
+      // Fechar o diálogo
+      Navigator.pop(context);
+        } catch (e) {
       // Tratar outras exceções que possam ocorrer
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Erro inesperado: $e')),
@@ -221,6 +212,7 @@ class ProductCard extends StatelessWidget {
       // Chamar a função onLoad para atualizar a interface, se necessário
       onLoad(context);
     }
+    return null;
   }
 
   Future<Map<String, dynamic>?> enviarContraProposta(
@@ -271,25 +263,16 @@ class ProductCard extends StatelessWidget {
       final response = await VendasCaller().confirmarRecusar(context, vendaId);
 
       // Verificar se a resposta é válida e se a negociação foi concluída com sucesso
-      if (response != null) {
-        // Mostrar Snackbar de sucesso e fechar o diálogo
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Sua Negociação foi recusada!'),
-          ),
-        );
+      // Mostrar Snackbar de sucesso e fechar o diálogo
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Sua Negociação foi recusada!'),
+        ),
+      );
 
-        // Fechar o diálogo
-        Navigator.pop(context);
-      } else {
-        // Mostrar Snackbar de erro com mensagem mais específica
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Erro ao recusar negociação ??'),
-          ),
-        );
-      }
-    } catch (e) {
+      // Fechar o diálogo
+      Navigator.pop(context);
+        } catch (e) {
       // Tratar outras exceções que possam ocorrer
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Erro inesperado: $e')),
@@ -298,6 +281,7 @@ class ProductCard extends StatelessWidget {
       // Chamar a função onLoad para atualizar a interface, se necessário
       onLoad(context);
     }
+    return null;
   }
 
   InputDecoration customInputDecoration(String labelText) {
@@ -320,9 +304,9 @@ class ProductCard extends StatelessWidget {
   }
 
   void showContraPropostaPopup(BuildContext context, dynamic negotiation) {
-    final _formKey = GlobalKey<FormState>();
-    final _qtdSacosController = TextEditingController();
-    final _vlrSacosController = TextEditingController();
+    final formKey = GlobalKey<FormState>();
+    final qtdSacosController = TextEditingController();
+    final vlrSacosController = TextEditingController();
 
     showDialog(
       context: context,
@@ -334,7 +318,7 @@ class ProductCard extends StatelessWidget {
             style: TextStyle(fontWeight: FontWeight.bold),
           ),
           content: Form(
-            key: _formKey,
+            key: formKey,
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
@@ -342,7 +326,7 @@ class ProductCard extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 8),
                   child: TextFormField(
-                    controller: _qtdSacosController,
+                    controller: qtdSacosController,
                     decoration: customInputDecoration('Quantidade de Sacos'),
                     keyboardType: TextInputType.number,
                     validator: (value) {
@@ -358,7 +342,7 @@ class ProductCard extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 8),
                   child: TextFormField(
-                    controller: _vlrSacosController,
+                    controller: vlrSacosController,
                     decoration: customInputDecoration('Valor por Saco'),
                     keyboardType: TextInputType.number,
                     validator: (value) {
@@ -382,9 +366,9 @@ class ProductCard extends StatelessWidget {
             ),
             ElevatedButton(
               onPressed: () async {
-                if (_formKey.currentState!.validate()) {
-                  final qtdSacos = double.parse(_qtdSacosController.text);
-                  final vlrSacos = double.parse(_vlrSacosController.text);
+                if (formKey.currentState!.validate()) {
+                  final qtdSacos = double.parse(qtdSacosController.text);
+                  final vlrSacos = double.parse(vlrSacosController.text);
 
                   // Aqui você pode chamar o endpoint para enviar a proposta
                   final response = await enviarContraProposta(

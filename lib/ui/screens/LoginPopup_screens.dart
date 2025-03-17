@@ -8,6 +8,8 @@ import 'package:task_manager_flutter/data/models/auth_utility.dart';
 import 'package:task_manager_flutter/data/models/login_model.dart';
 
 class LoginPopup extends StatefulWidget {
+  const LoginPopup({super.key});
+
   @override
   _LoginPopupState createState() => _LoginPopupState();
 }
@@ -78,14 +80,14 @@ class _LoginPopupState extends State<LoginPopup> {
   void _navigateToForgotPassword() {
     Navigator.push(
       context,
-      MaterialPageRoute(builder: (context) => ForgotPasswordScreen()),
+      MaterialPageRoute(builder: (context) => const ForgotPasswordScreen()),
     );
   }
 
   void _navigateToSignUp() {
     Navigator.push(
       context,
-      MaterialPageRoute(builder: (context) => SignUpScreen()),
+      MaterialPageRoute(builder: (context) => const SignUpScreen()),
     );
   }
 

@@ -13,12 +13,12 @@ class ProductCatalogPageVendas extends StatefulWidget {
   final String actionTooltip;
 
   const ProductCatalogPageVendas({
-    Key? key,
+    super.key,
     required this.title,
     required this.apiUrl,
     required this.actionIcon,
     required this.actionTooltip,
-  }) : super(key: key);
+  });
 
   @override
   _ProductCatalogPageVendasState createState() =>
@@ -177,13 +177,13 @@ class ProductCard extends StatelessWidget {
   final VoidCallback onDelete;
 
   const ProductCard({
-    Key? key,
+    super.key,
     required this.product,
     required this.actionIcon,
     required this.actionTooltip,
     required this.onAction,
     required this.onDelete,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -347,7 +347,7 @@ void main() {
     home: ProductCatalogPageVendas(
       title: 'Produtos do Vendedor',
       apiUrl:
-          'http://192.168.146.1:8088/boletobancos/api/produtos/vendedor/${AuthUtility.userInfo?.data?.id}',
+          'http://192.168.146.1:8088/boletobancos/api/produtos/vendedor/${AuthUtility.userInfo.data?.id}',
       actionIcon: Icons.edit,
       actionTooltip: 'Editar Produto',
     ),

@@ -15,13 +15,13 @@ class CheckoutScreen extends StatefulWidget {
   final int negociacaoId;
 
   const CheckoutScreen({
-    Key? key,
+    super.key,
     required this.productName,
     required this.productValue,
     required this.productQnt,
     required this.idVenda,
     required this.negociacaoId,
-  }) : super(key: key);
+  });
 
   @override
   _CheckoutScreenState createState() => _CheckoutScreenState();
@@ -121,7 +121,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
               style: {
                 "p": Style(
                   fontSize: FontSize(16.0),
-                  lineHeight: LineHeight(1.8),
+                  lineHeight: const LineHeight(1.8),
                   margin: Margins.only(bottom: 10),
                 ),
                 "ul": Style(
@@ -371,13 +371,12 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                       context: context, // Contexto do widget atual
                       vendaId: widget.idVenda, // ID da venda
                       vendedorId: 1,
-                      compradorId: AuthUtility.userInfo?.data?.id ??
+                      compradorId: AuthUtility.userInfo.data?.id ??
                           0, // Substitua com ID do comprador
                       qtdSacos: widget.productQnt ?? 0,
                       vlrSacos: widget.productValue ?? 0.0,
                       negociacaoId: widget.negociacaoId,
-                      qtdDisponivel:
-                          widget.productQnt!, // Quantidade disponível
+                      qtdDisponivel: widget.productQnt, // Quantidade disponível
                     );
                     Navigator.of(context).pop();
                     if (response) {

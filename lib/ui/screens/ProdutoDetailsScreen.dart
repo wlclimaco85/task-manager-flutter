@@ -248,7 +248,7 @@ class _ProdutoDetailsScreenState extends State<ProdutoDetailsScreen> {
                     ),
                   ),
                   _buildInfoItem('Nome', account.parceiro?.nome ?? 'N/A'),
-                  _buildInfoItem('Endereço', '${enderecoCompleto}'),
+                  _buildInfoItem('Endereço', enderecoCompleto),
 
                   // Classificações
                   const Padding(
@@ -298,7 +298,7 @@ class _ProdutoDetailsScreenState extends State<ProdutoDetailsScreen> {
                                   builder: (context) => NegotiationDialog(
                                     product: account,
                                     compradorId:
-                                        AuthUtility.userInfo?.data?.id ??
+                                        AuthUtility.userInfo.data?.id ??
                                             0, // ID do usuário logado
                                   ),
                                 ),

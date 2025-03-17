@@ -58,7 +58,7 @@ class Negotiation {
       estadoEntr: safeParse<String>(json['estadoEntr'], ''),
       bairroSaida: safeParse<String>(
           utf8.decode(latin1
-              .encode(json['bairroSaida'] != null ? json['bairroSaida'] : '')),
+              .encode(json['bairroSaida'] ?? '')),
           ''),
       cidadeSaida: safeParse<String>(
           utf8.decode(latin1.encode(json['cidadeSaida'] ?? '')), ''),
@@ -147,10 +147,8 @@ class Product {
     data['qtdSacos'] = qtdSacos;
     data['dtRetirada'] = dtRetirada;
     data['foto'] = foto;
-    if (negociacoes != null) {
-      data['negociacoes'] = negociacoes!.map((item) => item.toJson()).toList();
-    }
-    return data;
+    data['negociacoes'] = negociacoes.map((item) => item.toJson()).toList();
+      return data;
   }
 }
 

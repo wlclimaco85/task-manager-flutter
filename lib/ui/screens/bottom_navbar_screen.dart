@@ -22,8 +22,8 @@ class BottomNavBarScreen extends StatefulWidget {
 class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
   int selectedIndex = 0;
   List<Widget> get screens {
-    final isLoggedIn = AuthUtility.userInfo?.data?.id != null &&
-        AuthUtility.userInfo!.data!.id! > 1;
+    final isLoggedIn = AuthUtility.userInfo.data?.id != null &&
+        AuthUtility.userInfo.data!.id! > 1;
 
     return [
       const ProgressTaskScreen(),
@@ -32,7 +32,7 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
       const ProductRegisterScreen(),
       isLoggedIn
           ? const ProductRegisterScreen() // Substitua com a tela desejada para "Mais"
-          : LoginPopup(), // Substitua com a tela desejada para "Login"
+          : const LoginPopup(), // Substitua com a tela desejada para "Login"
     ];
   }
 
@@ -45,7 +45,7 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
             builder: (context) => ProductCatalogPageCompras(
               title: 'Produtos Comprados',
               apiUrl:
-                  '${ApiLinks.vendedorFindByUser}${AuthUtility.userInfo?.data?.id}',
+                  '${ApiLinks.vendedorFindByUser}${AuthUtility.userInfo.data?.id}',
               actionIcon: Icons.edit,
               actionTooltip: 'Editar Produto',
             ),
@@ -59,7 +59,7 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
             builder: (context) => ProductCatalogPageVendas(
               title: 'Produtos do Vendedor',
               apiUrl:
-                  '${ApiLinks.vendedorFindByUser}${AuthUtility.userInfo?.data?.id}',
+                  '${ApiLinks.vendedorFindByUser}${AuthUtility.userInfo.data?.id}',
               actionIcon: Icons.edit,
               actionTooltip: 'Editar Produto',
             ),
@@ -73,7 +73,7 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
             builder: (context) => NegociacaoCatalogPage(
               title: 'Negociação',
               apiUrl:
-                  '${ApiLinks.negociacaoFindByUser}${AuthUtility.userInfo?.data?.id}',
+                  '${ApiLinks.negociacaoFindByUser}${AuthUtility.userInfo.data?.id}',
               actionIcon: Icons.edit,
               actionTooltip: 'Editar Produto',
             ),
@@ -91,8 +91,8 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final isLoggedIn = AuthUtility.userInfo?.data?.id != null &&
-        AuthUtility.userInfo!.data!.id! > 1;
+    final isLoggedIn = AuthUtility.userInfo.data?.id != null &&
+        AuthUtility.userInfo.data!.id! > 1;
 
     return Scaffold(
       body: screens[selectedIndex],

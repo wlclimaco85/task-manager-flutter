@@ -1,6 +1,3 @@
-import 'dart:convert';
-import 'package:task_manager_flutter/data/models/parceiro_model.dart';
-import 'package:task_manager_flutter/data/models/login_model.dart';
 
 class News {
   final String title;

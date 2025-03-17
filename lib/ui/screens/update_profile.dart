@@ -64,7 +64,6 @@ class _UpdateProfileScreenState extends State<UpdateProfileScreen> {
         AuthUtility.userInfo.data?.id?.toString() ?? "";
 
     _cpfController.text = AuthUtility.userInfo.data?.codDadosPessoal?.cpf ?? "";
-    ;
     _codProdutorController.text =
         AuthUtility.userInfo.data?.codDadosPessoal?.codProdutor ?? "";
     _razaoSocialController.text =
@@ -373,11 +372,11 @@ class CustomTextFormField extends StatelessWidget {
   final FormFieldValidator<String>? validator;
 
   const CustomTextFormField({
-    Key? key,
+    super.key,
     required this.hintText,
     required this.controller,
     this.validator,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -416,13 +415,13 @@ class CustomPasswordTextFormField extends StatelessWidget {
   final FormFieldValidator<String>? validator;
 
   const CustomPasswordTextFormField({
-    Key? key,
+    super.key,
     required this.hintText,
     required this.controller,
     required this.obscureText,
     required this.togglePasswordVisibility,
     this.validator,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

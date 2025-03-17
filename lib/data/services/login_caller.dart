@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 class LoginPopup extends StatelessWidget {
   final VoidCallback? onLoginSuccess;
 
-  const LoginPopup({Key? key, this.onLoginSuccess}) : super(key: key);
+  const LoginPopup({super.key, this.onLoginSuccess});
 
   @override
   Widget build(BuildContext context) {

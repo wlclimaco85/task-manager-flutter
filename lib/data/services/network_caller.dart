@@ -23,8 +23,8 @@ class NetworkCaller {
       if (response.statusCode == 200) {
         return NetworkResponse(
             true, response.statusCode, jsonDecode(response.body));
-      } else if (AuthUtility.userInfo?.data?.id == null ||
-          AuthUtility.userInfo?.data?.id == 1 && response.statusCode == 403) {
+      } else if (AuthUtility.userInfo.data?.id == null ||
+          AuthUtility.userInfo.data?.id == 1 && response.statusCode == 403) {
         loginPadrao();
         Response response = await get(
           Uri.parse(url),
@@ -59,7 +59,7 @@ class NetworkCaller {
 
   Future<NetworkResponse> getRequests(String url, BuildContext context) async {
     try {
-      if (AuthUtility.userInfo?.data?.id != 1) {
+      if (AuthUtility.userInfo.data?.id != 1) {
         Response response = await get(
           Uri.parse(url),
           headers: {'Authorization': 'Bearer ${AuthUtility.userInfo.token}'},
@@ -71,12 +71,12 @@ class NetworkCaller {
           // Mostrar LoginPopup
           final result = await showDialog(
             context: context,
-            builder: (BuildContext context) => LoginPopup(),
+            builder: (BuildContext context) => const LoginPopup(),
           );
 
           if (result == true) {
             // Tenta novamente após login bem-sucedido
-            if (AuthUtility.userInfo?.data?.id != 1) {
+            if (AuthUtility.userInfo.data?.id != 1) {
               Response response = await get(
                 Uri.parse(url),
                 headers: {
@@ -106,12 +106,12 @@ class NetworkCaller {
         // Mostrar LoginPopup
         final result = await showDialog(
           context: context,
-          builder: (BuildContext context) => LoginPopup(),
+          builder: (BuildContext context) => const LoginPopup(),
         );
 
         if (result == true) {
           // Tenta novamente após login bem-sucedido
-          if (AuthUtility.userInfo?.data?.id != 1) {
+          if (AuthUtility.userInfo.data?.id != 1) {
             Response response = await get(
               Uri.parse(url),
               headers: {

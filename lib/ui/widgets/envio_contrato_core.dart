@@ -17,7 +17,7 @@ class RenegotiationMovimentoContratosHandler {
       builder: (_) => const Center(child: CircularProgressIndicator()),
     );
 
-    Future<void> _downloadContract(int contratoId, BuildContext context) async {
+    Future<void> downloadContract(int contratoId, BuildContext context) async {
       try {
         bool success =
             await CheckoutCaller().downloadContrato(contratoId, context);
@@ -40,7 +40,7 @@ class RenegotiationMovimentoContratosHandler {
               builder: (context) => NegociacaoCatalogPage(
                 title: 'Negociação',
                 apiUrl:
-                    '${ApiLinks.negociacaoFindByUser}${AuthUtility.userInfo?.data?.id}',
+                    '${ApiLinks.negociacaoFindByUser}${AuthUtility.userInfo.data?.id}',
                 actionIcon: Icons.edit,
                 actionTooltip: 'Editar Produto',
               ),
@@ -62,7 +62,7 @@ class RenegotiationMovimentoContratosHandler {
       }
     }
 
-    Future<void> _uploadContract(int negociacaoID) async {
+    Future<void> uploadContract(int negociacaoID) async {
       try {
         CheckoutCaller.uploadContract(negociacaoID);
       } catch (e) {}
@@ -73,7 +73,7 @@ class RenegotiationMovimentoContratosHandler {
       Navigator.of(context).pop();
 
       try {
-        void _showDownloadAndUploadButtons() {
+        void showDownloadAndUploadButtons() {
           showDialog(
             context: context,
             builder: (context) {
@@ -104,11 +104,11 @@ class RenegotiationMovimentoContratosHandler {
                                   color: CustomColors().getDarkGreenBorder()),
                             ),
                           ),
-                          onPressed: () => _downloadContract(vendaId, context),
+                          onPressed: () => downloadContract(vendaId, context),
                         ),
                       ),
                     if (status == 'upload' || status == 'both')
-                      SizedBox(height: 15),
+                      const SizedBox(height: 15),
                     if (status == 'upload' || status == 'both')
                       SizedBox(
                         width: double.infinity,
@@ -127,7 +127,7 @@ class RenegotiationMovimentoContratosHandler {
                                   color: CustomColors().getDarkGreenBorder()),
                             ),
                           ),
-                          onPressed: () => _uploadContract(vendaId),
+                          onPressed: () => uploadContract(vendaId),
                         ),
                       ),
                   ],
@@ -151,7 +151,7 @@ class RenegotiationMovimentoContratosHandler {
           );
         }
 
-        _showDownloadAndUploadButtons();
+        showDownloadAndUploadButtons();
 
         return true;
       } catch (e) {

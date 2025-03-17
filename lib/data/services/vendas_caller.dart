@@ -38,7 +38,7 @@ class VendasCaller {
     ProductModel models;
     try {
       final NetworkResponse response = await NetworkCaller().getRequests(
-          ApiLinks.fecthItensAVenda + '${AuthUtility.userInfo?.data?.id}',
+          '${ApiLinks.fecthItensAVenda}${AuthUtility.userInfo.data?.id}',
           context);
       String jsonString;
 
@@ -60,15 +60,15 @@ class VendasCaller {
     List<Product>? model = [];
     ProductModel models;
     try {
-      if (AuthUtility.userInfo?.data?.id == 1) {
+      if (AuthUtility.userInfo.data?.id == 1) {
         // AQUI CHAMAR O LOGIN
         await showDialog(
           context: context,
-          builder: (BuildContext context) => LoginPopup(),
+          builder: (BuildContext context) => const LoginPopup(),
         );
       } else {
         final NetworkResponse response = await NetworkCaller().getRequests(
-            ApiLinks.fecthItensACompra + '${AuthUtility.userInfo?.data?.id}',
+            '${ApiLinks.fecthItensACompra}${AuthUtility.userInfo.data?.id}',
             context);
         String jsonString;
 
@@ -78,13 +78,7 @@ class VendasCaller {
           model.addAll(models.produtos ?? []);
         } else if (response.statusCode == 403) {
           // Mova o código que depende do BuildContext para este método.
-          if (AuthUtility.userInfo == null) {
-            // AQUI CHAMAR O LOGIN
-            await showDialog(
-              context: context,
-              builder: (BuildContext context) => LoginPopup(),
-            );
-          }
+          
         } else {
           print('Erro: Nenhum dado retornado');
         }
@@ -101,7 +95,7 @@ class VendasCaller {
     ProductModel models;
     try {
       final NetworkResponse response = await NetworkCaller().getRequests(
-          ApiLinks.fecthItensANegociar + '${AuthUtility.userInfo?.data?.id}',
+          '${ApiLinks.fecthItensANegociar}${AuthUtility.userInfo.data?.id}',
           context);
       String jsonString;
 
@@ -147,7 +141,7 @@ class VendasCaller {
     ProdutoModel models;
     try {
       final NetworkResponse response = await NetworkCaller().getRequest(
-        ApiLinks.fecthProdutosById + '${id}',
+        '${ApiLinks.fecthProdutosById}$id',
       );
       String jsonString;
 
@@ -166,7 +160,7 @@ class VendasCaller {
   }
 
   void downloadContrato(int contratoId, BuildContext context) async {
-    final url = ApiLinks.downloadContrato + "/" + contratoId.toString();
+    final url = "${ApiLinks.downloadContrato}/$contratoId";
 
     // Get the token (replace with your actual AuthUtility method)
     final token =
@@ -227,7 +221,7 @@ class VendasCaller {
     ProductModel models;
     try {
       final NetworkResponse response = await NetworkCaller().getRequests(
-          ApiLinks.confirmarNegociacao + "/" + negociacaoId.toString(),
+          "${ApiLinks.confirmarNegociacao}/$negociacaoId",
           context);
       String jsonString;
 
@@ -252,7 +246,7 @@ class VendasCaller {
     ProductModel models;
     try {
       final NetworkResponse response = await NetworkCaller().getRequests(
-          ApiLinks.confirmarRecusar + "/" + negociacaoId.toString(), context);
+          "${ApiLinks.confirmarRecusar}/$negociacaoId", context);
       String jsonString;
 
       if (response.statusCode == 200 && response.body != null) {
@@ -305,5 +299,6 @@ class VendasCaller {
       print('Erro: $e'); // Log do erro
       throw Exception('Erro ao carregar itens à venda: $e');
     }
+    return null;
   }
 }

@@ -32,11 +32,10 @@ class AlertCaller {
   Future<List<Alert>> fetchItensAVenda(BuildContext context) async {
     List<Alert>? model = [];
     AlertResponse models;
-    if (AuthUtility.userInfo != null &&
-        AuthUtility.userInfo?.data?.id != null) {
+    if (AuthUtility.userInfo.data?.id != null) {
       try {
         final NetworkResponse response = await NetworkCaller().getRequests(
-            ApiLinks.alertFindByUser + '${AuthUtility.userInfo?.data?.id}',
+            '${ApiLinks.alertFindByUser}${AuthUtility.userInfo.data?.id}',
             context);
         String jsonString;
 

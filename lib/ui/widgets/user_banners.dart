@@ -1,7 +1,6 @@
 import 'dart:typed_data';
 import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:task_manager_flutter/data/models/auth_utility.dart';
 import 'package:task_manager_flutter/data/models/alert_model.dart';
 import 'package:task_manager_flutter/ui/screens/bottom_navbar_screen.dart';
@@ -19,12 +18,12 @@ class UserBannerAppBar extends StatefulWidget implements PreferredSizeWidget {
   final bool? isLoading;
 
   const UserBannerAppBar({
-    Key? key,
+    super.key,
     this.onTapped,
     this.screenTitle,
     this.onRefresh,
     this.isLoading,
-  }) : super(key: key);
+  });
 
   @override
   _UserBannerAppBarState createState() => _UserBannerAppBarState();
@@ -52,8 +51,8 @@ class _UserBannerAppBarState extends State<UserBannerAppBar> {
 
   Future<void> fetchAlerts() async {
     try {
-      if (AuthUtility.userInfo?.data?.id == null ||
-          AuthUtility.userInfo!.data!.id! > 1) {
+      if (AuthUtility.userInfo.data?.id == null ||
+          AuthUtility.userInfo.data!.id! > 1) {
         final List<Alert> alertData =
             await AlertCaller().fetchItensAVenda(context);
         if (alertData.isNotEmpty) {
@@ -262,8 +261,8 @@ class _UserBannerAppBarState extends State<UserBannerAppBar> {
   @override
   Widget build(BuildContext context) {
     // Condição para exibir o AppBar principal ou o alternativo
-    if (AuthUtility.userInfo?.data?.id != null &&
-        AuthUtility.userInfo!.data!.id! > 1) {
+    if (AuthUtility.userInfo.data?.id != null &&
+        AuthUtility.userInfo.data!.id! > 1) {
       return AppBar(
         backgroundColor: CustomColors().getLightGreenBackground(),
         bottom: PreferredSize(
@@ -274,7 +273,7 @@ class _UserBannerAppBarState extends State<UserBannerAppBar> {
           ),
         ),
         actions: [
-          if (widget?.isLoading ?? false)
+          if (widget.isLoading ?? false)
             const Padding(
               padding: EdgeInsets.only(right: 16),
               child: CircularProgressIndicator(
@@ -453,7 +452,7 @@ class _UserBannerAppBarState extends State<UserBannerAppBar> {
           ],
         ),
         actions: [
-          if (widget?.isLoading ?? false)
+          if (widget.isLoading ?? false)
             const Padding(
               padding: EdgeInsets.only(right: 16),
               child: CircularProgressIndicator(

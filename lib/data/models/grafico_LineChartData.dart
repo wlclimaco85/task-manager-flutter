@@ -65,7 +65,7 @@ class _CotacaoChartState extends State<CotacaoChart> {
         Expanded(
           child: LineChart(
             LineChartData(
-              gridData: FlGridData(show: true),
+              gridData: const FlGridData(show: true),
               titlesData: FlTitlesData(
                 bottomTitles: AxisTitles(
                   sideTitles: SideTitles(
@@ -112,7 +112,7 @@ class _CotacaoChartState extends State<CotacaoChart> {
                   }).toList(),
                   isCurved: true,
                   color: Colors.blue,
-                  dotData: FlDotData(show: true),
+                  dotData: const FlDotData(show: true),
                   belowBarData: BarAreaData(show: false),
                 ),
               ],

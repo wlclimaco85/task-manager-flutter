@@ -18,7 +18,7 @@ import 'package:task_manager_flutter/ui/widgets/user_banners.dart';
 import 'package:task_manager_flutter/ui/utils/showSnackBar.dart';
 
 class ProductRegisterScreen extends StatefulWidget {
-  const ProductRegisterScreen({Key? key}) : super(key: key);
+  const ProductRegisterScreen({super.key});
 
   @override
   _ProductRegisterScreenState createState() => _ProductRegisterScreenState();
@@ -74,7 +74,7 @@ class _ProductRegisterScreenState extends State<ProductRegisterScreen> {
 
     try {
       final List<Parceiro> parceiroData = await ParceiroCaller()
-          .fetchParceiros(context, AuthUtility.userInfo?.data?.id ?? 0);
+          .fetchParceiros(context, AuthUtility.userInfo.data?.id ?? 0);
 
       setState(() {
         vendedorEndereco =
@@ -108,9 +108,9 @@ class _ProductRegisterScreenState extends State<ProductRegisterScreen> {
 
   Future<void> pickImages() async {
     final ImagePicker picker = ImagePicker();
-    final List<XFile>? images = await picker.pickMultiImage();
+    final List<XFile> images = await picker.pickMultiImage();
 
-    if (images != null && images.isNotEmpty) {
+    if (images.isNotEmpty) {
       setState(() {
         selectedImages.addAll(images.map((image) => File(image.path)));
       });
@@ -159,7 +159,7 @@ class _ProductRegisterScreenState extends State<ProductRegisterScreen> {
       final Map<String, dynamic> requestBody = {
         'tipoProdutoId': 1,
         'produtoId': 1,
-        'descricao': selectedSafra + ' - ' + selectedTipoProduto,
+        'descricao': '$selectedSafra - $selectedTipoProduto',
         'safra': selectedSafra, // Novo campo
         'semente': sementeController.text, // Novo campo
         'tiposNegociacoes': selectedTipoNegociacao, // Novo campo
@@ -171,7 +171,7 @@ class _ProductRegisterScreenState extends State<ProductRegisterScreen> {
         'isCargaFechada': isCargaFechada,
         'tipoGrao': selectedTipoGrao,
         'dtRetirada': dtRetirada?.toIso8601String(),
-        'parceiro': {'id': AuthUtility.userInfo?.data?.id},
+        'parceiro': {'id': AuthUtility.userInfo.data?.id},
         'status': 'A',
         'qtdsacosoriginal': int.tryParse(qtdSacosController.text) ?? 0,
         'classificacao': classificacaoList,
@@ -190,7 +190,9 @@ class _ProductRegisterScreenState extends State<ProductRegisterScreen> {
         _formKey.currentState!.reset();
         qtdSacosController.clear();
         vlrSacosController.clear();
-        classificacaoControllers.forEach((controller) => controller.clear());
+        for (var controller in classificacaoControllers) {
+          controller.clear();
+        }
         ruaController.clear();
         numeroController.clear();
         bairroController.clear();
@@ -379,12 +381,6 @@ class _ProductRegisterScreenState extends State<ProductRegisterScreen> {
                                     });
                                   }
                                 },
-                                child: Text(
-                                  dtRetirada == null
-                                      ? 'Data para Retirada'
-                                      : DateFormat('dd/MM/yyyy', 'pt_BR')
-                                          .format(dtRetirada!),
-                                ),
                                 style: ElevatedButton.styleFrom(
                                   padding: const EdgeInsets.symmetric(
                                     horizontal: 20,
@@ -393,6 +389,12 @@ class _ProductRegisterScreenState extends State<ProductRegisterScreen> {
                                   backgroundColor:
                                       CustomColors().getDarkGreenBorder(),
                                   foregroundColor: Colors.white,
+                                ),
+                                child: Text(
+                                  dtRetirada == null
+                                      ? 'Data para Retirada'
+                                      : DateFormat('dd/MM/yyyy', 'pt_BR')
+                                          .format(dtRetirada!),
                                 ),
                               ),
                             ),

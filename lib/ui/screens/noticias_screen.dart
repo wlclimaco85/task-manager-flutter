@@ -12,12 +12,12 @@ class ProductCatalogPage extends StatefulWidget {
   final String actionTooltip;
 
   const ProductCatalogPage({
-    Key? key,
+    super.key,
     required this.title,
     required this.apiUrl,
     required this.actionIcon,
     required this.actionTooltip,
-  }) : super(key: key);
+  });
 
   @override
   _ProductCatalogPageState createState() => _ProductCatalogPageState();
@@ -161,12 +161,12 @@ class ProductCard extends StatelessWidget {
   final VoidCallback onAction;
 
   const ProductCard({
-    Key? key,
+    super.key,
     required this.product,
     required this.actionIcon,
     required this.actionTooltip,
     required this.onAction,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

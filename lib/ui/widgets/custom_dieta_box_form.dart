@@ -6,7 +6,6 @@ import 'package:task_manager_flutter/data/constants/custom_colors.dart';
 import 'package:dropdown_button2/dropdown_button2.dart';
 import 'package:task_manager_flutter/ui/widgets/custom_selected_tipo_refeicao.dart';
 import 'package:task_manager_flutter/ui/widgets/custom_dieta_box_itens_form.dart';
-import 'package:flutter/material.dart';
 
 var dias = [
   'Segunda',

@@ -28,7 +28,7 @@ class CotacaoChart extends StatelessWidget {
               },
             ),
           ),
-          leftTitles: AxisTitles(
+          leftTitles: const AxisTitles(
             sideTitles: SideTitles(showTitles: true),
           ),
         ),
@@ -45,11 +45,11 @@ class CotacaoChart extends StatelessWidget {
             }).toList(),
             isCurved: true,
             color: Colors.blue, // Atualização da cor
-            dotData: FlDotData(show: false),
+            dotData: const FlDotData(show: false),
             belowBarData: BarAreaData(show: false),
           ),
         ],
-        gridData: FlGridData(show: false),
+        gridData: const FlGridData(show: false),
       ),
     );
   }

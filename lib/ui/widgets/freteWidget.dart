@@ -14,14 +14,14 @@ class FreteService {
     required String bairroOrigem,
     required String bairroDestino,
   }) {
-    late Future<double> _freteFuture;
-    final NumberFormat _formatter = NumberFormat.currency(
+    late Future<double> freteFuture;
+    final NumberFormat formatter = NumberFormat.currency(
       locale: 'pt_BR',
       symbol: 'R\$',
       decimalDigits: 2,
     );
 
-    Future<double> _calcularFrete() async {
+    Future<double> calcularFrete() async {
       Map<String, dynamic> requestBody = {
         "vendaId": vendaId,
         "compradorId": compradorId,
@@ -46,7 +46,7 @@ class FreteService {
           backgroundColor: Colors.white,
           title: const Text('Detalhes do Frete'),
           content: FutureBuilder<double>(
-            future: _calcularFrete(),
+            future: calcularFrete(),
             builder: (context, snapshot) {
               if (snapshot.connectionState == ConnectionState.waiting) {
                 return const Column(
@@ -76,11 +76,11 @@ class FreteService {
                       style:
                           TextStyle(color: CustomColors().getTextColorDesc())),
                   const SizedBox(height: 12),
-                  Text('Valor Total: ${_formatter.format(snapshot.data!)}',
+                  Text('Valor Total: ${formatter.format(snapshot.data!)}',
                       style: TextStyle(
                           color: CustomColors().getTextColorDesc(),
                           fontWeight: FontWeight.bold)),
-                  Text('Peso: ${peso} kg'),
+                  Text('Peso: $peso kg'),
                   const SizedBox(height: 16),
                   Container(
                     padding: const EdgeInsets.all(15),
@@ -93,7 +93,7 @@ class FreteService {
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Text('Frete: ${_formatter.format(snapshot.data!)}'),
+                        Text('Frete: ${formatter.format(snapshot.data!)}'),
                         const Icon(Icons.check_circle, color: Colors.green),
                       ],
                     ),

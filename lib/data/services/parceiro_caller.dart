@@ -13,12 +13,12 @@ class ParceiroCaller {
     List<Parceiro>? model = [];
     ParceiroModel models;
     try {
-      if (AuthUtility.userInfo?.data?.id != null &&
-          AuthUtility.userInfo?.data?.id == 1) {
+      if (AuthUtility.userInfo.data?.id != null &&
+          AuthUtility.userInfo.data?.id == 1) {
         // AQUI CHAMAR O LOGIN
         await showDialog(
           context: context,
-          builder: (BuildContext context) => LoginPopup(),
+          builder: (BuildContext context) => const LoginPopup(),
         );
       } else {
         final NetworkResponse response = await NetworkCaller()
@@ -44,7 +44,7 @@ class ParceiroCaller {
       BuildContext context, Map<String, dynamic> parceiroData) async {
     try {
       final NetworkResponse response = await NetworkCaller().postRequest(
-        '${ApiLinks.insertParceiro}',
+        ApiLinks.insertParceiro,
         parceiroData,
       );
 
@@ -97,7 +97,7 @@ class ParceiroCaller {
       BuildContext context, Map<String, dynamic> parceiroData) async {
     try {
       final NetworkResponse response = await NetworkCaller().postRequest(
-        '${ApiLinks.updateParceiro}',
+        ApiLinks.updateParceiro,
         parceiroData,
       );
 

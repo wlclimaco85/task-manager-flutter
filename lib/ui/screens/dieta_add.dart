@@ -15,7 +15,6 @@ import 'package:task_manager_flutter/data/services/network_caller.dart';
 import 'package:task_manager_flutter/data/utils/personal_validation.dart';
 import 'package:task_manager_flutter/ui/widgets/data_picker_core_date.dart';
 import 'package:task_manager_flutter/ui/widgets/custom_dieta_box_form.dart';
-import 'package:task_manager_flutter/data/constants/custom_colors.dart';
 
 class DietaModalAdd extends StatefulWidget {
   const DietaModalAdd({super.key});

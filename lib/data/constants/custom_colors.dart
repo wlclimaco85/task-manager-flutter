@@ -2,17 +2,17 @@ import 'package:flutter/material.dart';
 
 class CustomColors {
   final Color _lightGreenBackground = Colors.white;
-  final Color _darkGreenBorder = Color(0xff002E18);
-  final Color _buttonBackground = Color.fromARGB(255, 255, 255, 23);
-  final Color _textColorDesc = Color(0xFF38180E);
-  final Color _borderInput = Color(0xFF38180E);
-  final Color _textColor = Color(0xFF002E18);
-  final Color _negotiationCardBackground = Color.fromARGB(255, 255, 255, 250);
-  final Color _confirmButtonColor = Color.fromARGB(255, 1, 95, 15);
+  final Color _darkGreenBorder = const Color(0xff002E18);
+  final Color _buttonBackground = const Color.fromARGB(255, 255, 255, 23);
+  final Color _textColorDesc = const Color(0xFF38180E);
+  final Color _borderInput = const Color(0xFF38180E);
+  final Color _textColor = const Color(0xFF002E18);
+  final Color _negotiationCardBackground = const Color.fromARGB(255, 255, 255, 250);
+  final Color _confirmButtonColor = const Color.fromARGB(255, 1, 95, 15);
   final Color _cancelButtonColor = Colors.red;
-  final Color _buttonTextColor = Color.fromARGB(255, 255, 255, 255);
-  final Color _darkBlue = Color(0xff002E18);
-  final Color _headerTable = Color(0xff8C8C8C);
+  final Color _buttonTextColor = const Color.fromARGB(255, 255, 255, 255);
+  final Color _darkBlue = const Color(0xff002E18);
+  final Color _headerTable = const Color(0xff8C8C8C);
   final Color _showSnackBarError = Colors.red;
   final Color _showSnackBarSuccess = Colors.green;
   final Color _showSnackBarWarning = Colors.yellow;

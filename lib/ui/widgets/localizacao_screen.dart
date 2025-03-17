@@ -3,7 +3,6 @@
 
 import 'package:flutter/material.dart';
 import 'package:task_manager_flutter/data/models/parceiro_model.dart';
-import 'dart:convert';
 import 'package:task_manager_flutter/data/utils/api_links.dart';
 import 'package:task_manager_flutter/data/models/network_response.dart';
 import 'package:task_manager_flutter/data/services/network_caller.dart';
@@ -13,10 +12,10 @@ class LocalizacaoWidget extends StatefulWidget {
   final bool required;
 
   const LocalizacaoWidget({
-    Key? key,
+    super.key,
     required this.onChanged, // Alterado para onChanged
     this.required = false,
-  }) : super(key: key);
+  });
 
   @override
   _LocalizacaoWidgetState createState() => _LocalizacaoWidgetState();
@@ -187,7 +186,7 @@ class _LocalizacaoWidgetState extends State<LocalizacaoWidget> {
           validator: (value) =>
               widget.required && value == null ? 'Selecione um estado' : null,
         ),
-        SizedBox(height: 16),
+        const SizedBox(height: 16),
         if (isLoadingEstados)
           Positioned.fill(
             child: Container(
@@ -244,6 +243,8 @@ class _LocalizacaoWidgetState extends State<LocalizacaoWidget> {
 
 // Exemplo de uso no widget pai:
 class MeuWidgetPai extends StatefulWidget {
+  const MeuWidgetPai({super.key});
+
   @override
   _MeuWidgetPaiState createState() => _MeuWidgetPaiState();
 }

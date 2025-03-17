@@ -18,7 +18,7 @@ import 'package:task_manager_flutter/data/constants/custom_colors.dart';
 import 'package:task_manager_flutter/ui/widgets/freteWidget.dart';
 
 class ProductCatalog extends StatefulWidget {
-  const ProductCatalog({Key? key}) : super(key: key);
+  const ProductCatalog({super.key});
 
   @override
   _ProductCatalogState createState() => _ProductCatalogState();
@@ -206,7 +206,7 @@ class _ProductCatalogState extends State<ProductCatalog> {
                                 context: context,
                                 builder: (context) => NegotiationDialog(
                                   product: product,
-                                  compradorId: AuthUtility.userInfo?.data?.id ??
+                                  compradorId: AuthUtility.userInfo.data?.id ??
                                       0, // ID do usuário logado
                                 ),
                               ),
@@ -248,7 +248,7 @@ class _ProductCatalogState extends State<ProductCatalog> {
             const Text('Classificação:'),
             ...product.classificacao!.map<Widget>((c) {
               return Text('${c.descricao}: ${c.valor}');
-            }).toList(),
+            }),
           ],
         ),
         actions: [
@@ -280,7 +280,7 @@ class _ProductCatalogState extends State<ProductCatalog> {
             const Text('Classificação:'),
             ...product.classificacao!.map<Widget>((c) {
               return Text('${c.descricao}: ${c.valor}');
-            }).toList(),
+            }),
           ],
         ),
         actions: [
@@ -294,7 +294,7 @@ class _ProductCatalogState extends State<ProductCatalog> {
                 context: context, // Contexto do widget atual
                 vendaId: product.id!,
                 vendedorId: product.parceiro!.id!,
-                compradorId: AuthUtility.userInfo?.data?.id ??
+                compradorId: AuthUtility.userInfo.data?.id ??
                     0, // Substitua com ID do comprador
                 qtdSacos: product.qtdSacos! ?? 0,
                 vlrSacos: product.vlrSacos ?? 0.0,
@@ -328,13 +328,13 @@ class ProductCard extends StatelessWidget {
   final VoidCallback onTransporte;
 
   const ProductCard({
-    Key? key,
+    super.key,
     required this.product,
     required this.onDetails,
     required this.onBuy,
     required this.onNegotiate,
     required this.onTransporte,
-  }) : super(key: key);
+  });
 
   Widget getFirstImageOrDefault(String photosBase64) {
     if (photosBase64.isNotEmpty) {
@@ -355,8 +355,8 @@ class ProductCard extends StatelessWidget {
   }
 
   List<String> getValidImageList(Produto product) {
-    if (product?.listFotos != null &&
-        product!.listFotos!.isNotEmpty &&
+    if (product.listFotos != null &&
+        product.listFotos!.isNotEmpty &&
         product.listFotos!.first.foto != null) {
       return [product.listFotos!.first.foto!];
     }
@@ -431,7 +431,7 @@ class ProductCard extends StatelessWidget {
                             ),
                             ...product.classificacao!
                                 .map((c) => _buildClassificationItem(c))
-                                .toList(),
+                                ,
                           ],
                         ),
                       ),
@@ -533,19 +533,19 @@ class ProductCard extends StatelessWidget {
                             color: Colors.purple),
                         onPressed: () => FreteService.mostrarPopupFrete(
                           context: context, // ESSE CONTEXT É IMPORTANTE!
-                          vendaId: product?.id ?? 0,
-                          compradorId: AuthUtility.userInfo?.data?.id ??
+                          vendaId: product.id ?? 0,
+                          compradorId: AuthUtility.userInfo.data?.id ??
                               0, // ID do usuário logado
                           peso: product.qtdSacos ?? 0 * 60, // Peso total
                           cidadeOrigem:
-                              product?.parceiro?.endereco?.cidade?.nome ?? "",
+                              product.parceiro?.endereco?.cidade?.nome ?? "",
                           cidadeDestino: AuthUtility
-                                  .userInfo?.data?.codDadosPessoal?.cidade ??
+                                  .userInfo.data?.codDadosPessoal?.cidade ??
                               "",
                           bairroOrigem:
-                              product?.parceiro?.endereco?.bairro ?? "",
+                              product.parceiro?.endereco?.bairro ?? "",
                           bairroDestino: AuthUtility
-                                  .userInfo?.data?.codDadosPessoal?.bairro ??
+                                  .userInfo.data?.codDadosPessoal?.bairro ??
                               "",
                         ),
                       ),

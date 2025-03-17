@@ -1,4 +1,3 @@
-import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:task_manager_flutter/data/models/network_response.dart';
 import 'package:task_manager_flutter/data/services/network_caller.dart';
@@ -14,11 +13,11 @@ class UtilCaller {
     List<T> items = [];
     try {
       // Check user authentication
-      if (AuthUtility.userInfo?.data?.id == 1) {
+      if (AuthUtility.userInfo.data?.id == 1) {
         // AQUI CHAMAR O LOGIN
         await showDialog(
           context: context,
-          builder: (BuildContext context) => LoginPopup(),
+          builder: (BuildContext context) => const LoginPopup(),
         );
       } else {
         // Perform network request
@@ -34,7 +33,7 @@ class UtilCaller {
           // AQUI CHAMAR O LOGIN
           await showDialog(
             context: context,
-            builder: (BuildContext context) => LoginPopup(),
+            builder: (BuildContext context) => const LoginPopup(),
           );
         } else {
           print(

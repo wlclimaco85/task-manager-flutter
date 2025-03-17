@@ -10,7 +10,7 @@ import 'package:dio/dio.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:open_filex/open_filex.dart';
 import 'package:http/http.dart' as http;
-import 'dart:convert'; // Importe o pacote dart:convert
+// Importe o pacote dart:convert
 
 class CheckoutCaller {
   static final Dio _dio = Dio();
@@ -75,7 +75,7 @@ class CheckoutCaller {
   }
 
   static Future<String> downloadContract() async {
-    final url = 'https://seuservidor.com/api/contract.pdf';
+    const url = 'https://seuservidor.com/api/contract.pdf';
     final response = await Dio().download(url, 'contrato.pdf');
     print('Contrato baixado: ${response.data}');
 
@@ -140,7 +140,7 @@ class CheckoutCaller {
   }
 
   Future<bool> downloadContrato(int contratoId, BuildContext context) async {
-    final url = ApiLinks.downloadContrato + "/" + contratoId.toString();
+    final url = "${ApiLinks.downloadContrato}/$contratoId";
 
     // Get the token (replace with your actual AuthUtility method)
     final token =
