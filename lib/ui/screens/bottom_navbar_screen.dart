@@ -30,7 +30,7 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
         apiLink: ApiLinks.allComunicados,
         screenStatus: 'In Progress',
       ),
-      const ChatMessageScreen(),
+      const ChatMessageScreen(sector: 'Financeiro', userName: 'Usuário'),
       const ProductCatalog(),
       const ProductRegisterScreen(),
       isLoggedIn

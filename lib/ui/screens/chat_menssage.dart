@@ -8,7 +8,14 @@ import 'dart:io';
 import 'dart:typed_data';
 
 class ChatMessageScreen extends StatefulWidget {
-  const ChatMessageScreen({super.key});
+  final String sector;
+  final String userName;
+
+  const ChatMessageScreen({
+    super.key,
+    required this.sector,
+    required this.userName,
+  });
 
   @override
   _ChatMessageScreenState createState() => _ChatMessageScreenState();
@@ -18,17 +25,7 @@ class _ChatMessageScreenState extends State<ChatMessageScreen> {
   final TextEditingController _messageController = TextEditingController();
   final List<ChatMessage> _messages = [];
   late WebSocketChannel _channel;
-  String _authToken = ''; // Adicione seu token JWT aqui se necessário
-  String? _selectedSector; // Setor selecionado
-  String _currentUser = "Usuário Logado"; // Substitua pelo usuário logado
-
-  // Lista de setores (exemplo)
-  final List<String> _sectors = [
-    'Financeiro',
-    'Suporte Técnico',
-    'Vendas',
-    'Outro'
-  ];
+  String _authToken = 'SEU_TOKEN_JWT_AQUI';
 
   @override
   void initState() {
@@ -40,7 +37,7 @@ class _ChatMessageScreenState extends State<ChatMessageScreen> {
   void _connectWebSocket() {
     try {
       _channel = IOWebSocketChannel.connect(
-        'ws://192.168.114.1:8088/boletobancos/ws-chat',
+        'ws://192.168.114.1:8088/boletobancos/ws-chat?user=${widget.userName}&sector=${widget.sector}',
       );
 
       _channel.stream.listen(
@@ -52,12 +49,10 @@ class _ChatMessageScreenState extends State<ChatMessageScreen> {
         },
         onError: (error) {
           print('WebSocket error: $error');
-          // Reconexão automática após 3 segundos
           Future.delayed(Duration(seconds: 3), _connectWebSocket);
         },
         onDone: () {
           print('WebSocket closed');
-          // Reconexão se a conexão for fechada
           _connectWebSocket();
         },
       );
@@ -69,7 +64,8 @@ class _ChatMessageScreenState extends State<ChatMessageScreen> {
   Future<void> _loadInitialMessages() async {
     try {
       final response = await http.get(
-        Uri.parse('http://192.168.114.1:8088/boletobancos/api/chat/messages'),
+        Uri.parse(
+            'http://192.168.114.1:8088/boletobancos/api/chat/messages?user=${widget.userName}&sector=${widget.sector}'),
         headers: {'Authorization': 'Bearer $_authToken'},
       );
 
@@ -88,14 +84,14 @@ class _ChatMessageScreenState extends State<ChatMessageScreen> {
 
   Future<void> _sendMessage() async {
     final String content = _messageController.text;
-
     if (content.isEmpty) return;
 
-    // Envia a mensagem com o setor selecionado e o usuário logado
     _channel.sink.add(json.encode({
-      'sender': _currentUser,
+      'sender': widget.userName,
       'content': content,
-      'sector': _selectedSector, // Envia o setor selecionado
+      'sector': widget.sector,
+      'type': 'text',
+      'timestamp': DateTime.now().toIso8601String(),
     }));
 
     _messageController.clear();
@@ -113,48 +109,40 @@ class _ChatMessageScreenState extends State<ChatMessageScreen> {
         Uint8List? fileBytes = file.bytes;
         String fileName = file.name;
 
-        if (fileBytes == null) {
-          if (file.path != null) {
-            File ioFile = File(file.path!);
-            fileBytes = await ioFile.readAsBytes();
-          } else {
-            throw Exception('Não foi possível ler o arquivo');
-          }
+        if (fileBytes == null && file.path != null) {
+          File ioFile = File(file.path!);
+          fileBytes = await ioFile.readAsBytes();
         }
 
-        // Prepara a requisição de upload
         var request = http.MultipartRequest(
           'POST',
-          Uri.parse('http://your-server-address/api/files/upload'),
+          Uri.parse('http://192.168.114.1:8088/boletobancos/api/files/upload'),
         );
 
         request.files.add(http.MultipartFile.fromBytes(
           'file',
-          fileBytes,
+          fileBytes!,
           filename: fileName,
         ));
+
+        request.fields['user'] = widget.userName;
+        request.fields['sector'] = widget.sector;
 
         if (_authToken.isNotEmpty) {
           request.headers['Authorization'] = 'Bearer $_authToken';
         }
 
         var response = await request.send();
-        var responseData = await response.stream.toBytes();
-        var responseString = String.fromCharCodes(responseData);
-        var jsonResponse = json.decode(responseString);
-
         if (response.statusCode == 200) {
           _channel.sink.add(json.encode({
-            'sender': _currentUser,
-            'content': _messageController.text,
-            'fileId': jsonResponse['fileId'],
+            'sender': widget.userName,
+            'content': 'Arquivo anexado',
+            'sector': widget.sector,
+            'type': 'file',
             'fileName': fileName,
-            'sector': _selectedSector,
+            'fileId': await response.stream.bytesToString(),
+            'timestamp': DateTime.now().toIso8601String(),
           }));
-
-          _messageController.clear();
-        } else {
-          print('Upload failed: ${jsonResponse['message']}');
         }
       }
     } catch (e) {
@@ -162,19 +150,29 @@ class _ChatMessageScreenState extends State<ChatMessageScreen> {
     }
   }
 
-  void _openTicket() {
-    // Lógica para abrir um chamado
-    // Pode ser um diálogo ou navegação para outra tela
+  void _createTicket() {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
         title: Text('Abrir Chamado'),
-        content:
-            Text('Funcionalidade de abrir chamado será implementada aqui.'),
+        content: Text('Deseja abrir um chamado para este assunto?'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: Text('Fechar'),
+            child: Text('Cancelar'),
+          ),
+          TextButton(
+            onPressed: () {
+              _channel.sink.add(json.encode({
+                'sender': widget.userName,
+                'content': 'Solicitação de abertura de chamado',
+                'sector': widget.sector,
+                'type': 'ticket',
+                'timestamp': DateTime.now().toIso8601String(),
+              }));
+              Navigator.pop(context);
+            },
+            child: Text('Confirmar'),
           ),
         ],
       ),
@@ -192,68 +190,57 @@ class _ChatMessageScreenState extends State<ChatMessageScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Chat com Suporte'),
+        title: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Chat - ${widget.sector}'),
+            Text(
+              widget.userName,
+              style: TextStyle(fontSize: 14, fontWeight: FontWeight.normal),
+            ),
+          ],
+        ),
       ),
       body: Column(
         children: [
-          // Dropdown para selecionar o setor
-          Padding(
-            padding: const EdgeInsets.all(8.0),
-            child: DropdownButtonFormField<String>(
-              value: _selectedSector,
-              hint: Text('Selecione o setor'),
-              items: _sectors.map((String sector) {
-                return DropdownMenuItem<String>(
-                  value: sector,
-                  child: Text(sector),
-                );
-              }).toList(),
-              onChanged: (String? newValue) {
-                setState(() {
-                  _selectedSector = newValue;
-                });
-              },
-            ),
-          ),
-          const Divider(),
-          // Área de exibição de mensagens
           Expanded(
             child: ListView.builder(
+              reverse: true,
               itemCount: _messages.length,
               itemBuilder: (context, index) {
                 return _buildMessage(_messages[index]);
               },
             ),
           ),
-          // Área de entrada de mensagens
-          Padding(
-            padding: const EdgeInsets.all(8.0),
+          Container(
+            padding: EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: Colors.grey[200],
+              border: Border(top: BorderSide(color: Colors.grey)),
+            ),
             child: Row(
               children: [
-                // Botão para anexar arquivo
                 IconButton(
                   icon: Icon(Icons.attach_file),
                   onPressed: _uploadAndSendFile,
                 ),
-                // Campo de texto
+                IconButton(
+                  icon: Icon(Icons.support_agent),
+                  onPressed: _createTicket,
+                ),
                 Expanded(
                   child: TextField(
                     controller: _messageController,
                     decoration: InputDecoration(
-                      hintText: 'Digite sua mensagem',
+                      hintText: 'Digite sua mensagem...',
                       border: OutlineInputBorder(),
+                      contentPadding: EdgeInsets.symmetric(horizontal: 16),
                     ),
                   ),
                 ),
-                // Botão para enviar mensagem
                 IconButton(
                   icon: Icon(Icons.send),
                   onPressed: _sendMessage,
-                ),
-                // Botão para abrir chamado
-                IconButton(
-                  icon: Icon(Icons.support_agent),
-                  onPressed: _openTicket,
                 ),
               ],
             ),
@@ -264,21 +251,24 @@ class _ChatMessageScreenState extends State<ChatMessageScreen> {
   }
 
   Widget _buildMessage(ChatMessage message) {
-    // Verifica se a mensagem é do usuário atual
-    bool isMe = message.sender == _currentUser;
+    bool isMe = message.sender == widget.userName;
 
     return Container(
-      margin: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
+      margin: EdgeInsets.symmetric(vertical: 4, horizontal: 8),
       child: Row(
         mainAxisAlignment:
             isMe ? MainAxisAlignment.end : MainAxisAlignment.start,
         children: [
-          if (!isMe) CircleAvatar(child: Text(message.sender[0])),
+          if (!isMe)
+            CircleAvatar(
+              child: Text(message.sender[0]),
+            ),
           Container(
             constraints: BoxConstraints(
               maxWidth: MediaQuery.of(context).size.width * 0.7,
             ),
-            padding: const EdgeInsets.all(12),
+            padding: EdgeInsets.all(12),
+            margin: EdgeInsets.symmetric(horizontal: 8),
             decoration: BoxDecoration(
               color: isMe ? Colors.blue[100] : Colors.grey[300],
               borderRadius: BorderRadius.circular(12),
@@ -286,34 +276,52 @@ class _ChatMessageScreenState extends State<ChatMessageScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                if (!isMe) // Mostra o nome do sender apenas se não for eu
+                if (!isMe)
                   Text(
                     message.sender,
-                    style: TextStyle(fontWeight: FontWeight.bold),
-                  ),
-                if (!isMe) SizedBox(height: 4),
-                Text(message.content),
-                if (message.fileName != null) ...[
-                  SizedBox(height: 8),
-                  GestureDetector(
-                    onTap: () =>
-                        _downloadFile(message.fileId!, message.fileName!),
-                    child: Text(
-                      message.fileName!,
-                      style: TextStyle(
-                        color: Colors.blue,
-                        decoration: TextDecoration.underline,
-                      ),
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 12,
                     ),
                   ),
-                ],
+                if (message.type == 'text') Text(message.content),
+                if (message.type == 'file')
+                  InkWell(
+                    onTap: () =>
+                        _downloadFile(message.fileId!, message.fileName!),
+                    child: Row(
+                      children: [
+                        Icon(Icons.attach_file),
+                        SizedBox(width: 4),
+                        Text(message.fileName!),
+                      ],
+                    ),
+                  ),
+                if (message.type == 'ticket')
+                  Text(
+                    '📋 Solicitação de chamado criada',
+                    style: TextStyle(fontStyle: FontStyle.italic),
+                  ),
+                Text(
+                  _formatTime(message.timestamp),
+                  style: TextStyle(fontSize: 10, color: Colors.grey),
+                ),
               ],
             ),
           ),
-          if (isMe) CircleAvatar(child: Text(message.sender[0])),
+          if (isMe)
+            CircleAvatar(
+              child: Text(message.sender[0]),
+            ),
         ],
       ),
     );
+  }
+
+  String _formatTime(String? timestamp) {
+    if (timestamp == null) return '';
+    final time = DateTime.parse(timestamp);
+    return '${time.hour}:${time.minute.toString().padLeft(2, '0')}';
   }
 
   Future<void> _downloadFile(int fileId, String fileName) async {
@@ -324,25 +332,28 @@ class _ChatMessageScreenState extends State<ChatMessageScreen> {
 class ChatMessage {
   final String sender;
   final String content;
+  final String type;
   final int? fileId;
   final String? fileName;
-  final String? sector;
+  final String? timestamp;
 
   ChatMessage({
     required this.sender,
     required this.content,
+    required this.type,
     this.fileId,
     this.fileName,
-    this.sector,
+    this.timestamp,
   });
 
   factory ChatMessage.fromJson(Map<String, dynamic> json) {
     return ChatMessage(
       sender: json['sender'],
       content: json['content'],
+      type: json['type'] ?? 'text',
       fileId: json['fileId'],
       fileName: json['fileName'],
-      sector: json['sector'],
+      timestamp: json['timestamp'],
     );
   }
 }
