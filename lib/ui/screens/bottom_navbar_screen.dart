@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-import 'package:task_manager_flutter/ui/screens/cotacao_grafico_screen.dart';
+import 'package:task_manager_flutter/ui/screens/chat_menssage.dart';
 import 'package:task_manager_flutter/ui/screens/vendas_screen.dart';
 import 'package:task_manager_flutter/ui/screens/negociacao_screen.dart';
-import 'package:task_manager_flutter/ui/screens/progress_task_screen.dart';
+import 'package:task_manager_flutter/ui/screens/comunicado_screen.dart';
 import 'package:task_manager_flutter/ui/screens/carrinho_compras_screen.dart';
 import 'package:task_manager_flutter/ui/screens/carrinho_vendas_screen.dart';
 import 'package:task_manager_flutter/ui/screens/product_register_screen.dart';
@@ -26,8 +26,11 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
         AuthUtility.userInfo.data!.id! > 1;
 
     return [
-      const ProgressTaskScreen(),
-      const CotacaoScreen(),
+      ComunicadoScreen(
+        apiLink: ApiLinks.allComunicados,
+        screenStatus: 'In Progress',
+      ),
+      const ChatMessageScreen(),
       const ProductCatalog(),
       const ProductRegisterScreen(),
       isLoggedIn

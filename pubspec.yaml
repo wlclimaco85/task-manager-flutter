@@ -59,6 +59,8 @@ dependencies:
   flutter_html: any
   html_unescape: any
   dio: ^5.3.2 # Para enviar arquivos (opcional, mas recomendado)
+  web_socket_channel: ^2.2.0
+  path: ^1.8.2
 dev_dependencies:
   flutter_test:
     sdk: flutter

@@ -5,19 +5,19 @@ import 'package:task_manager_flutter/data/models/network_response.dart';
 import 'package:task_manager_flutter/data/services/network_caller.dart';
 import 'package:intl/intl.dart';
 import 'dart:convert';
-import 'package:task_manager_flutter/data/models/noticias_model.dart';
+import 'package:task_manager_flutter/data/models/comunicados_model.dart';
 import 'package:task_manager_flutter/ui/screens/NewsDetailScreen.dart';
 import 'package:task_manager_flutter/ui/widgets/user_banners.dart';
 import 'package:task_manager_flutter/ui/screens/update_profile.dart';
 import 'package:task_manager_flutter/data/constants/custom_colors.dart';
 
-class TaskScreens extends StatefulWidget {
+class ComunicadoScreen extends StatefulWidget {
   final String screenStatus;
   final String apiLink;
   final bool showAllSummeryCard;
   final bool floatingActionButton;
 
-  const TaskScreens({
+  const ComunicadoScreen({
     super.key,
     required this.screenStatus,
     required this.apiLink,
@@ -26,17 +26,17 @@ class TaskScreens extends StatefulWidget {
   });
 
   @override
-  State<TaskScreens> createState() => _TaskScreenState();
+  State<ComunicadoScreen> createState() => _ComunicadoScreenState();
 }
 
-class NoticiaModel {
+class ComunicadoModel {
   String? status;
   String? token;
   List<Data>? data;
 
-  NoticiaModel({this.status, this.token, this.data});
+  ComunicadoModel({this.status, this.token, this.data});
 
-  NoticiaModel.fromJson(Map<String, dynamic> json) {
+  ComunicadoModel.fromJson(Map<String, dynamic> json) {
     status = json['status'];
     token = json['token'];
 
@@ -49,7 +49,7 @@ class NoticiaModel {
       data.add(List<Map<String, dynamic>>.from(list.map((item) => Map<String, dynamic>.from(item))));
     } */
       //  List<Data> dataList = Data.fromJsonList2(json['data']['noticiasDTO']);
-      List<Data> dataList = Data.fromJsonList(json['data']['noticiasDTO']);
+      List<Data> dataList = Data.fromJsonList(json['data']['comunicadoDTO']);
       data =
           dataList; //json['data'] != null ? Data.fromJson(json['data']) : null;
     } else {
@@ -81,7 +81,7 @@ class NoticiaModel {
   }
 }
 
-class _TaskScreenState extends State<TaskScreens> {
+class _ComunicadoScreenState extends State<ComunicadoScreen> {
   List<Data> newsList = [];
   bool isLoading = false;
   int page = 1;
@@ -108,12 +108,12 @@ class _TaskScreenState extends State<TaskScreens> {
     });
 
     final NetworkResponse response =
-        await NetworkCaller().getRequest(ApiLinks.allNoticias);
+        await NetworkCaller().getRequest(ApiLinks.allComunicados);
 
     if (response.statusCode == 200) {
       if (response.body != null) {
         final jsonString = json.encode(response.body);
-        final model = NoticiaModel.fromJson(response.body!);
+        final model = ComunicadoModel.fromJson(response.body!);
         if (model.data != null) {
           setState(() {
             newsList.addAll(model.data!);
@@ -327,7 +327,7 @@ class _TaskScreenState extends State<TaskScreens> {
                       children: [
                         ListTile(
                           title: Text(
-                            news.tituloResu ?? 'Título não disponível',
+                            news.titulo ?? 'titulo não disponível',
                             style: TextStyle(
                               fontSize: 18,
                               fontWeight: FontWeight.bold,
@@ -338,7 +338,7 @@ class _TaskScreenState extends State<TaskScreens> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                news.resumo ?? 'Resumo não disponível',
+                                news.conteudo ?? 'Conteudo não disponível',
                                 style: TextStyle(
                                     color: CustomColors().getTextColor()),
                               ),
@@ -348,7 +348,7 @@ class _TaskScreenState extends State<TaskScreens> {
                                     MainAxisAlignment.spaceBetween,
                                 children: [
                                   Text(
-                                    '${news.fonte ?? 'Fonte não disponível'}     ${news.dtNoticia != null ? DateFormat('dd/MM/yyyy HH:mm').format(news.dtNoticia!.toLocal()) : ''}',
+                                    '${news.categoria ?? 'Fonte não disponível'}     ${news.dhCreatedAt != null ? DateFormat('dd/MM/yyyy HH:mm').format(news.dhCreatedAt!.toLocal()) : ''}',
                                     style: TextStyle(
                                         fontSize: 10,
                                         fontWeight: FontWeight.bold,
@@ -365,13 +365,14 @@ class _TaskScreenState extends State<TaskScreens> {
                             ],
                           ),
                           onTap: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) =>
-                                    NewsDetailScreen(news: news),
-                              ),
-                            );
+                            //   Navigator.push(
+                            //    context,
+                            //     MaterialPageRoute(
+                            //   builder: (context) =>
+                            //        NewsDetailScreen(news: news),
+                            //   ),
+                            //     );
+                            // Ação ao tocar no item da lista
                           },
                         ),
                         const Divider(
