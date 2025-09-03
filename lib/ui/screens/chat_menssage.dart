@@ -1,19 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:task_manager_flutter/data/models/cotacao_model.dart';
-import 'package:task_manager_flutter/data/services/cotacao_caller.dart';
-import 'package:task_manager_flutter/ui/widgets/user_banners.dart';
-import 'package:task_manager_flutter/ui/screens/update_profile.dart';
-import 'package:task_manager_flutter/data/models/dollar_model.dart';
-import 'package:task_manager_flutter/data/constants/custom_colors.dart';
-import 'dart:convert';
-import 'dart:io';
-import 'dart:typed_data';
-import 'package:flutter/material.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
 import 'package:web_socket_channel/io.dart';
 import 'package:http/http.dart' as http;
 import 'package:file_picker/file_picker.dart';
-import 'package:path/path.dart' as path;
+import 'dart:convert';
+import 'dart:io';
+import 'dart:typed_data';
 
 class ChatMessageScreen extends StatefulWidget {
   const ChatMessageScreen({super.key});
@@ -23,14 +15,20 @@ class ChatMessageScreen extends StatefulWidget {
 }
 
 class _ChatMessageScreenState extends State<ChatMessageScreen> {
-  final TextEditingController _senderController = TextEditingController();
   final TextEditingController _messageController = TextEditingController();
   final List<ChatMessage> _messages = [];
   late WebSocketChannel _channel;
   String _authToken = ''; // Adicione seu token JWT aqui se necessário
-  List<Cotacao> cotacoes = [];
-  List<Dollar> dollarCotacoes = [];
-  bool isLoading = true;
+  String? _selectedSector; // Setor selecionado
+  String _currentUser = "Usuário Logado"; // Substitua pelo usuário logado
+
+  // Lista de setores (exemplo)
+  final List<String> _sectors = [
+    'Financeiro',
+    'Suporte Técnico',
+    'Vendas',
+    'Outro'
+  ];
 
   @override
   void initState() {
@@ -89,15 +87,15 @@ class _ChatMessageScreenState extends State<ChatMessageScreen> {
   }
 
   Future<void> _sendMessage() async {
-    final String sender = _senderController.text;
     final String content = _messageController.text;
 
-    if (sender.isEmpty || content.isEmpty) return;
+    if (content.isEmpty) return;
 
-    // Se não há arquivo selecionado, envia apenas a mensagem de texto
+    // Envia a mensagem com o setor selecionado e o usuário logado
     _channel.sink.add(json.encode({
-      'sender': sender,
+      'sender': _currentUser,
       'content': content,
+      'sector': _selectedSector, // Envia o setor selecionado
     }));
 
     _messageController.clear();
@@ -105,7 +103,6 @@ class _ChatMessageScreenState extends State<ChatMessageScreen> {
 
   Future<void> _uploadAndSendFile() async {
     try {
-      // Seleciona o arquivo
       FilePickerResult? result = await FilePicker.platform.pickFiles(
         type: FileType.custom,
         allowedExtensions: ['pdf', 'jpg', 'jpeg', 'png'],
@@ -117,7 +114,6 @@ class _ChatMessageScreenState extends State<ChatMessageScreen> {
         String fileName = file.name;
 
         if (fileBytes == null) {
-          // Se não temos os bytes, tenta ler do path
           if (file.path != null) {
             File ioFile = File(file.path!);
             fileBytes = await ioFile.readAsBytes();
@@ -132,30 +128,28 @@ class _ChatMessageScreenState extends State<ChatMessageScreen> {
           Uri.parse('http://your-server-address/api/files/upload'),
         );
 
-        // Adiciona o arquivo
         request.files.add(http.MultipartFile.fromBytes(
           'file',
           fileBytes,
           filename: fileName,
         ));
 
-        // Adiciona headers de autenticação se necessário
         if (_authToken.isNotEmpty) {
           request.headers['Authorization'] = 'Bearer $_authToken';
         }
 
-        // Envia o arquivo
         var response = await request.send();
         var responseData = await response.stream.toBytes();
         var responseString = String.fromCharCodes(responseData);
         var jsonResponse = json.decode(responseString);
 
         if (response.statusCode == 200) {
-          // Se o upload foi bem-sucedido, envia a mensagem com o arquivo
           _channel.sink.add(json.encode({
-            'sender': _senderController.text,
+            'sender': _currentUser,
             'content': _messageController.text,
             'fileId': jsonResponse['fileId'],
+            'fileName': fileName,
+            'sector': _selectedSector,
           }));
 
           _messageController.clear();
@@ -168,290 +162,57 @@ class _ChatMessageScreenState extends State<ChatMessageScreen> {
     }
   }
 
-  @override
-  void dispose() {
-    _channel.sink.close();
-    _senderController.dispose();
-    _messageController.dispose();
-    super.dispose();
-  }
-
-  void refresh() {
-    _fetchCotacoes();
-    _fetchCotacoesDollares();
-  }
-
-  void _fetchCotacoes() {
-    setState(() {
-      isLoading = true;
-    });
-    CotacaoCaller().fetchCotacoes().then((data) {
-      setState(() {
-        cotacoes = data;
-        isLoading = false;
-      });
-    });
-  }
-
-  void _fetchCotacoesDollares() {
-    setState(() {
-      isLoading = true;
-    });
-    CotacaoCaller().fetchCotacoesDollar().then((data) {
-      setState(() {
-        dollarCotacoes = data;
-        isLoading = false;
-      });
-    });
-  }
-
-  Widget _buildTable(String title, List<TableRow> rows,
-      {String? footer, String? source}) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              // CABEÇALHO AZUL DA TABELA
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(8),
-                color: CustomColors().getDarkBlue(),
-                child: Text(
-                  title, // Texto variável pelo parâmetro
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
-              const SizedBox(height: 8),
-              // TABELA
-              Container(
-                decoration: BoxDecoration(
-                  border: Border.all(
-                    color: CustomColors().getDarkGreenBorder(),
-                    width: 1,
-                  ),
-                ),
-                child: Table(
-                  border: TableBorder.all(
-                    color: CustomColors().getDarkGreenBorder(),
-                    width: 1,
-                  ),
-                  columnWidths: const {
-                    0: FlexColumnWidth(),
-                    1: FlexColumnWidth(),
-                  },
-                  children: [
-                    TableRow(
-                      decoration: BoxDecoration(
-                        color: CustomColors().getHeaderTable(),
-                      ),
-                      children: const [
-                        Padding(
-                          padding: EdgeInsets.all(8.0),
-                          child: Text(
-                            "Data",
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ),
-                        Padding(
-                          padding: EdgeInsets.all(8.0),
-                          child: Text(
-                            "Valor (R\$)",
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                    ...rows,
-                  ],
-                ),
-              ),
-              // FOOTER E FONTE
-              if (footer != null) ...[
-                const SizedBox(height: 8),
-                Text(
-                  footer,
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: CustomColors().getTextColorDesc(),
-                  ),
-                ),
-              ],
-              if (source != null) ...[
-                const SizedBox(height: 8),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.end,
-                  children: [
-                    Text(
-                      "Fonte: $source",
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: CustomColors().getTextColorDesc(),
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ],
+  void _openTicket() {
+    // Lógica para abrir um chamado
+    // Pode ser um diálogo ou navegação para outra tela
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('Abrir Chamado'),
+        content:
+            Text('Funcionalidade de abrir chamado será implementada aqui.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text('Fechar'),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 
-  List<TableRow> _buildCotacoesRows(List<Cotacao> cotacoes) {
-    return [
-      TableRow(
-        children: [
-          Padding(
-            padding: const EdgeInsets.all(8.0),
-            child: Text(
-              'Data',
-              style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  color: CustomColors().getTextColor()),
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.all(8.0),
-            child: Text(
-              'Valor (R\$)',
-              style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  color: CustomColors().getTextColor()),
-            ),
-          ),
-        ],
-      ),
-      ...cotacoes.map((cotacao) {
-        return TableRow(
-          children: [
-            Padding(
-              padding: const EdgeInsets.all(8.0),
-              child: Text(
-                '${cotacao.dtCotacao?.day}/${cotacao.dtCotacao?.month}/${cotacao.dtCotacao?.year}',
-                style: TextStyle(color: CustomColors().getTextColor()),
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.all(8.0),
-              child: Text(
-                'R\$ ${cotacao.valor?.toStringAsFixed(2)}',
-                style: TextStyle(color: CustomColors().getTextColor()),
-              ),
-            ),
-          ],
-        );
-      }),
-    ];
-  }
-
-  List<TableRow> _buildDollarRows(List<Dollar> cotacoes) {
-    return [
-      TableRow(
-        children: [
-          Padding(
-            padding: const EdgeInsets.all(8.0),
-            child: Text(
-              'Data',
-              style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  color: CustomColors().getTextColor()),
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.all(8.0),
-            child: Text(
-              'Valor (R\$)',
-              style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  color: CustomColors().getTextColor()),
-            ),
-          ),
-        ],
-      ),
-      ...cotacoes.map((cotacao) {
-        return TableRow(
-          children: [
-            Padding(
-              padding: const EdgeInsets.all(8.0),
-              child: Text(
-                '${cotacao.date?.day}/${cotacao.date?.month}/${cotacao.date?.year}',
-                style: TextStyle(color: CustomColors().getTextColor()),
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.all(8.0),
-              child: Text(
-                'R\$ ${cotacao.rate?.toStringAsFixed(2)}',
-                style: TextStyle(color: CustomColors().getTextColor()),
-              ),
-            ),
-          ],
-        );
-      }),
-    ];
+  @override
+  void dispose() {
+    _channel.sink.close();
+    _messageController.dispose();
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Chat com Upload de Arquivos'),
+        title: const Text('Chat com Suporte'),
       ),
       body: Column(
         children: [
-          // Área de entrada de mensagens
+          // Dropdown para selecionar o setor
           Padding(
             padding: const EdgeInsets.all(8.0),
-            child: Column(
-              children: [
-                TextField(
-                  controller: _senderController,
-                  decoration: const InputDecoration(
-                    labelText: 'Seu nome',
-                    border: OutlineInputBorder(),
-                  ),
-                ),
-                const SizedBox(height: 8),
-                TextField(
-                  controller: _messageController,
-                  decoration: const InputDecoration(
-                    labelText: 'Sua mensagem',
-                    border: OutlineInputBorder(),
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Row(
-                  children: [
-                    Expanded(
-                      child: ElevatedButton(
-                        onPressed: _sendMessage,
-                        child: const Text('Enviar Mensagem'),
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: ElevatedButton(
-                        onPressed: _uploadAndSendFile,
-                        child: const Text('Enviar Arquivo'),
-                      ),
-                    ),
-                  ],
-                ),
-              ],
+            child: DropdownButtonFormField<String>(
+              value: _selectedSector,
+              hint: Text('Selecione o setor'),
+              items: _sectors.map((String sector) {
+                return DropdownMenuItem<String>(
+                  value: sector,
+                  child: Text(sector),
+                );
+              }).toList(),
+              onChanged: (String? newValue) {
+                setState(() {
+                  _selectedSector = newValue;
+                });
+              },
             ),
           ),
           const Divider(),
@@ -464,63 +225,99 @@ class _ChatMessageScreenState extends State<ChatMessageScreen> {
               },
             ),
           ),
+          // Área de entrada de mensagens
+          Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: Row(
+              children: [
+                // Botão para anexar arquivo
+                IconButton(
+                  icon: Icon(Icons.attach_file),
+                  onPressed: _uploadAndSendFile,
+                ),
+                // Campo de texto
+                Expanded(
+                  child: TextField(
+                    controller: _messageController,
+                    decoration: InputDecoration(
+                      hintText: 'Digite sua mensagem',
+                      border: OutlineInputBorder(),
+                    ),
+                  ),
+                ),
+                // Botão para enviar mensagem
+                IconButton(
+                  icon: Icon(Icons.send),
+                  onPressed: _sendMessage,
+                ),
+                // Botão para abrir chamado
+                IconButton(
+                  icon: Icon(Icons.support_agent),
+                  onPressed: _openTicket,
+                ),
+              ],
+            ),
+          ),
         ],
       ),
     );
   }
 
   Widget _buildMessage(ChatMessage message) {
-    return Card(
+    // Verifica se a mensagem é do usuário atual
+    bool isMe = message.sender == _currentUser;
+
+    return Container(
       margin: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
-      child: Padding(
-        padding: const EdgeInsets.all(8.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              message.sender,
-              style: const TextStyle(fontWeight: FontWeight.bold),
+      child: Row(
+        mainAxisAlignment:
+            isMe ? MainAxisAlignment.end : MainAxisAlignment.start,
+        children: [
+          if (!isMe) CircleAvatar(child: Text(message.sender[0])),
+          Container(
+            constraints: BoxConstraints(
+              maxWidth: MediaQuery.of(context).size.width * 0.7,
             ),
-            const SizedBox(height: 4),
-            Text(message.content),
-            if (message.fileName != null) ...[
-              const SizedBox(height: 8),
-              GestureDetector(
-                onTap: () => _downloadFile(message.fileId!, message.fileName!),
-                child: Text(
-                  message.fileName!,
-                  style: const TextStyle(
-                    color: Colors.blue,
-                    decoration: TextDecoration.underline,
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: isMe ? Colors.blue[100] : Colors.grey[300],
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                if (!isMe) // Mostra o nome do sender apenas se não for eu
+                  Text(
+                    message.sender,
+                    style: TextStyle(fontWeight: FontWeight.bold),
                   ),
-                ),
-              ),
-            ],
-          ],
-        ),
+                if (!isMe) SizedBox(height: 4),
+                Text(message.content),
+                if (message.fileName != null) ...[
+                  SizedBox(height: 8),
+                  GestureDetector(
+                    onTap: () =>
+                        _downloadFile(message.fileId!, message.fileName!),
+                    child: Text(
+                      message.fileName!,
+                      style: TextStyle(
+                        color: Colors.blue,
+                        decoration: TextDecoration.underline,
+                      ),
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
+          if (isMe) CircleAvatar(child: Text(message.sender[0])),
+        ],
       ),
     );
   }
 
   Future<void> _downloadFile(int fileId, String fileName) async {
-    try {
-      final response = await http.get(
-        Uri.parse('http://your-server-address/api/files/$fileId'),
-        headers: {'Authorization': 'Bearer $_authToken'},
-      );
-
-      if (response.statusCode == 200) {
-        // Para arquivos reais, você usaria um gerenciador de downloads
-        // Aqui estamos apenas mostrando um snackbar
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Download do arquivo $fileName iniciado'),
-          ),
-        );
-      }
-    } catch (e) {
-      print('Error downloading file: $e');
-    }
+    // Implementar download do arquivo
   }
 }
 
@@ -529,12 +326,14 @@ class ChatMessage {
   final String content;
   final int? fileId;
   final String? fileName;
+  final String? sector;
 
   ChatMessage({
     required this.sender,
     required this.content,
     this.fileId,
     this.fileName,
+    this.sector,
   });
 
   factory ChatMessage.fromJson(Map<String, dynamic> json) {
@@ -543,6 +342,7 @@ class ChatMessage {
       content: json['content'],
       fileId: json['fileId'],
       fileName: json['fileName'],
+      sector: json['sector'],
     );
   }
 }
