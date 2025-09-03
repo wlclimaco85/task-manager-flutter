@@ -5,6 +5,7 @@ import 'package:http/http.dart' as http;
 import 'package:file_picker/file_picker.dart';
 import 'dart:convert';
 import 'dart:io';
+import 'package:task_manager_flutter/data/models/auth_utility.dart';
 import 'dart:typed_data';
 
 class ChatMessageScreen extends StatefulWidget {
@@ -25,7 +26,8 @@ class _ChatMessageScreenState extends State<ChatMessageScreen> {
   final TextEditingController _messageController = TextEditingController();
   final List<ChatMessage> _messages = [];
   late WebSocketChannel _channel;
-  String _authToken = 'SEU_TOKEN_JWT_AQUI';
+  String _authToken = '${AuthUtility.userInfo.token}';
+  final ScrollController _scrollController = ScrollController();
 
   @override
   void initState() {
@@ -45,6 +47,8 @@ class _ChatMessageScreenState extends State<ChatMessageScreen> {
           final messageData = json.decode(message);
           setState(() {
             _messages.add(ChatMessage.fromJson(messageData));
+            // Rolar para a última mensagem
+            _scrollToBottom();
           });
         },
         onError: (error) {
@@ -75,10 +79,23 @@ class _ChatMessageScreenState extends State<ChatMessageScreen> {
           _messages.addAll(
             messageList.map((json) => ChatMessage.fromJson(json)).toList(),
           );
+          // Rolar para a última mensagem após carregar as iniciais
+          WidgetsBinding.instance
+              .addPostFrameCallback((_) => _scrollToBottom());
         });
       }
     } catch (e) {
       print('Error loading messages: $e');
+    }
+  }
+
+  void _scrollToBottom() {
+    if (_scrollController.hasClients) {
+      _scrollController.animateTo(
+        _scrollController.position.maxScrollExtent,
+        duration: Duration(milliseconds: 300),
+        curve: Curves.easeOut,
+      );
     }
   }
 
@@ -181,6 +198,7 @@ class _ChatMessageScreenState extends State<ChatMessageScreen> {
 
   @override
   void dispose() {
+    _scrollController.dispose();
     _channel.sink.close();
     _messageController.dispose();
     super.dispose();
@@ -200,12 +218,20 @@ class _ChatMessageScreenState extends State<ChatMessageScreen> {
             ),
           ],
         ),
+        actions: [
+          IconButton(
+            icon: Icon(Icons.more_vert),
+            onPressed: () {
+              // Adicionar menu de opções
+            },
+          ),
+        ],
       ),
       body: Column(
         children: [
           Expanded(
             child: ListView.builder(
-              reverse: true,
+              controller: _scrollController,
               itemCount: _messages.length,
               itemBuilder: (context, index) {
                 return _buildMessage(_messages[index]);
@@ -233,7 +259,9 @@ class _ChatMessageScreenState extends State<ChatMessageScreen> {
                     controller: _messageController,
                     decoration: InputDecoration(
                       hintText: 'Digite sua mensagem...',
-                      border: OutlineInputBorder(),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(25),
+                      ),
                       contentPadding: EdgeInsets.symmetric(horizontal: 16),
                     ),
                   ),
@@ -261,57 +289,95 @@ class _ChatMessageScreenState extends State<ChatMessageScreen> {
         children: [
           if (!isMe)
             CircleAvatar(
-              child: Text(message.sender[0]),
+              backgroundColor: Colors.grey,
+              child: Text(
+                message.sender[0],
+                style: TextStyle(color: Colors.white),
+              ),
             ),
-          Container(
-            constraints: BoxConstraints(
-              maxWidth: MediaQuery.of(context).size.width * 0.7,
-            ),
-            padding: EdgeInsets.all(12),
-            margin: EdgeInsets.symmetric(horizontal: 8),
-            decoration: BoxDecoration(
-              color: isMe ? Colors.blue[100] : Colors.grey[300],
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                if (!isMe)
-                  Text(
-                    message.sender,
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 12,
+          Flexible(
+            child: Container(
+              constraints: BoxConstraints(
+                maxWidth: MediaQuery.of(context).size.width * 0.7,
+              ),
+              padding: EdgeInsets.all(12),
+              margin: EdgeInsets.symmetric(horizontal: 8),
+              decoration: BoxDecoration(
+                color: isMe ? Color(0xFFDCF8C6) : Colors.white,
+                borderRadius: BorderRadius.circular(8),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.grey.withOpacity(0.5),
+                    spreadRadius: 1,
+                    blurRadius: 1,
+                    offset: Offset(0, 1),
+                  ),
+                ],
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  if (!isMe)
+                    Text(
+                      message.sender,
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 12,
+                        color: Colors.blue,
+                      ),
                     ),
-                  ),
-                if (message.type == 'text') Text(message.content),
-                if (message.type == 'file')
-                  InkWell(
-                    onTap: () =>
-                        _downloadFile(message.fileId!, message.fileName!),
-                    child: Row(
-                      children: [
-                        Icon(Icons.attach_file),
-                        SizedBox(width: 4),
-                        Text(message.fileName!),
-                      ],
+                  if (message.type == 'text')
+                    Text(
+                      message.content,
+                      style: TextStyle(fontSize: 16),
                     ),
+                  if (message.type == 'file')
+                    InkWell(
+                      onTap: () =>
+                          _downloadFile(message.fileId!, message.fileName!),
+                      child: Row(
+                        children: [
+                          Icon(Icons.attach_file, size: 16),
+                          SizedBox(width: 4),
+                          Flexible(
+                            child: Text(
+                              message.fileName!,
+                              style: TextStyle(
+                                color: Colors.blue,
+                                decoration: TextDecoration.underline,
+                              ),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  if (message.type == 'ticket')
+                    Text(
+                      '📋 Solicitação de chamado criada',
+                      style: TextStyle(fontStyle: FontStyle.italic),
+                    ),
+                  SizedBox(height: 4),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: [
+                      Text(
+                        _formatTime(message.timestamp),
+                        style: TextStyle(fontSize: 10, color: Colors.grey),
+                      ),
+                    ],
                   ),
-                if (message.type == 'ticket')
-                  Text(
-                    '📋 Solicitação de chamado criada',
-                    style: TextStyle(fontStyle: FontStyle.italic),
-                  ),
-                Text(
-                  _formatTime(message.timestamp),
-                  style: TextStyle(fontSize: 10, color: Colors.grey),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
           if (isMe)
             CircleAvatar(
-              child: Text(message.sender[0]),
+              backgroundColor: Colors.green,
+              child: Text(
+                message.sender[0],
+                style: TextStyle(color: Colors.white),
+              ),
             ),
         ],
       ),
@@ -326,6 +392,19 @@ class _ChatMessageScreenState extends State<ChatMessageScreen> {
 
   Future<void> _downloadFile(int fileId, String fileName) async {
     // Implementar download do arquivo
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('Download'),
+        content: Text('Iniciando download de $fileName'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text('OK'),
+          ),
+        ],
+      ),
+    );
   }
 }
 
@@ -351,10 +430,16 @@ class ChatMessage {
       sender: json['sender'],
       content: json['content'],
       type: json['type'] ?? 'text',
-      fileId: json['fileId'],
+      fileId: _parseFileId(json['fileId']),
       fileName: json['fileName'],
       timestamp: json['timestamp'],
     );
   }
+
+  static int? _parseFileId(dynamic value) {
+    if (value == null) return null;
+    if (value is int) return value;
+    if (value is String) return int.tryParse(value);
+    return null;
+  }
 }
-// --- IGNORE ----
