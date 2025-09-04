@@ -3,6 +3,7 @@ import 'package:web_socket_channel/web_socket_channel.dart';
 import 'package:web_socket_channel/io.dart';
 import 'package:http/http.dart' as http;
 import 'package:file_picker/file_picker.dart';
+import 'package:path_provider/path_provider.dart';
 import 'dart:convert';
 import 'dart:io';
 import 'package:task_manager_flutter/data/models/auth_utility.dart';
@@ -47,7 +48,6 @@ class _ChatMessageScreenState extends State<ChatMessageScreen> {
           final messageData = json.decode(message);
           setState(() {
             _messages.add(ChatMessage.fromJson(messageData));
-            // Rolar para a última mensagem
             _scrollToBottom();
           });
         },
@@ -65,6 +65,16 @@ class _ChatMessageScreenState extends State<ChatMessageScreen> {
     }
   }
 
+  void _scrollToBottom() {
+    if (_scrollController.hasClients) {
+      _scrollController.animateTo(
+        _scrollController.position.maxScrollExtent,
+        duration: Duration(milliseconds: 300),
+        curve: Curves.easeOut,
+      );
+    }
+  }
+
   Future<void> _loadInitialMessages() async {
     try {
       final response = await http.get(
@@ -79,23 +89,12 @@ class _ChatMessageScreenState extends State<ChatMessageScreen> {
           _messages.addAll(
             messageList.map((json) => ChatMessage.fromJson(json)).toList(),
           );
-          // Rolar para a última mensagem após carregar as iniciais
           WidgetsBinding.instance
               .addPostFrameCallback((_) => _scrollToBottom());
         });
       }
     } catch (e) {
       print('Error loading messages: $e');
-    }
-  }
-
-  void _scrollToBottom() {
-    if (_scrollController.hasClients) {
-      _scrollController.animateTo(
-        _scrollController.position.maxScrollExtent,
-        duration: Duration(milliseconds: 300),
-        curve: Curves.easeOut,
-      );
     }
   }
 
@@ -150,16 +149,37 @@ class _ChatMessageScreenState extends State<ChatMessageScreen> {
         }
 
         var response = await request.send();
+
         if (response.statusCode == 200) {
-          _channel.sink.add(json.encode({
-            'sender': widget.userName,
-            'content': 'Arquivo anexado',
-            'sector': widget.sector,
-            'type': 'file',
-            'fileName': fileName,
-            'fileId': await response.stream.bytesToString(),
-            'timestamp': DateTime.now().toIso8601String(),
-          }));
+          String responseBody = await response.stream.bytesToString();
+          Map<String, dynamic> jsonResponse = json.decode(responseBody);
+
+          // Converta dynamic para int? de forma segura
+          int? fileId;
+          if (jsonResponse['fileId'] != null) {
+            if (jsonResponse['fileId'] is int) {
+              fileId = jsonResponse['fileId'];
+            } else if (jsonResponse['fileId'] is String) {
+              fileId = int.tryParse(jsonResponse['fileId']);
+            }
+          }
+
+          if (fileId != null) {
+            _channel.sink.add(json.encode({
+              'sender': widget.userName,
+              'content': 'Arquivo anexado: $fileName',
+              'sector': widget.sector,
+              'type': 'file',
+              'fileName': fileName,
+              'fileId': fileId, // Agora é um int
+              'timestamp': DateTime.now().toIso8601String(),
+            }));
+          } else {
+            print(
+                'ID do arquivo não encontrado ou inválido na resposta do servidor');
+          }
+        } else {
+          print('Upload failed with status: ${response.statusCode}');
         }
       }
     } catch (e) {
@@ -391,20 +411,38 @@ class _ChatMessageScreenState extends State<ChatMessageScreen> {
   }
 
   Future<void> _downloadFile(int fileId, String fileName) async {
-    // Implementar download do arquivo
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text('Download'),
-        content: Text('Iniciando download de $fileName'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text('OK'),
+    try {
+      final response = await http.get(
+        Uri.parse('http://192.168.114.1:8088/boletobancos/api/files/$fileId'),
+        headers: {'Authorization': 'Bearer $_authToken'},
+      );
+
+      if (response.statusCode == 200) {
+        // Salvar o arquivo localmente
+        final directory = await getApplicationDocumentsDirectory();
+        final file = File('${directory.path}/$fileName');
+        await file.writeAsBytes(response.bodyBytes);
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Arquivo salvo em: ${file.path}'),
           ),
-        ],
-      ),
-    );
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Falha ao baixar o arquivo'),
+          ),
+        );
+      }
+    } catch (e) {
+      print('Error downloading file: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Erro ao baixar o arquivo: $e'),
+        ),
+      );
+    }
   }
 }
 
@@ -426,20 +464,21 @@ class ChatMessage {
   });
 
   factory ChatMessage.fromJson(Map<String, dynamic> json) {
+    // Conversão segura do fileId (pode vir como String ou int do backend)
+    int? parseFileId(dynamic value) {
+      if (value == null) return null;
+      if (value is int) return value;
+      if (value is String) return int.tryParse(value);
+      return null;
+    }
+
     return ChatMessage(
-      sender: json['sender'],
-      content: json['content'],
+      sender: json['sender'] ?? 'Usuário desconhecido',
+      content: json['content'] ?? '',
       type: json['type'] ?? 'text',
-      fileId: _parseFileId(json['fileId']),
+      fileId: parseFileId(json['fileId']),
       fileName: json['fileName'],
       timestamp: json['timestamp'],
     );
-  }
-
-  static int? _parseFileId(dynamic value) {
-    if (value == null) return null;
-    if (value is int) return value;
-    if (value is String) return int.tryParse(value);
-    return null;
   }
 }

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-import 'package:task_manager_flutter/ui/screens/chat_menssage.dart';
+import 'package:task_manager_flutter/ui/screens/chatMenssageScreen.dart';
 import 'package:task_manager_flutter/ui/screens/vendas_screen.dart';
 import 'package:task_manager_flutter/ui/screens/negociacao_screen.dart';
 import 'package:task_manager_flutter/ui/screens/comunicado_screen.dart';
@@ -11,6 +11,8 @@ import 'package:task_manager_flutter/data/utils/api_links.dart';
 import 'package:task_manager_flutter/data/models/auth_utility.dart';
 import 'package:task_manager_flutter/ui/screens/LoginPopup_screens.dart';
 import 'package:task_manager_flutter/data/constants/custom_colors.dart';
+import 'package:task_manager_flutter/ui/screens/chatMessageListScreen.dart';
+import 'package:task_manager_flutter/ui/screens/chatMenssageScreen.dart';
 
 class BottomNavBarScreen extends StatefulWidget {
   const BottomNavBarScreen({super.key});
@@ -31,11 +33,11 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
         screenStatus: 'In Progress',
       ),
       const ChatMessageScreen(sector: 'Financeiro', userName: 'Usuário'),
-      const ProductCatalog(),
+      AuthUtility.userInfo.data?.email != null
+          ? ChatListScreen(userName: AuthUtility.userInfo.data!.email!)
+          : const ChatListScreen(userName: 'Usuário'),
       const ProductRegisterScreen(),
-      isLoggedIn
-          ? const ProductRegisterScreen() // Substitua com a tela desejada para "Mais"
-          : const LoginPopup(), // Substitua com a tela desejada para "Login"
+      isLoggedIn ? const ProductRegisterScreen() : const LoginPopup(),
     ];
   }
 

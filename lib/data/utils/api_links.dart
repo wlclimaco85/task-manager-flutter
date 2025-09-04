@@ -87,4 +87,5 @@ class ApiLinks {
   static String fecthEstadoByPais = '$_baseUrlNew/api/estados/by-pais/';
   static String fecthCidadeByEstado = '$_baseUrlNew/api/cidade/by-estado/';
   static String fecthCalcFrete = '$_baseUrlNew/api/rota/calcular';
+  static String fecthChats = '$_baseUrlNew/api/chat/user';
 }

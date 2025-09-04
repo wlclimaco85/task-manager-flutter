@@ -3,7 +3,7 @@
     "activeCommit": 0,
     "commits": [
         {
-            "activePatchIndex": 6,
+            "activePatchIndex": 7,
             "patches": [
                 {
                     "date": 1756408140711,
@@ -32,6 +32,10 @@
                 {
                     "date": 1756413112167,
                     "content": "Index: \n===================================================================\n--- \n+++ \n@@ -364,15 +364,16 @@\n                               ),\r\n                             ],\r\n                           ),\r\n                           onTap: () {\r\n-                            Navigator.push(\r\n-                              context,\r\n-                              MaterialPageRoute(\r\n-                                builder: (context) =>\r\n-                                    NewsDetailScreen(news: news),\r\n-                              ),\r\n-                            );\r\n+                         //   Navigator.push(\r\n+                          //    context,\r\n+                         //     MaterialPageRoute(\r\n+                             //   builder: (context) =>\r\n+                            //        NewsDetailScreen(news: news),\r\n+                           //   ),\r\n+                       //     );\r\n+                         // Ação ao tocar no item da lista\r\n                           },\r\n                         ),\r\n                         const Divider(\r\n                           height: 1,\r\n"
+                },
+                {
+                    "date": 1757014677170,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -5,9 +5,8 @@\n import 'package:task_manager_flutter/data/services/network_caller.dart';\r\n import 'package:intl/intl.dart';\r\n import 'dart:convert';\r\n import 'package:task_manager_flutter/data/models/comunicados_model.dart';\r\n-import 'package:task_manager_flutter/ui/screens/NewsDetailScreen.dart';\r\n import 'package:task_manager_flutter/ui/widgets/user_banners.dart';\r\n import 'package:task_manager_flutter/ui/screens/update_profile.dart';\r\n import 'package:task_manager_flutter/data/constants/custom_colors.dart';\r\n \r\n"
                 }
             ],
             "date": 1756408140711,
