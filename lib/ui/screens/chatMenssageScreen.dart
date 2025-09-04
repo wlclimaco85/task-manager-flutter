@@ -8,15 +8,19 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:task_manager_flutter/data/models/auth_utility.dart';
 import 'dart:typed_data';
+import 'package:task_manager_flutter/data/models/chat_model.dart';
+import 'package:task_manager_flutter/data/services/chat_caller.dart';
 
 class ChatMessageScreen extends StatefulWidget {
   final String sector;
   final String userName;
+  final String chatId; // Adicionando o ID do chat
 
   const ChatMessageScreen({
     super.key,
     required this.sector,
     required this.userName,
+    required this.chatId,
   });
 
   @override
@@ -25,10 +29,11 @@ class ChatMessageScreen extends StatefulWidget {
 
 class _ChatMessageScreenState extends State<ChatMessageScreen> {
   final TextEditingController _messageController = TextEditingController();
-  final List<ChatMessage> _messages = [];
+  List<ChatMessage> _messages = [];
   late WebSocketChannel _channel;
   String _authToken = '${AuthUtility.userInfo.token}';
   final ScrollController _scrollController = ScrollController();
+  bool _isLoading = false;
 
   @override
   void initState() {
@@ -76,25 +81,117 @@ class _ChatMessageScreenState extends State<ChatMessageScreen> {
   }
 
   Future<void> _loadInitialMessages() async {
+    setState(() {
+      _isLoading = true;
+    });
     try {
-      final response = await http.get(
-        Uri.parse(
-            'http://192.168.114.1:8088/boletobancos/api/chat/messages?user=${widget.userName}&sector=${widget.sector}'),
-        headers: {'Authorization': 'Bearer $_authToken'},
+      final data = await ChatCaller().fetchChatsById(context, widget.chatId);
+      setState(() {
+        _messages = data
+            .map((msg) => ChatMessage(
+                  sender: msg.sender ?? '',
+                  content: msg.text ?? '',
+                  type: 'text', // Ajuste conforme necessário
+                  timestamp: msg.uploadDate,
+                  empId: msg.empId,
+                  codApp: msg.codApp,
+                  codUsuOrig: msg.codUsuOrig,
+                  codUsuDest: msg.codUsuDest,
+                  sector: msg.sector,
+                  chatId: msg.chatId,
+                  uploadDate: msg.uploadDate,
+                  text: msg.text,
+                  // fileId e fileName serão null a menos que a mensagem seja do tipo arquivo
+                ))
+            .toList();
+        WidgetsBinding.instance.addPostFrameCallback((_) => _scrollToBottom());
+      });
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Erro ao carregar chats: $e')),
       );
+    } finally {
+      setState(() {
+        _isLoading = false;
+      });
+    }
+  }
 
+  Future<void> _finalizeChat(Chat chat) async {
+    try {
+      final response = await http.put(
+        Uri.parse(
+            'http://192.168.114.1:8088/boletobancos/api/chat/${chat.chatId}'),
+        headers: {'Authorization': 'Bearer $_authToken'},
+        body: json.encode({'status': 'Finalizado'}),
+      );
       if (response.statusCode == 200) {
-        final List<dynamic> messageList = json.decode(response.body);
         setState(() {
-          _messages.addAll(
-            messageList.map((json) => ChatMessage.fromJson(json)).toList(),
-          );
-          WidgetsBinding.instance
-              .addPostFrameCallback((_) => _scrollToBottom());
+          // Atualizar localmente o status do chat
+          // _chats = _chats.map((c) {
+          //   if (c.chatId == chat.chatId) {
+          //     return Chat(
+          //       chatId: c.chatId,
+          //       sector: c.sector,
+          //       lastMessage: c.lastMessage,
+          //       timestamp: c.timestamp,
+          //       status: 'Finalizado',
+          //     );
+          //   }
+          //   return c;
+          // }).toList();
         });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Chat finalizado com sucesso')),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Falha ao finalizar o chat')),
+        );
       }
     } catch (e) {
-      print('Error loading messages: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Erro ao finalizar o chat: $e')),
+      );
+    }
+  }
+
+  Future<void> _deleteChat(Chat chat) async {
+    try {
+      final response = await http.delete(
+        Uri.parse(
+            'http://192.168.114.1:8088/boletobancos/api/chat/${chat.chatId}'),
+        headers: {'Authorization': 'Bearer $_authToken'},
+      );
+      if (response.statusCode == 200) {
+        setState(() {
+          //_chats.removeWhere((c) => c.chatId == chat.chatId);
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Chat excluído com sucesso')),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Falha ao excluir o chat')),
+        );
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Erro ao excluir o chat: $e')),
+      );
+    }
+  }
+
+  Color _getStatusColor(String status) {
+    switch (status) {
+      case 'Ativo':
+        return Colors.green;
+      case 'Finalizado':
+        return Colors.red; // Alterado para vermelho
+      case 'Pendente':
+        return Colors.orange;
+      default:
+        return Colors.grey;
     }
   }
 
@@ -446,39 +543,18 @@ class _ChatMessageScreenState extends State<ChatMessageScreen> {
   }
 }
 
-class ChatMessage {
-  final String sender;
-  final String content;
-  final String type;
-  final int? fileId;
-  final String? fileName;
-  final String? timestamp;
+class Chat {
+  final String chatId; // Adicionando o ID do chat
+  final String sector;
+  final String lastMessage;
+  final DateTime timestamp;
+  final String status; // Novo campo para status
 
-  ChatMessage({
-    required this.sender,
-    required this.content,
-    required this.type,
-    this.fileId,
-    this.fileName,
-    this.timestamp,
+  Chat({
+    required this.chatId,
+    required this.sector,
+    required this.lastMessage,
+    required this.timestamp,
+    required this.status,
   });
-
-  factory ChatMessage.fromJson(Map<String, dynamic> json) {
-    // Conversão segura do fileId (pode vir como String ou int do backend)
-    int? parseFileId(dynamic value) {
-      if (value == null) return null;
-      if (value is int) return value;
-      if (value is String) return int.tryParse(value);
-      return null;
-    }
-
-    return ChatMessage(
-      sender: json['sender'] ?? 'Usuário desconhecido',
-      content: json['content'] ?? '',
-      type: json['type'] ?? 'text',
-      fileId: parseFileId(json['fileId']),
-      fileName: json['fileName'],
-      timestamp: json['timestamp'],
-    );
-  }
 }

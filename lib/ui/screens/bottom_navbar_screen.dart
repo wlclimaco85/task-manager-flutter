@@ -32,7 +32,8 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
         apiLink: ApiLinks.allComunicados,
         screenStatus: 'In Progress',
       ),
-      const ChatMessageScreen(sector: 'Financeiro', userName: 'Usuário'),
+      const ChatMessageScreen(
+          sector: 'Financeiro', userName: 'Usuário', chatId: '0'),
       AuthUtility.userInfo.data?.email != null
           ? ChatListScreen(userName: AuthUtility.userInfo.data!.email!)
           : const ChatListScreen(userName: 'Usuário'),
