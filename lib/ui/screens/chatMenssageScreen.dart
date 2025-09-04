@@ -408,7 +408,7 @@ class _ChatMessageScreenState extends State<ChatMessageScreen> {
             CircleAvatar(
               backgroundColor: Colors.grey,
               child: Text(
-                message.sender[0],
+                message.sender.isNotEmpty ? message.sender[0] : '?',
                 style: TextStyle(color: Colors.white),
               ),
             ),
@@ -437,7 +437,7 @@ class _ChatMessageScreenState extends State<ChatMessageScreen> {
                   if (!isMe)
                     Text(
                       message.sender,
-                      style: TextStyle(
+                      style: const TextStyle(
                         fontWeight: FontWeight.bold,
                         fontSize: 12,
                         color: Colors.blue,
@@ -446,7 +446,7 @@ class _ChatMessageScreenState extends State<ChatMessageScreen> {
                   if (message.type == 'text')
                     Text(
                       message.content,
-                      style: TextStyle(fontSize: 16),
+                      style: const TextStyle(fontSize: 16),
                     ),
                   if (message.type == 'file')
                     InkWell(
@@ -454,12 +454,12 @@ class _ChatMessageScreenState extends State<ChatMessageScreen> {
                           _downloadFile(message.fileId!, message.fileName!),
                       child: Row(
                         children: [
-                          Icon(Icons.attach_file, size: 16),
-                          SizedBox(width: 4),
+                          const Icon(Icons.attach_file, size: 16),
+                          const SizedBox(width: 4),
                           Flexible(
                             child: Text(
                               message.fileName!,
-                              style: TextStyle(
+                              style: const TextStyle(
                                 color: Colors.blue,
                                 decoration: TextDecoration.underline,
                               ),
@@ -470,17 +470,18 @@ class _ChatMessageScreenState extends State<ChatMessageScreen> {
                       ),
                     ),
                   if (message.type == 'ticket')
-                    Text(
+                    const Text(
                       '📋 Solicitação de chamado criada',
                       style: TextStyle(fontStyle: FontStyle.italic),
                     ),
-                  SizedBox(height: 4),
+                  const SizedBox(height: 4),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.end,
                     children: [
                       Text(
                         _formatTime(message.timestamp),
-                        style: TextStyle(fontSize: 10, color: Colors.grey),
+                        style:
+                            const TextStyle(fontSize: 10, color: Colors.grey),
                       ),
                     ],
                   ),
@@ -493,7 +494,7 @@ class _ChatMessageScreenState extends State<ChatMessageScreen> {
               backgroundColor: Colors.green,
               child: Text(
                 message.sender[0],
-                style: TextStyle(color: Colors.white),
+                style: const TextStyle(color: Colors.white),
               ),
             ),
         ],
