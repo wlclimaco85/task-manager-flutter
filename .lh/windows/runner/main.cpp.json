@@ -1,0 +1,18 @@
+{
+    "sourceFile": "windows/runner/main.cpp",
+    "activeCommit": 0,
+    "commits": [
+        {
+            "activePatchIndex": 0,
+            "patches": [
+                {
+                    "date": 1757459676331,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n"
+                }
+            ],
+            "date": 1757459676331,
+            "name": "Commit-0",
+            "content": "#include <flutter/dart_project.h>\r\n#include <flutter/flutter_view_controller.h>\r\n#include <windows.h>\r\n\r\n#include \"flutter_window.h\"\r\n#include \"utils.h\"\r\n\r\nint APIENTRY wWinMain(_In_ HINSTANCE instance, _In_opt_ HINSTANCE prev,\r\n                      _In_ wchar_t *command_line, _In_ int show_command) {\r\n  // Attach to console when present (e.g., 'flutter run') or create a\r\n  // new console when running with a debugger.\r\n  if (!::AttachConsole(ATTACH_PARENT_PROCESS) && ::IsDebuggerPresent()) {\r\n    CreateAndAttachConsole();\r\n  }\r\n\r\n  // Initialize COM, so that it is available for use in the library and/or\r\n  // plugins.\r\n  ::CoInitializeEx(nullptr, COINIT_APARTMENTTHREADED);\r\n\r\n  flutter::DartProject project(L\"data\");\r\n\r\n  std::vector<std::string> command_line_arguments =\r\n      GetCommandLineArguments();\r\n\r\n  project.set_dart_entrypoint_arguments(std::move(command_line_arguments));\r\n\r\n  FlutterWindow window(project);\r\n  Win32Window::Point origin(10, 10);\r\n  Win32Window::Size size(1280, 720);\r\n  if (!window.Create(L\"my_app\", origin, size)) {\r\n    return EXIT_FAILURE;\r\n  }\r\n  window.SetQuitOnClose(true);\r\n\r\n  ::MSG msg;\r\n  while (::GetMessage(&msg, nullptr, 0, 0)) {\r\n    ::TranslateMessage(&msg);\r\n    ::DispatchMessage(&msg);\r\n  }\r\n\r\n  ::CoUninitialize();\r\n  return EXIT_SUCCESS;\r\n}\r\n"
+        }
+    ]
+}

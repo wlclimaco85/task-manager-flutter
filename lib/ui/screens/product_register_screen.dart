@@ -73,20 +73,25 @@ class _ProductRegisterScreenState extends State<ProductRegisterScreen> {
     });
 
     try {
-      final List<Parceiro> parceiroData = await ParceiroCaller()
-          .fetchParceiros(context, AuthUtility.userInfo.data?.id ?? 0);
+      final List<Parceiro> parceiroData = await ParceiroCaller().fetchParceiros(
+        context,
+        AuthUtility.userInfo.data?.id ?? 0,
+      );
 
       setState(() {
         vendedorEndereco =
             '${parceiroData[0].endereco!.bairro},  ${parceiroData[0].endereco!.cidade!.nome},  ${parceiroData[0].endereco!.estado!.nome}';
       });
 
-      final List<Account> classificacoesData =
-          await VendasCaller().fetchClassificacao(context);
+      final List<Account> classificacoesData = await VendasCaller()
+          .fetchClassificacao(context);
 
       classificacoes = classificacoesData
-          .expand((classificacao) => (classificacao.valores as List).map(
-              (valor) => {'descricao': valor.descricao, 'valor': valor.valor}))
+          .expand(
+            (classificacao) => (classificacao.valores as List).map(
+              (valor) => {'descricao': valor.descricao, 'valor': valor.valor},
+            ),
+          )
           .toList();
 
       await Future.delayed(const Duration(seconds: 1)); // Simulação de atraso
@@ -96,9 +101,9 @@ class _ProductRegisterScreenState extends State<ProductRegisterScreen> {
         );
       });
     } catch (error) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Erro ao carregar dados: $error')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Erro ao carregar dados: $error')));
     } finally {
       setState(() {
         isLoading = false;
@@ -140,10 +145,7 @@ class _ProductRegisterScreenState extends State<ProductRegisterScreen> {
 
     final List<Map<String, dynamic>> imageList = selectedImages.map((image) {
       final String base64Image = base64Encode(image.readAsBytesSync());
-      return {
-        'foto': base64Image,
-        'isPrincipal': image == principalImage,
-      };
+      return {'foto': base64Image, 'isPrincipal': image == principalImage};
     }).toList();
 
     final Map<String, dynamic> customAddress = {
@@ -178,14 +180,17 @@ class _ProductRegisterScreenState extends State<ProductRegisterScreen> {
         if (useCustomAddress) 'enderecoRetirada': customAddress,
       };
 
-      final NetworkResponse response = await NetworkCaller()
-          .postRequest(ApiLinks.insertProduto, requestBody);
+      final NetworkResponse response = await NetworkCaller().postRequest(
+        ApiLinks.insertProduto,
+        requestBody,
+      );
 
       if (response.isSuccess) {
         showSnackBar(
-            message: "Venda enviada com sucesso!",
-            isError: false,
-            context: context);
+          message: "Venda enviada com sucesso!",
+          isError: false,
+          context: context,
+        );
 
         _formKey.currentState!.reset();
         qtdSacosController.clear();
@@ -204,9 +209,10 @@ class _ProductRegisterScreenState extends State<ProductRegisterScreen> {
         sementeController.clear(); // Limpar campo semente
       } else {
         showSnackBar(
-            message: "Erro ao enviar proposta.",
-            isError: true,
-            context: context);
+          message: "Erro ao enviar proposta.",
+          isError: true,
+          context: context,
+        );
       }
     } catch (error) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -229,8 +235,10 @@ class _ProductRegisterScreenState extends State<ProductRegisterScreen> {
     if (picked != null && picked != dtRetirada) {
       setState(() {
         dtRetirada = picked;
-        dtRetiradaController.text =
-            DateFormat('dd/MM/yyyy', 'pt_BR').format(picked);
+        dtRetiradaController.text = DateFormat(
+          'dd/MM/yyyy',
+          'pt_BR',
+        ).format(picked);
       });
     }
   }
@@ -243,12 +251,16 @@ class _ProductRegisterScreenState extends State<ProductRegisterScreen> {
         fontWeight: FontWeight.bold,
       ),
       enabledBorder: OutlineInputBorder(
-        borderSide:
-            BorderSide(color: CustomColors().getBorderInput(), width: 2),
+        borderSide: BorderSide(
+          color: CustomColors().getBorderInput(),
+          width: 2,
+        ),
       ),
       focusedBorder: OutlineInputBorder(
-        borderSide:
-            BorderSide(color: CustomColors().getBorderInput(), width: 2),
+        borderSide: BorderSide(
+          color: CustomColors().getBorderInput(),
+          width: 2,
+        ),
       ),
       errorBorder: const OutlineInputBorder(
         borderSide: BorderSide(color: Colors.red, width: 2),
@@ -268,9 +280,11 @@ class _ProductRegisterScreenState extends State<ProductRegisterScreen> {
         },
         onTapped: () {
           Navigator.push(
-              context,
-              MaterialPageRoute(
-                  builder: (context) => const UpdateProfileScreen()));
+            context,
+            MaterialPageRoute(
+              builder: (context) => const UpdateProfileScreen(),
+            ),
+          );
         },
       ),
       body: isLoading
@@ -367,14 +381,14 @@ class _ProductRegisterScreenState extends State<ProductRegisterScreen> {
                                 onPressed: () async {
                                   final DateTime? pickedDate =
                                       await showDatePicker(
-                                    context: context,
-                                    initialDate: DateTime.now(),
-                                    firstDate: DateTime.now(),
-                                    lastDate: DateTime.now().add(
-                                      const Duration(days: 365),
-                                    ),
-                                    locale: const Locale('pt', 'BR'),
-                                  );
+                                        context: context,
+                                        initialDate: DateTime.now(),
+                                        firstDate: DateTime.now(),
+                                        lastDate: DateTime.now().add(
+                                          const Duration(days: 365),
+                                        ),
+                                        locale: const Locale('pt', 'BR'),
+                                      );
                                   if (pickedDate != null) {
                                     setState(() {
                                       dtRetirada = pickedDate;
@@ -386,15 +400,17 @@ class _ProductRegisterScreenState extends State<ProductRegisterScreen> {
                                     horizontal: 20,
                                     vertical: 10,
                                   ),
-                                  backgroundColor:
-                                      CustomColors().getDarkGreenBorder(),
+                                  backgroundColor: CustomColors()
+                                      .getDarkGreenBorder(),
                                   foregroundColor: Colors.white,
                                 ),
                                 child: Text(
                                   dtRetirada == null
                                       ? 'Data para Retirada'
-                                      : DateFormat('dd/MM/yyyy', 'pt_BR')
-                                          .format(dtRetirada!),
+                                      : DateFormat(
+                                          'dd/MM/yyyy',
+                                          'pt_BR',
+                                        ).format(dtRetirada!),
                                 ),
                               ),
                             ),
@@ -407,13 +423,15 @@ class _ProductRegisterScreenState extends State<ProductRegisterScreen> {
                           ),
                         const SizedBox(height: 16),
                         DropdownButtonFormField<String>(
-                          value: selectedTipoProduto,
+                          initialValue: selectedTipoProduto,
                           decoration: customInputDecoration('Tipo de Produto'),
                           items: ['Arroz em Casca', 'Arroz Esbramado']
-                              .map((tipo) => DropdownMenuItem<String>(
-                                    value: tipo,
-                                    child: Text(tipo),
-                                  ))
+                              .map(
+                                (tipo) => DropdownMenuItem<String>(
+                                  value: tipo,
+                                  child: Text(tipo),
+                                ),
+                              )
                               .toList(),
                           onChanged: (value) {
                             setState(() {
@@ -423,13 +441,15 @@ class _ProductRegisterScreenState extends State<ProductRegisterScreen> {
                         ),
                         const SizedBox(height: 16),
                         DropdownButtonFormField<String>(
-                          value: selectedTipoGrao,
+                          initialValue: selectedTipoGrao,
                           decoration: customInputDecoration('Tipo de Grão'),
                           items: ['Verde', 'Seco']
-                              .map((tipo) => DropdownMenuItem<String>(
-                                    value: tipo,
-                                    child: Text(tipo),
-                                  ))
+                              .map(
+                                (tipo) => DropdownMenuItem<String>(
+                                  value: tipo,
+                                  child: Text(tipo),
+                                ),
+                              )
                               .toList(),
                           onChanged: (value) {
                             setState(() {
@@ -439,13 +459,15 @@ class _ProductRegisterScreenState extends State<ProductRegisterScreen> {
                         ),
                         const SizedBox(height: 16),
                         DropdownButtonFormField<String>(
-                          value: selectedSafra,
+                          initialValue: selectedSafra,
                           decoration: customInputDecoration('Safra'),
                           items: ['2023/2024', '2024/2025']
-                              .map((safra) => DropdownMenuItem<String>(
-                                    value: safra,
-                                    child: Text(safra),
-                                  ))
+                              .map(
+                                (safra) => DropdownMenuItem<String>(
+                                  value: safra,
+                                  child: Text(safra),
+                                ),
+                              )
                               .toList(),
                           onChanged: (value) {
                             setState(() {
@@ -465,19 +487,23 @@ class _ProductRegisterScreenState extends State<ProductRegisterScreen> {
                         ),
                         const SizedBox(height: 16),
                         DropdownButtonFormField<String>(
-                          value: selectedTipoNegociacao,
-                          decoration:
-                              customInputDecoration('Tipo de Negociação'),
-                          items: [
-                            'Adicionar valor e aceitar propostas',
-                            'Sem valor, só negociar valor',
-                            'Adicionar valor e não aceitar proposta'
-                          ]
-                              .map((tipo) => DropdownMenuItem<String>(
-                                    value: tipo,
-                                    child: Text(tipo),
-                                  ))
-                              .toList(),
+                          initialValue: selectedTipoNegociacao,
+                          decoration: customInputDecoration(
+                            'Tipo de Negociação',
+                          ),
+                          items:
+                              [
+                                    'Adicionar valor e aceitar propostas',
+                                    'Sem valor, só negociar valor',
+                                    'Adicionar valor e não aceitar proposta',
+                                  ]
+                                  .map(
+                                    (tipo) => DropdownMenuItem<String>(
+                                      value: tipo,
+                                      child: Text(tipo),
+                                    ),
+                                  )
+                                  .toList(),
                           onChanged: (value) {
                             setState(() {
                               selectedTipoNegociacao = value!;
@@ -535,20 +561,22 @@ class _ProductRegisterScreenState extends State<ProductRegisterScreen> {
                         const SizedBox(height: 16),
                         TextFormField(
                           controller: qtdSacosController,
-                          decoration:
-                              customInputDecoration('Quantidade de Sacos'),
+                          decoration: customInputDecoration(
+                            'Quantidade de Sacos',
+                          ),
                           keyboardType: TextInputType.number,
                           validator: (value) =>
                               value == null || int.tryParse(value) == null
-                                  ? 'Número inválido'
-                                  : null,
+                              ? 'Número inválido'
+                              : null,
                         ),
                         const SizedBox(height: 16),
                         TextFormField(
                           controller: vlrSacosController,
                           decoration: customInputDecoration('Valor por Saco'),
                           keyboardType: TextInputType.number,
-                          enabled: selectedTipoNegociacao !=
+                          enabled:
+                              selectedTipoNegociacao !=
                               "Sem valor, só negociar valor",
                           validator: (value) {
                             if (selectedTipoNegociacao !=
@@ -572,7 +600,8 @@ class _ProductRegisterScreenState extends State<ProductRegisterScreen> {
                             child: TextFormField(
                               controller: classificacaoControllers[i],
                               decoration: customInputDecoration(
-                                  classificacoes[i]['descricao']),
+                                classificacoes[i]['descricao'],
+                              ),
                               keyboardType: TextInputType.number,
                             ),
                           ),

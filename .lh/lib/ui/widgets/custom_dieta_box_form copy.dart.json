@@ -3,7 +3,7 @@
     "activeCommit": 0,
     "commits": [
         {
-            "activePatchIndex": 7,
+            "activePatchIndex": 8,
             "patches": [
                 {
                     "date": 1740663662854,
@@ -36,6 +36,10 @@
                 {
                     "date": 1740663716952,
                     "content": "Index: \n===================================================================\n--- \n+++ \n@@ -552,9 +552,9 @@\n                       borderRadius: BorderRadius.circular(14),\r\n                       border: Border.all(\r\n                         color: Colors.black26,\r\n                       ),\r\n-                      color: CustomColors().getAppBotton(),\r\n+                      color: CustomColors().getLightGreenBackground(),\r\n                     ),\r\n                     elevation: 2,\r\n                   ),\r\n                   iconStyleData: const IconStyleData(\r\n"
+                },
+                {
+                    "date": 1757457872603,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -343,10 +343,10 @@\n                     ),\r\n                     offset: const Offset(-20, 0),\r\n                     scrollbarTheme: ScrollbarThemeData(\r\n                       radius: const Radius.circular(40),\r\n-                      thickness: MaterialStateProperty.all(6),\r\n-                      thumbVisibility: MaterialStateProperty.all(true),\r\n+                      thickness: WidgetStateProperty.all(6),\r\n+                      thumbVisibility: WidgetStateProperty.all(true),\r\n                     ),\r\n                   ),\r\n                   menuItemStyleData: const MenuItemStyleData(\r\n                     height: 40,\r\n@@ -573,10 +573,10 @@\n                     ),\r\n                     offset: const Offset(-20, 0),\r\n                     scrollbarTheme: ScrollbarThemeData(\r\n                       radius: const Radius.circular(40),\r\n-                      thickness: MaterialStateProperty.all(6),\r\n-                      thumbVisibility: MaterialStateProperty.all(true),\r\n+                      thickness: WidgetStateProperty.all(6),\r\n+                      thumbVisibility: WidgetStateProperty.all(true),\r\n                     ),\r\n                   ),\r\n                   menuItemStyleData: const MenuItemStyleData(\r\n                     height: 40,\r\n"
                 }
             ],
             "date": 1740663662854,

@@ -18,16 +18,17 @@ class CheckoutCaller {
   static Future<String> carregarTermos() async {
     String jsonString = "";
     try {
-      final NetworkResponse response =
-          await NetworkCaller().getRequest(ApiLinks.fecthUltimoTermo);
+      final NetworkResponse response = await NetworkCaller().getRequest(
+        ApiLinks.fecthUltimoTermo,
+      );
 
       if (response.statusCode == 200 && response.body != null) {
         jsonString = json.encode(response.body?['texto']);
-        jsonString = jsonString != null
-            ? utf8.decode(latin1.encode(jsonString))
-            : 'noticia não disponível';
-        jsonString =
-            jsonString.trim().replaceAll(RegExp(r'(\n|\r|\t|\\n|\\r)'), '');
+        jsonString = utf8.decode(latin1.encode(jsonString));
+        jsonString = jsonString.trim().replaceAll(
+          RegExp(r'(\n|\r|\t|\\n|\\r)'),
+          '',
+        );
       } else {
         // Trate o caso onde o data é nulo
       }
@@ -38,10 +39,14 @@ class CheckoutCaller {
   }
 
   static Future<double> carregarVlrFrete(
-      BuildContext context, Map<String, dynamic> parceiroData) async {
+    BuildContext context,
+    Map<String, dynamic> parceiroData,
+  ) async {
     try {
-      final NetworkResponse response = await NetworkCaller()
-          .postRequest(ApiLinks.fecthCalcFrete, parceiroData);
+      final NetworkResponse response = await NetworkCaller().postRequest(
+        ApiLinks.fecthCalcFrete,
+        parceiroData,
+      );
 
       if (response.statusCode == 200 && response.body != null) {
         final List<Map<String, dynamic>> data =
@@ -59,17 +64,20 @@ class CheckoutCaller {
 
   static double _calcularMediaFrete(List<dynamic> data) {
     final filtered = data
-        .where((item) =>
-            item['tipoCarga'] == 'GRANEL_SOLIDO' &&
-            item['lotacao']?['semCargaRetorno'] != null)
+        .where(
+          (item) =>
+              item['tipoCarga'] == 'GRANEL_SOLIDO' &&
+              item['lotacao']?['semCargaRetorno'] != null,
+        )
         .toList();
 
     if (filtered.isEmpty) return 0.0;
 
     final total = filtered.fold<double>(
-        0.0,
-        (sum, item) =>
-            sum + (item['lotacao']['semCargaRetorno'] as num).toDouble());
+      0.0,
+      (sum, item) =>
+          sum + (item['lotacao']['semCargaRetorno'] as num).toDouble(),
+    );
 
     return total / filtered.length;
   }
@@ -89,8 +97,10 @@ class CheckoutCaller {
       FormData formData = FormData.fromMap({
         'file': await MultipartFile.fromFile(file.path),
       });
-      final response = await Dio()
-          .post('https://seuservidor.com/api/upload', data: formData);
+      final response = await Dio().post(
+        'https://seuservidor.com/api/upload',
+        data: formData,
+      );
       print('Contrato enviado: ${response.data}');
     }
   }
@@ -112,8 +122,10 @@ class CheckoutCaller {
 
         // Adicione o vendaID ao FormData
         FormData formData = FormData.fromMap({
-          'file': await MultipartFile.fromFile(uploadedFile.path,
-              filename: file.name),
+          'file': await MultipartFile.fromFile(
+            uploadedFile.path,
+            filename: file.name,
+          ),
           'vendaID': vendaID
               .toString(), // Envie como String ou int (depende do backend)
         });
@@ -121,11 +133,7 @@ class CheckoutCaller {
         final response = await dio.post(
           url,
           data: formData,
-          options: Options(
-            headers: {
-              'Authorization': 'Bearer SEU_TOKEN',
-            },
-          ),
+          options: Options(headers: {'Authorization': 'Bearer SEU_TOKEN'}),
         );
 
         if (response.statusCode == 200) {
@@ -160,27 +168,32 @@ class CheckoutCaller {
 
         final tempDir = await getTemporaryDirectory();
         final file = File('${tempDir.path}/contrato_$contratoId.pdf');
-        await file
-            .writeAsBytes(response.bodyBytes); // Write the bytes to the file
+        await file.writeAsBytes(
+          response.bodyBytes,
+        ); // Write the bytes to the file
 
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-              content: Text('Download concluído! Abrindo o contrato...')),
+            content: Text('Download concluído! Abrindo o contrato...'),
+          ),
         );
 
         OpenFilex.open(file.path); // Open the file
         return true;
       } else {
         print(
-            'Error: ${response.statusCode} - ${response.body}'); // Print error details
+          'Error: ${response.statusCode} - ${response.body}',
+        ); // Print error details
         // Try to decode the error response body (if it's JSON)
         try {
           final errorData = jsonDecode(response.body);
           print('Error Data: $errorData'); // Print decoded error data
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-                content: Text(
-                    'Erro ao baixar contrato: ${errorData['message'] ?? 'Erro desconhecido'}')),
+              content: Text(
+                'Erro ao baixar contrato: ${errorData['message'] ?? 'Erro desconhecido'}',
+              ),
+            ),
           );
           return false;
         } catch (e) {
@@ -192,9 +205,9 @@ class CheckoutCaller {
       }
     } catch (e) {
       print('Error during download: $e'); // Catch and log any exceptions
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Erro ao baixar contrato')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Erro ao baixar contrato')));
       return false;
     }
   }

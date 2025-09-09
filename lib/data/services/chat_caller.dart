@@ -10,15 +10,13 @@ class ChatCaller {
     List<ChatMessage>? model = [];
     ChatMessageModel models;
     try {
-      final eeee = ApiLinks.fecthChats +
-          '?user=' +
-          AuthUtility.userInfo.data!.codDadosPessoal!.email!;
+      final eeee =
+          '${ApiLinks.fecthChats}?user=${AuthUtility.userInfo.data!.codDadosPessoal!.email!}';
       print('URL de requisição: $eeee');
 
       final NetworkResponse response = await NetworkCaller().getRequest(
-          ApiLinks.fecthChats +
-              '?user=' +
-              AuthUtility.userInfo.data!.codDadosPessoal!.email!);
+        '${ApiLinks.fecthChats}?user=${AuthUtility.userInfo.data!.codDadosPessoal!.email!}',
+      );
 
       if (response.statusCode == 200 && response.body != null) {
         models = ChatMessageModel.fromJson(response.body!);
@@ -34,14 +32,17 @@ class ChatCaller {
   }
 
   Future<List<ChatMessage>> fetchChatsById(
-      BuildContext context, String chatId) async {
+    BuildContext context,
+    String chatId,
+  ) async {
     List<ChatMessage>? model = [];
     ChatMessageModel models;
     try {
       print('URL de requisição: $chatId');
 
-      final NetworkResponse response =
-          await NetworkCaller().getRequest(ApiLinks.fecthChatById + chatId);
+      final NetworkResponse response = await NetworkCaller().getRequest(
+        ApiLinks.fecthChatById + chatId,
+      );
 
       if (response.statusCode == 200 && response.body != null) {
         models = ChatMessageModel.fromJson(response.body!);

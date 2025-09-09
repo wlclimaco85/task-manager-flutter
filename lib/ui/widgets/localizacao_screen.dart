@@ -47,13 +47,16 @@ class _LocalizacaoWidgetState extends State<LocalizacaoWidget> {
     //     await NetworkCaller().getRequest(ApiLinks.fecthAllPaises);
     // if (response.statusCode == 200 && response.body != null) {
     setState(() {
-      paises.add(Pais(
+      paises.add(
+        Pais(
           id: 1,
           nome: "Brasil",
           nomePt: "Brasil",
           iso2: "BR",
           iso3: "BRA",
-          bacen: 1058));
+          bacen: 1058,
+        ),
+      );
       isLoadingPaises = false;
     });
     // }
@@ -62,8 +65,9 @@ class _LocalizacaoWidgetState extends State<LocalizacaoWidget> {
   Future<void> fetchEstados(String? paisId) async {
     if (paisId == null) return;
     setState(() => isLoadingEstados = true);
-    final NetworkResponse response =
-        await NetworkCaller().getRequest(ApiLinks.fecthEstadoByPais + paisId);
+    final NetworkResponse response = await NetworkCaller().getRequest(
+      ApiLinks.fecthEstadoByPais + paisId,
+    );
     EstadoModel model;
     if (response.statusCode == 200 && response.body != null) {
       setState(() {
@@ -79,8 +83,9 @@ class _LocalizacaoWidgetState extends State<LocalizacaoWidget> {
   Future<void> fetchCidades(String? estadoId) async {
     if (estadoId == null) return;
     setState(() => isLoadingCidades = true);
-    final NetworkResponse response = await NetworkCaller()
-        .getRequest(ApiLinks.fecthCidadeByEstado + estadoId);
+    final NetworkResponse response = await NetworkCaller().getRequest(
+      ApiLinks.fecthCidadeByEstado + estadoId,
+    );
     CidadeModel model;
     if (response.statusCode == 200) {
       setState(() {
@@ -113,12 +118,14 @@ class _LocalizacaoWidgetState extends State<LocalizacaoWidget> {
             labelText: 'País',
             border: OutlineInputBorder(),
           ),
-          value: selectedPais,
+          initialValue: selectedPais,
           items: paises
-              .map((pais) => DropdownMenuItem<Pais>(
-                    value: pais,
-                    child: Text(pais.nomePt),
-                  ))
+              .map(
+                (pais) => DropdownMenuItem<Pais>(
+                  value: pais,
+                  child: Text(pais.nomePt),
+                ),
+              )
               .toList(),
           onChanged: isLoadingPaises
               ? null
@@ -135,7 +142,10 @@ class _LocalizacaoWidgetState extends State<LocalizacaoWidget> {
                   }
                   // Chama onChanged aqui, passando os objetos
                   widget.onChanged(
-                      selectedPais, selectedEstado, selectedCidade);
+                    selectedPais,
+                    selectedEstado,
+                    selectedCidade,
+                  );
                 },
           validator: (value) =>
               widget.required && value == null ? 'Selecione um país' : null,
@@ -160,12 +170,14 @@ class _LocalizacaoWidgetState extends State<LocalizacaoWidget> {
             labelText: 'Estado',
             border: OutlineInputBorder(),
           ),
-          value: selectedEstado,
+          initialValue: selectedEstado,
           items: estados
-              .map((estado) => DropdownMenuItem<Estado>(
-                    value: estado,
-                    child: Text('${estado.nome} (${estado.uf})'),
-                  ))
+              .map(
+                (estado) => DropdownMenuItem<Estado>(
+                  value: estado,
+                  child: Text('${estado.nome} (${estado.uf})'),
+                ),
+              )
               .toList(),
           onChanged: isLoadingEstados
               ? null
@@ -180,7 +192,10 @@ class _LocalizacaoWidgetState extends State<LocalizacaoWidget> {
                   }
                   // Chama onChanged aqui, passando os objetos
                   widget.onChanged(
-                      selectedPais, selectedEstado, selectedCidade);
+                    selectedPais,
+                    selectedEstado,
+                    selectedCidade,
+                  );
                 },
           // ... (seu código existente)
           validator: (value) =>
@@ -207,12 +222,14 @@ class _LocalizacaoWidgetState extends State<LocalizacaoWidget> {
             labelText: 'Cidade',
             border: OutlineInputBorder(),
           ),
-          value: selectedCidade,
+          initialValue: selectedCidade,
           items: cidades
-              .map((cidade) => DropdownMenuItem<Cidade>(
-                    value: cidade,
-                    child: Text(cidade.nome),
-                  ))
+              .map(
+                (cidade) => DropdownMenuItem<Cidade>(
+                  value: cidade,
+                  child: Text(cidade.nome),
+                ),
+              )
               .toList(),
           onChanged: isLoadingCidades
               ? null
@@ -222,7 +239,10 @@ class _LocalizacaoWidgetState extends State<LocalizacaoWidget> {
                   });
                   // Chama onChanged aqui, passando os objetos
                   widget.onChanged(
-                      selectedPais, selectedEstado, selectedCidade);
+                    selectedPais,
+                    selectedEstado,
+                    selectedCidade,
+                  );
                 },
           // ... (seu código existente)
           validator: (value) =>

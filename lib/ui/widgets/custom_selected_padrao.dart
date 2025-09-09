@@ -52,8 +52,10 @@ class _SelectedForm extends State<SelectedForm> {
       setState(() {});
     }
     Map<String, dynamic> requestBody = {};
-    final NetworkResponse response =
-        await NetworkCaller().postRequest(ApiLinks.allModalidade, requestBody);
+    final NetworkResponse response = await NetworkCaller().postRequest(
+      ApiLinks.allModalidade,
+      requestBody,
+    );
     isLoading = false;
 
     if (mounted) {
@@ -78,11 +80,9 @@ class _SelectedForm extends State<SelectedForm> {
       }
     } else {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text("Profile update Failed"),
-          ),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text("Profile update Failed")));
       }
     }
     return modalidadeList;
@@ -95,7 +95,7 @@ class _SelectedForm extends State<SelectedForm> {
         chave: value,
         chave: value,
         chave: value,
-        chave: value
+        chave: value,
       };
       _dataArray.add(json);
       setState(() {
@@ -134,154 +134,146 @@ class _SelectedForm extends State<SelectedForm> {
   }
 
   Widget selected(
-          int key, String hit, int? maxLine, TextInputType tipo, chave) =>
-      Padding(
-        padding: const EdgeInsets.symmetric(vertical: 3),
-        child: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              DropdownButtonHideUnderline(
-                child: DropdownButton2<String>(
-                  isExpanded: true,
-                  hint: Text(
-                    'Escolha Dia Semana',
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: CustomColors().getLightGreenBackground(),
-                    ),
-                  ),
-                  items: dias.map((item) {
-                    return DropdownMenuItem(
-                      value: item,
-                      //disable default onTap to avoid closing menu when selecting an item
-                      enabled: false,
-                      child: StatefulBuilder(
-                        builder: (context, menuSetState) {
-                          final isSelected = diasSelectedItems.contains(item);
-                          return InkWell(
-                            onTap: () {
-                              isSelected
-                                  ? diasSelectedItems.remove(item)
-                                  : diasSelectedItems.add(item);
-                              //This rebuilds the StatefulWidget to update the button's text
-                              _onUpdate(
-                                  key, diasSelectedItems.join(","), chave);
-                              setState(() {});
-                              //This rebuilds the dropdownMenu Widget to update the check mark
-                              menuSetState(() {
-                                print(item);
-                              });
-                            },
-                            child: Container(
-                              height: double.infinity,
-                              padding:
-                                  const EdgeInsets.symmetric(horizontal: 16.0),
-                              child: Row(
-                                children: [
-                                  if (isSelected)
-                                    const Icon(Icons.check_box_outlined)
-                                  else
-                                    const Icon(Icons.check_box_outline_blank),
-                                  const SizedBox(width: 16),
-                                  Expanded(
-                                    child: Text(
-                                      item,
-                                      style: const TextStyle(
-                                        fontSize: 14,
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          );
-                        },
-                      ),
-                    );
-                  }).toList(),
-                  //Use last selected item as the current value so if we've limited menu height, it scroll to last item.
-                  value:
-                      diasSelectedItems.isEmpty ? null : diasSelectedItems.last,
-                  onChanged: (vale) => _onUpdate(key, vale, chave),
-
-                  selectedItemBuilder: (context) {
-                    return diasSelectedItems.map(
-                      (item) {
-                        return Container(
-                          alignment: AlignmentDirectional.center,
-                          child: Text(
-                            diasSelectedItems.join(', '),
-                            style: const TextStyle(
-                              fontSize: 14,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                            maxLines: 1,
-                          ),
-                        );
-                      },
-                    ).toList();
-                  },
-                  buttonStyleData: ButtonStyleData(
-                    height: 50,
-                    width: 280,
-                    padding: const EdgeInsets.only(left: 14, right: 14),
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(14),
-                      border: Border.all(
-                        color: Colors.black26,
-                      ),
-                      color: CustomColors().getLightGreenBackground(),
-                    ),
-                    elevation: 2,
-                  ),
-                  iconStyleData: const IconStyleData(
-                    icon: Icon(
-                      Icons.arrow_forward_ios_outlined,
-                    ),
-                    iconSize: 14,
-                    iconEnabledColor: Colors.yellow,
-                    iconDisabledColor: Colors.grey,
-                  ),
-                  dropdownStyleData: DropdownStyleData(
-                    maxHeight: 200,
-                    width: 200,
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(14),
-                      color: CustomColors().getLightGreenBackground(),
-                    ),
-                    offset: const Offset(-20, 0),
-                    scrollbarTheme: ScrollbarThemeData(
-                      radius: const Radius.circular(40),
-                      thickness: MaterialStateProperty.all(6),
-                      thumbVisibility: MaterialStateProperty.all(true),
-                    ),
-                  ),
-                  menuItemStyleData: const MenuItemStyleData(
-                    height: 40,
-                    padding: EdgeInsets.only(left: 14, right: 14),
-                  ),
+    int key,
+    String hit,
+    int? maxLine,
+    TextInputType tipo,
+    chave,
+  ) => Padding(
+    padding: const EdgeInsets.symmetric(vertical: 3),
+    child: Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          DropdownButtonHideUnderline(
+            child: DropdownButton2<String>(
+              isExpanded: true,
+              hint: Text(
+                'Escolha Dia Semana',
+                style: TextStyle(
+                  fontSize: 14,
+                  color: CustomColors().getLightGreenBackground(),
                 ),
               ),
-            ],
+              items: dias.map((item) {
+                return DropdownMenuItem(
+                  value: item,
+                  //disable default onTap to avoid closing menu when selecting an item
+                  enabled: false,
+                  child: StatefulBuilder(
+                    builder: (context, menuSetState) {
+                      final isSelected = diasSelectedItems.contains(item);
+                      return InkWell(
+                        onTap: () {
+                          isSelected
+                              ? diasSelectedItems.remove(item)
+                              : diasSelectedItems.add(item);
+                          //This rebuilds the StatefulWidget to update the button's text
+                          _onUpdate(key, diasSelectedItems.join(","), chave);
+                          setState(() {});
+                          //This rebuilds the dropdownMenu Widget to update the check mark
+                          menuSetState(() {
+                            print(item);
+                          });
+                        },
+                        child: Container(
+                          height: double.infinity,
+                          padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                          child: Row(
+                            children: [
+                              if (isSelected)
+                                const Icon(Icons.check_box_outlined)
+                              else
+                                const Icon(Icons.check_box_outline_blank),
+                              const SizedBox(width: 16),
+                              Expanded(
+                                child: Text(
+                                  item,
+                                  style: const TextStyle(fontSize: 14),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                );
+              }).toList(),
+              //Use last selected item as the current value so if we've limited menu height, it scroll to last item.
+              value: diasSelectedItems.isEmpty ? null : diasSelectedItems.last,
+              onChanged: (vale) => _onUpdate(key, vale, chave),
+
+              selectedItemBuilder: (context) {
+                return diasSelectedItems.map((item) {
+                  return Container(
+                    alignment: AlignmentDirectional.center,
+                    child: Text(
+                      diasSelectedItems.join(', '),
+                      style: const TextStyle(
+                        fontSize: 14,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      maxLines: 1,
+                    ),
+                  );
+                }).toList();
+              },
+              buttonStyleData: ButtonStyleData(
+                height: 50,
+                width: 280,
+                padding: const EdgeInsets.only(left: 14, right: 14),
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(color: Colors.black26),
+                  color: CustomColors().getLightGreenBackground(),
+                ),
+                elevation: 2,
+              ),
+              iconStyleData: const IconStyleData(
+                icon: Icon(Icons.arrow_forward_ios_outlined),
+                iconSize: 14,
+                iconEnabledColor: Colors.yellow,
+                iconDisabledColor: Colors.grey,
+              ),
+              dropdownStyleData: DropdownStyleData(
+                maxHeight: 200,
+                width: 200,
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(14),
+                  color: CustomColors().getLightGreenBackground(),
+                ),
+                offset: const Offset(-20, 0),
+                scrollbarTheme: ScrollbarThemeData(
+                  radius: const Radius.circular(40),
+                  thickness: WidgetStateProperty.all(6),
+                  thumbVisibility: WidgetStateProperty.all(true),
+                ),
+              ),
+              menuItemStyleData: const MenuItemStyleData(
+                height: 40,
+                padding: EdgeInsets.only(left: 14, right: 14),
+              ),
+            ),
           ),
-        ),
-      );
+        ],
+      ),
+    ),
+  );
 
   Widget form(int key) => Padding(
-        padding: const EdgeInsets.only(bottom: 15.0),
-        child: Container(
-          padding: EdgeInsets.zero,
-          color: CustomColors().getLightGreenBackground(),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: <Widget>[
-              selected(
-                  key, "Titulo Plano", null, TextInputType.text, 'diaAtene'),
-            ],
-          ),
-        ),
-      );
+    padding: const EdgeInsets.only(bottom: 15.0),
+    child: Container(
+      padding: EdgeInsets.zero,
+      color: CustomColors().getLightGreenBackground(),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: <Widget>[
+          selected(key, "Titulo Plano", null, TextInputType.text, 'diaAtene'),
+        ],
+      ),
+    ),
+  );
 
   @override
   Widget build(BuildContext context) {
@@ -296,11 +288,14 @@ class _SelectedForm extends State<SelectedForm> {
             crossAxisAlignment: CrossAxisAlignment.center,
             children: <Widget>[
               const SizedBox(height: 19),
-              const Text('Modalidade',
-                  style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      color: Colors.black87,
-                      fontSize: 22)),
+              const Text(
+                'Modalidade',
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  color: Colors.black87,
+                  fontSize: 22,
+                ),
+              ),
               const SizedBox(height: 20),
               ...List.generate(_formCount, (index) => form(index)),
               const SizedBox(height: 10),

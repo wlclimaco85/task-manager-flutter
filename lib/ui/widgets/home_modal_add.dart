@@ -30,10 +30,7 @@ class _HomeModalAddState extends State<HomeModalAdd> {
   String? base64Image;
   bool _signUpInProgress = false;
   // List of items in our dropdown menu
-  var sexo = [
-    'Masculino',
-    'Feminino',
-  ];
+  var sexo = ['Masculino', 'Feminino'];
 
   List<String> sexoSelectedItems = [];
 
@@ -235,8 +232,10 @@ class _HomeModalAddState extends State<HomeModalAdd> {
           "valor": 1.99,
         }*/
     };
-    final NetworkResponse response =
-        await NetworkCaller().postRequest(ApiLinks.insertPersonal, requestBody);
+    final NetworkResponse response = await NetworkCaller().postRequest(
+      ApiLinks.insertPersonal,
+      requestBody,
+    );
     _signUpInProgress = false;
     if (mounted) {
       setState(() {});
@@ -244,18 +243,14 @@ class _HomeModalAddState extends State<HomeModalAdd> {
     if (response.isSuccess) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text("Profile update Successful"),
-          ),
+          const SnackBar(content: Text("Profile update Successful")),
         );
       }
     } else {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text("Profile update Failed"),
-          ),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text("Profile update Failed")));
       }
     }
   }
@@ -269,7 +264,7 @@ class _HomeModalAddState extends State<HomeModalAdd> {
         chave: value,
         chave: value,
         chave: value,
-        chave: value
+        chave: value,
       };
       _dataArray.add(json);
       setState(() {
@@ -310,12 +305,16 @@ class _HomeModalAddState extends State<HomeModalAdd> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: UserBannerAppBar(onTapped: () {
-        Navigator.push(
+      appBar: UserBannerAppBar(
+        onTapped: () {
+          Navigator.push(
             context,
             MaterialPageRoute(
-                builder: (context) => const UpdateProfileScreen()));
-      }),
+              builder: (context) => const UpdateProfileScreen(),
+            ),
+          );
+        },
+      ),
       body: Form(
         key: _formKey,
         child: Padding(
@@ -379,43 +378,47 @@ class _HomeModalAddState extends State<HomeModalAdd> {
                     onTap: () {
                       imagePicked();
                     },
-                    child: Row(children: [
-                      Container(
-                        padding: const EdgeInsets.all(18),
-                        decoration: const BoxDecoration(
-                          color: Colors.grey,
-                          borderRadius: BorderRadius.only(
-                            topLeft: Radius.circular(8),
-                            bottomLeft: Radius.circular(8),
-                          ),
-                        ),
-                        child: const Text("Foto"),
-                      ),
-                      Expanded(
-                        child: Container(
+                    child: Row(
+                      children: [
+                        Container(
                           padding: const EdgeInsets.all(18),
-                          decoration: BoxDecoration(
-                            color: CustomColors().getLightGreenBackground(),
-                            borderRadius: const BorderRadius.only(
-                              topRight: Radius.circular(8),
-                              bottomRight: Radius.circular(8),
+                          decoration: const BoxDecoration(
+                            color: Colors.grey,
+                            borderRadius: BorderRadius.only(
+                              topLeft: Radius.circular(8),
+                              bottomLeft: Radius.circular(8),
                             ),
                           ),
-                          child: Text(
-                            pickImage?.name ?? "",
-                            maxLines: 1,
-                            style: const TextStyle(
-                                overflow: TextOverflow.ellipsis),
+                          child: const Text("Foto"),
+                        ),
+                        Expanded(
+                          child: Container(
+                            padding: const EdgeInsets.all(18),
+                            decoration: BoxDecoration(
+                              color: CustomColors().getLightGreenBackground(),
+                              borderRadius: const BorderRadius.only(
+                                topRight: Radius.circular(8),
+                                bottomRight: Radius.circular(8),
+                              ),
+                            ),
+                            child: Text(
+                              pickImage?.name ?? "",
+                              maxLines: 1,
+                              style: const TextStyle(
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
                           ),
                         ),
-                      ),
-                    ]),
+                      ],
+                    ),
                   ),
                   const LabeledCheckbox(
-                      value: true,
-                      label: "Sim",
-                      leadingCheckbox: false,
-                      onChanged: null),
+                    value: true,
+                    label: "Sim",
+                    leadingCheckbox: false,
+                    onChanged: null,
+                  ),
                   Padding(
                     padding: const EdgeInsets.symmetric(vertical: 3),
                     child: Center(
@@ -429,8 +432,8 @@ class _HomeModalAddState extends State<HomeModalAdd> {
                                 'Escolha o sexo atendimento',
                                 style: TextStyle(
                                   fontSize: 14,
-                                  color:
-                                      CustomColors().getLightGreenBackground(),
+                                  color: CustomColors()
+                                      .getLightGreenBackground(),
                                 ),
                               ),
                               items: sexo.map((item) {
@@ -440,8 +443,8 @@ class _HomeModalAddState extends State<HomeModalAdd> {
                                   enabled: false,
                                   child: StatefulBuilder(
                                     builder: (context, menuSetState) {
-                                      final isSelected =
-                                          sexoSelectedItems.contains(item);
+                                      final isSelected = sexoSelectedItems
+                                          .contains(item);
                                       return InkWell(
                                         onTap: () {
                                           isSelected
@@ -455,15 +458,18 @@ class _HomeModalAddState extends State<HomeModalAdd> {
                                         child: Container(
                                           height: double.infinity,
                                           padding: const EdgeInsets.symmetric(
-                                              horizontal: 16.0),
+                                            horizontal: 16.0,
+                                          ),
                                           child: Row(
                                             children: [
                                               if (isSelected)
                                                 const Icon(
-                                                    Icons.check_box_outlined)
+                                                  Icons.check_box_outlined,
+                                                )
                                               else
-                                                const Icon(Icons
-                                                    .check_box_outline_blank),
+                                                const Icon(
+                                                  Icons.check_box_outline_blank,
+                                                ),
                                               const SizedBox(width: 16),
                                               Expanded(
                                                 child: Text(
@@ -487,41 +493,37 @@ class _HomeModalAddState extends State<HomeModalAdd> {
                                   : sexoSelectedItems.last,
                               onChanged: (value) {},
                               selectedItemBuilder: (context) {
-                                return sexoSelectedItems.map(
-                                  (item) {
-                                    return Container(
-                                      alignment: AlignmentDirectional.center,
-                                      child: Text(
-                                        sexoSelectedItems.join(', '),
-                                        style: const TextStyle(
-                                          fontSize: 14,
-                                          overflow: TextOverflow.ellipsis,
-                                        ),
-                                        maxLines: 1,
+                                return sexoSelectedItems.map((item) {
+                                  return Container(
+                                    alignment: AlignmentDirectional.center,
+                                    child: Text(
+                                      sexoSelectedItems.join(', '),
+                                      style: const TextStyle(
+                                        fontSize: 14,
+                                        overflow: TextOverflow.ellipsis,
                                       ),
-                                    );
-                                  },
-                                ).toList();
+                                      maxLines: 1,
+                                    ),
+                                  );
+                                }).toList();
                               },
                               buttonStyleData: ButtonStyleData(
                                 height: 50,
                                 width: 280,
-                                padding:
-                                    const EdgeInsets.only(left: 14, right: 14),
+                                padding: const EdgeInsets.only(
+                                  left: 14,
+                                  right: 14,
+                                ),
                                 decoration: BoxDecoration(
                                   borderRadius: BorderRadius.circular(14),
-                                  border: Border.all(
-                                    color: Colors.black26,
-                                  ),
-                                  color:
-                                      CustomColors().getLightGreenBackground(),
+                                  border: Border.all(color: Colors.black26),
+                                  color: CustomColors()
+                                      .getLightGreenBackground(),
                                 ),
                                 elevation: 2,
                               ),
                               iconStyleData: const IconStyleData(
-                                icon: Icon(
-                                  Icons.arrow_forward_ios_outlined,
-                                ),
+                                icon: Icon(Icons.arrow_forward_ios_outlined),
                                 iconSize: 14,
                                 iconEnabledColor: Colors.yellow,
                                 iconDisabledColor: Colors.grey,
@@ -531,15 +533,16 @@ class _HomeModalAddState extends State<HomeModalAdd> {
                                 width: 200,
                                 decoration: BoxDecoration(
                                   borderRadius: BorderRadius.circular(14),
-                                  color:
-                                      CustomColors().getLightGreenBackground(),
+                                  color: CustomColors()
+                                      .getLightGreenBackground(),
                                 ),
                                 offset: const Offset(-20, 0),
                                 scrollbarTheme: ScrollbarThemeData(
                                   radius: const Radius.circular(40),
-                                  thickness: MaterialStateProperty.all(6),
-                                  thumbVisibility:
-                                      MaterialStateProperty.all(true),
+                                  thickness: WidgetStateProperty.all(6),
+                                  thumbVisibility: WidgetStateProperty.all(
+                                    true,
+                                  ),
                                 ),
                               ),
                               menuItemStyleData: const MenuItemStyleData(
@@ -574,44 +577,47 @@ class _HomeModalAddState extends State<HomeModalAdd> {
 
   void imagePicked() async {
     showDialog(
-        context: context,
-        builder: (context) {
-          return AlertDialog(
-            title: const Text('Pick Image From:'),
-            content: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                ListTile(
-                  onTap: () async {
-                    pickImage = await ImagePicker()
-                        .pickImage(source: ImageSource.camera);
-                    if (pickImage != null) {
-                      setState(() {});
-                      if (mounted) {
-                        Navigator.pop(context);
-                      }
-                    } else {}
-                  },
-                  leading: const Icon(Icons.camera),
-                  title: const Text('Camera'),
-                ),
-                ListTile(
-                  leading: const Icon(Icons.image),
-                  onTap: () async {
-                    pickImage = await ImagePicker()
-                        .pickImage(source: ImageSource.gallery);
-                    if (pickImage != null) {
-                      setState(() {});
-                      if (mounted) {
-                        Navigator.pop(context);
-                      }
-                    } else {}
-                  },
-                  title: const Text('Gallery'),
-                )
-              ],
-            ),
-          );
-        });
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Pick Image From:'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ListTile(
+                onTap: () async {
+                  pickImage = await ImagePicker().pickImage(
+                    source: ImageSource.camera,
+                  );
+                  if (pickImage != null) {
+                    setState(() {});
+                    if (mounted) {
+                      Navigator.pop(context);
+                    }
+                  } else {}
+                },
+                leading: const Icon(Icons.camera),
+                title: const Text('Camera'),
+              ),
+              ListTile(
+                leading: const Icon(Icons.image),
+                onTap: () async {
+                  pickImage = await ImagePicker().pickImage(
+                    source: ImageSource.gallery,
+                  );
+                  if (pickImage != null) {
+                    setState(() {});
+                    if (mounted) {
+                      Navigator.pop(context);
+                    }
+                  } else {}
+                },
+                title: const Text('Gallery'),
+              ),
+            ],
+          ),
+        );
+      },
+    );
   }
 }

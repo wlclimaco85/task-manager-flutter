@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:task_manager_flutter/ui/screens/chatMenssageScreen.dart';
-import 'package:task_manager_flutter/ui/screens/vendas_screen.dart';
 import 'package:task_manager_flutter/ui/screens/negociacao_screen.dart';
 import 'package:task_manager_flutter/ui/screens/comunicado_screen.dart';
 import 'package:task_manager_flutter/ui/screens/carrinho_compras_screen.dart';
@@ -12,7 +11,6 @@ import 'package:task_manager_flutter/data/models/auth_utility.dart';
 import 'package:task_manager_flutter/ui/screens/LoginPopup_screens.dart';
 import 'package:task_manager_flutter/data/constants/custom_colors.dart';
 import 'package:task_manager_flutter/ui/screens/chatMessageListScreen.dart';
-import 'package:task_manager_flutter/ui/screens/chatMenssageScreen.dart';
 
 class BottomNavBarScreen extends StatefulWidget {
   const BottomNavBarScreen({super.key});
@@ -24,7 +22,8 @@ class BottomNavBarScreen extends StatefulWidget {
 class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
   int selectedIndex = 0;
   List<Widget> get screens {
-    final isLoggedIn = AuthUtility.userInfo.data?.id != null &&
+    final isLoggedIn =
+        AuthUtility.userInfo.data?.id != null &&
         AuthUtility.userInfo.data!.id! > 1;
 
     return [
@@ -33,7 +32,10 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
         screenStatus: 'In Progress',
       ),
       const ChatMessageScreen(
-          sector: 'Financeiro', userName: 'Usuário', chatId: '0'),
+        sector: 'Financeiro',
+        userName: 'Usuário',
+        chatId: '0',
+      ),
       AuthUtility.userInfo.data?.email != null
           ? ChatListScreen(userName: AuthUtility.userInfo.data!.email!)
           : const ChatListScreen(userName: 'Usuário'),
@@ -97,7 +99,8 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final isLoggedIn = AuthUtility.userInfo.data?.id != null &&
+    final isLoggedIn =
+        AuthUtility.userInfo.data?.id != null &&
         AuthUtility.userInfo.data!.id! > 1;
 
     return Scaffold(
@@ -107,9 +110,12 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
           color: CustomColors().getLightGreenBackground(),
           border: Border(
             top: BorderSide(
-                color: CustomColors().getDarkGreenBorder(), width: 2),
+              color: CustomColors().getDarkGreenBorder(),
+              width: 2,
+            ),
           ),
         ),
+
         /*
         child: BottomNavigationBar(
           backgroundColor: lightGreenBackground,
@@ -316,7 +322,6 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
             }
           },
         ), */
-
         child: BottomNavigationBar(
           backgroundColor: CustomColors().getLightGreenBackground(),
           currentIndex: selectedIndex,
@@ -336,18 +341,27 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
           },
           items: [
             const BottomNavigationBarItem(
-                icon: Icon(FontAwesomeIcons.newspaper), label: "Notícias"),
+              icon: Icon(FontAwesomeIcons.newspaper),
+              label: "Notícias",
+            ),
             const BottomNavigationBarItem(
-                icon: Icon(FontAwesomeIcons.chartLine), label: "Cotação"),
+              icon: Icon(FontAwesomeIcons.chartLine),
+              label: "Cotação",
+            ),
             const BottomNavigationBarItem(
-                icon: Icon(FontAwesomeIcons.cartShopping), label: "Comprar"),
+              icon: Icon(FontAwesomeIcons.cartShopping),
+              label: "Comprar",
+            ),
             const BottomNavigationBarItem(
-                icon: Icon(FontAwesomeIcons.tags), label: "Vender"),
+              icon: Icon(FontAwesomeIcons.tags),
+              label: "Vender",
+            ),
             BottomNavigationBarItem(
-                icon: Icon(isLoggedIn
-                    ? FontAwesomeIcons.bars
-                    : FontAwesomeIcons.signInAlt),
-                label: (isLoggedIn ? "Mais" : 'Login')),
+              icon: Icon(
+                isLoggedIn ? FontAwesomeIcons.bars : FontAwesomeIcons.signInAlt,
+              ),
+              label: (isLoggedIn ? "Mais" : 'Login'),
+            ),
           ],
         ),
       ),

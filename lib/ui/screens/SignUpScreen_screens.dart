@@ -20,8 +20,7 @@ class SignUpScreen extends StatefulWidget {
 }
 
 class _SignUpScreenState extends State<SignUpScreen> {
-  Data userInfo =
-      AuthUtility.userInfo != null ? AuthUtility.userInfo.data! : Data();
+  Data userInfo = AuthUtility.userInfo.data!;
   final TextEditingController _nomeController = TextEditingController();
   final TextEditingController _cpfController = TextEditingController();
   final TextEditingController _codProdutorController = TextEditingController();
@@ -114,9 +113,9 @@ class _SignUpScreenState extends State<SignUpScreen> {
     try {
       bool result = await ParceiroCaller().insertParceiro(context, requestBody);
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Error: $e")),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text("Error: $e")));
     } finally {
       setState(() {
         _isSubmitting = false;
@@ -176,40 +175,46 @@ class _SignUpScreenState extends State<SignUpScreen> {
               ),
               const SizedBox(height: 16),
               CustomTextFormField(
-                  hintText: "Razão Social", controller: _razaoSocialController),
+                hintText: "Razão Social",
+                controller: _razaoSocialController,
+              ),
               const SizedBox(height: 16),
               InkWell(
                 onTap: imagePicked,
-                child: Row(children: [
-                  Container(
-                    padding: const EdgeInsets.all(16),
-                    decoration: const BoxDecoration(
-                      color: Colors.grey,
-                      borderRadius: BorderRadius.only(
-                        topLeft: Radius.circular(8),
-                        bottomLeft: Radius.circular(8),
-                      ),
-                    ),
-                    child: const Text("Photos"),
-                  ),
-                  Expanded(
-                    child: Container(
+                child: Row(
+                  children: [
+                    Container(
                       padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        color: CustomColors().getDarkGreenBorder(),
-                        borderRadius: const BorderRadius.only(
-                          topRight: Radius.circular(8),
-                          bottomRight: Radius.circular(8),
+                      decoration: const BoxDecoration(
+                        color: Colors.grey,
+                        borderRadius: BorderRadius.only(
+                          topLeft: Radius.circular(8),
+                          bottomLeft: Radius.circular(8),
                         ),
                       ),
-                      child: Text(
-                        pickImage?.name ?? "",
-                        maxLines: 1,
-                        style: const TextStyle(overflow: TextOverflow.ellipsis),
+                      child: const Text("Photos"),
+                    ),
+                    Expanded(
+                      child: Container(
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: CustomColors().getDarkGreenBorder(),
+                          borderRadius: const BorderRadius.only(
+                            topRight: Radius.circular(8),
+                            bottomRight: Radius.circular(8),
+                          ),
+                        ),
+                        child: Text(
+                          pickImage?.name ?? "",
+                          maxLines: 1,
+                          style: const TextStyle(
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
                       ),
                     ),
-                  ),
-                ]),
+                  ],
+                ),
               ),
               const SizedBox(height: 16),
               CustomTextFormField(
@@ -279,9 +284,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
       floatingActionButton: FloatingActionButton.extended(
         onPressed: _isSubmitting ? null : sendProfileData,
         label: _isSubmitting
-            ? const CircularProgressIndicator(
-                color: Colors.white,
-              )
+            ? const CircularProgressIndicator(color: Colors.white)
             : const Text('Gravar'),
         icon: const Icon(Icons.save),
         backgroundColor: _isSubmitting ? Colors.grey : Colors.green,
@@ -300,8 +303,9 @@ class _SignUpScreenState extends State<SignUpScreen> {
             children: [
               ListTile(
                 onTap: () async {
-                  pickImage =
-                      await ImagePicker().pickImage(source: ImageSource.camera);
+                  pickImage = await ImagePicker().pickImage(
+                    source: ImageSource.camera,
+                  );
                   if (pickImage != null) {
                     setState(() {});
                     if (mounted) {
@@ -315,8 +319,9 @@ class _SignUpScreenState extends State<SignUpScreen> {
               ListTile(
                 leading: const Icon(Icons.image),
                 onTap: () async {
-                  pickImage = await ImagePicker()
-                      .pickImage(source: ImageSource.gallery);
+                  pickImage = await ImagePicker().pickImage(
+                    source: ImageSource.gallery,
+                  );
                   if (pickImage != null) {
                     setState(() {});
                     if (mounted) {
@@ -325,7 +330,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                   }
                 },
                 title: const Text('Gallery'),
-              )
+              ),
             ],
           ),
         );
@@ -358,15 +363,21 @@ class CustomTextFormField extends StatelessWidget {
           fillColor: Colors.white,
           border: OutlineInputBorder(
             borderSide: BorderSide(
-                color: CustomColors().getDarkGreenBorder(), width: 2.0),
+              color: CustomColors().getDarkGreenBorder(),
+              width: 2.0,
+            ),
           ),
           enabledBorder: OutlineInputBorder(
             borderSide: BorderSide(
-                color: CustomColors().getDarkGreenBorder(), width: 2.0),
+              color: CustomColors().getDarkGreenBorder(),
+              width: 2.0,
+            ),
           ),
           focusedBorder: OutlineInputBorder(
             borderSide: BorderSide(
-                color: CustomColors().getDarkGreenBorder(), width: 2.0),
+              color: CustomColors().getDarkGreenBorder(),
+              width: 2.0,
+            ),
           ),
         ),
         validator: validator,
@@ -404,7 +415,9 @@ class CustomPasswordTextFormField extends StatelessWidget {
           fillColor: Colors.white,
           border: OutlineInputBorder(
             borderSide: BorderSide(
-                color: CustomColors().getDarkGreenBorder(), width: 2.0),
+              color: CustomColors().getDarkGreenBorder(),
+              width: 2.0,
+            ),
           ),
           suffixIcon: IconButton(
             icon: Icon(

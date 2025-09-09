@@ -3,7 +3,7 @@
     "activeCommit": 0,
     "commits": [
         {
-            "activePatchIndex": 33,
+            "activePatchIndex": 46,
             "patches": [
                 {
                     "date": 1707188005314,
@@ -140,6 +140,58 @@
                 {
                     "date": 1756847035063,
                     "content": "Index: \n===================================================================\n--- \n+++ \n@@ -59,8 +59,9 @@\n   flutter_html: any\r\n   html_unescape: any\r\n   dio: ^5.3.2 # Para enviar arquivos (opcional, mas recomendado)\r\n   web_socket_channel: ^2.2.0\r\n+  path: ^1.8.2\r\n dev_dependencies:\r\n   flutter_test:\r\n     sdk: flutter\r\n \r\n"
+                },
+                {
+                    "date": 1757453710345,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -60,8 +60,9 @@\n   html_unescape: any\r\n   dio: ^5.3.2 # Para enviar arquivos (opcional, mas recomendado)\r\n   web_socket_channel: ^2.2.0\r\n   path: ^1.8.2\r\n+  file_selector_windows: ^0.9.3+4\r\n dev_dependencies:\r\n   flutter_test:\r\n     sdk: flutter\r\n \r\n"
+                },
+                {
+                    "date": 1757453743004,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -43,9 +43,9 @@\n   shared_preferences: ^2.2.0\r\n   image_picker: ^1.0.1\r\n   font_awesome_flutter: ^10.5.0\r\n   fluttertoast: ^8.2.2\r\n-  intl: ^0.18.1\r\n+  intl: any\r\n   simple_gesture_detector: ^0.2.0\r\n   modal_bottom_sheet: ^3.0.0\r\n   dropdown_button2: ^2.3.8\r\n   simple_tags: ^0.0.6\r\n"
+                },
+                {
+                    "date": 1757454796716,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -18,9 +18,9 @@\n # of the product and file versions while build-number is used as the build suffix.\r\n version: 1.0.0+1\r\n \r\n environment:\r\n-  sdk: '>=3.0.6 <4.0.0'\r\n+  sdk: ^3.10.0-162.1.beta\r\n \r\n # Dependencies specify other packages that your package needs in order to work.\r\n # To automatically upgrade your package dependencies to the latest versions\r\n # consider running `flutter pub upgrade --major-versions`. Alternatively,\r\n"
+                },
+                {
+                    "date": 1757455505958,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -18,9 +18,9 @@\n # of the product and file versions while build-number is used as the build suffix.\r\n version: 1.0.0+1\r\n \r\n environment:\r\n-  sdk: ^3.10.0-162.1.beta\r\n+  sdk: ^3.37.0-0.0.pre.\r\n \r\n # Dependencies specify other packages that your package needs in order to work.\r\n # To automatically upgrade your package dependencies to the latest versions\r\n # consider running `flutter pub upgrade --major-versions`. Alternatively,\r\n@@ -48,19 +48,19 @@\n   simple_gesture_detector: ^0.2.0\r\n   modal_bottom_sheet: ^3.0.0\r\n   dropdown_button2: ^2.3.8\r\n   simple_tags: ^0.0.6\r\n-  fl_chart: ^0.69.2\r\n+  fl_chart: ^1.1.0\r\n   path_provider: ^2.0.11\r\n-  flutter_slidable: ^0.6.0\r\n+  flutter_slidable: ^4.0.1\r\n   open_filex: any\r\n   mime: any\r\n-  file_picker: ^5.3.3 # Para selecionar arquivos\r\n+  file_picker: ^10.3.2 # Para selecionar arquivos\r\n   html_editor_enhanced: any\r\n   flutter_html: any\r\n   html_unescape: any\r\n   dio: ^5.3.2 # Para enviar arquivos (opcional, mas recomendado)\r\n-  web_socket_channel: ^2.2.0\r\n+  web_socket_channel: ^3.0.3\r\n   path: ^1.8.2\r\n   file_selector_windows: ^0.9.3+4\r\n dev_dependencies:\r\n   flutter_test:\r\n@@ -70,9 +70,9 @@\n   # encourage good coding practices. The lint set provided by the package is\r\n   # activated in the `analysis_options.yaml` file located at the root of your\r\n   # package. See that file for information about deactivating specific lint\r\n   # rules and activating additional ones.\r\n-  flutter_lints: ^4.0.0\r\n+  flutter_lints: ^6.0.0\r\n \r\n # For information on the generic Dart part of this file, see the\r\n # following page: https://dart.dev/tools/pub/pubspec\r\n \r\n"
+                },
+                {
+                    "date": 1757455521393,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -18,9 +18,9 @@\n # of the product and file versions while build-number is used as the build suffix.\r\n version: 1.0.0+1\r\n \r\n environment:\r\n-  sdk: ^3.37.0-0.0.pre.\r\n+  sdk: ^3.37.0-0.0.pre\r\n \r\n # Dependencies specify other packages that your package needs in order to work.\r\n # To automatically upgrade your package dependencies to the latest versions\r\n # consider running `flutter pub upgrade --major-versions`. Alternatively,\r\n"
+                },
+                {
+                    "date": 1757455624042,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -18,9 +18,9 @@\n # of the product and file versions while build-number is used as the build suffix.\r\n version: 1.0.0+1\r\n \r\n environment:\r\n-  sdk: ^3.37.0-0.0.pre\r\n+  sdk: ^3.10.0-162.1.beta\r\n \r\n # Dependencies specify other packages that your package needs in order to work.\r\n # To automatically upgrade your package dependencies to the latest versions\r\n # consider running `flutter pub upgrade --major-versions`. Alternatively,\r\n"
+                },
+                {
+                    "date": 1757455822642,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -18,9 +18,9 @@\n # of the product and file versions while build-number is used as the build suffix.\r\n version: 1.0.0+1\r\n \r\n environment:\r\n-  sdk: ^3.10.0-162.1.beta\r\n+  sdk: '>=3.10.0 <4.0.0'\r\n \r\n # Dependencies specify other packages that your package needs in order to work.\r\n # To automatically upgrade your package dependencies to the latest versions\r\n # consider running `flutter pub upgrade --major-versions`. Alternatively,\r\n"
+                },
+                {
+                    "date": 1757457596360,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -18,9 +18,9 @@\n # of the product and file versions while build-number is used as the build suffix.\r\n version: 1.0.0+1\r\n \r\n environment:\r\n-  sdk: '>=3.10.0 <4.0.0'\r\n+  sdk: '>=3.37.0-0.0.pre. <4.0.0'\r\n \r\n # Dependencies specify other packages that your package needs in order to work.\r\n # To automatically upgrade your package dependencies to the latest versions\r\n # consider running `flutter pub upgrade --major-versions`. Alternatively,\r\n"
+                },
+                {
+                    "date": 1757457633794,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -18,9 +18,9 @@\n # of the product and file versions while build-number is used as the build suffix.\r\n version: 1.0.0+1\r\n \r\n environment:\r\n-  sdk: '>=3.37.0-0.0.pre. <4.0.0'\r\n+  sdk: '3.37.0-0.0.pre.'\r\n \r\n # Dependencies specify other packages that your package needs in order to work.\r\n # To automatically upgrade your package dependencies to the latest versions\r\n # consider running `flutter pub upgrade --major-versions`. Alternatively,\r\n"
+                },
+                {
+                    "date": 1757457641431,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -18,9 +18,9 @@\n # of the product and file versions while build-number is used as the build suffix.\r\n version: 1.0.0+1\r\n \r\n environment:\r\n-  sdk: '3.37.0-0.0.pre.'\r\n+  sdk: '3.37.0-0.0.pre.2'\r\n \r\n # Dependencies specify other packages that your package needs in order to work.\r\n # To automatically upgrade your package dependencies to the latest versions\r\n # consider running `flutter pub upgrade --major-versions`. Alternatively,\r\n"
+                },
+                {
+                    "date": 1757457664818,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -18,9 +18,9 @@\n # of the product and file versions while build-number is used as the build suffix.\r\n version: 1.0.0+1\r\n \r\n environment:\r\n-  sdk: '3.37.0-0.0.pre.2'\r\n+  sdk: '3.37.0-0.0.pre'\r\n \r\n # Dependencies specify other packages that your package needs in order to work.\r\n # To automatically upgrade your package dependencies to the latest versions\r\n # consider running `flutter pub upgrade --major-versions`. Alternatively,\r\n"
+                },
+                {
+                    "date": 1757457696749,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -18,9 +18,9 @@\n # of the product and file versions while build-number is used as the build suffix.\r\n version: 1.0.0+1\r\n \r\n environment:\r\n-  sdk: '3.37.0-0.0.pre'\r\n+  sdk: '3.10.0-162.1.beta.'\r\n \r\n # Dependencies specify other packages that your package needs in order to work.\r\n # To automatically upgrade your package dependencies to the latest versions\r\n # consider running `flutter pub upgrade --major-versions`. Alternatively,\r\n"
+                },
+                {
+                    "date": 1757457713052,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -18,9 +18,9 @@\n # of the product and file versions while build-number is used as the build suffix.\r\n version: 1.0.0+1\r\n \r\n environment:\r\n-  sdk: '3.10.0-162.1.beta.'\r\n+  sdk: '3.10.0-162.1.beta'\r\n \r\n # Dependencies specify other packages that your package needs in order to work.\r\n # To automatically upgrade your package dependencies to the latest versions\r\n # consider running `flutter pub upgrade --major-versions`. Alternatively,\r\n"
                 }
             ],
             "date": 1707188005314,

@@ -106,8 +106,9 @@ class _ComunicadoScreenState extends State<ComunicadoScreen> {
       isLoading = true;
     });
 
-    final NetworkResponse response =
-        await NetworkCaller().getRequest(ApiLinks.allComunicados);
+    final NetworkResponse response = await NetworkCaller().getRequest(
+      ApiLinks.allComunicados,
+    );
 
     if (response.statusCode == 200) {
       if (response.body != null) {
@@ -148,17 +149,16 @@ class _ComunicadoScreenState extends State<ComunicadoScreen> {
         isLoading = true;
       });
     }
-    final NetworkResponse response =
-        await NetworkCaller().getRequest(widget.apiLink);
+    final NetworkResponse response = await NetworkCaller().getRequest(
+      widget.apiLink,
+    );
     if (response.isSuccess) {
       _taskModel = TaskListModel.fromJson(response.body!);
     } else {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text("Failed to load data!"),
-          ),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text("Failed to load data!")));
       }
     }
     if (mounted) {
@@ -178,13 +178,12 @@ class _ComunicadoScreenState extends State<ComunicadoScreen> {
     if (mounted) {
       setState(() {});
     }
-    final NetworkResponse newTaskResponse =
-        await NetworkCaller().getRequest(ApiLinks.newTaskStatus);
-    TaskListModel newTaskModel = TaskListModel.fromJson((newTaskResponse != null
-        ? newTaskResponse.body != null
-            ? newTaskResponse.body!
-            : {}
-        : {}));
+    final NetworkResponse newTaskResponse = await NetworkCaller().getRequest(
+      ApiLinks.newTaskStatus,
+    );
+    TaskListModel newTaskModel = TaskListModel.fromJson(
+      (newTaskResponse.body != null ? newTaskResponse.body! : {}),
+    );
 
     if (mounted) {
       setState(() {
@@ -192,43 +191,37 @@ class _ComunicadoScreenState extends State<ComunicadoScreen> {
       });
     }
 
-    final cancelledTaskResponse =
-        await NetworkCaller().getRequest(ApiLinks.cancelledTaskStatus);
-    TaskListModel cancelledTaskModel =
-        TaskListModel.fromJson(cancelledTaskResponse != null
-            ? cancelledTaskResponse.body != null
-                ? cancelledTaskResponse.body!
-                : {}
-            : {});
+    final cancelledTaskResponse = await NetworkCaller().getRequest(
+      ApiLinks.cancelledTaskStatus,
+    );
+    TaskListModel cancelledTaskModel = TaskListModel.fromJson(
+      cancelledTaskResponse.body != null ? cancelledTaskResponse.body! : {},
+    );
     if (mounted) {
       setState(() {
         count2 = cancelledTaskModel.data?.length ?? 0;
       });
     }
 
-    final completedTaskResponse =
-        await NetworkCaller().getRequest(ApiLinks.completedTaskStatus);
+    final completedTaskResponse = await NetworkCaller().getRequest(
+      ApiLinks.completedTaskStatus,
+    );
 
-    TaskListModel completedTaskModel =
-        TaskListModel.fromJson(completedTaskResponse != null
-            ? completedTaskResponse.body != null
-                ? completedTaskResponse.body!
-                : {}
-            : {});
+    TaskListModel completedTaskModel = TaskListModel.fromJson(
+      completedTaskResponse.body != null ? completedTaskResponse.body! : {},
+    );
     if (mounted) {
       setState(() {
         count3 = completedTaskModel.data?.length ?? 0;
       });
     }
 
-    final inProgressResponse =
-        await NetworkCaller().getRequest(ApiLinks.inProgressTaskStatus);
-    TaskListModel inProgressTaskModel =
-        TaskListModel.fromJson(inProgressResponse != null
-            ? inProgressResponse.body != null
-                ? inProgressResponse.body!
-                : {}
-            : {});
+    final inProgressResponse = await NetworkCaller().getRequest(
+      ApiLinks.inProgressTaskStatus,
+    );
+    TaskListModel inProgressTaskModel = TaskListModel.fromJson(
+      inProgressResponse.body != null ? inProgressResponse.body! : {},
+    );
     if (mounted) {
       setState(() {
         count4 = inProgressTaskModel.data?.length ?? 0;
@@ -247,13 +240,15 @@ class _ComunicadoScreenState extends State<ComunicadoScreen> {
         isLoading = true;
       });
     }
-    final NetworkResponse response =
-        await NetworkCaller().getRequest(ApiLinks.deleteTask(taskId));
+    final NetworkResponse response = await NetworkCaller().getRequest(
+      ApiLinks.deleteTask(taskId),
+    );
     if (response.isSuccess) {
       _taskModel.data!.removeWhere((element) => element.sId == taskId);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text("Task Deleted Successfully!")));
+          const SnackBar(content: Text("Task Deleted Successfully!")),
+        );
       }
     }
     if (mounted) {
@@ -282,15 +277,18 @@ class _ComunicadoScreenState extends State<ComunicadoScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: UserBannerAppBar(
-          screenTitle: "Notícias",
-          isLoading: isLoading,
-          onRefresh: _refreshNews,
-          onTapped: () {
-            Navigator.push(
-                context,
-                MaterialPageRoute(
-                    builder: (context) => const UpdateProfileScreen()));
-          }),
+        screenTitle: "Notícias",
+        isLoading: isLoading,
+        onRefresh: _refreshNews,
+        onTapped: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => const UpdateProfileScreen(),
+            ),
+          );
+        },
+      ),
       body: Container(
         color: CustomColors().getLightGreenBackground(), // Cor de fundo da tela
         child: RefreshIndicator(
@@ -307,8 +305,9 @@ class _ComunicadoScreenState extends State<ComunicadoScreen> {
                             child: SizedBox(
                               width: 60,
                               height: 60,
-                              child:
-                                  CircularProgressIndicator(strokeWidth: 6.0),
+                              child: CircularProgressIndicator(
+                                strokeWidth: 6.0,
+                              ),
                             ),
                           )
                         : const SizedBox.shrink();
@@ -339,7 +338,8 @@ class _ComunicadoScreenState extends State<ComunicadoScreen> {
                               Text(
                                 news.conteudo ?? 'Conteudo não disponível',
                                 style: TextStyle(
-                                    color: CustomColors().getTextColor()),
+                                  color: CustomColors().getTextColor(),
+                                ),
                               ),
                               const SizedBox(height: 4),
                               Row(
@@ -349,15 +349,17 @@ class _ComunicadoScreenState extends State<ComunicadoScreen> {
                                   Text(
                                     '${news.categoria ?? 'Fonte não disponível'}     ${news.dhCreatedAt != null ? DateFormat('dd/MM/yyyy HH:mm').format(news.dhCreatedAt!.toLocal()) : ''}',
                                     style: TextStyle(
-                                        fontSize: 10,
-                                        fontWeight: FontWeight.bold,
-                                        color: CustomColors().getTextColor()),
+                                      fontSize: 10,
+                                      fontWeight: FontWeight.bold,
+                                      color: CustomColors().getTextColor(),
+                                    ),
                                   ),
                                   Text(
                                     news.autor ?? 'Autor não disponível',
                                     style: TextStyle(
-                                        fontSize: 10,
-                                        color: CustomColors().getTextColor()),
+                                      fontSize: 10,
+                                      color: CustomColors().getTextColor(),
+                                    ),
                                   ),
                                 ],
                               ),

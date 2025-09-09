@@ -31,7 +31,7 @@ class _ChatMessageScreenState extends State<ChatMessageScreen> {
   final TextEditingController _messageController = TextEditingController();
   List<ChatMessage> _messages = [];
   late WebSocketChannel _channel;
-  String _authToken = '${AuthUtility.userInfo.token}';
+  final String _authToken = '${AuthUtility.userInfo.token}';
   final ScrollController _scrollController = ScrollController();
   bool _isLoading = false;
 
@@ -58,7 +58,7 @@ class _ChatMessageScreenState extends State<ChatMessageScreen> {
         },
         onError: (error) {
           print('WebSocket error: $error');
-          Future.delayed(Duration(seconds: 3), _connectWebSocket);
+          Future.delayed(const Duration(seconds: 3), _connectWebSocket);
         },
         onDone: () {
           print('WebSocket closed');
@@ -74,7 +74,7 @@ class _ChatMessageScreenState extends State<ChatMessageScreen> {
     if (_scrollController.hasClients) {
       _scrollController.animateTo(
         _scrollController.position.maxScrollExtent,
-        duration: Duration(milliseconds: 300),
+        duration: const Duration(milliseconds: 300),
         curve: Curves.easeOut,
       );
     }
@@ -88,28 +88,30 @@ class _ChatMessageScreenState extends State<ChatMessageScreen> {
       final data = await ChatCaller().fetchChatsById(context, widget.chatId);
       setState(() {
         _messages = data
-            .map((msg) => ChatMessage(
-                  sender: msg.sender ?? '',
-                  content: msg.text ?? '',
-                  type: 'text', // Ajuste conforme necessário
-                  timestamp: msg.uploadDate,
-                  empId: msg.empId,
-                  codApp: msg.codApp,
-                  codUsuOrig: msg.codUsuOrig,
-                  codUsuDest: msg.codUsuDest,
-                  sector: msg.sector,
-                  chatId: msg.chatId,
-                  uploadDate: msg.uploadDate,
-                  text: msg.text,
-                  // fileId e fileName serão null a menos que a mensagem seja do tipo arquivo
-                ))
+            .map(
+              (msg) => ChatMessage(
+                sender: msg.sender ?? '',
+                content: msg.text ?? '',
+                type: 'text', // Ajuste conforme necessário
+                timestamp: msg.uploadDate,
+                empId: msg.empId,
+                codApp: msg.codApp,
+                codUsuOrig: msg.codUsuOrig,
+                codUsuDest: msg.codUsuDest,
+                sector: msg.sector,
+                chatId: msg.chatId,
+                uploadDate: msg.uploadDate,
+                text: msg.text,
+                // fileId e fileName serão null a menos que a mensagem seja do tipo arquivo
+              ),
+            )
             .toList();
         WidgetsBinding.instance.addPostFrameCallback((_) => _scrollToBottom());
       });
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Erro ao carregar chats: $e')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Erro ao carregar chats: $e')));
     } finally {
       setState(() {
         _isLoading = false;
@@ -121,7 +123,8 @@ class _ChatMessageScreenState extends State<ChatMessageScreen> {
     try {
       final response = await http.put(
         Uri.parse(
-            'http://192.168.114.1:8088/boletobancos/api/chat/${chat.chatId}'),
+          'http://192.168.114.1:8088/boletobancos/api/chat/${chat.chatId}',
+        ),
         headers: {'Authorization': 'Bearer $_authToken'},
         body: json.encode({'status': 'Finalizado'}),
       );
@@ -142,17 +145,17 @@ class _ChatMessageScreenState extends State<ChatMessageScreen> {
           // }).toList();
         });
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Chat finalizado com sucesso')),
+          const SnackBar(content: Text('Chat finalizado com sucesso')),
         );
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Falha ao finalizar o chat')),
+          const SnackBar(content: Text('Falha ao finalizar o chat')),
         );
       }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Erro ao finalizar o chat: $e')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Erro ao finalizar o chat: $e')));
     }
   }
 
@@ -160,7 +163,8 @@ class _ChatMessageScreenState extends State<ChatMessageScreen> {
     try {
       final response = await http.delete(
         Uri.parse(
-            'http://192.168.114.1:8088/boletobancos/api/chat/${chat.chatId}'),
+          'http://192.168.114.1:8088/boletobancos/api/chat/${chat.chatId}',
+        ),
         headers: {'Authorization': 'Bearer $_authToken'},
       );
       if (response.statusCode == 200) {
@@ -168,17 +172,17 @@ class _ChatMessageScreenState extends State<ChatMessageScreen> {
           //_chats.removeWhere((c) => c.chatId == chat.chatId);
         });
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Chat excluído com sucesso')),
+          const SnackBar(content: Text('Chat excluído com sucesso')),
         );
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Falha ao excluir o chat')),
+          const SnackBar(content: Text('Falha ao excluir o chat')),
         );
       }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Erro ao excluir o chat: $e')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Erro ao excluir o chat: $e')));
     }
   }
 
@@ -199,13 +203,15 @@ class _ChatMessageScreenState extends State<ChatMessageScreen> {
     final String content = _messageController.text;
     if (content.isEmpty) return;
 
-    _channel.sink.add(json.encode({
-      'sender': widget.userName,
-      'content': content,
-      'sector': widget.sector,
-      'type': 'text',
-      'timestamp': DateTime.now().toIso8601String(),
-    }));
+    _channel.sink.add(
+      json.encode({
+        'sender': widget.userName,
+        'content': content,
+        'sector': widget.sector,
+        'type': 'text',
+        'timestamp': DateTime.now().toIso8601String(),
+      }),
+    );
 
     _messageController.clear();
   }
@@ -232,11 +238,9 @@ class _ChatMessageScreenState extends State<ChatMessageScreen> {
           Uri.parse('http://192.168.114.1:8088/boletobancos/api/files/upload'),
         );
 
-        request.files.add(http.MultipartFile.fromBytes(
-          'file',
-          fileBytes!,
-          filename: fileName,
-        ));
+        request.files.add(
+          http.MultipartFile.fromBytes('file', fileBytes!, filename: fileName),
+        );
 
         request.fields['user'] = widget.userName;
         request.fields['sector'] = widget.sector;
@@ -262,18 +266,21 @@ class _ChatMessageScreenState extends State<ChatMessageScreen> {
           }
 
           if (fileId != null) {
-            _channel.sink.add(json.encode({
-              'sender': widget.userName,
-              'content': 'Arquivo anexado: $fileName',
-              'sector': widget.sector,
-              'type': 'file',
-              'fileName': fileName,
-              'fileId': fileId, // Agora é um int
-              'timestamp': DateTime.now().toIso8601String(),
-            }));
+            _channel.sink.add(
+              json.encode({
+                'sender': widget.userName,
+                'content': 'Arquivo anexado: $fileName',
+                'sector': widget.sector,
+                'type': 'file',
+                'fileName': fileName,
+                'fileId': fileId, // Agora é um int
+                'timestamp': DateTime.now().toIso8601String(),
+              }),
+            );
           } else {
             print(
-                'ID do arquivo não encontrado ou inválido na resposta do servidor');
+              'ID do arquivo não encontrado ou inválido na resposta do servidor',
+            );
           }
         } else {
           print('Upload failed with status: ${response.statusCode}');
@@ -288,25 +295,27 @@ class _ChatMessageScreenState extends State<ChatMessageScreen> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text('Abrir Chamado'),
-        content: Text('Deseja abrir um chamado para este assunto?'),
+        title: const Text('Abrir Chamado'),
+        content: const Text('Deseja abrir um chamado para este assunto?'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: Text('Cancelar'),
+            child: const Text('Cancelar'),
           ),
           TextButton(
             onPressed: () {
-              _channel.sink.add(json.encode({
-                'sender': widget.userName,
-                'content': 'Solicitação de abertura de chamado',
-                'sector': widget.sector,
-                'type': 'ticket',
-                'timestamp': DateTime.now().toIso8601String(),
-              }));
+              _channel.sink.add(
+                json.encode({
+                  'sender': widget.userName,
+                  'content': 'Solicitação de abertura de chamado',
+                  'sector': widget.sector,
+                  'type': 'ticket',
+                  'timestamp': DateTime.now().toIso8601String(),
+                }),
+              );
               Navigator.pop(context);
             },
-            child: Text('Confirmar'),
+            child: const Text('Confirmar'),
           ),
         ],
       ),
@@ -331,13 +340,16 @@ class _ChatMessageScreenState extends State<ChatMessageScreen> {
             Text('Chat - ${widget.sector}'),
             Text(
               widget.userName,
-              style: TextStyle(fontSize: 14, fontWeight: FontWeight.normal),
+              style: const TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.normal,
+              ),
             ),
           ],
         ),
         actions: [
           IconButton(
-            icon: Icon(Icons.more_vert),
+            icon: const Icon(Icons.more_vert),
             onPressed: () {
               // Adicionar menu de opções
             },
@@ -356,19 +368,19 @@ class _ChatMessageScreenState extends State<ChatMessageScreen> {
             ),
           ),
           Container(
-            padding: EdgeInsets.all(8),
+            padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
               color: Colors.grey[200],
-              border: Border(top: BorderSide(color: Colors.grey)),
+              border: const Border(top: BorderSide(color: Colors.grey)),
             ),
             child: Row(
               children: [
                 IconButton(
-                  icon: Icon(Icons.attach_file),
+                  icon: const Icon(Icons.attach_file),
                   onPressed: _uploadAndSendFile,
                 ),
                 IconButton(
-                  icon: Icon(Icons.support_agent),
+                  icon: const Icon(Icons.support_agent),
                   onPressed: _createTicket,
                 ),
                 Expanded(
@@ -379,12 +391,14 @@ class _ChatMessageScreenState extends State<ChatMessageScreen> {
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(25),
                       ),
-                      contentPadding: EdgeInsets.symmetric(horizontal: 16),
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                      ),
                     ),
                   ),
                 ),
                 IconButton(
-                  icon: Icon(Icons.send),
+                  icon: const Icon(Icons.send),
                   onPressed: _sendMessage,
                 ),
               ],
@@ -399,17 +413,18 @@ class _ChatMessageScreenState extends State<ChatMessageScreen> {
     bool isMe = message.sender == widget.userName;
 
     return Container(
-      margin: EdgeInsets.symmetric(vertical: 4, horizontal: 8),
+      margin: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
       child: Row(
-        mainAxisAlignment:
-            isMe ? MainAxisAlignment.end : MainAxisAlignment.start,
+        mainAxisAlignment: isMe
+            ? MainAxisAlignment.end
+            : MainAxisAlignment.start,
         children: [
           if (!isMe)
             CircleAvatar(
               backgroundColor: Colors.grey,
               child: Text(
                 message.sender.isNotEmpty ? message.sender[0] : '?',
-                style: TextStyle(color: Colors.white),
+                style: const TextStyle(color: Colors.white),
               ),
             ),
           Flexible(
@@ -417,17 +432,17 @@ class _ChatMessageScreenState extends State<ChatMessageScreen> {
               constraints: BoxConstraints(
                 maxWidth: MediaQuery.of(context).size.width * 0.7,
               ),
-              padding: EdgeInsets.all(12),
-              margin: EdgeInsets.symmetric(horizontal: 8),
+              padding: const EdgeInsets.all(12),
+              margin: const EdgeInsets.symmetric(horizontal: 8),
               decoration: BoxDecoration(
-                color: isMe ? Color(0xFFDCF8C6) : Colors.white,
+                color: isMe ? const Color(0xFFDCF8C6) : Colors.white,
                 borderRadius: BorderRadius.circular(8),
                 boxShadow: [
                   BoxShadow(
                     color: Colors.grey.withOpacity(0.5),
                     spreadRadius: 1,
                     blurRadius: 1,
-                    offset: Offset(0, 1),
+                    offset: const Offset(0, 1),
                   ),
                 ],
               ),
@@ -444,10 +459,7 @@ class _ChatMessageScreenState extends State<ChatMessageScreen> {
                       ),
                     ),
                   if (message.type == 'text')
-                    Text(
-                      message.content,
-                      style: const TextStyle(fontSize: 16),
-                    ),
+                    Text(message.content, style: const TextStyle(fontSize: 16)),
                   if (message.type == 'file')
                     InkWell(
                       onTap: () =>
@@ -480,8 +492,10 @@ class _ChatMessageScreenState extends State<ChatMessageScreen> {
                     children: [
                       Text(
                         _formatTime(message.timestamp),
-                        style:
-                            const TextStyle(fontSize: 10, color: Colors.grey),
+                        style: const TextStyle(
+                          fontSize: 10,
+                          color: Colors.grey,
+                        ),
                       ),
                     ],
                   ),
@@ -522,24 +536,18 @@ class _ChatMessageScreenState extends State<ChatMessageScreen> {
         await file.writeAsBytes(response.bodyBytes);
 
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Arquivo salvo em: ${file.path}'),
-          ),
+          SnackBar(content: Text('Arquivo salvo em: ${file.path}')),
         );
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Falha ao baixar o arquivo'),
-          ),
+          const SnackBar(content: Text('Falha ao baixar o arquivo')),
         );
       }
     } catch (e) {
       print('Error downloading file: $e');
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Erro ao baixar o arquivo: $e'),
-        ),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Erro ao baixar o arquivo: $e')));
     }
   }
 }
