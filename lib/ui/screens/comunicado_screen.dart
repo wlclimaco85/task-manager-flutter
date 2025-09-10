@@ -120,66 +120,212 @@ class _ComunicadoGridScreenState extends State<ComunicadoGridScreen> {
     showDialog(
       context: context,
       builder: (ctx) {
-        return AlertDialog(
-          title: Text(
-            comunicado == null ? "Novo Comunicado" : "Editar Comunicado",
+        return Dialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16.0),
           ),
-          content: SizedBox(
-            width: 400,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                TextField(
-                  controller: tituloController,
-                  decoration: const InputDecoration(labelText: "Título"),
-                ),
-                TextField(
-                  controller: conteudoController,
-                  decoration: const InputDecoration(labelText: "Conteúdo"),
-                ),
-                TextField(
-                  controller: categoriaController,
-                  decoration: const InputDecoration(labelText: "Categoria"),
-                ),
-                TextField(
-                  controller: autorController,
-                  decoration: const InputDecoration(labelText: "Autor"),
+          elevation: 0,
+          backgroundColor: Colors.transparent,
+          child: Container(
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              shape: BoxShape.rectangle,
+              borderRadius: BorderRadius.circular(16),
+              boxShadow: const [
+                BoxShadow(
+                  color: Colors.black26,
+                  blurRadius: 10.0,
+                  offset: Offset(0.0, 10.0),
                 ),
               ],
             ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(ctx),
-              child: const Text("Fechar"),
-            ),
-            ElevatedButton(
-              onPressed: () {
-                setState(() {
-                  if (comunicado == null) {
-                    comunicados.add(
-                      Comunicado(
-                        titulo: tituloController.text,
-                        conteudo: conteudoController.text,
-                        categoria: categoriaController.text,
-                        autor: autorController.text,
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  // Cabeçalho
+                  Container(
+                    padding: const EdgeInsets.only(bottom: 16),
+                    decoration: const BoxDecoration(
+                      border: Border(
+                        bottom: BorderSide(color: Colors.grey, width: 0.5),
                       ),
-                    );
-                  } else {
-                    comunicados[index!] = Comunicado(
-                      titulo: tituloController.text,
-                      conteudo: conteudoController.text,
-                      categoria: categoriaController.text,
-                      autor: autorController.text,
-                    );
-                  }
-                  _applyFilters();
-                });
-                Navigator.pop(ctx);
-              },
-              child: const Text("Salvar"),
+                    ),
+                    child: Text(
+                      comunicado == null
+                          ? "Novo Comunicado"
+                          : "Editar Comunicado",
+                      style: const TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.green,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+
+                  const SizedBox(height: 20),
+
+                  // Campo Título
+                  TextFormField(
+                    controller: tituloController,
+                    decoration: InputDecoration(
+                      labelText: "Título",
+                      labelStyle: const TextStyle(color: Colors.grey),
+                      focusedBorder: const OutlineInputBorder(
+                        borderSide: BorderSide(color: Colors.green, width: 2.0),
+                      ),
+                      enabledBorder: const OutlineInputBorder(
+                        borderSide: BorderSide(color: Colors.grey, width: 1.0),
+                      ),
+                      prefixIcon: const Icon(Icons.title, color: Colors.green),
+                      contentPadding: const EdgeInsets.symmetric(
+                        vertical: 15,
+                        horizontal: 15,
+                      ),
+                    ),
+                    style: const TextStyle(fontSize: 16),
+                  ),
+
+                  const SizedBox(height: 16),
+
+                  // Campo Conteúdo
+                  TextFormField(
+                    controller: conteudoController,
+                    maxLines: 3,
+                    decoration: InputDecoration(
+                      labelText: "Conteúdo",
+                      labelStyle: const TextStyle(color: Colors.grey),
+                      focusedBorder: const OutlineInputBorder(
+                        borderSide: BorderSide(color: Colors.green, width: 2.0),
+                      ),
+                      enabledBorder: const OutlineInputBorder(
+                        borderSide: BorderSide(color: Colors.grey, width: 1.0),
+                      ),
+                      prefixIcon: const Icon(
+                        Icons.description,
+                        color: Colors.green,
+                      ),
+                      contentPadding: const EdgeInsets.symmetric(
+                        vertical: 15,
+                        horizontal: 15,
+                      ),
+                    ),
+                    style: const TextStyle(fontSize: 16),
+                  ),
+
+                  const SizedBox(height: 16),
+
+                  // Campo Categoria
+                  TextFormField(
+                    controller: categoriaController,
+                    decoration: InputDecoration(
+                      labelText: "Categoria",
+                      labelStyle: const TextStyle(color: Colors.grey),
+                      focusedBorder: const OutlineInputBorder(
+                        borderSide: BorderSide(color: Colors.green, width: 2.0),
+                      ),
+                      enabledBorder: const OutlineInputBorder(
+                        borderSide: BorderSide(color: Colors.grey, width: 1.0),
+                      ),
+                      prefixIcon: const Icon(
+                        Icons.category,
+                        color: Colors.green,
+                      ),
+                      contentPadding: const EdgeInsets.symmetric(
+                        vertical: 15,
+                        horizontal: 15,
+                      ),
+                    ),
+                    style: const TextStyle(fontSize: 16),
+                  ),
+
+                  const SizedBox(height: 16),
+
+                  // Campo Autor
+                  TextFormField(
+                    controller: autorController,
+                    decoration: InputDecoration(
+                      labelText: "Autor",
+                      labelStyle: const TextStyle(color: Colors.grey),
+                      focusedBorder: const OutlineInputBorder(
+                        borderSide: BorderSide(color: Colors.green, width: 2.0),
+                      ),
+                      enabledBorder: const OutlineInputBorder(
+                        borderSide: BorderSide(color: Colors.grey, width: 1.0),
+                      ),
+                      prefixIcon: const Icon(Icons.person, color: Colors.green),
+                      contentPadding: const EdgeInsets.symmetric(
+                        vertical: 15,
+                        horizontal: 15,
+                      ),
+                    ),
+                    style: const TextStyle(fontSize: 16),
+                  ),
+
+                  const SizedBox(height: 24),
+
+                  // Botões de ação
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: [
+                      TextButton(
+                        onPressed: () => Navigator.pop(ctx),
+                        style: TextButton.styleFrom(
+                          foregroundColor: Colors.grey[700],
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 20,
+                            vertical: 10,
+                          ),
+                        ),
+                        child: const Text("CANCELAR"),
+                      ),
+                      const SizedBox(width: 10),
+                      ElevatedButton(
+                        onPressed: () {
+                          setState(() {
+                            if (comunicado == null) {
+                              comunicados.add(
+                                Comunicado(
+                                  titulo: tituloController.text,
+                                  conteudo: conteudoController.text,
+                                  categoria: categoriaController.text,
+                                  autor: autorController.text,
+                                ),
+                              );
+                            } else {
+                              comunicados[index!] = Comunicado(
+                                titulo: tituloController.text,
+                                conteudo: conteudoController.text,
+                                categoria: categoriaController.text,
+                                autor: autorController.text,
+                              );
+                            }
+                            _applyFilters();
+                          });
+                          Navigator.pop(ctx);
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.green,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 20,
+                            vertical: 10,
+                          ),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                        ),
+                        child: const Text("SALVAR"),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
             ),
-          ],
+          ),
         );
       },
     );
