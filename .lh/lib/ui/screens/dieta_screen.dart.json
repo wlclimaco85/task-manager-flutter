@@ -3,7 +3,7 @@
     "activeCommit": 0,
     "commits": [
         {
-            "activePatchIndex": 5,
+            "activePatchIndex": 6,
             "patches": [
                 {
                     "date": 1709066652459,
@@ -28,6 +28,10 @@
                 {
                     "date": 1736538316507,
                     "content": "Index: \n===================================================================\n--- \n+++ \n@@ -140,10 +140,9 @@\n   Widget build(BuildContext context) {\r\n     return Scaffold(\r\n       //  floatingActionButton: getHomeFab(context, listModels, refreshPage),\r\n       backgroundColor: const Color(0xFF340A9C),\r\n-      appBar: userBanner(\r\n-        context,\r\n+      appBar: UserBannerAppBar(\r\n         onTapped: () {\r\n           Navigator.push(\r\n               context,\r\n               MaterialPageRoute(\r\n"
+                },
+                {
+                    "date": 1757531152705,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -131,9 +131,9 @@\n       }\r\n     }\r\n   }\r\n \r\n-  refreshPage() {\r\n+  void refreshPage() {\r\n     setState(() {});\r\n   }\r\n \r\n   @override\r\n"
                 }
             ],
             "date": 1709066652459,

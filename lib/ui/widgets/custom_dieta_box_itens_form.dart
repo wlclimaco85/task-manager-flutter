@@ -14,7 +14,7 @@ String? _data = ""; //add this
 int ddd = 0;
 
 class NumberToDietaItens {
-  test() {
+  List<Map<String, dynamic>> test() {
     return _dataArrays;
   }
 }

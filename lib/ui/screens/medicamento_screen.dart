@@ -12,9 +12,7 @@ import 'package:task_manager_flutter/data/models/auth_utility.dart';
 import '../../data/models/login_model.dart';
 
 class Medicamentoscreen extends StatefulWidget {
-  const Medicamentoscreen({
-    super.key,
-  });
+  const Medicamentoscreen({super.key});
 
   @override
   State<Medicamentoscreen> createState() => _MedicamentoscreenState();
@@ -68,11 +66,15 @@ class _MedicamentoscreenState extends State<Medicamentoscreen> {
       "idaluno": {"id": 1},
     };
 
-    void onPressedss() => Navigator.push(context,
-        MaterialPageRoute(builder: (context) => const MedicamentosModalAdd()));
+    void onPressedss() => Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => const MedicamentosModalAdd()),
+    );
 
-    final NetworkResponse response = await NetworkCaller()
-        .postRequest(ApiLinks.findByAlunoByMedicamento, requestBody);
+    final NetworkResponse response = await NetworkCaller().postRequest(
+      ApiLinks.findByAlunoByMedicamento,
+      requestBody,
+    );
     _addNewTaskLoading = false;
     if (mounted) {
       setState(() {});
@@ -84,11 +86,14 @@ class _MedicamentoscreenState extends State<Medicamentoscreen> {
         dynamic data = response.body?['data'];
         List<dynamic> datas = data;
         mywidgets = [];
-        mywidgets.add(InputBuscarField(
+        mywidgets.add(
+          InputBuscarField(
             hint: "Buscar Medicamentos",
             obscure: false,
             icon: Icons.person_outline,
-            onPresseds: onPressedss));
+            onPresseds: onPressedss,
+          ),
+        );
         for (var element in datas) {
           mywidgets.add(
             Row(
@@ -118,22 +123,23 @@ class _MedicamentoscreenState extends State<Medicamentoscreen> {
     } else {
       if (mounted) {
         mywidgets = [];
-        mywidgets.add(InputBuscarField(
+        mywidgets.add(
+          InputBuscarField(
             hint: "Buscar Medicamentos",
             obscure: false,
             icon: Icons.person_outline,
-            onPresseds: onPressedss));
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text("Nenhuma suplemento cadastrado!"),
+            onPresseds: onPressedss,
           ),
+        );
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Nenhuma suplemento cadastrado!")),
         );
         _isLoading = false;
       }
     }
   }
 
-  refreshPage() {
+  void refreshPage() {
     setState(() {});
   }
 
@@ -145,9 +151,11 @@ class _MedicamentoscreenState extends State<Medicamentoscreen> {
       appBar: UserBannerAppBar(
         onTapped: () {
           Navigator.push(
-              context,
-              MaterialPageRoute(
-                  builder: (context) => const UpdateProfileScreen()));
+            context,
+            MaterialPageRoute(
+              builder: (context) => const UpdateProfileScreen(),
+            ),
+          );
         },
       ),
       body: SingleChildScrollView(

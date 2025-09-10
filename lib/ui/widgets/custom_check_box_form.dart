@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 int? selectedOption = 0;
 
 class GetFazAvaliacao {
-  test() {
+  int? test() {
     return selectedOption;
   }
 }
@@ -37,9 +37,7 @@ class _LabeledCheckboxState extends State<LabeledCheckbox> {
 
   @override
   Widget build(BuildContext context) {
-    var widgets = <Widget>[
-      _buildCheckbox(context),
-    ];
+    var widgets = <Widget>[_buildCheckbox(context)];
     if (widget.label.isNotEmpty) {
       if (widget.leadingCheckbox) {
         widgets.add(_buildLabel(context));
@@ -54,11 +52,14 @@ class _LabeledCheckboxState extends State<LabeledCheckbox> {
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
           children: <Widget>[
-            const Text('Faz Avaliação',
-                style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    color: Colors.black87,
-                    fontSize: 22)),
+            const Text(
+              'Faz Avaliação',
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                color: Colors.black87,
+                fontSize: 22,
+              ),
+            ),
             Container(
               margin: const EdgeInsets.all(10.0),
               color: Colors.transparent,
@@ -95,10 +96,11 @@ class _LabeledCheckboxState extends State<LabeledCheckbox> {
                 elevation: 5.0, // add this
                 child: Container(
                   decoration: const BoxDecoration(
-                      borderRadius: BorderRadius.only(
-                    topLeft: Radius.circular(40.0),
-                    topRight: Radius.circular(40.0),
-                  )),
+                    borderRadius: BorderRadius.only(
+                      topLeft: Radius.circular(40.0),
+                      topRight: Radius.circular(40.0),
+                    ),
+                  ),
                   height: 100,
                   width: 40,
                   child: Column(
@@ -139,10 +141,7 @@ class _LabeledCheckboxState extends State<LabeledCheckbox> {
                           });
                         },
                       ),
-                      const Text(
-                        'Apenas Alunos',
-                        textAlign: TextAlign.center,
-                      ),
+                      const Text('Apenas Alunos', textAlign: TextAlign.center),
                     ],
                   ),
                 ),
@@ -155,10 +154,7 @@ class _LabeledCheckboxState extends State<LabeledCheckbox> {
   }
 
   Widget _buildCheckbox(BuildContext context) {
-    return Checkbox(
-      value: value,
-      onChanged: (v) => _onCheckedChanged(),
-    );
+    return Checkbox(value: value, onChanged: (v) => _onCheckedChanged());
   }
 
   Widget _buildLabel(BuildContext context) {
@@ -166,10 +162,7 @@ class _LabeledCheckboxState extends State<LabeledCheckbox> {
         ? const EdgeInsets.only(right: 8)
         : const EdgeInsets.only(left: 8);
 
-    return Padding(
-      padding: padding,
-      child: Text(widget.label),
-    );
+    return Padding(padding: padding, child: Text(widget.label));
   }
 
   void _onCheckedChanged() {

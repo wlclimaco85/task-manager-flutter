@@ -129,15 +129,9 @@ class ListItensDieta extends StatelessWidget {
                           )), // <-- Wrapped in Flexible.
                         ],
                       ),
-                      const SizedBox(
-                        height: 10,
-                        width: 10,
-                      ),
+                      const SizedBox(height: 10, width: 10),
                       SimpleTag(content: listModadelidades),
-                      const SizedBox(
-                        height: 10,
-                        width: double.infinity,
-                      ),
+                      const SizedBox(height: 10, width: double.infinity),
                       const SizedBox(
                         height: 1,
                         width: double.infinity,
@@ -145,10 +139,7 @@ class ListItensDieta extends StatelessWidget {
                           decoration: BoxDecoration(color: Colors.black),
                         ),
                       ),
-                      const SizedBox(
-                        height: 5,
-                        width: double.infinity,
-                      ),
+                      const SizedBox(height: 5, width: double.infinity),
                       Row(
                         mainAxisAlignment: MainAxisAlignment.end,
                         crossAxisAlignment: CrossAxisAlignment.end,
@@ -158,13 +149,14 @@ class ListItensDieta extends StatelessWidget {
                             height: 40,
                             padding: const EdgeInsets.all(4.0),
                             decoration: const BoxDecoration(
-                                color: Color(0xFFFA903A),
-                                borderRadius: BorderRadius.only(
-                                  topLeft: Radius.circular(6.0),
-                                  topRight: Radius.circular(6.0),
-                                  bottomLeft: Radius.circular(6.0),
-                                  bottomRight: Radius.circular(6.0),
-                                )),
+                              color: Color(0xFFFA903A),
+                              borderRadius: BorderRadius.only(
+                                topLeft: Radius.circular(6.0),
+                                topRight: Radius.circular(6.0),
+                                bottomLeft: Radius.circular(6.0),
+                                bottomRight: Radius.circular(6.0),
+                              ),
+                            ),
                             child: Column(
                               children: <Widget>[
                                 Tooltip(
@@ -172,10 +164,12 @@ class ListItensDieta extends StatelessWidget {
                                   child: GestureDetector(
                                     onTap: () {
                                       Navigator.push(
-                                          context,
-                                          MaterialPageRoute(
-                                              builder: (context) =>
-                                                  const TableComplexExample()));
+                                        context,
+                                        MaterialPageRoute(
+                                          builder: (context) =>
+                                              const TableComplexExample(),
+                                        ),
+                                      );
                                     },
                                     child: ClipRRect(
                                       borderRadius: BorderRadius.circular(10.0),
@@ -190,31 +184,31 @@ class ListItensDieta extends StatelessWidget {
                               ],
                             ),
                           ),
-                          const SizedBox(
-                            height: 10,
-                            width: 10,
-                          ),
+                          const SizedBox(height: 10, width: 10),
                           Container(
                             width: 40,
                             height: 40,
                             padding: const EdgeInsets.all(4.0),
                             decoration: const BoxDecoration(
-                                color: Color(0xFFFA903A),
-                                borderRadius: BorderRadius.only(
-                                  topLeft: Radius.circular(6.0),
-                                  topRight: Radius.circular(6.0),
-                                  bottomLeft: Radius.circular(6.0),
-                                  bottomRight: Radius.circular(6.0),
-                                )),
+                              color: Color(0xFFFA903A),
+                              borderRadius: BorderRadius.only(
+                                topLeft: Radius.circular(6.0),
+                                topRight: Radius.circular(6.0),
+                                bottomLeft: Radius.circular(6.0),
+                                bottomRight: Radius.circular(6.0),
+                              ),
+                            ),
                             child: Column(
                               children: <Widget>[
                                 GestureDetector(
                                   onTap: () {
                                     Navigator.push(
-                                        context,
-                                        MaterialPageRoute(
-                                            builder: (context) =>
-                                                const TableEventsExample()));
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (context) =>
+                                            const TableEventsExample(),
+                                      ),
+                                    );
                                   },
                                   child: ClipRRect(
                                     borderRadius: BorderRadius.circular(10.0),
@@ -229,31 +223,31 @@ class ListItensDieta extends StatelessWidget {
                               ],
                             ),
                           ),
-                          const SizedBox(
-                            height: 10,
-                            width: 10,
-                          ),
+                          const SizedBox(height: 10, width: 10),
                           Container(
                             width: 40,
                             height: 40,
                             padding: const EdgeInsets.all(4.0),
                             decoration: const BoxDecoration(
-                                color: Color(0xFFFA903A),
-                                borderRadius: BorderRadius.only(
-                                  topLeft: Radius.circular(6.0),
-                                  topRight: Radius.circular(6.0),
-                                  bottomLeft: Radius.circular(6.0),
-                                  bottomRight: Radius.circular(6.0),
-                                )),
+                              color: Color(0xFFFA903A),
+                              borderRadius: BorderRadius.only(
+                                topLeft: Radius.circular(6.0),
+                                topRight: Radius.circular(6.0),
+                                bottomLeft: Radius.circular(6.0),
+                                bottomRight: Radius.circular(6.0),
+                              ),
+                            ),
                             child: Column(
                               children: <Widget>[
                                 GestureDetector(
                                   onTap: () {
                                     Navigator.push(
-                                        context,
-                                        MaterialPageRoute(
-                                            builder: (context) =>
-                                                const TableEventsExample()));
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (context) =>
+                                            const TableEventsExample(),
+                                      ),
+                                    );
                                   },
                                   child: ClipRRect(
                                     borderRadius: BorderRadius.circular(10.0),
@@ -268,14 +262,8 @@ class ListItensDieta extends StatelessWidget {
                               ],
                             ),
                           ),
-                          const SizedBox(
-                            height: 10,
-                            width: 10,
-                          ),
-                          const SizedBox(
-                            height: 5,
-                            width: 5,
-                          ),
+                          const SizedBox(height: 10, width: 10),
+                          const SizedBox(height: 5, width: 5),
                         ],
                       ),
                     ],
@@ -289,7 +277,7 @@ class ListItensDieta extends StatelessWidget {
     );
   }
 
-  showBase64ImageDefald(base64String) {
+  Uint8List showBase64ImageDefald(base64String) {
     if (base64String != null) {
       UriData? data = Uri.parse(base64String).data;
       Uint8List myImage = data!.contentAsBytes();

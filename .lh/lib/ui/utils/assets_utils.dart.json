@@ -3,7 +3,7 @@
     "activeCommit": 0,
     "commits": [
         {
-            "activePatchIndex": 1,
+            "activePatchIndex": 2,
             "patches": [
                 {
                     "date": 1741210075193,
@@ -12,6 +12,10 @@
                 {
                     "date": 1741210455607,
                     "content": "Index: \n===================================================================\n--- \n+++ \n@@ -2,9 +2,9 @@\n \r\n class AssetsUtils {\r\n   AssetsUtils._();\r\n   static const String _images = 'assets/images';\r\n-  static const String backgroundSVG = '$_images/novaLogo.svg';\r\n+  static const String backgroundSVG = '$_images/iPhone.svg';\r\n   static const String logoSVG = '$_images/logo.svg';\r\n }\r\n \r\n showBase64Image(base64String) {\r\n"
+                },
+                {
+                    "date": 1757531152719,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -6,15 +6,15 @@\n   static const String backgroundSVG = '$_images/iPhone.svg';\r\n   static const String logoSVG = '$_images/logo.svg';\r\n }\r\n \r\n-showBase64Image(base64String) {\r\n+Uint8List showBase64Image(base64String) {\r\n   UriData? data = Uri.parse(base64String).data;\r\n   Uint8List images = data!.contentAsBytes();\r\n   return images;\r\n }\r\n \r\n-showBase64ImageDefald(base64String) {\r\n+Uint8List showBase64ImageDefald(base64String) {\r\n   if (base64String != null) {\r\n     UriData? data = Uri.parse(base64String).data;\r\n     Uint8List myImage = data!.contentAsBytes();\r\n     return myImage;\r\n"
                 }
             ],
             "date": 1741210075193,

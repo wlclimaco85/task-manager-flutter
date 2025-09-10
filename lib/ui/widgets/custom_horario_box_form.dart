@@ -22,7 +22,7 @@ var dias = [
 List<String> diasSelectedItems = [];
 
 class GetDiasSemana {
-  test() {
+  List<Map<String, dynamic>> test() {
     return _dataArray;
   }
 }

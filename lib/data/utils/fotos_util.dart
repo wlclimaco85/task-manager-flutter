@@ -9,7 +9,7 @@ String verificFoto(Map<String, dynamic> fotos) {
   }
 }
 
-showBase64ImageDefald(base64String) {
+Uint8List showBase64ImageDefald(base64String) {
   if (base64String != null) {
     UriData? data = Uri.parse(base64String).data;
     Uint8List myImage = data!.contentAsBytes();

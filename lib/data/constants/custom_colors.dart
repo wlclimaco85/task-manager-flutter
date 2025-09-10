@@ -7,7 +7,12 @@ class CustomColors {
   final Color _textColorDesc = const Color(0xFF38180E);
   final Color _borderInput = const Color(0xFF38180E);
   final Color _textColor = const Color(0xFF002E18);
-  final Color _negotiationCardBackground = const Color.fromARGB(255, 255, 255, 250);
+  final Color _negotiationCardBackground = const Color.fromARGB(
+    255,
+    255,
+    255,
+    250,
+  );
   final Color _confirmButtonColor = const Color.fromARGB(255, 1, 95, 15);
   final Color _cancelButtonColor = Colors.red;
   final Color _buttonTextColor = const Color.fromARGB(255, 255, 255, 255);
@@ -39,51 +44,51 @@ class CustomColors {
     return _showSnackBarError;
   }
 
-  getBorderInput() {
+  Color getBorderInput() {
     return _borderInput;
   }
 
-  getLightGreenBackground() {
+  Color getLightGreenBackground() {
     return _lightGreenBackground;
   }
 
-  getDarkBlue() {
+  Color getDarkBlue() {
     return _darkBlue;
   }
 
-  getDarkGreenBorder() {
+  Color getDarkGreenBorder() {
     return _darkGreenBorder;
   }
 
-  getButtonBackground() {
+  Color getButtonBackground() {
     return _buttonBackground;
   }
 
-  getTextColorDesc() {
+  Color getTextColorDesc() {
     return _textColorDesc;
   }
 
-  getTextColor() {
+  Color getTextColor() {
     return _textColor;
   }
 
-  getNegotiationCardBackground() {
+  Color getNegotiationCardBackground() {
     return _negotiationCardBackground;
   }
 
-  getConfirmButtonColor() {
+  Color getConfirmButtonColor() {
     return _confirmButtonColor;
   }
 
-  getCancelButtonColor() {
+  Color getCancelButtonColor() {
     return _cancelButtonColor;
   }
 
-  getButtonTextColor() {
+  Color getButtonTextColor() {
     return _buttonTextColor;
   }
 
-  getHeaderTable() {
+  Color getHeaderTable() {
     return _headerTable;
   }
 

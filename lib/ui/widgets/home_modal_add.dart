@@ -205,7 +205,7 @@ class _HomeModalAddState extends State<HomeModalAdd> {
     List<Map<String, dynamic>> dayNames = myObjectInstances.test();
 
     GetFazAvaliacao myObjectInstancesd = GetFazAvaliacao();
-    int fazAval = myObjectInstancesd.test();
+    int? fazAval = myObjectInstancesd.test();
     String bb = MapToJson(dayNames);
 
     Map<String, dynamic> requestBody = {

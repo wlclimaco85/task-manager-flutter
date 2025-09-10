@@ -150,15 +150,9 @@ class ListItensAcademia extends StatelessWidget {
                           )), // <-- Wrapped in Flexible.
                         ],
                       ),
-                      const SizedBox(
-                        height: 10,
-                        width: 10,
-                      ),
+                      const SizedBox(height: 10, width: 10),
                       SimpleTag(content: listModadelidades),
-                      const SizedBox(
-                        height: 10,
-                        width: double.infinity,
-                      ),
+                      const SizedBox(height: 10, width: double.infinity),
                       const SizedBox(
                         height: 1,
                         width: double.infinity,
@@ -166,10 +160,7 @@ class ListItensAcademia extends StatelessWidget {
                           decoration: BoxDecoration(color: Colors.black),
                         ),
                       ),
-                      const SizedBox(
-                        height: 5,
-                        width: double.infinity,
-                      ),
+                      const SizedBox(height: 5, width: double.infinity),
                       Row(
                         mainAxisAlignment: MainAxisAlignment.end,
                         crossAxisAlignment: CrossAxisAlignment.end,
@@ -179,13 +170,14 @@ class ListItensAcademia extends StatelessWidget {
                             height: 50,
                             padding: const EdgeInsets.all(4.0),
                             decoration: const BoxDecoration(
-                                color: Color(0xFFFA903A),
-                                borderRadius: BorderRadius.only(
-                                  topLeft: Radius.circular(6.0),
-                                  topRight: Radius.circular(6.0),
-                                  bottomLeft: Radius.circular(6.0),
-                                  bottomRight: Radius.circular(6.0),
-                                )),
+                              color: Color(0xFFFA903A),
+                              borderRadius: BorderRadius.only(
+                                topLeft: Radius.circular(6.0),
+                                topRight: Radius.circular(6.0),
+                                bottomLeft: Radius.circular(6.0),
+                                bottomRight: Radius.circular(6.0),
+                              ),
+                            ),
                             child: Column(
                               children: <Widget>[
                                 Tooltip(
@@ -193,10 +185,12 @@ class ListItensAcademia extends StatelessWidget {
                                   child: GestureDetector(
                                     onTap: () {
                                       Navigator.push(
-                                          context,
-                                          MaterialPageRoute(
-                                              builder: (context) =>
-                                                  const TableComplexExample()));
+                                        context,
+                                        MaterialPageRoute(
+                                          builder: (context) =>
+                                              const TableComplexExample(),
+                                        ),
+                                      );
                                     },
                                     child: ClipRRect(
                                       borderRadius: BorderRadius.circular(10.0),
@@ -211,31 +205,31 @@ class ListItensAcademia extends StatelessWidget {
                               ],
                             ),
                           ),
-                          const SizedBox(
-                            height: 10,
-                            width: 10,
-                          ),
+                          const SizedBox(height: 10, width: 10),
                           Container(
                             width: 50,
                             height: 50,
                             padding: const EdgeInsets.all(4.0),
                             decoration: const BoxDecoration(
-                                color: Color(0xFFFA903A),
-                                borderRadius: BorderRadius.only(
-                                  topLeft: Radius.circular(6.0),
-                                  topRight: Radius.circular(6.0),
-                                  bottomLeft: Radius.circular(6.0),
-                                  bottomRight: Radius.circular(6.0),
-                                )),
+                              color: Color(0xFFFA903A),
+                              borderRadius: BorderRadius.only(
+                                topLeft: Radius.circular(6.0),
+                                topRight: Radius.circular(6.0),
+                                bottomLeft: Radius.circular(6.0),
+                                bottomRight: Radius.circular(6.0),
+                              ),
+                            ),
                             child: Column(
                               children: <Widget>[
                                 GestureDetector(
                                   onTap: () {
                                     Navigator.push(
-                                        context,
-                                        MaterialPageRoute(
-                                            builder: (context) =>
-                                                const TableEventsExample()));
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (context) =>
+                                            const TableEventsExample(),
+                                      ),
+                                    );
                                   },
                                   child: ClipRRect(
                                     borderRadius: BorderRadius.circular(10.0),
@@ -250,14 +244,8 @@ class ListItensAcademia extends StatelessWidget {
                               ],
                             ),
                           ),
-                          const SizedBox(
-                            height: 10,
-                            width: 10,
-                          ),
-                          const SizedBox(
-                            height: 5,
-                            width: 5,
-                          ),
+                          const SizedBox(height: 10, width: 10),
+                          const SizedBox(height: 5, width: 5),
                         ],
                       ),
                     ],
@@ -271,7 +259,7 @@ class ListItensAcademia extends StatelessWidget {
     );
   }
 
-  showBase64ImageDefald(base64String) {
+  Uint8List showBase64ImageDefald(base64String) {
     if (base64String != null && base64String.trim() != '') {
       UriData? data = Uri.parse(base64String).data;
       Uint8List myImage = data!.contentAsBytes();

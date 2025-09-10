@@ -3,7 +3,7 @@
     "activeCommit": 0,
     "commits": [
         {
-            "activePatchIndex": 12,
+            "activePatchIndex": 13,
             "patches": [
                 {
                     "date": 1708715741181,
@@ -56,6 +56,10 @@
                 {
                     "date": 1736538187573,
                     "content": "Index: \n===================================================================\n--- \n+++ \n@@ -147,10 +147,9 @@\n   Widget build(BuildContext context) {\r\n     return Scaffold(\r\n       //  floatingActionButton: getHomeFab(context, listModels, refreshPage),\r\n       backgroundColor: const Color(0xFF340A9C),\r\n-      appBar: userBanner(\r\n-        context,\r\n+      appBar: UserBannerAppBar(\r\n         onTapped: () {\r\n           Navigator.push(\r\n               context,\r\n               MaterialPageRoute(\r\n"
+                },
+                {
+                    "date": 1757531152716,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -138,9 +138,9 @@\n       title: \"Academia Titanium Core\",\r\n       assetIcon: \"assets/icons/gym_icon.png\",\r\n     )\r\n   ];\r\n-  refreshPage() {\r\n+  void refreshPage() {\r\n     setState(() {});\r\n   }\r\n \r\n   @override\r\n"
                 }
             ],
             "date": 1708715741181,

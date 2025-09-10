@@ -8,7 +8,7 @@ final List<Map<String, dynamic>> _dataArray = []; //add this
 String? _data = ""; //add this
 
 class NumberToDay {
-  test() {
+  List<Map<String, dynamic>> test() {
     return _dataArray;
   }
 }
@@ -44,7 +44,7 @@ class _CustomComboBoxForm extends State<CustomComboBoxForm> {
         chave: value,
         chave: value,
         chave: value,
-        chave: value
+        chave: value,
       };
       _dataArray.add(json);
       setState(() {
@@ -97,13 +97,8 @@ class _CustomComboBoxForm extends State<CustomComboBoxForm> {
                 fillColor: CustomColors().getLightGreenBackground(),
                 filled: true,
                 border: const OutlineInputBorder(
-                  borderRadius: BorderRadius.all(
-                    Radius.circular(8.0),
-                  ),
-                  borderSide: BorderSide(
-                    color: Colors.yellow,
-                    width: 3.0,
-                  ),
+                  borderRadius: BorderRadius.all(Radius.circular(8.0)),
+                  borderSide: BorderSide(color: Colors.yellow, width: 3.0),
                 ),
                 labelStyle: const TextStyle(color: Colors.red, fontSize: 16.0),
                 hintText: ' $hit ',
@@ -116,59 +111,67 @@ class _CustomComboBoxForm extends State<CustomComboBoxForm> {
       );
 
   Widget form(int key) => Padding(
-        padding: const EdgeInsets.only(bottom: 15.0),
-        child: Container(
-          padding: EdgeInsets.zero,
-          color: CustomColors().getLightGreenBackground(),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: <Widget>[
-              imput(key, "Titulo Plano", null, TextInputType.text, 'nome'),
-              imput(key, "Detalhe do Plano", 5, TextInputType.multiline,
-                  'descricao'),
-              imput(key, "Qnt. Aula Mês *dias", null, TextInputType.number,
-                  'qtdAula'),
-              imput(key, "Valor Plano", null, TextInputType.number, 'valor'),
-            ],
+    padding: const EdgeInsets.only(bottom: 15.0),
+    child: Container(
+      padding: EdgeInsets.zero,
+      color: CustomColors().getLightGreenBackground(),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: <Widget>[
+          imput(key, "Titulo Plano", null, TextInputType.text, 'nome'),
+          imput(
+            key,
+            "Detalhe do Plano",
+            5,
+            TextInputType.multiline,
+            'descricao',
           ),
-        ),
-      );
+          imput(
+            key,
+            "Qnt. Aula Mês *dias",
+            null,
+            TextInputType.number,
+            'qtdAula',
+          ),
+          imput(key, "Valor Plano", null, TextInputType.number, 'valor'),
+        ],
+      ),
+    ),
+  );
 
   Widget buttonRow() => Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          Visibility(
-            visible: _formCount > 0,
-            child: IconButton(
-                onPressed: () {
-                  if (_dataArray.isNotEmpty) {
-                    _dataArray.removeAt(_dataArray.length - 1);
-                  }
-                  setState(() {
-                    _data = _dataArray.toString();
-                    _formCount--;
-                  });
-                },
-                icon: CircleAvatar(
-                  backgroundColor: CustomColors().getLightGreenBackground(),
-                  child: const Icon(
-                    Icons.remove,
-                  ),
-                )),
+    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+    crossAxisAlignment: CrossAxisAlignment.center,
+    children: [
+      Visibility(
+        visible: _formCount > 0,
+        child: IconButton(
+          onPressed: () {
+            if (_dataArray.isNotEmpty) {
+              _dataArray.removeAt(_dataArray.length - 1);
+            }
+            setState(() {
+              _data = _dataArray.toString();
+              _formCount--;
+            });
+          },
+          icon: CircleAvatar(
+            backgroundColor: CustomColors().getLightGreenBackground(),
+            child: const Icon(Icons.remove),
           ),
-          IconButton(
-              onPressed: () {
-                setState(() => _formCount++);
-              },
-              icon: CircleAvatar(
-                backgroundColor: CustomColors().getLightGreenBackground(),
-                child: const Icon(
-                  Icons.add,
-                ),
-              )),
-        ],
-      );
+        ),
+      ),
+      IconButton(
+        onPressed: () {
+          setState(() => _formCount++);
+        },
+        icon: CircleAvatar(
+          backgroundColor: CustomColors().getLightGreenBackground(),
+          child: const Icon(Icons.add),
+        ),
+      ),
+    ],
+  );
   @override
   Widget build(BuildContext context) {
     final platform = Theme.of(context).platform;
@@ -182,11 +185,14 @@ class _CustomComboBoxForm extends State<CustomComboBoxForm> {
             crossAxisAlignment: CrossAxisAlignment.center,
             children: <Widget>[
               const SizedBox(height: 19),
-              const Text('Planos',
-                  style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      color: Colors.black87,
-                      fontSize: 22)),
+              const Text(
+                'Planos',
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  color: Colors.black87,
+                  fontSize: 22,
+                ),
+              ),
               const SizedBox(height: 20),
               ...List.generate(_formCount, (index) => form(index)),
               buttonRow(),

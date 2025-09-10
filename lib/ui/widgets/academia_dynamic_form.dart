@@ -23,7 +23,7 @@ class AcademiaDynamicForm extends StatefulWidget {
 }
 
 class GetAcademiaDynamicForm {
-  test() {
+  List<Map<String, dynamic>> test() {
     return _dataArray;
   }
 }
@@ -308,7 +308,7 @@ class _AcademiaDynamicFormState extends State<AcademiaDynamicForm> {
     super.dispose();
   }
 
-  getFromJson() async {
+  Future<void> getFromJson() async {
     String data = await DefaultAssetBundle.of(
       context,
     ).loadString("assets/json/academia_form.json");
@@ -417,7 +417,7 @@ class _AcademiaDynamicFormState extends State<AcademiaDynamicForm> {
     return null;
   }
 
-  myFormType(index) {
+  ListView myFormType(index) {
     return ListView.separated(
       itemCount: formResponse[index].fields!.length,
       shrinkWrap: true,
@@ -562,7 +562,10 @@ class _AcademiaDynamicFormState extends State<AcademiaDynamicForm> {
     }
   }
 
-  dropDownWidget(List<Options>? items, String value) {
+  DropdownButtonFormField<Options> dropDownWidget(
+    List<Options>? items,
+    String value,
+  ) {
     return DropdownButtonFormField<Options>(
       // Initial Value
       initialValue: dropdownvalue,
@@ -597,7 +600,7 @@ class _AcademiaDynamicFormState extends State<AcademiaDynamicForm> {
     );
   }
 
-  fotoWidget(List<Options>? items, String value) {
+  InkWell fotoWidget(List<Options>? items, String value) {
     return InkWell(
       onTap: () {
         imagePicked();

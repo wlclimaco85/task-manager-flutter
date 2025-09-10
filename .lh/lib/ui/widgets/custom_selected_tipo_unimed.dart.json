@@ -3,7 +3,7 @@
     "activeCommit": 0,
     "commits": [
         {
-            "activePatchIndex": 6,
+            "activePatchIndex": 7,
             "patches": [
                 {
                     "date": 1709679597314,
@@ -32,6 +32,10 @@
                 {
                     "date": 1757457872566,
                     "content": "Index: \n===================================================================\n--- \n+++ \n@@ -253,10 +253,10 @@\n                     ),\r\n                     offset: const Offset(-20, 0),\r\n                     scrollbarTheme: ScrollbarThemeData(\r\n                       radius: const Radius.circular(40),\r\n-                      thickness: MaterialStateProperty.all(6),\r\n-                      thumbVisibility: MaterialStateProperty.all(true),\r\n+                      thickness: WidgetStateProperty.all(6),\r\n+                      thumbVisibility: WidgetStateProperty.all(true),\r\n                     ),\r\n                   ),\r\n                   menuItemStyleData: const MenuItemStyleData(\r\n                     height: 40,\r\n"
+                },
+                {
+                    "date": 1757531090288,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -13,9 +13,9 @@\n List<String> diasSelectedItems = [];\r\n List<String> dias = [];\r\n \r\n class GetModalidade {\r\n-  test() {\r\n+  List<Map<String, dynamic>> test() {\r\n     return _dataArray;\r\n   }\r\n }\r\n \r\n"
                 }
             ],
             "date": 1709679597314,

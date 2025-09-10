@@ -7,13 +7,13 @@ class AssetsUtils {
   static const String logoSVG = '$_images/logo.svg';
 }
 
-showBase64Image(base64String) {
+Uint8List showBase64Image(base64String) {
   UriData? data = Uri.parse(base64String).data;
   Uint8List images = data!.contentAsBytes();
   return images;
 }
 
-showBase64ImageDefald(base64String) {
+Uint8List showBase64ImageDefald(base64String) {
   if (base64String != null) {
     UriData? data = Uri.parse(base64String).data;
     Uint8List myImage = data!.contentAsBytes();

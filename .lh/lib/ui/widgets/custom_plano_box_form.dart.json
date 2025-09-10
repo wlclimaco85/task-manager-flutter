@@ -3,7 +3,7 @@
     "activeCommit": 0,
     "commits": [
         {
-            "activePatchIndex": 7,
+            "activePatchIndex": 8,
             "patches": [
                 {
                     "date": 1706728723561,
@@ -36,6 +36,10 @@
                 {
                     "date": 1740664035235,
                     "content": "Index: \n===================================================================\n--- \n+++ \n@@ -93,9 +93,9 @@\n               key: Key('$hit ${key + 1}'),\r\n               //    focusNode: _focusNode,\r\n               keyboardType: tipo ?? TextInputType.text,\r\n               decoration: InputDecoration(\r\n-                fillColor: CustomColors().getAppFundoImput(),\r\n+                fillColor: CustomColors().getLightGreenBackground(),\r\n                 filled: true,\r\n                 border: const OutlineInputBorder(\r\n                   borderRadius: BorderRadius.all(\r\n                     Radius.circular(8.0),\r\n@@ -118,9 +118,9 @@\n   Widget form(int key) => Padding(\r\n         padding: const EdgeInsets.only(bottom: 15.0),\r\n         child: Container(\r\n           padding: EdgeInsets.zero,\r\n-          color: CustomColors().getAppFundoClaro(),\r\n+          color: CustomColors().getLightGreenBackground(),\r\n           child: Column(\r\n             mainAxisAlignment: MainAxisAlignment.center,\r\n             children: <Widget>[\r\n               imput(key, \"Titulo Plano\", null, TextInputType.text, 'nome'),\r\n@@ -150,9 +150,9 @@\n                     _formCount--;\r\n                   });\r\n                 },\r\n                 icon: CircleAvatar(\r\n-                  backgroundColor: CustomColors().getAppBotton(),\r\n+                  backgroundColor: CustomColors().getLightGreenBackground(),\r\n                   child: const Icon(\r\n                     Icons.remove,\r\n                   ),\r\n                 )),\r\n@@ -161,9 +161,9 @@\n               onPressed: () {\r\n                 setState(() => _formCount++);\r\n               },\r\n               icon: CircleAvatar(\r\n-                backgroundColor: CustomColors().getAppBotton(),\r\n+                backgroundColor: CustomColors().getLightGreenBackground(),\r\n                 child: const Icon(\r\n                   Icons.add,\r\n                 ),\r\n               )),\r\n"
+                },
+                {
+                    "date": 1757531152722,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -7,9 +7,9 @@\n final List<Map<String, dynamic>> _dataArray = []; //add this\r\n String? _data = \"\"; //add this\r\n \r\n class NumberToDay {\r\n-  test() {\r\n+  List<Map<String, dynamic>> test() {\r\n     return _dataArray;\r\n   }\r\n }\r\n \r\n"
                 }
             ],
             "date": 1706728723561,

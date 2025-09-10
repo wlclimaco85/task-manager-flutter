@@ -3,7 +3,7 @@
     "activeCommit": 0,
     "commits": [
         {
-            "activePatchIndex": 14,
+            "activePatchIndex": 15,
             "patches": [
                 {
                     "date": 1709045532764,
@@ -64,6 +64,10 @@
                 {
                     "date": 1740663604821,
                     "content": "Index: \n===================================================================\n--- \n+++ \n@@ -69,9 +69,9 @@\n               ),\r\n               Flexible(\r\n                 child: Container(\r\n                   height: 180,\r\n-                  color: CustomColors().getAppFundoPage(),\r\n+                  color: CustomColors().getLightGreenBackground(),\r\n                   child: Column(\r\n                     children: [\r\n                       Column(\r\n                         children: <Widget>[\r\n"
+                },
+                {
+                    "date": 1757531152710,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -304,9 +304,9 @@\n       ),\r\n     );\r\n   }\r\n \r\n-  showBase64ImageDefald(base64String) {\r\n+  Uint8List showBase64ImageDefald(base64String) {\r\n     if (base64String != null) {\r\n       UriData? data = Uri.parse(base64String).data;\r\n       Uint8List myImage = data!.contentAsBytes();\r\n       return myImage;\r\n"
                 }
             ],
             "date": 1709045532764,

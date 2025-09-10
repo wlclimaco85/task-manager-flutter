@@ -10,9 +10,7 @@ import 'package:task_manager_flutter/ui/screens/suplemento_list.dart';
 import 'package:task_manager_flutter/ui/screens/suplemento_add.dart';
 
 class SuplementoScreen extends StatefulWidget {
-  const SuplementoScreen({
-    super.key,
-  });
+  const SuplementoScreen({super.key});
 
   @override
   State<SuplementoScreen> createState() => _SuplementoScreenState();
@@ -62,11 +60,15 @@ class _SuplementoScreenState extends State<SuplementoScreen> {
       "codAluno": {"id": 1},
     };
 
-    void onPressedss() => Navigator.push(context,
-        MaterialPageRoute(builder: (context) => const SuplementoModalAdd()));
+    void onPressedss() => Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => const SuplementoModalAdd()),
+    );
 
-    final NetworkResponse response = await NetworkCaller()
-        .postRequest(ApiLinks.allSuplementoAluno, requestBody);
+    final NetworkResponse response = await NetworkCaller().postRequest(
+      ApiLinks.allSuplementoAluno,
+      requestBody,
+    );
     _addNewTaskLoading = false;
     if (mounted) {
       setState(() {});
@@ -78,11 +80,14 @@ class _SuplementoScreenState extends State<SuplementoScreen> {
         dynamic data = response.body?['data'];
         List<dynamic> datas = data;
         mywidgets = [];
-        mywidgets.add(InputBuscarField(
+        mywidgets.add(
+          InputBuscarField(
             hint: "Buscar Suplemento",
             obscure: false,
             icon: Icons.person_outline,
-            onPresseds: onPressedss));
+            onPresseds: onPressedss,
+          ),
+        );
         for (var element in datas) {
           mywidgets.add(
             Row(
@@ -90,17 +95,18 @@ class _SuplementoScreenState extends State<SuplementoScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: <Widget>[
                 ListItensSuplemento(
-                    nome: element['nome'] ?? "",
-                    marca: element['marca'] ?? "",
-                    dataIni: element['dtInicio'] ?? "",
-                    dataFin: element['dtFinal'] ?? "",
-                    dataVal: element['dtVal'] ?? "",
-                    porcao: element['dosagem'] ?? "",
-                    foto: element['foto'],
-                    id: element['id'],
-                    valor: element['valor'] ?? "",
-                    sabor: element['sabor'] ?? "",
-                    tamanho: element['tamanho'] ?? ""),
+                  nome: element['nome'] ?? "",
+                  marca: element['marca'] ?? "",
+                  dataIni: element['dtInicio'] ?? "",
+                  dataFin: element['dtFinal'] ?? "",
+                  dataVal: element['dtVal'] ?? "",
+                  porcao: element['dosagem'] ?? "",
+                  foto: element['foto'],
+                  id: element['id'],
+                  valor: element['valor'] ?? "",
+                  sabor: element['sabor'] ?? "",
+                  tamanho: element['tamanho'] ?? "",
+                ),
               ],
             ),
           );
@@ -110,15 +116,16 @@ class _SuplementoScreenState extends State<SuplementoScreen> {
     } else {
       if (mounted) {
         mywidgets = [];
-        mywidgets.add(InputBuscarField(
+        mywidgets.add(
+          InputBuscarField(
             hint: "Buscar Suplemento",
             obscure: false,
             icon: Icons.person_outline,
-            onPresseds: onPressedss));
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text("Nenhuma suplemento cadastrado!"),
+            onPresseds: onPressedss,
           ),
+        );
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Nenhuma suplemento cadastrado!")),
         );
         _isLoading = false;
       }
@@ -137,9 +144,9 @@ class _SuplementoScreenState extends State<SuplementoScreen> {
     HomeListModel(
       title: "Academia Titanium Core",
       assetIcon: "assets/icons/gym_icon.png",
-    )
+    ),
   ];
-  refreshPage() {
+  void refreshPage() {
     setState(() {});
   }
 
@@ -151,9 +158,11 @@ class _SuplementoScreenState extends State<SuplementoScreen> {
       appBar: UserBannerAppBar(
         onTapped: () {
           Navigator.push(
-              context,
-              MaterialPageRoute(
-                  builder: (context) => const UpdateProfileScreen()));
+            context,
+            MaterialPageRoute(
+              builder: (context) => const UpdateProfileScreen(),
+            ),
+          );
         },
       ),
       body: SingleChildScrollView(

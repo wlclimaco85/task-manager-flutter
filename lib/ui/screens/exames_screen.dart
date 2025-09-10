@@ -12,9 +12,7 @@ import 'package:task_manager_flutter/data/models/auth_utility.dart';
 import '../../data/models/login_model.dart';
 
 class ExameScreen extends StatefulWidget {
-  const ExameScreen({
-    super.key,
-  });
+  const ExameScreen({super.key});
 
   @override
   State<ExameScreen> createState() => _ExameScreenState();
@@ -68,11 +66,15 @@ class _ExameScreenState extends State<ExameScreen> {
       "idaluno": {"id": 1},
     };
 
-    void onPressedss() => Navigator.push(context,
-        MaterialPageRoute(builder: (context) => const ExamesModalAdd()));
+    void onPressedss() => Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => const ExamesModalAdd()),
+    );
 
-    final NetworkResponse response =
-        await NetworkCaller().postRequest(ApiLinks.findByIdAluno, requestBody);
+    final NetworkResponse response = await NetworkCaller().postRequest(
+      ApiLinks.findByIdAluno,
+      requestBody,
+    );
     _addNewTaskLoading = false;
     if (mounted) {
       setState(() {});
@@ -84,11 +86,14 @@ class _ExameScreenState extends State<ExameScreen> {
         dynamic data = response.body?['data'];
         List<dynamic> datas = data;
         mywidgets = [];
-        mywidgets.add(InputBuscarField(
+        mywidgets.add(
+          InputBuscarField(
             hint: "Buscar Exames",
             obscure: false,
             icon: Icons.person_outline,
-            onPresseds: onPressedss));
+            onPresseds: onPressedss,
+          ),
+        );
         for (var element in datas) {
           mywidgets.add(
             Row(
@@ -96,12 +101,13 @@ class _ExameScreenState extends State<ExameScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: <Widget>[
                 ListItensExames(
-                    nome: element['nome'] ?? "",
-                    medico: element['medico'] ?? "",
-                    dataExame: element['dataExame'] ?? "",
-                    dataEntrega: element['dataEntrega'] ?? "",
-                    dataConsulta: element['dataConsulta'] ?? "",
-                    laudo: element['resultado'] ?? ""),
+                  nome: element['nome'] ?? "",
+                  medico: element['medico'] ?? "",
+                  dataExame: element['dataExame'] ?? "",
+                  dataEntrega: element['dataEntrega'] ?? "",
+                  dataConsulta: element['dataConsulta'] ?? "",
+                  laudo: element['resultado'] ?? "",
+                ),
               ],
             ),
           );
@@ -111,15 +117,16 @@ class _ExameScreenState extends State<ExameScreen> {
     } else {
       if (mounted) {
         mywidgets = [];
-        mywidgets.add(InputBuscarField(
+        mywidgets.add(
+          InputBuscarField(
             hint: "Buscar Exames",
             obscure: false,
             icon: Icons.person_outline,
-            onPresseds: onPressedss));
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text("Nenhuma suplemento cadastrado!"),
+            onPresseds: onPressedss,
           ),
+        );
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Nenhuma suplemento cadastrado!")),
         );
         _isLoading = false;
       }
@@ -138,9 +145,9 @@ class _ExameScreenState extends State<ExameScreen> {
     HomeListModel(
       title: "Academia Titanium Core",
       assetIcon: "assets/icons/gym_icon.png",
-    )
+    ),
   ];
-  refreshPage() {
+  void refreshPage() {
     setState(() {});
   }
 
@@ -152,9 +159,11 @@ class _ExameScreenState extends State<ExameScreen> {
       appBar: UserBannerAppBar(
         onTapped: () {
           Navigator.push(
-              context,
-              MaterialPageRoute(
-                  builder: (context) => const UpdateProfileScreen()));
+            context,
+            MaterialPageRoute(
+              builder: (context) => const UpdateProfileScreen(),
+            ),
+          );
         },
       ),
       body: SingleChildScrollView(

@@ -18,7 +18,7 @@ class DynamicForm extends StatefulWidget {
 }
 
 class GetDynamicForm {
-  test() {
+  List<Map<String, dynamic>> test() {
     return _dataArray;
   }
 }
@@ -155,7 +155,7 @@ class _DynamicFormState extends State<DynamicForm> {
     super.dispose();
   }
 
-  getFromJson() async {
+  Future<void> getFromJson() async {
     String data = await DefaultAssetBundle.of(
       context,
     ).loadString("assets/json/form.json");
@@ -283,7 +283,7 @@ class _DynamicFormState extends State<DynamicForm> {
     return null;
   }
 
-  myFormType(index) {
+  ListView myFormType(index) {
     return ListView.separated(
       itemCount: formResponse[index].fields!.length,
       shrinkWrap: true,
@@ -396,7 +396,10 @@ class _DynamicFormState extends State<DynamicForm> {
     }
   }
 
-  dropDownWidget(List<Options>? items, String value) {
+  DropdownButtonFormField<Options> dropDownWidget(
+    List<Options>? items,
+    String value,
+  ) {
     return DropdownButtonFormField<Options>(
       // Initial Value
       initialValue: dropdownvalue,

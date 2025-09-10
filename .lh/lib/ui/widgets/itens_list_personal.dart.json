@@ -3,7 +3,7 @@
     "activeCommit": 0,
     "commits": [
         {
-            "activePatchIndex": 3,
+            "activePatchIndex": 4,
             "patches": [
                 {
                     "date": 1709242338172,
@@ -20,6 +20,10 @@
                 {
                     "date": 1740664207169,
                     "content": "Index: \n===================================================================\n--- \n+++ \n@@ -60,9 +60,9 @@\n               Container(\r\n                 width: 70,\r\n                 height: 140,\r\n                 padding: EdgeInsets.zero,\r\n-                color: CustomColors().getAppFundoPage(),\r\n+                color: CustomColors().getLightGreenBackground(),\r\n                 child: Padding(\r\n                   padding: const EdgeInsets.only(bottom: 60),\r\n                   child: CircleAvatar(\r\n                     radius: 25,\r\n"
+                },
+                {
+                    "date": 1757531152718,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -304,9 +304,9 @@\n       ),\r\n     );\r\n   }\r\n \r\n-  showBase64ImageDefald(base64String) {\r\n+  Uint8List showBase64ImageDefald(base64String) {\r\n     if (base64String != null && base64String.trim() != '') {\r\n       UriData? data = Uri.parse(base64String).data;\r\n       Uint8List myImage = data!.contentAsBytes();\r\n       return myImage;\r\n"
                 }
             ],
             "date": 1709242338172,

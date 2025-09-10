@@ -25,7 +25,7 @@ List<Map<String, dynamic>> _dataArrays = [];
 String? _data = ""; //add this
 
 class NumberToDieta {
-  test() {
+  List<Map<String, dynamic>> test() {
     NumberToDietaItens myObjectInstanced = NumberToDietaItens();
     List<Map<String, dynamic>> dayNamed = myObjectInstanced.test();
     print(_dataArray);

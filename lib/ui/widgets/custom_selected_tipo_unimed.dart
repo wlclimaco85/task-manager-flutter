@@ -14,7 +14,7 @@ List<String> diasSelectedItems = [];
 List<String> dias = [];
 
 class GetModalidade {
-  test() {
+  List<Map<String, dynamic>> test() {
     return _dataArray;
   }
 }

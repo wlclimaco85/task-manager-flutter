@@ -53,8 +53,9 @@ class _UserBannerAppBarState extends State<UserBannerAppBar> {
     try {
       if (AuthUtility.userInfo.data?.id == null ||
           AuthUtility.userInfo.data!.id! > 1) {
-        final List<Alert> alertData =
-            await AlertCaller().fetchItensAVenda(context);
+        final List<Alert> alertData = await AlertCaller().fetchItensAVenda(
+          context,
+        );
         if (alertData.isNotEmpty) {
           setState(() {
             notifications = alertData;
@@ -75,7 +76,8 @@ class _UserBannerAppBarState extends State<UserBannerAppBar> {
     try {
       final response = await http.post(
         Uri.parse(
-            'https://appacademia-production-be7e.up.railway.app/boletobancos/api/alert'),
+          'https://appacademia-production-be7e.up.railway.app/boletobancos/api/alert',
+        ),
         body: jsonEncode({"id": id}),
         headers: {"Content-Type": "application/json"},
       );
@@ -154,8 +156,10 @@ class _UserBannerAppBarState extends State<UserBannerAppBar> {
                       ),
                     ),
                     IconButton(
-                      icon: Icon(Icons.close,
-                          color: CustomColors().getCancelButtonColor()),
+                      icon: Icon(
+                        Icons.close,
+                        color: CustomColors().getCancelButtonColor(),
+                      ),
                       onPressed: closeNotificationDropdown,
                     ),
                   ],
@@ -191,8 +195,9 @@ class _UserBannerAppBarState extends State<UserBannerAppBar> {
                           itemCount: notifications.length,
                           itemBuilder: (context, index) {
                             final notification = notifications[index];
-                            final DateTime parsedDate =
-                                DateTime.parse(notification.data!);
+                            final DateTime parsedDate = DateTime.parse(
+                              notification.data!,
+                            );
                             final String formattedDate =
                                 "${parsedDate.day.toString().padLeft(2, '0')}/${parsedDate.month.toString().padLeft(2, '0')}/${parsedDate.year} ${parsedDate.hour.toString().padLeft(2, '0')}:${parsedDate.minute.toString().padLeft(2, '0')}";
 
@@ -233,7 +238,8 @@ class _UserBannerAppBarState extends State<UserBannerAppBar> {
                           child: Text(
                             "No notifications",
                             style: TextStyle(
-                                color: CustomColors().getButtonTextColor()),
+                              color: CustomColors().getButtonTextColor(),
+                            ),
                           ),
                         ),
                 ),
@@ -281,8 +287,8 @@ class _UserBannerAppBarState extends State<UserBannerAppBar> {
                 strokeWidth: 2,
               ),
             ),
-          // Alert Icon with unread count
 
+          // Alert Icon with unread count
           Stack(
             alignment: Alignment.center,
             children: [
@@ -326,25 +332,29 @@ class _UserBannerAppBarState extends State<UserBannerAppBar> {
                 context: context,
                 builder: (context) {
                   return AlertDialog(
-                    title: Text("Deseja realmente sair ?",
-                        style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            color: CustomColors().getTextColor())),
+                    title: Text(
+                      "Deseja realmente sair ?",
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: CustomColors().getTextColor(),
+                      ),
+                    ),
                     actions: [
                       TextButton(
                         onPressed: () => Navigator.pop(context),
-                        child: Text("Não",
-                            style: TextStyle(
-                                color: CustomColors().getTextColor())),
+                        child: Text(
+                          "Não",
+                          style: TextStyle(
+                            color: CustomColors().getTextColor(),
+                          ),
+                        ),
                       ),
                       TextButton(
                         onPressed: () {
                           AuthUtility.clearUserInfo();
-                          AuthUtility.setUserInfo(LoginModel(
-                            data: null,
-                            token: '',
-                            status: '',
-                          ));
+                          AuthUtility.setUserInfo(
+                            LoginModel(data: null, token: '', status: ''),
+                          );
                           Navigator.pushAndRemoveUntil(
                             context,
                             MaterialPageRoute(
@@ -353,9 +363,12 @@ class _UserBannerAppBarState extends State<UserBannerAppBar> {
                             (route) => false,
                           );
                         },
-                        child: Text("Sim",
-                            style: TextStyle(
-                                color: CustomColors().getTextColor())),
+                        child: Text(
+                          "Sim",
+                          style: TextStyle(
+                            color: CustomColors().getTextColor(),
+                          ),
+                        ),
                       ),
                     ],
                   );
@@ -389,7 +402,8 @@ class _UserBannerAppBarState extends State<UserBannerAppBar> {
                       radius: 25,
                       child: Image.memory(
                         showBase64Image(
-                            AuthUtility.userInfo.data?.codDadosPessoal?.photo),
+                          AuthUtility.userInfo.data?.codDadosPessoal?.photo,
+                        ),
                         errorBuilder: (_, __, ___) {
                           return const Icon(Icons.person);
                         },
@@ -402,17 +416,20 @@ class _UserBannerAppBarState extends State<UserBannerAppBar> {
                         Text(
                           "${AuthUtility.userInfo.data?.codDadosPessoal?.nome ?? " "} ",
                           style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                              color: CustomColors().getTextColor()),
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            color: CustomColors().getTextColor(),
+                          ),
                         ),
                         const SizedBox(height: 2),
                         Text(
-                            AuthUtility.userInfo.data?.codDadosPessoal?.email ??
-                                "",
-                            style: TextStyle(
-                                fontSize: 14,
-                                color: CustomColors().getTextColor())),
+                          AuthUtility.userInfo.data?.codDadosPessoal?.email ??
+                              "",
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: CustomColors().getTextColor(),
+                          ),
+                        ),
                       ],
                     ),
                   ],
@@ -476,7 +493,7 @@ class _UserBannerAppBarState extends State<UserBannerAppBar> {
   }
 }
 
-showBase64Image(base64String) {
+Uint8List showBase64Image(base64String) {
   if (base64String != null && base64String.trim() != '') {
     // UriData? data = Uri.parse(base64String).data;
     //  Uint8List myImage = data!.contentAsBytes();

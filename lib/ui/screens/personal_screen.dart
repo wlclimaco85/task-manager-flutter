@@ -10,9 +10,7 @@ import 'package:task_manager_flutter/ui/widgets/input_field_busca.dart';
 import 'package:task_manager_flutter/ui/widgets/itens_list_personal.dart';
 
 class PersonalScreen extends StatefulWidget {
-  const PersonalScreen({
-    super.key,
-  });
+  const PersonalScreen({super.key});
 
   @override
   State<PersonalScreen> createState() => _PersonalScreenState();
@@ -42,7 +40,9 @@ class _PersonalScreenState extends State<PersonalScreen> {
   bool _addNewTaskLoading = false;
 
   void onPresseds() => Navigator.push(
-      context, MaterialPageRoute(builder: (context) => const HomeModalAdd()));
+    context,
+    MaterialPageRoute(builder: (context) => const HomeModalAdd()),
+  );
 
   Future<void> findAllPersonal() async {
     _isLoading = true;
@@ -50,13 +50,12 @@ class _PersonalScreenState extends State<PersonalScreen> {
     if (mounted) {
       setState(() {});
     }
-    Map<String, dynamic> requestBody = {
-      "cref": '',
-      "id": 1,
-    };
+    Map<String, dynamic> requestBody = {"cref": '', "id": 1};
 
-    final NetworkResponse response =
-        await NetworkCaller().postRequest(ApiLinks.allPersonal, requestBody);
+    final NetworkResponse response = await NetworkCaller().postRequest(
+      ApiLinks.allPersonal,
+      requestBody,
+    );
     _addNewTaskLoading = false;
     if (mounted) {
       setState(() {});
@@ -68,11 +67,14 @@ class _PersonalScreenState extends State<PersonalScreen> {
         dynamic data = response.body?['data'];
         List<dynamic> datas = data['personalDto'];
         mywidgets = [];
-        mywidgets.add(InputBuscarField(
+        mywidgets.add(
+          InputBuscarField(
             hint: "Buscar Personal ",
             obscure: false,
             icon: Icons.person_outline,
-            onPresseds: onPresseds));
+            onPresseds: onPresseds,
+          ),
+        );
         for (var element in datas) {
           mywidgets.add(
             Row(
@@ -95,11 +97,9 @@ class _PersonalScreenState extends State<PersonalScreen> {
       }
     } else {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text("Task Added Failed"),
-          ),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text("Task Added Failed")));
         _isLoading = false;
       }
     }
@@ -117,9 +117,9 @@ class _PersonalScreenState extends State<PersonalScreen> {
     HomeListModel(
       title: "Academia Titanium Core",
       assetIcon: "assets/icons/gym_icon.png",
-    )
+    ),
   ];
-  refreshPage() {
+  void refreshPage() {
     setState(() {});
   }
 
@@ -131,9 +131,11 @@ class _PersonalScreenState extends State<PersonalScreen> {
       appBar: UserBannerAppBar(
         onTapped: () {
           Navigator.push(
-              context,
-              MaterialPageRoute(
-                  builder: (context) => const UpdateProfileScreen()));
+            context,
+            MaterialPageRoute(
+              builder: (context) => const UpdateProfileScreen(),
+            ),
+          );
         },
       ),
       body: SingleChildScrollView(

@@ -12,9 +12,7 @@ import 'package:task_manager_flutter/data/models/auth_utility.dart';
 import '../../data/models/login_model.dart';
 
 class Dietacreen extends StatefulWidget {
-  const Dietacreen({
-    super.key,
-  });
+  const Dietacreen({super.key});
 
   @override
   State<Dietacreen> createState() => _DietacreenState();
@@ -68,11 +66,15 @@ class _DietacreenState extends State<Dietacreen> {
       "codAluno": {"id": 1},
     };
 
-    void onPressedss() => Navigator.push(context,
-        MaterialPageRoute(builder: (context) => const DietaModalAdd()));
+    void onPressedss() => Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => const DietaModalAdd()),
+    );
 
-    final NetworkResponse response = await NetworkCaller()
-        .postRequest(ApiLinks.findByAlunoByDieta, requestBody);
+    final NetworkResponse response = await NetworkCaller().postRequest(
+      ApiLinks.findByAlunoByDieta,
+      requestBody,
+    );
     _addNewTaskLoading = false;
     if (mounted) {
       setState(() {});
@@ -84,11 +86,14 @@ class _DietacreenState extends State<Dietacreen> {
         dynamic data = response.body?['data'];
         List<dynamic> datas = data;
         mywidgets = [];
-        mywidgets.add(InputBuscarField(
+        mywidgets.add(
+          InputBuscarField(
             hint: "Buscar Dieta",
             obscure: false,
             icon: Icons.person_outline,
-            onPresseds: onPressedss));
+            onPresseds: onPressedss,
+          ),
+        );
         for (var element in datas) {
           mywidgets.add(
             Row(
@@ -117,22 +122,23 @@ class _DietacreenState extends State<Dietacreen> {
     } else {
       if (mounted) {
         mywidgets = [];
-        mywidgets.add(InputBuscarField(
+        mywidgets.add(
+          InputBuscarField(
             hint: "Buscar Dieta",
             obscure: false,
             icon: Icons.person_outline,
-            onPresseds: onPressedss));
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text("Nenhuma suplemento cadastrado!"),
+            onPresseds: onPressedss,
           ),
+        );
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Nenhuma suplemento cadastrado!")),
         );
         _isLoading = false;
       }
     }
   }
 
-  refreshPage() {
+  void refreshPage() {
     setState(() {});
   }
 
@@ -144,9 +150,11 @@ class _DietacreenState extends State<Dietacreen> {
       appBar: UserBannerAppBar(
         onTapped: () {
           Navigator.push(
-              context,
-              MaterialPageRoute(
-                  builder: (context) => const UpdateProfileScreen()));
+            context,
+            MaterialPageRoute(
+              builder: (context) => const UpdateProfileScreen(),
+            ),
+          );
         },
       ),
       body: SingleChildScrollView(
