@@ -63,6 +63,7 @@ dependencies:
   path: ^1.8.2
   file_selector_windows: ^0.9.3+4
   syncfusion_flutter_datagrid: ^31.1.18
+  data_table_2: ^2.5.8
 dev_dependencies:
   flutter_test:
     sdk: flutter
