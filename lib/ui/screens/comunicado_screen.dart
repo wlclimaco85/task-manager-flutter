@@ -47,6 +47,7 @@ class _ComunicadoGridScreenState extends State<ComunicadoGridScreen> {
   List<Comunicado> filtered = [];
   Set<int> selectedRows = {};
   int rowsPerPage = 25;
+  bool filtrosAbertos = false;
 
   // filtros
   final _tituloFilter = TextEditingController();
@@ -197,130 +198,212 @@ class _ComunicadoGridScreenState extends State<ComunicadoGridScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text("Comunicados"),
-        actions: [
-          ElevatedButton.icon(
-            onPressed: () => _openForm(),
-            icon: const Icon(Icons.add),
-            label: const Text("Novo"),
-          ),
-          const SizedBox(width: 8),
-          ElevatedButton.icon(
-            onPressed: selectedRows.isNotEmpty ? _deleteSelected : null,
-            icon: const Icon(Icons.delete),
-            label: const Text("Deletar Selecionados"),
-          ),
-          const SizedBox(width: 16),
-        ],
-      ),
+      appBar: AppBar(title: const Text("Comunicados")),
       body: Column(
         children: [
-          // 🔎 filtros
+          // Botões de ação
           Padding(
-            padding: const EdgeInsets.all(8.0),
+            padding: const EdgeInsets.all(16.0),
             child: Row(
               children: [
-                Flexible(
-                  child: TextField(
-                    controller: _tituloFilter,
-                    decoration: const InputDecoration(
-                      labelText: "Filtrar Título",
-                      prefixIcon: Icon(Icons.search),
+                // Botão Novo com cor verde
+                ElevatedButton.icon(
+                  onPressed: () => _openForm(),
+                  icon: const Icon(Icons.add),
+                  label: const Text("Novo"),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.green,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 12,
                     ),
-                    onChanged: (_) => _applyFilters(),
                   ),
                 ),
-                const SizedBox(width: 8),
-                Flexible(
-                  child: TextField(
-                    controller: _conteudoFilter,
-                    decoration: const InputDecoration(
-                      labelText: "Filtrar Conteúdo",
-                      prefixIcon: Icon(Icons.search),
+                const SizedBox(width: 12),
+                // Botão Deletar Selecionados
+                ElevatedButton.icon(
+                  onPressed: selectedRows.isNotEmpty ? _deleteSelected : null,
+                  icon: const Icon(Icons.delete),
+                  label: const Text("Deletar Selecionados"),
+                  style: ElevatedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 12,
                     ),
-                    onChanged: (_) => _applyFilters(),
                   ),
                 ),
-                const SizedBox(width: 8),
-                Flexible(
-                  child: TextField(
-                    controller: _categoriaFilter,
-                    decoration: const InputDecoration(
-                      labelText: "Filtrar Categoria",
-                      prefixIcon: Icon(Icons.search),
-                    ),
-                    onChanged: (_) => _applyFilters(),
+                const Spacer(),
+                // Botão para expandir/recolher filtros
+                ElevatedButton.icon(
+                  onPressed: () {
+                    setState(() {
+                      filtrosAbertos = !filtrosAbertos;
+                    });
+                  },
+                  icon: Icon(
+                    filtrosAbertos ? Icons.expand_less : Icons.expand_more,
                   ),
-                ),
-                const SizedBox(width: 8),
-                Flexible(
-                  child: TextField(
-                    controller: _autorFilter,
-                    decoration: const InputDecoration(
-                      labelText: "Filtrar Autor",
-                      prefixIcon: Icon(Icons.search),
-                    ),
-                    onChanged: (_) => _applyFilters(),
+                  label: Text(
+                    filtrosAbertos ? "Ocultar Filtros" : "Mostrar Filtros",
+                  ),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.blueGrey[50],
+                    foregroundColor: Colors.blueGrey[800],
                   ),
                 ),
               ],
             ),
           ),
-          Expanded(
-            child: PaginatedDataTable2(
-              sortColumnIndex: sortColumnIndex,
-              sortAscending: sortAscending,
-              columns: [
-                const DataColumn(label: Text("Selecionar")),
-                DataColumn(
-                  label: const Text("Título"),
-                  onSort: (i, asc) => _sort((c) => c.titulo, i, asc),
-                ),
-                DataColumn(
-                  label: const Text("Conteúdo"),
-                  onSort: (i, asc) => _sort((c) => c.conteudo, i, asc),
-                ),
-                DataColumn(
-                  label: const Text("Categoria"),
-                  onSort: (i, asc) => _sort((c) => c.categoria, i, asc),
-                ),
-                DataColumn(
-                  label: const Text("Autor"),
-                  onSort: (i, asc) => _sort((c) => c.autor, i, asc),
-                ),
-                const DataColumn(label: Text("Ações")),
-              ],
-              source: _ComunicadoDataSource(
-                comunicados: filtered,
-                selectedRows: selectedRows,
-                onEdit: (index) => _openForm(
-                  comunicado: filtered[index],
-                  index: comunicados.indexOf(filtered[index]),
-                ),
-                onDelete: (index) {
-                  setState(() {
-                    comunicados.remove(filtered[index]);
-                    _applyFilters();
-                  });
-                },
-                onSelect: (index, selected) {
-                  setState(() {
-                    if (selected) {
-                      selectedRows.add(comunicados.indexOf(filtered[index]));
-                    } else {
-                      selectedRows.remove(comunicados.indexOf(filtered[index]));
-                    }
-                  });
-                },
+
+          // 🔎 filtros - Painel com borda e cor diferenciada
+          if (filtrosAbertos)
+            Container(
+              decoration: BoxDecoration(
+                color: Colors.grey[100],
+                border: Border.all(color: Colors.grey[300]!),
+                borderRadius: BorderRadius.circular(8),
               ),
-              rowsPerPage: rowsPerPage,
-              availableRowsPerPage: const [25, 50, 75, 100],
-              onRowsPerPageChanged: (value) {
-                setState(() {
-                  rowsPerPage = value ?? 25;
-                });
-              },
+              margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                children: [
+                  const Text(
+                    "Filtros",
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                  ),
+                  const SizedBox(height: 16),
+                  Row(
+                    children: [
+                      Flexible(
+                        child: TextField(
+                          controller: _tituloFilter,
+                          decoration: const InputDecoration(
+                            labelText: "Filtrar Título",
+                            prefixIcon: Icon(Icons.search),
+                            isDense: true,
+                          ),
+                          onChanged: (_) => _applyFilters(),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Flexible(
+                        child: TextField(
+                          controller: _conteudoFilter,
+                          decoration: const InputDecoration(
+                            labelText: "Filtrar Conteúdo",
+                            prefixIcon: Icon(Icons.search),
+                            isDense: true,
+                          ),
+                          onChanged: (_) => _applyFilters(),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Flexible(
+                        child: TextField(
+                          controller: _categoriaFilter,
+                          decoration: const InputDecoration(
+                            labelText: "Filtrar Categoria",
+                            prefixIcon: Icon(Icons.search),
+                            isDense: true,
+                          ),
+                          onChanged: (_) => _applyFilters(),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Flexible(
+                        child: TextField(
+                          controller: _autorFilter,
+                          decoration: const InputDecoration(
+                            labelText: "Filtrar Autor",
+                            prefixIcon: Icon(Icons.search),
+                            isDense: true,
+                          ),
+                          onChanged: (_) => _applyFilters(),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+
+          Expanded(
+            child: Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: PaginatedDataTable2(
+                columnSpacing: 12,
+                horizontalMargin: 12,
+                minWidth: 800,
+                sortColumnIndex: sortColumnIndex,
+                sortAscending: sortAscending,
+                columns: [
+                  // Coluna de seleção apenas se houver dados
+                  if (filtered.isNotEmpty)
+                    const DataColumn(label: Text("Selecionar")),
+                  DataColumn(
+                    label: const Text("Título"),
+                    onSort: (i, asc) => _sort((c) => c.titulo, i, asc),
+                  ),
+                  DataColumn(
+                    label: const Text("Conteúdo"),
+                    onSort: (i, asc) => _sort((c) => c.conteudo, i, asc),
+                  ),
+                  DataColumn(
+                    label: const Text("Categoria"),
+                    onSort: (i, asc) => _sort((c) => c.categoria, i, asc),
+                  ),
+                  DataColumn(
+                    label: const Text("Autor"),
+                    onSort: (i, asc) => _sort((c) => c.autor, i, asc),
+                  ),
+                  const DataColumn(label: Text("Ações")),
+                ],
+                source: _ComunicadoDataSource(
+                  comunicados: filtered,
+                  selectedRows: selectedRows,
+                  onEdit: (index) => _openForm(
+                    comunicado: filtered[index],
+                    index: comunicados.indexOf(filtered[index]),
+                  ),
+                  onDelete: (index) {
+                    setState(() {
+                      comunicados.remove(filtered[index]);
+                      _applyFilters();
+                    });
+                  },
+                  onSelect: (index, selected) {
+                    setState(() {
+                      if (selected) {
+                        selectedRows.add(comunicados.indexOf(filtered[index]));
+                      } else {
+                        selectedRows.remove(
+                          comunicados.indexOf(filtered[index]),
+                        );
+                      }
+                    });
+                  },
+                ),
+                rowsPerPage: rowsPerPage,
+                availableRowsPerPage: const [25, 50, 75, 100],
+                onRowsPerPageChanged: (value) {
+                  setState(() {
+                    rowsPerPage = value ?? 25;
+                  });
+                },
+                empty: Center(
+                  child: Container(
+                    padding: const EdgeInsets.all(20),
+                    child: const Text(
+                      "Nenhum comunicado encontrado",
+                      style: TextStyle(
+                        fontStyle: FontStyle.italic,
+                        fontSize: 16,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
             ),
           ),
         ],
@@ -350,12 +433,12 @@ class _ComunicadoDataSource extends DataTableSource {
     final comunicado = comunicados[index];
     final isSelected = selectedRows.contains(index);
 
-    return DataRow(
-      selected: isSelected,
-      onSelectChanged: (selected) {
-        onSelect(index, selected ?? false);
-      },
-      cells: [
+    // Criar as células da linha
+    List<DataCell> cells = [];
+
+    // Adicionar célula de seleção apenas se houver dados
+    if (comunicados.isNotEmpty) {
+      cells.add(
         DataCell(
           Checkbox(
             value: isSelected,
@@ -364,25 +447,39 @@ class _ComunicadoDataSource extends DataTableSource {
             },
           ),
         ),
-        DataCell(Text(comunicado.titulo)),
-        DataCell(Text(comunicado.conteudo)),
-        DataCell(Text(comunicado.categoria)),
-        DataCell(Text(comunicado.autor)),
-        DataCell(
-          Row(
-            children: [
-              IconButton(
-                icon: const Icon(Icons.edit),
-                onPressed: () => onEdit(index),
-              ),
-              IconButton(
-                icon: const Icon(Icons.delete),
-                onPressed: () => onDelete(index),
-              ),
-            ],
-          ),
+      );
+    }
+
+    // Adicionar as demais células
+    cells.addAll([
+      DataCell(Text(comunicado.titulo)),
+      DataCell(Text(comunicado.conteudo)),
+      DataCell(Text(comunicado.categoria)),
+      DataCell(Text(comunicado.autor)),
+      DataCell(
+        Row(
+          children: [
+            IconButton(
+              icon: const Icon(Icons.edit, size: 20),
+              onPressed: () => onEdit(index),
+            ),
+            IconButton(
+              icon: const Icon(Icons.delete, size: 20),
+              onPressed: () => onDelete(index),
+            ),
+          ],
         ),
-      ],
+      ),
+    ]);
+
+    return DataRow(
+      selected: isSelected,
+      onSelectChanged: comunicados.isEmpty
+          ? null
+          : (selected) {
+              onSelect(index, selected ?? false);
+            },
+      cells: cells,
     );
   }
 
