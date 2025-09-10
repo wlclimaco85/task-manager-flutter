@@ -11,8 +11,6 @@ import 'package:task_manager_flutter/data/models/auth_utility.dart';
 import 'package:task_manager_flutter/ui/screens/LoginPopup_screens.dart';
 import 'package:task_manager_flutter/data/constants/custom_colors.dart';
 import 'package:task_manager_flutter/ui/screens/chatMessageListScreen.dart';
-import 'package:flutter/material.dart';
-import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
 class BottomNavBarScreen extends StatefulWidget {
   const BottomNavBarScreen({super.key});
@@ -26,17 +24,46 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
   bool _isSidebarCollapsed = false;
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
 
-  // Sample screens for demonstration
-  final List<Widget> _screens = [
-    const Center(
-      child: Text('Notícias Screen', style: TextStyle(fontSize: 24)),
-    ),
-    const Center(child: Text('Cotação Screen', style: TextStyle(fontSize: 24))),
-    const Center(child: Text('Comprar Screen', style: TextStyle(fontSize: 24))),
-    const Center(child: Text('Vender Screen', style: TextStyle(fontSize: 24))),
-    const Center(child: Text('Perfil Screen', style: TextStyle(fontSize: 24))),
-  ];
+  // Verifica se o usuário está logado
+  final bool isLoggedIn =
+      AuthUtility.userInfo.data?.id != null &&
+      AuthUtility.userInfo.data!.id! > 1;
 
+  // Obtém o nome do usuário ou retorna padrão
+  String get userName {
+    final user = AuthUtility.userInfo.data;
+    if (user?.firstName != null && user?.lastName != null) {
+      return '${user!.firstName!} ${user.lastName!}';
+    } else if (user?.email != null) {
+      return user!.email!;
+    } else {
+      return 'Usuário';
+    }
+  }
+
+  // Obtém as telas com base no estado de login
+  List<Widget> get _screens {
+    return [
+      ComunicadoScreen(
+        apiLink: ApiLinks.allComunicados,
+        screenStatus: 'In Progress',
+      ),
+      const ChatMessageScreen(
+        sector: 'Financeiro',
+        userName: 'Usuário',
+        chatId: '0',
+      ),
+      isLoggedIn
+          ? ChatListScreen(
+              userName: AuthUtility.userInfo.data!.email ?? 'Usuário',
+            )
+          : const LoginPopup(),
+      const ProductRegisterScreen(),
+      isLoggedIn ? const ProductRegisterScreen() : const LoginPopup(),
+    ];
+  }
+
+  // Itens da sidebar
   final List<SidebarItem> _sidebarItems = [
     SidebarItem(icon: FontAwesomeIcons.newspaper, label: "Notícias"),
     SidebarItem(icon: FontAwesomeIcons.chartLine, label: "Cotação"),
@@ -44,6 +71,17 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
     SidebarItem(icon: FontAwesomeIcons.tags, label: "Vender"),
     SidebarItem(icon: FontAwesomeIcons.user, label: "Perfil"),
   ];
+
+  // Função para logout
+  void _handleLogout() {
+    // Implementar lógica de logout aqui
+    AuthUtility.clearUserInfo();
+    Navigator.pushAndRemoveUntil(
+      context,
+      MaterialPageRoute(builder: (context) => const LoginPopup()),
+      (route) => false,
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -56,35 +94,89 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
             width: _isSidebarCollapsed ? 70 : 250,
             height: double.infinity,
             decoration: BoxDecoration(
-              color: Colors.green[50],
-              border: Border(right: BorderSide(color: Colors.green[100]!)),
+              color: CustomColors().getLightGreenBackground(),
+              border: Border(
+                right: BorderSide(
+                  color: CustomColors().getDarkGreenBorder(),
+                  width: 2,
+                ),
+              ),
             ),
             child: Column(
               children: [
-                // App Logo/Header
+                // Header do usuário
                 Container(
-                  height: 80,
+                  height: 120,
                   padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: Colors.green[50],
+                    border: Border(
+                      bottom: BorderSide(color: Colors.green[100]!),
+                    ),
+                  ),
                   child: _isSidebarCollapsed
-                      ? const Icon(
-                          FontAwesomeIcons.layerGroup,
-                          size: 30,
-                          color: Colors.green,
-                        )
-                      : const Row(
-                          children: [
-                            Icon(
-                              FontAwesomeIcons.layerGroup,
-                              size: 30,
-                              color: Colors.green,
+                      ? CircleAvatar(
+                          radius: 25,
+                          backgroundColor: Colors.green,
+                          child: Text(
+                            userName.isNotEmpty
+                                ? userName[0].toUpperCase()
+                                : 'U',
+                            style: const TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white,
                             ),
-                            SizedBox(width: 10),
+                          ),
+                        )
+                      : Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            CircleAvatar(
+                              radius: 30,
+                              backgroundColor: Colors.green,
+                              child: Text(
+                                userName.isNotEmpty
+                                    ? userName[0].toUpperCase()
+                                    : 'U',
+                                style: const TextStyle(
+                                  fontSize: 24,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.white,
+                                ),
+                              ),
+                            ),
+                            const SizedBox(height: 10),
                             Text(
-                              "Task Manager",
+                              userName,
                               style: TextStyle(
-                                fontSize: 20,
+                                fontSize: 16,
                                 fontWeight: FontWeight.bold,
-                                color: Colors.green,
+                                color: Colors.green[800],
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                              maxLines: 1,
+                            ),
+                            const SizedBox(height: 5),
+                            InkWell(
+                              onTap: _handleLogout,
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(
+                                    FontAwesomeIcons.rightFromBracket,
+                                    size: 14,
+                                    color: Colors.green[700],
+                                  ),
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    'Sair',
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      color: Colors.green[700],
+                                    ),
+                                  ),
+                                ],
                               ),
                             ),
                           ],
