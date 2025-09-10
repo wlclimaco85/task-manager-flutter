@@ -1,398 +1,185 @@
 import 'package:flutter/material.dart';
-import 'package:task_manager_flutter/data/utils/api_links.dart';
-import 'package:task_manager_flutter/data/models/task_model.dart';
-import 'package:task_manager_flutter/data/models/network_response.dart';
-import 'package:task_manager_flutter/data/services/network_caller.dart';
-import 'package:intl/intl.dart';
-import 'dart:convert';
+import 'package:syncfusion_flutter_datagrid/datagrid.dart';
 import 'package:task_manager_flutter/data/models/comunicados_model.dart';
-import 'package:task_manager_flutter/ui/widgets/user_banners.dart';
-import 'package:task_manager_flutter/ui/screens/update_profile.dart';
-import 'package:task_manager_flutter/data/constants/custom_colors.dart';
+import 'package:task_manager_flutter/data/services/network_caller.dart';
+import 'package:task_manager_flutter/data/utils/api_links.dart';
+import 'package:task_manager_flutter/data/models/network_response.dart';
+import 'package:intl/intl.dart';
 
-class ComunicadoScreen extends StatefulWidget {
-  final String screenStatus;
-  final String apiLink;
-  final bool showAllSummeryCard;
-  final bool floatingActionButton;
-
-  const ComunicadoScreen({
-    super.key,
-    required this.screenStatus,
-    required this.apiLink,
-    this.showAllSummeryCard = false,
-    this.floatingActionButton = true,
-  });
+class ComunicadoGridScreen extends StatefulWidget {
+  const ComunicadoGridScreen({super.key});
 
   @override
-  State<ComunicadoScreen> createState() => _ComunicadoScreenState();
+  State<ComunicadoGridScreen> createState() => _ComunicadoGridScreenState();
 }
 
-class ComunicadoModel {
-  String? status;
-  String? token;
-  List<Data>? data;
-
-  ComunicadoModel({this.status, this.token, this.data});
-
-  ComunicadoModel.fromJson(Map<String, dynamic> json) {
-    status = json['status'];
-    token = json['token'];
-
-    // Verifica se 'data' é uma lista de listas
-    if (json['data'] != null) {
-      /*  data = [];
-    // Itera sobre cada lista no 'data'
-    for (var list in json['data']) {
-      // Adiciona à lista de 'data' uma lista de Map<String, dynamic>
-      data.add(List<Map<String, dynamic>>.from(list.map((item) => Map<String, dynamic>.from(item))));
-    } */
-      //  List<Data> dataList = Data.fromJsonList2(json['data']['noticiasDTO']);
-      List<Data> dataList = Data.fromJsonList(json['data']['comunicadoDTO']);
-      data =
-          dataList; //json['data'] != null ? Data.fromJson(json['data']) : null;
-    } else {
-      data = null;
-    }
-
-    //data = json['data'] != null ? Data.fromJson(json['data']) : null;
-  }
-
-  /* Map<String, dynamic> toJson() {
-    final Map<String, dynamic> data = <String, dynamic>{};
-    data['status'] = status;
-    data['token'] = token;
-    if (this.data != null) {
-      data['data'] = this.data!.toJson();
-    }
-    return data;
-  }*/
-
-  Map<String, dynamic> toJson() {
-    final Map<String, dynamic> data = <String, dynamic>{};
-    data['status'] = status;
-    data['token'] = token;
-    if (this.data != null) {
-      // Mapeia cada item da lista 'data' para o formato JSON
-      data['data'] = this.data!.map((item) => item.toJson()).toList();
-    }
-    return data;
-  }
-}
-
-class _ComunicadoScreenState extends State<ComunicadoScreen> {
-  List<Data> newsList = [];
-  bool isLoading = false;
-  int page = 1;
-
-  final ScrollController _controller = ScrollController();
+class _ComunicadoGridScreenState extends State<ComunicadoGridScreen> {
+  late ComunicadoDataSource _comunicadoDataSource;
+  bool isLoading = true;
+  final List<Data> _newsList = [];
 
   @override
   void initState() {
     super.initState();
-    fetchNews();
-    _controller.addListener(_onScroll);
+    _fetchComunicados();
   }
 
-  Future<void> fetchNews({bool isRefresh = false}) async {
-    if (isRefresh) {
-      setState(() {
-        page = 1;
-        newsList.clear();
-      });
-    }
-
-    setState(() {
-      isLoading = true;
-    });
-
-    final NetworkResponse response = await NetworkCaller().getRequest(
-      ApiLinks.allComunicados,
-    );
-
-    if (response.statusCode == 200) {
-      if (response.body != null) {
-        final jsonString = json.encode(response.body);
-        final model = ComunicadoModel.fromJson(response.body!);
-        if (model.data != null) {
-          setState(() {
-            newsList.addAll(model.data!);
-            page++;
-          });
-        }
+  Future<void> _fetchComunicados() async {
+    final response = await NetworkCaller().getRequest(ApiLinks.allComunicados);
+    if (response.isSuccess && response.body != null) {
+      final model = ComunicadoModel.fromJson(response.body!);
+      if (model.data != null) {
+        _newsList.addAll(model.data!);
       }
-    } else {
-      throw Exception('Falha ao carregar as notícias');
     }
+    _comunicadoDataSource = ComunicadoDataSource(_newsList);
+    setState(() => isLoading = false);
+  }
 
+  void _deleteSelected() {
     setState(() {
-      isLoading = false;
+      _comunicadoDataSource.rows.removeWhere((row) => row.isSelected == true);
+      _comunicadoDataSource.updateDataGrid();
     });
   }
-
-  void _onScroll() {
-    if (_controller.position.pixels == _controller.position.maxScrollExtent &&
-        !isLoading) {
-      fetchNews();
-    }
-  }
-
-  Future<void> _refreshNews() async {
-    await fetchNews(isRefresh: true);
-  }
-
-  TaskListModel _taskModel = TaskListModel();
-
-  Future<void> getTask() async {
-    if (mounted) {
-      setState(() {
-        isLoading = true;
-      });
-    }
-    final NetworkResponse response = await NetworkCaller().getRequest(
-      widget.apiLink,
-    );
-    if (response.isSuccess) {
-      _taskModel = TaskListModel.fromJson(response.body!);
-    } else {
-      if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(const SnackBar(content: Text("Failed to load data!")));
-      }
-    }
-    if (mounted) {
-      setState(() {
-        isLoading = false;
-      });
-    }
-  }
-
-  int count1 = 0;
-  int count2 = 0;
-  int count3 = 0;
-  int count4 = 0;
-
-  Future<void> statusCount() async {
-    isLoading = true;
-    if (mounted) {
-      setState(() {});
-    }
-    final NetworkResponse newTaskResponse = await NetworkCaller().getRequest(
-      ApiLinks.newTaskStatus,
-    );
-    TaskListModel newTaskModel = TaskListModel.fromJson(
-      (newTaskResponse.body != null ? newTaskResponse.body! : {}),
-    );
-
-    if (mounted) {
-      setState(() {
-        count1 = newTaskModel.data?.length ?? 0;
-      });
-    }
-
-    final cancelledTaskResponse = await NetworkCaller().getRequest(
-      ApiLinks.cancelledTaskStatus,
-    );
-    TaskListModel cancelledTaskModel = TaskListModel.fromJson(
-      cancelledTaskResponse.body != null ? cancelledTaskResponse.body! : {},
-    );
-    if (mounted) {
-      setState(() {
-        count2 = cancelledTaskModel.data?.length ?? 0;
-      });
-    }
-
-    final completedTaskResponse = await NetworkCaller().getRequest(
-      ApiLinks.completedTaskStatus,
-    );
-
-    TaskListModel completedTaskModel = TaskListModel.fromJson(
-      completedTaskResponse.body != null ? completedTaskResponse.body! : {},
-    );
-    if (mounted) {
-      setState(() {
-        count3 = completedTaskModel.data?.length ?? 0;
-      });
-    }
-
-    final inProgressResponse = await NetworkCaller().getRequest(
-      ApiLinks.inProgressTaskStatus,
-    );
-    TaskListModel inProgressTaskModel = TaskListModel.fromJson(
-      inProgressResponse.body != null ? inProgressResponse.body! : {},
-    );
-    if (mounted) {
-      setState(() {
-        count4 = inProgressTaskModel.data?.length ?? 0;
-      });
-    }
-
-    isLoading = false;
-    if (mounted) {
-      setState(() {});
-    }
-  }
-
-  Future<void> deleteTask(String taskId) async {
-    if (mounted) {
-      setState(() {
-        isLoading = true;
-      });
-    }
-    final NetworkResponse response = await NetworkCaller().getRequest(
-      ApiLinks.deleteTask(taskId),
-    );
-    if (response.isSuccess) {
-      _taskModel.data!.removeWhere((element) => element.sId == taskId);
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("Task Deleted Successfully!")),
-        );
-      }
-    }
-    if (mounted) {
-      setState(() {
-        isLoading = false;
-      });
-    }
-  }
-
-  // int getCountForStatus(String status) {
-  //   final Data? statusData = statusCountModel.data?.firstWhere(
-  //     (data) => data.statusId == status,
-  //     orElse: () => Data(statusId: status, count: 0),
-  //   );
-  //   return statusData?.count ?? 0;
-  // }
-  bool standardSelected = false;
-  bool filledSelected = false;
-  bool tonalSelected = false;
-  bool outlinedSelected = false;
-  int count = 0;
-
-  void log(String message) => print(message);
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: UserBannerAppBar(
-        screenTitle: "Notícias",
-        isLoading: isLoading,
-        onRefresh: _refreshNews,
-        onTapped: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => const UpdateProfileScreen(),
-            ),
-          );
-        },
-      ),
-      body: Container(
-        color: CustomColors().getLightGreenBackground(), // Cor de fundo da tela
-        child: RefreshIndicator(
-          onRefresh: _refreshNews,
-          child: Stack(
-            children: [
-              ListView.builder(
-                controller: _controller,
-                itemCount: newsList.length + (isLoading ? 1 : 0),
-                itemBuilder: (context, index) {
-                  if (index == newsList.length) {
-                    return isLoading
-                        ? const Center(
-                            child: SizedBox(
-                              width: 60,
-                              height: 60,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 6.0,
-                              ),
-                            ),
-                          )
-                        : const SizedBox.shrink();
-                  }
-
-                  final news = newsList[index];
-                  return Card(
-                    elevation: 0, // Remove a sombra padrão do Card
-                    color: Colors.transparent, // Remove a cor de fundo
-                    shape: const RoundedRectangleBorder(
-                      borderRadius: BorderRadius.zero, // Bordas retas
-                      side: BorderSide.none, // Remove qualquer borda
-                    ),
-                    child: Column(
-                      children: [
-                        ListTile(
-                          title: Text(
-                            news.titulo ?? 'titulo não disponível',
-                            style: TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                              color: CustomColors().getTextColor(),
-                            ),
-                          ),
-                          subtitle: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
+      appBar: AppBar(title: const Text('📢 Comunicados')),
+      body: isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : Column(
+              children: [
+                // Barra de ação com botões
+                Padding(
+                  padding: const EdgeInsets.all(8.0),
+                  child: Row(
+                    children: [
+                      ElevatedButton.icon(
+                        icon: const Icon(Icons.add),
+                        label: const Text('Novo'),
+                        onPressed: () {
+                          debugPrint('Adicionar novo comunicado');
+                        },
+                      ),
+                      const SizedBox(width: 10),
+                      ElevatedButton.icon(
+                        icon: const Icon(Icons.delete),
+                        label: const Text('Excluir selecionados'),
+                        onPressed: _deleteSelected,
+                      ),
+                    ],
+                  ),
+                ),
+                // DataGrid Syncfusion
+                Expanded(
+                  child: SfDataGrid(
+                    source: _comunicadoDataSource,
+                    allowSorting: true,
+                    allowMultiColumnSorting: true,
+                    selectionMode: SelectionMode.multiple,
+                    columns: [
+                      GridColumn(
+                        columnName: 'titulo',
+                        label: const Text('Título'),
+                      ),
+                      GridColumn(
+                        columnName: 'conteudo',
+                        label: const Text('Conteúdo'),
+                      ),
+                      GridColumn(
+                        columnName: 'categoria',
+                        label: const Text('Categoria'),
+                      ),
+                      GridColumn(columnName: 'data', label: const Text('Data')),
+                      GridColumn(
+                        columnName: 'autor',
+                        label: const Text('Autor'),
+                      ),
+                      GridWidgetColumn(
+                        columnName: 'acoes',
+                        width: 100,
+                        label: const Text('Ações'),
+                        widget: (column, row) {
+                          return Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              Text(
-                                news.conteudo ?? 'Conteudo não disponível',
-                                style: TextStyle(
-                                  color: CustomColors().getTextColor(),
+                              IconButton(
+                                icon: const Icon(
+                                  Icons.edit,
+                                  color: Colors.blue,
                                 ),
+                                onPressed: () {
+                                  debugPrint(
+                                    'Editar: ${row.getCells()['titulo']?.value}',
+                                  );
+                                },
                               ),
-                              const SizedBox(height: 4),
-                              Row(
-                                mainAxisAlignment:
-                                    MainAxisAlignment.spaceBetween,
-                                children: [
-                                  Text(
-                                    '${news.categoria ?? 'Fonte não disponível'}     ${news.dhCreatedAt != null ? DateFormat('dd/MM/yyyy HH:mm').format(news.dhCreatedAt!.toLocal()) : ''}',
-                                    style: TextStyle(
-                                      fontSize: 10,
-                                      fontWeight: FontWeight.bold,
-                                      color: CustomColors().getTextColor(),
-                                    ),
-                                  ),
-                                  Text(
-                                    news.autor ?? 'Autor não disponível',
-                                    style: TextStyle(
-                                      fontSize: 10,
-                                      color: CustomColors().getTextColor(),
-                                    ),
-                                  ),
-                                ],
+                              IconButton(
+                                icon: const Icon(
+                                  Icons.delete,
+                                  color: Colors.red,
+                                ),
+                                onPressed: () {
+                                  debugPrint(
+                                    'Excluir: ${row.getCells()['titulo']?.value}',
+                                  );
+                                },
                               ),
                             ],
-                          ),
-                          onTap: () {
-                            //   Navigator.push(
-                            //    context,
-                            //     MaterialPageRoute(
-                            //   builder: (context) =>
-                            //        NewsDetailScreen(news: news),
-                            //   ),
-                            //     );
-                            // Ação ao tocar no item da lista
-                          },
-                        ),
-                        const Divider(
-                          height: 1,
-                          thickness: 1,
-                          color: Colors
-                              .grey, // Ou use CustomColors().getTextColor()
-                          indent: 16,
-                          endIndent: 16,
-                        ),
-                      ],
-                    ),
-                  );
-                },
-              ),
-            ],
-          ),
-        ),
-      ),
+                          );
+                        },
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
     );
+  }
+}
+
+class ComunicadoDataSource extends DataGridSource {
+  List<DataGridRow> rows = [];
+
+  ComunicadoDataSource(List<Data> comunicados) {
+    rows = comunicados.map((com) {
+      return DataGridRow(
+        cells: [
+          DataGridCell(columnName: 'titulo', value: com.titulo),
+          DataGridCell(columnName: 'conteudo', value: com.conteudo),
+          DataGridCell(columnName: 'categoria', value: com.categoria),
+          DataGridCell(
+            columnName: 'data',
+            value: com.dhCreatedAt != null
+                ? DateFormat('dd/MM/yyyy HH:mm').format(com.dhCreatedAt!)
+                : '',
+          ),
+          DataGridCell(columnName: 'autor', value: com.autor),
+          DataGridCell(columnName: 'acoes', value: null),
+        ],
+      );
+    }).toList();
+  }
+
+  @override
+  List<DataGridRow> get dataGridRows => rows;
+
+  @override
+  DataGridRowAdapter buildRow(DataGridRow row) {
+    return DataGridRowAdapter(
+      cells: row.getCells().map((cell) {
+        return Container(
+          padding: const EdgeInsets.all(8.0),
+          alignment: Alignment.centerLeft,
+          child: Text(cell.value?.toString() ?? ''),
+        );
+      }).toList(),
+    );
+  }
+
+  void updateDataGrid() {
+    notifyListeners();
   }
 }

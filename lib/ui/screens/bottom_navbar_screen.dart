@@ -104,10 +104,12 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
             ),
             child: Column(
               children: [
-                // Header do usuário
+                // Header do usuário - Corrigido para evitar overflow
                 Container(
-                  height: 120,
-                  padding: const EdgeInsets.all(16),
+                  padding: const EdgeInsets.symmetric(
+                    vertical: 16,
+                    horizontal: 12,
+                  ),
                   decoration: BoxDecoration(
                     color: Colors.green[50],
                     border: Border(
@@ -115,49 +117,52 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
                     ),
                   ),
                   child: _isSidebarCollapsed
-                      ? CircleAvatar(
-                          radius: 25,
-                          backgroundColor: Colors.green,
-                          child: Text(
-                            userName.isNotEmpty
-                                ? userName[0].toUpperCase()
-                                : 'U',
-                            style: const TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.white,
+                      ? Center(
+                          child: CircleAvatar(
+                            radius: 20,
+                            backgroundColor: Colors.green,
+                            child: Text(
+                              userName.isNotEmpty
+                                  ? userName[0].toUpperCase()
+                                  : 'U',
+                              style: const TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.white,
+                              ),
                             ),
                           ),
                         )
                       : Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
+                          mainAxisSize: MainAxisSize.min,
                           children: [
                             CircleAvatar(
-                              radius: 30,
+                              radius: 25,
                               backgroundColor: Colors.green,
                               child: Text(
                                 userName.isNotEmpty
                                     ? userName[0].toUpperCase()
                                     : 'U',
                                 style: const TextStyle(
-                                  fontSize: 24,
+                                  fontSize: 18,
                                   fontWeight: FontWeight.bold,
                                   color: Colors.white,
                                 ),
                               ),
                             ),
-                            const SizedBox(height: 10),
+                            const SizedBox(height: 8),
                             Text(
                               userName,
                               style: TextStyle(
-                                fontSize: 16,
+                                fontSize: 14,
                                 fontWeight: FontWeight.bold,
                                 color: Colors.green[800],
                                 overflow: TextOverflow.ellipsis,
                               ),
                               maxLines: 1,
+                              textAlign: TextAlign.center,
                             ),
-                            const SizedBox(height: 5),
+                            const SizedBox(height: 4),
                             InkWell(
                               onTap: _handleLogout,
                               child: Row(
@@ -165,14 +170,14 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
                                 children: [
                                   Icon(
                                     FontAwesomeIcons.rightFromBracket,
-                                    size: 14,
+                                    size: 12,
                                     color: Colors.green[700],
                                   ),
                                   const SizedBox(width: 4),
                                   Text(
                                     'Sair',
                                     style: TextStyle(
-                                      fontSize: 12,
+                                      fontSize: 11,
                                       color: Colors.green[700],
                                     ),
                                   ),
@@ -207,18 +212,24 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
                 // Collapse/Expand Button
                 Divider(height: 1, color: Colors.green[100]),
                 ListTile(
+                  dense: true,
+                  visualDensity: VisualDensity.compact,
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 12),
                   leading: Icon(
                     _isSidebarCollapsed
                         ? FontAwesomeIcons.arrowRight
                         : FontAwesomeIcons.arrowLeft,
-                    size: 18,
+                    size: 16,
                     color: Colors.green[700],
                   ),
                   title: _isSidebarCollapsed
                       ? null
                       : Text(
                           _isSidebarCollapsed ? "Expandir" : "Recolher",
-                          style: TextStyle(color: Colors.green[700]),
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Colors.green[700],
+                          ),
                         ),
                   onTap: () {
                     setState(() {
@@ -276,18 +287,21 @@ class _SidebarListItem extends StatelessWidget {
           child: isCollapsed
               ? Icon(
                   icon,
+                  size: 20,
                   color: isSelected ? Colors.green[800] : Colors.grey[700],
                 )
               : Row(
                   children: [
                     Icon(
                       icon,
+                      size: 20,
                       color: isSelected ? Colors.green[800] : Colors.grey[700],
                     ),
                     const SizedBox(width: 12),
                     Text(
                       label,
                       style: TextStyle(
+                        fontSize: 14,
                         color: isSelected
                             ? Colors.green[800]
                             : Colors.grey[700],
