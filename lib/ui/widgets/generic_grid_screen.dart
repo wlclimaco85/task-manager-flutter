@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:data_table_2/data_table_2.dart';
 import 'package:task_manager_flutter/data/models/network_response.dart';
 import 'package:task_manager_flutter/data/services/network_caller.dart';
-import 'package:intl/intl.dart';
 
 typedef FromJson<T> = T Function(Map<String, dynamic> json);
 typedef ToJson<T> = Map<String, dynamic> Function(T item);
@@ -13,10 +12,25 @@ typedef FormBuilder<T> =
       Function(T) onSave,
       bool isSaving,
     );
-typedef ColumnBuilder<T> = List<DataColumn> Function(BuildContext context);
+typedef ColumnBuilder<T> =
+    List<DataColumn> Function(
+      BuildContext context,
+      void Function<U>(
+        Comparable<U> Function(T c) getField,
+        int columnIndex,
+        bool asc,
+      )
+      onSort,
+    );
 typedef CellBuilder<T> =
     List<DataCell> Function(BuildContext context, T item, int index);
 typedef SecurityCheck = bool Function(String permission);
+typedef FilterBuilder<T> =
+    Widget Function(
+      BuildContext context,
+      Map<String, TextEditingController> filterControllers,
+      VoidCallback applyFilters,
+    );
 
 class GenericGridScreen<T> extends StatefulWidget {
   final String title;
@@ -29,6 +43,7 @@ class GenericGridScreen<T> extends StatefulWidget {
   final FormBuilder<T> formBuilder;
   final ColumnBuilder<T> columnBuilder;
   final CellBuilder<T> cellBuilder;
+  final FilterBuilder<T> filterBuilder;
   final SecurityCheck hasPermission;
   final Map<String, bool> buttonPermissions;
 
@@ -44,6 +59,7 @@ class GenericGridScreen<T> extends StatefulWidget {
     required this.formBuilder,
     required this.columnBuilder,
     required this.cellBuilder,
+    required this.filterBuilder,
     required this.hasPermission,
     this.buttonPermissions = const {
       'create': true,
@@ -91,8 +107,11 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
 
     if (response.statusCode == 200 && response.body != null) {
       try {
-        // Parse da resposta do servidor
-        final List<dynamic> data = response.body!['data'];
+        // Parse da resposta do servidor - ajuste conforme sua estrutura de API
+        final List<dynamic> data = response.body!['data'] is Map
+            ? response.body!['data']['comunicadoDTO'] // Ajuste conforme sua API
+            : response.body!['data'];
+
         setState(() {
           items = data.map((json) => widget.fromJson(json)).toList();
           filtered = List.from(items);
@@ -115,8 +134,6 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
   }
 
   void _applyFilters() {
-    // Esta função precisa ser implementada de acordo com os campos do modelo
-    // Pode ser sobrescrita ou personalizada conforme necessário
     setState(() {
       filtered = List.from(items);
     });
@@ -395,9 +412,40 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
                             icon: const Icon(Icons.refresh),
                             tooltip: "Recarregar",
                           ),
+                          const SizedBox(width: 12),
+                          // Botão para expandir/recolher filtros
+                          ElevatedButton.icon(
+                            onPressed: () {
+                              setState(() {
+                                filtrosAbertos = !filtrosAbertos;
+                              });
+                            },
+                            icon: Icon(
+                              filtrosAbertos
+                                  ? Icons.expand_less
+                                  : Icons.expand_more,
+                            ),
+                            label: Text(
+                              filtrosAbertos
+                                  ? "Ocultar Filtros"
+                                  : "Mostrar Filtros",
+                            ),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.blueGrey[50],
+                              foregroundColor: Colors.blueGrey[800],
+                            ),
+                          ),
                         ],
                       ),
                     ),
+
+                    // 🔎 filtros - Painel com borda e cor diferenciada
+                    if (filtrosAbertos)
+                      widget.filterBuilder(
+                        context,
+                        _filterControllers,
+                        _applyFilters,
+                      ),
 
                     Expanded(
                       child: Padding(
@@ -408,7 +456,7 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
                           minWidth: 800,
                           sortColumnIndex: sortColumnIndex,
                           sortAscending: sortAscending,
-                          columns: widget.columnBuilder(context),
+                          columns: widget.columnBuilder(context, _sort),
                           source: _GenericDataSource<T>(
                             items: filtered,
                             selectedRows: selectedRows,
@@ -453,7 +501,7 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
                               });
                             },
                             cellBuilder: widget.cellBuilder,
-                            context: context, // Passe o contexto
+                            context: context,
                           ),
                           rowsPerPage: rowsPerPage,
                           availableRowsPerPage: const [25, 50, 75, 100],

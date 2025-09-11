@@ -64,6 +64,7 @@ class ComunicadoGridComponentesScreen extends StatelessWidget {
       fromJson: (json) => Comunicado.fromJson(json),
       toJson: (comunicado) => comunicado.toJson(),
       formBuilder: _buildForm,
+      filterBuilder: _buildFilters, // ✅ Adicione esta linha
       columnBuilder: _buildColumns,
       cellBuilder: _buildCells,
       hasPermission: hasPermission,
@@ -73,6 +74,82 @@ class ComunicadoGridComponentesScreen extends StatelessWidget {
         'delete': true,
         'deleteMultiple': true,
       },
+    );
+  }
+
+  Widget _buildFilters(
+    BuildContext context,
+    Map<String, TextEditingController> filterControllers,
+    VoidCallback applyFilters,
+  ) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.grey[100],
+        border: Border.all(color: Colors.grey[300]!),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        children: [
+          const Text(
+            "Filtros",
+            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+          ),
+          const SizedBox(height: 16),
+          Row(
+            children: [
+              Flexible(
+                child: TextField(
+                  controller: filterControllers['titulo'],
+                  decoration: const InputDecoration(
+                    labelText: "Filtrar Título",
+                    prefixIcon: Icon(Icons.search),
+                    isDense: true,
+                  ),
+                  onChanged: (_) => applyFilters(),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Flexible(
+                child: TextField(
+                  controller: filterControllers['conteudo'],
+                  decoration: const InputDecoration(
+                    labelText: "Filtrar Conteúdo",
+                    prefixIcon: Icon(Icons.search),
+                    isDense: true,
+                  ),
+                  onChanged: (_) => applyFilters(),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Flexible(
+                child: TextField(
+                  controller: filterControllers['categoria'],
+                  decoration: const InputDecoration(
+                    labelText: "Filtrar Categoria",
+                    prefixIcon: Icon(Icons.search),
+                    isDense: true,
+                  ),
+                  onChanged: (_) => applyFilters(),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Flexible(
+                child: TextField(
+                  controller: filterControllers['autor'],
+                  decoration: const InputDecoration(
+                    labelText: "Filtrar Autor",
+                    prefixIcon: Icon(Icons.search),
+                    isDense: true,
+                  ),
+                  onChanged: (_) => applyFilters(),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
     );
   }
 
@@ -294,12 +371,40 @@ class ComunicadoGridComponentesScreen extends StatelessWidget {
     );
   }
 
-  List<DataColumn> _buildColumns(BuildContext context) {
+  List<DataColumn> _buildColumns(
+    BuildContext context,
+    void Function<U>(
+      Comparable<U> Function(Comunicado c) getField,
+      int columnIndex,
+      bool asc,
+    )
+    onSort,
+  ) {
     return [
-      const DataColumn(label: Text("Título")),
-      const DataColumn(label: Text("Conteúdo")),
-      const DataColumn(label: Text("Categoria")),
-      const DataColumn(label: Text("Autor")),
+      DataColumn(
+        label: const Text("Título"),
+        onSort: (columnIndex, ascending) {
+          onSort((c) => c.titulo, columnIndex, ascending);
+        },
+      ),
+      DataColumn(
+        label: const Text("Conteúdo"),
+        onSort: (columnIndex, ascending) {
+          onSort((c) => c.conteudo, columnIndex, ascending);
+        },
+      ),
+      DataColumn(
+        label: const Text("Categoria"),
+        onSort: (columnIndex, ascending) {
+          onSort((c) => c.categoria, columnIndex, ascending);
+        },
+      ),
+      DataColumn(
+        label: const Text("Autor"),
+        onSort: (columnIndex, ascending) {
+          onSort((c) => c.autor, columnIndex, ascending);
+        },
+      ),
       const DataColumn(label: Text("Data")),
       const DataColumn(label: Text("Ações")),
     ];
