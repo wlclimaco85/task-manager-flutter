@@ -2,7 +2,6 @@ class ApiLinks {
   ApiLinks._();
   static const String _baseIp =
       // "https://appacademia-production-be7e.up.railway.app";
-
       // "http://192.168.100.41:8088";
       "http://192.168.114.1:8088";
   // "http://192.168.100.113:8088";
@@ -69,6 +68,11 @@ class ApiLinks {
   static String insertCotacaoFrete = '$_baseUrlNew/api/cotacaofrete';
   static String allAlerts = '$_baseUrlNew/api/alert';
   static String allComunicados = '$_baseUrlNew/api/comunicados';
+  static String createComunicado = '$_baseUrlNew/api/comunicados/insert';
+  static String updateComunicado(String taskId) =>
+      '$_baseUrl//api/comunicados/update/$taskId';
+  static String deleteComunicado(String taskId) =>
+      '$_baseUrl/api/comunicados/delete/$taskId';
   static String alertFindByUser = '$_baseUrlNew/api/alert/byUser/';
   static String compradorFindByUser = '$_baseUrlNew/api/produtos/comprador/';
   static String vendedorFindByUser = '$_baseUrlNew/api/produtos/vendedor/';

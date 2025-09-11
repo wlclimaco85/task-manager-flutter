@@ -1,18 +1,51 @@
 import 'package:flutter/material.dart';
 import 'package:data_table_2/data_table_2.dart';
+import 'package:task_manager_flutter/data/utils/api_links.dart';
+import 'package:task_manager_flutter/data/models/network_response.dart';
+import 'package:task_manager_flutter/data/services/network_caller.dart';
+import 'package:intl/intl.dart';
+import 'dart:convert';
 
 class Comunicado {
+  String id;
   String titulo;
   String conteudo;
   String categoria;
   String autor;
+  DateTime? dhCreatedAt;
 
   Comunicado({
+    required this.id,
     required this.titulo,
     required this.conteudo,
     required this.categoria,
     required this.autor,
+    this.dhCreatedAt,
   });
+
+  factory Comunicado.fromJson(Map<String, dynamic> json) {
+    return Comunicado(
+      id: json['_id'] ?? '',
+      titulo: json['titulo'] ?? '',
+      conteudo: json['conteudo'] ?? '',
+      categoria: json['categoria'] ?? '',
+      autor: json['autor'] ?? '',
+      dhCreatedAt: json['dhCreatedAt'] != null
+          ? DateTime.parse(json['dhCreatedAt']).toLocal()
+          : null,
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      '_id': id,
+      'titulo': titulo,
+      'conteudo': conteudo,
+      'categoria': categoria,
+      'autor': autor,
+      'dhCreatedAt': dhCreatedAt?.toIso8601String(),
+    };
+  }
 }
 
 class ComunicadoGridScreen extends StatefulWidget {
@@ -23,31 +56,12 @@ class ComunicadoGridScreen extends StatefulWidget {
 }
 
 class _ComunicadoGridScreenState extends State<ComunicadoGridScreen> {
-  List<Comunicado> comunicados = [
-    Comunicado(
-      titulo: "Título C",
-      conteudo: "Conteúdo 3",
-      categoria: "Aviso",
-      autor: "Carlos",
-    ),
-    Comunicado(
-      titulo: "Título A",
-      conteudo: "Conteúdo 1",
-      categoria: "Notícia",
-      autor: "Ana",
-    ),
-    Comunicado(
-      titulo: "Título B",
-      conteudo: "Conteúdo 2",
-      categoria: "Evento",
-      autor: "Bruno",
-    ),
-  ];
-
+  List<Comunicado> comunicados = [];
   List<Comunicado> filtered = [];
-  Set<int> selectedRows = {};
+  Set<String> selectedRows = {}; // Agora usando IDs em vez de índices
   int rowsPerPage = 25;
   bool filtrosAbertos = false;
+  bool isLoading = false;
 
   // filtros
   final _tituloFilter = TextEditingController();
@@ -62,7 +76,41 @@ class _ComunicadoGridScreenState extends State<ComunicadoGridScreen> {
   @override
   void initState() {
     super.initState();
-    filtered = List.from(comunicados);
+    _loadComunicados();
+  }
+
+  Future<void> _loadComunicados() async {
+    setState(() {
+      isLoading = true;
+    });
+
+    final NetworkResponse response = await NetworkCaller().getRequest(
+      ApiLinks.allComunicados,
+    );
+
+    if (response.statusCode == 200 && response.body != null) {
+      try {
+        // Parse da resposta do servidor
+        final List<dynamic> data = response.body!['data']['comunicadoDTO'];
+        setState(() {
+          comunicados = data.map((json) => Comunicado.fromJson(json)).toList();
+          filtered = List.from(comunicados);
+        });
+      } catch (e) {
+        print('Erro no parse dos dados: $e');
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Erro ao processar os dados')),
+        );
+      }
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Falha ao carregar comunicados')),
+      );
+    }
+
+    setState(() {
+      isLoading = false;
+    });
   }
 
   void _applyFilters() {
@@ -103,7 +151,7 @@ class _ComunicadoGridScreenState extends State<ComunicadoGridScreen> {
     });
   }
 
-  void _openForm({Comunicado? comunicado, int? index}) {
+  void _openForm({Comunicado? comunicado}) {
     final tituloController = TextEditingController(
       text: comunicado?.titulo ?? "",
     );
@@ -284,28 +332,27 @@ class _ComunicadoGridScreenState extends State<ComunicadoGridScreen> {
                       ),
                       const SizedBox(width: 10),
                       ElevatedButton(
-                        onPressed: () {
-                          setState(() {
-                            if (comunicado == null) {
-                              comunicados.add(
-                                Comunicado(
-                                  titulo: tituloController.text,
-                                  conteudo: conteudoController.text,
-                                  categoria: categoriaController.text,
-                                  autor: autorController.text,
-                                ),
-                              );
-                            } else {
-                              comunicados[index!] = Comunicado(
-                                titulo: tituloController.text,
-                                conteudo: conteudoController.text,
-                                categoria: categoriaController.text,
-                                autor: autorController.text,
-                              );
-                            }
-                            _applyFilters();
-                          });
-                          Navigator.pop(ctx);
+                        onPressed: () async {
+                          // Salvar no servidor
+                          final newComunicado = Comunicado(
+                            id:
+                                comunicado?.id ??
+                                DateTime.now().millisecondsSinceEpoch
+                                    .toString(),
+                            titulo: tituloController.text,
+                            conteudo: conteudoController.text,
+                            categoria: categoriaController.text,
+                            autor: autorController.text,
+                          );
+
+                          final success = comunicado == null
+                              ? await _createComunicado(newComunicado)
+                              : await _updateComunicado(newComunicado);
+
+                          if (success) {
+                            Navigator.pop(ctx);
+                            _loadComunicados(); // Recarregar dados do servidor
+                          }
                         },
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Colors.green,
@@ -331,236 +378,349 @@ class _ComunicadoGridScreenState extends State<ComunicadoGridScreen> {
     );
   }
 
-  void _deleteSelected() {
+  Future<bool> _createComunicado(Comunicado comunicado) async {
     setState(() {
-      comunicados.removeWhere(
-        (element) => selectedRows.contains(comunicados.indexOf(element)),
-      );
-      selectedRows.clear();
-      _applyFilters();
+      isLoading = true;
     });
+
+    final response = await NetworkCaller().postRequest(
+      ApiLinks.createComunicado,
+      comunicado.toJson(),
+    );
+
+    setState(() {
+      isLoading = false;
+    });
+
+    if (response.isSuccess) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Comunicado criado com sucesso')),
+      );
+      return true;
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Falha ao criar comunicado')),
+      );
+      return false;
+    }
+  }
+
+  Future<bool> _updateComunicado(Comunicado comunicado) async {
+    setState(() {
+      isLoading = true;
+    });
+
+    final response = await NetworkCaller().postRequest(
+      ApiLinks.updateComunicado(comunicado.id),
+      comunicado.toJson(),
+    );
+
+    setState(() {
+      isLoading = false;
+    });
+
+    if (response.isSuccess) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Comunicado atualizado com sucesso')),
+      );
+      return true;
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Falha ao atualizar comunicado')),
+      );
+      return false;
+    }
+  }
+
+  Future<void> _deleteComunicado(String id) async {
+    setState(() {
+      isLoading = true;
+    });
+
+    final response = await NetworkCaller().getRequest(
+      ApiLinks.deleteComunicado(id),
+    );
+
+    setState(() {
+      isLoading = false;
+    });
+
+    if (response.isSuccess) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Comunicado excluído com sucesso')),
+      );
+      _loadComunicados(); // Recarregar dados do servidor
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Falha ao excluir comunicado')),
+      );
+    }
+  }
+
+  void _deleteSelected() {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Confirmar Exclusão'),
+        content: Text(
+          'Deseja excluir ${selectedRows.length} comunicado(s) selecionado(s)?',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Cancelar'),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              Navigator.pop(ctx);
+              for (final id in selectedRows) {
+                await _deleteComunicado(id);
+              }
+              setState(() {
+                selectedRows.clear();
+              });
+            },
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+            child: const Text('Excluir'),
+          ),
+        ],
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text("Comunicados")),
-      body: Column(
-        children: [
-          // Botões de ação
-          Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Row(
+      body: isLoading && comunicados.isEmpty
+          ? const Center(child: CircularProgressIndicator())
+          : Column(
               children: [
-                // Botão Novo com cor verde
-                ElevatedButton.icon(
-                  onPressed: () => _openForm(),
-                  icon: const Icon(Icons.add),
-                  label: const Text("Novo"),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.green,
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 12,
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 12),
-                // Botão Deletar Selecionados
-                ElevatedButton.icon(
-                  onPressed: selectedRows.isNotEmpty ? _deleteSelected : null,
-                  icon: const Icon(Icons.delete),
-                  label: const Text("Deletar Selecionados"),
-                  style: ElevatedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 12,
-                    ),
-                  ),
-                ),
-                const Spacer(),
-                // Botão para expandir/recolher filtros
-                ElevatedButton.icon(
-                  onPressed: () {
-                    setState(() {
-                      filtrosAbertos = !filtrosAbertos;
-                    });
-                  },
-                  icon: Icon(
-                    filtrosAbertos ? Icons.expand_less : Icons.expand_more,
-                  ),
-                  label: Text(
-                    filtrosAbertos ? "Ocultar Filtros" : "Mostrar Filtros",
-                  ),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.blueGrey[50],
-                    foregroundColor: Colors.blueGrey[800],
-                  ),
-                ),
-              ],
-            ),
-          ),
-
-          // 🔎 filtros - Painel com borda e cor diferenciada
-          if (filtrosAbertos)
-            Container(
-              decoration: BoxDecoration(
-                color: Colors.grey[100],
-                border: Border.all(color: Colors.grey[300]!),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                children: [
-                  const Text(
-                    "Filtros",
-                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-                  ),
-                  const SizedBox(height: 16),
-                  Row(
+                // Botões de ação
+                Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Row(
                     children: [
-                      Flexible(
-                        child: TextField(
-                          controller: _tituloFilter,
-                          decoration: const InputDecoration(
-                            labelText: "Filtrar Título",
-                            prefixIcon: Icon(Icons.search),
-                            isDense: true,
+                      // Botão Novo com cor verde
+                      ElevatedButton.icon(
+                        onPressed: () => _openForm(),
+                        icon: const Icon(Icons.add),
+                        label: const Text("Novo"),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.green,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 12,
                           ),
-                          onChanged: (_) => _applyFilters(),
                         ),
                       ),
-                      const SizedBox(width: 8),
-                      Flexible(
-                        child: TextField(
-                          controller: _conteudoFilter,
-                          decoration: const InputDecoration(
-                            labelText: "Filtrar Conteúdo",
-                            prefixIcon: Icon(Icons.search),
-                            isDense: true,
+                      const SizedBox(width: 12),
+                      // Botão Deletar Selecionados
+                      ElevatedButton.icon(
+                        onPressed: selectedRows.isNotEmpty
+                            ? _deleteSelected
+                            : null,
+                        icon: const Icon(Icons.delete),
+                        label: const Text("Deletar Selecionados"),
+                        style: ElevatedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 12,
                           ),
-                          onChanged: (_) => _applyFilters(),
                         ),
                       ),
-                      const SizedBox(width: 8),
-                      Flexible(
-                        child: TextField(
-                          controller: _categoriaFilter,
-                          decoration: const InputDecoration(
-                            labelText: "Filtrar Categoria",
-                            prefixIcon: Icon(Icons.search),
-                            isDense: true,
-                          ),
-                          onChanged: (_) => _applyFilters(),
-                        ),
+                      const Spacer(),
+                      // Botão para recarregar dados
+                      IconButton(
+                        onPressed: _loadComunicados,
+                        icon: const Icon(Icons.refresh),
+                        tooltip: "Recarregar",
                       ),
-                      const SizedBox(width: 8),
-                      Flexible(
-                        child: TextField(
-                          controller: _autorFilter,
-                          decoration: const InputDecoration(
-                            labelText: "Filtrar Autor",
-                            prefixIcon: Icon(Icons.search),
-                            isDense: true,
-                          ),
-                          onChanged: (_) => _applyFilters(),
+                      const SizedBox(width: 12),
+                      // Botão para expandir/recolher filtros
+                      ElevatedButton.icon(
+                        onPressed: () {
+                          setState(() {
+                            filtrosAbertos = !filtrosAbertos;
+                          });
+                        },
+                        icon: Icon(
+                          filtrosAbertos
+                              ? Icons.expand_less
+                              : Icons.expand_more,
+                        ),
+                        label: Text(
+                          filtrosAbertos
+                              ? "Ocultar Filtros"
+                              : "Mostrar Filtros",
+                        ),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.blueGrey[50],
+                          foregroundColor: Colors.blueGrey[800],
                         ),
                       ),
                     ],
                   ),
-                ],
-              ),
-            ),
-
-          Expanded(
-            child: Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: PaginatedDataTable2(
-                columnSpacing: 12,
-                horizontalMargin: 12,
-                minWidth: 800,
-                sortColumnIndex: sortColumnIndex,
-                sortAscending: sortAscending,
-                columns: [
-                  // Coluna de seleção apenas se houver dados
-                  if (filtered.isNotEmpty)
-                    const DataColumn(label: Text("Selecionar")),
-                  DataColumn(
-                    label: const Text("Título"),
-                    onSort: (i, asc) => _sort((c) => c.titulo, i, asc),
-                  ),
-                  DataColumn(
-                    label: const Text("Conteúdo"),
-                    onSort: (i, asc) => _sort((c) => c.conteudo, i, asc),
-                  ),
-                  DataColumn(
-                    label: const Text("Categoria"),
-                    onSort: (i, asc) => _sort((c) => c.categoria, i, asc),
-                  ),
-                  DataColumn(
-                    label: const Text("Autor"),
-                    onSort: (i, asc) => _sort((c) => c.autor, i, asc),
-                  ),
-                  const DataColumn(label: Text("Ações")),
-                ],
-                source: _ComunicadoDataSource(
-                  comunicados: filtered,
-                  selectedRows: selectedRows,
-                  onEdit: (index) => _openForm(
-                    comunicado: filtered[index],
-                    index: comunicados.indexOf(filtered[index]),
-                  ),
-                  onDelete: (index) {
-                    setState(() {
-                      comunicados.remove(filtered[index]);
-                      _applyFilters();
-                    });
-                  },
-                  onSelect: (index, selected) {
-                    setState(() {
-                      if (selected) {
-                        selectedRows.add(comunicados.indexOf(filtered[index]));
-                      } else {
-                        selectedRows.remove(
-                          comunicados.indexOf(filtered[index]),
-                        );
-                      }
-                    });
-                  },
                 ),
-                rowsPerPage: rowsPerPage,
-                availableRowsPerPage: const [25, 50, 75, 100],
-                onRowsPerPageChanged: (value) {
-                  setState(() {
-                    rowsPerPage = value ?? 25;
-                  });
-                },
-                empty: Center(
-                  child: Container(
-                    padding: const EdgeInsets.all(20),
-                    child: const Text(
-                      "Nenhum comunicado encontrado",
-                      style: TextStyle(
-                        fontStyle: FontStyle.italic,
-                        fontSize: 16,
+
+                // 🔎 filtros - Painel com borda e cor diferenciada
+                if (filtrosAbertos)
+                  Container(
+                    decoration: BoxDecoration(
+                      color: Colors.grey[100],
+                      border: Border.all(color: Colors.grey[300]!),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    margin: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 8,
+                    ),
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      children: [
+                        const Text(
+                          "Filtros",
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16,
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                        Row(
+                          children: [
+                            Flexible(
+                              child: TextField(
+                                controller: _tituloFilter,
+                                decoration: const InputDecoration(
+                                  labelText: "Filtrar Título",
+                                  prefixIcon: Icon(Icons.search),
+                                  isDense: true,
+                                ),
+                                onChanged: (_) => _applyFilters(),
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Flexible(
+                              child: TextField(
+                                controller: _conteudoFilter,
+                                decoration: const InputDecoration(
+                                  labelText: "Filtrar Conteúdo",
+                                  prefixIcon: Icon(Icons.search),
+                                  isDense: true,
+                                ),
+                                onChanged: (_) => _applyFilters(),
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Flexible(
+                              child: TextField(
+                                controller: _categoriaFilter,
+                                decoration: const InputDecoration(
+                                  labelText: "Filtrar Categoria",
+                                  prefixIcon: Icon(Icons.search),
+                                  isDense: true,
+                                ),
+                                onChanged: (_) => _applyFilters(),
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Flexible(
+                              child: TextField(
+                                controller: _autorFilter,
+                                decoration: const InputDecoration(
+                                  labelText: "Filtrar Autor",
+                                  prefixIcon: Icon(Icons.search),
+                                  isDense: true,
+                                ),
+                                onChanged: (_) => _applyFilters(),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+
+                Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: PaginatedDataTable2(
+                      columnSpacing: 12,
+                      horizontalMargin: 12,
+                      minWidth: 800,
+                      sortColumnIndex: sortColumnIndex,
+                      sortAscending: sortAscending,
+                      columns: [
+                        DataColumn(
+                          label: const Text("Título"),
+                          onSort: (i, asc) => _sort((c) => c.titulo, i, asc),
+                        ),
+                        DataColumn(
+                          label: const Text("Conteúdo"),
+                          onSort: (i, asc) => _sort((c) => c.conteudo, i, asc),
+                        ),
+                        DataColumn(
+                          label: const Text("Categoria"),
+                          onSort: (i, asc) => _sort((c) => c.categoria, i, asc),
+                        ),
+                        DataColumn(
+                          label: const Text("Autor"),
+                          onSort: (i, asc) => _sort((c) => c.autor, i, asc),
+                        ),
+                        const DataColumn(label: Text("Data")),
+                        const DataColumn(label: Text("Ações")),
+                      ],
+                      source: _ComunicadoDataSource(
+                        comunicados: filtered,
+                        selectedRows: selectedRows,
+                        onEdit: (index) =>
+                            _openForm(comunicado: filtered[index]),
+                        onDelete: (index) {
+                          _deleteComunicado(filtered[index].id);
+                        },
+                        onSelect: (index, selected) {
+                          setState(() {
+                            final id = filtered[index].id;
+                            if (selected) {
+                              selectedRows.add(id);
+                            } else {
+                              selectedRows.remove(id);
+                            }
+                          });
+                        },
+                      ),
+                      rowsPerPage: rowsPerPage,
+                      availableRowsPerPage: const [25, 50, 75, 100],
+                      onRowsPerPageChanged: (value) {
+                        setState(() {
+                          rowsPerPage = value ?? 25;
+                        });
+                      },
+                      empty: Center(
+                        child: Container(
+                          padding: const EdgeInsets.all(20),
+                          child: const Text(
+                            "Nenhum comunicado encontrado",
+                            style: TextStyle(
+                              fontStyle: FontStyle.italic,
+                              fontSize: 16,
+                            ),
+                          ),
+                        ),
                       ),
                     ),
                   ),
                 ),
-              ),
+              ],
             ),
-          ),
-        ],
-      ),
     );
   }
 }
 
 class _ComunicadoDataSource extends DataTableSource {
   final List<Comunicado> comunicados;
-  final Set<int> selectedRows;
+  final Set<String> selectedRows;
   final void Function(int index) onEdit;
   final void Function(int index) onDelete;
   final void Function(int index, bool selected) onSelect;
@@ -577,55 +737,40 @@ class _ComunicadoDataSource extends DataTableSource {
   DataRow? getRow(int index) {
     if (index >= comunicados.length) return null;
     final comunicado = comunicados[index];
-    final isSelected = selectedRows.contains(index);
-
-    // Criar as células da linha
-    List<DataCell> cells = [];
-
-    // Adicionar célula de seleção apenas se houver dados
-    if (comunicados.isNotEmpty) {
-      cells.add(
-        DataCell(
-          Checkbox(
-            value: isSelected,
-            onChanged: (value) {
-              onSelect(index, value ?? false);
-            },
-          ),
-        ),
-      );
-    }
-
-    // Adicionar as demais células
-    cells.addAll([
-      DataCell(Text(comunicado.titulo)),
-      DataCell(Text(comunicado.conteudo)),
-      DataCell(Text(comunicado.categoria)),
-      DataCell(Text(comunicado.autor)),
-      DataCell(
-        Row(
-          children: [
-            IconButton(
-              icon: const Icon(Icons.edit, size: 20),
-              onPressed: () => onEdit(index),
-            ),
-            IconButton(
-              icon: const Icon(Icons.delete, size: 20),
-              onPressed: () => onDelete(index),
-            ),
-          ],
-        ),
-      ),
-    ]);
+    final isSelected = selectedRows.contains(comunicado.id);
 
     return DataRow(
       selected: isSelected,
-      onSelectChanged: comunicados.isEmpty
-          ? null
-          : (selected) {
-              onSelect(index, selected ?? false);
-            },
-      cells: cells,
+      onSelectChanged: (selected) {
+        onSelect(index, selected ?? false);
+      },
+      cells: [
+        DataCell(Text(comunicado.titulo)),
+        DataCell(Text(comunicado.conteudo)),
+        DataCell(Text(comunicado.categoria)),
+        DataCell(Text(comunicado.autor)),
+        DataCell(
+          Text(
+            comunicado.dhCreatedAt != null
+                ? DateFormat('dd/MM/yyyy HH:mm').format(comunicado.dhCreatedAt!)
+                : 'N/A',
+          ),
+        ),
+        DataCell(
+          Row(
+            children: [
+              IconButton(
+                icon: const Icon(Icons.edit, size: 20),
+                onPressed: () => onEdit(index),
+              ),
+              IconButton(
+                icon: const Icon(Icons.delete, size: 20),
+                onPressed: () => onDelete(index),
+              ),
+            ],
+          ),
+        ),
+      ],
     );
   }
 
