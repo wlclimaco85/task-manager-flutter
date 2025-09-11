@@ -5,6 +5,7 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:task_manager_flutter/ui/screens/chatMenssageScreen.dart';
 import 'package:task_manager_flutter/ui/screens/negociacao_screen.dart';
 import 'package:task_manager_flutter/ui/screens/comunicado_screen.dart';
+import 'package:task_manager_flutter/ui/screens/comunicado_componente_screen.dart';
 import 'package:task_manager_flutter/ui/screens/carrinho_compras_screen.dart';
 import 'package:task_manager_flutter/ui/screens/carrinho_vendas_screen.dart';
 import 'package:task_manager_flutter/ui/screens/product_register_screen.dart';
@@ -59,11 +60,9 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
         userName: 'Usuário',
         chatId: '0',
       ),
-      isLoggedIn
-          ? ChatListScreen(
-              userName: AuthUtility.userInfo.data!.email ?? 'Usuário',
-            )
-          : const LoginPopup(),
+      ComunicadoGridComponentesScreen(hasPermission: (permission) => true),
+
+      ChatListScreen(userName: AuthUtility.userInfo.data!.email ?? 'Usuário'),
       const ProductRegisterScreen(),
       isLoggedIn ? const ProductRegisterScreen() : const LoginPopup(),
     ];
