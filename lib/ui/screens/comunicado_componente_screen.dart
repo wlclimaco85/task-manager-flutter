@@ -31,8 +31,8 @@ class ComunicadoGridComponentesScreen extends StatelessWidget {
         filenamePrefix: 'comunicados',
       ),
       paginationConfig: const PaginationConfig(
-        defaultRowsPerPage: 20,
-        availableRowsPerPage: [10, 20, 50, 100],
+        defaultRowsPerPage: 10,
+        availableRowsPerPage: [10, 25, 50, 100],
       ),
       onItemTap: (comunicado, context) {
         // Navegar para tela de detalhes

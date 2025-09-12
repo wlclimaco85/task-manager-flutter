@@ -55,7 +55,7 @@ class ExportConfig {
 
   const ExportConfig({
     this.enableCsvExport = true,
-    this.enablePdfExport = false,
+    this.enablePdfExport = true,
     this.filenamePrefix = 'export',
   });
 }
@@ -270,9 +270,25 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
     final itemMap = item != null ? widget.toJson(item) : {};
 
     for (final config in widget.fieldConfigs.where((c) => c.isInForm)) {
-      controllers[config.fieldName] = TextEditingController(
-        text: itemMap[config.fieldName]?.toString() ?? '',
-      );
+      if (config.fieldType == FieldType.dropdown) {
+        // Para dropdowns, precisamos do valor (não do display)
+        final value = itemMap[config.fieldName];
+        if (value is Map) {
+          // Se for um objeto, extrai o campo de valor
+          controllers[config.fieldName] = TextEditingController(
+            text: value[config.dropdownValueField]?.toString() ?? '',
+          );
+        } else {
+          // Se for um valor simples
+          controllers[config.fieldName] = TextEditingController(
+            text: value?.toString() ?? '',
+          );
+        }
+      } else {
+        controllers[config.fieldName] = TextEditingController(
+          text: itemMap[config.fieldName]?.toString() ?? '',
+        );
+      }
     }
 
     showDialog(
@@ -609,13 +625,19 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
     TextEditingController controller,
     List<Map<String, dynamic>> options,
   ) {
+    // Converte o valor do controller para o tipo correto
+    final currentValue = controller.text.isNotEmpty ? controller.text : null;
+
     return DropdownButtonFormField<String>(
-      value: controller.text.isNotEmpty ? controller.text : null,
+      value: currentValue,
       decoration: _buildInputDecoration(config),
       items: options.map<DropdownMenuItem<String>>((option) {
+        final optionValue = option['value']?.toString();
+        final optionLabel = option['label']?.toString() ?? '';
+
         return DropdownMenuItem<String>(
-          value: option[config.dropdownValueField]?.toString(),
-          child: Text(option[config.dropdownDisplayField]?.toString() ?? ''),
+          value: optionValue,
+          child: Text(optionLabel),
         );
       }).toList(),
       onChanged: (value) {
@@ -954,40 +976,44 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
                   children: [
                     Padding(
                       padding: const EdgeInsets.all(16.0),
-                      child: Wrap(
-                        spacing: 12,
-                        runSpacing: 12,
+                      child: Row(
                         children: [
-                          if (widget.hasPermission('create') &&
-                              widget.buttonPermissions['create']!)
-                            ElevatedButton.icon(
-                              onPressed: () => _openForm(),
-                              icon: const Icon(Icons.add),
-                              label: const Text("Novo"),
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: Colors.green,
-                                foregroundColor: Colors.white,
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 16,
-                                  vertical: 12,
+                          Wrap(
+                            spacing: 12,
+                            runSpacing: 12,
+                            children: [
+                              if (widget.hasPermission('create') &&
+                                  widget.buttonPermissions['create']!)
+                                ElevatedButton.icon(
+                                  onPressed: () => _openForm(),
+                                  icon: const Icon(Icons.add),
+                                  label: const Text("Novo"),
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: Colors.green,
+                                    foregroundColor: Colors.white,
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 16,
+                                      vertical: 12,
+                                    ),
+                                  ),
                                 ),
-                              ),
-                            ),
-                          if (widget.hasPermission('deleteMultiple') &&
-                              widget.buttonPermissions['deleteMultiple']!)
-                            ElevatedButton.icon(
-                              onPressed: selectedRows.isNotEmpty
-                                  ? _deleteSelected
-                                  : null,
-                              icon: const Icon(Icons.delete),
-                              label: const Text("Deletar Selecionados"),
-                              style: ElevatedButton.styleFrom(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 16,
-                                  vertical: 12,
+                              if (widget.hasPermission('deleteMultiple') &&
+                                  widget.buttonPermissions['deleteMultiple']!)
+                                ElevatedButton.icon(
+                                  onPressed: selectedRows.isNotEmpty
+                                      ? _deleteSelected
+                                      : null,
+                                  icon: const Icon(Icons.delete),
+                                  label: const Text("Deletar Selecionados"),
+                                  style: ElevatedButton.styleFrom(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 16,
+                                      vertical: 12,
+                                    ),
+                                  ),
                                 ),
-                              ),
-                            ),
+                            ],
+                          ),
                           const Spacer(),
                           IconButton(
                             onPressed: _loadItems,

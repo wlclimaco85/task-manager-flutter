@@ -13,13 +13,13 @@ class Setor {
 
   Setor({this.id, this.descricao, this.responsavel, this.ramal});
 
-  factory Setor.fromJson(Map<String, dynamic> json) {
-    return Setor(
-      id: json['id'],
-      descricao: json['descricao'],
-      responsavel: json['responsavel'],
-      ramal: json['ramal'],
-    );
+  Setor.fromJson(Map<String, dynamic> json) {
+    if (json.isNotEmpty) {
+      id = json['id'];
+      descricao = json['descricao'];
+      responsavel = json['responsavel'];
+      ramal = json['ramal'];
+    }
   }
 
   Map<String, dynamic> toJson() {
@@ -79,19 +79,19 @@ class Comunicado {
       id = json['id'];
       empId = json['empId'];
       codApp = json['codApp'];
-      conteudo = json['conteudo'] != null
-          ? utf8.decode(latin1.encode(json['conteudo']))
-          : 'conteudo não disponível';
-      titulo = json['titulo'] != null
-          ? utf8.decode(latin1.encode(json['titulo']))
-          : 'Título não disponível';
-      autor = json['autor'] != null
-          ? utf8.decode(latin1.encode(json['autor']))
-          : 'autor não disponível';
+      titulo = json['titulo'] ?? '';
+      autor = json['autor'] ?? '';
+      conteudo = json['conteudo'] ?? '';
+      //  conteudo = json['conteudo'] != null
+      //     ? utf8.decode(latin1.encode(json['conteudo']))
+      //    : 'conteudo não disponível';
+      // titulo = json['titulo'] != null
+      //    ? utf8.decode(latin1.encode(json['titulo']))
+      //     : 'Título não disponível';
+      // autor = json['autor'] != null
+      //      ? utf8.decode(latin1.encode(json['autor']))
+      //     : 'autor não disponível';
       setor = json['setor'] != null ? Setor.fromJson(json['setor']) : null;
-      autor = json['autor'] != null
-          ? utf8.decode(latin1.encode(json['autor']))
-          : 'autor desconhecido';
       dataPublicacao = DateTime.parse(json['dataPublicacao']);
     }
   }
@@ -131,7 +131,7 @@ class Comunicado {
     );
 
     if (response.isSuccess && response.body != null) {
-      final List<dynamic> data = response.body!['data'];
+      final List<dynamic> data = response.body!['data']['account'] ?? [];
       return data
           .map(
             (item) => {
@@ -175,9 +175,12 @@ class Comunicado {
       isFilterable: true,
       isInForm: true,
       fieldType: FieldType.dropdown,
-      dropdownFutureBuilder: Comunicado.loadCategorias,
-      dropdownValueField: 'value',
-      dropdownDisplayField: 'label',
+      dropdownFutureBuilder: () async {
+        // Sua função que retorna um Future<List<Map<String, dynamic>>>
+        return await loadCategorias();
+      },
+      dropdownValueField: 'id',
+      dropdownDisplayField: 'descricao',
       isRequired: true,
     ),
     FieldConfig(
