@@ -1,6 +1,39 @@
 import 'dart:convert';
 import 'package:task_manager_flutter/ui/widgets/generic_grid_screen.dart';
 import 'package:flutter/material.dart';
+import 'package:task_manager_flutter/data/utils/api_links.dart';
+import 'package:task_manager_flutter/data/models/network_response.dart';
+import 'package:task_manager_flutter/data/services/network_caller.dart';
+
+class Setor {
+  int? id;
+  String? descricao;
+  String? responsavel;
+  String? ramal;
+
+  Setor({this.id, this.descricao, this.responsavel, this.ramal});
+
+  factory Setor.fromJson(Map<String, dynamic> json) {
+    return Setor(
+      id: json['id'],
+      descricao: json['descricao'],
+      responsavel: json['responsavel'],
+      ramal: json['ramal'],
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'descricao': descricao,
+      'responsavel': responsavel,
+      'ramal': ramal,
+    };
+  }
+
+  @override
+  String toString() => descricao ?? '';
+}
 
 class Comunicado {
   int? id;
@@ -9,10 +42,10 @@ class Comunicado {
   String? titulo;
   String? conteudo;
   String? autor;
-  String? categoria;
+  Setor? setor;
   DateTime? dhCreatedAt;
-  DateTime? dataPublicacao; // Novo campo
-  DateTime? dhUpdatedAt; // Novo campo
+  DateTime? dataPublicacao;
+  DateTime? dhUpdatedAt;
 
   Comunicado({
     this.id,
@@ -21,23 +54,11 @@ class Comunicado {
     this.titulo,
     this.conteudo,
     this.autor,
-    this.categoria,
+    this.setor,
     this.dhCreatedAt,
     this.dataPublicacao,
     this.dhUpdatedAt,
   });
-
-  /* Data.fromJson(Map<String, dynamic> json) {
-    id = json['comunicacaoDTO'][0]['id'];
-    codApp = json['codApp'];
-    link = json['link'];
-    noticia = json['noticia'];
-    titulo = json['titulo'];
-    tituloResu = json['tituloResu'];
-    tituloResu = json['fonte'];
-    tituloResu = json['autor'];
-    tituloResu = json['resumo'];
-  } */
 
   Map<String, dynamic> toJson() {
     return {
@@ -46,14 +67,13 @@ class Comunicado {
       'codApp': codApp,
       'titulo': titulo,
       'conteudo': conteudo,
-      'categoria': categoria,
+      'setor': setor?.toJson(),
       'dataPublicacao': dataPublicacao?.toIso8601String(),
       'autor': autor,
       'dhCreatedAt': dhCreatedAt?.toIso8601String(),
     };
   }
 
-  // Método para converter de JSON para a classe Data
   Comunicado.fromJson(Map<String, dynamic> json) {
     if (json.isNotEmpty) {
       id = json['id'];
@@ -68,28 +88,20 @@ class Comunicado {
       autor = json['autor'] != null
           ? utf8.decode(latin1.encode(json['autor']))
           : 'autor não disponível';
-      categoria = json['categoria'] != null
-          ? utf8.decode(latin1.encode(json['categoria']))
-          : 'Fonte desconhecida';
+      setor = json['setor'] != null ? Setor.fromJson(json['setor']) : null;
       autor = json['autor'] != null
           ? utf8.decode(latin1.encode(json['autor']))
           : 'autor desconhecido';
-      dataPublicacao = DateTime.parse(
-        json['dataPublicacao'],
-      ); // Converter string para DateTime
-      //   dhUpdatedAt = DateTime.parse(
-      //       json['audit'] ?? ['dataUpdated']); // Converter string para DateTime
+      dataPublicacao = DateTime.parse(json['dataPublicacao']);
     }
   }
 
-  // Método para converter uma lista de JSON para uma lista de objetos Data
   static List<Comunicado> fromJsonList(List<dynamic> jsonList) {
     return jsonList
         .map((item) => Comunicado.fromJson(Map<String, dynamic>.from(item)))
         .toList();
   }
 
-  // Método para converter de JSON para a classe Data
   Comunicado.fromJson2(Map<String, dynamic> json) {
     if (json['comunicacaoDTO'] != null && json['comunicacaoDTO'].isNotEmpty) {
       var comunicacaoDTO = json['comunicacaoDTO'][0];
@@ -99,29 +111,52 @@ class Comunicado {
       titulo = comunicacaoDTO['titulo'];
       conteudo = comunicacaoDTO['conteudo'];
       autor = comunicacaoDTO['autor'];
-      categoria = comunicacaoDTO['categoria'];
+      setor = comunicacaoDTO['setor'] != null
+          ? Setor.fromJson(comunicacaoDTO['setor'])
+          : null;
       dataPublicacao = comunicacaoDTO['dataPublicacao'];
       dhUpdatedAt = comunicacaoDTO['dhUpdatedAt'];
     }
   }
 
-  // Método para converter uma lista de JSON para uma lista de objetos Data
   static List<Comunicado> fromJsonList2(List<Map<String, dynamic>> jsonList) {
     List<Comunicado> dataList = [];
-    for (var json in jsonList) {
-      // dataList.add(Data.fromJson(json));
-    }
+    for (var json in jsonList) {}
     return dataList;
   }
 
-  // Configuração dos campos para a grid
-  static const List<FieldConfig> fieldConfigs = [
+  static Future<List<Map<String, dynamic>>> loadCategorias() async {
+    final NetworkResponse response = await NetworkCaller().getRequest(
+      ApiLinks.getCategorias,
+    );
+
+    if (response.isSuccess && response.body != null) {
+      final List<dynamic> data = response.body!['data'];
+      return data
+          .map(
+            (item) => {
+              'value': item['id'].toString(),
+              'label': item['descricao'],
+            },
+          )
+          .toList();
+    }
+    return [];
+  }
+
+  static List<FieldConfig> fieldConfigs = [
     FieldConfig(
       label: "Título",
       fieldName: "titulo",
       icon: Icons.title,
       isFilterable: true,
       isInForm: true,
+      isRequired: true,
+      validator: (value) {
+        if (value == null || value.isEmpty) return 'Título é obrigatório';
+        if (value.length < 3) return 'Título deve ter pelo menos 3 caracteres';
+        return null;
+      },
     ),
     FieldConfig(
       label: "Conteúdo",
@@ -130,13 +165,20 @@ class Comunicado {
       isFilterable: true,
       isInForm: true,
       maxLines: 3,
+      fieldType: FieldType.multiline,
+      isRequired: true,
     ),
     FieldConfig(
       label: "Categoria",
-      fieldName: "categoria",
+      fieldName: "setor",
       icon: Icons.category,
       isFilterable: true,
       isInForm: true,
+      fieldType: FieldType.dropdown,
+      dropdownFutureBuilder: Comunicado.loadCategorias,
+      dropdownValueField: 'value',
+      dropdownDisplayField: 'label',
+      isRequired: true,
     ),
     FieldConfig(
       label: "Autor",
@@ -144,6 +186,7 @@ class Comunicado {
       icon: Icons.person,
       isFilterable: true,
       isInForm: true,
+      isRequired: true,
     ),
   ];
 }

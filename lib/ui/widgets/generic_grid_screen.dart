@@ -3,7 +3,13 @@ import 'package:data_table_2/data_table_2.dart';
 import 'package:task_manager_flutter/data/models/network_response.dart';
 import 'package:task_manager_flutter/data/services/network_caller.dart';
 import 'package:intl/intl.dart';
+import 'package:flutter/foundation.dart';
+import 'dart:convert';
 
+// Enum para tipos de campo
+enum FieldType { text, number, email, date, multiline, dropdown }
+
+// Configuração avançada de campo
 class FieldConfig {
   final String label;
   final String fieldName;
@@ -13,6 +19,14 @@ class FieldConfig {
   final int maxLines;
   final IconData? icon;
   final bool isSortable;
+  final FieldType fieldType;
+  final List<Map<String, dynamic>>? dropdownOptions;
+  final Future<List<Map<String, dynamic>>> Function()?
+  dropdownFutureBuilder; // Alterado para uma função que retorna Future
+  final String dropdownValueField;
+  final String dropdownDisplayField;
+  final bool isRequired;
+  final String? Function(String?)? validator;
 
   const FieldConfig({
     required this.label,
@@ -23,12 +37,47 @@ class FieldConfig {
     this.maxLines = 1,
     this.icon,
     this.isSortable = true,
+    this.fieldType = FieldType.text,
+    this.dropdownOptions,
+    this.dropdownFutureBuilder, // Alterado para uma função
+    this.dropdownValueField = 'value',
+    this.dropdownDisplayField = 'label',
+    this.isRequired = false,
+    this.validator,
+  });
+}
+
+// Configuração de exportação
+class ExportConfig {
+  final bool enableCsvExport;
+  final bool enablePdfExport;
+  final String filenamePrefix;
+
+  const ExportConfig({
+    this.enableCsvExport = true,
+    this.enablePdfExport = false,
+    this.filenamePrefix = 'export',
+  });
+}
+
+// Configuração de paginação
+class PaginationConfig {
+  final int defaultRowsPerPage;
+  final List<int> availableRowsPerPage;
+  final bool showItemsPerPageSelector;
+
+  const PaginationConfig({
+    this.defaultRowsPerPage = 25,
+    this.availableRowsPerPage = const [10, 25, 50, 100],
+    this.showItemsPerPageSelector = true,
   });
 }
 
 typedef FromJson<T> = T Function(Map<String, dynamic> json);
 typedef ToJson<T> = Map<String, dynamic> Function(T item);
 typedef SecurityCheck = bool Function(String permission);
+typedef OnItemTap<T> = void Function(T item, BuildContext context);
+typedef CustomActionBuilder = List<Widget> Function(BuildContext context);
 
 class GenericGridScreen<T> extends StatefulWidget {
   final String title;
@@ -43,6 +92,14 @@ class GenericGridScreen<T> extends StatefulWidget {
   final List<FieldConfig> fieldConfigs;
   final String idFieldName;
   final String dateFieldName;
+  final ExportConfig exportConfig;
+  final PaginationConfig paginationConfig;
+  final OnItemTap<T>? onItemTap;
+  final CustomActionBuilder? customActions;
+  final bool enableSearch;
+  final bool enableColumnReorder;
+  final bool enableColumnResize;
+  final Map<String, dynamic>? initialFilters;
 
   const GenericGridScreen({
     super.key,
@@ -56,13 +113,22 @@ class GenericGridScreen<T> extends StatefulWidget {
     required this.hasPermission,
     required this.fieldConfigs,
     this.idFieldName = 'id',
-    this.dateFieldName = 'dhCreatedAt',
+    this.dateFieldName = 'createdAt',
     this.buttonPermissions = const {
       'create': true,
       'edit': true,
       'delete': true,
       'deleteMultiple': true,
+      'export': true,
     },
+    this.exportConfig = const ExportConfig(),
+    this.paginationConfig = const PaginationConfig(),
+    this.onItemTap,
+    this.customActions,
+    this.enableSearch = true,
+    this.enableColumnReorder = false,
+    this.enableColumnResize = false,
+    this.initialFilters,
   });
 
   @override
@@ -78,52 +144,93 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
   bool isLoading = false;
   bool _isUpdating = false;
   bool _isDeleting = false;
+  bool _isExporting = false;
 
   final Map<String, TextEditingController> _filterControllers = {};
+  final TextEditingController _searchController = TextEditingController();
+  final Map<String, List<Map<String, dynamic>>> _dropdownCache = {};
   int? sortColumnIndex;
   bool sortAscending = true;
+
+  // Para controle de colunas visíveis
+  final Map<String, bool> _columnVisibility = {};
 
   @override
   void initState() {
     super.initState();
+    rowsPerPage = widget.paginationConfig.defaultRowsPerPage;
+
+    // Inicializar visibilidade das colunas
+    for (final config in widget.fieldConfigs) {
+      _columnVisibility[config.fieldName] = true;
+    }
+
     _loadItems();
+
+    // Aplicar filtros iniciais se fornecidos
+    if (widget.initialFilters != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _applyInitialFilters();
+      });
+    }
+  }
+
+  void _applyInitialFilters() {
+    widget.initialFilters?.forEach((key, value) {
+      _filterControllers[key] = TextEditingController(text: value.toString());
+    });
+    _applyFilters();
   }
 
   Future<void> _loadItems() async {
     setState(() => isLoading = true);
 
-    final NetworkResponse response = await NetworkCaller().getRequest(
-      widget.fetchEndpoint,
-    );
+    try {
+      final NetworkResponse response = await NetworkCaller().getRequest(
+        widget.fetchEndpoint,
+      );
 
-    if (response.statusCode == 200 && response.body != null) {
-      try {
+      if (response.statusCode == 200 && response.body != null) {
         final List<dynamic> data = response.body!['data'] is Map
-            ? response.body!['data']['comunicadoDTO']
-            : response.body!['data'];
+            ? response.body!['data']['comunicadoDTO'] ?? []
+            : response.body!['data'] ?? [];
 
         setState(() {
           items = data.map((json) => widget.fromJson(json)).toList();
           filtered = List.from(items);
         });
-      } catch (e) {
+      } else {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Erro ao processar os dados')),
+          SnackBar(content: Text('Falha ao carregar dados: ${response}')),
         );
       }
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Falha ao carregar dados: ${response}')),
-      );
+    } catch (e) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Erro ao carregar dados: $e')));
+    } finally {
+      setState(() => isLoading = false);
     }
-
-    setState(() => isLoading = false);
   }
 
   void _applyFilters() {
     setState(() {
+      final searchText = _searchController.text.toLowerCase();
+
       filtered = items.where((item) {
         final itemMap = widget.toJson(item);
+
+        // Aplicar busca global
+        if (searchText.isNotEmpty) {
+          final hasMatch = widget.fieldConfigs.any((config) {
+            final value =
+                itemMap[config.fieldName]?.toString().toLowerCase() ?? '';
+            return value.contains(searchText);
+          });
+          if (!hasMatch) return false;
+        }
+
+        // Aplicar filtros individuais
         for (final config in widget.fieldConfigs) {
           if (config.isFilterable &&
               _filterControllers[config.fieldName]?.text.isNotEmpty == true) {
@@ -134,6 +241,7 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
             if (!value.contains(filterText)) return false;
           }
         }
+
         return true;
       }).toList();
     });
@@ -183,6 +291,7 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
       elevation: 0,
       backgroundColor: Colors.transparent,
       child: Container(
+        constraints: const BoxConstraints(maxWidth: 600),
         padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
           color: Colors.white,
@@ -224,25 +333,9 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
               ) {
                 return Padding(
                   padding: const EdgeInsets.only(bottom: 16),
-                  child: TextFormField(
-                    controller: controllers[config.fieldName],
-                    maxLines: config.maxLines,
-                    decoration: InputDecoration(
-                      labelText: config.label,
-                      labelStyle: const TextStyle(color: Colors.grey),
-                      focusedBorder: const OutlineInputBorder(
-                        borderSide: BorderSide(color: Colors.green, width: 2.0),
-                      ),
-                      enabledBorder: const OutlineInputBorder(
-                        borderSide: BorderSide(color: Colors.grey, width: 1.0),
-                      ),
-                      prefixIcon: Icon(config.icon, color: Colors.green),
-                      contentPadding: const EdgeInsets.symmetric(
-                        vertical: 15,
-                        horizontal: 15,
-                      ),
-                    ),
-                    style: const TextStyle(fontSize: 16),
+                  child: _buildFormField(
+                    config,
+                    controllers[config.fieldName]!,
                   ),
                 );
               }).toList(),
@@ -297,11 +390,136 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
     );
   }
 
+  Widget _buildFormField(FieldConfig config, TextEditingController controller) {
+    switch (config.fieldType) {
+      case FieldType.multiline:
+        return TextFormField(
+          controller: controller,
+          maxLines: config.maxLines,
+          decoration: _buildInputDecoration(config),
+          style: const TextStyle(fontSize: 16),
+          validator: config.validator,
+        );
+      case FieldType.dropdown:
+        if (config.dropdownFutureBuilder != null) {
+          final cacheKey = '${config.fieldName}_dropdown';
+
+          if (_dropdownCache.containsKey(cacheKey)) {
+            return _buildDropdownField(
+              config,
+              controller,
+              _dropdownCache[cacheKey]!,
+            );
+          } else if (config.dropdownFutureBuilder != null) {
+            return FutureBuilder<List<Map<String, dynamic>>>(
+              future: config.dropdownFutureBuilder!(),
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const CircularProgressIndicator();
+                } else if (snapshot.hasError) {
+                  return Text('Erro ao carregar opções: ${snapshot.error}');
+                } else {
+                  final options = snapshot.data ?? [];
+                  _dropdownCache[cacheKey] = options; // Armazena no cache
+                  return _buildDropdownField(config, controller, options);
+                }
+              },
+            );
+          } else {
+            return _buildDropdownField(
+              config,
+              controller,
+              config.dropdownOptions ?? [],
+            );
+          }
+        } else {
+          return _buildDropdownField(
+            config,
+            controller,
+            config.dropdownOptions ?? [],
+          );
+        }
+      case FieldType.date:
+        return TextFormField(
+          controller: controller,
+          decoration: _buildInputDecoration(config),
+          style: const TextStyle(fontSize: 16),
+          readOnly: true,
+          onTap: () => _selectDate(context, controller),
+          validator: config.validator,
+        );
+      default:
+        return TextFormField(
+          controller: controller,
+          maxLines: config.maxLines,
+          decoration: _buildInputDecoration(config),
+          style: const TextStyle(fontSize: 16),
+          keyboardType: config.fieldType == FieldType.number
+              ? TextInputType.number
+              : TextInputType.text,
+          validator: config.validator,
+        );
+    }
+  }
+
+  InputDecoration _buildInputDecoration(FieldConfig config) {
+    return InputDecoration(
+      labelText: config.label + (config.isRequired ? ' *' : ''),
+      labelStyle: const TextStyle(color: Colors.grey),
+      focusedBorder: const OutlineInputBorder(
+        borderSide: BorderSide(color: Colors.green, width: 2.0),
+      ),
+      enabledBorder: const OutlineInputBorder(
+        borderSide: BorderSide(color: Colors.grey, width: 1.0),
+      ),
+      prefixIcon: Icon(config.icon, color: Colors.green),
+      contentPadding: const EdgeInsets.symmetric(vertical: 15, horizontal: 15),
+    );
+  }
+
+  Future<void> _selectDate(
+    BuildContext context,
+    TextEditingController controller,
+  ) async {
+    final DateTime? picked = await showDatePicker(
+      context: context,
+      initialDate: DateTime.now(),
+      firstDate: DateTime(2000),
+      lastDate: DateTime(2100),
+    );
+
+    if (picked != null) {
+      controller.text = DateFormat('yyyy-MM-dd').format(picked);
+    }
+  }
+
   Future<void> _saveItem(
     T? item,
     Map<String, TextEditingController> controllers,
     BuildContext context,
   ) async {
+    // Validar campos obrigatórios
+    for (final config in widget.fieldConfigs.where(
+      (c) => c.isInForm && c.isRequired,
+    )) {
+      if (controllers[config.fieldName]?.text.isEmpty == true) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('${config.label} é obrigatório')),
+        );
+        return;
+      }
+
+      if (config.validator != null) {
+        final error = config.validator!(controllers[config.fieldName]?.text);
+        if (error != null) {
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text(error)));
+          return;
+        }
+      }
+    }
+
     setState(() => _isUpdating = true);
 
     final formData = <String, dynamic>{};
@@ -386,6 +604,27 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
     }
   }
 
+  Widget _buildDropdownField(
+    FieldConfig config,
+    TextEditingController controller,
+    List<Map<String, dynamic>> options,
+  ) {
+    return DropdownButtonFormField<String>(
+      value: controller.text.isNotEmpty ? controller.text : null,
+      decoration: _buildInputDecoration(config),
+      items: options.map<DropdownMenuItem<String>>((option) {
+        return DropdownMenuItem<String>(
+          value: option[config.dropdownValueField]?.toString(),
+          child: Text(option[config.dropdownDisplayField]?.toString() ?? ''),
+        );
+      }).toList(),
+      onChanged: (value) {
+        controller.text = value ?? '';
+      },
+      validator: config.validator,
+    );
+  }
+
   Future<void> _deleteItem(String id) async {
     if (!widget.hasPermission('delete') ||
         !widget.buttonPermissions['delete']!) {
@@ -454,8 +693,67 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
     );
   }
 
+  Future<void> _exportToCsv() async {
+    if (!widget.hasPermission('export') ||
+        !widget.buttonPermissions['export']!) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Sem permissão para exportar')),
+      );
+      return;
+    }
+
+    setState(() => _isExporting = true);
+
+    try {
+      final csvData = StringBuffer();
+
+      // Cabeçalhos
+      final visibleFields = widget.fieldConfigs.where(
+        (config) => _columnVisibility[config.fieldName] == true,
+      );
+      csvData.write(visibleFields.map((config) => config.label).join(','));
+      csvData.write(',Data\n');
+
+      // Dados
+      for (final item in filtered) {
+        final itemMap = widget.toJson(item);
+        final row = visibleFields
+            .map((config) {
+              final value = itemMap[config.fieldName]?.toString() ?? '';
+              // Escapar vírgulas em valores
+              return value.contains(',') ? '"$value"' : value;
+            })
+            .join(',');
+
+        // Adicionar data
+        final date = itemMap[widget.dateFieldName] != null
+            ? DateFormat(
+                'dd/MM/yyyy HH:mm',
+              ).format(DateTime.parse(itemMap[widget.dateFieldName]).toLocal())
+            : 'N/A';
+
+        csvData.write('$row,$date\n');
+      }
+
+      // Em um app real, você salvaria o arquivo ou compartilharia
+      if (kDebugMode) {
+        print(csvData.toString());
+      }
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Dados exportados com sucesso')),
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Falha ao exportar: $e')));
+    } finally {
+      setState(() => _isExporting = false);
+    }
+  }
+
   Widget _buildLoadingOverlay() {
-    if (_isUpdating || _isDeleting) {
+    if (_isUpdating || _isDeleting || _isExporting) {
       return Container(
         color: Colors.black54,
         child: const Center(child: CircularProgressIndicator()),
@@ -480,29 +778,46 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
       padding: const EdgeInsets.all(16),
       child: Column(
         children: [
+          // No método _buildFilters, substitua a parte do search por:
+          if (widget.enableSearch)
+            TextField(
+              controller: _searchController,
+              decoration: InputDecoration(
+                labelText: "Busca Global",
+                prefixIcon: const Icon(Icons.search),
+                suffixIcon: IconButton(
+                  icon: const Icon(Icons.clear),
+                  onPressed: () {
+                    _searchController.clear();
+                    _applyFilters();
+                  },
+                ),
+              ),
+              onChanged: (_) => _applyFilters(),
+            ),
+          if (widget.enableSearch) const SizedBox(height: 16),
           const Text(
-            "Filtros",
+            "Filtros Avançados",
             style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
           ),
           const SizedBox(height: 16),
-          Row(
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
             children: [
               for (final config in widget.fieldConfigs.where(
                 (c) => c.isFilterable,
               ))
-                Expanded(
-                  flex: config.flex,
-                  child: Padding(
-                    padding: const EdgeInsets.only(right: 8),
-                    child: TextField(
-                      controller: _filterControllers[config.fieldName],
-                      decoration: InputDecoration(
-                        labelText: "Filtrar ${config.label}",
-                        prefixIcon: Icon(config.icon ?? Icons.search),
-                        isDense: true,
-                      ),
-                      onChanged: (_) => _applyFilters(),
+                SizedBox(
+                  width: 200,
+                  child: TextField(
+                    controller: _filterControllers[config.fieldName],
+                    decoration: InputDecoration(
+                      labelText: "Filtrar ${config.label}",
+                      prefixIcon: Icon(config.icon ?? Icons.search),
+                      isDense: true,
                     ),
+                    onChanged: (_) => _applyFilters(),
                   ),
                 ),
             ],
@@ -512,9 +827,36 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
     );
   }
 
+  Widget _buildColumnVisibilityMenu() {
+    return PopupMenuButton(
+      icon: const Icon(Icons.view_column),
+      itemBuilder: (context) => widget.fieldConfigs.map((config) {
+        return PopupMenuItem(
+          value: config.fieldName,
+          child: StatefulBuilder(
+            builder: (context, setState) {
+              return CheckboxListTile(
+                title: Text(config.label),
+                value: _columnVisibility[config.fieldName] ?? true,
+                onChanged: (value) {
+                  setState(() {
+                    _columnVisibility[config.fieldName] = value ?? true;
+                  });
+                  setState(() {}); // Atualizar a UI
+                },
+              );
+            },
+          ),
+        );
+      }).toList(),
+    );
+  }
+
   List<DataColumn> _buildColumns() {
     return [
-      for (final config in widget.fieldConfigs.where((c) => c.isSortable))
+      for (final config in widget.fieldConfigs.where(
+        (c) => _columnVisibility[c.fieldName] == true && c.isSortable,
+      ))
         DataColumn(
           label: Text(config.label),
           onSort: (columnIndex, ascending) {
@@ -536,8 +878,19 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
   List<DataCell> _buildCells(T item, int index) {
     final itemMap = widget.toJson(item);
     return [
-      for (final config in widget.fieldConfigs)
-        DataCell(Text(itemMap[config.fieldName]?.toString() ?? '')),
+      for (final config in widget.fieldConfigs.where(
+        (c) => _columnVisibility[c.fieldName] == true,
+      ))
+        DataCell(
+          Text(
+            itemMap[config.fieldName]?.toString() ?? '',
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+          onTap: widget.onItemTap != null
+              ? () => widget.onItemTap!(item, context)
+              : null,
+        ),
       DataCell(
         Text(
           itemMap[widget.dateFieldName] != null
@@ -550,15 +903,19 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
       DataCell(
         Row(
           children: [
-            IconButton(
-              icon: const Icon(Icons.edit, size: 20),
-              onPressed: () => _openForm(item: item),
-            ),
-            IconButton(
-              icon: const Icon(Icons.delete, size: 20),
-              onPressed: () =>
-                  _deleteItem(itemMap[widget.idFieldName].toString()),
-            ),
+            if (widget.hasPermission('edit') &&
+                widget.buttonPermissions['edit']!)
+              IconButton(
+                icon: const Icon(Icons.edit, size: 20),
+                onPressed: () => _openForm(item: item),
+              ),
+            if (widget.hasPermission('delete') &&
+                widget.buttonPermissions['delete']!)
+              IconButton(
+                icon: const Icon(Icons.delete, size: 20),
+                onPressed: () =>
+                    _deleteItem(itemMap[widget.idFieldName].toString()),
+              ),
           ],
         ),
       ),
@@ -570,14 +927,36 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
     return Stack(
       children: [
         Scaffold(
-          appBar: AppBar(title: Text(widget.title)),
+          appBar: AppBar(
+            title: Text(widget.title),
+            actions: [
+              if (widget.exportConfig.enableCsvExport &&
+                  widget.hasPermission('export') &&
+                  widget.buttonPermissions['export']!)
+                IconButton(
+                  icon: _isExporting
+                      ? const CircularProgressIndicator(
+                          valueColor: AlwaysStoppedAnimation(Colors.white),
+                        )
+                      : const Icon(Icons.download),
+                  onPressed: _isExporting ? null : _exportToCsv,
+                  tooltip: "Exportar CSV",
+                ),
+              _buildColumnVisibilityMenu(),
+              ...widget.customActions != null
+                  ? widget.customActions!(context)
+                  : [],
+            ],
+          ),
           body: isLoading && items.isEmpty
               ? const Center(child: CircularProgressIndicator())
               : Column(
                   children: [
                     Padding(
                       padding: const EdgeInsets.all(16.0),
-                      child: Row(
+                      child: Wrap(
+                        spacing: 12,
+                        runSpacing: 12,
                         children: [
                           if (widget.hasPermission('create') &&
                               widget.buttonPermissions['create']!)
@@ -594,7 +973,6 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
                                 ),
                               ),
                             ),
-                          const SizedBox(width: 12),
                           if (widget.hasPermission('deleteMultiple') &&
                               widget.buttonPermissions['deleteMultiple']!)
                             ElevatedButton.icon(
@@ -616,7 +994,6 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
                             icon: const Icon(Icons.refresh),
                             tooltip: "Recarregar",
                           ),
-                          const SizedBox(width: 12),
                           ElevatedButton.icon(
                             onPressed: () => setState(
                               () => filtrosAbertos = !filtrosAbertos,
@@ -666,9 +1043,18 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
                             },
                           ),
                           rowsPerPage: rowsPerPage,
-                          availableRowsPerPage: const [25, 50, 75, 100],
-                          onRowsPerPageChanged: (value) =>
-                              setState(() => rowsPerPage = value ?? 25),
+                          availableRowsPerPage:
+                              widget.paginationConfig.availableRowsPerPage,
+                          onRowsPerPageChanged:
+                              widget.paginationConfig.showItemsPerPageSelector
+                              ? (value) => setState(
+                                  () => rowsPerPage =
+                                      value ??
+                                      widget
+                                          .paginationConfig
+                                          .defaultRowsPerPage,
+                                )
+                              : null,
                           empty: Center(
                             child: Container(
                               padding: const EdgeInsets.all(20),

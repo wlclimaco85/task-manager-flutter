@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:task_manager_flutter/data/utils/api_links.dart';
 import 'package:task_manager_flutter/ui/widgets/generic_grid_screen.dart';
-import 'package:intl/intl.dart';
+
 import 'package:task_manager_flutter/data/models/comunicados_model.dart';
 
 class ComunicadoGridComponentesScreen extends StatelessWidget {
@@ -24,8 +24,31 @@ class ComunicadoGridComponentesScreen extends StatelessWidget {
       toJson: (comunicado) => comunicado.toJson(),
       hasPermission: hasPermission,
       fieldConfigs: Comunicado.fieldConfigs,
-      idFieldName: '_id', // Nome do campo ID no JSON
-      dateFieldName: 'dhCreatedAt', // Nome do campo data no JSON
+      idFieldName: '_id',
+      dateFieldName: 'dhCreatedAt',
+      exportConfig: const ExportConfig(
+        enableCsvExport: true,
+        filenamePrefix: 'comunicados',
+      ),
+      paginationConfig: const PaginationConfig(
+        defaultRowsPerPage: 20,
+        availableRowsPerPage: [10, 20, 50, 100],
+      ),
+      onItemTap: (comunicado, context) {
+        // Navegar para tela de detalhes
+        // Navigator.push(context, MaterialPageRoute(builder: (_) => ComunicadoDetailScreen(comunicado)));
+      },
+      customActions: (context) => [
+        IconButton(
+          icon: const Icon(Icons.settings),
+          onPressed: () {
+            // Abrir configurações
+          },
+        ),
+      ],
+      enableSearch: true,
+      enableColumnReorder: true,
+      initialFilters: {'categoria': 'Urgente'}, // Filtro inicial
     );
   }
 }

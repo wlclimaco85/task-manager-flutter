@@ -93,4 +93,5 @@ class ApiLinks {
   static String fecthCalcFrete = '$_baseUrlNew/api/rota/calcular';
   static String fecthChats = '$_baseUrlNew/api/chat/user';
   static String fecthChatById = '$_baseUrlNew/api/chat/messages?chatId=';
+  static String getCategorias = '$_baseUrlNew/api/setor';
 }
