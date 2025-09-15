@@ -1,5 +1,7 @@
 // Classe Endereco
 import 'dart:convert';
+import 'package:flutter/material.dart';
+import 'package:task_manager_flutter/ui/widgets/generic_grid_screen.dart';
 
 class Endereco {
   int? id;
@@ -117,8 +119,9 @@ class Parceiro {
     razaoSocial = json['razaoSocial'];
     incrMun = json['incrMun'];
     status = json['status'];
-    endereco =
-        json['endereco'] != null ? Endereco.fromJson(json['endereco']) : null;
+    endereco = json['endereco'] != null
+        ? Endereco.fromJson(json['endereco'])
+        : null;
   }
 
   // Método para serializar o objeto Parceiro em JSON
@@ -145,6 +148,22 @@ class Parceiro {
         .map((item) => Parceiro.fromJson(Map<String, dynamic>.from(item)))
         .toList();
   }
+
+  static List<FieldConfig> fieldConfigs = [
+    FieldConfig(
+      label: "Nome",
+      fieldName: "nome",
+      icon: Icons.business,
+      isInForm: true,
+      isFilterable: true,
+    ),
+    FieldConfig(
+      label: "Contato",
+      fieldName: "contato",
+      icon: Icons.phone,
+      isInForm: true,
+    ),
+  ];
 }
 
 class PaisModel {
@@ -157,8 +176,9 @@ class PaisModel {
   PaisModel.fromJson(Map<String, dynamic> json) {
     status = json['status'];
     token = json['token'];
-    pais =
-        json['data'] != null ? Pais.fromJsonList(json['data']['account']) : [];
+    pais = json['data'] != null
+        ? Pais.fromJsonList(json['data']['account'])
+        : [];
   }
 
   Map<String, dynamic> toJson() {
@@ -301,7 +321,8 @@ class Estado {
               nomePt: 'Brasil',
               iso2: 'BR',
               iso3: 'BRA',
-              bacen: 1058), // Criar um objeto padrão
+              bacen: 1058,
+            ), // Criar um objeto padrão
     );
   }
   // Método para serializar o objeto Parceiro em JSON

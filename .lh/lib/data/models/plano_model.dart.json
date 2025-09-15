@@ -1,0 +1,18 @@
+{
+    "sourceFile": "lib/data/models/plano_model.dart",
+    "activeCommit": 0,
+    "commits": [
+        {
+            "activePatchIndex": 0,
+            "patches": [
+                {
+                    "date": 1757969156162,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n"
+                }
+            ],
+            "date": 1757969156162,
+            "name": "Commit-0",
+            "content": "import 'package:flutter/material.dart';\r\nimport 'package:task_manager_flutter/ui/widgets/generic_grid_screen.dart';\r\n\r\nclass Plano {\r\n  int? id;\r\n  String? nome;\r\n  String? descricao;\r\n  double? valor;\r\n\r\n  Plano({this.id, this.nome, this.descricao, this.valor});\r\n\r\n  Plano.fromJson(Map<String, dynamic> json) {\r\n    id = json['id'];\r\n    nome = json['nome'];\r\n    descricao = json['descricao'];\r\n    valor = (json['valor'] as num?)?.toDouble();\r\n  }\r\n\r\n  Map<String, dynamic> toJson() {\r\n    return {'id': id, 'nome': nome, 'descricao': descricao, 'valor': valor};\r\n  }\r\n\r\n  static List<FieldConfig> fieldConfigs = [\r\n    FieldConfig(\r\n      label: \"Nome\",\r\n      fieldName: \"nome\",\r\n      icon: Icons.assignment,\r\n      isInForm: true,\r\n      isFilterable: true,\r\n    ),\r\n    FieldConfig(\r\n      label: \"Descrição\",\r\n      fieldName: \"descricao\",\r\n      icon: Icons.description,\r\n      isInForm: true,\r\n    ),\r\n    FieldConfig(\r\n      label: \"Valor\",\r\n      fieldName: \"valor\",\r\n      icon: Icons.attach_money,\r\n      isInForm: true,\r\n      isFilterable: true,\r\n    ),\r\n  ];\r\n}\r\n"
+        }
+    ]
+}

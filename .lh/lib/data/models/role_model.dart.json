@@ -1,0 +1,18 @@
+{
+    "sourceFile": "lib/data/models/role_model.dart",
+    "activeCommit": 0,
+    "commits": [
+        {
+            "activePatchIndex": 0,
+            "patches": [
+                {
+                    "date": 1757969183032,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n"
+                }
+            ],
+            "date": 1757969183032,
+            "name": "Commit-0",
+            "content": "import 'package:flutter/material.dart';\r\nimport 'package:task_manager_flutter/ui/widgets/generic_grid_screen.dart';\r\n\r\nclass Role {\r\n  int? id;\r\n  String? nome;\r\n\r\n  Role({this.id, this.nome});\r\n\r\n  Role.fromJson(Map<String, dynamic> json) {\r\n    id = json['id'];\r\n    nome = json['nome'];\r\n  }\r\n\r\n  Map<String, dynamic> toJson() {\r\n    return {'id': id, 'nome': nome};\r\n  }\r\n\r\n  static List<FieldConfig> fieldConfigs = [\r\n    FieldConfig(\r\n      label: \"Nome\",\r\n      fieldName: \"nome\",\r\n      icon: Icons.security,\r\n      isInForm: true,\r\n      isFilterable: true,\r\n    ),\r\n  ];\r\n}\r\n"
+        }
+    ]
+}

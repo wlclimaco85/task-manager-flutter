@@ -1,0 +1,18 @@
+{
+    "sourceFile": "lib/ui/screens/suplemento_grid_screen.dart",
+    "activeCommit": 0,
+    "commits": [
+        {
+            "activePatchIndex": 0,
+            "patches": [
+                {
+                    "date": 1757969721616,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n"
+                }
+            ],
+            "date": 1757969721616,
+            "name": "Commit-0",
+            "content": "import 'package:flutter/material.dart';\r\nimport 'package:task_manager_flutter/data/utils/api_links.dart';\r\nimport 'package:task_manager_flutter/ui/widgets/generic_grid_screen.dart';\r\nimport 'package:task_manager_flutter/data/models/suplemento_model.dart';\r\n\r\nclass SuplementoGridScreen extends StatelessWidget {\r\n  final SecurityCheck hasPermission;\r\n\r\n  const SuplementoGridScreen({super.key, required this.hasPermission});\r\n\r\n  @override\r\n  Widget build(BuildContext context) {\r\n    return GenericGridScreen<Suplemento>(\r\n      title: \"Suplementos\",\r\n      fetchEndpoint: ApiLinks.allSuplementos,\r\n      createEndpoint: ApiLinks.createSuplemento,\r\n      updateEndpoint: ApiLinks.updateSuplemento(\":id\"),\r\n      deleteEndpoint: ApiLinks.deleteSuplemento(\":id\"),\r\n      fromJson: (json) => Suplemento.fromJson(json),\r\n      toJson: (s) => s.toJson(),\r\n      hasPermission: hasPermission,\r\n      fieldConfigs: Suplemento.fieldConfigs,\r\n      idFieldName: 'id',\r\n      dateFieldName: 'dtInicio',\r\n      exportConfig: const ExportConfig(\r\n        enableCsvExport: true,\r\n        filenamePrefix: 'suplementos',\r\n      ),\r\n      paginationConfig: const PaginationConfig(\r\n        defaultRowsPerPage: 10,\r\n        availableRowsPerPage: [10, 25, 50],\r\n      ),\r\n      enableSearch: true,\r\n      enableColumnReorder: true,\r\n    );\r\n  }\r\n}\r\n"
+        }
+    ]
+}

@@ -1,0 +1,22 @@
+{
+    "sourceFile": "lib/data/models/mensalidade_model.dart",
+    "activeCommit": 0,
+    "commits": [
+        {
+            "activePatchIndex": 1,
+            "patches": [
+                {
+                    "date": 1757968892715,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n"
+                },
+                {
+                    "date": 1757968911003,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -48,9 +48,8 @@\n       label: \"Data Pagamento\",\r\n       fieldName: \"dtPagamento\",\r\n       icon: Icons.date_range,\r\n       isInForm: true,\r\n-      isDate: true,\r\n     ),\r\n     FieldConfig(\r\n       label: \"Aluno ID\",\r\n       fieldName: \"alunoId\",\r\n"
+                }
+            ],
+            "date": 1757968892715,
+            "name": "Commit-0",
+            "content": "import 'package:flutter/material.dart';\r\nimport 'package:task_manager_flutter/ui/widgets/generic_grid_screen.dart';\r\n\r\nclass Mensalidade {\r\n  int? id;\r\n  double? valor;\r\n  DateTime? dtPagamento;\r\n  int? alunoId;\r\n  int? planoId;\r\n\r\n  Mensalidade({\r\n    this.id,\r\n    this.valor,\r\n    this.dtPagamento,\r\n    this.alunoId,\r\n    this.planoId,\r\n  });\r\n\r\n  Mensalidade.fromJson(Map<String, dynamic> json) {\r\n    id = json['id'];\r\n    valor = (json['valor'] as num?)?.toDouble();\r\n    dtPagamento = json['dtPagamento'] != null\r\n        ? DateTime.parse(json['dtPagamento'])\r\n        : null;\r\n    alunoId = json['alunoId'];\r\n    planoId = json['planoId'];\r\n  }\r\n\r\n  Map<String, dynamic> toJson() {\r\n    return {\r\n      'id': id,\r\n      'valor': valor,\r\n      'dtPagamento': dtPagamento?.toIso8601String(),\r\n      'alunoId': alunoId,\r\n      'planoId': planoId,\r\n    };\r\n  }\r\n\r\n  static List<FieldConfig> fieldConfigs = [\r\n    FieldConfig(\r\n      label: \"Valor\",\r\n      fieldName: \"valor\",\r\n      icon: Icons.attach_money,\r\n      isInForm: true,\r\n      isFilterable: true,\r\n    ),\r\n    FieldConfig(\r\n      label: \"Data Pagamento\",\r\n      fieldName: \"dtPagamento\",\r\n      icon: Icons.date_range,\r\n      isInForm: true,\r\n      isDate: true,\r\n    ),\r\n    FieldConfig(\r\n      label: \"Aluno ID\",\r\n      fieldName: \"alunoId\",\r\n      icon: Icons.person,\r\n      isInForm: true,\r\n    ),\r\n    FieldConfig(\r\n      label: \"Plano ID\",\r\n      fieldName: \"planoId\",\r\n      icon: Icons.assignment,\r\n      isInForm: true,\r\n    ),\r\n  ];\r\n}\r\n"
+        }
+    ]
+}

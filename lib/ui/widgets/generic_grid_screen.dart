@@ -7,7 +7,7 @@ import 'package:flutter/foundation.dart';
 import 'dart:convert';
 
 // Enum para tipos de campo
-enum FieldType { text, number, email, date, multiline, dropdown }
+enum FieldType { text, number, email, date, multiline, dropdown, boolean }
 
 // Configuração avançada de campo
 class FieldConfig {
@@ -21,8 +21,7 @@ class FieldConfig {
   final bool isSortable;
   final FieldType fieldType;
   final List<Map<String, dynamic>>? dropdownOptions;
-  final Future<List<Map<String, dynamic>>> Function()?
-  dropdownFutureBuilder; // Alterado para uma função que retorna Future
+  final Future<List<Map<String, dynamic>>> Function()? dropdownFutureBuilder;
   final String dropdownValueField;
   final String dropdownDisplayField;
   final bool isRequired;
@@ -39,7 +38,7 @@ class FieldConfig {
     this.isSortable = true,
     this.fieldType = FieldType.text,
     this.dropdownOptions,
-    this.dropdownFutureBuilder, // Alterado para uma função
+    this.dropdownFutureBuilder,
     this.dropdownValueField = 'value',
     this.dropdownDisplayField = 'label',
     this.isRequired = false,
@@ -146,6 +145,10 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
   bool _isDeleting = false;
   bool _isExporting = false;
 
+  // Controles de paginação
+  int _currentPage = 0;
+  int _totalItems = 0;
+
   final Map<String, TextEditingController> _filterControllers = {};
   final TextEditingController _searchController = TextEditingController();
   final Map<String, List<Map<String, dynamic>>> _dropdownCache = {};
@@ -165,7 +168,7 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
       _columnVisibility[config.fieldName] = true;
     }
 
-    _loadItems();
+    _loadItems(_currentPage, rowsPerPage);
 
     // Aplicar filtros iniciais se fornecidos
     if (widget.initialFilters != null) {
@@ -186,22 +189,52 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
     setState(() => isLoading = true);
 
     try {
-      final NetworkResponse response = await NetworkCaller().getRequest(
-        '${widget.fetchEndpoint}?pagina=$pagina&tamanho=$tamanhoPagina',
-      );
+      // Construir a URL com parâmetros de paginação
+      String url =
+          '${widget.fetchEndpoint}?pagina=$pagina&tamanho=$tamanhoPagina';
+
+      // Adicionar parâmetros de ordenação se existirem
+      if (sortColumnIndex != null &&
+          widget.fieldConfigs[sortColumnIndex!].isSortable) {
+        final config = widget.fieldConfigs[sortColumnIndex!];
+        final direction = sortAscending ? 'ASC' : 'DESC';
+        url += '&ordenarPor=${config.fieldName}&direcao=$direction';
+      }
+
+      // Adicionar filtros se existirem
+      for (final config in widget.fieldConfigs.where((c) => c.isFilterable)) {
+        if (_filterControllers[config.fieldName]?.text.isNotEmpty == true) {
+          url +=
+              '&${config.fieldName}=${Uri.encodeComponent(_filterControllers[config.fieldName]!.text)}';
+        }
+      }
+
+      // Adicionar busca global se existir
+      if (_searchController.text.isNotEmpty) {
+        url += '&busca=${Uri.encodeComponent(_searchController.text)}';
+      }
+
+      final NetworkResponse response = await NetworkCaller().getRequest(url);
 
       if (response.statusCode == 200 && response.body != null) {
-        final List<dynamic> data = response.body!['data'] is Map
-            ? response.body!['data']['comunicadoDTO'] ?? []
-            : response.body!['data'] ?? [];
+        // Processar resposta paginada do backend
+        final responseData = response.body!['data'];
+        final List<dynamic> data = responseData is Map
+            ? responseData['dados'] ?? []
+            : responseData ?? [];
 
         setState(() {
           items = data.map((json) => widget.fromJson(json)).toList();
           filtered = List.from(items);
+          _totalItems = responseData is Map
+              ? responseData['totalElements'] ?? 0
+              : data.length;
         });
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Falha ao carregar dados: ${response}')),
+          SnackBar(
+            content: Text('Falha ao carregar dados: ${response.statusCode}'),
+          ),
         );
       }
     } catch (e) {
@@ -214,37 +247,11 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
   }
 
   void _applyFilters() {
+    // Recarregar dados com filtros aplicados
     setState(() {
-      final searchText = _searchController.text.toLowerCase();
-
-      filtered = items.where((item) {
-        final itemMap = widget.toJson(item);
-
-        // Aplicar busca global
-        if (searchText.isNotEmpty) {
-          final hasMatch = widget.fieldConfigs.any((config) {
-            final value =
-                itemMap[config.fieldName]?.toString().toLowerCase() ?? '';
-            return value.contains(searchText);
-          });
-          if (!hasMatch) return false;
-        }
-
-        // Aplicar filtros individuais
-        for (final config in widget.fieldConfigs) {
-          if (config.isFilterable &&
-              _filterControllers[config.fieldName]?.text.isNotEmpty == true) {
-            final value =
-                itemMap[config.fieldName]?.toString().toLowerCase() ?? '';
-            final filterText = _filterControllers[config.fieldName]!.text
-                .toLowerCase();
-            if (!value.contains(filterText)) return false;
-          }
-        }
-
-        return true;
-      }).toList();
+      _currentPage = 0; // Reset para a primeira página ao aplicar filtros
     });
+    _loadItems(_currentPage, rowsPerPage);
   }
 
   void _sort<U>(
@@ -253,16 +260,12 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
     bool asc,
   ) {
     setState(() {
-      filtered.sort((a, b) {
-        final aValue = getField(a);
-        final bValue = getField(b);
-        return asc
-            ? Comparable.compare(aValue, bValue)
-            : Comparable.compare(bValue, aValue);
-      });
       sortColumnIndex = columnIndex;
       sortAscending = asc;
     });
+
+    // Recarregar dados com a nova ordenação
+    _loadItems(_currentPage, rowsPerPage);
   }
 
   void _openForm({T? item}) {
@@ -558,7 +561,7 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
 
     if (success) {
       Navigator.pop(context);
-      _loadItems();
+      _loadItems(_currentPage, rowsPerPage);
     }
 
     setState(() => _isUpdating = false);
@@ -585,7 +588,7 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
       return true;
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Falha ao criar item: ${response}')),
+        SnackBar(content: Text('Falha ao criar item: ${response.statusCode}')),
       );
       return false;
     }
@@ -614,7 +617,9 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
       return true;
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Falha ao atualizar item: ${response}')),
+        SnackBar(
+          content: Text('Falha ao atualizar item: ${response.statusCode}'),
+        ),
       );
       return false;
     }
@@ -668,10 +673,12 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Item excluído com sucesso')),
       );
-      _loadItems();
+      _loadItems(_currentPage, rowsPerPage);
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Falha ao excluir item: ${response}')),
+        SnackBar(
+          content: Text('Falha ao excluir item: ${response.statusCode}'),
+        ),
       );
     }
   }
@@ -1016,7 +1023,8 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
                           ),
                           const Spacer(),
                           IconButton(
-                            onPressed: _loadItems,
+                            onPressed: () =>
+                                _loadItems(_currentPage, rowsPerPage),
                             icon: const Icon(Icons.refresh),
                             tooltip: "Recarregar",
                           ),
@@ -1073,14 +1081,24 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
                               widget.paginationConfig.availableRowsPerPage,
                           onRowsPerPageChanged:
                               widget.paginationConfig.showItemsPerPageSelector
-                              ? (value) => setState(
-                                  () => rowsPerPage =
-                                      value ??
-                                      widget
-                                          .paginationConfig
-                                          .defaultRowsPerPage,
-                                )
+                              ? (value) {
+                                  setState(() {
+                                    rowsPerPage =
+                                        value ??
+                                        widget
+                                            .paginationConfig
+                                            .defaultRowsPerPage;
+                                    _currentPage = 0;
+                                  });
+                                  _loadItems(_currentPage, rowsPerPage);
+                                }
                               : null,
+                          onPageChanged: (pageIndex) {
+                            setState(() {
+                              _currentPage = pageIndex;
+                            });
+                            _loadItems(_currentPage, rowsPerPage);
+                          },
                           empty: Center(
                             child: Container(
                               padding: const EdgeInsets.all(20),

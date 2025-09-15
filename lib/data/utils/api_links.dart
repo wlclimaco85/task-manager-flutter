@@ -67,18 +67,11 @@ class ApiLinks {
   static String fecthItensANegociar = '$_baseUrlNew/api/produtos/negociacoes/';
   static String insertCotacaoFrete = '$_baseUrlNew/api/cotacaofrete';
   static String allAlerts = '$_baseUrlNew/api/alert';
-  static String allComunicados = '$_baseUrlNew/api/comunicados';
-  static String createComunicado = '$_baseUrlNew/api/comunicados/insert';
-  static String updateComunicado(String taskId) =>
-      '$_baseUrl//api/comunicados/update/$taskId';
-  static String deleteComunicado(String taskId) =>
-      '$_baseUrl/api/comunicados/delete/$taskId';
   static String alertFindByUser = '$_baseUrlNew/api/alert/byUser/';
   static String compradorFindByUser = '$_baseUrlNew/api/produtos/comprador/';
   static String vendedorFindByUser = '$_baseUrlNew/api/produtos/vendedor/';
   static String negociacaoFindByUser = '$_baseUrlNew/produtos/negociacoes/';
   static String insertParceiro = '$_baseUrlNew/api/parceiro/insert';
-  static String updateParceiro = '$_baseUrlNew/api/parceiro/update';
   static String fecthAllCotacaoDollar = '$_baseUrlNew/api/cotacoes/dollar';
   static String confirmarNegociacao = '$_baseUrlNew/api/negociacao/finalizar';
   static String confirmarRecusar = '$_baseUrlNew/api/negociacao/recusar';
@@ -94,4 +87,131 @@ class ApiLinks {
   static String fecthChats = '$_baseUrlNew/api/chat/user';
   static String fecthChatById = '$_baseUrlNew/api/chat/messages?chatId=';
   static String getCategorias = '$_baseUrlNew/api/setor';
+
+  // Comunicado
+  static String allComunicados = '$_baseUrlNew/api/comunicados';
+  static String createComunicado = '$_baseUrlNew/api/comunicados/insert';
+  static String updateComunicado(String taskId) =>
+      '$_baseUrlNew/api/comunicados/update/$taskId';
+  static String deleteComunicado(String taskId) =>
+      '$_baseUrlNew/api/comunicados/delete/$taskId';
+
+  // Alimento
+  static String allAlimentos = '$_baseUrlNew/api/alimentos';
+  static String createAlimento = '$_baseUrlNew/api/alimentos/insert';
+  static String updateAlimento(String id) =>
+      '$_baseUrlNew/api/alimentos/update/$id';
+  static String deleteAlimento(String id) =>
+      '$_baseUrlNew/api/alimentos/delete/$id';
+
+  // Dieta
+  static String allDietas = '$_baseUrlNew/api/dietas';
+  static String createDieta = '$_baseUrlNew/api/dietas/insert';
+  static String updateDieta(String id) => '$_baseUrlNew/api/dietas/update/$id';
+  static String deleteDieta(String id) => '$_baseUrlNew/api/dietas/delete/$id';
+
+  // Empresa
+  static String allEmpresas = '$_baseUrlNew/api/empresas';
+  static String createEmpresa = '$_baseUrlNew/api/empresas/insert';
+  static String updateEmpresa(String id) =>
+      '$_baseUrlNew/api/empresas/update/$id';
+  static String deleteEmpresa(String id) =>
+      '$_baseUrlNew/api/empresas/delete/$id';
+
+  // Exame
+  static String allExames = '$_baseUrlNew/api/exames';
+  static String createExame = '$_baseUrlNew/api/exames/insert';
+  static String updateExame(String id) => '$_baseUrlNew/api/exames/update/$id';
+  static String deleteExame(String id) => '$_baseUrlNew/api/exames/delete/$id';
+
+  // Exercicio
+  static String allExercicios = '$_baseUrlNew/api/exercicios';
+  static String createExercicio = '$_baseUrlNew/api/exercicios/insert';
+  static String updateExercicio(String id) =>
+      '$_baseUrlNew/api/exercicios/update/$id';
+  static String deleteExercicio(String id) =>
+      '$_baseUrlNew/api/exercicios/delete/$id';
+
+  // Grupo Muscular
+  static String allGruposMusculares = '$_baseUrlNew/api/grupos-musculares';
+  static String createGrupoMuscular =
+      '$_baseUrlNew/api/grupos-musculares/insert';
+  static String updateGrupoMuscular(String id) =>
+      '$_baseUrlNew/api/grupos-musculares/update/$id';
+  static String deleteGrupoMuscular(String id) =>
+      '$_baseUrlNew/api/grupos-musculares/delete/$id';
+
+  // Medicamento
+  static String allMedicamentos = '$_baseUrlNew/api/medicamentos';
+  static String createMedicamento = '$_baseUrlNew/api/medicamentos/insert';
+  static String updateMedicamento(String id) =>
+      '$_baseUrlNew/api/medicamentos/update/$id';
+  static String deleteMedicamento(String id) =>
+      '$_baseUrlNew/api/medicamentos/delete/$id';
+
+  // Mensalidade
+  static String allMensalidades = '$_baseUrlNew/api/mensalidades';
+  static String createMensalidade = '$_baseUrlNew/api/mensalidades/insert';
+  static String updateMensalidade(String id) =>
+      '$_baseUrlNew/api/mensalidades/update/$id';
+  static String deleteMensalidade(String id) =>
+      '$_baseUrlNew/api/mensalidades/delete/$id';
+
+  // Modalidade
+  static String allModalidades = '$_baseUrlNew/api/modalidades';
+  static String createModalidade = '$_baseUrlNew/api/modalidades/insert';
+  static String updateModalidade(String id) =>
+      '$_baseUrlNew/api/modalidades/update/$id';
+  static String deleteModalidade(String id) =>
+      '$_baseUrlNew/api/modalidades/delete/$id';
+
+  // Objetivo
+  static String allObjetivos = '$_baseUrlNew/api/objetivos';
+  static String createObjetivo = '$_baseUrlNew/api/objetivos/insert';
+  static String updateObjetivo(String id) =>
+      '$_baseUrlNew/api/objetivos/update/$id';
+  static String deleteObjetivo(String id) =>
+      '$_baseUrlNew/api/objetivos/delete/$id';
+
+  // Parceiro
+  static String allParceiros = '$_baseUrlNew/api/parceiros';
+  static String createParceiro = '$_baseUrlNew/api/parceiros/insert';
+  static String updateParceiro(String id) =>
+      '$_baseUrlNew/api/parceiros/update/$id';
+  static String deleteParceiro(String id) =>
+      '$_baseUrlNew/api/parceiros/delete/$id';
+
+  // Personal
+  static String allPersonais = '$_baseUrlNew/api/personais';
+  static String createPersonal = '$_baseUrlNew/api/personais/insert';
+  static String updatePersonal(String id) =>
+      '$_baseUrlNew/api/personais/update/$id';
+  static String deletePersonal(String id) =>
+      '$_baseUrlNew/api/personais/delete/$id';
+
+  // Plano
+  static String allPlanos = '$_baseUrlNew/api/planos';
+  static String createPlano = '$_baseUrlNew/api/planos/insert';
+  static String updatePlano(String id) => '$_baseUrlNew/api/planos/update/$id';
+  static String deletePlano(String id) => '$_baseUrlNew/api/planos/delete/$id';
+
+  // Role
+  static String allRoles = '$_baseUrlNew/api/roles';
+  static String createRole = '$_baseUrlNew/api/roles/insert';
+  static String updateRole(String id) => '$_baseUrlNew/api/roles/update/$id';
+  static String deleteRole(String id) => '$_baseUrlNew/api/roles/delete/$id';
+
+  // Setor
+  static String allSetores = '$_baseUrlNew/api/setores';
+  static String createSetor = '$_baseUrlNew/api/setores/insert';
+  static String updateSetor(String id) => '$_baseUrlNew/api/setores/update/$id';
+  static String deleteSetor(String id) => '$_baseUrlNew/api/setores/delete/$id';
+
+  // Suplemento
+  static String allSuplementos = '$_baseUrlNew/api/suplementos';
+  static String createSuplemento = '$_baseUrlNew/api/suplementos/insert';
+  static String updateSuplemento(String id) =>
+      '$_baseUrlNew/api/suplementos/update/$id';
+  static String deleteSuplemento(String id) =>
+      '$_baseUrlNew/api/suplementos/delete/$id';
 }

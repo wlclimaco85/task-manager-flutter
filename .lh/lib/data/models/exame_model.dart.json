@@ -1,0 +1,18 @@
+{
+    "sourceFile": "lib/data/models/exame_model.dart",
+    "activeCommit": 0,
+    "commits": [
+        {
+            "activePatchIndex": 0,
+            "patches": [
+                {
+                    "date": 1757967859254,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n"
+                }
+            ],
+            "date": 1757967859254,
+            "name": "Commit-0",
+            "content": "import 'package:flutter/material.dart';\r\nimport 'package:task_manager_flutter/ui/widgets/generic_grid_screen.dart';\r\n\r\nclass Exame {\r\n  int? id;\r\n  int? idaluno;\r\n  String? nome;\r\n  String? laboratorio;\r\n  String? medico;\r\n  String? resultado;\r\n  String? dtExame;\r\n  String? dtEntregaResulExame;\r\n\r\n  Exame({\r\n    this.id,\r\n    this.idaluno,\r\n    this.nome,\r\n    this.laboratorio,\r\n    this.medico,\r\n    this.resultado,\r\n    this.dtExame,\r\n    this.dtEntregaResulExame,\r\n  });\r\n\r\n  Exame.fromJson(Map<String, dynamic> json) {\r\n    id = json['id'];\r\n    idaluno = json['idaluno'];\r\n    nome = json['nome'];\r\n    laboratorio = json['laboratorio'];\r\n    medico = json['medico'];\r\n    resultado = json['resultado'];\r\n    dtExame = json['dtExame'];\r\n    dtEntregaResulExame = json['dtEntregaResulExame'];\r\n  }\r\n\r\n  Map<String, dynamic> toJson() {\r\n    return {\r\n      'id': id,\r\n      'idaluno': idaluno,\r\n      'nome': nome,\r\n      'laboratorio': laboratorio,\r\n      'medico': medico,\r\n      'resultado': resultado,\r\n      'dtExame': dtExame,\r\n      'dtEntregaResulExame': dtEntregaResulExame,\r\n    };\r\n  }\r\n\r\n  static List<FieldConfig> fieldConfigs = [\r\n    FieldConfig(\r\n      label: \"Nome\",\r\n      fieldName: \"nome\",\r\n      icon: Icons.text_fields,\r\n      isInForm: true,\r\n      isFilterable: true,\r\n    ),\r\n    FieldConfig(\r\n      label: \"Laboratório\",\r\n      fieldName: \"laboratorio\",\r\n      icon: Icons.local_hospital,\r\n      isInForm: true,\r\n    ),\r\n    FieldConfig(\r\n      label: \"Médico\",\r\n      fieldName: \"medico\",\r\n      icon: Icons.person,\r\n      isInForm: true,\r\n    ),\r\n    FieldConfig(\r\n      label: \"Resultado\",\r\n      fieldName: \"resultado\",\r\n      icon: Icons.description,\r\n      isInForm: true,\r\n    ),\r\n    FieldConfig(\r\n      label: \"Data Exame\",\r\n      fieldName: \"dtExame\",\r\n      icon: Icons.calendar_month,\r\n      isInForm: true,\r\n    ),\r\n    FieldConfig(\r\n      label: \"Entrega Resultado\",\r\n      fieldName: \"dtEntregaResulExame\",\r\n      icon: Icons.event,\r\n      isInForm: true,\r\n    ),\r\n  ];\r\n}\r\n"
+        }
+    ]
+}

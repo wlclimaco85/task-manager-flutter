@@ -1,0 +1,18 @@
+{
+    "sourceFile": "lib/data/models/empresa_model.dart",
+    "activeCommit": 0,
+    "commits": [
+        {
+            "activePatchIndex": 0,
+            "patches": [
+                {
+                    "date": 1757967882884,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n"
+                }
+            ],
+            "date": 1757967882884,
+            "name": "Commit-0",
+            "content": "import 'package:flutter/material.dart';\r\nimport 'package:task_manager_flutter/ui/widgets/generic_grid_screen.dart';\r\n\r\nclass Empresa {\r\n  int? id;\r\n  String? nome;\r\n  String? razaoSocial;\r\n  String? email;\r\n  String? site;\r\n  String? contato;\r\n  String? telefone;\r\n  String? cidade;\r\n\r\n  Empresa({\r\n    this.id,\r\n    this.nome,\r\n    this.razaoSocial,\r\n    this.email,\r\n    this.site,\r\n    this.contato,\r\n    this.telefone,\r\n    this.cidade,\r\n  });\r\n\r\n  Empresa.fromJson(Map<String, dynamic> json) {\r\n    id = json['id'];\r\n    nome = json['nome'];\r\n    razaoSocial = json['razaoSocial'];\r\n    email = json['email'];\r\n    site = json['site'];\r\n    contato = json['contato'];\r\n    telefone = json['telefone'];\r\n    cidade = json['cidade'];\r\n  }\r\n\r\n  Map<String, dynamic> toJson() {\r\n    return {\r\n      'id': id,\r\n      'nome': nome,\r\n      'razaoSocial': razaoSocial,\r\n      'email': email,\r\n      'site': site,\r\n      'contato': contato,\r\n      'telefone': telefone,\r\n      'cidade': cidade,\r\n    };\r\n  }\r\n\r\n  static List<FieldConfig> fieldConfigs = [\r\n    FieldConfig(\r\n      label: \"Nome\",\r\n      fieldName: \"nome\",\r\n      icon: Icons.business,\r\n      isInForm: true,\r\n      isFilterable: true,\r\n    ),\r\n    FieldConfig(\r\n      label: \"Razão Social\",\r\n      fieldName: \"razaoSocial\",\r\n      icon: Icons.apartment,\r\n      isInForm: true,\r\n      isFilterable: true,\r\n    ),\r\n    FieldConfig(\r\n      label: \"Email\",\r\n      fieldName: \"email\",\r\n      icon: Icons.email,\r\n      isInForm: true,\r\n    ),\r\n    FieldConfig(\r\n      label: \"Telefone\",\r\n      fieldName: \"telefone\",\r\n      icon: Icons.phone,\r\n      isInForm: true,\r\n    ),\r\n    FieldConfig(\r\n      label: \"Cidade\",\r\n      fieldName: \"cidade\",\r\n      icon: Icons.location_city,\r\n      isInForm: true,\r\n      isFilterable: true,\r\n    ),\r\n  ];\r\n}\r\n"
+        }
+    ]
+}

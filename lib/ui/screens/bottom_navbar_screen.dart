@@ -19,6 +19,23 @@ import 'package:task_manager_flutter/data/services/alert_caller.dart';
 import 'package:task_manager_flutter/data/models/login_model.dart';
 import 'package:http/http.dart' as http;
 import 'dart:async';
+// GridScreens
+import 'package:task_manager_flutter/ui/screens/alimento_grid_screen.dart';
+import 'package:task_manager_flutter/ui/screens/dieta_grid_screen.dart';
+import 'package:task_manager_flutter/ui/screens/empresa_grid_screen.dart';
+import 'package:task_manager_flutter/ui/screens/exame_grid_screen.dart';
+import 'package:task_manager_flutter/ui/screens/exercicio_grid_screen.dart';
+import 'package:task_manager_flutter/ui/screens/grupo_muscular_grid_screen.dart';
+import 'package:task_manager_flutter/ui/screens/medicamento_grid_screen.dart';
+import 'package:task_manager_flutter/ui/screens/mensalidade_grid_screen.dart';
+import 'package:task_manager_flutter/ui/screens/modalidade_grid_screen.dart';
+import 'package:task_manager_flutter/ui/screens/objetivo_grid_screen.dart';
+import 'package:task_manager_flutter/ui/screens/parceiro_grid_screen.dart';
+import 'package:task_manager_flutter/ui/screens/personal_grid_screen.dart';
+import 'package:task_manager_flutter/ui/screens/plano_grid_screen.dart';
+import 'package:task_manager_flutter/ui/screens/role_grid_screen.dart';
+import 'package:task_manager_flutter/ui/screens/setor_grid_screen.dart';
+import 'package:task_manager_flutter/ui/screens/suplemento_grid_screen.dart';
 
 class BottomNavBarScreen extends StatefulWidget {
   const BottomNavBarScreen({super.key});
@@ -65,6 +82,22 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
       ChatListScreen(userName: AuthUtility.userInfo.data!.email ?? 'Usuário'),
       const ProductRegisterScreen(),
       isLoggedIn ? const ProductRegisterScreen() : const LoginPopup(),
+      AlimentoGridScreen(hasPermission: (perm) => true),
+      DietaGridScreen(hasPermission: (perm) => true),
+      EmpresaGridScreen(hasPermission: (perm) => true),
+      ExameGridScreen(hasPermission: (perm) => true),
+      ExercicioGridScreen(hasPermission: (perm) => true),
+      GrupoMuscularGridScreen(hasPermission: (perm) => true),
+      MedicamentoGridScreen(hasPermission: (perm) => true),
+      MensalidadeGridScreen(hasPermission: (perm) => true),
+      ModalidadeGridScreen(hasPermission: (perm) => true),
+      ObjetivoGridScreen(hasPermission: (perm) => true),
+      ParceiroGridScreen(hasPermission: (perm) => true),
+      PersonalGridScreen(hasPermission: (perm) => true),
+      PlanoGridScreen(hasPermission: (perm) => true),
+      RoleGridScreen(hasPermission: (perm) => true),
+      SetorGridScreen(hasPermission: (perm) => true),
+      SuplementoGridScreen(hasPermission: (perm) => true),
     ];
   }
 
@@ -75,6 +108,23 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
     SidebarItem(icon: FontAwesomeIcons.cartShopping, label: "Comprar"),
     SidebarItem(icon: FontAwesomeIcons.tags, label: "Vender"),
     SidebarItem(icon: FontAwesomeIcons.user, label: "Perfil"),
+    SidebarItem(icon: FontAwesomeIcons.newspaper, label: "Comunicados"),
+    SidebarItem(icon: FontAwesomeIcons.appleAlt, label: "Alimentos"),
+    SidebarItem(icon: FontAwesomeIcons.bowlFood, label: "Dietas"),
+    SidebarItem(icon: FontAwesomeIcons.building, label: "Empresas"),
+    SidebarItem(icon: FontAwesomeIcons.vials, label: "Exames"),
+    SidebarItem(icon: FontAwesomeIcons.dumbbell, label: "Exercícios"),
+    SidebarItem(icon: FontAwesomeIcons.peopleGroup, label: "Grupos Musculares"),
+    SidebarItem(icon: FontAwesomeIcons.pills, label: "Medicamentos"),
+    SidebarItem(icon: FontAwesomeIcons.moneyBill, label: "Mensalidades"),
+    SidebarItem(icon: FontAwesomeIcons.table, label: "Modalidades"),
+    SidebarItem(icon: FontAwesomeIcons.bullseye, label: "Objetivos"),
+    SidebarItem(icon: FontAwesomeIcons.handshake, label: "Parceiros"),
+    SidebarItem(icon: FontAwesomeIcons.user, label: "Personais"),
+    SidebarItem(icon: FontAwesomeIcons.listCheck, label: "Planos"),
+    SidebarItem(icon: FontAwesomeIcons.userShield, label: "Roles"),
+    SidebarItem(icon: FontAwesomeIcons.sitemap, label: "Setores"),
+    SidebarItem(icon: FontAwesomeIcons.capsules, label: "Suplementos"),
   ];
 
   @override

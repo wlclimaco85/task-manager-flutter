@@ -1,3 +1,48 @@
+import 'package:flutter/material.dart';
+import 'package:task_manager_flutter/ui/widgets/generic_grid_screen.dart';
+
+class Personal {
+  int? id;
+  String? nome;
+  String? cref;
+  String? telefone;
+
+  Personal({this.id, this.nome, this.cref, this.telefone});
+
+  Personal.fromJson(Map<String, dynamic> json) {
+    id = json['id'];
+    nome = json['nome'];
+    cref = json['cref'];
+    telefone = json['telefone'];
+  }
+
+  Map<String, dynamic> toJson() {
+    return {'id': id, 'nome': nome, 'cref': cref, 'telefone': telefone};
+  }
+
+  static List<FieldConfig> fieldConfigs = [
+    FieldConfig(
+      label: "Nome",
+      fieldName: "nome",
+      icon: Icons.person,
+      isInForm: true,
+      isFilterable: true,
+    ),
+    FieldConfig(
+      label: "CREF",
+      fieldName: "cref",
+      icon: Icons.badge,
+      isInForm: true,
+    ),
+    FieldConfig(
+      label: "Telefone",
+      fieldName: "telefone",
+      icon: Icons.phone,
+      isInForm: true,
+    ),
+  ];
+}
+
 class PersonalDtoModel {
   dynamic data;
 
@@ -42,6 +87,7 @@ class PersonalDto {
     return data;
   }
 }
+
 /*
 class Data {
   String? email;

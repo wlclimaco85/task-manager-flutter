@@ -1,0 +1,22 @@
+{
+    "sourceFile": "lib/ui/screens/modalidade_grid_screen.dart",
+    "activeCommit": 0,
+    "commits": [
+        {
+            "activePatchIndex": 1,
+            "patches": [
+                {
+                    "date": 1757969533159,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n"
+                },
+                {
+                    "date": 1757969538466,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -20,9 +20,9 @@\n       toJson: (m) => m.toJson(),\r\n       hasPermission: hasPermission,\r\n       fieldConfigs: Modalidade.fieldConfigs,\r\n       idFieldName: 'id',\r\n-      dateFieldName: null,\r\n+      dateFieldName: 'createdAt',\r\n       exportConfig: const ExportConfig(\r\n         enableCsvExport: true,\r\n         filenamePrefix: 'modalidades',\r\n       ),\r\n"
+                }
+            ],
+            "date": 1757969533159,
+            "name": "Commit-0",
+            "content": "import 'package:flutter/material.dart';\r\nimport 'package:task_manager_flutter/data/utils/api_links.dart';\r\nimport 'package:task_manager_flutter/ui/widgets/generic_grid_screen.dart';\r\nimport 'package:task_manager_flutter/data/models/modalidade_model.dart';\r\n\r\nclass ModalidadeGridScreen extends StatelessWidget {\r\n  final SecurityCheck hasPermission;\r\n\r\n  const ModalidadeGridScreen({super.key, required this.hasPermission});\r\n\r\n  @override\r\n  Widget build(BuildContext context) {\r\n    return GenericGridScreen<Modalidade>(\r\n      title: \"Modalidades\",\r\n      fetchEndpoint: ApiLinks.allModalidades,\r\n      createEndpoint: ApiLinks.createModalidade,\r\n      updateEndpoint: ApiLinks.updateModalidade(\":id\"),\r\n      deleteEndpoint: ApiLinks.deleteModalidade(\":id\"),\r\n      fromJson: (json) => Modalidade.fromJson(json),\r\n      toJson: (m) => m.toJson(),\r\n      hasPermission: hasPermission,\r\n      fieldConfigs: Modalidade.fieldConfigs,\r\n      idFieldName: 'id',\r\n      dateFieldName: null,\r\n      exportConfig: const ExportConfig(\r\n        enableCsvExport: true,\r\n        filenamePrefix: 'modalidades',\r\n      ),\r\n      paginationConfig: const PaginationConfig(\r\n        defaultRowsPerPage: 10,\r\n        availableRowsPerPage: [10, 25, 50],\r\n      ),\r\n      enableSearch: true,\r\n      enableColumnReorder: true,\r\n    );\r\n  }\r\n}\r\n"
+        }
+    ]
+}

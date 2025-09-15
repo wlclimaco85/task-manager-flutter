@@ -1,0 +1,18 @@
+{
+    "sourceFile": "lib/data/models/dieta_model.dart",
+    "activeCommit": 0,
+    "commits": [
+        {
+            "activePatchIndex": 0,
+            "patches": [
+                {
+                    "date": 1757967464849,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n"
+                }
+            ],
+            "date": 1757967464849,
+            "name": "Commit-0",
+            "content": "import 'package:flutter/material.dart';\r\nimport 'package:task_manager_flutter/ui/widgets/generic_grid_screen.dart';\r\n\r\nclass Dieta {\r\n  int? id;\r\n  int? codAluno; // simplificado\r\n  String? nutricionista;\r\n  String? objetivo;\r\n  String? descricao;\r\n  String? dtConsulta;\r\n  String? dtInicio;\r\n  String? dtFinal;\r\n\r\n  Dieta({\r\n    this.id,\r\n    this.codAluno,\r\n    this.nutricionista,\r\n    this.objetivo,\r\n    this.descricao,\r\n    this.dtConsulta,\r\n    this.dtInicio,\r\n    this.dtFinal,\r\n  });\r\n\r\n  Dieta.fromJson(Map<String, dynamic> json) {\r\n    id = json['id'];\r\n    codAluno = json['codAluno'];\r\n    nutricionista = json['nutricionista'];\r\n    objetivo = json['objetivo'];\r\n    descricao = json['descricao'];\r\n    dtConsulta = json['dtConsulta'];\r\n    dtInicio = json['dtInicio'];\r\n    dtFinal = json['dtFinal'];\r\n  }\r\n\r\n  Map<String, dynamic> toJson() {\r\n    return {\r\n      'id': id,\r\n      'codAluno': codAluno,\r\n      'nutricionista': nutricionista,\r\n      'objetivo': objetivo,\r\n      'descricao': descricao,\r\n      'dtConsulta': dtConsulta,\r\n      'dtInicio': dtInicio,\r\n      'dtFinal': dtFinal,\r\n    };\r\n  }\r\n\r\n  static List<FieldConfig> fieldConfigs = [\r\n    FieldConfig(\r\n      label: \"Nutricionista\",\r\n      fieldName: \"nutricionista\",\r\n      icon: Icons.person,\r\n      isInForm: true,\r\n      isFilterable: true,\r\n    ),\r\n    FieldConfig(\r\n      label: \"Objetivo\",\r\n      fieldName: \"objetivo\",\r\n      icon: Icons.flag,\r\n      isInForm: true,\r\n      isFilterable: true,\r\n    ),\r\n    FieldConfig(\r\n      label: \"Descrição\",\r\n      fieldName: \"descricao\",\r\n      icon: Icons.description,\r\n      isInForm: true,\r\n    ),\r\n    FieldConfig(\r\n      label: \"Data Consulta\",\r\n      fieldName: \"dtConsulta\",\r\n      icon: Icons.calendar_month,\r\n      isInForm: true,\r\n    ),\r\n    FieldConfig(\r\n      label: \"Data Início\",\r\n      fieldName: \"dtInicio\",\r\n      icon: Icons.calendar_today,\r\n      isInForm: true,\r\n    ),\r\n    FieldConfig(\r\n      label: \"Data Final\",\r\n      fieldName: \"dtFinal\",\r\n      icon: Icons.calendar_today,\r\n      isInForm: true,\r\n    ),\r\n  ];\r\n}\r\n"
+        }
+    ]
+}

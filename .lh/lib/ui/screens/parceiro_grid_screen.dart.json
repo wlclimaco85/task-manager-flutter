@@ -1,0 +1,22 @@
+{
+    "sourceFile": "lib/ui/screens/parceiro_grid_screen.dart",
+    "activeCommit": 0,
+    "commits": [
+        {
+            "activePatchIndex": 1,
+            "patches": [
+                {
+                    "date": 1757969587818,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n"
+                },
+                {
+                    "date": 1757969597307,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -20,9 +20,9 @@\n       toJson: (p) => p.toJson(),\r\n       hasPermission: hasPermission,\r\n       fieldConfigs: Parceiro.fieldConfigs,\r\n       idFieldName: 'id',\r\n-      dateFieldName: null,\r\n+      dateFieldName: 'createdAt',\r\n       exportConfig: const ExportConfig(\r\n         enableCsvExport: true,\r\n         filenamePrefix: 'parceiros',\r\n       ),\r\n"
+                }
+            ],
+            "date": 1757969587818,
+            "name": "Commit-0",
+            "content": "import 'package:flutter/material.dart';\r\nimport 'package:task_manager_flutter/data/utils/api_links.dart';\r\nimport 'package:task_manager_flutter/ui/widgets/generic_grid_screen.dart';\r\nimport 'package:task_manager_flutter/data/models/parceiro_model.dart';\r\n\r\nclass ParceiroGridScreen extends StatelessWidget {\r\n  final SecurityCheck hasPermission;\r\n\r\n  const ParceiroGridScreen({super.key, required this.hasPermission});\r\n\r\n  @override\r\n  Widget build(BuildContext context) {\r\n    return GenericGridScreen<Parceiro>(\r\n      title: \"Parceiros\",\r\n      fetchEndpoint: ApiLinks.allParceiros,\r\n      createEndpoint: ApiLinks.createParceiro,\r\n      updateEndpoint: ApiLinks.updateParceiro(\":id\"),\r\n      deleteEndpoint: ApiLinks.deleteParceiro(\":id\"),\r\n      fromJson: (json) => Parceiro.fromJson(json),\r\n      toJson: (p) => p.toJson(),\r\n      hasPermission: hasPermission,\r\n      fieldConfigs: Parceiro.fieldConfigs,\r\n      idFieldName: 'id',\r\n      dateFieldName: null,\r\n      exportConfig: const ExportConfig(\r\n        enableCsvExport: true,\r\n        filenamePrefix: 'parceiros',\r\n      ),\r\n      paginationConfig: const PaginationConfig(\r\n        defaultRowsPerPage: 10,\r\n        availableRowsPerPage: [10, 25, 50],\r\n      ),\r\n      enableSearch: true,\r\n      enableColumnReorder: true,\r\n    );\r\n  }\r\n}\r\n"
+        }
+    ]
+}

@@ -1,0 +1,18 @@
+{
+    "sourceFile": "lib/data/models/modalidade_model.dart",
+    "activeCommit": 0,
+    "commits": [
+        {
+            "activePatchIndex": 0,
+            "patches": [
+                {
+                    "date": 1757968937252,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n"
+                }
+            ],
+            "date": 1757968937252,
+            "name": "Commit-0",
+            "content": "import 'package:flutter/material.dart';\r\nimport 'package:task_manager_flutter/ui/widgets/generic_grid_screen.dart';\r\n\r\nclass Modalidade {\r\n  int? id;\r\n  String? nome;\r\n  String? descricao;\r\n\r\n  Modalidade({this.id, this.nome, this.descricao});\r\n\r\n  Modalidade.fromJson(Map<String, dynamic> json) {\r\n    id = json['id'];\r\n    nome = json['nome'];\r\n    descricao = json['descricao'];\r\n  }\r\n\r\n  Map<String, dynamic> toJson() {\r\n    return {'id': id, 'nome': nome, 'descricao': descricao};\r\n  }\r\n\r\n  static List<FieldConfig> fieldConfigs = [\r\n    FieldConfig(\r\n      label: \"Nome\",\r\n      fieldName: \"nome\",\r\n      icon: Icons.sports,\r\n      isInForm: true,\r\n      isFilterable: true,\r\n    ),\r\n    FieldConfig(\r\n      label: \"Descrição\",\r\n      fieldName: \"descricao\",\r\n      icon: Icons.description,\r\n      isInForm: true,\r\n    ),\r\n  ];\r\n}\r\n"
+        }
+    ]
+}

@@ -1,0 +1,18 @@
+{
+    "sourceFile": "lib/data/models/medicamento_model.dart",
+    "activeCommit": 0,
+    "commits": [
+        {
+            "activePatchIndex": 0,
+            "patches": [
+                {
+                    "date": 1757968424902,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n"
+                }
+            ],
+            "date": 1757968424902,
+            "name": "Commit-0",
+            "content": "import 'package:flutter/material.dart';\r\nimport 'package:task_manager_flutter/ui/widgets/generic_grid_screen.dart';\r\n\r\nclass Medicamento {\r\n  int? id;\r\n  String? nome;\r\n  String? descricao;\r\n  String? dosagem;\r\n  String? laboratorio;\r\n\r\n  Medicamento({\r\n    this.id,\r\n    this.nome,\r\n    this.descricao,\r\n    this.dosagem,\r\n    this.laboratorio,\r\n  });\r\n\r\n  Medicamento.fromJson(Map<String, dynamic> json) {\r\n    id = json['id'];\r\n    nome = json['nome'];\r\n    descricao = json['descricao'];\r\n    dosagem = json['dosagem'];\r\n    laboratorio = json['laboratorio'];\r\n  }\r\n\r\n  Map<String, dynamic> toJson() {\r\n    return {\r\n      'id': id,\r\n      'nome': nome,\r\n      'descricao': descricao,\r\n      'dosagem': dosagem,\r\n      'laboratorio': laboratorio,\r\n    };\r\n  }\r\n\r\n  static List<FieldConfig> fieldConfigs = [\r\n    FieldConfig(\r\n      label: \"Nome\",\r\n      fieldName: \"nome\",\r\n      icon: Icons.medication,\r\n      isInForm: true,\r\n      isFilterable: true,\r\n    ),\r\n    FieldConfig(\r\n      label: \"Descrição\",\r\n      fieldName: \"descricao\",\r\n      icon: Icons.description,\r\n      isInForm: true,\r\n    ),\r\n    FieldConfig(\r\n      label: \"Dosagem\",\r\n      fieldName: \"dosagem\",\r\n      icon: Icons.scale,\r\n      isInForm: true,\r\n    ),\r\n    FieldConfig(\r\n      label: \"Laboratório\",\r\n      fieldName: \"laboratorio\",\r\n      icon: Icons.local_hospital,\r\n      isInForm: true,\r\n    ),\r\n  ];\r\n}\r\n"
+        }
+    ]
+}

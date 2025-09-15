@@ -1,0 +1,18 @@
+{
+    "sourceFile": "lib/ui/screens/dieta_grid_screen.dart",
+    "activeCommit": 0,
+    "commits": [
+        {
+            "activePatchIndex": 0,
+            "patches": [
+                {
+                    "date": 1757967615902,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n"
+                }
+            ],
+            "date": 1757967615902,
+            "name": "Commit-0",
+            "content": "import 'package:flutter/material.dart';\r\nimport 'package:task_manager_flutter/data/utils/api_links.dart';\r\nimport 'package:task_manager_flutter/ui/widgets/generic_grid_screen.dart';\r\nimport 'package:task_manager_flutter/data/models/dieta_model.dart';\r\n\r\nclass DietaGridScreen extends StatelessWidget {\r\n  final SecurityCheck hasPermission;\r\n\r\n  const DietaGridScreen({super.key, required this.hasPermission});\r\n\r\n  @override\r\n  Widget build(BuildContext context) {\r\n    return GenericGridScreen<Dieta>(\r\n      title: \"Dietas\",\r\n      fetchEndpoint: ApiLinks.allDietas,\r\n      createEndpoint: ApiLinks.createDieta,\r\n      updateEndpoint: ApiLinks.updateDieta(\":id\"),\r\n      deleteEndpoint: ApiLinks.deleteDieta(\":id\"),\r\n      fromJson: (json) => Dieta.fromJson(json),\r\n      toJson: (obj) => obj.toJson(),\r\n      hasPermission: hasPermission,\r\n      fieldConfigs: Dieta.fieldConfigs,\r\n      idFieldName: 'id',\r\n      dateFieldName: 'dtConsulta',\r\n      exportConfig: const ExportConfig(\r\n        enableCsvExport: true,\r\n        filenamePrefix: 'dietas',\r\n      ),\r\n      paginationConfig: const PaginationConfig(\r\n        defaultRowsPerPage: 10,\r\n        availableRowsPerPage: [10, 25, 50],\r\n      ),\r\n      enableSearch: true,\r\n      enableColumnReorder: true,\r\n    );\r\n  }\r\n}\r\n"
+        }
+    ]
+}

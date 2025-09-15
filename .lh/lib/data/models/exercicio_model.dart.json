@@ -1,0 +1,18 @@
+{
+    "sourceFile": "lib/data/models/exercicio_model.dart",
+    "activeCommit": 0,
+    "commits": [
+        {
+            "activePatchIndex": 0,
+            "patches": [
+                {
+                    "date": 1757968292933,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n"
+                }
+            ],
+            "date": 1757968292933,
+            "name": "Commit-0",
+            "content": "import 'package:flutter/material.dart';\r\nimport 'package:task_manager_flutter/ui/widgets/generic_grid_screen.dart';\r\n\r\nclass Exercicio {\r\n  int? id;\r\n  String? nome;\r\n  String? descricao;\r\n  int? grupoMuscularId;\r\n\r\n  Exercicio({this.id, this.nome, this.descricao, this.grupoMuscularId});\r\n\r\n  Exercicio.fromJson(Map<String, dynamic> json) {\r\n    id = json['id'];\r\n    nome = json['nome'];\r\n    descricao = json['descricao'];\r\n    grupoMuscularId = json['grupoMuscularId'];\r\n  }\r\n\r\n  Map<String, dynamic> toJson() {\r\n    return {\r\n      'id': id,\r\n      'nome': nome,\r\n      'descricao': descricao,\r\n      'grupoMuscularId': grupoMuscularId,\r\n    };\r\n  }\r\n\r\n  static List<FieldConfig> fieldConfigs = [\r\n    FieldConfig(\r\n      label: \"Nome\",\r\n      fieldName: \"nome\",\r\n      icon: Icons.fitness_center,\r\n      isInForm: true,\r\n      isFilterable: true,\r\n    ),\r\n    FieldConfig(\r\n      label: \"Descrição\",\r\n      fieldName: \"descricao\",\r\n      icon: Icons.description,\r\n      isInForm: true,\r\n    ),\r\n    FieldConfig(\r\n      label: \"Grupo Muscular ID\",\r\n      fieldName: \"grupoMuscularId\",\r\n      icon: Icons.group,\r\n      isInForm: true,\r\n      isFilterable: true,\r\n    ),\r\n  ];\r\n}\r\n"
+        }
+    ]
+}

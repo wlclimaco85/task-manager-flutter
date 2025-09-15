@@ -1,0 +1,18 @@
+{
+    "sourceFile": "lib/ui/screens/role_grid_screen.dart",
+    "activeCommit": 0,
+    "commits": [
+        {
+            "activePatchIndex": 0,
+            "patches": [
+                {
+                    "date": 1757969675676,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n"
+                }
+            ],
+            "date": 1757969675676,
+            "name": "Commit-0",
+            "content": "import 'package:flutter/material.dart';\r\nimport 'package:task_manager_flutter/data/utils/api_links.dart';\r\nimport 'package:task_manager_flutter/ui/widgets/generic_grid_screen.dart';\r\nimport 'package:task_manager_flutter/data/models/role_model.dart';\r\n\r\nclass RoleGridScreen extends StatelessWidget {\r\n  final SecurityCheck hasPermission;\r\n\r\n  const RoleGridScreen({super.key, required this.hasPermission});\r\n\r\n  @override\r\n  Widget build(BuildContext context) {\r\n    return GenericGridScreen<Role>(\r\n      title: \"Roles\",\r\n      fetchEndpoint: ApiLinks.allRoles,\r\n      createEndpoint: ApiLinks.createRole,\r\n      updateEndpoint: ApiLinks.updateRole(\":id\"),\r\n      deleteEndpoint: ApiLinks.deleteRole(\":id\"),\r\n      fromJson: (json) => Role.fromJson(json),\r\n      toJson: (r) => r.toJson(),\r\n      hasPermission: hasPermission,\r\n      fieldConfigs: Role.fieldConfigs,\r\n      idFieldName: 'id',\r\n      dateFieldName: 'createdAt',\r\n      exportConfig: const ExportConfig(\r\n        enableCsvExport: true,\r\n        filenamePrefix: 'roles',\r\n      ),\r\n      paginationConfig: const PaginationConfig(\r\n        defaultRowsPerPage: 10,\r\n        availableRowsPerPage: [10, 25, 50],\r\n      ),\r\n      enableSearch: true,\r\n      enableColumnReorder: true,\r\n    );\r\n  }\r\n}\r\n"
+        }
+    ]
+}

@@ -1,0 +1,22 @@
+{
+    "sourceFile": "lib/ui/screens/setor_grid_screen.dart",
+    "activeCommit": 0,
+    "commits": [
+        {
+            "activePatchIndex": 1,
+            "patches": [
+                {
+                    "date": 1757969696875,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n"
+                },
+                {
+                    "date": 1757969701984,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -20,9 +20,9 @@\n       toJson: (s) => s.toJson(),\r\n       hasPermission: hasPermission,\r\n       fieldConfigs: Setor.fieldConfigs,\r\n       idFieldName: 'id',\r\n-      dateFieldName: null,\r\n+      dateFieldName: 'createdAt',\r\n       exportConfig: const ExportConfig(\r\n         enableCsvExport: true,\r\n         filenamePrefix: 'setores',\r\n       ),\r\n"
+                }
+            ],
+            "date": 1757969696875,
+            "name": "Commit-0",
+            "content": "import 'package:flutter/material.dart';\r\nimport 'package:task_manager_flutter/data/utils/api_links.dart';\r\nimport 'package:task_manager_flutter/ui/widgets/generic_grid_screen.dart';\r\nimport 'package:task_manager_flutter/data/models/setor_model.dart';\r\n\r\nclass SetorGridScreen extends StatelessWidget {\r\n  final SecurityCheck hasPermission;\r\n\r\n  const SetorGridScreen({super.key, required this.hasPermission});\r\n\r\n  @override\r\n  Widget build(BuildContext context) {\r\n    return GenericGridScreen<Setor>(\r\n      title: \"Setores\",\r\n      fetchEndpoint: ApiLinks.allSetores,\r\n      createEndpoint: ApiLinks.createSetor,\r\n      updateEndpoint: ApiLinks.updateSetor(\":id\"),\r\n      deleteEndpoint: ApiLinks.deleteSetor(\":id\"),\r\n      fromJson: (json) => Setor.fromJson(json),\r\n      toJson: (s) => s.toJson(),\r\n      hasPermission: hasPermission,\r\n      fieldConfigs: Setor.fieldConfigs,\r\n      idFieldName: 'id',\r\n      dateFieldName: null,\r\n      exportConfig: const ExportConfig(\r\n        enableCsvExport: true,\r\n        filenamePrefix: 'setores',\r\n      ),\r\n      paginationConfig: const PaginationConfig(\r\n        defaultRowsPerPage: 10,\r\n        availableRowsPerPage: [10, 25, 50],\r\n      ),\r\n      enableSearch: true,\r\n      enableColumnReorder: true,\r\n    );\r\n  }\r\n}\r\n"
+        }
+    ]
+}

@@ -93,7 +93,7 @@ class _ComunicadoGridScreenState extends State<ComunicadoGridScreen> {
     if (response.statusCode == 200 && response.body != null) {
       try {
         // Parse da resposta do servidor
-        final List<dynamic> data = response.body!['data']['comunicadoDTO'];
+        final List<dynamic> data = response.body!['data']['dados'] ?? [];
         setState(() {
           comunicados = data.map((json) => Comunicado.fromJson(json)).toList();
           filtered = List.from(comunicados);
