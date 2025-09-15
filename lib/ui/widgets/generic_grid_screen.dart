@@ -182,12 +182,12 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
     _applyFilters();
   }
 
-  Future<void> _loadItems() async {
+  Future<void> _loadItems(int pagina, int tamanhoPagina) async {
     setState(() => isLoading = true);
 
     try {
       final NetworkResponse response = await NetworkCaller().getRequest(
-        widget.fetchEndpoint,
+        '${widget.fetchEndpoint}?pagina=$pagina&tamanho=$tamanhoPagina',
       );
 
       if (response.statusCode == 200 && response.body != null) {
