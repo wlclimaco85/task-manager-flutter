@@ -196,9 +196,9 @@ class ApiLinks {
   static String deletePlano(String id) => '$_baseUrlNew/api/planos/delete/$id';
 
   // Role
-  static String allRoles = '$_baseUrlNew/api/roles';
-  static String createRole = '$_baseUrlNew/api/roles/insert';
-  static String updateRole(String id) => '$_baseUrlNew/api/roles/update/$id';
+  static String allRoles = '$_baseUrlNew/api/role';
+  static String createRole = '$_baseUrlNew/api/role';
+  static String updateRole(String id) => '$_baseUrlNew/api/role/$id';
   static String deleteRole(String id) => '$_baseUrlNew/api/roles/delete/$id';
 
   // Setor
@@ -214,4 +214,12 @@ class ApiLinks {
       '$_baseUrlNew/api/suplementos/update/$id';
   static String deleteSuplemento(String id) =>
       '$_baseUrlNew/api/suplementos/delete/$id';
+
+  // Suplemento
+  static String allAplicativos = '$_baseUrlNew/api/aplicativos';
+  static String createAplicativo = '$_baseUrlNew/api/aplicativos';
+  static String updateAplicativo(String id) =>
+      '$_baseUrlNew/api/aplicativos/update/$id';
+  static String deleteAplicativo(String id) =>
+      '$_baseUrlNew/api/aplicativos/delete/$id';
 }

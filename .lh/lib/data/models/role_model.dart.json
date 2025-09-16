@@ -3,11 +3,23 @@
     "activeCommit": 0,
     "commits": [
         {
-            "activePatchIndex": 0,
+            "activePatchIndex": 3,
             "patches": [
                 {
                     "date": 1757969183032,
                     "content": "Index: \n===================================================================\n--- \n+++ \n"
+                },
+                {
+                    "date": 1758031067906,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -2,27 +2,68 @@\n import 'package:task_manager_flutter/ui/widgets/generic_grid_screen.dart';\r\n \r\n class Role {\r\n   int? id;\r\n-  String? nome;\r\n+  String? description;\r\n+  bool? available;\r\n+  String? key;\r\n+  Aplicativo? aplicativo;\r\n \r\n-  Role({this.id, this.nome});\r\n+  Role({\r\n+    this.id,\r\n+    this.description,\r\n+    this.available,\r\n+    this.key,\r\n+    this.aplicativo,\r\n+  });\r\n \r\n   Role.fromJson(Map<String, dynamic> json) {\r\n     id = json['id'];\r\n-    nome = json['nome'];\r\n+    description = json['description'];\r\n+    available = json['available'];\r\n+    key = json['key'];\r\n+    aplicativo =\r\n+        json['aplicativo'] != null ? Aplicativo.fromJson(json['aplicativo']) : null;\r\n   }\r\n \r\n   Map<String, dynamic> toJson() {\r\n-    return {'id': id, 'nome': nome};\r\n+    return {\r\n+      'id': id,\r\n+      'description': description,\r\n+      'available': available,\r\n+      'key': key,\r\n+      'aplicativo': aplicativo?.toJson(),\r\n+    };\r\n   }\r\n \r\n   static List<FieldConfig> fieldConfigs = [\r\n     FieldConfig(\r\n-      label: \"Nome\",\r\n-      fieldName: \"nome\",\r\n-      icon: Icons.security,\r\n+      label: \"Descrição\",\r\n+      fieldName: \"description\",\r\n+      icon: Icons.description,\r\n       isInForm: true,\r\n       isFilterable: true,\r\n     ),\r\n+    FieldConfig(\r\n+      label: \"Disponível\",\r\n+      fieldName: \"available\",\r\n+      icon: Icons.check_circle,\r\n+      isInForm: true,\r\n+      isFilterable: true,\r\n+    ),\r\n+    FieldConfig(\r\n+      label: \"Chave\",\r\n+      fieldName: \"key\",\r\n+      icon: Icons.vpn_key,\r\n+      isInForm: true,\r\n+      isFilterable: true,\r\n+    ),\r\n+    FieldConfig(\r\n+      label: \"Aplicativo\",\r\n+      fieldName: \"aplicativo.nome\", // aqui mostra o nome do aplicativo\r\n+      icon: Icons.apps,\r\n+      isInForm: false, // não edita direto aqui\r\n+      isFilterable: true,\r\n+    ),\r\n   ];\r\n }\r\n+\r\n"
+                },
+                {
+                    "date": 1758031088852,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -1,6 +1,7 @@\n import 'package:flutter/material.dart';\r\n import 'package:task_manager_flutter/ui/widgets/generic_grid_screen.dart';\r\n+import 'package:task_manager_flutter/data/models/aplicativo_model.dart';\r\n \r\n class Role {\r\n   int? id;\r\n   String? description;\r\n"
+                },
+                {
+                    "date": 1758031102241,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -8,23 +8,18 @@\n   bool? available;\r\n   String? key;\r\n   Aplicativo? aplicativo;\r\n \r\n-  Role({\r\n-    this.id,\r\n-    this.description,\r\n-    this.available,\r\n-    this.key,\r\n-    this.aplicativo,\r\n-  });\r\n+  Role({this.id, this.description, this.available, this.key, this.aplicativo});\r\n \r\n   Role.fromJson(Map<String, dynamic> json) {\r\n     id = json['id'];\r\n     description = json['description'];\r\n     available = json['available'];\r\n     key = json['key'];\r\n-    aplicativo =\r\n-        json['aplicativo'] != null ? Aplicativo.fromJson(json['aplicativo']) : null;\r\n+    aplicativo = json['aplicativo'] != null\r\n+        ? Aplicativo.fromJson(json['aplicativo'])\r\n+        : null;\r\n   }\r\n \r\n   Map<String, dynamic> toJson() {\r\n     return {\r\n@@ -66,5 +61,4 @@\n       isFilterable: true,\r\n     ),\r\n   ];\r\n }\r\n-\r\n"
                 }
             ],
             "date": 1757969183032,
