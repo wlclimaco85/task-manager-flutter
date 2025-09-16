@@ -21,7 +21,7 @@ class RoleGridScreen extends StatelessWidget {
       hasPermission: hasPermission,
       fieldConfigs: Role.fieldConfigs,
       idFieldName: 'id',
-      dateFieldName: 'createdAt',
+      dateFieldName: 'audit.createdAt',
       exportConfig: const ExportConfig(
         enableCsvExport: true,
         filenamePrefix: 'roles',

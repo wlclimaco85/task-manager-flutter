@@ -26,6 +26,7 @@ class FieldConfig {
   final String dropdownDisplayField;
   final bool isRequired;
   final String? Function(String?)? validator;
+  final String? displayFieldName; // Nova propriedade para exibição
 
   const FieldConfig({
     required this.label,
@@ -43,6 +44,7 @@ class FieldConfig {
     this.dropdownDisplayField = 'label',
     this.isRequired = false,
     this.validator,
+    this.displayFieldName, // Campo para exibição (opcional)
   });
 }
 
@@ -203,12 +205,14 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
 
       // Adicionar filtros se existirem
       for (final config in widget.fieldConfigs.where((c) => c.isFilterable)) {
-        if (_filterControllers[config.fieldName]?.text.isNotEmpty == true) {
-          url +=
-              '&${config.fieldName}=${Uri.encodeComponent(_filterControllers[config.fieldName]!.text)}';
+        final filterValue = _filterControllers[config.fieldName]?.text;
+        if (filterValue != null && filterValue.isNotEmpty) {
+          final filterField = config.fieldName.contains('.')
+              ? config.fieldName
+              : config.fieldName;
+          url += '&$filterField=${Uri.encodeComponent(filterValue)}';
         }
       }
-
       // Adicionar busca global se existir
       if (_searchController.text.isNotEmpty) {
         url += '&busca=${Uri.encodeComponent(_searchController.text)}';
@@ -273,9 +277,14 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
     final itemMap = item != null ? widget.toJson(item) : {};
 
     for (final config in widget.fieldConfigs.where((c) => c.isInForm)) {
+      // Ocultar campo ID quando for um novo registro
+      if (item == null && config.fieldName == widget.idFieldName) {
+        continue;
+      }
+
       if (config.fieldType == FieldType.dropdown) {
         // Para dropdowns, precisamos do valor (não do display)
-        final value = itemMap[config.fieldName];
+        final value = _getNestedValue(itemMap, config.fieldName);
         if (value is Map) {
           // Se for um objeto, extrai o campo de valor
           controllers[config.fieldName] = TextEditingController(
@@ -289,7 +298,7 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
         }
       } else {
         controllers[config.fieldName] = TextEditingController(
-          text: itemMap[config.fieldName]?.toString() ?? '',
+          text: _getNestedValue(itemMap, config.fieldName)?.toString() ?? '',
         );
       }
     }
@@ -347,17 +356,25 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
                 ),
               ),
               const SizedBox(height: 20),
-              ...widget.fieldConfigs.where((config) => config.isInForm).map((
-                config,
-              ) {
-                return Padding(
-                  padding: const EdgeInsets.only(bottom: 16),
-                  child: _buildFormField(
-                    config,
-                    controllers[config.fieldName]!,
-                  ),
-                );
-              }).toList(),
+              ...widget.fieldConfigs
+                  .where((config) {
+                    // Ocultar campo ID quando for um novo registro
+                    if (item == null &&
+                        config.fieldName == widget.idFieldName) {
+                      return false;
+                    }
+                    return config.isInForm;
+                  })
+                  .map((config) {
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: 16),
+                      child: _buildFormField(
+                        config,
+                        controllers[config.fieldName]!,
+                      ),
+                    );
+                  })
+                  .toList(),
               const SizedBox(height: 24),
               Row(
                 mainAxisAlignment: MainAxisAlignment.end,
@@ -539,19 +556,63 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
       }
     }
 
+    // Adicione esta função auxiliar
+    void _setNestedValue(
+      Map<String, dynamic> map,
+      List<String> parts,
+      dynamic value,
+    ) {
+      if (parts.isEmpty) return;
+
+      var current = map;
+      for (int i = 0; i < parts.length - 1; i++) {
+        final part = parts[i];
+        if (!current.containsKey(part) ||
+            current[part] is! Map<String, dynamic>) {
+          current[part] = <String, dynamic>{};
+        }
+        current = current[part];
+      }
+
+      current[parts.last] = value;
+    }
+
     setState(() => _isUpdating = true);
 
     final formData = <String, dynamic>{};
     for (final config in widget.fieldConfigs.where((c) => c.isInForm)) {
-      formData[config.fieldName] = controllers[config.fieldName]!.text;
+      if (item == null && config.fieldName == widget.idFieldName) {
+        continue;
+      }
+
+      final value = controllers[config.fieldName]!.text;
+
+      if (config.fieldName.contains('.')) {
+        // Para campos aninhados, criar a estrutura correta
+        final parts = config.fieldName.split('.');
+        _setNestedValue(formData, parts, value);
+      } else {
+        formData[config.fieldName] = value;
+      }
     }
 
     // Preservar ID e data se estiver editando
     if (item != null) {
       final itemMap = widget.toJson(item);
-      formData[widget.idFieldName] = itemMap[widget.idFieldName];
-      if (itemMap.containsKey(widget.dateFieldName)) {
-        formData[widget.dateFieldName] = itemMap[widget.dateFieldName];
+      formData[widget.idFieldName] = _getNestedValue(
+        itemMap,
+        widget.idFieldName,
+      );
+      final dateValue = _getNestedValue(itemMap, widget.dateFieldName);
+      String date = 'N/A';
+      if (dateValue != null) {
+        try {
+          final dateString = dateValue.toString();
+          final dateTime = DateTime.parse(dateString).toLocal();
+          date = DateFormat('dd/MM/yyyy HH:mm').format(dateTime);
+        } catch (e) {
+          date = 'Data inválida';
+        }
       }
     }
 
@@ -748,18 +809,25 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
         final itemMap = widget.toJson(item);
         final row = visibleFields
             .map((config) {
-              final value = itemMap[config.fieldName]?.toString() ?? '';
+              final value =
+                  _getNestedValue(itemMap, config.fieldName)?.toString() ?? '';
               // Escapar vírgulas em valores
               return value.contains(',') ? '"$value"' : value;
             })
             .join(',');
 
         // Adicionar data
-        final date = itemMap[widget.dateFieldName] != null
-            ? DateFormat(
-                'dd/MM/yyyy HH:mm',
-              ).format(DateTime.parse(itemMap[widget.dateFieldName]).toLocal())
-            : 'N/A';
+        final dateValue = _getNestedValue(itemMap, widget.dateFieldName);
+        String date = 'N/A';
+        if (dateValue != null) {
+          try {
+            final dateString = dateValue.toString();
+            final dateTime = DateTime.parse(dateString).toLocal();
+            date = DateFormat('dd/MM/yyyy HH:mm').format(dateTime);
+          } catch (e) {
+            date = 'Data inválida';
+          }
+        }
 
         csvData.write('$row,$date\n');
       }
@@ -891,7 +959,10 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
           onSort: (columnIndex, ascending) {
             _sort<dynamic>(
               (c) {
-                final value = widget.toJson(c)[config.fieldName];
+                final value = _getNestedValue(
+                  widget.toJson(c),
+                  config.fieldName,
+                );
                 return value is Comparable ? value : value.toString();
               },
               widget.fieldConfigs.indexOf(config),
@@ -912,7 +983,11 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
       ))
         DataCell(
           Text(
-            itemMap[config.fieldName]?.toString() ?? '',
+            _getNestedValue(
+                  itemMap,
+                  config.displayFieldName ?? config.fieldName,
+                )?.toString() ??
+                '',
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
           ),
@@ -922,9 +997,11 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
         ),
       DataCell(
         Text(
-          itemMap[widget.dateFieldName] != null
+          _getNestedValue(itemMap, widget.dateFieldName) != null
               ? DateFormat('dd/MM/yyyy HH:mm').format(
-                  DateTime.parse(itemMap[widget.dateFieldName]).toLocal(),
+                  DateTime.parse(
+                    _getNestedValue(itemMap, widget.dateFieldName).toString(),
+                  ).toLocal(),
                 )
               : 'N/A',
         ),
@@ -942,13 +1019,46 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
                 widget.buttonPermissions['delete']!)
               IconButton(
                 icon: const Icon(Icons.delete, size: 20),
-                onPressed: () =>
-                    _deleteItem(itemMap[widget.idFieldName].toString()),
+                onPressed: () => _deleteItem(
+                  _getNestedValue(itemMap, widget.idFieldName).toString(),
+                ),
               ),
           ],
         ),
       ),
     ];
+  }
+
+  dynamic _getNestedValue(dynamic map, String fieldName) {
+    if (map == null) return null;
+
+    if (!fieldName.contains('.')) {
+      return map is Map ? map[fieldName] : null;
+    }
+
+    final parts = fieldName.split('.');
+    dynamic value = map;
+
+    for (final part in parts) {
+      if (value == null) return null;
+
+      if (value is Map<dynamic, dynamic>) {
+        value = Map<String, dynamic>.from(value)[part];
+      } else if (value is Map<String, dynamic>) {
+        value = value[part];
+      } else {
+        // Tenta acessar via reflexão se for um objeto Dart
+        try {
+          if (value is dynamic) {
+            value = value[part];
+          }
+        } catch (e) {
+          return null;
+        }
+      }
+    }
+
+    return value;
   }
 
   @override
@@ -1068,8 +1178,10 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
                             onSelect: (index, selected) {
                               setState(() {
                                 final itemMap = widget.toJson(filtered[index]);
-                                final id = itemMap[widget.idFieldName]
-                                    .toString();
+                                final id = _getNestedValue(
+                                  itemMap,
+                                  widget.idFieldName,
+                                ).toString();
                                 selected
                                     ? selectedRows.add(id)
                                     : selectedRows.remove(id);

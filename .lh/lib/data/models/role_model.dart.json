@@ -3,7 +3,7 @@
     "activeCommit": 0,
     "commits": [
         {
-            "activePatchIndex": 3,
+            "activePatchIndex": 14,
             "patches": [
                 {
                     "date": 1757969183032,
@@ -20,6 +20,50 @@
                 {
                     "date": 1758031102241,
                     "content": "Index: \n===================================================================\n--- \n+++ \n@@ -8,23 +8,18 @@\n   bool? available;\r\n   String? key;\r\n   Aplicativo? aplicativo;\r\n \r\n-  Role({\r\n-    this.id,\r\n-    this.description,\r\n-    this.available,\r\n-    this.key,\r\n-    this.aplicativo,\r\n-  });\r\n+  Role({this.id, this.description, this.available, this.key, this.aplicativo});\r\n \r\n   Role.fromJson(Map<String, dynamic> json) {\r\n     id = json['id'];\r\n     description = json['description'];\r\n     available = json['available'];\r\n     key = json['key'];\r\n-    aplicativo =\r\n-        json['aplicativo'] != null ? Aplicativo.fromJson(json['aplicativo']) : null;\r\n+    aplicativo = json['aplicativo'] != null\r\n+        ? Aplicativo.fromJson(json['aplicativo'])\r\n+        : null;\r\n   }\r\n \r\n   Map<String, dynamic> toJson() {\r\n     return {\r\n@@ -66,5 +61,4 @@\n       isFilterable: true,\r\n     ),\r\n   ];\r\n }\r\n-\r\n"
+                },
+                {
+                    "date": 1758046455306,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -30,8 +30,27 @@\n       'aplicativo': aplicativo?.toJson(),\r\n     };\r\n   }\r\n \r\n+    static Future<List<Map<String, dynamic>>> loadCategorias() async {\r\n+    final NetworkResponse response = await NetworkCaller().getRequest(\r\n+      ApiLinks.allAplicativos,\r\n+    );\r\n+\r\n+    if (response.isSuccess && response.body != null) {\r\n+      final List<dynamic> data = response.body!['data']['account'] ?? [];\r\n+      return data\r\n+          .map(\r\n+            (item) => {\r\n+              'value': item['id'].toString(),\r\n+              'label': item['descricao'],\r\n+            },\r\n+          )\r\n+          .toList();\r\n+    }\r\n+    return [];\r\n+  }\r\n+\r\n   static List<FieldConfig> fieldConfigs = [\r\n     FieldConfig(\r\n       label: \"Descrição\",\r\n       fieldName: \"description\",\r\n"
+                },
+                {
+                    "date": 1758046480590,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -1,7 +1,10 @@\n import 'package:flutter/material.dart';\r\n import 'package:task_manager_flutter/ui/widgets/generic_grid_screen.dart';\r\n import 'package:task_manager_flutter/data/models/aplicativo_model.dart';\r\n+import 'package:task_manager_flutter/data/utils/api_links.dart';\r\n+import 'package:task_manager_flutter/data/models/network_response.dart';\r\n+import 'package:task_manager_flutter/data/services/network_caller.dart';\r\n \r\n class Role {\r\n   int? id;\r\n   String? description;\r\n"
+                },
+                {
+                    "date": 1758046535850,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -81,6 +81,21 @@\n       icon: Icons.apps,\r\n       isInForm: false, // não edita direto aqui\r\n       isFilterable: true,\r\n     ),\r\n+    FieldConfig(\r\n+      label: \"Categoria\",\r\n+      fieldName: \"setor\",\r\n+      icon: Icons.category,\r\n+      isFilterable: true,\r\n+      isInForm: true,\r\n+      fieldType: FieldType.dropdown,\r\n+      dropdownFutureBuilder: () async {\r\n+        // Sua função que retorna um Future<List<Map<String, dynamic>>>\r\n+        return await loadCategorias();\r\n+      },\r\n+      dropdownValueField: 'id',\r\n+      dropdownDisplayField: 'descricao',\r\n+      isRequired: true,\r\n+    ),\r\n   ];\r\n }\r\n"
+                },
+                {
+                    "date": 1758046569962,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -82,11 +82,11 @@\n       isInForm: false, // não edita direto aqui\r\n       isFilterable: true,\r\n     ),\r\n     FieldConfig(\r\n-      label: \"Categoria\",\r\n-      fieldName: \"setor\",\r\n-      icon: Icons.category,\r\n+      label: \"Aplicativo\",\r\n+      fieldName: \"aplicativo\",\r\n+      icon: Icons.app_blocking_sharp,\r\n       isFilterable: true,\r\n       isInForm: true,\r\n       fieldType: FieldType.dropdown,\r\n       dropdownFutureBuilder: () async {\r\n"
+                },
+                {
+                    "date": 1758046751885,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -83,9 +83,9 @@\n       isFilterable: true,\r\n     ),\r\n     FieldConfig(\r\n       label: \"Aplicativo\",\r\n-      fieldName: \"aplicativo\",\r\n+      fieldName: \"aplicativo.nome\",\r\n       icon: Icons.app_blocking_sharp,\r\n       isFilterable: true,\r\n       isInForm: true,\r\n       fieldType: FieldType.dropdown,\r\n"
+                },
+                {
+                    "date": 1758046815562,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -44,9 +44,9 @@\n       return data\r\n           .map(\r\n             (item) => {\r\n               'value': item['id'].toString(),\r\n-              'label': item['descricao'],\r\n+              'label': item['nome'],\r\n             },\r\n           )\r\n           .toList();\r\n     }\r\n"
+                },
+                {
+                    "date": 1758046850276,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -33,21 +33,18 @@\n       'aplicativo': aplicativo?.toJson(),\r\n     };\r\n   }\r\n \r\n-    static Future<List<Map<String, dynamic>>> loadCategorias() async {\r\n+  static Future<List<Map<String, dynamic>>> loadCategorias() async {\r\n     final NetworkResponse response = await NetworkCaller().getRequest(\r\n       ApiLinks.allAplicativos,\r\n     );\r\n \r\n     if (response.isSuccess && response.body != null) {\r\n       final List<dynamic> data = response.body!['data']['account'] ?? [];\r\n       return data\r\n           .map(\r\n-            (item) => {\r\n-              'value': item['id'].toString(),\r\n-              'label': item['nome'],\r\n-            },\r\n+            (item) => {'value': item['id'].toString(), 'label': item['nome']},\r\n           )\r\n           .toList();\r\n     }\r\n     return [];\r\n"
+                },
+                {
+                    "date": 1758046868216,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -80,9 +80,9 @@\n       isFilterable: true,\r\n     ),\r\n     FieldConfig(\r\n       label: \"Aplicativo\",\r\n-      fieldName: \"aplicativo.nome\",\r\n+      fieldName: \"aplicativo\",\r\n       icon: Icons.app_blocking_sharp,\r\n       isFilterable: true,\r\n       isInForm: true,\r\n       fieldType: FieldType.dropdown,\r\n"
+                },
+                {
+                    "date": 1758047062733,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -39,9 +39,9 @@\n       ApiLinks.allAplicativos,\r\n     );\r\n \r\n     if (response.isSuccess && response.body != null) {\r\n-      final List<dynamic> data = response.body!['data']['account'] ?? [];\r\n+      final List<dynamic> data = response.body!['data']['dados'] ?? [];\r\n       return data\r\n           .map(\r\n             (item) => {'value': item['id'].toString(), 'label': item['nome']},\r\n           )\r\n"
+                },
+                {
+                    "date": 1758047565427,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -79,20 +79,20 @@\n       isInForm: false, // não edita direto aqui\r\n       isFilterable: true,\r\n     ),\r\n     FieldConfig(\r\n-      label: \"Aplicativo\",\r\n-      fieldName: \"aplicativo\", // aqui é o objeto completo\r\n-      icon: Icons.app_blocking_sharp,\r\n-      isFilterable: true,\r\n-      isInForm: true,\r\n-      fieldType: FieldType.dropdown,\r\n-      dropdownFutureBuilder: () async {\r\n-        // Sua função que retorna um Future<List<Map<String, dynamic>>>\r\n-        return await loadCategorias();\r\n-      },\r\n-      dropdownValueField: 'id',\r\n-      dropdownDisplayField: 'descricao',\r\n-      isRequired: true,\r\n-    ),\r\n+    label: \"Aplicativo\",\r\n+    fieldName: \"aplicativo\", // Objeto completo\r\n+    displayFieldName: \"aplicativo.nome\", // Campo para exibição\r\n+    icon: Icons.apps,\r\n+    isInForm: true,\r\n+    isFilterable: true,\r\n+    fieldType: FieldType.dropdown,\r\n+    dropdownFutureBuilder: () async {\r\n+      return await loadCategorias();\r\n+    },\r\n+    dropdownValueField: 'id',\r\n+    dropdownDisplayField: 'descricao',\r\n+    isRequired: true,\r\n+  ),\r\n   ];\r\n }\r\n"
+                },
+                {
+                    "date": 1758048031176,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -79,20 +79,20 @@\n       isInForm: false, // não edita direto aqui\r\n       isFilterable: true,\r\n     ),\r\n     FieldConfig(\r\n-      label: \"Aplicativo\",\r\n-      fieldName: \"aplicativo\", // Objeto completo\r\n-      displayFieldName: \"aplicativo.nome\", // Campo para exibição\r\n-      icon: Icons.apps,\r\n-      isInForm: true,\r\n-      isFilterable: true,\r\n-      fieldType: FieldType.dropdown,\r\n-      dropdownFutureBuilder: () async {\r\n-        return await loadCategorias();\r\n-      },\r\n-      dropdownValueField: 'id',\r\n-      dropdownDisplayField: 'descricao',\r\n-      isRequired: true,\r\n-    ),\r\n+    label: \"Aplicativo\",\r\n+    fieldName: \"aplicativo\", // Para o formulário (dropdown)\r\n+    displayFieldName: \"aplicativo.nome\", // Para exibição na grid\r\n+    icon: Icons.apps,\r\n+    isInForm: true,\r\n+    isFilterable: true,\r\n+    fieldType: FieldType.dropdown,\r\n+    dropdownFutureBuilder: () async {\r\n+      return await loadAplicativos();\r\n+    },\r\n+    dropdownValueField: 'id',\r\n+    dropdownDisplayField: 'nome',\r\n+    isRequired: true,\r\n+  ),\r\n   ];\r\n }\r\n"
                 }
             ],
             "date": 1757969183032,

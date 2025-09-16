@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:task_manager_flutter/ui/widgets/generic_grid_screen.dart';
 import 'package:task_manager_flutter/data/models/aplicativo_model.dart';
+import 'package:task_manager_flutter/data/utils/api_links.dart';
+import 'package:task_manager_flutter/data/models/network_response.dart';
+import 'package:task_manager_flutter/data/services/network_caller.dart';
 
 class Role {
   int? id;
@@ -31,6 +34,22 @@ class Role {
     };
   }
 
+  static Future<List<Map<String, dynamic>>> loadCategorias() async {
+    final NetworkResponse response = await NetworkCaller().getRequest(
+      ApiLinks.allAplicativos,
+    );
+
+    if (response.isSuccess && response.body != null) {
+      final List<dynamic> data = response.body!['data']['dados'] ?? [];
+      return data
+          .map(
+            (item) => {'value': item['id'].toString(), 'label': item['nome']},
+          )
+          .toList();
+    }
+    return [];
+  }
+
   static List<FieldConfig> fieldConfigs = [
     FieldConfig(
       label: "Descrição",
@@ -55,10 +74,18 @@ class Role {
     ),
     FieldConfig(
       label: "Aplicativo",
-      fieldName: "aplicativo.nome", // aqui mostra o nome do aplicativo
+      fieldName: "aplicativo", // Para o formulário (dropdown)
+      displayFieldName: "aplicativo.nome", // Para exibição na grid
       icon: Icons.apps,
-      isInForm: false, // não edita direto aqui
+      isInForm: true,
       isFilterable: true,
+      fieldType: FieldType.dropdown,
+      dropdownFutureBuilder: () async {
+        return await loadCategorias();
+      },
+      dropdownValueField: 'id',
+      dropdownDisplayField: 'nome',
+      isRequired: true,
     ),
   ];
 }

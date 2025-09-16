@@ -21,7 +21,7 @@ class AplicativoGridScreen extends StatelessWidget {
       hasPermission: hasPermission,
       fieldConfigs: Aplicativo.fieldConfigs,
       idFieldName: 'id',
-      dateFieldName: 'createdAt',
+      dateFieldName: 'audit.createdAt',
       exportConfig: const ExportConfig(
         enableCsvExport: true,
         filenamePrefix: 'roles',
