@@ -5,6 +5,7 @@ import 'package:task_manager_flutter/data/services/network_caller.dart';
 import 'package:intl/intl.dart';
 import 'package:flutter/foundation.dart';
 import 'dart:convert';
+import 'package:shared_preferences/shared_preferences.dart';
 
 // Enum para tipos de campo
 enum FieldType { text, number, email, date, multiline, dropdown, boolean }
@@ -26,7 +27,9 @@ class FieldConfig {
   final String dropdownDisplayField;
   final bool isRequired;
   final String? Function(String?)? validator;
-  final String? displayFieldName; // Nova propriedade para exibição
+  final String? displayFieldName;
+  final bool isVisibleByDefault; // Nova propriedade para visibilidade padrão
+  final bool isFixed; // Nova propriedade para coluna fixa
 
   const FieldConfig({
     required this.label,
@@ -44,7 +47,9 @@ class FieldConfig {
     this.dropdownDisplayField = 'label',
     this.isRequired = false,
     this.validator,
-    this.displayFieldName, // Campo para exibição (opcional)
+    this.displayFieldName,
+    this.isVisibleByDefault = true,
+    this.isFixed = false,
   });
 }
 
@@ -101,6 +106,7 @@ class GenericGridScreen<T> extends StatefulWidget {
   final bool enableColumnReorder;
   final bool enableColumnResize;
   final Map<String, dynamic>? initialFilters;
+  final String storageKey; // Chave para armazenamento das preferências
 
   const GenericGridScreen({
     super.key,
@@ -130,6 +136,7 @@ class GenericGridScreen<T> extends StatefulWidget {
     this.enableColumnReorder = false,
     this.enableColumnResize = false,
     this.initialFilters,
+    this.storageKey = 'generic_grid_settings', // Chave padrão
   });
 
   @override
@@ -164,19 +171,40 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
   void initState() {
     super.initState();
     rowsPerPage = widget.paginationConfig.defaultRowsPerPage;
-
-    // Inicializar visibilidade das colunas
-    for (final config in widget.fieldConfigs) {
-      _columnVisibility[config.fieldName] = true;
-    }
-
-    _loadItems(_currentPage, rowsPerPage);
+    _loadColumnPreferences().then((_) {
+      _loadItems(_currentPage, rowsPerPage);
+    });
 
     // Aplicar filtros iniciais se fornecidos
     if (widget.initialFilters != null) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         _applyInitialFilters();
       });
+    }
+  }
+
+  // Carregar preferências de coluna
+  Future<void> _loadColumnPreferences() async {
+    final prefs = await SharedPreferences.getInstance();
+    final key = '${widget.storageKey}_${widget.title}';
+
+    for (final config in widget.fieldConfigs) {
+      final savedValue = prefs.getBool('$key${config.fieldName}');
+      _columnVisibility[config.fieldName] =
+          savedValue ?? config.isVisibleByDefault;
+    }
+  }
+
+  // Salvar preferências de coluna
+  Future<void> _saveColumnPreferences() async {
+    final prefs = await SharedPreferences.getInstance();
+    final key = '${widget.storageKey}_${widget.title}';
+
+    for (final config in widget.fieldConfigs) {
+      await prefs.setBool(
+        '$key${config.fieldName}',
+        _columnVisibility[config.fieldName] ?? config.isVisibleByDefault,
+      );
     }
   }
 
@@ -810,7 +838,11 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
         final row = visibleFields
             .map((config) {
               final value =
-                  _getNestedValue(itemMap, config.fieldName)?.toString() ?? '';
+                  _getNestedValue(
+                    itemMap,
+                    config.displayFieldName ?? config.fieldName,
+                  )?.toString() ??
+                  '';
               // Escapar vírgulas em valores
               return value.contains(',') ? '"$value"' : value;
             })
@@ -924,63 +956,142 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
     );
   }
 
-  Widget _buildColumnVisibilityMenu() {
+  // Método para construir o menu de configuração de colunas
+  Widget _buildColumnSettingsMenu() {
     return PopupMenuButton(
-      icon: const Icon(Icons.view_column),
-      itemBuilder: (context) => widget.fieldConfigs.map((config) {
-        return PopupMenuItem(
-          value: config.fieldName,
-          child: StatefulBuilder(
-            builder: (context, setState) {
-              return CheckboxListTile(
-                title: Text(config.label),
-                value: _columnVisibility[config.fieldName] ?? true,
-                onChanged: (value) {
-                  setState(() {
-                    _columnVisibility[config.fieldName] = value ?? true;
-                  });
-                  setState(() {}); // Atualizar a UI
+      icon: const Icon(Icons.settings), // Ícone de engrenagem
+      tooltip: 'Configurar colunas',
+      itemBuilder: (context) => [
+        const PopupMenuItem(
+          value: 'settings',
+          child: Text('Configurar colunas visíveis'),
+        ),
+      ],
+      onSelected: (value) {
+        if (value == 'settings') {
+          _showColumnSettingsDialog();
+        }
+      },
+    );
+  }
+
+  // Diálogo para configuração de colunas
+  void _showColumnSettingsDialog() {
+    showDialog(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (context, setState) {
+          return AlertDialog(
+            title: const Text('Colunas visíveis'),
+            content: SizedBox(
+              width: double.maxFinite,
+              child: ListView(
+                shrinkWrap: true,
+                children: widget.fieldConfigs.map((config) {
+                  return CheckboxListTile(
+                    title: Text(config.label),
+                    value:
+                        _columnVisibility[config.fieldName] ??
+                        config.isVisibleByDefault,
+                    onChanged: (value) {
+                      setState(() {
+                        _columnVisibility[config.fieldName] = value ?? false;
+                      });
+                    },
+                  );
+                }).toList(),
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(ctx),
+                child: const Text('Cancelar'),
+              ),
+              ElevatedButton(
+                onPressed: () {
+                  _saveColumnPreferences();
+                  setState(() {});
+                  Navigator.pop(ctx);
                 },
-              );
-            },
-          ),
-        );
-      }).toList(),
+                child: const Text('Aplicar'),
+              ),
+            ],
+          );
+        },
+      ),
     );
   }
 
   List<DataColumn> _buildColumns() {
-    return [
-      for (final config in widget.fieldConfigs.where(
-        (c) => _columnVisibility[c.fieldName] == true && c.isSortable,
-      ))
+    final columns = <DataColumn>[];
+
+    // Adicionar colunas fixas primeiro
+    for (final config in widget.fieldConfigs.where(
+      (c) => (_columnVisibility[c.fieldName] == true) && c.isFixed,
+    )) {
+      columns.add(
         DataColumn(
           label: Text(config.label),
-          onSort: (columnIndex, ascending) {
-            _sort<dynamic>(
-              (c) {
-                final value = _getNestedValue(
-                  widget.toJson(c),
-                  config.fieldName,
-                );
-                return value is Comparable ? value : value.toString();
-              },
-              widget.fieldConfigs.indexOf(config),
-              ascending,
-            );
-          },
+          onSort: config.isSortable
+              ? (columnIndex, ascending) {
+                  _sort<dynamic>(
+                    (c) {
+                      final value = _getNestedValue(
+                        widget.toJson(c),
+                        config.fieldName,
+                      );
+                      return value is Comparable ? value : value.toString();
+                    },
+                    widget.fieldConfigs.indexOf(config),
+                    ascending,
+                  );
+                }
+              : null,
         ),
-      const DataColumn(label: Text("Data")),
-      const DataColumn(label: Text("Ações")),
-    ];
+      );
+    }
+
+    // Adicionar colunas não fixas
+    for (final config in widget.fieldConfigs.where(
+      (c) => (_columnVisibility[c.fieldName] == true) && !c.isFixed,
+    )) {
+      columns.add(
+        DataColumn(
+          label: Text(config.label),
+          onSort: config.isSortable
+              ? (columnIndex, ascending) {
+                  _sort<dynamic>(
+                    (c) {
+                      final value = _getNestedValue(
+                        widget.toJson(c),
+                        config.fieldName,
+                      );
+                      return value is Comparable ? value : value.toString();
+                    },
+                    widget.fieldConfigs.indexOf(config),
+                    ascending,
+                  );
+                }
+              : null,
+        ),
+      );
+    }
+
+    // Adicionar coluna de ações (sempre fixa)
+    columns.add(const DataColumn(label: Text("Ações")));
+
+    return columns;
   }
 
   List<DataCell> _buildCells(T item, int index) {
     final itemMap = widget.toJson(item);
-    return [
-      for (final config in widget.fieldConfigs.where(
-        (c) => _columnVisibility[c.fieldName] == true,
-      ))
+    final cells = <DataCell>[];
+
+    // Adicionar células fixas primeiro
+    for (final config in widget.fieldConfigs.where(
+      (c) => (_columnVisibility[c.fieldName] == true) && c.isFixed,
+    )) {
+      cells.add(
         DataCell(
           Text(
             _getNestedValue(
@@ -995,17 +1106,33 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
               ? () => widget.onItemTap!(item, context)
               : null,
         ),
-      DataCell(
-        Text(
-          _getNestedValue(itemMap, widget.dateFieldName) != null
-              ? DateFormat('dd/MM/yyyy HH:mm').format(
-                  DateTime.parse(
-                    _getNestedValue(itemMap, widget.dateFieldName).toString(),
-                  ).toLocal(),
-                )
-              : 'N/A',
+      );
+    }
+
+    // Adicionar células não fixas
+    for (final config in widget.fieldConfigs.where(
+      (c) => (_columnVisibility[c.fieldName] == true) && !c.isFixed,
+    )) {
+      cells.add(
+        DataCell(
+          Text(
+            _getNestedValue(
+                  itemMap,
+                  config.displayFieldName ?? config.fieldName,
+                )?.toString() ??
+                '',
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+          onTap: widget.onItemTap != null
+              ? () => widget.onItemTap!(item, context)
+              : null,
         ),
-      ),
+      );
+    }
+
+    // Adicionar célula de ações (sempre fixa)
+    cells.add(
       DataCell(
         Row(
           children: [
@@ -1026,7 +1153,9 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
           ],
         ),
       ),
-    ];
+    );
+
+    return cells;
   }
 
   dynamic _getNestedValue(dynamic map, String fieldName) {
@@ -1063,12 +1192,21 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
 
   @override
   Widget build(BuildContext context) {
+    final fixedColumnsCount =
+        widget.fieldConfigs
+            .where((c) => (_columnVisibility[c.fieldName] == true) && c.isFixed)
+            .length +
+        1; // +1 para a coluna de ações
+
     return Stack(
       children: [
         Scaffold(
           appBar: AppBar(
             title: Text(widget.title),
             actions: [
+              // Botão de configurações de coluna
+              _buildColumnSettingsMenu(),
+
               if (widget.exportConfig.enableCsvExport &&
                   widget.hasPermission('export') &&
                   widget.buttonPermissions['export']!)
@@ -1081,7 +1219,6 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
                   onPressed: _isExporting ? null : _exportToCsv,
                   tooltip: "Exportar CSV",
                 ),
-              _buildColumnVisibilityMenu(),
               ...widget.customActions != null
                   ? widget.customActions!(context)
                   : [],
@@ -1211,6 +1348,7 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
                             });
                             _loadItems(_currentPage, rowsPerPage);
                           },
+                          fixedLeftColumns: fixedColumnsCount, // Colunas fixas
                           empty: Center(
                             child: Container(
                               padding: const EdgeInsets.all(20),
