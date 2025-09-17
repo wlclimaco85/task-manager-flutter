@@ -6,7 +6,8 @@ import 'package:task_manager_flutter/data/models/empresa_model.dart';
 import 'package:task_manager_flutter/data/utils/api_links.dart';
 import 'package:task_manager_flutter/data/models/network_response.dart';
 import 'package:task_manager_flutter/data/services/network_caller.dart';
-import 'package:task_manager_flutter/data/models/regime_tributario.dart';
+import 'package:task_manager_flutter/data/models/regime_tributario_model.dart';
+import 'package:task_manager_flutter/ui/details/parceiro_detail_screen.dart';
 
 class Endereco {
   int? id;
@@ -177,6 +178,30 @@ class Parceiro {
         .toList();
   }
 
+  static Future<List<Map<String, dynamic>>> loadCategorias() async {
+    final NetworkResponse response = await NetworkCaller().getRequest(
+      ApiLinks.allRegimetributario,
+    );
+
+    if (response.isSuccess && response.body != null) {
+      final List<dynamic> data = response.body!['data']['dados'] ?? [];
+      return data
+          .map(
+            (item) => {'value': item['id'].toString(), 'label': item['codigo']},
+          )
+          .toList();
+    }
+    return [];
+  }
+
+  // Adicione este método para suporte à navegação de detalhes
+  static Widget detailScreenBuilder(
+    Parceiro item,
+    SecurityCheck hasPermission,
+  ) {
+    return ParceiroDetailScreen(item: item, hasPermission: hasPermission);
+  }
+
   static List<FieldConfig> fieldConfigs = [
     FieldConfig(
       label: "Nome",
@@ -184,6 +209,8 @@ class Parceiro {
       icon: Icons.person,
       isInForm: true,
       isFilterable: true,
+      isVisibleByDefault: true,
+      isFixed: true,
     ),
     FieldConfig(
       label: "CPF",
@@ -191,54 +218,72 @@ class Parceiro {
       icon: Icons.badge,
       isInForm: true,
       isFilterable: true,
+      isVisibleByDefault: true,
+      isFixed: true,
     ),
     FieldConfig(
       label: "Email",
       fieldName: "email",
       icon: Icons.email,
       isInForm: true,
+      isVisibleByDefault: true,
+      isFixed: true,
     ),
     FieldConfig(
       label: "Telefone 1",
       fieldName: "telefone1",
       icon: Icons.phone,
       isInForm: true,
+      isVisibleByDefault: true,
+      isFixed: true,
     ),
     FieldConfig(
       label: "Telefone 2",
       fieldName: "telefone2",
       icon: Icons.phone_android,
       isInForm: true,
+      isVisibleByDefault: false,
+      isFixed: false,
     ),
     FieldConfig(
       label: "Razão Social",
       fieldName: "razaoSocial",
       icon: Icons.apartment,
       isInForm: true,
+      isVisibleByDefault: false,
+      isFixed: false,
     ),
     FieldConfig(
       label: "Código Produtor",
       fieldName: "codProdutor",
       icon: Icons.qr_code,
       isInForm: true,
+      isVisibleByDefault: false,
+      isFixed: false,
     ),
     FieldConfig(
       label: "Cód. Personal",
       fieldName: "codPersonal",
       icon: Icons.confirmation_number,
       isInForm: true,
+      isVisibleByDefault: false,
+      isFixed: false,
     ),
     FieldConfig(
       label: "Inscrição Municipal",
       fieldName: "incrMun",
       icon: Icons.assignment,
       isInForm: true,
+      isVisibleByDefault: false,
+      isFixed: false,
     ),
     FieldConfig(
       label: "Status",
       fieldName: "status",
       icon: Icons.toggle_on,
       isInForm: true,
+      isVisibleByDefault: false,
+      isFixed: false,
     ),
     FieldConfig(
       label: "Valor Mensal",
@@ -246,12 +291,16 @@ class Parceiro {
       icon: Icons.attach_money,
       isInForm: true,
       fieldType: FieldType.number,
+      isVisibleByDefault: false,
+      isFixed: false,
     ),
     FieldConfig(
       label: "Observação",
       fieldName: "observacao",
       icon: Icons.notes,
       isInForm: true,
+      isVisibleByDefault: false,
+      isFixed: false,
     ),
     FieldConfig(
       label: "Empresa",
@@ -259,13 +308,24 @@ class Parceiro {
       displayFieldName: "empresa.nome",
       icon: Icons.business,
       isInForm: true,
+      isVisibleByDefault: false,
+      isFixed: false,
     ),
     FieldConfig(
       label: "Regime",
       fieldName: "regime",
-      displayFieldName: "regime.codigo",
-      icon: Icons.account_balance,
+      displayFieldName: "regime.codigo", // Campo aninhado para exibição
+      icon: Icons.business_center,
       isInForm: true,
+      isFilterable: true,
+      fieldType: FieldType.dropdown,
+      dropdownFutureBuilder: () async {
+        return await loadCategorias();
+      },
+      dropdownValueField: 'id',
+      dropdownDisplayField: 'codigo',
+      isRequired: true,
+      isVisibleByDefault: true,
     ),
   ];
 }
@@ -465,7 +525,7 @@ class Cidade {
   factory Cidade.fromJson(Map<String, dynamic> json) {
     return Cidade(
       id: json['id'],
-      nome: utf8.decode(latin1.encode(json['nome'])),
+      nome: json['nome']?.toString() ?? '',
       //   uf: json['uf'],
       ibge: json['ibge'],
       latLon: json['latLon'] ?? '',

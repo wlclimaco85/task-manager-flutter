@@ -28,8 +28,8 @@ class FieldConfig {
   final bool isRequired;
   final String? Function(String?)? validator;
   final String? displayFieldName;
-  final bool isVisibleByDefault; // Nova propriedade para visibilidade padrão
-  final bool isFixed; // Nova propriedade para coluna fixa
+  final bool isVisibleByDefault;
+  final bool isFixed;
 
   const FieldConfig({
     required this.label,
@@ -106,7 +106,8 @@ class GenericGridScreen<T> extends StatefulWidget {
   final bool enableColumnReorder;
   final bool enableColumnResize;
   final Map<String, dynamic>? initialFilters;
-  final String storageKey; // Chave para armazenamento das preferências
+  final String storageKey;
+  final Widget Function(T item)? detailScreenBuilder;
 
   const GenericGridScreen({
     super.key,
@@ -136,7 +137,8 @@ class GenericGridScreen<T> extends StatefulWidget {
     this.enableColumnReorder = false,
     this.enableColumnResize = false,
     this.initialFilters,
-    this.storageKey = 'generic_grid_settings', // Chave padrão
+    this.storageKey = 'generic_grid_settings',
+    this.detailScreenBuilder,
   });
 
   @override
@@ -171,11 +173,17 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
   void initState() {
     super.initState();
     rowsPerPage = widget.paginationConfig.defaultRowsPerPage;
+
+    // Inicializar visibilidade com valores padrão primeiro
+    for (final config in widget.fieldConfigs) {
+      _columnVisibility[config.fieldName] = config.isVisibleByDefault;
+    }
+
+    // Carregar preferências e depois carregar dados
     _loadColumnPreferences().then((_) {
       _loadItems(_currentPage, rowsPerPage);
     });
 
-    // Aplicar filtros iniciais se fornecidos
     if (widget.initialFilters != null) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         _applyInitialFilters();
@@ -185,26 +193,39 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
 
   // Carregar preferências de coluna
   Future<void> _loadColumnPreferences() async {
-    final prefs = await SharedPreferences.getInstance();
-    final key = '${widget.storageKey}_${widget.title}';
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final key = '${widget.storageKey}_${widget.title}';
 
-    for (final config in widget.fieldConfigs) {
-      final savedValue = prefs.getBool('$key${config.fieldName}');
-      _columnVisibility[config.fieldName] =
-          savedValue ?? config.isVisibleByDefault;
+      for (final config in widget.fieldConfigs) {
+        final savedValue = prefs.getBool('$key${config.fieldName}');
+        if (savedValue != null) {
+          _columnVisibility[config.fieldName] = savedValue;
+        }
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        print('Erro ao carregar preferências: $e');
+      }
     }
   }
 
   // Salvar preferências de coluna
   Future<void> _saveColumnPreferences() async {
-    final prefs = await SharedPreferences.getInstance();
-    final key = '${widget.storageKey}_${widget.title}';
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final key = '${widget.storageKey}_${widget.title}';
 
-    for (final config in widget.fieldConfigs) {
-      await prefs.setBool(
-        '$key${config.fieldName}',
-        _columnVisibility[config.fieldName] ?? config.isVisibleByDefault,
-      );
+      for (final config in widget.fieldConfigs) {
+        await prefs.setBool(
+          '$key${config.fieldName}',
+          _columnVisibility[config.fieldName] ?? config.isVisibleByDefault,
+        );
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        print('Erro ao salvar preferências: $e');
+      }
     }
   }
 
@@ -219,29 +240,27 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
     setState(() => isLoading = true);
 
     try {
-      // Construir a URL com parâmetros de paginação
       String url =
           '${widget.fetchEndpoint}?pagina=$pagina&tamanho=$tamanhoPagina';
 
-      // Adicionar parâmetros de ordenação se existirem
+      // Adicionar parâmetros de ordenação
       if (sortColumnIndex != null &&
+          sortColumnIndex! < widget.fieldConfigs.length &&
           widget.fieldConfigs[sortColumnIndex!].isSortable) {
         final config = widget.fieldConfigs[sortColumnIndex!];
         final direction = sortAscending ? 'ASC' : 'DESC';
         url += '&ordenarPor=${config.fieldName}&direcao=$direction';
       }
 
-      // Adicionar filtros se existirem
+      // Adicionar filtros
       for (final config in widget.fieldConfigs.where((c) => c.isFilterable)) {
         final filterValue = _filterControllers[config.fieldName]?.text;
         if (filterValue != null && filterValue.isNotEmpty) {
-          final filterField = config.fieldName.contains('.')
-              ? config.fieldName
-              : config.fieldName;
-          url += '&$filterField=${Uri.encodeComponent(filterValue)}';
+          url += '&${config.fieldName}=${Uri.encodeComponent(filterValue)}';
         }
       }
-      // Adicionar busca global se existir
+
+      // Adicionar busca global
       if (_searchController.text.isNotEmpty) {
         url += '&busca=${Uri.encodeComponent(_searchController.text)}';
       }
@@ -249,7 +268,6 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
       final NetworkResponse response = await NetworkCaller().getRequest(url);
 
       if (response.statusCode == 200 && response.body != null) {
-        // Processar resposta paginada do backend
         final responseData = response.body!['data'];
         final List<dynamic> data = responseData is Map
             ? responseData['dados'] ?? []
@@ -279,9 +297,8 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
   }
 
   void _applyFilters() {
-    // Recarregar dados com filtros aplicados
     setState(() {
-      _currentPage = 0; // Reset para a primeira página ao aplicar filtros
+      _currentPage = 0;
     });
     _loadItems(_currentPage, rowsPerPage);
   }
@@ -295,8 +312,6 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
       sortColumnIndex = columnIndex;
       sortAscending = asc;
     });
-
-    // Recarregar dados com a nova ordenação
     _loadItems(_currentPage, rowsPerPage);
   }
 
@@ -305,21 +320,17 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
     final itemMap = item != null ? widget.toJson(item) : {};
 
     for (final config in widget.fieldConfigs.where((c) => c.isInForm)) {
-      // Ocultar campo ID quando for um novo registro
       if (item == null && config.fieldName == widget.idFieldName) {
         continue;
       }
 
       if (config.fieldType == FieldType.dropdown) {
-        // Para dropdowns, precisamos do valor (não do display)
         final value = _getNestedValue(itemMap, config.fieldName);
         if (value is Map) {
-          // Se for um objeto, extrai o campo de valor
           controllers[config.fieldName] = TextEditingController(
             text: value[config.dropdownValueField]?.toString() ?? '',
           );
         } else {
-          // Se for um valor simples
           controllers[config.fieldName] = TextEditingController(
             text: value?.toString() ?? '',
           );
@@ -386,7 +397,6 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
               const SizedBox(height: 20),
               ...widget.fieldConfigs
                   .where((config) {
-                    // Ocultar campo ID quando for um novo registro
                     if (item == null &&
                         config.fieldName == widget.idFieldName) {
                       return false;
@@ -484,7 +494,7 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
                   return Text('Erro ao carregar opções: ${snapshot.error}');
                 } else {
                   final options = snapshot.data ?? [];
-                  _dropdownCache[cacheKey] = options; // Armazena no cache
+                  _dropdownCache[cacheKey] = options;
                   return _buildDropdownField(config, controller, options);
                 }
               },
@@ -584,7 +594,6 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
       }
     }
 
-    // Adicione esta função auxiliar
     void _setNestedValue(
       Map<String, dynamic> map,
       List<String> parts,
@@ -616,7 +625,6 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
       final value = controllers[config.fieldName]!.text;
 
       if (config.fieldName.contains('.')) {
-        // Para campos aninhados, criar a estrutura correta
         final parts = config.fieldName.split('.');
         _setNestedValue(formData, parts, value);
       } else {
@@ -631,17 +639,6 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
         itemMap,
         widget.idFieldName,
       );
-      final dateValue = _getNestedValue(itemMap, widget.dateFieldName);
-      String date = 'N/A';
-      if (dateValue != null) {
-        try {
-          final dateString = dateValue.toString();
-          final dateTime = DateTime.parse(dateString).toLocal();
-          date = DateFormat('dd/MM/yyyy HH:mm').format(dateTime);
-        } catch (e) {
-          date = 'Data inválida';
-        }
-      }
     }
 
     final success = item == null
@@ -719,15 +716,15 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
     TextEditingController controller,
     List<Map<String, dynamic>> options,
   ) {
-    // Converte o valor do controller para o tipo correto
     final currentValue = controller.text.isNotEmpty ? controller.text : null;
 
     return DropdownButtonFormField<String>(
       value: currentValue,
       decoration: _buildInputDecoration(config),
       items: options.map<DropdownMenuItem<String>>((option) {
-        final optionValue = option['value']?.toString();
-        final optionLabel = option['label']?.toString() ?? '';
+        final optionValue = option[config.dropdownValueField]?.toString();
+        final optionLabel =
+            option[config.dropdownDisplayField]?.toString() ?? '';
 
         return DropdownMenuItem<String>(
           value: optionValue,
@@ -843,7 +840,6 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
                     config.displayFieldName ?? config.fieldName,
                   )?.toString() ??
                   '';
-              // Escapar vírgulas em valores
               return value.contains(',') ? '"$value"' : value;
             })
             .join(',');
@@ -864,7 +860,6 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
         csvData.write('$row,$date\n');
       }
 
-      // Em um app real, você salvaria o arquivo ou compartilharia
       if (kDebugMode) {
         print(csvData.toString());
       }
@@ -892,7 +887,6 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
   }
 
   Widget _buildFilters() {
-    // Inicializar controladores
     for (final config in widget.fieldConfigs.where((c) => c.isFilterable)) {
       _filterControllers[config.fieldName] ??= TextEditingController();
     }
@@ -907,7 +901,6 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
       padding: const EdgeInsets.all(16),
       child: Column(
         children: [
-          // No método _buildFilters, substitua a parte do search por:
           if (widget.enableSearch)
             TextField(
               controller: _searchController,
@@ -959,7 +952,7 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
   // Método para construir o menu de configuração de colunas
   Widget _buildColumnSettingsMenu() {
     return PopupMenuButton(
-      icon: const Icon(Icons.settings), // Ícone de engrenagem
+      icon: const Icon(Icons.settings),
       tooltip: 'Configurar colunas',
       itemBuilder: (context) => [
         const PopupMenuItem(
@@ -1012,6 +1005,7 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
                   _saveColumnPreferences();
                   setState(() {});
                   Navigator.pop(ctx);
+                  _applyFilters(); // Recarregar dados com as novas colunas
                 },
                 child: const Text('Aplicar'),
               ),
@@ -1025,9 +1019,9 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
   List<DataColumn> _buildColumns() {
     final columns = <DataColumn>[];
 
-    // Adicionar colunas fixas primeiro
+    // Adicionar colunas visíveis
     for (final config in widget.fieldConfigs.where(
-      (c) => (_columnVisibility[c.fieldName] == true) && c.isFixed,
+      (c) => _columnVisibility[c.fieldName] == true,
     )) {
       columns.add(
         DataColumn(
@@ -1038,7 +1032,7 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
                     (c) {
                       final value = _getNestedValue(
                         widget.toJson(c),
-                        config.fieldName,
+                        config.displayFieldName ?? config.fieldName,
                       );
                       return value is Comparable ? value : value.toString();
                     },
@@ -1051,33 +1045,7 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
       );
     }
 
-    // Adicionar colunas não fixas
-    for (final config in widget.fieldConfigs.where(
-      (c) => (_columnVisibility[c.fieldName] == true) && !c.isFixed,
-    )) {
-      columns.add(
-        DataColumn(
-          label: Text(config.label),
-          onSort: config.isSortable
-              ? (columnIndex, ascending) {
-                  _sort<dynamic>(
-                    (c) {
-                      final value = _getNestedValue(
-                        widget.toJson(c),
-                        config.fieldName,
-                      );
-                      return value is Comparable ? value : value.toString();
-                    },
-                    widget.fieldConfigs.indexOf(config),
-                    ascending,
-                  );
-                }
-              : null,
-        ),
-      );
-    }
-
-    // Adicionar coluna de ações (sempre fixa)
+    // Adicionar coluna de ações (sempre visível)
     columns.add(const DataColumn(label: Text("Ações")));
 
     return columns;
@@ -1087,9 +1055,9 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
     final itemMap = widget.toJson(item);
     final cells = <DataCell>[];
 
-    // Adicionar células fixas primeiro
+    // Adicionar células das colunas visíveis
     for (final config in widget.fieldConfigs.where(
-      (c) => (_columnVisibility[c.fieldName] == true) && c.isFixed,
+      (c) => _columnVisibility[c.fieldName] == true,
     )) {
       cells.add(
         DataCell(
@@ -1109,33 +1077,24 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
       );
     }
 
-    // Adicionar células não fixas
-    for (final config in widget.fieldConfigs.where(
-      (c) => (_columnVisibility[c.fieldName] == true) && !c.isFixed,
-    )) {
-      cells.add(
-        DataCell(
-          Text(
-            _getNestedValue(
-                  itemMap,
-                  config.displayFieldName ?? config.fieldName,
-                )?.toString() ??
-                '',
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-          ),
-          onTap: widget.onItemTap != null
-              ? () => widget.onItemTap!(item, context)
-              : null,
-        ),
-      );
-    }
-
-    // Adicionar célula de ações (sempre fixa)
+    // Adicionar célula de ações (sempre visível)
     cells.add(
       DataCell(
         Row(
           children: [
+            if (widget.detailScreenBuilder != null &&
+                widget.hasPermission('view'))
+              IconButton(
+                icon: const Icon(Icons.visibility, size: 20),
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => widget.detailScreenBuilder!(item),
+                    ),
+                  );
+                },
+              ),
             if (widget.hasPermission('edit') &&
                 widget.buttonPermissions['edit']!)
               IconButton(
@@ -1175,12 +1134,18 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
         value = Map<String, dynamic>.from(value)[part];
       } else if (value is Map<String, dynamic>) {
         value = value[part];
+      } else if (value is List) {
+        // Tenta acessar elemento de lista se for numérico
+        final index = int.tryParse(part);
+        if (index != null && index >= 0 && index < value.length) {
+          value = value[index];
+        } else {
+          return null;
+        }
       } else {
         // Tenta acessar via reflexão se for um objeto Dart
         try {
-          if (value is dynamic) {
-            value = value[part];
-          }
+          value = value[part];
         } catch (e) {
           return null;
         }
@@ -1192,11 +1157,9 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
 
   @override
   Widget build(BuildContext context) {
-    final fixedColumnsCount =
-        widget.fieldConfigs
-            .where((c) => (_columnVisibility[c.fieldName] == true) && c.isFixed)
-            .length +
-        1; // +1 para a coluna de ações
+    final fixedColumnsCount = widget.fieldConfigs
+        .where((c) => _columnVisibility[c.fieldName] == true && c.isFixed)
+        .length;
 
     return Stack(
       children: [
@@ -1204,7 +1167,6 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
           appBar: AppBar(
             title: Text(widget.title),
             actions: [
-              // Botão de configurações de coluna
               _buildColumnSettingsMenu(),
 
               if (widget.exportConfig.enableCsvExport &&
@@ -1299,7 +1261,7 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
                     ),
                     if (filtrosAbertos) _buildFilters(),
                     Expanded(
-                      child: Padding(
+                      child: Container(
                         padding: const EdgeInsets.all(16.0),
                         child: PaginatedDataTable2(
                           columnSpacing: 12,
@@ -1348,7 +1310,7 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
                             });
                             _loadItems(_currentPage, rowsPerPage);
                           },
-                          fixedLeftColumns: fixedColumnsCount, // Colunas fixas
+                          fixedLeftColumns: fixedColumnsCount,
                           empty: Center(
                             child: Container(
                               padding: const EdgeInsets.all(20),

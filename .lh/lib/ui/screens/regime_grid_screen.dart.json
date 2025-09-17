@@ -1,0 +1,22 @@
+{
+    "sourceFile": "lib/ui/screens/regime_grid_screen.dart",
+    "activeCommit": 0,
+    "commits": [
+        {
+            "activePatchIndex": 1,
+            "patches": [
+                {
+                    "date": 1758137928580,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n"
+                },
+                {
+                    "date": 1758137936137,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -1,8 +1,9 @@\n import 'package:flutter/material.dart';\r\n import 'package:task_manager_flutter/data/utils/api_links.dart';\r\n import 'package:task_manager_flutter/ui/widgets/generic_grid_screen.dart';\r\n import 'package:task_manager_flutter/data/models/regime_tributario_model.dart';\r\n+import 'package:task_manager_flutter/ui/details/regime_tributario_detail.dart';\r\n \r\n class RegimeGridScreen extends StatelessWidget {\r\n   final SecurityCheck hasPermission;\r\n \r\n"
+                }
+            ],
+            "date": 1758137928580,
+            "name": "Commit-0",
+            "content": "import 'package:flutter/material.dart';\r\nimport 'package:task_manager_flutter/data/utils/api_links.dart';\r\nimport 'package:task_manager_flutter/ui/widgets/generic_grid_screen.dart';\r\nimport 'package:task_manager_flutter/data/models/regime_tributario_model.dart';\r\n\r\nclass RegimeGridScreen extends StatelessWidget {\r\n  final SecurityCheck hasPermission;\r\n\r\n  const RegimeGridScreen({super.key, required this.hasPermission});\r\n\r\n  @override\r\n  Widget build(BuildContext context) {\r\n    return GenericGridScreen<RegimeTributario>(\r\n      title: \"Regime Tributarios\",\r\n      fetchEndpoint: ApiLinks.allRegimetributario,\r\n      createEndpoint: ApiLinks.createRegimetributario,\r\n      updateEndpoint: ApiLinks.updateRegimetributario(\":id\"),\r\n      deleteEndpoint: ApiLinks.deleteRegimetributario(\":id\"),\r\n      fromJson: (json) => RegimeTributario.fromJson(json),\r\n      toJson: (p) => p.toJson(),\r\n      hasPermission: hasPermission,\r\n      fieldConfigs: RegimeTributario.fieldConfigs,\r\n      idFieldName: 'id',\r\n      dateFieldName: 'createdAt',\r\n      exportConfig: const ExportConfig(\r\n        enableCsvExport: true,\r\n        filenamePrefix: 'Regime Tributarios',\r\n      ),\r\n      paginationConfig: const PaginationConfig(\r\n        defaultRowsPerPage: 10,\r\n        availableRowsPerPage: [10, 25, 50],\r\n      ),\r\n      enableSearch: true,\r\n      enableColumnReorder: true,\r\n      detailScreenBuilder: (item) => RegimeDetailScreen(\r\n        item: item,\r\n        hasPermission: hasPermission,\r\n      ),\r\n    );\r\n  }\r\n}\r\n"
+        }
+    ]
+}

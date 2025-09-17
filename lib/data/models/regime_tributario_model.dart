@@ -3,6 +3,8 @@ import 'package:task_manager_flutter/ui/widgets/generic_grid_screen.dart';
 import 'package:task_manager_flutter/data/utils/api_links.dart';
 import 'package:task_manager_flutter/data/services/network_caller.dart';
 import 'package:task_manager_flutter/data/models/network_response.dart';
+import 'package:task_manager_flutter/ui/widgets/generic_grid_screen.dart';
+import 'package:task_manager_flutter/ui/widgets/tab_config.dart';
 
 class RegimeTributario {
   int? id;
@@ -90,6 +92,40 @@ class RegimeTributario {
       },
       dropdownValueField: 'id',
       dropdownDisplayField: 'codigo',
+    ),
+  ];
+
+  /// 🔧 Configuração das abas
+  static List<TabConfig> tabConfigs = [
+    TabConfig(
+      title: "Dados Principais",
+      icon: Icons.description,
+      isGrid: false,
+      endpoint: ApiLinks.allRegimetributario,
+      fields: [
+        FieldConfig(
+          label: "Código",
+          fieldName: "codigo",
+          icon: Icons.code,
+          isInForm: true,
+          isRequired: true,
+        ),
+        FieldConfig(
+          label: "Descrição",
+          fieldName: "descricao",
+          icon: Icons.text_fields,
+          isInForm: true,
+          isRequired: true,
+        ),
+      ],
+    ),
+    TabConfig(
+      title: "Histórico",
+      icon: Icons.history,
+      isGrid: true,
+      endpoint: ApiLinks
+          .allRegimetributario, // Ex: "/api/regime-tributario/{id}/historico"
+      //    parentField: "regimeId",
     ),
   ];
 }

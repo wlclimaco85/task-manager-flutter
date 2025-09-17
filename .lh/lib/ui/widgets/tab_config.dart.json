@@ -1,0 +1,26 @@
+{
+    "sourceFile": "lib/ui/widgets/tab_config.dart",
+    "activeCommit": 0,
+    "commits": [
+        {
+            "activePatchIndex": 2,
+            "patches": [
+                {
+                    "date": 1758132818386,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n"
+                },
+                {
+                    "date": 1758135711762,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -6,17 +6,21 @@\n   final IconData icon;\r\n   final bool isGrid;\r\n   final String endpoint;\r\n   final List<FieldConfig>? fields;\r\n-\r\n-  // Adicionado para grids\r\n   final List<FieldConfig>? gridFieldConfigs;\r\n+  final Function(dynamic)? fromJson;\r\n+  final Function(dynamic)? toJson;\r\n+  final Widget Function(dynamic item, SecurityCheck hasPermission)? detailScreenBuilder;\r\n \r\n   TabConfig({\r\n     required this.title,\r\n     required this.icon,\r\n     required this.isGrid,\r\n     required this.endpoint,\r\n     this.fields,\r\n     this.gridFieldConfigs,\r\n+    this.fromJson,\r\n+    this.toJson,\r\n+    this.detailScreenBuilder,\r\n   });\r\n-}\r\n+}\n\\ No newline at end of file\n"
+                },
+                {
+                    "date": 1758137802273,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -8,9 +8,9 @@\n   final String endpoint;\r\n   final List<FieldConfig>? fields;\r\n   final List<FieldConfig>? gridFieldConfigs;\r\n   final Function(dynamic)? fromJson;\r\n-  final Function(dynamic)? toJson;\r\n+  final Map<String, dynamic> Function(dynamic)? toJson;\r\n   final Widget Function(dynamic item, SecurityCheck hasPermission)?\r\n   detailScreenBuilder;\r\n \r\n   TabConfig({\r\n"
+                }
+            ],
+            "date": 1758132818386,
+            "name": "Commit-0",
+            "content": "import 'package:flutter/material.dart';\r\nimport 'package:task_manager_flutter/ui/widgets/generic_grid_screen.dart';\r\n\r\nclass TabConfig {\r\n  final String title;\r\n  final IconData icon;\r\n  final bool isGrid;\r\n  final String endpoint;\r\n  final List<FieldConfig>? fields;\r\n  \r\n  // Adicionado para grids\r\n  final List<FieldConfig>? gridFieldConfigs;\r\n\r\n  TabConfig({\r\n    required this.title,\r\n    required this.icon,\r\n    required this.isGrid,\r\n    required this.endpoint,\r\n    this.fields,\r\n    this.gridFieldConfigs,\r\n  });\r\n}\r\n"
+        }
+    ]
+}

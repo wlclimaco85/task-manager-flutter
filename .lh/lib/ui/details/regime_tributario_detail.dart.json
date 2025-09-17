@@ -1,0 +1,26 @@
+{
+    "sourceFile": "lib/ui/details/regime_tributario_detail.dart",
+    "activeCommit": 0,
+    "commits": [
+        {
+            "activePatchIndex": 2,
+            "patches": [
+                {
+                    "date": 1758132034448,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n"
+                },
+                {
+                    "date": 1758132223882,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -11,9 +11,9 @@\n \r\n   @override\r\n   Widget build(BuildContext context) {\r\n     return GenericDetailFormScreen<RegimeTributario>(\r\n-      item: regime, // objeto vindo da lista anterior\r\n+      item: RegimeTributario(id:1), // objeto vindo da lista anterior\r\n       tabConfigs: RegimeTributario.tabConfigs,\r\n       title: \"Detalhes Regime Tributário\",\r\n       onSave: (formData) async {\r\n         print(\"Salvar regime: $formData\");\r\n"
+                },
+                {
+                    "date": 1758137876318,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -2,24 +2,29 @@\n import 'package:task_manager_flutter/data/utils/api_links.dart';\r\n import 'package:task_manager_flutter/ui/widgets/generic_grid_screen.dart';\r\n import 'package:task_manager_flutter/data/models/regime_tributario_model.dart';\r\n import 'package:task_manager_flutter/ui/widgets/genericDetailFormScreen.dart';\r\n-\r\n class RegimeDetailScreen extends StatelessWidget {\r\n+  final RegimeTributario item;\r\n   final SecurityCheck hasPermission;\r\n \r\n-  const RegimeDetailScreen({super.key, required this.hasPermission});\r\n+  const RegimeDetailScreen({\r\n+    super.key, \r\n+    required this.item, \r\n+    required this.hasPermission\r\n+  });\r\n \r\n   @override\r\n   Widget build(BuildContext context) {\r\n     return GenericDetailFormScreen<RegimeTributario>(\r\n-      item: RegimeTributario(id: 1), // objeto vindo da lista anterior\r\n+      item: item,\r\n       tabConfigs: RegimeTributario.tabConfigs,\r\n       title: \"Detalhes Regime Tributário\",\r\n       onSave: (formData) async {\r\n         print(\"Salvar regime: $formData\");\r\n         // chamada POST/PUT\r\n       },\r\n       onBack: () => Navigator.pop(context),\r\n+      hasPermission: hasPermission, // Adicionar este parâmetro\r\n     );\r\n   }\r\n-}\r\n+}\n\\ No newline at end of file\n"
+                }
+            ],
+            "date": 1758132034448,
+            "name": "Commit-0",
+            "content": "import 'package:flutter/material.dart';\r\nimport 'package:task_manager_flutter/data/utils/api_links.dart';\r\nimport 'package:task_manager_flutter/ui/widgets/generic_grid_screen.dart';\r\nimport 'package:task_manager_flutter/data/models/regime_tributario_model.dart';\r\nimport 'package:task_manager_flutter/ui/widgets/genericDetailFormScreen.dart';\r\n\r\nclass RegimeDetailScreen extends StatelessWidget {\r\n  final SecurityCheck hasPermission;\r\n\r\n  const RegimeDetailScreen({super.key, required this.hasPermission});\r\n\r\n  @override\r\n  Widget build(BuildContext context) {\r\n    return GenericDetailFormScreen<RegimeTributario>(\r\n      item: regime, // objeto vindo da lista anterior\r\n      tabConfigs: RegimeTributario.tabConfigs,\r\n      title: \"Detalhes Regime Tributário\",\r\n      onSave: (formData) async {\r\n        print(\"Salvar regime: $formData\");\r\n        // chamada POST/PUT\r\n      },\r\n      onBack: () => Navigator.pop(context),\r\n    );\r\n  }\r\n}\r\n"
+        }
+    ]
+}

@@ -1,26 +1,21 @@
+import 'dart:async';
 import 'dart:typed_data';
-import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-import 'package:task_manager_flutter/ui/screens/chatMenssageScreen.dart';
-import 'package:task_manager_flutter/ui/screens/negociacao_screen.dart';
-import 'package:task_manager_flutter/ui/screens/comunicado_screen.dart';
-import 'package:task_manager_flutter/ui/screens/comunicado_componente_screen.dart';
-import 'package:task_manager_flutter/ui/screens/carrinho_compras_screen.dart';
-import 'package:task_manager_flutter/ui/screens/carrinho_vendas_screen.dart';
-import 'package:task_manager_flutter/ui/screens/product_register_screen.dart';
-import 'package:task_manager_flutter/data/utils/api_links.dart';
-import 'package:task_manager_flutter/data/models/auth_utility.dart';
-import 'package:task_manager_flutter/ui/screens/LoginPopup_screens.dart';
 import 'package:task_manager_flutter/data/constants/custom_colors.dart';
-import 'package:task_manager_flutter/ui/screens/chatMessageListScreen.dart';
 import 'package:task_manager_flutter/data/models/alert_model.dart';
-import 'package:task_manager_flutter/data/services/alert_caller.dart';
+import 'package:task_manager_flutter/data/models/auth_utility.dart';
 import 'package:task_manager_flutter/data/models/login_model.dart';
-import 'package:http/http.dart' as http;
-import 'dart:async';
+import 'package:task_manager_flutter/data/services/alert_caller.dart';
+import 'package:task_manager_flutter/ui/screens/LoginPopup_screens.dart';
 // GridScreens
 import 'package:task_manager_flutter/ui/screens/alimento_grid_screen.dart';
+import 'package:task_manager_flutter/ui/screens/aplicativo_screen.dart';
+import 'package:task_manager_flutter/ui/screens/chatMenssageScreen.dart';
+import 'package:task_manager_flutter/ui/screens/chatMessageListScreen.dart';
+import 'package:task_manager_flutter/ui/screens/comunicado_componente_screen.dart';
+import 'package:task_manager_flutter/ui/screens/comunicado_screen.dart';
 import 'package:task_manager_flutter/ui/screens/dieta_grid_screen.dart';
 import 'package:task_manager_flutter/ui/screens/empresa_grid_screen.dart';
 import 'package:task_manager_flutter/ui/screens/exame_grid_screen.dart';
@@ -33,10 +28,11 @@ import 'package:task_manager_flutter/ui/screens/objetivo_grid_screen.dart';
 import 'package:task_manager_flutter/ui/screens/parceiro_grid_screen.dart';
 import 'package:task_manager_flutter/ui/screens/personal_grid_screen.dart';
 import 'package:task_manager_flutter/ui/screens/plano_grid_screen.dart';
+import 'package:task_manager_flutter/ui/screens/product_register_screen.dart';
+import 'package:task_manager_flutter/ui/screens/regime_grid_screen.dart';
 import 'package:task_manager_flutter/ui/screens/role_grid_screen.dart';
 import 'package:task_manager_flutter/ui/screens/setor_grid_screen.dart';
 import 'package:task_manager_flutter/ui/screens/suplemento_grid_screen.dart';
-import 'package:task_manager_flutter/ui/screens/aplicativo_screen.dart';
 
 class BottomNavBarScreen extends StatefulWidget {
   const BottomNavBarScreen({super.key});
@@ -83,6 +79,7 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
       ChatListScreen(userName: AuthUtility.userInfo.data!.email ?? 'Usuário'),
       const ProductRegisterScreen(),
       isLoggedIn ? const ProductRegisterScreen() : const LoginPopup(),
+      RegimeGridScreen(hasPermission: (perm) => true),
       AlimentoGridScreen(hasPermission: (perm) => true),
       DietaGridScreen(hasPermission: (perm) => true),
       EmpresaGridScreen(hasPermission: (perm) => true),
@@ -111,6 +108,7 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
     SidebarItem(icon: FontAwesomeIcons.tags, label: "Vender"),
     SidebarItem(icon: FontAwesomeIcons.user, label: "Perfil"),
     SidebarItem(icon: FontAwesomeIcons.newspaper, label: "Comunicados"),
+    SidebarItem(icon: FontAwesomeIcons.taxi, label: "Regime Tributario"),
     SidebarItem(icon: FontAwesomeIcons.appleAlt, label: "Alimentos"),
     SidebarItem(icon: FontAwesomeIcons.bowlFood, label: "Dietas"),
     SidebarItem(icon: FontAwesomeIcons.building, label: "Empresas"),
