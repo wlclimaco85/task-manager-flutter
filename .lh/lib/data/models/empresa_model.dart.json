@@ -3,11 +3,51 @@
     "activeCommit": 0,
     "commits": [
         {
-            "activePatchIndex": 0,
+            "activePatchIndex": 10,
             "patches": [
                 {
                     "date": 1757967882884,
                     "content": "Index: \n===================================================================\n--- \n+++ \n"
+                },
+                {
+                    "date": 1758115270368,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -79,6 +79,21 @@\n       icon: Icons.location_city,\r\n       isInForm: true,\r\n       isFilterable: true,\r\n     ),\r\n+    FieldConfig(\r\n+      label: \"Aplicativo\",\r\n+      fieldName: \"aplicativo\", // Para o formulário (dropdown)\r\n+      displayFieldName: \"aplicativo.nome\", // Para exibição na grid\r\n+      icon: Icons.apps,\r\n+      isInForm: true,\r\n+      isFilterable: true,\r\n+      fieldType: FieldType.dropdown,\r\n+      dropdownFutureBuilder: () async {\r\n+        return await loadCategorias();\r\n+      },\r\n+      dropdownValueField: 'id',\r\n+      dropdownDisplayField: 'nome',\r\n+      isRequired: true,\r\n+    ),\r\n   ];\r\n }\r\n"
+                },
+                {
+                    "date": 1758115311742,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -45,8 +45,24 @@\n       'cidade': cidade,\r\n     };\r\n   }\r\n \r\n+  static Future<List<Map<String, dynamic>>> loadCategorias() async {\r\n+    final NetworkResponse response = await NetworkCaller().getRequest(\r\n+      ApiLinks.allAplicativos,\r\n+    );\r\n+\r\n+    if (response.isSuccess && response.body != null) {\r\n+      final List<dynamic> data = response.body!['data']['dados'] ?? [];\r\n+      return data\r\n+          .map(\r\n+            (item) => {'value': item['id'].toString(), 'label': item['nome']},\r\n+          )\r\n+          .toList();\r\n+    }\r\n+    return [];\r\n+  }\r\n+\r\n   static List<FieldConfig> fieldConfigs = [\r\n     FieldConfig(\r\n       label: \"Nome\",\r\n       fieldName: \"nome\",\r\n"
+                },
+                {
+                    "date": 1758115329316,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -1,6 +1,9 @@\n import 'package:flutter/material.dart';\r\n import 'package:task_manager_flutter/ui/widgets/generic_grid_screen.dart';\r\n+import 'package:task_manager_flutter/data/utils/api_links.dart';\r\n+import 'package:task_manager_flutter/data/models/network_response.dart';\r\n+import 'package:task_manager_flutter/data/services/network_caller.dart';\r\n \r\n class Empresa {\r\n   int? id;\r\n   String? nome;\r\n"
+                },
+                {
+                    "date": 1758115401891,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -99,12 +99,12 @@\n       isInForm: true,\r\n       isFilterable: true,\r\n     ),\r\n     FieldConfig(\r\n-      label: \"Aplicativo\",\r\n-      fieldName: \"aplicativo\", // Para o formulário (dropdown)\r\n-      displayFieldName: \"aplicativo.nome\", // Para exibição na grid\r\n-      icon: Icons.apps,\r\n+      label: \"Regime\",\r\n+      fieldName: \"regime\", // Para o formulário (dropdown)\r\n+      displayFieldName: \"aplicativo.codigo\", // Para exibição na grid\r\n+      icon: Icons.business_center,\r\n       isInForm: true,\r\n       isFilterable: true,\r\n       fieldType: FieldType.dropdown,\r\n       dropdownFutureBuilder: () async {\r\n"
+                },
+                {
+                    "date": 1758115413844,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -57,9 +57,9 @@\n     if (response.isSuccess && response.body != null) {\r\n       final List<dynamic> data = response.body!['data']['dados'] ?? [];\r\n       return data\r\n           .map(\r\n-            (item) => {'value': item['id'].toString(), 'label': item['nome']},\r\n+            (item) => {'value': item['id'].toString(), 'label': item['codigo']},\r\n           )\r\n           .toList();\r\n     }\r\n     return [];\r\n@@ -110,9 +110,9 @@\n       dropdownFutureBuilder: () async {\r\n         return await loadCategorias();\r\n       },\r\n       dropdownValueField: 'id',\r\n-      dropdownDisplayField: 'nome',\r\n+      dropdownDisplayField: 'codigo',\r\n       isRequired: true,\r\n     ),\r\n   ];\r\n }\r\n"
+                },
+                {
+                    "date": 1758115934435,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -50,9 +50,9 @@\n   }\r\n \r\n   static Future<List<Map<String, dynamic>>> loadCategorias() async {\r\n     final NetworkResponse response = await NetworkCaller().getRequest(\r\n-      ApiLinks.allAplicativos,\r\n+      ApiLinks.allRegimetributario,\r\n     );\r\n \r\n     if (response.isSuccess && response.body != null) {\r\n       final List<dynamic> data = response.body!['data']['dados'] ?? [];\r\n"
+                },
+                {
+                    "date": 1758117106591,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -101,9 +101,9 @@\n     ),\r\n     FieldConfig(\r\n       label: \"Regime\",\r\n       fieldName: \"regime\", // Para o formulário (dropdown)\r\n-      displayFieldName: \"aplicativo.codigo\", // Para exibição na grid\r\n+      displayFieldName: \"regime.codigo\", // Para exibição na grid\r\n       icon: Icons.business_center,\r\n       isInForm: true,\r\n       isFilterable: true,\r\n       fieldType: FieldType.dropdown,\r\n"
+                },
+                {
+                    "date": 1758117309790,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -2,28 +2,41 @@\n import 'package:task_manager_flutter/ui/widgets/generic_grid_screen.dart';\r\n import 'package:task_manager_flutter/data/utils/api_links.dart';\r\n import 'package:task_manager_flutter/data/models/network_response.dart';\r\n import 'package:task_manager_flutter/data/services/network_caller.dart';\r\n+import 'package:task_manager_flutter/data/models/aplicativo_model.dart';\r\n \r\n class Empresa {\r\n   int? id;\r\n   String? nome;\r\n   String? razaoSocial;\r\n   String? email;\r\n   String? site;\r\n   String? contato;\r\n+  String? emailContato;\r\n+  String? telefoneContato;\r\n   String? telefone;\r\n+  String? rua;\r\n+  String? numero;\r\n   String? cidade;\r\n+  String? cep;\r\n+  Aplicativo aplicativo; // Pode ser detalhado depois como um model separado\r\n \r\n   Empresa({\r\n-    this.id,\r\n+     this.id,\r\n     this.nome,\r\n     this.razaoSocial,\r\n     this.email,\r\n     this.site,\r\n     this.contato,\r\n+    this.emailContato,\r\n+    this.telefoneContato,\r\n     this.telefone,\r\n+    this.rua,\r\n+    this.numero,\r\n     this.cidade,\r\n+    this.cep,\r\n+    this.aplicativo,\r\n   });\r\n \r\n   Empresa.fromJson(Map<String, dynamic> json) {\r\n     id = json['id'];\r\n"
+                },
+                {
+                    "date": 1758117379924,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -18,9 +18,9 @@\n   String? rua;\r\n   String? numero;\r\n   String? cidade;\r\n   String? cep;\r\n-  Aplicativo aplicativo; // Pode ser detalhado depois como um model separado\r\n+  Aplicativo? aplicativo; // Pode ser detalhado depois como um model separado\r\n \r\n   Empresa({\r\n     this.id,\r\n     this.nome,\r\n@@ -44,22 +44,36 @@\n     razaoSocial = json['razaoSocial'];\r\n     email = json['email'];\r\n     site = json['site'];\r\n     contato = json['contato'];\r\n+    emailContato = json['emailContato'];\r\n+    telefoneContato = json['telefoneContato'];\r\n     telefone = json['telefone'];\r\n+    rua = json['rua'];\r\n+    numero = json['numero'];\r\n     cidade = json['cidade'];\r\n+    cep = json['cep'];\r\n+    aplicativo = json['aplicativo'] != null\r\n+        ? Aplicativo.fromJson(json['aplicativo'])\r\n+        : null; // pode ser adaptado se tiver DTO no back\r\n   }\r\n \r\n   Map<String, dynamic> toJson() {\r\n     return {\r\n-      'id': id,\r\n+       'id': id,\r\n       'nome': nome,\r\n       'razaoSocial': razaoSocial,\r\n       'email': email,\r\n       'site': site,\r\n       'contato': contato,\r\n+      'emailContato': emailContato,\r\n+      'telefoneContato': telefoneContato,\r\n       'telefone': telefone,\r\n+      'rua': rua,\r\n+      'numero': numero,\r\n       'cidade': cidade,\r\n+      'cep': cep,\r\n+      'aplicativo': aplicativo,\r\n     };\r\n   }\r\n \r\n   static Future<List<Map<String, dynamic>>> loadCategorias() async {\r\n"
+                },
+                {
+                    "date": 1758117400398,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -71,9 +71,9 @@\n       'rua': rua,\r\n       'numero': numero,\r\n       'cidade': cidade,\r\n       'cep': cep,\r\n-      'aplicativo': aplicativo,\r\n+      'aplicativo': aplicativo?.toJson(),\r\n     };\r\n   }\r\n \r\n   static Future<List<Map<String, dynamic>>> loadCategorias() async {\r\n"
                 }
             ],
             "date": 1757967882884,

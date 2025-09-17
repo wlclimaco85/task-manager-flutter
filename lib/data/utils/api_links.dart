@@ -111,12 +111,12 @@ class ApiLinks {
   static String deleteDieta(String id) => '$_baseUrlNew/api/dietas/delete/$id';
 
   // Empresa
-  static String allEmpresas = '$_baseUrlNew/api/empresas';
-  static String createEmpresa = '$_baseUrlNew/api/empresas/insert';
+  static String allEmpresas = '$_baseUrlNew/api/empresa';
+  static String createEmpresa = '$_baseUrlNew/api/empresa/insert';
   static String updateEmpresa(String id) =>
-      '$_baseUrlNew/api/empresas/update/$id';
+      '$_baseUrlNew/api/empresa/update/$id';
   static String deleteEmpresa(String id) =>
-      '$_baseUrlNew/api/empresas/delete/$id';
+      '$_baseUrlNew/api/empresa/delete/$id';
 
   // Exame
   static String allExames = '$_baseUrlNew/api/exames';
@@ -174,12 +174,12 @@ class ApiLinks {
       '$_baseUrlNew/api/objetivos/delete/$id';
 
   // Parceiro
-  static String allParceiros = '$_baseUrlNew/api/parceiros';
-  static String createParceiro = '$_baseUrlNew/api/parceiros/insert';
+  static String allParceiros = '$_baseUrlNew/api/parceiro';
+  static String createParceiro = '$_baseUrlNew/api/parceiro/insert';
   static String updateParceiro(String id) =>
-      '$_baseUrlNew/api/parceiros/update/$id';
+      '$_baseUrlNew/api/parceiro/update/$id';
   static String deleteParceiro(String id) =>
-      '$_baseUrlNew/api/parceiros/delete/$id';
+      '$_baseUrlNew/api/parceiro/delete/$id';
 
   // Personal
   static String allPersonais = '$_baseUrlNew/api/personais';
@@ -222,4 +222,12 @@ class ApiLinks {
       '$_baseUrlNew/api/aplicativos/update/$id';
   static String deleteAplicativo(String id) =>
       '$_baseUrlNew/api/aplicativos/delete/$id';
+
+  // Regime
+  static String allRegimetributario = '$_baseUrlNew/api/regimetributario';
+  static String createRegimetributario = '$_baseUrlNew/api/regimetributario';
+  static String updateRegimetributario(String id) =>
+      '$_baseUrlNew/api/regimetributario/update/$id';
+  static String deleteRegimetributario(String id) =>
+      '$_baseUrlNew/api/regimetributario/delete/$id';
 }

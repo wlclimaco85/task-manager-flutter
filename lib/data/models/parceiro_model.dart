@@ -2,6 +2,11 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:task_manager_flutter/ui/widgets/generic_grid_screen.dart';
+import 'package:task_manager_flutter/data/models/empresa_model.dart';
+import 'package:task_manager_flutter/data/utils/api_links.dart';
+import 'package:task_manager_flutter/data/models/network_response.dart';
+import 'package:task_manager_flutter/data/services/network_caller.dart';
+import 'package:task_manager_flutter/data/models/regime_tributario.dart';
 
 class Endereco {
   int? id;
@@ -89,9 +94,14 @@ class Parceiro {
   String? telefone1;
   String? telefone2;
   String? razaoSocial;
+  int? codPersonal;
   String? incrMun;
   String? status;
   Endereco? endereco;
+  Empresa? empresa;
+  RegimeTributario? regime; // pode depois virar um model específico
+  double? valorMensal;
+  String? observacao;
 
   Parceiro({
     this.id,
@@ -102,12 +112,17 @@ class Parceiro {
     this.telefone1,
     this.telefone2,
     this.razaoSocial,
+    this.codPersonal,
     this.incrMun,
     this.status,
     this.endereco,
+    this.empresa,
+    this.regime,
+    this.valorMensal,
+    this.observacao,
   });
 
-  // Método para deserializar o JSON em um objeto Parceiro
+  // Deserialização
   Parceiro.fromJson(Map<String, dynamic> json) {
     id = json['id'];
     nome = json['nome'];
@@ -117,14 +132,23 @@ class Parceiro {
     telefone1 = json['telefone1'];
     telefone2 = json['telefone2'];
     razaoSocial = json['razaoSocial'];
+    codPersonal = json['codPersonal'];
     incrMun = json['incrMun'];
     status = json['status'];
     endereco = json['endereco'] != null
         ? Endereco.fromJson(json['endereco'])
         : null;
+    empresa = json['empresa'] != null
+        ? Empresa.fromJson(json['empresa'])
+        : null;
+    regime = json['regime'] != null
+        ? RegimeTributario.fromJson(json['regime'])
+        : null;
+    valorMensal = json['valorMensal']?.toDouble();
+    observacao = json['observacao'];
   }
 
-  // Método para serializar o objeto Parceiro em JSON
+  // Serialização
   Map<String, dynamic> toJson() {
     final Map<String, dynamic> data = <String, dynamic>{};
     data['id'] = id;
@@ -135,11 +159,15 @@ class Parceiro {
     data['telefone1'] = telefone1;
     data['telefone2'] = telefone2;
     data['razaoSocial'] = razaoSocial;
+    data['codPersonal'] = codPersonal;
     data['incrMun'] = incrMun;
     data['status'] = status;
-    if (endereco != null) {
-      data['endereco'] = endereco!.toJson();
-    }
+    if (endereco != null) data['endereco'] = endereco!.toJson();
+    if (empresa != null) data['empresa'] = empresa!.toJson();
+    if (regime != null) data['regime'] = regime!.toJson();
+    data['regime'] = regime;
+    data['valorMensal'] = valorMensal;
+    data['observacao'] = observacao;
     return data;
   }
 
@@ -153,14 +181,90 @@ class Parceiro {
     FieldConfig(
       label: "Nome",
       fieldName: "nome",
-      icon: Icons.business,
+      icon: Icons.person,
       isInForm: true,
       isFilterable: true,
     ),
     FieldConfig(
-      label: "Contato",
-      fieldName: "contato",
+      label: "CPF",
+      fieldName: "cpf",
+      icon: Icons.badge,
+      isInForm: true,
+      isFilterable: true,
+    ),
+    FieldConfig(
+      label: "Email",
+      fieldName: "email",
+      icon: Icons.email,
+      isInForm: true,
+    ),
+    FieldConfig(
+      label: "Telefone 1",
+      fieldName: "telefone1",
       icon: Icons.phone,
+      isInForm: true,
+    ),
+    FieldConfig(
+      label: "Telefone 2",
+      fieldName: "telefone2",
+      icon: Icons.phone_android,
+      isInForm: true,
+    ),
+    FieldConfig(
+      label: "Razão Social",
+      fieldName: "razaoSocial",
+      icon: Icons.apartment,
+      isInForm: true,
+    ),
+    FieldConfig(
+      label: "Código Produtor",
+      fieldName: "codProdutor",
+      icon: Icons.qr_code,
+      isInForm: true,
+    ),
+    FieldConfig(
+      label: "Cód. Personal",
+      fieldName: "codPersonal",
+      icon: Icons.confirmation_number,
+      isInForm: true,
+    ),
+    FieldConfig(
+      label: "Inscrição Municipal",
+      fieldName: "incrMun",
+      icon: Icons.assignment,
+      isInForm: true,
+    ),
+    FieldConfig(
+      label: "Status",
+      fieldName: "status",
+      icon: Icons.toggle_on,
+      isInForm: true,
+    ),
+    FieldConfig(
+      label: "Valor Mensal",
+      fieldName: "valorMensal",
+      icon: Icons.attach_money,
+      isInForm: true,
+      fieldType: FieldType.number,
+    ),
+    FieldConfig(
+      label: "Observação",
+      fieldName: "observacao",
+      icon: Icons.notes,
+      isInForm: true,
+    ),
+    FieldConfig(
+      label: "Empresa",
+      fieldName: "empresa",
+      displayFieldName: "empresa.nome",
+      icon: Icons.business,
+      isInForm: true,
+    ),
+    FieldConfig(
+      label: "Regime",
+      fieldName: "regime",
+      displayFieldName: "regime.codigo",
+      icon: Icons.account_balance,
       isInForm: true,
     ),
   ];
