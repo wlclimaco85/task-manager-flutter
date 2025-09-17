@@ -30,6 +30,8 @@ class _GenericDetailFormScreenState<T> extends State<GenericDetailFormScreen<T>>
   late TabController _tabController;
   final Map<String, dynamic> _formData = {};
   final Map<int, GlobalKey<FormState>> _formKeys = {};
+  final Map<String, dynamic> _dropdownValues = {};
+  final Map<String, bool> _checkboxValues = {};
 
   @override
   void initState() {
@@ -47,6 +49,7 @@ class _GenericDetailFormScreenState<T> extends State<GenericDetailFormScreen<T>>
     }
 
     _convertItemToMap(widget.item);
+    _initializeFieldValues();
   }
 
   void _convertItemToMap(T item) {
@@ -65,6 +68,43 @@ class _GenericDetailFormScreenState<T> extends State<GenericDetailFormScreen<T>>
       } catch (_) {
         // Último recurso: usar representação string
         _formData['toString'] = item.toString();
+      }
+    }
+  }
+
+  void _initializeFieldValues() {
+    // Inicializar valores para dropdowns e checkboxes
+    for (final tab in widget.tabConfigs) {
+      if (!tab.isGrid && tab.fields != null) {
+        for (final field in tab.fields!) {
+          if (field.fieldType == FieldType.dropdown) {
+            // Obter valor inicial para dropdown
+            if (field.fieldName.contains('.')) {
+              final parts = field.fieldName.split('.');
+              if (_formData[parts[0]] is Map) {
+                _dropdownValues[field.fieldName] =
+                    _formData[parts[0]][parts[1]]?.toString() ?? '';
+              }
+            } else {
+              _dropdownValues[field.fieldName] =
+                  _formData[field.fieldName]?.toString() ?? '';
+            }
+          } else if (field.fieldType == FieldType.boolean) {
+            // Obter valor inicial para checkbox
+            if (field.fieldName.contains('.')) {
+              final parts = field.fieldName.split('.');
+              if (_formData[parts[0]] is Map) {
+                _checkboxValues[field.fieldName] =
+                    _formData[parts[0]][parts[1]]?.toString() == 'true' ||
+                    _formData[parts[0]][parts[1]] == true;
+              }
+            } else {
+              _checkboxValues[field.fieldName] =
+                  _formData[field.fieldName]?.toString() == 'true' ||
+                  _formData[field.fieldName] == true;
+            }
+          }
+        }
       }
     }
   }
@@ -141,6 +181,17 @@ class _GenericDetailFormScreenState<T> extends State<GenericDetailFormScreen<T>>
   }
 
   Widget _buildFormField(FieldConfig field) {
+    switch (field.fieldType) {
+      case FieldType.dropdown:
+        return _buildDropdownField(field);
+      case FieldType.boolean:
+        return _buildCheckboxField(field);
+      default:
+        return _buildTextField(field);
+    }
+  }
+
+  Widget _buildTextField(FieldConfig field) {
     String initialValue = '';
 
     if (field.fieldName.contains('.')) {
@@ -161,6 +212,10 @@ class _GenericDetailFormScreenState<T> extends State<GenericDetailFormScreen<T>>
           prefixIcon: Icon(field.icon),
           border: const OutlineInputBorder(),
         ),
+        keyboardType: field.fieldType == FieldType.number
+            ? TextInputType.number
+            : TextInputType.text,
+        maxLines: field.fieldType == FieldType.multiline ? field.maxLines : 1,
         validator: field.validator,
         onChanged: (val) {
           setState(() {
@@ -175,6 +230,100 @@ class _GenericDetailFormScreenState<T> extends State<GenericDetailFormScreen<T>>
             }
           });
         },
+      ),
+    );
+  }
+
+  Widget _buildDropdownField(FieldConfig field) {
+    // Obter valor inicial
+    final currentValue = _dropdownValues[field.fieldName] ?? '';
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 16),
+      child: InputDecorator(
+        decoration: InputDecoration(
+          labelText: field.label,
+          prefixIcon: Icon(field.icon),
+          border: const OutlineInputBorder(),
+        ),
+        child: DropdownButtonHideUnderline(
+          child: DropdownButton<String>(
+            value: currentValue.isNotEmpty ? currentValue : null,
+            isExpanded: true,
+            items: _buildDropdownItems(field),
+            onChanged: (String? newValue) {
+              setState(() {
+                _dropdownValues[field.fieldName] = newValue ?? '';
+
+                if (field.fieldName.contains('.')) {
+                  final parts = field.fieldName.split('.');
+                  if (_formData[parts[0]] is! Map) {
+                    _formData[parts[0]] = {};
+                  }
+                  _formData[parts[0]][parts[1]] = newValue;
+                } else {
+                  _formData[field.fieldName] = newValue;
+                }
+              });
+            },
+          ),
+        ),
+      ),
+    );
+  }
+
+  List<DropdownMenuItem<String>> _buildDropdownItems(FieldConfig field) {
+    final items = <DropdownMenuItem<String>>[];
+
+    // Adicionar item vazio
+    items.add(
+      DropdownMenuItem<String>(
+        value: '',
+        child: Text('Selecione ${field.label}'),
+      ),
+    );
+
+    // Adicionar opções estáticas
+    if (field.dropdownOptions != null) {
+      for (final option in field.dropdownOptions!) {
+        items.add(
+          DropdownMenuItem<String>(
+            value: option[field.dropdownValueField]?.toString(),
+            child: Text(option[field.dropdownDisplayField]?.toString() ?? ''),
+          ),
+        );
+      }
+    }
+
+    return items;
+  }
+
+  Widget _buildCheckboxField(FieldConfig field) {
+    final currentValue = _checkboxValues[field.fieldName] ?? false;
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 16),
+      child: CheckboxListTile(
+        title: Text(field.label),
+        subtitle: field.isRequired ? const Text('Obrigatório') : null,
+        value: currentValue,
+        onChanged: (bool? newValue) {
+          setState(() {
+            _checkboxValues[field.fieldName] = newValue ?? false;
+
+            if (field.fieldName.contains('.')) {
+              final parts = field.fieldName.split('.');
+              if (_formData[parts[0]] is! Map) {
+                _formData[parts[0]] = {};
+              }
+              _formData[parts[0]][parts[1]] = newValue;
+            } else {
+              _formData[field.fieldName] = newValue;
+            }
+          });
+        },
+        secondary: Icon(field.icon),
+        controlAffinity: ListTileControlAffinity.leading,
       ),
     );
   }
