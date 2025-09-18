@@ -17,12 +17,15 @@ class NetworkCaller {
         Uri.parse(url),
         headers: {
           'Authorization': 'Bearer ${AuthUtility.userInfo.token}',
-          'Accept-Encoding': 'gzip'
+          'Accept-Encoding': 'gzip',
         },
       );
       if (response.statusCode == 200) {
         return NetworkResponse(
-            true, response.statusCode, jsonDecode(response.body));
+          true,
+          response.statusCode,
+          jsonDecode(response.body),
+        );
       } else if (AuthUtility.userInfo.data?.id == null ||
           AuthUtility.userInfo.data?.id == 1 && response.statusCode == 403) {
         loginPadrao();
@@ -32,29 +35,20 @@ class NetworkCaller {
         );
         if (response.statusCode == 200) {
           return NetworkResponse(
-              true, response.statusCode, jsonDecode(response.body));
-        } else {
-          return NetworkResponse(
-            false,
+            true,
             response.statusCode,
-            null,
+            jsonDecode(response.body),
           );
+        } else {
+          return NetworkResponse(false, response.statusCode, null);
         }
       } else {
-        return NetworkResponse(
-          false,
-          response.statusCode,
-          null,
-        );
+        return NetworkResponse(false, response.statusCode, null);
       }
     } catch (e) {
       log(e.toString());
     }
-    return NetworkResponse(
-      false,
-      -1,
-      null,
-    );
+    return NetworkResponse(false, -1, null);
   }
 
   Future<NetworkResponse> getRequests(String url, BuildContext context) async {
@@ -66,7 +60,10 @@ class NetworkCaller {
         );
         if (response.statusCode == 200) {
           return NetworkResponse(
-              true, response.statusCode, jsonDecode(response.body));
+            true,
+            response.statusCode,
+            jsonDecode(response.body),
+          );
         } else if (response.statusCode == 403) {
           // Mostrar LoginPopup
           final result = await showDialog(
@@ -80,27 +77,22 @@ class NetworkCaller {
               Response response = await get(
                 Uri.parse(url),
                 headers: {
-                  'Authorization': 'Bearer ${AuthUtility.userInfo.token}'
+                  'Authorization': 'Bearer ${AuthUtility.userInfo.token}',
                 },
               );
               if (response.statusCode == 200) {
                 return NetworkResponse(
-                    true, response.statusCode, jsonDecode(response.body));
-              } else {
-                return NetworkResponse(
-                  false,
+                  true,
                   response.statusCode,
-                  null,
+                  jsonDecode(response.body),
                 );
+              } else {
+                return NetworkResponse(false, response.statusCode, null);
               }
             }
           }
         } else {
-          return NetworkResponse(
-            false,
-            response.statusCode,
-            null,
-          );
+          return NetworkResponse(false, response.statusCode, null);
         }
       } else {
         // Mostrar LoginPopup
@@ -115,18 +107,17 @@ class NetworkCaller {
             Response response = await get(
               Uri.parse(url),
               headers: {
-                'Authorization': 'Bearer ${AuthUtility.userInfo.token}'
+                'Authorization': 'Bearer ${AuthUtility.userInfo.token}',
               },
             );
             if (response.statusCode == 200) {
               return NetworkResponse(
-                  true, response.statusCode, jsonDecode(response.body));
-            } else {
-              return NetworkResponse(
-                false,
+                true,
                 response.statusCode,
-                null,
+                jsonDecode(response.body),
               );
+            } else {
+              return NetworkResponse(false, response.statusCode, null);
             }
           }
         }
@@ -134,20 +125,18 @@ class NetworkCaller {
     } catch (e) {
       log(e.toString());
     }
-    return NetworkResponse(
-      false,
-      -1,
-      null,
-    );
+    return NetworkResponse(false, -1, null);
   }
 
   Future<void> loginPadrao() async {
     Map<String, dynamic> requestBody = {
       "email": 'wlclimaco@gmail.com',
-      "password": '123456'
+      "password": '123456',
     };
-    final NetworkResponse response =
-        await NetworkCaller().postRequest(ApiLinks.login, requestBody);
+    final NetworkResponse response = await NetworkCaller().postRequest(
+      ApiLinks.login,
+      requestBody,
+    );
 
     if (response.isSuccess) {
       LoginModel model = LoginModel.fromJson(response.body!);
@@ -170,7 +159,8 @@ class NetworkCaller {
         Uri.parse(url),
         headers: {
           'Content-Type': 'application/json;charset=UTF-8',
-          'Authorization': url.contains('login') || url.contains('inserirAluno')
+          //TODO     'Authorization': url.contains('login') || url.contains('inserirAluno')
+          'Authorization': url.contains('inserirAluno')
               ? 'c2Fua2h5YTpzdXA='
               : 'Bearer ${AuthUtility.userInfo.token}',
           'Access-Control-Allow-Origin': '*',
@@ -182,22 +172,17 @@ class NetworkCaller {
       );
       if (response.statusCode == 200 || response.statusCode == 201) {
         return NetworkResponse(
-            true, response.statusCode, jsonDecode(response.body));
-      } else {
-        return NetworkResponse(
-          false,
+          true,
           response.statusCode,
-          null,
+          jsonDecode(response.body),
         );
+      } else {
+        return NetworkResponse(false, response.statusCode, null);
       }
     } catch (e) {
       log(e.toString());
     }
-    return NetworkResponse(
-      false,
-      -1,
-      null,
-    );
+    return NetworkResponse(false, -1, null);
   }
 }
 

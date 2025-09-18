@@ -1,0 +1,18 @@
+{
+    "sourceFile": "lib/ui/screens/login_grid_screen.dart",
+    "activeCommit": 0,
+    "commits": [
+        {
+            "activePatchIndex": 0,
+            "patches": [
+                {
+                    "date": 1758202754736,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n"
+                }
+            ],
+            "date": 1758202754736,
+            "name": "Commit-0",
+            "content": "import 'package:flutter/material.dart';\r\nimport 'package:task_manager_flutter/data/utils/api_links.dart';\r\nimport 'package:task_manager_flutter/ui/widgets/generic_grid_screen.dart';\r\nimport 'package:task_manager_flutter/data/models/login_2_model.dart';\r\n\r\nclass LoginGridScreen extends StatelessWidget {\r\n  final SecurityCheck hasPermission;\r\n\r\n  const LoginGridScreen({\r\n    super.key,\r\n    required this.hasPermission,\r\n  });\r\n\r\n  @override\r\n  Widget build(BuildContext context) {\r\n    return GenericGridScreen<Login>(\r\n      title: \"Logins\",\r\n      fetchEndpoint: ApiLinks.allLogins,\r\n      createEndpoint: ApiLinks.createLogin,\r\n      updateEndpoint: ApiLinks.updateLogin(\":id\"),\r\n      deleteEndpoint: ApiLinks.deleteLogin(\":id\"),\r\n      fromJson: (json) => Login.fromJson(json),\r\n      toJson: (login) => login.toJson(),\r\n      hasPermission: hasPermission,\r\n      fieldConfigs: Login.fieldConfigs,\r\n      idFieldName: 'id',\r\n      dateFieldName: 'dhCreatedAt',\r\n      exportConfig: const ExportConfig(\r\n        enableCsvExport: true,\r\n        filenamePrefix: 'logins',\r\n      ),\r\n      paginationConfig: const PaginationConfig(\r\n        defaultRowsPerPage: 10,\r\n        availableRowsPerPage: [10, 25, 50, 100],\r\n      ),\r\n      onItemTap: (login, context) {\r\n        // Navigate to detail screen if needed\r\n        // Navigator.push(context, MaterialPageRoute(builder: (_) => LoginDetailScreen(login)));\r\n      },\r\n      customActions: (context) => [\r\n        IconButton(\r\n          icon: const Icon(Icons.settings),\r\n          onPressed: () {\r\n            // Open settings\r\n          },\r\n        ),\r\n      ],\r\n      enableSearch: true,\r\n      enableColumnReorder: true,\r\n    );\r\n  }\r\n}"
+        }
+    ]
+}

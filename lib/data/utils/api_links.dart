@@ -230,4 +230,10 @@ class ApiLinks {
       '$_baseUrlNew/api/regimetributario/update/$id';
   static String deleteRegimetributario(String id) =>
       '$_baseUrlNew/api/regimetributario/delete/$id';
+
+  // Add these endpoints to your ApiLinks class
+  static String get allLogins => '$_baseUrlNew/api/logins';
+  static String get createLogin => '$_baseUrlNew/api/logins';
+  static String updateLogin(String id) => '$_baseUrlNew/api/logins/$id';
+  static String deleteLogin(String id) => '$_baseUrlNew/api/logins/$id';
 }

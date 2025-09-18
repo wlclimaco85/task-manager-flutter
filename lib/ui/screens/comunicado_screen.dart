@@ -106,7 +106,7 @@ class _ComunicadoGridScreenState extends State<ComunicadoGridScreen> {
       }
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Falha ao carregar comunicados: ${response}')),
+        SnackBar(content: Text('Falha ao carregar comunicados: $response')),
       );
     }
 
@@ -415,7 +415,7 @@ class _ComunicadoGridScreenState extends State<ComunicadoGridScreen> {
         return true;
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Falha ao criar comunicado: ${response}')),
+          SnackBar(content: Text('Falha ao criar comunicado: $response')),
         );
         return false;
       }
@@ -452,7 +452,7 @@ class _ComunicadoGridScreenState extends State<ComunicadoGridScreen> {
         return true;
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Falha ao atualizar comunicado: ${response}')),
+          SnackBar(content: Text('Falha ao atualizar comunicado: $response')),
         );
         return false;
       }
@@ -488,7 +488,7 @@ class _ComunicadoGridScreenState extends State<ComunicadoGridScreen> {
         _loadComunicados(); // Recarregar dados do servidor
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Falha ao excluir comunicado: ${response}')),
+          SnackBar(content: Text('Falha ao excluir comunicado: $response')),
         );
       }
     } catch (e) {

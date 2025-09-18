@@ -4,6 +4,7 @@ import 'package:task_manager_flutter/data/utils/api_links.dart';
 import 'package:task_manager_flutter/ui/widgets/genericDetailFormScreen.dart';
 import 'package:task_manager_flutter/ui/widgets/generic_grid_screen.dart';
 import 'package:task_manager_flutter/ui/widgets/tab_config.dart';
+import 'package:task_manager_flutter/data/models/login_2_model.dart';
 
 class ParceiroDetailScreen extends StatelessWidget {
   final Parceiro item;
@@ -56,26 +57,11 @@ class ParceiroDetailScreen extends StatelessWidget {
       ],
     ),
     TabConfig(
-      title: "Histórico",
+      title: "Logins",
       icon: Icons.history,
       isGrid: true,
-      endpoint: ApiLinks.allParceiros,
-      gridFieldConfigs: [
-        FieldConfig(
-          label: "Data",
-          fieldName: "data",
-          icon: Icons.date_range,
-          isInForm: true,
-          isVisibleByDefault: true,
-        ),
-        FieldConfig(
-          label: "Ação",
-          fieldName: "acao",
-          icon: Icons.edit,
-          isInForm: true,
-          isVisibleByDefault: true,
-        ),
-      ],
+      endpoint: ApiLinks.allLogins,
+      gridFieldConfigs: Login.fieldConfigs,
     ),
   ];
 

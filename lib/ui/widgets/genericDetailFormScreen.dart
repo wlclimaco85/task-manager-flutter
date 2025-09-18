@@ -9,6 +9,7 @@ class GenericDetailFormScreen<T> extends StatefulWidget {
   final Future<void> Function(Map<String, dynamic> formData) onSave;
   final VoidCallback onBack;
   final SecurityCheck hasPermission;
+  final Map<String, dynamic>? extraParams;
 
   const GenericDetailFormScreen({
     super.key,
@@ -18,6 +19,7 @@ class GenericDetailFormScreen<T> extends StatefulWidget {
     required this.onSave,
     required this.onBack,
     required this.hasPermission,
+    this.extraParams,
   });
 
   @override
@@ -32,6 +34,7 @@ class _GenericDetailFormScreenState<T> extends State<GenericDetailFormScreen<T>>
   final Map<int, GlobalKey<FormState>> _formKeys = {};
   final Map<String, dynamic> _dropdownValues = {};
   final Map<String, bool> _checkboxValues = {};
+  final Map<String, List<Map<String, dynamic>>> _dropdownOptionsCache = {};
 
   @override
   void initState() {
@@ -158,16 +161,25 @@ class _GenericDetailFormScreenState<T> extends State<GenericDetailFormScreen<T>>
     if (tab.isGrid) {
       return GenericGridScreen(
         title: tab.title,
-        fetchEndpoint: "${tab.endpoint}/${_formData['id']}/listar",
-        createEndpoint: "${tab.endpoint}/${_formData['id']}/criar",
-        updateEndpoint: "${tab.endpoint}/${_formData['id']}/atualizar",
-        deleteEndpoint: "${tab.endpoint}/${_formData['id']}/deletar",
+        fetchEndpoint: "${tab.endpoint}?parcId=${_formData['id']}",
+        createEndpoint: "${tab.endpoint}",
+        updateEndpoint: "${tab.endpoint}",
+        deleteEndpoint: "${tab.endpoint}?parcId${_formData['id']}",
         fromJson: tab.fromJson ?? (json) => json,
         toJson: tab.toJson != null
-            ? (item) => tab.toJson!(item) as Map<String, dynamic>
+            ? (item) => tab.toJson!(item)
             : (item) => item as Map<String, dynamic>,
         hasPermission: widget.hasPermission,
         fieldConfigs: tab.gridFieldConfigs ?? [],
+        extraParams: {
+          'parceiro': {'id': _formData['id']},
+          'empresa': {
+            'id': _formData["empresa"] != null
+                ? _formData["empresa"]["id"]
+                : null,
+            'codApp': 1,
+          },
+        },
       );
     } else {
       return Form(
@@ -235,9 +247,75 @@ class _GenericDetailFormScreenState<T> extends State<GenericDetailFormScreen<T>>
   }
 
   Widget _buildDropdownField(FieldConfig field) {
-    // Obter valor inicial
     final currentValue = _dropdownValues[field.fieldName] ?? '';
 
+    if (field.dropdownFutureBuilder != null) {
+      // Para dropdowns com carregamento assíncrono
+      return FutureBuilder<List<Map<String, dynamic>>>(
+        future: field.dropdownFutureBuilder!(),
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return _buildDropdownLoading(field);
+          } else if (snapshot.hasError) {
+            return _buildDropdownError(field, snapshot.error.toString());
+          } else {
+            final options = snapshot.data ?? [];
+            _dropdownOptionsCache[field.fieldName] = options;
+            return _buildDropdownWidget(field, options, currentValue);
+          }
+        },
+      );
+    } else {
+      // Para dropdowns com opções estáticas
+      final options = field.dropdownOptions ?? [];
+      return _buildDropdownWidget(field, options, currentValue);
+    }
+  }
+
+  Widget _buildDropdownLoading(FieldConfig field) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 16),
+      child: InputDecorator(
+        decoration: InputDecoration(
+          labelText: field.label,
+          prefixIcon: Icon(field.icon),
+          border: const OutlineInputBorder(),
+        ),
+        child: const Row(
+          children: [
+            Text("Carregando opções...", style: TextStyle(color: Colors.grey)),
+            SizedBox(width: 10),
+            SizedBox(
+              width: 16,
+              height: 16,
+              child: CircularProgressIndicator(strokeWidth: 2),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDropdownError(FieldConfig field, String error) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 16),
+      child: InputDecorator(
+        decoration: InputDecoration(
+          labelText: field.label,
+          prefixIcon: Icon(field.icon),
+          border: const OutlineInputBorder(),
+          errorText: "Erro ao carregar opções",
+        ),
+        child: Text("Erro: $error", style: const TextStyle(color: Colors.red)),
+      ),
+    );
+  }
+
+  Widget _buildDropdownWidget(
+    FieldConfig field,
+    List<Map<String, dynamic>> options,
+    String currentValue,
+  ) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 16),
       child: InputDecorator(
@@ -250,7 +328,7 @@ class _GenericDetailFormScreenState<T> extends State<GenericDetailFormScreen<T>>
           child: DropdownButton<String>(
             value: currentValue.isNotEmpty ? currentValue : null,
             isExpanded: true,
-            items: _buildDropdownItems(field),
+            items: _buildDropdownItems(field, options),
             onChanged: (String? newValue) {
               setState(() {
                 _dropdownValues[field.fieldName] = newValue ?? '';
@@ -266,33 +344,42 @@ class _GenericDetailFormScreenState<T> extends State<GenericDetailFormScreen<T>>
                 }
               });
             },
+            hint: Text('Selecione ${field.label}'),
           ),
         ),
       ),
     );
   }
 
-  List<DropdownMenuItem<String>> _buildDropdownItems(FieldConfig field) {
+  List<DropdownMenuItem<String>> _buildDropdownItems(
+    FieldConfig field,
+    List<Map<String, dynamic>> options,
+  ) {
     final items = <DropdownMenuItem<String>>[];
 
-    // Adicionar item vazio
-    items.add(
-      DropdownMenuItem<String>(
-        value: '',
-        child: Text('Selecione ${field.label}'),
-      ),
-    );
-
-    // Adicionar opções estáticas
-    if (field.dropdownOptions != null) {
-      for (final option in field.dropdownOptions!) {
-        items.add(
-          DropdownMenuItem<String>(
-            value: option[field.dropdownValueField]?.toString(),
-            child: Text(option[field.dropdownDisplayField]?.toString() ?? ''),
+    // Adicionar item vazio apenas se não houver valor selecionado
+    if (_dropdownValues[field.fieldName] == null ||
+        _dropdownValues[field.fieldName]!.toString().isEmpty) {
+      items.add(
+        DropdownMenuItem<String>(
+          value: '',
+          child: Text(
+            'Selecione ${field.label}',
+            style: const TextStyle(color: Colors.grey),
           ),
-        );
-      }
+        ),
+      );
+    }
+
+    // Adicionar opções
+    for (final option in options) {
+      final optionValue = option[field.dropdownValueField]?.toString() ?? '';
+      final optionLabel =
+          option[field.dropdownDisplayField]?.toString() ?? optionValue;
+
+      items.add(
+        DropdownMenuItem<String>(value: optionValue, child: Text(optionLabel)),
+      );
     }
 
     return items;

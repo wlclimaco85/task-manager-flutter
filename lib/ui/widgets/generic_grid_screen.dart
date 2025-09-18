@@ -108,6 +108,7 @@ class GenericGridScreen<T> extends StatefulWidget {
   final Map<String, dynamic>? initialFilters;
   final String storageKey;
   final Widget Function(T item)? detailScreenBuilder;
+  final Map<String, dynamic>? extraParams;
 
   const GenericGridScreen({
     super.key,
@@ -139,6 +140,7 @@ class GenericGridScreen<T> extends StatefulWidget {
     this.initialFilters,
     this.storageKey = 'generic_grid_settings',
     this.detailScreenBuilder,
+    this.extraParams,
   });
 
   @override
@@ -236,12 +238,49 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
     _applyFilters();
   }
 
+  String buildUrl(String baseUrl, Map<String, dynamic> params) {
+    String url = baseUrl;
+
+    // Verifica se a URL já contém parâmetros
+    bool hasExistingParams = url.contains('?');
+
+    // Adiciona os parâmetros à URL
+    if (params.isNotEmpty) {
+      url += hasExistingParams ? '&' : '?';
+
+      // Converte os parâmetros para query string
+      url += params.entries
+          .map(
+            (entry) =>
+                '${Uri.encodeComponent(entry.key)}=${Uri.encodeComponent(entry.value.toString())}',
+          )
+          .join('&');
+    }
+
+    return url;
+  }
+
+  String construirUrl(String baseUrl, int pagina, int tamanhoPagina) {
+    String url = baseUrl;
+    bool jaTemParametros = url.contains('?');
+
+    url += jaTemParametros ? '&' : '?';
+    url += 'pagina=$pagina&tamanho=$tamanhoPagina';
+
+    return url;
+  }
+
   Future<void> _loadItems(int pagina, int tamanhoPagina) async {
     setState(() => isLoading = true);
 
     try {
-      String url =
-          '${widget.fetchEndpoint}?pagina=$pagina&tamanho=$tamanhoPagina';
+      String endpoint = construirUrl(
+        widget.fetchEndpoint,
+        pagina,
+        tamanhoPagina,
+      );
+
+      String url = endpoint;
 
       // Adicionar parâmetros de ordenação
       if (sortColumnIndex != null &&
@@ -411,8 +450,7 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
                         controllers[config.fieldName]!,
                       ),
                     );
-                  })
-                  .toList(),
+                  }),
               const SizedBox(height: 24),
               Row(
                 mainAxisAlignment: MainAxisAlignment.end,
@@ -594,7 +632,7 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
       }
     }
 
-    void _setNestedValue(
+    void setNestedValue(
       Map<String, dynamic> map,
       List<String> parts,
       dynamic value,
@@ -626,7 +664,7 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
 
       if (config.fieldName.contains('.')) {
         final parts = config.fieldName.split('.');
-        _setNestedValue(formData, parts, value);
+        setNestedValue(formData, parts, value);
       } else {
         formData[config.fieldName] = value;
       }
@@ -662,9 +700,17 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
       return false;
     }
 
+    // Adicionar campos extras ao formData
+    final Map<String, dynamic> enrichedFormData = Map.from(formData);
+
+    // Adicionar campos extras se estiverem disponíveis
+    if (widget.extraParams != null) {
+      enrichedFormData.addAll(widget.extraParams!);
+    }
+
     final response = await NetworkCaller().postRequest(
       widget.createEndpoint,
-      formData,
+      enrichedFormData,
     );
 
     if (response.isSuccess) {
@@ -719,7 +765,7 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
     final currentValue = controller.text.isNotEmpty ? controller.text : null;
 
     return DropdownButtonFormField<String>(
-      value: currentValue,
+      initialValue: currentValue,
       decoration: _buildInputDecoration(config),
       items: options.map<DropdownMenuItem<String>>((option) {
         final optionValue = option[config.dropdownValueField]?.toString();

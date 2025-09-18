@@ -33,6 +33,7 @@ import 'package:task_manager_flutter/ui/screens/regime_grid_screen.dart';
 import 'package:task_manager_flutter/ui/screens/role_grid_screen.dart';
 import 'package:task_manager_flutter/ui/screens/setor_grid_screen.dart';
 import 'package:task_manager_flutter/ui/screens/suplemento_grid_screen.dart';
+import 'package:task_manager_flutter/ui/screens/login_grid_screen.dart';
 
 class BottomNavBarScreen extends StatefulWidget {
   const BottomNavBarScreen({super.key});
@@ -75,6 +76,7 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
         chatId: '0',
       ),
       ComunicadoGridComponentesScreen(hasPermission: (permission) => true),
+      LoginGridScreen(hasPermission: (permission) => true),
       AplicativoGridScreen(hasPermission: (permission) => true),
       ChatListScreen(userName: AuthUtility.userInfo.data!.email ?? 'Usuário'),
       const ProductRegisterScreen(),
@@ -102,6 +104,7 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
   // Itens da sidebar
   final List<SidebarItem> _sidebarItems = [
     SidebarItem(icon: FontAwesomeIcons.newspaper, label: "Notícias"),
+    SidebarItem(icon: FontAwesomeIcons.person, label: "Logins"),
     SidebarItem(icon: FontAwesomeIcons.chartLine, label: "Cotação"),
     SidebarItem(icon: FontAwesomeIcons.cartShopping, label: "Comprar"),
     SidebarItem(icon: FontAwesomeIcons.appStore, label: "Aplicativo"),
