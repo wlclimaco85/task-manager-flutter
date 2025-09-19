@@ -162,8 +162,8 @@ class _GenericDetailFormScreenState<T> extends State<GenericDetailFormScreen<T>>
       return GenericGridScreen(
         title: tab.title,
         fetchEndpoint: "${tab.endpoint}?parcId=${_formData['id']}",
-        createEndpoint: "${tab.endpoint}",
-        updateEndpoint: "${tab.endpoint}",
+        createEndpoint: tab.endpoint,
+        updateEndpoint: tab.endpoint,
         deleteEndpoint: "${tab.endpoint}?parcId${_formData['id']}",
         fromJson: tab.fromJson ?? (json) => json,
         toJson: tab.toJson != null

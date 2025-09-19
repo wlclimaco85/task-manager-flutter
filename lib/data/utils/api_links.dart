@@ -236,4 +236,14 @@ class ApiLinks {
   static String get createLogin => '$_baseUrlNew/api/logins';
   static String updateLogin(String id) => '$_baseUrlNew/api/logins/$id';
   static String deleteLogin(String id) => '$_baseUrlNew/api/logins/$id';
+
+  static String get allContasPagar => '$_baseUrlNew/api/contas-pagar';
+  static String get createContaPagar => '$_baseUrlNew/api/contas-pagar';
+  static String updateContaPagar(String id) =>
+      '$_baseUrlNew/api/contas-pagar/$id';
+  static String deleteContaPagar(String id) =>
+      '$_baseUrlNew/api/contas-pagar/$id';
+
+  static String registrarBaixaContaPagar(String id) =>
+      '$_baseUrlNew/api/contas-pagar/$id/baixa';
 }
