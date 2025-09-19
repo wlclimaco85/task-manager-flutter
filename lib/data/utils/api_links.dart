@@ -237,13 +237,41 @@ class ApiLinks {
   static String updateLogin(String id) => '$_baseUrlNew/api/logins/$id';
   static String deleteLogin(String id) => '$_baseUrlNew/api/logins/$id';
 
+  // Contas a Pagar
   static String get allContasPagar => '$_baseUrlNew/api/contas-pagar';
   static String get createContaPagar => '$_baseUrlNew/api/contas-pagar';
   static String updateContaPagar(String id) =>
       '$_baseUrlNew/api/contas-pagar/$id';
   static String deleteContaPagar(String id) =>
       '$_baseUrlNew/api/contas-pagar/$id';
-
   static String registrarBaixaContaPagar(String id) =>
       '$_baseUrlNew/api/contas-pagar/$id/baixa';
+
+  // Contas a Receber
+  static String get allContasReceber => '$_baseUrlNew/api/contas-receber';
+  static String get createContaReceber => '$_baseUrlNew/api/contas-receber';
+  static String updateContaReceber(String id) =>
+      '$_baseUrlNew/api/contas-receber/$id';
+  static String deleteContaReceber(String id) =>
+      '$_baseUrlNew/api/contas-receber/$id';
+  static String registrarBaixaContaReceber(String id) =>
+      '$_baseUrlNew/api/contas-receber/$id/baixa';
+
+  // Chamados
+  static String get allChamados => '$_baseUrlNew/api/chamados';
+  static String get createChamado => '$_baseUrlNew/api/chamados';
+  static String updateChamado(String id) => '$_baseUrlNew/api/chamados/$id';
+  static String deleteChamado(String id) => '$_baseUrlNew/api/chamados/$id';
+  static String updateStatusChamado(String id) =>
+      '$_baseUrlNew/api/chamados/$id/status';
+
+  // Formas de Pagamento
+  static String get allFormasPagamento => '$_baseUrlNew/api/formas-pagamento';
+  static String get createFormaPagamento => '$_baseUrlNew/api/formas-pagamento';
+  static String updateFormaPagamento(String id) =>
+      '$_baseUrlNew/api/formas-pagamento/$id';
+  static String deleteFormaPagamento(String id) =>
+      '$_baseUrlNew/api/formas-pagamento/$id';
+  static String formasPagamentoByEmpresa(String empresaId) =>
+      '$_baseUrlNew/api/formas-pagamento/empresa/$empresaId';
 }

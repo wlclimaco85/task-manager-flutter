@@ -3,11 +3,31 @@
     "activeCommit": 0,
     "commits": [
         {
-            "activePatchIndex": 0,
+            "activePatchIndex": 5,
             "patches": [
                 {
                     "date": 1758202754736,
                     "content": "Index: \n===================================================================\n--- \n+++ \n"
+                },
+                {
+                    "date": 1758306447974,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -33,16 +33,20 @@\n       onItemTap: (login, context) {\r\n         // Navigate to detail screen if needed\r\n         // Navigator.push(context, MaterialPageRoute(builder: (_) => LoginDetailScreen(login)));\r\n       },\r\n-      customActions: (context) => [\r\n-        IconButton(\r\n-          icon: const Icon(Icons.settings),\r\n-          onPressed: () {\r\n-            // Open settings\r\n-          },\r\n+      customActions: () => [\r\n+        CustomAction<ContaPagar>(\r\n+          icon: Icons.payment,\r\n+          label: 'Baixar',\r\n+          onPressed: (context, object) => _showBaixaDialog(context, object),\r\n+          isVisible: (object) => object.status == StatusConta.ABERTA,\r\n         ),\r\n       ],\r\n+      exportConfig: const ExportConfig(\r\n+        enableCsvExport: true,\r\n+        filenamePrefix: 'contas_pagar',\r\n+      ),\r\n       enableSearch: true,\r\n       enableColumnReorder: true,\r\n     );\r\n   }\r\n"
+                },
+                {
+                    "date": 1758306453179,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -34,9 +34,9 @@\n         // Navigate to detail screen if needed\r\n         // Navigator.push(context, MaterialPageRoute(builder: (_) => LoginDetailScreen(login)));\r\n       },\r\n       customActions: () => [\r\n-        CustomAction<ContaPagar>(\r\n+        CustomAction<?>(\r\n           icon: Icons.payment,\r\n           label: 'Baixar',\r\n           onPressed: (context, object) => _showBaixaDialog(context, object),\r\n           isVisible: (object) => object.status == StatusConta.ABERTA,\r\n"
+                },
+                {
+                    "date": 1758306505010,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -34,19 +34,15 @@\n         // Navigate to detail screen if needed\r\n         // Navigator.push(context, MaterialPageRoute(builder: (_) => LoginDetailScreen(login)));\r\n       },\r\n       customActions: () => [\r\n-        CustomAction<?>(\r\n+        CustomAction<Login>(\r\n           icon: Icons.payment,\r\n           label: 'Baixar',\r\n           onPressed: (context, object) => _showBaixaDialog(context, object),\r\n-          isVisible: (object) => object.status == StatusConta.ABERTA,\r\n+\r\n         ),\r\n       ],\r\n-      exportConfig: const ExportConfig(\r\n-        enableCsvExport: true,\r\n-        filenamePrefix: 'contas_pagar',\r\n-      ),\r\n       enableSearch: true,\r\n       enableColumnReorder: true,\r\n     );\r\n   }\r\n"
+                },
+                {
+                    "date": 1758306518917,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -44,5 +44,13 @@\n       enableSearch: true,\r\n       enableColumnReorder: true,\r\n     );\r\n   }\r\n+  void _showBaixaDialog(BuildContext context, ContaPagar conta) {\r\n+    showDialog(\r\n+      context: context,\r\n+      builder: (BuildContext context) {\r\n+        return BaixaDialog(conta: conta);\r\n+      },\r\n+    );\r\n+  }\r\n }\r\n"
+                },
+                {
+                    "date": 1758306615183,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -45,13 +45,22 @@\n       enableColumnReorder: true,\r\n     );\r\n   }\r\n \r\n-  void _showBaixaDialog(BuildContext context, ContaPagar conta) {\r\n-    showDialog(\r\n-      context: context,\r\n-      builder: (BuildContext context) {\r\n-        return BaixaDialog(conta: conta);\r\n-      },\r\n-    );\r\n-  }\r\n+  void _showBaixaDialog(BuildContext context, Login conta) {\r\n+  showDialog(\r\n+    context: context,\r\n+    builder: (BuildContext context) {\r\n+      return AlertDialog(\r\n+        title: const Text('Bom Dia!'),\r\n+        content: const Text('Tenha um excelente dia! 😊'),\r\n+        actions: [\r\n+          TextButton(\r\n+            onPressed: () => Navigator.pop(context),\r\n+            child: const Text('Fechar'),\r\n+          ),\r\n+        ],\r\n+      );\r\n+    },\r\n+  );\r\n }\r\n+}\r\n"
                 }
             ],
             "date": 1758202754736,

@@ -1,0 +1,18 @@
+{
+    "sourceFile": "lib/ui/screens/forma_pagamento_grid_screen.dart",
+    "activeCommit": 0,
+    "commits": [
+        {
+            "activePatchIndex": 0,
+            "patches": [
+                {
+                    "date": 1758309329933,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n"
+                }
+            ],
+            "date": 1758309329933,
+            "name": "Commit-0",
+            "content": "import 'package:flutter/material.dart';\r\nimport 'package:task_manager_flutter/data/models/forma_pagamento_model.dart';\r\nimport 'package:task_manager_flutter/data/utils/api_links.dart';\r\nimport 'package:task_manager_flutter/ui/widgets/generic_grid_screen.dart';\r\n\r\nclass FormaPagamentoGridScreen extends StatelessWidget {\r\n  final SecurityCheck hasPermission;\r\n\r\n  const FormaPagamentoGridScreen({super.key, required this.hasPermission});\r\n\r\n  @override\r\n  Widget build(BuildContext context) {\r\n    return GenericGridScreen<FormaPagamento>(\r\n      title: \"Formas de Pagamento\",\r\n      fetchEndpoint: ApiLinks.allFormasPagamento,\r\n      createEndpoint: ApiLinks.createFormaPagamento,\r\n      updateEndpoint: ApiLinks.updateFormaPagamento(\":id\"),\r\n      deleteEndpoint: ApiLinks.deleteFormaPagamento(\":id\"),\r\n      fromJson: (json) => FormaPagamento.fromJson(json),\r\n      toJson: (obj) => obj.toJson(),\r\n      hasPermission: hasPermission,\r\n      fieldConfigs: FormaPagamento.fieldConfigs,\r\n      idFieldName: 'id',\r\n      dateFieldName: 'createdAt',\r\n      exportConfig: const ExportConfig(\r\n        enableCsvExport: true,\r\n        filenamePrefix: 'formas_pagamento',\r\n      ),\r\n      paginationConfig: const PaginationConfig(\r\n        defaultRowsPerPage: 10,\r\n        availableRowsPerPage: [10, 25, 50],\r\n      ),\r\n      enableSearch: true,\r\n      enableColumnReorder: true,\r\n    );\r\n  }\r\n}"
+        }
+    ]
+}

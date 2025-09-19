@@ -78,11 +78,26 @@ class PaginationConfig {
   });
 }
 
+// Configuração de ação personalizada
+class CustomAction<T> {
+  final IconData icon;
+  final String label;
+  final void Function(BuildContext context, T item) onPressed;
+  final bool Function(T item)? isVisible;
+
+  const CustomAction({
+    required this.icon,
+    required this.label,
+    required this.onPressed,
+    this.isVisible,
+  });
+}
+
 typedef FromJson<T> = T Function(Map<String, dynamic> json);
 typedef ToJson<T> = Map<String, dynamic> Function(T item);
 typedef SecurityCheck = bool Function(String permission);
 typedef OnItemTap<T> = void Function(T item, BuildContext context);
-typedef CustomActionBuilder = List<Widget> Function(BuildContext context);
+typedef CustomActionBuilder<T> = List<CustomAction<T>> Function();
 
 class GenericGridScreen<T> extends StatefulWidget {
   final String title;
@@ -100,7 +115,7 @@ class GenericGridScreen<T> extends StatefulWidget {
   final ExportConfig exportConfig;
   final PaginationConfig paginationConfig;
   final OnItemTap<T>? onItemTap;
-  final CustomActionBuilder? customActions;
+  final CustomActionBuilder<T>? customActions;
   final bool enableSearch;
   final bool enableColumnReorder;
   final bool enableColumnResize;
@@ -170,6 +185,9 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
   // Para controle de colunas visíveis
   final Map<String, bool> _columnVisibility = {};
 
+  // Para ações personalizadas
+  List<CustomAction<T>> _customActions = [];
+
   @override
   void initState() {
     super.initState();
@@ -189,6 +207,11 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         _applyInitialFilters();
       });
+    }
+
+    // Inicializar ações personalizadas
+    if (widget.customActions != null) {
+      _customActions = widget.customActions!();
     }
   }
 
@@ -1154,6 +1177,16 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
                   _getNestedValue(itemMap, widget.idFieldName).toString(),
                 ),
               ),
+            // Adicionar ações personalizadas
+            ..._customActions
+                .where((action) => action.isVisible?.call(item) ?? true)
+                .map(
+                  (action) => IconButton(
+                    icon: Icon(action.icon, size: 20),
+                    onPressed: () => action.onPressed(context, item),
+                    tooltip: action.label,
+                  ),
+                ),
           ],
         ),
       ),
@@ -1226,9 +1259,6 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
                   onPressed: _isExporting ? null : _exportToCsv,
                   tooltip: "Exportar CSV",
                 ),
-              ...widget.customActions != null
-                  ? widget.customActions!(context)
-                  : [],
             ],
           ),
           body: isLoading && items.isEmpty

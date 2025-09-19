@@ -1,0 +1,18 @@
+{
+    "sourceFile": "lib/data/models/forma_pagamento_model.dart",
+    "activeCommit": 0,
+    "commits": [
+        {
+            "activePatchIndex": 0,
+            "patches": [
+                {
+                    "date": 1758309109434,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n"
+                }
+            ],
+            "date": 1758309109434,
+            "name": "Commit-0",
+            "content": "import 'package:flutter/material.dart';\r\nimport 'package:task_manager_flutter/ui/widgets/generic_grid_screen.dart';\r\n\r\nclass FormaPagamento {\r\n  int? id;\r\n  String nome;\r\n  String descricao;\r\n  bool ativo;\r\n  int empresaId;\r\n  DateTime createdAt;\r\n\r\n  FormaPagamento({\r\n    this.id,\r\n    required this.nome,\r\n    required this.descricao,\r\n    required this.ativo,\r\n    required this.empresaId,\r\n    required this.createdAt,\r\n  });\r\n\r\n  factory FormaPagamento.fromJson(Map<String, dynamic> json) {\r\n    return FormaPagamento(\r\n      id: json['id'],\r\n      nome: json['nome'],\r\n      descricao: json['descricao'],\r\n      ativo: json['ativo'],\r\n      empresaId: json['empresaId'],\r\n      createdAt: DateTime.parse(json['createdAt']),\r\n    );\r\n  }\r\n\r\n  Map<String, dynamic> toJson() {\r\n    return {\r\n      'id': id,\r\n      'nome': nome,\r\n      'descricao': descricao,\r\n      'ativo': ativo,\r\n      'empresaId': empresaId,\r\n      'createdAt': createdAt.toIso8601String(),\r\n    };\r\n  }\r\n\r\n  static List<FieldConfig> fieldConfigs = [\r\n    FieldConfig(\r\n      label: \"Nome\",\r\n      fieldName: \"nome\",\r\n      icon: Icons.payment,\r\n      isInForm: true,\r\n      isFilterable: true,\r\n      isVisibleByDefault: true,\r\n      isFixed: false,\r\n    ),\r\n    FieldConfig(\r\n      label: \"Descrição\",\r\n      fieldName: \"descricao\",\r\n      icon: Icons.description,\r\n      isInForm: true,\r\n      isVisibleByDefault: true,\r\n      isFixed: false,\r\n    ),\r\n    FieldConfig(\r\n      label: \"Ativo\",\r\n      fieldName: \"ativo\",\r\n      icon: Icons.check_circle,\r\n      isFilterable: true,\r\n      isVisibleByDefault: true,\r\n      isFixed: false,\r\n    ),\r\n    FieldConfig(\r\n      label: \"Data Criação\",\r\n      fieldName: \"createdAt\",\r\n      icon: Icons.calendar_today,\r\n      isVisibleByDefault: false,\r\n      isFixed: false,\r\n    ),\r\n  ];\r\n}"
+        }
+    ]
+}
