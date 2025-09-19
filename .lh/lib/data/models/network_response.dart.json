@@ -3,7 +3,7 @@
     "activeCommit": 0,
     "commits": [
         {
-            "activePatchIndex": 2,
+            "activePatchIndex": 3,
             "patches": [
                 {
                     "date": 1738269456282,
@@ -16,6 +16,10 @@
                 {
                     "date": 1738269805175,
                     "content": "Index: \n===================================================================\n--- \n+++ \n@@ -3,13 +3,11 @@\n class NetworkResponse {\r\n   final int statusCode;\r\n   final bool isSuccess;\r\n   final Map<String, dynamic>? body;\r\n-  final Uint8List? bodyBytes;\r\n \r\n   NetworkResponse(\r\n     this.isSuccess,\r\n     this.statusCode,\r\n     this.body,\r\n-    this.bodyBytes,\r\n   );\r\n }\r\n"
+                },
+                {
+                    "date": 1758316531221,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -1,12 +1,14 @@\n \r\n class NetworkResponse {\r\n-  final int statusCode;\r\n-  final bool isSuccess;\r\n+  final int? statusCode;\r\n+  final bool? isSuccess;\r\n   final Map<String, dynamic>? body;\r\n+  final String? errorMessage;\r\n \r\n   NetworkResponse(\r\n     this.isSuccess,\r\n     this.statusCode,\r\n     this.body,\r\n+    this.errorMessage,\r\n   );\r\n }\r\n"
                 }
             ],
             "date": 1738269456282,

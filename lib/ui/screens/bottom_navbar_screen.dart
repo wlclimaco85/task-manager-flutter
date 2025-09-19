@@ -34,6 +34,13 @@ import 'package:task_manager_flutter/ui/screens/role_grid_screen.dart';
 import 'package:task_manager_flutter/ui/screens/setor_grid_screen.dart';
 import 'package:task_manager_flutter/ui/screens/suplemento_grid_screen.dart';
 import 'package:task_manager_flutter/ui/screens/login_grid_screen.dart';
+import 'package:task_manager_flutter/ui/screens/conta_pagar_grid_screen.dart';
+import 'package:task_manager_flutter/ui/screens/conta_receber_grid_screen.dart';
+import 'package:task_manager_flutter/ui/screens/chamado_grid_screen.dart';
+import 'package:task_manager_flutter/ui/screens/forma_pagamento_grid_screen.dart';
+import 'package:task_manager_flutter/ui/screens/diretorio_grid_screen.dart';
+
+import 'package:task_manager_flutter/ui/screens/file_upload_screen.dart';
 
 class BottomNavBarScreen extends StatefulWidget {
   const BottomNavBarScreen({super.key});
@@ -76,11 +83,13 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
         chatId: '0',
       ),
       ComunicadoGridComponentesScreen(hasPermission: (permission) => true),
-      LoginGridScreen(hasPermission: (permission) => true),
+
       AplicativoGridScreen(hasPermission: (permission) => true),
+      LoginGridScreen(hasPermission: (permission) => true),
       ChatListScreen(userName: AuthUtility.userInfo.data!.email ?? 'Usuário'),
+
       const ProductRegisterScreen(),
-      isLoggedIn ? const ProductRegisterScreen() : const LoginPopup(),
+      const ProductRegisterScreen(),
       RegimeGridScreen(hasPermission: (perm) => true),
       AlimentoGridScreen(hasPermission: (perm) => true),
       DietaGridScreen(hasPermission: (perm) => true),
@@ -98,6 +107,12 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
       RoleGridScreen(hasPermission: (perm) => true),
       SetorGridScreen(hasPermission: (perm) => true),
       SuplementoGridScreen(hasPermission: (perm) => true),
+      ContaPagarGridScreen(hasPermission: (perm) => true),
+      ContaReceberGridScreen(hasPermission: (perm) => true),
+      ChamadoGridScreen(hasPermission: (perm) => true),
+      FormaPagamentoGridScreen(hasPermission: (perm) => true),
+      DiretorioGridScreen(hasPermission: (perm) => true),
+      FileUploadScreen(hasPermission: (perm) => true),
     ];
   }
 
@@ -128,6 +143,15 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
     SidebarItem(icon: FontAwesomeIcons.userShield, label: "Roles"),
     SidebarItem(icon: FontAwesomeIcons.sitemap, label: "Setores"),
     SidebarItem(icon: FontAwesomeIcons.capsules, label: "Suplementos"),
+    SidebarItem(icon: FontAwesomeIcons.moneyBill, label: "Contas a Pagar"),
+    SidebarItem(icon: FontAwesomeIcons.moneyCheck, label: "Contas a Receber"),
+    SidebarItem(icon: FontAwesomeIcons.ticketAlt, label: "Chamados"),
+    SidebarItem(
+      icon: FontAwesomeIcons.creditCard,
+      label: "Formas de Pagamento",
+    ),
+    SidebarItem(icon: FontAwesomeIcons.dribbble, label: "Diretoria"),
+    SidebarItem(icon: FontAwesomeIcons.file, label: "Arquivos"),
   ];
 
   @override

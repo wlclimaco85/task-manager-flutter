@@ -266,12 +266,29 @@ class ApiLinks {
       '$_baseUrlNew/api/chamados/$id/status';
 
   // Formas de Pagamento
-  static String get allFormasPagamento => '$_baseUrlNew/api/formas-pagamento';
-  static String get createFormaPagamento => '$_baseUrlNew/api/formas-pagamento';
+  static String get allFormasPagamento => '$_baseUrlNew/api/forma-pagamento';
+  static String get createFormaPagamento => '$_baseUrlNew/api/forma-pagamento';
   static String updateFormaPagamento(String id) =>
-      '$_baseUrlNew/api/formas-pagamento/$id';
+      '$_baseUrlNew/api/forma-pagamento/$id';
   static String deleteFormaPagamento(String id) =>
-      '$_baseUrlNew/api/formas-pagamento/$id';
+      '$_baseUrlNew/api/forma-pagamento/$id';
   static String formasPagamentoByEmpresa(String empresaId) =>
-      '$_baseUrlNew/api/formas-pagamento/empresa/$empresaId';
+      '$_baseUrlNew/api/forma-pagamento/empresa/$empresaId';
+
+  // Diretórios
+  static String get allDiretorios => '$_baseUrlNew/api/diretorios';
+  static String get createDiretorio => '$_baseUrlNew/api/diretorios';
+  static String updateDiretorio(String id) => '$_baseUrlNew/api/diretorios/$id';
+  static String deleteDiretorio(String id) => '$_baseUrlNew/api/diretorios/$id';
+
+  // Arquivos
+  static String get allArquivos => '$_baseUrlNew/api/arquivos';
+  static String get createArquivo => '$_baseUrlNew/api/arquivos';
+  static String updateArquivo(String id) => '$_baseUrlNew/api/arquivos/$id';
+  static String deleteArquivo(String id) => '$_baseUrlNew/api/arquivos/$id';
+  static String get uploadArquivo => '$_baseUrlNew/api/arquivos/upload';
+  static String downloadArquivo(String id) =>
+      '$_baseUrlNew/api/arquivos/download/$id';
+  static String arquivosPorDiretorio(String diretorioId) =>
+      '$_baseUrlNew/api/arquivos/diretorio/$diretorioId';
 }

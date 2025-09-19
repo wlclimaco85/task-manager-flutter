@@ -1,0 +1,26 @@
+{
+    "sourceFile": "lib/data/services/network_caller_dio.dart",
+    "activeCommit": 0,
+    "commits": [
+        {
+            "activePatchIndex": 2,
+            "patches": [
+                {
+                    "date": 1758316956787,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n"
+                },
+                {
+                    "date": 1758316979013,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -1,6 +1,7 @@\n // network_caller.dart\r\n import 'package:dio/dio.dart';\r\n+import 'package:task_manager_flutter/data/models/network_response.dart';\r\n \r\n class NetworkCaller {\r\n   final Dio _dio = Dio();\r\n \r\n"
+                },
+                {
+                    "date": 1758317283534,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -1,12 +1,12 @@\n // network_caller.dart\r\n import 'package:dio/dio.dart';\r\n-import 'package:task_manager_flutter/data/models/network_response.dart';\r\n+import 'package:task_manager_flutter/data/models/network_response_dio.dart';\r\n \r\n class NetworkCaller {\r\n   final Dio _dio = Dio();\r\n \r\n-  Future<NetworkResponse> multipartRequestWithDio(\r\n+  Future<NetworkResponseDio> multipartRequestWithDio(\r\n     String url,\r\n     String filePath, {\r\n     Map<String, dynamic>? data,\r\n     Map<String, String>? headers,\r\n@@ -25,14 +25,14 @@\n         data: formData,\r\n         options: Options(headers: headers),\r\n       );\r\n \r\n-      return NetworkResponse(\r\n+      return NetworkResponseDio(\r\n         statusCode: response.statusCode,\r\n         body: response.data,\r\n       );\r\n     } on DioException catch (e) {\r\n-      return NetworkResponse(\r\n+      return NetworkResponseDio(\r\n         statusCode: e.response?.statusCode,\r\n         errorMessage: e.message,\r\n       );\r\n     }\r\n"
+                }
+            ],
+            "date": 1758316956787,
+            "name": "Commit-0",
+            "content": "// network_caller.dart\r\nimport 'package:dio/dio.dart';\r\n\r\nclass NetworkCaller {\r\n  final Dio _dio = Dio();\r\n\r\n  Future<NetworkResponse> multipartRequestWithDio(\r\n    String url,\r\n    String filePath, {\r\n    Map<String, dynamic>? data,\r\n    Map<String, String>? headers,\r\n  }) async {\r\n    try {\r\n      FormData formData = FormData.fromMap({\r\n        'file': await MultipartFile.fromFile(\r\n          filePath,\r\n          filename: filePath.split('/').last,\r\n        ),\r\n        ...data ?? {},\r\n      });\r\n\r\n      Response response = await _dio.post(\r\n        url,\r\n        data: formData,\r\n        options: Options(headers: headers),\r\n      );\r\n\r\n      return NetworkResponse(\r\n        statusCode: response.statusCode,\r\n        body: response.data,\r\n      );\r\n    } on DioException catch (e) {\r\n      return NetworkResponse(\r\n        statusCode: e.response?.statusCode,\r\n        errorMessage: e.message,\r\n      );\r\n    }\r\n  }\r\n}"
+        }
+    ]
+}

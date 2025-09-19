@@ -1,0 +1,30 @@
+{
+    "sourceFile": "lib/ui/screens/file_attachment_grid_screen.dart",
+    "activeCommit": 0,
+    "commits": [
+        {
+            "activePatchIndex": 3,
+            "patches": [
+                {
+                    "date": 1758315780949,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n"
+                },
+                {
+                    "date": 1758316011707,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -7,11 +7,14 @@\n import 'package:task_manager_flutter/ui/widgets/negociacao_core.dart';\r\n import 'package:task_manager_flutter/ui/widgets/envio_contrato_core.dart';\r\n \r\n class FileAttachmentGridScreen extends StatelessWidget {\r\n-  final SecurityCheck hasPermission;\r\n+ final SecurityCheck hasPermission;\r\n \r\n-  const FileAttachmentGridScreen({super.key, required this.hasPermission});\r\n+  const FileAttachmentGridScreen({\r\n+    super.key,\r\n+    required this.hasPermission,\r\n+  });\r\n \r\n   @override\r\n   Widget build(BuildContext context) {\r\n     return GenericGridScreen<FileAttachment>(\r\n"
+                },
+                {
+                    "date": 1758316028333,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -5,8 +5,9 @@\n import 'package:intl/intl.dart';\r\n import 'package:task_manager_flutter/data/models/auth_utility.dart';\r\n import 'package:task_manager_flutter/ui/widgets/negociacao_core.dart';\r\n import 'package:task_manager_flutter/ui/widgets/envio_contrato_core.dart';\r\n+import 'package:task_manager_flutter/ui/widgets/generic_grid_screen.dart';\r\n \r\n class FileAttachmentGridScreen extends StatelessWidget {\r\n   final SecurityCheck hasPermission;\r\n \r\n"
+                },
+                {
+                    "date": 1758316035315,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -6,8 +6,9 @@\n import 'package:task_manager_flutter/data/models/auth_utility.dart';\r\n import 'package:task_manager_flutter/ui/widgets/negociacao_core.dart';\r\n import 'package:task_manager_flutter/ui/widgets/envio_contrato_core.dart';\r\n import 'package:task_manager_flutter/ui/widgets/generic_grid_screen.dart';\r\n+import 'package:task_manager_flutter/data/models/file_attachment_model.dart';\r\n \r\n class FileAttachmentGridScreen extends StatelessWidget {\r\n   final SecurityCheck hasPermission;\r\n \r\n"
+                }
+            ],
+            "date": 1758315780949,
+            "name": "Commit-0",
+            "content": "import 'package:flutter/material.dart';\r\nimport 'package:flutter_html/flutter_html.dart';\r\nimport 'package:task_manager_flutter/data/services/checkout_caller.dart';\r\nimport 'package:html_unescape/html_unescape.dart';\r\nimport 'package:intl/intl.dart';\r\nimport 'package:task_manager_flutter/data/models/auth_utility.dart';\r\nimport 'package:task_manager_flutter/ui/widgets/negociacao_core.dart';\r\nimport 'package:task_manager_flutter/ui/widgets/envio_contrato_core.dart';\r\n\r\nclass FileAttachmentGridScreen extends StatelessWidget {\r\n  final SecurityCheck hasPermission;\r\n\r\n  const FileAttachmentGridScreen({super.key, required this.hasPermission});\r\n\r\n  @override\r\n  Widget build(BuildContext context) {\r\n    return GenericGridScreen<FileAttachment>(\r\n      title: \"Arquivos\",\r\n      fetchEndpoint: ApiLinks.allArquivos,\r\n      createEndpoint: ApiLinks.createArquivo,\r\n      updateEndpoint: ApiLinks.updateArquivo(\":id\"),\r\n      deleteEndpoint: ApiLinks.deleteArquivo(\":id\"),\r\n      fromJson: (json) => FileAttachment.fromJson(json),\r\n      toJson: (obj) => obj.toJson(),\r\n      hasPermission: hasPermission,\r\n      fieldConfigs: FileAttachment.fieldConfigs,\r\n      idFieldName: 'id',\r\n      dateFieldName: 'uploadDate',\r\n      customActions: [\r\n        CustomAction(\r\n          icon: Icons.download,\r\n          label: 'Download',\r\n          onPressed: (context, object) => _downloadFile(context, object),\r\n          isVisible: (object) => true,\r\n        ),\r\n      ],\r\n      exportConfig: const ExportConfig(\r\n        enableCsvExport: true,\r\n        filenamePrefix: 'arquivos',\r\n      ),\r\n      paginationConfig: const PaginationConfig(\r\n        defaultRowsPerPage: 10,\r\n        availableRowsPerPage: [10, 25, 50],\r\n      ),\r\n      enableSearch: true,\r\n      enableColumnReorder: true,\r\n    );\r\n  }\r\n\r\n  void _downloadFile(BuildContext context, FileAttachment arquivo) async {\r\n    try {\r\n      final NetworkResponse response = await NetworkCaller().getRequest(\r\n        ApiLinks.downloadArquivo(arquivo.id.toString()),\r\n      );\r\n      \r\n      if (response.isSuccess && response.body != null) {\r\n        // Implementar lógica de download do arquivo\r\n        ScaffoldMessenger.of(context).showSnackBar(\r\n          SnackBar(content: Text('Download iniciado: ${arquivo.fileName}')),\r\n        );\r\n      } else {\r\n        ScaffoldMessenger.of(context).showSnackBar(\r\n          SnackBar(content: Text('Erro ao fazer download: ${response.errorMessage}')),\r\n        );\r\n      }\r\n    } catch (e) {\r\n      ScaffoldMessenger.of(context).showSnackBar(\r\n        SnackBar(content: Text('Erro: $e')),\r\n      );\r\n    }\r\n  }\r\n}"
+        }
+    ]
+}

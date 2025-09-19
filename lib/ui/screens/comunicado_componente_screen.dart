@@ -38,17 +38,34 @@ class ComunicadoGridComponentesScreen extends StatelessWidget {
         // Navegar para tela de detalhes
         // Navigator.push(context, MaterialPageRoute(builder: (_) => ComunicadoDetailScreen(comunicado)));
       },
-      customActions: (context) => [
-        IconButton(
-          icon: const Icon(Icons.settings),
-          onPressed: () {
-            // Abrir configurações
-          },
+      customActions: () => [
+        CustomAction<Comunicado>(
+          icon: Icons.payment,
+          label: 'Baixar',
+          onPressed: (context, object) => _showBaixaDialog(context, object),
         ),
       ],
       enableSearch: true,
       enableColumnReorder: true,
       initialFilters: {'categoria': 'Urgente'}, // Filtro inicial
+    );
+  }
+
+  void _showBaixaDialog(BuildContext context, Comunicado conta) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Bom Dia!'),
+          content: const Text('Tenha um excelente dia! 😊'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Fechar'),
+            ),
+          ],
+        );
+      },
     );
   }
 }

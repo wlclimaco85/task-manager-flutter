@@ -1,0 +1,22 @@
+{
+    "sourceFile": "lib/ui/screens/diretorio_grid_screen.dart",
+    "activeCommit": 0,
+    "commits": [
+        {
+            "activePatchIndex": 1,
+            "patches": [
+                {
+                    "date": 1758315741874,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n"
+                },
+                {
+                    "date": 1758315960957,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -5,8 +5,9 @@\n // diretorio_grid_screen.dart\r\n import 'package:flutter/material.dart';\r\n import 'package:task_manager_flutter/data/utils/api_links.dart';\r\n import 'package:task_manager_flutter/ui/widgets/generic_grid_screen.dart';\r\n+import 'package:task_manager_flutter/data/models/diretorio_model.dart';\r\n \r\n class DiretorioGridScreen extends StatelessWidget {\r\n   final SecurityCheck hasPermission;\r\n \r\n"
+                }
+            ],
+            "date": 1758315741874,
+            "name": "Commit-0",
+            "content": "import 'package:flutter/material.dart';\r\nimport 'package:task_manager_flutter/data/models/chamado_model.dart';\r\nimport 'package:task_manager_flutter/data/utils/api_links.dart';\r\nimport 'package:task_manager_flutter/ui/widgets/generic_grid_screen.dart';\r\n// diretorio_grid_screen.dart\r\nimport 'package:flutter/material.dart';\r\nimport 'package:task_manager_flutter/data/utils/api_links.dart';\r\nimport 'package:task_manager_flutter/ui/widgets/generic_grid_screen.dart';\r\n\r\nclass DiretorioGridScreen extends StatelessWidget {\r\n  final SecurityCheck hasPermission;\r\n\r\n  const DiretorioGridScreen({super.key, required this.hasPermission});\r\n\r\n  @override\r\n  Widget build(BuildContext context) {\r\n    return GenericGridScreen<Diretorio>(\r\n      title: \"Diretórios\",\r\n      fetchEndpoint: ApiLinks.allDiretorios,\r\n      createEndpoint: ApiLinks.createDiretorio,\r\n      updateEndpoint: ApiLinks.updateDiretorio(\":id\"),\r\n      deleteEndpoint: ApiLinks.deleteDiretorio(\":id\"),\r\n      fromJson: (json) => Diretorio.fromJson(json),\r\n      toJson: (obj) => obj.toJson(),\r\n      hasPermission: hasPermission,\r\n      fieldConfigs: Diretorio.fieldConfigs,\r\n      idFieldName: 'id',\r\n      dateFieldName: 'createdAt',\r\n      exportConfig: const ExportConfig(\r\n        enableCsvExport: true,\r\n        filenamePrefix: 'diretorios',\r\n      ),\r\n      paginationConfig: const PaginationConfig(\r\n        defaultRowsPerPage: 10,\r\n        availableRowsPerPage: [10, 25, 50],\r\n      ),\r\n      enableSearch: true,\r\n      enableColumnReorder: true,\r\n    );\r\n  }\r\n}\r\n"
+        }
+    ]
+}
