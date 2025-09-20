@@ -15,6 +15,9 @@ class DocumentoService {
       '$baseUrl/data/${data.toIso8601String().substring(0, 10)}',
     );
 
+    print(
+      'Response Status: $baseUrl/data/${data.toIso8601String().substring(0, 10)}',
+    );
     if (response.statusCode == 200) {
       models = DocumentoModel.fromJson(response.body!);
       model.addAll(models.data ?? []);
@@ -142,7 +145,7 @@ class DocumentoService {
     if (response.statusCode == 200) {
       return response.body?['data'] as bool? ?? false;
     } else {
-      throw Exception('Falha ao verificar status de leitura');
+      return false;
     }
   }
 }

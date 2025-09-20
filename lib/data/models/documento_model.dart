@@ -65,9 +65,7 @@ class DocumentoModel {
       data.add(List<Map<String, dynamic>>.from(list.map((item) => Map<String, dynamic>.from(item))));
     } */
       //  List<Data> dataList = Data.fromJsonList2(json['data']['noticiasDTO']);
-      List<Documento> dataList = Documento.fromJsonList(
-        json['data']['cotacoesDTO'],
-      );
+      List<Documento> dataList = Documento.fromJsonList(json['data']['dados']);
       data =
           dataList; //json['data'] != null ? Data.fromJson(json['data']) : null;
     } else {
