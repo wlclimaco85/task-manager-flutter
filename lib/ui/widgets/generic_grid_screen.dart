@@ -873,25 +873,66 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
     TextEditingController controller,
     List<Map<String, dynamic>> options,
   ) {
-    final currentValue = controller.text.isNotEmpty ? controller.text : null;
+    // Determina se o campo é do tipo ID (inteiro)
+    bool expectInteger =
+        config.dropdownValueField == 'id' ||
+        config.fieldName.toLowerCase().contains('id');
 
-    return DropdownButtonFormField<String>(
-      initialValue: currentValue,
+    // Converte o valor do controlador para o tipo apropriado
+    dynamic currentValue;
+    if (controller.text.isNotEmpty) {
+      if (expectInteger) {
+        currentValue = int.tryParse(controller.text);
+      } else {
+        currentValue = controller.text;
+      }
+    } else {
+      currentValue = null; // Valor inicial nulo
+    }
+
+    // Remove duplicatas para evitar erros de assertion
+    final uniqueOptions = options
+        .fold<Map<dynamic, Map<String, dynamic>>>({}, (map, item) {
+          dynamic key = item[config.dropdownValueField];
+          if (key != null && !map.containsKey(key)) {
+            map[key] = item;
+          }
+          return map;
+        })
+        .values
+        .toList();
+
+    // Verifica se o valor atual existe na lista de opções
+    // Se não existir, define como nulo para evitar erro de assertion
+    bool valueExists = uniqueOptions.any(
+      (option) => option[config.dropdownValueField] == currentValue,
+    );
+    if (!valueExists) {
+      currentValue = null;
+    }
+
+    return DropdownButtonFormField<dynamic>(
+      value: currentValue,
       decoration: _buildInputDecoration(config),
-      items: options.map<DropdownMenuItem<String>>((option) {
-        final optionValue = option[config.dropdownValueField]?.toString();
+      items: uniqueOptions.map<DropdownMenuItem<dynamic>>((option) {
+        final optionValue = option[config.dropdownValueField];
         final optionLabel =
             option[config.dropdownDisplayField]?.toString() ?? '';
 
-        return DropdownMenuItem<String>(
+        return DropdownMenuItem<dynamic>(
           value: optionValue,
           child: Text(optionLabel),
         );
       }).toList(),
       onChanged: (value) {
-        controller.text = value ?? '';
+        controller.text = value?.toString() ?? '';
       },
-      validator: config.validator,
+      validator: (value) {
+        if (config.validator != null) {
+          return config.validator!(value?.toString());
+        }
+        return null;
+      },
     );
   }
 

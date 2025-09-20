@@ -3,22 +3,19 @@ import 'package:flutter/material.dart';
 import 'package:task_manager_flutter/data/utils/api_links.dart';
 import 'package:task_manager_flutter/data/models/network_response.dart';
 import 'package:task_manager_flutter/data/services/network_caller.dart';
+import 'empresa_model.dart';
 
 class Diretorio {
   int? id;
   String nome;
   String descricao;
-  int empresaId;
-  DateTime createdAt;
-  DateTime updatedAt;
+  Empresa? empresa;
 
   Diretorio({
     this.id,
     required this.nome,
     required this.descricao,
-    required this.empresaId,
-    required this.createdAt,
-    required this.updatedAt,
+    this.empresa,
   });
 
   factory Diretorio.fromJson(Map<String, dynamic> json) {
@@ -26,35 +23,28 @@ class Diretorio {
       id: json['id'],
       nome: json['nome'],
       descricao: json['descricao'],
-      empresaId: json['empresaId'],
-      createdAt: DateTime.parse(json['createdAt']),
-      updatedAt: DateTime.parse(json['updatedAt']),
+      empresa: json['empresa'] != null
+          ? Empresa.fromJson(json['empresa'])
+          : null,
     );
   }
 
   Map<String, dynamic> toJson() {
-    return {
-      'id': id,
-      'nome': nome,
-      'descricao': descricao,
-      'empresaId': empresaId,
-      'createdAt': createdAt.toIso8601String(),
-      'updatedAt': updatedAt.toIso8601String(),
-    };
+    return {'id': id, 'nome': nome, 'descricao': descricao, 'empresa': empresa};
   }
 
   static Future<List<Map<String, dynamic>>> loadCategorias() async {
     final NetworkResponse response = await NetworkCaller().getRequest(
-      ApiLinks.getCategorias,
+      ApiLinks.allEmpresas,
     );
 
     if (response.isSuccess && response.body != null) {
-      final List<dynamic> data = response.body!['data']['account'] ?? [];
+      final List<dynamic> data = response.body!['data']['dados'] ?? [];
       return data
           .map(
             (item) => {
               'value': item['id'].toString(),
-              'label': item['descricao'],
+              'label': item['nome'].toString(),
             },
           )
           .toList();
@@ -82,7 +72,7 @@ class Diretorio {
     ),
     FieldConfig(
       label: "Empresa",
-      fieldName: "empresaId",
+      fieldName: "empresa",
       displayFieldName: "empresa.nome",
       icon: Icons.business,
       isInForm: true,

@@ -1,0 +1,26 @@
+{
+    "sourceFile": "lib/data/models/diretorio_model.dart",
+    "activeCommit": 0,
+    "commits": [
+        {
+            "activePatchIndex": 2,
+            "patches": [
+                {
+                    "date": 1758378962167,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n"
+                },
+                {
+                    "date": 1758378969608,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -2,8 +2,9 @@\n import 'package:flutter/material.dart';\r\n import 'package:task_manager_flutter/data/utils/api_links.dart';\r\n import 'package:task_manager_flutter/data/models/network_response.dart';\r\n import 'package:task_manager_flutter/data/services/network_caller.dart';\r\n+import 'empresa_model.dart';\r\n \r\n class Diretorio {\r\n   int? id;\r\n   String nome;\r\n"
+                },
+                {
+                    "date": 1758379009413,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -8,23 +8,23 @@\n class Diretorio {\r\n   int? id;\r\n   String nome;\r\n   String descricao;\r\n-  Empresa? empresaId;\r\n+  Empresa? empresa;\r\n \r\n   Diretorio({\r\n     this.id,\r\n     required this.nome,\r\n     required this.descricao,\r\n-    this.empresaId,\r\n+    this.empresa,\r\n   });\r\n \r\n   factory Diretorio.fromJson(Map<String, dynamic> json) {\r\n     return Diretorio(\r\n       id: json['id'],\r\n       nome: json['nome'],\r\n       descricao: json['descricao'],\r\n-      empresaId: json['empresaId'],\r\n+      empresa: json['empresaId'],\r\n     );\r\n   }\r\n \r\n   Map<String, dynamic> toJson() {\r\n"
+                }
+            ],
+            "date": 1758378962167,
+            "name": "Commit-0",
+            "content": "import 'package:task_manager_flutter/ui/widgets/generic_grid_screen.dart';\r\nimport 'package:flutter/material.dart';\r\nimport 'package:task_manager_flutter/data/utils/api_links.dart';\r\nimport 'package:task_manager_flutter/data/models/network_response.dart';\r\nimport 'package:task_manager_flutter/data/services/network_caller.dart';  \r\n\r\n\r\nclass Diretorio {\r\n  int? id;\r\n  String nome;\r\n  String descricao;\r\n  Empresa? empresaId;\r\n\r\n\r\n  Diretorio({\r\n    this.id,\r\n    required this.nome,\r\n    required this.descricao,\r\n    this.empresaId,\r\n  });\r\n\r\n  factory Diretorio.fromJson(Map<String, dynamic> json) {\r\n    return Diretorio(\r\n      id: json['id'],\r\n      nome: json['nome'],\r\n      descricao: json['descricao'],\r\n      empresaId: json['empresaId'],\r\n    );\r\n  }\r\n\r\n  Map<String, dynamic> toJson() {\r\n    return {\r\n      'id': id,\r\n      'nome': nome,\r\n      'descricao': descricao,\r\n      'empresaId': empresaId\r\n    };\r\n  }\r\n\r\n  static Future<List<Map<String, dynamic>>> loadCategorias() async {\r\n    final NetworkResponse response = await NetworkCaller().getRequest(\r\n      ApiLinks.getCategorias,\r\n    );\r\n\r\n    if (response.isSuccess && response.body != null) {\r\n      final List<dynamic> data = response.body!['data']['account'] ?? [];\r\n      return data\r\n          .map(\r\n            (item) => {\r\n              'value': item['id'].toString(),\r\n              'label': item['descricao'],\r\n            },\r\n          )\r\n          .toList();\r\n    }\r\n    return [];\r\n  }\r\n\r\n  static List<FieldConfig> fieldConfigs = [\r\n    FieldConfig(\r\n      label: \"Nome\",\r\n      fieldName: \"nome\",\r\n      icon: Icons.folder,\r\n      isInForm: true,\r\n      isFilterable: true,\r\n      isVisibleByDefault: true,\r\n      isFixed: false,\r\n    ),\r\n    FieldConfig(\r\n      label: \"Descrição\",\r\n      fieldName: \"descricao\",\r\n      icon: Icons.description,\r\n      isInForm: true,\r\n      isVisibleByDefault: true,\r\n      isFixed: false,\r\n    ),\r\n    FieldConfig(\r\n      label: \"Empresa\",\r\n      fieldName: \"empresaId\",\r\n      displayFieldName: \"empresa.nome\",\r\n      icon: Icons.business,\r\n      isInForm: true,\r\n      isFilterable: true,\r\n      fieldType: FieldType.dropdown,\r\n      dropdownFutureBuilder: () async {\r\n        return await loadCategorias();\r\n      },\r\n      dropdownValueField: 'id',\r\n      dropdownDisplayField: 'nome',\r\n      isRequired: true,\r\n      isVisibleByDefault: true,\r\n      isFixed: false,\r\n    ),\r\n  ];\r\n}\r\n"
+        }
+    ]
+}

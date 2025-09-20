@@ -291,4 +291,6 @@ class ApiLinks {
       '$_baseUrlNew/api/arquivos/download/$id';
   static String arquivosPorDiretorio(String diretorioId) =>
       '$_baseUrlNew/api/arquivos/diretorio/$diretorioId';
+
+  static String get fecthAllDocumentos => '$_baseUrlNew/api/documentos';
 }

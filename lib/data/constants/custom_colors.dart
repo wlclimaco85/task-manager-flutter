@@ -1,162 +1,46 @@
 import 'package:flutter/material.dart';
 
 class CustomColors {
-  final Color _lightGreenBackground = Colors.white;
-  final Color _darkGreenBorder = const Color(0xff002E18);
-  final Color _buttonBackground = const Color.fromARGB(255, 255, 255, 23);
-  final Color _textColorDesc = const Color(0xFF38180E);
-  final Color _borderInput = const Color(0xFF38180E);
-  final Color _textColor = const Color(0xFF002E18);
-  final Color _negotiationCardBackground = const Color.fromARGB(
+  // 🔹 Fundo principal da tela
+  final Color _lightGreenBackground = const Color.fromARGB(
     255,
-    255,
-    255,
-    250,
-  );
-  final Color _confirmButtonColor = const Color.fromARGB(255, 1, 95, 15);
+    195,
+    224,
+    207,
+  ); // fundo secundário
+  final Color _darkGreenBorder = const Color(0xFF93070A); // bordas/ação
+  final Color _buttonBackground = const Color(0xFF93070A); // botões
+  final Color _buttonTextColor = const Color(0xFFFFFFFF); // texto do botão
+  final Color _textColor = const Color(0xFFFFFFFF); // textos principais
+  final Color _textColorDesc = const Color(0xFF000000); // textos secundários
+  final Color _borderInput = const Color(0xFF93070A); // borda do input
+  final Color _negotiationCardBackground = const Color(0xFFFFFFFF); // cards
+  final Color _confirmButtonColor = const Color(0xFF93070A);
   final Color _cancelButtonColor = Colors.red;
-  final Color _buttonTextColor = const Color.fromARGB(255, 255, 255, 255);
-  final Color _darkBlue = const Color(0xff002E18);
-  final Color _headerTable = const Color(0xff8C8C8C);
-  final Color _showSnackBarError = Colors.red;
-  final Color _showSnackBarSuccess = Colors.green;
-  final Color _showSnackBarWarning = Colors.yellow;
-  final Color _showSnackBarInfo = Colors.blue;
-  final Color _showSnackBarText = Colors.white;
+  final Color _darkBlue = const Color(0xFF93070A); // header tabela
+  final Color _headerTable = const Color(0xFF93070A);
+  final Color _showSnackBarError = const Color(0xFFD32F2F);
+  final Color _showSnackBarSuccess = const Color(0xFF2E7D32);
+  final Color _showSnackBarWarning = const Color(0xFFFFA000);
+  final Color _showSnackBarInfo = const Color(0xFF1976D2);
+  final Color _showSnackBarText = const Color(0xFFFFFFFF);
 
-  Color getShowSnackBarText() {
-    return _showSnackBarText;
-  }
+  Color getShowSnackBarText() => _showSnackBarText;
+  Color getShowSnackBarInfo() => _showSnackBarInfo;
+  Color getShowSnackBarWarning() => _showSnackBarWarning;
+  Color getShowSnackBarSuccess() => _showSnackBarSuccess;
+  Color getShowSnackBarError() => _showSnackBarError;
 
-  Color getShowSnackBarInfo() {
-    return _showSnackBarInfo;
-  }
-
-  Color getShowSnackBarWarning() {
-    return _showSnackBarWarning;
-  }
-
-  Color getShowSnackBarSuccess() {
-    return _showSnackBarSuccess;
-  }
-
-  Color getShowSnackBarError() {
-    return _showSnackBarError;
-  }
-
-  Color getBorderInput() {
-    return _borderInput;
-  }
-
-  Color getLightGreenBackground() {
-    return _lightGreenBackground;
-  }
-
-  Color getDarkBlue() {
-    return _darkBlue;
-  }
-
-  Color getDarkGreenBorder() {
-    return _darkGreenBorder;
-  }
-
-  Color getButtonBackground() {
-    return _buttonBackground;
-  }
-
-  Color getTextColorDesc() {
-    return _textColorDesc;
-  }
-
-  Color getTextColor() {
-    return _textColor;
-  }
-
-  Color getNegotiationCardBackground() {
-    return _negotiationCardBackground;
-  }
-
-  Color getConfirmButtonColor() {
-    return _confirmButtonColor;
-  }
-
-  Color getCancelButtonColor() {
-    return _cancelButtonColor;
-  }
-
-  Color getButtonTextColor() {
-    return _buttonTextColor;
-  }
-
-  Color getHeaderTable() {
-    return _headerTable;
-  }
-
-  /*
-  final Color _activePrimaryButton = const Color.fromARGB(255, 63, 81, 181);
-  final Color _activeSecondaryButton = const Color.fromARGB(255, 230, 230, 255);
-  final Color _gradientMainColor = const Color(0xff00ADFA);
-  final Color _gradientSecColor = const Color(0xff00E6FD);
-  final Color _appBarMainColor = const Color(0xff0A6D92);
-  final Color _appFundoPage = const Color(0xFF5937B2);
-  final Color _appFundoImput = const Color(0xFFffffff);
-  final Color _appFundoClaro = const Color(0xFF7859C9);
-  final Color _appBotton = const Color(0xFFFA903A);
-  final Color _appLabelBotton = const Color(0xFFffffff);
-  final Color _lightGreenBackground = const Color.fromARGB(255, 231, 247, 233);
-  final Color _darkGreenBorder = const Color.fromARGB(255, 1, 247, 14);
-  final Color _buttonBackground = const Color.fromARGB(255, 128, 202, 132);
-
-  Color getButtonBackground() {
-    return _buttonBackground;
-  }
-
-  Color getDarkGreenBorder() {
-    return _darkGreenBorder;
-  }
-
-  Color getLightGreenBackground() {
-    return _lightGreenBackground;
-  }
-
-  Color getActivePrimaryButtonColor() {
-    return _activePrimaryButton;
-  }
-
-  Color getActiveSecondaryButton() {
-    return _activeSecondaryButton;
-  }
-
-  Color getGradientMainColor() {
-    return _gradientMainColor;
-  }
-
-  Color getGradientSecondaryColor() {
-    return _gradientSecColor;
-  }
-
-  Color getAppBarMainColor() {
-    return _appBarMainColor;
-  }
-
-  Color getAppFundoPage() {
-    return _appFundoPage;
-  }
-
-  Color getAppFundoImput() {
-    return _appFundoImput;
-  }
-
-  Color getAppFundoClaro() {
-    return _appFundoClaro;
-  }
-
-  Color getAppBotton() {
-    return _appBotton;
-  }
-
-  Color getAppLabelBotton() {
-    return _appLabelBotton;
-  }
-  */
+  Color getBorderInput() => _borderInput;
+  Color getLightGreenBackground() => _lightGreenBackground;
+  Color getDarkBlue() => _darkBlue;
+  Color getDarkGreenBorder() => _darkGreenBorder;
+  Color getButtonBackground() => _buttonBackground;
+  Color getTextColorDesc() => _textColorDesc;
+  Color getTextColor() => _textColor;
+  Color getNegotiationCardBackground() => _negotiationCardBackground;
+  Color getConfirmButtonColor() => _confirmButtonColor;
+  Color getCancelButtonColor() => _cancelButtonColor;
+  Color getButtonTextColor() => _buttonTextColor;
+  Color getHeaderTable() => _headerTable;
 }

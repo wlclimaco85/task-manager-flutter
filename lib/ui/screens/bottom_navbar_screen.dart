@@ -39,6 +39,7 @@ import 'package:task_manager_flutter/ui/screens/conta_receber_grid_screen.dart';
 import 'package:task_manager_flutter/ui/screens/chamado_grid_screen.dart';
 import 'package:task_manager_flutter/ui/screens/forma_pagamento_grid_screen.dart';
 import 'package:task_manager_flutter/ui/screens/diretorio_grid_screen.dart';
+import 'documento_screen.dart';
 
 import 'package:task_manager_flutter/ui/screens/file_upload_screen.dart';
 
@@ -113,6 +114,7 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
       FormaPagamentoGridScreen(hasPermission: (perm) => true),
       DiretorioGridScreen(hasPermission: (perm) => true),
       FileUploadScreen(hasPermission: (perm) => true),
+      CalendarScreen(),
     ];
   }
 
@@ -150,7 +152,8 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
       icon: FontAwesomeIcons.creditCard,
       label: "Formas de Pagamento",
     ),
-    SidebarItem(icon: FontAwesomeIcons.dribbble, label: "Diretoria"),
+    SidebarItem(icon: FontAwesomeIcons.dribbble, label: "Diretorios"),
+    SidebarItem(icon: FontAwesomeIcons.file, label: "Arquivos"),
     SidebarItem(icon: FontAwesomeIcons.file, label: "Arquivos"),
   ];
 
