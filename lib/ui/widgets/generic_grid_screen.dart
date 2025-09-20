@@ -6,6 +6,49 @@ import 'package:intl/intl.dart';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+// Cores centralizadas para todo o componente
+class GridColors {
+  // 🔹 Cores principais do cliente
+  static const Color primary = Color(0xFF93070A); // vermelho vinho
+  static const Color primaryDark = Color(0xFF6A0507); // tom mais escuro
+  static const Color primaryLight = Color(0xFFB84042); // tom mais claro
+
+  static const Color secondary = Color(0xFF005826); // verde fundo
+  static const Color secondaryLight = Color(0xFF2E7D32); // verde mais claro
+  static const Color secondaryDark = Color(0xFF003D1A); // verde mais escuro
+
+  // 🔹 Textos
+  static const Color textPrimary = Color(0xFFFFFFFF); // branco
+  static const Color textSecondary = Color(0xFF000000); // preto
+  static const Color link = Color(0xFFFF0000); // vermelho
+
+  // 🔹 Inputs
+  static const Color inputBackground = Color(0xFFFFFFFF);
+  static const Color inputBorder = Color(0xFF93070A);
+
+  // 🔹 Botões
+  static const Color buttonBackground = Color(0xFF93070A);
+  static const Color buttonText = Color(0xFFFFFFFF);
+
+  // 🔹 Fundo / cartões
+  static const Color background = Color(0xFF005826); // cor secundária
+  static const Color card = Color(0xFFFFFFFF);
+
+  // 🔹 Estados do sistema (mantidos mas adaptados)
+  static const Color error = Color(0xFFD32F2F);
+  static const Color warning = Color(0xFFFFA000);
+  static const Color success = Color(0xFF2E7D32);
+  static const Color info = Color(0xFF1976D2);
+
+  // 🔹 Outros
+  static const Color divider = Color(0xFFBDBDBD);
+  static const Color filterBackground = Color(0xFFEFEFEF);
+  static const Color hover = Color(0x1A000000);
+  static const Color selectedRow = Color(0xFFE3F2FD);
+  static const Color dialogBackground = Color(0xFFFFFFFF);
+  static const Color shadow = Color(0x26000000);
+}
+
 // Enum para tipos de campo
 enum FieldType { text, number, email, date, multiline, dropdown, boolean }
 
@@ -198,16 +241,24 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
       _columnVisibility[config.fieldName] = config.isVisibleByDefault;
     }
 
+    // Inicializar controladores de filtro para campos filtráveis
+    for (final config in widget.fieldConfigs.where((c) => c.isFilterable)) {
+      _filterControllers[config.fieldName] = TextEditingController();
+    }
+
+    // Aplicar filtros iniciais se fornecidos
+    if (widget.initialFilters != null) {
+      widget.initialFilters!.forEach((key, value) {
+        if (_filterControllers.containsKey(key)) {
+          _filterControllers[key]!.text = value.toString();
+        }
+      });
+    }
+
     // Carregar preferências e depois carregar dados
     _loadColumnPreferences().then((_) {
       _loadItems(_currentPage, rowsPerPage);
     });
-
-    if (widget.initialFilters != null) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        _applyInitialFilters();
-      });
-    }
 
     // Inicializar ações personalizadas
     if (widget.customActions != null) {
@@ -251,13 +302,6 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
         print('Erro ao salvar preferências: $e');
       }
     }
-  }
-
-  void _applyInitialFilters() {
-    widget.initialFilters?.forEach((key, value) {
-      _filterControllers[key] = TextEditingController(text: value.toString());
-    });
-    _applyFilters();
   }
 
   String buildUrl(String baseUrl, Map<String, dynamic> params) {
@@ -313,7 +357,7 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
         url += '&ordenarPor=${config.fieldName}&direcao=$direction';
       }
 
-      // Adicionar filtros
+      // Adicionar filtros - CORREÇÃO DO BUG: usar _filterControllers
       for (final config in widget.fieldConfigs.where((c) => c.isFilterable)) {
         final filterValue = _filterControllers[config.fieldName]?.text;
         if (filterValue != null && filterValue.isNotEmpty) {
@@ -345,13 +389,17 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Falha ao carregar dados: ${response.statusCode}'),
+            backgroundColor: GridColors.error,
           ),
         );
       }
     } catch (e) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Erro ao carregar dados: $e')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Erro ao carregar dados: $e'),
+          backgroundColor: GridColors.error,
+        ),
+      );
     } finally {
       setState(() => isLoading = false);
     }
@@ -422,12 +470,12 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
         constraints: const BoxConstraints(maxWidth: 600),
         padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: GridColors.dialogBackground,
           shape: BoxShape.rectangle,
           borderRadius: BorderRadius.circular(16),
           boxShadow: const [
             BoxShadow(
-              color: Colors.black26,
+              color: GridColors.shadow,
               blurRadius: 10.0,
               offset: Offset(0.0, 10.0),
             ),
@@ -440,17 +488,17 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
             children: [
               Container(
                 padding: const EdgeInsets.only(bottom: 16),
-                decoration: const BoxDecoration(
+                decoration: BoxDecoration(
                   border: Border(
-                    bottom: BorderSide(color: Colors.grey, width: 0.5),
+                    bottom: BorderSide(color: GridColors.divider, width: 0.5),
                   ),
                 ),
                 child: Text(
                   item == null ? "Novo Item" : "Editar Item",
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 20,
                     fontWeight: FontWeight.bold,
-                    color: Colors.green,
+                    color: GridColors.primary,
                   ),
                   textAlign: TextAlign.center,
                 ),
@@ -480,7 +528,7 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
                   TextButton(
                     onPressed: () => Navigator.pop(context),
                     style: TextButton.styleFrom(
-                      foregroundColor: Colors.grey[700],
+                      foregroundColor: GridColors.textSecondary,
                       padding: const EdgeInsets.symmetric(
                         horizontal: 20,
                         vertical: 10,
@@ -494,8 +542,8 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
                         ? null
                         : () => _saveItem(item, controllers, context),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.green,
-                      foregroundColor: Colors.white,
+                      backgroundColor: GridColors.primary,
+                      foregroundColor: GridColors.card,
                       padding: const EdgeInsets.symmetric(
                         horizontal: 20,
                         vertical: 10,
@@ -599,14 +647,14 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
   InputDecoration _buildInputDecoration(FieldConfig config) {
     return InputDecoration(
       labelText: config.label + (config.isRequired ? ' *' : ''),
-      labelStyle: const TextStyle(color: Colors.grey),
-      focusedBorder: const OutlineInputBorder(
-        borderSide: BorderSide(color: Colors.green, width: 2.0),
+      labelStyle: TextStyle(color: GridColors.textSecondary),
+      focusedBorder: OutlineInputBorder(
+        borderSide: BorderSide(color: GridColors.primary, width: 2.0),
       ),
-      enabledBorder: const OutlineInputBorder(
-        borderSide: BorderSide(color: Colors.grey, width: 1.0),
+      enabledBorder: OutlineInputBorder(
+        borderSide: BorderSide(color: GridColors.divider, width: 1.0),
       ),
-      prefixIcon: Icon(config.icon, color: Colors.green),
+      prefixIcon: Icon(config.icon, color: GridColors.primary),
       contentPadding: const EdgeInsets.symmetric(vertical: 15, horizontal: 15),
     );
   }
@@ -638,7 +686,10 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
     )) {
       if (controllers[config.fieldName]?.text.isEmpty == true) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('${config.label} é obrigatório')),
+          SnackBar(
+            content: Text('${config.label} é obrigatório'),
+            backgroundColor: GridColors.error,
+          ),
         );
         return;
       }
@@ -646,9 +697,9 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
       if (config.validator != null) {
         final error = config.validator!(controllers[config.fieldName]?.text);
         if (error != null) {
-          ScaffoldMessenger.of(
-            context,
-          ).showSnackBar(SnackBar(content: Text(error)));
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(error), backgroundColor: GridColors.error),
+          );
           return;
         }
       }
@@ -736,16 +787,49 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
     );
 
     if (response.isSuccess) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('Item criado com sucesso')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Item criado com sucesso'),
+          backgroundColor: GridColors.success,
+        ),
+      );
       return true;
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Falha ao criar item: ${response.statusCode}')),
+        SnackBar(
+          content: Text('Falha ao criar item: ${response.statusCode}'),
+          backgroundColor: GridColors.error,
+        ),
       );
       return false;
     }
+  }
+
+  // Função auxiliar para normalizar status
+  Map<String, dynamic> normalizeFormData(Map<String, dynamic> formData) {
+    final updated = Map<String, dynamic>.from(formData);
+
+    if (updated.containsKey("status")) {
+      final status = updated["status"];
+
+      if (status is String) {
+        // Se vier como texto
+        if (status.toLowerCase() == "ativo") {
+          updated["status"] = 0;
+        } else if (status.toLowerCase() == "inativo") {
+          updated["status"] = 1;
+        } else {
+          updated["status"] = 0; // default
+        }
+      } else if (status == null) {
+        updated["status"] = 0; // default se nulo
+      }
+    } else {
+      // Se não vier o campo "status", adiciona como 0
+      updated["status"] = 0;
+    }
+
+    return updated;
   }
 
   Future<bool> _updateItem(Map<String, dynamic> formData) async {
@@ -755,24 +839,29 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
       );
       return false;
     }
+    final adjustedFormData = normalizeFormData(formData);
 
     final response = await NetworkCaller().postRequest(
       widget.updateEndpoint.replaceAll(
         ':id',
-        formData[widget.idFieldName].toString(),
+        adjustedFormData[widget.idFieldName].toString(),
       ),
-      formData,
+      adjustedFormData,
     );
 
     if (response.isSuccess) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Item atualizado com sucesso')),
+        const SnackBar(
+          content: Text('Item atualizado com sucesso'),
+          backgroundColor: GridColors.success,
+        ),
       );
       return true;
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Falha ao atualizar item: ${response.statusCode}'),
+          backgroundColor: GridColors.error,
         ),
       );
       return false;
@@ -825,13 +914,17 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
 
     if (response.isSuccess) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Item excluído com sucesso')),
+        const SnackBar(
+          content: Text('Item excluído com sucesso'),
+          backgroundColor: GridColors.success,
+        ),
       );
       _loadItems(_currentPage, rowsPerPage);
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Falha ao excluir item: ${response.statusCode}'),
+          backgroundColor: GridColors.error,
         ),
       );
     }
@@ -868,7 +961,7 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
               }
               setState(() => selectedRows.clear());
             },
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+            style: ElevatedButton.styleFrom(backgroundColor: GridColors.error),
             child: const Text('Excluir'),
           ),
         ],
@@ -933,12 +1026,18 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
       }
 
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Dados exportados com sucesso')),
+        const SnackBar(
+          content: Text('Dados exportados com sucesso'),
+          backgroundColor: GridColors.success,
+        ),
       );
     } catch (e) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Falha ao exportar: $e')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Falha ao exportar: $e'),
+          backgroundColor: GridColors.error,
+        ),
+      );
     } finally {
       setState(() => _isExporting = false);
     }
@@ -955,14 +1054,10 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
   }
 
   Widget _buildFilters() {
-    for (final config in widget.fieldConfigs.where((c) => c.isFilterable)) {
-      _filterControllers[config.fieldName] ??= TextEditingController();
-    }
-
     return Container(
       decoration: BoxDecoration(
-        color: Colors.grey[100],
-        border: Border.all(color: Colors.grey[300]!),
+        color: GridColors.filterBackground,
+        border: Border.all(color: GridColors.divider),
         borderRadius: BorderRadius.circular(8),
       ),
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -1054,11 +1149,14 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
                     value:
                         _columnVisibility[config.fieldName] ??
                         config.isVisibleByDefault,
-                    onChanged: (value) {
-                      setState(() {
-                        _columnVisibility[config.fieldName] = value ?? false;
-                      });
-                    },
+                    onChanged: config.isFixed
+                        ? null
+                        : (value) {
+                            setState(() {
+                              _columnVisibility[config.fieldName] =
+                                  value ?? false;
+                            });
+                          },
                   );
                 }).toList(),
               ),
@@ -1244,6 +1342,8 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
         Scaffold(
           appBar: AppBar(
             title: Text(widget.title),
+            backgroundColor: GridColors.primary,
+            foregroundColor: GridColors.card,
             actions: [
               _buildColumnSettingsMenu(),
 
@@ -1280,8 +1380,8 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
                                   icon: const Icon(Icons.add),
                                   label: const Text("Novo"),
                                   style: ElevatedButton.styleFrom(
-                                    backgroundColor: Colors.green,
-                                    foregroundColor: Colors.white,
+                                    backgroundColor: GridColors.primary,
+                                    foregroundColor: GridColors.card,
                                     padding: const EdgeInsets.symmetric(
                                       horizontal: 16,
                                       vertical: 12,
@@ -1297,6 +1397,8 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
                                   icon: const Icon(Icons.delete),
                                   label: const Text("Deletar Selecionados"),
                                   style: ElevatedButton.styleFrom(
+                                    backgroundColor: GridColors.error,
+                                    foregroundColor: GridColors.card,
                                     padding: const EdgeInsets.symmetric(
                                       horizontal: 16,
                                       vertical: 12,
@@ -1327,8 +1429,8 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
                                   : "Mostrar Filtros",
                             ),
                             style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.blueGrey[50],
-                              foregroundColor: Colors.blueGrey[800],
+                              backgroundColor: GridColors.buttonBackground,
+                              foregroundColor: GridColors.textPrimary,
                             ),
                           ),
                         ],

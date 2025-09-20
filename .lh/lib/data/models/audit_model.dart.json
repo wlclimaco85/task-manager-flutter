@@ -1,0 +1,22 @@
+{
+    "sourceFile": "lib/data/models/audit_model.dart",
+    "activeCommit": 0,
+    "commits": [
+        {
+            "activePatchIndex": 1,
+            "patches": [
+                {
+                    "date": 1758375893051,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n"
+                },
+                {
+                    "date": 1758375904955,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -3,12 +3,9 @@\n class Audit {\r\n   final DateTime? dataCreated;\r\n   final DateTime? dataUpdated;\r\n \r\n-  Audit({\r\n-    this.dataCreated,\r\n-    this.dataUpdated,\r\n-  });\r\n+  Audit({this.dataCreated, this.dataUpdated});\r\n \r\n   factory Audit.fromJson(Map<String, dynamic> json) {\r\n     return Audit(\r\n       dataCreated: json['dataCreated'] != null\r\n"
+                }
+            ],
+            "date": 1758375893051,
+            "name": "Commit-0",
+            "content": "import 'package:intl/intl.dart';\r\n\r\nclass Audit {\r\n  final DateTime? dataCreated;\r\n  final DateTime? dataUpdated;\r\n\r\n  Audit({\r\n    this.dataCreated,\r\n    this.dataUpdated,\r\n  });\r\n\r\n  factory Audit.fromJson(Map<String, dynamic> json) {\r\n    return Audit(\r\n      dataCreated: json['dataCreated'] != null\r\n          ? DateTime.tryParse(json['dataCreated'])\r\n          : null,\r\n      dataUpdated: json['dataUpdated'] != null\r\n          ? DateTime.tryParse(json['dataUpdated'])\r\n          : null,\r\n    );\r\n  }\r\n\r\n  Map<String, dynamic> toJson() {\r\n    return {\r\n      'dataCreated': dataCreated?.toIso8601String(),\r\n      'dataUpdated': dataUpdated?.toIso8601String(),\r\n    };\r\n  }\r\n\r\n  /// 🔹 Métodos auxiliares para exibir formatado (dd/MM/yyyy HH:mm)\r\n  String get dataCreatedFormatada {\r\n    return dataCreated != null\r\n        ? DateFormat('dd/MM/yyyy HH:mm').format(dataCreated!)\r\n        : '';\r\n  }\r\n\r\n  String get dataUpdatedFormatada {\r\n    return dataUpdated != null\r\n        ? DateFormat('dd/MM/yyyy HH:mm').format(dataUpdated!)\r\n        : '';\r\n  }\r\n}\r\n"
+        }
+    ]
+}

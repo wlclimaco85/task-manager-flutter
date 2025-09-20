@@ -3,11 +3,23 @@
     "activeCommit": 0,
     "commits": [
         {
-            "activePatchIndex": 0,
+            "activePatchIndex": 3,
             "patches": [
                 {
                     "date": 1758309109434,
                     "content": "Index: \n===================================================================\n--- \n+++ \n"
+                },
+                {
+                    "date": 1758372394766,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -4,30 +4,32 @@\n class FormaPagamento {\r\n   int? id;\r\n   String nome;\r\n   String descricao;\r\n-  bool ativo;\r\n+  String status;\r\n   int empresaId;\r\n   DateTime createdAt;\r\n \r\n   FormaPagamento({\r\n     this.id,\r\n     required this.nome,\r\n     required this.descricao,\r\n-    required this.ativo,\r\n+    required this.status,\r\n     required this.empresaId,\r\n     required this.createdAt,\r\n   });\r\n \r\n-  factory FormaPagamento.fromJson(Map<String, dynamic> json) {\r\n-    return FormaPagamento(\r\n-      id: json['id'],\r\n-      nome: json['nome'],\r\n-      descricao: json['descricao'],\r\n-      ativo: json['ativo'],\r\n-      empresaId: json['empresaId'],\r\n-      createdAt: DateTime.parse(json['createdAt']),\r\n-    );\r\n+ \r\n+\r\n+  FormaPagamento.fromJson(Map<String, dynamic> json) {\r\n+    if (json.isNotEmpty) {\r\n+      id: json['id'];\r\n+      nome: json['nome'];\r\n+      descricao: json['descricao'];\r\n+      status: json['ativo'];\r\n+      empresaId: json['empresaId'];\r\n+      createdAt: DateTime.parse(json['audit']['createdAt']);\r\n+    }\r\n   }\r\n \r\n   Map<String, dynamic> toJson() {\r\n     return {\r\n"
+                },
+                {
+                    "date": 1758372541758,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -17,25 +17,18 @@\n     required this.empresaId,\r\n     required this.createdAt,\r\n   });\r\n \r\n-  FormaPagamento.fromJson(Map<String, dynamic> json) {\r\n-    if (json.isNotEmpty) {\r\n-      id:\r\n-      json['id'];\r\n-      nome:\r\n-      json['nome'];\r\n-      descricao:\r\n-      json['descricao'];\r\n-      status:\r\n-      json['ativo'];\r\n-      empresaId:\r\n-      json['empresaId'];\r\n-      createdAt:\r\n-      DateTime.parse(json['audit']['createdAt']);\r\n-    }\r\n+ factory FormaPagamento.fromJson(Map<String, dynamic> json) {\r\n+    return FormaPagamento(\r\n+      id: json['id'] ?? 0,\r\n+      nome: json['nome'] ?? '',\r\n+      descricao: json['descricao'] ?? '',\r\n+      status: json['ativo'] ?? false,\r\n+      empresaId: json['empresaId'] ?? 0,\r\n+      createdAt: DateTime.tryParse(json['audit']?['createdAt'] ?? '') ?? DateTime.now(),\r\n+    );\r\n   }\r\n-\r\n   Map<String, dynamic> toJson() {\r\n     return {\r\n       'id': id,\r\n       'nome': nome,\r\n"
+                },
+                {
+                    "date": 1758372550389,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -34,9 +34,9 @@\n     return {\r\n       'id': id,\r\n       'nome': nome,\r\n       'descricao': descricao,\r\n-      'ativo': ativo,\r\n+      'ativo': status,\r\n       'empresaId': empresaId,\r\n       'createdAt': createdAt.toIso8601String(),\r\n     };\r\n   }\r\n"
                 }
             ],
             "date": 1758309109434,
