@@ -43,7 +43,7 @@ class RegimeTributario {
   // 🔹 Carrega lista de regimes tributários para dropdown
   static Future<List<Map<String, dynamic>>> loadDropdownData() async {
     final NetworkResponse response = await NetworkCaller().getRequest(
-      ApiLinks.allRegimetributario,
+      ApiLinks.allAplicativos,
     );
 
     if (response.isSuccess && response.body != null) {
@@ -52,7 +52,7 @@ class RegimeTributario {
           .map(
             (item) => {
               'value': item['id'].toString(),
-              'label': "${item['codigo']} - ${item['descricao']}",
+              'label': "${item['nome']}",
             },
           )
           .toList();
@@ -76,21 +76,6 @@ class RegimeTributario {
       isInForm: true,
       isFilterable: true,
       isRequired: true,
-    ),
-    FieldConfig(
-      label: "Aplicativo",
-      fieldName: "aplicativo",
-      displayFieldName:
-          "aplicativo.nome", // supondo que exista "nome" no Aplicativo
-      icon: Icons.apps,
-      isInForm: true,
-      isFilterable: true,
-      fieldType: FieldType.dropdown,
-      dropdownFutureBuilder: () async {
-        return await loadDropdownData();
-      },
-      dropdownValueField: 'value',
-      dropdownDisplayField: 'label',
     ),
     FieldConfig(
       label: "Aplicativo",

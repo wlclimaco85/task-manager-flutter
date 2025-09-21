@@ -612,15 +612,23 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
   InputDecoration _buildInputDecoration(FieldConfig config) {
     return InputDecoration(
       labelText: config.label + (config.isRequired ? ' *' : ''),
-      labelStyle: TextStyle(color: GridColors.textSecondary),
+      labelStyle: TextStyle(
+        color: GridColors.textSecondary,
+        fontSize: 14, // Fonte menor
+      ),
+      isDense: true, // Reduz o padding interno
+      contentPadding: EdgeInsets.symmetric(vertical: 12, horizontal: 12),
       focusedBorder: OutlineInputBorder(
-        borderSide: BorderSide(color: GridColors.primary, width: 2.0),
+        borderSide: BorderSide(color: GridColors.primary, width: 1.5),
+        borderRadius: BorderRadius.circular(8),
       ),
       enabledBorder: OutlineInputBorder(
         borderSide: BorderSide(color: GridColors.divider, width: 1.0),
+        borderRadius: BorderRadius.circular(8),
       ),
-      prefixIcon: Icon(config.icon, color: GridColors.primary),
-      contentPadding: const EdgeInsets.symmetric(vertical: 15, horizontal: 15),
+      prefixIcon: config.icon != null
+          ? Icon(config.icon, size: 20, color: GridColors.primary)
+          : null,
     );
   }
 
@@ -737,6 +745,9 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
     return DropdownButtonFormField<dynamic>(
       value: currentValue,
       decoration: _buildInputDecoration(config),
+      isExpanded: true, // Para evitar que o dropdown seja muito largo
+      menuMaxHeight: 300, // Altura máxima do menu (ajuste conforme necessário)
+      itemHeight: 48, // Altura de cada item
       items: uniqueOptions.map<DropdownMenuItem<dynamic>>((option) {
         final optionValue = option[config.dropdownValueField];
         final optionLabel =
@@ -744,7 +755,10 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
         print('Creating menu item: value=$optionValue, label=$optionLabel');
         return DropdownMenuItem<dynamic>(
           value: optionValue,
-          child: Text(optionLabel),
+          child: Text(
+            optionLabel,
+            overflow: TextOverflow.ellipsis, // Para textos longos
+          ),
         );
       }).toList(),
 
