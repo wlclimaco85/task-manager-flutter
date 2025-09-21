@@ -583,44 +583,9 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
           validator: config.validator,
         );
       case FieldType.dropdown:
-        if (config.dropdownFutureBuilder != null) {
-          final cacheKey = '${config.fieldName}_dropdown';
-
-          if (_dropdownCache.containsKey(cacheKey)) {
-            return _buildDropdownField(
-              config,
-              controller,
-              _dropdownCache[cacheKey]!,
-            );
-          } else if (config.dropdownFutureBuilder != null) {
-            return FutureBuilder<List<Map<String, dynamic>>>(
-              future: config.dropdownFutureBuilder!(),
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const CircularProgressIndicator();
-                } else if (snapshot.hasError) {
-                  return Text('Erro ao carregar opções: ${snapshot.error}');
-                } else {
-                  final options = snapshot.data ?? [];
-                  _dropdownCache[cacheKey] = options;
-                  return _buildDropdownField(config, controller, options);
-                }
-              },
-            );
-          } else {
-            return _buildDropdownField(
-              config,
-              controller,
-              config.dropdownOptions ?? [],
-            );
-          }
-        } else {
-          return _buildDropdownField(
-            config,
-            controller,
-            config.dropdownOptions ?? [],
-          );
-        }
+        // Para dropdowns, usamos a nova função _buildDropdownField
+        // que agora lida com ambos os casos (estático e assíncrono) internamente
+        return _buildDropdownField(config, controller);
       case FieldType.date:
         return TextFormField(
           controller: controller,
@@ -673,6 +638,149 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
     if (picked != null) {
       controller.text = DateFormat('yyyy-MM-dd').format(picked);
     }
+  }
+
+  // NOVA IMPLEMENTAÇÃO PARA DROPDOWNS
+  Widget _buildDropdownField(
+    FieldConfig config,
+    TextEditingController controller,
+  ) {
+    final cacheKey = '${config.fieldName}_dropdown';
+
+    // Se temos opções em cache, usamos a versão síncrona
+    if (_dropdownCache.containsKey(cacheKey)) {
+      return _buildDropdownContent(
+        config: config,
+        controller: controller,
+        options: _dropdownCache[cacheKey]!,
+      );
+    }
+    // Se não temos cache mas temos um FutureBuilder, carregamos os dados
+    else if (config.dropdownFutureBuilder != null) {
+      return FutureBuilder<List<Map<String, dynamic>>>(
+        future: config.dropdownFutureBuilder!(),
+        builder: (context, snapshot) {
+          print('Snapshot connection state: ${snapshot.connectionState}');
+          print('Snapshot has data: ${snapshot.hasData}');
+          print('Snapshot data: ${snapshot.data}');
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const CircularProgressIndicator();
+          } else if (snapshot.hasError) {
+            return Text('Erro ao carregar opções: ${snapshot.error}');
+          } else {
+            final options = snapshot.data ?? [];
+            _dropdownCache[cacheKey] = options;
+            return _buildDropdownContent(
+              config: config,
+              controller: controller,
+              options: options,
+            );
+          }
+        },
+      );
+    }
+    // Caso contrário, usamos as opções estáticas
+    else {
+      return _buildDropdownContent(
+        config: config,
+        controller: controller,
+        options: config.dropdownOptions ?? [],
+      );
+    }
+  }
+
+  // Função auxiliar para construir o conteúdo do dropdown
+  Widget _buildDropdownContent({
+    required FieldConfig config,
+    required TextEditingController controller,
+    required List<Map<String, dynamic>> options,
+  }) {
+    // Determina se o campo é do tipo ID (inteiro)
+    bool expectInteger =
+        config.dropdownValueField == 'id' ||
+        config.fieldName.toLowerCase().contains('id');
+
+    // Converte o valor do controlador para o tipo apropriado
+    dynamic currentValue;
+    if (controller.text.isNotEmpty) {
+      if (expectInteger) {
+        currentValue = int.tryParse(controller.text);
+      } else {
+        currentValue = controller.text;
+      }
+    } else {
+      currentValue = null;
+    }
+
+    print('Current value after conversion: $currentValue');
+
+    // Remove duplicatas
+    final uniqueOptions = options
+        .fold<Map<dynamic, Map<String, dynamic>>>({}, (map, item) {
+          dynamic key = item[config.dropdownValueField];
+          if (key != null && !map.containsKey(key)) {
+            map[key] = item;
+          }
+          return map;
+        })
+        .values
+        .toList();
+    print('Options available: $uniqueOptions');
+    // Verifica se o valor atual existe na lista
+    bool valueExists = uniqueOptions.any(
+      (option) => option[config.dropdownValueField] == currentValue,
+    );
+    if (!valueExists) {
+      currentValue = null;
+    }
+
+    return DropdownButtonFormField<dynamic>(
+      value: currentValue,
+      decoration: _buildInputDecoration(config),
+      items: uniqueOptions.map<DropdownMenuItem<dynamic>>((option) {
+        final optionValue = option[config.dropdownValueField];
+        final optionLabel =
+            option[config.dropdownDisplayField]?.toString() ?? '';
+        print('Creating menu item: value=$optionValue, label=$optionLabel');
+        return DropdownMenuItem<dynamic>(
+          value: optionValue,
+          child: Text(optionLabel),
+        );
+      }).toList(),
+
+      onChanged: (value) {
+        controller.text = value?.toString() ?? '';
+      },
+      validator: (value) {
+        if (config.validator != null) {
+          return config.validator!(value?.toString());
+        }
+        return null;
+      },
+    );
+  }
+
+  // Funções auxiliares para determinar se é campo inteiro e obter valor atual
+  dynamic _getCurrentValue(
+    FieldConfig config,
+    TextEditingController controller,
+  ) {
+    bool expectInteger = _isIntegerField(config);
+
+    if (controller.text.isNotEmpty) {
+      if (expectInteger) {
+        return int.tryParse(controller.text);
+      } else {
+        return controller.text;
+      }
+    } else {
+      return null;
+    }
+  }
+
+  bool _isIntegerField(FieldConfig config) {
+    return config.dropdownValueField == 'id' ||
+        config.fieldName.toLowerCase().contains('id');
   }
 
   Future<void> _saveItem(
@@ -866,74 +974,6 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
       );
       return false;
     }
-  }
-
-  Widget _buildDropdownField(
-    FieldConfig config,
-    TextEditingController controller,
-    List<Map<String, dynamic>> options,
-  ) {
-    // Determina se o campo é do tipo ID (inteiro)
-    bool expectInteger =
-        config.dropdownValueField == 'id' ||
-        config.fieldName.toLowerCase().contains('id');
-
-    // Converte o valor do controlador para o tipo apropriado
-    dynamic currentValue;
-    if (controller.text.isNotEmpty) {
-      if (expectInteger) {
-        currentValue = int.tryParse(controller.text);
-      } else {
-        currentValue = controller.text;
-      }
-    } else {
-      currentValue = null; // Valor inicial nulo
-    }
-
-    // Remove duplicatas para evitar erros de assertion
-    final uniqueOptions = options
-        .fold<Map<dynamic, Map<String, dynamic>>>({}, (map, item) {
-          dynamic key = item[config.dropdownValueField];
-          if (key != null && !map.containsKey(key)) {
-            map[key] = item;
-          }
-          return map;
-        })
-        .values
-        .toList();
-
-    // Verifica se o valor atual existe na lista de opções
-    // Se não existir, define como nulo para evitar erro de assertion
-    bool valueExists = uniqueOptions.any(
-      (option) => option[config.dropdownValueField] == currentValue,
-    );
-    if (!valueExists) {
-      currentValue = null;
-    }
-
-    return DropdownButtonFormField<dynamic>(
-      value: currentValue,
-      decoration: _buildInputDecoration(config),
-      items: uniqueOptions.map<DropdownMenuItem<dynamic>>((option) {
-        final optionValue = option[config.dropdownValueField];
-        final optionLabel =
-            option[config.dropdownDisplayField]?.toString() ?? '';
-
-        return DropdownMenuItem<dynamic>(
-          value: optionValue,
-          child: Text(optionLabel),
-        );
-      }).toList(),
-      onChanged: (value) {
-        controller.text = value?.toString() ?? '';
-      },
-      validator: (value) {
-        if (config.validator != null) {
-          return config.validator!(value?.toString());
-        }
-        return null;
-      },
-    );
   }
 
   Future<void> _deleteItem(String id) async {

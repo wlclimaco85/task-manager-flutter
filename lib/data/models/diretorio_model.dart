@@ -42,10 +42,7 @@ class Diretorio {
       final List<dynamic> data = response.body!['data']['dados'] ?? [];
       return data
           .map(
-            (item) => {
-              'value': item['id'].toString(),
-              'label': item['nome'].toString(),
-            },
+            (item) => {'value': item['id'], 'label': item['nome'].toString()},
           )
           .toList();
     }
@@ -81,8 +78,8 @@ class Diretorio {
       dropdownFutureBuilder: () async {
         return await loadCategorias();
       },
-      dropdownValueField: 'id',
-      dropdownDisplayField: 'nome',
+      dropdownValueField: 'value', // Altere para 'value'
+      dropdownDisplayField: 'label', // Altere para 'label'
       isRequired: true,
       isVisibleByDefault: true,
       isFixed: false,

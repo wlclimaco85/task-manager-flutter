@@ -89,8 +89,25 @@ class RegimeTributario {
       dropdownFutureBuilder: () async {
         return await loadDropdownData();
       },
-      dropdownValueField: 'id',
-      dropdownDisplayField: 'codigo',
+      dropdownValueField: 'value',
+      dropdownDisplayField: 'label',
+    ),
+    FieldConfig(
+      label: "Aplicativo",
+      fieldName: "aplicativo",
+      displayFieldName: "aplicativo.nome",
+      icon: Icons.apps,
+      isInForm: true,
+      isFilterable: true,
+      fieldType: FieldType.dropdown,
+      dropdownFutureBuilder: () async {
+        return await loadDropdownData();
+      },
+      dropdownValueField: 'value', // Altere para 'value'
+      dropdownDisplayField: 'label', // Altere para 'label'
+      isRequired: true,
+      isVisibleByDefault: true,
+      isFixed: false,
     ),
   ];
 
