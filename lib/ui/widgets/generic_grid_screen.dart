@@ -6,127 +6,39 @@ import 'package:intl/intl.dart';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:io';
-import 'package:image_picker/image_picker.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:http/http.dart' as http;
-import 'package:file_picker/file_picker.dart';
-import 'package:path_provider/path_provider.dart';
-import 'package:task_manager_flutter/data/models/auth_utility.dart';
-import 'dart:convert';
 import 'package:task_manager_flutter/data/models/auth_utility.dart';
 import 'package:task_manager_flutter/data/utils/api_links.dart';
+import 'package:task_manager_flutter/ui/widgets/field_factory.dart';
 
 // Cores centralizadas para todo o componente
 class GridColors {
-  // 🔹 Cores principais do cliente
-  static const Color primary = Color(0xFF93070A); // vermelho vinho
-  static const Color primaryDark = Color(0xFF6A0507); // tom mais escuro
-  static const Color primaryLight = Color(0xFFB84042); // tom mais claro
-
-  static const Color secondary = Color(0xFF005826); // verde fundo
-  static const Color secondaryLight = Color(0xFF2E7D32); // verde mais claro
-  static const Color secondaryDark = Color(0xFF003D1A); // verde mais escuro
-
-  // 🔹 Textos
-  static const Color textPrimary = Color(0xFFFFFFFF); // branco
-  static const Color textSecondary = Color(0xFF000000); // preto
-  static const Color link = Color(0xFFFF0000); // vermelho
-
-  // 🔹 Inputs
+  static const Color primary = Color(0xFF93070A);
+  static const Color primaryDark = Color(0xFF6A0507);
+  static const Color primaryLight = Color(0xFFB84042);
+  static const Color secondary = Color(0xFF005826);
+  static const Color secondaryLight = Color(0xFF2E7D32);
+  static const Color secondaryDark = Color(0xFF003D1A);
+  static const Color textPrimary = Color(0xFFFFFFFF);
+  static const Color textSecondary = Color(0xFF000000);
+  static const Color link = Color(0xFFFF0000);
   static const Color inputBackground = Color(0xFFFFFFFF);
   static const Color inputBorder = Color(0xFF93070A);
-
-  // 🔹 Botões
   static const Color buttonBackground = Color(0xFF93070A);
   static const Color buttonText = Color(0xFFFFFFFF);
-
-  // 🔹 Fundo / cartões
-  static const Color background = Color(0xFF005826); // cor secundária
+  static const Color background = Color(0xFF005826);
   static const Color card = Color(0xFFFFFFFF);
-
-  // 🔹 Estados do sistema (mantidos mas adaptados)
   static const Color error = Color(0xFFD32F2F);
   static const Color warning = Color(0xFFFFA000);
   static const Color success = Color(0xFF2E7D32);
   static const Color info = Color(0xFF1976D2);
-
-  // 🔹 Outros
   static const Color divider = Color(0xFFBDBDBD);
   static const Color filterBackground = Color(0xFFEFEFEF);
   static const Color hover = Color(0x1A000000);
   static const Color selectedRow = Color(0xFFE3F2FD);
   static const Color dialogBackground = Color(0xFFFFFFFF);
   static const Color shadow = Color(0x26000000);
-}
-
-// Enum para tipos de campo
-enum FieldType { text, number, email, date, multiline, dropdown, boolean, file }
-
-// Configuração de arquivo
-class FileConfig {
-  final List<String> allowedExtensions;
-  final bool allowMultiple;
-  final int maxFileSize; // em bytes
-  final String fileFieldName; // nome do campo para upload
-
-  const FileConfig({
-    this.allowedExtensions = const ['pdf', 'doc', 'docx', 'jpg', 'jpeg', 'png'],
-    this.allowMultiple = false,
-    this.maxFileSize = 5 * 1024 * 1024, // 5MB
-    this.fileFieldName = 'file',
-  });
-}
-
-// Configuração avançada de campo
-class FieldConfig {
-  final String label;
-  final String fieldName;
-  final bool isFilterable;
-  final bool isInForm;
-  final int flex;
-  final int maxLines;
-  final IconData? icon;
-  final bool isSortable;
-  final FieldType fieldType;
-  final List<Map<String, dynamic>>? dropdownOptions;
-  final Future<List<Map<String, dynamic>>> Function()? dropdownFutureBuilder;
-  final String dropdownValueField;
-  final String dropdownDisplayField;
-  final bool isRequired;
-  final String? Function(String?)? validator;
-  final String? displayFieldName;
-  final bool isVisibleByDefault;
-  final bool isFixed;
-  final bool enabled; // NOVO: campo para habilitar/desabilitar
-  final dynamic defaultValue; // NOVO: valor padrão para o campo
-  final FileConfig? fileConfig; // NOVO: configuração para arquivos
-  final dynamic
-  dropdownSelectedValue; // NOVO: valor selecionado padrão para dropdown
-
-  const FieldConfig({
-    required this.label,
-    required this.fieldName,
-    this.isFilterable = true,
-    this.isInForm = true,
-    this.flex = 1,
-    this.maxLines = 1,
-    this.icon,
-    this.isSortable = true,
-    this.fieldType = FieldType.text,
-    this.dropdownOptions,
-    this.dropdownFutureBuilder,
-    this.dropdownValueField = 'value',
-    this.dropdownDisplayField = 'label',
-    this.isRequired = false,
-    this.validator,
-    this.displayFieldName,
-    this.isVisibleByDefault = true,
-    this.isFixed = false,
-    this.enabled = true, // NOVO: padrão é habilitado
-    this.defaultValue, // NOVO: valor padrão
-    this.fileConfig, // NOVO: configuração de arquivo
-    this.dropdownSelectedValue, // NOVO: valor selecionado padrão para dropdown
-  });
 }
 
 // Configuração de exportação
@@ -249,7 +161,6 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
   bool _isDeleting = false;
   bool _isExporting = false;
 
-  // Controles de paginação
   int _currentPage = 0;
   int _totalItems = 0;
 
@@ -259,32 +170,24 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
   int? sortColumnIndex;
   bool sortAscending = true;
 
-  // Para controle de colunas visíveis
   final Map<String, bool> _columnVisibility = {};
-
-  // Para ações personalizadas
   List<CustomAction<T>> _customActions = [];
 
-  // NOVO: Para controle de arquivos
   final Map<String, List<PlatformFile>> _fileCache = {};
-  final ImagePicker _imagePicker = ImagePicker();
 
   @override
   void initState() {
     super.initState();
     rowsPerPage = widget.paginationConfig.defaultRowsPerPage;
 
-    // Inicializar visibilidade com valores padrão primeiro
     for (final config in widget.fieldConfigs) {
       _columnVisibility[config.fieldName] = config.isVisibleByDefault;
     }
 
-    // Inicializar controladores de filtro para campos filtráveis
     for (final config in widget.fieldConfigs.where((c) => c.isFilterable)) {
       _filterControllers[config.fieldName] = TextEditingController();
     }
 
-    // Aplicar filtros iniciais se fornecidos
     if (widget.initialFilters != null) {
       widget.initialFilters!.forEach((key, value) {
         if (_filterControllers.containsKey(key)) {
@@ -293,18 +196,15 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
       });
     }
 
-    // Carregar preferências e depois carregar dados
     _loadColumnPreferences().then((_) {
       _loadItems(_currentPage, rowsPerPage);
     });
 
-    // Inicializar ações personalizadas
     if (widget.customActions != null) {
       _customActions = widget.customActions!();
     }
   }
 
-  // Carregar preferências de coluna
   Future<void> _loadColumnPreferences() async {
     try {
       final prefs = await SharedPreferences.getInstance();
@@ -323,7 +223,6 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
     }
   }
 
-  // Salvar preferências de coluna
   Future<void> _saveColumnPreferences() async {
     try {
       final prefs = await SharedPreferences.getInstance();
@@ -340,28 +239,6 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
         print('Erro ao salvar preferências: $e');
       }
     }
-  }
-
-  String buildUrl(String baseUrl, Map<String, dynamic> params) {
-    String url = baseUrl;
-
-    // Verifica se a URL já contém parâmetros
-    bool hasExistingParams = url.contains('?');
-
-    // Adiciona os parâmetros à URL
-    if (params.isNotEmpty) {
-      url += hasExistingParams ? '&' : '?';
-
-      // Converte os parâmetros para query string
-      url += params.entries
-          .map(
-            (entry) =>
-                '${Uri.encodeComponent(entry.key)}=${Uri.encodeComponent(entry.value.toString())}',
-          )
-          .join('&');
-    }
-
-    return url;
   }
 
   String construirUrl(String baseUrl, int pagina, int tamanhoPagina) {
@@ -383,10 +260,8 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
         pagina,
         tamanhoPagina,
       );
-
       String url = endpoint;
 
-      // Adicionar parâmetros de ordenação
       if (sortColumnIndex != null &&
           sortColumnIndex! < widget.fieldConfigs.length &&
           widget.fieldConfigs[sortColumnIndex!].isSortable) {
@@ -395,7 +270,6 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
         url += '&ordenarPor=${config.fieldName}&direcao=$direction';
       }
 
-      // Adicionar filtros - CORREÇÃO DO BUG: usar _filterControllers
       for (final config in widget.fieldConfigs.where((c) => c.isFilterable)) {
         final filterValue = _filterControllers[config.fieldName]?.text;
         if (filterValue != null && filterValue.isNotEmpty) {
@@ -403,7 +277,6 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
         }
       }
 
-      // Adicionar busca global
       if (_searchController.text.isNotEmpty) {
         url += '&busca=${Uri.encodeComponent(_searchController.text)}';
       }
@@ -471,7 +344,6 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
         continue;
       }
 
-      // NOVO: Inicializar com valor padrão se fornecido
       String initialValue = '';
       if (item != null) {
         final value = _getNestedValue(itemMap, config.fieldName);
@@ -551,9 +423,12 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
                   .map((config) {
                     return Padding(
                       padding: const EdgeInsets.only(bottom: 16),
-                      child: _buildFormField(
-                        config,
-                        controllers[config.fieldName]!,
+                      child: FieldFactory.buildField(
+                        config: config,
+                        controller: controllers[config.fieldName]!,
+                        context: context,
+                        fileCache: _fileCache,
+                        dropdownCache: _dropdownCache,
                         item: item,
                       ),
                     );
@@ -609,305 +484,6 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
     );
   }
 
-  // NOVO: Parâmetro item adicionado para verificar se é edição
-  Widget _buildFormField(
-    FieldConfig config,
-    TextEditingController controller, {
-    T? item,
-  }) {
-    // Aplicar valor selecionado padrão para dropdowns se for um novo item
-    if (item == null &&
-        config.fieldType == FieldType.dropdown &&
-        config.dropdownSelectedValue != null &&
-        controller.text.isEmpty) {
-      controller.text = config.dropdownSelectedValue.toString();
-    }
-
-    final fieldWidget = _buildFieldByType(config, controller);
-
-    // NOVO: Aplicar enabled/disabled state
-    return AbsorbPointer(
-      absorbing: !config.enabled,
-      child: Opacity(opacity: config.enabled ? 1.0 : 0.6, child: fieldWidget),
-    );
-  }
-
-  Widget _buildFieldByType(
-    FieldConfig config,
-    TextEditingController controller,
-  ) {
-    switch (config.fieldType) {
-      case FieldType.multiline:
-        return TextFormField(
-          controller: controller,
-          maxLines: config.maxLines,
-          decoration: _buildInputDecoration(config),
-          style: const TextStyle(fontSize: 16),
-          validator: config.validator,
-        );
-      case FieldType.dropdown:
-        return _buildDropdownField(config, controller);
-      case FieldType.date:
-        return TextFormField(
-          controller: controller,
-          decoration: _buildInputDecoration(config),
-          style: const TextStyle(fontSize: 16),
-          readOnly: true,
-          onTap: () => _selectDate(context, controller),
-          validator: config.validator,
-        );
-      case FieldType.file:
-        return _buildFileField(config, controller);
-      default:
-        return TextFormField(
-          controller: controller,
-          maxLines: config.maxLines,
-          decoration: _buildInputDecoration(config),
-          style: const TextStyle(fontSize: 16),
-          keyboardType: config.fieldType == FieldType.number
-              ? TextInputType.number
-              : TextInputType.text,
-          validator: config.validator,
-        );
-    }
-  }
-
-  InputDecoration _buildInputDecoration(FieldConfig config) {
-    return InputDecoration(
-      labelText: config.label + (config.isRequired ? ' *' : ''),
-      labelStyle: TextStyle(color: GridColors.textSecondary, fontSize: 14),
-      isDense: true,
-      contentPadding: const EdgeInsets.symmetric(vertical: 12, horizontal: 12),
-      focusedBorder: OutlineInputBorder(
-        borderSide: BorderSide(color: GridColors.primary, width: 1.5),
-        borderRadius: BorderRadius.circular(8),
-      ),
-      enabledBorder: OutlineInputBorder(
-        borderSide: BorderSide(color: GridColors.divider, width: 1.0),
-        borderRadius: BorderRadius.circular(8),
-      ),
-      prefixIcon: config.icon != null
-          ? Icon(config.icon, size: 20, color: GridColors.primary)
-          : null,
-    );
-  }
-
-  Future<void> _selectDate(
-    BuildContext context,
-    TextEditingController controller,
-  ) async {
-    final DateTime? picked = await showDatePicker(
-      context: context,
-      initialDate: DateTime.now(),
-      firstDate: DateTime(2000),
-      lastDate: DateTime(2100),
-    );
-
-    if (picked != null) {
-      controller.text = DateFormat('yyyy-MM-dd').format(picked);
-    }
-  }
-
-  // NOVO: Implementação do campo de arquivo
-  Widget _buildFileField(FieldConfig config, TextEditingController controller) {
-    final fileConfig = config.fileConfig ?? const FileConfig();
-    final currentFiles = _fileCache[config.fieldName] ?? [];
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        if (currentFiles.isNotEmpty)
-          ...currentFiles.map(
-            (file) => ListTile(
-              leading: const Icon(Icons.attach_file),
-              title: Text(file.name),
-              trailing: IconButton(
-                icon: const Icon(Icons.delete, color: GridColors.error),
-                onPressed: () {
-                  setState(() {
-                    _fileCache[config.fieldName]?.remove(file);
-                    controller.text = '';
-                  });
-                },
-              ),
-            ),
-          ),
-        ElevatedButton.icon(
-          onPressed: () => _selectFiles(config, controller),
-          icon: const Icon(Icons.attach_file),
-          label: Text(
-            currentFiles.isEmpty
-                ? 'Selecionar Arquivo'
-                : 'Adicionar Mais Arquivos',
-          ),
-          style: ElevatedButton.styleFrom(
-            backgroundColor: GridColors.primary,
-            foregroundColor: GridColors.card,
-          ),
-        ),
-        if (fileConfig.allowedExtensions.isNotEmpty)
-          Padding(
-            padding: const EdgeInsets.only(top: 8.0),
-            child: Text(
-              'Extensões permitidas: ${fileConfig.allowedExtensions.join(', ')}',
-              style: const TextStyle(
-                fontSize: 12,
-                color: GridColors.textSecondary,
-              ),
-            ),
-          ),
-      ],
-    );
-  }
-
-  // NOVO: Método para selecionar arquivos
-  Future<void> _selectFiles(
-    FieldConfig config,
-    TextEditingController controller,
-  ) async {
-    final fileConfig = config.fileConfig ?? const FileConfig();
-
-    try {
-      FilePickerResult? result = await FilePicker.platform.pickFiles(
-        type: FileType.custom,
-        allowedExtensions: fileConfig.allowedExtensions,
-        allowMultiple: fileConfig.allowMultiple,
-      );
-
-      if (result != null && result.files.isNotEmpty) {
-        setState(() {
-          _fileCache[config.fieldName] = result.files;
-          controller.text = result.files.map((f) => f.name).join(', ');
-        });
-      }
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Erro ao selecionar arquivo: $e'),
-          backgroundColor: GridColors.error,
-        ),
-      );
-    }
-  }
-
-  Widget _buildDropdownField(
-    FieldConfig config,
-    TextEditingController controller,
-  ) {
-    final cacheKey = '${config.fieldName}_dropdown';
-
-    if (_dropdownCache.containsKey(cacheKey)) {
-      return _buildDropdownContent(
-        config: config,
-        controller: controller,
-        options: _dropdownCache[cacheKey]!,
-      );
-    } else if (config.dropdownFutureBuilder != null) {
-      return FutureBuilder<List<Map<String, dynamic>>>(
-        future: config.dropdownFutureBuilder!(),
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const CircularProgressIndicator();
-          } else if (snapshot.hasError) {
-            return Text('Erro ao carregar opções: ${snapshot.error}');
-          } else {
-            final options = snapshot.data ?? [];
-            _dropdownCache[cacheKey] = options;
-            return _buildDropdownContent(
-              config: config,
-              controller: controller,
-              options: options,
-            );
-          }
-        },
-      );
-    } else {
-      return _buildDropdownContent(
-        config: config,
-        controller: controller,
-        options: config.dropdownOptions ?? [],
-      );
-    }
-  }
-
-  Widget _buildDropdownContent({
-    required FieldConfig config,
-    required TextEditingController controller,
-    required List<Map<String, dynamic>> options,
-  }) {
-    bool expectInteger = _isIntegerField(config);
-    dynamic currentValue = _getCurrentValue(config, controller);
-
-    final uniqueOptions = options
-        .fold<Map<dynamic, Map<String, dynamic>>>({}, (map, item) {
-          dynamic key = item[config.dropdownValueField];
-          if (key != null && !map.containsKey(key)) {
-            map[key] = item;
-          }
-          return map;
-        })
-        .values
-        .toList();
-
-    bool valueExists = uniqueOptions.any(
-      (option) => option[config.dropdownValueField] == currentValue,
-    );
-
-    if (!valueExists && config.dropdownSelectedValue != null) {
-      currentValue = config.dropdownSelectedValue;
-    } else if (!valueExists) {
-      currentValue = null;
-    }
-
-    return DropdownButtonFormField<dynamic>(
-      value: currentValue,
-      decoration: _buildInputDecoration(config),
-      isExpanded: true,
-      menuMaxHeight: 300,
-      itemHeight: 48,
-      items: uniqueOptions.map<DropdownMenuItem<dynamic>>((option) {
-        final optionValue = option[config.dropdownValueField];
-        final optionLabel =
-            option[config.dropdownDisplayField]?.toString() ?? '';
-        return DropdownMenuItem<dynamic>(
-          value: optionValue,
-          child: Text(optionLabel, overflow: TextOverflow.ellipsis),
-        );
-      }).toList(),
-      onChanged: (value) {
-        controller.text = value?.toString() ?? '';
-      },
-      validator: (value) {
-        if (config.validator != null) {
-          return config.validator!(value?.toString());
-        }
-        return null;
-      },
-    );
-  }
-
-  dynamic _getCurrentValue(
-    FieldConfig config,
-    TextEditingController controller,
-  ) {
-    bool expectInteger = _isIntegerField(config);
-
-    if (controller.text.isNotEmpty) {
-      if (expectInteger) {
-        return int.tryParse(controller.text);
-      } else {
-        return controller.text;
-      }
-    } else {
-      return null;
-    }
-  }
-
-  bool _isIntegerField(FieldConfig config) {
-    return config.dropdownValueField == 'id' ||
-        config.fieldName.toLowerCase().contains('id');
-  }
-
   Future<void> _saveItem(
     T? item,
     Map<String, TextEditingController> controllers,
@@ -937,31 +513,10 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
       }
     }
 
-    void setNestedValue(
-      Map<String, dynamic> map,
-      List<String> parts,
-      dynamic value,
-    ) {
-      if (parts.isEmpty) return;
-
-      var current = map;
-      for (int i = 0; i < parts.length - 1; i++) {
-        final part = parts[i];
-        if (!current.containsKey(part) ||
-            current[part] is! Map<String, dynamic>) {
-          current[part] = <String, dynamic>{};
-        }
-        current = current[part];
-      }
-
-      current[parts.last] = value;
-    }
-
     setState(() => _isUpdating = true);
 
     final formData = <String, dynamic>{};
 
-    // NOVO: Processar arquivos primeiro
     for (final config in widget.fieldConfigs.where(
       (c) => c.fieldType == FieldType.file,
     )) {
@@ -979,13 +534,7 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
       }
 
       final value = controllers[config.fieldName]!.text;
-
-      if (config.fieldName.contains('.')) {
-        final parts = config.fieldName.split('.');
-        setNestedValue(formData, parts, value);
-      } else {
-        formData[config.fieldName] = value;
-      }
+      formData[config.fieldName] = value;
     }
 
     if (item != null) {
@@ -1001,7 +550,6 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
         : await _updateItem(formData);
 
     if (success) {
-      // NOVO: Limpar cache de arquivos após salvar
       for (final config in widget.fieldConfigs.where(
         (c) => c.fieldType == FieldType.file,
       )) {
@@ -1029,41 +577,32 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
       enrichedFormData.addAll(widget.extraParams!);
     }
 
-    // NOVO: Processar upload de arquivos se houver
-    // NOVO: Processar upload de arquivos se houver
     final filesToUpload = <String, List<PlatformFile>>{};
-    final keysToRemove =
-        <String>[]; // Lista para armazenar as chaves que serão removidas
+    final keysToRemove = <String>[];
 
     for (final key in enrichedFormData.keys) {
       final value = enrichedFormData[key];
       if (value is List<PlatformFile>) {
         filesToUpload[key] = value;
-        keysToRemove.add(key); // Adiciona a chave à lista de remoção
+        keysToRemove.add(key);
       }
     }
 
-    // Remove todas as chaves marcadas fora do loop de iteração
     for (final key in keysToRemove) {
       enrichedFormData.remove(key);
     }
 
-    // 🔹 Detectar qualquer campo que esteja em formato dd/MM/yyyy e converter para yyyy-MM-dd
     enrichedFormData.updateAll((key, value) {
       if (value is String && value.isNotEmpty) {
         try {
-          // Tenta fazer parse no formato brasileiro
           final parsedDate = DateFormat("dd/MM/yyyy").parseStrict(value);
           return DateFormat("yyyy-MM-dd").format(parsedDate);
         } catch (e) {
-          // Se não for data válida em dd/MM/yyyy, mantém o valor original
           return value;
         }
       }
       return value;
     });
-
-    print(enrichedFormData);
 
     final response = await NetworkCaller().postRequest(
       widget.createEndpoint,
@@ -1071,7 +610,6 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
     );
 
     if (response.isSuccess) {
-      // NOVO: Fazer upload dos arquivos se a criação foi bem sucedida
       if (filesToUpload.isNotEmpty) {
         await _uploadFiles(response.body?['id']?.toString(), filesToUpload);
       }
@@ -1094,7 +632,6 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
     }
   }
 
-  // NOVO: Método para upload de arquivos - VERSÃO CORRIGIDA
   Future<void> _uploadFiles(
     String? itemId,
     Map<String, List<PlatformFile>> filesToUpload,
@@ -1103,40 +640,31 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
     if (itemId == null || filesToUpload.isEmpty) return;
 
     try {
-      // Criar a requisição multipart
       var request = http.MultipartRequest(
         'POST',
         Uri.parse(ApiLinks.fecthAUpload),
       );
-
-      // Adicionar o ID do item como parâmetro
       request.fields['itemId'] = itemId;
 
-      // Processar todos os arquivos do Map filesToUpload
       for (final entry in filesToUpload.entries) {
-        final String fieldName =
-            entry.key; // Nome do campo (ex: "file", "anexo")
+        final String fieldName = entry.key;
         final List<PlatformFile> files = entry.value;
 
         for (final platformFile in files) {
           Uint8List fileBytes;
 
-          // Obter os bytes do arquivo
           if (platformFile.bytes != null) {
             fileBytes = platformFile.bytes!;
           } else if (platformFile.path != null) {
-            // Para arquivos com path (mobile/desktop)
             File ioFile = File(platformFile.path!);
             fileBytes = await ioFile.readAsBytes();
           } else {
-            print('Arquivo sem bytes ou path: ${platformFile.name}');
             continue;
           }
 
-          // Adicionar o arquivo à requisição
           request.files.add(
             http.MultipartFile.fromBytes(
-              fieldName, // Nome do campo que o backend espera
+              fieldName,
               fileBytes,
               filename: platformFile.name,
             ),
@@ -1144,17 +672,12 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
         }
       }
 
-      // Adicionar headers de autenticação
       if (_authToken.isNotEmpty) {
         request.headers['Authorization'] = 'Bearer $_authToken';
       }
 
-      print('Enviando ${filesToUpload.length} arquivo(s) para o item $itemId');
-
-      // Enviar a requisição
       final response = await request.send();
 
-      // Verificar resposta
       if (response.statusCode == 200) {
         final responseBody = await response.stream.bytesToString();
         print('Upload realizado com sucesso: $responseBody');
@@ -1172,7 +695,6 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
 
     if (updated.containsKey("status")) {
       final status = updated["status"];
-
       if (status is String) {
         if (status.toLowerCase() == "ativo") {
           updated["status"] = 0;
@@ -1237,11 +759,9 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
     }
 
     setState(() => _isDeleting = true);
-
     final response = await NetworkCaller().getRequest(
       widget.deleteEndpoint.replaceAll(':id', id),
     );
-
     setState(() => _isDeleting = false);
 
     if (response.isSuccess) {
@@ -1301,6 +821,8 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
     );
   }
 
+  // MÉTODOS QUE ESTAVAM FALTANDO:
+
   Future<void> _exportToCsv() async {
     if (!widget.hasPermission('export') ||
         !widget.buttonPermissions['export']!) {
@@ -1315,14 +837,12 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
     try {
       final csvData = StringBuffer();
 
-      // Cabeçalhos
       final visibleFields = widget.fieldConfigs.where(
         (config) => _columnVisibility[config.fieldName] == true,
       );
       csvData.write(visibleFields.map((config) => config.label).join(','));
       csvData.write(',Data\n');
 
-      // Dados
       for (final item in filtered) {
         final itemMap = widget.toJson(item);
         final row = visibleFields
@@ -1337,7 +857,6 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
             })
             .join(',');
 
-        // Adicionar data
         final dateValue = _getNestedValue(itemMap, widget.dateFieldName);
         String date = 'N/A';
         if (dateValue != null) {
@@ -1444,7 +963,6 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
     );
   }
 
-  // Método para construir o menu de configuração de colunas
   Widget _buildColumnSettingsMenu() {
     return PopupMenuButton(
       icon: const Icon(Icons.settings),
@@ -1463,7 +981,6 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
     );
   }
 
-  // Diálogo para configuração de colunas
   void _showColumnSettingsDialog() {
     showDialog(
       context: context,
@@ -1503,7 +1020,7 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
                   _saveColumnPreferences();
                   setState(() {});
                   Navigator.pop(ctx);
-                  _applyFilters(); // Recarregar dados com as novas colunas
+                  _applyFilters();
                 },
                 child: const Text('Aplicar'),
               ),
@@ -1517,7 +1034,6 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
   List<DataColumn> _buildColumns() {
     final columns = <DataColumn>[];
 
-    // Adicionar colunas visíveis
     for (final config in widget.fieldConfigs.where(
       (c) => _columnVisibility[c.fieldName] == true,
     )) {
@@ -1543,7 +1059,6 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
       );
     }
 
-    // Adicionar coluna de ações (sempre visível)
     columns.add(const DataColumn(label: Text("Ações")));
 
     return columns;
@@ -1553,7 +1068,6 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
     final itemMap = widget.toJson(item);
     final cells = <DataCell>[];
 
-    // Adicionar células das colunas visíveis
     for (final config in widget.fieldConfigs.where(
       (c) => _columnVisibility[c.fieldName] == true,
     )) {
@@ -1575,7 +1089,6 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
       );
     }
 
-    // Adicionar célula de ações (sempre visível)
     cells.add(
       DataCell(
         Row(
@@ -1607,7 +1120,6 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
                   _getNestedValue(itemMap, widget.idFieldName).toString(),
                 ),
               ),
-            // Adicionar ações personalizadas
             ..._customActions
                 .where((action) => action.isVisible?.call(item) ?? true)
                 .map(
@@ -1643,7 +1155,6 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
       } else if (value is Map<String, dynamic>) {
         value = value[part];
       } else if (value is List) {
-        // Tenta acessar elemento de lista se for numérico
         final index = int.tryParse(part);
         if (index != null && index >= 0 && index < value.length) {
           value = value[index];
@@ -1651,7 +1162,6 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
           return null;
         }
       } else {
-        // Tenta acessar via reflexão se for um objeto Dart
         try {
           value = value[part];
         } catch (e) {
@@ -1813,18 +1323,10 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
                                 }
                               : null,
                           onPageChanged: (pageIndex) {
-                            setState(() {
-                              _currentPage = pageIndex;
-                            });
+                            setState(() => _currentPage = pageIndex);
                             _loadItems(_currentPage, rowsPerPage);
                           },
-                          fixedLeftColumns: widget.fieldConfigs
-                              .where(
-                                (c) =>
-                                    _columnVisibility[c.fieldName] == true &&
-                                    c.isFixed,
-                              )
-                              .length,
+                          fixedLeftColumns: fixedColumnsCount,
                           empty: Center(
                             child: Container(
                               padding: const EdgeInsets.all(20),

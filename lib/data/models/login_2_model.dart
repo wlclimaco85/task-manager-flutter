@@ -3,6 +3,7 @@ import 'package:task_manager_flutter/ui/widgets/generic_grid_screen.dart';
 import 'package:task_manager_flutter/data/models/parceiro_model.dart';
 import 'package:task_manager_flutter/data/models/empresa_model.dart';
 import 'package:task_manager_flutter/data/models/aplicativo_model.dart';
+import 'package:task_manager_flutter/ui/widgets/field_factory.dart';
 
 class Login {
   int? id;
@@ -73,13 +74,13 @@ class Login {
       } else {
         tipoLogin = LoginEnum.APP_ABRACO; // valor padrão se for nulo
       }
-      aplicativo = json['login']['aplicativo'] != null
+      aplicativo = json['aplicativo'] != null
           ? Aplicativo.fromJson(json['endereco'])
           : null;
-      empresa = json['login']['empresa'] != null
+      empresa = json['empresa'] != null
           ? Empresa.fromJson(json['empresa'])
           : null;
-      parceiro = json['login']['parceiro'] != null
+      parceiro = json['parceiro'] != null
           ? Parceiro.fromJson(json['parceiro'])
           : null;
       dhCreatedAt = json['audit][dhCreatedAt'] != null

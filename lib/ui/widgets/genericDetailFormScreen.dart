@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:task_manager_flutter/ui/widgets/generic_grid_screen.dart';
 import 'package:task_manager_flutter/ui/widgets/tab_config.dart';
+import 'package:task_manager_flutter/ui/widgets/field_factory.dart';
 
 class GenericDetailFormScreen<T> extends StatefulWidget {
   final T item;
@@ -186,7 +187,9 @@ class _GenericDetailFormScreenState<T> extends State<GenericDetailFormScreen<T>>
         key: _formKeys[index],
         child: ListView(
           padding: const EdgeInsets.all(16),
-          children: tab.fields!.map((field) => _buildFormField(field)).toList(),
+          children: tab.fields!
+              .map((field) => _buildFormField(field as FieldConfig))
+              .toList(),
         ),
       );
     }

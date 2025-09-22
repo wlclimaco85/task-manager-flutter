@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:task_manager_flutter/ui/widgets/generic_grid_screen.dart';
+import 'package:task_manager_flutter/ui/widgets/field_factory.dart';
 
 class Dieta {
   int? id;

@@ -3,7 +3,7 @@
     "activeCommit": 0,
     "commits": [
         {
-            "activePatchIndex": 1,
+            "activePatchIndex": 2,
             "patches": [
                 {
                     "date": 1757968892715,
@@ -12,6 +12,10 @@
                 {
                     "date": 1757968911003,
                     "content": "Index: \n===================================================================\n--- \n+++ \n@@ -48,9 +48,8 @@\n       label: \"Data Pagamento\",\r\n       fieldName: \"dtPagamento\",\r\n       icon: Icons.date_range,\r\n       isInForm: true,\r\n-      isDate: true,\r\n     ),\r\n     FieldConfig(\r\n       label: \"Aluno ID\",\r\n       fieldName: \"alunoId\",\r\n"
+                },
+                {
+                    "date": 1758569942620,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -1,6 +1,6 @@\n import 'package:flutter/material.dart';\r\n-import 'package:task_manager_flutter/ui/widgets/generic_grid_screen.dart';\r\n+import 'package:task_manager_flutter/ui/widgets/field_factory.dart';\r\n \r\n class Mensalidade {\r\n   int? id;\r\n   double? valor;\r\n"
                 }
             ],
             "date": 1757968892715,

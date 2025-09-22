@@ -3,7 +3,7 @@
     "activeCommit": 0,
     "commits": [
         {
-            "activePatchIndex": 2,
+            "activePatchIndex": 5,
             "patches": [
                 {
                     "date": 1758305148225,
@@ -16,6 +16,18 @@
                 {
                     "date": 1758306384467,
                     "content": "Index: \n===================================================================\n--- \n+++ \n@@ -23,10 +23,10 @@\n       hasPermission: hasPermission,\r\n       fieldConfigs: ContaPagar.fieldConfigs,\r\n       idFieldName: 'id',\r\n       dateFieldName: 'createdAt',\r\n-      customActions: [\r\n-        CustomAction(\r\n+      customActions: () => [\r\n+        CustomAction<ContaPagar>(\r\n           icon: Icons.payment,\r\n           label: 'Baixar',\r\n           onPressed: (context, object) => _showBaixaDialog(context, object),\r\n           isVisible: (object) => object.status == StatusConta.ABERTA,\r\n"
+                },
+                {
+                    "date": 1758571664473,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -3,8 +3,9 @@\n import 'package:task_manager_flutter/data/utils/api_links.dart';\r\n import 'package:task_manager_flutter/ui/widgets/generic_grid_screen.dart';\r\n import 'package:task_manager_flutter/data/models/conta_pagar_model.dart';\r\n import 'package:task_manager_flutter/ui/screens/baixa_dialog.dart';\r\n+import 'package:task_manager_flutter/ui/widgets/field_factory.dart';\r\n \r\n class ContaPagarGridScreen extends StatelessWidget {\r\n   final SecurityCheck hasPermission;\r\n \r\n"
+                },
+                {
+                    "date": 1758571674074,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -53,5 +53,5 @@\n         return BaixaDialog(conta: conta);\r\n       },\r\n     );\r\n   }\r\n-}\n\\ No newline at end of file\n+}\r\n"
+                },
+                {
+                    "date": 1758571688286,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -4,8 +4,9 @@\n import 'package:task_manager_flutter/ui/widgets/generic_grid_screen.dart';\r\n import 'package:task_manager_flutter/data/models/conta_pagar_model.dart';\r\n import 'package:task_manager_flutter/ui/screens/baixa_dialog.dart';\r\n import 'package:task_manager_flutter/ui/widgets/field_factory.dart';\r\n+// Remove any other imports of FieldConfig from field_types.dart in this file\r\n \r\n class ContaPagarGridScreen extends StatelessWidget {\r\n   final SecurityCheck hasPermission;\r\n \r\n"
                 }
             ],
             "date": 1758305148225,

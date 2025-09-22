@@ -4,6 +4,8 @@ import 'package:task_manager_flutter/data/utils/api_links.dart';
 import 'package:task_manager_flutter/ui/widgets/generic_grid_screen.dart';
 import 'package:task_manager_flutter/data/models/conta_pagar_model.dart';
 import 'package:task_manager_flutter/ui/screens/baixa_dialog.dart';
+import 'package:task_manager_flutter/ui/widgets/field_factory.dart';
+// Remove any other imports of FieldConfig from field_types.dart in this file
 
 class ContaPagarGridScreen extends StatelessWidget {
   final SecurityCheck hasPermission;
