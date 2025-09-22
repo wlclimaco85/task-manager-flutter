@@ -1,3 +1,7 @@
+import 'package:task_manager_flutter/data/models/parceiro_model.dart';
+import 'package:task_manager_flutter/data/models/empresa_model.dart';
+import 'package:task_manager_flutter/data/models/login_2_model.dart';
+
 class LoginModel {
   String? status;
   String? token;
@@ -30,15 +34,22 @@ class Data {
   String? mobile;
   String? photo;
   DadosPessoal? codDadosPessoal;
+  Empresa? empresa;
+  Parceiro? parceiro;
+  Login? login;
 
-  Data(
-      {this.id,
-      this.email,
-      this.firstName,
-      this.lastName,
-      this.mobile,
-      this.photo,
-      this.codDadosPessoal});
+  Data({
+    this.id,
+    this.email,
+    this.firstName,
+    this.lastName,
+    this.mobile,
+    this.photo,
+    this.codDadosPessoal,
+    this.empresa,
+    this.parceiro,
+    this.login,
+  });
 
   Data.fromJson(Map<String, dynamic> json) {
     id = json['id'];
@@ -82,7 +93,7 @@ class Data {
       "academia": codDadosPessoal?.academia,
       "codProdutor": codDadosPessoal?.codProdutor,
       "incrMun": codDadosPessoal?.incrMun,
-      "razaoSocial": codDadosPessoal?.razaoSocial
+      "razaoSocial": codDadosPessoal?.razaoSocial,
     };
 
     return data;
@@ -113,29 +124,30 @@ class DadosPessoal {
   String? incrMun;
   String? razaoSocial;
 
-  DadosPessoal(
-      {this.id,
-      this.nome,
-      this.cpf,
-      this.telefone1,
-      this.telefone2,
-      this.logradouro,
-      this.numero,
-      this.cep,
-      this.bairro,
-      this.cidade,
-      this.estado,
-      this.pais,
-      this.email,
-      this.fistName,
-      this.lastName,
-      this.photo,
-      this.tipoAluno,
-      this.parentId,
-      this.academia,
-      this.codProdutor,
-      this.incrMun,
-      this.razaoSocial});
+  DadosPessoal({
+    this.id,
+    this.nome,
+    this.cpf,
+    this.telefone1,
+    this.telefone2,
+    this.logradouro,
+    this.numero,
+    this.cep,
+    this.bairro,
+    this.cidade,
+    this.estado,
+    this.pais,
+    this.email,
+    this.fistName,
+    this.lastName,
+    this.photo,
+    this.tipoAluno,
+    this.parentId,
+    this.academia,
+    this.codProdutor,
+    this.incrMun,
+    this.razaoSocial,
+  });
 
   DadosPessoal.fromJson(Map<String, dynamic> json) {
     id = json['id'];

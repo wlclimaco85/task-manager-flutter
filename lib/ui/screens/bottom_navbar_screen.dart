@@ -40,6 +40,7 @@ import 'package:task_manager_flutter/ui/screens/chamado_grid_screen.dart';
 import 'package:task_manager_flutter/ui/screens/forma_pagamento_grid_screen.dart';
 import 'package:task_manager_flutter/ui/screens/diretorio_grid_screen.dart';
 import 'documento_screen.dart';
+import 'package:task_manager_flutter/ui/screens/auth_screens/login_screen.dart';
 
 import 'package:task_manager_flutter/ui/screens/file_upload_screen.dart';
 
@@ -76,46 +77,53 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
 
   // Obtém as telas com base no estado de login
   List<Widget> get _screens {
-    return [
-      ComunicadoGridScreen(),
-      const ChatMessageScreen(
-        sector: 'Financeiro',
-        userName: 'Usuário',
-        chatId: '0',
-      ),
-      ComunicadoGridComponentesScreen(hasPermission: (permission) => true),
+    final userInfo = AuthUtility.userInfo.data;
 
-      AplicativoGridScreen(hasPermission: (permission) => true),
-      LoginGridScreen(hasPermission: (permission) => true),
-      ChatListScreen(userName: AuthUtility.userInfo.data!.email ?? 'Usuário'),
+    // Se o usuário está logado
+    if (userInfo != null && userInfo.id != null && userInfo.id! >= 1) {
+      return [
+        ComunicadoGridScreen(),
+        const ChatMessageScreen(
+          sector: 'Financeiro',
+          userName: 'Usuário',
+          chatId: '0',
+        ),
+        ComunicadoGridComponentesScreen(hasPermission: (permission) => true),
+        AplicativoGridScreen(hasPermission: (permission) => true),
+        LoginGridScreen(hasPermission: (permission) => true),
+        ChatListScreen(userName: userInfo.email ?? 'Usuário'),
 
-      const ProductRegisterScreen(),
-      const ProductRegisterScreen(),
-      RegimeGridScreen(hasPermission: (perm) => true),
-      AlimentoGridScreen(hasPermission: (perm) => true),
-      DietaGridScreen(hasPermission: (perm) => true),
-      EmpresaGridScreen(hasPermission: (perm) => true),
-      ExameGridScreen(hasPermission: (perm) => true),
-      ExercicioGridScreen(hasPermission: (perm) => true),
-      GrupoMuscularGridScreen(hasPermission: (perm) => true),
-      MedicamentoGridScreen(hasPermission: (perm) => true),
-      MensalidadeGridScreen(hasPermission: (perm) => true),
-      ModalidadeGridScreen(hasPermission: (perm) => true),
-      ObjetivoGridScreen(hasPermission: (perm) => true),
-      ParceiroGridScreen(hasPermission: (perm) => true),
-      PersonalGridScreen(hasPermission: (perm) => true),
-      PlanoGridScreen(hasPermission: (perm) => true),
-      RoleGridScreen(hasPermission: (perm) => true),
-      SetorGridScreen(hasPermission: (perm) => true),
-      SuplementoGridScreen(hasPermission: (perm) => true),
-      ContaPagarGridScreen(hasPermission: (perm) => true),
-      ContaReceberGridScreen(hasPermission: (perm) => true),
-      ChamadoGridScreen(hasPermission: (perm) => true),
-      FormaPagamentoGridScreen(hasPermission: (perm) => true),
-      DiretorioGridScreen(hasPermission: (perm) => true),
-      FileUploadScreen(hasPermission: (perm) => true),
-      CalendarScreen(),
-    ];
+        const ProductRegisterScreen(),
+        const ProductRegisterScreen(),
+        RegimeGridScreen(hasPermission: (perm) => true),
+        AlimentoGridScreen(hasPermission: (perm) => true),
+        DietaGridScreen(hasPermission: (perm) => true),
+        EmpresaGridScreen(hasPermission: (perm) => true),
+        ExameGridScreen(hasPermission: (perm) => true),
+        ExercicioGridScreen(hasPermission: (perm) => true),
+        GrupoMuscularGridScreen(hasPermission: (perm) => true),
+        MedicamentoGridScreen(hasPermission: (perm) => true),
+        MensalidadeGridScreen(hasPermission: (perm) => true),
+        ModalidadeGridScreen(hasPermission: (perm) => true),
+        ObjetivoGridScreen(hasPermission: (perm) => true),
+        ParceiroGridScreen(hasPermission: (perm) => true),
+        PersonalGridScreen(hasPermission: (perm) => true),
+        PlanoGridScreen(hasPermission: (perm) => true),
+        RoleGridScreen(hasPermission: (perm) => true),
+        SetorGridScreen(hasPermission: (perm) => true),
+        SuplementoGridScreen(hasPermission: (perm) => true),
+        ContaPagarGridScreen(hasPermission: (perm) => true),
+        ContaReceberGridScreen(hasPermission: (perm) => true),
+        ChamadoGridScreen(hasPermission: (perm) => true),
+        FormaPagamentoGridScreen(hasPermission: (perm) => true),
+        DiretorioGridScreen(hasPermission: (perm) => true),
+        FileUploadScreen(hasPermission: (perm) => true),
+        CalendarScreen(),
+      ];
+    } else {
+      // Usuário não logado → só mostra login
+      return [LoginScreen()];
+    }
   }
 
   // Itens da sidebar

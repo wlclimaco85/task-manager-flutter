@@ -5,6 +5,15 @@ import 'package:task_manager_flutter/data/services/network_caller.dart';
 import 'package:intl/intl.dart';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'dart:io';
+import 'package:image_picker/image_picker.dart';
+import 'package:file_picker/file_picker.dart';
+import 'package:http/http.dart' as http;
+import 'package:file_picker/file_picker.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:task_manager_flutter/data/models/auth_utility.dart';
+import 'dart:convert';
+import 'package:task_manager_flutter/data/models/auth_utility.dart';
 
 // Cores centralizadas para todo o componente
 class GridColors {
@@ -50,7 +59,22 @@ class GridColors {
 }
 
 // Enum para tipos de campo
-enum FieldType { text, number, email, date, multiline, dropdown, boolean }
+enum FieldType { text, number, email, date, multiline, dropdown, boolean, file }
+
+// Configuração de arquivo
+class FileConfig {
+  final List<String> allowedExtensions;
+  final bool allowMultiple;
+  final int maxFileSize; // em bytes
+  final String fileFieldName; // nome do campo para upload
+
+  const FileConfig({
+    this.allowedExtensions = const ['pdf', 'doc', 'docx', 'jpg', 'jpeg', 'png'],
+    this.allowMultiple = false,
+    this.maxFileSize = 5 * 1024 * 1024, // 5MB
+    this.fileFieldName = 'file',
+  });
+}
 
 // Configuração avançada de campo
 class FieldConfig {
@@ -72,6 +96,11 @@ class FieldConfig {
   final String? displayFieldName;
   final bool isVisibleByDefault;
   final bool isFixed;
+  final bool enabled; // NOVO: campo para habilitar/desabilitar
+  final dynamic defaultValue; // NOVO: valor padrão para o campo
+  final FileConfig? fileConfig; // NOVO: configuração para arquivos
+  final dynamic
+  dropdownSelectedValue; // NOVO: valor selecionado padrão para dropdown
 
   const FieldConfig({
     required this.label,
@@ -92,6 +121,10 @@ class FieldConfig {
     this.displayFieldName,
     this.isVisibleByDefault = true,
     this.isFixed = false,
+    this.enabled = true, // NOVO: padrão é habilitado
+    this.defaultValue, // NOVO: valor padrão
+    this.fileConfig, // NOVO: configuração de arquivo
+    this.dropdownSelectedValue, // NOVO: valor selecionado padrão para dropdown
   });
 }
 
@@ -230,6 +263,10 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
 
   // Para ações personalizadas
   List<CustomAction<T>> _customActions = [];
+
+  // NOVO: Para controle de arquivos
+  final Map<String, List<PlatformFile>> _fileCache = {};
+  final ImagePicker _imagePicker = ImagePicker();
 
   @override
   void initState() {
@@ -433,22 +470,20 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
         continue;
       }
 
-      if (config.fieldType == FieldType.dropdown) {
+      // NOVO: Inicializar com valor padrão se fornecido
+      String initialValue = '';
+      if (item != null) {
         final value = _getNestedValue(itemMap, config.fieldName);
         if (value is Map) {
-          controllers[config.fieldName] = TextEditingController(
-            text: value[config.dropdownValueField]?.toString() ?? '',
-          );
+          initialValue = value[config.dropdownValueField]?.toString() ?? '';
         } else {
-          controllers[config.fieldName] = TextEditingController(
-            text: value?.toString() ?? '',
-          );
+          initialValue = value?.toString() ?? '';
         }
-      } else {
-        controllers[config.fieldName] = TextEditingController(
-          text: _getNestedValue(itemMap, config.fieldName)?.toString() ?? '',
-        );
+      } else if (config.defaultValue != null) {
+        initialValue = config.defaultValue.toString();
       }
+
+      controllers[config.fieldName] = TextEditingController(text: initialValue);
     }
 
     showDialog(
@@ -518,6 +553,7 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
                       child: _buildFormField(
                         config,
                         controllers[config.fieldName]!,
+                        item: item,
                       ),
                     );
                   }),
@@ -572,7 +608,33 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
     );
   }
 
-  Widget _buildFormField(FieldConfig config, TextEditingController controller) {
+  // NOVO: Parâmetro item adicionado para verificar se é edição
+  Widget _buildFormField(
+    FieldConfig config,
+    TextEditingController controller, {
+    T? item,
+  }) {
+    // Aplicar valor selecionado padrão para dropdowns se for um novo item
+    if (item == null &&
+        config.fieldType == FieldType.dropdown &&
+        config.dropdownSelectedValue != null &&
+        controller.text.isEmpty) {
+      controller.text = config.dropdownSelectedValue.toString();
+    }
+
+    final fieldWidget = _buildFieldByType(config, controller);
+
+    // NOVO: Aplicar enabled/disabled state
+    return AbsorbPointer(
+      absorbing: !config.enabled,
+      child: Opacity(opacity: config.enabled ? 1.0 : 0.6, child: fieldWidget),
+    );
+  }
+
+  Widget _buildFieldByType(
+    FieldConfig config,
+    TextEditingController controller,
+  ) {
     switch (config.fieldType) {
       case FieldType.multiline:
         return TextFormField(
@@ -583,8 +645,6 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
           validator: config.validator,
         );
       case FieldType.dropdown:
-        // Para dropdowns, usamos a nova função _buildDropdownField
-        // que agora lida com ambos os casos (estático e assíncrono) internamente
         return _buildDropdownField(config, controller);
       case FieldType.date:
         return TextFormField(
@@ -595,6 +655,8 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
           onTap: () => _selectDate(context, controller),
           validator: config.validator,
         );
+      case FieldType.file:
+        return _buildFileField(config, controller);
       default:
         return TextFormField(
           controller: controller,
@@ -612,12 +674,9 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
   InputDecoration _buildInputDecoration(FieldConfig config) {
     return InputDecoration(
       labelText: config.label + (config.isRequired ? ' *' : ''),
-      labelStyle: TextStyle(
-        color: GridColors.textSecondary,
-        fontSize: 14, // Fonte menor
-      ),
-      isDense: true, // Reduz o padding interno
-      contentPadding: EdgeInsets.symmetric(vertical: 12, horizontal: 12),
+      labelStyle: TextStyle(color: GridColors.textSecondary, fontSize: 14),
+      isDense: true,
+      contentPadding: const EdgeInsets.symmetric(vertical: 12, horizontal: 12),
       focusedBorder: OutlineInputBorder(
         borderSide: BorderSide(color: GridColors.primary, width: 1.5),
         borderRadius: BorderRadius.circular(8),
@@ -648,29 +707,104 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
     }
   }
 
-  // NOVA IMPLEMENTAÇÃO PARA DROPDOWNS
+  // NOVO: Implementação do campo de arquivo
+  Widget _buildFileField(FieldConfig config, TextEditingController controller) {
+    final fileConfig = config.fileConfig ?? const FileConfig();
+    final currentFiles = _fileCache[config.fieldName] ?? [];
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        if (currentFiles.isNotEmpty)
+          ...currentFiles.map(
+            (file) => ListTile(
+              leading: const Icon(Icons.attach_file),
+              title: Text(file.name),
+              trailing: IconButton(
+                icon: const Icon(Icons.delete, color: GridColors.error),
+                onPressed: () {
+                  setState(() {
+                    _fileCache[config.fieldName]?.remove(file);
+                    controller.text = '';
+                  });
+                },
+              ),
+            ),
+          ),
+        ElevatedButton.icon(
+          onPressed: () => _selectFiles(config, controller),
+          icon: const Icon(Icons.attach_file),
+          label: Text(
+            currentFiles.isEmpty
+                ? 'Selecionar Arquivo'
+                : 'Adicionar Mais Arquivos',
+          ),
+          style: ElevatedButton.styleFrom(
+            backgroundColor: GridColors.primary,
+            foregroundColor: GridColors.card,
+          ),
+        ),
+        if (fileConfig.allowedExtensions.isNotEmpty)
+          Padding(
+            padding: const EdgeInsets.only(top: 8.0),
+            child: Text(
+              'Extensões permitidas: ${fileConfig.allowedExtensions.join(', ')}',
+              style: const TextStyle(
+                fontSize: 12,
+                color: GridColors.textSecondary,
+              ),
+            ),
+          ),
+      ],
+    );
+  }
+
+  // NOVO: Método para selecionar arquivos
+  Future<void> _selectFiles(
+    FieldConfig config,
+    TextEditingController controller,
+  ) async {
+    final fileConfig = config.fileConfig ?? const FileConfig();
+
+    try {
+      FilePickerResult? result = await FilePicker.platform.pickFiles(
+        type: FileType.custom,
+        allowedExtensions: fileConfig.allowedExtensions,
+        allowMultiple: fileConfig.allowMultiple,
+      );
+
+      if (result != null && result.files.isNotEmpty) {
+        setState(() {
+          _fileCache[config.fieldName] = result.files;
+          controller.text = result.files.map((f) => f.name).join(', ');
+        });
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Erro ao selecionar arquivo: $e'),
+          backgroundColor: GridColors.error,
+        ),
+      );
+    }
+  }
+
   Widget _buildDropdownField(
     FieldConfig config,
     TextEditingController controller,
   ) {
     final cacheKey = '${config.fieldName}_dropdown';
 
-    // Se temos opções em cache, usamos a versão síncrona
     if (_dropdownCache.containsKey(cacheKey)) {
       return _buildDropdownContent(
         config: config,
         controller: controller,
         options: _dropdownCache[cacheKey]!,
       );
-    }
-    // Se não temos cache mas temos um FutureBuilder, carregamos os dados
-    else if (config.dropdownFutureBuilder != null) {
+    } else if (config.dropdownFutureBuilder != null) {
       return FutureBuilder<List<Map<String, dynamic>>>(
         future: config.dropdownFutureBuilder!(),
         builder: (context, snapshot) {
-          print('Snapshot connection state: ${snapshot.connectionState}');
-          print('Snapshot has data: ${snapshot.hasData}');
-          print('Snapshot data: ${snapshot.data}');
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const CircularProgressIndicator();
           } else if (snapshot.hasError) {
@@ -686,9 +820,7 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
           }
         },
       );
-    }
-    // Caso contrário, usamos as opções estáticas
-    else {
+    } else {
       return _buildDropdownContent(
         config: config,
         controller: controller,
@@ -697,32 +829,14 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
     }
   }
 
-  // Função auxiliar para construir o conteúdo do dropdown
   Widget _buildDropdownContent({
     required FieldConfig config,
     required TextEditingController controller,
     required List<Map<String, dynamic>> options,
   }) {
-    // Determina se o campo é do tipo ID (inteiro)
-    bool expectInteger =
-        config.dropdownValueField == 'id' ||
-        config.fieldName.toLowerCase().contains('id');
+    bool expectInteger = _isIntegerField(config);
+    dynamic currentValue = _getCurrentValue(config, controller);
 
-    // Converte o valor do controlador para o tipo apropriado
-    dynamic currentValue;
-    if (controller.text.isNotEmpty) {
-      if (expectInteger) {
-        currentValue = int.tryParse(controller.text);
-      } else {
-        currentValue = controller.text;
-      }
-    } else {
-      currentValue = null;
-    }
-
-    print('Current value after conversion: $currentValue');
-
-    // Remove duplicatas
     final uniqueOptions = options
         .fold<Map<dynamic, Map<String, dynamic>>>({}, (map, item) {
           dynamic key = item[config.dropdownValueField];
@@ -733,35 +847,32 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
         })
         .values
         .toList();
-    print('Options available: $uniqueOptions');
-    // Verifica se o valor atual existe na lista
+
     bool valueExists = uniqueOptions.any(
       (option) => option[config.dropdownValueField] == currentValue,
     );
-    if (!valueExists) {
+
+    if (!valueExists && config.dropdownSelectedValue != null) {
+      currentValue = config.dropdownSelectedValue;
+    } else if (!valueExists) {
       currentValue = null;
     }
 
     return DropdownButtonFormField<dynamic>(
       value: currentValue,
       decoration: _buildInputDecoration(config),
-      isExpanded: true, // Para evitar que o dropdown seja muito largo
-      menuMaxHeight: 300, // Altura máxima do menu (ajuste conforme necessário)
-      itemHeight: 48, // Altura de cada item
+      isExpanded: true,
+      menuMaxHeight: 300,
+      itemHeight: 48,
       items: uniqueOptions.map<DropdownMenuItem<dynamic>>((option) {
         final optionValue = option[config.dropdownValueField];
         final optionLabel =
             option[config.dropdownDisplayField]?.toString() ?? '';
-        print('Creating menu item: value=$optionValue, label=$optionLabel');
         return DropdownMenuItem<dynamic>(
           value: optionValue,
-          child: Text(
-            optionLabel,
-            overflow: TextOverflow.ellipsis, // Para textos longos
-          ),
+          child: Text(optionLabel, overflow: TextOverflow.ellipsis),
         );
       }).toList(),
-
       onChanged: (value) {
         controller.text = value?.toString() ?? '';
       },
@@ -774,7 +885,6 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
     );
   }
 
-  // Funções auxiliares para determinar se é campo inteiro e obter valor atual
   dynamic _getCurrentValue(
     FieldConfig config,
     TextEditingController controller,
@@ -802,7 +912,6 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
     Map<String, TextEditingController> controllers,
     BuildContext context,
   ) async {
-    // Validar campos obrigatórios
     for (final config in widget.fieldConfigs.where(
       (c) => c.isInForm && c.isRequired,
     )) {
@@ -850,7 +959,20 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
     setState(() => _isUpdating = true);
 
     final formData = <String, dynamic>{};
-    for (final config in widget.fieldConfigs.where((c) => c.isInForm)) {
+
+    // NOVO: Processar arquivos primeiro
+    for (final config in widget.fieldConfigs.where(
+      (c) => c.fieldType == FieldType.file,
+    )) {
+      final files = _fileCache[config.fieldName];
+      if (files != null && files.isNotEmpty) {
+        formData[config.fieldName] = files;
+      }
+    }
+
+    for (final config in widget.fieldConfigs.where(
+      (c) => c.isInForm && c.fieldType != FieldType.file,
+    )) {
       if (item == null && config.fieldName == widget.idFieldName) {
         continue;
       }
@@ -865,7 +987,6 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
       }
     }
 
-    // Preservar ID e data se estiver editando
     if (item != null) {
       final itemMap = widget.toJson(item);
       formData[widget.idFieldName] = _getNestedValue(
@@ -879,6 +1000,12 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
         : await _updateItem(formData);
 
     if (success) {
+      // NOVO: Limpar cache de arquivos após salvar
+      for (final config in widget.fieldConfigs.where(
+        (c) => c.fieldType == FieldType.file,
+      )) {
+        _fileCache.remove(config.fieldName);
+      }
       Navigator.pop(context);
       _loadItems(_currentPage, rowsPerPage);
     }
@@ -895,13 +1022,47 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
       return false;
     }
 
-    // Adicionar campos extras ao formData
     final Map<String, dynamic> enrichedFormData = Map.from(formData);
 
-    // Adicionar campos extras se estiverem disponíveis
     if (widget.extraParams != null) {
       enrichedFormData.addAll(widget.extraParams!);
     }
+
+    // NOVO: Processar upload de arquivos se houver
+    // NOVO: Processar upload de arquivos se houver
+    final filesToUpload = <String, List<PlatformFile>>{};
+    final keysToRemove =
+        <String>[]; // Lista para armazenar as chaves que serão removidas
+
+    for (final key in enrichedFormData.keys) {
+      final value = enrichedFormData[key];
+      if (value is List<PlatformFile>) {
+        filesToUpload[key] = value;
+        keysToRemove.add(key); // Adiciona a chave à lista de remoção
+      }
+    }
+
+    // Remove todas as chaves marcadas fora do loop de iteração
+    for (final key in keysToRemove) {
+      enrichedFormData.remove(key);
+    }
+
+    // 🔹 Detectar qualquer campo que esteja em formato dd/MM/yyyy e converter para yyyy-MM-dd
+    enrichedFormData.updateAll((key, value) {
+      if (value is String && value.isNotEmpty) {
+        try {
+          // Tenta fazer parse no formato brasileiro
+          final parsedDate = DateFormat("dd/MM/yyyy").parseStrict(value);
+          return DateFormat("yyyy-MM-dd").format(parsedDate);
+        } catch (e) {
+          // Se não for data válida em dd/MM/yyyy, mantém o valor original
+          return value;
+        }
+      }
+      return value;
+    });
+
+    print(enrichedFormData);
 
     final response = await NetworkCaller().postRequest(
       widget.createEndpoint,
@@ -909,6 +1070,11 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
     );
 
     if (response.isSuccess) {
+      // NOVO: Fazer upload dos arquivos se a criação foi bem sucedida
+      if (filesToUpload.isNotEmpty) {
+        await _uploadFiles(response.body?['id']?.toString(), filesToUpload);
+      }
+
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Item criado com sucesso'),
@@ -927,7 +1093,79 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
     }
   }
 
-  // Função auxiliar para normalizar status
+  // NOVO: Método para upload de arquivos - VERSÃO CORRIGIDA
+  Future<void> _uploadFiles(
+    String? itemId,
+    Map<String, List<PlatformFile>> filesToUpload,
+  ) async {
+    final String _authToken = '${AuthUtility.userInfo.token}';
+    if (itemId == null || filesToUpload.isEmpty) return;
+
+    try {
+      // Criar a requisição multipart
+      var request = http.MultipartRequest(
+        'POST',
+        Uri.parse('http://192.168.114.1:8088/boletobancos/api/files/upload'),
+      );
+
+      // Adicionar o ID do item como parâmetro
+      request.fields['itemId'] = itemId;
+
+      // Processar todos os arquivos do Map filesToUpload
+      for (final entry in filesToUpload.entries) {
+        final String fieldName =
+            entry.key; // Nome do campo (ex: "file", "anexo")
+        final List<PlatformFile> files = entry.value;
+
+        for (final platformFile in files) {
+          Uint8List fileBytes;
+
+          // Obter os bytes do arquivo
+          if (platformFile.bytes != null) {
+            fileBytes = platformFile.bytes!;
+          } else if (platformFile.path != null) {
+            // Para arquivos com path (mobile/desktop)
+            File ioFile = File(platformFile.path!);
+            fileBytes = await ioFile.readAsBytes();
+          } else {
+            print('Arquivo sem bytes ou path: ${platformFile.name}');
+            continue;
+          }
+
+          // Adicionar o arquivo à requisição
+          request.files.add(
+            http.MultipartFile.fromBytes(
+              fieldName, // Nome do campo que o backend espera
+              fileBytes,
+              filename: platformFile.name,
+            ),
+          );
+        }
+      }
+
+      // Adicionar headers de autenticação
+      if (_authToken.isNotEmpty) {
+        request.headers['Authorization'] = 'Bearer $_authToken';
+      }
+
+      print('Enviando ${filesToUpload.length} arquivo(s) para o item $itemId');
+
+      // Enviar a requisição
+      final response = await request.send();
+
+      // Verificar resposta
+      if (response.statusCode == 200) {
+        final responseBody = await response.stream.bytesToString();
+        print('Upload realizado com sucesso: $responseBody');
+      } else {
+        final errorBody = await response.stream.bytesToString();
+        print('Erro no upload (${response.statusCode}): $errorBody');
+      }
+    } catch (e) {
+      print('Exceção durante o upload: $e');
+    }
+  }
+
   Map<String, dynamic> normalizeFormData(Map<String, dynamic> formData) {
     final updated = Map<String, dynamic>.from(formData);
 
@@ -935,19 +1173,17 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
       final status = updated["status"];
 
       if (status is String) {
-        // Se vier como texto
         if (status.toLowerCase() == "ativo") {
           updated["status"] = 0;
         } else if (status.toLowerCase() == "inativo") {
           updated["status"] = 1;
         } else {
-          updated["status"] = 0; // default
+          updated["status"] = 0;
         }
       } else if (status == null) {
-        updated["status"] = 0; // default se nulo
+        updated["status"] = 0;
       }
     } else {
-      // Se não vier o campo "status", adiciona como 0
       updated["status"] = 0;
     }
 
@@ -1441,7 +1677,6 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
             foregroundColor: GridColors.card,
             actions: [
               _buildColumnSettingsMenu(),
-
               if (widget.exportConfig.enableCsvExport &&
                   widget.hasPermission('export') &&
                   widget.buttonPermissions['export']!)
@@ -1582,7 +1817,13 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
                             });
                             _loadItems(_currentPage, rowsPerPage);
                           },
-                          fixedLeftColumns: fixedColumnsCount,
+                          fixedLeftColumns: widget.fieldConfigs
+                              .where(
+                                (c) =>
+                                    _columnVisibility[c.fieldName] == true &&
+                                    c.isFixed,
+                              )
+                              .length,
                           empty: Center(
                             child: Container(
                               padding: const EdgeInsets.all(20),
