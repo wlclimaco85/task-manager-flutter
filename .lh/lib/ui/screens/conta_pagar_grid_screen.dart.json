@@ -3,7 +3,7 @@
     "activeCommit": 0,
     "commits": [
         {
-            "activePatchIndex": 5,
+            "activePatchIndex": 8,
             "patches": [
                 {
                     "date": 1758305148225,
@@ -28,6 +28,18 @@
                 {
                     "date": 1758571688286,
                     "content": "Index: \n===================================================================\n--- \n+++ \n@@ -4,8 +4,9 @@\n import 'package:task_manager_flutter/ui/widgets/generic_grid_screen.dart';\r\n import 'package:task_manager_flutter/data/models/conta_pagar_model.dart';\r\n import 'package:task_manager_flutter/ui/screens/baixa_dialog.dart';\r\n import 'package:task_manager_flutter/ui/widgets/field_factory.dart';\r\n+// Remove any other imports of FieldConfig from field_types.dart in this file\r\n \r\n class ContaPagarGridScreen extends StatelessWidget {\r\n   final SecurityCheck hasPermission;\r\n \r\n"
+                },
+                {
+                    "date": 1758573552717,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -3,9 +3,9 @@\n import 'package:task_manager_flutter/data/utils/api_links.dart';\r\n import 'package:task_manager_flutter/ui/widgets/generic_grid_screen.dart';\r\n import 'package:task_manager_flutter/data/models/conta_pagar_model.dart';\r\n import 'package:task_manager_flutter/ui/screens/baixa_dialog.dart';\r\n-import 'package:task_manager_flutter/ui/widgets/field_factory.dart';\r\n+import 'package:task_manager_flutter/ui/widgets/field_factory.dart'  show FieldConfig; \r\n // Remove any other imports of FieldConfig from field_types.dart in this file\r\n \r\n class ContaPagarGridScreen extends StatelessWidget {\r\n   final SecurityCheck hasPermission;\r\n"
+                },
+                {
+                    "date": 1758573576655,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -3,8 +3,9 @@\n import 'package:task_manager_flutter/data/utils/api_links.dart';\r\n import 'package:task_manager_flutter/ui/widgets/generic_grid_screen.dart';\r\n import 'package:task_manager_flutter/data/models/conta_pagar_model.dart';\r\n import 'package:task_manager_flutter/ui/screens/baixa_dialog.dart';\r\n+import 'package:task_manager_flutter/ui/widgets/field_types.dart';\r\n import 'package:task_manager_flutter/ui/widgets/field_factory.dart'\r\n     show FieldConfig;\r\n // Remove any other imports of FieldConfig from field_types.dart in this file\r\n \r\n"
+                },
+                {
+                    "date": 1758573607349,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -3,9 +3,10 @@\n import 'package:task_manager_flutter/data/utils/api_links.dart';\r\n import 'package:task_manager_flutter/ui/widgets/generic_grid_screen.dart';\r\n import 'package:task_manager_flutter/data/models/conta_pagar_model.dart';\r\n import 'package:task_manager_flutter/ui/screens/baixa_dialog.dart';\r\n-import 'package:task_manager_flutter/ui/widgets/field_types.dart';\r\n+import 'package:task_manager_flutter/ui/widgets/field_types.dart'\r\n+    show FieldConfig;\r\n import 'package:task_manager_flutter/ui/widgets/field_factory.dart'\r\n     show FieldConfig;\r\n // Remove any other imports of FieldConfig from field_types.dart in this file\r\n \r\n"
                 }
             ],
             "date": 1758305148225,

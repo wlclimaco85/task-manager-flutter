@@ -178,12 +178,12 @@ class NetworkCaller {
     Map<String, dynamic>? body,
   ) async {
     try {
-      final user = AuthUtility.userInfo.data;
+      final user = AuthUtility.userInfo.login;
 
       // Adiciona empresa, parceiro e aplicativo ao body
-      body?['empresa'] = user?.login?.empresa?.id;
-      body?['parceiro'] = user?.login?.parceiro?.id;
-      body?['aplicativo'] = user?.login?.aplicativo?.id;
+      body?['empresa'] = user?.empresa?.id;
+      body?['parceiro'] = user?.parceiro?.id;
+      body?['aplicativo'] = user?.aplicativo?.id;
 
       Response response = await post(
         Uri.parse(url),

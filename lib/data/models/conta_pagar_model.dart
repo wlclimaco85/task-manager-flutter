@@ -2,12 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:task_manager_flutter/data/models/network_response.dart';
 import 'package:task_manager_flutter/data/services/network_caller.dart';
 import 'package:task_manager_flutter/data/utils/api_links.dart';
-// Importe apenas field_types.dart, pois field_factory.dart também importa field_types.dart e pode causar conflito.
-import 'package:task_manager_flutter/ui/widgets/field_types.dart';
-import 'package:task_manager_flutter/ui/widgets/field_factory.dart'
-    hide FieldConfig, FieldType;
+import 'package:task_manager_flutter/ui/widgets/field_factory.dart';
 
-// ... resto do código
 import 'audit_model.dart';
 import 'empresa_model.dart';
 import 'file_attachment_model.dart';
@@ -176,156 +172,149 @@ class ContaPagar {
   }
 
   static List<FieldConfig> fieldConfigs = [
-    // Campos principais
-    FieldConfigBuilder.dropdown(
+    FieldConfig(
       label: "Fornecedor",
       fieldName: "parceiro.id",
       displayFieldName: "parceiro.nome",
       icon: Icons.business,
+      isInForm: true,
+      isFilterable: true,
+      fieldType: FieldType.dropdown,
       dropdownFutureBuilder: () async => await loadParceiros(),
       dropdownValueField: 'value',
       dropdownDisplayField: 'label',
       isRequired: true,
+      isVisibleByDefault: true,
+      isFixed: false,
     ),
-
-    FieldConfigBuilder.dropdown(
+    FieldConfig(
       label: "Fornecedor Dev",
       fieldName: "parceiroDev.id",
       displayFieldName: "parceiroDev.nome",
       icon: Icons.business,
+      isInForm: true,
+      isFilterable: true,
+      fieldType: FieldType.dropdown,
       dropdownFutureBuilder: () async => await loadParceiros(),
       dropdownValueField: 'value',
       dropdownDisplayField: 'label',
       isRequired: true,
+      isVisibleByDefault: true,
+      isFixed: false,
     ),
-
-    FieldConfigBuilder.text(
+    FieldConfig(
       label: "Descrição",
       fieldName: "descricao",
       icon: Icons.description,
-      isRequired: true,
-      maxLines: 3,
+      isInForm: true,
+      isFilterable: true,
+      isVisibleByDefault: true,
+      isFixed: false,
     ),
-
-    FieldConfigBuilder.number(
+    FieldConfig(
       label: "Valor",
       fieldName: "valor",
       icon: Icons.attach_money,
-      isRequired: true,
-      decimalDigits: 2,
-      minValue: 0,
+      isInForm: true,
+      isVisibleByDefault: true,
+      isFixed: false,
     ),
-
-    FieldConfigBuilder.date(
+    FieldConfig(
       label: "Data Vencimento",
       fieldName: "dataVencimento",
       icon: Icons.calendar_today,
-      isRequired: true,
+      isInForm: true,
+      isFilterable: true,
+      isVisibleByDefault: true,
+      isFixed: false,
     ),
-
-    // Campos de baixa (visíveis apenas quando necessário)
-    FieldConfigBuilder.date(
+    FieldConfig(
+      label: "Status",
+      fieldName: "status",
+      icon: Icons.info,
+      isFilterable: true,
+      isVisibleByDefault: true,
+      isFixed: false,
+      isInForm: false,
+    ),
+    FieldConfig(
       label: "Data Baixa",
       fieldName: "dataBaixa",
       icon: Icons.calendar_today,
-      isRequired: false,
       isVisibleByDefault: false,
+      isFixed: false,
       isInForm: false,
     ),
-
-    FieldConfigBuilder.number(
+    FieldConfig(
       label: "Valor Baixa",
       fieldName: "valorBaixa",
       icon: Icons.attach_money,
-      decimalDigits: 2,
-      minValue: 0,
       isVisibleByDefault: false,
+      isFixed: false,
       isInForm: false,
     ),
-
-    // Campos de cálculos
-    FieldConfigBuilder.number(
+    FieldConfig(
       label: "Valor Multa",
       fieldName: "valorMulta",
-      icon: Icons.money_off,
-      decimalDigits: 2,
-      minValue: 0,
+      icon: Icons.attach_money,
+      isInForm: true,
       isVisibleByDefault: false,
+      isFixed: false,
     ),
-
-    FieldConfigBuilder.number(
+    FieldConfig(
       label: "Valor Juros",
       fieldName: "valorJuros",
-      icon: Icons.percent,
-      decimalDigits: 2,
-      minValue: 0,
+      icon: Icons.attach_money,
+      isInForm: true,
       isVisibleByDefault: false,
+      isFixed: false,
     ),
-
-    FieldConfigBuilder.number(
+    FieldConfig(
       label: "Valor Desconto",
       fieldName: "valorDesconto",
-      icon: Icons.discount,
-      decimalDigits: 2,
-      minValue: 0,
+      icon: Icons.attach_money,
+      isInForm: true,
       isVisibleByDefault: false,
+      isFixed: false,
     ),
-
-    // Forma de pagamento
-    FieldConfigBuilder.dropdown(
+    FieldConfig(
       label: "Forma Pagamento",
       fieldName: "formaPagamento.id",
       displayFieldName: "formaPagamento.nome",
       icon: Icons.payment,
+      isInForm: true,
+      isFilterable: true,
+      fieldType: FieldType.dropdown,
       dropdownFutureBuilder: () async => await loadFormasPagamento(),
       dropdownValueField: 'value',
       dropdownDisplayField: 'label',
       isRequired: true,
+      isVisibleByDefault: true,
+      isFixed: false,
     ),
-
-    // Status (apenas um campo - removido o duplicado)
     FieldConfig(
       label: "Status",
       fieldName: "status",
       icon: Icons.check_circle,
-      fieldType: FieldType.dropdown,
       isFilterable: true,
       isVisibleByDefault: true,
-      isInForm: false, // Não editável no formulário, apenas visual
       isFixed: false,
+      fieldType: FieldType.dropdown,
       dropdownOptions: [
-        {'value': 0, 'label': 'Aberta'},
-        {'value': 1, 'label': 'Baixada'},
-        {'value': 2, 'label': 'Cancelada'},
+        {'value': 0, 'label': 'Abertoa'},
+        {'value': 1, 'label': 'Baixada '},
+        {'value': 2, 'label': 'Cancelado'},
       ],
-      dropdownSelectedValue: 0,
-      enabled: false, // Readonly
+      dropdownSelectedValue: 0, // Valor padrão selecionado
+      enabled: false,
       dropdownValueField: 'value',
       dropdownDisplayField: 'label',
-      validator: (value) {
-        if (value == null || value.isEmpty) {
-          return 'Status é obrigatório';
-        }
-        return null;
-      },
     ),
-
-    // Anexo
     FieldConfig(
       label: "Anexo",
       fieldName: "file",
       fieldType: FieldType.file,
-      icon: Icons.attach_file,
-      isRequired: false,
-      isVisibleByDefault: false,
-      fileConfig: FileConfig(
-        allowedExtensions: ['pdf', 'doc', 'docx', 'jpg', 'jpeg', 'png'],
-        allowMultiple: false,
-        maxFileSize: 10 * 1024 * 1024, // 10MB
-        fileFieldName: 'anexo',
-      ),
-      enabled: true,
-      fieldSpecificConfig: {'showPreview': true, 'maxFiles': 3},
+      enabled: true, // Pode ser false para desabilitar
     ),
   ];
 }

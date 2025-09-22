@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:task_manager_flutter/ui/widgets/generic_grid_screen.dart';
 import 'package:task_manager_flutter/ui/widgets/tab_config.dart';
 import 'package:task_manager_flutter/ui/widgets/field_factory.dart';
+import 'package:task_manager_flutter/data/constants/custom_colors.dart';
 
 class GenericDetailFormScreen<T> extends StatefulWidget {
   final T item;
@@ -37,6 +38,8 @@ class _GenericDetailFormScreenState<T> extends State<GenericDetailFormScreen<T>>
   final Map<String, bool> _checkboxValues = {};
   final Map<String, List<Map<String, dynamic>>> _dropdownOptionsCache = {};
 
+  final CustomColors colors = CustomColors();
+
   @override
   void initState() {
     super.initState();
@@ -65,24 +68,20 @@ class _GenericDetailFormScreenState<T> extends State<GenericDetailFormScreen<T>>
         if (dynamicItem.toJson != null) {
           _formData.addAll(dynamicItem.toJson());
         } else {
-          // Fallback: usar toString para propriedades simples
           _formData['id'] = dynamicItem.id?.toString();
           _formData['toString'] = dynamicItem.toString();
         }
       } catch (_) {
-        // Último recurso: usar representação string
         _formData['toString'] = item.toString();
       }
     }
   }
 
   void _initializeFieldValues() {
-    // Inicializar valores para dropdowns e checkboxes
     for (final tab in widget.tabConfigs) {
       if (!tab.isGrid && tab.fields != null) {
         for (final field in tab.fields!) {
           if (field.fieldType == FieldType.dropdown) {
-            // Obter valor inicial para dropdown
             if (field.fieldName.contains('.')) {
               final parts = field.fieldName.split('.');
               if (_formData[parts[0]] is Map) {
@@ -94,7 +93,6 @@ class _GenericDetailFormScreenState<T> extends State<GenericDetailFormScreen<T>>
                   _formData[field.fieldName]?.toString() ?? '';
             }
           } else if (field.fieldType == FieldType.boolean) {
-            // Obter valor inicial para checkbox
             if (field.fieldName.contains('.')) {
               final parts = field.fieldName.split('.');
               if (_formData[parts[0]] is Map) {
@@ -116,15 +114,22 @@ class _GenericDetailFormScreenState<T> extends State<GenericDetailFormScreen<T>>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: colors.getLightGreenBackground(),
       appBar: AppBar(
-        title: Text(widget.title),
+        title: Text(
+          widget.title,
+          style: TextStyle(color: colors.getTextColor()),
+        ),
+        backgroundColor: colors.getHeaderTable(),
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
+          icon: Icon(Icons.arrow_back, color: colors.getTextColor()),
           onPressed: widget.onBack,
         ),
         bottom: widget.tabConfigs.length > 1
             ? TabBar(
                 controller: _tabController,
+                labelColor: colors.getTextColor(),
+                indicatorColor: colors.getDarkGreenBorder(),
                 tabs: widget.tabConfigs
                     .map((tab) => Tab(icon: Icon(tab.icon), text: tab.title))
                     .toList(),
@@ -140,6 +145,7 @@ class _GenericDetailFormScreenState<T> extends State<GenericDetailFormScreen<T>>
             )
           : _buildTabContent(widget.tabConfigs.first, 0),
       floatingActionButton: FloatingActionButton(
+        backgroundColor: colors.getButtonBackground(),
         onPressed: () async {
           final currentIndex = _tabController.index;
           final currentTab = widget.tabConfigs[currentIndex];
@@ -149,11 +155,10 @@ class _GenericDetailFormScreenState<T> extends State<GenericDetailFormScreen<T>>
               await widget.onSave(_formData);
             }
           } else {
-            // Se for uma grid, salva diretamente sem validação de formulário
             await widget.onSave(_formData);
           }
         },
-        child: const Icon(Icons.save),
+        child: Icon(Icons.save, color: colors.getButtonTextColor()),
       ),
     );
   }
@@ -165,7 +170,7 @@ class _GenericDetailFormScreenState<T> extends State<GenericDetailFormScreen<T>>
         fetchEndpoint: "${tab.endpoint}?parcId=${_formData['id']}",
         createEndpoint: tab.endpoint,
         updateEndpoint: tab.endpoint,
-        deleteEndpoint: "${tab.endpoint}?parcId${_formData['id']}",
+        deleteEndpoint: "${tab.endpoint}?parcId=${_formData['id']}",
         fromJson: tab.fromJson ?? (json) => json,
         toJson: tab.toJson != null
             ? (item) => tab.toJson!(item)
@@ -224,9 +229,12 @@ class _GenericDetailFormScreenState<T> extends State<GenericDetailFormScreen<T>>
         initialValue: initialValue,
         decoration: InputDecoration(
           labelText: field.label,
-          prefixIcon: Icon(field.icon),
-          border: const OutlineInputBorder(),
+          prefixIcon: Icon(field.icon, color: colors.getDarkGreenBorder()),
+          border: OutlineInputBorder(
+            borderSide: BorderSide(color: colors.getBorderInput()),
+          ),
         ),
+        style: TextStyle(color: colors.getTextColorDesc()),
         keyboardType: field.fieldType == FieldType.number
             ? TextInputType.number
             : TextInputType.text,
@@ -253,7 +261,6 @@ class _GenericDetailFormScreenState<T> extends State<GenericDetailFormScreen<T>>
     final currentValue = _dropdownValues[field.fieldName] ?? '';
 
     if (field.dropdownFutureBuilder != null) {
-      // Para dropdowns com carregamento assíncrono
       return FutureBuilder<List<Map<String, dynamic>>>(
         future: field.dropdownFutureBuilder!(),
         builder: (context, snapshot) {
@@ -269,7 +276,6 @@ class _GenericDetailFormScreenState<T> extends State<GenericDetailFormScreen<T>>
         },
       );
     } else {
-      // Para dropdowns com opções estáticas
       final options = field.dropdownOptions ?? [];
       return _buildDropdownWidget(field, options, currentValue);
     }
@@ -281,8 +287,10 @@ class _GenericDetailFormScreenState<T> extends State<GenericDetailFormScreen<T>>
       child: InputDecorator(
         decoration: InputDecoration(
           labelText: field.label,
-          prefixIcon: Icon(field.icon),
-          border: const OutlineInputBorder(),
+          prefixIcon: Icon(field.icon, color: colors.getDarkGreenBorder()),
+          border: OutlineInputBorder(
+            borderSide: BorderSide(color: colors.getBorderInput()),
+          ),
         ),
         child: const Row(
           children: [
@@ -305,11 +313,16 @@ class _GenericDetailFormScreenState<T> extends State<GenericDetailFormScreen<T>>
       child: InputDecorator(
         decoration: InputDecoration(
           labelText: field.label,
-          prefixIcon: Icon(field.icon),
-          border: const OutlineInputBorder(),
+          prefixIcon: Icon(field.icon, color: colors.getDarkGreenBorder()),
+          border: OutlineInputBorder(
+            borderSide: BorderSide(color: colors.getBorderInput()),
+          ),
           errorText: "Erro ao carregar opções",
         ),
-        child: Text("Erro: $error", style: const TextStyle(color: Colors.red)),
+        child: Text(
+          "Erro: $error",
+          style: TextStyle(color: colors.getShowSnackBarError()),
+        ),
       ),
     );
   }
@@ -324,8 +337,10 @@ class _GenericDetailFormScreenState<T> extends State<GenericDetailFormScreen<T>>
       child: InputDecorator(
         decoration: InputDecoration(
           labelText: field.label,
-          prefixIcon: Icon(field.icon),
-          border: const OutlineInputBorder(),
+          prefixIcon: Icon(field.icon, color: colors.getDarkGreenBorder()),
+          border: OutlineInputBorder(
+            borderSide: BorderSide(color: colors.getBorderInput()),
+          ),
         ),
         child: DropdownButtonHideUnderline(
           child: DropdownButton<String>(
@@ -347,7 +362,10 @@ class _GenericDetailFormScreenState<T> extends State<GenericDetailFormScreen<T>>
                 }
               });
             },
-            hint: Text('Selecione ${field.label}'),
+            hint: Text(
+              'Selecione ${field.label}',
+              style: TextStyle(color: colors.getTextColorDesc()),
+            ),
           ),
         ),
       ),
@@ -360,7 +378,6 @@ class _GenericDetailFormScreenState<T> extends State<GenericDetailFormScreen<T>>
   ) {
     final items = <DropdownMenuItem<String>>[];
 
-    // Adicionar item vazio apenas se não houver valor selecionado
     if (_dropdownValues[field.fieldName] == null ||
         _dropdownValues[field.fieldName]!.toString().isEmpty) {
       items.add(
@@ -368,20 +385,25 @@ class _GenericDetailFormScreenState<T> extends State<GenericDetailFormScreen<T>>
           value: '',
           child: Text(
             'Selecione ${field.label}',
-            style: const TextStyle(color: Colors.grey),
+            style: TextStyle(color: colors.getTextColorDesc()),
           ),
         ),
       );
     }
 
-    // Adicionar opções
     for (final option in options) {
       final optionValue = option[field.dropdownValueField]?.toString() ?? '';
       final optionLabel =
           option[field.dropdownDisplayField]?.toString() ?? optionValue;
 
       items.add(
-        DropdownMenuItem<String>(value: optionValue, child: Text(optionLabel)),
+        DropdownMenuItem<String>(
+          value: optionValue,
+          child: Text(
+            optionLabel,
+            style: TextStyle(color: colors.getTextColorDesc()),
+          ),
+        ),
       );
     }
 
@@ -394,8 +416,16 @@ class _GenericDetailFormScreenState<T> extends State<GenericDetailFormScreen<T>>
     return Padding(
       padding: const EdgeInsets.only(bottom: 16),
       child: CheckboxListTile(
-        title: Text(field.label),
-        subtitle: field.isRequired ? const Text('Obrigatório') : null,
+        title: Text(
+          field.label,
+          style: TextStyle(color: colors.getTextColorDesc()),
+        ),
+        subtitle: field.isRequired
+            ? Text(
+                'Obrigatório',
+                style: TextStyle(color: colors.getShowSnackBarWarning()),
+              )
+            : null,
         value: currentValue,
         onChanged: (bool? newValue) {
           setState(() {
@@ -412,7 +442,7 @@ class _GenericDetailFormScreenState<T> extends State<GenericDetailFormScreen<T>>
             }
           });
         },
-        secondary: Icon(field.icon),
+        secondary: Icon(field.icon, color: colors.getDarkGreenBorder()),
         controlAffinity: ListTileControlAffinity.leading,
       ),
     );
