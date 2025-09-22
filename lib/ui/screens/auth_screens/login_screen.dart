@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:task_manager_flutter/ui/widgets/home_screen.dart';
 import 'package:task_manager_flutter/data/models/auth_utility.dart';
-import 'package:task_manager_flutter/data/models/login_model.dart';
+
+import 'package:task_manager_flutter/data/models/login_2_model.dart';
 import 'package:task_manager_flutter/data/models/network_response.dart';
 import 'package:task_manager_flutter/data/services/network_caller.dart';
 import 'package:task_manager_flutter/data/utils/api_links.dart';
@@ -35,10 +36,12 @@ class _LoginScreenState extends State<LoginScreen>
     }
     Map<String, dynamic> requestBody = {
       "email": _emailController.text.trim(),
-      "password": _passwordController.text
+      "password": _passwordController.text,
     };
-    final NetworkResponse response =
-        await NetworkCaller().postRequest(ApiLinks.login, requestBody);
+    final NetworkResponse response = await NetworkCaller().postRequest(
+      ApiLinks.login,
+      requestBody,
+    );
     _loginInProgress = false;
     if (mounted) {
       setState(() {});
@@ -48,15 +51,17 @@ class _LoginScreenState extends State<LoginScreen>
       await AuthUtility.setUserInfo(model);
       if (mounted) {
         Navigator.pushAndRemoveUntil(
-            context,
-            MaterialPageRoute(builder: (context) => const BottomNavBarScreen()),
-            (route) => false);
+          context,
+          MaterialPageRoute(builder: (context) => const BottomNavBarScreen()),
+          (route) => false,
+        );
       }
     } else {
       if (mounted) {
         _passwordController.clear();
         ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Incorrect email or password')));
+          const SnackBar(content: Text('Incorrect email or password')),
+        );
       }
     }
   }
@@ -97,10 +102,7 @@ class _LoginScreenState extends State<LoginScreen>
                 Column(
                   children: [
                     Padding(
-                      padding: const EdgeInsets.only(
-                        top: 70,
-                        bottom: 32,
-                      ),
+                      padding: const EdgeInsets.only(top: 70, bottom: 32),
                       child: Image.asset(
                         "assets/images/logoforafitn1.png",
                         height: 260,
@@ -116,15 +118,16 @@ class _LoginScreenState extends State<LoginScreen>
                           Form(
                             key: _formKey,
                             child: CustomTextFormField(
-                                hintText: "Email",
-                                controller: _emailController,
-                                textInputType: TextInputType.emailAddress,
-                                validator: (value) {
-                                  if (value!.isEmpty) {
-                                    return "Please enter email";
-                                  }
-                                  return null;
-                                }),
+                              hintText: "Email",
+                              controller: _emailController,
+                              textInputType: TextInputType.emailAddress,
+                              validator: (value) {
+                                if (value!.isEmpty) {
+                                  return "Please enter email";
+                                }
+                                return null;
+                              },
+                            ),
                           ),
                           const SizedBox(height: 12),
                           CustomPasswordTextFormField(
@@ -139,9 +142,7 @@ class _LoginScreenState extends State<LoginScreen>
                             },
                             textInputType: TextInputType.visiblePassword,
                           ),
-                          const SizedBox(
-                            height: 16,
-                          ),
+                          const SizedBox(height: 16),
                           ElevatedButton(
                             style: ElevatedButton.styleFrom(
                               backgroundColor: const Color(0xFFFA903A),
@@ -152,13 +153,13 @@ class _LoginScreenState extends State<LoginScreen>
                             },
                             child: const Text(
                               'Acessar',
-                              style:
-                                  TextStyle(fontSize: 24, color: Colors.white),
+                              style: TextStyle(
+                                fontSize: 24,
+                                color: Colors.white,
+                              ),
                             ),
                           ),
-                          const SizedBox(
-                            height: 10,
-                          ),
+                          const SizedBox(height: 10),
                           ElevatedButton(
                             style: ElevatedButton.styleFrom(
                               backgroundColor: const Color(0xFFFA903A),
@@ -168,34 +169,38 @@ class _LoginScreenState extends State<LoginScreen>
                               Navigator.push(
                                 context,
                                 MaterialPageRoute(
-                                    builder: (context) =>
-                                        const SignUpFormScreen()),
+                                  builder: (context) =>
+                                      const SignUpFormScreen(),
+                                ),
                               );
                             },
                             child: const Text(
                               'Criar Conta',
-                              style:
-                                  TextStyle(fontSize: 24, color: Colors.white),
+                              style: TextStyle(
+                                fontSize: 24,
+                                color: Colors.white,
+                              ),
                             ),
                           ),
-                          const SizedBox(
-                            height: 40,
-                          ),
+                          const SizedBox(height: 40),
                           Center(
                             child: TextButton(
                               onPressed: () {
                                 Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                        builder: (context) =>
-                                            const EmailVarificationScreeen()));
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) =>
+                                        const EmailVarificationScreeen(),
+                                  ),
+                                );
                               },
                               child: const Text(
                                 "Esqueceu a Senha?",
                                 style: TextStyle(
-                                    color: Color(0xFFFA903A),
-                                    letterSpacing: .7,
-                                    fontSize: 20),
+                                  color: Color(0xFFFA903A),
+                                  letterSpacing: .7,
+                                  fontSize: 20,
+                                ),
                               ),
                             ),
                           ),
@@ -205,7 +210,7 @@ class _LoginScreenState extends State<LoginScreen>
                   ],
                 ),
               ],
-            )
+            ),
           ],
         ),
       ),

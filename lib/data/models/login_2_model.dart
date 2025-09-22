@@ -73,14 +73,14 @@ class Login {
       } else {
         tipoLogin = LoginEnum.APP_ABRACO; // valor padrão se for nulo
       }
-      aplicativo = json['aplicativo'] != null
+      aplicativo = json['login']['aplicativo'] != null
           ? Aplicativo.fromJson(json['endereco'])
           : null;
-      empresa = json['empresa'] != null
+      empresa = json['login']['empresa'] != null
           ? Empresa.fromJson(json['empresa'])
           : null;
-      parceiro = json['parceiro'] != null
-          ? Parceiro.fromJson(json['regime'])
+      parceiro = json['login']['parceiro'] != null
+          ? Parceiro.fromJson(json['parceiro'])
           : null;
       dhCreatedAt = json['audit][dhCreatedAt'] != null
           ? DateTime.parse(json['audit][dhCreatedAt'])
@@ -179,4 +179,207 @@ class Role {
   // Add role properties
   Map<String, dynamic> toJson() => {};
   static Role fromJson(Map<String, dynamic> json) => Role();
+}
+
+class LoginModel {
+  String? status;
+  String? token;
+  Data? data;
+  Login? login;
+
+  LoginModel({this.status, this.token, this.data});
+
+  LoginModel.fromJson(Map<String, dynamic> json) {
+    status = json['status'];
+    token = json['token'];
+    data = json['data'] != null ? Data.fromJson(json['data']) : null;
+    login = json['login'] != null ? Login.fromJson(json['login']) : null;
+  }
+
+  Map<String, dynamic> toJson() {
+    final Map<String, dynamic> data = <String, dynamic>{};
+    data['status'] = status;
+    data['token'] = token;
+    if (this.data != null) {
+      data['data'] = this.data!.toJson();
+    }
+    if (this.login != null) {
+      data['login'] = this.data!.toJson();
+    }
+    return data;
+  }
+}
+
+class Data {
+  int? id;
+  String? email;
+  String? firstName;
+  String? lastName;
+  String? mobile;
+  String? photo;
+  DadosPessoal? codDadosPessoal;
+  Login? login;
+
+  Data({
+    this.id,
+    this.email,
+    this.firstName,
+    this.lastName,
+    this.mobile,
+    this.photo,
+    this.codDadosPessoal,
+    this.login,
+  });
+
+  Data.fromJson(Map<String, dynamic> json) {
+    id = json['id'];
+    email = json['email'];
+    firstName = json['firstName'];
+    lastName = json['lastName'];
+    mobile = json['mobile'];
+    photo = json['photo'];
+    codDadosPessoal = json['codDadosPessoal'] != null
+        ? DadosPessoal.fromJson(json['codDadosPessoal'])
+        : null;
+    login = json['login'] != null ? Login.fromJson(json['login']) : null;
+  }
+
+  Map<String, dynamic> toJson() {
+    final Map<String, dynamic> data = <String, dynamic>{};
+    data['id'] = id;
+    data['email'] = email;
+    data['firstName'] = firstName;
+    data['lastName'] = lastName;
+    data['mobile'] = mobile;
+    data['photo'] = photo;
+    data['login'] = login?.toJson();
+    data['codDadosPessoal'] = {
+      "id": codDadosPessoal?.id,
+      "nome": codDadosPessoal?.nome,
+      "cpf": codDadosPessoal?.cpf,
+      "telefone1": codDadosPessoal?.telefone1,
+      "telefone2": codDadosPessoal?.telefone2,
+      "logradouro": codDadosPessoal?.logradouro,
+      "numero": codDadosPessoal?.numero,
+      "cep": codDadosPessoal?.cep,
+      "bairro": codDadosPessoal?.bairro,
+      "cidade": codDadosPessoal?.cidade,
+      "estado": codDadosPessoal?.estado,
+      "pais": codDadosPessoal?.pais,
+      "email": codDadosPessoal?.email,
+      "fistName": codDadosPessoal?.fistName,
+      "lastName": codDadosPessoal?.lastName,
+      "photo": codDadosPessoal?.photo,
+      "tipoAluno": codDadosPessoal?.tipoAluno,
+      "parentId": codDadosPessoal?.parentId,
+      "academia": codDadosPessoal?.academia,
+      "codProdutor": codDadosPessoal?.codProdutor,
+      "incrMun": codDadosPessoal?.incrMun,
+      "razaoSocial": codDadosPessoal?.razaoSocial,
+    };
+
+    return data;
+  }
+}
+
+class DadosPessoal {
+  int? id;
+  String? nome;
+  String? cpf;
+  String? telefone1;
+  String? telefone2;
+  String? logradouro;
+  String? numero;
+  String? cep;
+  String? bairro;
+  String? cidade;
+  String? estado;
+  String? pais;
+  String? email;
+  String? fistName;
+  String? lastName;
+  String? photo;
+  String? tipoAluno;
+  int? parentId;
+  String? academia;
+  String? codProdutor;
+  String? incrMun;
+  String? razaoSocial;
+
+  DadosPessoal({
+    this.id,
+    this.nome,
+    this.cpf,
+    this.telefone1,
+    this.telefone2,
+    this.logradouro,
+    this.numero,
+    this.cep,
+    this.bairro,
+    this.cidade,
+    this.estado,
+    this.pais,
+    this.email,
+    this.fistName,
+    this.lastName,
+    this.photo,
+    this.tipoAluno,
+    this.parentId,
+    this.academia,
+    this.codProdutor,
+    this.incrMun,
+    this.razaoSocial,
+  });
+
+  DadosPessoal.fromJson(Map<String, dynamic> json) {
+    id = json['id'];
+    nome = json['nome'];
+    cpf = json['cpf'];
+    telefone1 = json['telefone1'];
+    telefone2 = json['telefone2'];
+    logradouro = json['logradouro'];
+    numero = json['numero'];
+    cep = json['cep'];
+    bairro = json['bairro'];
+    cidade = json['cidade'];
+    estado = json['estado'];
+    pais = json['pais'];
+    email = json['email'];
+    fistName = json['fistName'];
+    lastName = json['lastName'];
+    photo = json['photo'];
+    tipoAluno = json['tipoAluno'];
+    parentId = json['parentId'];
+    academia = json['academia'];
+    codProdutor = json['codProdutor'];
+    incrMun = json['incrMun'];
+    razaoSocial = json['razaoSocial'];
+  }
+
+  Map<String, dynamic> toJson() {
+    final Map<String, dynamic> codDadosPessoal = <String, dynamic>{};
+    codDadosPessoal['id'] = id;
+    codDadosPessoal['nome'] = nome;
+    codDadosPessoal['cpf'] = cpf;
+    codDadosPessoal['telefone1'] = telefone1;
+    codDadosPessoal['telefone2'] = telefone2;
+    codDadosPessoal['logradouro'] = logradouro;
+    codDadosPessoal['numero'] = numero;
+    codDadosPessoal['cep'] = cep;
+    codDadosPessoal['bairro'] = bairro;
+    codDadosPessoal['cidade'] = cidade;
+    codDadosPessoal['estado'] = estado;
+    codDadosPessoal['pais'] = pais;
+    codDadosPessoal['email'] = email;
+    codDadosPessoal['fistName'] = fistName;
+    codDadosPessoal['lastName'] = lastName;
+    codDadosPessoal['photo'] = photo;
+    codDadosPessoal['tipoAluno'] = tipoAluno;
+    codDadosPessoal['parentId'] = parentId;
+    codDadosPessoal['academia'] = academia;
+    codDadosPessoal['codProdutor'] = codProdutor;
+    codDadosPessoal['incrMun'] = incrMun;
+    codDadosPessoal['razaoSocial'] = razaoSocial;
+    return codDadosPessoal;
+  }
 }

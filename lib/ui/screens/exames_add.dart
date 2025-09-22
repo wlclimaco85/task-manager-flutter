@@ -10,7 +10,7 @@ import 'package:task_manager_flutter/data/constants/custom_colors.dart';
 import 'package:task_manager_flutter/data/models/network_response.dart';
 import 'package:task_manager_flutter/data/services/network_caller.dart';
 import 'package:task_manager_flutter/data/utils/personal_validation.dart';
-import '../../data/models/login_model.dart';
+import '../../data/models/login_2_model.dart';
 import 'package:task_manager_flutter/data/models/auth_utility.dart';
 import 'dart:io';
 import 'package:task_manager_flutter/ui/widgets/custom_insert_list_foto.dart';
@@ -104,8 +104,10 @@ class _ExamesModalAddState extends State<ExamesModalAdd> {
       // "foto": "data:image/png;base64,$base64Imagess",
     };
 
-    final NetworkResponse response =
-        await NetworkCaller().postRequest(ApiLinks.insertExame, requestBody);
+    final NetworkResponse response = await NetworkCaller().postRequest(
+      ApiLinks.insertExame,
+      requestBody,
+    );
     _signUpInProgress = false;
     if (mounted) {
       setState(() {});
@@ -113,18 +115,14 @@ class _ExamesModalAddState extends State<ExamesModalAdd> {
     if (response.isSuccess) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text("Exame inserido com Success"),
-          ),
+          const SnackBar(content: Text("Exame inserido com Success")),
         );
       }
     } else {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text("Erro ao inserir Exame"),
-          ),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text("Erro ao inserir Exame")));
       }
     }
   }
@@ -138,7 +136,7 @@ class _ExamesModalAddState extends State<ExamesModalAdd> {
         chave: value,
         chave: value,
         chave: value,
-        chave: value
+        chave: value,
       };
       _dataArray.add(json);
       setState(() {
@@ -179,12 +177,16 @@ class _ExamesModalAddState extends State<ExamesModalAdd> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: UserBannerAppBar(onTapped: () {
-        Navigator.push(
+      appBar: UserBannerAppBar(
+        onTapped: () {
+          Navigator.push(
             context,
             MaterialPageRoute(
-                builder: (context) => const UpdateProfileScreen()));
-      }),
+              builder: (context) => const UpdateProfileScreen(),
+            ),
+          );
+        },
+      ),
       body: Form(
         key: _formKey,
         child: Padding(
@@ -275,44 +277,47 @@ class _ExamesModalAddState extends State<ExamesModalAdd> {
 
   void imagePicked() async {
     showDialog(
-        context: context,
-        builder: (context) {
-          return AlertDialog(
-            title: const Text('Pick Image From:'),
-            content: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                ListTile(
-                  onTap: () async {
-                    pickImage = await ImagePicker()
-                        .pickImage(source: ImageSource.camera);
-                    if (pickImage != null) {
-                      setState(() {});
-                      if (mounted) {
-                        Navigator.pop(context);
-                      }
-                    } else {}
-                  },
-                  leading: const Icon(Icons.camera),
-                  title: const Text('Camera'),
-                ),
-                ListTile(
-                  leading: const Icon(Icons.image),
-                  onTap: () async {
-                    pickImage = await ImagePicker()
-                        .pickImage(source: ImageSource.gallery);
-                    if (pickImage != null) {
-                      setState(() {});
-                      if (mounted) {
-                        Navigator.pop(context);
-                      }
-                    } else {}
-                  },
-                  title: const Text('Gallery'),
-                )
-              ],
-            ),
-          );
-        });
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Pick Image From:'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ListTile(
+                onTap: () async {
+                  pickImage = await ImagePicker().pickImage(
+                    source: ImageSource.camera,
+                  );
+                  if (pickImage != null) {
+                    setState(() {});
+                    if (mounted) {
+                      Navigator.pop(context);
+                    }
+                  } else {}
+                },
+                leading: const Icon(Icons.camera),
+                title: const Text('Camera'),
+              ),
+              ListTile(
+                leading: const Icon(Icons.image),
+                onTap: () async {
+                  pickImage = await ImagePicker().pickImage(
+                    source: ImageSource.gallery,
+                  );
+                  if (pickImage != null) {
+                    setState(() {});
+                    if (mounted) {
+                      Navigator.pop(context);
+                    }
+                  } else {}
+                },
+                title: const Text('Gallery'),
+              ),
+            ],
+          ),
+        );
+      },
+    );
   }
 }

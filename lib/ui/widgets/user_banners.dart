@@ -3,12 +3,14 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:task_manager_flutter/data/models/auth_utility.dart';
 import 'package:task_manager_flutter/data/models/alert_model.dart';
+import 'package:task_manager_flutter/data/utils/api_links.dart';
 import 'package:task_manager_flutter/ui/screens/bottom_navbar_screen.dart';
 import 'package:task_manager_flutter/data/services/alert_caller.dart';
-import 'package:task_manager_flutter/data/models/login_model.dart';
+import 'package:task_manager_flutter/data/models/login_2_model.dart';
 import 'package:http/http.dart' as http;
 import 'dart:async';
 import 'package:task_manager_flutter/data/constants/custom_colors.dart';
+import 'package:task_manager_flutter/data/utils/api_links.dart';
 
 // AppBar personalizado
 class UserBannerAppBar extends StatefulWidget implements PreferredSizeWidget {
@@ -75,9 +77,7 @@ class _UserBannerAppBarState extends State<UserBannerAppBar> {
   Future<void> markNotificationAsRead(int id) async {
     try {
       final response = await http.post(
-        Uri.parse(
-          'https://appacademia-production-be7e.up.railway.app/boletobancos/api/alert',
-        ),
+        Uri.parse(ApiLinks.fecthAllAlerts),
         body: jsonEncode({"id": id}),
         headers: {"Content-Type": "application/json"},
       );

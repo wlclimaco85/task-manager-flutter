@@ -6,7 +6,7 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:task_manager_flutter/data/constants/custom_colors.dart';
 import 'package:task_manager_flutter/data/models/alert_model.dart';
 import 'package:task_manager_flutter/data/models/auth_utility.dart';
-import 'package:task_manager_flutter/data/models/login_model.dart';
+import 'package:task_manager_flutter/data/models/login_2_model.dart';
 import 'package:task_manager_flutter/data/services/alert_caller.dart';
 import 'package:task_manager_flutter/ui/screens/LoginPopup_screens.dart';
 // GridScreens

@@ -3,7 +3,7 @@
 import 'dart:convert';
 
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:task_manager_flutter/data/models/login_model.dart';
+import 'package:task_manager_flutter/data/models/login_2_model.dart';
 
 //*this is the utility class for authentication to store user data in shared preferences.
 //*shared preferences is used to store data locally in the device.

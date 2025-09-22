@@ -5,7 +5,7 @@ import 'package:task_manager_flutter/ui/screens/ForgotPasswordScreen_screens.dar
 import 'package:task_manager_flutter/ui/screens/SignUpScreen_screens.dart';
 import 'package:task_manager_flutter/data/utils/api_links.dart';
 import 'package:task_manager_flutter/data/models/auth_utility.dart';
-import 'package:task_manager_flutter/data/models/login_model.dart';
+import 'package:task_manager_flutter/data/models/login_2_model.dart';
 
 class LoginPopup extends StatefulWidget {
   const LoginPopup({super.key});
@@ -32,8 +32,10 @@ class _LoginPopupState extends State<LoginPopup> {
     };
 
     try {
-      final NetworkResponse response =
-          await NetworkCaller().postRequest(ApiLinks.login, requestBody);
+      final NetworkResponse response = await NetworkCaller().postRequest(
+        ApiLinks.login,
+        requestBody,
+      );
 
       setState(() {
         isLoading = false;
@@ -95,10 +97,7 @@ class _LoginPopupState extends State<LoginPopup> {
   Widget build(BuildContext context) {
     return AlertDialog(
       backgroundColor: const Color.fromARGB(255, 231, 247, 233),
-      title: const Text(
-        'Login',
-        style: TextStyle(fontWeight: FontWeight.bold),
-      ),
+      title: const Text('Login', style: TextStyle(fontWeight: FontWeight.bold)),
       content: SingleChildScrollView(
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -137,10 +136,7 @@ class _LoginPopupState extends State<LoginPopup> {
             ),
             if (errorMessage != null) ...[
               const SizedBox(height: 5),
-              Text(
-                errorMessage!,
-                style: const TextStyle(color: Colors.red),
-              ),
+              Text(errorMessage!, style: const TextStyle(color: Colors.red)),
             ],
             const SizedBox(height: 10),
             Column(
@@ -151,7 +147,9 @@ class _LoginPopupState extends State<LoginPopup> {
                   child: const Text(
                     'Esqueci a senha',
                     style: TextStyle(
-                        color: Colors.blue, fontWeight: FontWeight.bold),
+                      color: Colors.blue,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                 ),
                 TextButton(
@@ -159,7 +157,9 @@ class _LoginPopupState extends State<LoginPopup> {
                   child: const Text(
                     'Criar Novo Usuário',
                     style: TextStyle(
-                        color: Colors.blue, fontWeight: FontWeight.bold),
+                      color: Colors.blue,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                 ),
               ],
@@ -173,10 +173,7 @@ class _LoginPopupState extends State<LoginPopup> {
           style: ElevatedButton.styleFrom(
             backgroundColor: const Color.fromARGB(255, 128, 202, 132),
           ),
-          child: const Text(
-            'Cancelar',
-            style: TextStyle(color: Colors.white),
-          ),
+          child: const Text('Cancelar', style: TextStyle(color: Colors.white)),
         ),
         if (isLoading)
           const CircularProgressIndicator()
@@ -186,10 +183,7 @@ class _LoginPopupState extends State<LoginPopup> {
             style: ElevatedButton.styleFrom(
               backgroundColor: const Color.fromARGB(255, 128, 202, 132),
             ),
-            child: const Text(
-              'Entrar',
-              style: TextStyle(color: Colors.white),
-            ),
+            child: const Text('Entrar', style: TextStyle(color: Colors.white)),
           ),
       ],
     );

@@ -9,7 +9,7 @@ import 'package:task_manager_flutter/ui/widgets/input_field_busca.dart';
 import 'package:task_manager_flutter/ui/screens/exames_add.dart';
 import 'package:task_manager_flutter/ui/screens/exames_list.dart';
 import 'package:task_manager_flutter/data/models/auth_utility.dart';
-import '../../data/models/login_model.dart';
+import '../../data/models/login_2_model.dart';
 
 class ExameScreen extends StatefulWidget {
   const ExameScreen({super.key});

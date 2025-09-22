@@ -1,3 +1,4 @@
+import 'package:task_manager_flutter/data/models/aplicativo_model.dart';
 import 'package:task_manager_flutter/data/models/parceiro_model.dart';
 import 'package:task_manager_flutter/data/models/empresa_model.dart';
 import 'package:task_manager_flutter/data/models/login_2_model.dart';
@@ -37,6 +38,7 @@ class Data {
   Empresa? empresa;
   Parceiro? parceiro;
   Login? login;
+  Aplicativo? aplicativo;
 
   Data({
     this.id,
@@ -49,6 +51,7 @@ class Data {
     this.empresa,
     this.parceiro,
     this.login,
+    this.aplicativo,
   });
 
   Data.fromJson(Map<String, dynamic> json) {

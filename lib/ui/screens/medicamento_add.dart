@@ -10,7 +10,7 @@ import 'package:task_manager_flutter/data/constants/custom_colors.dart';
 import 'package:task_manager_flutter/data/models/network_response.dart';
 import 'package:task_manager_flutter/data/services/network_caller.dart';
 import 'package:task_manager_flutter/data/utils/personal_validation.dart';
-import '../../data/models/login_model.dart';
+import '../../data/models/login_2_model.dart';
 import 'package:task_manager_flutter/data/models/auth_utility.dart';
 import 'dart:io';
 
@@ -111,8 +111,10 @@ class _MedicamentosModalAddState extends State<MedicamentosModalAdd> {
       "fotos": [fotos],
     };
 
-    final NetworkResponse response = await NetworkCaller()
-        .postRequest(ApiLinks.insertMedicamento, requestBody);
+    final NetworkResponse response = await NetworkCaller().postRequest(
+      ApiLinks.insertMedicamento,
+      requestBody,
+    );
     _signUpInProgress = false;
     if (mounted) {
       setState(() {});
@@ -120,18 +122,14 @@ class _MedicamentosModalAddState extends State<MedicamentosModalAdd> {
     if (response.isSuccess) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text("Exame inserido com Success"),
-          ),
+          const SnackBar(content: Text("Exame inserido com Success")),
         );
       }
     } else {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text("Erro ao inserir Exame"),
-          ),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text("Erro ao inserir Exame")));
       }
     }
   }
@@ -145,7 +143,7 @@ class _MedicamentosModalAddState extends State<MedicamentosModalAdd> {
         chave: value,
         chave: value,
         chave: value,
-        chave: value
+        chave: value,
       };
       _dataArray.add(json);
       setState(() {
@@ -186,12 +184,16 @@ class _MedicamentosModalAddState extends State<MedicamentosModalAdd> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: UserBannerAppBar(onTapped: () {
-        Navigator.push(
+      appBar: UserBannerAppBar(
+        onTapped: () {
+          Navigator.push(
             context,
             MaterialPageRoute(
-                builder: (context) => const UpdateProfileScreen()));
-      }),
+              builder: (context) => const UpdateProfileScreen(),
+            ),
+          );
+        },
+      ),
       body: Form(
         key: _formKey,
         child: Padding(
@@ -280,37 +282,40 @@ class _MedicamentosModalAddState extends State<MedicamentosModalAdd> {
                     onTap: () {
                       imagePicked();
                     },
-                    child: Row(children: [
-                      Container(
-                        padding: const EdgeInsets.all(18),
-                        decoration: const BoxDecoration(
-                          color: Colors.grey,
-                          borderRadius: BorderRadius.only(
-                            topLeft: Radius.circular(8),
-                            bottomLeft: Radius.circular(8),
-                          ),
-                        ),
-                        child: const Text("Foto"),
-                      ),
-                      Expanded(
-                        child: Container(
+                    child: Row(
+                      children: [
+                        Container(
                           padding: const EdgeInsets.all(18),
-                          decoration: BoxDecoration(
-                            color: CustomColors().getLightGreenBackground(),
-                            borderRadius: const BorderRadius.only(
-                              topRight: Radius.circular(8),
-                              bottomRight: Radius.circular(8),
+                          decoration: const BoxDecoration(
+                            color: Colors.grey,
+                            borderRadius: BorderRadius.only(
+                              topLeft: Radius.circular(8),
+                              bottomLeft: Radius.circular(8),
                             ),
                           ),
-                          child: Text(
-                            pickImage?.name ?? "",
-                            maxLines: 1,
-                            style: const TextStyle(
-                                overflow: TextOverflow.ellipsis),
+                          child: const Text("Foto"),
+                        ),
+                        Expanded(
+                          child: Container(
+                            padding: const EdgeInsets.all(18),
+                            decoration: BoxDecoration(
+                              color: CustomColors().getLightGreenBackground(),
+                              borderRadius: const BorderRadius.only(
+                                topRight: Radius.circular(8),
+                                bottomRight: Radius.circular(8),
+                              ),
+                            ),
+                            child: Text(
+                              pickImage?.name ?? "",
+                              maxLines: 1,
+                              style: const TextStyle(
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
                           ),
                         ),
-                      ),
-                    ]),
+                      ],
+                    ),
                   ),
                 ],
               ),
@@ -332,44 +337,47 @@ class _MedicamentosModalAddState extends State<MedicamentosModalAdd> {
 
   void imagePicked() async {
     showDialog(
-        context: context,
-        builder: (context) {
-          return AlertDialog(
-            title: const Text('Pick Image From:'),
-            content: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                ListTile(
-                  onTap: () async {
-                    pickImage = await ImagePicker()
-                        .pickImage(source: ImageSource.camera);
-                    if (pickImage != null) {
-                      setState(() {});
-                      if (mounted) {
-                        Navigator.pop(context);
-                      }
-                    } else {}
-                  },
-                  leading: const Icon(Icons.camera),
-                  title: const Text('Camera'),
-                ),
-                ListTile(
-                  leading: const Icon(Icons.image),
-                  onTap: () async {
-                    pickImage = await ImagePicker()
-                        .pickImage(source: ImageSource.gallery);
-                    if (pickImage != null) {
-                      setState(() {});
-                      if (mounted) {
-                        Navigator.pop(context);
-                      }
-                    } else {}
-                  },
-                  title: const Text('Gallery'),
-                )
-              ],
-            ),
-          );
-        });
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Pick Image From:'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ListTile(
+                onTap: () async {
+                  pickImage = await ImagePicker().pickImage(
+                    source: ImageSource.camera,
+                  );
+                  if (pickImage != null) {
+                    setState(() {});
+                    if (mounted) {
+                      Navigator.pop(context);
+                    }
+                  } else {}
+                },
+                leading: const Icon(Icons.camera),
+                title: const Text('Camera'),
+              ),
+              ListTile(
+                leading: const Icon(Icons.image),
+                onTap: () async {
+                  pickImage = await ImagePicker().pickImage(
+                    source: ImageSource.gallery,
+                  );
+                  if (pickImage != null) {
+                    setState(() {});
+                    if (mounted) {
+                      Navigator.pop(context);
+                    }
+                  } else {}
+                },
+                title: const Text('Gallery'),
+              ),
+            ],
+          ),
+        );
+      },
+    );
   }
 }

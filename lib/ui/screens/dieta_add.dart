@@ -2,7 +2,7 @@ import 'dart:io';
 import 'dart:convert';
 import 'dart:io' as io;
 import 'package:flutter/material.dart';
-import '../../data/models/login_model.dart';
+import '../../data/models/login_2_model.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:task_manager_flutter/data/utils/api_links.dart';
 import 'package:task_manager_flutter/ui/widgets/user_banners.dart';
@@ -111,8 +111,10 @@ class _DietaModalAddState extends State<DietaModalAdd> {
       "fotos": [fotos],
     };
 
-    final NetworkResponse response = await NetworkCaller()
-        .postRequest(ApiLinks.insertMedicamento, requestBody);
+    final NetworkResponse response = await NetworkCaller().postRequest(
+      ApiLinks.insertMedicamento,
+      requestBody,
+    );
     _signUpInProgress = false;
     if (mounted) {
       setState(() {});
@@ -120,18 +122,14 @@ class _DietaModalAddState extends State<DietaModalAdd> {
     if (response.isSuccess) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text("Exame inserido com Success"),
-          ),
+          const SnackBar(content: Text("Exame inserido com Success")),
         );
       }
     } else {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text("Erro ao inserir Exame"),
-          ),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text("Erro ao inserir Exame")));
       }
     }
   }
@@ -145,7 +143,7 @@ class _DietaModalAddState extends State<DietaModalAdd> {
         chave: value,
         chave: value,
         chave: value,
-        chave: value
+        chave: value,
       };
       _dataArray.add(json);
       setState(() {
@@ -186,12 +184,16 @@ class _DietaModalAddState extends State<DietaModalAdd> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: UserBannerAppBar(onTapped: () {
-        Navigator.push(
+      appBar: UserBannerAppBar(
+        onTapped: () {
+          Navigator.push(
             context,
             MaterialPageRoute(
-                builder: (context) => const UpdateProfileScreen()));
-      }),
+              builder: (context) => const UpdateProfileScreen(),
+            ),
+          );
+        },
+      ),
       body: Form(
         key: _formKey,
         child: Padding(
@@ -259,44 +261,47 @@ class _DietaModalAddState extends State<DietaModalAdd> {
 
   void imagePicked() async {
     showDialog(
-        context: context,
-        builder: (context) {
-          return AlertDialog(
-            title: const Text('Pick Image From:'),
-            content: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                ListTile(
-                  onTap: () async {
-                    pickImage = await ImagePicker()
-                        .pickImage(source: ImageSource.camera);
-                    if (pickImage != null) {
-                      setState(() {});
-                      if (mounted) {
-                        Navigator.pop(context);
-                      }
-                    } else {}
-                  },
-                  leading: const Icon(Icons.camera),
-                  title: const Text('Camera'),
-                ),
-                ListTile(
-                  leading: const Icon(Icons.image),
-                  onTap: () async {
-                    pickImage = await ImagePicker()
-                        .pickImage(source: ImageSource.gallery);
-                    if (pickImage != null) {
-                      setState(() {});
-                      if (mounted) {
-                        Navigator.pop(context);
-                      }
-                    } else {}
-                  },
-                  title: const Text('Gallery'),
-                )
-              ],
-            ),
-          );
-        });
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Pick Image From:'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ListTile(
+                onTap: () async {
+                  pickImage = await ImagePicker().pickImage(
+                    source: ImageSource.camera,
+                  );
+                  if (pickImage != null) {
+                    setState(() {});
+                    if (mounted) {
+                      Navigator.pop(context);
+                    }
+                  } else {}
+                },
+                leading: const Icon(Icons.camera),
+                title: const Text('Camera'),
+              ),
+              ListTile(
+                leading: const Icon(Icons.image),
+                onTap: () async {
+                  pickImage = await ImagePicker().pickImage(
+                    source: ImageSource.gallery,
+                  );
+                  if (pickImage != null) {
+                    setState(() {});
+                    if (mounted) {
+                      Navigator.pop(context);
+                    }
+                  } else {}
+                },
+                title: const Text('Gallery'),
+              ),
+            ],
+          ),
+        );
+      },
+    );
   }
 }

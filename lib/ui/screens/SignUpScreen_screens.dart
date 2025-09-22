@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:task_manager_flutter/ui/widgets/localizacao_screen.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:task_manager_flutter/data/models/auth_utility.dart';
-import '../../data/models/login_model.dart';
+import '../../data/models/login_2_model.dart';
 import 'dart:async';
 import 'dart:io';
 import 'dart:convert';

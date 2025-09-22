@@ -293,4 +293,8 @@ class ApiLinks {
       '$_baseUrlNew/api/arquivos/diretorio/$diretorioId';
 
   static String get fecthAllDocumentos => '$_baseUrlNew/api/documentos';
+
+  static String get fecthAllAlerts => '$_baseUrlNew/api/alert';
+
+  static String get fecthAUpload => '$_baseUrlNew/api/files/upload';
 }

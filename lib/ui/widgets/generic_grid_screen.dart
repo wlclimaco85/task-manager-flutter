@@ -14,6 +14,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:task_manager_flutter/data/models/auth_utility.dart';
 import 'dart:convert';
 import 'package:task_manager_flutter/data/models/auth_utility.dart';
+import 'package:task_manager_flutter/data/utils/api_links.dart';
 
 // Cores centralizadas para todo o componente
 class GridColors {
@@ -1105,7 +1106,7 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
       // Criar a requisição multipart
       var request = http.MultipartRequest(
         'POST',
-        Uri.parse('http://192.168.114.1:8088/boletobancos/api/files/upload'),
+        Uri.parse(ApiLinks.fecthAUpload),
       );
 
       // Adicionar o ID do item como parâmetro

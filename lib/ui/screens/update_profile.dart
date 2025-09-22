@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:task_manager_flutter/data/models/auth_utility.dart';
-import '../../data/models/login_model.dart';
+import '../../data/models/login_2_model.dart';
 import 'dart:async';
 import 'dart:io';
 import 'dart:convert';
@@ -73,9 +73,9 @@ class _UpdateProfileScreenState extends State<UpdateProfileScreen> {
     _fotoController.text =
         AuthUtility.userInfo.data?.codDadosPessoal?.photo ?? "";
     _ruaController.text = utf8.decode(
-        (AuthUtility.userInfo.data?.codDadosPessoal?.logradouro ?? "")
-            .runes
-            .toList());
+      (AuthUtility.userInfo.data?.codDadosPessoal?.logradouro ?? "").runes
+          .toList(),
+    );
     _numeroController.text =
         AuthUtility.userInfo.data?.codDadosPessoal?.numero ?? "";
     _bairroController.text =
@@ -142,9 +142,9 @@ class _UpdateProfileScreenState extends State<UpdateProfileScreen> {
     try {
       bool result = await ParceiroCaller().updateParceiro(context, requestBody);
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Error: $e")),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text("Error: $e")));
     } finally {
       setState(() {
         _isSubmitting = false;
@@ -208,40 +208,46 @@ class _UpdateProfileScreenState extends State<UpdateProfileScreen> {
               ),
               const SizedBox(height: 16),
               CustomTextFormField(
-                  hintText: "Razão Social", controller: _razaoSocialController),
+                hintText: "Razão Social",
+                controller: _razaoSocialController,
+              ),
               const SizedBox(height: 16),
               InkWell(
                 onTap: imagePicked,
-                child: Row(children: [
-                  Container(
-                    padding: const EdgeInsets.all(16),
-                    decoration: const BoxDecoration(
-                      color: Colors.grey,
-                      borderRadius: BorderRadius.only(
-                        topLeft: Radius.circular(8),
-                        bottomLeft: Radius.circular(8),
-                      ),
-                    ),
-                    child: const Text("Photos"),
-                  ),
-                  Expanded(
-                    child: Container(
+                child: Row(
+                  children: [
+                    Container(
                       padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        color: CustomColors().getLightGreenBackground(),
-                        borderRadius: const BorderRadius.only(
-                          topRight: Radius.circular(8),
-                          bottomRight: Radius.circular(8),
+                      decoration: const BoxDecoration(
+                        color: Colors.grey,
+                        borderRadius: BorderRadius.only(
+                          topLeft: Radius.circular(8),
+                          bottomLeft: Radius.circular(8),
                         ),
                       ),
-                      child: Text(
-                        pickImage?.name ?? "",
-                        maxLines: 1,
-                        style: const TextStyle(overflow: TextOverflow.ellipsis),
+                      child: const Text("Photos"),
+                    ),
+                    Expanded(
+                      child: Container(
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: CustomColors().getLightGreenBackground(),
+                          borderRadius: const BorderRadius.only(
+                            topRight: Radius.circular(8),
+                            bottomRight: Radius.circular(8),
+                          ),
+                        ),
+                        child: Text(
+                          pickImage?.name ?? "",
+                          maxLines: 1,
+                          style: const TextStyle(
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
                       ),
                     ),
-                  ),
-                ]),
+                  ],
+                ),
               ),
               const SizedBox(height: 16),
               CustomTextFormField(
@@ -311,9 +317,7 @@ class _UpdateProfileScreenState extends State<UpdateProfileScreen> {
       floatingActionButton: FloatingActionButton.extended(
         onPressed: _isSubmitting ? null : sendProfileData,
         label: _isSubmitting
-            ? const CircularProgressIndicator(
-                color: Colors.white,
-              )
+            ? const CircularProgressIndicator(color: Colors.white)
             : const Text('Gravar'),
         icon: const Icon(Icons.save),
         backgroundColor: _isSubmitting ? Colors.grey : Colors.green,
@@ -332,8 +336,9 @@ class _UpdateProfileScreenState extends State<UpdateProfileScreen> {
             children: [
               ListTile(
                 onTap: () async {
-                  pickImage =
-                      await ImagePicker().pickImage(source: ImageSource.camera);
+                  pickImage = await ImagePicker().pickImage(
+                    source: ImageSource.camera,
+                  );
                   if (pickImage != null) {
                     setState(() {});
                     if (mounted) {
@@ -347,8 +352,9 @@ class _UpdateProfileScreenState extends State<UpdateProfileScreen> {
               ListTile(
                 leading: const Icon(Icons.image),
                 onTap: () async {
-                  pickImage = await ImagePicker()
-                      .pickImage(source: ImageSource.gallery);
+                  pickImage = await ImagePicker().pickImage(
+                    source: ImageSource.gallery,
+                  );
                   if (pickImage != null) {
                     setState(() {});
                     if (mounted) {
@@ -357,7 +363,7 @@ class _UpdateProfileScreenState extends State<UpdateProfileScreen> {
                   }
                 },
                 title: const Text('Gallery'),
-              )
+              ),
             ],
           ),
         );
@@ -390,15 +396,21 @@ class CustomTextFormField extends StatelessWidget {
           fillColor: Colors.white,
           border: OutlineInputBorder(
             borderSide: BorderSide(
-                color: CustomColors().getDarkGreenBorder(), width: 2.0),
+              color: CustomColors().getDarkGreenBorder(),
+              width: 2.0,
+            ),
           ),
           enabledBorder: OutlineInputBorder(
             borderSide: BorderSide(
-                color: CustomColors().getDarkGreenBorder(), width: 2.0),
+              color: CustomColors().getDarkGreenBorder(),
+              width: 2.0,
+            ),
           ),
           focusedBorder: OutlineInputBorder(
             borderSide: BorderSide(
-                color: CustomColors().getDarkGreenBorder(), width: 2.0),
+              color: CustomColors().getDarkGreenBorder(),
+              width: 2.0,
+            ),
           ),
         ),
         validator: validator,
@@ -436,7 +448,9 @@ class CustomPasswordTextFormField extends StatelessWidget {
           fillColor: Colors.white,
           border: OutlineInputBorder(
             borderSide: BorderSide(
-                color: CustomColors().getDarkGreenBorder(), width: 2.0),
+              color: CustomColors().getDarkGreenBorder(),
+              width: 2.0,
+            ),
           ),
           suffixIcon: IconButton(
             icon: Icon(

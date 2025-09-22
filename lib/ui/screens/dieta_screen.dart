@@ -9,7 +9,7 @@ import 'package:task_manager_flutter/ui/widgets/input_field_busca.dart';
 import 'package:task_manager_flutter/ui/screens/Dieta_add.dart';
 import 'package:task_manager_flutter/ui/screens/Dieta_list.dart';
 import 'package:task_manager_flutter/data/models/auth_utility.dart';
-import '../../data/models/login_model.dart';
+import '../../data/models/login_2_model.dart';
 
 class Dietacreen extends StatefulWidget {
   const Dietacreen({super.key});
