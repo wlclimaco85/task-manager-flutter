@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:task_manager_flutter/ui/widgets/generic_grid_screen.dart';
 import 'package:task_manager_flutter/ui/widgets/tab_config.dart';
-import 'package:task_manager_flutter/ui/widgets/field_factory.dart';
 import 'package:task_manager_flutter/data/constants/custom_colors.dart';
+import 'package:task_manager_flutter/ui/widgets/generic_grid_screen.dart';
 
 class GenericDetailFormScreen<T> extends StatefulWidget {
   final T item;

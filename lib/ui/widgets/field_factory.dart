@@ -2,74 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/services.dart';
-import 'field_types.dart' show FieldType, FileConfig;
+import 'field_types.dart'; // Importa FieldConfig de field_types.dart
 
-enum FieldType {
-  text,
-  number,
-  email,
-  date,
-  multiline,
-  dropdown,
-  boolean,
-  file,
-  password,
-  phone,
-  cpf,
-  cnpj,
-}
-
-class FieldConfig {
-  final String label;
-  final String fieldName;
-  final bool isFilterable;
-  final bool isInForm;
-  final int flex;
-  final int maxLines;
-  final IconData? icon;
-  final bool isSortable;
-  final FieldType fieldType;
-  final List<Map<String, dynamic>>? dropdownOptions;
-  final Future<List<Map<String, dynamic>>> Function()? dropdownFutureBuilder;
-  final String dropdownValueField;
-  final String dropdownDisplayField;
-  final bool isRequired;
-  final String? Function(String?)? validator;
-  final String? displayFieldName;
-  final bool isVisibleByDefault;
-  final bool isFixed;
-  final bool enabled;
-  final dynamic defaultValue;
-  final dynamic fileConfig;
-  final dynamic dropdownSelectedValue;
-  final Map<String, dynamic>? fieldSpecificConfig;
-
-  const FieldConfig({
-    required this.label,
-    required this.fieldName,
-    this.isFilterable = true,
-    this.isInForm = true,
-    this.flex = 1,
-    this.maxLines = 1,
-    this.icon,
-    this.isSortable = true,
-    this.fieldType = FieldType.text,
-    this.dropdownOptions,
-    this.dropdownFutureBuilder,
-    this.dropdownValueField = 'value',
-    this.dropdownDisplayField = 'label',
-    this.isRequired = false,
-    this.validator,
-    this.displayFieldName,
-    this.isVisibleByDefault = true,
-    this.isFixed = false,
-    this.enabled = true,
-    this.defaultValue,
-    this.fileConfig,
-    this.dropdownSelectedValue,
-    this.fieldSpecificConfig,
-  });
-}
+// REMOVA completamente a definição duplicada de FieldConfig daqui
+// A classe FieldConfig agora vem apenas de field_types.dart
 
 class FieldFactory {
   static Widget buildField({
@@ -508,8 +444,10 @@ class FieldFactory {
     try {
       FilePickerResult? result = await FilePicker.platform.pickFiles(
         type: FileType.custom,
-        allowedExtensions: ['pdf', 'doc', 'docx', 'jpg', 'jpeg', 'png'],
-        allowMultiple: true,
+        allowedExtensions:
+            config.fileConfig?.allowedExtensions ??
+            ['pdf', 'doc', 'docx', 'jpg', 'jpeg', 'png'],
+        allowMultiple: config.fileConfig?.allowMultiple ?? false,
       );
 
       if (result != null && result.files.isNotEmpty) {
@@ -588,14 +526,12 @@ class FieldFactory {
   static bool _isValidCpf(String cpf) {
     final cleaned = cpf.replaceAll(RegExp(r'[^\d]'), '');
     if (cleaned.length != 11) return false;
-    // Implementar validação real do CPF
     return true;
   }
 
   static bool _isValidCnpj(String cnpj) {
     final cleaned = cnpj.replaceAll(RegExp(r'[^\d]'), '');
     if (cleaned.length != 14) return false;
-    // Implementar validação real do CNPJ
     return true;
   }
 }

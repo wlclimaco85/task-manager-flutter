@@ -181,9 +181,14 @@ class NetworkCaller {
       final user = AuthUtility.userInfo.login;
 
       // Adiciona empresa, parceiro e aplicativo ao body
-      body?['empresa'] = user?.empresa?.id;
-      body?['parceiro'] = user?.parceiro?.id;
-      body?['aplicativo'] = user?.aplicativo?.id;
+      body?['empresa'] = {};
+      body?['parceiro'] = {};
+      body?['aplicativo'] = {};
+      body?['empresa']['id'] = user?.empresa?.id ?? 1;
+      body?['parceiro']['id'] = user?.parceiro?.id ?? 1;
+      body?['aplicativo']['id'] = user?.aplicativo != null
+          ? user?.aplicativo?.id
+          : 1;
 
       Response response = await post(
         Uri.parse(url),
@@ -200,6 +205,10 @@ class NetworkCaller {
         },
         body: jsonEncode(body),
       );
+
+      print('POST $url');
+      print('Request Body: ${jsonEncode(body)}');
+
       if (response.statusCode == 200 || response.statusCode == 201) {
         return NetworkResponse(
           true,

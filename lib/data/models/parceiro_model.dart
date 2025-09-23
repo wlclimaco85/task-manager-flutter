@@ -8,7 +8,6 @@ import 'package:task_manager_flutter/data/models/network_response.dart';
 import 'package:task_manager_flutter/data/services/network_caller.dart';
 import 'package:task_manager_flutter/data/models/regime_tributario_model.dart';
 import 'package:task_manager_flutter/ui/details/parceiro_detail_screen.dart';
-import 'package:task_manager_flutter/ui/widgets/field_factory.dart';
 
 class Endereco {
   int? id;

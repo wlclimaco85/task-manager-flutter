@@ -5,7 +5,6 @@ import 'package:task_manager_flutter/ui/widgets/genericDetailFormScreen.dart';
 import 'package:task_manager_flutter/ui/widgets/generic_grid_screen.dart';
 import 'package:task_manager_flutter/ui/widgets/tab_config.dart';
 import 'package:task_manager_flutter/data/models/login_2_model.dart';
-import 'package:task_manager_flutter/ui/widgets/field_factory.dart';
 
 class ParceiroDetailScreen extends StatelessWidget {
   final Parceiro item;
