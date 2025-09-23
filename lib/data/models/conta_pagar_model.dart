@@ -311,7 +311,8 @@ class ContaPagar {
     ),
     FieldConfig(
       label: "Anexo",
-      fieldName: "file",
+      fieldName: "file.id",
+      displayFieldName: "file.nome",
       fieldType: FieldType.file,
       enabled: true, // Pode ser false para desabilitar
     ),

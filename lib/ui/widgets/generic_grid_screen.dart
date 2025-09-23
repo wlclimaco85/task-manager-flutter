@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:data_table_2/data_table_2.dart';
@@ -7,10 +8,12 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
+import 'package:path_provider/path_provider.dart'; // Para mobile/desktop
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:task_manager_flutter/data/models/auth_utility.dart';
 import 'package:task_manager_flutter/data/models/network_response.dart';
 import 'package:task_manager_flutter/data/services/network_caller.dart';
+import 'package:file_saver/file_saver.dart';
 
 // Cores centralizadas para todo o componente
 class GridColors {
@@ -358,6 +361,48 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
     }
 
     return url;
+  }
+
+  Future<void> _downloadFile(int fileId, String fileName) async {
+    try {
+      final String authToken = '${AuthUtility.userInfo.token}';
+
+      final response = await http.get(
+        Uri.parse(
+          'http://192.168.114.1:8088/boletobancos/api/files/download/$fileId',
+        ),
+        headers: {'Authorization': 'Bearer $authToken'},
+      );
+
+      if (response.statusCode == 200) {
+        await FileSaver.instance.saveFile(
+          fileName,
+          response.bodyBytes,
+          fileName.split('.').last, // file extension
+        );
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Download realizado com sucesso'),
+            backgroundColor: GridColors.success,
+          ),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Falha no download: ${response.statusCode}'),
+            backgroundColor: GridColors.error,
+          ),
+        );
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Erro no download: $e'),
+          backgroundColor: GridColors.error,
+        ),
+      );
+    }
   }
 
   String construirUrl(String baseUrl, int pagina, int tamanhoPagina) {
@@ -856,7 +901,7 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
     }
 
     return DropdownButtonFormField<dynamic>(
-      value: currentValue,
+      initialValue: currentValue,
       decoration: _buildInputDecoration(config),
       isExpanded: true,
       menuMaxHeight: 300,
@@ -1058,6 +1103,11 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
       }
       return value;
     });
+    int fileId = 0;
+    if (filesToUpload.isNotEmpty) {
+      fileId = await _uploadFiles("", filesToUpload);
+      enrichedFormData["file"] = {"id": fileId};
+    }
 
     print(enrichedFormData);
 
@@ -1068,9 +1118,6 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
 
     if (response.isSuccess) {
       // NOVO: Fazer upload dos arquivos se a criação foi bem sucedida
-      if (filesToUpload.isNotEmpty) {
-        await _uploadFiles(response.body?['id']?.toString(), filesToUpload);
-      }
 
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -1091,12 +1138,12 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
   }
 
   // NOVO: Método para upload de arquivos - VERSÃO CORRIGIDA
-  Future<void> _uploadFiles(
+  Future<int> _uploadFiles(
     String? itemId,
     Map<String, List<PlatformFile>> filesToUpload,
   ) async {
-    final String _authToken = '${AuthUtility.userInfo.token}';
-    if (itemId == null || filesToUpload.isEmpty) return;
+    final String authToken = '${AuthUtility.userInfo.token}';
+    if (itemId == null || filesToUpload.isEmpty) return 0;
 
     try {
       // Criar a requisição multipart
@@ -1141,8 +1188,8 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
       }
 
       // Adicionar headers de autenticação
-      if (_authToken.isNotEmpty) {
-        request.headers['Authorization'] = 'Bearer $_authToken';
+      if (authToken.isNotEmpty) {
+        request.headers['Authorization'] = 'Bearer $authToken';
       }
 
       print('Enviando ${filesToUpload.length} arquivo(s) para o item $itemId');
@@ -1154,6 +1201,11 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
       if (response.statusCode == 200) {
         final responseBody = await response.stream.bytesToString();
         print('Upload realizado com sucesso: $responseBody');
+        // Converter JSON para Map
+        final decoded = jsonDecode(responseBody);
+
+        // Retornar o fileId se existir
+        return decoded['fileId'] ?? 0;
       } else {
         final errorBody = await response.stream.bytesToString();
         print('Erro no upload (${response.statusCode}): $errorBody');
@@ -1161,6 +1213,7 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
     } catch (e) {
       print('Exceção durante o upload: $e');
     }
+    return 0;
   }
 
   Map<String, dynamic> normalizeFormData(Map<String, dynamic> formData) {
@@ -1549,29 +1602,83 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
     final itemMap = widget.toJson(item);
     final cells = <DataCell>[];
 
-    // Adicionar células das colunas visíveis
     for (final config in widget.fieldConfigs.where(
       (c) => _columnVisibility[c.fieldName] == true,
     )) {
-      cells.add(
-        DataCell(
-          Text(
-            _getNestedValue(
-                  itemMap,
-                  config.displayFieldName ?? config.fieldName,
-                )?.toString() ??
-                '',
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
+      // TRATAMENTO ESPECIAL PARA CAMPOS DE ARQUIVO
+      if (config.fieldType == FieldType.file) {
+        final fileData = _getNestedValue(itemMap, config.fieldName);
+        final fileName = _getNestedValue(
+          itemMap,
+          config.displayFieldName ?? 'fileName',
+        )?.toString();
+        final fileId = _getNestedValue(fileData, 'id');
+
+        cells.add(
+          DataCell(
+            fileId != null && fileName != null && fileName.isNotEmpty
+                ? InkWell(
+                    onTap: () => _downloadFile(
+                      fileId is int
+                          ? fileId
+                          : int.tryParse(fileId.toString()) ?? 0,
+                      fileName,
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          Icons.attach_file,
+                          size: 16,
+                          color: GridColors.primary,
+                        ),
+                        const SizedBox(width: 4),
+                        Flexible(
+                          child: Text(
+                            fileName,
+                            style: TextStyle(
+                              color: GridColors.primary,
+                              decoration: TextDecoration.underline,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ],
+                    ),
+                  )
+                : Text(
+                    'Nenhum arquivo',
+                    style: TextStyle(
+                      color: GridColors.textSecondary.withOpacity(0.5),
+                      fontStyle: FontStyle.italic,
+                    ),
+                  ),
           ),
-          onTap: widget.onItemTap != null
-              ? () => widget.onItemTap!(item, context)
-              : null,
-        ),
-      );
+        );
+      } else {
+        // Célula normal para outros tipos de campo
+        final displayValue = _getNestedValue(
+          itemMap,
+          config.displayFieldName ?? config.fieldName,
+        );
+
+        cells.add(
+          DataCell(
+            Text(
+              displayValue?.toString() ?? '',
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+            onTap: widget.onItemTap != null
+                ? () => widget.onItemTap!(item, context)
+                : null,
+          ),
+        );
+      }
     }
 
-    // Adicionar célula de ações (sempre visível)
+    // ... resto do método (célula de ações) permanece igual
     cells.add(
       DataCell(
         Row(
@@ -1603,7 +1710,6 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
                   _getNestedValue(itemMap, widget.idFieldName).toString(),
                 ),
               ),
-            // Adicionar ações personalizadas
             ..._customActions
                 .where((action) => action.isVisible?.call(item) ?? true)
                 .map(
@@ -1624,6 +1730,7 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
   dynamic _getNestedValue(dynamic map, String fieldName) {
     if (map == null) return null;
 
+    // Se não tem ponto, é acesso direto
     if (!fieldName.contains('.')) {
       return map is Map ? map[fieldName] : null;
     }
@@ -1639,7 +1746,6 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
       } else if (value is Map<String, dynamic>) {
         value = value[part];
       } else if (value is List) {
-        // Tenta acessar elemento de lista se for numérico
         final index = int.tryParse(part);
         if (index != null && index >= 0 && index < value.length) {
           value = value[index];
@@ -1647,16 +1753,48 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
           return null;
         }
       } else {
-        // Tenta acessar via reflexão se for um objeto Dart
-        try {
-          value = value[part];
-        } catch (e) {
-          return null;
-        }
+        // PARA OBJETOS DART: tenta métodos específicos sem reflexão
+        value = _getObjectProperty(value, part);
+        if (value == null) return null;
       }
     }
 
     return value;
+  }
+
+  // NOVO: Método para acessar propriedades de objetos Dart sem reflexão
+  dynamic _getObjectProperty(dynamic object, String propertyName) {
+    if (object == null) return null;
+
+    // Tenta métodos comuns primeiro
+    switch (propertyName) {
+      case 'id':
+        return object.id ?? object.ID ?? object.Id;
+      case 'fileName':
+      case 'filename':
+      case 'name':
+        return object.fileName ??
+            object.filename ??
+            object.name ??
+            object.fileName;
+      case 'fileType':
+      case 'filetype':
+      case 'type':
+        return object.fileType ?? object.filetype ?? object.type;
+      default:
+        // Tenta converter para mapa via toJson() se existir
+        try {
+          if (object.toJson != null) {
+            final jsonMap = object.toJson();
+            if (jsonMap is Map && jsonMap.containsKey(propertyName)) {
+              return jsonMap[propertyName];
+            }
+          }
+        } catch (e) {
+          // Ignora erro e retorna null
+        }
+        return null;
+    }
   }
 
   @override

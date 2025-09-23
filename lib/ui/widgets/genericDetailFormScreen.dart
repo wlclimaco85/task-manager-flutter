@@ -191,9 +191,7 @@ class _GenericDetailFormScreenState<T> extends State<GenericDetailFormScreen<T>>
         key: _formKeys[index],
         child: ListView(
           padding: const EdgeInsets.all(16),
-          children: tab.fields!
-              .map((field) => _buildFormField(field as FieldConfig))
-              .toList(),
+          children: tab.fields!.map((field) => _buildFormField(field)).toList(),
         ),
       );
     }

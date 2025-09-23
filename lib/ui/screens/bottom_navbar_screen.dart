@@ -8,7 +8,6 @@ import 'package:task_manager_flutter/data/models/alert_model.dart';
 import 'package:task_manager_flutter/data/models/auth_utility.dart';
 import 'package:task_manager_flutter/data/models/login_2_model.dart';
 import 'package:task_manager_flutter/data/services/alert_caller.dart';
-import 'package:task_manager_flutter/ui/screens/LoginPopup_screens.dart';
 // GridScreens
 import 'package:task_manager_flutter/ui/screens/alimento_grid_screen.dart';
 import 'package:task_manager_flutter/ui/screens/aplicativo_screen.dart';

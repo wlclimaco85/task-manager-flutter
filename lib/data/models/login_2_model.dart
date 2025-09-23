@@ -203,7 +203,7 @@ class LoginModel {
     if (this.data != null) {
       data['data'] = this.data!.toJson();
     }
-    if (this.login != null) {
+    if (login != null) {
       data['login'] = this.data!.toJson();
     }
     return data;

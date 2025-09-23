@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:task_manager_flutter/ui/widgets/generic_grid_screen.dart';
 import 'audit_model.dart'; // importe seu Audit aqui
+import 'package:task_manager_flutter/data/services/network_caller.dart';
+import 'package:task_manager_flutter/data/utils/api_links.dart';
+import 'package:task_manager_flutter/data/models/network_response.dart';
 
 class FormaPagamento {
   int? id;
@@ -46,6 +49,27 @@ class FormaPagamento {
   String get createdAtFormatado {
     if (audit?.dataCreated == null) return '';
     return DateFormat('dd/MM/yyyy').format(audit!.dataCreated!);
+  }
+
+  /// Método estático para carregar todas as formas de pagamento
+  static Future<List<Map<String, dynamic>>> loadFormasPagamento() async {
+    final NetworkResponse response = await NetworkCaller().getRequest(
+      ApiLinks.allFormasPagamento,
+    );
+
+    if (response.isSuccess && response.body != null) {
+      final List<dynamic> data = response.body!['data']['dados'] ?? [];
+      return data
+          .map(
+            (item) => {
+              'value': item['id'], // id da forma de pagamento
+              'label': item['nome'].toString(), // nome da forma
+            },
+          )
+          .toList();
+    }
+
+    return [];
   }
 
   static List<FieldConfig> fieldConfigs = [

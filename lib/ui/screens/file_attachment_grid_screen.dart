@@ -58,7 +58,7 @@ class FileAttachmentGridScreen extends StatelessWidget {
         );
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Erro ao fazer download: ${response}')),
+          SnackBar(content: Text('Erro ao fazer download: $response')),
         );
       }
     } catch (e) {

@@ -169,7 +169,7 @@ class _FileUploadScreenState extends State<FileUploadScreen> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               DropdownButtonFormField<int>(
-                value: _diretorioId,
+                initialValue: _diretorioId,
                 decoration: const InputDecoration(
                   labelText: 'Diretório',
                   border: OutlineInputBorder(),
@@ -189,7 +189,7 @@ class _FileUploadScreenState extends State<FileUploadScreen> {
               ),
               const SizedBox(height: 16),
               DropdownButtonFormField<int>(
-                value: _empresaId,
+                initialValue: _empresaId,
                 decoration: const InputDecoration(
                   labelText: 'Empresa',
                   border: OutlineInputBorder(),

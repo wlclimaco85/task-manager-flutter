@@ -3,7 +3,7 @@
     "activeCommit": 0,
     "commits": [
         {
-            "activePatchIndex": 53,
+            "activePatchIndex": 57,
             "patches": [
                 {
                     "date": 1707188005314,
@@ -220,6 +220,22 @@
                 {
                     "date": 1757535216018,
                     "content": "Index: \n===================================================================\n--- \n+++ \n@@ -62,8 +62,9 @@\n   web_socket_channel: ^3.0.3\r\n   path: ^1.8.2\r\n   file_selector_windows: ^0.9.3+4\r\n   syncfusion_flutter_datagrid: ^31.1.18\r\n+  data_table_2: ^2.5.8\r\n dev_dependencies:\r\n   flutter_test:\r\n     sdk: flutter\r\n \r\n"
+                },
+                {
+                    "date": 1758652612366,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -63,8 +63,9 @@\n   path: ^1.8.2\r\n   file_selector_windows: ^0.9.3+4\r\n   syncfusion_flutter_datagrid: ^31.1.18\r\n   data_table_2: ^2.5.8\r\n+  reflectable: ^4.0.5\r\n dev_dependencies:\r\n   flutter_test:\r\n     sdk: flutter\r\n \r\n"
+                },
+                {
+                    "date": 1758652634549,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -65,8 +65,9 @@\n   syncfusion_flutter_datagrid: ^31.1.18\r\n   data_table_2: ^2.5.8\r\n   reflectable: ^4.0.5\r\n dev_dependencies:\r\n+  build_runner: ^2.4.8  \r\n   flutter_test:\r\n     sdk: flutter\r\n \r\n   # The \"flutter_lints\" package below contains a set of recommended lints to\r\n"
+                },
+                {
+                    "date": 1758654985747,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -63,11 +63,9 @@\n   path: ^1.8.2\r\n   file_selector_windows: ^0.9.3+4\r\n   syncfusion_flutter_datagrid: ^31.1.18\r\n   data_table_2: ^2.5.8\r\n-  reflectable: ^4.0.5\r\n dev_dependencies:\r\n-  build_runner: ^2.4.8  \r\n   flutter_test:\r\n     sdk: flutter\r\n \r\n   # The \"flutter_lints\" package below contains a set of recommended lints to\r\n"
+                },
+                {
+                    "date": 1758657873563,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -63,8 +63,9 @@\n   path: ^1.8.2\r\n   file_selector_windows: ^0.9.3+4\r\n   syncfusion_flutter_datagrid: ^31.1.18\r\n   data_table_2: ^2.5.8\r\n+  file_saver: ^0.1.1\r\n dev_dependencies:\r\n   flutter_test:\r\n     sdk: flutter\r\n \r\n"
                 }
             ],
             "date": 1707188005314,

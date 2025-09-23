@@ -2,10 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:task_manager_flutter/data/models/documento_model.dart';
 import 'package:task_manager_flutter/data/services/documentoService.dart';
-import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
 
 class CalendarScreen extends StatefulWidget {
+  const CalendarScreen({super.key});
+
   @override
   _CalendarScreenState createState() => _CalendarScreenState();
 }
@@ -17,7 +17,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
   List<DateTime> _datesWithReadDocs = [];
   List<Documento> _selectedDayDocuments = [];
   DateTime? _selectedDay;
-  int _usuarioId = 1; // ID do usuário logado (deve vir da autenticação)
+  final int _usuarioId = 1; // ID do usuário logado (deve vir da autenticação)
 
   @override
   void initState() {

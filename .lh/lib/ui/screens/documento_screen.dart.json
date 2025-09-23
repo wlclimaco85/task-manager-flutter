@@ -3,7 +3,7 @@
     "activeCommit": 0,
     "commits": [
         {
-            "activePatchIndex": 1,
+            "activePatchIndex": 3,
             "patches": [
                 {
                     "date": 1758402748674,
@@ -12,6 +12,14 @@
                 {
                     "date": 1758402755193,
                     "content": "Index: \n===================================================================\n--- \n+++ \n@@ -3,10 +3,8 @@\n import 'package:task_manager_flutter/data/models/documento_model.dart';\r\n import 'package:task_manager_flutter/data/services/documentoService.dart';\r\n import 'package:flutter/material.dart';\r\n import 'package:intl/intl.dart';\r\n-import 'package:calendario_financeiro/models/documento_model.dart';\r\n-import 'package:calendario_financeiro/services/documento_service.dart';\r\n \r\n class CalendarScreen extends StatefulWidget {\r\n   @override\r\n   _CalendarScreenState createState() => _CalendarScreenState();\r\n"
+                },
+                {
+                    "date": 1758649835427,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -5,8 +5,10 @@\n import 'package:flutter/material.dart';\r\n import 'package:intl/intl.dart';\r\n \r\n class CalendarScreen extends StatefulWidget {\r\n+  const CalendarScreen({super.key});\r\n+\r\n   @override\r\n   _CalendarScreenState createState() => _CalendarScreenState();\r\n }\r\n \r\n@@ -16,9 +18,9 @@\n   List<DateTime> _datesWithNewDocs = [];\r\n   List<DateTime> _datesWithReadDocs = [];\r\n   List<Documento> _selectedDayDocuments = [];\r\n   DateTime? _selectedDay;\r\n-  int _usuarioId = 1; // ID do usuário logado (deve vir da autenticação)\r\n+  final int _usuarioId = 1; // ID do usuário logado (deve vir da autenticação)\r\n \r\n   @override\r\n   void initState() {\r\n     super.initState();\r\n"
+                },
+                {
+                    "date": 1758655234051,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -1,10 +1,8 @@\n import 'package:flutter/material.dart';\r\n import 'package:intl/intl.dart';\r\n import 'package:task_manager_flutter/data/models/documento_model.dart';\r\n import 'package:task_manager_flutter/data/services/documentoService.dart';\r\n-import 'package:flutter/material.dart';\r\n-import 'package:intl/intl.dart';\r\n \r\n class CalendarScreen extends StatefulWidget {\r\n   const CalendarScreen({super.key});\r\n \r\n"
                 }
             ],
             "date": 1758402748674,

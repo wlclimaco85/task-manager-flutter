@@ -1,6 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:task_manager_flutter/data/models/conta_receber_model.dart';
-import 'package:task_manager_flutter/data/models/conta_pagar_model.dart';
 import 'package:task_manager_flutter/data/services/network_caller.dart';
 import 'package:task_manager_flutter/data/models/network_response.dart';
 import 'package:task_manager_flutter/data/utils/api_links.dart';
@@ -69,7 +67,7 @@ class _BaixaDialogState extends State<BaixaDialog> {
               ),
               const SizedBox(height: 16),
               DropdownButtonFormField<String>(
-                value: _formaPagamento,
+                initialValue: _formaPagamento,
                 decoration: InputDecoration(
                   labelText: 'Forma de Pagamento',
                   prefixIcon: Icon(Icons.payment),
@@ -159,7 +157,7 @@ class _BaixaDialogState extends State<BaixaDialog> {
       } else {
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(SnackBar(content: Text('Erro: ${response}')));
+        ).showSnackBar(SnackBar(content: Text('Erro: $response')));
       }
     }
   }

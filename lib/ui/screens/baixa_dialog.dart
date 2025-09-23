@@ -1,6 +1,7 @@
 // baixa_dialog.dart
 import 'package:flutter/material.dart';
 import 'package:task_manager_flutter/data/models/conta_pagar_model.dart';
+import 'package:task_manager_flutter/data/models/forma_pagamento_model.dart';
 import 'package:task_manager_flutter/data/services/network_caller.dart';
 import 'package:task_manager_flutter/data/models/network_response.dart';
 import 'package:task_manager_flutter/data/utils/api_links.dart';
@@ -18,22 +19,36 @@ class _BaixaDialogState extends State<BaixaDialog> {
   final _formKey = GlobalKey<FormState>();
   final _valorController = TextEditingController();
   DateTime _dataBaixa = DateTime.now();
-  String? _formaPagamento;
-
-  final List<String> _formasPagamento = [
-    'Dinheiro',
-    'Cartão de Crédito',
-    'Cartão de Débito',
-    'Transferência',
-    'PIX',
-    'Boleto',
-    'Cheque',
-  ];
+  int? _formaPagamentoId; // Armazena o ID selecionado
+  bool _isLoading = true;
+  List<FormaPagamento> _formasPagamento = [];
 
   @override
   void initState() {
     super.initState();
     _valorController.text = widget.conta.valor.toString();
+    _loadFormasPagamento();
+  }
+
+  Future<void> _loadFormasPagamento() async {
+    final List<Map<String, dynamic>> formasMap =
+        await FormaPagamento.loadFormasPagamento(); // retorna List<Map>
+
+    final List<FormaPagamento> formas = formasMap
+        .map(
+          (map) => FormaPagamento(
+            id: map['value'],
+            nome: map['label'],
+            descricao: '',
+            status: 'Ativo',
+            audit: null,
+          ),
+        )
+        .toList();
+    setState(() {
+      _formasPagamento = formas;
+      _isLoading = false;
+    });
   }
 
   @override
@@ -46,6 +61,7 @@ class _BaixaDialogState extends State<BaixaDialog> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
+              // Campo Valor da Baixa
               TextFormField(
                 controller: _valorController,
                 decoration: const InputDecoration(
@@ -65,31 +81,39 @@ class _BaixaDialogState extends State<BaixaDialog> {
                 },
               ),
               const SizedBox(height: 16),
-              DropdownButtonFormField<String>(
-                value: _formaPagamento,
-                decoration: const InputDecoration(
-                  labelText: 'Forma de Pagamento',
-                  prefixIcon: Icon(Icons.payment),
-                ),
-                items: _formasPagamento.map((String value) {
-                  return DropdownMenuItem<String>(
-                    value: value,
-                    child: Text(value),
-                  );
-                }).toList(),
-                onChanged: (newValue) {
-                  setState(() {
-                    _formaPagamento = newValue;
-                  });
-                },
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Selecione a forma de pagamento';
-                  }
-                  return null;
-                },
-              ),
+
+              // Dropdown Formas de Pagamento
+              _isLoading
+                  ? const CircularProgressIndicator()
+                  : DropdownButtonFormField<int>(
+                      initialValue: _formaPagamentoId,
+                      decoration: const InputDecoration(
+                        labelText: 'Forma de Pagamento',
+                        prefixIcon: Icon(Icons.payment),
+                      ),
+                      items: _formasPagamento.map((forma) {
+                        return DropdownMenuItem<int>(
+                          value: forma.id, // Acessa o ID do objeto
+                          child: Text(
+                            forma.nome ?? '',
+                          ), // Acessa o nome do objeto
+                        );
+                      }).toList(),
+                      onChanged: (newValue) {
+                        setState(() {
+                          _formaPagamentoId = newValue;
+                        });
+                      },
+                      validator: (value) {
+                        if (value == null) {
+                          return 'Selecione a forma de pagamento';
+                        }
+                        return null;
+                      },
+                    ),
               const SizedBox(height: 16),
+
+              // Seletor de Data
               Row(
                 children: [
                   const Icon(Icons.calendar_today, size: 20),
@@ -145,7 +169,7 @@ class _BaixaDialogState extends State<BaixaDialog> {
         {
           'dataBaixa': _dataBaixa.toIso8601String(),
           'valorBaixa': valorBaixa,
-          'formaPagamento': _formaPagamento,
+          'formaPagamentoId': _formaPagamentoId,
         },
       );
 
@@ -155,9 +179,13 @@ class _BaixaDialogState extends State<BaixaDialog> {
         );
         Navigator.of(context).pop(true);
       } else {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Erro: ${response}')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'Erro ao registrar baixa: ${response ?? response.statusCode}',
+            ),
+          ),
+        );
       }
     }
   }

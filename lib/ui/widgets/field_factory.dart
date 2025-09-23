@@ -4,9 +4,6 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter/services.dart';
 import 'field_types.dart'; // Importa FieldConfig de field_types.dart
 
-// REMOVA completamente a definição duplicada de FieldConfig daqui
-// A classe FieldConfig agora vem apenas de field_types.dart
-
 class FieldFactory {
   static Widget buildField({
     required FieldConfig config,
@@ -371,7 +368,7 @@ class FieldFactory {
     }
 
     return DropdownButtonFormField<dynamic>(
-      value: currentValue,
+      initialValue: currentValue,
       decoration: _buildInputDecoration(config),
       isExpanded: true,
       menuMaxHeight: 300,

@@ -71,9 +71,9 @@ class NetworkCaller {
       Uri uri = Uri.parse(url).replace(
         queryParameters: {
           ...Uri.parse(url).queryParameters, // mantém query existentes
-          'empresa': {'id': user?.login?.empresa?.id?.toString() ?? null},
-          'parceiro': {'id': user?.login?.parceiro?.id?.toString() ?? null},
-          'aplicativo': {'id': user?.login?.aplicativo?.id?.toString() ?? null},
+          'empresa': {'id': user?.login?.empresa?.id?.toString()},
+          'parceiro': {'id': user?.login?.parceiro?.id?.toString()},
+          'aplicativo': {'id': user?.login?.aplicativo?.id?.toString()},
         },
       );
       if (AuthUtility.userInfo.data?.id != 1) {

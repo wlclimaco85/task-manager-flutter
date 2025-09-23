@@ -10,7 +10,6 @@ import 'package:task_manager_flutter/data/models/login_2_model.dart';
 import 'package:http/http.dart' as http;
 import 'dart:async';
 import 'package:task_manager_flutter/data/constants/custom_colors.dart';
-import 'package:task_manager_flutter/data/utils/api_links.dart';
 
 // AppBar personalizado
 class UserBannerAppBar extends StatefulWidget implements PreferredSizeWidget {
