@@ -23,7 +23,7 @@ class ContaPagarGridScreen extends StatelessWidget {
       hasPermission: hasPermission,
       fieldConfigs: ContaPagar.fieldConfigs,
       idFieldName: 'id',
-      dateFieldName: 'createdAt',
+      dateFieldName: 'audit.createdAt',
       customActions: () => [
         CustomAction<ContaPagar>(
           icon: Icons.payment,

@@ -26,9 +26,9 @@ class FileAttachment {
       id: json['id'],
       fileName: json['fileName'],
       fileType: json['fileType'],
-      uploadDate: DateTime.parse(json['uploadDate']),
-      diretorioId: json['diretorioId'],
-      empresaId: json['empresaId'],
+      uploadDate: DateTime.parse(json['uploadDate']) ?? DateTime.now(),
+      diretorioId: json['diretorioId'] != null ? json['diretorioId'] : null,
+      empresaId: json['empresaId'] != null ? json['empresaId'] : 0,
     );
   }
 

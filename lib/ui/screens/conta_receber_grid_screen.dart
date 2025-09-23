@@ -1,3 +1,4 @@
+// conta_receber_grid_screen.dart
 import 'package:flutter/material.dart';
 import 'package:task_manager_flutter/data/utils/api_links.dart';
 import 'package:task_manager_flutter/ui/widgets/generic_grid_screen.dart';
@@ -28,6 +29,7 @@ class ContaReceberGridScreen extends StatelessWidget {
           icon: Icons.payment,
           label: 'Baixar',
           onPressed: (context, object) => _showBaixaDialog(context, object),
+          isVisible: (object) => object.status == StatusContaReceber.ABERTA,
         ),
       ],
       exportConfig: const ExportConfig(
@@ -47,7 +49,7 @@ class ContaReceberGridScreen extends StatelessWidget {
     showDialog(
       context: context,
       builder: (BuildContext context) {
-        return BaixaDialog(conta: conta, isReceber: true);
+        return BaixaDialogReceber(conta: conta);
       },
     );
   }

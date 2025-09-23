@@ -3,17 +3,16 @@ import 'dart:io';
 
 import 'package:data_table_2/data_table_2.dart';
 import 'package:file_picker/file_picker.dart';
+import 'package:file_saver/file_saver.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
-import 'package:path_provider/path_provider.dart'; // Para mobile/desktop
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:task_manager_flutter/data/models/auth_utility.dart';
 import 'package:task_manager_flutter/data/models/network_response.dart';
 import 'package:task_manager_flutter/data/services/network_caller.dart';
-import 'package:file_saver/file_saver.dart';
 
 // Cores centralizadas para todo o componente
 class GridColors {
@@ -415,6 +414,42 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
     return url;
   }
 
+  // No início do initState ou em um método de validação
+  void _validateFieldConfigs() {
+    for (final config in widget.fieldConfigs) {
+      if (config.fieldType == FieldType.file) {
+        print('Configuração File: ${config.fieldName}');
+        print('Display Field: ${config.displayFieldName}');
+
+        // Valida se a estrutura está correta
+        if (!config.fieldName.contains('.')) {
+          print('AVISO: Campo file deve ser aninhado (ex: "file.id")');
+        }
+      }
+    }
+  }
+
+  dynamic _getDefaultValueForField(String fieldName) {
+    // Analisa o nome do campo para determinar o tipo esperado
+    final lowerFieldName = fieldName.toLowerCase();
+
+    if (lowerFieldName.contains('id') ||
+        lowerFieldName.contains('codigo') ||
+        lowerFieldName.contains('numero')) {
+      return 0;
+    } else if (lowerFieldName.contains('data') ||
+        lowerFieldName.contains('date')) {
+      return '';
+    } else if (lowerFieldName.contains('file') ||
+        lowerFieldName.contains('anexo') ||
+        lowerFieldName.contains('nome') ||
+        lowerFieldName.contains('name')) {
+      return ''; // Campos de texto relacionados a arquivo
+    } else {
+      return '';
+    }
+  }
+
   Future<void> _loadItems(int pagina, int tamanhoPagina) async {
     setState(() => isLoading = true);
 
@@ -451,14 +486,36 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
 
       final NetworkResponse response = await NetworkCaller().getRequest(url);
 
+      // No método _loadItems, após carregar os dados:
       if (response.statusCode == 200 && response.body != null) {
         final responseData = response.body!['data'];
         final List<dynamic> data = responseData is Map
             ? responseData['dados'] ?? []
             : responseData ?? [];
 
+        // Pré-processa os dados para garantir que campos file existam
+        final processedData = data.map((json) {
+          final itemMap = json is Map ? Map<String, dynamic>.from(json) : {};
+
+          // Garante que campos file tenham estrutura mínima
+          for (final config in widget.fieldConfigs.where(
+            (c) => c.fieldType == FieldType.file,
+          )) {
+            final fileField = config.fieldName.split('.')[0];
+            if (!itemMap.containsKey(fileField)) {
+              itemMap[fileField] = {'id': 0, 'nome': ''};
+            }
+          }
+
+          return itemMap;
+        }).toList();
+
         setState(() {
-          items = data.map((json) => widget.fromJson(json)).toList();
+          items = processedData.map((json) {
+            // Ensure the JSON map has String keys before conversion
+            Map<String, dynamic> jsonMap = Map<String, dynamic>.from(json);
+            return widget.fromJson(jsonMap);
+          }).toList();
           filtered = List.from(items);
           _totalItems = responseData is Map
               ? responseData['totalElements'] ?? 0
@@ -1598,6 +1655,43 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
     return columns;
   }
 
+  // Método específico para extrair valores de campos file aninhados
+  Map<String, dynamic> _extractFileData(
+    Map<String, dynamic> itemMap,
+    FieldConfig config,
+  ) {
+    try {
+      final fileData =
+          _getNestedValue(itemMap, config.fieldName.split('.')[0]) ?? {};
+
+      // Se fileData é um Map, extrai id e nome
+      if (fileData is Map) {
+        return {
+          'id': _getNestedValue(fileData, 'id') ?? 0,
+          'nome': _getNestedValue(fileData, 'nome') ?? '',
+          'fileName': _getNestedValue(fileData, 'fileName') ?? '',
+          'fileType': _getNestedValue(fileData, 'fileType') ?? '',
+        };
+      }
+
+      // Se fileData é um objeto, tenta extrair propriedades
+      return {
+        'id': _getObjectProperty(fileData, 'id') ?? 0,
+        'nome':
+            _getObjectProperty(fileData, 'nome') ??
+            _getObjectProperty(fileData, 'fileName') ??
+            '',
+        'fileName':
+            _getObjectProperty(fileData, 'fileName') ??
+            _getObjectProperty(fileData, 'nome') ??
+            '',
+        'fileType': _getObjectProperty(fileData, 'fileType') ?? '',
+      };
+    } catch (e) {
+      return {'id': 0, 'nome': '', 'fileName': '', 'fileType': ''};
+    }
+  }
+
   List<DataCell> _buildCells(T item, int index) {
     final itemMap = widget.toJson(item);
     final cells = <DataCell>[];
@@ -1606,24 +1700,34 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
       (c) => _columnVisibility[c.fieldName] == true,
     )) {
       // TRATAMENTO ESPECIAL PARA CAMPOS DE ARQUIVO
+      // Dentro do _buildCells, substitua a parte do case FieldType.file:
+
       if (config.fieldType == FieldType.file) {
-        final fileData = _getNestedValue(itemMap, config.fieldName);
-        final fileName = _getNestedValue(
-          itemMap,
-          config.displayFieldName ?? 'fileName',
-        )?.toString();
-        final fileId = _getNestedValue(fileData, 'id');
+        // Extrai dados do arquivo de forma segura
+        final fileData = _extractFileData(itemMap, config);
+
+        final int fileId = fileData['id'] is int
+            ? fileData['id']
+            : (fileData['id'] != null
+                  ? int.tryParse(fileData['id'].toString()) ?? 0
+                  : 0);
+
+        // Tenta obter o nome do arquivo de várias fontes possíveis
+        final String fileName = fileData['nome']?.toString().isNotEmpty == true
+            ? fileData['nome'].toString()
+            : fileData['fileName']?.toString().isNotEmpty == true
+            ? fileData['fileName'].toString()
+            : _getNestedValue(
+                    itemMap,
+                    config.displayFieldName ?? 'file.nome',
+                  )?.toString() ??
+                  '';
 
         cells.add(
           DataCell(
-            fileId != null && fileName != null && fileName.isNotEmpty
+            fileId > 0 && fileName.isNotEmpty
                 ? InkWell(
-                    onTap: () => _downloadFile(
-                      fileId is int
-                          ? fileId
-                          : int.tryParse(fileId.toString()) ?? 0,
-                      fileName,
-                    ),
+                    onTap: () => _downloadFile(fileId, fileName),
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
@@ -1762,25 +1866,32 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
     return value;
   }
 
-  // NOVO: Método para acessar propriedades de objetos Dart sem reflexão
   dynamic _getObjectProperty(dynamic object, String propertyName) {
     if (object == null) return null;
 
-    // Tenta métodos comuns primeiro
-    switch (propertyName) {
+    // Tratamento específico para objetos de arquivo
+    switch (propertyName.toLowerCase()) {
       case 'id':
-        return object.id ?? object.ID ?? object.Id;
-      case 'fileName':
+        return object.id ??
+            object.ID ??
+            object.Id ??
+            object.fileId ??
+            object.fileID ??
+            0;
+      case 'nome':
       case 'filename':
       case 'name':
-        return object.fileName ??
+        return object.nome ??
+            object.fileName ??
             object.filename ??
             object.name ??
-            object.fileName;
-      case 'fileType':
+            '';
       case 'filetype':
       case 'type':
-        return object.fileType ?? object.filetype ?? object.type;
+        return object.fileType ?? object.type ?? object.contentType ?? '';
+      case 'tamanho':
+      case 'size':
+        return object.tamanho ?? object.size ?? object.fileSize ?? 0;
       default:
         // Tenta converter para mapa via toJson() se existir
         try {

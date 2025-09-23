@@ -3,7 +3,7 @@
     "activeCommit": 0,
     "commits": [
         {
-            "activePatchIndex": 4,
+            "activePatchIndex": 5,
             "patches": [
                 {
                     "date": 1758309208539,
@@ -24,6 +24,10 @@
                 {
                     "date": 1758309607653,
                     "content": "Index: \n===================================================================\n--- \n+++ \n@@ -1,9 +1,9 @@\n import 'package:flutter/material.dart';\r\n import 'package:task_manager_flutter/data/utils/api_links.dart';\r\n import 'package:task_manager_flutter/ui/widgets/generic_grid_screen.dart';\r\n import 'package:task_manager_flutter/data/models/conta_receber_model.dart';\r\n-import 'package:task_manager_flutter/ui/screens/baixa_dialog.dart';\r\n+import 'package:task_manager_flutter/ui/screens/baixa_dialog_receber.dart';\r\n \r\n class ContaReceberGridScreen extends StatelessWidget {\r\n   final SecurityCheck hasPermission;\r\n \r\n"
+                },
+                {
+                    "date": 1758663298767,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -1,4 +1,5 @@\n+// conta_receber_grid_screen.dart\r\n import 'package:flutter/material.dart';\r\n import 'package:task_manager_flutter/data/utils/api_links.dart';\r\n import 'package:task_manager_flutter/ui/widgets/generic_grid_screen.dart';\r\n import 'package:task_manager_flutter/data/models/conta_receber_model.dart';\r\n@@ -27,8 +28,9 @@\n         CustomAction<ContaReceber>(\r\n           icon: Icons.payment,\r\n           label: 'Baixar',\r\n           onPressed: (context, object) => _showBaixaDialog(context, object),\r\n+          isVisible: (object) => object.status == StatusContaReceber.ABERTA,\r\n         ),\r\n       ],\r\n       exportConfig: const ExportConfig(\r\n         enableCsvExport: true,\r\n@@ -46,9 +48,9 @@\n   void _showBaixaDialog(BuildContext context, ContaReceber conta) {\r\n     showDialog(\r\n       context: context,\r\n       builder: (BuildContext context) {\r\n-        return BaixaDialog(conta: conta, isReceber: true);\r\n+        return BaixaDialogReceber(conta: conta);\r\n       },\r\n     );\r\n   }\r\n-}\r\n+}\n\\ No newline at end of file\n"
                 }
             ],
             "date": 1758309208539,

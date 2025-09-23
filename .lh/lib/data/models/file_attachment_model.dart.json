@@ -3,7 +3,7 @@
     "activeCommit": 0,
     "commits": [
         {
-            "activePatchIndex": 6,
+            "activePatchIndex": 8,
             "patches": [
                 {
                     "date": 1758315601318,
@@ -32,6 +32,14 @@
                 {
                     "date": 1758631299296,
                     "content": "Index: \n===================================================================\n--- \n+++ \n@@ -1,5 +1,5 @@\n-import 'package:task_manager_flutter/ui/widgets/field_types.dart';\r\n+import 'package:task_manager_flutter/ui/widgets/generic_grid_screen.dart';\r\n import 'package:flutter/material.dart';\r\n import 'package:task_manager_flutter/data/utils/api_links.dart';\r\n import 'package:task_manager_flutter/data/models/network_response.dart';\r\n import 'package:task_manager_flutter/data/services/network_caller.dart';\r\n"
+                },
+                {
+                    "date": 1758662040448,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -27,9 +27,9 @@\n       fileName: json['fileName'],\r\n       fileType: json['fileType'],\r\n       uploadDate: DateTime.parse(json['uploadDate']),\r\n       diretorioId: json['diretorioId'],\r\n-      empresaId: json['empresaId'],\r\n+      empresaId: json['empresaId'] != null ? json['empresaId'] : 0,\r\n     );\r\n   }\r\n \r\n   Map<String, dynamic> toJson() {\r\n"
+                },
+                {
+                    "date": 1758662051371,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -25,10 +25,10 @@\n     return FileAttachment(\r\n       id: json['id'],\r\n       fileName: json['fileName'],\r\n       fileType: json['fileType'],\r\n-      uploadDate: DateTime.parse(json['uploadDate']),\r\n-      diretorioId: json['diretorioId'],\r\n+      uploadDate: DateTime.parse(json['uploadDate']) ?? DateTime.now(),\r\n+      diretorioId: json['diretorioId'] != null ? json['diretorioId'] : null,\r\n       empresaId: json['empresaId'] != null ? json['empresaId'] : 0,\r\n     );\r\n   }\r\n \r\n"
                 }
             ],
             "date": 1758315601318,

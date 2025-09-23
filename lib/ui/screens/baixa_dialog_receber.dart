@@ -1,108 +1,101 @@
 import 'package:flutter/material.dart';
-import 'package:task_manager_flutter/data/services/network_caller.dart';
-import 'package:task_manager_flutter/data/models/network_response.dart';
-import 'package:task_manager_flutter/data/utils/api_links.dart';
+import 'package:task_manager_flutter/data/models/conta_receber_model.dart';
 
-class BaixaDialog extends StatefulWidget {
-  final dynamic conta;
-  final bool isReceber;
+class BaixaDialogReceber extends StatefulWidget {
+  final ContaReceber conta;
 
-  const BaixaDialog({super.key, required this.conta, this.isReceber = false});
+  const BaixaDialogReceber({super.key, required this.conta});
 
   @override
-  _BaixaDialogState createState() => _BaixaDialogState();
+  State<BaixaDialogReceber> createState() => _BaixaDialogReceberState();
 }
 
-class _BaixaDialogState extends State<BaixaDialog> {
+class _BaixaDialogReceberState extends State<BaixaDialogReceber> {
   final _formKey = GlobalKey<FormState>();
-  final _valorController = TextEditingController();
+  final _valorBaixaController = TextEditingController();
+  final _valorMultaController = TextEditingController();
+  final _valorJurosController = TextEditingController();
+  final _valorDescontoController = TextEditingController();
   DateTime _dataBaixa = DateTime.now();
-  String? _formaPagamento;
-
-  final List<String> _formasPagamento = [
-    'Dinheiro',
-    'Cartão de Crédito',
-    'Cartão de Débito',
-    'Transferência',
-    'PIX',
-    'Boleto',
-    'Cheque',
-  ];
 
   @override
   void initState() {
     super.initState();
-    _valorController.text = widget.conta.valor.toString();
+    _valorBaixaController.text = widget.conta.valor.toString();
+    _valorMultaController.text = widget.conta.valorMulta?.toString() ?? '0';
+    _valorJurosController.text = widget.conta.valorJuros?.toString() ?? '0';
+    _valorDescontoController.text =
+        widget.conta.valorDesconto?.toString() ?? '0';
   }
 
   @override
   Widget build(BuildContext context) {
-    return AlertDialog(
-      title: Text(
-        'Registrar Baixa - ${widget.isReceber ? 'Recebimento' : 'Pagamento'}',
-      ),
-      content: SingleChildScrollView(
+    return Dialog(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      child: Padding(
+        padding: const EdgeInsets.all(20),
         child: Form(
           key: _formKey,
           child: Column(
             mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              TextFormField(
-                controller: _valorController,
-                decoration: InputDecoration(
-                  labelText: 'Valor da Baixa',
-                  prefixIcon: Icon(Icons.attach_money),
-                ),
-                keyboardType: TextInputType.number,
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Informe o valor da baixa';
-                  }
-                  final valor = double.tryParse(value);
-                  if (valor == null || valor <= 0) {
-                    return 'Valor deve ser maior que zero';
-                  }
-                  return null;
-                },
+              Text(
+                'Baixar Conta a Receber',
+                style: Theme.of(
+                  context,
+                ).textTheme.titleLarge, // This is the correct replacement
               ),
               const SizedBox(height: 16),
-              DropdownButtonFormField<String>(
-                initialValue: _formaPagamento,
-                decoration: InputDecoration(
-                  labelText: 'Forma de Pagamento',
-                  prefixIcon: Icon(Icons.payment),
+              Text('Descrição: ${widget.conta.descricao}'),
+              Text(
+                'Valor Original: R\$${widget.conta.valor.toStringAsFixed(2)}',
+              ),
+              const SizedBox(height: 16),
+              TextFormField(
+                controller: _valorBaixaController,
+                decoration: const InputDecoration(labelText: 'Valor da Baixa'),
+                keyboardType: TextInputType.number,
+              ),
+              TextFormField(
+                controller: _valorMultaController,
+                decoration: const InputDecoration(labelText: 'Valor da Multa'),
+                keyboardType: TextInputType.number,
+              ),
+              TextFormField(
+                controller: _valorJurosController,
+                decoration: const InputDecoration(labelText: 'Valor dos Juros'),
+                keyboardType: TextInputType.number,
+              ),
+              TextFormField(
+                controller: _valorDescontoController,
+                decoration: const InputDecoration(
+                  labelText: 'Valor do Desconto',
                 ),
-                items: _formasPagamento.map((String value) {
-                  return DropdownMenuItem<String>(
-                    value: value,
-                    child: Text(value),
-                  );
-                }).toList(),
-                onChanged: (newValue) {
-                  setState(() {
-                    _formaPagamento = newValue;
-                  });
-                },
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Selecione a forma de pagamento';
-                  }
-                  return null;
-                },
+                keyboardType: TextInputType.number,
               ),
               const SizedBox(height: 16),
               Row(
                 children: [
-                  Icon(Icons.calendar_today, size: 20),
-                  SizedBox(width: 8),
-                  Text('Data da Baixa:'),
-                  SizedBox(width: 8),
-                  TextButton(
+                  Text('Data da Baixa: ${_formatDate(_dataBaixa)}'),
+                  IconButton(
+                    icon: const Icon(Icons.calendar_today),
                     onPressed: () => _selectDate(context),
-                    child: Text(
-                      '${_dataBaixa.day}/${_dataBaixa.month}/${_dataBaixa.year}',
-                      style: TextStyle(fontWeight: FontWeight.bold),
-                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 20),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  TextButton(
+                    onPressed: () => Navigator.pop(context),
+                    child: const Text('Cancelar'),
+                  ),
+                  const SizedBox(width: 10),
+                  ElevatedButton(
+                    onPressed: _baixarConta,
+                    child: const Text('Confirmar Baixa'),
                   ),
                 ],
               ),
@@ -110,14 +103,11 @@ class _BaixaDialogState extends State<BaixaDialog> {
           ),
         ),
       ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.of(context).pop(),
-          child: Text('Cancelar'),
-        ),
-        ElevatedButton(onPressed: _submitBaixa, child: Text('Confirmar Baixa')),
-      ],
     );
+  }
+
+  String _formatDate(DateTime date) {
+    return '${date.day}/${date.month}/${date.year}';
   }
 
   Future<void> _selectDate(BuildContext context) async {
@@ -134,37 +124,19 @@ class _BaixaDialogState extends State<BaixaDialog> {
     }
   }
 
-  void _submitBaixa() async {
+  void _baixarConta() {
     if (_formKey.currentState!.validate()) {
-      final valorBaixa = double.parse(_valorController.text);
-
-      final endpoint = widget.isReceber
-          ? ApiLinks.registrarBaixaContaReceber(widget.conta.id.toString())
-          : ApiLinks.registrarBaixaContaPagar(widget.conta.id.toString());
-
-      final NetworkResponse response = await NetworkCaller()
-          .postRequest(endpoint, {
-            'dataBaixa': _dataBaixa.toIso8601String(),
-            'valorBaixa': valorBaixa,
-            'formaPagamento': _formaPagamento,
-          });
-
-      if (response.isSuccess) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Baixa registrada com sucesso!')),
-        );
-        Navigator.of(context).pop(true);
-      } else {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Erro: $response')));
-      }
+      // Implementar lógica de baixa aqui
+      Navigator.pop(context);
     }
   }
 
   @override
   void dispose() {
-    _valorController.dispose();
+    _valorBaixaController.dispose();
+    _valorMultaController.dispose();
+    _valorJurosController.dispose();
+    _valorDescontoController.dispose();
     super.dispose();
   }
 }

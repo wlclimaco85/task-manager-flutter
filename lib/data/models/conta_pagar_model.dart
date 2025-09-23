@@ -300,7 +300,7 @@ class ContaPagar {
       isFixed: false,
       fieldType: FieldType.dropdown,
       dropdownOptions: [
-        {'value': 0, 'label': 'Abertoa'},
+        {'value': 0, 'label': 'Aberto'},
         {'value': 1, 'label': 'Baixada '},
         {'value': 2, 'label': 'Cancelado'},
       ],

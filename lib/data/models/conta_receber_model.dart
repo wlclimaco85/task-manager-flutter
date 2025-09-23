@@ -1,6 +1,16 @@
-// Classe Endereco
+// conta_receber_model.dart
 import 'package:flutter/material.dart';
+import 'package:task_manager_flutter/data/models/network_response.dart';
+import 'package:task_manager_flutter/data/services/network_caller.dart';
+import 'package:task_manager_flutter/data/utils/api_links.dart';
 import 'package:task_manager_flutter/ui/widgets/generic_grid_screen.dart';
+import 'audit_model.dart';
+import 'empresa_model.dart';
+import 'file_attachment_model.dart';
+import 'forma_pagamento_model.dart';
+import 'parceiro_model.dart';
+
+enum StatusContaReceber { ABERTA, BAIXADA, CANCELADA }
 
 class ContaReceber {
   int? id;
@@ -9,10 +19,16 @@ class ContaReceber {
   DateTime dataVencimento;
   DateTime? dataBaixa;
   double? valorBaixa;
-  String? formaPagamento;
-  String status;
-  int empresaId;
-  DateTime createdAt;
+  double? valorMulta;
+  double? valorJuros;
+  double? valorDesconto;
+  StatusContaReceber status;
+  Empresa empresa;
+  Parceiro? cliente;
+  Parceiro? clienteDev;
+  FileAttachment? file;
+  FormaPagamento? formaPagamento;
+  Audit audit;
 
   ContaReceber({
     this.id,
@@ -21,27 +37,84 @@ class ContaReceber {
     required this.dataVencimento,
     this.dataBaixa,
     this.valorBaixa,
-    this.formaPagamento,
+    this.valorMulta,
+    this.valorJuros,
+    this.valorDesconto,
     required this.status,
-    required this.empresaId,
-    required this.createdAt,
+    required this.empresa,
+    this.cliente,
+    this.clienteDev,
+    this.file,
+    this.formaPagamento,
+    required this.audit,
   });
 
   factory ContaReceber.fromJson(Map<String, dynamic> json) {
     return ContaReceber(
       id: json['id'],
       descricao: json['descricao'],
-      valor: json['valor'].toDouble(),
+      valor: json['valor']?.toDouble() ?? 0.0,
       dataVencimento: DateTime.parse(json['dataVencimento']),
       dataBaixa: json['dataBaixa'] != null
           ? DateTime.parse(json['dataBaixa'])
           : null,
       valorBaixa: json['valorBaixa']?.toDouble(),
-      formaPagamento: json['formaPagamento'],
-      status: json['status'],
-      empresaId: json['empresaId'],
-      createdAt: DateTime.parse(json['createdAt']),
+      valorMulta: json['valorMulta']?.toDouble(),
+      valorJuros: json['valorJuros']?.toDouble(),
+      valorDesconto: json['valorDesconto']?.toDouble(),
+      status: _parseStatus(json['status']),
+      empresa: Empresa.fromJson(json['empresa']),
+      cliente: json['cliente'] != null
+          ? Parceiro.fromJson(json['cliente'])
+          : null,
+      clienteDev: json['clienteDev'] != null
+          ? Parceiro.fromJson(json['clienteDev'])
+          : null,
+      file: json['file'] != null ? FileAttachment.fromJson(json['file']) : null,
+      formaPagamento: json['formaPagamento'] != null
+          ? FormaPagamento.fromJson(json['formaPagamento'])
+          : null,
+      audit: Audit.fromJson(json['audit'] ?? {}),
     );
+  }
+
+  static StatusContaReceber _parseStatus(dynamic status) {
+    if (status is int) {
+      switch (status) {
+        case 0:
+          return StatusContaReceber.ABERTA;
+        case 1:
+          return StatusContaReceber.BAIXADA;
+        case 2:
+          return StatusContaReceber.CANCELADA;
+        default:
+          return StatusContaReceber.ABERTA;
+      }
+    } else if (status is String) {
+      switch (status) {
+        case 'ABERTA':
+          return StatusContaReceber.ABERTA;
+        case 'BAIXADA':
+          return StatusContaReceber.BAIXADA;
+        case 'CANCELADA':
+          return StatusContaReceber.CANCELADA;
+        default:
+          return StatusContaReceber.ABERTA;
+      }
+    } else {
+      return StatusContaReceber.ABERTA;
+    }
+  }
+
+  int _statusToInt(StatusContaReceber status) {
+    switch (status) {
+      case StatusContaReceber.ABERTA:
+        return 0;
+      case StatusContaReceber.BAIXADA:
+        return 1;
+      case StatusContaReceber.CANCELADA:
+        return 2;
+    }
   }
 
   Map<String, dynamic> toJson() {
@@ -52,14 +125,84 @@ class ContaReceber {
       'dataVencimento': dataVencimento.toIso8601String(),
       'dataBaixa': dataBaixa?.toIso8601String(),
       'valorBaixa': valorBaixa,
-      'formaPagamento': formaPagamento,
-      'status': status,
-      'empresaId': empresaId,
-      'createdAt': createdAt.toIso8601String(),
+      'valorMulta': valorMulta,
+      'valorJuros': valorJuros,
+      'valorDesconto': valorDesconto,
+      'status': _statusToInt(status),
+      'empresa': empresa.toJson(),
+      'cliente': cliente?.toJson(),
+      'clienteDev': clienteDev?.toJson(),
+      'file': file?.toJson(),
+      'formaPagamento': formaPagamento?.toJson(),
+      'audit': audit.toJson(),
     };
   }
 
+  // Classes auxiliares para as entidades relacionadas
+  static Future<List<Map<String, dynamic>>> loadFormasPagamento() async {
+    final NetworkResponse response = await NetworkCaller().getRequest(
+      ApiLinks.allFormasPagamento,
+    );
+
+    if (response.isSuccess && response.body != null) {
+      final List<dynamic> data = response.body!['data']['dados'] ?? [];
+      return data
+          .map(
+            (item) => {'value': item['id'], 'label': item['nome'].toString()},
+          )
+          .toList();
+    }
+    return [];
+  }
+
+  static Future<List<Map<String, dynamic>>> loadClientes() async {
+    final NetworkResponse response = await NetworkCaller().getRequest(
+      ApiLinks
+          .allParceiros, // Ou ApiLinks.allClientes se tiver endpoint específico
+    );
+
+    if (response.isSuccess && response.body != null) {
+      final List<dynamic> data = response.body!['data']['dados'] ?? [];
+      return data
+          .map(
+            (item) => {'value': item['id'], 'label': item['nome'].toString()},
+          )
+          .toList();
+    }
+    return [];
+  }
+
   static List<FieldConfig> fieldConfigs = [
+    FieldConfig(
+      label: "Cliente",
+      fieldName: "parceiro.id",
+      displayFieldName: "parceiro.nome",
+      icon: Icons.person,
+      isInForm: true,
+      isFilterable: true,
+      fieldType: FieldType.dropdown,
+      dropdownFutureBuilder: () async => await loadClientes(),
+      dropdownValueField: 'value',
+      dropdownDisplayField: 'label',
+      isRequired: true,
+      isVisibleByDefault: true,
+      isFixed: false,
+    ),
+    FieldConfig(
+      label: "Cliente Dev",
+      fieldName: "parceiroRec.id",
+      displayFieldName: "parceiroRec.nome",
+      icon: Icons.person,
+      isInForm: true,
+      isFilterable: true,
+      fieldType: FieldType.dropdown,
+      dropdownFutureBuilder: () async => await loadClientes(),
+      dropdownValueField: 'value',
+      dropdownDisplayField: 'label',
+      isRequired: true,
+      isVisibleByDefault: true,
+      isFixed: false,
+    ),
     FieldConfig(
       label: "Descrição",
       fieldName: "descricao",
@@ -89,10 +232,11 @@ class ContaReceber {
     FieldConfig(
       label: "Status",
       fieldName: "status",
-      icon: Icons.abc,
+      icon: Icons.info,
       isFilterable: true,
       isVisibleByDefault: true,
       isFixed: false,
+      isInForm: false,
     ),
     FieldConfig(
       label: "Data Baixa",
@@ -100,6 +244,7 @@ class ContaReceber {
       icon: Icons.calendar_today,
       isVisibleByDefault: false,
       isFixed: false,
+      isInForm: false,
     ),
     FieldConfig(
       label: "Valor Baixa",
@@ -107,13 +252,71 @@ class ContaReceber {
       icon: Icons.attach_money,
       isVisibleByDefault: false,
       isFixed: false,
+      isInForm: false,
+    ),
+    FieldConfig(
+      label: "Valor Multa",
+      fieldName: "valorMulta",
+      icon: Icons.attach_money,
+      isInForm: true,
+      isVisibleByDefault: false,
+      isFixed: false,
+    ),
+    FieldConfig(
+      label: "Valor Juros",
+      fieldName: "valorJuros",
+      icon: Icons.attach_money,
+      isInForm: true,
+      isVisibleByDefault: false,
+      isFixed: false,
+    ),
+    FieldConfig(
+      label: "Valor Desconto",
+      fieldName: "valorDesconto",
+      icon: Icons.attach_money,
+      isInForm: true,
+      isVisibleByDefault: false,
+      isFixed: false,
     ),
     FieldConfig(
       label: "Forma Pagamento",
-      fieldName: "formaPagamento",
+      fieldName: "formaPagamento.id",
+      displayFieldName: "formaPagamento.nome",
       icon: Icons.payment,
-      isVisibleByDefault: false,
+      isInForm: true,
+      isFilterable: true,
+      fieldType: FieldType.dropdown,
+      dropdownFutureBuilder: () async => await loadFormasPagamento(),
+      dropdownValueField: 'value',
+      dropdownDisplayField: 'label',
+      isRequired: true,
+      isVisibleByDefault: true,
       isFixed: false,
+    ),
+    FieldConfig(
+      label: "Status",
+      fieldName: "status",
+      icon: Icons.check_circle,
+      isFilterable: true,
+      isVisibleByDefault: true,
+      isFixed: false,
+      fieldType: FieldType.dropdown,
+      dropdownOptions: [
+        {'value': 0, 'label': 'Aberta'},
+        {'value': 1, 'label': 'Baixada'},
+        {'value': 2, 'label': 'Cancelada'},
+      ],
+      dropdownSelectedValue: 0,
+      enabled: false,
+      dropdownValueField: 'value',
+      dropdownDisplayField: 'label',
+    ),
+    FieldConfig(
+      label: "Anexo",
+      fieldName: "file.id",
+      displayFieldName: "file.nome",
+      fieldType: FieldType.file,
+      enabled: true,
     ),
   ];
 }
