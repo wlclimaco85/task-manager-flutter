@@ -93,6 +93,7 @@ class FieldConfig {
   final FileConfig? fileConfig;
   final dynamic dropdownSelectedValue;
   final Map<String, dynamic>? fieldSpecificConfig;
+  final bool showInCard; // Nova propriedade para controlar se aparece no card
 
   const FieldConfig({
     required this.label,
@@ -118,6 +119,7 @@ class FieldConfig {
     this.fileConfig,
     this.dropdownSelectedValue,
     this.fieldSpecificConfig,
+    this.showInCard = true, // Padrão é true
   });
 }
 
@@ -168,19 +170,21 @@ class GenericMobileGridScreen<T> extends StatefulWidget {
   final String createEndpoint;
   final String updateEndpoint;
   final String deleteEndpoint;
-  final FromJson<T> fromJson;
-  final ToJson<T> toJson;
-  final SecurityCheck hasPermission;
+  final T Function(Map<String, dynamic> json) fromJson;
+  final Map<String, dynamic> Function(T item) toJson;
+  final bool Function(String permission) hasPermission;
   final List<FieldConfig> fieldConfigs;
   final String idFieldName;
+  final String? dateFieldName;
   final PaginationConfig paginationConfig;
-  final OnItemTap<T>? onItemTap;
-  final CustomActionBuilder<T>? customActions;
+  final void Function(T item, BuildContext context)? onItemTap;
+  final List<CustomAction<T>> Function()? customActions;
   final bool enableSearch;
   final Map<String, dynamic>? initialFilters;
   final String storageKey;
   final Widget Function(T item)? detailScreenBuilder;
   final Map<String, dynamic>? extraParams;
+  final bool enableDebugMode; // Nova propriedade para modo debug
 
   const GenericMobileGridScreen({
     super.key,
@@ -194,6 +198,7 @@ class GenericMobileGridScreen<T> extends StatefulWidget {
     required this.hasPermission,
     required this.fieldConfigs,
     this.idFieldName = 'id',
+    this.dateFieldName,
     this.paginationConfig = const PaginationConfig(),
     this.onItemTap,
     this.customActions,
@@ -202,6 +207,7 @@ class GenericMobileGridScreen<T> extends StatefulWidget {
     this.storageKey = 'generic_mobile_grid_settings',
     this.detailScreenBuilder,
     this.extraParams,
+    this.enableDebugMode = false, // Modo debug desligado por padrão
   });
 
   @override
@@ -228,7 +234,6 @@ class _GenericMobileGridScreenState<T>
   final Map<String, TextEditingController> _filterControllers = {};
   final TextEditingController _searchController = TextEditingController();
   final Map<String, List<Map<String, dynamic>>> _dropdownCache = {};
-  final Map<String, List<PlatformFile>> _fileCache = {};
 
   final Map<String, bool> _fieldVisibility = {};
   List<CustomAction<T>> _customActions = [];
@@ -236,6 +241,7 @@ class _GenericMobileGridScreenState<T>
   // Novos estados para controle de visualização
   bool _isSelectionMode = false;
   final Map<String, bool> _cardSelection = {};
+  T? _itemParaEditar;
 
   @override
   void initState() {
@@ -265,6 +271,17 @@ class _GenericMobileGridScreenState<T>
 
     if (widget.customActions != null) {
       _customActions = widget.customActions!();
+    }
+
+    // Adicionar ação de debug se habilitado
+    if (widget.enableDebugMode) {
+      _customActions.add(
+        CustomAction<T>(
+          icon: Icons.bug_report,
+          label: 'Ver Todos Campos',
+          onPressed: _showAllFieldsDebug,
+        ),
+      );
     }
 
     // Configurar scroll infinito
@@ -340,7 +357,7 @@ class _GenericMobileGridScreenState<T>
       if (response.statusCode == 200 && response.body != null) {
         final responseData = response.body!['data'];
         final List<dynamic> data = responseData is Map
-            ? responseData['dados'] ?? []
+            ? responseData['dados'] ?? responseData['content'] ?? []
             : responseData ?? [];
 
         final newItems = data.map((json) {
@@ -358,7 +375,9 @@ class _GenericMobileGridScreenState<T>
           }
 
           _totalItems = responseData is Map
-              ? responseData['totalElements'] ?? 0
+              ? responseData['totalElements'] ??
+                  responseData['total'] ??
+                  data.length
               : data.length;
           _hasMoreItems = newItems.length == _itemsPerPage;
           _currentPage++;
@@ -448,13 +467,119 @@ class _GenericMobileGridScreenState<T>
     });
   }
 
+  // MÉTODO CORRIGIDO: Abrir formulário de adição/edição
   void _openForm({T? item}) {
-    // Implementar abertura do formulário (similar ao grid original)
-    // Pode reutilizar a mesma lógica do GenericGridScreen
+    _itemParaEditar = item;
+
+    showDialog(
+      context: context,
+      builder: (context) => _buildFormDialog(item),
+    );
+  }
+
+  Widget _buildFormDialog(T? item) {
+    final Map<String, dynamic> itemData =
+        item != null ? widget.toJson(item) : {};
+    final Map<String, TextEditingController> formControllers = {};
+
+    // Inicializar controladores com dados existentes ou vazios
+    for (final config in widget.fieldConfigs.where((c) => c.isInForm)) {
+      formControllers[config.fieldName] = TextEditingController(
+        text: _getNestedValue(itemData, config.fieldName)?.toString() ?? '',
+      );
+    }
+
+    return AlertDialog(
+      title: Text(item == null ? 'Adicionar Novo' : 'Editar'),
+      content: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: widget.fieldConfigs
+              .where((config) => config.isInForm)
+              .map((config) => Padding(
+                    padding: const EdgeInsets.only(bottom: 12),
+                    child: TextField(
+                      controller: formControllers[config.fieldName],
+                      decoration: InputDecoration(
+                        labelText: config.label,
+                        border: const OutlineInputBorder(),
+                      ),
+                      maxLines: config.fieldType == FieldType.multiline ? 3 : 1,
+                    ),
+                  ))
+              .toList(),
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text('Cancelar'),
+        ),
+        ElevatedButton(
+          onPressed: () => _saveForm(item, formControllers, context),
+          child: Text(item == null ? 'Adicionar' : 'Salvar'),
+        ),
+      ],
+    );
+  }
+
+  Future<void> _saveForm(
+      T? item,
+      Map<String, TextEditingController> controllers,
+      BuildContext context) async {
+    try {
+      final Map<String, dynamic> formData = {};
+
+      for (final config in widget.fieldConfigs.where((c) => c.isInForm)) {
+        final controller = controllers[config.fieldName];
+        if (controller != null && controller.text.isNotEmpty) {
+          formData[config.fieldName] = controller.text;
+        }
+      }
+
+      final endpoint = item == null
+          ? widget.createEndpoint
+          : widget.updateEndpoint.replaceFirst(':id', _getItemId(item));
+      final method = item == null ? 'POST' : 'PUT';
+
+      final NetworkResponse response = method == 'POST'
+          ? await NetworkCaller().postRequest(endpoint, formData)
+          : await NetworkCaller().putRequest(endpoint, formData);
+
+      if (response.isSuccess) {
+        Navigator.pop(context);
+        _showSnackBar(item == null
+            ? 'Item adicionado com sucesso!'
+            : 'Item atualizado com sucesso!');
+        _loadItems(reset: true);
+      } else {
+        _showSnackBar('Erro ao salvar: ${response}', isError: true);
+      }
+    } catch (e) {
+      _showSnackBar('Erro: $e', isError: true);
+    }
+  }
+
+  String _getItemId(T item) {
+    final itemMap = widget.toJson(item);
+    return _getNestedValue(itemMap, widget.idFieldName).toString();
   }
 
   Future<void> _deleteItem(String id) async {
-    // Implementar exclusão (similar ao grid original)
+    try {
+      final response = await NetworkCaller().deleteRequest(
+        widget.deleteEndpoint.replaceFirst(':id', id),
+      );
+
+      if (response.isSuccess) {
+        _showSnackBar('Item excluído com sucesso!');
+        _loadItems(reset: true);
+      } else {
+        _showSnackBar('Erro ao excluir: ${response}', isError: true);
+      }
+    } catch (e) {
+      _showSnackBar('Erro: $e', isError: true);
+    }
   }
 
   void _deleteSelected() {
@@ -480,10 +605,57 @@ class _GenericMobileGridScreenState<T>
                 _cardSelection.clear();
                 _isSelectionMode = false;
               });
-              _loadItems();
+              _loadItems(reset: true);
             },
             style: ElevatedButton.styleFrom(backgroundColor: GridColors.error),
             child: const Text('Excluir'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // NOVO MÉTODO: Mostrar todos os campos em modo debug
+  void _showAllFieldsDebug(BuildContext context, T item) {
+    final itemMap = widget.toJson(item);
+
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Todos os Campos (Debug)'),
+        content: SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: itemMap.entries.map((entry) {
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 8),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    SizedBox(
+                      width: 120,
+                      child: Text(
+                        '${entry.key}:',
+                        style: const TextStyle(fontWeight: FontWeight.bold),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        entry.value?.toString() ?? 'null',
+                        style: const TextStyle(fontSize: 14),
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            }).toList(),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Fechar'),
           ),
         ],
       ),
@@ -580,8 +752,7 @@ class _GenericMobileGridScreenState<T>
                   child: ElevatedButton(
                     onPressed: _clearFilters,
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: GridColors.secondary,
-                    ),
+                        backgroundColor: GridColors.secondary),
                     child: const Text('Limpar Filtros'),
                   ),
                 ),
@@ -590,8 +761,7 @@ class _GenericMobileGridScreenState<T>
                   child: ElevatedButton(
                     onPressed: _applyFilters,
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: GridColors.primary,
-                    ),
+                        backgroundColor: GridColors.primary),
                     child: const Text('Aplicar'),
                   ),
                 ),
@@ -663,8 +833,8 @@ class _GenericMobileGridScreenState<T>
 
               const SizedBox(height: 8),
 
-              // Campos visíveis
-              ..._buildVisibleFields(itemMap),
+              // Campos visíveis que devem aparecer no card
+              ..._buildVisibleFieldsForCard(itemMap),
 
               const SizedBox(height: 8),
 
@@ -677,11 +847,13 @@ class _GenericMobileGridScreenState<T>
     );
   }
 
-  List<Widget> _buildVisibleFields(Map<String, dynamic> itemMap) {
+  List<Widget> _buildVisibleFieldsForCard(Map<String, dynamic> itemMap) {
     final visibleConfigs = widget.fieldConfigs
         .where((config) =>
             _fieldVisibility[config.fieldName] == true &&
-            config.fieldName != widget.idFieldName)
+            config.fieldName != widget.idFieldName &&
+            config
+                .showInCard) // Nova propriedade para controlar exibição no card
         .toList();
 
     return visibleConfigs.map((config) {
@@ -701,10 +873,8 @@ class _GenericMobileGridScreenState<T>
               width: 120,
               child: Text(
                 '${config.label}:',
-                style: const TextStyle(
-                  fontWeight: FontWeight.w500,
-                  fontSize: 14,
-                ),
+                style:
+                    const TextStyle(fontWeight: FontWeight.w500, fontSize: 14),
               ),
             ),
             const SizedBox(width: 8),
@@ -731,18 +901,20 @@ class _GenericMobileGridScreenState<T>
       case 'ativo':
       case 'true':
       case '1':
+      case 'aberto':
         badgeColor = GridColors.success;
         badgeText = 'Ativo';
         break;
       case 'inativo':
       case 'false':
       case '0':
+      case 'fechado':
         badgeColor = GridColors.error;
         badgeText = 'Inativo';
         break;
       default:
         badgeColor = GridColors.warning;
-        badgeText = 'Status';
+        badgeText = status?.toUpperCase() ?? 'Status';
     }
 
     return Container(
@@ -755,10 +927,7 @@ class _GenericMobileGridScreenState<T>
       child: Text(
         badgeText,
         style: TextStyle(
-          color: badgeColor,
-          fontSize: 10,
-          fontWeight: FontWeight.bold,
-        ),
+            color: badgeColor, fontSize: 10, fontWeight: FontWeight.bold),
       ),
     );
   }
@@ -767,6 +936,14 @@ class _GenericMobileGridScreenState<T>
     return Row(
       mainAxisAlignment: MainAxisAlignment.end,
       children: [
+        // Botão de Debug para ver todos os campos
+        if (widget.enableDebugMode)
+          IconButton(
+            icon: const Icon(Icons.bug_report, size: 20),
+            onPressed: () => _showAllFieldsDebug(context, item),
+            tooltip: 'Ver todos os campos',
+          ),
+
         if (widget.detailScreenBuilder != null && widget.hasPermission('view'))
           IconButton(
             icon: const Icon(Icons.visibility, size: 20),
@@ -774,8 +951,7 @@ class _GenericMobileGridScreenState<T>
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (context) => widget.detailScreenBuilder!(item),
-                ),
+                    builder: (context) => widget.detailScreenBuilder!(item)),
               );
             },
             tooltip: 'Visualizar',
@@ -873,16 +1049,13 @@ class _GenericMobileGridScreenState<T>
             const PopupMenuItem(
               value: 'select',
               child: ListTile(
-                leading: Icon(Icons.check_box),
-                title: Text('Modo seleção'),
-              ),
+                  leading: Icon(Icons.check_box), title: Text('Modo seleção')),
             ),
             const PopupMenuItem(
               value: 'filters',
               child: ListTile(
-                leading: Icon(Icons.filter_list),
-                title: Text('Mostrar filtros'),
-              ),
+                  leading: Icon(Icons.filter_list),
+                  title: Text('Mostrar filtros')),
             ),
           ],
         ),
@@ -902,7 +1075,6 @@ class _GenericMobileGridScreenState<T>
   dynamic _getNestedValue(dynamic map, String fieldName) {
     if (map == null) return null;
     if (!fieldName.contains('.')) {
-      // Se map não é um Map, retornar null
       if (map is! Map) return null;
       return map[fieldName];
     }
@@ -929,9 +1101,6 @@ class _GenericMobileGridScreenState<T>
   }
 
   @override
-  Size get preferredSize => Size.fromHeight(kToolbarHeight);
-
-  @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: _isSelectionMode ? _buildSelectionAppBar() : _buildNormalAppBar(),
@@ -955,18 +1124,15 @@ class _GenericMobileGridScreenState<T>
                 Text(
                   '${filtered.length} itens encontrados',
                   style: const TextStyle(
-                    fontWeight: FontWeight.w500,
-                    color: GridColors.textSecondary,
-                  ),
+                      fontWeight: FontWeight.w500,
+                      color: GridColors.textSecondary),
                 ),
                 const Spacer(),
                 if (_isSelectionMode)
                   Text(
                     '${selectedRows.length} selecionados',
                     style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      color: GridColors.primary,
-                    ),
+                        fontWeight: FontWeight.bold, color: GridColors.primary),
                   ),
               ],
             ),
@@ -1002,42 +1168,17 @@ class _GenericMobileGridScreenState<T>
             : const Text(
                 'Todos os itens carregados',
                 style: TextStyle(
-                  color: GridColors.textSecondary,
-                  fontStyle: FontStyle.italic,
-                ),
+                    color: GridColors.textSecondary,
+                    fontStyle: FontStyle.italic),
               ),
       ),
     );
   }
 }
 
-// ==============================================
-// COMPLEMENTOS NECESSÁRIOS
-// ==============================================
-
-// Adicione estas definições se não existirem
-
+// Typedefs necessários
 typedef FromJson<T> = T Function(Map<String, dynamic> json);
 typedef ToJson<T> = Map<String, dynamic> Function(T item);
 typedef SecurityCheck = bool Function(String permission);
 typedef OnItemTap<T> = void Function(T item, BuildContext context);
 typedef CustomActionBuilder<T> = List<CustomAction<T>> Function();
-
-class PlatformFile {
-  final String name;
-  final String? path;
-  final Uint8List? bytes;
-  final int size;
-
-  const PlatformFile({
-    required this.name,
-    this.path,
-    this.bytes,
-    required this.size,
-  });
-}
-
-class Uint8List {
-  // Implementação básica para o exemplo
-  const Uint8List();
-}

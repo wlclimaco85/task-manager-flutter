@@ -9,6 +9,8 @@ import 'package:task_manager_flutter/ui/screens/auth_screens/login_screen.dart';
 import 'package:task_manager_flutter/ui/screens/LoginPopup_screens.dart';
 import 'package:task_manager_flutter/data/models/login_model.dart';
 import 'package:task_manager_flutter/data/utils/api_links.dart';
+import 'dart:convert';
+import 'package:http/http.dart' as http;
 
 class NetworkCaller {
   Future<NetworkResponse> getRequest(String url) async {
@@ -159,6 +161,87 @@ class NetworkCaller {
         print('Erro: ${response.statusCode}');
       }
     }
+  }
+
+  Future<NetworkResponse> deleteRequest(String url) async {
+    try {
+      final response = await http.delete(
+        Uri.parse(url),
+        headers: {
+          'Content-Type': 'application/json;charset=UTF-8',
+          'Authorization': url.contains('login') || url.contains('inserirAluno')
+              ? 'c2Fua2h5YTpzdXA='
+              : 'Bearer ${AuthUtility.userInfo.token}',
+          'Access-Control-Allow-Origin': '*',
+          'Access-Control-Allow-Credentials': 'true',
+          'Access-Control-Allow-Methods': 'GET, POST, OPTIONS, PUT, DELETE',
+          'Access-Control-Allow-Headers': 'Origin, Content-Type, Accept',
+        },
+      );
+      if (response.statusCode == 200 || response.statusCode == 204) {
+        // 204 No Content é comum em DELETE
+        return NetworkResponse(
+          true,
+          response.statusCode,
+          response.body.isNotEmpty ? jsonDecode(response.body) : null,
+        );
+      } else {
+        return NetworkResponse(
+          false,
+          response.statusCode,
+          null,
+        );
+      }
+    } catch (e) {
+      log(e.toString());
+    }
+    return NetworkResponse(
+      false,
+      -1,
+      null,
+    );
+  }
+
+  Future<NetworkResponse> putRequest(
+    String url,
+    Map<String, dynamic>? body,
+  ) async {
+    try {
+      final response = await http.put(
+        Uri.parse(url),
+        headers: {
+          'Content-Type': 'application/json;charset=UTF-8',
+          'Authorization': url.contains('login') || url.contains('inserirAluno')
+              ? 'c2Fua2h5YTpzdXA='
+              : 'Bearer ${AuthUtility.userInfo.token}',
+          'Access-Control-Allow-Origin': '*',
+          'Access-Control-Allow-Credentials': 'true',
+          'Access-Control-Allow-Methods': 'GET, POST, OPTIONS, PUT, DELETE',
+          'Access-Control-Allow-Headers': 'Origin, Content-Type, Accept',
+        },
+        body: jsonEncode(body),
+      );
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        return NetworkResponse(
+          true,
+          response.statusCode,
+          jsonDecode(response.body),
+        );
+      } else {
+        return NetworkResponse(
+          false,
+          response.statusCode,
+          null,
+        );
+      }
+    } catch (e) {
+      log(e.toString());
+    }
+    return NetworkResponse(
+      false,
+      -1,
+      null,
+    );
   }
 
   Future<NetworkResponse> postRequest(
