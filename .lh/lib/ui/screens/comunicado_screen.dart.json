@@ -3,7 +3,7 @@
     "activeCommit": 0,
     "commits": [
         {
-            "activePatchIndex": 7,
+            "activePatchIndex": 8,
             "patches": [
                 {
                     "date": 1756408140711,
@@ -36,6 +36,10 @@
                 {
                     "date": 1757014677170,
                     "content": "Index: \n===================================================================\n--- \n+++ \n@@ -5,9 +5,8 @@\n import 'package:task_manager_flutter/data/services/network_caller.dart';\r\n import 'package:intl/intl.dart';\r\n import 'dart:convert';\r\n import 'package:task_manager_flutter/data/models/comunicados_model.dart';\r\n-import 'package:task_manager_flutter/ui/screens/NewsDetailScreen.dart';\r\n import 'package:task_manager_flutter/ui/widgets/user_banners.dart';\r\n import 'package:task_manager_flutter/ui/screens/update_profile.dart';\r\n import 'package:task_manager_flutter/data/constants/custom_colors.dart';\r\n \r\n"
+                },
+                {
+                    "date": 1758831468070,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -47,9 +47,9 @@\n       // Adiciona à lista de 'data' uma lista de Map<String, dynamic>\r\n       data.add(List<Map<String, dynamic>>.from(list.map((item) => Map<String, dynamic>.from(item))));\r\n     } */\r\n       //  List<Data> dataList = Data.fromJsonList2(json['data']['noticiasDTO']);\r\n-      List<Data> dataList = Data.fromJsonList(json['data']['comunicadoDTO']);\r\n+      List<Data> dataList = Data.fromJsonList(json['data']['dados']);\r\n       data =\r\n           dataList; //json['data'] != null ? Data.fromJson(json['data']) : null;\r\n     } else {\r\n       data = null;\r\n"
                 }
             ],
             "date": 1756408140711,

@@ -13,6 +13,7 @@ import 'package:task_manager_flutter/ui/screens/LoginPopup_screens.dart';
 import 'package:task_manager_flutter/data/constants/custom_colors.dart';
 import 'package:task_manager_flutter/ui/screens/chatMessageListScreen.dart';
 import 'package:task_manager_flutter/ui/screens/chatMenssageScreen.dart';
+import 'package:task_manager_flutter/ui/screens/chamado_grid_screen.dart';
 
 class BottomNavBarScreen extends StatefulWidget {
   const BottomNavBarScreen({super.key});
@@ -37,6 +38,7 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
       AuthUtility.userInfo.data?.email != null
           ? ChatListScreen(userName: AuthUtility.userInfo.data!.email!)
           : const ChatListScreen(userName: 'Usuário'),
+      ChamadoGridScreen(hasPermission: (action) => true),
       const ProductRegisterScreen(),
       isLoggedIn ? const ProductRegisterScreen() : const LoginPopup(),
     ];

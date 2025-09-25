@@ -48,7 +48,7 @@ class ComunicadoModel {
       data.add(List<Map<String, dynamic>>.from(list.map((item) => Map<String, dynamic>.from(item))));
     } */
       //  List<Data> dataList = Data.fromJsonList2(json['data']['noticiasDTO']);
-      List<Data> dataList = Data.fromJsonList(json['data']['comunicadoDTO']);
+      List<Data> dataList = Data.fromJsonList(json['data']['dados']);
       data =
           dataList; //json['data'] != null ? Data.fromJson(json['data']) : null;
     } else {

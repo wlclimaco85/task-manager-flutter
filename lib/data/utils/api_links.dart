@@ -1,10 +1,10 @@
 class ApiLinks {
   ApiLinks._();
   static const String _baseIp =
-      // "https://appacademia-production-be7e.up.railway.app";
+      "https://appacademia-production-be7e.up.railway.app";
 
-      // "http://192.168.100.41:8088";
-      "http://192.168.114.1:8088";
+  // "http://192.168.100.41:8088";
+  //  "http://192.168.114.1:8088";
   // "http://192.168.100.113:8088";
   //  "http://192.168.146.1:8088";
   // // "http://192.168.100.41:8088";
@@ -89,4 +89,102 @@ class ApiLinks {
   static String fecthCalcFrete = '$_baseUrlNew/api/rota/calcular';
   static String fecthChats = '$_baseUrlNew/api/chat/user';
   static String fecthChatById = '$_baseUrlNew/api/chat/messages?chatId=';
+
+  // Suplemento
+  static String allAplicativos = '$_baseUrlNew/api/aplicativos';
+  static String createAplicativo = '$_baseUrlNew/api/aplicativos';
+  static String updateAplicativo(String id) =>
+      '$_baseUrlNew/api/aplicativos/update/$id';
+  static String deleteAplicativo(String id) =>
+      '$_baseUrlNew/api/aplicativos/delete/$id';
+
+  // Regime
+  static String allRegimetributario = '$_baseUrlNew/api/regimetributario';
+  static String createRegimetributario = '$_baseUrlNew/api/regimetributario';
+  static String updateRegimetributario(String id) =>
+      '$_baseUrlNew/api/regimetributario/update/$id';
+  static String deleteRegimetributario(String id) =>
+      '$_baseUrlNew/api/regimetributario/delete/$id';
+
+  // Add these endpoints to your ApiLinks class
+  static String get allLogins => '$_baseUrlNew/api/logins';
+  static String get createLogin => '$_baseUrlNew/api/logins';
+  static String updateLogin(String id) => '$_baseUrlNew/api/logins/$id';
+  static String deleteLogin(String id) => '$_baseUrlNew/api/logins/$id';
+
+  // Contas a Pagar
+  static String get allContasPagar => '$_baseUrlNew/api/contas-pagar';
+  static String get createContaPagar => '$_baseUrlNew/api/contas-pagar';
+  static String updateContaPagar(String id) =>
+      '$_baseUrlNew/api/contas-pagar/$id';
+  static String deleteContaPagar(String id) =>
+      '$_baseUrlNew/api/contas-pagar/$id';
+  static String registrarBaixaContaPagar(String id) =>
+      '$_baseUrlNew/api/contas-pagar/$id/baixa';
+
+  // Contas a Receber
+  static String get allContasReceber => '$_baseUrlNew/api/contas-receber';
+  static String get createContaReceber => '$_baseUrlNew/api/contas-receber';
+  static String updateContaReceber(String id) =>
+      '$_baseUrlNew/api/contas-receber/$id';
+  static String deleteContaReceber(String id) =>
+      '$_baseUrlNew/api/contas-receber/$id';
+  static String registrarBaixaContaReceber(String id) =>
+      '$_baseUrlNew/api/contas-receber/$id/baixa';
+
+  // Chamados
+  static String get allChamados => '$_baseUrlNew/api/chamados';
+  static String get createChamado => '$_baseUrlNew/api/chamados';
+  static String updateChamado(String id) => '$_baseUrlNew/api/chamados/$id';
+  static String deleteChamado(String id) => '$_baseUrlNew/api/chamados/$id';
+  static String updateStatusChamado(String id) =>
+      '$_baseUrlNew/api/chamados/$id/status';
+
+  // Formas de Pagamento
+  static String get allFormasPagamento => '$_baseUrlNew/api/forma-pagamento';
+  static String get createFormaPagamento => '$_baseUrlNew/api/forma-pagamento';
+  static String updateFormaPagamento(String id) =>
+      '$_baseUrlNew/api/forma-pagamento/$id';
+  static String deleteFormaPagamento(String id) =>
+      '$_baseUrlNew/api/forma-pagamento/$id';
+  static String formasPagamentoByEmpresa(String empresaId) =>
+      '$_baseUrlNew/api/forma-pagamento/empresa/$empresaId';
+
+  // Diretórios
+  static String get allDiretorios => '$_baseUrlNew/api/diretorios';
+  static String get createDiretorio => '$_baseUrlNew/api/diretorios';
+  static String updateDiretorio(String id) => '$_baseUrlNew/api/diretorios/$id';
+  static String deleteDiretorio(String id) => '$_baseUrlNew/api/diretorios/$id';
+
+  // Arquivos
+  static String get allArquivos => '$_baseUrlNew/api/arquivos';
+  static String get createArquivo => '$_baseUrlNew/api/arquivos';
+  static String updateArquivo(String id) => '$_baseUrlNew/api/arquivos/$id';
+  static String deleteArquivo(String id) => '$_baseUrlNew/api/arquivos/$id';
+  static String get uploadArquivo => '$_baseUrlNew/api/arquivos/upload';
+  static String downloadArquivo(String id) =>
+      '$_baseUrlNew/api/arquivos/download/$id';
+  static String arquivosPorDiretorio(String diretorioId) =>
+      '$_baseUrlNew/api/arquivos/diretorio/$diretorioId';
+
+  static String get fecthAllDocumentos => '$_baseUrlNew/api/documentos';
+
+  static String get fecthAllAlerts => '$_baseUrlNew/api/alert';
+
+  static String get fecthAUpload => '$_baseUrlNew/api/files/upload';
+
+  // Arquivos
+  static String get allObrigacaoFiscal => '$_baseUrlNew/api/obrigacoes-fiscais';
+  static String get createObrigacaoFiscal =>
+      '$_baseUrlNew/api/obrigacoes-fiscais';
+  static String updateObrigacaoFiscal(String id) =>
+      '$_baseUrlNew/api/obrigacoes-fiscais/$id';
+  static String deleteObrigacaoFiscal(String id) =>
+      '$_baseUrlNew/api/obrigacoes-fiscais/$id';
+
+  // Setor
+  static String allSetores = '$_baseUrlNew/api/setor';
+  static String createSetor = '$_baseUrlNew/api/setor';
+  static String updateSetor(String id) => '$_baseUrlNew/api/setor/update/$id';
+  static String deleteSetor(String id) => '$_baseUrlNew/api/setor/delete/$id';
 }
