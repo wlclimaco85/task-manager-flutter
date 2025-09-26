@@ -10,6 +10,46 @@ import 'package:http/http.dart' as http;
 import 'dart:async';
 import 'package:task_manager_flutter/data/constants/custom_colors.dart';
 
+import 'dart:typed_data';
+import 'dart:convert';
+import 'package:flutter/material.dart';
+import 'package:task_manager_flutter/data/models/auth_utility.dart';
+import 'package:task_manager_flutter/data/models/alert_model.dart';
+import 'package:task_manager_flutter/ui/screens/bottom_navbar_screen.dart';
+import 'package:task_manager_flutter/data/services/alert_caller.dart';
+import 'package:task_manager_flutter/data/models/login_model.dart';
+import 'package:http/http.dart' as http;
+import 'dart:async';
+
+// Cores do Grid (mantendo suas cores originais)
+class GridColors {
+  static const Color primary = Color(0xFF93070A);
+  static const Color primaryDark = Color(0xFF6A0507);
+  static const Color primaryLight = Color(0xFFB84042);
+  static const Color secondary = Color(0xFF005826);
+  static const Color secondaryLight = Color(0xFF2E7D32);
+  static const Color secondaryDark = Color(0xFF003D1A);
+  static const Color textPrimary = Color(0xFFFFFFFF);
+  static const Color textSecondary = Color(0xFF000000);
+  static const Color link = Color(0xFFFF0000);
+  static const Color inputBackground = Color(0xFFFFFFFF);
+  static const Color inputBorder = Color(0xFF93070A);
+  static const Color buttonBackground = Color(0xFF93070A);
+  static const Color buttonText = Color(0xFFFFFFFF);
+  static const Color background = Color(0xFF005826);
+  static const Color card = Color(0xFFFFFFFF);
+  static const Color error = Color(0xFFD32F2F);
+  static const Color warning = Color(0xFFFFA000);
+  static const Color success = Color(0xFF2E7D32);
+  static const Color info = Color(0xFF1976D2);
+  static const Color divider = Color(0xFFBDBDBD);
+  static const Color filterBackground = Color(0xFFEFEFEF);
+  static const Color hover = Color(0x1A000000);
+  static const Color selectedRow = Color(0xFFE3F2FD);
+  static const Color dialogBackground = Color(0xFFFFFFFF);
+  static const Color shadow = Color(0x26000000);
+}
+
 // AppBar personalizado
 class UserBannerAppBar extends StatefulWidget implements PreferredSizeWidget {
   final VoidCallback? onTapped;
@@ -120,30 +160,35 @@ class _UserBannerAppBarState extends State<UserBannerAppBar> {
     }
 
     final overlay = Overlay.of(context);
-    final appBarHeight = Scaffold.of(context).appBarMaxHeight ?? kToolbarHeight;
 
     notificationOverlay = OverlayEntry(
       builder: (context) => Positioned(
-        top: appBarHeight + 8, // Abaixo da AppBar
+        top: kToolbarHeight + 8, // CORREÇÃO: usando constante direta
         right: 8,
         child: Material(
-          elevation: 4,
+          elevation: 8,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
           child: Container(
-            width: 300,
+            width: 320,
             height: 400,
-            padding: const EdgeInsets.all(8),
+            padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
               color: GridColors.card,
-              border: Border.all(
-                color: GridColors.divider,
-                width: 1,
-              ),
-              borderRadius: BorderRadius.circular(8),
+              borderRadius: BorderRadius.circular(12),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.2),
+                  blurRadius: 10,
+                  offset: const Offset(0, 4),
+                ),
+              ],
             ),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                // Botão de fechar no topo
+                // Header
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
@@ -151,7 +196,7 @@ class _UserBannerAppBarState extends State<UserBannerAppBar> {
                       "Notificações",
                       style: TextStyle(
                         fontWeight: FontWeight.bold,
-                        fontSize: 16,
+                        fontSize: 18,
                         color: GridColors.textSecondary,
                       ),
                     ),
@@ -161,33 +206,29 @@ class _UserBannerAppBarState extends State<UserBannerAppBar> {
                     ),
                   ],
                 ),
-                const Divider(color: GridColors.divider, thickness: 1),
 
-                // Linha com a opção "Deletar Tudo"
+                const Divider(height: 1, color: GridColors.divider),
+
+                // Botão Deletar Tudo
                 ListTile(
                   dense: true,
-                  visualDensity: VisualDensity.compact,
+                  leading: Icon(Icons.delete_sweep, color: GridColors.error),
                   title: Text(
-                    "Deletar Tudo",
+                    "Limpar Todas",
                     style: TextStyle(
-                      fontSize: 14,
                       color: GridColors.error,
+                      fontWeight: FontWeight.w500,
                     ),
-                  ),
-                  trailing: Icon(
-                    Icons.delete_forever,
-                    color: GridColors.error,
-                    size: 20,
                   ),
                   onTap: deleteAllNotifications,
                 ),
-                const Divider(color: GridColors.divider, thickness: 1),
 
-                // Lista de notificações
+                const Divider(height: 1, color: GridColors.divider),
+
+                // Lista de Notificações
                 Expanded(
                   child: notifications.isNotEmpty
                       ? ListView.builder(
-                          shrinkWrap: true,
                           itemCount: notifications.length,
                           itemBuilder: (context, index) {
                             final notification = notifications[index];
@@ -196,43 +237,80 @@ class _UserBannerAppBarState extends State<UserBannerAppBar> {
                             final String formattedDate =
                                 "${parsedDate.day.toString().padLeft(2, '0')}/${parsedDate.month.toString().padLeft(2, '0')}/${parsedDate.year} ${parsedDate.hour.toString().padLeft(2, '0')}:${parsedDate.minute.toString().padLeft(2, '0')}";
 
-                            return ListTile(
-                              contentPadding: const EdgeInsets.symmetric(
-                                horizontal: 8,
-                                vertical: 4,
+                            return Container(
+                              margin: const EdgeInsets.symmetric(vertical: 4),
+                              decoration: BoxDecoration(
+                                color: GridColors.filterBackground,
+                                borderRadius: BorderRadius.circular(8),
                               ),
-                              title: Text(
-                                notification.texto,
-                                style: TextStyle(
-                                  fontSize: 14,
-                                  color: GridColors.textSecondary,
-                                  fontWeight: FontWeight.w500,
+                              child: ListTile(
+                                contentPadding: const EdgeInsets.symmetric(
+                                  horizontal: 12,
+                                  vertical: 8,
                                 ),
-                              ),
-                              subtitle: Text(
-                                formattedDate,
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  color: GridColors.textSecondary,
+                                leading: CircleAvatar(
+                                  radius: 16,
+                                  backgroundColor:
+                                      GridColors.primary.withOpacity(0.1),
+                                  child: Icon(
+                                    Icons.notifications,
+                                    size: 16,
+                                    color: GridColors.primary,
+                                  ),
                                 ),
-                              ),
-                              trailing: IconButton(
-                                icon: Icon(
-                                  Icons.delete,
-                                  color: GridColors.error,
-                                  size: 20,
+                                title: Text(
+                                  notification.texto,
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    color: GridColors.textSecondary,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis,
                                 ),
-                                onPressed: () {
-                                  deleteNotification(notification.id);
+                                subtitle: Text(
+                                  formattedDate,
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: GridColors.textSecondary
+                                        .withOpacity(0.6),
+                                  ),
+                                ),
+                                trailing: IconButton(
+                                  icon: Icon(
+                                    Icons.clear,
+                                    size: 18,
+                                    color: GridColors.error,
+                                  ),
+                                  onPressed: () =>
+                                      deleteNotification(notification.id),
+                                ),
+                                onTap: () {
+                                  markNotificationAsRead(notification.id);
                                 },
                               ),
                             );
                           },
                         )
                       : Center(
-                          child: Text(
-                            "No notifications",
-                            style: TextStyle(color: GridColors.textSecondary),
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(
+                                Icons.notifications_off,
+                                size: 48,
+                                color:
+                                    GridColors.textSecondary.withOpacity(0.3),
+                              ),
+                              const SizedBox(height: 8),
+                              Text(
+                                "Nenhuma notificação",
+                                style: TextStyle(
+                                  color:
+                                      GridColors.textSecondary.withOpacity(0.5),
+                                ),
+                              ),
+                            ],
                           ),
                         ),
                 ),
@@ -246,41 +324,77 @@ class _UserBannerAppBarState extends State<UserBannerAppBar> {
     overlay.insert(notificationOverlay!);
   }
 
-  void clearUserData() {
-    AuthUtility.clearUserInfo();
-    debugPrint("User data cleared");
-  }
-
   @override
   void dispose() {
     notificationOverlay?.remove();
     super.dispose();
   }
 
+  // CORREÇÃO DO LOGOUT - NAVEGAÇÃO CORRETA
+  void _handleLogout() {
+    AuthUtility.clearUserInfo();
+    AuthUtility.setUserInfo(LoginModel(
+      data: null,
+      token: '',
+      status: '',
+    ));
+
+    // Navega para a tela de login em vez de BottomNavBarScreen
+    Navigator.pushNamedAndRemoveUntil(
+      context,
+      '/login', // Substitua pela sua rota de login
+      (route) => false,
+    );
+  }
+
+  Uint8List _getUserAvatar() {
+    final base64String = AuthUtility.userInfo.data?.codDadosPessoal?.photo;
+    if (base64String != null && base64String.trim() != '') {
+      try {
+        final image = "data:image/png;base64," + base64String;
+        final UriData? data = Uri.parse(image).data;
+        if (data != null) {
+          return data.contentAsBytes();
+        }
+      } catch (e) {
+        debugPrint('Error loading avatar: $e');
+      }
+    }
+
+    // Avatar padrão em base64
+    const String defaultImage =
+        "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==";
+    final UriData? data =
+        Uri.parse("data:image/png;base64," + defaultImage).data;
+    return data!.contentAsBytes();
+  }
+
   @override
   Widget build(BuildContext context) {
-    // Condição para exibir o AppBar principal ou o alternativo
-    if (AuthUtility.userInfo.data?.id != null &&
-        AuthUtility.userInfo.data!.id! > 1) {
-      return AppBar(
-        backgroundColor: GridColors.primary,
-        bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(1),
-          child: Container(
-            height: 1,
-            color: GridColors.divider,
-          ),
+    final isLoggedIn = AuthUtility.userInfo.data?.id != null &&
+        AuthUtility.userInfo.data!.id! > 1;
+
+    return AppBar(
+      backgroundColor: GridColors.primary,
+      bottom: PreferredSize(
+        preferredSize: const Size.fromHeight(1),
+        child: Container(
+          height: 1,
+          color: GridColors.divider,
         ),
-        actions: [
-          if (widget.isLoading ?? false)
-            const Padding(
-              padding: EdgeInsets.only(right: 16),
-              child: CircularProgressIndicator(
-                color: Colors.white,
-                strokeWidth: 2,
-              ),
+      ),
+      actions: [
+        if (widget.isLoading ?? false)
+          const Padding(
+            padding: EdgeInsets.only(right: 16),
+            child: CircularProgressIndicator(
+              color: Colors.white,
+              strokeWidth: 2,
             ),
-          // Alert Icon with unread count
+          ),
+
+        // Ícone de Notificações (apenas se logado)
+        if (isLoggedIn) ...[
           Stack(
             alignment: Alignment.center,
             children: [
@@ -303,10 +417,10 @@ class _UserBannerAppBarState extends State<UserBannerAppBar> {
                       minHeight: 18,
                     ),
                     child: Text(
-                      '$unreadAlerts',
+                      unreadAlerts > 9 ? '9+' : '$unreadAlerts',
                       style: const TextStyle(
                         color: Colors.white,
-                        fontSize: 12,
+                        fontSize: 10,
                         fontWeight: FontWeight.bold,
                       ),
                       textAlign: TextAlign.center,
@@ -316,158 +430,120 @@ class _UserBannerAppBarState extends State<UserBannerAppBar> {
             ],
           ),
 
-          // Logout button
+          // Botão Logout (apenas se logado)
           IconButton(
             icon: Icon(Icons.logout, color: GridColors.textPrimary),
             onPressed: () {
               showDialog(
                 context: context,
-                builder: (context) {
-                  return AlertDialog(
-                    title: Text("Deseja realmente sair?",
-                        style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            color: GridColors.textSecondary)),
-                    actions: [
-                      TextButton(
-                        onPressed: () => Navigator.pop(context),
-                        child: Text("Não",
-                            style: TextStyle(color: GridColors.textSecondary)),
+                builder: (context) => AlertDialog(
+                  title: Text(
+                    "Deseja realmente sair?",
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: GridColors.textSecondary,
+                    ),
+                  ),
+                  actions: [
+                    TextButton(
+                      onPressed: () => Navigator.pop(context),
+                      child: Text(
+                        "Não",
+                        style: TextStyle(color: GridColors.textSecondary),
                       ),
-                      TextButton(
-                        onPressed: () {
-                          AuthUtility.clearUserInfo();
-                          AuthUtility.setUserInfo(LoginModel(
-                            data: null,
-                            token: '',
-                            status: '',
-                          ));
-                          Navigator.pushAndRemoveUntil(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => const BottomNavBarScreen(),
-                            ),
-                            (route) => false,
-                          );
-                        },
-                        child: Text("Sim",
-                            style: TextStyle(color: GridColors.textSecondary)),
+                    ),
+                    TextButton(
+                      onPressed: _handleLogout,
+                      child: Text(
+                        "Sim",
+                        style: TextStyle(color: GridColors.textSecondary),
                       ),
-                    ],
-                  );
-                },
+                    ),
+                  ],
+                ),
               );
             },
           ),
+        ] else ...[
+          // Botão Login (se não logado)
+          IconButton(
+            icon: Icon(Icons.login, color: GridColors.textPrimary),
+            onPressed: widget.onRefresh,
+          ),
         ],
-        title: Center(
-          child: SizedBox(
-            height: 60,
-            width: double.infinity,
-            child: SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              child: GestureDetector(
-                onTap: widget.onTapped,
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.start,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Logo do App
-                    Padding(
-                      padding: const EdgeInsets.only(right: 15),
-                      child: Image.asset(
-                        'assets/images/iconApp.png',
-                        width: 60,
-                        height: 60,
-                      ),
+      ],
+      title: Center(
+        child: SizedBox(
+          height: 60,
+          child: SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: GestureDetector(
+              onTap: widget.onTapped,
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.start,
+                children: [
+                  // Logo do App
+                  Padding(
+                    padding: const EdgeInsets.only(right: 15),
+                    child: Image.asset(
+                      'assets/images/iconApp.png',
+                      width: 60,
+                      height: 60,
+                      errorBuilder: (_, __, ___) =>
+                          const Icon(Icons.apps, size: 40, color: Colors.white),
                     ),
+                  ),
+
+                  if (isLoggedIn) ...[
                     CircleAvatar(
                       radius: 25,
                       child: Image.memory(
-                        showBase64Image(
-                            AuthUtility.userInfo.data?.codDadosPessoal?.photo),
-                        errorBuilder: (_, __, ___) {
-                          return const Icon(Icons.person);
-                        },
+                        _getUserAvatar(),
+                        errorBuilder: (_, __, ___) => const Icon(Icons.person),
                       ),
                     ),
                     const SizedBox(width: 15),
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         Text(
-                          "${AuthUtility.userInfo.data?.codDadosPessoal?.nome ?? " "} ",
+                          AuthUtility.userInfo.data?.codDadosPessoal?.nome ??
+                              "Usuário",
                           style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                              color: GridColors.textPrimary),
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            color: GridColors.textPrimary,
+                          ),
                         ),
                         const SizedBox(height: 2),
                         Text(
-                            AuthUtility.userInfo.data?.codDadosPessoal?.email ??
-                                "",
-                            style: TextStyle(
-                                fontSize: 14, color: GridColors.textPrimary)),
+                          AuthUtility.userInfo.data?.codDadosPessoal?.email ??
+                              "",
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: GridColors.textPrimary,
+                          ),
+                        ),
                       ],
                     ),
+                  ] else ...[
+                    Text(
+                      widget.screenTitle ?? "Comunicados",
+                      style: TextStyle(
+                        color: GridColors.textPrimary,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 18,
+                      ),
+                    ),
                   ],
-                ),
+                ],
               ),
             ),
           ),
         ),
-      );
-    } else {
-      // AppBar alternativo
-      return AppBar(
-        backgroundColor: GridColors.primary,
-        bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(1),
-          child: Container(
-            height: 1,
-            color: GridColors.divider,
-          ),
-        ),
-        title: Row(
-          children: [
-            // Logo do App
-            Image.asset(
-              'assets/images/iconApp.png',
-              width: 80,
-              height: 80,
-            ),
-            const SizedBox(width: 10),
-            Text(
-              widget.screenTitle ?? "Screen",
-              style: TextStyle(
-                color: GridColors.textPrimary,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-          ],
-        ),
-        actions: [
-          if (widget.isLoading ?? false)
-            const Padding(
-              padding: EdgeInsets.only(right: 16),
-              child: CircularProgressIndicator(
-                color: Colors.white,
-                strokeWidth: 2,
-              ),
-            ),
-          IconButton(
-            icon: Icon(Icons.refresh, color: GridColors.textPrimary),
-            onPressed: widget.onRefresh,
-          ),
-          IconButton(
-            icon: Icon(Icons.login, color: GridColors.textPrimary),
-            onPressed: () {
-              // Adicione a navegação para a tela de login aqui
-            },
-          ),
-        ],
-      );
-    }
+      ),
+    );
   }
 }
 
