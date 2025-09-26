@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:task_manager_flutter/data/models/network_response.dart';
-import 'package:task_manager_flutter/data/services/network_caller.dart';
-import 'package:task_manager_flutter/data/utils/api_links.dart';
+import 'package:task_manager_flutter/data/services/formaPagamento_caller.dart';
+import 'package:task_manager_flutter/data/services/parceiro_caller.dart';
 import 'package:task_manager_flutter/ui/widgets/generic_grid_screen.dart';
+
 import 'audit_model.dart';
 import 'empresa_model.dart';
 import 'file_attachment_model.dart';
@@ -137,39 +137,6 @@ class ContaPagar {
     };
   }
 
-  // Classes auxiliares para as entidades relacionadas
-  static Future<List<Map<String, dynamic>>> loadFormasPagamento() async {
-    final NetworkResponse response = await NetworkCaller().getRequest(
-      ApiLinks.allFormasPagamento,
-    );
-
-    if (response.isSuccess && response.body != null) {
-      final List<dynamic> data = response.body!['data']['dados'] ?? [];
-      return data
-          .map(
-            (item) => {'value': item['id'], 'label': item['nome'].toString()},
-          )
-          .toList();
-    }
-    return [];
-  }
-
-  static Future<List<Map<String, dynamic>>> loadParceiros() async {
-    final NetworkResponse response = await NetworkCaller().getRequest(
-      ApiLinks.allParceiros,
-    );
-
-    if (response.isSuccess && response.body != null) {
-      final List<dynamic> data = response.body!['data']['dados'] ?? [];
-      return data
-          .map(
-            (item) => {'value': item['id'], 'label': item['nome'].toString()},
-          )
-          .toList();
-    }
-    return [];
-  }
-
   static List<FieldConfig> fieldConfigs = [
     FieldConfig(
       label: "Fornecedor",
@@ -179,7 +146,8 @@ class ContaPagar {
       isInForm: true,
       isFilterable: true,
       fieldType: FieldType.dropdown,
-      dropdownFutureBuilder: () async => await loadParceiros(),
+      dropdownFutureBuilder: () async =>
+          await ParceiroCaller().fetchParceiroDropdown(),
       dropdownValueField: 'value',
       dropdownDisplayField: 'label',
       isRequired: true,
@@ -194,7 +162,8 @@ class ContaPagar {
       isInForm: true,
       isFilterable: true,
       fieldType: FieldType.dropdown,
-      dropdownFutureBuilder: () async => await loadParceiros(),
+      dropdownFutureBuilder: () async =>
+          await ParceiroCaller().fetchParceiroDropdown(),
       dropdownValueField: 'value',
       dropdownDisplayField: 'label',
       isRequired: true,
@@ -284,7 +253,8 @@ class ContaPagar {
       isInForm: true,
       isFilterable: true,
       fieldType: FieldType.dropdown,
-      dropdownFutureBuilder: () async => await loadFormasPagamento(),
+      dropdownFutureBuilder: () async =>
+          await FormaPagamentoCaller().fetchFormasPagamentoDropDown(),
       dropdownValueField: 'value',
       dropdownDisplayField: 'label',
       isRequired: true,

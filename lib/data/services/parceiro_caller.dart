@@ -157,4 +157,46 @@ class ParceiroCaller {
       throw Exception('Erro ao inserir parceiro: $e');
     }
   }
+
+  /// Busca todos os parceiros
+  Future<List<Parceiro>> fetchParceiross() async {
+    List<Parceiro> list = [];
+    try {
+      final NetworkResponse response = await NetworkCaller().getRequest(
+        ApiLinks.allParceiros,
+      );
+
+      if (response.isSuccess && response.body != null) {
+        final data = response.body!['data']['dados'] ?? [];
+        list = data.map<Parceiro>((item) => Parceiro.fromJson(item)).toList();
+      }
+    } catch (e) {
+      print('Erro ao carregar parceiros: $e');
+      throw Exception('Erro ao carregar parceiros: $e');
+    }
+    return list;
+  }
+
+  /// Retorna lista formatada para dropdown de parceiros
+  Future<List<Map<String, dynamic>>> fetchParceiroDropdown() async {
+    List<Map<String, dynamic>> list = [];
+    try {
+      final NetworkResponse response = await NetworkCaller().getRequest(
+        ApiLinks.allParceiros,
+      );
+
+      if (response.isSuccess && response.body != null) {
+        final data = response.body!['data']['dados'] ?? [];
+        list = data
+            .map<Map<String, dynamic>>(
+              (item) => {'value': item['id'], 'label': item['nome'].toString()},
+            )
+            .toList();
+      }
+    } catch (e) {
+      print('Erro ao carregar parceiros: $e');
+      throw Exception('Erro ao carregar parceiros: $e');
+    }
+    return list;
+  }
 }

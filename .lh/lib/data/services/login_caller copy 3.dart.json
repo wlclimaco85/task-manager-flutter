@@ -1,0 +1,18 @@
+{
+    "sourceFile": "lib/data/services/login_caller copy 3.dart",
+    "activeCommit": 0,
+    "commits": [
+        {
+            "activePatchIndex": 0,
+            "patches": [
+                {
+                    "date": 1758912545736,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n"
+                }
+            ],
+            "date": 1758912545736,
+            "name": "Commit-0",
+            "content": "import 'package:flutter/material.dart';\r\nimport 'package:task_manager_flutter/data/models/network_response.dart';\r\nimport 'package:task_manager_flutter/data/services/network_caller.dart';\r\nimport 'package:task_manager_flutter/data/utils/api_links.dart';\r\nimport '../models/setor_model.dart';\r\n\r\nclass SetorCaller {\r\n  Future<List<Setor>> fetchAllSetores() async {\r\n    List<Setor> list = [];\r\n    try {\r\n      final NetworkResponse response =\r\n          await NetworkCaller().getRequest(ApiLinks.allSetores);\r\n\r\n      if (response.isSuccess && response.body != null) {\r\n        final data = response.body!['data']['dados'] ?? [];\r\n        list = (data as List).map((item) => Setor.fromJson(item)).toList();\r\n      }\r\n    } catch (e) {\r\n      print('Erro ao carregar setores: $e');\r\n      throw Exception('Erro ao carregar setores: $e');\r\n    }\r\n    return list;\r\n  }\r\n\r\n  Future<List<Map<String, dynamic>>> fetchSetorDropdown() async {\r\n    final setores = await fetchAllSetores();\r\n    return setores\r\n        .map((s) => {'value': s.id, 'label': s.nome})\r\n        .toList();\r\n  }\r\n}"
+        }
+    ]
+}
