@@ -1,25 +1,26 @@
-import 'dart:typed_data';
-import 'dart:convert';
-import 'package:flutter/material.dart';
-import 'package:task_manager_flutter/data/models/auth_utility.dart';
-import 'package:task_manager_flutter/data/models/alert_model.dart';
-import 'package:task_manager_flutter/ui/screens/bottom_navbar_screen.dart';
-import 'package:task_manager_flutter/data/services/alert_caller.dart';
-import 'package:task_manager_flutter/data/models/login_model.dart';
-import 'package:http/http.dart' as http;
 import 'dart:async';
-import 'package:task_manager_flutter/data/constants/custom_colors.dart';
+import 'dart:async';
+import 'dart:convert';
+import 'dart:convert';
+import 'dart:typed_data';
+import 'dart:typed_data';
 
-import 'dart:typed_data';
-import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:task_manager_flutter/data/models/auth_utility.dart';
-import 'package:task_manager_flutter/data/models/alert_model.dart';
-import 'package:task_manager_flutter/ui/screens/bottom_navbar_screen.dart';
-import 'package:task_manager_flutter/data/services/alert_caller.dart';
-import 'package:task_manager_flutter/data/models/login_model.dart';
+import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
-import 'dart:async';
+import 'package:http/http.dart' as http;
+import 'package:task_manager_flutter/data/constants/custom_colors.dart';
+import 'package:task_manager_flutter/data/models/alert_model.dart';
+import 'package:task_manager_flutter/data/models/alert_model.dart';
+import 'package:task_manager_flutter/data/models/auth_utility.dart';
+import 'package:task_manager_flutter/data/models/auth_utility.dart';
+import 'package:task_manager_flutter/data/models/login_model.dart';
+import 'package:task_manager_flutter/data/models/login_model.dart';
+import 'package:task_manager_flutter/data/services/alert_caller.dart';
+import 'package:task_manager_flutter/data/services/alert_caller.dart';
+import 'package:task_manager_flutter/ui/screens/auth_screens/login_screen.dart';
+import 'package:task_manager_flutter/ui/screens/bottom_navbar_screen.dart';
+import 'package:task_manager_flutter/ui/screens/bottom_navbar_screen.dart';
 
 // Cores do Grid (mantendo suas cores originais)
 class GridColors {
@@ -373,7 +374,7 @@ class _UserBannerAppBarState extends State<UserBannerAppBar> {
   Widget build(BuildContext context) {
     final isLoggedIn = AuthUtility.userInfo.data?.id != null &&
         AuthUtility.userInfo.data!.id! > 1;
-
+    bool kDebugMode = true;
     return AppBar(
       backgroundColor: GridColors.primary,
       bottom: PreferredSize(
@@ -391,6 +392,19 @@ class _UserBannerAppBarState extends State<UserBannerAppBar> {
               color: Colors.white,
               strokeWidth: 2,
             ),
+          ),
+
+        // Ícone de Notificações (apenas se logado)
+        // VERIFICAÇÃO DE DEBUG - Adicione este print
+        if (kDebugMode)
+          IconButton(
+            icon: Icon(Icons.bug_report, color: GridColors.textPrimary),
+            onPressed: () {
+              print('DEBUG - UserInfo: ${AuthUtility.userInfo.toJson()}');
+              print('DEBUG - isLoggedIn: $isLoggedIn');
+              print('DEBUG - User ID: ${AuthUtility.userInfo.data?.id}');
+              print('DEBUG - Token: ${AuthUtility.userInfo.token}');
+            },
           ),
 
         // Ícone de Notificações (apenas se logado)
@@ -430,7 +444,7 @@ class _UserBannerAppBarState extends State<UserBannerAppBar> {
             ],
           ),
 
-          // Botão Logout (apenas se logado)
+          // BOTÃO LOGOUT - Agora deve aparecer
           IconButton(
             icon: Icon(Icons.logout, color: GridColors.textPrimary),
             onPressed: () {
@@ -448,15 +462,21 @@ class _UserBannerAppBarState extends State<UserBannerAppBar> {
                     TextButton(
                       onPressed: () => Navigator.pop(context),
                       child: Text(
-                        "Não",
+                        "Cancelar",
                         style: TextStyle(color: GridColors.textSecondary),
                       ),
                     ),
                     TextButton(
-                      onPressed: _handleLogout,
+                      onPressed: () {
+                        Navigator.pop(context); // Fecha o dialog
+                        _handleLogout(); // Executa o logout
+                      },
                       child: Text(
-                        "Sim",
-                        style: TextStyle(color: GridColors.textSecondary),
+                        "Sair",
+                        style: TextStyle(
+                          color: GridColors.error,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                     ),
                   ],
@@ -465,10 +485,16 @@ class _UserBannerAppBarState extends State<UserBannerAppBar> {
             },
           ),
         ] else ...[
-          // Botão Login (se não logado)
+          // BOTÃO LOGIN - aparece apenas se NÃO estiver logado
           IconButton(
             icon: Icon(Icons.login, color: GridColors.textPrimary),
-            onPressed: widget.onRefresh,
+            onPressed: () {
+              // Navega para a tela de LoginScreen
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => LoginScreen()),
+              );
+            },
           ),
         ],
       ],

@@ -4,9 +4,7 @@ import 'package:task_manager_flutter/data/models/comunicados_model.dart';
 import 'package:task_manager_flutter/data/models/network_response.dart';
 import 'package:task_manager_flutter/data/services/network_caller.dart';
 import 'package:intl/intl.dart';
-import 'dart:convert';
 import 'package:task_manager_flutter/ui/widgets/user_banners.dart';
-import 'package:task_manager_flutter/data/constants/custom_colors.dart';
 
 class ComunicadoScreen extends StatefulWidget {
   final String screenStatus;
@@ -180,105 +178,108 @@ class _ComunicadoScreenState extends State<ComunicadoScreen> {
   Widget _buildNewsItem(Comunicado news, int index) {
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      elevation: 2,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      elevation: 4,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       child: Container(
         decoration: BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
             colors: [
-              GridColors.card.withOpacity(0.9),
-              GridColors.primaryLight.withOpacity(0.1),
+              GridColors.card,
+              GridColors.primaryLight.withOpacity(0.05),
             ],
           ),
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(16),
         ),
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Header com título e indicador de status
-              Row(
-                children: [
-                  Expanded(
-                    child: Text(
-                      news.titulo ?? 'Sem título',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        color: GridColors.textSecondary,
-                      ),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ),
-                  _buildStatusIndicator(news.autor),
-                ],
-              ),
-
-              const SizedBox(height: 12),
-
-              // Conteúdo
-              Text(
-                news.conteudo ?? 'Conteúdo não disponível',
-                style: TextStyle(
-                  fontSize: 14,
-                  color: GridColors.textSecondary.withOpacity(0.8),
-                  height: 1.4,
-                ),
-                maxLines: 4,
-                overflow: TextOverflow.ellipsis,
-              ),
-
-              const SizedBox(height: 12),
-
-              // Footer com informações
-              Container(
-                padding: const EdgeInsets.symmetric(vertical: 8),
-                decoration: BoxDecoration(
-                  border: Border(
-                      top: BorderSide(
-                          color: GridColors.divider.withOpacity(0.3))),
-                ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        child: InkWell(
+          onTap: () => _showNewsDetail(news),
+          borderRadius: BorderRadius.circular(16),
+          child: Padding(
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Header com título e status
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Por: ${news.autor ?? 'Autor desconhecido'}',
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: GridColors.textSecondary.withOpacity(0.6),
-                          ),
+                    Expanded(
+                      child: Text(
+                        news.titulo ?? 'Sem título',
+                        style: const TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          height: 1.3,
                         ),
-                        if (news.dhCreatedAt != null) ...[
-                          const SizedBox(height: 2),
-                          Text(
-                            DateFormat('dd/MM/yyyy HH:mm')
-                                .format(news.dhCreatedAt!.toLocal()),
-                            style: TextStyle(
-                              fontSize: 10,
-                              color: GridColors.textSecondary.withOpacity(0.5),
-                            ),
-                          ),
-                        ],
-                      ],
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
                     ),
-
-                    // Botão de ação
-                    IconButton(
-                      icon: Icon(Icons.arrow_forward_ios,
-                          size: 16, color: GridColors.primary),
-                      onPressed: () => _showNewsDetail(news),
-                    ),
+                    const SizedBox(width: 12),
+                    _buildStatusIndicator(news.autor),
                   ],
                 ),
-              ),
-            ],
+
+                const SizedBox(height: 12),
+
+                // Conteúdo
+                Text(
+                  news.conteudo ?? 'Conteúdo não disponível',
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: Colors.grey[700],
+                    height: 1.4,
+                  ),
+                  maxLines: 3,
+                  overflow: TextOverflow.ellipsis,
+                ),
+
+                const SizedBox(height: 16),
+
+                // Footer com metadados
+                Container(
+                  padding: const EdgeInsets.only(top: 12),
+                  decoration: BoxDecoration(
+                    border: Border(top: BorderSide(color: Colors.grey[300]!)),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Por: ${news.autor ?? 'Autor desconhecido'}',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Colors.grey[600],
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                          if (news.dhCreatedAt != null) ...[
+                            const SizedBox(height: 4),
+                            Text(
+                              DateFormat('dd/MM/yyyy • HH:mm')
+                                  .format(news.dhCreatedAt!.toLocal()),
+                              style: TextStyle(
+                                fontSize: 11,
+                                color: Colors.grey[500],
+                              ),
+                            ),
+                          ],
+                        ],
+                      ),
+                      Icon(
+                        Icons.arrow_forward_ios_rounded,
+                        size: 16,
+                        color: GridColors.primary,
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),
@@ -327,42 +328,49 @@ class _ComunicadoScreenState extends State<ComunicadoScreen> {
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (context) => Container(
-        height: MediaQuery.of(context).size.height * 0.8,
+        height: MediaQuery.of(context).size.height * 0.85,
         decoration: BoxDecoration(
-          color: GridColors.card,
+          color: Colors.white,
           borderRadius: const BorderRadius.only(
-            topLeft: Radius.circular(20),
-            topRight: Radius.circular(20),
+            topLeft: Radius.circular(24),
+            topRight: Radius.circular(24),
           ),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.2),
+              blurRadius: 20,
+              offset: const Offset(0, -5),
+            ),
+          ],
         ),
         child: Column(
           children: [
             // Header do modal
             Container(
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
-                color: GridColors.primary.withOpacity(0.1),
+                color: GridColors.primary,
                 borderRadius: const BorderRadius.only(
-                  topLeft: Radius.circular(20),
-                  topRight: Radius.circular(20),
+                  topLeft: Radius.circular(24),
+                  topRight: Radius.circular(24),
                 ),
               ),
               child: Row(
                 children: [
-                  Icon(Icons.announcement, color: GridColors.primary),
+                  const Icon(Icons.announcement, color: Colors.white, size: 24),
                   const SizedBox(width: 12),
                   Expanded(
                     child: Text(
                       news.titulo ?? 'Comunicado',
-                      style: TextStyle(
+                      style: const TextStyle(
                         fontSize: 20,
                         fontWeight: FontWeight.bold,
-                        color: GridColors.textSecondary,
+                        color: Colors.white,
                       ),
                     ),
                   ),
                   IconButton(
-                    icon: Icon(Icons.close, color: GridColors.textSecondary),
+                    icon: const Icon(Icons.close, color: Colors.white),
                     onPressed: () => Navigator.pop(context),
                   ),
                 ],
@@ -372,27 +380,27 @@ class _ComunicadoScreenState extends State<ComunicadoScreen> {
             // Conteúdo
             Expanded(
               child: SingleChildScrollView(
-                padding: const EdgeInsets.all(16),
+                padding: const EdgeInsets.all(20),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
                       news.conteudo ?? 'Conteúdo não disponível',
-                      style: TextStyle(
+                      style: const TextStyle(
                         fontSize: 16,
-                        color: GridColors.textSecondary.withOpacity(0.8),
                         height: 1.6,
                       ),
                     ),
 
-                    const SizedBox(height: 20),
+                    const SizedBox(height: 24),
 
                     // Informações adicionais
                     Container(
-                      padding: const EdgeInsets.all(12),
+                      padding: const EdgeInsets.all(16),
                       decoration: BoxDecoration(
-                        color: GridColors.filterBackground,
-                        borderRadius: BorderRadius.circular(8),
+                        color: Colors.grey[50],
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: Colors.grey[200]!),
                       ),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -402,7 +410,7 @@ class _ComunicadoScreenState extends State<ComunicadoScreen> {
                           _buildInfoRow(
                               'Data:',
                               news.dhCreatedAt != null
-                                  ? DateFormat('dd/MM/yyyy HH:mm')
+                                  ? DateFormat('dd/MM/yyyy às HH:mm')
                                       .format(news.dhCreatedAt!.toLocal())
                                   : 'Não informada'),
                           _buildInfoRow('Status:', news.autor ?? 'Normal'),
@@ -421,15 +429,14 @@ class _ComunicadoScreenState extends State<ComunicadoScreen> {
 
   Widget _buildInfoRow(String label, String value) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
+      padding: const EdgeInsets.symmetric(vertical: 6),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
             label,
-            style: TextStyle(
+            style: const TextStyle(
               fontWeight: FontWeight.bold,
-              color: GridColors.textSecondary,
               fontSize: 14,
             ),
           ),
@@ -437,8 +444,7 @@ class _ComunicadoScreenState extends State<ComunicadoScreen> {
           Expanded(
             child: Text(
               value,
-              style: TextStyle(
-                color: GridColors.textSecondary.withOpacity(0.8),
+              style: const TextStyle(
                 fontSize: 14,
               ),
             ),
@@ -453,14 +459,18 @@ class _ComunicadoScreenState extends State<ComunicadoScreen> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(Icons.announcement,
-              size: 64, color: GridColors.textSecondary.withOpacity(0.3)),
+          Icon(
+            Icons.announcement_outlined,
+            size: 80,
+            color: Colors.grey[300],
+          ),
           const SizedBox(height: 16),
           Text(
             'Nenhum comunicado disponível',
             style: TextStyle(
               fontSize: 18,
-              color: GridColors.textSecondary.withOpacity(0.5),
+              color: Colors.grey[500],
+              fontWeight: FontWeight.w500,
             ),
           ),
           const SizedBox(height: 8),
@@ -468,7 +478,7 @@ class _ComunicadoScreenState extends State<ComunicadoScreen> {
             'Novos comunicados aparecerão aqui',
             style: TextStyle(
               fontSize: 14,
-              color: GridColors.textSecondary.withOpacity(0.4),
+              color: Colors.grey[400],
             ),
           ),
         ],
@@ -479,7 +489,7 @@ class _ComunicadoScreenState extends State<ComunicadoScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: GridColors.background,
+      backgroundColor: Colors.grey[50],
       appBar: UserBannerAppBar(
         screenTitle: "Comunicados",
         isLoading: isLoading,
@@ -487,72 +497,35 @@ class _ComunicadoScreenState extends State<ComunicadoScreen> {
       ),
       body: RefreshIndicator(
         onRefresh: _refreshNews,
-        backgroundColor: GridColors.card,
+        backgroundColor: Colors.white,
         color: GridColors.primary,
-        child: CustomScrollView(
-          controller: _controller,
-          slivers: [
-            // Header
-            SliverAppBar(
-              expandedHeight: 100,
-              flexibleSpace: FlexibleSpaceBar(
-                background: Container(
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                      colors: [
-                        GridColors.primary.withOpacity(0.8),
-                        GridColors.secondary.withOpacity(0.6),
-                      ],
-                    ),
-                  ),
-                  child: Center(
-                    child: Text(
-                      'Comunicados Institucionais',
-                      style: TextStyle(
-                        fontSize: 24,
-                        fontWeight: FontWeight.bold,
-                        color: GridColors.textPrimary,
-                      ),
-                    ),
-                  ),
-                ),
+        child: newsList.isEmpty && !isLoading
+            ? _buildEmptyState()
+            : ListView.builder(
+                controller: _controller,
+                itemCount: newsList.length + (isLoading ? 1 : 0),
+                itemBuilder: (context, index) {
+                  if (index == newsList.length) {
+                    return isLoading
+                        ? const Padding(
+                            padding: EdgeInsets.all(24.0),
+                            child: Center(
+                              child: CircularProgressIndicator(),
+                            ),
+                          )
+                        : const SizedBox.shrink();
+                  }
+                  return _buildNewsItem(newsList[index], index);
+                },
               ),
-              pinned: true,
+      ),
+      floatingActionButton: widget.floatingActionButton
+          ? FloatingActionButton(
+              onPressed: _refreshNews,
               backgroundColor: GridColors.primary,
-            ),
-
-            // Lista de comunicados
-            if (newsList.isEmpty && !isLoading)
-              SliverFillRemaining(child: _buildEmptyState())
-            else
-              SliverList(
-                delegate: SliverChildBuilderDelegate(
-                  (context, index) {
-                    if (index == newsList.length) {
-                      return isLoading
-                          ? const Padding(
-                              padding: EdgeInsets.all(16.0),
-                              child: Center(child: CircularProgressIndicator()),
-                            )
-                          : const SizedBox.shrink();
-                    }
-                    return _buildNewsItem(newsList[index], index);
-                  },
-                  childCount: newsList.length + (isLoading ? 1 : 0),
-                ),
-              ),
-          ],
-        ),
-      ),
-
-      // Botão flutuante para recarregar
-      floatingActionButton: FloatingActionButton(
-        onPressed: _refreshNews,
-        backgroundColor: GridColors.primary,
-        child: Icon(Icons.refresh, color: GridColors.textPrimary),
-      ),
+              child: const Icon(Icons.refresh, color: Colors.white),
+            )
+          : null,
     );
   }
 

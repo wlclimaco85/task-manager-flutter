@@ -17,6 +17,7 @@ class ChamadoGridScreen extends StatelessWidget {
         createEndpoint: ApiLinks.createChamado,
         updateEndpoint: ApiLinks.updateChamado(":id"),
         deleteEndpoint: ApiLinks.deleteChamado(":id"),
+        useUserBannerAppBar: true,
         fromJson: (json) => Chamado.fromJson(Map<String, dynamic>.from(json)),
         toJson: (obj) => obj.toJson(),
         hasPermission: hasPermission,

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:task_manager_flutter/data/models/network_response.dart';
 import 'package:task_manager_flutter/data/services/network_caller.dart';
+import 'package:task_manager_flutter/ui/widgets/user_banners.dart';
 
 // ==============================================
 // MOBILE GRID SCREEN - CARD BASED
@@ -185,6 +186,10 @@ class GenericMobileGridScreen<T> extends StatefulWidget {
   final Widget Function(T item)? detailScreenBuilder;
   final Map<String, dynamic>? extraParams;
   final bool enableDebugMode;
+  // NOVA PROPRIEDADE: Controla se usa UserBannerAppBar ou AppBar normal
+  final bool useUserBannerAppBar;
+  final VoidCallback? onUserBannerTapped;
+  final VoidCallback? onBannerRefresh;
 
   const GenericMobileGridScreen({
     super.key,
@@ -208,6 +213,11 @@ class GenericMobileGridScreen<T> extends StatefulWidget {
     this.detailScreenBuilder,
     this.extraParams,
     this.enableDebugMode = false,
+    // ... outras propriedades ...
+    this.useUserBannerAppBar =
+        false, // Padrão é false para não quebrar código existente
+    this.onUserBannerTapped,
+    this.onBannerRefresh,
   });
 
   @override
@@ -1386,7 +1396,18 @@ class _GenericMobileGridScreenState<T>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: _isSelectionMode ? _buildSelectionAppBar() : _buildNormalAppBar(),
+      appBar: widget.useUserBannerAppBar
+          ? PreferredSize(
+              preferredSize: const Size.fromHeight(kToolbarHeight),
+              child: UserBannerAppBar(
+                screenTitle: widget.title,
+                onTapped: widget.onUserBannerTapped,
+                onRefresh:
+                    widget.onBannerRefresh ?? () => _loadItems(reset: true),
+                isLoading: isLoading,
+              ),
+            )
+          : (_isSelectionMode ? _buildSelectionAppBar() : _buildNormalAppBar()),
       floatingActionButton: widget.hasPermission('create')
           ? FloatingActionButton(
               onPressed: () => _openForm(),
