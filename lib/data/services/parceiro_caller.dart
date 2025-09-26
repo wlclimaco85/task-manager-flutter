@@ -9,7 +9,9 @@ import 'package:task_manager_flutter/ui/screens/LoginPopup_screens.dart';
 
 class ParceiroCaller {
   Future<List<Parceiro>> fetchParceiros(
-      BuildContext context, int idParceiro) async {
+    BuildContext context,
+    int idParceiro,
+  ) async {
     List<Parceiro>? model = [];
     ParceiroModel models;
     try {
@@ -21,8 +23,9 @@ class ParceiroCaller {
           builder: (BuildContext context) => const LoginPopup(),
         );
       } else {
-        final NetworkResponse response = await NetworkCaller()
-            .getRequest('${ApiLinks.parceiroById}/$idParceiro');
+        final NetworkResponse response = await NetworkCaller().getRequest(
+          '${ApiLinks.parceiroById}/$idParceiro',
+        );
         String jsonString;
 
         if (response.statusCode == 200 && response.body != null) {
@@ -41,7 +44,9 @@ class ParceiroCaller {
   }
 
   Future<bool> insertParceiro(
-      BuildContext context, Map<String, dynamic> parceiroData) async {
+    BuildContext context,
+    Map<String, dynamic> parceiroData,
+  ) async {
     try {
       final NetworkResponse response = await NetworkCaller().postRequest(
         ApiLinks.insertParceiro,
@@ -94,10 +99,12 @@ class ParceiroCaller {
   }
 
   Future<bool> updateParceiro(
-      BuildContext context, Map<String, dynamic> parceiroData) async {
+    BuildContext context,
+    Map<String, dynamic> parceiroData,
+  ) async {
     try {
       final NetworkResponse response = await NetworkCaller().postRequest(
-        ApiLinks.updateParceiro,
+        ApiLinks.updateParceiro(parceiroData['id'].toString()),
         parceiroData,
       );
 
@@ -149,5 +156,47 @@ class ParceiroCaller {
       );
       throw Exception('Erro ao inserir parceiro: $e');
     }
+  }
+
+  /// Busca todos os parceiros
+  Future<List<Parceiro>> fetchParceiross() async {
+    List<Parceiro> list = [];
+    try {
+      final NetworkResponse response = await NetworkCaller().getRequest(
+        ApiLinks.allParceiros,
+      );
+
+      if (response.isSuccess && response.body != null) {
+        final data = response.body!['data']['dados'] ?? [];
+        list = data.map<Parceiro>((item) => Parceiro.fromJson(item)).toList();
+      }
+    } catch (e) {
+      print('Erro ao carregar parceiros: $e');
+      throw Exception('Erro ao carregar parceiros: $e');
+    }
+    return list;
+  }
+
+  /// Retorna lista formatada para dropdown de parceiros
+  Future<List<Map<String, dynamic>>> fetchParceiroDropdown() async {
+    List<Map<String, dynamic>> list = [];
+    try {
+      final NetworkResponse response = await NetworkCaller().getRequest(
+        ApiLinks.allParceiros,
+      );
+
+      if (response.isSuccess && response.body != null) {
+        final data = response.body!['data']['dados'] ?? [];
+        list = data
+            .map<Map<String, dynamic>>(
+              (item) => {'value': item['id'], 'label': item['nome'].toString()},
+            )
+            .toList();
+      }
+    } catch (e) {
+      print('Erro ao carregar parceiros: $e');
+      throw Exception('Erro ao carregar parceiros: $e');
+    }
+    return list;
   }
 }

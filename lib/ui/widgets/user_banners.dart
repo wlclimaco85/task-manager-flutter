@@ -108,7 +108,8 @@ class _UserBannerAppBarState extends State<UserBannerAppBar> {
 
   void deleteAllNotifications() {
     setState(() {
-      notifications.clear(); // Limpa a lista de notificações
+      notifications.clear();
+      unreadAlerts = 0;
     });
   }
 
@@ -119,22 +120,23 @@ class _UserBannerAppBarState extends State<UserBannerAppBar> {
     }
 
     final overlay = Overlay.of(context);
+    final appBarHeight = Scaffold.of(context).appBarMaxHeight ?? kToolbarHeight;
 
     notificationOverlay = OverlayEntry(
       builder: (context) => Positioned(
-        top: 50,
+        top: appBarHeight + 8, // Abaixo da AppBar
         right: 8,
         child: Material(
           elevation: 4,
           child: Container(
-            width: 300, // Largura fixa
-            height: 400, // Altura fixa (ajuste conforme necessário)
+            width: 300,
+            height: 400,
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: CustomColors().getLightGreenBackground(),
+              color: GridColors.card,
               border: Border.all(
-                color: CustomColors().getDarkGreenBorder(),
-                width: 2,
+                color: GridColors.divider,
+                width: 1,
               ),
               borderRadius: BorderRadius.circular(8),
             ),
@@ -150,38 +152,36 @@ class _UserBannerAppBarState extends State<UserBannerAppBar> {
                       style: TextStyle(
                         fontWeight: FontWeight.bold,
                         fontSize: 16,
-                        color: CustomColors().getTextColor(),
+                        color: GridColors.textSecondary,
                       ),
                     ),
                     IconButton(
-                      icon: Icon(Icons.close,
-                          color: CustomColors().getCancelButtonColor()),
+                      icon: Icon(Icons.close, color: GridColors.error),
                       onPressed: closeNotificationDropdown,
                     ),
                   ],
                 ),
-                const Divider(color: Colors.green, thickness: 1),
+                const Divider(color: GridColors.divider, thickness: 1),
 
                 // Linha com a opção "Deletar Tudo"
                 ListTile(
-                  dense: true, // Torna o ListTile mais compacto
-                  visualDensity:
-                      VisualDensity.compact, // Reduz o espaçamento interno
+                  dense: true,
+                  visualDensity: VisualDensity.compact,
                   title: Text(
                     "Deletar Tudo",
                     style: TextStyle(
                       fontSize: 14,
-                      color: CustomColors().getCancelButtonColor(),
+                      color: GridColors.error,
                     ),
                   ),
                   trailing: Icon(
                     Icons.delete_forever,
-                    color: CustomColors().getCancelButtonColor(),
+                    color: GridColors.error,
                     size: 20,
                   ),
                   onTap: deleteAllNotifications,
                 ),
-                const Divider(color: Colors.green, thickness: 1),
+                const Divider(color: GridColors.divider, thickness: 1),
 
                 // Lista de notificações
                 Expanded(
@@ -205,7 +205,7 @@ class _UserBannerAppBarState extends State<UserBannerAppBar> {
                                 notification.texto,
                                 style: TextStyle(
                                   fontSize: 14,
-                                  color: CustomColors().getButtonTextColor(),
+                                  color: GridColors.textSecondary,
                                   fontWeight: FontWeight.w500,
                                 ),
                               ),
@@ -213,13 +213,13 @@ class _UserBannerAppBarState extends State<UserBannerAppBar> {
                                 formattedDate,
                                 style: TextStyle(
                                   fontSize: 12,
-                                  color: CustomColors().getButtonTextColor(),
+                                  color: GridColors.textSecondary,
                                 ),
                               ),
                               trailing: IconButton(
                                 icon: Icon(
                                   Icons.delete,
-                                  color: CustomColors().getCancelButtonColor(),
+                                  color: GridColors.error,
                                   size: 20,
                                 ),
                                 onPressed: () {
@@ -232,8 +232,7 @@ class _UserBannerAppBarState extends State<UserBannerAppBar> {
                       : Center(
                           child: Text(
                             "No notifications",
-                            style: TextStyle(
-                                color: CustomColors().getButtonTextColor()),
+                            style: TextStyle(color: GridColors.textSecondary),
                           ),
                         ),
                 ),
@@ -264,12 +263,12 @@ class _UserBannerAppBarState extends State<UserBannerAppBar> {
     if (AuthUtility.userInfo.data?.id != null &&
         AuthUtility.userInfo.data!.id! > 1) {
       return AppBar(
-        backgroundColor: CustomColors().getLightGreenBackground(),
+        backgroundColor: GridColors.primary,
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(1),
           child: Container(
             height: 1,
-            color: CustomColors().getDarkGreenBorder(),
+            color: GridColors.divider,
           ),
         ),
         actions: [
@@ -282,12 +281,11 @@ class _UserBannerAppBarState extends State<UserBannerAppBar> {
               ),
             ),
           // Alert Icon with unread count
-
           Stack(
             alignment: Alignment.center,
             children: [
               IconButton(
-                icon: const Icon(Icons.notifications, color: Colors.black),
+                icon: Icon(Icons.notifications, color: GridColors.textPrimary),
                 onPressed: () => showNotificationDropdown(context),
               ),
               if (unreadAlerts > 0)
@@ -320,22 +318,21 @@ class _UserBannerAppBarState extends State<UserBannerAppBar> {
 
           // Logout button
           IconButton(
-            icon: const Icon(Icons.logout, color: Colors.black),
+            icon: Icon(Icons.logout, color: GridColors.textPrimary),
             onPressed: () {
               showDialog(
                 context: context,
                 builder: (context) {
                   return AlertDialog(
-                    title: Text("Deseja realmente sair ?",
+                    title: Text("Deseja realmente sair?",
                         style: TextStyle(
                             fontWeight: FontWeight.bold,
-                            color: CustomColors().getTextColor())),
+                            color: GridColors.textSecondary)),
                     actions: [
                       TextButton(
                         onPressed: () => Navigator.pop(context),
                         child: Text("Não",
-                            style: TextStyle(
-                                color: CustomColors().getTextColor())),
+                            style: TextStyle(color: GridColors.textSecondary)),
                       ),
                       TextButton(
                         onPressed: () {
@@ -354,8 +351,7 @@ class _UserBannerAppBarState extends State<UserBannerAppBar> {
                           );
                         },
                         child: Text("Sim",
-                            style: TextStyle(
-                                color: CustomColors().getTextColor())),
+                            style: TextStyle(color: GridColors.textSecondary)),
                       ),
                     ],
                   );
@@ -404,15 +400,14 @@ class _UserBannerAppBarState extends State<UserBannerAppBar> {
                           style: TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.bold,
-                              color: CustomColors().getTextColor()),
+                              color: GridColors.textPrimary),
                         ),
                         const SizedBox(height: 2),
                         Text(
                             AuthUtility.userInfo.data?.codDadosPessoal?.email ??
                                 "",
                             style: TextStyle(
-                                fontSize: 14,
-                                color: CustomColors().getTextColor())),
+                                fontSize: 14, color: GridColors.textPrimary)),
                       ],
                     ),
                   ],
@@ -425,19 +420,19 @@ class _UserBannerAppBarState extends State<UserBannerAppBar> {
     } else {
       // AppBar alternativo
       return AppBar(
-        backgroundColor: CustomColors().getLightGreenBackground(),
+        backgroundColor: GridColors.primary,
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(1),
           child: Container(
             height: 1,
-            color: CustomColors().getDarkGreenBorder(),
+            color: GridColors.divider,
           ),
         ),
         title: Row(
           children: [
             // Logo do App
             Image.asset(
-              'assets/images/iconApp.png', // Verifique o caminho correto
+              'assets/images/iconApp.png',
               width: 80,
               height: 80,
             ),
@@ -445,7 +440,7 @@ class _UserBannerAppBarState extends State<UserBannerAppBar> {
             Text(
               widget.screenTitle ?? "Screen",
               style: TextStyle(
-                color: CustomColors().getTextColor(), // Cor #002E18
+                color: GridColors.textPrimary,
                 fontWeight: FontWeight.bold,
               ),
             ),
@@ -461,11 +456,11 @@ class _UserBannerAppBarState extends State<UserBannerAppBar> {
               ),
             ),
           IconButton(
-            icon: const Icon(Icons.refresh, color: Colors.black),
+            icon: Icon(Icons.refresh, color: GridColors.textPrimary),
             onPressed: widget.onRefresh,
           ),
           IconButton(
-            icon: Icon(Icons.login, color: CustomColors().getTextColor()),
+            icon: Icon(Icons.login, color: GridColors.textPrimary),
             onPressed: () {
               // Adicione a navegação para a tela de login aqui
             },

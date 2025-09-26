@@ -174,12 +174,12 @@ class Chamado {
       isFixed: false,
       fieldType: FieldType.dropdown,
       dropdownOptions: [
-        {'value': 'Aberto', 'label': 'Aberto'},
-        {'value': 'Em Andamento', 'label': 'Em Andamento'},
-        {'value': 'Fechado', 'label': 'Fechado'},
-        {'value': 'Cancelado', 'label': 'Cancelado'},
+        {'value': 0, 'label': 'Aberto'},
+        {'value': 1, 'label': 'Em Andamento'},
+        {'value': 2, 'label': 'Fechado'},
+        {'value': 3, 'label': 'Cancelado'},
       ], //('MENSAL', 'TRIMESTRAL', 'ANUAL', 'SEMESTRAL'))
-      dropdownSelectedValue: 'Aberto', // Valor padrão selecionado
+      dropdownSelectedValue: 0, // Valor padrão selecionado
       dropdownValueField: 'value',
       dropdownDisplayField: 'label',
     ),
@@ -192,12 +192,12 @@ class Chamado {
       isFixed: false,
       fieldType: FieldType.dropdown,
       dropdownOptions: [
-        {'value': 'BAIXA', 'label': 'Baixa'},
-        {'value': 'MEDIA', 'label': 'Media'},
-        {'value': 'ALTA', 'label': 'Alta'},
-        {'value': 'URGENTE', 'label': 'Urgente'},
+        {'value': 0, 'label': 'Baixa'},
+        {'value': 1, 'label': 'Media'},
+        {'value': 2, 'label': 'Alta'},
+        {'value': 3, 'label': 'Urgente'},
       ],
-      dropdownSelectedValue: 'BAIXA', // Valor padrão selecionado
+      dropdownSelectedValue: 0, // Valor padrão selecionado
       dropdownValueField: 'value',
       dropdownDisplayField: 'label',
     ),

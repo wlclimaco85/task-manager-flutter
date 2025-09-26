@@ -1,5 +1,12 @@
 // Classe Endereco
 import 'dart:convert';
+import 'package:flutter/material.dart';
+import '../customization/generic_grid_card.dart';
+import 'package:task_manager_flutter/data/models/empresa_model.dart';
+import 'package:task_manager_flutter/data/utils/api_links.dart';
+import 'package:task_manager_flutter/data/models/network_response.dart';
+import 'package:task_manager_flutter/data/services/network_caller.dart';
+import 'package:task_manager_flutter/data/models/regime_tributario_model.dart';
 
 class Endereco {
   int? id;
@@ -87,9 +94,14 @@ class Parceiro {
   String? telefone1;
   String? telefone2;
   String? razaoSocial;
+  int? codPersonal;
   String? incrMun;
   String? status;
   Endereco? endereco;
+  Empresa? empresa;
+  RegimeTributario? regime; // pode depois virar um model específico
+  double? valorMensal;
+  String? observacao;
 
   Parceiro({
     this.id,
@@ -100,12 +112,17 @@ class Parceiro {
     this.telefone1,
     this.telefone2,
     this.razaoSocial,
+    this.codPersonal,
     this.incrMun,
     this.status,
     this.endereco,
+    this.empresa,
+    this.regime,
+    this.valorMensal,
+    this.observacao,
   });
 
-  // Método para deserializar o JSON em um objeto Parceiro
+  // Deserialização
   Parceiro.fromJson(Map<String, dynamic> json) {
     id = json['id'];
     nome = json['nome'];
@@ -115,13 +132,21 @@ class Parceiro {
     telefone1 = json['telefone1'];
     telefone2 = json['telefone2'];
     razaoSocial = json['razaoSocial'];
+    codPersonal = json['codPersonal'];
     incrMun = json['incrMun'];
     status = json['status'];
     endereco =
         json['endereco'] != null ? Endereco.fromJson(json['endereco']) : null;
+    empresa =
+        json['empresa'] != null ? Empresa.fromJson(json['empresa']) : null;
+    regime = json['regime'] != null
+        ? RegimeTributario.fromJson(json['regime'])
+        : null;
+    valorMensal = json['valorMensal']?.toDouble();
+    observacao = json['observacao'];
   }
 
-  // Método para serializar o objeto Parceiro em JSON
+  // Serialização
   Map<String, dynamic> toJson() {
     final Map<String, dynamic> data = <String, dynamic>{};
     data['id'] = id;
@@ -132,11 +157,15 @@ class Parceiro {
     data['telefone1'] = telefone1;
     data['telefone2'] = telefone2;
     data['razaoSocial'] = razaoSocial;
+    data['codPersonal'] = codPersonal;
     data['incrMun'] = incrMun;
     data['status'] = status;
-    if (endereco != null) {
-      data['endereco'] = endereco!.toJson();
-    }
+    if (endereco != null) data['endereco'] = endereco!.toJson();
+    if (empresa != null) data['empresa'] = empresa!.toJson();
+    if (regime != null) data['regime'] = regime!.toJson();
+    data['regime'] = regime;
+    data['valorMensal'] = valorMensal;
+    data['observacao'] = observacao;
     return data;
   }
 
@@ -145,6 +174,149 @@ class Parceiro {
         .map((item) => Parceiro.fromJson(Map<String, dynamic>.from(item)))
         .toList();
   }
+
+  static Future<List<Map<String, dynamic>>> loadCategorias() async {
+    final NetworkResponse response = await NetworkCaller().getRequest(
+      ApiLinks.allRegimetributario,
+    );
+
+    if (response.isSuccess && response.body != null) {
+      final List<dynamic> data = response.body!['data']['dados'] ?? [];
+      return data
+          .map(
+            (item) => {'value': item['id'].toString(), 'label': item['codigo']},
+          )
+          .toList();
+    }
+    return [];
+  }
+
+  static List<FieldConfig> fieldConfigs = [
+    FieldConfig(
+      label: "Nome",
+      fieldName: "nome",
+      icon: Icons.person,
+      isInForm: true,
+      isFilterable: true,
+      isVisibleByDefault: true,
+      isFixed: true,
+    ),
+    FieldConfig(
+      label: "CPF",
+      fieldName: "cpf",
+      icon: Icons.badge,
+      isInForm: true,
+      isFilterable: true,
+      isVisibleByDefault: true,
+      isFixed: true,
+    ),
+    FieldConfig(
+      label: "Email",
+      fieldName: "email",
+      icon: Icons.email,
+      isInForm: true,
+      isVisibleByDefault: true,
+      isFixed: true,
+    ),
+    FieldConfig(
+      label: "Telefone 1",
+      fieldName: "telefone1",
+      icon: Icons.phone,
+      isInForm: true,
+      isVisibleByDefault: true,
+      isFixed: true,
+    ),
+    FieldConfig(
+      label: "Telefone 2",
+      fieldName: "telefone2",
+      icon: Icons.phone_android,
+      isInForm: true,
+      isVisibleByDefault: false,
+      isFixed: false,
+    ),
+    FieldConfig(
+      label: "Razão Social",
+      fieldName: "razaoSocial",
+      icon: Icons.apartment,
+      isInForm: true,
+      isVisibleByDefault: false,
+      isFixed: false,
+    ),
+    FieldConfig(
+      label: "Código Produtor",
+      fieldName: "codProdutor",
+      icon: Icons.qr_code,
+      isInForm: true,
+      isVisibleByDefault: false,
+      isFixed: false,
+    ),
+    FieldConfig(
+      label: "Cód. Personal",
+      fieldName: "codPersonal",
+      icon: Icons.confirmation_number,
+      isInForm: true,
+      isVisibleByDefault: false,
+      isFixed: false,
+    ),
+    FieldConfig(
+      label: "Inscrição Municipal",
+      fieldName: "incrMun",
+      icon: Icons.assignment,
+      isInForm: true,
+      isVisibleByDefault: false,
+      isFixed: false,
+    ),
+    FieldConfig(
+      label: "Status",
+      fieldName: "status",
+      icon: Icons.toggle_on,
+      isInForm: true,
+      isVisibleByDefault: false,
+      isFixed: false,
+    ),
+    FieldConfig(
+      label: "Valor Mensal",
+      fieldName: "valorMensal",
+      icon: Icons.attach_money,
+      isInForm: true,
+      fieldType: FieldType.number,
+      isVisibleByDefault: false,
+      isFixed: false,
+    ),
+    FieldConfig(
+      label: "Observação",
+      fieldName: "observacao",
+      icon: Icons.notes,
+      isInForm: true,
+      isVisibleByDefault: false,
+      isFixed: false,
+    ),
+    FieldConfig(
+      label: "Empresa",
+      fieldName: "empresa",
+      displayFieldName: "empresa.nome",
+      icon: Icons.business,
+      isInForm: true,
+      isVisibleByDefault: false,
+      isFixed: false,
+    ),
+    FieldConfig(
+      label: "Regime",
+      fieldName: "regime",
+      displayFieldName: "regime.codigo", // Campo aninhado para exibição
+      icon: Icons.business_center,
+      isInForm: true,
+      isFilterable: true,
+      fieldType: FieldType.dropdown,
+      dropdownFutureBuilder: () async {
+        return await loadCategorias();
+      },
+      dropdownValueField: 'id',
+      dropdownDisplayField: 'codigo',
+      isRequired: true,
+      isVisibleByDefault: true,
+    ),
+  ];
 }
 
 class PaisModel {
@@ -301,7 +473,8 @@ class Estado {
               nomePt: 'Brasil',
               iso2: 'BR',
               iso3: 'BRA',
-              bacen: 1058), // Criar um objeto padrão
+              bacen: 1058,
+            ), // Criar um objeto padrão
     );
   }
   // Método para serializar o objeto Parceiro em JSON
@@ -340,7 +513,7 @@ class Cidade {
   factory Cidade.fromJson(Map<String, dynamic> json) {
     return Cidade(
       id: json['id'],
-      nome: utf8.decode(latin1.encode(json['nome'])),
+      nome: json['nome']?.toString() ?? '',
       //   uf: json['uf'],
       ibge: json['ibge'],
       latLon: json['latLon'] ?? '',

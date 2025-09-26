@@ -633,8 +633,19 @@ class _GenericMobileGridScreenState<T>
 
   Widget _buildDropdownField(
       FieldConfig config, TextEditingController controller) {
+    // Função para obter as opções (estáticas ou dinâmicas)
+    Future<List<Map<String, dynamic>>> getOptions() async {
+      if (config.dropdownFutureBuilder != null) {
+        // Caso dinâmico - carrega via Future
+        return await config.dropdownFutureBuilder!();
+      } else {
+        // Caso estático - retorna as opções fixas
+        return config.dropdownOptions ?? [];
+      }
+    }
+
     return FutureBuilder<List<Map<String, dynamic>>>(
-      future: config.dropdownFutureBuilder?.call(),
+      future: getOptions(),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const CircularProgressIndicator();
@@ -661,7 +672,13 @@ class _GenericMobileGridScreenState<T>
 
         final uniqueOptionsList = uniqueOptions.values.toList();
 
+        // Obter valor atual considerando valor padrão para novos registros
         dynamic currentValue = _getCurrentValue(config, controller);
+
+        // Se é um novo registro e não tem valor no controller, usar o valor padrão
+        if (controller.text.isEmpty && config.dropdownSelectedValue != null) {
+          currentValue = config.dropdownSelectedValue;
+        }
 
         // VERIFICAR SE O VALOR ATUAL EXISTE NAS OPÇÕES ÚNICAS
         bool valueExists = uniqueOptionsList.any((option) {
@@ -672,8 +689,9 @@ class _GenericMobileGridScreenState<T>
           }
         });
 
+        // Se o valor não existe nas opções, usar null (mostrará placeholder)
         if (!valueExists) {
-          currentValue = null; // Reset para null se não existir
+          currentValue = null;
         }
 
         return DropdownButtonFormField<dynamic>(
@@ -691,7 +709,8 @@ class _GenericMobileGridScreenState<T>
           ),
           isExpanded: true,
           items: [
-            if (!config.isRequired)
+            // Item placeholder apenas se não for obrigatório ou se não houver valor selecionado
+            if (!config.isRequired || currentValue == null)
               const DropdownMenuItem<dynamic>(
                 value: null,
                 child: Text(
@@ -730,37 +749,43 @@ class _GenericMobileGridScreenState<T>
             });
           },
           validator: (dynamic value) {
-            // Use 'dynamic' instead of 'String?'
-            if (value == null || value.toString().isEmpty) {
-              return 'This field is required';
+            if (config.isRequired &&
+                (value == null || value.toString().isEmpty)) {
+              return '${config.label} é obrigatório';
             }
-            return null;
+            return config.validator?.call(value?.toString());
           },
         );
       },
     );
   }
 
-  bool _isIntegerField(FieldConfig config) {
-    return config.dropdownValueField == 'id' ||
-        config.fieldName.toLowerCase().contains('id');
-  }
-
+// Método auxiliar corrigido para considerar valor padrão
   dynamic _getCurrentValue(
       FieldConfig config, TextEditingController controller) {
     bool expectInteger = _isIntegerField(config);
 
+    // Se o controller tem texto, usar ele
     if (controller.text.isNotEmpty) {
       if (expectInteger) {
         return int.tryParse(controller.text);
       } else {
         return controller.text;
       }
-    } else if (config.defaultValue != null) {
-      return config.defaultValue;
-    } else {
+    }
+    // Se não tem texto no controller, usar valor padrão da config
+    else if (config.dropdownSelectedValue != null) {
+      return config.dropdownSelectedValue;
+    }
+    // Se não tem nada, retornar null
+    else {
       return null;
     }
+  }
+
+  bool _isIntegerField(FieldConfig config) {
+    return config.dropdownValueField == 'id' ||
+        config.fieldName.toLowerCase().contains('id');
   }
 
   TextInputType _getKeyboardType(FieldType fieldType) {
@@ -799,7 +824,12 @@ class _GenericMobileGridScreenState<T>
       final NetworkResponse response = item == null
           ? await NetworkCaller().postRequest(endpoint, formData)
           : await NetworkCaller().putRequest(endpoint, formData);
-
+      // ✅ TAMBÉM PRINT A RESPOSTA
+      print('=== DEBUG RESPONSE ===');
+      print('STATUS CODE: ${response.statusCode}');
+      print('RESPONSE BODY: ${formData}');
+      print('IS SUCCESS: ${endpoint}');
+      print('======================');
       if (response.isSuccess) {
         Navigator.pop(context);
         _showSnackBar(item == null

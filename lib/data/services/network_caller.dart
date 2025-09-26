@@ -15,8 +15,19 @@ import 'package:http/http.dart' as http;
 class NetworkCaller {
   Future<NetworkResponse> getRequest(String url) async {
     try {
+      final user = AuthUtility.userInfo.data;
+      // Adiciona empresa, parceiro e aplicativo como query params
+      Uri uri = Uri.parse(url).replace(
+        queryParameters: {
+          ...Uri.parse(url).queryParameters, // mantém query existentes
+          'empresa': user?.login?.empresa?.id?.toString() ?? '',
+          'parceiro': user?.login?.parceiro?.id?.toString() ?? '',
+          'aplicativo': user?.login?.aplicativo?.id?.toString() ?? '',
+        },
+      );
+
       Response response = await get(
-        Uri.parse(url),
+        uri,
         headers: {
           'Authorization': 'Bearer ${AuthUtility.userInfo.token}',
           'Accept-Encoding': 'gzip'
@@ -207,6 +218,16 @@ class NetworkCaller {
     Map<String, dynamic>? body,
   ) async {
     try {
+      final user = AuthUtility.userInfo.login;
+
+      // Adiciona empresa, parceiro e aplicativo ao body
+      body?['empresa'] = {};
+      body?['parceiro'] = {};
+      body?['aplicativo'] = {};
+      body?['empresa']['id'] = user?.empresa?.id ?? 1;
+      body?['parceiro']['id'] = user?.parceiro?.id ?? 1;
+      body?['aplicativo']['id'] =
+          user?.aplicativo != null ? user?.aplicativo?.id : 1;
       final response = await http.put(
         Uri.parse(url),
         headers: {
@@ -249,6 +270,17 @@ class NetworkCaller {
     Map<String, dynamic>? body,
   ) async {
     try {
+      final user = AuthUtility.userInfo.login;
+
+      // Adiciona empresa, parceiro e aplicativo ao body
+      body?['empresa'] = {};
+      body?['parceiro'] = {};
+      body?['aplicativo'] = {};
+      body?['empresa']['id'] = user?.empresa?.id ?? 1;
+      body?['parceiro']['id'] = user?.parceiro?.id ?? 1;
+      body?['aplicativo']['id'] =
+          user?.aplicativo != null ? user?.aplicativo?.id : 1;
+
       Response response = await post(
         Uri.parse(url),
         headers: {

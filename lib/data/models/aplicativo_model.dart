@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+
 import '../customization/generic_grid_card.dart';
 
 class Aplicativo {

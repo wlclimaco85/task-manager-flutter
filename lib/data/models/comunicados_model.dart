@@ -1,95 +1,79 @@
-import 'dart:convert';
+import 'package:flutter/material.dart';
+import 'package:task_manager_flutter/data/models/network_response.dart';
+import 'package:task_manager_flutter/data/services/network_caller.dart';
+import 'package:task_manager_flutter/data/utils/api_links.dart';
 
-class Data {
+import '../customization/generic_grid_card.dart';
+import 'setor_model.dart';
+
+class Comunicado {
   int? id;
   int? codApp;
   int? empId;
   String? titulo;
   String? conteudo;
   String? autor;
-  String? categoria;
+  Setor? setor;
   DateTime? dhCreatedAt;
-  DateTime? dataPublicacao; // Novo campo
-  DateTime? dhUpdatedAt; // Novo campo
+  DateTime? dataPublicacao;
+  DateTime? dhUpdatedAt;
 
-  Data(
-      {this.id,
-      this.codApp,
-      this.empId,
-      this.titulo,
-      this.conteudo,
-      this.autor,
-      this.categoria,
-      this.dhCreatedAt,
-      this.dataPublicacao,
-      this.dhUpdatedAt});
-
-  /* Data.fromJson(Map<String, dynamic> json) {
-    id = json['comunicacaoDTO'][0]['id'];
-    codApp = json['codApp'];
-    link = json['link'];
-    noticia = json['noticia'];
-    titulo = json['titulo'];
-    tituloResu = json['tituloResu'];
-    tituloResu = json['fonte'];
-    tituloResu = json['autor'];
-    tituloResu = json['resumo'];
-  } */
+  Comunicado({
+    this.id,
+    this.codApp,
+    this.empId,
+    this.titulo,
+    this.conteudo,
+    this.autor,
+    this.setor,
+    this.dhCreatedAt,
+    this.dataPublicacao,
+    this.dhUpdatedAt,
+  });
 
   Map<String, dynamic> toJson() {
-    final Map<String, dynamic> data = <String, dynamic>{};
-    data['comunicacaoDTO']['id'] = id;
-    data['comunicacaoDTO']['empId'] = empId;
-    data['comunicacaoDTO']['codApp'] = codApp;
-    data['comunicacaoDTO']['titulo'] = titulo;
-    data['comunicacaoDTO']['conteudo'] = conteudo;
-    data['comunicacaoDTO']['autor'] = autor;
-    data['comunicacaoDTO']['categoria'] = categoria;
-    data['comunicacaoDTO']['dataPublicacao'] =
-        dataPublicacao?.toIso8601String(); // Converter DateTime para string
-    data['comunicacaoDTO']['dhUpdatedAt'] =
-        dhUpdatedAt?.toIso8601String(); // Converter DateTime para string
-
-    return data;
+    return {
+      '_id': id,
+      'empId': empId,
+      'codApp': codApp,
+      'titulo': titulo,
+      'conteudo': conteudo,
+      'setor': setor?.toJson(),
+      'dataPublicacao': dataPublicacao?.toIso8601String(),
+      'autor': autor,
+      'dhCreatedAt': dhCreatedAt?.toIso8601String(),
+    };
   }
 
-  // Método para converter de JSON para a classe Data
-  Data.fromJson(Map<String, dynamic> json) {
+  Comunicado.fromJson(Map<String, dynamic> json) {
     if (json.isNotEmpty) {
       id = json['id'];
       empId = json['empId'];
       codApp = json['codApp'];
-      conteudo = json['conteudo'] != null
-          ? utf8.decode(latin1.encode(json['conteudo']))
-          : 'conteudo não disponível';
-      titulo = json['titulo'] != null
-          ? utf8.decode(latin1.encode(json['titulo']))
-          : 'Título não disponível';
-      autor = json['autor'] != null
-          ? utf8.decode(latin1.encode(json['autor']))
-          : 'autor não disponível';
-      categoria = json['categoria'] != null
-          ? utf8.decode(latin1.encode(json['categoria']))
-          : 'Fonte desconhecida';
-      autor = json['autor'] != null
-          ? utf8.decode(latin1.encode(json['autor']))
-          : 'autor desconhecido';
-      dataPublicacao = DateTime.parse(
-          json['dataPublicacao']); // Converter string para DateTime
-      //   dhUpdatedAt = DateTime.parse(
-      //       json['audit'] ?? ['dataUpdated']); // Converter string para DateTime
+      titulo = json['titulo'] ?? '';
+      autor = json['autor'] ?? '';
+      conteudo = json['conteudo'] ?? '';
+      //  conteudo = json['conteudo'] != null
+      //     ? utf8.decode(latin1.encode(json['conteudo']))
+      //    : 'conteudo não disponível';
+      // titulo = json['titulo'] != null
+      //    ? utf8.decode(latin1.encode(json['titulo']))
+      //     : 'Título não disponível';
+      // autor = json['autor'] != null
+      //      ? utf8.decode(latin1.encode(json['autor']))
+      //     : 'autor não disponível';
+      setor = json['setor'] != null ? Setor.fromJson(json['setor']) : null;
+      dataPublicacao = DateTime.parse(json['dataPublicacao']);
     }
   }
 
-  // Método para converter uma lista de JSON para uma lista de objetos Data
-  static List<Data> fromJsonList(List<dynamic> jsonList) {
+  static List<Comunicado> fromJsonList(List<dynamic> jsonList) {
     return jsonList
-        .map((item) => Data.fromJson(Map<String, dynamic>.from(item)))
+        .map((item) => Comunicado.fromJson(Map<String, dynamic>.from(item)))
         .toList();
   }
 
-  // Método para converter de JSON para a classe Data
-  Data.fromJson2(Map<String, dynamic> json) {
+  Comunicado.fromJson2(Map<String, dynamic> json) {
     if (json['comunicacaoDTO'] != null && json['comunicacaoDTO'].isNotEmpty) {
       var comunicacaoDTO = json['comunicacaoDTO'][0];
       id = comunicacaoDTO['id'];
@@ -98,23 +82,85 @@ class Data {
       titulo = comunicacaoDTO['titulo'];
       conteudo = comunicacaoDTO['conteudo'];
       autor = comunicacaoDTO['autor'];
-      categoria = comunicacaoDTO['categoria'];
+      setor = comunicacaoDTO['setor'] != null
+          ? Setor.fromJson(comunicacaoDTO['setor'])
+          : null;
       dataPublicacao = comunicacaoDTO['dataPublicacao'];
       dhUpdatedAt = comunicacaoDTO['dhUpdatedAt'];
     }
   }
 
-  // Método para converter uma lista de JSON para uma lista de objetos Data
-  static List<Data> fromJsonList2(List<Map<String, dynamic>> jsonList) {
-    List<Data> dataList = [];
-    for (var json in jsonList) {
-      // dataList.add(Data.fromJson(json));
-    }
+  static List<Comunicado> fromJsonList2(List<Map<String, dynamic>> jsonList) {
+    List<Comunicado> dataList = [];
+    for (var json in jsonList) {}
     return dataList;
   }
 
-  // Método para converter uma lista de mapas para uma lista de objetos Data
-  // static List<Data> fromJsonList(List<Map<String, dynamic>> jsonList) {
-  //   return jsonList.map((json) => Data.fromJson(json)).toList();
-  // }
+  static Future<List<Map<String, dynamic>>> loadCategorias() async {
+    final NetworkResponse response = await NetworkCaller().getRequest(
+      ApiLinks.getCategorias,
+    );
+
+    if (response.isSuccess && response.body != null) {
+      final List<dynamic> data = response.body!['data']['account'] ?? [];
+      return data
+          .map(
+            (item) => {
+              'value': item['id'].toString(),
+              'label': item['descricao'],
+            },
+          )
+          .toList();
+    }
+    return [];
+  }
+
+  static List<FieldConfig> fieldConfigs = [
+    FieldConfig(
+      label: "Título",
+      fieldName: "titulo",
+      icon: Icons.title,
+      isFilterable: true,
+      isInForm: true,
+      isRequired: true,
+      validator: (value) {
+        if (value == null || value.isEmpty) return 'Título é obrigatório';
+        if (value.length < 3) return 'Título deve ter pelo menos 3 caracteres';
+        return null;
+      },
+    ),
+    FieldConfig(
+      label: "Conteúdo",
+      fieldName: "conteudo",
+      icon: Icons.description,
+      isFilterable: true,
+      isInForm: true,
+      maxLines: 3,
+      fieldType: FieldType.multiline,
+      isRequired: true,
+    ),
+    FieldConfig(
+      label: "Categoria",
+      fieldName: "setor",
+      icon: Icons.category,
+      isFilterable: true,
+      isInForm: true,
+      fieldType: FieldType.dropdown,
+      dropdownFutureBuilder: () async {
+        // Sua função que retorna um Future<List<Map<String, dynamic>>>
+        return await loadCategorias();
+      },
+      dropdownValueField: 'id',
+      dropdownDisplayField: 'descricao',
+      isRequired: true,
+    ),
+    FieldConfig(
+      label: "Autor",
+      fieldName: "autor",
+      icon: Icons.person,
+      isFilterable: true,
+      isInForm: true,
+      isRequired: true,
+    ),
+  ];
 }
