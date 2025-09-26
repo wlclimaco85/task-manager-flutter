@@ -3,7 +3,7 @@
     "activeCommit": 0,
     "commits": [
         {
-            "activePatchIndex": 57,
+            "activePatchIndex": 58,
             "patches": [
                 {
                     "date": 1707188005314,
@@ -236,6 +236,10 @@
                 {
                     "date": 1758657873563,
                     "content": "Index: \n===================================================================\n--- \n+++ \n@@ -63,8 +63,9 @@\n   path: ^1.8.2\r\n   file_selector_windows: ^0.9.3+4\r\n   syncfusion_flutter_datagrid: ^31.1.18\r\n   data_table_2: ^2.5.8\r\n+  file_saver: ^0.1.1\r\n dev_dependencies:\r\n   flutter_test:\r\n     sdk: flutter\r\n \r\n"
+                },
+                {
+                    "date": 1758826473873,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -64,8 +64,9 @@\n   file_selector_windows: ^0.9.3+4\r\n   syncfusion_flutter_datagrid: ^31.1.18\r\n   data_table_2: ^2.5.8\r\n   file_saver: ^0.1.1\r\n+  time_machine: ^0.9.0 # Check for the latest version on pub.dev\r\n dev_dependencies:\r\n   flutter_test:\r\n     sdk: flutter\r\n \r\n"
                 }
             ],
             "date": 1707188005314,

@@ -202,10 +202,10 @@ class ApiLinks {
   static String deleteRole(String id) => '$_baseUrlNew/api/roles/delete/$id';
 
   // Setor
-  static String allSetores = '$_baseUrlNew/api/setores';
-  static String createSetor = '$_baseUrlNew/api/setores/insert';
-  static String updateSetor(String id) => '$_baseUrlNew/api/setores/update/$id';
-  static String deleteSetor(String id) => '$_baseUrlNew/api/setores/delete/$id';
+  static String allSetores = '$_baseUrlNew/api/setor';
+  static String createSetor = '$_baseUrlNew/api/setor';
+  static String updateSetor(String id) => '$_baseUrlNew/api/setor/update/$id';
+  static String deleteSetor(String id) => '$_baseUrlNew/api/setor/delete/$id';
 
   // Suplemento
   static String allSuplementos = '$_baseUrlNew/api/suplementos';
@@ -297,4 +297,13 @@ class ApiLinks {
   static String get fecthAllAlerts => '$_baseUrlNew/api/alert';
 
   static String get fecthAUpload => '$_baseUrlNew/api/files/upload';
+
+  // Arquivos
+  static String get allObrigacaoFiscal => '$_baseUrlNew/api/obrigacoes-fiscais';
+  static String get createObrigacaoFiscal =>
+      '$_baseUrlNew/api/obrigacoes-fiscais';
+  static String updateObrigacaoFiscal(String id) =>
+      '$_baseUrlNew/api/obrigacoes-fiscais/$id';
+  static String deleteObrigacaoFiscal(String id) =>
+      '$_baseUrlNew/api/obrigacoes-fiscais/$id';
 }

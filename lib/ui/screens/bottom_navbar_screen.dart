@@ -7,6 +7,7 @@ import 'package:task_manager_flutter/data/constants/custom_colors.dart';
 import 'package:task_manager_flutter/data/models/alert_model.dart';
 import 'package:task_manager_flutter/data/models/auth_utility.dart';
 import 'package:task_manager_flutter/data/models/login_2_model.dart';
+import 'package:task_manager_flutter/data/models/obrigacao_fiscal_model.dart';
 import 'package:task_manager_flutter/data/services/alert_caller.dart';
 // GridScreens
 import 'package:task_manager_flutter/ui/screens/alimento_grid_screen.dart';
@@ -40,7 +41,7 @@ import 'package:task_manager_flutter/ui/screens/forma_pagamento_grid_screen.dart
 import 'package:task_manager_flutter/ui/screens/diretorio_grid_screen.dart';
 import 'documento_screen.dart';
 import 'package:task_manager_flutter/ui/screens/auth_screens/login_screen.dart';
-
+import 'package:task_manager_flutter/ui/screens/obrigacao_fiscal_grid_screen.dart';
 import 'package:task_manager_flutter/ui/screens/file_upload_screen.dart';
 
 class BottomNavBarScreen extends StatefulWidget {
@@ -118,6 +119,7 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
         DiretorioGridScreen(hasPermission: (perm) => true),
         FileUploadScreen(hasPermission: (perm) => true),
         CalendarScreen(),
+        ObrigacaoFiscalGridScreen(hasPermission: (perm) => true),
       ];
     } else {
       // Usuário não logado → só mostra login
@@ -161,7 +163,11 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
     ),
     SidebarItem(icon: FontAwesomeIcons.dribbble, label: "Diretorios"),
     SidebarItem(icon: FontAwesomeIcons.file, label: "Arquivos"),
-    SidebarItem(icon: FontAwesomeIcons.file, label: "Arquivos"),
+    SidebarItem(icon: FontAwesomeIcons.calendar, label: "Calendario "),
+    SidebarItem(
+      icon: FontAwesomeIcons.fileInvoiceDollar,
+      label: "Obrigações Fiscais",
+    ),
   ];
 
   @override
