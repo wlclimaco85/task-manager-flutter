@@ -93,7 +93,7 @@ class FieldConfig {
   final FileConfig? fileConfig;
   final dynamic dropdownSelectedValue;
   final Map<String, dynamic>? fieldSpecificConfig;
-  final bool showInCard; // Nova propriedade para controlar se aparece no card
+  final bool showInCard;
 
   const FieldConfig({
     required this.label,
@@ -184,7 +184,7 @@ class GenericMobileGridScreen<T> extends StatefulWidget {
   final String storageKey;
   final Widget Function(T item)? detailScreenBuilder;
   final Map<String, dynamic>? extraParams;
-  final bool enableDebugMode; // Nova propriedade para modo debug
+  final bool enableDebugMode;
 
   const GenericMobileGridScreen({
     super.key,
@@ -207,7 +207,7 @@ class GenericMobileGridScreen<T> extends StatefulWidget {
     this.storageKey = 'generic_mobile_grid_settings',
     this.detailScreenBuilder,
     this.extraParams,
-    this.enableDebugMode = false, // Modo debug desligado por padrão
+    this.enableDebugMode = false,
   });
 
   @override
@@ -238,7 +238,6 @@ class _GenericMobileGridScreenState<T>
   final Map<String, bool> _fieldVisibility = {};
   List<CustomAction<T>> _customActions = [];
 
-  // Novos estados para controle de visualização
   bool _isSelectionMode = false;
   final Map<String, bool> _cardSelection = {};
   T? _itemParaEditar;
@@ -247,12 +246,10 @@ class _GenericMobileGridScreenState<T>
   void initState() {
     super.initState();
 
-    // Inicializar visibilidade dos campos
     for (final config in widget.fieldConfigs) {
       _fieldVisibility[config.fieldName] = config.isVisibleByDefault;
     }
 
-    // Inicializar controladores de filtro
     for (final config in widget.fieldConfigs.where((c) => c.isFilterable)) {
       _filterControllers[config.fieldName] = TextEditingController();
     }
@@ -273,7 +270,6 @@ class _GenericMobileGridScreenState<T>
       _customActions = widget.customActions!();
     }
 
-    // Adicionar ação de debug se habilitado
     if (widget.enableDebugMode) {
       _customActions.add(
         CustomAction<T>(
@@ -284,7 +280,6 @@ class _GenericMobileGridScreenState<T>
       );
     }
 
-    // Configurar scroll infinito
     _scrollController.addListener(_onScroll);
   }
 
@@ -397,14 +392,12 @@ class _GenericMobileGridScreenState<T>
   }
 
   String _buildUrl(int page) {
-    String url = '${widget.fetchEndpoint}?pagina=$page&tamanho=$_itemsPerPage';
+    String url = '${widget.fetchEndpoint}?page=$page&size=$_itemsPerPage';
 
-    // Adicionar busca
     if (_searchController.text.isNotEmpty) {
-      url += '&busca=${Uri.encodeComponent(_searchController.text)}';
+      url += '&search=${Uri.encodeComponent(_searchController.text)}';
     }
 
-    // Adicionar filtros
     for (final config in widget.fieldConfigs.where((c) => c.isFilterable)) {
       final filterValue = _filterControllers[config.fieldName]?.text;
       if (filterValue != null && filterValue.isNotEmpty) {
@@ -467,7 +460,7 @@ class _GenericMobileGridScreenState<T>
     });
   }
 
-  // MÉTODO CORRIGIDO: Abrir formulário de adição/edição
+  // FORMULÁRIO MELHORADO - MATERIAL DESIGN
   void _openForm({T? item}) {
     _itemParaEditar = item;
 
@@ -481,46 +474,246 @@ class _GenericMobileGridScreenState<T>
     final Map<String, dynamic> itemData =
         item != null ? widget.toJson(item) : {};
     final Map<String, TextEditingController> formControllers = {};
+    final Map<String, dynamic> dropdownValues = {};
 
-    // Inicializar controladores com dados existentes ou vazios
+    item != null ? widget.toJson(item) : {};
+
+    // Limpar valores anteriores
+    _dropdownValues.clear();
+
+    // Inicializar controladores
     for (final config in widget.fieldConfigs.where((c) => c.isInForm)) {
-      formControllers[config.fieldName] = TextEditingController(
-        text: _getNestedValue(itemData, config.fieldName)?.toString() ?? '',
-      );
+      final initialValue =
+          _getNestedValue(itemData, config.fieldName)?.toString() ?? '';
+      formControllers[config.fieldName] =
+          TextEditingController(text: initialValue);
+
+      // ✅ INICIALIZAR dropdownValues também
+      if (config.fieldType == FieldType.dropdown) {
+        _dropdownValues[config.fieldName] =
+            initialValue.isEmpty ? null : initialValue;
+      }
     }
 
-    return AlertDialog(
-      title: Text(item == null ? 'Adicionar Novo' : 'Editar'),
-      content: SingleChildScrollView(
+    return Dialog(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      child: Container(
+        constraints: BoxConstraints(
+            maxWidth: 500, maxHeight: MediaQuery.of(context).size.height * 0.8),
+        padding: const EdgeInsets.all(20),
         child: Column(
           mainAxisSize: MainAxisSize.min,
-          children: widget.fieldConfigs
-              .where((config) => config.isInForm)
-              .map((config) => Padding(
-                    padding: const EdgeInsets.only(bottom: 12),
-                    child: TextField(
-                      controller: formControllers[config.fieldName],
-                      decoration: InputDecoration(
-                        labelText: config.label,
-                        border: const OutlineInputBorder(),
-                      ),
-                      maxLines: config.fieldType == FieldType.multiline ? 3 : 1,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            // Header
+            Row(
+              children: [
+                Icon(Icons.edit, color: GridColors.primary, size: 24),
+                const SizedBox(width: 8),
+                Text(
+                  item == null ? 'Adicionar Novo' : 'Editar Item',
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    color: GridColors.primary,
+                  ),
+                ),
+                const Spacer(),
+                IconButton(
+                  icon: const Icon(Icons.close),
+                  onPressed: () => Navigator.pop(context),
+                ),
+              ],
+            ),
+
+            const SizedBox(height: 20),
+
+            // Campos do formulário
+            Expanded(
+              child: SingleChildScrollView(
+                child: Column(
+                  children: widget.fieldConfigs
+                      .where((config) => config.isInForm)
+                      .map((config) => _buildFormField(
+                          config, formControllers[config.fieldName]!))
+                      .toList(),
+                ),
+              ),
+            ),
+
+            const SizedBox(height: 20),
+
+            // Botões de ação
+            Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton(
+                    onPressed: () => Navigator.pop(context),
+                    child: const Text('Cancelar'),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: ElevatedButton(
+                    onPressed: () => _saveForm(item, formControllers, context),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: GridColors.primary,
+                      foregroundColor: Colors.white,
                     ),
-                  ))
-              .toList(),
+                    child: Text(item == null ? 'Adicionar' : 'Salvar'),
+                  ),
+                ),
+              ],
+            ),
+          ],
         ),
       ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(context),
-          child: const Text('Cancelar'),
+    );
+  }
+
+  Widget _buildFormField(FieldConfig config, TextEditingController controller) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            config.label + (config.isRequired ? ' *' : ''),
+            style: TextStyle(
+              fontWeight: FontWeight.w500,
+              color: GridColors.textSecondary,
+            ),
+          ),
+          const SizedBox(height: 4),
+          if (config.fieldType == FieldType.dropdown)
+            _buildDropdownField(config, controller)
+          else if (config.fieldType == FieldType.boolean)
+            _buildBooleanField(config, controller)
+          else if (config.fieldType == FieldType.multiline)
+            _buildMultilineField(config, controller)
+          else
+            _buildTextField(config, controller),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTextField(FieldConfig config, TextEditingController controller) {
+    return TextField(
+      controller: controller,
+      decoration: InputDecoration(
+        hintText: 'Digite ${config.label.toLowerCase()}',
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(8),
+          borderSide: BorderSide(color: GridColors.inputBorder),
         ),
-        ElevatedButton(
-          onPressed: () => _saveForm(item, formControllers, context),
-          child: Text(item == null ? 'Adicionar' : 'Salvar'),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(8),
+          borderSide: BorderSide(color: GridColors.primary, width: 2),
         ),
+      ),
+      keyboardType: _getKeyboardType(config.fieldType),
+      maxLines: config.maxLines,
+    );
+  }
+
+  Widget _buildMultilineField(
+      FieldConfig config, TextEditingController controller) {
+    return TextField(
+      controller: controller,
+      decoration: InputDecoration(
+        hintText: 'Digite ${config.label.toLowerCase()}',
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(8),
+          borderSide: BorderSide(color: GridColors.inputBorder),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(8),
+          borderSide: BorderSide(color: GridColors.primary, width: 2),
+        ),
+      ),
+      maxLines: 4,
+      minLines: 3,
+    );
+  }
+
+  Widget _buildBooleanField(
+      FieldConfig config, TextEditingController controller) {
+    return Row(
+      children: [
+        Checkbox(
+          value: controller.text.toLowerCase() == 'true',
+          onChanged: (value) {
+            controller.text = value.toString();
+            setState(() {});
+          },
+        ),
+        Text(config.label),
       ],
     );
+  }
+
+  // NOVO: Adicione esta variável no início da classe _GenericMobileGridScreenState
+  final Map<String, String?> _dropdownValues = {};
+  Widget _buildDropdownField(
+      FieldConfig config, TextEditingController controller) {
+    final options = config.dropdownOptions ?? [];
+    final currentValue = controller.text.isEmpty ? null : controller.text;
+
+    return Container(
+      decoration: BoxDecoration(
+        border: Border.all(color: GridColors.inputBorder),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      padding: const EdgeInsets.symmetric(horizontal: 12),
+      child: DropdownButton<String>(
+        isExpanded: true,
+        value: currentValue, // Diretamente do controller
+        hint: const Text('Selecione uma opção'),
+        underline: const SizedBox(),
+        items: [
+          // Item explícito para "nenhum valor"
+          const DropdownMenuItem<String>(
+            value: null,
+            child: Text('Selecione uma opção',
+                style: TextStyle(color: Colors.grey)),
+          ),
+          ...options.map<DropdownMenuItem<String>>((option) {
+            final value = option[config.dropdownValueField]?.toString() ?? '';
+            final label =
+                option[config.dropdownDisplayField]?.toString() ?? value;
+            return DropdownMenuItem(
+              value: value,
+              child: Text(label),
+            );
+          }),
+        ],
+        onChanged: (String? newValue) {
+          setState(() {
+            if (newValue == null) {
+              controller.clear();
+            } else {
+              controller.text = newValue;
+            }
+          });
+        },
+      ),
+    );
+  }
+
+  TextInputType _getKeyboardType(FieldType fieldType) {
+    switch (fieldType) {
+      case FieldType.number:
+        return TextInputType.number;
+      case FieldType.email:
+        return TextInputType.emailAddress;
+      case FieldType.phone:
+        return TextInputType.phone;
+      case FieldType.multiline:
+        return TextInputType.multiline;
+      default:
+        return TextInputType.text;
+    }
   }
 
   Future<void> _saveForm(
@@ -540,9 +733,8 @@ class _GenericMobileGridScreenState<T>
       final endpoint = item == null
           ? widget.createEndpoint
           : widget.updateEndpoint.replaceFirst(':id', _getItemId(item));
-      final method = item == null ? 'POST' : 'PUT';
 
-      final NetworkResponse response = method == 'POST'
+      final NetworkResponse response = item == null
           ? await NetworkCaller().postRequest(endpoint, formData)
           : await NetworkCaller().putRequest(endpoint, formData);
 
@@ -615,49 +807,72 @@ class _GenericMobileGridScreenState<T>
     );
   }
 
-  // NOVO MÉTODO: Mostrar todos os campos em modo debug
+  // BOTÃO DEBUG - MOSTRAR TODOS OS CAMPOS
   void _showAllFieldsDebug(BuildContext context, T item) {
     final itemMap = widget.toJson(item);
 
     showDialog(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Todos os Campos (Debug)'),
-        content: SingleChildScrollView(
+      builder: (ctx) => Dialog(
+        child: Container(
+          padding: const EdgeInsets.all(20),
+          width: MediaQuery.of(context).size.width * 0.9,
+          height: MediaQuery.of(context).size.height * 0.8,
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: itemMap.entries.map((entry) {
-              return Padding(
-                padding: const EdgeInsets.only(bottom: 8),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    SizedBox(
-                      width: 120,
-                      child: Text(
-                        '${entry.key}:',
-                        style: const TextStyle(fontWeight: FontWeight.bold),
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        entry.value?.toString() ?? 'null',
-                        style: const TextStyle(fontSize: 14),
-                      ),
-                    ),
-                  ],
+            children: [
+              Text(
+                'DEBUG - Todos os Campos',
+                style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: GridColors.primary),
+              ),
+              const SizedBox(height: 16),
+              Expanded(
+                child: SingleChildScrollView(
+                  child: Column(
+                    children: itemMap.entries.map((entry) {
+                      return Container(
+                        margin: const EdgeInsets.only(bottom: 8),
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          border: Border.all(color: GridColors.divider),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            SizedBox(
+                              width: 150,
+                              child: Text(
+                                entry.key,
+                                style: const TextStyle(
+                                    fontWeight: FontWeight.bold),
+                              ),
+                            ),
+                            const SizedBox(width: 16),
+                            Expanded(
+                              child: Text(
+                                entry.value?.toString() ?? 'null',
+                                style:
+                                    TextStyle(color: GridColors.textSecondary),
+                              ),
+                            ),
+                          ],
+                        ),
+                      );
+                    }).toList(),
+                  ),
                 ),
-              );
-            }).toList(),
+              ),
+              const SizedBox(height: 16),
+              ElevatedButton(
+                onPressed: () => Navigator.pop(ctx),
+                child: const Text('Fechar'),
+              ),
+            ],
           ),
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text('Fechar'),
-          ),
-        ],
       ),
     );
   }
@@ -726,10 +941,7 @@ class _GenericMobileGridScreenState<T>
                 ),
                 onChanged: (_) => _applyFilters(),
               ),
-
             const SizedBox(height: 16),
-
-            // Filtros por campo
             ...widget.fieldConfigs.where((c) => c.isFilterable).map((config) {
               return Padding(
                 padding: const EdgeInsets.only(bottom: 8),
@@ -743,9 +955,7 @@ class _GenericMobileGridScreenState<T>
                 ),
               );
             }),
-
             const SizedBox(height: 16),
-
             Row(
               children: [
                 Expanded(
@@ -805,7 +1015,6 @@ class _GenericMobileGridScreenState<T>
                       onChanged: (value) =>
                           _toggleCardSelection(id, value ?? false),
                     ),
-
                   if (_fieldVisibility[widget.idFieldName] == true)
                     Container(
                       padding: const EdgeInsets.symmetric(
@@ -823,22 +1032,17 @@ class _GenericMobileGridScreenState<T>
                         ),
                       ),
                     ),
-
                   const Spacer(),
-
-                  // Badge de status se existir
                   if (_hasStatusField(itemMap)) _buildStatusBadge(itemMap),
                 ],
               ),
 
               const SizedBox(height: 8),
 
-              // Campos visíveis que devem aparecer no card
               ..._buildVisibleFieldsForCard(itemMap),
 
               const SizedBox(height: 8),
 
-              // Ações (apenas quando não está em modo seleção)
               if (!_isSelectionMode) _buildCardActions(item, itemMap),
             ],
           ),
@@ -852,8 +1056,7 @@ class _GenericMobileGridScreenState<T>
         .where((config) =>
             _fieldVisibility[config.fieldName] == true &&
             config.fieldName != widget.idFieldName &&
-            config
-                .showInCard) // Nova propriedade para controlar exibição no card
+            config.showInCard)
         .toList();
 
     return visibleConfigs.map((config) {
@@ -936,14 +1139,12 @@ class _GenericMobileGridScreenState<T>
     return Row(
       mainAxisAlignment: MainAxisAlignment.end,
       children: [
-        // Botão de Debug para ver todos os campos
         if (widget.enableDebugMode)
           IconButton(
             icon: const Icon(Icons.bug_report, size: 20),
             onPressed: () => _showAllFieldsDebug(context, item),
             tooltip: 'Ver todos os campos',
           ),
-
         if (widget.detailScreenBuilder != null && widget.hasPermission('view'))
           IconButton(
             icon: const Icon(Icons.visibility, size: 20),
@@ -956,14 +1157,12 @@ class _GenericMobileGridScreenState<T>
             },
             tooltip: 'Visualizar',
           ),
-
         if (widget.hasPermission('edit'))
           IconButton(
             icon: const Icon(Icons.edit, size: 20),
             onPressed: () => _openForm(item: item),
             tooltip: 'Editar',
           ),
-
         if (widget.hasPermission('delete'))
           IconButton(
             icon: const Icon(Icons.delete, size: 20),
@@ -971,8 +1170,6 @@ class _GenericMobileGridScreenState<T>
                 _getNestedValue(itemMap, widget.idFieldName).toString()),
             tooltip: 'Excluir',
           ),
-
-        // Ações customizadas
         ..._customActions
             .where((action) => action.isVisible?.call(item) ?? true)
             .map(
@@ -1113,10 +1310,7 @@ class _GenericMobileGridScreenState<T>
           : null,
       body: Column(
         children: [
-          // Filtros
           if (filtrosAbertos) _buildFilters(),
-
-          // Contador de resultados
           Padding(
             padding: const EdgeInsets.all(8.0),
             child: Row(
@@ -1137,8 +1331,6 @@ class _GenericMobileGridScreenState<T>
               ],
             ),
           ),
-
-          // Lista de cards
           Expanded(
             child: RefreshIndicator(
               onRefresh: () => _loadItems(reset: true),

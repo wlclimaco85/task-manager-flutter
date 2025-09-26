@@ -46,7 +46,7 @@ class _ChatMessageScreenState extends State<ChatMessageScreen> {
   void _connectWebSocket() {
     try {
       _channel = IOWebSocketChannel.connect(
-        ApiLinks.chatStart(widget.userName, widget.sector),
+        ApiLinks.chatStart('Washington', widget.sector),
       );
 
       _channel.stream.listen(
