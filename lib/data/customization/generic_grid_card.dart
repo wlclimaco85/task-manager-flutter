@@ -119,7 +119,7 @@ class FieldConfig {
     this.fileConfig,
     this.dropdownSelectedValue,
     this.fieldSpecificConfig,
-    this.showInCard = true, // Padrão é true
+    this.showInCard = true,
   });
 }
 
@@ -460,10 +460,8 @@ class _GenericMobileGridScreenState<T>
     });
   }
 
-  // FORMULÁRIO MELHORADO - MATERIAL DESIGN
   void _openForm({T? item}) {
     _itemParaEditar = item;
-
     showDialog(
       context: context,
       builder: (context) => _buildFormDialog(item),
@@ -474,25 +472,12 @@ class _GenericMobileGridScreenState<T>
     final Map<String, dynamic> itemData =
         item != null ? widget.toJson(item) : {};
     final Map<String, TextEditingController> formControllers = {};
-    final Map<String, dynamic> dropdownValues = {};
 
-    item != null ? widget.toJson(item) : {};
-
-    // Limpar valores anteriores
-    _dropdownValues.clear();
-
-    // Inicializar controladores
     for (final config in widget.fieldConfigs.where((c) => c.isInForm)) {
       final initialValue =
           _getNestedValue(itemData, config.fieldName)?.toString() ?? '';
       formControllers[config.fieldName] =
           TextEditingController(text: initialValue);
-
-      // ✅ INICIALIZAR dropdownValues também
-      if (config.fieldType == FieldType.dropdown) {
-        _dropdownValues[config.fieldName] =
-            initialValue.isEmpty ? null : initialValue;
-      }
     }
 
     return Dialog(
@@ -505,7 +490,6 @@ class _GenericMobileGridScreenState<T>
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            // Header
             Row(
               children: [
                 Icon(Icons.edit, color: GridColors.primary, size: 24),
@@ -525,10 +509,7 @@ class _GenericMobileGridScreenState<T>
                 ),
               ],
             ),
-
             const SizedBox(height: 20),
-
-            // Campos do formulário
             Expanded(
               child: SingleChildScrollView(
                 child: Column(
@@ -540,10 +521,7 @@ class _GenericMobileGridScreenState<T>
                 ),
               ),
             ),
-
             const SizedBox(height: 20),
-
-            // Botões de ação
             Row(
               children: [
                 Expanded(
@@ -653,52 +631,108 @@ class _GenericMobileGridScreenState<T>
     );
   }
 
-  // NOVO: Adicione esta variável no início da classe _GenericMobileGridScreenState
-  final Map<String, String?> _dropdownValues = {};
+  // DROPDOWN CORRIGIDO - FUNCIONANDO IGUAL AO WINDOWS
   Widget _buildDropdownField(
       FieldConfig config, TextEditingController controller) {
     final options = config.dropdownOptions ?? [];
-    final currentValue = controller.text.isEmpty ? null : controller.text;
+    bool expectInteger = _isIntegerField(config);
+    dynamic currentValue = _getCurrentValue(config, controller);
 
-    return Container(
-      decoration: BoxDecoration(
-        border: Border.all(color: GridColors.inputBorder),
-        borderRadius: BorderRadius.circular(8),
-      ),
-      padding: const EdgeInsets.symmetric(horizontal: 12),
-      child: DropdownButton<String>(
-        isExpanded: true,
-        value: currentValue, // Diretamente do controller
-        hint: const Text('Selecione uma opção'),
-        underline: const SizedBox(),
-        items: [
-          // Item explícito para "nenhum valor"
-          const DropdownMenuItem<String>(
-            value: null,
-            child: Text('Selecione uma opção',
-                style: TextStyle(color: Colors.grey)),
-          ),
-          ...options.map<DropdownMenuItem<String>>((option) {
-            final value = option[config.dropdownValueField]?.toString() ?? '';
-            final label =
-                option[config.dropdownDisplayField]?.toString() ?? value;
-            return DropdownMenuItem(
-              value: value,
-              child: Text(label),
-            );
-          }),
-        ],
-        onChanged: (String? newValue) {
-          setState(() {
-            if (newValue == null) {
-              controller.clear();
-            } else {
-              controller.text = newValue;
-            }
-          });
-        },
-      ),
+    final validOptions = options.whereType<Map<String, dynamic>>().toList();
+
+    final uniqueOptions = validOptions
+        .fold<Map<dynamic, Map<String, dynamic>>>({}, (map, item) {
+          dynamic key = item[config.dropdownValueField];
+          if (key != null && !map.containsKey(key)) {
+            map[key] = item;
+          }
+          return map;
+        })
+        .values
+        .toList();
+
+    bool valueExists = uniqueOptions.any(
+      (option) => option[config.dropdownValueField] == currentValue,
     );
+
+    if (!valueExists && config.dropdownSelectedValue != null) {
+      currentValue = config.dropdownSelectedValue;
+    } else if (!valueExists) {
+      currentValue = null;
+    }
+
+    return DropdownButtonFormField<dynamic>(
+      value: currentValue,
+      decoration: InputDecoration(
+        labelText: config.label + (config.isRequired ? ' *' : ''),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(8),
+          borderSide: BorderSide(color: GridColors.inputBorder),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(8),
+          borderSide: BorderSide(color: GridColors.primary, width: 2),
+        ),
+      ),
+      isExpanded: true,
+      items: [
+        if (!config.isRequired)
+          DropdownMenuItem<dynamic>(
+            value: null,
+            child: Text(
+              'Selecione uma opção',
+              style: TextStyle(color: Colors.grey),
+            ),
+          ),
+        ...uniqueOptions.map<DropdownMenuItem<dynamic>>((option) {
+          final optionValue = option[config.dropdownValueField];
+          final optionLabel = option[config.dropdownDisplayField]?.toString() ??
+              optionValue.toString();
+          return DropdownMenuItem<dynamic>(
+            value: optionValue,
+            child: Text(optionLabel),
+          );
+        }),
+      ],
+      onChanged: (dynamic newValue) {
+        setState(() {
+          if (newValue == null) {
+            controller.clear();
+          } else {
+            controller.text = newValue.toString();
+          }
+        });
+      },
+      validator: (dynamic value) {
+        // Use 'dynamic' instead of 'String?'
+        if (value == null || value.toString().isEmpty) {
+          return 'This field is required';
+        }
+        return null;
+      },
+    );
+  }
+
+  bool _isIntegerField(FieldConfig config) {
+    return config.dropdownValueField == 'id' ||
+        config.fieldName.toLowerCase().contains('id');
+  }
+
+  dynamic _getCurrentValue(
+      FieldConfig config, TextEditingController controller) {
+    bool expectInteger = _isIntegerField(config);
+
+    if (controller.text.isNotEmpty) {
+      if (expectInteger) {
+        return int.tryParse(controller.text);
+      } else {
+        return controller.text;
+      }
+    } else if (config.defaultValue != null) {
+      return config.defaultValue;
+    } else {
+      return null;
+    }
   }
 
   TextInputType _getKeyboardType(FieldType fieldType) {
@@ -807,7 +841,6 @@ class _GenericMobileGridScreenState<T>
     );
   }
 
-  // BOTÃO DEBUG - MOSTRAR TODOS OS CAMPOS
   void _showAllFieldsDebug(BuildContext context, T item) {
     final itemMap = widget.toJson(item);
 
@@ -1006,7 +1039,6 @@ class _GenericMobileGridScreenState<T>
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Header com seleção e ID
               Row(
                 children: [
                   if (_isSelectionMode)
@@ -1036,13 +1068,9 @@ class _GenericMobileGridScreenState<T>
                   if (_hasStatusField(itemMap)) _buildStatusBadge(itemMap),
                 ],
               ),
-
               const SizedBox(height: 8),
-
               ..._buildVisibleFieldsForCard(itemMap),
-
               const SizedBox(height: 8),
-
               if (!_isSelectionMode) _buildCardActions(item, itemMap),
             ],
           ),

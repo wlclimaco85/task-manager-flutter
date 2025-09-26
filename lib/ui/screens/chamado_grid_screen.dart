@@ -1,4 +1,3 @@
-// lib/ui/screens/chamado_grid_screen.dart
 import 'package:flutter/material.dart';
 import 'package:task_manager_flutter/data/models/chamado_model.dart';
 import 'package:task_manager_flutter/data/utils/api_links.dart';
@@ -29,12 +28,11 @@ class ChamadoGridScreen extends StatelessWidget {
         ),
         enableSearch: true,
         customActions: () => [
-          // A função deve retornar uma List<CustomAction<Chamado>>
           CustomAction<Chamado>(
             icon: Icons.assignment_turned_in,
             label: 'Fechar Chamado',
             onPressed: (context, item) {
-              // Sua lógica para fechar o chamado aqui
+              _showCloseChamadoDialog(context, [item]);
             },
           ),
         ],
@@ -43,29 +41,38 @@ class ChamadoGridScreen extends StatelessWidget {
   }
 
   void _showCloseChamadoDialog(
-      BuildContext context, List<dynamic> selectedItems) {
+      BuildContext context, List<Chamado> selectedItems) {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text('Fechar Chamados'),
+        title: const Text('Fechar Chamados'),
         content: Text('Deseja fechar ${selectedItems.length} chamado(s)?'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: Text('Cancelar'),
+            child: const Text('Cancelar'),
           ),
           ElevatedButton(
             onPressed: () {
               // Implementar lógica de fechamento
+              _fecharChamados(selectedItems);
               Navigator.pop(context);
               ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text('Chamados fechados com sucesso!')),
+                const SnackBar(content: Text('Chamados fechados com sucesso!')),
               );
             },
-            child: Text('Confirmar'),
+            child: const Text('Confirmar'),
           ),
         ],
       ),
     );
+  }
+
+  void _fecharChamados(List<Chamado> chamados) {
+    // Implementar a lógica de fechamento dos chamados
+    for (var chamado in chamados) {
+      // Lógica para fechar cada chamado
+      print('Fechando chamado: ${chamado.id}');
+    }
   }
 }

@@ -1,14 +1,13 @@
 import 'package:flutter/material.dart';
-import 'parceiro_model.dart';
-import 'login_model.dart';
 import 'package:task_manager_flutter/data/models/network_response.dart';
 import 'package:task_manager_flutter/data/services/network_caller.dart';
 import 'package:task_manager_flutter/data/utils/api_links.dart';
-import 'package:time_machine/time_machine.dart';
+
 import '../customization/generic_grid_card.dart';
 import 'empresa_model.dart';
+import 'login_model.dart';
+import 'parceiro_model.dart';
 import 'setor_model.dart';
-import 'package:task_manager_flutter/data/utils/api_links.dart';
 
 enum StatusChamadoEnum {
   ABERTO(1, "Aberto"),
