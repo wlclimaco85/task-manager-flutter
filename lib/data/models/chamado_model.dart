@@ -146,7 +146,7 @@ class Chamado {
   }
 
   static List<FieldConfig> fieldConfigs = [
-    FieldConfig(
+    const FieldConfig(
       label: "Título",
       fieldName: "titulo",
       icon: Icons.title,
@@ -156,7 +156,7 @@ class Chamado {
       isFixed: false,
       fieldType: FieldType.text,
     ),
-    FieldConfig(
+    const FieldConfig(
       label: "Descrição",
       fieldName: "descricao",
       icon: Icons.description,
@@ -165,7 +165,7 @@ class Chamado {
       isFixed: false,
       fieldType: FieldType.text,
     ),
-    FieldConfig(
+    const FieldConfig(
       label: "Status",
       fieldName: "status",
       icon: Icons.info,

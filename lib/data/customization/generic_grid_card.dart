@@ -631,84 +631,112 @@ class _GenericMobileGridScreenState<T>
     );
   }
 
-  // DROPDOWN CORRIGIDO - FUNCIONANDO IGUAL AO WINDOWS
   Widget _buildDropdownField(
       FieldConfig config, TextEditingController controller) {
-    final options = config.dropdownOptions ?? [];
-    bool expectInteger = _isIntegerField(config);
-    dynamic currentValue = _getCurrentValue(config, controller);
+    return FutureBuilder<List<Map<String, dynamic>>>(
+      future: config.dropdownFutureBuilder?.call(),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const CircularProgressIndicator();
+        }
 
-    final validOptions = options.whereType<Map<String, dynamic>>().toList();
+        if (snapshot.hasError) {
+          return Text('Erro: ${snapshot.error}');
+        }
 
-    final uniqueOptions = validOptions
-        .fold<Map<dynamic, Map<String, dynamic>>>({}, (map, item) {
-          dynamic key = item[config.dropdownValueField];
-          if (key != null && !map.containsKey(key)) {
-            map[key] = item;
+        final options = snapshot.data ?? [];
+
+        // GARANTIR VALORES ÚNICOS - CRÍTICO
+        final uniqueOptions = <dynamic, Map<String, dynamic>>{};
+        for (final option in options) {
+          try {
+            final value = option[config.dropdownValueField];
+            if (value != null && !uniqueOptions.containsKey(value)) {
+              uniqueOptions[value] = option;
+            }
+          } catch (e) {
+            continue;
           }
-          return map;
-        })
-        .values
-        .toList();
+        }
 
-    bool valueExists = uniqueOptions.any(
-      (option) => option[config.dropdownValueField] == currentValue,
-    );
+        final uniqueOptionsList = uniqueOptions.values.toList();
 
-    if (!valueExists && config.dropdownSelectedValue != null) {
-      currentValue = config.dropdownSelectedValue;
-    } else if (!valueExists) {
-      currentValue = null;
-    }
+        dynamic currentValue = _getCurrentValue(config, controller);
 
-    return DropdownButtonFormField<dynamic>(
-      value: currentValue,
-      decoration: InputDecoration(
-        labelText: config.label + (config.isRequired ? ' *' : ''),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8),
-          borderSide: BorderSide(color: GridColors.inputBorder),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8),
-          borderSide: BorderSide(color: GridColors.primary, width: 2),
-        ),
-      ),
-      isExpanded: true,
-      items: [
-        if (!config.isRequired)
-          DropdownMenuItem<dynamic>(
-            value: null,
-            child: Text(
-              'Selecione uma opção',
-              style: TextStyle(color: Colors.grey),
-            ),
-          ),
-        ...uniqueOptions.map<DropdownMenuItem<dynamic>>((option) {
-          final optionValue = option[config.dropdownValueField];
-          final optionLabel = option[config.dropdownDisplayField]?.toString() ??
-              optionValue.toString();
-          return DropdownMenuItem<dynamic>(
-            value: optionValue,
-            child: Text(optionLabel),
-          );
-        }),
-      ],
-      onChanged: (dynamic newValue) {
-        setState(() {
-          if (newValue == null) {
-            controller.clear();
-          } else {
-            controller.text = newValue.toString();
+        // VERIFICAR SE O VALOR ATUAL EXISTE NAS OPÇÕES ÚNICAS
+        bool valueExists = uniqueOptionsList.any((option) {
+          try {
+            return option[config.dropdownValueField] == currentValue;
+          } catch (e) {
+            return false;
           }
         });
-      },
-      validator: (dynamic value) {
-        // Use 'dynamic' instead of 'String?'
-        if (value == null || value.toString().isEmpty) {
-          return 'This field is required';
+
+        if (!valueExists) {
+          currentValue = null; // Reset para null se não existir
         }
-        return null;
+
+        return DropdownButtonFormField<dynamic>(
+          value: currentValue,
+          decoration: InputDecoration(
+            labelText: config.label + (config.isRequired ? ' *' : ''),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(8),
+              borderSide: BorderSide(color: GridColors.inputBorder),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(8),
+              borderSide: BorderSide(color: GridColors.primary, width: 2),
+            ),
+          ),
+          isExpanded: true,
+          items: [
+            if (!config.isRequired)
+              const DropdownMenuItem<dynamic>(
+                value: null,
+                child: Text(
+                  'Selecione uma opção',
+                  style: TextStyle(color: Colors.grey),
+                ),
+              ),
+            ...uniqueOptionsList.map<DropdownMenuItem<dynamic>>((option) {
+              try {
+                final optionValue = option[config.dropdownValueField];
+                final optionLabel =
+                    option[config.dropdownDisplayField]?.toString() ??
+                        optionValue?.toString() ??
+                        'Sem label';
+
+                return DropdownMenuItem<dynamic>(
+                  value: optionValue,
+                  child: Text(optionLabel),
+                );
+              } catch (e) {
+                // Garantir valor único mesmo em caso de erro
+                return DropdownMenuItem<dynamic>(
+                  value: UniqueKey().toString(),
+                  child: const Text('Erro na opção'),
+                );
+              }
+            }),
+          ],
+          onChanged: (dynamic newValue) {
+            setState(() {
+              if (newValue == null) {
+                controller.clear();
+              } else {
+                controller.text = newValue.toString();
+              }
+            });
+          },
+          validator: (dynamic value) {
+            // Use 'dynamic' instead of 'String?'
+            if (value == null || value.toString().isEmpty) {
+              return 'This field is required';
+            }
+            return null;
+          },
+        );
       },
     );
   }
