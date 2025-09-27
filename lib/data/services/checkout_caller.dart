@@ -152,7 +152,7 @@ class CheckoutCaller {
 
     // Get the token (replace with your actual AuthUtility method)
     final token =
-        AuthUtility.userInfo.token; // Assuming userInfo.token is available
+        AuthUtility.userInfo?.token; // Assuming userInfo.token is available
 
     try {
       final response = await http.get(

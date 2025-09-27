@@ -1083,7 +1083,7 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
 
   Future<void> _downloadFile(int fileId, String fileName) async {
     try {
-      final String authToken = '${AuthUtility.userInfo.token}';
+      final String authToken = '${AuthUtility.userInfo?.token}';
 
       final response = await http.get(
         Uri.parse(
@@ -1602,7 +1602,7 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
     String? itemId,
     Map<String, List<PlatformFile>> filesToUpload,
   ) async {
-    final String authToken = '${AuthUtility.userInfo.token}';
+    final String authToken = '${AuthUtility.userInfo?.token}';
     if (itemId == null || filesToUpload.isEmpty) return 0;
 
     try {

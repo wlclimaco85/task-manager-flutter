@@ -52,8 +52,8 @@ class _UserBannerAppBarState extends State<UserBannerAppBar> {
 
   Future<void> fetchAlerts() async {
     try {
-      if (AuthUtility.userInfo.data?.id == null ||
-          AuthUtility.userInfo.data!.id! > 1) {
+      final userId = AuthUtility.userInfo?.data?.id;
+      if (userId != null && userId > 1) {
         final List<Alert> alertData = await AlertCaller().fetchItensAVenda(
           context,
         );
@@ -266,8 +266,8 @@ class _UserBannerAppBarState extends State<UserBannerAppBar> {
   @override
   Widget build(BuildContext context) {
     // Condição para exibir o AppBar principal ou o alternativo
-    if (AuthUtility.userInfo.data?.id != null &&
-        AuthUtility.userInfo.data!.id! > 1) {
+    final userId = AuthUtility.userInfo?.data?.id;
+    if (userId != null && userId > 1) {
       return AppBar(
         backgroundColor: CustomColors().getLightGreenBackground(),
         bottom: PreferredSize(
@@ -401,7 +401,7 @@ class _UserBannerAppBarState extends State<UserBannerAppBar> {
                       radius: 25,
                       child: Image.memory(
                         showBase64Image(
-                          AuthUtility.userInfo.data?.codDadosPessoal?.photo,
+                          AuthUtility.userInfo?.data?.codDadosPessoal?.photo,
                         ),
                         errorBuilder: (_, __, ___) {
                           return const Icon(Icons.person);
@@ -413,7 +413,7 @@ class _UserBannerAppBarState extends State<UserBannerAppBar> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          "${AuthUtility.userInfo.data?.codDadosPessoal?.nome ?? " "} ",
+                          "${AuthUtility.userInfo?.data?.codDadosPessoal?.nome ?? " "} ",
                           style: TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.bold,
@@ -422,7 +422,7 @@ class _UserBannerAppBarState extends State<UserBannerAppBar> {
                         ),
                         const SizedBox(height: 2),
                         Text(
-                          AuthUtility.userInfo.data?.codDadosPessoal?.email ??
+                          AuthUtility.userInfo?.data?.codDadosPessoal?.email ??
                               "",
                           style: TextStyle(
                             fontSize: 14,

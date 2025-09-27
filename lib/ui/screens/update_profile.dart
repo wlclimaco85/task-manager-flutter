@@ -10,7 +10,7 @@ import 'package:task_manager_flutter/data/models/parceiro_model.dart';
 import 'package:task_manager_flutter/ui/widgets/localizacao_screen.dart';
 import 'package:task_manager_flutter/data/constants/custom_colors.dart';
 
-int idParceiro = AuthUtility.userInfo.data!.id!;
+int idParceiro = AuthUtility.userInfo?.data!.id! ?? 0;
 
 class UpdateProfileScreen extends StatefulWidget {
   const UpdateProfileScreen({super.key});
@@ -20,7 +20,7 @@ class UpdateProfileScreen extends StatefulWidget {
 }
 
 class _UpdateProfileScreenState extends State<UpdateProfileScreen> {
-  Data userInfo = AuthUtility.userInfo.data!;
+  Data userInfo = AuthUtility.userInfo?.data ?? Data();
   final TextEditingController _nomeController = TextEditingController();
   final TextEditingController _cpfController = TextEditingController();
   final TextEditingController _codProdutorController = TextEditingController();
@@ -53,38 +53,41 @@ class _UpdateProfileScreenState extends State<UpdateProfileScreen> {
   void initState() {
     super.initState();
     _emailController.text =
-        AuthUtility.userInfo.data?.codDadosPessoal?.email ?? "";
+        AuthUtility.userInfo?.data?.codDadosPessoal?.email ?? "";
     _nomeController.text =
-        AuthUtility.userInfo.data?.codDadosPessoal?.nome ?? "";
-    _cpfController.text = AuthUtility.userInfo.data?.codDadosPessoal?.cpf ?? "";
-    _telefone1Controller.text = AuthUtility.userInfo.data?.mobile ?? "";
+        AuthUtility.userInfo?.data?.codDadosPessoal?.nome ?? "";
+    _cpfController.text =
+        AuthUtility.userInfo?.data?.codDadosPessoal?.cpf ?? "";
+    _telefone1Controller.text = AuthUtility.userInfo?.data?.mobile ?? "";
     _telefone2Controller.text =
-        AuthUtility.userInfo.data?.codDadosPessoal?.telefone2 ?? "";
+        AuthUtility.userInfo?.data?.codDadosPessoal?.telefone2 ?? "";
     _parceiroIdController.text =
-        AuthUtility.userInfo.data?.id?.toString() ?? "";
+        AuthUtility.userInfo?.data?.id?.toString() ?? "";
 
-    _cpfController.text = AuthUtility.userInfo.data?.codDadosPessoal?.cpf ?? "";
+    _cpfController.text =
+        AuthUtility.userInfo?.data?.codDadosPessoal?.cpf ?? "";
     _codProdutorController.text =
-        AuthUtility.userInfo.data?.codDadosPessoal?.codProdutor ?? "";
+        AuthUtility.userInfo?.data?.codDadosPessoal?.codProdutor ?? "";
     _razaoSocialController.text =
-        AuthUtility.userInfo.data?.codDadosPessoal?.razaoSocial ?? "";
+        AuthUtility.userInfo?.data?.codDadosPessoal?.razaoSocial ?? "";
     _incrMunController.text =
-        AuthUtility.userInfo.data?.codDadosPessoal?.incrMun ?? "";
+        AuthUtility.userInfo?.data?.codDadosPessoal?.incrMun ?? "";
     _fotoController.text =
-        AuthUtility.userInfo.data?.codDadosPessoal?.photo ?? "";
+        AuthUtility.userInfo?.data?.codDadosPessoal?.photo ?? "";
     _ruaController.text = utf8.decode(
-      (AuthUtility.userInfo.data?.codDadosPessoal?.logradouro ?? "").runes
+      (AuthUtility.userInfo?.data?.codDadosPessoal?.logradouro ?? "").runes
           .toList(),
     );
     _numeroController.text =
-        AuthUtility.userInfo.data?.codDadosPessoal?.numero ?? "";
+        AuthUtility.userInfo?.data?.codDadosPessoal?.numero ?? "";
     _bairroController.text =
-        AuthUtility.userInfo.data?.codDadosPessoal?.bairro ?? "";
+        AuthUtility.userInfo?.data?.codDadosPessoal?.bairro ?? "";
     _cidadeController.text =
-        AuthUtility.userInfo.data?.codDadosPessoal?.cidade ?? "";
+        AuthUtility.userInfo?.data?.codDadosPessoal?.cidade ?? "";
     _estadoController.text =
-        AuthUtility.userInfo.data?.codDadosPessoal?.estado ?? "";
-    _cepController.text = AuthUtility.userInfo.data?.codDadosPessoal?.cep ?? "";
+        AuthUtility.userInfo?.data?.codDadosPessoal?.estado ?? "";
+    _cepController.text =
+        AuthUtility.userInfo?.data?.codDadosPessoal?.cep ?? "";
   }
 
   Future<XFile?> getLostData() async {

@@ -39,14 +39,13 @@ class _ProductCatalogState extends State<ProductCatalog> {
   }
 
   Future<void> onTransporte(BuildContext context, Produto product) async {
-    final Map<String, dynamic> requestBody = {
-      "idProduto": 13,
-      "qtdSacos": 10,
-    };
+    final Map<String, dynamic> requestBody = {"idProduto": 13, "qtdSacos": 10};
 
     try {
-      final NetworkResponse response = await NetworkCaller()
-          .postRequest(ApiLinks.insertCotacaoFrete, requestBody);
+      final NetworkResponse response = await NetworkCaller().postRequest(
+        ApiLinks.insertCotacaoFrete,
+        requestBody,
+      );
 
       if (response.statusCode == 200) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -60,9 +59,9 @@ class _ProductCatalogState extends State<ProductCatalog> {
         );
       }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Erro ao enviar solicitação: $e")),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text("Erro ao enviar solicitação: $e")));
     }
   }
 
@@ -77,9 +76,9 @@ class _ProductCatalogState extends State<ProductCatalog> {
         filteredProducts = data;
       });
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Erro ao carregar produtos: $e')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Erro ao carregar produtos: $e')));
     } finally {
       setState(() {
         isLoading = false;
@@ -90,10 +89,12 @@ class _ProductCatalogState extends State<ProductCatalog> {
   void applyFilters() {
     setState(() {
       filteredProducts = allProducts.where((product) {
-        final stateMatch = selectedState == "Estado" ||
+        final stateMatch =
+            selectedState == "Estado" ||
             (product.parceiro?.endereco?.estado?.nome.toString() ?? '') ==
                 selectedState;
-        final cityMatch = selectedCity == "Cidade" ||
+        final cityMatch =
+            selectedCity == "Cidade" ||
             (product.parceiro?.endereco?.cidade?.nome.toString() ?? '') ==
                 selectedCity;
 
@@ -105,30 +106,39 @@ class _ProductCatalogState extends State<ProductCatalog> {
   @override
   Widget build(BuildContext context) {
     final states = allProducts
-        .map<String>((p) =>
-            p.parceiro?.endereco?.estado?.nome.toString() ?? 'Não especificado')
+        .map<String>(
+          (p) =>
+              p.parceiro?.endereco?.estado?.nome.toString() ??
+              'Não especificado',
+        )
         .toSet()
         .toList();
     states.insert(0, "Estado");
 
     final cities = allProducts
-        .map<String>((p) =>
-            p.parceiro?.endereco?.cidade?.nome.toString() ?? 'Não especificado')
+        .map<String>(
+          (p) =>
+              p.parceiro?.endereco?.cidade?.nome.toString() ??
+              'Não especificado',
+        )
         .toSet()
         .toList();
     cities.insert(0, "Cidade");
 
     return Scaffold(
       appBar: UserBannerAppBar(
-          screenTitle: "Catálogo de Grãos",
-          isLoading: isLoading,
-          onRefresh: _fetchProducts,
-          onTapped: () {
-            Navigator.push(
-                context,
-                MaterialPageRoute(
-                    builder: (context) => const UpdateProfileScreen()));
-          }),
+        screenTitle: "Catálogo de Grãos",
+        isLoading: isLoading,
+        onRefresh: _fetchProducts,
+        onTapped: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => const UpdateProfileScreen(),
+            ),
+          );
+        },
+      ),
       body: Container(
         color: CustomColors().getLightGreenBackground(),
         child: Column(
@@ -181,40 +191,39 @@ class _ProductCatalogState extends State<ProductCatalog> {
               child: isLoading
                   ? const Center(child: CircularProgressIndicator())
                   : filteredProducts.isEmpty
-                      ? const Center(child: Text('Nenhum produto encontrado'))
-                      : ListView.builder(
-                          itemCount: filteredProducts.length,
-                          itemBuilder: (context, index) {
-                            final product = filteredProducts[index];
-                            return ProductCard(
+                  ? const Center(child: Text('Nenhum produto encontrado'))
+                  : ListView.builder(
+                      itemCount: filteredProducts.length,
+                      itemBuilder: (context, index) {
+                        final product = filteredProducts[index];
+                        return ProductCard(
+                          product: product,
+                          onDetails: () => showProductDetails(context, product),
+                          onBuy: () => Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => CheckoutScreen(
+                                productName: 'Arroz em Casca',
+                                productValue: product.vlrSacos ?? 0.0,
+                                productQnt: product.qtdSacos ?? 0,
+                                idVenda: product.id ?? 0,
+                                negociacaoId: product.id ?? 0,
+                              ),
+                            ),
+                          ),
+                          onNegotiate: () => showDialog(
+                            context: context,
+                            builder: (context) => NegotiationDialog(
                               product: product,
-                              onDetails: () =>
-                                  showProductDetails(context, product),
-                              onBuy: () => Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => CheckoutScreen(
-                                    productName: 'Arroz em Casca',
-                                    productValue: product.vlrSacos ?? 0.0,
-                                    productQnt: product.qtdSacos ?? 0,
-                                    idVenda: product.id ?? 0,
-                                    negociacaoId: product.id ?? 0,
-                                  ),
-                                ),
-                              ),
-                              onNegotiate: () => showDialog(
-                                context: context,
-                                builder: (context) => NegotiationDialog(
-                                  product: product,
-                                  compradorId: AuthUtility.userInfo.data?.id ??
-                                      0, // ID do usuário logado
-                                ),
-                              ),
-                              onTransporte: () =>
-                                  onTransporte(context, product),
-                            );
-                          },
-                        ),
+                              compradorId:
+                                  AuthUtility.userInfo?.data?.id ??
+                                  0, // ID do usuário logado
+                            ),
+                          ),
+                          onTransporte: () => onTransporte(context, product),
+                        );
+                      },
+                    ),
             ),
           ],
         ),
@@ -236,13 +245,17 @@ class _ProductCatalogState extends State<ProductCatalog> {
             Text('Semente: ${product.semente ?? "Não informado"}'),
             Text('Tipo do Grão: ${product.tipoGrao ?? "Não informado"}'),
             Text(
-                'Data de Retirada: ${product.dataRetirada ?? "Não informado"}'),
+              'Data de Retirada: ${product.dataRetirada ?? "Não informado"}',
+            ),
             Text(
-                'Tipo de Negociação: ${product.tipoNegociacao ?? "Não informado"}'),
+              'Tipo de Negociação: ${product.tipoNegociacao ?? "Não informado"}',
+            ),
             Text(
-                'Estado: ${product.parceiro?.endereco?.estado?.nome ?? "Não informado"}'),
+              'Estado: ${product.parceiro?.endereco?.estado?.nome ?? "Não informado"}',
+            ),
             Text(
-                'Cidade: ${product.parceiro?.endereco?.cidade?.nome ?? "Não informado"}'),
+              'Cidade: ${product.parceiro?.endereco?.cidade?.nome ?? "Não informado"}',
+            ),
             Text('Quantidade de sacos: ${product.qtdSacos ?? 0}'),
             Text('Valor por saco: R\$${product.vlrSacos ?? 0.0}'),
             const Text('Classificação:'),
@@ -272,9 +285,11 @@ class _ProductCatalogState extends State<ProductCatalog> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-                'Estado: ${product.parceiro?.endereco?.estado?.nome ?? "Não informado"}'),
+              'Estado: ${product.parceiro?.endereco?.estado?.nome ?? "Não informado"}',
+            ),
             Text(
-                'Cidade: ${product.parceiro?.endereco?.cidade?.nome ?? "Não informado"}'),
+              'Cidade: ${product.parceiro?.endereco?.cidade?.nome ?? "Não informado"}',
+            ),
             Text('Quantidade de sacos: ${product.qtdSacos ?? 0}'),
             Text('Valor por saco: R\$${product.vlrSacos ?? 0.0}'),
             const Text('Classificação:'),
@@ -294,7 +309,8 @@ class _ProductCatalogState extends State<ProductCatalog> {
                 context: context, // Contexto do widget atual
                 vendaId: product.id!,
                 vendedorId: product.parceiro!.id!,
-                compradorId: AuthUtility.userInfo.data?.id ??
+                compradorId:
+                    AuthUtility.userInfo?.data?.id ??
                     0, // Substitua com ID do comprador
                 qtdSacos: product.qtdSacos! ?? 0,
                 vlrSacos: product.vlrSacos ?? 0.0,
@@ -306,9 +322,7 @@ class _ProductCatalogState extends State<ProductCatalog> {
                 _fetchProducts(); // Refresh automático após sucesso
               } else {
                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('Erro ao Comprar'),
-                  ),
+                  const SnackBar(content: Text('Erro ao Comprar')),
                 );
               }
             },
@@ -383,8 +397,8 @@ class ProductCard extends StatelessWidget {
                   child: Text(
                     'Arroz em Casca - Lote : ${product.id.toString()}',
                     style: TextStyle(
-                      color:
-                          CustomColors().getDarkGreenBorder(), // Cor do título
+                      color: CustomColors()
+                          .getDarkGreenBorder(), // Cor do título
                       fontSize: 22,
                       fontWeight: FontWeight.bold,
                     ),
@@ -397,7 +411,8 @@ class ProductCard extends StatelessWidget {
                     Expanded(
                       flex: 2,
                       child: getFirstImageOrDefault(
-                          getValidImageList(product).first),
+                        getValidImageList(product).first,
+                      ),
                     ),
                     Expanded(
                       flex: 3,
@@ -406,21 +421,33 @@ class ProductCard extends StatelessWidget {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            _buildInfoRow('Estado',
-                                product.parceiro?.endereco?.estado?.nome),
-                            _buildInfoRow('Cidade',
-                                product.parceiro?.endereco?.cidade?.nome),
                             _buildInfoRow(
-                                'Quantidade', '${product.qtdSacos} sacos'),
+                              'Estado',
+                              product.parceiro?.endereco?.estado?.nome,
+                            ),
                             _buildInfoRow(
-                                'Valor por saco', 'R\$${product.vlrSacos}'),
+                              'Cidade',
+                              product.parceiro?.endereco?.cidade?.nome,
+                            ),
+                            _buildInfoRow(
+                              'Quantidade',
+                              '${product.qtdSacos} sacos',
+                            ),
+                            _buildInfoRow(
+                              'Valor por saco',
+                              'R\$${product.vlrSacos}',
+                            ),
                             _buildInfoRow('Safra', product.safra),
                             _buildInfoRow('Semente', product.semente),
                             _buildInfoRow('Tipo do Grão', product.tipoGrao),
                             _buildInfoRow(
-                                'Data de Retirada', product.dataRetirada),
+                              'Data de Retirada',
+                              product.dataRetirada,
+                            ),
                             _buildInfoRow(
-                                'Tipo de Negociação', product.tipoNegociacao),
+                              'Tipo de Negociação',
+                              product.tipoNegociacao,
+                            ),
                             const SizedBox(height: 8),
                             const Text(
                               'Classificação:',
@@ -429,9 +456,9 @@ class ProductCard extends StatelessWidget {
                                 fontWeight: FontWeight.bold,
                               ),
                             ),
-                            ...product.classificacao!
-                                .map((c) => _buildClassificationItem(c))
-                                ,
+                            ...product.classificacao!.map(
+                              (c) => _buildClassificationItem(c),
+                            ),
                           ],
                         ),
                       ),
@@ -483,8 +510,10 @@ class ProductCard extends StatelessWidget {
                     Column(
                       children: [
                         IconButton(
-                          icon:
-                              const Icon(Icons.handshake, color: Colors.green),
+                          icon: const Icon(
+                            Icons.handshake,
+                            color: Colors.green,
+                          ),
                           onPressed: onNegotiate,
                         ),
                         const Text(
@@ -507,8 +536,10 @@ class ProductCard extends StatelessWidget {
                     Column(
                       children: [
                         IconButton(
-                          icon: const Icon(Icons.shopping_cart,
-                              color: Colors.orange),
+                          icon: const Icon(
+                            Icons.shopping_cart,
+                            color: Colors.orange,
+                          ),
                           onPressed: onBuy,
                         ),
                         const Text(
@@ -529,23 +560,34 @@ class ProductCard extends StatelessWidget {
                   Column(
                     children: [
                       IconButton(
-                        icon: const Icon(Icons.local_shipping,
-                            color: Colors.purple),
+                        icon: const Icon(
+                          Icons.local_shipping,
+                          color: Colors.purple,
+                        ),
                         onPressed: () => FreteService.mostrarPopupFrete(
                           context: context, // ESSE CONTEXT É IMPORTANTE!
                           vendaId: product.id ?? 0,
-                          compradorId: AuthUtility.userInfo.data?.id ??
+                          compradorId:
+                              AuthUtility.userInfo?.data?.id ??
                               0, // ID do usuário logado
                           peso: product.qtdSacos ?? 0 * 60, // Peso total
                           cidadeOrigem:
                               product.parceiro?.endereco?.cidade?.nome ?? "",
-                          cidadeDestino: AuthUtility
-                                  .userInfo.data?.codDadosPessoal?.cidade ??
+                          cidadeDestino:
+                              AuthUtility
+                                  .userInfo
+                                  ?.data
+                                  ?.codDadosPessoal
+                                  ?.cidade ??
                               "",
                           bairroOrigem:
                               product.parceiro?.endereco?.bairro ?? "",
-                          bairroDestino: AuthUtility
-                                  .userInfo.data?.codDadosPessoal?.bairro ??
+                          bairroDestino:
+                              AuthUtility
+                                  .userInfo
+                                  ?.data
+                                  ?.codDadosPessoal
+                                  ?.bairro ??
                               "",
                         ),
                       ),
@@ -592,7 +634,7 @@ class ProductCard extends StatelessWidget {
     );
   }
 
-// Método auxiliar para itens de classificação
+  // Método auxiliar para itens de classificação
   Widget _buildClassificationItem(Classificacao c) {
     return Container(
       margin: const EdgeInsets.only(left: 16, top: 4),

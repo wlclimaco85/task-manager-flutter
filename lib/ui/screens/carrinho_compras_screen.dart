@@ -46,9 +46,9 @@ class _ProductCatalogPageComprasState extends State<ProductCatalogPageCompras> {
         products = data;
       });
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Erro ao carregar produtos: $e')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Erro ao carregar produtos: $e')));
     } finally {
       setState(() {
         isLoading = false;
@@ -77,19 +77,19 @@ class _ProductCatalogPageComprasState extends State<ProductCatalogPageCompras> {
         child: isLoading
             ? const Center(child: CircularProgressIndicator())
             : products.isEmpty
-                ? const Center(child: Text('Nenhum produto encontrado'))
-                : ListView.builder(
-                    itemCount: products.length,
-                    itemBuilder: (context, index) {
-                      final product = products[index];
-                      return ProductCard(
-                        product: product,
-                        actionIcon: widget.actionIcon,
-                        actionTooltip: widget.actionTooltip,
-                        onAction: () => showActionPopup(context, product),
-                      );
-                    },
-                  ),
+            ? const Center(child: Text('Nenhum produto encontrado'))
+            : ListView.builder(
+                itemCount: products.length,
+                itemBuilder: (context, index) {
+                  final product = products[index];
+                  return ProductCard(
+                    product: product,
+                    actionIcon: widget.actionIcon,
+                    actionTooltip: widget.actionTooltip,
+                    onAction: () => showActionPopup(context, product),
+                  );
+                },
+              ),
       ),
     );
   }
@@ -111,10 +111,13 @@ class _ProductCatalogPageComprasState extends State<ProductCatalogPageCompras> {
             Text('Quantidade de sacos: ${product.qtdSacos ?? 0}'),
             Text('Valor por saco: R\$${product.vlrSacos ?? 0.0}'),
             Text(
-                'Data de retirada: ${product.dtRetirada ?? 'Não especificado'}'),
+              'Data de retirada: ${product.dtRetirada ?? 'Não especificado'}',
+            ),
             const SizedBox(height: 8),
-            const Text('Negociações:',
-                style: TextStyle(fontWeight: FontWeight.bold)),
+            const Text(
+              'Negociações:',
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
             ...List.generate((product.negociacoes as List).length, (i) {
               final negotiation = product.negociacoes[i];
               return Column(
@@ -147,7 +150,9 @@ class _ProductCatalogPageComprasState extends State<ProductCatalogPageCompras> {
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(8),
                 side: BorderSide(
-                    color: CustomColors().getDarkGreenBorder(), width: 2),
+                  color: CustomColors().getDarkGreenBorder(),
+                  width: 2,
+                ),
               ),
             ),
             child: const Text('Confirmar Ação'),
@@ -176,9 +181,9 @@ class ProductCard extends StatelessWidget {
     try {
       final data = await VendasCaller().fetchItensANegocias(context);
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Erro ao carregar produtos: $e')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Erro ao carregar produtos: $e')));
     } finally {}
   }
 
@@ -192,24 +197,24 @@ class ProductCard extends StatelessWidget {
   ) async {
     try {
       // Chamada para a API com tratamento de erros mais detalhado
-      final response =
-          await VendasCaller().confirmarNegociacao(context, vendaId);
+      final response = await VendasCaller().confirmarNegociacao(
+        context,
+        vendaId,
+      );
 
       // Verificar se a resposta é válida e se a negociação foi concluída com sucesso
       // Mostrar Snackbar de sucesso e fechar o diálogo
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Negociação aceita com sucesso!'),
-        ),
+        const SnackBar(content: Text('Negociação aceita com sucesso!')),
       );
 
       // Fechar o diálogo
       Navigator.pop(context);
-        } catch (e) {
+    } catch (e) {
       // Tratar outras exceções que possam ocorrer
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Erro inesperado: $e')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Erro inesperado: $e')));
     } finally {
       // Chamar a função onLoad para atualizar a interface, se necessário
       onLoad(context);
@@ -245,9 +250,9 @@ class ProductCard extends StatelessWidget {
         );
       }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Erro inesperado: $e')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Erro inesperado: $e')));
     }
     return null;
   }
@@ -267,18 +272,16 @@ class ProductCard extends StatelessWidget {
       // Verificar se a resposta é válida e se a negociação foi concluída com sucesso
       // Mostrar Snackbar de sucesso e fechar o diálogo
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Sua Negociação foi recusada!'),
-        ),
+        const SnackBar(content: Text('Sua Negociação foi recusada!')),
       );
 
       // Fechar o diálogo
       Navigator.pop(context);
-        } catch (e) {
+    } catch (e) {
       // Tratar outras exceções que possam ocorrer
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Erro inesperado: $e')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Erro inesperado: $e')));
     } finally {
       // Chamar a função onLoad para atualizar a interface, se necessário
       onLoad(context);
@@ -386,13 +389,15 @@ class ProductCard extends StatelessWidget {
                   if (response != null && response['status'] == 'success') {
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(
-                          content: Text('Contraproposta enviada com sucesso!')),
+                        content: Text('Contraproposta enviada com sucesso!'),
+                      ),
                     );
                     Navigator.of(context).pop();
                   } else {
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(
-                          content: Text('Erro ao enviar contraproposta.')),
+                        content: Text('Erro ao enviar contraproposta.'),
+                      ),
                     );
                   }
                 }
@@ -402,7 +407,9 @@ class ProductCard extends StatelessWidget {
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(8),
                   side: BorderSide(
-                      color: CustomColors().getDarkGreenBorder(), width: 2),
+                    color: CustomColors().getDarkGreenBorder(),
+                    width: 2,
+                  ),
                 ),
               ),
               child: const Text('Enviar Proposta'),
@@ -425,12 +432,7 @@ class ProductCard extends StatelessWidget {
 
     // final imageBase64 = decodeBase64Image(getImagepadrao());
     final Widget image = imageBase64.isNotEmpty
-        ? Image.memory(
-            imageBase64,
-            width: 100,
-            height: 100,
-            fit: BoxFit.cover,
-          )
+        ? Image.memory(imageBase64, width: 100, height: 100, fit: BoxFit.cover)
         : const Icon(Icons.image, size: 100);
 
     final int contratoId;
@@ -478,8 +480,10 @@ class ProductCard extends StatelessWidget {
               ],
             ),
             const SizedBox(height: 8),
-            const Text('Negociações:',
-                style: TextStyle(fontWeight: FontWeight.bold)),
+            const Text(
+              'Negociações:',
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
             ...List.generate((product.negociacoes as List).length, (i) {
               final negotiation = product.negociacoes[i];
               return Card(
@@ -488,7 +492,9 @@ class ProductCard extends StatelessWidget {
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(8.0),
                   side: BorderSide(
-                      color: CustomColors().getDarkGreenBorder(), width: 1.5),
+                    color: CustomColors().getDarkGreenBorder(),
+                    width: 1.5,
+                  ),
                 ),
                 child: Padding(
                   padding: const EdgeInsets.all(8.0),
@@ -538,8 +544,10 @@ class ProductCard extends StatelessWidget {
                               mainAxisSize: MainAxisSize.min,
                               children: [
                                 IconButton(
-                                  icon: const Icon(Icons.check,
-                                      color: Colors.green),
+                                  icon: const Icon(
+                                    Icons.check,
+                                    color: Colors.green,
+                                  ),
                                   tooltip: 'Aceitar',
                                   onPressed: () {
                                     showDialog(
@@ -547,18 +555,21 @@ class ProductCard extends StatelessWidget {
                                       builder: (context) {
                                         return AlertDialog(
                                           backgroundColor: const Color.fromARGB(
-                                              255,
-                                              231,
-                                              247,
-                                              233), // Verde claro
+                                            255,
+                                            231,
+                                            247,
+                                            233,
+                                          ), // Verde claro
                                           title: const Text(
-                                              'Confirmar Negociação'),
+                                            'Confirmar Negociação',
+                                          ),
                                           content: Column(
                                             mainAxisSize: MainAxisSize.min,
                                             children: [
                                               Container(
-                                                padding:
-                                                    const EdgeInsets.all(8),
+                                                padding: const EdgeInsets.all(
+                                                  8,
+                                                ),
                                                 decoration: BoxDecoration(
                                                   color: Colors.white,
                                                   borderRadius:
@@ -572,18 +583,21 @@ class ProductCard extends StatelessWidget {
                                                     const Text(
                                                       'Quantidade:',
                                                       style: TextStyle(
-                                                          fontWeight:
-                                                              FontWeight.bold),
+                                                        fontWeight:
+                                                            FontWeight.bold,
+                                                      ),
                                                     ),
                                                     Text(
-                                                        '${negotiation.qtdSacos} sacos'),
+                                                      '${negotiation.qtdSacos} sacos',
+                                                    ),
                                                   ],
                                                 ),
                                               ),
                                               const SizedBox(height: 16),
                                               Container(
-                                                padding:
-                                                    const EdgeInsets.all(8),
+                                                padding: const EdgeInsets.all(
+                                                  8,
+                                                ),
                                                 decoration: BoxDecoration(
                                                   color: Colors.white,
                                                   borderRadius:
@@ -597,11 +611,13 @@ class ProductCard extends StatelessWidget {
                                                     const Text(
                                                       'Valor:',
                                                       style: TextStyle(
-                                                          fontWeight:
-                                                              FontWeight.bold),
+                                                        fontWeight:
+                                                            FontWeight.bold,
+                                                      ),
                                                     ),
                                                     Text(
-                                                        'R\$ ${negotiation.vlrSacos!.toString()}'),
+                                                      'R\$ ${negotiation.vlrSacos!.toString()}',
+                                                    ),
                                                   ], //'valor: ${negotiation.vlrSacos}''quantidade : ${negotiation.qtdSacos}'
                                                 ),
                                               ),
@@ -620,36 +636,45 @@ class ProductCard extends StatelessWidget {
                                             ElevatedButton(
                                               style: ElevatedButton.styleFrom(
                                                 backgroundColor:
-                                                    const Color.fromARGB(255, 1,
-                                                        95, 15), // Verde escuro
+                                                    const Color.fromARGB(
+                                                      255,
+                                                      1,
+                                                      95,
+                                                      15,
+                                                    ), // Verde escuro
                                               ),
                                               onPressed: () async {
                                                 final response =
                                                     await finalizarNegociacao(
-                                                        context,
-                                                        negotiation.id!,
-                                                        negotiation.qtdSacos!,
-                                                        negotiation.vlrSacos!,
-                                                        negotiation.id!
-                                                            .toString(),
-                                                        fetchProducts);
+                                                      context,
+                                                      negotiation.id!,
+                                                      negotiation.qtdSacos!,
+                                                      negotiation.vlrSacos!,
+                                                      negotiation.id!
+                                                          .toString(),
+                                                      fetchProducts,
+                                                    );
 
                                                 if (response != null &&
                                                     response['status'] == 'A') {
-                                                  ScaffoldMessenger.of(context)
-                                                      .showSnackBar(
+                                                  ScaffoldMessenger.of(
+                                                    context,
+                                                  ).showSnackBar(
                                                     const SnackBar(
                                                       content: Text(
-                                                          'Negociação aceita com sucesso!'),
+                                                        'Negociação aceita com sucesso!',
+                                                      ),
                                                     ),
                                                   );
                                                   Navigator.pop(context);
                                                 } else {
-                                                  ScaffoldMessenger.of(context)
-                                                      .showSnackBar(
+                                                  ScaffoldMessenger.of(
+                                                    context,
+                                                  ).showSnackBar(
                                                     const SnackBar(
                                                       content: Text(
-                                                          'Erro ao finalizar negociação.'),
+                                                        'Erro ao finalizar negociação.',
+                                                      ),
                                                     ),
                                                   );
                                                 }
@@ -665,7 +690,9 @@ class ProductCard extends StatelessWidget {
                                 const Text(
                                   'Aceitar',
                                   style: TextStyle(
-                                      fontSize: 12, color: Colors.black),
+                                    fontSize: 12,
+                                    color: Colors.black,
+                                  ),
                                 ),
                               ],
                             ),
@@ -673,8 +700,10 @@ class ProductCard extends StatelessWidget {
                               mainAxisSize: MainAxisSize.min,
                               children: [
                                 IconButton(
-                                  icon: const Icon(Icons.close,
-                                      color: Colors.red),
+                                  icon: const Icon(
+                                    Icons.close,
+                                    color: Colors.red,
+                                  ),
                                   tooltip: 'Recusar',
                                   onPressed: () {
                                     showDialog(
@@ -682,18 +711,21 @@ class ProductCard extends StatelessWidget {
                                       builder: (context) {
                                         return AlertDialog(
                                           backgroundColor: const Color.fromARGB(
-                                              255,
-                                              231,
-                                              247,
-                                              233), // Verde claro
+                                            255,
+                                            231,
+                                            247,
+                                            233,
+                                          ), // Verde claro
                                           title: const Text(
-                                              'Confirmar Negociação'),
+                                            'Confirmar Negociação',
+                                          ),
                                           content: Column(
                                             mainAxisSize: MainAxisSize.min,
                                             children: [
                                               Container(
-                                                padding:
-                                                    const EdgeInsets.all(8),
+                                                padding: const EdgeInsets.all(
+                                                  8,
+                                                ),
                                                 decoration: BoxDecoration(
                                                   color: Colors.white,
                                                   borderRadius:
@@ -707,18 +739,21 @@ class ProductCard extends StatelessWidget {
                                                     const Text(
                                                       'Quantidade:',
                                                       style: TextStyle(
-                                                          fontWeight:
-                                                              FontWeight.bold),
+                                                        fontWeight:
+                                                            FontWeight.bold,
+                                                      ),
                                                     ),
                                                     Text(
-                                                        '${negotiation.qtdSacos} sacos'),
+                                                      '${negotiation.qtdSacos} sacos',
+                                                    ),
                                                   ],
                                                 ),
                                               ),
                                               const SizedBox(height: 16),
                                               Container(
-                                                padding:
-                                                    const EdgeInsets.all(8),
+                                                padding: const EdgeInsets.all(
+                                                  8,
+                                                ),
                                                 decoration: BoxDecoration(
                                                   color: Colors.white,
                                                   borderRadius:
@@ -732,11 +767,13 @@ class ProductCard extends StatelessWidget {
                                                     const Text(
                                                       'Valor:',
                                                       style: TextStyle(
-                                                          fontWeight:
-                                                              FontWeight.bold),
+                                                        fontWeight:
+                                                            FontWeight.bold,
+                                                      ),
                                                     ),
                                                     Text(
-                                                        'R\$ ${negotiation.vlrSacos!.toString()}'),
+                                                      'R\$ ${negotiation.vlrSacos!.toString()}',
+                                                    ),
                                                   ], //'valor: ${negotiation.vlrSacos}''quantidade : ${negotiation.qtdSacos}'
                                                 ),
                                               ),
@@ -755,36 +792,45 @@ class ProductCard extends StatelessWidget {
                                             ElevatedButton(
                                               style: ElevatedButton.styleFrom(
                                                 backgroundColor:
-                                                    const Color.fromARGB(255, 1,
-                                                        95, 15), // Verde escuro
+                                                    const Color.fromARGB(
+                                                      255,
+                                                      1,
+                                                      95,
+                                                      15,
+                                                    ), // Verde escuro
                                               ),
                                               onPressed: () async {
                                                 final response =
                                                     await recusarNegociacao(
-                                                        context,
-                                                        negotiation.id!,
-                                                        negotiation.qtdSacos!,
-                                                        negotiation.vlrSacos!,
-                                                        negotiation.id!
-                                                            .toString(),
-                                                        fetchProducts);
+                                                      context,
+                                                      negotiation.id!,
+                                                      negotiation.qtdSacos!,
+                                                      negotiation.vlrSacos!,
+                                                      negotiation.id!
+                                                          .toString(),
+                                                      fetchProducts,
+                                                    );
 
                                                 if (response != null &&
                                                     response['status'] == 'A') {
-                                                  ScaffoldMessenger.of(context)
-                                                      .showSnackBar(
+                                                  ScaffoldMessenger.of(
+                                                    context,
+                                                  ).showSnackBar(
                                                     const SnackBar(
                                                       content: Text(
-                                                          'Negociação aceita com sucesso!'),
+                                                        'Negociação aceita com sucesso!',
+                                                      ),
                                                     ),
                                                   );
                                                   Navigator.pop(context);
                                                 } else {
-                                                  ScaffoldMessenger.of(context)
-                                                      .showSnackBar(
+                                                  ScaffoldMessenger.of(
+                                                    context,
+                                                  ).showSnackBar(
                                                     const SnackBar(
                                                       content: Text(
-                                                          'Erro ao finalizar negociação.'),
+                                                        'Erro ao finalizar negociação.',
+                                                      ),
                                                     ),
                                                   );
                                                 }
@@ -800,7 +846,9 @@ class ProductCard extends StatelessWidget {
                                 const Text(
                                   'Recusar',
                                   style: TextStyle(
-                                      fontSize: 12, color: Colors.black),
+                                    fontSize: 12,
+                                    color: Colors.black,
+                                  ),
                                 ),
                               ],
                             ),
@@ -808,21 +856,27 @@ class ProductCard extends StatelessWidget {
                               mainAxisSize: MainAxisSize.min,
                               children: [
                                 IconButton(
-                                  icon: const Icon(Icons.handshake,
-                                      color: Colors.green),
+                                  icon: const Icon(
+                                    Icons.handshake,
+                                    color: Colors.green,
+                                  ),
                                   tooltip: 'Fazer Contra Proposta',
                                   onPressed: () {
                                     showContraPropostaPopup(
-                                        context, negotiation);
+                                      context,
+                                      negotiation,
+                                    );
                                   },
                                 ),
                                 const Text(
                                   'Fazer Contra Proposta',
                                   style: TextStyle(
-                                      fontSize: 12, color: Colors.black),
+                                    fontSize: 12,
+                                    color: Colors.black,
+                                  ),
                                 ),
                               ],
-                            )
+                            ),
                           ],
                         ),
                       ] else if (negotiation.tipo == 'A') ...[
@@ -859,15 +913,16 @@ class ProductCard extends StatelessWidget {
                                   onPressed: () async {
                                     await handleWithdraw(context, negotiation);
                                   },
-                                  icon: const Icon(Icons
-                                      .cancel), // Choose an appropriate icon
+                                  icon: const Icon(
+                                    Icons.cancel,
+                                  ), // Choose an appropriate icon
                                   color: Colors.red,
                                 ),
                                 const Text('Desistir'),
                               ],
                             ),
                           ],
-                        )
+                        ),
                       ] else if (negotiation.tipo == 'X') ...[
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -876,23 +931,29 @@ class ProductCard extends StatelessWidget {
                               mainAxisSize: MainAxisSize.min,
                               children: [
                                 IconButton(
-                                  icon: const Icon(Icons.handshake,
-                                      color: Colors.green),
+                                  icon: const Icon(
+                                    Icons.handshake,
+                                    color: Colors.green,
+                                  ),
                                   tooltip: 'Fazer Contra Proposta',
                                   onPressed: () {
                                     showContraPropostaPopup(
-                                        context, negotiation);
+                                      context,
+                                      negotiation,
+                                    );
                                   },
                                 ),
                                 const Text(
                                   'Fazer Contra Proposta',
                                   style: TextStyle(
-                                      fontSize: 12, color: Colors.black),
+                                    fontSize: 12,
+                                    color: Colors.black,
+                                  ),
                                 ),
                               ],
-                            )
+                            ),
                           ],
-                        )
+                        ),
                       ] else if (negotiation.tipo == 'F') ...[
                         Row(
                           mainAxisAlignment: MainAxisAlignment
@@ -902,14 +963,18 @@ class ProductCard extends StatelessWidget {
                               mainAxisSize: MainAxisSize.min,
                               children: [
                                 IconButton(
-                                  icon: const Icon(Icons.download,
-                                      color: Colors.green), // Download icon
+                                  icon: const Icon(
+                                    Icons.download,
+                                    color: Colors.green,
+                                  ), // Download icon
                                   tooltip: 'Download Contrato',
                                   onPressed: () {
                                     ScaffoldMessenger.of(context).showSnackBar(
                                       const SnackBar(
-                                          content: Text(
-                                              'Download do contrato iniciado...')),
+                                        content: Text(
+                                          'Download do contrato iniciado...',
+                                        ),
+                                      ),
                                     );
                                     downloadContrato(negotiation.id, context);
                                     // Add your download logic here
@@ -918,7 +983,9 @@ class ProductCard extends StatelessWidget {
                                 const Text(
                                   'Download Contrato',
                                   style: TextStyle(
-                                      fontSize: 12, color: Colors.black),
+                                    fontSize: 12,
+                                    color: Colors.black,
+                                  ),
                                 ),
                               ],
                             ),
@@ -926,15 +993,17 @@ class ProductCard extends StatelessWidget {
                               mainAxisSize: MainAxisSize.min,
                               children: [
                                 IconButton(
-                                  icon: const Icon(Icons.star,
-                                      color:
-                                          Colors.orange), // Rating/Review icon
+                                  icon: const Icon(
+                                    Icons.star,
+                                    color: Colors.orange,
+                                  ), // Rating/Review icon
                                   tooltip: 'Avaliar Vendedor/Comprador',
                                   onPressed: () {
                                     ScaffoldMessenger.of(context).showSnackBar(
                                       const SnackBar(
                                         content: Text(
-                                            'Abrindo tela de avaliação...'), // More appropriate message
+                                          'Abrindo tela de avaliação...',
+                                        ), // More appropriate message
                                       ),
                                     );
                                     // Navigate to your rating screen or logic here
@@ -943,12 +1012,14 @@ class ProductCard extends StatelessWidget {
                                 const Text(
                                   'Avaliar Vendedor/Comprador',
                                   style: TextStyle(
-                                      fontSize: 12, color: Colors.black),
+                                    fontSize: 12,
+                                    color: Colors.black,
+                                  ),
                                 ),
                               ],
                             ),
                           ],
-                        )
+                        ),
                       ],
                     ],
                   ),
@@ -961,7 +1032,7 @@ class ProductCard extends StatelessWidget {
     );
   }
 
-// Função para mapear status para texto
+  // Função para mapear status para texto
   String getStatusText(String status) {
     switch (status) {
       case 'A':
@@ -1026,7 +1097,9 @@ class ProductCard extends StatelessWidget {
   }
 
   Future<void> handleSignContract(
-      BuildContext context, dynamic negotiation) async {
+    BuildContext context,
+    dynamic negotiation,
+  ) async {
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text('Contrato assinado com sucesso!')),
     );
@@ -1039,15 +1112,17 @@ class ProductCard extends StatelessWidget {
   }
 
   void main() {
-    runApp(MaterialApp(
-      theme: ThemeData(primarySwatch: Colors.green),
-      home: ProductCatalogPageCompras(
-        title: 'Produtos do Vendedor',
-        apiUrl:
-            'http://192.168.146.1:8088/boletobancos/api/produtos/vendedor/${AuthUtility.userInfo.data?.id}',
-        actionIcon: Icons.edit,
-        actionTooltip: 'Editar Produto',
+    runApp(
+      MaterialApp(
+        theme: ThemeData(primarySwatch: Colors.green),
+        home: ProductCatalogPageCompras(
+          title: 'Produtos do Vendedor',
+          apiUrl:
+              'http://192.168.146.1:8088/boletobancos/api/produtos/vendedor/${AuthUtility.userInfo?.data?.id}',
+          actionIcon: Icons.edit,
+          actionTooltip: 'Editar Produto',
+        ),
       ),
-    ));
+    );
   }
 }

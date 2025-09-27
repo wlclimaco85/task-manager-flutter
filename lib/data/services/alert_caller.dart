@@ -11,8 +11,10 @@ class AlertCaller {
     List<Alert>? model = [];
     AlertResponse models;
     try {
-      final NetworkResponse response =
-          await NetworkCaller().getRequests(ApiLinks.allAlerts, context);
+      final NetworkResponse response = await NetworkCaller().getRequests(
+        ApiLinks.allAlerts,
+        context,
+      );
       String jsonString;
 
       if (response.statusCode == 200 && response.body != null) {
@@ -32,11 +34,12 @@ class AlertCaller {
   Future<List<Alert>> fetchItensAVenda(BuildContext context) async {
     List<Alert>? model = [];
     AlertResponse models;
-    if (AuthUtility.userInfo.data?.id != null) {
+    if (AuthUtility.userInfo?.data?.id != null) {
       try {
         final NetworkResponse response = await NetworkCaller().getRequests(
-            '${ApiLinks.alertFindByUser}${AuthUtility.userInfo.data?.id}',
-            context);
+          '${ApiLinks.alertFindByUser}${AuthUtility.userInfo?.data?.id}',
+          context,
+        );
         String jsonString;
 
         if (response.statusCode == 200 && response.body != null) {

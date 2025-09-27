@@ -41,7 +41,10 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     super.initState();
     _carregarTermos();
     _freteFuture = _calcularFrete(
-        widget.idVenda, AuthUtility.userInfo.data!.id ?? 0, widget.productQnt);
+      widget.idVenda,
+      AuthUtility.userInfo?.data!.id ?? 0,
+      widget.productQnt,
+    );
   }
 
   Future<double> _calcularFrete(int vendaId, int compradorId, int peso) async {
@@ -90,15 +93,16 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
 
     if (_termsText.isEmpty) {
       print("_termsText is empty. Not showing dialog.");
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Termos não encontrados.')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Termos não encontrados.')));
       return;
     }
 
     final unescape = HtmlUnescape();
-    String textoDecodificado =
-        _termsText.contains('&') ? unescape.convert(_termsText) : _termsText;
+    String textoDecodificado = _termsText.contains('&')
+        ? unescape.convert(_termsText)
+        : _termsText;
     print("Decoded text: $textoDecodificado");
 
     print("About to show dialog");
@@ -109,8 +113,10 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
         backgroundColor: _fundoVerdeClaro,
         title: Text(
           'Termos da Compra',
-          style:
-              TextStyle(fontWeight: FontWeight.bold, color: _bordaVerdeEscuro),
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+            color: _bordaVerdeEscuro,
+          ),
         ),
         content: SizedBox(
           height: MediaQuery.of(context).size.height * 0.6,
@@ -173,12 +179,20 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(titulo,
-              style: const TextStyle(
-                  fontWeight: FontWeight.bold, color: Colors.black87)),
-          Text(valor,
-              style: const TextStyle(
-                  fontWeight: FontWeight.w600, color: Colors.green)),
+          Text(
+            titulo,
+            style: const TextStyle(
+              fontWeight: FontWeight.bold,
+              color: Colors.black87,
+            ),
+          ),
+          Text(
+            valor,
+            style: const TextStyle(
+              fontWeight: FontWeight.w600,
+              color: Colors.green,
+            ),
+          ),
         ],
       ),
     );
@@ -191,7 +205,8 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
         return AlertDialog(
           title: const Text("Estimativa de Frete"),
           content: const Text(
-              "Este é o valor estimado de frete. Será feita uma nova cotação junto aos motoristas parceiros para verificar se conseguiremos manter o preço."),
+            "Este é o valor estimado de frete. Será feita uma nova cotação junto aos motoristas parceiros para verificar se conseguiremos manter o preço.",
+          ),
           actions: [
             TextButton(
               onPressed: () => Navigator.of(context).pop(),
@@ -209,8 +224,10 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Finalização da Compra',
-            style: TextStyle(fontWeight: FontWeight.bold)),
+        title: const Text(
+          'Finalização da Compra',
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
         centerTitle: true,
       ),
       body: Container(
@@ -231,9 +248,13 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                   children: [
                     _buildCardInformacao('Produto:', widget.productName),
                     _buildCardInformacao(
-                        'Quantidade:', '${widget.productQnt} sacos'),
-                    _buildCardInformacao('Valor Unitário:',
-                        'R\$ ${widget.productValue.toStringAsFixed(2)}'),
+                      'Quantidade:',
+                      '${widget.productQnt} sacos',
+                    ),
+                    _buildCardInformacao(
+                      'Valor Unitário:',
+                      'R\$ ${widget.productValue.toStringAsFixed(2)}',
+                    ),
                     const SizedBox(height: 15),
                     Container(
                       padding: const EdgeInsets.all(12),
@@ -245,16 +266,22 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          const Text('VALOR TOTAL:',
-                              style: TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 16,
-                                  color: Colors.green)),
-                          Text('R\$ ${valorTotal.toStringAsFixed(2)}',
-                              style: const TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 18,
-                                  color: Colors.green)),
+                          const Text(
+                            'VALOR TOTAL:',
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 16,
+                              color: Colors.green,
+                            ),
+                          ),
+                          Text(
+                            'R\$ ${valorTotal.toStringAsFixed(2)}',
+                            style: const TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 18,
+                              color: Colors.green,
+                            ),
+                          ),
                         ],
                       ),
                     ),
@@ -282,15 +309,20 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                   Expanded(
                     child: Wrap(
                       children: [
-                        const Text('Li e aceito os ',
-                            style: TextStyle(fontWeight: FontWeight.bold)),
+                        const Text(
+                          'Li e aceito os ',
+                          style: TextStyle(fontWeight: FontWeight.bold),
+                        ),
                         GestureDetector(
                           onTap: _exibirTermos,
-                          child: const Text('termos de compra',
-                              style: TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.blue,
-                                  decoration: TextDecoration.underline)),
+                          child: const Text(
+                            'termos de compra',
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              color: Colors.blue,
+                              decoration: TextDecoration.underline,
+                            ),
+                          ),
                         ),
                       ],
                     ),
@@ -318,31 +350,38 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                   ),
                   Expanded(
                     child: FutureBuilder<double>(
-                        future: _freteFuture,
-                        builder: (context, snapshot) {
-                          if (snapshot.connectionState ==
-                              ConnectionState.waiting) {
-                            return const Text('Calculando frete...',
-                                style: TextStyle(color: Colors.grey));
-                          }
-
-                          if (snapshot.hasError) {
-                            return const Text('Frete não disponível',
-                                style: TextStyle(color: Colors.red));
-                          }
-
-                          final formatter = NumberFormat.currency(
-                            locale: 'pt_BR',
-                            symbol: 'R\$',
-                            decimalDigits: 2,
+                      future: _freteFuture,
+                      builder: (context, snapshot) {
+                        if (snapshot.connectionState ==
+                            ConnectionState.waiting) {
+                          return const Text(
+                            'Calculando frete...',
+                            style: TextStyle(color: Colors.grey),
                           );
+                        }
 
-                          return Text(
-                              'Contratar Frete - ${formatter.format(snapshot.data!)}',
-                              style: TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.green[800]));
-                        }),
+                        if (snapshot.hasError) {
+                          return const Text(
+                            'Frete não disponível',
+                            style: TextStyle(color: Colors.red),
+                          );
+                        }
+
+                        final formatter = NumberFormat.currency(
+                          locale: 'pt_BR',
+                          symbol: 'R\$',
+                          decimalDigits: 2,
+                        );
+
+                        return Text(
+                          'Contratar Frete - ${formatter.format(snapshot.data!)}',
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            color: Colors.green[800],
+                          ),
+                        );
+                      },
+                    ),
                   ),
                 ],
               ),
@@ -354,9 +393,10 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
               width: double.infinity,
               child: ElevatedButton.icon(
                 icon: const Icon(Icons.shopping_cart_checkout, size: 24),
-                label: const Text('CONFIRMAR COMPRA',
-                    style:
-                        TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                label: const Text(
+                  'CONFIRMAR COMPRA',
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                ),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: _bordaVerdeEscuro,
                   foregroundColor: Colors.white,
@@ -371,7 +411,8 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                       context: context, // Contexto do widget atual
                       vendaId: widget.idVenda, // ID da venda
                       vendedorId: 1,
-                      compradorId: AuthUtility.userInfo.data?.id ??
+                      compradorId:
+                          AuthUtility.userInfo?.data?.id ??
                           0, // Substitua com ID do comprador
                       qtdSacos: widget.productQnt ?? 0,
                       vlrSacos: widget.productValue ?? 0.0,
@@ -380,17 +421,15 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                     );
                     Navigator.of(context).pop();
                     if (response) {
-                      final response = await RenegotiationMovimentoContratosHandler
-                          .renegotiates(
-                              context: context, // Contexto do widget atual
-                              vendaId: widget.idVenda,
-                              status:
-                                  'download'); // Refresh automático após sucesso
+                      final response =
+                          await RenegotiationMovimentoContratosHandler.renegotiates(
+                            context: context, // Contexto do widget atual
+                            vendaId: widget.idVenda,
+                            status: 'download',
+                          ); // Refresh automático após sucesso
                     } else {
                       ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('Erro ao Comprar'),
-                        ),
+                        const SnackBar(content: Text('Erro ao Comprar')),
                       );
                     }
                   }

@@ -35,15 +35,17 @@ class _ProdutoDetailsScreenState extends State<ProdutoDetailsScreen> {
       isLoading = true; // Show loading indicator
     });
     try {
-      final produto =
-          await VendasCaller().fetchProdutoDetails(context, widget.produtoId);
+      final produto = await VendasCaller().fetchProdutoDetails(
+        context,
+        widget.produtoId,
+      );
       setState(() {
         _futureProduto = Future.value(produto); // Assign the Produto object
       });
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Erro ao carregar produto: $e')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Erro ao carregar produto: $e')));
     } finally {
       setState(() {
         isLoading = false; // Hide loading indicator
@@ -57,12 +59,16 @@ class _ProdutoDetailsScreenState extends State<ProdutoDetailsScreen> {
 
   void _previousPage() {
     _pageController.previousPage(
-        duration: const Duration(milliseconds: 300), curve: Curves.easeInOut);
+      duration: const Duration(milliseconds: 300),
+      curve: Curves.easeInOut,
+    );
   }
 
   void _nextPage() {
     _pageController.nextPage(
-        duration: const Duration(milliseconds: 300), curve: Curves.easeInOut);
+      duration: const Duration(milliseconds: 300),
+      curve: Curves.easeInOut,
+    );
   }
 
   @override
@@ -91,7 +97,8 @@ class _ProdutoDetailsScreenState extends State<ProdutoDetailsScreen> {
             return Center(
               child: CircularProgressIndicator(
                 valueColor: AlwaysStoppedAnimation<Color>(
-                    CustomColors().getDarkGreenBorder()),
+                  CustomColors().getDarkGreenBorder(),
+                ),
               ),
             );
           }
@@ -108,8 +115,8 @@ class _ProdutoDetailsScreenState extends State<ProdutoDetailsScreen> {
           final account = snapshot.data == null
               ? Produto()
               : snapshot.data!.isNotEmpty
-                  ? snapshot.data!.first
-                  : Produto();
+              ? snapshot.data!.first
+              : Produto();
           final listFotos = (account.listFotos as List?) ?? [];
 
           final parceiro = account.parceiro;
@@ -130,7 +137,9 @@ class _ProdutoDetailsScreenState extends State<ProdutoDetailsScreen> {
                 color: CustomColors().getLightGreenBackground(),
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(
-                    color: CustomColors().getDarkGreenBorder(), width: 2),
+                  color: CustomColors().getDarkGreenBorder(),
+                  width: 2,
+                ),
               ),
               padding: const EdgeInsets.all(16),
               child: Column(
@@ -141,7 +150,9 @@ class _ProdutoDetailsScreenState extends State<ProdutoDetailsScreen> {
                     decoration: BoxDecoration(
                       borderRadius: BorderRadius.circular(12),
                       border: Border.all(
-                          color: CustomColors().getDarkGreenBorder(), width: 2),
+                        color: CustomColors().getDarkGreenBorder(),
+                        width: 2,
+                      ),
                     ),
                     child: SizedBox(
                       height: 250,
@@ -160,8 +171,9 @@ class _ProdutoDetailsScreenState extends State<ProdutoDetailsScreen> {
                               try {
                                 Uint8List bytes = base64.decode(imageData);
                                 return Container(
-                                  margin:
-                                      const EdgeInsets.symmetric(horizontal: 8),
+                                  margin: const EdgeInsets.symmetric(
+                                    horizontal: 8,
+                                  ),
                                   decoration: BoxDecoration(
                                     borderRadius: BorderRadius.circular(8),
                                     image: DecorationImage(
@@ -173,15 +185,19 @@ class _ProdutoDetailsScreenState extends State<ProdutoDetailsScreen> {
                               } catch (e) {
                                 print('Error decoding base64 image: $e');
                                 return Container(
-                                  margin:
-                                      const EdgeInsets.symmetric(horizontal: 8),
+                                  margin: const EdgeInsets.symmetric(
+                                    horizontal: 8,
+                                  ),
                                   decoration: BoxDecoration(
                                     borderRadius: BorderRadius.circular(8),
                                     color: Colors.grey,
                                   ),
                                   child: const Center(
-                                      child: Icon(Icons.error,
-                                          color: Colors.white)),
+                                    child: Icon(
+                                      Icons.error,
+                                      color: Colors.white,
+                                    ),
+                                  ),
                                 );
                               }
                             },
@@ -203,7 +219,8 @@ class _ProdutoDetailsScreenState extends State<ProdutoDetailsScreen> {
                                     width: 8,
                                     height: 8,
                                     margin: const EdgeInsets.symmetric(
-                                        horizontal: 4),
+                                      horizontal: 4,
+                                    ),
                                     decoration: BoxDecoration(
                                       shape: BoxShape.circle,
                                       color: _currentPage == index
@@ -229,7 +246,9 @@ class _ProdutoDetailsScreenState extends State<ProdutoDetailsScreen> {
                   _buildSectionTitle('Informações do Produto'),
                   _buildInfoItem('Descrição', account.descricao),
                   _buildInfoItem(
-                      'Quantidade de Sacos', account.qtdSacos.toString()),
+                    'Quantidade de Sacos',
+                    account.qtdSacos.toString(),
+                  ),
                   _buildInfoItem('Valor por Saco', 'R\$ ${account.vlrSacos}'),
                   _buildInfoItem('Data de Retirada', account.dataRetirada),
                   _buildInfoItem('Safra', account.safra),
@@ -242,9 +261,10 @@ class _ProdutoDetailsScreenState extends State<ProdutoDetailsScreen> {
                     child: Text(
                       'Vendedor:',
                       style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.black),
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.black,
+                      ),
                     ),
                   ),
                   _buildInfoItem('Nome', account.parceiro?.nome ?? 'N/A'),
@@ -256,22 +276,25 @@ class _ProdutoDetailsScreenState extends State<ProdutoDetailsScreen> {
                     child: Text(
                       'Classificações:',
                       style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.black),
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.black,
+                      ),
                     ),
                   ),
                   if (account.classificacao?.isNotEmpty ?? false)
                     Column(
                       children: account.classificacao!
-                          .map<Widget>((classificacao) => _buildInfoItem(
+                          .map<Widget>(
+                            (classificacao) => _buildInfoItem(
                               classificacao.descricao ?? "Sem descrição",
-                              classificacao.valor?.toString() ?? "0"))
+                              classificacao.valor?.toString() ?? "0",
+                            ),
+                          )
                           .toList(),
                     )
                   else
                     const SizedBox.shrink(), // Não exibe nada
-
                   // Botões de Ação
                   const Divider(color: Colors.grey),
                   Padding(
@@ -291,22 +314,26 @@ class _ProdutoDetailsScreenState extends State<ProdutoDetailsScreen> {
                           Column(
                             children: [
                               IconButton(
-                                icon: const Icon(Icons.handshake,
-                                    color: Colors.green),
+                                icon: const Icon(
+                                  Icons.handshake,
+                                  color: Colors.green,
+                                ),
                                 onPressed: () => showDialog(
                                   context: context,
                                   builder: (context) => NegotiationDialog(
                                     product: account,
                                     compradorId:
-                                        AuthUtility.userInfo.data?.id ??
-                                            0, // ID do usuário logado
+                                        AuthUtility.userInfo?.data?.id ??
+                                        0, // ID do usuário logado
                                   ),
                                 ),
                               ),
                               const Text(
                                 "Negociar",
                                 style: TextStyle(
-                                    fontSize: 12, color: Colors.black),
+                                  fontSize: 12,
+                                  color: Colors.black,
+                                ),
                               ),
                             ],
                           ),
@@ -323,8 +350,10 @@ class _ProdutoDetailsScreenState extends State<ProdutoDetailsScreen> {
                           Column(
                             children: [
                               IconButton(
-                                icon: const Icon(Icons.shopping_cart,
-                                    color: Colors.orange),
+                                icon: const Icon(
+                                  Icons.shopping_cart,
+                                  color: Colors.orange,
+                                ),
                                 onPressed: () => Navigator.push(
                                   context,
                                   MaterialPageRoute(
@@ -345,7 +374,9 @@ class _ProdutoDetailsScreenState extends State<ProdutoDetailsScreen> {
                               const Text(
                                 "Comprar",
                                 style: TextStyle(
-                                    fontSize: 12, color: Colors.black),
+                                  fontSize: 12,
+                                  color: Colors.black,
+                                ),
                               ),
                             ],
                           ),
@@ -360,17 +391,21 @@ class _ProdutoDetailsScreenState extends State<ProdutoDetailsScreen> {
                         Column(
                           children: [
                             IconButton(
-                              icon: const Icon(Icons.local_shipping,
-                                  color: Colors.purple),
+                              icon: const Icon(
+                                Icons.local_shipping,
+                                color: Colors.purple,
+                              ),
                               onPressed: () async {
                                 await showDialog(
                                   context: context,
                                   builder: (BuildContext context) {
                                     return AlertDialog(
-                                      title:
-                                          const Text("Cotação de Transporte"),
+                                      title: const Text(
+                                        "Cotação de Transporte",
+                                      ),
                                       content: const Text(
-                                          "Vamos enviar suas informações para nossa transportadora parceira e o mais breve possível será enviado o valor do frete."),
+                                        "Vamos enviar suas informações para nossa transportadora parceira e o mais breve possível será enviado o valor do frete.",
+                                      ),
                                       actions: [
                                         TextButton(
                                           child: const Text("Cancelar"),
@@ -392,8 +427,10 @@ class _ProdutoDetailsScreenState extends State<ProdutoDetailsScreen> {
                             ),
                             const Text(
                               "Cotar Transporte",
-                              style:
-                                  TextStyle(fontSize: 12, color: Colors.black),
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: Colors.black,
+                              ),
                             ),
                           ],
                         ),
@@ -430,8 +467,10 @@ class _ProdutoDetailsScreenState extends State<ProdutoDetailsScreen> {
       decoration: BoxDecoration(
         color: CustomColors().getLightGreenBackground(),
         borderRadius: BorderRadius.circular(8),
-        border:
-            Border.all(color: CustomColors().getDarkGreenBorder(), width: 1),
+        border: Border.all(
+          color: CustomColors().getDarkGreenBorder(),
+          width: 1,
+        ),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -450,10 +489,7 @@ class _ProdutoDetailsScreenState extends State<ProdutoDetailsScreen> {
             flex: 3,
             child: Text(
               value ?? 'N/A',
-              style: const TextStyle(
-                color: Colors.black54,
-                fontSize: 14,
-              ),
+              style: const TextStyle(color: Colors.black54, fontSize: 14),
             ),
           ),
         ],

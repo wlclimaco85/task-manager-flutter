@@ -45,9 +45,9 @@ class _ProductCatalogPageVendasState extends State<ProductCatalogPageVendas> {
         products = data;
       });
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Erro ao carregar produtos: $e')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Erro ao carregar produtos: $e')));
     } finally {
       setState(() {
         isLoading = false;
@@ -81,29 +81,29 @@ class _ProductCatalogPageVendasState extends State<ProductCatalogPageVendas> {
         child: isLoading
             ? const Center(child: CircularProgressIndicator())
             : products.isEmpty
-                ? const Center(child: Text('Nenhum produto encontrado'))
-                : ListView.builder(
-                    itemCount: products.length,
-                    itemBuilder: (context, index) {
-                      final product = products[index];
-                      return ProductCard(
-                        product: product,
-                        actionIcon: widget.actionIcon,
-                        actionTooltip: widget.actionTooltip,
-                        onAction: () => showActionPopup(context, product),
-                        onDelete: () {
-                          setState(() {
-                            products.removeAt(index);
-                          });
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text('Produto excluído com sucesso'),
-                            ),
-                          );
-                        },
+            ? const Center(child: Text('Nenhum produto encontrado'))
+            : ListView.builder(
+                itemCount: products.length,
+                itemBuilder: (context, index) {
+                  final product = products[index];
+                  return ProductCard(
+                    product: product,
+                    actionIcon: widget.actionIcon,
+                    actionTooltip: widget.actionTooltip,
+                    onAction: () => showActionPopup(context, product),
+                    onDelete: () {
+                      setState(() {
+                        products.removeAt(index);
+                      });
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('Produto excluído com sucesso'),
+                        ),
                       );
                     },
-                  ),
+                  );
+                },
+              ),
       ),
     );
   }
@@ -125,7 +125,8 @@ class _ProductCatalogPageVendasState extends State<ProductCatalogPageVendas> {
             Text('Quantidade de sacos: ${product.qtdSacos ?? 0}'),
             Text('Valor por saco: R\$${product.vlrSacos ?? 0.0}'),
             Text(
-                'Data de retirada: ${product.dtRetirada ?? 'Não especificado'}'),
+              'Data de retirada: ${product.dtRetirada ?? 'Não especificado'}',
+            ),
             const SizedBox(height: 8),
             ...List.generate((product.negociacoes as List).length, (i) {
               final negotiation = product.negociacoes[i];
@@ -158,7 +159,9 @@ class _ProductCatalogPageVendasState extends State<ProductCatalogPageVendas> {
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(8),
                 side: BorderSide(
-                    color: CustomColors().getDarkGreenBorder(), width: 2),
+                  color: CustomColors().getDarkGreenBorder(),
+                  width: 2,
+                ),
               ),
             ),
             child: const Text('Confirmar Ação'),
@@ -193,12 +196,7 @@ class ProductCard extends StatelessWidget {
 
     // final imageBase64 = decodeBase64Image(getImagepadrao());
     final Widget image = imageBase64.isNotEmpty
-        ? Image.memory(
-            imageBase64,
-            width: 100,
-            height: 100,
-            fit: BoxFit.cover,
-          )
+        ? Image.memory(imageBase64, width: 100, height: 100, fit: BoxFit.cover)
         : const Icon(Icons.image, size: 100);
 
     return Card(
@@ -215,10 +213,7 @@ class ProductCard extends StatelessWidget {
             padding: const EdgeInsets.all(8.0),
             child: Text(
               product.tipo ?? 'Sem descrição',
-              style: const TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-              ),
+              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
             ),
           ),
 
@@ -228,10 +223,7 @@ class ProductCard extends StatelessWidget {
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Expanded(
-                  flex: 2,
-                  child: image,
-                ),
+                Expanded(flex: 2, child: image),
                 Expanded(
                   flex: 3,
                   child: Padding(
@@ -251,8 +243,10 @@ class ProductCard extends StatelessWidget {
                           Text('Data Retirada: ${product.dtRetirada}'),
                           Text('Descrição: ${product.descricao}'),
                           const SizedBox(height: 8),
-                          const Text('Endereço Retirada:',
-                              style: TextStyle(fontWeight: FontWeight.bold)),
+                          const Text(
+                            'Endereço Retirada:',
+                            style: TextStyle(fontWeight: FontWeight.bold),
+                          ),
                           ...List.generate(
                             (product.negociacoes as List).length,
                             (i) {
@@ -342,14 +336,16 @@ String getStatusText(String status) {
 }
 
 void main() {
-  runApp(MaterialApp(
-    theme: ThemeData(primarySwatch: Colors.green),
-    home: ProductCatalogPageVendas(
-      title: 'Produtos do Vendedor',
-      apiUrl:
-          'http://192.168.146.1:8088/boletobancos/api/produtos/vendedor/${AuthUtility.userInfo.data?.id}',
-      actionIcon: Icons.edit,
-      actionTooltip: 'Editar Produto',
+  runApp(
+    MaterialApp(
+      theme: ThemeData(primarySwatch: Colors.green),
+      home: ProductCatalogPageVendas(
+        title: 'Produtos do Vendedor',
+        apiUrl:
+            'http://192.168.146.1:8088/boletobancos/api/produtos/vendedor/${AuthUtility.userInfo?.data?.id}',
+        actionIcon: Icons.edit,
+        actionTooltip: 'Editar Produto',
+      ),
     ),
-  ));
+  );
 }

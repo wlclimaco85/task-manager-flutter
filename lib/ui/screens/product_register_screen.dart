@@ -75,7 +75,7 @@ class _ProductRegisterScreenState extends State<ProductRegisterScreen> {
     try {
       final List<Parceiro> parceiroData = await ParceiroCaller().fetchParceiros(
         context,
-        AuthUtility.userInfo.data?.id ?? 0,
+        AuthUtility.userInfo?.data?.id ?? 0,
       );
 
       setState(() {
@@ -173,7 +173,7 @@ class _ProductRegisterScreenState extends State<ProductRegisterScreen> {
         'isCargaFechada': isCargaFechada,
         'tipoGrao': selectedTipoGrao,
         'dtRetirada': dtRetirada?.toIso8601String(),
-        'parceiro': {'id': AuthUtility.userInfo.data?.id},
+        'parceiro': {'id': AuthUtility.userInfo?.data?.id},
         'status': 'A',
         'qtdsacosoriginal': int.tryParse(qtdSacosController.text) ?? 0,
         'classificacao': classificacaoList,

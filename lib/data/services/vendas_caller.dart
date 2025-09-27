@@ -17,8 +17,9 @@ class VendasCaller {
     List<Produto>? model = [];
     ProdutoModel models;
     try {
-      final NetworkResponse response =
-          await NetworkCaller().getRequest(ApiLinks.allVendas);
+      final NetworkResponse response = await NetworkCaller().getRequest(
+        ApiLinks.allVendas,
+      );
 
       if (response.statusCode == 200 && response.body != null) {
         models = ProdutoModel.fromJson(response.body!);
@@ -38,8 +39,9 @@ class VendasCaller {
     ProductModel models;
     try {
       final NetworkResponse response = await NetworkCaller().getRequests(
-          '${ApiLinks.fecthItensAVenda}${AuthUtility.userInfo.data?.id}',
-          context);
+        '${ApiLinks.fecthItensAVenda}${AuthUtility.userInfo?.data?.id}',
+        context,
+      );
       String jsonString;
 
       if (response.statusCode == 200 && response.body != null) {
@@ -60,7 +62,7 @@ class VendasCaller {
     List<Product>? model = [];
     ProductModel models;
     try {
-      if (AuthUtility.userInfo.data?.id == 1) {
+      if (AuthUtility.userInfo?.data?.id == 1) {
         // AQUI CHAMAR O LOGIN
         await showDialog(
           context: context,
@@ -68,8 +70,9 @@ class VendasCaller {
         );
       } else {
         final NetworkResponse response = await NetworkCaller().getRequests(
-            '${ApiLinks.fecthItensACompra}${AuthUtility.userInfo.data?.id}',
-            context);
+          '${ApiLinks.fecthItensACompra}${AuthUtility.userInfo?.data?.id}',
+          context,
+        );
         String jsonString;
 
         if (response.statusCode == 200 && response.body != null) {
@@ -78,7 +81,6 @@ class VendasCaller {
           model.addAll(models.produtos ?? []);
         } else if (response.statusCode == 403) {
           // Mova o código que depende do BuildContext para este método.
-          
         } else {
           print('Erro: Nenhum dado retornado');
         }
@@ -95,8 +97,9 @@ class VendasCaller {
     ProductModel models;
     try {
       final NetworkResponse response = await NetworkCaller().getRequests(
-          '${ApiLinks.fecthItensANegociar}${AuthUtility.userInfo.data?.id}',
-          context);
+        '${ApiLinks.fecthItensANegociar}${AuthUtility.userInfo?.data?.id}',
+        context,
+      );
       String jsonString;
 
       if (response.statusCode == 200 && response.body != null) {
@@ -117,8 +120,10 @@ class VendasCaller {
     List<Account>? model = [];
     ClassificacaoResponse models;
     try {
-      final NetworkResponse response =
-          await NetworkCaller().getRequests(ApiLinks.allClassificacao, context);
+      final NetworkResponse response = await NetworkCaller().getRequests(
+        ApiLinks.allClassificacao,
+        context,
+      );
       String jsonString;
 
       if (response.statusCode == 200 && response.body != null) {
@@ -136,7 +141,9 @@ class VendasCaller {
   }
 
   Future<List<Produto>> fetchProdutoDetails(
-      BuildContext context, int id) async {
+    BuildContext context,
+    int id,
+  ) async {
     List<Produto>? model = [];
     ProdutoModel models;
     try {
@@ -164,7 +171,7 @@ class VendasCaller {
 
     // Get the token (replace with your actual AuthUtility method)
     final token =
-        AuthUtility.userInfo.token; // Assuming userInfo.token is available
+        AuthUtility.userInfo?.token; // Assuming userInfo.token is available
 
     try {
       final response = await http.get(
@@ -180,26 +187,31 @@ class VendasCaller {
 
         final tempDir = await getTemporaryDirectory();
         final file = File('${tempDir.path}/contrato_$contratoId.pdf');
-        await file
-            .writeAsBytes(response.bodyBytes); // Write the bytes to the file
+        await file.writeAsBytes(
+          response.bodyBytes,
+        ); // Write the bytes to the file
 
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-              content: Text('Download concluído! Abrindo o contrato...')),
+            content: Text('Download concluído! Abrindo o contrato...'),
+          ),
         );
 
         OpenFilex.open(file.path); // Open the file
       } else {
         print(
-            'Error: ${response.statusCode} - ${response.body}'); // Print error details
+          'Error: ${response.statusCode} - ${response.body}',
+        ); // Print error details
         // Try to decode the error response body (if it's JSON)
         try {
           final errorData = jsonDecode(response.body);
           print('Error Data: $errorData'); // Print decoded error data
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-                content: Text(
-                    'Erro ao baixar contrato: ${errorData['message'] ?? 'Erro desconhecido'}')),
+              content: Text(
+                'Erro ao baixar contrato: ${errorData['message'] ?? 'Erro desconhecido'}',
+              ),
+            ),
           );
         } catch (e) {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -209,27 +221,30 @@ class VendasCaller {
       }
     } catch (e) {
       print('Error during download: $e'); // Catch and log any exceptions
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Erro ao baixar contrato')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Erro ao baixar contrato')));
     }
   }
 
   Future<List<Product>> confirmarNegociacao(
-      BuildContext context, int negociacaoId) async {
+    BuildContext context,
+    int negociacaoId,
+  ) async {
     List<Product>? model = [];
     ProductModel models;
     try {
       final NetworkResponse response = await NetworkCaller().getRequests(
-          "${ApiLinks.confirmarNegociacao}/$negociacaoId",
-          context);
+        "${ApiLinks.confirmarNegociacao}/$negociacaoId",
+        context,
+      );
       String jsonString;
 
       if (response.statusCode == 200 && response.body != null) {
         jsonString = json.encode(response.body);
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Sucesso!!!')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('Sucesso!!!')));
       } else {
         print('Erro: Nenhum dado retornado');
       }
@@ -241,19 +256,23 @@ class VendasCaller {
   }
 
   Future<List<Product>> confirmarRecusar(
-      BuildContext context, int negociacaoId) async {
+    BuildContext context,
+    int negociacaoId,
+  ) async {
     List<Product>? model = [];
     ProductModel models;
     try {
       final NetworkResponse response = await NetworkCaller().getRequests(
-          "${ApiLinks.confirmarRecusar}/$negociacaoId", context);
+        "${ApiLinks.confirmarRecusar}/$negociacaoId",
+        context,
+      );
       String jsonString;
 
       if (response.statusCode == 200 && response.body != null) {
         jsonString = json.encode(response.body);
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Sucesso!!!')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('Sucesso!!!')));
       } else {
         print('Erro: Nenhum dado retornado');
       }
@@ -283,15 +302,17 @@ class VendasCaller {
     };
 
     try {
-      final NetworkResponse response =
-          await NetworkCaller().getRequests(ApiLinks.contraProposta, context);
+      final NetworkResponse response = await NetworkCaller().getRequests(
+        ApiLinks.contraProposta,
+        context,
+      );
       String jsonString;
 
       if (response.statusCode == 200 && response.body != null) {
         jsonString = json.encode(response.body);
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Sucesso!!!')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('Sucesso!!!')));
       } else {
         print('Erro: Nenhum dado retornado');
       }

@@ -46,7 +46,7 @@ class _LoginPopupState extends State<LoginPopup> {
         await AuthUtility.setUserInfo(model);
 
         if (mounted) {
-          AuthUtility.userInfo.token = model.token;
+          AuthUtility.userInfo?.token = model.token;
           Navigator.of(context).pop();
         }
       } else if (response.statusCode == 400) {

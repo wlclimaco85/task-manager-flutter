@@ -19,8 +19,10 @@ class RenegotiationMovimentoContratosHandler {
 
     Future<void> downloadContract(int contratoId, BuildContext context) async {
       try {
-        bool success =
-            await CheckoutCaller().downloadContrato(contratoId, context);
+        bool success = await CheckoutCaller().downloadContrato(
+          contratoId,
+          context,
+        );
 
         if (success) {
           // Fecha todos os diálogos abertos
@@ -40,7 +42,7 @@ class RenegotiationMovimentoContratosHandler {
               builder: (context) => NegociacaoCatalogPage(
                 title: 'Negociação',
                 apiUrl:
-                    '${ApiLinks.negociacaoFindByUser}${AuthUtility.userInfo.data?.id}',
+                    '${ApiLinks.negociacaoFindByUser}${AuthUtility.userInfo?.data?.id}',
                 actionIcon: Icons.edit,
                 actionTooltip: 'Editar Produto',
               ),
@@ -54,11 +56,7 @@ class RenegotiationMovimentoContratosHandler {
           );
         }
       } catch (e) {
-        _showSnackBar(
-          context,
-          message: "Erro: ${e.toString()}",
-          isError: true,
-        );
+        _showSnackBar(context, message: "Erro: ${e.toString()}", isError: true);
       }
     }
 
@@ -79,10 +77,13 @@ class RenegotiationMovimentoContratosHandler {
             builder: (context) {
               return AlertDialog(
                 backgroundColor: CustomColors().getLightGreenBackground(),
-                title: Text('Contrato',
-                    style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        color: CustomColors().getDarkGreenBorder())),
+                title: Text(
+                  'Contrato',
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    color: CustomColors().getDarkGreenBorder(),
+                  ),
+                ),
                 content: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
@@ -91,17 +92,20 @@ class RenegotiationMovimentoContratosHandler {
                         width: double.infinity,
                         child: ElevatedButton.icon(
                           icon: const Icon(Icons.download, size: 24),
-                          label: const Text('Baixar Contrato Modelo',
-                              style: TextStyle(fontSize: 16)),
+                          label: const Text(
+                            'Baixar Contrato Modelo',
+                            style: TextStyle(fontSize: 16),
+                          ),
                           style: ElevatedButton.styleFrom(
-                            backgroundColor:
-                                CustomColors().getDarkGreenBorder(),
+                            backgroundColor: CustomColors()
+                                .getDarkGreenBorder(),
                             foregroundColor: Colors.white,
                             padding: const EdgeInsets.symmetric(vertical: 15),
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(10),
                               side: BorderSide(
-                                  color: CustomColors().getDarkGreenBorder()),
+                                color: CustomColors().getDarkGreenBorder(),
+                              ),
                             ),
                           ),
                           onPressed: () => downloadContract(vendaId, context),
@@ -114,17 +118,20 @@ class RenegotiationMovimentoContratosHandler {
                         width: double.infinity,
                         child: ElevatedButton.icon(
                           icon: const Icon(Icons.upload, size: 24),
-                          label: const Text('Enviar Contrato Assinado',
-                              style: TextStyle(fontSize: 16)),
+                          label: const Text(
+                            'Enviar Contrato Assinado',
+                            style: TextStyle(fontSize: 16),
+                          ),
                           style: ElevatedButton.styleFrom(
-                            backgroundColor:
-                                CustomColors().getDarkGreenBorder(),
+                            backgroundColor: CustomColors()
+                                .getDarkGreenBorder(),
                             foregroundColor: Colors.white,
                             padding: const EdgeInsets.symmetric(vertical: 15),
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(10),
                               side: BorderSide(
-                                  color: CustomColors().getDarkGreenBorder()),
+                                color: CustomColors().getDarkGreenBorder(),
+                              ),
                             ),
                           ),
                           onPressed: () => uploadContract(vendaId),
@@ -135,16 +142,21 @@ class RenegotiationMovimentoContratosHandler {
                 actions: [
                   TextButton(
                     onPressed: () => Navigator.pop(context),
-                    child: Text('Fechar',
-                        style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            color: CustomColors().getDarkGreenBorder())),
+                    child: Text(
+                      'Fechar',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: CustomColors().getDarkGreenBorder(),
+                      ),
+                    ),
                   ),
                 ],
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(15),
                   side: BorderSide(
-                      color: CustomColors().getDarkGreenBorder(), width: 2),
+                    color: CustomColors().getDarkGreenBorder(),
+                    width: 2,
+                  ),
                 ),
               );
             },
@@ -156,11 +168,7 @@ class RenegotiationMovimentoContratosHandler {
         return true;
       } catch (e) {
         Navigator.of(context).pop();
-        _showSnackBar(
-          context,
-          message: "Erro: ${e.toString()}",
-          isError: true,
-        );
+        _showSnackBar(context, message: "Erro: ${e.toString()}", isError: true);
         return false;
       }
     } catch (e) {

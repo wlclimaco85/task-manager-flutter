@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:task_manager_flutter/data/utils/api_links.dart';
 import 'package:task_manager_flutter/ui/widgets/generic_grid_screen.dart';
 import 'package:task_manager_flutter/data/models/login_2_model.dart';
+import 'package:task_manager_flutter/ui/details/login_detail_screen.dart';
 
 class LoginGridScreen extends StatelessWidget {
   final SecurityCheck hasPermission;
@@ -34,6 +35,10 @@ class LoginGridScreen extends StatelessWidget {
         // Navigate to detail screen if needed
         // Navigator.push(context, MaterialPageRoute(builder: (_) => LoginDetailScreen(login)));
       },
+      detailScreenBuilder: (item) => LoginDetailScreen(
+        item: item, // Agora está correto - passando o item
+        hasPermission: hasPermission,
+      ),
       customActions: () => [
         CustomAction<Login>(
           icon: Icons.payment,

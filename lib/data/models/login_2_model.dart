@@ -3,6 +3,7 @@ import 'package:task_manager_flutter/data/models/parceiro_model.dart';
 import 'package:task_manager_flutter/data/models/empresa_model.dart';
 import 'package:task_manager_flutter/data/models/aplicativo_model.dart';
 import 'package:task_manager_flutter/ui/widgets/generic_grid_screen.dart';
+import 'package:task_manager_flutter/data/models/role_model.dart';
 
 class Login {
   int? id;
@@ -41,7 +42,7 @@ class Login {
       'nome': nome,
       'cpfCnpj': cpfCnpj,
       'roles': roles?.map((role) => role.toJson()).toList(),
-      'tipoLogin': tipoLogin?.index,
+      'tipoLogin': tipoLogin?.value, // Salve o value em vez do index
       'empresa': empresa?.toJson(),
       'parceiro': parceiro?.toJson(),
       'aplicativo': aplicativo?.toJson(),
@@ -57,36 +58,44 @@ class Login {
       senha = json['senha'];
       nome = json['nome'];
       cpfCnpj = json['cpfCnpj'];
+
       roles = json['roles'] != null
           ? (json['roles'] as List).map((i) => Role.fromJson(i)).toList()
           : null;
-      // No método fromJson, substitua a linha problemática por:
+
+      // Corrigido: use o value para converter
       if (json['tipoLogin'] != null) {
-        // Converte para int se for string
         final tipoLoginValue = json['tipoLogin'] is String
             ? int.tryParse(json['tipoLogin'])
             : json['tipoLogin'] as int?;
 
         tipoLogin = tipoLoginValue != null
             ? LoginEnum.fromValue(tipoLoginValue)
-            : LoginEnum.APP_ABRACO; // valor padrão
+            : LoginEnum.APP_ABRACO;
       } else {
-        tipoLogin = LoginEnum.APP_ABRACO; // valor padrão se for nulo
+        tipoLogin = LoginEnum.APP_ABRACO;
       }
+
+      // CORRIGIDO: estava 'endereco' em vez de 'aplicativo'
       aplicativo = json['aplicativo'] != null
-          ? Aplicativo.fromJson(json['endereco'])
+          ? Aplicativo.fromJson(json['aplicativo'])
           : null;
+
       empresa = json['empresa'] != null
           ? Empresa.fromJson(json['empresa'])
           : null;
+
       parceiro = json['parceiro'] != null
           ? Parceiro.fromJson(json['parceiro'])
           : null;
-      dhCreatedAt = json['audit][dhCreatedAt'] != null
-          ? DateTime.parse(json['audit][dhCreatedAt'])
+
+      // CORRIGIDO: chaves corretas para as datas
+      dhCreatedAt = json['dhCreatedAt'] != null
+          ? DateTime.parse(json['dhCreatedAt'])
           : null;
-      dhUpdatedAt = json['audit][dhUpdatedAt'] != null
-          ? DateTime.parse(json['audit][dhUpdatedAt'])
+
+      dhUpdatedAt = json['dhUpdatedAt'] != null
+          ? DateTime.parse(json['dhUpdatedAt'])
           : null;
     }
   }
@@ -175,19 +184,13 @@ enum LoginEnum {
   }
 }
 
-class Role {
-  // Add role properties
-  Map<String, dynamic> toJson() => {};
-  static Role fromJson(Map<String, dynamic> json) => Role();
-}
-
 class LoginModel {
   String? status;
   String? token;
   Data? data;
   Login? login;
 
-  LoginModel({this.status, this.token, this.data});
+  LoginModel({this.status, this.token, this.data, this.login});
 
   LoginModel.fromJson(Map<String, dynamic> json) {
     status = json['status'];
@@ -200,12 +203,16 @@ class LoginModel {
     final Map<String, dynamic> data = <String, dynamic>{};
     data['status'] = status;
     data['token'] = token;
+
     if (this.data != null) {
       data['data'] = this.data!.toJson();
     }
-    if (login != null) {
-      data['login'] = this.data!.toJson();
+
+    // CORRIGIDO: estava salvando data em vez de login
+    if (this.login != null) {
+      data['login'] = this.login!.toJson();
     }
+
     return data;
   }
 }

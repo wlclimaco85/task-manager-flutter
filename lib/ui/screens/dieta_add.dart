@@ -89,7 +89,7 @@ class _DietaModalAddState extends State<DietaModalAdd> {
       //String base64Images = base64Encode(imageBytes);
       base64Imagess = base64Encode(bytess);
     }
-    Data userInfo = AuthUtility.userInfo.data!;
+    Data userInfo = AuthUtility.userInfo?.data ?? Data();
 
     NumberToDieta myObjectInstanced = NumberToDieta();
     List<Map<String, dynamic>> dayNamed = myObjectInstanced.test();

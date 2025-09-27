@@ -60,12 +60,12 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
 
   // Verifica se o usuário está logado
   final bool isLoggedIn =
-      AuthUtility.userInfo.data?.id != null &&
-      AuthUtility.userInfo.data!.id! > 1;
+      (AuthUtility.userInfo?.data?.id != null &&
+      AuthUtility.userInfo!.data!.id! > 1);
 
   // Obtém o nome do usuário ou retorna padrão
   String get userName {
-    final user = AuthUtility.userInfo.data;
+    final user = AuthUtility.userInfo?.data;
     if (user?.firstName != null && user?.lastName != null) {
       return '${user!.firstName!} ${user.lastName!}';
     } else if (user?.email != null) {
@@ -77,7 +77,7 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
 
   // Obtém as telas com base no estado de login
   List<Widget> get _screens {
-    final userInfo = AuthUtility.userInfo.data;
+    final userInfo = AuthUtility.userInfo?.data;
 
     // Se o usuário está logado
     if (userInfo != null && userInfo.id != null && userInfo.id! >= 1) {
@@ -120,6 +120,7 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
         FileUploadScreen(hasPermission: (perm) => true),
         CalendarScreen(),
         ObrigacaoFiscalGridScreen(hasPermission: (perm) => true),
+        LoginGridScreen(hasPermission: (perm) => true),
       ];
     } else {
       // Usuário não logado → só mostra login
@@ -168,6 +169,7 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
       icon: FontAwesomeIcons.fileInvoiceDollar,
       label: "Obrigações Fiscais",
     ),
+    SidebarItem(icon: FontAwesomeIcons.person, label: "Logins"),
   ];
 
   @override
@@ -184,8 +186,8 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
 
   Future<void> fetchAlerts() async {
     try {
-      if (AuthUtility.userInfo.data?.id == null ||
-          AuthUtility.userInfo.data!.id! > 1) {
+      final userId = AuthUtility.userInfo?.data?.id;
+      if (userId == null || userId > 1) {
         final List<Alert> alertData = await AlertCaller().fetchItensAVenda(
           context,
         );
@@ -517,7 +519,7 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
                                         Text(
                                           AuthUtility
                                                   .userInfo
-                                                  .data
+                                                  ?.data
                                                   ?.codDadosPessoal
                                                   ?.email ??
                                               "",
@@ -545,7 +547,7 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
                                         showBase64Image(
                                           AuthUtility
                                               .userInfo
-                                              .data
+                                              ?.data
                                               ?.codDadosPessoal
                                               ?.photo,
                                         ),

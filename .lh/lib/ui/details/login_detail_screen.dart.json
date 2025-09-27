@@ -1,0 +1,42 @@
+{
+    "sourceFile": "lib/ui/details/login_detail_screen.dart",
+    "activeCommit": 0,
+    "commits": [
+        {
+            "activePatchIndex": 6,
+            "patches": [
+                {
+                    "date": 1758985567699,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n"
+                },
+                {
+                    "date": 1758985578144,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -27,10 +27,10 @@\n     TabConfig(\r\n       title: \"Roles\",\r\n       icon: Icons.history,\r\n       isGrid: true,\r\n-      endpoint: ApiLinks.allLogins,\r\n-      gridFieldConfigs: Login.fieldConfigs,\r\n+      endpoint: ApiLinks.allRoles,\r\n+      gridFieldConfigs: Roles.fieldConfigs,\r\n     ),\r\n   ];\r\n \r\n   @override\r\n"
+                },
+                {
+                    "date": 1758985620255,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -4,8 +4,9 @@\n import 'package:task_manager_flutter/ui/widgets/genericDetailFormScreen.dart';\r\n import 'package:task_manager_flutter/ui/widgets/generic_grid_screen.dart';\r\n import 'package:task_manager_flutter/ui/widgets/tab_config.dart';\r\n import 'package:task_manager_flutter/data/models/login_2_model.dart';\r\n+import 'package:task_manager_flutter/data/models/role_model.dart';\r\n \r\n class LoginDetailScreen extends StatelessWidget {\r\n   final Login item;\r\n   final SecurityCheck hasPermission;\r\n"
+                },
+                {
+                    "date": 1758985679086,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -29,9 +29,9 @@\n       title: \"Roles\",\r\n       icon: Icons.history,\r\n       isGrid: true,\r\n       endpoint: ApiLinks.allRoles,\r\n-      gridFieldConfigs: Roles.fieldConfigs,\r\n+      gridFieldConfigs: Role.fieldConfigs,\r\n     ),\r\n   ];\r\n \r\n   @override\r\n"
+                },
+                {
+                    "date": 1758985704245,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -35,9 +35,9 @@\n   ];\r\n \r\n   @override\r\n   Widget build(BuildContext context) {\r\n-    return GenericDetailFormScreen<Parceiro>(\r\n+    return GenericDetailFormScreen<Login>(\r\n       item: item,\r\n       tabConfigs: tabConfigs,\r\n       title: \"Detalhes do Parceiro\",\r\n       onSave: (formData) async {\r\n"
+                },
+                {
+                    "date": 1758985758685,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -3,9 +3,8 @@\n import 'package:task_manager_flutter/data/utils/api_links.dart';\r\n import 'package:task_manager_flutter/ui/widgets/genericDetailFormScreen.dart';\r\n import 'package:task_manager_flutter/ui/widgets/generic_grid_screen.dart';\r\n import 'package:task_manager_flutter/ui/widgets/tab_config.dart';\r\n-import 'package:task_manager_flutter/data/models/login_2_model.dart';\r\n import 'package:task_manager_flutter/data/models/role_model.dart';\r\n \r\n class LoginDetailScreen extends StatelessWidget {\r\n   final Login item;\r\n"
+                },
+                {
+                    "date": 1758985835384,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -3,8 +3,9 @@\n import 'package:task_manager_flutter/data/utils/api_links.dart';\r\n import 'package:task_manager_flutter/ui/widgets/genericDetailFormScreen.dart';\r\n import 'package:task_manager_flutter/ui/widgets/generic_grid_screen.dart';\r\n import 'package:task_manager_flutter/ui/widgets/tab_config.dart';\r\n+import 'package:task_manager_flutter/data/models/login_2_model.dart';\r\n import 'package:task_manager_flutter/data/models/role_model.dart';\r\n \r\n class LoginDetailScreen extends StatelessWidget {\r\n   final Login item;\r\n"
+                }
+            ],
+            "date": 1758985567699,
+            "name": "Commit-0",
+            "content": "import 'package:flutter/material.dart';\r\nimport 'package:task_manager_flutter/data/models/parceiro_model.dart';\r\nimport 'package:task_manager_flutter/data/utils/api_links.dart';\r\nimport 'package:task_manager_flutter/ui/widgets/genericDetailFormScreen.dart';\r\nimport 'package:task_manager_flutter/ui/widgets/generic_grid_screen.dart';\r\nimport 'package:task_manager_flutter/ui/widgets/tab_config.dart';\r\nimport 'package:task_manager_flutter/data/models/login_2_model.dart';\r\n\r\nclass LoginDetailScreen extends StatelessWidget {\r\n  final Login item;\r\n  final SecurityCheck hasPermission;\r\n\r\n  const LoginDetailScreen({\r\n    super.key,\r\n    required this.item,\r\n    required this.hasPermission,\r\n  });\r\n\r\n  static List<TabConfig> get tabConfigs => [\r\n    TabConfig(\r\n      title: \"Dados Principais\",\r\n      icon: Icons.person,\r\n      isGrid: false,\r\n      endpoint: ApiLinks.allParceiros,\r\n      fields: Parceiro.fieldConfigs.where((field) => field.isInForm).toList(),\r\n    ),\r\n    TabConfig(\r\n      title: \"Roles\",\r\n      icon: Icons.history,\r\n      isGrid: true,\r\n      endpoint: ApiLinks.allLogins,\r\n      gridFieldConfigs: Login.fieldConfigs,\r\n    ),\r\n  ];\r\n\r\n  @override\r\n  Widget build(BuildContext context) {\r\n    return GenericDetailFormScreen<Parceiro>(\r\n      item: item,\r\n      tabConfigs: tabConfigs,\r\n      title: \"Detalhes do Parceiro\",\r\n      onSave: (formData) async {\r\n        print(\"Salvar parceiro: $formData\");\r\n        // Implementar lógica de save aqui\r\n        try {\r\n          // Exemplo de implementação:\r\n          // final response = await NetworkCaller().postRequest(\r\n          //   ApiLinks.updateParceiro(item.id.toString()),\r\n          //   data: formData,\r\n          // );\r\n          // if (response.isSuccess) {\r\n          //   ScaffoldMessenger.of(context).showSnackBar(\r\n          //     SnackBar(content: Text('Parceiro salvo com sucesso!')),\r\n          //   );\r\n          // }\r\n        } catch (e) {\r\n          print(\"Erro ao salvar: $e\");\r\n        }\r\n      },\r\n      onBack: () => Navigator.pop(context),\r\n      hasPermission: hasPermission,\r\n    );\r\n  }\r\n}\r\n"
+        }
+    ]
+}

@@ -13,7 +13,7 @@ class UtilCaller {
     List<T> items = [];
     try {
       // Check user authentication
-      if (AuthUtility.userInfo.data?.id == 1) {
+      if (AuthUtility.userInfo?.data?.id == 1) {
         // AQUI CHAMAR O LOGIN
         await showDialog(
           context: context,
@@ -21,8 +21,10 @@ class UtilCaller {
         );
       } else {
         // Perform network request
-        final NetworkResponse response =
-            await NetworkCaller().getRequests(apiEndpoint, context);
+        final NetworkResponse response = await NetworkCaller().getRequests(
+          apiEndpoint,
+          context,
+        );
 
         if (response.statusCode == 200 && response.body != null) {
           final List<dynamic> responseData = response.body?['data']['account'];
@@ -37,7 +39,8 @@ class UtilCaller {
           );
         } else {
           print(
-              'Erro: Nenhum dado retornado. Status Code: ${response.statusCode}');
+            'Erro: Nenhum dado retornado. Status Code: ${response.statusCode}',
+          );
         }
       }
     } catch (e) {

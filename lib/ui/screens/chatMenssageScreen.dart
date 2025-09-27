@@ -31,7 +31,7 @@ class _ChatMessageScreenState extends State<ChatMessageScreen> {
   final TextEditingController _messageController = TextEditingController();
   List<ChatMessage> _messages = [];
   late WebSocketChannel _channel;
-  final String _authToken = '${AuthUtility.userInfo.token}';
+  final String _authToken = '${AuthUtility.userInfo?.token}';
   final ScrollController _scrollController = ScrollController();
   bool _isLoading = false;
 

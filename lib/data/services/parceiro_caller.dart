@@ -15,8 +15,8 @@ class ParceiroCaller {
     List<Parceiro>? model = [];
     ParceiroModel models;
     try {
-      if (AuthUtility.userInfo.data?.id != null &&
-          AuthUtility.userInfo.data?.id == 1) {
+      if (AuthUtility.userInfo?.data?.id != null &&
+          AuthUtility.userInfo?.data?.id == 1) {
         // AQUI CHAMAR O LOGIN
         await showDialog(
           context: context,

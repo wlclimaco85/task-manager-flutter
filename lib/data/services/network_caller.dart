@@ -13,22 +13,26 @@ import 'package:task_manager_flutter/data/models/login_2_model.dart';
 class NetworkCaller {
   Future<NetworkResponse> getRequest(String url) async {
     try {
-      final user = AuthUtility.userInfo.data;
-
+      final login = AuthUtility.userInfo?.login;
+      final user = AuthUtility.userInfo?.data;
       // Adiciona empresa, parceiro e aplicativo como query params
       Uri uri = Uri.parse(url).replace(
         queryParameters: {
           ...Uri.parse(url).queryParameters, // mantém query existentes
-          'empresa': user?.login?.empresa?.id?.toString() ?? '',
-          'parceiro': user?.login?.parceiro?.id?.toString() ?? '',
-          'aplicativo': user?.login?.aplicativo?.id?.toString() ?? '',
+          'empresa': login?.empresa?.id?.toString() ?? '',
+          'parceiro': login?.parceiro?.id?.toString() ?? '',
+          'aplicativo': login?.aplicativo?.id?.toString() ?? '',
+          'audit.parceiroId': login?.parceiro?.id?.toString() ?? '',
+          'audit.empresaId': login?.empresa?.id?.toString() ?? '',
+          'audit.appId': login?.aplicativo?.id?.toString() ?? '',
+          'audit.userLogadoId': login?.id?.toString() ?? '',
         },
       );
 
       Response response = await get(
         uri,
         headers: {
-          'Authorization': 'Bearer ${AuthUtility.userInfo.token}',
+          'Authorization': 'Bearer ${AuthUtility.userInfo?.token}',
           'Accept-Encoding': 'gzip',
         },
       );
@@ -38,12 +42,12 @@ class NetworkCaller {
           response.statusCode,
           jsonDecode(response.body),
         );
-      } else if (AuthUtility.userInfo.data?.id == null ||
-          AuthUtility.userInfo.data?.id == 1 && response.statusCode == 403) {
+      } else if (AuthUtility.userInfo?.data?.id == null ||
+          AuthUtility.userInfo?.data?.id == 1 && response.statusCode == 403) {
         loginPadrao();
         Response response = await get(
           Uri.parse(url),
-          headers: {'Authorization': 'Bearer ${AuthUtility.userInfo.token}'},
+          headers: {'Authorization': 'Bearer ${AuthUtility.userInfo?.token}'},
         );
         if (response.statusCode == 200) {
           return NetworkResponse(
@@ -65,7 +69,7 @@ class NetworkCaller {
 
   Future<NetworkResponse> getRequests(String url, BuildContext context) async {
     try {
-      final user = AuthUtility.userInfo.data;
+      final user = AuthUtility.userInfo?.data;
 
       // Adiciona empresa, parceiro e aplicativo como query params
       Uri uri = Uri.parse(url).replace(
@@ -76,10 +80,10 @@ class NetworkCaller {
           'aplicativo': {'id': user?.login?.aplicativo?.id?.toString()},
         },
       );
-      if (AuthUtility.userInfo.data?.id != 1) {
+      if (AuthUtility.userInfo?.data?.id != 1) {
         Response response = await get(
           uri,
-          headers: {'Authorization': 'Bearer ${AuthUtility.userInfo.token}'},
+          headers: {'Authorization': 'Bearer ${AuthUtility.userInfo?.token}'},
         );
         if (response.statusCode == 200) {
           return NetworkResponse(
@@ -96,11 +100,11 @@ class NetworkCaller {
 
           if (result == true) {
             // Tenta novamente após login bem-sucedido
-            if (AuthUtility.userInfo.data?.id != 1) {
+            if (AuthUtility.userInfo?.data?.id != 1) {
               Response response = await get(
                 Uri.parse(url),
                 headers: {
-                  'Authorization': 'Bearer ${AuthUtility.userInfo.token}',
+                  'Authorization': 'Bearer ${AuthUtility.userInfo?.token}',
                 },
               );
               if (response.statusCode == 200) {
@@ -126,11 +130,11 @@ class NetworkCaller {
 
         if (result == true) {
           // Tenta novamente após login bem-sucedido
-          if (AuthUtility.userInfo.data?.id != 1) {
+          if (AuthUtility.userInfo?.data?.id != 1) {
             Response response = await get(
               Uri.parse(url),
               headers: {
-                'Authorization': 'Bearer ${AuthUtility.userInfo.token}',
+                'Authorization': 'Bearer ${AuthUtility.userInfo?.token}',
               },
             );
             if (response.statusCode == 200) {
@@ -178,17 +182,22 @@ class NetworkCaller {
     Map<String, dynamic>? body,
   ) async {
     try {
-      final user = AuthUtility.userInfo.login;
+      final user = AuthUtility.userInfo?.login;
 
       // Adiciona empresa, parceiro e aplicativo ao body
       body?['empresa'] = {};
       body?['parceiro'] = {};
       body?['aplicativo'] = {};
+      body?['audit'] = {};
       body?['empresa']['id'] = user?.empresa?.id ?? 1;
       body?['parceiro']['id'] = user?.parceiro?.id ?? 1;
       body?['aplicativo']['id'] = user?.aplicativo != null
           ? user?.aplicativo?.id
           : 1;
+      body?['audit']['parceiroId'] = user?.parceiro?.id ?? 1;
+      body?['audit']['empresaId'] = user?.empresa?.id ?? 1;
+      body?['audit']['appId'] = user?.aplicativo?.id ?? 1;
+      body?['audit']['userLogadoId'] = user?.id ?? 1;
 
       Response response = await post(
         Uri.parse(url),
@@ -197,7 +206,7 @@ class NetworkCaller {
           //TODO     'Authorization': url.contains('login') || url.contains('inserirAluno')
           'Authorization': url.contains('inserirAluno')
               ? 'c2Fua2h5YTpzdXA='
-              : 'Bearer ${AuthUtility.userInfo.token}',
+              : 'Bearer ${AuthUtility.userInfo?.token}',
           'Access-Control-Allow-Origin': '*',
           'Access-Control-Allow-Credentials': 'true',
           'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',

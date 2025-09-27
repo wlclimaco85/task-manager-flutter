@@ -58,7 +58,7 @@ class _DietacreenState extends State<Dietacreen> {
     if (mounted) {
       setState(() {});
     }
-    Data userInfo = AuthUtility.userInfo.data!;
+    Data userInfo = AuthUtility.userInfo?.data ?? Data();
 
     Map<String, dynamic> af = {};
     af["id"] = userInfo.id;

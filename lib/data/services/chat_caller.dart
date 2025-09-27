@@ -11,11 +11,11 @@ class ChatCaller {
     ChatMessageModel models;
     try {
       final eeee =
-          '${ApiLinks.fecthChats}?user=${AuthUtility.userInfo.data!.codDadosPessoal!.email!}';
+          '${ApiLinks.fecthChats}?user=${AuthUtility.userInfo?.data!.codDadosPessoal!.email!}';
       print('URL de requisição: $eeee');
 
       final NetworkResponse response = await NetworkCaller().getRequest(
-        '${ApiLinks.fecthChats}?user=${AuthUtility.userInfo.data!.codDadosPessoal!.email!}',
+        '${ApiLinks.fecthChats}?user=${AuthUtility.userInfo?.data!.codDadosPessoal!.email!}',
       );
 
       if (response.statusCode == 200 && response.body != null) {

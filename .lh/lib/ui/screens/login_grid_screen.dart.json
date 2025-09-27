@@ -3,7 +3,7 @@
     "activeCommit": 0,
     "commits": [
         {
-            "activePatchIndex": 5,
+            "activePatchIndex": 6,
             "patches": [
                 {
                     "date": 1758202754736,
@@ -28,6 +28,10 @@
                 {
                     "date": 1758306615183,
                     "content": "Index: \n===================================================================\n--- \n+++ \n@@ -45,13 +45,22 @@\n       enableColumnReorder: true,\r\n     );\r\n   }\r\n \r\n-  void _showBaixaDialog(BuildContext context, ContaPagar conta) {\r\n-    showDialog(\r\n-      context: context,\r\n-      builder: (BuildContext context) {\r\n-        return BaixaDialog(conta: conta);\r\n-      },\r\n-    );\r\n-  }\r\n+  void _showBaixaDialog(BuildContext context, Login conta) {\r\n+  showDialog(\r\n+    context: context,\r\n+    builder: (BuildContext context) {\r\n+      return AlertDialog(\r\n+        title: const Text('Bom Dia!'),\r\n+        content: const Text('Tenha um excelente dia! 😊'),\r\n+        actions: [\r\n+          TextButton(\r\n+            onPressed: () => Navigator.pop(context),\r\n+            child: const Text('Fechar'),\r\n+          ),\r\n+        ],\r\n+      );\r\n+    },\r\n+  );\r\n }\r\n+}\r\n"
+                },
+                {
+                    "date": 1758985867234,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -33,8 +33,12 @@\n       onItemTap: (login, context) {\r\n         // Navigate to detail screen if needed\r\n         // Navigator.push(context, MaterialPageRoute(builder: (_) => LoginDetailScreen(login)));\r\n       },\r\n+      detailScreenBuilder: (item) => LoginDetailScreen(\r\n+        item: item, // Agora está correto - passando o item\r\n+        hasPermission: hasPermission,\r\n+      ),\r\n       customActions: () => [\r\n         CustomAction<Login>(\r\n           icon: Icons.payment,\r\n           label: 'Baixar',\r\n"
                 }
             ],
             "date": 1758202754736,
