@@ -11,31 +11,51 @@ import 'package:task_manager_flutter/data/services/alert_caller.dart';
 import 'package:task_manager_flutter/ui/screens/auth_screens/login_screen.dart';
 
 // Cores do Grid (mantendo suas cores originais)
+// Cores do Grid (baseadas diretamente na logo)
 class GridColors {
+  // Vermelho principal (logo)
   static const Color primary = Color(0xFF93070A);
   static const Color primaryDark = Color(0xFF6A0507);
   static const Color primaryLight = Color(0xFFB84042);
+
+  // Verde principal (logo)
   static const Color secondary = Color(0xFF005826);
   static const Color secondaryLight = Color(0xFF2E7D32);
   static const Color secondaryDark = Color(0xFF003D1A);
-  static const Color textPrimary = Color(0xFFFFFFFF);
-  static const Color textSecondary = Color(0xFF000000);
-  static const Color link = Color(0xFFFF0000);
-  static const Color inputBackground = Color(0xFFFFFFFF);
-  static const Color inputBorder = Color(0xFF93070A);
-  static const Color buttonBackground = Color(0xFF93070A);
-  static const Color buttonText = Color(0xFFFFFFFF);
-  static const Color background = Color(0xFF005826);
+
+  // Texto
+  static const Color textPrimary = Color(0xFFFFFFFF); // branco
+  static const Color textSecondary = Color(0xFF000000); // preto
+
+  // Links e destaques
+  static const Color link = Color(0xFF93070A); // vermelho da logo
+
+  // Inputs
+  static const Color inputBackground = Color(0xFF005826); // fundo verde
+  static const Color inputBorder = Color(0xFF93070A); // borda vermelha
+
+  // Botões
+  static const Color buttonBackground = Color(0xFF93070A); // vermelho
+  static const Color buttonText = Color(0xFFFFFFFF); // branco
+
+  // Fundo principal
+  static const Color background = Color(0xFF005826); // verde logo
+
+  // Cartões e diálogos
   static const Color card = Color(0xFFFFFFFF);
+  static const Color dialogBackground = Color(0xFFFFFFFF);
+
+  // Feedback
   static const Color error = Color(0xFFD32F2F);
   static const Color warning = Color(0xFFFFA000);
   static const Color success = Color(0xFF2E7D32);
   static const Color info = Color(0xFF1976D2);
+
+  // Outros
   static const Color divider = Color(0xFFBDBDBD);
   static const Color filterBackground = Color(0xFFEFEFEF);
   static const Color hover = Color(0x1A000000);
   static const Color selectedRow = Color(0xFFE3F2FD);
-  static const Color dialogBackground = Color(0xFFFFFFFF);
   static const Color shadow = Color(0x26000000);
 }
 

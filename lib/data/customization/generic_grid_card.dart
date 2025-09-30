@@ -5,8 +5,9 @@ import 'package:task_manager_flutter/data/services/network_caller.dart';
 import 'package:task_manager_flutter/ui/widgets/user_banners.dart';
 
 // ==============================================
-// MOBILE GRID SCREEN - CARD BASED
+// MOBILE GRID SCREEN - MATERIAL DESIGN 3
 // ==============================================
+
 class GridColors {
   static const Color primary = Color(0xFF93070A);
   static const Color primaryDark = Color(0xFF6A0507);
@@ -186,7 +187,6 @@ class GenericMobileGridScreen<T> extends StatefulWidget {
   final Widget Function(T item)? detailScreenBuilder;
   final Map<String, dynamic>? extraParams;
   final bool enableDebugMode;
-  // NOVA PROPRIEDADE: Controla se usa UserBannerAppBar ou AppBar normal
   final bool useUserBannerAppBar;
   final VoidCallback? onUserBannerTapped;
   final VoidCallback? onBannerRefresh;
@@ -213,9 +213,7 @@ class GenericMobileGridScreen<T> extends StatefulWidget {
     this.detailScreenBuilder,
     this.extraParams,
     this.enableDebugMode = false,
-    // ... outras propriedades ...
-    this.useUserBannerAppBar =
-        false, // Padrão é false para não quebrar código existente
+    this.useUserBannerAppBar = false,
     this.onUserBannerTapped,
     this.onBannerRefresh,
   });
@@ -255,7 +253,10 @@ class _GenericMobileGridScreenState<T>
   @override
   void initState() {
     super.initState();
+    _initializeData();
+  }
 
+  void _initializeData() {
     for (final config in widget.fieldConfigs) {
       _fieldVisibility[config.fieldName] = config.isVisibleByDefault;
     }
@@ -395,7 +396,7 @@ class _GenericMobileGridScreenState<T>
               SnackBar(
                 content:
                     Text('Falha ao carregar dados: ${response.statusCode}'),
-                backgroundColor: GridColors.error,
+                backgroundColor: Theme.of(context).colorScheme.error,
               ),
             );
           }
@@ -523,14 +524,15 @@ class _GenericMobileGridScreenState<T>
           children: [
             Row(
               children: [
-                Icon(Icons.edit, color: GridColors.primary, size: 24),
+                Icon(Icons.edit,
+                    color: Theme.of(context).colorScheme.primary, size: 24),
                 const SizedBox(width: 8),
                 Text(
                   item == null ? 'Adicionar Novo' : 'Editar Item',
                   style: TextStyle(
                     fontSize: 20,
                     fontWeight: FontWeight.bold,
-                    color: GridColors.primary,
+                    color: Theme.of(context).colorScheme.primary,
                   ),
                 ),
                 const Spacer(),
@@ -566,8 +568,8 @@ class _GenericMobileGridScreenState<T>
                   child: ElevatedButton(
                     onPressed: () => _saveForm(item, formControllers, context),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: GridColors.primary,
-                      foregroundColor: Colors.white,
+                      backgroundColor: Theme.of(context).colorScheme.primary,
+                      foregroundColor: Theme.of(context).colorScheme.onPrimary,
                     ),
                     child: Text(item == null ? 'Adicionar' : 'Salvar'),
                   ),
@@ -590,7 +592,7 @@ class _GenericMobileGridScreenState<T>
             config.label + (config.isRequired ? ' *' : ''),
             style: TextStyle(
               fontWeight: FontWeight.w500,
-              color: GridColors.textSecondary,
+              color: Theme.of(context).colorScheme.onSurface,
             ),
           ),
           const SizedBox(height: 4),
@@ -614,11 +616,12 @@ class _GenericMobileGridScreenState<T>
         hintText: 'Digite ${config.label.toLowerCase()}',
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(8),
-          borderSide: BorderSide(color: GridColors.inputBorder),
+          borderSide: BorderSide(color: Theme.of(context).colorScheme.outline),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(8),
-          borderSide: BorderSide(color: GridColors.primary, width: 2),
+          borderSide: BorderSide(
+              color: Theme.of(context).colorScheme.primary, width: 2),
         ),
       ),
       keyboardType: _getKeyboardType(config.fieldType),
@@ -634,11 +637,12 @@ class _GenericMobileGridScreenState<T>
         hintText: 'Digite ${config.label.toLowerCase()}',
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(8),
-          borderSide: BorderSide(color: GridColors.inputBorder),
+          borderSide: BorderSide(color: Theme.of(context).colorScheme.outline),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(8),
-          borderSide: BorderSide(color: GridColors.primary, width: 2),
+          borderSide: BorderSide(
+              color: Theme.of(context).colorScheme.primary, width: 2),
         ),
       ),
       maxLines: 4,
@@ -664,13 +668,10 @@ class _GenericMobileGridScreenState<T>
 
   Widget _buildDropdownField(
       FieldConfig config, TextEditingController controller) {
-    // Função para obter as opções (estáticas ou dinâmicas)
     Future<List<Map<String, dynamic>>> getOptions() async {
       if (config.dropdownFutureBuilder != null) {
-        // Caso dinâmico - carrega via Future
         return await config.dropdownFutureBuilder!();
       } else {
-        // Caso estático - retorna as opções fixas
         return config.dropdownOptions ?? [];
       }
     }
@@ -688,7 +689,6 @@ class _GenericMobileGridScreenState<T>
 
         final options = snapshot.data ?? [];
 
-        // GARANTIR VALORES ÚNICOS - CRÍTICO
         final uniqueOptions = <dynamic, Map<String, dynamic>>{};
         for (final option in options) {
           try {
@@ -703,15 +703,12 @@ class _GenericMobileGridScreenState<T>
 
         final uniqueOptionsList = uniqueOptions.values.toList();
 
-        // Obter valor atual considerando valor padrão para novos registros
         dynamic currentValue = _getCurrentValue(config, controller);
 
-        // Se é um novo registro e não tem valor no controller, usar o valor padrão
         if (controller.text.isEmpty && config.dropdownSelectedValue != null) {
           currentValue = config.dropdownSelectedValue;
         }
 
-        // VERIFICAR SE O VALOR ATUAL EXISTE NAS OPÇÕES ÚNICAS
         bool valueExists = uniqueOptionsList.any((option) {
           try {
             return option[config.dropdownValueField] == currentValue;
@@ -720,7 +717,6 @@ class _GenericMobileGridScreenState<T>
           }
         });
 
-        // Se o valor não existe nas opções, usar null (mostrará placeholder)
         if (!valueExists) {
           currentValue = null;
         }
@@ -731,16 +727,17 @@ class _GenericMobileGridScreenState<T>
             labelText: config.label + (config.isRequired ? ' *' : ''),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(8),
-              borderSide: BorderSide(color: GridColors.inputBorder),
+              borderSide:
+                  BorderSide(color: Theme.of(context).colorScheme.outline),
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(8),
-              borderSide: BorderSide(color: GridColors.primary, width: 2),
+              borderSide: BorderSide(
+                  color: Theme.of(context).colorScheme.primary, width: 2),
             ),
           ),
           isExpanded: true,
           items: [
-            // Item placeholder apenas se não for obrigatório ou se não houver valor selecionado
             if (!config.isRequired || currentValue == null)
               const DropdownMenuItem<dynamic>(
                 value: null,
@@ -762,7 +759,6 @@ class _GenericMobileGridScreenState<T>
                   child: Text(optionLabel),
                 );
               } catch (e) {
-                // Garantir valor único mesmo em caso de erro
                 return DropdownMenuItem<dynamic>(
                   value: UniqueKey().toString(),
                   child: const Text('Erro na opção'),
@@ -791,25 +787,19 @@ class _GenericMobileGridScreenState<T>
     );
   }
 
-// Método auxiliar corrigido para considerar valor padrão
   dynamic _getCurrentValue(
       FieldConfig config, TextEditingController controller) {
     bool expectInteger = _isIntegerField(config);
 
-    // Se o controller tem texto, usar ele
     if (controller.text.isNotEmpty) {
       if (expectInteger) {
         return int.tryParse(controller.text);
       } else {
         return controller.text;
       }
-    }
-    // Se não tem texto no controller, usar valor padrão da config
-    else if (config.dropdownSelectedValue != null) {
+    } else if (config.dropdownSelectedValue != null) {
       return config.dropdownSelectedValue;
-    }
-    // Se não tem nada, retornar null
-    else {
+    } else {
       return null;
     }
   }
@@ -855,7 +845,7 @@ class _GenericMobileGridScreenState<T>
       final NetworkResponse response = item == null
           ? await NetworkCaller().postRequest(endpoint, formData)
           : await NetworkCaller().putRequest(endpoint, formData);
-      // ✅ TAMBÉM PRINT A RESPOSTA
+
       print('=== DEBUG RESPONSE ===');
       print('STATUS CODE: ${response.statusCode}');
       print('RESPONSE BODY: ${formData}');
@@ -922,7 +912,8 @@ class _GenericMobileGridScreenState<T>
               });
               _loadItems(reset: true);
             },
-            style: ElevatedButton.styleFrom(backgroundColor: GridColors.error),
+            style: ElevatedButton.styleFrom(
+                backgroundColor: Theme.of(context).colorScheme.error),
             child: const Text('Excluir'),
           ),
         ],
@@ -947,7 +938,7 @@ class _GenericMobileGridScreenState<T>
                 style: TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
-                    color: GridColors.primary),
+                    color: Theme.of(context).colorScheme.primary),
               ),
               const SizedBox(height: 16),
               Expanded(
@@ -958,7 +949,8 @@ class _GenericMobileGridScreenState<T>
                         margin: const EdgeInsets.only(bottom: 8),
                         padding: const EdgeInsets.all(12),
                         decoration: BoxDecoration(
-                          border: Border.all(color: GridColors.divider),
+                          border: Border.all(
+                              color: Theme.of(context).colorScheme.outline),
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: Row(
@@ -976,8 +968,10 @@ class _GenericMobileGridScreenState<T>
                             Expanded(
                               child: Text(
                                 entry.value?.toString() ?? 'null',
-                                style:
-                                    TextStyle(color: GridColors.textSecondary),
+                                style: TextStyle(
+                                    color: Theme.of(context)
+                                        .colorScheme
+                                        .onSurface),
                               ),
                             ),
                           ],
@@ -1048,30 +1042,47 @@ class _GenericMobileGridScreenState<T>
   }
 
   Widget _buildFilters() {
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+
     return Card(
-      margin: const EdgeInsets.all(8),
+      margin: const EdgeInsets.all(16),
+      elevation: 1,
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            Text(
+              'Filtros',
+              style: textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.w600,
+                color: colorScheme.onSurface,
+              ),
+            ),
+            const SizedBox(height: 16),
             if (widget.enableSearch)
               TextField(
                 controller: _searchController,
-                decoration: const InputDecoration(
+                decoration: InputDecoration(
                   labelText: "Buscar",
-                  prefixIcon: Icon(Icons.search),
+                  prefixIcon: const Icon(Icons.search),
+                  filled: true,
+                  fillColor: colorScheme.surfaceVariant.withOpacity(0.4),
                 ),
                 onChanged: (_) => _applyFilters(),
               ),
             const SizedBox(height: 16),
             ...widget.fieldConfigs.where((c) => c.isFilterable).map((config) {
               return Padding(
-                padding: const EdgeInsets.only(bottom: 8),
+                padding: const EdgeInsets.only(bottom: 12),
                 child: TextField(
                   controller: _filterControllers[config.fieldName],
                   decoration: InputDecoration(
                     labelText: "Filtrar por ${config.label}",
                     prefixIcon: Icon(config.icon ?? Icons.filter_list),
+                    filled: true,
+                    fillColor: colorScheme.surfaceVariant.withOpacity(0.4),
                   ),
                   onChanged: (_) => _applyFilters(),
                 ),
@@ -1081,20 +1092,16 @@ class _GenericMobileGridScreenState<T>
             Row(
               children: [
                 Expanded(
-                  child: ElevatedButton(
+                  child: FilledButton.tonal(
                     onPressed: _clearFilters,
-                    style: ElevatedButton.styleFrom(
-                        backgroundColor: GridColors.secondary),
                     child: const Text('Limpar Filtros'),
                   ),
                 ),
-                const SizedBox(width: 8),
+                const SizedBox(width: 12),
                 Expanded(
-                  child: ElevatedButton(
+                  child: FilledButton(
                     onPressed: _applyFilters,
-                    style: ElevatedButton.styleFrom(
-                        backgroundColor: GridColors.primary),
-                    child: const Text('Aplicar'),
+                    child: const Text('Aplicar Filtros'),
                   ),
                 ),
               ],
@@ -1109,11 +1116,23 @@ class _GenericMobileGridScreenState<T>
     final itemMap = widget.toJson(item);
     final id = _getNestedValue(itemMap, widget.idFieldName).toString();
     final isSelected = _cardSelection[id] ?? false;
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
 
     return Card(
-      margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-      color: isSelected ? GridColors.selectedRow.withOpacity(0.3) : null,
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+      elevation: 1,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+        side: isSelected
+            ? BorderSide(color: colorScheme.primary, width: 2)
+            : BorderSide(color: colorScheme.outline.withOpacity(0.2)),
+      ),
+      color: isSelected
+          ? colorScheme.primary.withOpacity(0.08)
+          : colorScheme.surface,
       child: InkWell(
+        borderRadius: BorderRadius.circular(12),
         onTap: _isSelectionMode
             ? () => _toggleCardSelection(id, !isSelected)
             : () => widget.onItemTap?.call(item, context),
@@ -1124,32 +1143,36 @@ class _GenericMobileGridScreenState<T>
           }
         },
         child: Padding(
-          padding: const EdgeInsets.all(12),
+          padding: const EdgeInsets.all(16),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Row(
                 children: [
                   if (_isSelectionMode)
-                    Checkbox(
-                      value: isSelected,
-                      onChanged: (value) =>
-                          _toggleCardSelection(id, value ?? false),
+                    Padding(
+                      padding: const EdgeInsets.only(right: 12),
+                      child: Checkbox(
+                        value: isSelected,
+                        onChanged: (value) =>
+                            _toggleCardSelection(id, value ?? false),
+                        fillColor:
+                            MaterialStateProperty.all(colorScheme.primary),
+                      ),
                     ),
                   if (_fieldVisibility[widget.idFieldName] == true)
                     Container(
                       padding: const EdgeInsets.symmetric(
-                          horizontal: 8, vertical: 2),
+                          horizontal: 8, vertical: 4),
                       decoration: BoxDecoration(
-                        color: GridColors.primary.withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(4),
+                        color: colorScheme.primary.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(6),
                       ),
                       child: Text(
-                        'ID: $id',
-                        style: const TextStyle(
-                          fontWeight: FontWeight.bold,
-                          color: GridColors.primary,
-                          fontSize: 12,
+                        '#$id',
+                        style: textTheme.labelSmall?.copyWith(
+                          fontWeight: FontWeight.w600,
+                          color: colorScheme.primary,
                         ),
                       ),
                     ),
@@ -1157,9 +1180,9 @@ class _GenericMobileGridScreenState<T>
                   if (_hasStatusField(itemMap)) _buildStatusBadge(itemMap),
                 ],
               ),
-              const SizedBox(height: 8),
+              const SizedBox(height: 12),
               ..._buildVisibleFieldsForCard(itemMap),
-              const SizedBox(height: 8),
+              const SizedBox(height: 12),
               if (!_isSelectionMode) _buildCardActions(item, itemMap),
             ],
           ),
@@ -1176,6 +1199,9 @@ class _GenericMobileGridScreenState<T>
             config.showInCard)
         .toList();
 
+    final textTheme = Theme.of(context).textTheme;
+    final colorScheme = Theme.of(context).colorScheme;
+
     return visibleConfigs.map((config) {
       final displayValue =
           _getNestedValue(itemMap, config.displayFieldName ?? config.fieldName)
@@ -1185,26 +1211,25 @@ class _GenericMobileGridScreenState<T>
       if (displayValue.isEmpty) return const SizedBox.shrink();
 
       return Padding(
-        padding: const EdgeInsets.only(bottom: 4),
-        child: Row(
+        padding: const EdgeInsets.only(bottom: 8),
+        child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            SizedBox(
-              width: 120,
-              child: Text(
-                '${config.label}:',
-                style:
-                    const TextStyle(fontWeight: FontWeight.w500, fontSize: 14),
+            Text(
+              config.label,
+              style: textTheme.labelMedium?.copyWith(
+                fontWeight: FontWeight.w500,
+                color: colorScheme.onSurface.withOpacity(0.7),
               ),
             ),
-            const SizedBox(width: 8),
-            Expanded(
-              child: Text(
-                displayValue,
-                style: const TextStyle(fontSize: 14),
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
+            const SizedBox(height: 2),
+            Text(
+              displayValue,
+              style: textTheme.bodyMedium?.copyWith(
+                color: colorScheme.onSurface,
               ),
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
             ),
           ],
         ),
@@ -1214,6 +1239,8 @@ class _GenericMobileGridScreenState<T>
 
   Widget _buildStatusBadge(Map<String, dynamic> itemMap) {
     final status = _getNestedValue(itemMap, 'status')?.toString().toLowerCase();
+    final colorScheme = Theme.of(context).colorScheme;
+
     Color badgeColor;
     String badgeText;
 
@@ -1222,76 +1249,91 @@ class _GenericMobileGridScreenState<T>
       case 'true':
       case '1':
       case 'aberto':
-        badgeColor = GridColors.success;
+        badgeColor = colorScheme.primary;
         badgeText = 'Ativo';
         break;
       case 'inativo':
       case 'false':
       case '0':
       case 'fechado':
-        badgeColor = GridColors.error;
+        badgeColor = colorScheme.error;
         badgeText = 'Inativo';
         break;
+      case 'pendente':
+        badgeColor = colorScheme.secondary;
+        badgeText = 'Pendente';
+        break;
       default:
-        badgeColor = GridColors.warning;
+        badgeColor = colorScheme.outline;
         badgeText = status?.toUpperCase() ?? 'Status';
     }
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
         color: badgeColor.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: badgeColor),
+        borderRadius: BorderRadius.circular(6),
+        border: Border.all(color: badgeColor.withOpacity(0.3)),
       ),
       child: Text(
         badgeText,
-        style: TextStyle(
-            color: badgeColor, fontSize: 10, fontWeight: FontWeight.bold),
+        style: Theme.of(context).textTheme.labelSmall?.copyWith(
+              color: badgeColor,
+              fontWeight: FontWeight.w600,
+            ),
       ),
     );
   }
 
   Widget _buildCardActions(T item, Map<String, dynamic> itemMap) {
+    final colorScheme = Theme.of(context).colorScheme;
+
     return Row(
       mainAxisAlignment: MainAxisAlignment.end,
       children: [
         if (widget.enableDebugMode)
           IconButton(
-            icon: const Icon(Icons.bug_report, size: 20),
+            icon: Icon(Icons.bug_report,
+                size: 18, color: colorScheme.onSurface.withOpacity(0.6)),
             onPressed: () => _showAllFieldsDebug(context, item),
             tooltip: 'Ver todos os campos',
           ),
         if (widget.detailScreenBuilder != null && widget.hasPermission('view'))
           IconButton(
-            icon: const Icon(Icons.visibility, size: 20),
+            icon: Icon(Icons.visibility_outlined,
+                size: 18, color: colorScheme.onSurface.withOpacity(0.6)),
             onPressed: () {
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                    builder: (context) => widget.detailScreenBuilder!(item)),
+                  builder: (context) => widget.detailScreenBuilder!(item),
+                ),
               );
             },
             tooltip: 'Visualizar',
           ),
         if (widget.hasPermission('edit'))
           IconButton(
-            icon: const Icon(Icons.edit, size: 20),
+            icon: Icon(Icons.edit_outlined,
+                size: 18, color: colorScheme.onSurface.withOpacity(0.6)),
             onPressed: () => _openForm(item: item),
             tooltip: 'Editar',
           ),
         if (widget.hasPermission('delete'))
           IconButton(
-            icon: const Icon(Icons.delete, size: 20),
+            icon:
+                Icon(Icons.delete_outline, size: 18, color: colorScheme.error),
             onPressed: () => _deleteItem(
-                _getNestedValue(itemMap, widget.idFieldName).toString()),
+              _getNestedValue(itemMap, widget.idFieldName).toString(),
+            ),
             tooltip: 'Excluir',
           ),
         ..._customActions
             .where((action) => action.isVisible?.call(item) ?? true)
             .map(
               (action) => IconButton(
-                icon: Icon(action.icon, size: 20),
+                icon: Icon(action.icon,
+                    size: 18, color: colorScheme.onSurface.withOpacity(0.6)),
                 onPressed: () => action.onPressed(context, item),
                 tooltip: action.label,
               ),
@@ -1301,14 +1343,20 @@ class _GenericMobileGridScreenState<T>
   }
 
   AppBar _buildSelectionAppBar() {
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+
     return AppBar(
-      backgroundColor: GridColors.primary,
-      foregroundColor: Colors.white,
+      backgroundColor: colorScheme.primary,
+      foregroundColor: colorScheme.onPrimary,
       leading: IconButton(
         icon: const Icon(Icons.close),
         onPressed: _toggleSelectionMode,
       ),
-      title: Text('${selectedRows.length} selecionado(s)'),
+      title: Text(
+        '${selectedRows.length} selecionado(s)',
+        style: textTheme.bodyMedium?.copyWith(color: colorScheme.onPrimary),
+      ),
       actions: [
         if (selectedRows.length == filtered.length)
           IconButton(
@@ -1322,10 +1370,10 @@ class _GenericMobileGridScreenState<T>
             onPressed: _selectAllCards,
             tooltip: 'Selecionar todos',
           ),
-        if (widget.hasPermission('delete'))
+        if (widget.hasPermission('delete') && selectedRows.isNotEmpty)
           IconButton(
-            icon: const Icon(Icons.delete),
-            onPressed: selectedRows.isNotEmpty ? _deleteSelected : null,
+            icon: const Icon(Icons.delete_outline),
+            onPressed: _deleteSelected,
             tooltip: 'Excluir selecionados',
           ),
       ],
@@ -1333,55 +1381,58 @@ class _GenericMobileGridScreenState<T>
   }
 
   AppBar _buildNormalAppBar() {
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+
     return AppBar(
-      title: Text(widget.title),
-      backgroundColor: GridColors.primary,
-      foregroundColor: Colors.white,
+      title: Text(
+        widget.title,
+        style: textTheme.titleLarge?.copyWith(
+          fontWeight: FontWeight.w600,
+          color: colorScheme.onPrimary,
+        ),
+      ),
+      backgroundColor: colorScheme.primary,
+      foregroundColor: colorScheme.onPrimary,
+      elevation: 1,
+      surfaceTintColor: Colors.transparent,
       actions: [
         IconButton(
-          icon: const Icon(Icons.settings),
+          icon: const Icon(Icons.view_column),
           onPressed: _showFieldSettings,
-          tooltip: 'Configurar campos',
+          tooltip: 'Configurar campos visíveis',
+        ),
+        IconButton(
+          icon: const Icon(Icons.filter_list),
+          onPressed: () => setState(() => filtrosAbertos = !filtrosAbertos),
+          tooltip: 'Mostrar/ocultar filtros',
         ),
         IconButton(
           icon: const Icon(Icons.refresh),
           onPressed: () => _loadItems(reset: true),
-          tooltip: 'Recarregar',
+          tooltip: 'Recarregar dados',
         ),
-        PopupMenuButton<String>(
-          onSelected: (value) {
-            switch (value) {
-              case 'select':
-                _toggleSelectionMode();
-                break;
-              case 'filters':
-                setState(() => filtrosAbertos = !filtrosAbertos);
-                break;
-            }
-          },
-          itemBuilder: (context) => [
-            const PopupMenuItem(
-              value: 'select',
-              child: ListTile(
-                  leading: Icon(Icons.check_box), title: Text('Modo seleção')),
-            ),
-            const PopupMenuItem(
-              value: 'filters',
-              child: ListTile(
-                  leading: Icon(Icons.filter_list),
-                  title: Text('Mostrar filtros')),
-            ),
-          ],
-        ),
+        if (widget.hasPermission('create')) ...[
+          const SizedBox(width: 8),
+          FloatingActionButton.small(
+            onPressed: () => _openForm(),
+            backgroundColor: colorScheme.primaryContainer,
+            foregroundColor: colorScheme.onPrimaryContainer,
+            elevation: 0,
+            child: const Icon(Icons.add),
+          ),
+        ],
       ],
     );
   }
 
   void _showSnackBar(String message, {bool isError = false}) {
+    final colorScheme = Theme.of(context).colorScheme;
+
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(message),
-        backgroundColor: isError ? GridColors.error : GridColors.success,
+        backgroundColor: isError ? colorScheme.error : colorScheme.primary,
       ),
     );
   }
@@ -1416,6 +1467,9 @@ class _GenericMobileGridScreenState<T>
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+
     return Scaffold(
       appBar: widget.useUserBannerAppBar
           ? PreferredSize(
@@ -1432,35 +1486,44 @@ class _GenericMobileGridScreenState<T>
       floatingActionButton: widget.hasPermission('create')
           ? FloatingActionButton(
               onPressed: () => _openForm(),
-              backgroundColor: GridColors.primary,
-              child: const Icon(Icons.add, color: Colors.white),
+              backgroundColor: colorScheme.primary,
+              foregroundColor: colorScheme.onPrimary,
+              child: const Icon(Icons.add),
             )
           : null,
       body: Column(
         children: [
           if (filtrosAbertos) _buildFilters(),
-          Padding(
-            padding: const EdgeInsets.all(8.0),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            decoration: BoxDecoration(
+              color: colorScheme.surfaceVariant.withOpacity(0.3),
+              border: Border(
+                bottom: BorderSide(color: colorScheme.outline.withOpacity(0.1)),
+              ),
+            ),
             child: Row(
               children: [
                 Text(
                   '${filtered.length} itens encontrados',
-                  style: const TextStyle(
-                      fontWeight: FontWeight.w500,
-                      color: GridColors.textSecondary),
+                  style: textTheme.bodyMedium?.copyWith(
+                    color: colorScheme.onSurface.withOpacity(0.7),
+                  ),
                 ),
                 const Spacer(),
                 if (_isSelectionMode)
                   Text(
                     '${selectedRows.length} selecionados',
-                    style: TextStyle(
-                        fontWeight: FontWeight.bold, color: GridColors.primary),
+                    style: textTheme.bodyMedium?.copyWith(
+                      fontWeight: FontWeight.w600,
+                      color: colorScheme.primary,
+                    ),
                   ),
               ],
             ),
           ),
           Expanded(
-            child: RefreshIndicator(
+            child: RefreshIndicator.adaptive(
               onRefresh: () => _loadItems(reset: true),
               child: ListView.builder(
                 controller: _scrollController,
@@ -1480,16 +1543,22 @@ class _GenericMobileGridScreenState<T>
   }
 
   Widget _buildLoadingIndicator() {
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+
     return Padding(
-      padding: const EdgeInsets.all(16.0),
+      padding: const EdgeInsets.all(24.0),
       child: Center(
         child: _hasMoreItems
-            ? const CircularProgressIndicator()
-            : const Text(
-                'Todos os itens carregados',
-                style: TextStyle(
-                    color: GridColors.textSecondary,
-                    fontStyle: FontStyle.italic),
+            ? CircularProgressIndicator.adaptive(
+                valueColor: AlwaysStoppedAnimation<Color>(colorScheme.primary),
+              )
+            : Text(
+                'Todos os itens foram carregados',
+                style: textTheme.bodyMedium?.copyWith(
+                  color: colorScheme.onSurface.withOpacity(0.5),
+                  fontStyle: FontStyle.italic,
+                ),
               ),
       ),
     );
