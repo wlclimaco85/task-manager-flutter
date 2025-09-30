@@ -362,21 +362,42 @@ class _GenericMobileGridScreenState<T>
       if (response.statusCode == 200 && response.body != null) {
         final responseData = response.body!['data'];
         final List<dynamic> data = responseData is Map
-            ? responseData['dados'] ?? responseData['content'] ?? []
+            ? responseData['dados'] ?? []
             : responseData ?? [];
 
-        final newItems = data.map((json) {
+        final processedData = data.map((json) {
           final itemMap = json is Map ? Map<String, dynamic>.from(json) : {};
-          return widget.fromJson(itemMap as Map<String, dynamic>);
+
+          for (final config in widget.fieldConfigs.where(
+            (c) => c.fieldType == FieldType.file,
+          )) {
+            final fileField = config.fieldName.split('.')[0];
+            if (!itemMap.containsKey(fileField)) {
+              itemMap[fileField] = {'id': 0, 'nome': ''};
+            }
+          }
+
+          return itemMap;
         }).toList();
 
         setState(() {
           if (reset) {
-            items = newItems;
-            filtered = newItems;
+            items = processedData.map((json) {
+              Map<String, dynamic> jsonMap = Map<String, dynamic>.from(json);
+              return widget.fromJson(jsonMap);
+            }).toList();
+            filtered = List.from(items);
+            _totalItems = responseData is Map
+                ? responseData['totalElements'] ?? 0
+                : data.length;
           } else {
-            items.addAll(newItems);
-            filtered.addAll(newItems);
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content:
+                    Text('Falha ao carregar dados: ${response.statusCode}'),
+                backgroundColor: GridColors.error,
+              ),
+            );
           }
 
           _totalItems = responseData is Map
@@ -384,7 +405,7 @@ class _GenericMobileGridScreenState<T>
                   responseData['total'] ??
                   data.length
               : data.length;
-          _hasMoreItems = newItems.length == _itemsPerPage;
+          _hasMoreItems = items.length == _itemsPerPage;
           _currentPage++;
         });
       }
