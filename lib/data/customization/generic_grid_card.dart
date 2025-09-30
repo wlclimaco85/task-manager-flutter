@@ -5,7 +5,7 @@ import 'package:task_manager_flutter/data/services/network_caller.dart';
 import 'package:task_manager_flutter/ui/widgets/user_banners.dart';
 
 // ==============================================
-// MOBILE GRID SCREEN - MATERIAL DESIGN 3
+// MOBILE GRID SCREEN - MATERIAL DESIGN 3 COMPLETO
 // ==============================================
 
 class GridColors {
@@ -392,13 +392,11 @@ class _GenericMobileGridScreenState<T>
                 ? responseData['totalElements'] ?? 0
                 : data.length;
           } else {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content:
-                    Text('Falha ao carregar dados: ${response.statusCode}'),
-                backgroundColor: Theme.of(context).colorScheme.error,
-              ),
-            );
+            items.addAll(processedData.map((json) {
+              Map<String, dynamic> jsonMap = Map<String, dynamic>.from(json);
+              return widget.fromJson(jsonMap);
+            }).toList());
+            filtered = List.from(items);
           }
 
           _totalItems = responseData is Map
@@ -406,7 +404,7 @@ class _GenericMobileGridScreenState<T>
                   responseData['total'] ??
                   data.length
               : data.length;
-          _hasMoreItems = items.length == _itemsPerPage;
+          _hasMoreItems = items.length < _totalItems;
           _currentPage++;
         });
       }
@@ -435,6 +433,12 @@ class _GenericMobileGridScreenState<T>
       if (filterValue != null && filterValue.isNotEmpty) {
         url += '&${config.fieldName}=${Uri.encodeComponent(filterValue)}';
       }
+    }
+
+    if (widget.extraParams != null) {
+      widget.extraParams!.forEach((key, value) {
+        url += '&$key=${Uri.encodeComponent(value.toString())}';
+      });
     }
 
     return url;
@@ -846,11 +850,6 @@ class _GenericMobileGridScreenState<T>
           ? await NetworkCaller().postRequest(endpoint, formData)
           : await NetworkCaller().putRequest(endpoint, formData);
 
-      print('=== DEBUG RESPONSE ===');
-      print('STATUS CODE: ${response.statusCode}');
-      print('RESPONSE BODY: ${formData}');
-      print('IS SUCCESS: ${endpoint}');
-      print('======================');
       if (response.isSuccess) {
         Navigator.pop(context);
         _showSnackBar(item == null
@@ -1041,70 +1040,188 @@ class _GenericMobileGridScreenState<T>
     );
   }
 
+  // ==============================================
+  // FILTROS RESTAURADOS - VERSÃO COMPLETA
+  // ==============================================
+
   Widget _buildFilters() {
     final colorScheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
 
     return Card(
       margin: const EdgeInsets.all(16),
-      elevation: 1,
+      elevation: 2,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+      ),
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(20),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              'Filtros',
-              style: textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.w600,
-                color: colorScheme.onSurface,
-              ),
-            ),
-            const SizedBox(height: 16),
-            if (widget.enableSearch)
-              TextField(
-                controller: _searchController,
-                decoration: InputDecoration(
-                  labelText: "Buscar",
-                  prefixIcon: const Icon(Icons.search),
-                  filled: true,
-                  fillColor: colorScheme.surfaceVariant.withOpacity(0.4),
-                ),
-                onChanged: (_) => _applyFilters(),
-              ),
-            const SizedBox(height: 16),
-            ...widget.fieldConfigs.where((c) => c.isFilterable).map((config) {
-              return Padding(
-                padding: const EdgeInsets.only(bottom: 12),
-                child: TextField(
-                  controller: _filterControllers[config.fieldName],
-                  decoration: InputDecoration(
-                    labelText: "Filtrar por ${config.label}",
-                    prefixIcon: Icon(config.icon ?? Icons.filter_list),
-                    filled: true,
-                    fillColor: colorScheme.surfaceVariant.withOpacity(0.4),
-                  ),
-                  onChanged: (_) => _applyFilters(),
-                ),
-              );
-            }),
-            const SizedBox(height: 16),
             Row(
               children: [
-                Expanded(
-                  child: FilledButton.tonal(
-                    onPressed: _clearFilters,
-                    child: const Text('Limpar Filtros'),
+                Icon(Icons.filter_alt, color: colorScheme.primary, size: 24),
+                const SizedBox(width: 8),
+                Text(
+                  'Filtros e Busca',
+                  style: textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w600,
+                    color: colorScheme.onSurface,
                   ),
                 ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: FilledButton(
-                    onPressed: _applyFilters,
-                    child: const Text('Aplicar Filtros'),
-                  ),
+                const Spacer(),
+                IconButton(
+                  icon: Icon(Icons.close,
+                      color: colorScheme.onSurface.withOpacity(0.6)),
+                  onPressed: () => setState(() => filtrosAbertos = false),
+                  tooltip: 'Fechar filtros',
                 ),
               ],
+            ),
+            const SizedBox(height: 20),
+
+            // Busca Global
+            if (widget.enableSearch)
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Busca Global',
+                    style: textTheme.bodyMedium?.copyWith(
+                      fontWeight: FontWeight.w500,
+                      color: colorScheme.onSurface.withOpacity(0.8),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  TextField(
+                    controller: _searchController,
+                    decoration: InputDecoration(
+                      hintText: 'Digite para buscar em todos os campos...',
+                      prefixIcon: const Icon(Icons.search),
+                      suffixIcon: _searchController.text.isNotEmpty
+                          ? IconButton(
+                              icon: const Icon(Icons.clear),
+                              onPressed: () {
+                                _searchController.clear();
+                                _applyFilters();
+                              },
+                            )
+                          : null,
+                      filled: true,
+                      fillColor: colorScheme.surfaceVariant.withOpacity(0.3),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8),
+                        borderSide: BorderSide.none,
+                      ),
+                    ),
+                    onChanged: (_) => _applyFilters(),
+                  ),
+                  const SizedBox(height: 20),
+                ],
+              ),
+
+            // Filtros por Campo
+            Text(
+              'Filtros por Campo',
+              style: textTheme.bodyMedium?.copyWith(
+                fontWeight: FontWeight.w500,
+                color: colorScheme.onSurface.withOpacity(0.8),
+              ),
+            ),
+            const SizedBox(height: 12),
+
+            Wrap(
+              spacing: 16,
+              runSpacing: 16,
+              children: widget.fieldConfigs
+                  .where((c) => c.isFilterable)
+                  .map((config) => SizedBox(
+                        width: 250,
+                        child: TextField(
+                          controller: _filterControllers[config.fieldName],
+                          decoration: InputDecoration(
+                            labelText: config.label,
+                            hintText:
+                                'Filtrar por ${config.label.toLowerCase()}...',
+                            prefixIcon: Icon(
+                                config.icon ?? Icons.filter_list_alt,
+                                size: 20),
+                            suffixIcon: _filterControllers[config.fieldName]
+                                        ?.text
+                                        .isNotEmpty ==
+                                    true
+                                ? IconButton(
+                                    icon: const Icon(Icons.clear, size: 16),
+                                    onPressed: () {
+                                      _filterControllers[config.fieldName]
+                                          ?.clear();
+                                      _applyFilters();
+                                    },
+                                  )
+                                : null,
+                            filled: true,
+                            fillColor:
+                                colorScheme.surfaceVariant.withOpacity(0.3),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(8),
+                              borderSide: BorderSide.none,
+                            ),
+                            contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 8,
+                            ),
+                          ),
+                          onChanged: (_) => _applyFilters(),
+                        ),
+                      ))
+                  .toList(),
+            ),
+
+            const SizedBox(height: 24),
+
+            // Botões de Ação dos Filtros
+            Container(
+              padding: const EdgeInsets.only(top: 16),
+              decoration: BoxDecoration(
+                border: Border(
+                  top: BorderSide(
+                    color: colorScheme.outline.withOpacity(0.2),
+                  ),
+                ),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  FilledButton.tonal(
+                    onPressed: _clearFilters,
+                    style: FilledButton.styleFrom(
+                      backgroundColor: colorScheme.surfaceVariant,
+                      foregroundColor: colorScheme.onSurfaceVariant,
+                    ),
+                    child: const Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.clear_all, size: 18),
+                        SizedBox(width: 8),
+                        Text('Limpar Todos'),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  FilledButton(
+                    onPressed: _applyFilters,
+                    child: const Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.check, size: 18),
+                        SizedBox(width: 8),
+                        Text('Aplicar Filtros'),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
             ),
           ],
         ),
@@ -1112,6 +1229,282 @@ class _GenericMobileGridScreenState<T>
     );
   }
 
+  // ==============================================
+  // BOTÃO DE REFRESH RESTAURADO
+  // ==============================================
+
+  Widget _buildRefreshButton() {
+    return IconButton(
+      icon: isLoading
+          ? SizedBox(
+              width: 20,
+              height: 20,
+              child: CircularProgressIndicator(
+                strokeWidth: 2,
+                valueColor: AlwaysStoppedAnimation<Color>(
+                  Theme.of(context).colorScheme.onPrimary,
+                ),
+              ),
+            )
+          : const Icon(Icons.refresh),
+      onPressed: isLoading ? null : () => _loadItems(reset: true),
+      tooltip: 'Recarregar dados',
+    );
+  }
+
+  // ==============================================
+  // HEADER COM TODAS AS AÇÕES RESTAURADAS
+  // ==============================================
+
+  AppBar _buildNormalAppBar() {
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+
+    return AppBar(
+      title: Text(
+        widget.title,
+        style: textTheme.titleLarge?.copyWith(
+          fontWeight: FontWeight.w600,
+          color: colorScheme.onPrimary,
+        ),
+      ),
+      backgroundColor: colorScheme.primary,
+      foregroundColor: colorScheme.onPrimary,
+      elevation: 3,
+      shadowColor: colorScheme.shadow,
+      surfaceTintColor: Colors.transparent,
+      actions: [
+        // Botão de Refresh
+        _buildRefreshButton(),
+
+        // Configuração de Campos
+        IconButton(
+          icon: const Icon(Icons.view_column),
+          onPressed: _showFieldSettings,
+          tooltip: 'Configurar campos visíveis',
+        ),
+
+        // Filtros
+        IconButton(
+          icon: const Icon(Icons.filter_list),
+          onPressed: () => setState(() => filtrosAbertos = !filtrosAbertos),
+          tooltip: 'Mostrar/ocultar filtros',
+        ),
+
+        // Botão Adicionar (se tiver permissão)
+        if (widget.hasPermission('create')) ...[
+          const SizedBox(width: 8),
+          _buildAddButton(),
+        ],
+      ],
+    );
+  }
+
+  Widget _buildAddButton() {
+    final colorScheme = Theme.of(context).colorScheme;
+    return FloatingActionButton.small(
+      onPressed: () => _openForm(),
+      backgroundColor: colorScheme.primaryContainer,
+      foregroundColor: colorScheme.onPrimaryContainer,
+      elevation: 2,
+      child: const Icon(Icons.add),
+    );
+  }
+
+  FloatingActionButton _buildFloatingActionButton() {
+    final colorScheme = Theme.of(context).colorScheme;
+    return FloatingActionButton(
+      onPressed: () => _openForm(),
+      backgroundColor: colorScheme.primary,
+      foregroundColor: colorScheme.onPrimary,
+      elevation: 4,
+      child: const Icon(Icons.add),
+    );
+  }
+
+  AppBar _buildSelectionAppBar() {
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+
+    return AppBar(
+      backgroundColor: colorScheme.primary,
+      foregroundColor: colorScheme.onPrimary,
+      leading: IconButton(
+        icon: const Icon(Icons.close),
+        onPressed: _toggleSelectionMode,
+      ),
+      title: Text(
+        '${selectedRows.length} selecionado(s)',
+        style: textTheme.bodyMedium?.copyWith(color: colorScheme.onPrimary),
+      ),
+      actions: [
+        if (selectedRows.length == filtered.length)
+          IconButton(
+            icon: const Icon(Icons.deselect),
+            onPressed: _deselectAllCards,
+            tooltip: 'Desmarcar todos',
+          )
+        else
+          IconButton(
+            icon: const Icon(Icons.select_all),
+            onPressed: _selectAllCards,
+            tooltip: 'Selecionar todos',
+          ),
+        if (widget.hasPermission('delete') && selectedRows.isNotEmpty)
+          IconButton(
+            icon: const Icon(Icons.delete_outline),
+            onPressed: _deleteSelected,
+            tooltip: 'Excluir selecionados',
+          ),
+      ],
+    );
+  }
+
+  // ==============================================
+  // WIDGET PRINCIPAL COMPLETO
+  // ==============================================
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+
+    return Scaffold(
+      appBar: widget.useUserBannerAppBar
+          ? PreferredSize(
+              preferredSize: const Size.fromHeight(kToolbarHeight),
+              child: UserBannerAppBar(
+                screenTitle: widget.title,
+                onTapped: widget.onUserBannerTapped,
+                onRefresh:
+                    widget.onBannerRefresh ?? () => _loadItems(reset: true),
+                isLoading: isLoading,
+              ),
+            )
+          : (_isSelectionMode ? _buildSelectionAppBar() : _buildNormalAppBar()),
+      floatingActionButton:
+          widget.hasPermission('create') ? _buildFloatingActionButton() : null,
+      body: Column(
+        children: [
+          // Filtros (quando abertos)
+          if (filtrosAbertos) _buildFilters(),
+
+          // Header de Informações
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            decoration: BoxDecoration(
+              color: colorScheme.surfaceVariant.withOpacity(0.3),
+              border: Border(
+                bottom: BorderSide(color: colorScheme.outline.withOpacity(0.1)),
+              ),
+            ),
+            child: Row(
+              children: [
+                Text(
+                  '${filtered.length} itens de $_totalItems encontrados',
+                  style: textTheme.bodyMedium?.copyWith(
+                    color: colorScheme.onSurface.withOpacity(0.7),
+                  ),
+                ),
+                const Spacer(),
+                if (_isSelectionMode)
+                  Text(
+                    '${selectedRows.length} selecionados',
+                    style: textTheme.bodyMedium?.copyWith(
+                      fontWeight: FontWeight.w600,
+                      color: colorScheme.primary,
+                    ),
+                  ),
+                // Botão de Refresh adicional no header
+                if (!_isSelectionMode) ...[
+                  const SizedBox(width: 16),
+                  _buildRefreshButton(),
+                ],
+              ],
+            ),
+          ),
+
+          // Lista de Itens
+          Expanded(
+            child: Stack(
+              children: [
+                RefreshIndicator.adaptive(
+                  onRefresh: () => _loadItems(reset: true),
+                  child: ListView.builder(
+                    controller: _scrollController,
+                    itemCount: filtered.length + (isLoading ? 1 : 0),
+                    itemBuilder: (context, index) {
+                      if (index == filtered.length) {
+                        return _buildLoadingIndicator();
+                      }
+                      return _buildItemCard(filtered[index], index);
+                    },
+                  ),
+                ),
+
+                // Overlay de carregamento
+                if (isLoading && filtered.isEmpty)
+                  Container(
+                    color: Colors.black.withOpacity(0.1),
+                    child: const Center(
+                      child: CircularProgressIndicator(),
+                    ),
+                  ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildLoadingIndicator() {
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+
+    return Padding(
+      padding: const EdgeInsets.all(24.0),
+      child: Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (_hasMoreItems) ...[
+              CircularProgressIndicator.adaptive(
+                valueColor: AlwaysStoppedAnimation<Color>(colorScheme.primary),
+              ),
+              const SizedBox(height: 16),
+              Text(
+                'Carregando mais itens...',
+                style: textTheme.bodyMedium?.copyWith(
+                  color: colorScheme.onSurface.withOpacity(0.6),
+                ),
+              ),
+            ] else ...[
+              Icon(
+                Icons.check_circle,
+                color: colorScheme.primary.withOpacity(0.5),
+                size: 48,
+              ),
+              const SizedBox(height: 16),
+              Text(
+                'Todos os itens foram carregados',
+                style: textTheme.bodyMedium?.copyWith(
+                  color: colorScheme.onSurface.withOpacity(0.5),
+                  fontStyle: FontStyle.italic,
+                ),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  // ... (mantenha os métodos _buildItemCard, _buildVisibleFieldsForCard,
+  // _buildStatusBadge, _buildCardActions, _showSnackBar, _getNestedValue,
+  // _hasStatusField exatamente como estavam na versão anterior que eu forneci)
+
+  // Restaurando métodos essenciais que podem estar faltando
   Widget _buildItemCard(T item, int index) {
     final itemMap = widget.toJson(item);
     final id = _getNestedValue(itemMap, widget.idFieldName).toString();
@@ -1342,90 +1735,6 @@ class _GenericMobileGridScreenState<T>
     );
   }
 
-  AppBar _buildSelectionAppBar() {
-    final colorScheme = Theme.of(context).colorScheme;
-    final textTheme = Theme.of(context).textTheme;
-
-    return AppBar(
-      backgroundColor: colorScheme.primary,
-      foregroundColor: colorScheme.onPrimary,
-      leading: IconButton(
-        icon: const Icon(Icons.close),
-        onPressed: _toggleSelectionMode,
-      ),
-      title: Text(
-        '${selectedRows.length} selecionado(s)',
-        style: textTheme.bodyMedium?.copyWith(color: colorScheme.onPrimary),
-      ),
-      actions: [
-        if (selectedRows.length == filtered.length)
-          IconButton(
-            icon: const Icon(Icons.deselect),
-            onPressed: _deselectAllCards,
-            tooltip: 'Desmarcar todos',
-          )
-        else
-          IconButton(
-            icon: const Icon(Icons.select_all),
-            onPressed: _selectAllCards,
-            tooltip: 'Selecionar todos',
-          ),
-        if (widget.hasPermission('delete') && selectedRows.isNotEmpty)
-          IconButton(
-            icon: const Icon(Icons.delete_outline),
-            onPressed: _deleteSelected,
-            tooltip: 'Excluir selecionados',
-          ),
-      ],
-    );
-  }
-
-  AppBar _buildNormalAppBar() {
-    final colorScheme = Theme.of(context).colorScheme;
-    final textTheme = Theme.of(context).textTheme;
-
-    return AppBar(
-      title: Text(
-        widget.title,
-        style: textTheme.titleLarge?.copyWith(
-          fontWeight: FontWeight.w600,
-          color: colorScheme.onPrimary,
-        ),
-      ),
-      backgroundColor: colorScheme.primary,
-      foregroundColor: colorScheme.onPrimary,
-      elevation: 1,
-      surfaceTintColor: Colors.transparent,
-      actions: [
-        IconButton(
-          icon: const Icon(Icons.view_column),
-          onPressed: _showFieldSettings,
-          tooltip: 'Configurar campos visíveis',
-        ),
-        IconButton(
-          icon: const Icon(Icons.filter_list),
-          onPressed: () => setState(() => filtrosAbertos = !filtrosAbertos),
-          tooltip: 'Mostrar/ocultar filtros',
-        ),
-        IconButton(
-          icon: const Icon(Icons.refresh),
-          onPressed: () => _loadItems(reset: true),
-          tooltip: 'Recarregar dados',
-        ),
-        if (widget.hasPermission('create')) ...[
-          const SizedBox(width: 8),
-          FloatingActionButton.small(
-            onPressed: () => _openForm(),
-            backgroundColor: colorScheme.primaryContainer,
-            foregroundColor: colorScheme.onPrimaryContainer,
-            elevation: 0,
-            child: const Icon(Icons.add),
-          ),
-        ],
-      ],
-    );
-  }
-
   void _showSnackBar(String message, {bool isError = false}) {
     final colorScheme = Theme.of(context).colorScheme;
 
@@ -1433,6 +1742,10 @@ class _GenericMobileGridScreenState<T>
       SnackBar(
         content: Text(message),
         backgroundColor: isError ? colorScheme.error : colorScheme.primary,
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(8),
+        ),
       ),
     );
   }
@@ -1463,105 +1776,6 @@ class _GenericMobileGridScreenState<T>
     return itemMap.containsKey('status') ||
         itemMap.containsKey('ativo') ||
         itemMap.containsKey('situacao');
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final textTheme = Theme.of(context).textTheme;
-
-    return Scaffold(
-      appBar: widget.useUserBannerAppBar
-          ? PreferredSize(
-              preferredSize: const Size.fromHeight(kToolbarHeight),
-              child: UserBannerAppBar(
-                screenTitle: widget.title,
-                onTapped: widget.onUserBannerTapped,
-                onRefresh:
-                    widget.onBannerRefresh ?? () => _loadItems(reset: true),
-                isLoading: isLoading,
-              ),
-            )
-          : (_isSelectionMode ? _buildSelectionAppBar() : _buildNormalAppBar()),
-      floatingActionButton: widget.hasPermission('create')
-          ? FloatingActionButton(
-              onPressed: () => _openForm(),
-              backgroundColor: colorScheme.primary,
-              foregroundColor: colorScheme.onPrimary,
-              child: const Icon(Icons.add),
-            )
-          : null,
-      body: Column(
-        children: [
-          if (filtrosAbertos) _buildFilters(),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            decoration: BoxDecoration(
-              color: colorScheme.surfaceVariant.withOpacity(0.3),
-              border: Border(
-                bottom: BorderSide(color: colorScheme.outline.withOpacity(0.1)),
-              ),
-            ),
-            child: Row(
-              children: [
-                Text(
-                  '${filtered.length} itens encontrados',
-                  style: textTheme.bodyMedium?.copyWith(
-                    color: colorScheme.onSurface.withOpacity(0.7),
-                  ),
-                ),
-                const Spacer(),
-                if (_isSelectionMode)
-                  Text(
-                    '${selectedRows.length} selecionados',
-                    style: textTheme.bodyMedium?.copyWith(
-                      fontWeight: FontWeight.w600,
-                      color: colorScheme.primary,
-                    ),
-                  ),
-              ],
-            ),
-          ),
-          Expanded(
-            child: RefreshIndicator.adaptive(
-              onRefresh: () => _loadItems(reset: true),
-              child: ListView.builder(
-                controller: _scrollController,
-                itemCount: filtered.length + (isLoading ? 1 : 0),
-                itemBuilder: (context, index) {
-                  if (index == filtered.length) {
-                    return _buildLoadingIndicator();
-                  }
-                  return _buildItemCard(filtered[index], index);
-                },
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildLoadingIndicator() {
-    final colorScheme = Theme.of(context).colorScheme;
-    final textTheme = Theme.of(context).textTheme;
-
-    return Padding(
-      padding: const EdgeInsets.all(24.0),
-      child: Center(
-        child: _hasMoreItems
-            ? CircularProgressIndicator.adaptive(
-                valueColor: AlwaysStoppedAnimation<Color>(colorScheme.primary),
-              )
-            : Text(
-                'Todos os itens foram carregados',
-                style: textTheme.bodyMedium?.copyWith(
-                  color: colorScheme.onSurface.withOpacity(0.5),
-                  fontStyle: FontStyle.italic,
-                ),
-              ),
-      ),
-    );
   }
 }
 

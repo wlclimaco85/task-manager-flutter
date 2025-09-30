@@ -9,9 +9,19 @@ import 'package:task_manager_flutter/data/models/auth_utility.dart';
 import 'package:task_manager_flutter/data/models/login_model.dart';
 import 'package:task_manager_flutter/data/services/alert_caller.dart';
 import 'package:task_manager_flutter/ui/screens/auth_screens/login_screen.dart';
+import 'dart:async';
+import 'dart:convert';
+import 'dart:typed_data';
 
-// Cores do Grid (mantendo suas cores originais)
-// Cores do Grid (baseadas diretamente na logo)
+import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+import 'package:task_manager_flutter/data/models/alert_model.dart';
+import 'package:task_manager_flutter/data/models/auth_utility.dart';
+import 'package:task_manager_flutter/data/models/login_model.dart';
+import 'package:task_manager_flutter/data/services/alert_caller.dart';
+import 'package:task_manager_flutter/ui/screens/auth_screens/login_screen.dart';
+
+// Cores do Grid baseadas na logo - agora integradas com o tema
 class GridColors {
   // Vermelho principal (logo)
   static const Color primary = Color(0xFF93070A);
@@ -24,34 +34,22 @@ class GridColors {
   static const Color secondaryDark = Color(0xFF003D1A);
 
   // Texto
-  static const Color textPrimary = Color(0xFFFFFFFF); // branco
-  static const Color textSecondary = Color(0xFF000000); // preto
+  static const Color textPrimary = Color(0xFFFFFFFF);
+  static const Color textSecondary = Color(0xFF000000);
 
-  // Links e destaques
-  static const Color link = Color(0xFF93070A); // vermelho da logo
-
-  // Inputs
-  static const Color inputBackground = Color(0xFF005826); // fundo verde
-  static const Color inputBorder = Color(0xFF93070A); // borda vermelha
-
-  // Botões
-  static const Color buttonBackground = Color(0xFF93070A); // vermelho
-  static const Color buttonText = Color(0xFFFFFFFF); // branco
-
-  // Fundo principal
-  static const Color background = Color(0xFF005826); // verde logo
-
-  // Cartões e diálogos
+  // Outras cores
+  static const Color link = Color(0xFF93070A);
+  static const Color inputBackground = Color(0xFF005826);
+  static const Color inputBorder = Color(0xFF93070A);
+  static const Color buttonBackground = Color(0xFF93070A);
+  static const Color buttonText = Color(0xFFFFFFFF);
+  static const Color background = Color(0xFF005826);
   static const Color card = Color(0xFFFFFFFF);
   static const Color dialogBackground = Color(0xFFFFFFFF);
-
-  // Feedback
   static const Color error = Color(0xFFD32F2F);
   static const Color warning = Color(0xFFFFA000);
   static const Color success = Color(0xFF2E7D32);
   static const Color info = Color(0xFF1976D2);
-
-  // Outros
   static const Color divider = Color(0xFFBDBDBD);
   static const Color filterBackground = Color(0xFFEFEFEF);
   static const Color hover = Color(0x1A000000);
@@ -59,12 +57,14 @@ class GridColors {
   static const Color shadow = Color(0x26000000);
 }
 
-// AppBar personalizado
+// AppBar personalizado com todas as modificações
 class UserBannerAppBar extends StatefulWidget implements PreferredSizeWidget {
   final VoidCallback? onTapped;
   final String? screenTitle;
   final VoidCallback? onRefresh;
   final bool? isLoading;
+  final VoidCallback? onEmpresaTap;
+  final VoidCallback? onUserTap;
 
   const UserBannerAppBar({
     super.key,
@@ -72,13 +72,16 @@ class UserBannerAppBar extends StatefulWidget implements PreferredSizeWidget {
     this.screenTitle,
     this.onRefresh,
     this.isLoading,
+    this.onEmpresaTap,
+    this.onUserTap,
   });
 
   @override
   _UserBannerAppBarState createState() => _UserBannerAppBarState();
 
   @override
-  Size get preferredSize => const Size.fromHeight(kToolbarHeight);
+  Size get preferredSize => const Size.fromHeight(
+      kToolbarHeight + 60); // Altura aumentada para o header
 }
 
 class _UserBannerAppBarState extends State<UserBannerAppBar> {
@@ -120,10 +123,8 @@ class _UserBannerAppBarState extends State<UserBannerAppBar> {
     }
   }
 
-  // Updated version using AlertCaller
   Future<void> markNotificationAsRead(int id) async {
     await AlertCaller().markNotificationAsRead(id);
-    // Update local state after successful API call
     setState(() {
       notifications.removeWhere((notification) => notification.id == id);
       unreadAlerts = notifications.length;
@@ -161,7 +162,7 @@ class _UserBannerAppBarState extends State<UserBannerAppBar> {
 
     notificationOverlay = OverlayEntry(
       builder: (context) => Positioned(
-        top: kToolbarHeight + 8, // CORREÇÃO: usando constante direta
+        top: kToolbarHeight + 68, // Ajustado para nova altura do AppBar
         right: 8,
         child: Material(
           elevation: 8,
@@ -328,7 +329,27 @@ class _UserBannerAppBarState extends State<UserBannerAppBar> {
     super.dispose();
   }
 
-  // CORREÇÃO DO LOGOUT - NAVEGAÇÃO CORRETA
+  // Navegação para EmpresaGrid
+  void _navigateToEmpresaGrid() {
+    if (widget.onEmpresaTap != null) {
+      widget.onEmpresaTap!();
+    } else {
+      // Fallback para navegação padrão
+      Navigator.pushNamed(context, '/empresa-grid');
+    }
+  }
+
+  // Navegação para atualização do usuário
+  void _navigateToUserUpdate() {
+    if (widget.onUserTap != null) {
+      widget.onUserTap!();
+    } else {
+      // Fallback para navegação padrão
+      Navigator.pushNamed(context, '/user-update');
+    }
+  }
+
+  // Logout
   void _handleLogout() {
     AuthUtility.clearUserInfo();
     AuthUtility.setUserInfo(LoginModel(
@@ -337,10 +358,9 @@ class _UserBannerAppBarState extends State<UserBannerAppBar> {
       status: '',
     ));
 
-    // Navega para a tela de login em vez de BottomNavBarScreen
     Navigator.pushNamedAndRemoveUntil(
       context,
-      '/login', // Substitua pela sua rota de login
+      '/login',
       (route) => false,
     );
   }
@@ -367,19 +387,112 @@ class _UserBannerAppBarState extends State<UserBannerAppBar> {
     return data!.contentAsBytes();
   }
 
+  String _getCompanyName() {
+    // Implemente conforme sua estrutura de dados
+    return AuthUtility.userInfo?.login?.empresa?.nome ?? "Nome da Empresa";
+  }
+
+  // Widget do header com empresa e usuário
+  Widget _buildUserInfoHeader() {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.primaryContainer.withOpacity(0.3),
+        border: Border(
+          bottom: BorderSide(
+            color: Theme.of(context).colorScheme.outline.withOpacity(0.1),
+            width: 1,
+          ),
+        ),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          // Nome da Empresa (clicável)
+          GestureDetector(
+            onTap: _navigateToEmpresaGrid,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              decoration: BoxDecoration(
+                color: Theme.of(context).colorScheme.primary,
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: Text(
+                _getCompanyName(),
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.bold,
+                  color: Theme.of(context).colorScheme.onPrimary,
+                ),
+              ),
+            ),
+          ),
+
+          // Informações do Usuário (clicável)
+          GestureDetector(
+            onTap: _navigateToUserUpdate,
+            child: Row(
+              children: [
+                // Avatar pequeno e redondo
+                Container(
+                  width: 24,
+                  height: 24,
+                  margin: const EdgeInsets.only(right: 8),
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    border: Border.all(
+                      color: Theme.of(context).colorScheme.onPrimary,
+                      width: 1,
+                    ),
+                  ),
+                  child: ClipOval(
+                    child: Image.memory(
+                      _getUserAvatar(),
+                      fit: BoxFit.cover,
+                      errorBuilder: (_, __, ___) => Icon(
+                        Icons.person,
+                        size: 16,
+                        color: Theme.of(context).colorScheme.onPrimary,
+                      ),
+                    ),
+                  ),
+                ),
+                Text(
+                  AuthUtility.userInfo?.data?.codDadosPessoal?.nome ??
+                      "Usuário",
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w500,
+                    color: Theme.of(context).colorScheme.onPrimary,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final isLoggedIn = AuthUtility.userInfo?.data?.id != null &&
         AuthUtility.userInfo!.data!.id! > 1;
-    bool kDebugMode = true;
+
     return AppBar(
-      backgroundColor: GridColors.primary,
+      backgroundColor: Theme.of(context).colorScheme.primary, // Cor do tema
       bottom: PreferredSize(
         preferredSize: const Size.fromHeight(1),
         child: Container(
           height: 1,
           color: GridColors.divider,
         ),
+      ),
+      flexibleSpace: Column(
+        mainAxisAlignment: MainAxisAlignment.end,
+        children: [
+          if (isLoggedIn) _buildUserInfoHeader(),
+        ],
       ),
       actions: [
         if (widget.isLoading ?? false)
@@ -391,20 +504,7 @@ class _UserBannerAppBarState extends State<UserBannerAppBar> {
             ),
           ),
 
-        // Ícone de Notificações (apenas se logado)
-        // VERIFICAÇÃO DE DEBUG - Adicione este print
-        if (kDebugMode)
-          IconButton(
-            icon: Icon(Icons.bug_report, color: GridColors.textPrimary),
-            onPressed: () {
-              print('DEBUG - UserInfo: ${AuthUtility.userInfo?.toJson()}');
-              print('DEBUG - isLoggedIn: $isLoggedIn');
-              print('DEBUG - User ID: ${AuthUtility.userInfo?.data?.id}');
-              print('DEBUG - Token: ${AuthUtility.userInfo?.token}');
-            },
-          ),
-
-        // Ícone de Notificações (apenas se logado)
+        // Ícone de Notificações (substitui o debug)
         if (isLoggedIn) ...[
           Stack(
             alignment: Alignment.center,
@@ -419,8 +519,8 @@ class _UserBannerAppBarState extends State<UserBannerAppBar> {
                   top: 8,
                   child: Container(
                     padding: const EdgeInsets.all(2),
-                    decoration: const BoxDecoration(
-                      color: Colors.red,
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).colorScheme.error,
                       shape: BoxShape.circle,
                     ),
                     constraints: const BoxConstraints(
@@ -429,8 +529,8 @@ class _UserBannerAppBarState extends State<UserBannerAppBar> {
                     ),
                     child: Text(
                       unreadAlerts > 9 ? '9+' : '$unreadAlerts',
-                      style: const TextStyle(
-                        color: Colors.white,
+                      style: TextStyle(
+                        color: Theme.of(context).colorScheme.onError,
                         fontSize: 10,
                         fontWeight: FontWeight.bold,
                       ),
@@ -441,18 +541,20 @@ class _UserBannerAppBarState extends State<UserBannerAppBar> {
             ],
           ),
 
-          // BOTÃO LOGOUT - Agora deve aparecer
+          // Botão Logout
           IconButton(
-            icon: Icon(Icons.logout, color: GridColors.textPrimary),
+            icon: Icon(Icons.logout,
+                color: Theme.of(context).colorScheme.onPrimary),
             onPressed: () {
               showDialog(
                 context: context,
                 builder: (context) => AlertDialog(
+                  backgroundColor: Theme.of(context).colorScheme.surface,
                   title: Text(
                     "Deseja realmente sair?",
                     style: TextStyle(
                       fontWeight: FontWeight.bold,
-                      color: GridColors.textSecondary,
+                      color: Theme.of(context).colorScheme.onSurface,
                     ),
                   ),
                   actions: [
@@ -460,18 +562,19 @@ class _UserBannerAppBarState extends State<UserBannerAppBar> {
                       onPressed: () => Navigator.pop(context),
                       child: Text(
                         "Cancelar",
-                        style: TextStyle(color: GridColors.textSecondary),
+                        style: TextStyle(
+                            color: Theme.of(context).colorScheme.onSurface),
                       ),
                     ),
                     TextButton(
                       onPressed: () {
-                        Navigator.pop(context); // Fecha o dialog
-                        _handleLogout(); // Executa o logout
+                        Navigator.pop(context);
+                        _handleLogout();
                       },
                       child: Text(
                         "Sair",
                         style: TextStyle(
-                          color: GridColors.error,
+                          color: Theme.of(context).colorScheme.error,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
@@ -482,11 +585,11 @@ class _UserBannerAppBarState extends State<UserBannerAppBar> {
             },
           ),
         ] else ...[
-          // BOTÃO LOGIN - aparece apenas se NÃO estiver logado
+          // Botão Login
           IconButton(
-            icon: Icon(Icons.login, color: GridColors.textPrimary),
+            icon: Icon(Icons.login,
+                color: Theme.of(context).colorScheme.onPrimary),
             onPressed: () {
-              // Navega para a tela de LoginScreen
               Navigator.push(
                 context,
                 MaterialPageRoute(builder: (context) => LoginScreen()),
@@ -497,7 +600,7 @@ class _UserBannerAppBarState extends State<UserBannerAppBar> {
       ],
       title: Center(
         child: SizedBox(
-          height: 60,
+          height: 40,
           child: SingleChildScrollView(
             scrollDirection: Axis.horizontal,
             child: GestureDetector(
@@ -510,8 +613,8 @@ class _UserBannerAppBarState extends State<UserBannerAppBar> {
                     padding: const EdgeInsets.only(right: 15),
                     child: Image.asset(
                       'assets/images/iconApp.png',
-                      width: 60,
-                      height: 60,
+                      width: 40,
+                      height: 40,
                       errorBuilder: (_, __, ___) =>
                           const Icon(Icons.apps, size: 40, color: Colors.white),
                     ),
