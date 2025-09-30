@@ -230,7 +230,7 @@ class Chamado {
       label: "Motivo Fechamento",
       fieldName: "motivoFechamento",
       icon: Icons.close,
-      isInForm: true,
+      isInForm: false,
       isVisibleByDefault: false,
       isFixed: false,
       fieldType: FieldType.text,

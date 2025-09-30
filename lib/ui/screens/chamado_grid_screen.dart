@@ -21,13 +21,15 @@ class ChamadoGridScreen extends StatelessWidget {
         fromJson: (json) => Chamado.fromJson(Map<String, dynamic>.from(json)),
         toJson: (obj) => obj.toJson(),
         hasPermission: hasPermission,
-        fieldConfigs: Chamado.fieldConfigs,
+        fieldConfigs: _getFieldConfigsWithFilters(), // Configuração corrigida
         idFieldName: 'id',
         paginationConfig: const PaginationConfig(
           defaultRowsPerPage: 10,
           availableRowsPerPage: [10, 25, 50],
         ),
         enableSearch: true,
+        initialFilters: _getInitialFilters(), // FILTROS INICIAIS ADICIONADOS
+        storageKey: 'chamados_grid', // CHAVE DE ARMAZENAMENTO
         customActions: () => [
           CustomAction<Chamado>(
             icon: Icons.assignment_turned_in,
@@ -39,6 +41,48 @@ class ChamadoGridScreen extends StatelessWidget {
         ],
       ),
     );
+  }
+
+  List<FieldConfig> _getFieldConfigsWithFilters() {
+    return [
+      FieldConfig(
+        label: 'ID',
+        fieldName: 'id',
+        fieldType: FieldType.text,
+        isFilterable: true, // Filter is enabled
+        isInForm: false,
+        isVisibleByDefault: true,
+      ),
+      FieldConfig(
+        label: 'Título',
+        fieldName: 'titulo',
+        fieldType: FieldType.text,
+        isFilterable: true, // Filter is enabled
+        isInForm: true,
+        isVisibleByDefault: true,
+      ),
+      FieldConfig(
+        label: 'Status',
+        fieldName: 'status',
+        fieldType: FieldType.dropdown,
+        isFilterable: true, // Filter is enabled
+        isInForm: true,
+        isVisibleByDefault: true,
+        dropdownOptions: [
+          // Simple local options
+          {'value': 'aberto', 'label': 'Aberto'},
+          {'value': 'fechado', 'label': 'Fechado'},
+        ],
+      ),
+    ];
+  }
+
+  // FILTROS INICIAIS (OPCIONAL)
+  Map<String, dynamic> _getInitialFilters() {
+    return {
+      'status': 'aberto', // Filtra apenas chamados abertos por padrão
+      // 'prioridade': 'alta', // Descomente para filtrar por prioridade específica
+    };
   }
 
   void _showCloseChamadoDialog(
@@ -55,7 +99,6 @@ class ChamadoGridScreen extends StatelessWidget {
           ),
           ElevatedButton(
             onPressed: () {
-              // Implementar lógica de fechamento
               _fecharChamados(selectedItems);
               Navigator.pop(context);
               ScaffoldMessenger.of(context).showSnackBar(

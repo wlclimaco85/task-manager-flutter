@@ -1,0 +1,22 @@
+{
+    "sourceFile": "lib/ui/screens/conta_receber_grid_screen.dart",
+    "activeCommit": 0,
+    "commits": [
+        {
+            "activePatchIndex": 1,
+            "patches": [
+                {
+                    "date": 1759268792493,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n"
+                },
+                {
+                    "date": 1759268858142,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -11,9 +11,9 @@\n   const ContaReceberGridScreen({super.key, required this.hasPermission});\r\n \r\n   @override\r\n   Widget build(BuildContext context) {\r\n-    return GenericGridScreen<ContaReceber>(\r\n+    return GenericMobileGridScreen<ContaReceber>(\r\n       title: \"Contas a Receber\",\r\n       fetchEndpoint: ApiLinks.allContasReceber,\r\n       createEndpoint: ApiLinks.createContaReceber,\r\n       updateEndpoint: ApiLinks.updateContaReceber(\":id\"),\r\n@@ -31,18 +31,13 @@\n           onPressed: (context, object) => _showBaixaDialog(context, object),\r\n           isVisible: (object) => object.status == StatusContaReceber.ABERTA,\r\n         ),\r\n       ],\r\n-      exportConfig: const ExportConfig(\r\n-        enableCsvExport: true,\r\n-        filenamePrefix: 'contas_receber',\r\n-      ),\r\n       paginationConfig: const PaginationConfig(\r\n         defaultRowsPerPage: 10,\r\n         availableRowsPerPage: [10, 25, 50],\r\n       ),\r\n       enableSearch: true,\r\n-      enableColumnReorder: true,\r\n     );\r\n   }\r\n \r\n   void _showBaixaDialog(BuildContext context, ContaReceber conta) {\r\n"
+                }
+            ],
+            "date": 1759268792493,
+            "name": "Commit-0",
+            "content": "// conta_receber_grid_screen.dart\r\nimport 'package:flutter/material.dart';\r\nimport 'package:task_manager_flutter/data/utils/api_links.dart';\r\nimport 'package:task_manager_flutter/data/customization/generic_grid_card.dart';\r\nimport 'package:task_manager_flutter/data/models/conta_receber_model.dart';\r\nimport 'package:task_manager_flutter/ui/screens/baixa_dialog_receber.dart';\r\n\r\nclass ContaReceberGridScreen extends StatelessWidget {\r\n  final SecurityCheck hasPermission;\r\n\r\n  const ContaReceberGridScreen({super.key, required this.hasPermission});\r\n\r\n  @override\r\n  Widget build(BuildContext context) {\r\n    return GenericGridScreen<ContaReceber>(\r\n      title: \"Contas a Receber\",\r\n      fetchEndpoint: ApiLinks.allContasReceber,\r\n      createEndpoint: ApiLinks.createContaReceber,\r\n      updateEndpoint: ApiLinks.updateContaReceber(\":id\"),\r\n      deleteEndpoint: ApiLinks.deleteContaReceber(\":id\"),\r\n      fromJson: (json) => ContaReceber.fromJson(json),\r\n      toJson: (obj) => obj.toJson(),\r\n      hasPermission: hasPermission,\r\n      fieldConfigs: ContaReceber.fieldConfigs,\r\n      idFieldName: 'id',\r\n      dateFieldName: 'createdAt',\r\n      customActions: () => [\r\n        CustomAction<ContaReceber>(\r\n          icon: Icons.payment,\r\n          label: 'Baixar',\r\n          onPressed: (context, object) => _showBaixaDialog(context, object),\r\n          isVisible: (object) => object.status == StatusContaReceber.ABERTA,\r\n        ),\r\n      ],\r\n      exportConfig: const ExportConfig(\r\n        enableCsvExport: true,\r\n        filenamePrefix: 'contas_receber',\r\n      ),\r\n      paginationConfig: const PaginationConfig(\r\n        defaultRowsPerPage: 10,\r\n        availableRowsPerPage: [10, 25, 50],\r\n      ),\r\n      enableSearch: true,\r\n      enableColumnReorder: true,\r\n    );\r\n  }\r\n\r\n  void _showBaixaDialog(BuildContext context, ContaReceber conta) {\r\n    showDialog(\r\n      context: context,\r\n      builder: (BuildContext context) {\r\n        return BaixaDialogReceber(conta: conta);\r\n      },\r\n    );\r\n  }\r\n}\r\n"
+        }
+    ]
+}
