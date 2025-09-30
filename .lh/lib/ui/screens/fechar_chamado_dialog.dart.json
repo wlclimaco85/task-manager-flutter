@@ -1,0 +1,26 @@
+{
+    "sourceFile": "lib/ui/screens/fechar_chamado_dialog.dart",
+    "activeCommit": 0,
+    "commits": [
+        {
+            "activePatchIndex": 2,
+            "patches": [
+                {
+                    "date": 1759252320703,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n"
+                },
+                {
+                    "date": 1759252884275,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -1,8 +1,8 @@\n // fechar_chamado_dialog.dart\r\n import 'package:flutter/material.dart';\r\n import 'package:task_manager_flutter/data/utils/api_links.dart';\r\n-import 'package:task_manager_flutter/data/services/api_service.dart';\r\n+import 'package:task_manager_flutter/data/services/chamado_caller.dart';\r\n \r\n class FecharChamadoDialog extends StatefulWidget {\r\n   final int chamadoId;\r\n \r\n@@ -62,11 +62,11 @@\n     if (_formKey.currentState!.validate()) {\r\n       setState(() => _loading = true);\r\n \r\n       try {\r\n-        final response = await ApiService().post(\r\n+        final response = await ChamadoCaller().fecharChamado(\r\n           ApiLinks.fecharChamado(widget.chamadoId),\r\n-          data: {'solucao': _solucaoController.text},\r\n+          _solucaoController.text,\r\n         );\r\n \r\n         if (response.statusCode == 200) {\r\n           Navigator.of(context).pop(true);\r\n"
+                },
+                {
+                    "date": 1759253051821,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -4,10 +4,11 @@\n import 'package:task_manager_flutter/data/services/chamado_caller.dart';\r\n \r\n class FecharChamadoDialog extends StatefulWidget {\r\n   final int chamadoId;\r\n+  final Chamado chamado;\r\n \r\n-  const FecharChamadoDialog({super.key, required this.chamadoId});\r\n+  const FecharChamadoDialog({super.key, required this.chamadoId, this.chamado});\r\n \r\n   @override\r\n   _FecharChamadoDialogState createState() => _FecharChamadoDialogState();\r\n }\r\n"
+                }
+            ],
+            "date": 1759252320703,
+            "name": "Commit-0",
+            "content": "// fechar_chamado_dialog.dart\r\nimport 'package:flutter/material.dart';\r\nimport 'package:task_manager_flutter/data/utils/api_links.dart';\r\nimport 'package:task_manager_flutter/data/services/api_service.dart';\r\n\r\nclass FecharChamadoDialog extends StatefulWidget {\r\n  final int chamadoId;\r\n\r\n  const FecharChamadoDialog({super.key, required this.chamadoId});\r\n\r\n  @override\r\n  _FecharChamadoDialogState createState() => _FecharChamadoDialogState();\r\n}\r\n\r\nclass _FecharChamadoDialogState extends State<FecharChamadoDialog> {\r\n  final _formKey = GlobalKey<FormState>();\r\n  final _solucaoController = TextEditingController();\r\n  bool _loading = false;\r\n\r\n  @override\r\n  Widget build(BuildContext context) {\r\n    return AlertDialog(\r\n      title: Text('Fechar Chamado'),\r\n      content: Form(\r\n        key: _formKey,\r\n        child: Column(\r\n          mainAxisSize: MainAxisSize.min,\r\n          children: [\r\n            TextFormField(\r\n              controller: _solucaoController,\r\n              decoration: InputDecoration(\r\n                labelText: 'Solução',\r\n                border: OutlineInputBorder(),\r\n              ),\r\n              maxLines: 5,\r\n              validator: (value) {\r\n                if (value == null || value.isEmpty) {\r\n                  return 'Por favor, informe a solução';\r\n                }\r\n                return null;\r\n              },\r\n            ),\r\n            SizedBox(height: 16),\r\n            if (_loading) CircularProgressIndicator(),\r\n          ],\r\n        ),\r\n      ),\r\n      actions: [\r\n        TextButton(\r\n          onPressed: _loading ? null : () => Navigator.of(context).pop(),\r\n          child: Text('Cancelar'),\r\n        ),\r\n        ElevatedButton(\r\n          onPressed: _loading ? null : _fecharChamado,\r\n          child: Text('Fechar Chamado'),\r\n        ),\r\n      ],\r\n    );\r\n  }\r\n\r\n  void _fecharChamado() async {\r\n    if (_formKey.currentState!.validate()) {\r\n      setState(() => _loading = true);\r\n\r\n      try {\r\n        final response = await ApiService().post(\r\n          ApiLinks.fecharChamado(widget.chamadoId),\r\n          data: {\r\n            'solucao': _solucaoController.text,\r\n          },\r\n        );\r\n\r\n        if (response.statusCode == 200) {\r\n          Navigator.of(context).pop(true);\r\n          ScaffoldMessenger.of(context).showSnackBar(\r\n            SnackBar(content: Text('Chamado fechado com sucesso!')),\r\n          );\r\n        } else {\r\n          throw Exception('Erro ao fechar chamado');\r\n        }\r\n      } catch (e) {\r\n        ScaffoldMessenger.of(context).showSnackBar(\r\n          SnackBar(content: Text('Erro: $e')),\r\n        );\r\n      } finally {\r\n        setState(() => _loading = false);\r\n      }\r\n    }\r\n  }\r\n}"
+        }
+    ]
+}

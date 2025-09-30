@@ -3,7 +3,7 @@
     "activeCommit": 0,
     "commits": [
         {
-            "activePatchIndex": 1,
+            "activePatchIndex": 3,
             "patches": [
                 {
                     "date": 1758912474932,
@@ -12,6 +12,14 @@
                 {
                     "date": 1758912505463,
                     "content": "Index: \n===================================================================\n--- \n+++ \n@@ -1,8 +1,6 @@\n-import 'package:flutter/material.dart';\r\n-\r\n-import 'package:task_manager_flutter/data/network/network_caller.dart';\r\n-import 'package:task_manager_flutter/data/network/network_response.dart';\r\n+import 'package:task_manager_flutter/data/models/network_response.dart';\r\n+import 'package:task_manager_flutter/data/services/network_caller.dart';\r\n import 'package:task_manager_flutter/data/utils/api_links.dart';\r\n \r\n import '../models/chamado_model.dart';\r\n \r\n"
+                },
+                {
+                    "date": 1759252531437,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -26,5 +26,24 @@\n   Future<List<Map<String, dynamic>>> fetchChamadoDropdown() async {\r\n     final chamados = await fetchAllChamados();\r\n     return chamados.map((c) => {'value': c.id, 'label': c.titulo}).toList();\r\n   }\r\n+\r\n+  Future<List<Chamado>> fecharChamado(Chamado chamado) async {\r\n+    List<Chamado> list = [];\r\n+    try {\r\n+      final NetworkResponse response = await NetworkCaller().postRequest(\r\n+        ApiLinks.allChamados,\r\n+        chamado.toJson(),\r\n+      );\r\n+\r\n+      if (response.isSuccess && response.body != null) {\r\n+        final data = response.body!['data']['dados'] ?? [];\r\n+        list = (data as List).map((item) => Chamado.fromJson(item)).toList();\r\n+      }\r\n+    } catch (e) {\r\n+      print('Erro ao carregar chamados: $e');\r\n+      throw Exception('Erro ao carregar chamados: $e');\r\n+    }\r\n+    return list;\r\n+  }\r\n }\r\n"
+                },
+                {
+                    "date": 1759252835762,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -27,9 +27,9 @@\n     final chamados = await fetchAllChamados();\r\n     return chamados.map((c) => {'value': c.id, 'label': c.titulo}).toList();\r\n   }\r\n \r\n-  Future<List<Chamado>> fecharChamado(Chamado chamado) async {\r\n+  Future<List<Chamado>> fecharChamado(String url, Chamado chamado) async {\r\n     List<Chamado> list = [];\r\n     try {\r\n       final NetworkResponse response = await NetworkCaller().postRequest(\r\n         ApiLinks.allChamados,\r\n"
                 }
             ],
             "date": 1758912474932,

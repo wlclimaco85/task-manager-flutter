@@ -5,6 +5,32 @@ import 'package:task_manager_flutter/data/utils/api_links.dart';
 import 'package:task_manager_flutter/data/models/network_response.dart';
 import 'package:task_manager_flutter/data/services/network_caller.dart';
 
+class RolesModel {
+  String? status;
+  String? token;
+  List<Role>? roles;
+
+  RolesModel({this.status, this.token, this.roles});
+
+  RolesModel.fromJson(Map<String, dynamic> json) {
+    status = json['status'];
+    token = json['token'];
+    roles = json['data'] != null
+        ? Role.fromJsonList(json['data']['dados'])
+        : [];
+  }
+
+  Map<String, dynamic> toJson() {
+    final Map<String, dynamic> data = <String, dynamic>{};
+    data['status'] = status;
+    data['token'] = token;
+    if (roles != null) {
+      data['data'] = roles!.map((produto) => produto.toJson()).toList();
+    }
+    return data;
+  }
+}
+
 class Role {
   int? id;
   String? description;
@@ -22,6 +48,12 @@ class Role {
     aplicativo = json['aplicativo'] != null
         ? Aplicativo.fromJson(json['aplicativo'])
         : null;
+  }
+
+  static List<Role> fromJsonList(List<dynamic> jsonList) {
+    return jsonList
+        .map((item) => Role.fromJson(Map<String, dynamic>.from(item)))
+        .toList();
   }
 
   Map<String, dynamic> toJson() {

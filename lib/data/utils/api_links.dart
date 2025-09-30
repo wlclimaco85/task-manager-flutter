@@ -306,4 +306,21 @@ class ApiLinks {
       '$_baseUrlNew/api/obrigacoes-fiscais/$id';
   static String deleteObrigacaoFiscal(String id) =>
       '$_baseUrlNew/api/obrigacoes-fiscais/$id';
+
+  static String getAllRoles =
+      '$_baseUrlNew/api/role?size=1000'; // Aumentamos o size para pegar todas as roles
+
+  static String associateRoleToLogin(int loginId, int roleId) {
+    return '$_baseUrlNew/api/logins/$loginId/roles/$roleId';
+  }
+
+  static String removeRoleFromLogin(int loginId, int roleId) {
+    return '$_baseUrlNew/api/logins/$loginId/roles/$roleId';
+  }
+
+  //ApiLinks.fecharChamado(widget.chamadoId),
+  static String getRolesLoginId(String id) =>
+      '$_baseUrlNew/api/logins/$id/roles';
+
+  static String fecharChamados(int id) => "$_baseUrlNew/chamados/$id/fechar";
 }

@@ -1,0 +1,30 @@
+{
+    "sourceFile": "lib/data/services/role_caller.dart",
+    "activeCommit": 0,
+    "commits": [
+        {
+            "activePatchIndex": 3,
+            "patches": [
+                {
+                    "date": 1759007594532,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n"
+                },
+                {
+                    "date": 1759007786596,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -35,9 +35,9 @@\n \r\n   Future<bool> associateRoleToLogin(int loginId, int roleId) async {\r\n     try {\r\n       final NetworkResponse response = await NetworkCaller().postRequest(\r\n-        ApiLinks.associateRoleToLogin(loginId, roleId),\r\n+        ApiLinks.associateRoleToLogin(loginId, roleId)\r\n         // Como é uma associação, não enviamos body, mas se a API exigir, ajuste aqui.\r\n         // No exemplo, o endpoint é POST e não tem body.\r\n       );\r\n \r\n"
+                },
+                {
+                    "date": 1759007920026,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -35,9 +35,9 @@\n \r\n   Future<bool> associateRoleToLogin(int loginId, int roleId) async {\r\n     try {\r\n       final NetworkResponse response = await NetworkCaller().postRequest(\r\n-        ApiLinks.associateRoleToLogin(loginId, roleId),\r\n+        ApiLinks.associateRoleToLogin(loginId, roleId)\r\n         // Como é uma associação, não enviamos body, mas se a API exigir, ajuste aqui.\r\n         // No exemplo, o endpoint é POST e não tem body.\r\n       );\r\n \r\n"
+                },
+                {
+                    "date": 1759007930810,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -36,8 +36,9 @@\n   Future<bool> associateRoleToLogin(int loginId, int roleId) async {\r\n     try {\r\n       final NetworkResponse response = await NetworkCaller().postRequest(\r\n         ApiLinks.associateRoleToLogin(loginId, roleId),\r\n+        {},\r\n         // Como é uma associação, não enviamos body, mas se a API exigir, ajuste aqui.\r\n         // No exemplo, o endpoint é POST e não tem body.\r\n       );\r\n \r\n"
+                }
+            ],
+            "date": 1759007594532,
+            "name": "Commit-0",
+            "content": "import 'dart:convert';\r\nimport 'package:task_manager_flutter/data/models/role_model.dart'; // Ajuste o caminho conforme necessário\r\nimport 'package:task_manager_flutter/data/utils/api_links.dart'; // Onde definiremos as URLs\r\nimport 'package:task_manager_flutter/data/models/network_response.dart';\r\nimport 'package:task_manager_flutter/data/services/network_caller.dart';\r\n\r\nclass RoleCaller {\r\n  Future<List<Role>> getRoles() async {\r\n    List<Role> rolesList = [];\r\n    try {\r\n      final NetworkResponse response =\r\n          await NetworkCaller().getRequest(ApiLinks.getAllRoles);\r\n\r\n      if (response.statusCode == 200 && response.body != null) {\r\n        // A resposta é um mapa, e esperamos que tenha uma chave 'data' que é um mapa com 'content' (lista de roles)\r\n        final Map<String, dynamic> responseData = response.body!;\r\n        if (responseData.containsKey('data')) {\r\n          final List<dynamic> rolesJson = responseData['data']['content'];\r\n          rolesList = rolesJson.map((json) => Role.fromJson(json)).toList();\r\n        } else {\r\n          throw Exception('Estrutura de resposta inválida: falta a chave \"data\"');\r\n        }\r\n      } else {\r\n        throw Exception('Falha ao carregar roles: ${response.statusCode}');\r\n      }\r\n    } catch (e) {\r\n      print('Erro: $e');\r\n      throw Exception('Erro ao carregar roles: $e');\r\n    }\r\n    return rolesList;\r\n  }\r\n\r\n  Future<bool> associateRoleToLogin(int loginId, int roleId) async {\r\n    try {\r\n      final NetworkResponse response = await NetworkCaller().postRequest(\r\n        ApiLinks.associateRoleToLogin(loginId, roleId),\r\n        // Como é uma associação, não enviamos body, mas se a API exigir, ajuste aqui.\r\n        // No exemplo, o endpoint é POST e não tem body.\r\n      );\r\n\r\n      if (response.statusCode == 200) {\r\n        return true;\r\n      } else {\r\n        return false;\r\n      }\r\n    } catch (e) {\r\n      print('Erro: $e');\r\n      return false;\r\n    }\r\n  }\r\n\r\n  Future<bool> removeRoleFromLogin(int loginId, int roleId) async {\r\n    try {\r\n      final NetworkResponse response = await NetworkCaller().deleteRequest(\r\n        ApiLinks.removeRoleFromLogin(loginId, roleId),\r\n      );\r\n\r\n      if (response.statusCode == 204) {\r\n        return true;\r\n      } else {\r\n        return false;\r\n      }\r\n    } catch (e) {\r\n      print('Erro: $e');\r\n      return false;\r\n    }\r\n  }\r\n}"
+        }
+    ]
+}

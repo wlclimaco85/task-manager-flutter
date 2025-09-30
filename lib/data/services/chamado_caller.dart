@@ -1,7 +1,7 @@
 import 'package:task_manager_flutter/data/models/network_response.dart';
 import 'package:task_manager_flutter/data/services/network_caller.dart';
 import 'package:task_manager_flutter/data/utils/api_links.dart';
-
+import 'package:task_manager_flutter/data/models/auth_utility.dart';
 import '../models/chamado_model.dart';
 
 class ChamadoCaller {
@@ -26,5 +26,32 @@ class ChamadoCaller {
   Future<List<Map<String, dynamic>>> fetchChamadoDropdown() async {
     final chamados = await fetchAllChamados();
     return chamados.map((c) => {'value': c.id, 'label': c.titulo}).toList();
+  }
+
+  Future<List<Chamado>> fecharChamado(
+    String url,
+    String text,
+    Chamado? chamado,
+  ) async {
+    List<Chamado> list = [];
+    try {
+      chamado?.dataFechamento = DateTime.now();
+      chamado?.motivoFechamento = text;
+      final login = AuthUtility.userInfo?.login;
+      chamado?.usuarioFechamento = login;
+      final NetworkResponse response = await NetworkCaller().postRequest(
+        url,
+        chamado?.toJson(),
+      );
+
+      if (response.isSuccess && response.body != null) {
+        final data = response.body!['data']['dados'] ?? [];
+        list = (data as List).map((item) => Chamado.fromJson(item)).toList();
+      }
+    } catch (e) {
+      print('Erro ao carregar chamados: $e');
+      throw Exception('Erro ao carregar chamados: $e');
+    }
+    return list;
   }
 }

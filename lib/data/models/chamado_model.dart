@@ -22,6 +22,10 @@ enum StatusChamadoEnum {
   static StatusChamadoEnum fromValue(int value) {
     return values.firstWhere((e) => e.value == value);
   }
+
+  static StatusChamadoEnum fromString(String name) {
+    return values.firstWhere((e) => e.name.toUpperCase() == name.toUpperCase());
+  }
 }
 
 enum PrioridadeChamadoEnum {
@@ -36,6 +40,10 @@ enum PrioridadeChamadoEnum {
 
   static PrioridadeChamadoEnum fromValue(int value) {
     return values.firstWhere((e) => e.value == value);
+  }
+
+  static PrioridadeChamadoEnum fromString(String name) {
+    return values.firstWhere((e) => e.name.toUpperCase() == name.toUpperCase());
   }
 }
 
@@ -76,8 +84,8 @@ class Chamado {
       titulo: json['titulo'],
       descricao: json['descricao'],
       motivoFechamento: json['motivoFechamento'],
-      status: StatusChamadoEnum.fromValue(json['status']),
-      prioridade: PrioridadeChamadoEnum.fromValue(json['prioridade']),
+      status: StatusChamadoEnum.fromString(json['status']),
+      prioridade: PrioridadeChamadoEnum.fromString(json['prioridade']),
       empresa: Empresa.fromJson(json['empresa']),
       usuarioAbertura: json['usuarioAbertura'] != null
           ? Login.fromJson(json['usuarioAbertura'])
@@ -89,7 +97,9 @@ class Chamado {
           ? Parceiro.fromJson(json['parceiro'])
           : null,
       setor: json['setor'] != null ? Setor.fromJson(json['setor']) : null,
-      dataAbertura: DateTime.parse(json['dataAbertura']),
+      dataAbertura: json['dataAbertura'] != null
+          ? DateTime.parse(json['dataAbertura'])
+          : DateTime.now(),
       dataFechamento: json['dataFechamento'] != null
           ? DateTime.parse(json['dataFechamento'])
           : null,

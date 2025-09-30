@@ -189,15 +189,15 @@ class NetworkCaller {
       body?['parceiro'] = {};
       body?['aplicativo'] = {};
       body?['audit'] = {};
-      body?['empresa']['id'] = user?.empresa?.id ?? 1;
-      body?['parceiro']['id'] = user?.parceiro?.id ?? 1;
+      body?['empresa']['id'] = user?.empresa?.id ?? null;
+      body?['parceiro']['id'] = user?.parceiro?.id ?? null;
       body?['aplicativo']['id'] = user?.aplicativo != null
           ? user?.aplicativo?.id
-          : 1;
-      body?['audit']['parceiroId'] = user?.parceiro?.id ?? 1;
-      body?['audit']['empresaId'] = user?.empresa?.id ?? 1;
-      body?['audit']['appId'] = user?.aplicativo?.id ?? 1;
-      body?['audit']['userLogadoId'] = user?.id ?? 1;
+          : null;
+      body?['audit']['parceiroId'] = user?.parceiro?.id ?? null;
+      body?['audit']['empresaId'] = user?.empresa?.id ?? null;
+      body?['audit']['appId'] = user?.aplicativo?.id ?? null;
+      body?['audit']['userLogadoId'] = user?.id ?? null;
 
       Response response = await post(
         Uri.parse(url),
@@ -231,6 +231,55 @@ class NetworkCaller {
       log(e.toString());
     }
     return NetworkResponse(false, -1, null);
+  }
+
+  Future<NetworkResponse> deleteRequest(
+    String url, {
+    Map<String, dynamic>? queryParams,
+  }) async {
+    try {
+      final user = AuthUtility.userInfo?.login;
+
+      // Se queryParams é nulo, cria um novo Map, senão usa o passado
+      queryParams ??= {};
+
+      // Adiciona os parâmetros padrão
+      queryParams['empresaId'] = user?.empresa?.id ?? 1;
+      queryParams['parceiroId'] = user?.parceiro?.id ?? 1;
+      queryParams['appId'] = user?.aplicativo?.id ?? 1;
+      queryParams['userLogadoId'] = user?.id ?? 1;
+
+      // Constrói a URI com os query parameters
+      Uri uri = Uri.parse(url);
+      uri = uri.replace(queryParameters: queryParams);
+
+      final response = await delete(
+        uri,
+        headers: {
+          'Content-Type': 'application/json;charset=UTF-8',
+          'Authorization': 'Bearer ${AuthUtility.userInfo?.token}',
+          'Access-Control-Allow-Origin': '*',
+          'Access-Control-Allow-Credentials': 'true',
+          'Access-Control-Allow-Methods': 'GET, POST, OPTIONS, DELETE',
+          'Access-Control-Allow-Headers': 'Origin, Content-Type, Accept',
+        },
+      );
+
+      print('DELETE $uri');
+
+      if (response.statusCode == 200 || response.statusCode == 204) {
+        // Se a resposta for bem-sucedida e tiver corpo, decodifica, senão retorna null
+        final body = response.body.isNotEmpty
+            ? jsonDecode(response.body)
+            : null;
+        return NetworkResponse(true, response.statusCode, body);
+      } else {
+        return NetworkResponse(false, response.statusCode, null);
+      }
+    } catch (e) {
+      log(e.toString());
+      return NetworkResponse(false, -1, null);
+    }
   }
 }
 

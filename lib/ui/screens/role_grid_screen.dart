@@ -2,14 +2,15 @@ import 'package:flutter/material.dart';
 import 'package:task_manager_flutter/data/utils/api_links.dart';
 import 'package:task_manager_flutter/ui/widgets/generic_grid_screen.dart';
 import 'package:task_manager_flutter/data/models/role_model.dart';
+import 'package:task_manager_flutter/ui/screens/role_dialog.dart';
 
 class RoleGridScreen extends StatelessWidget {
   final SecurityCheck hasPermission;
-
   const RoleGridScreen({super.key, required this.hasPermission});
 
   @override
   Widget build(BuildContext context) {
+    int loginId = ModalRoute.of(context)!.settings.arguments as int;
     return GenericGridScreen<Role>(
       title: "Roles",
       fetchEndpoint: ApiLinks.allRoles,
@@ -22,6 +23,14 @@ class RoleGridScreen extends StatelessWidget {
       fieldConfigs: Role.fieldConfigs,
       idFieldName: 'id',
       dateFieldName: 'audit.createdAt',
+      customActions: () => [
+        CustomAction<Role>(
+          icon: Icons.payment,
+          label: 'Baixar',
+          onPressed: (context, object) =>
+              _showBaixaDialog(context, object, loginId),
+        ),
+      ],
       exportConfig: const ExportConfig(
         enableCsvExport: true,
         filenamePrefix: 'roles',
@@ -32,6 +41,15 @@ class RoleGridScreen extends StatelessWidget {
       ),
       enableSearch: true,
       enableColumnReorder: true,
+    );
+  }
+
+  void _showBaixaDialog(BuildContext context, Role conta, int loginId) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return RoleDialog(loginId: loginId);
+      },
     );
   }
 }

@@ -17,7 +17,8 @@ class LoginDetailScreen extends StatelessWidget {
     required this.hasPermission,
   });
 
-  static List<TabConfig> get tabConfigs => [
+  // 🔹 Agora é um getter normal (não static)
+  List<TabConfig> get tabConfigs => [
     TabConfig(
       title: "Dados Principais",
       icon: Icons.person,
@@ -29,7 +30,7 @@ class LoginDetailScreen extends StatelessWidget {
       title: "Roles",
       icon: Icons.history,
       isGrid: true,
-      endpoint: ApiLinks.allRoles,
+      endpoint: ApiLinks.getRolesLoginId(item.id?.toString() ?? ''),
       gridFieldConfigs: Role.fieldConfigs,
     ),
   ];
@@ -38,22 +39,12 @@ class LoginDetailScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return GenericDetailFormScreen<Login>(
       item: item,
-      tabConfigs: tabConfigs,
+      tabConfigs: tabConfigs, // ✅ funciona agora
       title: "Detalhes do Parceiro",
       onSave: (formData) async {
         print("Salvar parceiro: $formData");
-        // Implementar lógica de save aqui
         try {
-          // Exemplo de implementação:
-          // final response = await NetworkCaller().postRequest(
-          //   ApiLinks.updateParceiro(item.id.toString()),
-          //   data: formData,
-          // );
-          // if (response.isSuccess) {
-          //   ScaffoldMessenger.of(context).showSnackBar(
-          //     SnackBar(content: Text('Parceiro salvo com sucesso!')),
-          //   );
-          // }
+          // implementar lógica de save aqui
         } catch (e) {
           print("Erro ao salvar: $e");
         }

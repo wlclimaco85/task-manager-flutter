@@ -3,6 +3,7 @@ import 'package:task_manager_flutter/data/utils/api_links.dart';
 import 'package:task_manager_flutter/ui/widgets/generic_grid_screen.dart';
 import 'package:task_manager_flutter/data/models/login_2_model.dart';
 import 'package:task_manager_flutter/ui/details/login_detail_screen.dart';
+import 'package:task_manager_flutter/ui/screens/role_dialog.dart';
 
 class LoginGridScreen extends StatelessWidget {
   final SecurityCheck hasPermission;
@@ -55,16 +56,7 @@ class LoginGridScreen extends StatelessWidget {
     showDialog(
       context: context,
       builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text('Bom Dia!'),
-          content: const Text('Tenha um excelente dia! 😊'),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('Fechar'),
-            ),
-          ],
-        );
+        return RoleDialog(loginId: conta?.id ?? 0);
       },
     );
   }

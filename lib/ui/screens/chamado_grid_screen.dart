@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:task_manager_flutter/data/models/chamado_model.dart';
 import 'package:task_manager_flutter/data/utils/api_links.dart';
 import 'package:task_manager_flutter/ui/widgets/generic_grid_screen.dart';
+import 'package:task_manager_flutter/ui/screens/fechar_chamado_dialog.dart';
 
 class ChamadoGridScreen extends StatelessWidget {
   final SecurityCheck hasPermission;
@@ -32,6 +33,22 @@ class ChamadoGridScreen extends StatelessWidget {
       ),
       enableSearch: true,
       enableColumnReorder: true,
+      customActions: () => [
+        CustomAction<Chamado>(
+          icon: Icons.check_circle,
+          label: 'Fechar',
+          onPressed: (context, object) => _showFecharDialog(context, object),
+        ),
+      ],
+    );
+  }
+
+  void _showFecharDialog(BuildContext context, Chamado chamado) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return FecharChamadoDialog(chamadoId: chamado?.id ?? 0);
+      },
     );
   }
 }

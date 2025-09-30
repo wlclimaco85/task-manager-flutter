@@ -3,7 +3,7 @@
     "activeCommit": 0,
     "commits": [
         {
-            "activePatchIndex": 1,
+            "activePatchIndex": 4,
             "patches": [
                 {
                     "date": 1758309272197,
@@ -12,6 +12,18 @@
                 {
                     "date": 1758309294878,
                     "content": "Index: \n===================================================================\n--- \n+++ \n@@ -26,16 +26,8 @@\n       hasPermission: hasPermission,\r\n       fieldConfigs: Chamado.fieldConfigs,\r\n       idFieldName: 'id',\r\n       dateFieldName: 'createdAt',\r\n-      customActions: [\r\n-        CustomAction(\r\n-          icon: Icons.update,\r\n-          label: 'Alterar Status',\r\n-          onPressed: (context, object) => _showStatusDialog(context, object),\r\n-          isVisible: (object) => object.status != 'FECHADO',\r\n-        ),\r\n-      ],\r\n       exportConfig: const ExportConfig(\r\n         enableCsvExport: true,\r\n         filenamePrefix: 'chamados',\r\n       ),\r\n@@ -46,14 +38,5 @@\n       enableSearch: true,\r\n       enableColumnReorder: true,\r\n     );\r\n   }\r\n-\r\n-  void _showStatusDialog(BuildContext context, Chamado chamado) {\r\n-    showDialog(\r\n-      context: context,\r\n-      builder: (BuildContext context) {\r\n-        return StatusChamadoDialog(chamado: chamado);\r\n-      },\r\n-    );\r\n-  }\r\n }\r\n"
+                },
+                {
+                    "date": 1759253165673,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -33,5 +33,14 @@\n       enableSearch: true,\r\n       enableColumnReorder: true,\r\n     );\r\n   }\r\n+\r\n+  void _showFecharDialog(BuildContext context, Chamado chamado) {\r\n+    showDialog(\r\n+      context: context,\r\n+      builder: (BuildContext context) {\r\n+        return FecharChamadoDialog(chamadoId: chamado?.id ?? 0);\r\n+      },\r\n+    );\r\n+  }\r\n }\r\n"
+                },
+                {
+                    "date": 1759253199316,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -31,8 +31,15 @@\n         availableRowsPerPage: [10, 25, 50],\r\n       ),\r\n       enableSearch: true,\r\n       enableColumnReorder: true,\r\n+      customActions: () => [\r\n+        CustomAction<Chamado>(\r\n+          icon: Icons.check_circle,\r\n+          label: 'Fechar',\r\n+          onPressed: (context, object) => _showFecharDialog(context, object),\r\n+        ),\r\n+      ],\r\n     );\r\n   }\r\n \r\n   void _showFecharDialog(BuildContext context, Chamado chamado) {\r\n"
+                },
+                {
+                    "date": 1759253286966,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -0,0 +1,54 @@\n+import 'package:flutter/material.dart';\r\n+import 'package:task_manager_flutter/data/models/chamado_model.dart';\r\n+import 'package:task_manager_flutter/data/utils/api_links.dart';\r\n+import 'package:task_manager_flutter/ui/widgets/generic_grid_screen.dart';\r\n+import 'package:task_manager_flutter/ui/screens/fechar_chamado_dialog.dart';\r\n+\r\n+class ChamadoGridScreen extends StatelessWidget {\r\n+  final SecurityCheck hasPermission;\r\n+\r\n+  const ChamadoGridScreen({super.key, required this.hasPermission});\r\n+\r\n+  @override\r\n+  Widget build(BuildContext context) {\r\n+    return GenericGridScreen<Chamado>(\r\n+      title: \"Chamados\",\r\n+      fetchEndpoint: ApiLinks.allChamados,\r\n+      createEndpoint: ApiLinks.createChamado,\r\n+      updateEndpoint: ApiLinks.updateChamado(\":id\"),\r\n+      deleteEndpoint: ApiLinks.deleteChamado(\":id\"),\r\n+      fromJson: (json) => Chamado.fromJson(json),\r\n+      toJson: (obj) => obj.toJson(),\r\n+      hasPermission: hasPermission,\r\n+      fieldConfigs: Chamado.fieldConfigs,\r\n+      idFieldName: 'id',\r\n+      dateFieldName: 'createdAt',\r\n+      exportConfig: const ExportConfig(\r\n+        enableCsvExport: true,\r\n+        filenamePrefix: 'chamados',\r\n+      ),\r\n+      paginationConfig: const PaginationConfig(\r\n+        defaultRowsPerPage: 10,\r\n+        availableRowsPerPage: [10, 25, 50],\r\n+      ),\r\n+      enableSearch: true,\r\n+      enableColumnReorder: true,\r\n+      customActions: () => [\r\n+        CustomAction<Chamado>(\r\n+          icon: Icons.check_circle,\r\n+          label: 'Fechar',\r\n+          onPressed: (context, object) => _showFecharDialog(context, object),\r\n+        ),\r\n+      ],\r\n+    );\r\n+  }\r\n+\r\n+  void _showFecharDialog(BuildContext context, Chamado chamado) {\r\n+    showDialog(\r\n+      context: context,\r\n+      builder: (BuildContext context) {\r\n+        return FecharChamadoDialog(chamadoId: chamado?.id ?? 0);\r\n+      },\r\n+    );\r\n+  }\r\n+}\r\n"
                 }
             ],
             "date": 1758309272197,

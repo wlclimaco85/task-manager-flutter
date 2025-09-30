@@ -3,7 +3,7 @@
     "activeCommit": 0,
     "commits": [
         {
-            "activePatchIndex": 6,
+            "activePatchIndex": 11,
             "patches": [
                 {
                     "date": 1758985567699,
@@ -32,6 +32,26 @@
                 {
                     "date": 1758985835384,
                     "content": "Index: \n===================================================================\n--- \n+++ \n@@ -3,8 +3,9 @@\n import 'package:task_manager_flutter/data/utils/api_links.dart';\r\n import 'package:task_manager_flutter/ui/widgets/genericDetailFormScreen.dart';\r\n import 'package:task_manager_flutter/ui/widgets/generic_grid_screen.dart';\r\n import 'package:task_manager_flutter/ui/widgets/tab_config.dart';\r\n+import 'package:task_manager_flutter/data/models/login_2_model.dart';\r\n import 'package:task_manager_flutter/data/models/role_model.dart';\r\n \r\n class LoginDetailScreen extends StatelessWidget {\r\n   final Login item;\r\n"
+                },
+                {
+                    "date": 1759237987489,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -28,9 +28,9 @@\n     TabConfig(\r\n       title: \"Roles\",\r\n       icon: Icons.history,\r\n       isGrid: true,\r\n-      endpoint: ApiLinks.allRoles,\r\n+      endpoint: ApiLinks.getRolesLoginId(item.id ?? 0),\r\n       gridFieldConfigs: Role.fieldConfigs,\r\n     ),\r\n   ];\r\n \r\n"
+                },
+                {
+                    "date": 1759238056254,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -28,9 +28,9 @@\n     TabConfig(\r\n       title: \"Roles\",\r\n       icon: Icons.history,\r\n       isGrid: true,\r\n-      endpoint: ApiLinks.getRolesLoginId(item.id ?? 0),\r\n+      endpoint: ApiLinks.getRolesLoginId(item.id?.toString() ?? ''),\r\n       gridFieldConfigs: Role.fieldConfigs,\r\n     ),\r\n   ];\r\n \r\n"
+                },
+                {
+                    "date": 1759238222172,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -37,9 +37,9 @@\n   @override\r\n   Widget build(BuildContext context) {\r\n     return GenericDetailFormScreen<Login>(\r\n       item: item,\r\n-      tabConfigs: tabConfigs,\r\n+      tabConfigs: LoginDetailScreen.buildTabConfigs(item),\r\n       title: \"Detalhes do Parceiro\",\r\n       onSave: (formData) async {\r\n         print(\"Salvar parceiro: $formData\");\r\n         // Implementar lógica de save aqui\r\n"
+                },
+                {
+                    "date": 1759238314663,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -16,45 +16,37 @@\n     required this.item,\r\n     required this.hasPermission,\r\n   });\r\n \r\n-  static List<TabConfig> get tabConfigs => [\r\n-    TabConfig(\r\n-      title: \"Dados Principais\",\r\n-      icon: Icons.person,\r\n-      isGrid: false,\r\n-      endpoint: ApiLinks.allParceiros,\r\n-      fields: Parceiro.fieldConfigs.where((field) => field.isInForm).toList(),\r\n-    ),\r\n-    TabConfig(\r\n-      title: \"Roles\",\r\n-      icon: Icons.history,\r\n-      isGrid: true,\r\n-      endpoint: ApiLinks.getRolesLoginId(item.id?.toString() ?? ''),\r\n-      gridFieldConfigs: Role.fieldConfigs,\r\n-    ),\r\n-  ];\r\n+  // 🔹 Agora é um getter normal (não static)\r\n+  List<TabConfig> get tabConfigs => [\r\n+        TabConfig(\r\n+          title: \"Dados Principais\",\r\n+          icon: Icons.person,\r\n+          isGrid: false,\r\n+          endpoint: ApiLinks.allParceiros,\r\n+          fields:\r\n+              Parceiro.fieldConfigs.where((field) => field.isInForm).toList(),\r\n+        ),\r\n+        TabConfig(\r\n+          title: \"Roles\",\r\n+          icon: Icons.history,\r\n+          isGrid: true,\r\n+          endpoint: ApiLinks.getRolesLoginId(item.id?.toString() ?? ''),\r\n+          gridFieldConfigs: Role.fieldConfigs,\r\n+        ),\r\n+      ];\r\n \r\n   @override\r\n   Widget build(BuildContext context) {\r\n     return GenericDetailFormScreen<Login>(\r\n       item: item,\r\n-      tabConfigs: LoginDetailScreen.buildTabConfigs(item),\r\n+      tabConfigs: tabConfigs, // ✅ funciona agora\r\n       title: \"Detalhes do Parceiro\",\r\n       onSave: (formData) async {\r\n         print(\"Salvar parceiro: $formData\");\r\n-        // Implementar lógica de save aqui\r\n         try {\r\n-          // Exemplo de implementação:\r\n-          // final response = await NetworkCaller().postRequest(\r\n-          //   ApiLinks.updateParceiro(item.id.toString()),\r\n-          //   data: formData,\r\n-          // );\r\n-          // if (response.isSuccess) {\r\n-          //   ScaffoldMessenger.of(context).showSnackBar(\r\n-          //     SnackBar(content: Text('Parceiro salvo com sucesso!')),\r\n-          //   );\r\n-          // }\r\n+          // implementar lógica de save aqui\r\n         } catch (e) {\r\n           print(\"Erro ao salvar: $e\");\r\n         }\r\n       },\r\n"
+                },
+                {
+                    "date": 1759238324321,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -18,24 +18,23 @@\n   });\r\n \r\n   // 🔹 Agora é um getter normal (não static)\r\n   List<TabConfig> get tabConfigs => [\r\n-        TabConfig(\r\n-          title: \"Dados Principais\",\r\n-          icon: Icons.person,\r\n-          isGrid: false,\r\n-          endpoint: ApiLinks.allParceiros,\r\n-          fields:\r\n-              Parceiro.fieldConfigs.where((field) => field.isInForm).toList(),\r\n-        ),\r\n-        TabConfig(\r\n-          title: \"Roles\",\r\n-          icon: Icons.history,\r\n-          isGrid: true,\r\n-          endpoint: ApiLinks.getRolesLoginId(item.id?.toString() ?? ''),\r\n-          gridFieldConfigs: Role.fieldConfigs,\r\n-        ),\r\n-      ];\r\n+    TabConfig(\r\n+      title: \"Dados Principais\",\r\n+      icon: Icons.person,\r\n+      isGrid: false,\r\n+      endpoint: ApiLinks.allParceiros,\r\n+      fields: Parceiro.fieldConfigs.where((field) => field.isInForm).toList(),\r\n+    ),\r\n+    TabConfig(\r\n+      title: \"Roles\",\r\n+      icon: Icons.history,\r\n+      isGrid: true,\r\n+      endpoint: ApiLinks.getRolesLoginId(item.id?.toString() ?? ''),\r\n+      gridFieldConfigs: Role.fieldConfigs,\r\n+    ),\r\n+  ];\r\n \r\n   @override\r\n   Widget build(BuildContext context) {\r\n     return GenericDetailFormScreen<Login>(\r\n"
                 }
             ],
             "date": 1758985567699,
