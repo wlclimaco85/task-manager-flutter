@@ -298,7 +298,7 @@ class _ProdutoDetailsScreenState extends State<ProdutoDetailsScreen> {
                                   builder: (context) => NegotiationDialog(
                                     product: account,
                                     compradorId:
-                                        AuthUtility.userInfo.data?.id ??
+                                        AuthUtility.userInfo?.data?.id ??
                                             0, // ID do usuário logado
                                   ),
                                 ),

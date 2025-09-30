@@ -1,0 +1,18 @@
+{
+    "sourceFile": "lib/data/models/auth_utility.dart",
+    "activeCommit": 0,
+    "commits": [
+        {
+            "activePatchIndex": 0,
+            "patches": [
+                {
+                    "date": 1759259072987,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n"
+                }
+            ],
+            "date": 1759259072987,
+            "name": "Commit-0",
+            "content": "// ignore_for_file: no_leading_underscores_for_local_identifiers\r\n\r\nimport 'dart:convert';\r\nimport 'package:shared_preferences/shared_preferences.dart';\r\nimport 'package:task_manager_flutter/data/models/login_model.dart';\r\n\r\nclass AuthUtility {\r\n  static LoginModel? userInfo;\r\n\r\n  static Future<void> setUserInfo(LoginModel model) async {\r\n    SharedPreferences _sharedPreferences =\r\n        await SharedPreferences.getInstance();\r\n    await _sharedPreferences.setString(\"user_data\", jsonEncode(model.toJson()));\r\n    userInfo = model;\r\n  }\r\n\r\n  static Future<LoginModel?> getUserInfo() async {\r\n    try {\r\n      SharedPreferences _sharedPreferences =\r\n          await SharedPreferences.getInstance();\r\n      String? value = _sharedPreferences.getString(\"user_data\");\r\n\r\n      if (value == null) return null;\r\n\r\n      Map<String, dynamic> jsonData = jsonDecode(value);\r\n      return LoginModel.fromJson(jsonData);\r\n    } catch (e) {\r\n      print('Erro ao recuperar user_data: $e');\r\n      return null;\r\n    }\r\n  }\r\n\r\n  static Future<void> clearUserInfo() async {\r\n    SharedPreferences _sharedPreferences =\r\n        await SharedPreferences.getInstance();\r\n    await _sharedPreferences.remove(\"user_data\");\r\n    userInfo = null;\r\n  }\r\n\r\n  static Future<bool> isUserLoggedIn() async {\r\n    SharedPreferences _sharedPreferences =\r\n        await SharedPreferences.getInstance();\r\n    bool isLogin = _sharedPreferences.containsKey(\"user_data\");\r\n\r\n    if (isLogin) {\r\n      userInfo = await getUserInfo();\r\n    }\r\n\r\n    return isLogin && userInfo != null;\r\n  }\r\n}\r\n"
+        }
+    ]
+}

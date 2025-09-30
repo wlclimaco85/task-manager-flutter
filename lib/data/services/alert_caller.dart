@@ -32,10 +32,10 @@ class AlertCaller {
   Future<List<Alert>> fetchItensAVenda(BuildContext context) async {
     List<Alert>? model = [];
     AlertResponse models;
-    if (AuthUtility.userInfo.data?.id != null) {
+    if (AuthUtility.userInfo?.data?.id != null) {
       try {
         final NetworkResponse response = await NetworkCaller().getRequests(
-            '${ApiLinks.alertFindByUser}${AuthUtility.userInfo.data?.id}',
+            '${ApiLinks.alertFindByUser}${AuthUtility.userInfo?.data?.id}',
             context);
         String jsonString;
 
@@ -53,5 +53,24 @@ class AlertCaller {
       return model;
     }
     return model;
+  }
+
+  // New function to mark notification as read
+  Future<void> markNotificationAsRead(int id) async {
+    try {
+      final NetworkResponse response = await NetworkCaller().postRequest(
+        ApiLinks.allAlerts,
+        {"id": id},
+      );
+
+      if (response.isSuccess) {
+        // Success is handled in the calling widget which will update its state
+        debugPrint('Notification marked as read successfully');
+      } else {
+        debugPrint('Failed to mark notification as read');
+      }
+    } catch (e) {
+      debugPrint('Error marking notification as read: $e');
+    }
   }
 }

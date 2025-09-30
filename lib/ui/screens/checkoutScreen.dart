@@ -41,7 +41,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     super.initState();
     _carregarTermos();
     _freteFuture = _calcularFrete(
-        widget.idVenda, AuthUtility.userInfo.data!.id ?? 0, widget.productQnt);
+        widget.idVenda, AuthUtility.userInfo?.data!.id ?? 0, widget.productQnt);
   }
 
   Future<double> _calcularFrete(int vendaId, int compradorId, int peso) async {
@@ -371,7 +371,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                       context: context, // Contexto do widget atual
                       vendaId: widget.idVenda, // ID da venda
                       vendedorId: 1,
-                      compradorId: AuthUtility.userInfo.data?.id ??
+                      compradorId: AuthUtility.userInfo?.data?.id ??
                           0, // Substitua com ID do comprador
                       qtdSacos: widget.productQnt ?? 0,
                       vlrSacos: widget.productValue ?? 0.0,

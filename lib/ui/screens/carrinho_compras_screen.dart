@@ -205,7 +205,7 @@ class ProductCard extends StatelessWidget {
 
       // Fechar o diálogo
       Navigator.pop(context);
-        } catch (e) {
+    } catch (e) {
       // Tratar outras exceções que possam ocorrer
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Erro inesperado: $e')),
@@ -274,7 +274,7 @@ class ProductCard extends StatelessWidget {
 
       // Fechar o diálogo
       Navigator.pop(context);
-        } catch (e) {
+    } catch (e) {
       // Tratar outras exceções que possam ocorrer
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Erro inesperado: $e')),
@@ -1044,7 +1044,7 @@ class ProductCard extends StatelessWidget {
       home: ProductCatalogPageCompras(
         title: 'Produtos do Vendedor',
         apiUrl:
-            'http://192.168.146.1:8088/boletobancos/api/produtos/vendedor/${AuthUtility.userInfo.data?.id}',
+            'http://192.168.146.1:8088/boletobancos/api/produtos/vendedor/${AuthUtility.userInfo?.data?.id}',
         actionIcon: Icons.edit,
         actionTooltip: 'Editar Produto',
       ),

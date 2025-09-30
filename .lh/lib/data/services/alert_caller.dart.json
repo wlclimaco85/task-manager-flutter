@@ -3,7 +3,7 @@
     "activeCommit": 0,
     "commits": [
         {
-            "activePatchIndex": 4,
+            "activePatchIndex": 6,
             "patches": [
                 {
                     "date": 1736526830059,
@@ -24,6 +24,14 @@
                 {
                     "date": 1739811225914,
                     "content": "Index: \n===================================================================\n--- \n+++ \n@@ -31,8 +31,9 @@\n \r\n   Future<List<Alert>> fetchItensAVenda(BuildContext context) async {\r\n     List<Alert>? model = [];\r\n     AlertResponse models;\r\n+    if (AuthUtility.userInfo != null && AuthUtility.userInfo?.data?.id != null) {\r\n     try {\r\n       final NetworkResponse response = await NetworkCaller().getRequests(\r\n           ApiLinks.alertFindByUser + '${AuthUtility.userInfo?.data?.id}',\r\n           context);\r\n@@ -50,5 +51,7 @@\n       throw Exception('Erro ao carregar itens à venda: $e');\r\n     }\r\n     return model;\r\n   }\r\n+    return model;\r\n+  }\r\n }\r\n"
+                },
+                {
+                    "date": 1759260126631,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -31,12 +31,12 @@\n \r\n   Future<List<Alert>> fetchItensAVenda(BuildContext context) async {\r\n     List<Alert>? model = [];\r\n     AlertResponse models;\r\n-    if (AuthUtility.userInfo.data?.id != null) {\r\n+    if (AuthUtility.userInfo?.data?.id != null) {\r\n       try {\r\n         final NetworkResponse response = await NetworkCaller().getRequests(\r\n-            '${ApiLinks.alertFindByUser}${AuthUtility.userInfo.data?.id}',\r\n+            '${ApiLinks.alertFindByUser}${AuthUtility.userInfo?.data?.id}',\r\n             context);\r\n         String jsonString;\r\n \r\n         if (response.statusCode == 200 && response.body != null) {\r\n"
+                },
+                {
+                    "date": 1759260710867,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -53,5 +53,24 @@\n       return model;\r\n     }\r\n     return model;\r\n   }\r\n+\r\n+  // New function to mark notification as read\r\n+  Future<void> markNotificationAsRead(int id) async {\r\n+    try {\r\n+      final NetworkResponse response = await NetworkCaller().postRequest(\r\n+        '${ApiLinks.allAlerts}',\r\n+        {\"id\": id},\r\n+      );\r\n+\r\n+      if (response.isSuccess) {\r\n+        // Success is handled in the calling widget which will update its state\r\n+        debugPrint('Notification marked as read successfully');\r\n+      } else {\r\n+        debugPrint('Failed to mark notification as read');\r\n+      }\r\n+    } catch (e) {\r\n+      debugPrint('Error marking notification as read: $e');\r\n+    }\r\n+  }\r\n }\r\n"
                 }
             ],
             "date": 1736526830059,

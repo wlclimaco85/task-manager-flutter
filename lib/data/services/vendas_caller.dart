@@ -38,7 +38,7 @@ class VendasCaller {
     ProductModel models;
     try {
       final NetworkResponse response = await NetworkCaller().getRequests(
-          '${ApiLinks.fecthItensAVenda}${AuthUtility.userInfo.data?.id}',
+          '${ApiLinks.fecthItensAVenda}${AuthUtility.userInfo?.data?.id}',
           context);
       String jsonString;
 
@@ -60,7 +60,7 @@ class VendasCaller {
     List<Product>? model = [];
     ProductModel models;
     try {
-      if (AuthUtility.userInfo.data?.id == 1) {
+      if (AuthUtility.userInfo?.data?.id == 1) {
         // AQUI CHAMAR O LOGIN
         await showDialog(
           context: context,
@@ -68,7 +68,7 @@ class VendasCaller {
         );
       } else {
         final NetworkResponse response = await NetworkCaller().getRequests(
-            '${ApiLinks.fecthItensACompra}${AuthUtility.userInfo.data?.id}',
+            '${ApiLinks.fecthItensACompra}${AuthUtility.userInfo?.data?.id}',
             context);
         String jsonString;
 
@@ -78,7 +78,6 @@ class VendasCaller {
           model.addAll(models.produtos ?? []);
         } else if (response.statusCode == 403) {
           // Mova o código que depende do BuildContext para este método.
-          
         } else {
           print('Erro: Nenhum dado retornado');
         }
@@ -95,7 +94,7 @@ class VendasCaller {
     ProductModel models;
     try {
       final NetworkResponse response = await NetworkCaller().getRequests(
-          '${ApiLinks.fecthItensANegociar}${AuthUtility.userInfo.data?.id}',
+          '${ApiLinks.fecthItensANegociar}${AuthUtility.userInfo?.data?.id}',
           context);
       String jsonString;
 
@@ -164,7 +163,7 @@ class VendasCaller {
 
     // Get the token (replace with your actual AuthUtility method)
     final token =
-        AuthUtility.userInfo.token; // Assuming userInfo.token is available
+        AuthUtility.userInfo?.token; // Assuming userInfo.token is available
 
     try {
       final response = await http.get(
@@ -221,8 +220,7 @@ class VendasCaller {
     ProductModel models;
     try {
       final NetworkResponse response = await NetworkCaller().getRequests(
-          "${ApiLinks.confirmarNegociacao}/$negociacaoId",
-          context);
+          "${ApiLinks.confirmarNegociacao}/$negociacaoId", context);
       String jsonString;
 
       if (response.statusCode == 200 && response.body != null) {
@@ -245,8 +243,8 @@ class VendasCaller {
     List<Product>? model = [];
     ProductModel models;
     try {
-      final NetworkResponse response = await NetworkCaller().getRequests(
-          "${ApiLinks.confirmarRecusar}/$negociacaoId", context);
+      final NetworkResponse response = await NetworkCaller()
+          .getRequests("${ApiLinks.confirmarRecusar}/$negociacaoId", context);
       String jsonString;
 
       if (response.statusCode == 200 && response.body != null) {

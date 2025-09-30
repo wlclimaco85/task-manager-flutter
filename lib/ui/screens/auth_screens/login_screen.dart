@@ -10,6 +10,7 @@ import 'package:task_manager_flutter/ui/screens/bottom_navbar_screen.dart';
 import 'package:task_manager_flutter/ui/widgets/custom_password_text_field.dart';
 import 'package:task_manager_flutter/ui/widgets/custom_text_form_field.dart';
 import 'package:task_manager_flutter/ui/screens/auth_screens/signup_form_screen.dart';
+import 'package:task_manager_flutter/data/constants/custom_colors.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -86,7 +87,7 @@ class _LoginScreenState extends State<LoginScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF340A9C),
+      backgroundColor: GridColors.background, // Replaced Color(0xFF340A9C)
       body: Container(
         child: ListView(
           padding: EdgeInsets.zero,
@@ -144,16 +145,19 @@ class _LoginScreenState extends State<LoginScreen>
                           ),
                           ElevatedButton(
                             style: ElevatedButton.styleFrom(
-                              backgroundColor: const Color(0xFFFA903A),
+                              backgroundColor: GridColors
+                                  .buttonBackground, // Replaced Color(0xFFFA903A)
                               minimumSize: const Size.fromHeight(50), // NEW
                             ),
                             onPressed: () {
                               login();
                             },
-                            child: const Text(
+                            child: Text(
                               'Acessar',
-                              style:
-                                  TextStyle(fontSize: 24, color: Colors.white),
+                              style: TextStyle(
+                                  fontSize: 24,
+                                  color: GridColors
+                                      .buttonText), // Replaced Colors.white
                             ),
                           ),
                           const SizedBox(
@@ -161,7 +165,8 @@ class _LoginScreenState extends State<LoginScreen>
                           ),
                           ElevatedButton(
                             style: ElevatedButton.styleFrom(
-                              backgroundColor: const Color(0xFFFA903A),
+                              backgroundColor: GridColors
+                                  .buttonBackground, // Replaced Color(0xFFFA903A)
                               minimumSize: const Size.fromHeight(50), // NEW
                             ),
                             onPressed: () {
@@ -172,10 +177,12 @@ class _LoginScreenState extends State<LoginScreen>
                                         const SignUpFormScreen()),
                               );
                             },
-                            child: const Text(
+                            child: Text(
                               'Criar Conta',
-                              style:
-                                  TextStyle(fontSize: 24, color: Colors.white),
+                              style: TextStyle(
+                                  fontSize: 24,
+                                  color: GridColors
+                                      .buttonText), // Replaced Colors.white
                             ),
                           ),
                           const SizedBox(
@@ -190,10 +197,11 @@ class _LoginScreenState extends State<LoginScreen>
                                         builder: (context) =>
                                             const EmailVarificationScreeen()));
                               },
-                              child: const Text(
+                              child: Text(
                                 "Esqueceu a Senha?",
                                 style: TextStyle(
-                                    color: Color(0xFFFA903A),
+                                    color: GridColors
+                                        .link, // Replaced Color(0xFFFA903A)
                                     letterSpacing: .7,
                                     fontSize: 20),
                               ),

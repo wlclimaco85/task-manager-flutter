@@ -60,7 +60,7 @@ class _MedicamentoscreenState extends State<Medicamentoscreen> {
     if (mounted) {
       setState(() {});
     }
-    Data userInfo = AuthUtility.userInfo.data!;
+    Data userInfo = AuthUtility.userInfo?.data ?? Data();
 
     Map<String, dynamic> af = {};
     af["id"] = userInfo.id;

@@ -22,6 +22,10 @@ enum StatusChamadoEnum {
   static StatusChamadoEnum fromValue(int value) {
     return values.firstWhere((e) => e.value == value);
   }
+
+  static StatusChamadoEnum fromString(String name) {
+    return values.firstWhere((e) => e.name.toUpperCase() == name.toUpperCase());
+  }
 }
 
 enum PrioridadeChamadoEnum {
@@ -36,6 +40,10 @@ enum PrioridadeChamadoEnum {
 
   static PrioridadeChamadoEnum fromValue(int value) {
     return values.firstWhere((e) => e.value == value);
+  }
+
+  static PrioridadeChamadoEnum fromString(String name) {
+    return values.firstWhere((e) => e.name.toUpperCase() == name.toUpperCase());
   }
 }
 
@@ -76,8 +84,8 @@ class Chamado {
       titulo: json['titulo'],
       descricao: json['descricao'],
       motivoFechamento: json['motivoFechamento'],
-      status: StatusChamadoEnum.fromValue(json['status']),
-      prioridade: PrioridadeChamadoEnum.fromValue(json['prioridade']),
+      status: StatusChamadoEnum.fromString(json['status']),
+      prioridade: PrioridadeChamadoEnum.fromString(json['prioridade']),
       empresa: Empresa.fromJson(json['empresa']),
       usuarioAbertura: json['usuarioAbertura'] != null
           ? Login.fromJson(json['usuarioAbertura'])
@@ -88,7 +96,9 @@ class Chamado {
       parceiro:
           json['parceiro'] != null ? Parceiro.fromJson(json['parceiro']) : null,
       setor: json['setor'] != null ? Setor.fromJson(json['setor']) : null,
-      dataAbertura: DateTime.parse(json['dataAbertura']),
+      dataAbertura: json['dataAbertura'] != null
+          ? DateTime.parse(json['dataAbertura'])
+          : DateTime.now(),
       dataFechamento: json['dataFechamento'] != null
           ? DateTime.parse(json['dataFechamento'])
           : null,
@@ -174,16 +184,16 @@ class Chamado {
       isFixed: false,
       fieldType: FieldType.dropdown,
       dropdownOptions: [
-        {'value': 0, 'label': 'Aberto'},
-        {'value': 1, 'label': 'Em Andamento'},
-        {'value': 2, 'label': 'Fechado'},
-        {'value': 3, 'label': 'Cancelado'},
+        {'value': 'Aberto', 'label': 'Aberto'},
+        {'value': 'Em Andamento', 'label': 'Em Andamento'},
+        {'value': 'Fechado', 'label': 'Fechado'},
+        {'value': 'Cancelado', 'label': 'Cancelado'},
       ], //('MENSAL', 'TRIMESTRAL', 'ANUAL', 'SEMESTRAL'))
       dropdownSelectedValue: 0, // Valor padrão selecionado
       dropdownValueField: 'value',
       dropdownDisplayField: 'label',
     ),
-    FieldConfig(
+    const FieldConfig(
       label: "Prioridade",
       fieldName: "prioridade",
       icon: Icons.priority_high,
@@ -192,10 +202,10 @@ class Chamado {
       isFixed: false,
       fieldType: FieldType.dropdown,
       dropdownOptions: [
-        {'value': 0, 'label': 'Baixa'},
-        {'value': 1, 'label': 'Media'},
-        {'value': 2, 'label': 'Alta'},
-        {'value': 3, 'label': 'Urgente'},
+        {'value': 'BAIXA', 'label': 'Baixa'},
+        {'value': 'MEDIA', 'label': 'Media'},
+        {'value': 'ALTA', 'label': 'Alta'},
+        {'value': 'URGENTE', 'label': 'Urgente'},
       ],
       dropdownSelectedValue: 0, // Valor padrão selecionado
       dropdownValueField: 'value',
@@ -216,7 +226,7 @@ class Chamado {
       isVisibleByDefault: true,
       isFixed: false,
     ),
-    FieldConfig(
+    const FieldConfig(
       label: "Motivo Fechamento",
       fieldName: "motivoFechamento",
       icon: Icons.close,

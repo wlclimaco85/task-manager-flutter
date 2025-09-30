@@ -1,26 +1,14 @@
 import 'dart:async';
-import 'dart:async';
 import 'dart:convert';
-import 'dart:convert';
-import 'dart:typed_data';
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
-import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
-import 'package:http/http.dart' as http;
-import 'package:task_manager_flutter/data/constants/custom_colors.dart';
-import 'package:task_manager_flutter/data/models/alert_model.dart';
 import 'package:task_manager_flutter/data/models/alert_model.dart';
 import 'package:task_manager_flutter/data/models/auth_utility.dart';
-import 'package:task_manager_flutter/data/models/auth_utility.dart';
 import 'package:task_manager_flutter/data/models/login_model.dart';
-import 'package:task_manager_flutter/data/models/login_model.dart';
-import 'package:task_manager_flutter/data/services/alert_caller.dart';
 import 'package:task_manager_flutter/data/services/alert_caller.dart';
 import 'package:task_manager_flutter/ui/screens/auth_screens/login_screen.dart';
-import 'package:task_manager_flutter/ui/screens/bottom_navbar_screen.dart';
-import 'package:task_manager_flutter/ui/screens/bottom_navbar_screen.dart';
 
 // Cores do Grid (mantendo suas cores originais)
 class GridColors {
@@ -92,8 +80,8 @@ class _UserBannerAppBarState extends State<UserBannerAppBar> {
 
   Future<void> fetchAlerts() async {
     try {
-      if (AuthUtility.userInfo.data?.id == null ||
-          AuthUtility.userInfo.data!.id! > 1) {
+      if (AuthUtility.userInfo?.data?.id == null ||
+          AuthUtility.userInfo!.data!.id! > 1) {
         final List<Alert> alertData =
             await AlertCaller().fetchItensAVenda(context);
         if (alertData.isNotEmpty) {
@@ -112,25 +100,14 @@ class _UserBannerAppBarState extends State<UserBannerAppBar> {
     }
   }
 
+  // Updated version using AlertCaller
   Future<void> markNotificationAsRead(int id) async {
-    try {
-      final response = await http.post(
-        Uri.parse(
-            'https://appacademia-production-be7e.up.railway.app/boletobancos/api/alert'),
-        body: jsonEncode({"id": id}),
-        headers: {"Content-Type": "application/json"},
-      );
-      if (response.statusCode == 200) {
-        setState(() {
-          notifications.removeWhere((notification) => notification.id == id);
-          unreadAlerts = notifications.length;
-        });
-      } else {
-        debugPrint('Failed to mark notification as read');
-      }
-    } catch (e) {
-      debugPrint('Error marking notification as read: $e');
-    }
+    await AlertCaller().markNotificationAsRead(id);
+    // Update local state after successful API call
+    setState(() {
+      notifications.removeWhere((notification) => notification.id == id);
+      unreadAlerts = notifications.length;
+    });
   }
 
   void deleteNotification(int id) {
@@ -349,7 +326,7 @@ class _UserBannerAppBarState extends State<UserBannerAppBar> {
   }
 
   Uint8List _getUserAvatar() {
-    final base64String = AuthUtility.userInfo.data?.codDadosPessoal?.photo;
+    final base64String = AuthUtility.userInfo?.data?.codDadosPessoal?.photo;
     if (base64String != null && base64String.trim() != '') {
       try {
         final image = "data:image/png;base64," + base64String;
@@ -372,8 +349,8 @@ class _UserBannerAppBarState extends State<UserBannerAppBar> {
 
   @override
   Widget build(BuildContext context) {
-    final isLoggedIn = AuthUtility.userInfo.data?.id != null &&
-        AuthUtility.userInfo.data!.id! > 1;
+    final isLoggedIn = AuthUtility.userInfo?.data?.id != null &&
+        AuthUtility.userInfo!.data!.id! > 1;
     bool kDebugMode = true;
     return AppBar(
       backgroundColor: GridColors.primary,
@@ -400,10 +377,10 @@ class _UserBannerAppBarState extends State<UserBannerAppBar> {
           IconButton(
             icon: Icon(Icons.bug_report, color: GridColors.textPrimary),
             onPressed: () {
-              print('DEBUG - UserInfo: ${AuthUtility.userInfo.toJson()}');
+              print('DEBUG - UserInfo: ${AuthUtility.userInfo?.toJson()}');
               print('DEBUG - isLoggedIn: $isLoggedIn');
-              print('DEBUG - User ID: ${AuthUtility.userInfo.data?.id}');
-              print('DEBUG - Token: ${AuthUtility.userInfo.token}');
+              print('DEBUG - User ID: ${AuthUtility.userInfo?.data?.id}');
+              print('DEBUG - Token: ${AuthUtility.userInfo?.token}');
             },
           ),
 
@@ -534,7 +511,7 @@ class _UserBannerAppBarState extends State<UserBannerAppBar> {
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         Text(
-                          AuthUtility.userInfo.data?.codDadosPessoal?.nome ??
+                          AuthUtility.userInfo?.data?.codDadosPessoal?.nome ??
                               "Usuário",
                           style: TextStyle(
                             fontSize: 16,
@@ -544,7 +521,7 @@ class _UserBannerAppBarState extends State<UserBannerAppBar> {
                         ),
                         const SizedBox(height: 2),
                         Text(
-                          AuthUtility.userInfo.data?.codDadosPessoal?.email ??
+                          AuthUtility.userInfo?.data?.codDadosPessoal?.email ??
                               "",
                           style: TextStyle(
                             fontSize: 14,

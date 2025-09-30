@@ -10,7 +10,7 @@ import 'package:task_manager_flutter/data/services/parceiro_caller.dart';
 import 'package:task_manager_flutter/data/models/parceiro_model.dart';
 import 'package:task_manager_flutter/data/constants/custom_colors.dart';
 
-int idParceiro = AuthUtility.userInfo.data!.id!;
+int idParceiro = AuthUtility.userInfo?.data?.id ?? 0;
 
 class SignUpScreen extends StatefulWidget {
   const SignUpScreen({super.key});
@@ -20,8 +20,8 @@ class SignUpScreen extends StatefulWidget {
 }
 
 class _SignUpScreenState extends State<SignUpScreen> {
-  Data userInfo =
-      AuthUtility.userInfo != null ? AuthUtility.userInfo.data! : Data();
+  Data userInfo = AuthUtility.userInfo?.data ?? Data();
+
   final TextEditingController _nomeController = TextEditingController();
   final TextEditingController _cpfController = TextEditingController();
   final TextEditingController _codProdutorController = TextEditingController();

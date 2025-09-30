@@ -40,7 +40,7 @@ class RenegotiationMovimentoContratosHandler {
               builder: (context) => NegociacaoCatalogPage(
                 title: 'Negociação',
                 apiUrl:
-                    '${ApiLinks.negociacaoFindByUser}${AuthUtility.userInfo.data?.id}',
+                    '${ApiLinks.negociacaoFindByUser}${AuthUtility.userInfo?.data?.id}',
                 actionIcon: Icons.edit,
                 actionTooltip: 'Editar Produto',
               ),

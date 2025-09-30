@@ -3,7 +3,7 @@
     "activeCommit": 0,
     "commits": [
         {
-            "activePatchIndex": 5,
+            "activePatchIndex": 6,
             "patches": [
                 {
                     "date": 1709066652459,
@@ -28,6 +28,10 @@
                 {
                     "date": 1736538316507,
                     "content": "Index: \n===================================================================\n--- \n+++ \n@@ -140,10 +140,9 @@\n   Widget build(BuildContext context) {\r\n     return Scaffold(\r\n       //  floatingActionButton: getHomeFab(context, listModels, refreshPage),\r\n       backgroundColor: const Color(0xFF340A9C),\r\n-      appBar: userBanner(\r\n-        context,\r\n+      appBar: UserBannerAppBar(\r\n         onTapped: () {\r\n           Navigator.push(\r\n               context,\r\n               MaterialPageRoute(\r\n"
+                },
+                {
+                    "date": 1759259674115,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -59,9 +59,9 @@\n     _addNewTaskLoading = true;\r\n     if (mounted) {\r\n       setState(() {});\r\n     }\r\n-    Data userInfo = AuthUtility.userInfo.data!;\r\n+    Data userInfo = AuthUtility.userInfo?.data ?? Data();\r\n \r\n     Map<String, dynamic> af = {};\r\n     af[\"id\"] = userInfo.id;\r\n     Map<String, dynamic> requestBody = {\r\n"
                 }
             ],
             "date": 1709066652459,

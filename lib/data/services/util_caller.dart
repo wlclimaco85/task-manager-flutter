@@ -13,7 +13,7 @@ class UtilCaller {
     List<T> items = [];
     try {
       // Check user authentication
-      if (AuthUtility.userInfo.data?.id == 1) {
+      if (AuthUtility.userInfo?.data?.id == 1) {
         // AQUI CHAMAR O LOGIN
         await showDialog(
           context: context,
