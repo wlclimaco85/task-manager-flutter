@@ -3,7 +3,7 @@
     "activeCommit": 0,
     "commits": [
         {
-            "activePatchIndex": 9,
+            "activePatchIndex": 10,
             "patches": [
                 {
                     "date": 1734546612749,
@@ -44,6 +44,10 @@
                 {
                     "date": 1758914147598,
                     "content": "Index: \n===================================================================\n--- \n+++ \n@@ -190,16 +190,8 @@\n     }\r\n     return [];\r\n   }\r\n \r\n-  // Adicione este método para suporte à navegação de detalhes\r\n-  static Widget detailScreenBuilder(\r\n-    Parceiro item,\r\n-    SecurityCheck hasPermission,\r\n-  ) {\r\n-    return ParceiroDetailScreen(item: item, hasPermission: hasPermission);\r\n-  }\r\n-\r\n   static List<FieldConfig> fieldConfigs = [\r\n     FieldConfig(\r\n       label: \"Nome\",\r\n       fieldName: \"nome\",\r\n"
+                },
+                {
+                    "date": 1759325833408,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -1,14 +1,13 @@\n // Classe Endereco\r\n import 'dart:convert';\r\n import 'package:flutter/material.dart';\r\n-import 'package:task_manager_flutter/ui/widgets/generic_grid_screen.dart';\r\n+import 'package:task_manager_flutter/data/customization/generic_grid_card.dart';\r\n import 'package:task_manager_flutter/data/models/empresa_model.dart';\r\n import 'package:task_manager_flutter/data/utils/api_links.dart';\r\n import 'package:task_manager_flutter/data/models/network_response.dart';\r\n import 'package:task_manager_flutter/data/services/network_caller.dart';\r\n import 'package:task_manager_flutter/data/models/regime_tributario_model.dart';\r\n-import 'package:task_manager_flutter/ui/details/parceiro_detail_screen.dart';\r\n \r\n class Endereco {\r\n   int? id;\r\n   String? rua;\r\n@@ -193,16 +192,10 @@\n     }\r\n     return [];\r\n   }\r\n \r\n-  // Adicione este método para suporte à navegação de detalhes\r\n-  static Widget detailScreenBuilder(\r\n-    Parceiro item,\r\n-    SecurityCheck hasPermission,\r\n-  ) {\r\n-    return ParceiroDetailScreen(item: item, hasPermission: hasPermission);\r\n-  }\r\n \r\n+\r\n   static List<FieldConfig> fieldConfigs = [\r\n     FieldConfig(\r\n       label: \"Nome\",\r\n       fieldName: \"nome\",\r\n"
                 }
             ],
             "date": 1734546612749,

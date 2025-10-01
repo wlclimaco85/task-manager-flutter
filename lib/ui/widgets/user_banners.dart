@@ -29,8 +29,8 @@ class UserBannerAppBar extends StatefulWidget implements PreferredSizeWidget {
   final bool? isLoading;
   final VoidCallback? onEmpresaTap;
   final VoidCallback? onUserTap;
-  final VoidCallback? onFilterToggle; // NOVO: callback para filtros
-  final bool? showFilterButton; // NOVO: controlar visibilidade do botão
+  final VoidCallback? onFilterToggle;
+  final bool? showFilterButton;
 
   const UserBannerAppBar({
     super.key,
@@ -40,8 +40,8 @@ class UserBannerAppBar extends StatefulWidget implements PreferredSizeWidget {
     this.isLoading,
     this.onEmpresaTap,
     this.onUserTap,
-    this.onFilterToggle, // NOVO
-    this.showFilterButton = true, // NOVO: padrão é mostrar
+    this.onFilterToggle,
+    this.showFilterButton = true,
   });
 
   @override
@@ -289,10 +289,54 @@ class _UserBannerAppBarState extends State<UserBannerAppBar> {
       ),
       actions: [
         if (isLoggedIn) ...[
+          // Botão de Refresh
+          if (widget.onRefresh != null)
+            IconButton(
+              iconSize: 22, // Tamanho ajustado :cite[1]:cite[7]
+              icon: widget.isLoading ?? false
+                  ? SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        valueColor: AlwaysStoppedAnimation<Color>(
+                          Colors.white,
+                        ),
+                      ),
+                    )
+                  : Icon(Icons.refresh,
+                      color: Theme.of(context).colorScheme.onPrimary),
+              onPressed: widget.isLoading ?? false ? null : widget.onRefresh,
+              tooltip: 'Recarregar dados',
+            ),
+          if (widget.showFilterButton ?? true)
+            // Botão de Configuração de Campos
+            IconButton(
+              iconSize: 22, // Tamanho ajustado :cite[1]:cite[7]
+              icon:
+                  const Icon(Icons.view_column, color: GridColors.textPrimary),
+              onPressed: () {
+                // Callback para configuração de campos
+              },
+              tooltip: 'Configurar campos visíveis',
+            ),
+
+          // Botão de Filtros
+
+          IconButton(
+            icon: Icon(Icons.filter_list,
+                color: Theme.of(context).colorScheme.onPrimary),
+            onPressed: widget
+                .onFilterToggle, // Este callback vem do GenericMobileGridScreen
+            tooltip: 'Mostrar/ocultar filtros',
+          ),
+
+          // Botão de Notificações (COM STACK - apenas para a badge)
           Stack(
             alignment: Alignment.center,
             children: [
               IconButton(
+                iconSize: 22, // Tamanho ajustado :cite[1]:cite[7]
                 icon: const Icon(Icons.notifications,
                     color: GridColors.textPrimary),
                 onPressed: () => showNotificationDropdown(context),
@@ -304,24 +348,37 @@ class _UserBannerAppBarState extends State<UserBannerAppBar> {
                   child: Container(
                     padding: const EdgeInsets.all(2),
                     decoration: const BoxDecoration(
-                        color: Colors.white, shape: BoxShape.circle),
+                      color: Colors.red,
+                      shape: BoxShape.circle,
+                    ),
+                    constraints: const BoxConstraints(
+                      minWidth: 18,
+                      minHeight: 18,
+                    ),
                     child: Text(
                       unreadAlerts > 9 ? '9+' : '$unreadAlerts',
                       style: const TextStyle(
-                          color: GridColors.primary,
-                          fontSize: 10,
-                          fontWeight: FontWeight.bold),
+                        color: GridColors.primary,
+                        fontSize: 10,
+                        fontWeight: FontWeight.bold,
+                      ),
+                      textAlign: TextAlign.center,
                     ),
                   ),
                 ),
             ],
           ),
+
+          // Botão de Logout (FORA DA STACK - funciona corretamente)
           IconButton(
+            iconSize: 22, // Tamanho ajustado :cite[1]:cite[7]
             icon: const Icon(Icons.logout, color: GridColors.textPrimary),
-            onPressed: _handleLogout,
+            onPressed: _handleLogout, // AGORA FUNCIONA
+            tooltip: 'Sair',
           ),
         ] else ...[
           IconButton(
+            iconSize: 22, // Tamanho ajustado :cite[1]:cite[7]
             icon: const Icon(Icons.login, color: GridColors.textPrimary),
             onPressed: () {
               Navigator.push(context,

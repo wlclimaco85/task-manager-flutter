@@ -11,18 +11,23 @@ class TaskManagerApp extends StatelessWidget {
     return MaterialApp(
       navigatorKey: globalKey,
       debugShowCheckedModeBanner: false,
-      title: "Task Manager",
+      title: "Gestão Contabil",
       theme: ThemeData(
-        primarySwatch: Colors.green,
-        inputDecorationTheme: const InputDecorationTheme(
-          filled: true,
-          fillColor: Colors.white,
-          contentPadding: EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-          border: OutlineInputBorder(borderSide: BorderSide.none),
+        useMaterial3: true, // Opcional: para usar Material 3
+        colorScheme: const ColorScheme.light(
+          primary: GridColors.primary, // Vermelho da logo
+          secondary: GridColors.secondary, // Verde da logo
+          surface: GridColors.card, // Branco para superfícies
+          background: GridColors.background, // Verde para fundo
+          onPrimary: GridColors.textPrimary, // Branco para texto sobre vermelho
+          onSecondary: GridColors.textPrimary, // Branco para texto sobre verde
+          onSurface: GridColors.textSecondary, // Preto para texto sobre branco
+          onBackground: GridColors.textPrimary, // Branco para texto sobre verde
+          error: GridColors.error, // Vermelho para errors
         ),
-        textTheme: const TextTheme(
-          titleLarge: TextStyle(
-              fontSize: 24, fontWeight: FontWeight.w500, color: Colors.black),
+        appBarTheme: const AppBarTheme(
+          backgroundColor: GridColors.primary,
+          foregroundColor: GridColors.textPrimary,
         ),
         elevatedButtonTheme: ElevatedButtonThemeData(
           style: ElevatedButton.styleFrom(

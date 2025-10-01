@@ -314,5 +314,6 @@ class ApiLinks {
   static String chatStart(String id, String setor) =>
       '$_chatId/ws-chat?user=$id&sector=$setor';
 
+  static String chatStartfetch(String id) => '$_baseUrlNew/api/chat/$id';
   //   'ws://192.168.114.1:8088/boletobancos/ws-chat?user=${widget.userName}&sector=${widget.sector}',
 }

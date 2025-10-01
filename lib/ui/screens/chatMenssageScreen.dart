@@ -121,8 +121,7 @@ class _ChatMessageScreenState extends State<ChatMessageScreen> {
   Future<void> _finalizeChat(Chat chat) async {
     try {
       final response = await http.put(
-        Uri.parse(
-            'http://192.168.114.1:8088/boletobancos/api/chat/${chat.chatId}'),
+        Uri.parse(ApiLinks.chatStartfetch(chat.chatId)),
         headers: {'Authorization': 'Bearer $_authToken'},
         body: json.encode({'status': 'Finalizado'}),
       );

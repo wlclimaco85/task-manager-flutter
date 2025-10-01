@@ -3,16 +3,15 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:task_manager_flutter/data/constants/custom_colors.dart';
 import 'package:task_manager_flutter/data/models/auth_utility.dart';
 import 'package:task_manager_flutter/data/utils/api_links.dart';
-import 'package:task_manager_flutter/ui/screens/carrinho_compras_screen.dart';
-import 'package:task_manager_flutter/ui/screens/carrinho_vendas_screen.dart';
 import 'package:task_manager_flutter/ui/screens/chamado_grid_screen.dart';
 import 'package:task_manager_flutter/ui/screens/chatMessageListScreen.dart';
 import 'package:task_manager_flutter/ui/screens/comunicado_screen.dart';
+import 'package:task_manager_flutter/ui/screens/conta_pagar_grid_screen.dart';
+import 'package:task_manager_flutter/ui/screens/conta_receber_grid_screen.dart';
 import 'package:task_manager_flutter/ui/screens/documento_screen.dart';
 import 'package:task_manager_flutter/ui/screens/file_upload_screen.dart';
 import 'package:task_manager_flutter/ui/screens/negociacao_screen.dart';
-import 'package:task_manager_flutter/ui/screens/conta_pagar_grid_screen.dart';
-import 'package:task_manager_flutter/ui/screens/conta_receber_grid_screen.dart';
+import 'package:task_manager_flutter/ui/screens/parceiro_grid_screen.dart';
 
 class BottomNavBarScreen extends StatefulWidget {
   const BottomNavBarScreen({super.key});
@@ -23,6 +22,7 @@ class BottomNavBarScreen extends StatefulWidget {
 
 class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
   int selectedIndex = 0;
+
   List<Widget> get screens {
     final isLoggedIn = AuthUtility.userInfo?.data?.id != null &&
         AuthUtility.userInfo!.data!.id! > 1;
@@ -38,6 +38,8 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
       ),
       ChamadoGridScreen(hasPermission: (action) => true),
       FileUploadScreen(hasPermission: (perm) => true),
+      // Tela placeholder para o item "Mais" - não será mostrada pois o item abre um menu
+      Container(),
     ];
   }
 
@@ -57,6 +59,14 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
           MaterialPageRoute(
               builder: (context) =>
                   ContaReceberGridScreen(hasPermission: (action) => true)),
+        );
+        break;
+      case "Parceiros":
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+              builder: (context) =>
+                  ParceiroGridScreen(hasPermission: (action) => true)),
         );
         break;
       case "Dashboard":
@@ -106,7 +116,8 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
           showSelectedLabels: true,
           type: BottomNavigationBarType.fixed,
           onTap: (int index) {
-            if (index == 4) {
+            if (index == 5) {
+              // Agora o índice 5 é o item "Mais"
               _showMenuOptions(context);
             } else {
               setState(() {
@@ -116,19 +127,18 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
           },
           items: [
             const BottomNavigationBarItem(
-                icon: Icon(FontAwesomeIcons.calendarPlus), label: "Calendario"),
+                icon: Icon(FontAwesomeIcons.calendar), label: "Calendario"),
             const BottomNavigationBarItem(
-                icon: Icon(FontAwesomeIcons.chartLine), label: "Chat"),
+                icon: Icon(FontAwesomeIcons.comments), label: "Chat"),
             const BottomNavigationBarItem(
-                icon: Icon(FontAwesomeIcons.prescription),
-                label: "Comunicados"),
+                icon: Icon(FontAwesomeIcons.bullhorn), label: "Comunicados"),
             const BottomNavigationBarItem(
-                icon: Icon(FontAwesomeIcons.tags), label: "Solicitações"),
+                icon: Icon(FontAwesomeIcons.headset), label: "Solicitações"),
             const BottomNavigationBarItem(
-                icon: Icon(FontAwesomeIcons.download), label: "GED"),
+                icon: Icon(FontAwesomeIcons.folderOpen), label: "GED"),
             BottomNavigationBarItem(
                 icon: Icon(isLoggedIn
-                    ? FontAwesomeIcons.bars
+                    ? FontAwesomeIcons.ellipsisH
                     : FontAwesomeIcons.signInAlt),
                 label: "Mais"),
           ],
@@ -149,17 +159,22 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
           mainAxisSize: MainAxisSize.min,
           children: [
             ListTile(
-              leading: const Icon(FontAwesomeIcons.shoppingBag),
+              leading: const Icon(FontAwesomeIcons.moneyBillWave),
               title: const Text('Contas Pagar'),
               onTap: () => onMenuOptionSelected('Contas Pagar'),
             ),
             ListTile(
-              leading: const Icon(FontAwesomeIcons.store),
+              leading: const Icon(FontAwesomeIcons.moneyCheck),
               title: const Text('Contas Receber'),
               onTap: () => onMenuOptionSelected('Contas Receber'),
             ),
             ListTile(
-              leading: const Icon(FontAwesomeIcons.handshake),
+              leading: const Icon(FontAwesomeIcons.person),
+              title: const Text('Parceiro'),
+              onTap: () => onMenuOptionSelected('Parceiro'),
+            ),
+            ListTile(
+              leading: const Icon(FontAwesomeIcons.chartBar),
               title: const Text('Dashboard'),
               onTap: () => onMenuOptionSelected('Dashboard'),
             ),

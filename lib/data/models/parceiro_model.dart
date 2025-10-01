@@ -1,7 +1,7 @@
 // Classe Endereco
 import 'dart:convert';
 import 'package:flutter/material.dart';
-import '../customization/generic_grid_card.dart';
+import 'package:task_manager_flutter/data/customization/generic_grid_card.dart';
 import 'package:task_manager_flutter/data/models/empresa_model.dart';
 import 'package:task_manager_flutter/data/utils/api_links.dart';
 import 'package:task_manager_flutter/data/models/network_response.dart';

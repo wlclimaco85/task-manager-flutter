@@ -3,7 +3,7 @@
     "activeCommit": 0,
     "commits": [
         {
-            "activePatchIndex": 1,
+            "activePatchIndex": 2,
             "patches": [
                 {
                     "date": 1741210075193,
@@ -12,6 +12,10 @@
                 {
                     "date": 1741210455607,
                     "content": "Index: \n===================================================================\n--- \n+++ \n@@ -2,9 +2,9 @@\n \r\n class AssetsUtils {\r\n   AssetsUtils._();\r\n   static const String _images = 'assets/images';\r\n-  static const String backgroundSVG = '$_images/novaLogo.svg';\r\n+  static const String backgroundSVG = '$_images/iPhone.svg';\r\n   static const String logoSVG = '$_images/logo.svg';\r\n }\r\n \r\n showBase64Image(base64String) {\r\n"
+                },
+                {
+                    "date": 1759322497717,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -3,9 +3,9 @@\n class AssetsUtils {\r\n   AssetsUtils._();\r\n   static const String _images = 'assets/images';\r\n   static const String backgroundSVG = '$_images/iPhone.svg';\r\n-  static const String logoSVG = '$_images/logo.svg';\r\n+  static const String logoSVG = '$_images/Logo contabilidade_page-0001.jpg';\r\n }\r\n \r\n showBase64Image(base64String) {\r\n   UriData? data = Uri.parse(base64String).data;\r\n"
                 }
             ],
             "date": 1741210075193,

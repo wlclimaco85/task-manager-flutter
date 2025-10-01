@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:task_manager_flutter/data/models/documento_model.dart';
 import 'package:task_manager_flutter/data/services/documentoService.dart';
+import 'package:task_manager_flutter/ui/widgets/user_banners.dart'; // Adjust path as needed
 
 class CalendarScreen extends StatefulWidget {
   const CalendarScreen({super.key});
@@ -129,12 +130,11 @@ class _CalendarScreenState extends State<CalendarScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text('Calendário Financeiro'),
-        actions: [
-          IconButton(icon: Icon(Icons.home), onPressed: () {}),
-          IconButton(icon: Icon(Icons.menu), onPressed: () {}),
-        ],
+      appBar: UserBannerAppBar(
+        screenTitle: 'Calendário Financeiro',
+        onRefresh: _loadDatesWithDocuments, // Reloads calendar data
+        isLoading: false, // Set based on your loading state if needed
+        showFilterButton: false,
       ),
       body: Column(
         children: [
@@ -298,9 +298,8 @@ class _CalendarScreenState extends State<CalendarScreen> {
       _currentMonth.month,
       1,
     );
-    final int firstWeekday = firstDayOfMonth.weekday == 7
-        ? 0
-        : firstDayOfMonth.weekday;
+    final int firstWeekday =
+        firstDayOfMonth.weekday == 7 ? 0 : firstDayOfMonth.weekday;
 
     List<String> weekdays = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sab'];
 

@@ -1379,6 +1379,12 @@ class _GenericMobileGridScreenState<T>
                 onRefresh:
                     widget.onBannerRefresh ?? () => _loadItems(reset: true),
                 isLoading: isLoading,
+                // NOVOS PARÂMETROS:
+                onFilterToggle: () =>
+                    setState(() => filtrosAbertos = !filtrosAbertos),
+                showFilterButton: true,
+                // Adicione também se precisar:
+                // onFieldSettings: _showFieldSettings,
               ),
             )
           : (_isSelectionMode ? _buildSelectionAppBar() : _buildNormalAppBar()),

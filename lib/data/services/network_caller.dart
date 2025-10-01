@@ -231,8 +231,7 @@ class NetworkCaller {
         Uri.parse(url),
         headers: {
           'Content-Type': 'application/json;charset=UTF-8',
-          //TODO     'Authorization': url.contains('login') || url.contains('inserirAluno')
-          'Authorization': url.contains('inserirAluno')
+          'Authorization': url.contains('login') || url.contains('inserirAluno')
               ? 'c2Fua2h5YTpzdXA='
               : 'Bearer ${AuthUtility.userInfo?.token}',
           'Access-Control-Allow-Origin': '*',
