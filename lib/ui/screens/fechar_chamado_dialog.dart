@@ -1,8 +1,8 @@
-// fechar_chamado_dialog.dart
 import 'package:flutter/material.dart';
 import 'package:task_manager_flutter/data/utils/api_links.dart';
 import 'package:task_manager_flutter/data/services/chamado_caller.dart';
 import 'package:task_manager_flutter/data/models/chamado_model.dart';
+import 'package:task_manager_flutter/data/constants/custom_colors.dart';
 
 class FecharChamadoDialog extends StatefulWidget {
   final int chamadoId;
@@ -21,42 +21,179 @@ class _FecharChamadoDialogState extends State<FecharChamadoDialog> {
 
   @override
   Widget build(BuildContext context) {
-    return AlertDialog(
-      title: Text('Fechar Chamado'),
-      content: Form(
-        key: _formKey,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextFormField(
-              controller: _solucaoController,
-              decoration: InputDecoration(
-                labelText: 'Solução',
-                border: OutlineInputBorder(),
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+
+    return Dialog(
+      elevation: 8,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      child: Container(
+        decoration: BoxDecoration(
+          color: colorScheme.surface,
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(24.0),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Header
+              Row(
+                children: [
+                  Icon(Icons.task_alt, color: colorScheme.primary, size: 24),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      'Fechar Chamado',
+                      style: textTheme.titleLarge?.copyWith(
+                        color: colorScheme.onSurface,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                  if (!_loading)
+                    IconButton(
+                      icon: Icon(
+                        Icons.close,
+                        color: colorScheme.onSurface.withOpacity(0.6),
+                      ),
+                      onPressed: () => Navigator.of(context).pop(),
+                      padding: EdgeInsets.zero,
+                      constraints: const BoxConstraints(minWidth: 36),
+                    ),
+                ],
               ),
-              maxLines: 5,
-              validator: (value) {
-                if (value == null || value.isEmpty) {
-                  return 'Por favor, informe a solução';
-                }
-                return null;
-              },
-            ),
-            SizedBox(height: 16),
-            if (_loading) CircularProgressIndicator(),
-          ],
+
+              const SizedBox(height: 20),
+
+              // Description
+              Text(
+                'Informe a solução aplicada para finalizar este chamado:',
+                style: textTheme.bodyMedium?.copyWith(
+                  color: colorScheme.onSurface.withOpacity(0.8),
+                ),
+              ),
+
+              const SizedBox(height: 20),
+
+              // Form
+              Form(
+                key: _formKey,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    TextFormField(
+                      controller: _solucaoController,
+                      decoration: InputDecoration(
+                        labelText: 'Solução',
+                        hintText:
+                            'Descreva detalhadamente a solução aplicada...',
+                        border: const OutlineInputBorder(),
+                        enabledBorder: OutlineInputBorder(
+                          borderSide: BorderSide(color: colorScheme.outline),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderSide: BorderSide(
+                            color: colorScheme.primary,
+                            width: 2,
+                          ),
+                        ),
+                        labelStyle: TextStyle(color: colorScheme.onSurface),
+                        floatingLabelStyle: TextStyle(
+                          color: colorScheme.primary,
+                        ),
+                        filled: true,
+                        fillColor: colorScheme.surfaceVariant.withOpacity(0.3),
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 16,
+                        ),
+                      ),
+                      style: TextStyle(color: colorScheme.onSurface),
+                      maxLines: 6,
+                      minLines: 4,
+                      textInputAction: TextInputAction.done,
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return 'Por favor, informe a solução';
+                        }
+                        if (value.length < 15) {
+                          return 'A solução deve ter pelo menos 15 caracteres';
+                        }
+                        return null;
+                      },
+                    ),
+
+                    const SizedBox(height: 20),
+
+                    if (_loading)
+                      Center(
+                        child: Column(
+                          children: [
+                            CircularProgressIndicator(
+                              valueColor: AlwaysStoppedAnimation<Color>(
+                                colorScheme.primary,
+                              ),
+                            ),
+                            const SizedBox(height: 12),
+                            Text(
+                              'Fechando chamado...',
+                              style: textTheme.bodyMedium?.copyWith(
+                                color: colorScheme.onSurface.withOpacity(0.7),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+
+              const SizedBox(height: 8),
+
+              // Actions
+              if (!_loading)
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    TextButton(
+                      onPressed: () => Navigator.of(context).pop(),
+                      style: TextButton.styleFrom(
+                        foregroundColor: colorScheme.onSurface.withOpacity(0.7),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 20,
+                          vertical: 10,
+                        ),
+                      ),
+                      child: const Text('CANCELAR'),
+                    ),
+                    const SizedBox(width: 12),
+                    ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: colorScheme.primary,
+                        foregroundColor: colorScheme.onPrimary,
+                        elevation: 2,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 24,
+                          vertical: 12,
+                        ),
+                      ),
+                      onPressed: _fecharChamado,
+                      child: const Text(
+                        'CONFIRMAR',
+                        style: TextStyle(fontWeight: FontWeight.w600),
+                      ),
+                    ),
+                  ],
+                ),
+            ],
+          ),
         ),
       ),
-      actions: [
-        TextButton(
-          onPressed: _loading ? null : () => Navigator.of(context).pop(),
-          child: Text('Cancelar'),
-        ),
-        ElevatedButton(
-          onPressed: _loading ? null : _fecharChamado,
-          child: Text('Fechar Chamado'),
-        ),
-      ],
     );
   }
 
@@ -68,24 +205,51 @@ class _FecharChamadoDialogState extends State<FecharChamadoDialog> {
         final response = await ChamadoCaller().fecharChamado(
           ApiLinks.fecharChamados(widget.chamadoId),
           _solucaoController.text,
-          widget.chamado, // 👈 aqui o ajuste
+          widget.chamado,
         );
 
         if (!response.isEmpty) {
           Navigator.of(context).pop(true);
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Chamado fechado com sucesso!')),
+            SnackBar(
+              content: const Text('Chamado fechado com sucesso!'),
+              backgroundColor: CustomColors().getLightGreenBackground(),
+              behavior: SnackBarBehavior.floating,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+              action: SnackBarAction(
+                label: 'OK',
+                textColor: CustomColors().getConfirmButtonColor(),
+                onPressed: () {},
+              ),
+            ),
           );
         } else {
           throw Exception('Erro ao fechar chamado');
         }
       } catch (e) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Erro: $e')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Erro: $e'),
+            backgroundColor: CustomColors().getShowSnackBarError(),
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(8),
+            ),
+          ),
+        );
       } finally {
-        setState(() => _loading = false);
+        if (mounted) {
+          setState(() => _loading = false);
+        }
       }
     }
+  }
+
+  @override
+  void dispose() {
+    _solucaoController.dispose();
+    super.dispose();
   }
 }
