@@ -144,6 +144,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
         screenTitle: 'Calendário Financeiro',
         onRefresh: _loadDatesWithDocuments, // Connects refresh button
         isLoading: _isLoading, // Controls refresh indicator state
+        showFilterButton: false,
         // onFilterToggle: () {
         //   Add filter functionality here if needed later
         // },

@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_svg/svg.dart';
 import 'package:task_manager_flutter/data/models/auth_utility.dart';
 import 'package:task_manager_flutter/ui/screens/auth_screens/login_screen.dart';
 import 'package:task_manager_flutter/ui/screens/bottom_navbar_screen.dart';
@@ -29,19 +28,20 @@ class SplashScreen extends StatefulWidget {
 class _SplashScreenState extends State<SplashScreen> {
   @override
   void initState() {
-    navigateToLogin();
     super.initState();
+    navigateToLogin();
   }
 
   void navigateToLogin() {
     Future.delayed(const Duration(seconds: 3)).then((_) async {
-      final bool loggedIn = await AuthUtility.isUserLoggedIn();
       if (mounted) {
+        final bool loggedIn = await AuthUtility.isUserLoggedIn();
         Navigator.pushAndRemoveUntil(
           context,
           MaterialPageRoute(
-              builder: (context) =>
-                  loggedIn ? const BottomNavBarScreen() : const LoginScreen()),
+            builder: (context) =>
+                loggedIn ? const BottomNavBarScreen() : const LoginScreen(),
+          ),
           (route) => false,
         );
       }
@@ -56,40 +56,44 @@ class _SplashScreenState extends State<SplashScreen> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              // Logo SVG
-              SvgPicture.asset(
-                AssetsUtils.logoSVG,
+              // Logo JPG - Corrigido
+              Image.asset(
+                AssetsUtils.logoJPG,
                 width: 90,
-                fit: BoxFit.scaleDown,
-                // Optional: Apply color filter if needed
-                // colorFilter: ColorFilter.mode(
-                //   GridColors.textPrimary,
-                //   BlendMode.srcIn,
-                // ),
+                height: 90,
+                fit: BoxFit.contain,
+                errorBuilder: (context, error, stackTrace) {
+                  // Fallback se a imagem não carregar
+                  return const Icon(
+                    Icons.apps,
+                    size: 90,
+                    color: GridColors.textPrimary,
+                  );
+                },
               ),
 
-              const SizedBox(height: 40), // Space between logo and text
+              const SizedBox(height: 40),
 
-              // "Carregando..." text
-              Text(
+              // Texto "Carregando..."
+              const Text(
                 'Carregando...',
                 style: TextStyle(
-                  color: GridColors.textPrimary, // White text
+                  color: GridColors.textPrimary,
                   fontSize: 18,
                   fontWeight: FontWeight.w500,
                 ),
               ),
 
-              const SizedBox(height: 20), // Space between text and loader
+              const SizedBox(height: 20),
 
-              // Loading indicator
-              SizedBox(
+              // Indicador de loading
+              const SizedBox(
                 width: 20,
                 height: 20,
                 child: CircularProgressIndicator(
                   strokeWidth: 2,
                   valueColor: AlwaysStoppedAnimation<Color>(
-                    GridColors.textPrimary, // White loader
+                    GridColors.textPrimary,
                   ),
                 ),
               ),

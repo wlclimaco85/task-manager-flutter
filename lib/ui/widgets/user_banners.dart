@@ -207,7 +207,10 @@ class _UserBannerAppBarState extends State<UserBannerAppBar> {
 
   void _handleLogout() {
     AuthUtility.clearUserInfo();
-    MaterialPageRoute(builder: (context) => LoginScreen());
+    Navigator.of(context).pushAndRemoveUntil(
+      MaterialPageRoute(builder: (context) => const LoginScreen()),
+      (Route<dynamic> route) => false,
+    );
   }
 
   Uint8List _getUserAvatar() {
@@ -232,6 +235,108 @@ class _UserBannerAppBarState extends State<UserBannerAppBar> {
     notificationOverlay?.remove();
     _timer?.cancel();
     super.dispose();
+  }
+
+  // Filter Box Widget
+  Widget _buildFilterBox() {
+    return Container(
+      width: double.infinity, // Takes full width
+      constraints:
+          BoxConstraints(maxWidth: 400), // Maximum width for larger screens
+      margin: EdgeInsets.all(8),
+      padding: EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: GridColors.card,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.1),
+            blurRadius: 8,
+            offset: Offset(0, 2),
+          ),
+        ],
+        border: Border.all(color: GridColors.divider),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Filter Header
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text(
+                'Filtros',
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 16,
+                  color: GridColors.textSecondary,
+                ),
+              ),
+              IconButton(
+                icon:
+                    const Icon(Icons.close, size: 20, color: GridColors.error),
+                onPressed: () {
+                  // Add logic to close/hide filters if needed
+                },
+              ),
+            ],
+          ),
+
+          const SizedBox(height: 16),
+
+          // Filter Content - Add your filter widgets here
+          const Wrap(
+            spacing: 12,
+            runSpacing: 12,
+            children: [
+              // Example filter field
+              SizedBox(
+                width: 200,
+                child: TextField(
+                  decoration: InputDecoration(
+                    labelText: 'Buscar...',
+                    border: OutlineInputBorder(),
+                    contentPadding:
+                        EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  ),
+                ),
+              ),
+
+              // Add more filter widgets as needed
+              // DropdownButton, DatePicker, etc.
+            ],
+          ),
+
+          // Filter Actions
+          Container(
+            padding: EdgeInsets.only(top: 16),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                TextButton(
+                  onPressed: () {
+                    // Clear filters logic
+                  },
+                  child: const Text('Limpar',
+                      style: TextStyle(color: GridColors.error)),
+                ),
+                SizedBox(width: 8),
+                ElevatedButton(
+                  onPressed: () {
+                    // Apply filters logic
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: GridColors.primary,
+                    foregroundColor: GridColors.textPrimary,
+                  ),
+                  child: Text('Aplicar'),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   @override
@@ -287,12 +392,11 @@ class _UserBannerAppBarState extends State<UserBannerAppBar> {
       ),
       actions: [
         if (isLoggedIn) ...[
-          // Botão de Refresh
-          if (widget.onRefresh != null)
+          if (widget.onRefresh != null && widget.showFilterButton == true)
             IconButton(
               iconSize: 22, // Tamanho ajustado :cite[1]:cite[7]
               icon: widget.isLoading ?? false
-                  ? SizedBox(
+                  ? const SizedBox(
                       width: 20,
                       height: 20,
                       child: CircularProgressIndicator(
@@ -318,23 +422,22 @@ class _UserBannerAppBarState extends State<UserBannerAppBar> {
               },
               tooltip: 'Configurar campos visíveis',
             ),
-
-          // Botão de Filtros
-
-          IconButton(
-            icon: Icon(Icons.filter_list,
-                color: Theme.of(context).colorScheme.onPrimary),
-            onPressed: widget
-                .onFilterToggle, // Este callback vem do GenericMobileGridScreen
-            tooltip: 'Mostrar/ocultar filtros',
-          ),
-
+          if (widget.showFilterButton ?? true)
+            // Botão de Filtros
+            IconButton(
+              icon: Icon(Icons.filter_list,
+                  color: Theme.of(context).colorScheme.onPrimary),
+              onPressed: widget
+                  .onFilterToggle, // Este callback vem do GenericMobileGridScreen
+              tooltip: 'Mostrar/ocultar filtros',
+            ),
+          // Botão de Refresh
           // Botão de Notificações (COM STACK - apenas para a badge)
           Stack(
             alignment: Alignment.center,
             children: [
               IconButton(
-                iconSize: 22, // Tamanho ajustado :cite[1]:cite[7]
+                iconSize: 22,
                 icon: const Icon(Icons.notifications,
                     color: GridColors.textPrimary),
                 onPressed: () => showNotificationDropdown(context),
@@ -367,16 +470,17 @@ class _UserBannerAppBarState extends State<UserBannerAppBar> {
             ],
           ),
 
-          // Botão de Logout (FORA DA STACK - funciona corretamente)
+          // Botão de Logout
           IconButton(
-            iconSize: 22, // Tamanho ajustado :cite[1]:cite[7]
+            iconSize: 22,
             icon: const Icon(Icons.logout, color: GridColors.textPrimary),
-            onPressed: _handleLogout, // AGORA FUNCIONA
+            onPressed: _handleLogout,
             tooltip: 'Sair',
           ),
         ] else ...[
+          // Botão de Login para usuários não logados
           IconButton(
-            iconSize: 22, // Tamanho ajustado :cite[1]:cite[7]
+            iconSize: 22,
             icon: const Icon(Icons.login, color: GridColors.textPrimary),
             onPressed: () {
               Navigator.push(context,

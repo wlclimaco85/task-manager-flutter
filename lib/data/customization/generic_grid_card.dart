@@ -1382,7 +1382,7 @@ class _GenericMobileGridScreenState<T>
                 // NOVOS PARÂMETROS:
                 onFilterToggle: () =>
                     setState(() => filtrosAbertos = !filtrosAbertos),
-                showFilterButton: true,
+                showFilterButton: widget.useUserBannerAppBar,
                 // Adicione também se precisar:
                 // onFieldSettings: _showFieldSettings,
               ),
