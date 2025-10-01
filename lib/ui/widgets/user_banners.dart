@@ -46,7 +46,8 @@ class UserBannerAppBar extends StatefulWidget implements PreferredSizeWidget {
   _UserBannerAppBarState createState() => _UserBannerAppBarState();
 
   @override
-  Size get preferredSize => const Size.fromHeight(kToolbarHeight);
+  Size get preferredSize => const Size.fromHeight(
+      kToolbarHeight + 52); // Ajuste para incluir FilterActionBar
 }
 
 class _UserBannerAppBarState extends State<UserBannerAppBar> {
@@ -328,6 +329,14 @@ class _UserBannerAppBarState extends State<UserBannerAppBar> {
           ),
         ]
       ],
+      bottom: PreferredSize(
+        preferredSize: const Size.fromHeight(52),
+        child: FilterActionBar(
+          onRefresh: widget.onRefresh,
+          isLoading: widget.isLoading,
+          onFilterToggle: widget.onFilterToggle,
+        ),
+      ),
     );
   }
 }
@@ -410,18 +419,16 @@ class ExampleScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: const UserBannerAppBar(screenTitle: "Comunicados"),
-      body: Column(
-        children: [
-          const FilterActionBar(),
-          Expanded(
-            child: Container(
-              color: Colors.grey[100],
-              child: const Center(
-                child: Text("Conteúdo da tela aqui"),
-              ),
-            ),
-          ),
-        ],
+      body: Container(
+        color: Colors.grey[100],
+        child: const Center(
+          child: Text("Conteúdo da tela aqui"),
+        ),
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () {},
+        backgroundColor: GridColors.primary,
+        child: const Icon(Icons.add),
       ),
     );
   }
