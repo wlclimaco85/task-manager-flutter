@@ -170,8 +170,8 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
             ),
             ListTile(
               leading: const Icon(FontAwesomeIcons.person),
-              title: const Text('Parceiro'),
-              onTap: () => onMenuOptionSelected('Parceiro'),
+              title: const Text('Parceiros'),
+              onTap: () => onMenuOptionSelected('Parceiros'),
             ),
             ListTile(
               leading: const Icon(FontAwesomeIcons.chartBar),

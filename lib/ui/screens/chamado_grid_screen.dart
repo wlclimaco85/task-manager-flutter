@@ -28,7 +28,6 @@ class ChamadoGridScreen extends StatelessWidget {
           availableRowsPerPage: [10, 25, 50],
         ),
         enableSearch: true,
-        initialFilters: _getInitialFilters(), // FILTROS INICIAIS ADICIONADOS
         storageKey: 'chamados_grid', // CHAVE DE ARMAZENAMENTO
         customActions: () => [
           CustomAction<Chamado>(

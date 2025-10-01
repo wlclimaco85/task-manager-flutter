@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:task_manager_flutter/data/models/documento_model.dart';
 import 'package:task_manager_flutter/data/services/documentoService.dart';
+// Make sure to import your UserBannerAppBar
 import 'package:task_manager_flutter/ui/widgets/user_banners.dart'; // Adjust path as needed
 
 class CalendarScreen extends StatefulWidget {
@@ -19,6 +20,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
   List<Documento> _selectedDayDocuments = [];
   DateTime? _selectedDay;
   final int _usuarioId = 1; // ID do usuário logado (deve vir da autenticação)
+  bool _isLoading = false; // To control refresh indicator state
 
   @override
   void initState() {
@@ -28,6 +30,9 @@ class _CalendarScreenState extends State<CalendarScreen> {
   }
 
   Future<void> _loadDatesWithDocuments() async {
+    setState(() {
+      _isLoading = true;
+    });
     try {
       final newDates = await _documentoService.getDatasComDocumentosNovos(
         _currentMonth.month,
@@ -47,6 +52,10 @@ class _CalendarScreenState extends State<CalendarScreen> {
       });
     } catch (e) {
       print('Erro ao carregar datas: $e');
+    } finally {
+      setState(() {
+        _isLoading = false;
+      });
     }
   }
 
@@ -130,11 +139,14 @@ class _CalendarScreenState extends State<CalendarScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      // Replaced standard AppBar with UserBannerAppBar
       appBar: UserBannerAppBar(
         screenTitle: 'Calendário Financeiro',
-        onRefresh: _loadDatesWithDocuments, // Reloads calendar data
-        isLoading: false, // Set based on your loading state if needed
-        showFilterButton: false,
+        onRefresh: _loadDatesWithDocuments, // Connects refresh button
+        isLoading: _isLoading, // Controls refresh indicator state
+        // onFilterToggle: () {
+        //   Add filter functionality here if needed later
+        // },
       ),
       body: Column(
         children: [
@@ -151,93 +163,6 @@ class _CalendarScreenState extends State<CalendarScreen> {
       ),
     );
   }
-
-  // Os métodos _buildMonthNavigation, _buildLegend, _buildCalendarGrid
-  // permanecem iguais ao código anterior...
-
-  Widget _buildDailyDocuments() {
-    if (_selectedDay == null || _selectedDayDocuments.isEmpty) {
-      return Container();
-    }
-
-    return Padding(
-      padding: const EdgeInsets.all(16.0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'Documentos do dia ${DateFormat('dd/MM/yyyy').format(_selectedDay!)}',
-            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-          ),
-          SizedBox(height: 10),
-          ListView.builder(
-            shrinkWrap: true,
-            physics: NeverScrollableScrollPhysics(),
-            itemCount: _selectedDayDocuments.length,
-            itemBuilder: (context, index) {
-              final doc = _selectedDayDocuments[index];
-              return Card(
-                margin: EdgeInsets.symmetric(vertical: 5),
-                child: Padding(
-                  padding: const EdgeInsets.all(12.0),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Expanded(
-                        child: Row(
-                          children: [
-                            Text(doc.descricao),
-                            if (!doc.lido)
-                              Padding(
-                                padding: const EdgeInsets.only(left: 8.0),
-                                child: Container(
-                                  padding: EdgeInsets.symmetric(
-                                    horizontal: 6,
-                                    vertical: 2,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    color: Colors.green[100],
-                                    borderRadius: BorderRadius.circular(3),
-                                  ),
-                                  child: Text(
-                                    'Novo',
-                                    style: TextStyle(
-                                      fontSize: 10,
-                                      color: Colors.green[800],
-                                    ),
-                                  ),
-                                ),
-                              ),
-                          ],
-                        ),
-                      ),
-                      Text(
-                        'R\$${doc.valor.toStringAsFixed(2)}',
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          color: Colors.red,
-                        ),
-                      ),
-                      if (!doc.lido)
-                        IconButton(
-                          icon: Icon(
-                            Icons.check_circle_outline,
-                            color: Colors.blue,
-                          ),
-                          onPressed: () => _marcarDocumentoComoLido(doc.id),
-                          tooltip: 'Marcar como lido',
-                        ),
-                    ],
-                  ),
-                ),
-              );
-            },
-          ),
-        ],
-      ),
-    );
-  }
-  // Adicione estes métodos à classe _CalendarScreenState
 
   Widget _buildMonthNavigation() {
     return Container(
@@ -372,6 +297,89 @@ class _CalendarScreenState extends State<CalendarScreen> {
             itemCount: dayWidgets.length - 7,
             itemBuilder: (context, index) {
               return dayWidgets[index + 7];
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDailyDocuments() {
+    if (_selectedDay == null || _selectedDayDocuments.isEmpty) {
+      return Container();
+    }
+
+    return Padding(
+      padding: const EdgeInsets.all(16.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Documentos do dia ${DateFormat('dd/MM/yyyy').format(_selectedDay!)}',
+            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+          ),
+          SizedBox(height: 10),
+          ListView.builder(
+            shrinkWrap: true,
+            physics: NeverScrollableScrollPhysics(),
+            itemCount: _selectedDayDocuments.length,
+            itemBuilder: (context, index) {
+              final doc = _selectedDayDocuments[index];
+              return Card(
+                margin: EdgeInsets.symmetric(vertical: 5),
+                child: Padding(
+                  padding: const EdgeInsets.all(12.0),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Expanded(
+                        child: Row(
+                          children: [
+                            Text(doc.descricao),
+                            if (!doc.lido)
+                              Padding(
+                                padding: const EdgeInsets.only(left: 8.0),
+                                child: Container(
+                                  padding: EdgeInsets.symmetric(
+                                    horizontal: 6,
+                                    vertical: 2,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: Colors.green[100],
+                                    borderRadius: BorderRadius.circular(3),
+                                  ),
+                                  child: Text(
+                                    'Novo',
+                                    style: TextStyle(
+                                      fontSize: 10,
+                                      color: Colors.green[800],
+                                    ),
+                                  ),
+                                ),
+                              ),
+                          ],
+                        ),
+                      ),
+                      Text(
+                        'R\$${doc.valor.toStringAsFixed(2)}',
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          color: Colors.red,
+                        ),
+                      ),
+                      if (!doc.lido)
+                        IconButton(
+                          icon: Icon(
+                            Icons.check_circle_outline,
+                            color: Colors.blue,
+                          ),
+                          onPressed: () => _marcarDocumentoComoLido(doc.id),
+                          tooltip: 'Marcar como lido',
+                        ),
+                    ],
+                  ),
+                ),
+              );
             },
           ),
         ],

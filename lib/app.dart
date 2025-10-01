@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:task_manager_flutter/ui/screens/splash_screens.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:task_manager_flutter/ui/screens/auth_screens/login_screen.dart';
+import 'package:task_manager_flutter/ui/screens/bottom_navbar_screen.dart';
 
 class TaskManagerApp extends StatelessWidget {
   const TaskManagerApp({super.key});
@@ -50,6 +52,19 @@ class TaskManagerApp extends StatelessWidget {
       ],
       themeMode: ThemeMode.light,
       home: const SplashScreen(),
+      routes: {
+        '/login': (context) => LoginScreen(),
+        '/home': (context) => BottomNavBarScreen(),
+      },
+      onUnknownRoute: (settings) {
+        return MaterialPageRoute(
+          builder: (context) => Scaffold(
+            body: Center(
+              child: Text('Rota não encontrada: ${settings.name}'),
+            ),
+          ),
+        );
+      },
     );
   }
 }

@@ -1,11 +1,9 @@
 import 'dart:async';
-import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:task_manager_flutter/data/models/alert_model.dart';
 import 'package:task_manager_flutter/data/models/auth_utility.dart';
-import 'package:task_manager_flutter/data/models/login_model.dart';
 import 'package:task_manager_flutter/data/services/alert_caller.dart';
 import 'package:task_manager_flutter/ui/screens/auth_screens/login_screen.dart';
 
@@ -209,7 +207,7 @@ class _UserBannerAppBarState extends State<UserBannerAppBar> {
 
   void _handleLogout() {
     AuthUtility.clearUserInfo();
-    Navigator.pushNamedAndRemoveUntil(context, '/login', (route) => false);
+    MaterialPageRoute(builder: (context) => LoginScreen());
   }
 
   Uint8List _getUserAvatar() {
