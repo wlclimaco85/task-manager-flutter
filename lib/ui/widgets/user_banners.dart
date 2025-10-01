@@ -345,7 +345,7 @@ class _UserBannerAppBarState extends State<UserBannerAppBar> {
         AuthUtility.userInfo!.data!.id! > 0;
 
     return AppBar(
-      backgroundColor: GridColors.primary, // vermelho da logo
+      backgroundColor: GridColors.primary,
       title: Row(
         children: [
           Image.asset('assets/images/iconApp.png', width: 36, height: 36,
@@ -371,9 +371,10 @@ class _UserBannerAppBarState extends State<UserBannerAppBar> {
                   AuthUtility.userInfo?.data?.codDadosPessoal?.nome ??
                       "Usuário",
                   style: const TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.bold,
-                      color: GridColors.textPrimary),
+                    fontSize: 14,
+                    fontWeight: FontWeight.bold,
+                    color: GridColors.textPrimary,
+                  ),
                 ),
                 Text(
                   _getCompanyName(),
@@ -392,47 +393,7 @@ class _UserBannerAppBarState extends State<UserBannerAppBar> {
       ),
       actions: [
         if (isLoggedIn) ...[
-          if (widget.onRefresh != null && widget.showFilterButton == true)
-            IconButton(
-              iconSize: 22, // Tamanho ajustado :cite[1]:cite[7]
-              icon: widget.isLoading ?? false
-                  ? const SizedBox(
-                      width: 20,
-                      height: 20,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        valueColor: AlwaysStoppedAnimation<Color>(
-                          Colors.white,
-                        ),
-                      ),
-                    )
-                  : Icon(Icons.refresh,
-                      color: Theme.of(context).colorScheme.onPrimary),
-              onPressed: widget.isLoading ?? false ? null : widget.onRefresh,
-              tooltip: 'Recarregar dados',
-            ),
-          if (widget.showFilterButton ?? true)
-            // Botão de Configuração de Campos
-            IconButton(
-              iconSize: 22, // Tamanho ajustado :cite[1]:cite[7]
-              icon:
-                  const Icon(Icons.view_column, color: GridColors.textPrimary),
-              onPressed: () {
-                // Callback para configuração de campos
-              },
-              tooltip: 'Configurar campos visíveis',
-            ),
-          if (widget.showFilterButton ?? true)
-            // Botão de Filtros
-            IconButton(
-              icon: Icon(Icons.filter_list,
-                  color: Theme.of(context).colorScheme.onPrimary),
-              onPressed: widget
-                  .onFilterToggle, // Este callback vem do GenericMobileGridScreen
-              tooltip: 'Mostrar/ocultar filtros',
-            ),
-          // Botão de Refresh
-          // Botão de Notificações (COM STACK - apenas para a badge)
+          // Notificações
           Stack(
             alignment: Alignment.center,
             children: [
@@ -452,14 +413,12 @@ class _UserBannerAppBarState extends State<UserBannerAppBar> {
                       color: Colors.red,
                       shape: BoxShape.circle,
                     ),
-                    constraints: const BoxConstraints(
-                      minWidth: 18,
-                      minHeight: 18,
-                    ),
+                    constraints:
+                        const BoxConstraints(minWidth: 18, minHeight: 18),
                     child: Text(
                       unreadAlerts > 9 ? '9+' : '$unreadAlerts',
                       style: const TextStyle(
-                        color: GridColors.primary,
+                        color: GridColors.textPrimary,
                         fontSize: 10,
                         fontWeight: FontWeight.bold,
                       ),
@@ -469,26 +428,78 @@ class _UserBannerAppBarState extends State<UserBannerAppBar> {
                 ),
             ],
           ),
-
-          // Botão de Logout
+          // Logout
           IconButton(
             iconSize: 22,
             icon: const Icon(Icons.logout, color: GridColors.textPrimary),
             onPressed: _handleLogout,
             tooltip: 'Sair',
           ),
-        ] else ...[
-          // Botão de Login para usuários não logados
-          IconButton(
-            iconSize: 22,
-            icon: const Icon(Icons.login, color: GridColors.textPrimary),
-            onPressed: () {
-              Navigator.push(context,
-                  MaterialPageRoute(builder: (context) => const LoginScreen()));
-            },
-          )
         ]
       ],
+      bottom: widget.showFilterButton == true
+          ? PreferredSize(
+              preferredSize: const Size.fromHeight(52),
+              child: Container(
+                height: 52,
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  border: const Border(
+                    top: BorderSide(color: GridColors.divider, width: 1),
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.05),
+                      blurRadius: 6,
+                      offset: const Offset(0, 3),
+                    ),
+                  ],
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    if (widget.onRefresh != null)
+                      IconButton(
+                        iconSize: 28,
+                        icon: widget.isLoading ?? false
+                            ? const SizedBox(
+                                width: 20,
+                                height: 20,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  valueColor: AlwaysStoppedAnimation<Color>(
+                                    GridColors.primary,
+                                  ),
+                                ),
+                              )
+                            : const Icon(Icons.refresh,
+                                color: GridColors.primary),
+                        onPressed:
+                            widget.isLoading ?? false ? null : widget.onRefresh,
+                        tooltip: 'Recarregar dados',
+                      ),
+                    IconButton(
+                      iconSize: 28,
+                      icon: const Icon(Icons.view_column,
+                          color: GridColors.primary),
+                      onPressed: () {
+                        // ação configurar colunas
+                      },
+                      tooltip: 'Configurar campos visíveis',
+                    ),
+                    IconButton(
+                      iconSize: 28,
+                      icon: const Icon(Icons.filter_list,
+                          color: GridColors.primary),
+                      onPressed: widget.onFilterToggle,
+                      tooltip: 'Mostrar/ocultar filtros',
+                    ),
+                  ],
+                ),
+              ),
+            )
+          : null,
     );
   }
 }
