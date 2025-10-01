@@ -19,7 +19,7 @@ class GridColors {
   static const Color filterBackground = Color(0xFFEFEFEF);
 }
 
-// AppBar customizado
+// AppBar customizado (apenas cabeçalho)
 class UserBannerAppBar extends StatefulWidget implements PreferredSizeWidget {
   final VoidCallback? onTapped;
   final String? screenTitle;
@@ -46,8 +46,7 @@ class UserBannerAppBar extends StatefulWidget implements PreferredSizeWidget {
   _UserBannerAppBarState createState() => _UserBannerAppBarState();
 
   @override
-  Size get preferredSize =>
-      const Size.fromHeight(kToolbarHeight + 60); // altura maior
+  Size get preferredSize => const Size.fromHeight(kToolbarHeight);
 }
 
 class _UserBannerAppBarState extends State<UserBannerAppBar> {
@@ -66,7 +65,7 @@ class _UserBannerAppBarState extends State<UserBannerAppBar> {
     _timer = Timer.periodic(const Duration(minutes: 1), (timer) {
       fetchAlerts();
     });
-    fetchAlerts(); // primeira carga imediata
+    fetchAlerts();
   }
 
   Future<void> fetchAlerts() async {
@@ -142,7 +141,6 @@ class _UserBannerAppBarState extends State<UserBannerAppBar> {
             ),
             child: Column(
               children: [
-                // Header
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
@@ -161,7 +159,6 @@ class _UserBannerAppBarState extends State<UserBannerAppBar> {
                   ],
                 ),
                 const Divider(height: 1, color: GridColors.divider),
-                // Botão deletar tudo
                 ListTile(
                   leading:
                       const Icon(Icons.delete_sweep, color: GridColors.error),
@@ -172,7 +169,6 @@ class _UserBannerAppBarState extends State<UserBannerAppBar> {
                   onTap: deleteAllNotifications,
                 ),
                 const Divider(height: 1, color: GridColors.divider),
-                // Lista
                 Expanded(
                   child: notifications.isNotEmpty
                       ? ListView.builder(
@@ -222,7 +218,6 @@ class _UserBannerAppBarState extends State<UserBannerAppBar> {
         if (data != null) return data.contentAsBytes();
       } catch (_) {}
     }
-    // avatar vazio
     return Uint8List(0);
   }
 
@@ -235,108 +230,6 @@ class _UserBannerAppBarState extends State<UserBannerAppBar> {
     notificationOverlay?.remove();
     _timer?.cancel();
     super.dispose();
-  }
-
-  // Filter Box Widget
-  Widget _buildFilterBox() {
-    return Container(
-      width: double.infinity, // Takes full width
-      constraints:
-          BoxConstraints(maxWidth: 400), // Maximum width for larger screens
-      margin: EdgeInsets.all(8),
-      padding: EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: GridColors.card,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.1),
-            blurRadius: 8,
-            offset: Offset(0, 2),
-          ),
-        ],
-        border: Border.all(color: GridColors.divider),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Filter Header
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              const Text(
-                'Filtros',
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 16,
-                  color: GridColors.textSecondary,
-                ),
-              ),
-              IconButton(
-                icon:
-                    const Icon(Icons.close, size: 20, color: GridColors.error),
-                onPressed: () {
-                  // Add logic to close/hide filters if needed
-                },
-              ),
-            ],
-          ),
-
-          const SizedBox(height: 16),
-
-          // Filter Content - Add your filter widgets here
-          const Wrap(
-            spacing: 12,
-            runSpacing: 12,
-            children: [
-              // Example filter field
-              SizedBox(
-                width: 200,
-                child: TextField(
-                  decoration: InputDecoration(
-                    labelText: 'Buscar...',
-                    border: OutlineInputBorder(),
-                    contentPadding:
-                        EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                  ),
-                ),
-              ),
-
-              // Add more filter widgets as needed
-              // DropdownButton, DatePicker, etc.
-            ],
-          ),
-
-          // Filter Actions
-          Container(
-            padding: EdgeInsets.only(top: 16),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.end,
-              children: [
-                TextButton(
-                  onPressed: () {
-                    // Clear filters logic
-                  },
-                  child: const Text('Limpar',
-                      style: TextStyle(color: GridColors.error)),
-                ),
-                SizedBox(width: 8),
-                ElevatedButton(
-                  onPressed: () {
-                    // Apply filters logic
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: GridColors.primary,
-                    foregroundColor: GridColors.textPrimary,
-                  ),
-                  child: Text('Aplicar'),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
   }
 
   @override
@@ -393,7 +286,6 @@ class _UserBannerAppBarState extends State<UserBannerAppBar> {
       ),
       actions: [
         if (isLoggedIn) ...[
-          // Notificações
           Stack(
             alignment: Alignment.center,
             children: [
@@ -428,7 +320,6 @@ class _UserBannerAppBarState extends State<UserBannerAppBar> {
                 ),
             ],
           ),
-          // Logout
           IconButton(
             iconSize: 22,
             icon: const Icon(Icons.logout, color: GridColors.textPrimary),
@@ -437,69 +328,101 @@ class _UserBannerAppBarState extends State<UserBannerAppBar> {
           ),
         ]
       ],
-      bottom: widget.showFilterButton == true
-          ? PreferredSize(
-              preferredSize: const Size.fromHeight(52),
-              child: Container(
-                height: 52,
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  border: const Border(
-                    top: BorderSide(color: GridColors.divider, width: 1),
-                  ),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.05),
-                      blurRadius: 6,
-                      offset: const Offset(0, 3),
-                    ),
-                  ],
-                ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    if (widget.onRefresh != null)
-                      IconButton(
-                        iconSize: 28,
-                        icon: widget.isLoading ?? false
-                            ? const SizedBox(
-                                width: 20,
-                                height: 20,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                  valueColor: AlwaysStoppedAnimation<Color>(
-                                    GridColors.primary,
-                                  ),
-                                ),
-                              )
-                            : const Icon(Icons.refresh,
-                                color: GridColors.primary),
-                        onPressed:
-                            widget.isLoading ?? false ? null : widget.onRefresh,
-                        tooltip: 'Recarregar dados',
+    );
+  }
+}
+
+// Nova barra de ações secundária
+class FilterActionBar extends StatelessWidget {
+  final VoidCallback? onRefresh;
+  final bool? isLoading;
+  final VoidCallback? onFilterToggle;
+
+  const FilterActionBar({
+    super.key,
+    this.onRefresh,
+    this.isLoading,
+    this.onFilterToggle,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      height: 52,
+      decoration: BoxDecoration(
+        color: Colors.white,
+        border: const Border(
+          bottom: BorderSide(color: GridColors.divider, width: 1),
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 6,
+            offset: const Offset(0, 3),
+          ),
+        ],
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+        children: [
+          if (onRefresh != null)
+            IconButton(
+              iconSize: 28,
+              icon: isLoading ?? false
+                  ? const SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        valueColor:
+                            AlwaysStoppedAnimation<Color>(GridColors.primary),
                       ),
-                    IconButton(
-                      iconSize: 28,
-                      icon: const Icon(Icons.view_column,
-                          color: GridColors.primary),
-                      onPressed: () {
-                        // ação configurar colunas
-                      },
-                      tooltip: 'Configurar campos visíveis',
-                    ),
-                    IconButton(
-                      iconSize: 28,
-                      icon: const Icon(Icons.filter_list,
-                          color: GridColors.primary),
-                      onPressed: widget.onFilterToggle,
-                      tooltip: 'Mostrar/ocultar filtros',
-                    ),
-                  ],
-                ),
+                    )
+                  : const Icon(Icons.refresh, color: GridColors.primary),
+              onPressed: isLoading ?? false ? null : onRefresh,
+              tooltip: 'Recarregar dados',
+            ),
+          IconButton(
+            iconSize: 28,
+            icon: const Icon(Icons.view_column, color: GridColors.primary),
+            onPressed: () {
+              // ação configurar colunas
+            },
+            tooltip: 'Configurar campos visíveis',
+          ),
+          IconButton(
+            iconSize: 28,
+            icon: const Icon(Icons.filter_list, color: GridColors.primary),
+            onPressed: onFilterToggle,
+            tooltip: 'Mostrar/ocultar filtros',
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// Exemplo de uso no Scaffold
+class ExampleScreen extends StatelessWidget {
+  const ExampleScreen({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: const UserBannerAppBar(screenTitle: "Comunicados"),
+      body: Column(
+        children: [
+          const FilterActionBar(),
+          Expanded(
+            child: Container(
+              color: Colors.grey[100],
+              child: const Center(
+                child: Text("Conteúdo da tela aqui"),
               ),
-            )
-          : null,
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
