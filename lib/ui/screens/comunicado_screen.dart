@@ -494,6 +494,7 @@ class _ComunicadoScreenState extends State<ComunicadoScreen> {
         screenTitle: "Comunicados",
         isLoading: isLoading,
         onRefresh: _refreshNews,
+        showFilterButton: false,
       ),
       body: RefreshIndicator(
         onRefresh: _refreshNews,

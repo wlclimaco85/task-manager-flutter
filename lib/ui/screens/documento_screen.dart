@@ -219,85 +219,104 @@ class _CalendarScreenState extends State<CalendarScreen> {
       _currentMonth.month + 1,
       0,
     ).day;
+
     final DateTime firstDayOfMonth = DateTime(
       _currentMonth.year,
       _currentMonth.month,
       1,
     );
-    final int firstWeekday =
-        firstDayOfMonth.weekday == 7 ? 0 : firstDayOfMonth.weekday;
+
+    // Corrigido: O domingo é 7 no DateTime, mas queremos que seja 0 para o grid
+    final int firstWeekday = firstDayOfMonth.weekday;
+    final int startingDay =
+        firstWeekday % 7; // Isso faz Dom=0, Seg=1, ..., Sab=6
 
     List<String> weekdays = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sab'];
-
-    List<Widget> dayWidgets = [];
-
-    // Add weekday headers
-    for (String day in weekdays) {
-      dayWidgets.add(
-        Expanded(
-          child: Center(
-            child: Text(day, style: TextStyle(fontWeight: FontWeight.bold)),
-          ),
-        ),
-      );
-    }
-
-    // Add empty cells for days before the 1st
-    for (int i = 0; i < firstWeekday; i++) {
-      dayWidgets.add(Expanded(child: Container()));
-    }
-
-    // Add days of the month
-    for (int i = 1; i <= daysInMonth; i++) {
-      DateTime dayDate = DateTime(_currentMonth.year, _currentMonth.month, i);
-      dayWidgets.add(
-        Expanded(
-          child: GestureDetector(
-            onTap: () => _loadDayDocuments(dayDate),
-            child: Container(
-              margin: EdgeInsets.all(2),
-              decoration: BoxDecoration(
-                color: _getDayColor(dayDate),
-                borderRadius: BorderRadius.circular(5),
-                border: Border.all(color: Colors.grey[300]!),
-              ),
-              child: Center(
-                child: Text(
-                  '$i',
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    color: Colors.black,
-                  ),
-                ),
-              ),
-            ),
-          ),
-        ),
-      );
-    }
-
-    // Fill remaining cells to complete the last row
-    while (dayWidgets.length % 7 != 0) {
-      dayWidgets.add(Expanded(child: Container()));
-    }
 
     return Container(
       padding: EdgeInsets.all(8.0),
       child: Column(
         children: [
-          // Weekday headers
-          Row(children: dayWidgets.sublist(0, 7)),
-          // Days grid
+          // Cabeçalho com os dias da semana
+          Row(
+            children: weekdays.map((day) {
+              return Expanded(
+                child: Container(
+                  padding: EdgeInsets.symmetric(vertical: 8),
+                  child: Center(
+                    child: Text(
+                      day,
+                      style: TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                ),
+              );
+            }).toList(),
+          ),
+
+          // Grid dos dias
           GridView.builder(
             shrinkWrap: true,
             physics: NeverScrollableScrollPhysics(),
             gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
               crossAxisCount: 7,
-              childAspectRatio: 1.0,
+              childAspectRatio: 1.2,
             ),
-            itemCount: dayWidgets.length - 7,
+            itemCount: 42, // 6 semanas * 7 dias (máximo que pode precisar)
             itemBuilder: (context, index) {
-              return dayWidgets[index + 7];
+              // Calcular qual dia este índice representa
+              final dayOffset = index - startingDay;
+              final currentDay = DateTime(
+                _currentMonth.year,
+                _currentMonth.month,
+                1 + dayOffset,
+              );
+
+              // Verificar se este dia pertence ao mês atual
+              final bool isCurrentMonth =
+                  currentDay.month == _currentMonth.month;
+
+              if (!isCurrentMonth ||
+                  dayOffset < 0 ||
+                  dayOffset >= daysInMonth) {
+                // Dia vazio (de outro mês)
+                return Container(
+                  margin: EdgeInsets.all(2),
+                  child: Center(child: Text('')),
+                );
+              }
+
+              final int dayNumber = currentDay.day;
+
+              return GestureDetector(
+                onTap: () => _loadDayDocuments(currentDay),
+                child: Container(
+                  margin: EdgeInsets.all(2),
+                  decoration: BoxDecoration(
+                    color: _getDayColor(currentDay),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(
+                      color: _selectedDay != null &&
+                              _isSameDay(_selectedDay!, currentDay)
+                          ? Colors.blue
+                          : Colors.grey[300]!,
+                      width: _selectedDay != null &&
+                              _isSameDay(_selectedDay!, currentDay)
+                          ? 2
+                          : 1,
+                    ),
+                  ),
+                  child: Center(
+                    child: Text(
+                      '$dayNumber',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: Colors.black,
+                      ),
+                    ),
+                  ),
+                ),
+              );
             },
           ),
         ],
@@ -306,8 +325,34 @@ class _CalendarScreenState extends State<CalendarScreen> {
   }
 
   Widget _buildDailyDocuments() {
-    if (_selectedDay == null || _selectedDayDocuments.isEmpty) {
-      return Container();
+    if (_selectedDay == null) {
+      return Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Text(
+          'Selecione um dia para ver os documentos',
+          style: TextStyle(fontSize: 16, color: Colors.grey),
+        ),
+      );
+    }
+
+    if (_selectedDayDocuments.isEmpty) {
+      return Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Documentos do dia ${DateFormat('dd/MM/yyyy').format(_selectedDay!)}',
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+            ),
+            SizedBox(height: 10),
+            Text(
+              'Nenhum documento encontrado para este dia',
+              style: TextStyle(color: Colors.grey),
+            ),
+          ],
+        ),
+      );
     }
 
     return Padding(

@@ -22,6 +22,7 @@ class ParceiroGridScreen extends StatelessWidget {
       fieldConfigs: Parceiro.fieldConfigs,
       idFieldName: 'id',
       dateFieldName: 'createdAt',
+      useUserBannerAppBar: true,
       paginationConfig: const PaginationConfig(
         defaultRowsPerPage: 10,
         availableRowsPerPage: [10, 25, 50],

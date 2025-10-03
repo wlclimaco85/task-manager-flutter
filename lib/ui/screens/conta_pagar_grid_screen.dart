@@ -32,6 +32,7 @@ class ContaPagarGridScreen extends StatelessWidget {
           isVisible: (object) => object.status == StatusConta.ABERTA,
         ),
       ],
+      useUserBannerAppBar: true,
       paginationConfig: const PaginationConfig(
         defaultRowsPerPage: 10,
         availableRowsPerPage: [10, 25, 50],

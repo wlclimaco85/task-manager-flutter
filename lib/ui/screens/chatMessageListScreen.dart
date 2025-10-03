@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:task_manager_flutter/ui/screens/chatMenssageScreen.dart';
 import 'package:task_manager_flutter/data/services/chat_caller.dart';
+import 'package:task_manager_flutter/ui/widgets/user_banners.dart'; // Adjust path as needed
 
 class ChatListScreen extends StatefulWidget {
   final String userName;
@@ -253,8 +254,14 @@ class _ChatListScreenState extends State<ChatListScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text('Meus Chats'),
+      appBar: UserBannerAppBar(
+        screenTitle: 'CMeus Chats',
+        onRefresh: _loadChats, // Connects refresh button
+        isLoading: _isLoading, // Controls refresh indicator state
+        showFilterButton: false,
+        // onFilterToggle: () {
+        //   Add filter functionality here if needed later
+        // },
       ),
       body: _isLoading
           ? Center(child: CircularProgressIndicator())

@@ -1372,7 +1372,7 @@ class _GenericMobileGridScreenState<T>
     return Scaffold(
       appBar: widget.useUserBannerAppBar
           ? PreferredSize(
-              preferredSize: const Size.fromHeight(kToolbarHeight),
+              preferredSize: const Size.fromHeight(94),
               child: UserBannerAppBar(
                 screenTitle: widget.title,
                 onTapped: widget.onUserBannerTapped,
@@ -1397,14 +1397,14 @@ class _GenericMobileGridScreenState<T>
 
           // Header de Informações
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 5),
             decoration: BoxDecoration(
               color: colorScheme.surfaceVariant.withOpacity(0.3),
               border: Border(
                 bottom: BorderSide(color: colorScheme.outline.withOpacity(0.1)),
               ),
             ),
-            child: Row(
+            /*       child: Row(
               children: [
                 Text(
                   '${filtered.length} itens de $_totalItems encontrados',
@@ -1427,7 +1427,7 @@ class _GenericMobileGridScreenState<T>
                   _buildRefreshButton(),
                 ],
               ],
-            ),
+            ),*/
           ),
 
           // Lista de Itens

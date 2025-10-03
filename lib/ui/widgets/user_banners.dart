@@ -46,8 +46,12 @@ class UserBannerAppBar extends StatefulWidget implements PreferredSizeWidget {
   _UserBannerAppBarState createState() => _UserBannerAppBarState();
 
   @override
-  Size get preferredSize => const Size.fromHeight(
-      kToolbarHeight + 52); // Ajuste para incluir FilterActionBar
+  Size get preferredSize {
+    // Ajusta a altura baseada no showFilterButton
+    final baseHeight = kToolbarHeight;
+    final filterBarHeight = (showFilterButton == true) ? 52.0 : 0.0;
+    return Size.fromHeight(baseHeight + filterBarHeight);
+  }
 }
 
 class _UserBannerAppBarState extends State<UserBannerAppBar> {
@@ -118,7 +122,7 @@ class _UserBannerAppBarState extends State<UserBannerAppBar> {
 
     notificationOverlay = OverlayEntry(
       builder: (context) => Positioned(
-        top: kToolbarHeight + 68,
+        top: kToolbarHeight + ((widget.showFilterButton == true) ? 68 : 16),
         right: 8,
         child: Material(
           elevation: 8,
@@ -329,14 +333,17 @@ class _UserBannerAppBarState extends State<UserBannerAppBar> {
           ),
         ]
       ],
-      bottom: PreferredSize(
-        preferredSize: const Size.fromHeight(52),
-        child: FilterActionBar(
-          onRefresh: widget.onRefresh,
-          isLoading: widget.isLoading,
-          onFilterToggle: widget.onFilterToggle,
-        ),
-      ),
+      // CORREÇÃO: Só exibe o FilterActionBar se showFilterButton for true
+      bottom: (widget.showFilterButton == true)
+          ? PreferredSize(
+              preferredSize: const Size.fromHeight(52),
+              child: FilterActionBar(
+                onRefresh: widget.onRefresh,
+                isLoading: widget.isLoading,
+                onFilterToggle: widget.onFilterToggle,
+              ),
+            )
+          : null,
     );
   }
 }
