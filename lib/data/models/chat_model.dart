@@ -1,3 +1,7 @@
+import 'package:task_manager_flutter/ui/widgets/generic_grid_screen.dart';
+import 'dart:convert';
+import 'package:flutter/material.dart';
+
 class ChatMessage {
   final String sender;
   final String content;
@@ -110,4 +114,120 @@ class ChatMessageModel {
     }
     return data;
   }
+
+  static List<FieldConfig> messageFieldConfigs = [
+    FieldConfig(
+      label: "Remetente",
+      fieldName: "sender",
+      icon: Icons.person,
+      isInForm: true,
+      isFilterable: true,
+      isVisibleByDefault: true,
+      isFixed: false,
+    ),
+    FieldConfig(
+      label: "Mensagem",
+      fieldName: "content",
+      icon: Icons.message,
+      isInForm: true,
+      isFilterable: true,
+      isVisibleByDefault: true,
+      isFixed: false,
+    ),
+    FieldConfig(
+      label: "Tipo",
+      fieldName: "type",
+      icon: Icons.category,
+      isInForm: true,
+      isFilterable: true,
+      isVisibleByDefault: true,
+      isFixed: false,
+    ),
+    FieldConfig(
+      label: "Arquivo",
+      fieldName: "fileId",
+      displayFieldName: "fileName",
+      fieldType: FieldType.file,
+      icon: Icons.attach_file,
+      isInForm: true,
+      isVisibleByDefault: true,
+      isFixed: false,
+    ),
+    FieldConfig(
+      label: "Data/Hora",
+      fieldName: "timestamp",
+      icon: Icons.access_time,
+      isInForm: false,
+      isFilterable: true,
+      isVisibleByDefault: true,
+      isFixed: false,
+    ),
+
+    // Novos campos do payload
+    FieldConfig(
+      label: "Empresa",
+      fieldName: "empId",
+      icon: Icons.business,
+      isInForm: true,
+      isFilterable: true,
+      isVisibleByDefault: false,
+      isFixed: false,
+    ),
+    FieldConfig(
+      label: "Aplicativo",
+      fieldName: "codApp",
+      icon: Icons.apps,
+      isInForm: true,
+      isVisibleByDefault: false,
+      isFixed: false,
+    ),
+    FieldConfig(
+      label: "Usuário Origem",
+      fieldName: "codUsuOrig",
+      icon: Icons.person_outline,
+      isInForm: true,
+      isVisibleByDefault: false,
+      isFixed: false,
+    ),
+    FieldConfig(
+      label: "Usuário Destino",
+      fieldName: "codUsuDest",
+      icon: Icons.person_add,
+      isInForm: true,
+      isVisibleByDefault: false,
+      isFixed: false,
+    ),
+    FieldConfig(
+      label: "Setor",
+      fieldName: "sector",
+      icon: Icons.apartment,
+      isInForm: true,
+      isVisibleByDefault: false,
+      isFixed: false,
+    ),
+    FieldConfig(
+      label: "Chat",
+      fieldName: "chatId",
+      icon: Icons.chat,
+      isInForm: true,
+      isVisibleByDefault: true,
+      isFixed: false,
+    ),
+    FieldConfig(
+      label: "Data Upload",
+      fieldName: "uploadDate",
+      icon: Icons.cloud_upload,
+      isInForm: false,
+      isVisibleByDefault: true,
+      isFixed: false,
+    ),
+    FieldConfig(
+      label: "Texto",
+      fieldName: "text",
+      icon: Icons.notes,
+      isInForm: true,
+      isVisibleByDefault: true,
+      isFixed: false,
+    ),
+  ];
 }

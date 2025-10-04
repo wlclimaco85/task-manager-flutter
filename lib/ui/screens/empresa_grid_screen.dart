@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:task_manager_flutter/data/utils/api_links.dart';
 import 'package:task_manager_flutter/ui/widgets/generic_grid_screen.dart';
 import 'package:task_manager_flutter/data/models/empresa_model.dart';
+import 'package:task_manager_flutter/ui/details/empresa_detail_screen.dart';
 
 class EmpresaGridScreen extends StatelessWidget {
   final SecurityCheck hasPermission;
@@ -32,6 +33,8 @@ class EmpresaGridScreen extends StatelessWidget {
       ),
       enableSearch: true,
       enableColumnReorder: true,
+      detailScreenBuilder: (item) =>
+          EmpresaDetailScreen(item: item, hasPermission: hasPermission),
     );
   }
 }

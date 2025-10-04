@@ -4,6 +4,7 @@ import 'package:task_manager_flutter/data/utils/api_links.dart';
 import 'package:task_manager_flutter/data/models/network_response.dart';
 import 'package:task_manager_flutter/data/services/network_caller.dart';
 import 'package:task_manager_flutter/data/models/aplicativo_model.dart';
+import 'package:task_manager_flutter/data/models/regime_tributario_model.dart';
 
 class Empresa {
   int? id;
@@ -20,6 +21,7 @@ class Empresa {
   String? cidade;
   String? cep;
   Aplicativo? aplicativo; // Pode ser detalhado depois como um model separado
+  RegimeTributario? regimeTributario;
 
   Empresa({
     this.id,
@@ -36,6 +38,7 @@ class Empresa {
     this.cidade,
     this.cep,
     this.aplicativo,
+    this.regimeTributario,
   });
 
   Empresa.fromJson(Map<String, dynamic> json) {
@@ -55,6 +58,9 @@ class Empresa {
     aplicativo = json['aplicativo'] != null
         ? Aplicativo.fromJson(json['aplicativo'])
         : null; // pode ser adaptado se tiver DTO no back
+    regimeTributario = json['regime'] != null
+        ? RegimeTributario.fromJson(json['regime'])
+        : null; // pode ser adaptado se tiver DTO no back
   }
 
   Map<String, dynamic> toJson() {
@@ -73,6 +79,7 @@ class Empresa {
       'cidade': cidade,
       'cep': cep,
       'aplicativo': aplicativo?.toJson(),
+      'regimeTributario': regimeTributario?.toJson(),
     };
   }
 
@@ -194,7 +201,7 @@ class Empresa {
     ),
     FieldConfig(
       label: "Aplicativo",
-      fieldName: "aplicativo",
+      fieldName: "aplicativo.id",
       displayFieldName: "aplicativo.nome",
       icon: Icons.apps,
       isInForm: true,
@@ -203,15 +210,16 @@ class Empresa {
       dropdownFutureBuilder: () async {
         return await loadAplicativos();
       },
-      dropdownValueField: 'id',
-      dropdownDisplayField: 'nome',
+      dropdownValueField: 'value',
+      dropdownDisplayField: 'label',
       isRequired: true,
       isVisibleByDefault: true,
       isFixed: false,
+      enabled: false,
     ),
     FieldConfig(
       label: "Regime",
-      fieldName: "regime", // Para o formulário (dropdown)
+      fieldName: "regime.id", // Para o formulário (dropdown)
       displayFieldName: "regime.codigo", // Para exibição na grid
       icon: Icons.business_center,
       isInForm: true,
@@ -220,8 +228,8 @@ class Empresa {
       dropdownFutureBuilder: () async {
         return await loadCategorias();
       },
-      dropdownValueField: 'id',
-      dropdownDisplayField: 'codigo',
+      dropdownValueField: 'value',
+      dropdownDisplayField: 'label',
       isRequired: true,
       isVisibleByDefault: true,
       isFixed: false,

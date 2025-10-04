@@ -323,4 +323,12 @@ class ApiLinks {
       '$_baseUrlNew/api/logins/$id/roles';
 
   static String fecharChamados(int id) => "$_baseUrlNew/chamados/$id/fechar";
+
+  static String chatByEmpesaId(String id) => '$_baseUrlNew/api/chat/chat/$id';
+
+  static String clienteByEmpresaId(String id) =>
+      '$_baseUrlNew/api/parceiro/parceiro/$id';
+
+  static String chamadoByEmpresaId(String id) =>
+      '$_baseUrlNew/api/chamados/chamado/$id';
 }
