@@ -137,7 +137,7 @@ class ContaPagar {
 
   static List<FieldConfig> fieldConfigs = [
     FieldConfig(
-        label: "Fornecedor",
+        label: "Parceiro",
         fieldName: "parceiro.id",
         displayFieldName: "parceiro.nome",
         icon: Icons.business,
@@ -154,7 +154,7 @@ class ContaPagar {
         enabled: true,
         dropdownSelectedValue: pegarEmpresaLogada()),
     FieldConfig(
-      label: "Fornecedor Dev",
+      label: "Fornecedor",
       fieldName: "parceiroDev.id",
       displayFieldName: "parceiroDev.nome",
       icon: Icons.business,
@@ -196,15 +196,6 @@ class ContaPagar {
       isVisibleByDefault: true,
       isFixed: false,
       fieldType: FieldType.date,
-    ),
-    const FieldConfig(
-      label: "Status",
-      fieldName: "status",
-      icon: Icons.info,
-      isFilterable: true,
-      isVisibleByDefault: true,
-      isFixed: false,
-      isInForm: false,
     ),
     const FieldConfig(
         label: "Data Baixa",
@@ -267,7 +258,7 @@ class ContaPagar {
       fieldName: "status",
       icon: Icons.check_circle,
       isFilterable: true,
-      isVisibleByDefault: true,
+      isVisibleByDefault: false,
       isFixed: false,
       fieldType: FieldType.dropdown,
       dropdownOptions: [

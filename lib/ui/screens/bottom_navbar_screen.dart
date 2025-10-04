@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:task_manager_flutter/data/constants/custom_colors.dart';
 import 'package:task_manager_flutter/data/models/auth_utility.dart';
 import 'package:task_manager_flutter/data/utils/api_links.dart';
@@ -127,19 +126,17 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
           },
           items: [
             const BottomNavigationBarItem(
-                icon: Icon(FontAwesomeIcons.calendar), label: "Calendario"),
+                icon: Icon(Icons.calendar_today), label: "Calendario"),
             const BottomNavigationBarItem(
-                icon: Icon(FontAwesomeIcons.comments), label: "Chat"),
+                icon: Icon(Icons.chat), label: "Chat"),
             const BottomNavigationBarItem(
-                icon: Icon(FontAwesomeIcons.bullhorn), label: "Comunicados"),
+                icon: Icon(Icons.campaign), label: "Comunicados"),
             const BottomNavigationBarItem(
-                icon: Icon(FontAwesomeIcons.headset), label: "Solicitações"),
+                icon: Icon(Icons.support_agent), label: "Solicitações"),
             const BottomNavigationBarItem(
-                icon: Icon(FontAwesomeIcons.folderOpen), label: "GED"),
+                icon: Icon(Icons.folder_open), label: "GED"),
             BottomNavigationBarItem(
-                icon: Icon(isLoggedIn
-                    ? FontAwesomeIcons.ellipsisH
-                    : FontAwesomeIcons.signInAlt),
+                icon: Icon(isLoggedIn ? Icons.more_horiz : Icons.login),
                 label: "Mais"),
           ],
         ),
@@ -159,32 +156,32 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
           mainAxisSize: MainAxisSize.min,
           children: [
             ListTile(
-              leading: const Icon(FontAwesomeIcons.moneyBillWave),
+              leading: const Icon(Icons.payments),
               title: const Text('Contas Pagar'),
               onTap: () => onMenuOptionSelected('Contas Pagar'),
             ),
             ListTile(
-              leading: const Icon(FontAwesomeIcons.moneyCheck),
+              leading: const Icon(Icons.account_balance_wallet),
               title: const Text('Contas Receber'),
               onTap: () => onMenuOptionSelected('Contas Receber'),
             ),
             ListTile(
-              leading: const Icon(FontAwesomeIcons.person),
+              leading: const Icon(Icons.people),
               title: const Text('Parceiros'),
               onTap: () => onMenuOptionSelected('Parceiros'),
             ),
             ListTile(
-              leading: const Icon(FontAwesomeIcons.chartBar),
+              leading: const Icon(Icons.bar_chart),
               title: const Text('Dashboard'),
               onTap: () => onMenuOptionSelected('Dashboard'),
             ),
             ListTile(
-              leading: const Icon(FontAwesomeIcons.signOutAlt),
+              leading: const Icon(Icons.exit_to_app),
               title: const Text('Sair'),
               onTap: () => onMenuOptionSelected('Sair'),
             ),
             ListTile(
-              leading: const Icon(FontAwesomeIcons.arrowLeft),
+              leading: const Icon(Icons.arrow_back),
               title: const Text('Voltar'),
               onTap: () => onMenuOptionSelected('Voltar'),
             ),

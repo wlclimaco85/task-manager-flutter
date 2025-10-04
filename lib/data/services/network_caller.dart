@@ -215,14 +215,17 @@ class NetworkCaller {
 
       // Adiciona empresa, parceiro e aplicativo ao body
       body?['empresa'] = {};
-      body?['parceiro'] = {};
       body?['aplicativo'] = {};
       body?['audit'] = {};
       body?['empresa']['id'] = user?.empresa?.id ?? null;
-      body?['parceiro']['id'] = user?.parceiro?.id ?? null;
+
       body?['aplicativo']['id'] =
           user?.aplicativo != null ? user?.aplicativo?.id : null;
-      body?['audit']['parceiroId'] = user?.parceiro?.id ?? null;
+      if (user?.parceiro?.id != null) {
+        body?['parceiro'] = {};
+        body?['parceiro']['id'] = user?.parceiro?.id ?? null;
+        body?['audit']?['parceiroId'] = user!.parceiro!.id ?? 0;
+      }
       body?['audit']['empresaId'] = user?.empresa?.id ?? null;
       body?['audit']['appId'] = user?.aplicativo?.id ?? null;
       body?['audit']['userLogadoId'] = user?.id ?? null;

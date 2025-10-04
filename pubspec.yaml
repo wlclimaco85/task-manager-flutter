@@ -42,7 +42,7 @@ dependencies:
   http: ^1.1.0
   shared_preferences: ^2.2.0
   image_picker: ^1.0.1
-  font_awesome_flutter: ^10.5.0
+  #font_awesome_flutter: ^10.4.0
   fluttertoast: ^8.2.2
   intl: ^0.18.1
   simple_gesture_detector: ^0.2.0
@@ -55,6 +55,7 @@ dependencies:
   open_filex: any
   mime: any
   file_picker: ^5.3.3 # Para selecionar arquivos
+  share_plus: ^7.0.1
   html_editor_enhanced: any
   flutter_html: any
   html_unescape: any

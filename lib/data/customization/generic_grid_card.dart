@@ -1,9 +1,11 @@
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:task_manager_flutter/data/models/network_response.dart';
 import 'package:task_manager_flutter/data/services/network_caller.dart';
+import 'package:task_manager_flutter/data/services/upload_file_caller.dart';
 import 'package:task_manager_flutter/ui/widgets/user_banners.dart';
-import 'package:intl/intl.dart';
 // ==============================================
 // MOBILE GRID SCREEN - MATERIAL DESIGN 3 COMPLETO
 // ==============================================
@@ -238,6 +240,8 @@ class _GenericMobileGridScreenState<T>
   bool _isUpdating = false;
   bool _isDeleting = false;
   bool filtrosAbertos = false;
+  final Map<String, List<PlatformFile>> _fileCache =
+      {}; // NOVO: Cache para arquivos
 
   int _currentPage = 0;
   int _totalItems = 0;
@@ -614,11 +618,106 @@ class _GenericMobileGridScreenState<T>
             _buildMultilineField(config, controller)
           else if (config.fieldType == FieldType.date) // NOVO: Campo de data
             _buildDateField(config, controller)
+          else if (config.fieldType == FieldType.file) // NOVO: Campo de arquivo
+            _buildFileField(config, controller)
           else
             _buildTextField(config, controller),
         ],
       ),
     );
+  }
+
+  Widget _buildFileField(FieldConfig config, TextEditingController controller) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final currentFiles = _fileCache[config.fieldName] ?? [];
+    final fileConfig = config.fileConfig ?? const FileConfig();
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Exibe arquivos selecionados
+        if (currentFiles.isNotEmpty)
+          ...currentFiles.map((file) => Card(
+                margin: const EdgeInsets.only(bottom: 8),
+                child: ListTile(
+                  leading: const Icon(Icons.attach_file),
+                  title: Text(
+                    file.name,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  subtitle: Text(
+                    '${(file.size / 1024).toStringAsFixed(1)} KB',
+                    style: TextStyle(
+                      color: colorScheme.onSurface.withOpacity(0.6),
+                      fontSize: 12,
+                    ),
+                  ),
+                  trailing: IconButton(
+                    icon: Icon(Icons.delete, color: GridColors.error),
+                    onPressed: () {
+                      setState(() {
+                        _fileCache[config.fieldName]?.remove(file);
+                        if (_fileCache[config.fieldName]!.isEmpty) {
+                          _fileCache.remove(config.fieldName);
+                        }
+                        controller.clear();
+                      });
+                    },
+                  ),
+                ),
+              )),
+
+        // Botão para selecionar arquivos
+        ElevatedButton.icon(
+          onPressed: () => _selectFiles(config, controller),
+          icon: const Icon(Icons.attach_file),
+          label: Text(
+            currentFiles.isEmpty
+                ? 'Selecionar Arquivo'
+                : 'Adicionar Mais Arquivos',
+          ),
+          style: ElevatedButton.styleFrom(
+            backgroundColor: GridColors.primary,
+            foregroundColor: GridColors.card,
+          ),
+        ),
+
+        // Informações sobre extensões permitidas
+        if (fileConfig.allowedExtensions.isNotEmpty)
+          Padding(
+            padding: const EdgeInsets.only(top: 8.0),
+            child: Text(
+              'Extensões permitidas: ${fileConfig.allowedExtensions.join(', ')}',
+              style: TextStyle(
+                fontSize: 12,
+                color: colorScheme.onSurface.withOpacity(0.6),
+              ),
+            ),
+          ),
+      ],
+    );
+  }
+
+  Future<void> _selectFiles(
+      FieldConfig config, TextEditingController controller) async {
+    final fileConfig = config.fileConfig ?? const FileConfig();
+
+    try {
+      FilePickerResult? result = await FilePicker.platform.pickFiles(
+        type: FileType.custom,
+        allowedExtensions: fileConfig.allowedExtensions,
+        allowMultiple: fileConfig.allowMultiple,
+      );
+
+      if (result != null && result.files.isNotEmpty) {
+        setState(() {
+          _fileCache[config.fieldName] = result.files;
+          controller.text = result.files.map((f) => f.name).join(', ');
+        });
+      }
+    } catch (e) {
+      _showSnackBar('Erro ao selecionar arquivo: $e', isError: true);
+    }
   }
 
   Widget _buildDateField(FieldConfig config, TextEditingController controller) {
@@ -912,70 +1011,95 @@ class _GenericMobileGridScreenState<T>
         if (!valueExists) {
           currentValue = null;
         }
+        return AbsorbPointer(
+          absorbing:
+              !config.enabled, // Desabilita quando config.enabled = false
+          child: Opacity(
+            opacity: config.enabled ? 1.0 : 0.6, // Visualmente desabilitado
+            child: DropdownButtonFormField<dynamic>(
+              value: currentValue,
+              decoration: InputDecoration(
+                labelText: config.label + (config.isRequired ? ' *' : ''),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                  borderSide:
+                      BorderSide(color: Theme.of(context).colorScheme.outline),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                  borderSide: BorderSide(
+                      color: Theme.of(context).colorScheme.primary, width: 2),
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                  borderSide:
+                      BorderSide(color: Theme.of(context).colorScheme.outline),
+                ),
+                disabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                  borderSide: BorderSide(
+                      color: Theme.of(context)
+                          .colorScheme
+                          .onSurface
+                          .withOpacity(0.38)),
+                ),
+                filled: !config.enabled,
+                fillColor: !config.enabled
+                    ? Theme.of(context).colorScheme.onSurface.withOpacity(0.04)
+                    : Colors.transparent,
+              ),
+              isExpanded: true,
+              items: [
+                if (!config.isRequired || currentValue == null)
+                  const DropdownMenuItem<dynamic>(
+                    value: null,
+                    child: Text(
+                      'Selecione uma opção',
+                      style: TextStyle(color: Colors.grey),
+                    ),
+                  ),
+                ...uniqueOptionsList.map<DropdownMenuItem<dynamic>>((option) {
+                  try {
+                    final optionValue = option[config.dropdownValueField];
+                    final optionLabel =
+                        option[config.dropdownDisplayField]?.toString() ??
+                            optionValue?.toString() ??
+                            'Sem label';
 
-        return DropdownButtonFormField<dynamic>(
-          value: currentValue,
-          decoration: InputDecoration(
-            labelText: config.label + (config.isRequired ? ' *' : ''),
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8),
-              borderSide:
-                  BorderSide(color: Theme.of(context).colorScheme.outline),
-            ),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8),
-              borderSide: BorderSide(
-                  color: Theme.of(context).colorScheme.primary, width: 2),
+                    return DropdownMenuItem<dynamic>(
+                      value: optionValue is int
+                          ? optionValue
+                          : int.tryParse(optionValue.toString()),
+                      child: Text(optionLabel),
+                    );
+                  } catch (e) {
+                    return DropdownMenuItem<dynamic>(
+                      value: UniqueKey().toString(),
+                      child: const Text('Erro na opção'),
+                    );
+                  }
+                }),
+              ],
+              onChanged: config.enabled
+                  ? (dynamic newValue) {
+                      setState(() {
+                        if (newValue == null) {
+                          controller.clear();
+                        } else {
+                          controller.text = newValue.toString();
+                        }
+                      });
+                    }
+                  : null, // Desabilita onChanged quando não enabled
+              validator: (dynamic value) {
+                if (config.isRequired &&
+                    (value == null || value.toString().isEmpty)) {
+                  return '${config.label} é obrigatório';
+                }
+                return config.validator?.call(value?.toString());
+              },
             ),
           ),
-          isExpanded: true,
-          items: [
-            if (!config.isRequired || currentValue == null)
-              const DropdownMenuItem<dynamic>(
-                value: null,
-                child: Text(
-                  'Selecione uma opção',
-                  style: TextStyle(color: Colors.grey),
-                ),
-              ),
-            ...uniqueOptionsList.map<DropdownMenuItem<dynamic>>((option) {
-              try {
-                final optionValue = option[config.dropdownValueField];
-                final optionLabel =
-                    option[config.dropdownDisplayField]?.toString() ??
-                        optionValue?.toString() ??
-                        'Sem label';
-
-                return DropdownMenuItem<dynamic>(
-                  value: optionValue is int
-                      ? optionValue
-                      : int.tryParse(optionValue.toString()),
-                  child: Text(optionLabel),
-                );
-              } catch (e) {
-                return DropdownMenuItem<dynamic>(
-                  value: UniqueKey().toString(),
-                  child: const Text('Erro na opção'),
-                );
-              }
-            }),
-          ],
-          onChanged: (dynamic newValue) {
-            setState(() {
-              if (newValue == null) {
-                controller.clear();
-              } else {
-                controller.text = newValue.toString();
-              }
-            });
-          },
-          validator: (dynamic value) {
-            if (config.isRequired &&
-                (value == null || value.toString().isEmpty)) {
-              return '${config.label} é obrigatório';
-            }
-            return config.validator?.call(value?.toString());
-          },
         );
       },
     );
@@ -1045,9 +1169,11 @@ class _GenericMobileGridScreenState<T>
     try {
       final Map<String, dynamic> formData = {};
 
-      for (final config in widget.fieldConfigs.where((c) => c.isInForm)) {
+      for (final config in widget.fieldConfigs
+          .where((c) => c.isInForm && c.fieldType != FieldType.file)) {
         final controller = controllers[config.fieldName];
         if (controller != null && controller.text.isNotEmpty) {
+          final fieldValue = controller.text;
           // FORMATAÇÃO ESPECIAL PARA DATAS
           if (config.fieldType == FieldType.date) {
             // Converte de "MM/dd/yyyy" para "yyyy-MM-dd"
@@ -1058,8 +1184,18 @@ class _GenericMobileGridScreenState<T>
               formData[config.fieldName] = controller.text;
             }
           } else {
-            formData[config.fieldName] = controller.text;
+            _addToFormData(formData, config.fieldName, fieldValue);
           }
+        }
+      }
+
+      // Processa arquivos
+      final filesToUpload = <String, List<PlatformFile>>{};
+      for (final config
+          in widget.fieldConfigs.where((c) => c.fieldType == FieldType.file)) {
+        final files = _fileCache[config.fieldName];
+        if (files != null && files.isNotEmpty) {
+          filesToUpload[config.fieldName] = files;
         }
       }
 
@@ -1067,12 +1203,27 @@ class _GenericMobileGridScreenState<T>
           ? widget.createEndpoint
           : widget.updateEndpoint.replaceFirst(':id', _getItemId(item));
 
+      if (filesToUpload.isNotEmpty) {
+        // CORREÇÃO: Para criação (item == null), usa um ID temporário ou vazio
+        final itemId = item == null ? '0' : _getItemId(item);
+        final fileId =
+            await UploadFileCaller().uploadFiles(itemId, filesToUpload);
+        if (fileId > 0) {
+          formData['file'] = {'id': fileId};
+        }
+      }
+
       final NetworkResponse response = item == null
           ? await NetworkCaller().postRequest(endpoint, formData)
           : await NetworkCaller().putRequest(endpoint, formData);
 
       if (response.isSuccess) {
         Navigator.pop(context);
+        // Limpa o cache de arquivos após sucesso
+        for (final config in widget.fieldConfigs
+            .where((c) => c.fieldType == FieldType.file)) {
+          _fileCache.remove(config.fieldName);
+        }
         _showSnackBar(item == null
             ? 'Item adicionado com sucesso!'
             : 'Item atualizado com sucesso!');
@@ -1082,6 +1233,69 @@ class _GenericMobileGridScreenState<T>
       }
     } catch (e) {
       _showSnackBar('Erro: $e', isError: true);
+    }
+  }
+
+  void _addToFormData(
+      Map<String, dynamic> formData, String fieldName, dynamic value) {
+    if (fieldName.contains('.')) {
+      final parts = fieldName.split('.');
+      _buildNestedStructure(formData, parts, value);
+    } else {
+      formData[fieldName] = value;
+    }
+  }
+
+  void _buildNestedStructure(
+      Map<String, dynamic> map, List<String> parts, dynamic value) {
+    final currentPart = parts[0];
+
+    if (parts.length == 1) {
+      // Última parte - atribui o valor
+      map[currentPart] = value;
+    } else {
+      // Precisa criar estrutura aninhada
+      if (!map.containsKey(currentPart)) {
+        map[currentPart] = <String, dynamic>{};
+      }
+
+      // Garante que é um Map
+      var nextMap = map[currentPart];
+      if (nextMap is! Map) {
+        nextMap = <String, dynamic>{};
+        map[currentPart] = nextMap;
+      }
+
+      // Converte para Map<String, dynamic> se necessário
+      final nextMapString = (nextMap is Map<String, dynamic>)
+          ? nextMap
+          : Map<String, dynamic>.from(nextMap as Map);
+
+      map[currentPart] = nextMapString;
+
+      // Continua recursivamente
+      _buildNestedStructure(nextMapString, parts.sublist(1), value);
+    }
+  }
+
+  void _addNestedField(
+      Map<String, dynamic> map, List<String> parts, dynamic value) {
+    if (parts.isEmpty) return;
+
+    final currentPart = parts[0];
+
+    if (parts.length == 1) {
+      // Última parte, adiciona o valor
+      map[currentPart] = value;
+    } else {
+      // Ainda tem partes aninhadas
+      if (!map.containsKey(currentPart) || map[currentPart] is! Map) {
+        map[currentPart] = {};
+      }
+
+      // Chama recursivamente para o próximo nível
+      _addNestedField(
+          map[currentPart] as Map<String, dynamic>, parts.sublist(1), value);
     }
   }
 
@@ -1826,38 +2040,172 @@ class _GenericMobileGridScreenState<T>
     final colorScheme = Theme.of(context).colorScheme;
 
     return visibleConfigs.map((config) {
-      final displayValue =
-          _getNestedValue(itemMap, config.displayFieldName ?? config.fieldName)
-                  ?.toString() ??
-              '';
+      if (config.fieldType == FieldType.file) {
+        final fileData = _extractFileData(itemMap, config);
+        final int fileId = fileData['id'] ?? 0;
+        final String fileName = fileData['nome'] ?? fileData['fileName'] ?? '';
 
-      if (displayValue.isEmpty) return const SizedBox.shrink();
+        if (fileId == 0 || fileName.isEmpty) {
+          return const SizedBox.shrink();
+        }
 
-      return Padding(
-        padding: const EdgeInsets.only(bottom: 8),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              config.label,
-              style: textTheme.labelMedium?.copyWith(
-                fontWeight: FontWeight.w500,
-                color: colorScheme.onSurface.withOpacity(0.7),
+        return Padding(
+          padding: const EdgeInsets.only(bottom: 8),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                config.label,
+                style: textTheme.labelMedium?.copyWith(
+                  fontWeight: FontWeight.w500,
+                  color: colorScheme.onSurface.withOpacity(0.7),
+                ),
               ),
-            ),
-            const SizedBox(height: 2),
-            Text(
-              displayValue,
-              style: textTheme.bodyMedium?.copyWith(
-                color: colorScheme.onSurface,
+              const SizedBox(height: 2),
+              InkWell(
+                onTap: () => _downloadFile(fileId, fileName),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      Icons.attach_file,
+                      size: 16,
+                      color: GridColors.primary,
+                    ),
+                    const SizedBox(width: 4),
+                    Flexible(
+                      child: Text(
+                        fileName,
+                        style: TextStyle(
+                          color: GridColors.primary,
+                          decoration: TextDecoration.underline,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ],
+                ),
               ),
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-            ),
-          ],
-        ),
-      );
+            ],
+          ),
+        );
+      } else {
+        final displayValue = _getNestedValue(
+                    itemMap, config.displayFieldName ?? config.fieldName)
+                ?.toString() ??
+            '';
+
+        if (displayValue.isEmpty) return const SizedBox.shrink();
+
+        return Padding(
+          padding: const EdgeInsets.only(bottom: 8),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                config.label,
+                style: textTheme.labelMedium?.copyWith(
+                  fontWeight: FontWeight.w500,
+                  color: colorScheme.onSurface.withOpacity(0.7),
+                ),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                displayValue,
+                style: textTheme.bodyMedium?.copyWith(
+                  color: colorScheme.onSurface,
+                ),
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ],
+          ),
+        );
+      }
     }).toList();
+  }
+
+  Future<void> _downloadFile(int fileId, String fileName) async {
+    final response = await UploadFileCaller().downloadFile(fileId, fileName);
+
+    if (response == 200) {
+      _showSnackBar('Download realizado com sucesso');
+    } else {
+      _showSnackBar('Falha no download: ${response}', isError: true);
+    }
+  }
+
+  Map<String, dynamic> _extractFileData(
+    Map<String, dynamic> itemMap,
+    FieldConfig config,
+  ) {
+    try {
+      final fileData =
+          _getNestedValue(itemMap, config.fieldName.split('.')[0]) ?? {};
+
+      if (fileData is Map) {
+        return {
+          'id': _getNestedValue(fileData, 'id') ?? 0,
+          'nome': _getNestedValue(fileData, 'nome') ?? '',
+          'fileName': _getNestedValue(fileData, 'fileName') ?? '',
+          'fileType': _getNestedValue(fileData, 'fileType') ?? '',
+        };
+      }
+
+      return {
+        'id': _getObjectProperty(fileData, 'id') ?? 0,
+        'nome': _getObjectProperty(fileData, 'nome') ??
+            _getObjectProperty(fileData, 'fileName') ??
+            '',
+        'fileName': _getObjectProperty(fileData, 'fileName') ??
+            _getObjectProperty(fileData, 'nome') ??
+            '',
+        'fileType': _getObjectProperty(fileData, 'fileType') ?? '',
+      };
+    } catch (e) {
+      return {'id': 0, 'nome': '', 'fileName': '', 'fileType': ''};
+    }
+  }
+
+  dynamic _getObjectProperty(dynamic object, String propertyName) {
+    if (object == null) return null;
+
+    switch (propertyName.toLowerCase()) {
+      case 'id':
+        return object.id ??
+            object.ID ??
+            object.Id ??
+            object.fileId ??
+            object.fileID ??
+            0;
+      case 'nome':
+      case 'filename':
+      case 'name':
+        return object.nome ??
+            object.fileName ??
+            object.filename ??
+            object.name ??
+            '';
+      case 'filetype':
+      case 'type':
+        return object.fileType ?? object.type ?? object.contentType ?? '';
+      case 'tamanho':
+      case 'size':
+        return object.tamanho ?? object.size ?? object.fileSize ?? 0;
+      default:
+        try {
+          if (object.toJson != null) {
+            final jsonMap = object.toJson();
+            if (jsonMap is Map && jsonMap.containsKey(propertyName)) {
+              return jsonMap[propertyName];
+            }
+          }
+        } catch (e) {
+          // Ignora erro e retorna null
+        }
+        return null;
+    }
   }
 
   Widget _buildStatusBadge(Map<String, dynamic> itemMap) {

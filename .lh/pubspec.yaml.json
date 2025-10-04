@@ -3,7 +3,7 @@
     "activeCommit": 0,
     "commits": [
         {
-            "activePatchIndex": 34,
+            "activePatchIndex": 42,
             "patches": [
                 {
                     "date": 1707188005314,
@@ -144,6 +144,38 @@
                 {
                     "date": 1758829617421,
                     "content": "Index: \n===================================================================\n--- \n+++ \n@@ -60,8 +60,9 @@\n   html_unescape: any\r\n   dio: ^5.3.2 # Para enviar arquivos (opcional, mas recomendado)\r\n   web_socket_channel: ^2.2.0\r\n   path: ^1.8.2\r\n+  time_machine: ^0.9.0 # Check for the latest version on pub.dev\r\n dev_dependencies:\r\n   flutter_test:\r\n     sdk: flutter\r\n \r\n"
+                },
+                {
+                    "date": 1759612426455,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -53,9 +53,10 @@\n   path_provider: ^2.0.11\r\n   flutter_slidable: ^0.6.0\r\n   open_filex: any\r\n   mime: any\r\n-  file_picker: ^5.3.3 # Para selecionar arquivos\r\n+  file_picker: ^5.6.1 # Para selecionar arquivos\r\n+  file_saver: ^0.1.1\r\n   html_editor_enhanced: any\r\n   flutter_html: any\r\n   html_unescape: any\r\n   dio: ^5.3.2 # Para enviar arquivos (opcional, mas recomendado)\r\n"
+                },
+                {
+                    "date": 1759612947722,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -53,9 +53,9 @@\n   path_provider: ^2.0.11\r\n   flutter_slidable: ^0.6.0\r\n   open_filex: any\r\n   mime: any\r\n-  file_picker: ^5.6.1 # Para selecionar arquivos\r\n+  file_picker: ^5.5.0\r\n   file_saver: ^0.1.1\r\n   html_editor_enhanced: any\r\n   flutter_html: any\r\n   html_unescape: any\r\n"
+                },
+                {
+                    "date": 1759615360637,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -53,9 +53,9 @@\n   path_provider: ^2.0.11\r\n   flutter_slidable: ^0.6.0\r\n   open_filex: any\r\n   mime: any\r\n-  file_picker: ^5.5.0\r\n+  file_picker: ^5.3.3 # Para selecionar arquivos\r\n   file_saver: ^0.1.1\r\n   html_editor_enhanced: any\r\n   flutter_html: any\r\n   html_unescape: any\r\n"
+                },
+                {
+                    "date": 1759615468560,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -54,9 +54,9 @@\n   flutter_slidable: ^0.6.0\r\n   open_filex: any\r\n   mime: any\r\n   file_picker: ^5.3.3 # Para selecionar arquivos\r\n-  file_saver: ^0.1.1\r\n+  file_saver: ^3.0.1  # Versão mais atualizada\r\n   html_editor_enhanced: any\r\n   flutter_html: any\r\n   html_unescape: any\r\n   dio: ^5.3.2 # Para enviar arquivos (opcional, mas recomendado)\r\n"
+                },
+                {
+                    "date": 1759615524767,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -54,9 +54,9 @@\n   flutter_slidable: ^0.6.0\r\n   open_filex: any\r\n   mime: any\r\n   file_picker: ^5.3.3 # Para selecionar arquivos\r\n-  file_saver: ^3.0.1  # Versão mais atualizada\r\n+  file_saver: ^0.1.1  # Esta é a versão mais recente disponível\r\n   html_editor_enhanced: any\r\n   flutter_html: any\r\n   html_unescape: any\r\n   dio: ^5.3.2 # Para enviar arquivos (opcional, mas recomendado)\r\n"
+                },
+                {
+                    "date": 1759615668120,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -54,9 +54,9 @@\n   flutter_slidable: ^0.6.0\r\n   open_filex: any\r\n   mime: any\r\n   file_picker: ^5.3.3 # Para selecionar arquivos\r\n-  file_saver: ^0.1.1  # Esta é a versão mais recente disponível\r\n+  share_plus: ^7.0.1\r\n   html_editor_enhanced: any\r\n   flutter_html: any\r\n   html_unescape: any\r\n   dio: ^5.3.2 # Para enviar arquivos (opcional, mas recomendado)\r\n"
+                },
+                {
+                    "date": 1759616142143,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -41,9 +41,9 @@\n   pin_code_fields: ^8.0.1\r\n   http: ^1.1.0\r\n   shared_preferences: ^2.2.0\r\n   image_picker: ^1.0.1\r\n-  font_awesome_flutter: ^10.5.0\r\n+  font_awesome_flutter: ^10.4.0\r\n   fluttertoast: ^8.2.2\r\n   intl: ^0.18.1\r\n   simple_gesture_detector: ^0.2.0\r\n   modal_bottom_sheet: ^3.0.0\r\n"
+                },
+                {
+                    "date": 1759616738944,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -41,9 +41,9 @@\n   pin_code_fields: ^8.0.1\r\n   http: ^1.1.0\r\n   shared_preferences: ^2.2.0\r\n   image_picker: ^1.0.1\r\n-  font_awesome_flutter: ^10.4.0\r\n+  #font_awesome_flutter: ^10.4.0\r\n   fluttertoast: ^8.2.2\r\n   intl: ^0.18.1\r\n   simple_gesture_detector: ^0.2.0\r\n   modal_bottom_sheet: ^3.0.0\r\n"
                 }
             ],
             "date": 1707188005314,
