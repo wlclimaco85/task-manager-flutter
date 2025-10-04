@@ -3,7 +3,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:task_manager_flutter/data/models/network_response.dart';
 import 'package:task_manager_flutter/data/services/network_caller.dart';
 import 'package:task_manager_flutter/ui/widgets/user_banners.dart';
-
+import 'package:intl/intl.dart';
 // ==============================================
 // MOBILE GRID SCREEN - MATERIAL DESIGN 3 COMPLETO
 // ==============================================
@@ -96,6 +96,9 @@ class FieldConfig {
   final dynamic dropdownSelectedValue;
   final Map<String, dynamic>? fieldSpecificConfig;
   final bool showInCard;
+  final DateTime? firstDate;
+  final DateTime? lastDate;
+  final String dateFormat;
 
   const FieldConfig({
     required this.label,
@@ -122,6 +125,9 @@ class FieldConfig {
     this.dropdownSelectedValue,
     this.fieldSpecificConfig,
     this.showInCard = true,
+    this.firstDate,
+    this.lastDate,
+    this.dateFormat = 'dd/MM/yyyy',
   });
 }
 
@@ -606,6 +612,8 @@ class _GenericMobileGridScreenState<T>
             _buildBooleanField(config, controller)
           else if (config.fieldType == FieldType.multiline)
             _buildMultilineField(config, controller)
+          else if (config.fieldType == FieldType.date) // NOVO: Campo de data
+            _buildDateField(config, controller)
           else
             _buildTextField(config, controller),
         ],
@@ -613,9 +621,164 @@ class _GenericMobileGridScreenState<T>
     );
   }
 
+  Widget _buildDateField(FieldConfig config, TextEditingController controller) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+
+    return TextFormField(
+      controller: controller,
+      readOnly: true,
+      enabled: config.enabled, // CORREÇÃO: Propriedade enabled funcionando
+      decoration: InputDecoration(
+        hintText: 'Selecione a data',
+        suffixIcon: Icon(
+          Icons.calendar_today,
+          color: config.enabled
+              ? colorScheme.primary
+              : colorScheme.onSurface.withOpacity(0.38),
+        ),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(8),
+          borderSide: BorderSide(color: colorScheme.outline),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(8),
+          borderSide: BorderSide(color: colorScheme.primary, width: 2),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(8),
+          borderSide: BorderSide(color: colorScheme.outline),
+        ),
+        disabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(8),
+          borderSide:
+              BorderSide(color: colorScheme.onSurface.withOpacity(0.38)),
+        ),
+        filled: !config.enabled,
+        fillColor: !config.enabled
+            ? colorScheme.onSurface.withOpacity(0.04)
+            : Colors.transparent,
+      ),
+      style: TextStyle(
+        color: config.enabled
+            ? textTheme.bodyMedium?.color
+            : colorScheme.onSurface.withOpacity(0.38),
+      ),
+      onTap: config.enabled ? () => _selectDate(config, controller) : null,
+      validator: config.validator,
+    );
+  }
+
+  Future<void> _selectDate(
+      FieldConfig config, TextEditingController controller) async {
+    final DateTime? picked = await showDatePicker(
+      context: context,
+      initialDate: _parseDate(controller.text) ?? DateTime.now(),
+      firstDate: config.firstDate ?? DateTime(1900),
+      lastDate: config.lastDate ?? DateTime(2100),
+      builder: (BuildContext context, Widget? child) {
+        return Theme(
+          data: _buildDatePickerTheme(),
+          child: child!,
+        );
+      },
+      locale: const Locale('pt', 'BR'), // Português Brasil
+    );
+
+    if (picked != null) {
+      final formattedDate = _formatDate(picked, config.dateFormat);
+      controller.text = formattedDate;
+    }
+  }
+
+  ThemeData _buildDatePickerTheme() {
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+
+    return ThemeData(
+      colorScheme: ColorScheme.light(
+        primary: GridColors.primary, // Sua cor primária
+        onPrimary: GridColors.textPrimary, // Texto sobre a cor primária
+        surface: GridColors.card, // Cor de fundo
+        onSurface: GridColors.textSecondary, // Texto principal
+        background: GridColors.background, // Cor de fundo alternativa
+      ),
+      dialogBackgroundColor: GridColors.dialogBackground,
+      textTheme: textTheme.copyWith(
+        bodyLarge: TextStyle(
+          color: GridColors.textSecondary,
+          fontSize: 16,
+        ),
+        bodyMedium: TextStyle(
+          color: GridColors.textSecondary,
+          fontSize: 14,
+        ),
+        labelLarge: TextStyle(
+          color: GridColors.primary,
+          fontWeight: FontWeight.bold,
+          fontSize: 16,
+        ),
+        titleMedium: TextStyle(
+          color: GridColors.textSecondary,
+          fontWeight: FontWeight.bold,
+          fontSize: 18,
+        ),
+      ),
+      inputDecorationTheme: InputDecorationTheme(
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(8),
+          borderSide: BorderSide(color: GridColors.inputBorder),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(8),
+          borderSide: BorderSide(color: GridColors.primary, width: 2),
+        ),
+      ),
+    );
+  }
+
+  DateTime? _parseDate(String dateString) {
+    if (dateString.isEmpty) return null;
+
+    try {
+      // Tenta vários formatos de data comuns
+      final formats = [
+        'dd/MM/yyyy',
+        'dd-MM-yyyy',
+        'yyyy-MM-dd',
+        'dd/MM/yy',
+      ];
+
+      for (final format in formats) {
+        try {
+          final inputFormat = DateFormat(format);
+          return inputFormat.parse(dateString);
+        } catch (e) {
+          continue;
+        }
+      }
+
+      // Se nenhum formato funcionar, tenta parse padrão
+      return DateTime.tryParse(dateString);
+    } catch (e) {
+      return null;
+    }
+  }
+
+  String _formatDate(DateTime date, String format) {
+    try {
+      final dateFormat = DateFormat(format);
+      return dateFormat.format(date);
+    } catch (e) {
+      // Fallback para formato padrão
+      return DateFormat('dd/MM/yyyy').format(date);
+    }
+  }
+
   Widget _buildTextField(FieldConfig config, TextEditingController controller) {
     return TextField(
       controller: controller,
+      enabled: config.enabled, // CORREÇÃO ADICIONADA
       decoration: InputDecoration(
         hintText: 'Digite ${config.label.toLowerCase()}',
         border: OutlineInputBorder(
@@ -636,6 +799,7 @@ class _GenericMobileGridScreenState<T>
   Widget _buildMultilineField(
       FieldConfig config, TextEditingController controller) {
     return TextField(
+      enabled: config.enabled, // CORREÇÃO ADICIONADA
       controller: controller,
       decoration: InputDecoration(
         hintText: 'Digite ${config.label.toLowerCase()}',
@@ -709,13 +873,37 @@ class _GenericMobileGridScreenState<T>
 
         dynamic currentValue = _getCurrentValue(config, controller);
 
+        // Adicione debug para verificar os valores
+        print('dropdownSelectedValue: ${config.dropdownSelectedValue}');
+        print('currentValue inicial: $currentValue');
+        print('controller.text: ${controller.text}');
+
         if (controller.text.isEmpty && config.dropdownSelectedValue != null) {
-          currentValue = config.dropdownSelectedValue;
+          // Force o mesmo tipo que será usado nas opções
+          currentValue = config.dropdownSelectedValue is int
+              ? config.dropdownSelectedValue
+              : int.tryParse(config.dropdownSelectedValue.toString());
         }
 
         bool valueExists = uniqueOptionsList.any((option) {
           try {
-            return option[config.dropdownValueField] == currentValue;
+            final optionValue = option[config.dropdownValueField];
+            final optionInt = int.tryParse(optionValue.toString());
+            final currentInt = currentValue is int
+                ? currentValue
+                : int.tryParse(currentValue.toString());
+
+            final exists = optionInt != null &&
+                currentInt != null &&
+                optionInt == currentInt;
+
+            if (exists) {
+              print('COMPARAÇÃO BEM SUCEDIDA:');
+              print('  optionValue: $optionValue -> $optionInt (int)');
+              print('  currentValue: $currentValue -> $currentInt (int)');
+            }
+
+            return exists;
           } catch (e) {
             return false;
           }
@@ -759,7 +947,9 @@ class _GenericMobileGridScreenState<T>
                         'Sem label';
 
                 return DropdownMenuItem<dynamic>(
-                  value: optionValue,
+                  value: optionValue is int
+                      ? optionValue
+                      : int.tryParse(optionValue.toString()),
                   child: Text(optionLabel),
                 );
               } catch (e) {
@@ -828,6 +1018,26 @@ class _GenericMobileGridScreenState<T>
     }
   }
 
+  String? _parseDates(String dateString) {
+    try {
+      // Tenta parsear no formato "MM/dd/yyyy"
+      final parts = dateString.split('/');
+      if (parts.length == 3) {
+        final month = parts[0].padLeft(2, '0');
+        final day = parts[1].padLeft(2, '0');
+        final year = parts[2];
+
+        // Retorna no formato ISO "yyyy-MM-dd"
+        return '$year-$month-$day';
+      }
+
+      // Se não conseguir parsear, retorna null para usar o valor original
+      return null;
+    } catch (e) {
+      return null;
+    }
+  }
+
   Future<void> _saveForm(
       T? item,
       Map<String, TextEditingController> controllers,
@@ -838,7 +1048,18 @@ class _GenericMobileGridScreenState<T>
       for (final config in widget.fieldConfigs.where((c) => c.isInForm)) {
         final controller = controllers[config.fieldName];
         if (controller != null && controller.text.isNotEmpty) {
-          formData[config.fieldName] = controller.text;
+          // FORMATAÇÃO ESPECIAL PARA DATAS
+          if (config.fieldType == FieldType.date) {
+            // Converte de "MM/dd/yyyy" para "yyyy-MM-dd"
+            final dateValue = _parseDates(controller.text);
+            if (dateValue != null) {
+              formData[config.fieldName] = dateValue;
+            } else {
+              formData[config.fieldName] = controller.text;
+            }
+          } else {
+            formData[config.fieldName] = controller.text;
+          }
         }
       }
 
@@ -1372,7 +1593,10 @@ class _GenericMobileGridScreenState<T>
     return Scaffold(
       appBar: widget.useUserBannerAppBar
           ? PreferredSize(
-              preferredSize: const Size.fromHeight(94),
+              // preferredSize: const Size.fromHeight(94),
+              preferredSize: Size.fromHeight(
+                widget.useUserBannerAppBar == true ? 94 : kToolbarHeight,
+              ),
               child: UserBannerAppBar(
                 screenTitle: widget.title,
                 onTapped: widget.onUserBannerTapped,
@@ -1382,7 +1606,7 @@ class _GenericMobileGridScreenState<T>
                 // NOVOS PARÂMETROS:
                 onFilterToggle: () =>
                     setState(() => filtrosAbertos = !filtrosAbertos),
-                showFilterButton: widget.useUserBannerAppBar,
+                showFilterButton: widget.useUserBannerAppBar ?? true,
                 // Adicione também se precisar:
                 // onFieldSettings: _showFieldSettings,
               ),

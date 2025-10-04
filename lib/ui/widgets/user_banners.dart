@@ -6,6 +6,7 @@ import 'package:task_manager_flutter/data/models/alert_model.dart';
 import 'package:task_manager_flutter/data/models/auth_utility.dart';
 import 'package:task_manager_flutter/data/services/alert_caller.dart';
 import 'package:task_manager_flutter/ui/screens/auth_screens/login_screen.dart';
+import 'package:task_manager_flutter/ui/screens/user_edit_screen.dart';
 
 // Paleta da logo
 class GridColors {
@@ -17,6 +18,8 @@ class GridColors {
   static const Color divider = Color(0xFFBDBDBD);
   static const Color card = Color(0xFFFFFFFF);
   static const Color filterBackground = Color(0xFFEFEFEF);
+  static const Color warning = Color(0xFFFFA000);
+  static const Color success = Color(0xFF2E7D32);
 }
 
 // AppBar customizado (apenas cabeçalho)
@@ -244,50 +247,156 @@ class _UserBannerAppBarState extends State<UserBannerAppBar> {
 
     return AppBar(
       backgroundColor: GridColors.primary,
-      title: Row(
-        children: [
-          Image.asset('assets/images/iconApp.png', width: 36, height: 36,
+      title: Container(
+        constraints: BoxConstraints(
+          maxWidth: MediaQuery.of(context).size.width - 120,
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Image.asset(
+              'assets/images/iconApp.png',
+              width: 36,
+              height: 36,
               errorBuilder: (_, __, ___) {
-            return const Icon(Icons.apps, color: GridColors.textPrimary);
-          }),
-          const SizedBox(width: 12),
-          if (isLoggedIn) ...[
-            CircleAvatar(
-              radius: 18,
-              backgroundColor: Colors.white,
-              child: _getUserAvatar().isNotEmpty
-                  ? ClipOval(
-                      child: Image.memory(_getUserAvatar(),
-                          width: 36, height: 36, fit: BoxFit.cover))
-                  : const Icon(Icons.person, color: GridColors.primary),
+                return const Icon(Icons.apps, color: GridColors.textPrimary);
+              },
             ),
-            const SizedBox(width: 10),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  AuthUtility.userInfo?.data?.codDadosPessoal?.nome ??
-                      "Usuário",
+            const SizedBox(width: 12),
+            if (isLoggedIn) ...[
+              Flexible(
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    // CORREÇÃO: GestureDetector apenas no CircleAvatar
+                    GestureDetector(
+                      onTap: () {
+                        // Prepara os dados atuais do usuário
+                        final userData = {
+                          'id': AuthUtility.userInfo?.data?.codDadosPessoal?.id,
+                          'nome':
+                              AuthUtility.userInfo?.data?.codDadosPessoal?.nome,
+                          'cpf':
+                              AuthUtility.userInfo?.data?.codDadosPessoal?.cpf,
+                          'telefone1': AuthUtility
+                              .userInfo?.data?.codDadosPessoal?.telefone1,
+                          'logradouro': AuthUtility
+                              .userInfo?.data?.codDadosPessoal?.logradouro,
+                          'numero': AuthUtility
+                              .userInfo?.data?.codDadosPessoal?.numero,
+                          'cep':
+                              AuthUtility.userInfo?.data?.codDadosPessoal?.cep,
+                          'bairro': AuthUtility
+                              .userInfo?.data?.codDadosPessoal?.bairro,
+                          'cidade': AuthUtility
+                              .userInfo?.data?.codDadosPessoal?.cidade,
+                          'estado': AuthUtility
+                              .userInfo?.data?.codDadosPessoal?.estado,
+                          'pais':
+                              AuthUtility.userInfo?.data?.codDadosPessoal?.pais,
+                          'email': AuthUtility
+                              .userInfo?.data?.codDadosPessoal?.email,
+                          'photo': AuthUtility
+                              .userInfo?.data?.codDadosPessoal?.photo,
+                          'incrMun': AuthUtility
+                              .userInfo?.data?.codDadosPessoal?.incrMun,
+                          'razaoSocial': AuthUtility
+                              .userInfo?.data?.codDadosPessoal?.razaoSocial,
+                        };
+
+                        // Navega para a tela de edição
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) =>
+                                UserEditScreen(initialData: userData),
+                          ),
+                        ).then((updatedData) {
+                          if (updatedData != null) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: const Text(
+                                    'Perfil atualizado com sucesso!'),
+                                backgroundColor: GridColors.success,
+                              ),
+                            );
+                          }
+                        });
+                      },
+                      child: CircleAvatar(
+                        radius: 16,
+                        backgroundColor: Colors.white,
+                        child: _getUserAvatar().isNotEmpty
+                            ? ClipOval(
+                                child: Image.memory(
+                                  _getUserAvatar(),
+                                  width: 32,
+                                  height: 32,
+                                  fit: BoxFit.cover,
+                                  // CORREÇÃO: Adicionar errorBuilder para evitar NaN
+                                  errorBuilder: (context, error, stackTrace) {
+                                    return const Icon(
+                                      Icons.person,
+                                      color: GridColors.primary,
+                                      size: 16,
+                                    );
+                                  },
+                                ),
+                              )
+                            : const Icon(
+                                Icons.person,
+                                color: GridColors.primary,
+                                size: 16,
+                              ),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Flexible(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            AuthUtility.userInfo?.data?.codDadosPessoal?.nome ??
+                                "Usuário",
+                            style: const TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.bold,
+                              color: GridColors.textPrimary,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            maxLines: 1,
+                          ),
+                          Text(
+                            _getCompanyName(),
+                            style: const TextStyle(
+                              fontSize: 10,
+                              color: GridColors.textPrimary,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            maxLines: 1,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              )
+            ] else ...[
+              Flexible(
+                child: Text(
+                  widget.screenTitle ?? "Comunicados",
                   style: const TextStyle(
-                    fontSize: 14,
+                    color: GridColors.textPrimary,
                     fontWeight: FontWeight.bold,
-                    color: GridColors.textPrimary,
+                    overflow: TextOverflow.ellipsis,
                   ),
+                  maxLines: 1,
                 ),
-                Text(
-                  _getCompanyName(),
-                  style: const TextStyle(
-                      fontSize: 12, color: GridColors.textPrimary),
-                ),
-              ],
-            )
-          ] else ...[
-            Text(widget.screenTitle ?? "Comunicados",
-                style: const TextStyle(
-                    color: GridColors.textPrimary,
-                    fontWeight: FontWeight.bold)),
+              ),
+            ],
           ],
-        ],
+        ),
       ),
       actions: [
         if (isLoggedIn) ...[
@@ -295,28 +404,28 @@ class _UserBannerAppBarState extends State<UserBannerAppBar> {
             alignment: Alignment.center,
             children: [
               IconButton(
-                iconSize: 22,
+                iconSize: 20,
                 icon: const Icon(Icons.notifications,
                     color: GridColors.textPrimary),
                 onPressed: () => showNotificationDropdown(context),
               ),
               if (unreadAlerts > 0)
                 Positioned(
-                  right: 8,
-                  top: 8,
+                  right: 6,
+                  top: 6,
                   child: Container(
-                    padding: const EdgeInsets.all(2),
+                    padding: const EdgeInsets.all(1),
                     decoration: const BoxDecoration(
                       color: Colors.red,
                       shape: BoxShape.circle,
                     ),
                     constraints:
-                        const BoxConstraints(minWidth: 18, minHeight: 18),
+                        const BoxConstraints(minWidth: 14, minHeight: 14),
                     child: Text(
                       unreadAlerts > 9 ? '9+' : '$unreadAlerts',
                       style: const TextStyle(
                         color: GridColors.textPrimary,
-                        fontSize: 10,
+                        fontSize: 8,
                         fontWeight: FontWeight.bold,
                       ),
                       textAlign: TextAlign.center,
@@ -326,14 +435,13 @@ class _UserBannerAppBarState extends State<UserBannerAppBar> {
             ],
           ),
           IconButton(
-            iconSize: 22,
+            iconSize: 20,
             icon: const Icon(Icons.logout, color: GridColors.textPrimary),
             onPressed: _handleLogout,
             tooltip: 'Sair',
           ),
         ]
       ],
-      // CORREÇÃO: Só exibe o FilterActionBar se showFilterButton for true
       bottom: (widget.showFilterButton == true)
           ? PreferredSize(
               preferredSize: const Size.fromHeight(52),
@@ -413,29 +521,6 @@ class FilterActionBar extends StatelessWidget {
             tooltip: 'Mostrar/ocultar filtros',
           ),
         ],
-      ),
-    );
-  }
-}
-
-// Exemplo de uso no Scaffold
-class ExampleScreen extends StatelessWidget {
-  const ExampleScreen({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: const UserBannerAppBar(screenTitle: "Comunicados"),
-      body: Container(
-        color: Colors.grey[100],
-        child: const Center(
-          child: Text("Conteúdo da tela aqui"),
-        ),
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {},
-        backgroundColor: GridColors.primary,
-        child: const Icon(Icons.add),
       ),
     );
   }

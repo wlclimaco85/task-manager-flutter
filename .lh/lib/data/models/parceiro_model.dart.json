@@ -3,7 +3,7 @@
     "activeCommit": 0,
     "commits": [
         {
-            "activePatchIndex": 10,
+            "activePatchIndex": 11,
             "patches": [
                 {
                     "date": 1734546612749,
@@ -48,6 +48,10 @@
                 {
                     "date": 1759325833408,
                     "content": "Index: \n===================================================================\n--- \n+++ \n@@ -1,14 +1,13 @@\n // Classe Endereco\r\n import 'dart:convert';\r\n import 'package:flutter/material.dart';\r\n-import 'package:task_manager_flutter/ui/widgets/generic_grid_screen.dart';\r\n+import 'package:task_manager_flutter/data/customization/generic_grid_card.dart';\r\n import 'package:task_manager_flutter/data/models/empresa_model.dart';\r\n import 'package:task_manager_flutter/data/utils/api_links.dart';\r\n import 'package:task_manager_flutter/data/models/network_response.dart';\r\n import 'package:task_manager_flutter/data/services/network_caller.dart';\r\n import 'package:task_manager_flutter/data/models/regime_tributario_model.dart';\r\n-import 'package:task_manager_flutter/ui/details/parceiro_detail_screen.dart';\r\n \r\n class Endereco {\r\n   int? id;\r\n   String? rua;\r\n@@ -193,16 +192,10 @@\n     }\r\n     return [];\r\n   }\r\n \r\n-  // Adicione este método para suporte à navegação de detalhes\r\n-  static Widget detailScreenBuilder(\r\n-    Parceiro item,\r\n-    SecurityCheck hasPermission,\r\n-  ) {\r\n-    return ParceiroDetailScreen(item: item, hasPermission: hasPermission);\r\n-  }\r\n \r\n+\r\n   static List<FieldConfig> fieldConfigs = [\r\n     FieldConfig(\r\n       label: \"Nome\",\r\n       fieldName: \"nome\",\r\n"
+                },
+                {
+                    "date": 1759533596134,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -218,64 +218,32 @@\n       isVisibleByDefault: true,\r\n       isFixed: true,\r\n     ),\r\n     FieldConfig(\r\n-      label: \"Telefone 1\",\r\n+      label: \"Telefone\",\r\n       fieldName: \"telefone1\",\r\n       icon: Icons.phone,\r\n       isInForm: true,\r\n       isVisibleByDefault: true,\r\n       isFixed: true,\r\n     ),\r\n     FieldConfig(\r\n-      label: \"Telefone 2\",\r\n-      fieldName: \"telefone2\",\r\n-      icon: Icons.phone_android,\r\n-      isInForm: true,\r\n-      isVisibleByDefault: false,\r\n-      isFixed: false,\r\n-    ),\r\n-    FieldConfig(\r\n       label: \"Razão Social\",\r\n       fieldName: \"razaoSocial\",\r\n       icon: Icons.apartment,\r\n       isInForm: true,\r\n       isVisibleByDefault: false,\r\n       isFixed: false,\r\n     ),\r\n     FieldConfig(\r\n-      label: \"Código Produtor\",\r\n-      fieldName: \"codProdutor\",\r\n-      icon: Icons.qr_code,\r\n-      isInForm: true,\r\n-      isVisibleByDefault: false,\r\n-      isFixed: false,\r\n-    ),\r\n-    FieldConfig(\r\n-      label: \"Cód. Personal\",\r\n-      fieldName: \"codPersonal\",\r\n-      icon: Icons.confirmation_number,\r\n-      isInForm: true,\r\n-      isVisibleByDefault: false,\r\n-      isFixed: false,\r\n-    ),\r\n-    FieldConfig(\r\n       label: \"Inscrição Municipal\",\r\n       fieldName: \"incrMun\",\r\n       icon: Icons.assignment,\r\n       isInForm: true,\r\n       isVisibleByDefault: false,\r\n       isFixed: false,\r\n     ),\r\n     FieldConfig(\r\n-      label: \"Status\",\r\n-      fieldName: \"status\",\r\n-      icon: Icons.toggle_on,\r\n-      isInForm: true,\r\n-      isVisibleByDefault: false,\r\n-      isFixed: false,\r\n-    ),\r\n-    FieldConfig(\r\n       label: \"Valor Mensal\",\r\n       fieldName: \"valorMensal\",\r\n       icon: Icons.attach_money,\r\n       isInForm: true,\r\n"
                 }
             ],
             "date": 1734546612749,

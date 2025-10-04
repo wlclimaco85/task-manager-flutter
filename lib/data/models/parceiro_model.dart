@@ -7,6 +7,7 @@ import 'package:task_manager_flutter/data/utils/api_links.dart';
 import 'package:task_manager_flutter/data/models/network_response.dart';
 import 'package:task_manager_flutter/data/services/network_caller.dart';
 import 'package:task_manager_flutter/data/models/regime_tributario_model.dart';
+import 'package:task_manager_flutter/data/models/auth_utility.dart';
 
 class Endereco {
   int? id;
@@ -191,8 +192,36 @@ class Parceiro {
     return [];
   }
 
+  static dynamic pegarEmpresaLogada() {
+    final user = AuthUtility.userInfo?.login;
+    final empresaId = user?.empresa?.id;
+
+    // Debug para verificar o que está retornando
+    print('Usuário: ${AuthUtility.userInfo}');
+    print('Empresa ID: $empresaId');
+
+    // Se 0 não for um valor válido, retorne null
+    return (empresaId != null && empresaId != 0) ? empresaId : null;
+  }
+
+  static Future<List<Map<String, dynamic>>> _loadEmpresas() async {
+    final NetworkResponse response = await NetworkCaller().getRequest(
+      ApiLinks.allEmpresas,
+    );
+
+    if (response.isSuccess && response.body != null) {
+      final List<dynamic> data = response.body!['data']['dados'] ?? [];
+      return data
+          .map(
+            (item) => {'value': item['id'].toString(), 'label': item['nome']},
+          )
+          .toList();
+    }
+    return [];
+  }
+
   static List<FieldConfig> fieldConfigs = [
-    FieldConfig(
+    const FieldConfig(
       label: "Nome",
       fieldName: "nome",
       icon: Icons.person,
@@ -200,81 +229,50 @@ class Parceiro {
       isFilterable: true,
       isVisibleByDefault: true,
       isFixed: true,
+      fieldType: FieldType.text,
     ),
-    FieldConfig(
-      label: "CPF",
-      fieldName: "cpf",
-      icon: Icons.badge,
-      isInForm: true,
-      isFilterable: true,
-      isVisibleByDefault: true,
-      isFixed: true,
-    ),
-    FieldConfig(
-      label: "Email",
-      fieldName: "email",
-      icon: Icons.email,
-      isInForm: true,
-      isVisibleByDefault: true,
-      isFixed: true,
-    ),
-    FieldConfig(
-      label: "Telefone 1",
-      fieldName: "telefone1",
-      icon: Icons.phone,
-      isInForm: true,
-      isVisibleByDefault: true,
-      isFixed: true,
-    ),
-    FieldConfig(
-      label: "Telefone 2",
-      fieldName: "telefone2",
-      icon: Icons.phone_android,
-      isInForm: true,
-      isVisibleByDefault: false,
-      isFixed: false,
-    ),
-    FieldConfig(
-      label: "Razão Social",
-      fieldName: "razaoSocial",
-      icon: Icons.apartment,
-      isInForm: true,
-      isVisibleByDefault: false,
-      isFixed: false,
-    ),
-    FieldConfig(
-      label: "Código Produtor",
-      fieldName: "codProdutor",
-      icon: Icons.qr_code,
-      isInForm: true,
-      isVisibleByDefault: false,
-      isFixed: false,
-    ),
-    FieldConfig(
-      label: "Cód. Personal",
-      fieldName: "codPersonal",
-      icon: Icons.confirmation_number,
-      isInForm: true,
-      isVisibleByDefault: false,
-      isFixed: false,
-    ),
-    FieldConfig(
-      label: "Inscrição Municipal",
-      fieldName: "incrMun",
-      icon: Icons.assignment,
-      isInForm: true,
-      isVisibleByDefault: false,
-      isFixed: false,
-    ),
-    FieldConfig(
-      label: "Status",
-      fieldName: "status",
-      icon: Icons.toggle_on,
-      isInForm: true,
-      isVisibleByDefault: false,
-      isFixed: false,
-    ),
-    FieldConfig(
+    const FieldConfig(
+        label: "CPF",
+        fieldName: "cpf",
+        icon: Icons.badge,
+        isInForm: true,
+        isFilterable: true,
+        isVisibleByDefault: true,
+        isFixed: true,
+        fieldType: FieldType.cnpj),
+    const FieldConfig(
+        label: "Email",
+        fieldName: "email",
+        icon: Icons.email,
+        isInForm: true,
+        isVisibleByDefault: true,
+        isFixed: true,
+        fieldType: FieldType.email),
+    const FieldConfig(
+        label: "Telefone",
+        fieldName: "telefone1",
+        icon: Icons.phone,
+        isInForm: true,
+        isVisibleByDefault: true,
+        isFixed: true,
+        fieldType: FieldType.phone),
+    const FieldConfig(
+        label: "Razão Social",
+        fieldName: "razaoSocial",
+        icon: Icons.apartment,
+        isInForm: true,
+        isVisibleByDefault: false,
+        isFixed: false,
+        fieldType: FieldType.text),
+    const FieldConfig(
+        label: "Inscrição Municipal",
+        fieldName: "incrMun",
+        icon: Icons.assignment,
+        isInForm: true,
+        isVisibleByDefault: false,
+        isFixed: false,
+        fieldType: FieldType.number),
+    const FieldConfig(
       label: "Valor Mensal",
       fieldName: "valorMensal",
       icon: Icons.attach_money,
@@ -283,19 +281,10 @@ class Parceiro {
       isVisibleByDefault: false,
       isFixed: false,
     ),
-    FieldConfig(
+    const FieldConfig(
       label: "Observação",
       fieldName: "observacao",
       icon: Icons.notes,
-      isInForm: true,
-      isVisibleByDefault: false,
-      isFixed: false,
-    ),
-    FieldConfig(
-      label: "Empresa",
-      fieldName: "empresa",
-      displayFieldName: "empresa.nome",
-      icon: Icons.business,
       isInForm: true,
       isVisibleByDefault: false,
       isFixed: false,
@@ -311,11 +300,28 @@ class Parceiro {
       dropdownFutureBuilder: () async {
         return await loadCategorias();
       },
-      dropdownValueField: 'id',
-      dropdownDisplayField: 'codigo',
+      dropdownValueField: 'value',
+      dropdownDisplayField: 'label',
       isRequired: true,
       isVisibleByDefault: true,
     ),
+    FieldConfig(
+        label: "Empresa",
+        fieldName: "empresa",
+        displayFieldName: "empresa.nome",
+        icon: Icons.business,
+        isInForm: true,
+        isFilterable: true,
+        fieldType: FieldType.dropdown,
+        dropdownFutureBuilder: () async {
+          return await _loadEmpresas();
+        },
+        dropdownValueField: 'value',
+        dropdownDisplayField: 'label',
+        isRequired: false,
+        isVisibleByDefault: true,
+        enabled: true,
+        dropdownSelectedValue: pegarEmpresaLogada()),
   ];
 }
 

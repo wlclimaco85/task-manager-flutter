@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:task_manager_flutter/data/services/formaPagamento_caller.dart';
+import 'package:task_manager_flutter/data/utils/utils.dart';
 import 'package:task_manager_flutter/data/services/parceiro_caller.dart';
-
+import 'package:task_manager_flutter/data/services/formaPagamento_caller.dart';
 import '../customization/generic_grid_card.dart';
 import 'audit_model.dart';
 import 'empresa_model.dart';
@@ -137,21 +137,22 @@ class ContaPagar {
 
   static List<FieldConfig> fieldConfigs = [
     FieldConfig(
-      label: "Fornecedor",
-      fieldName: "parceiro.id",
-      displayFieldName: "parceiro.nome",
-      icon: Icons.business,
-      isInForm: true,
-      isFilterable: true,
-      fieldType: FieldType.dropdown,
-      dropdownFutureBuilder: () async =>
-          await ParceiroCaller().fetchParceiroDropdown(),
-      dropdownValueField: 'value',
-      dropdownDisplayField: 'label',
-      isRequired: true,
-      isVisibleByDefault: true,
-      isFixed: false,
-    ),
+        label: "Fornecedor",
+        fieldName: "parceiro.id",
+        displayFieldName: "parceiro.nome",
+        icon: Icons.business,
+        isInForm: true,
+        isFilterable: true,
+        fieldType: FieldType.dropdown,
+        dropdownFutureBuilder: () async =>
+            await ParceiroCaller().fetchParceiroDropdown(),
+        dropdownValueField: 'value',
+        dropdownDisplayField: 'label',
+        isRequired: true,
+        isVisibleByDefault: true,
+        isFixed: false,
+        enabled: true,
+        dropdownSelectedValue: pegarEmpresaLogada()),
     FieldConfig(
       label: "Fornecedor Dev",
       fieldName: "parceiroDev.id",
@@ -168,7 +169,7 @@ class ContaPagar {
       isVisibleByDefault: true,
       isFixed: false,
     ),
-    FieldConfig(
+    const FieldConfig(
       label: "Descrição",
       fieldName: "descricao",
       icon: Icons.description,
@@ -177,15 +178,16 @@ class ContaPagar {
       isVisibleByDefault: true,
       isFixed: false,
     ),
-    FieldConfig(
+    const FieldConfig(
       label: "Valor",
       fieldName: "valor",
       icon: Icons.attach_money,
       isInForm: true,
       isVisibleByDefault: true,
       isFixed: false,
+      fieldType: FieldType.currency,
     ),
-    FieldConfig(
+    const FieldConfig(
       label: "Data Vencimento",
       fieldName: "dataVencimento",
       icon: Icons.calendar_today,
@@ -193,8 +195,9 @@ class ContaPagar {
       isFilterable: true,
       isVisibleByDefault: true,
       isFixed: false,
+      fieldType: FieldType.date,
     ),
-    FieldConfig(
+    const FieldConfig(
       label: "Status",
       fieldName: "status",
       icon: Icons.info,
@@ -203,15 +206,15 @@ class ContaPagar {
       isFixed: false,
       isInForm: false,
     ),
-    FieldConfig(
-      label: "Data Baixa",
-      fieldName: "dataBaixa",
-      icon: Icons.calendar_today,
-      isVisibleByDefault: false,
-      isFixed: false,
-      isInForm: false,
-    ),
-    FieldConfig(
+    const FieldConfig(
+        label: "Data Baixa",
+        fieldName: "dataBaixa",
+        icon: Icons.calendar_today,
+        isVisibleByDefault: false,
+        isFixed: false,
+        isInForm: false,
+        fieldType: FieldType.date),
+    const FieldConfig(
       label: "Valor Baixa",
       fieldName: "valorBaixa",
       icon: Icons.attach_money,
@@ -219,7 +222,7 @@ class ContaPagar {
       isFixed: false,
       isInForm: false,
     ),
-    FieldConfig(
+    const FieldConfig(
       label: "Valor Multa",
       fieldName: "valorMulta",
       icon: Icons.attach_money,
@@ -227,7 +230,7 @@ class ContaPagar {
       isVisibleByDefault: false,
       isFixed: false,
     ),
-    FieldConfig(
+    const FieldConfig(
       label: "Valor Juros",
       fieldName: "valorJuros",
       icon: Icons.attach_money,
@@ -235,7 +238,7 @@ class ContaPagar {
       isVisibleByDefault: false,
       isFixed: false,
     ),
-    FieldConfig(
+    const FieldConfig(
       label: "Valor Desconto",
       fieldName: "valorDesconto",
       icon: Icons.attach_money,
@@ -259,7 +262,7 @@ class ContaPagar {
       isVisibleByDefault: true,
       isFixed: false,
     ),
-    FieldConfig(
+    const FieldConfig(
       label: "Status",
       fieldName: "status",
       icon: Icons.check_circle,
@@ -277,7 +280,7 @@ class ContaPagar {
       dropdownValueField: 'value',
       dropdownDisplayField: 'label',
     ),
-    FieldConfig(
+    const FieldConfig(
       label: "Anexo",
       fieldName: "file.id",
       displayFieldName: "file.nome",
