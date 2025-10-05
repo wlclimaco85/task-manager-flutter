@@ -795,7 +795,7 @@ class _GenericMobileGridScreenState<T>
     final textTheme = Theme.of(context).textTheme;
 
     return ThemeData(
-      colorScheme: ColorScheme.light(
+      colorScheme: const ColorScheme.light(
         primary: GridColors.primary, // Sua cor primária
         onPrimary: GridColors.textPrimary, // Texto sobre a cor primária
         surface: GridColors.card, // Cor de fundo
@@ -804,15 +804,15 @@ class _GenericMobileGridScreenState<T>
       ),
       dialogBackgroundColor: GridColors.dialogBackground,
       textTheme: textTheme.copyWith(
-        bodyLarge: TextStyle(
+        bodyLarge: const TextStyle(
           color: GridColors.textSecondary,
           fontSize: 16,
         ),
-        bodyMedium: TextStyle(
+        bodyMedium: const TextStyle(
           color: GridColors.textSecondary,
           fontSize: 14,
         ),
-        labelLarge: TextStyle(
+        labelLarge: const TextStyle(
           color: GridColors.primary,
           fontWeight: FontWeight.bold,
           fontSize: 16,
@@ -1147,8 +1147,8 @@ class _GenericMobileGridScreenState<T>
       // Tenta parsear no formato "MM/dd/yyyy"
       final parts = dateString.split('/');
       if (parts.length == 3) {
-        final month = parts[0].padLeft(2, '0');
-        final day = parts[1].padLeft(2, '0');
+        final month = parts[1].padLeft(2, '0');
+        final day = parts[0].padLeft(2, '0');
         final year = parts[2];
 
         // Retorna no formato ISO "yyyy-MM-dd"
@@ -1168,6 +1168,16 @@ class _GenericMobileGridScreenState<T>
       BuildContext context) async {
     try {
       final Map<String, dynamic> formData = {};
+
+      // ADICIONE ESTA PARTE SIMPLES - Processa dropdowns com valor selecionado
+      for (final config in widget.fieldConfigs) {
+        if (config.fieldType == FieldType.dropdown &&
+            config.dropdownSelectedValue != null) {
+          final value = config.dropdownSelectedValue;
+          // Usa o valor direto, sem verificar tipo
+          _addToFormData(formData, config.fieldName, value);
+        }
+      }
 
       for (final config in widget.fieldConfigs
           .where((c) => c.isInForm && c.fieldType != FieldType.file)) {

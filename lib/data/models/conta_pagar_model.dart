@@ -151,7 +151,7 @@ class ContaPagar {
         isRequired: true,
         isVisibleByDefault: true,
         isFixed: false,
-        enabled: true,
+        enabled: false,
         dropdownSelectedValue: pegarEmpresaLogada()),
     FieldConfig(
       label: "Fornecedor",
@@ -185,7 +185,7 @@ class ContaPagar {
       isInForm: true,
       isVisibleByDefault: true,
       isFixed: false,
-      fieldType: FieldType.currency,
+      fieldType: FieldType.number,
     ),
     const FieldConfig(
       label: "Data Vencimento",
@@ -198,13 +198,14 @@ class ContaPagar {
       fieldType: FieldType.date,
     ),
     const FieldConfig(
-        label: "Data Baixa",
-        fieldName: "dataBaixa",
-        icon: Icons.calendar_today,
-        isVisibleByDefault: false,
-        isFixed: false,
-        isInForm: false,
-        fieldType: FieldType.date),
+      label: "Data Baixa",
+      fieldName: "dataBaixa",
+      icon: Icons.calendar_today,
+      isVisibleByDefault: false,
+      isFixed: false,
+      isInForm: false,
+      fieldType: FieldType.date,
+    ),
     const FieldConfig(
       label: "Valor Baixa",
       fieldName: "valorBaixa",
@@ -212,6 +213,7 @@ class ContaPagar {
       isVisibleByDefault: false,
       isFixed: false,
       isInForm: false,
+      fieldType: FieldType.number,
     ),
     const FieldConfig(
       label: "Valor Multa",
@@ -220,6 +222,7 @@ class ContaPagar {
       isInForm: true,
       isVisibleByDefault: false,
       isFixed: false,
+      fieldType: FieldType.number,
     ),
     const FieldConfig(
       label: "Valor Juros",
@@ -228,6 +231,7 @@ class ContaPagar {
       isInForm: true,
       isVisibleByDefault: false,
       isFixed: false,
+      fieldType: FieldType.number,
     ),
     const FieldConfig(
       label: "Valor Desconto",
@@ -236,6 +240,7 @@ class ContaPagar {
       isInForm: true,
       isVisibleByDefault: false,
       isFixed: false,
+      fieldType: FieldType.number,
     ),
     FieldConfig(
       label: "Forma Pagamento",
@@ -276,7 +281,6 @@ class ContaPagar {
       fieldName: "file.id",
       displayFieldName: "file.nome",
       fieldType: FieldType.file,
-      enabled: true, // Pode ser false para desabilitar
     ),
   ];
 }

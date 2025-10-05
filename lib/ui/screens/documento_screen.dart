@@ -143,7 +143,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
       appBar: UserBannerAppBar(
         screenTitle: 'Calendário Financeiro',
         onRefresh: _loadDatesWithDocuments, // Connects refresh button
-        isLoading: _isLoading, // Controls refresh indicator state
+        isLoading: true, // Controls refresh indicator state
         showFilterButton: false,
         // onFilterToggle: () {
         //   Add filter functionality here if needed later

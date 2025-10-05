@@ -3,7 +3,7 @@
     "activeCommit": 0,
     "commits": [
         {
-            "activePatchIndex": 15,
+            "activePatchIndex": 18,
             "patches": [
                 {
                     "date": 1758913689774,
@@ -68,6 +68,18 @@
                 {
                     "date": 1759620325044,
                     "content": "Index: \n===================================================================\n--- \n+++ \n@@ -257,9 +257,9 @@\n       label: \"Status\",\r\n       fieldName: \"status\",\r\n       icon: Icons.check_circle,\r\n       isFilterable: true,\r\n-      isVisibleByDefault: true,\r\n+      isVisibleByDefault: false,\r\n       isFixed: false,\r\n       fieldType: FieldType.dropdown,\r\n       dropdownOptions: [\r\n         {'value': 0, 'label': 'Aberto'},\r\n"
+                },
+                {
+                    "date": 1759686880497,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -184,9 +184,9 @@\n       icon: Icons.attach_money,\r\n       isInForm: true,\r\n       isVisibleByDefault: true,\r\n       isFixed: false,\r\n-      fieldType: FieldType.currency,\r\n+      fieldType: FieldType.number,\r\n     ),\r\n     const FieldConfig(\r\n       label: \"Data Vencimento\",\r\n       fieldName: \"dataVencimento\",\r\n@@ -211,24 +211,27 @@\n       icon: Icons.attach_money,\r\n       isVisibleByDefault: false,\r\n       isFixed: false,\r\n       isInForm: false,\r\n+      fieldType: FieldType.number\r\n     ),\r\n     const FieldConfig(\r\n       label: \"Valor Multa\",\r\n       fieldName: \"valorMulta\",\r\n       icon: Icons.attach_money,\r\n       isInForm: true,\r\n       isVisibleByDefault: false,\r\n       isFixed: false,\r\n+      fieldType: FieldType.number\r\n     ),\r\n     const FieldConfig(\r\n       label: \"Valor Juros\",\r\n       fieldName: \"valorJuros\",\r\n       icon: Icons.attach_money,\r\n       isInForm: true,\r\n       isVisibleByDefault: false,\r\n       isFixed: false,\r\n+      fieldType: FieldType.number\r\n     ),\r\n     const FieldConfig(\r\n       label: \"Valor Desconto\",\r\n       fieldName: \"valorDesconto\",\r\n"
+                },
+                {
+                    "date": 1759686889893,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -203,33 +203,33 @@\n         icon: Icons.calendar_today,\r\n         isVisibleByDefault: false,\r\n         isFixed: false,\r\n         isInForm: false,\r\n-        fieldType: FieldType.date),\r\n+        fieldType: FieldType.date,),\r\n     const FieldConfig(\r\n         label: \"Valor Baixa\",\r\n         fieldName: \"valorBaixa\",\r\n         icon: Icons.attach_money,\r\n         isVisibleByDefault: false,\r\n         isFixed: false,\r\n         isInForm: false,\r\n-        fieldType: FieldType.number),\r\n+        fieldType: FieldType.number,),\r\n     const FieldConfig(\r\n         label: \"Valor Multa\",\r\n         fieldName: \"valorMulta\",\r\n         icon: Icons.attach_money,\r\n         isInForm: true,\r\n         isVisibleByDefault: false,\r\n         isFixed: false,\r\n-        fieldType: FieldType.number),\r\n+        fieldType: FieldType.number,),\r\n     const FieldConfig(\r\n         label: \"Valor Juros\",\r\n         fieldName: \"valorJuros\",\r\n         icon: Icons.attach_money,\r\n         isInForm: true,\r\n         isVisibleByDefault: false,\r\n         isFixed: false,\r\n-        fieldType: FieldType.number),\r\n+        fieldType: FieldType.number,),\r\n     const FieldConfig(\r\n       label: \"Valor Desconto\",\r\n       fieldName: \"valorDesconto\",\r\n       icon: Icons.attach_money,\r\n"
+                },
+                {
+                    "date": 1759686904555,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -239,8 +239,9 @@\n       icon: Icons.attach_money,\r\n       isInForm: true,\r\n       isVisibleByDefault: false,\r\n       isFixed: false,\r\n+      fieldType: FieldType.number,\r\n     ),\r\n     FieldConfig(\r\n       label: \"Forma Pagamento\",\r\n       fieldName: \"formaPagamento.id\",\r\n"
                 }
             ],
             "date": 1758913689774,

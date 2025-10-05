@@ -1,7 +1,7 @@
 class ApiLinks {
   ApiLinks._();
-  static const String _baseIp = "http://192.168.56.1:8088";
-  //  "https://appacademia-production-be7e.up.railway.app";
+  static const String _baseIp = //"http://192.168.56.1:8088";
+      "https://appacademia-production-be7e.up.railway.app";
   //static const String _chatId = 'ws://192.168.114.1:8088/boletobancos';
 
   static const String _chatId =
@@ -316,4 +316,9 @@ class ApiLinks {
 
   static String chatStartfetch(String id) => '$_baseUrlNew/api/chat/$id';
   //   'ws://192.168.114.1:8088/boletobancos/ws-chat?user=${widget.userName}&sector=${widget.sector}',
+
+  static String downloadFile(String id) =>
+      '$_baseUrlNew/api/files/download/$id';
+
+  static String get uploadFile => '$_baseUrlNew/api/files/upload';
 }

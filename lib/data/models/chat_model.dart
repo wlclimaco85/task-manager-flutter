@@ -98,7 +98,7 @@ class ChatMessageModel {
     status = json['status'];
     token = json['token'];
     messages = json['data'] != null
-        ? ChatMessage.fromJsonList(json['data']['account'])
+        ? ChatMessage.fromJsonList(json['data']['dados'])
         : [];
   }
 

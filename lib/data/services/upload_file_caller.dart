@@ -1,16 +1,14 @@
 import 'dart:convert';
 import 'dart:io';
-import 'dart:io';
 import 'dart:typed_data';
 import 'dart:ui' as ui; // ← Adicione esta importação
 
 import 'package:file_picker/file_picker.dart';
 import 'package:http/http.dart' as http;
 import 'package:path_provider/path_provider.dart';
-import 'package:path_provider/path_provider.dart';
-import 'package:share_plus/share_plus.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:task_manager_flutter/data/models/auth_utility.dart';
+import 'package:task_manager_flutter/data/utils/api_links.dart';
 
 class UploadFileCaller {
   Future<int> uploadFiles(
@@ -24,7 +22,7 @@ class UploadFileCaller {
     try {
       var request = http.MultipartRequest(
         'POST',
-        Uri.parse('http://192.168.114.1:8088/boletobancos/api/files/upload'),
+        Uri.parse(ApiLinks.uploadFile),
       );
 
       request.fields['itemId'] = itemId;
@@ -84,7 +82,7 @@ class UploadFileCaller {
 
       final response = await http.get(
         Uri.parse(
-          'http://192.168.114.1:8088/boletobancos/api/files/download/$fileId',
+          ApiLinks.downloadFile(fileId.toString()),
         ),
         headers: {'Authorization': 'Bearer $authToken'},
       );

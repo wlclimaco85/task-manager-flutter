@@ -88,6 +88,8 @@ class DocumentoService {
       '$baseUrl/datas/novos/mes/$mes/ano/$ano/usuario/$usuarioId',
     );
 
+    print('$baseUrl/datas/novos/mes/$mes/ano/$ano/usuario/$usuarioId');
+
     if (response.statusCode == 200) {
       final body = response.body;
 
@@ -114,7 +116,7 @@ class DocumentoService {
     if (response.statusCode == 200) {
       final body = response.body;
 
-      final List<DateTime> datas = (body?['data'] as List<dynamic>)
+      final List<DateTime> datas = (body?['data']['dados'] as List<dynamic>)
           .map<DateTime>((d) => DateTime.parse(d.toString()))
           .toList();
 
