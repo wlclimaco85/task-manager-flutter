@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:task_manager_flutter/data/models/chamado_model.dart';
 import 'package:task_manager_flutter/data/utils/api_links.dart';
 import 'package:task_manager_flutter/data/customization/generic_grid_card.dart';
+import 'package:task_manager_flutter/data/utils/utils.dart';
 
 class ChamadoGridScreen extends StatelessWidget {
   final SecurityCheck hasPermission;
@@ -17,11 +18,26 @@ class ChamadoGridScreen extends StatelessWidget {
         createEndpoint: ApiLinks.createChamado,
         updateEndpoint: ApiLinks.updateChamado(":id"),
         deleteEndpoint: ApiLinks.deleteChamado(":id"),
+        dynamicAdditionalFormData: (item) {
+          // item é null para CREATE, tem valor para UPDATE
+          if (item == null) {
+            // DADOS PARA CRIAÇÃO
+            return {
+              'usuarioAberturaId': pegarUsuarioLogado,
+              'dataAbertura': DateTime.now().millisecondsSinceEpoch,
+            };
+          } else {
+            // DADOS PARA EDIÇÃO
+            return {
+              'usuarioAberturaId': pegarUsuarioLogado,
+            };
+          }
+        },
         useUserBannerAppBar: true,
         fromJson: (json) => Chamado.fromJson(Map<String, dynamic>.from(json)),
         toJson: (obj) => obj.toJson(),
         hasPermission: hasPermission,
-        fieldConfigs: _getFieldConfigsWithFilters(), // Configuração corrigida
+        fieldConfigs: Chamado.fieldConfigs, // Configuração corrigida
         idFieldName: 'id',
         paginationConfig: const PaginationConfig(
           defaultRowsPerPage: 10,
@@ -40,40 +56,6 @@ class ChamadoGridScreen extends StatelessWidget {
         ],
       ),
     );
-  }
-
-  List<FieldConfig> _getFieldConfigsWithFilters() {
-    return [
-      FieldConfig(
-        label: 'ID',
-        fieldName: 'id',
-        fieldType: FieldType.text,
-        isFilterable: true, // Filter is enabled
-        isInForm: false,
-        isVisibleByDefault: true,
-      ),
-      FieldConfig(
-        label: 'Título',
-        fieldName: 'titulo',
-        fieldType: FieldType.text,
-        isFilterable: true, // Filter is enabled
-        isInForm: true,
-        isVisibleByDefault: true,
-      ),
-      FieldConfig(
-        label: 'Status',
-        fieldName: 'status',
-        fieldType: FieldType.dropdown,
-        isFilterable: true, // Filter is enabled
-        isInForm: true,
-        isVisibleByDefault: true,
-        dropdownOptions: [
-          // Simple local options
-          {'value': 'aberto', 'label': 'Aberto'},
-          {'value': 'fechado', 'label': 'Fechado'},
-        ],
-      ),
-    ];
   }
 
   // FILTROS INICIAIS (OPCIONAL)

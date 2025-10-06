@@ -198,6 +198,9 @@ class GenericMobileGridScreen<T> extends StatefulWidget {
   final bool useUserBannerAppBar;
   final VoidCallback? onUserBannerTapped;
   final VoidCallback? onBannerRefresh;
+  // NOVA PROPRIEDADE SIMPLES
+  final Map<String, dynamic>? additionalFormData;
+  final Map<String, dynamic> Function(T? item)? dynamicAdditionalFormData;
 
   const GenericMobileGridScreen({
     super.key,
@@ -224,6 +227,8 @@ class GenericMobileGridScreen<T> extends StatefulWidget {
     this.useUserBannerAppBar = false,
     this.onUserBannerTapped,
     this.onBannerRefresh,
+    this.additionalFormData, // NOVO PARÂMETRO
+    this.dynamicAdditionalFormData, // NOVO: Para dados dinâmicos
   });
 
   @override
@@ -1168,6 +1173,43 @@ class _GenericMobileGridScreenState<T>
       BuildContext context) async {
     try {
       final Map<String, dynamic> formData = {};
+
+      // ==============================================
+      // NOVO: ADICIONAR DADOS EXTRAS AO FORM DATA
+      // ==============================================
+      if (widget.additionalFormData != null) {
+        formData.addAll(widget.additionalFormData!);
+
+        // DEBUG: Mostrar dados adicionais
+        if (widget.enableDebugMode) {
+          print('=== DADOS ADICIONAIS DO FORMULÁRIO ===');
+          widget.additionalFormData!.forEach((key, value) {
+            print('$key: $value (${value.runtimeType})');
+          });
+          print('=====================================');
+        }
+      }
+
+      // Dados dinâmicos (create vs update)
+      if (widget.dynamicAdditionalFormData != null) {
+        final dynamicData = widget.dynamicAdditionalFormData!(item);
+        formData.addAll(dynamicData);
+      }
+
+      // Adiciona ao formData
+      if (formData.isNotEmpty) {
+        formData.addAll(formData);
+
+        // DEBUG: Mostrar dados adicionais
+        if (widget.enableDebugMode) {
+          print('=== DADOS ADICIONAIS DO FORMULÁRIO ===');
+          print('Tipo: ${item == null ? "CREATE" : "UPDATE"}');
+          formData.forEach((key, value) {
+            print('$key: $value (${value.runtimeType})');
+          });
+          print('=====================================');
+        }
+      }
 
       // ADICIONE ESTA PARTE SIMPLES - Processa dropdowns com valor selecionado
       for (final config in widget.fieldConfigs) {

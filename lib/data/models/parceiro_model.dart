@@ -7,7 +7,7 @@ import 'package:task_manager_flutter/data/utils/api_links.dart';
 import 'package:task_manager_flutter/data/models/network_response.dart';
 import 'package:task_manager_flutter/data/services/network_caller.dart';
 import 'package:task_manager_flutter/data/models/regime_tributario_model.dart';
-import 'package:task_manager_flutter/data/models/auth_utility.dart';
+import 'package:task_manager_flutter/data/utils/utils.dart';
 
 class Endereco {
   int? id;
@@ -190,18 +190,6 @@ class Parceiro {
           .toList();
     }
     return [];
-  }
-
-  static dynamic pegarEmpresaLogada() {
-    final user = AuthUtility.userInfo?.login;
-    final empresaId = user?.empresa?.id;
-
-    // Debug para verificar o que está retornando
-    print('Usuário: ${AuthUtility.userInfo}');
-    print('Empresa ID: $empresaId');
-
-    // Se 0 não for um valor válido, retorne null
-    return (empresaId != null && empresaId != 0) ? empresaId : null;
   }
 
   static Future<List<Map<String, dynamic>>> _loadEmpresas() async {

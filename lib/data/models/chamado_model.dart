@@ -130,7 +130,7 @@ class Chamado {
     );
 
     if (response.isSuccess && response.body != null) {
-      final List<dynamic> data = response.body!['data']['account'] ?? [];
+      final List<dynamic> data = response.body!['data']['dados'] ?? [];
       return data
           .map(
             (item) => {
@@ -192,6 +192,7 @@ class Chamado {
       dropdownSelectedValue: 0, // Valor padrão selecionado
       dropdownValueField: 'value',
       dropdownDisplayField: 'label',
+      enabled: false,
     ),
     const FieldConfig(
       label: "Prioridade",

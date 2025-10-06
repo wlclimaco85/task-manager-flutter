@@ -1,0 +1,18 @@
+{
+    "sourceFile": "lib/ui/screens/chamado_grid_screen_dynamic.dart",
+    "activeCommit": 0,
+    "commits": [
+        {
+            "activePatchIndex": 0,
+            "patches": [
+                {
+                    "date": 1759781431954,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n"
+                }
+            ],
+            "date": 1759781431954,
+            "name": "Commit-0",
+            "content": "import 'package:flutter/material.dart';\r\nimport 'package:task_manager_flutter/data/models/chamado_model.dart';\r\nimport 'package:task_manager_flutter/data/utils/api_links.dart';\r\nimport 'package:task_manager_flutter/data/customization/generic_grid_card_1_0.dart';\r\nimport 'package:task_manager_flutter/data/utils/utils.dart';\r\n\r\nclass ChamadosScreen extends StatelessWidget {\r\n  const ChamadosScreen({super.key});\r\n\r\n  @override\r\n  Widget build(BuildContext context) {\r\n    return DynamicGridScreen<Chamado>(\r\n      telaNome: 'chamados', // ← APENAS ISSO!\r\n      fromJson: (json) => Chamado.fromJson(json),\r\n      toJson: (chamado) => chamado.toJson(),\r\n      hasPermission: (permission) => AuthService().hasPermission(permission),\r\n    );\r\n  }\r\n}"
+        }
+    ]
+}

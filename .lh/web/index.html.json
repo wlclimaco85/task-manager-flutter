@@ -1,0 +1,18 @@
+{
+    "sourceFile": "web/index.html",
+    "activeCommit": 0,
+    "commits": [
+        {
+            "activePatchIndex": 0,
+            "patches": [
+                {
+                    "date": 1759776229598,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n"
+                }
+            ],
+            "date": 1759776229598,
+            "name": "Commit-0",
+            "content": "<!DOCTYPE html>\r\n<html>\r\n<head>\r\n  <!--\r\n    If you are serving your web app in a path other than the root, change the\r\n    href value below to reflect the base path you are serving from.\r\n\r\n    The path provided below has to start and end with a slash \"/\" in order for\r\n    it to work correctly.\r\n\r\n    For more details:\r\n    * https://developer.mozilla.org/en-US/docs/Web/HTML/Element/base\r\n\r\n    This is a placeholder for base href that will be replaced by the value of\r\n    the `--base-href` argument provided to `flutter build`.\r\n  -->\r\n  <base href=\"$FLUTTER_BASE_HREF\">\r\n\r\n  <meta charset=\"UTF-8\">\r\n  <meta content=\"IE=Edge\" http-equiv=\"X-UA-Compatible\">\r\n  <meta name=\"description\" content=\"A new Flutter project.\">\r\n\r\n  <!-- iOS meta tags & icons -->\r\n  <meta name=\"apple-mobile-web-app-capable\" content=\"yes\">\r\n  <meta name=\"apple-mobile-web-app-status-bar-style\" content=\"black\">\r\n  <meta name=\"apple-mobile-web-app-title\" content=\"Abraço Contabilidade Uberaba\">\r\n  <link rel=\"apple-touch-icon\" href=\"icons/Icon-192.png\">\r\n\r\n  <!-- Favicon -->\r\n  <link rel=\"icon\" type=\"image/png\" href=\"favicon.png\"/>\r\n\r\n  <title>Abraço Contabilidade Uberaba</title>\r\n  <link rel=\"manifest\" href=\"manifest.json\">\r\n\r\n  <script>\r\n    // The value below is injected by flutter build, do not touch.\r\n    var serviceWorkerVersion = null;\r\n  </script>\r\n  <!-- This script adds the flutter initialization JS code -->\r\n  <script src=\"flutter.js\" defer></script>\r\n</head>\r\n<body>\r\n  <script>\r\n    window.addEventListener('load', function(ev) {\r\n      // Download main.dart.js\r\n      _flutter.loader.loadEntrypoint({\r\n        serviceWorker: {\r\n          serviceWorkerVersion: serviceWorkerVersion,\r\n        },\r\n        onEntrypointLoaded: function(engineInitializer) {\r\n          engineInitializer.initializeEngine().then(function(appRunner) {\r\n            appRunner.runApp();\r\n          });\r\n        }\r\n      });\r\n    });\r\n  </script>\r\n</body>\r\n</html>\r\n"
+        }
+    ]
+}

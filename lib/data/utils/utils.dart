@@ -66,3 +66,15 @@ dynamic pegarEmpresaLogada() {
   // Se 0 não for um valor válido, retorne null
   return (empresaId != null && empresaId != 0) ? empresaId : null;
 }
+
+dynamic pegarUsuarioLogado() {
+  final user = AuthUtility.userInfo?.login;
+  final empresaId = user?.id;
+
+  // Debug para verificar o que está retornando
+  print('Usuário: ${AuthUtility.userInfo}');
+  print('Empresa ID: $empresaId');
+
+  // Se 0 não for um valor válido, retorne null
+  return (empresaId != null && empresaId != 0) ? empresaId : null;
+}
