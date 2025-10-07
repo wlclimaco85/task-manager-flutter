@@ -1,0 +1,18 @@
+{
+    "sourceFile": "lib/data/services/auth_service.dart",
+    "activeCommit": 0,
+    "commits": [
+        {
+            "activePatchIndex": 0,
+            "patches": [
+                {
+                    "date": 1759782143612,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n"
+                }
+            ],
+            "date": 1759782143612,
+            "name": "Commit-0",
+            "content": "import 'package:task_manager_flutter/data/models/network_response.dart';\r\nimport 'package:task_manager_flutter/data/services/network_caller.dart';\r\nimport 'package:task_manager_flutter/data/utils/api_links.dart';\r\n\r\nimport '../models/telas_model.dart';\r\n// services/tela_service.dart\r\nimport 'dart:convert';\r\nimport 'package:shared_preferences/shared_preferences.dart';\r\nimport 'package:task_manager_flutter/data/services/network_caller.dart';\r\nimport 'package:task_manager_flutter/data/models/network_response.dart';\r\n\r\n// services/tela_service.dart\r\nimport 'dart:convert';\r\nimport 'package:shared_preferences/shared_preferences.dart';\r\nimport 'package:task_manager_flutter/data/services/network_caller.dart';\r\nimport 'package:task_manager_flutter/data/models/network_response.dart';\r\n// services/auth_service.dart\r\nclass AuthService {\r\n  static final AuthService _instance = AuthService._internal();\r\n  factory AuthService() => _instance;\r\n  AuthService._internal();\r\n\r\n  bool hasPermission(String permission) {\r\n    // Implemente sua lógica de permissões aqui\r\n    // Por enquanto, retorna true para testes\r\n    return true;\r\n  }\r\n\r\n  // Método para obter o ID do usuário atual\r\n  int getCurrentUserId() {\r\n    // Retorna um ID fixo para testes - substitua pela sua lógica\r\n    return 1;\r\n  }\r\n}"
+        }
+    ]
+}

@@ -321,4 +321,9 @@ class ApiLinks {
       '$_baseUrlNew/api/files/download/$id';
 
   static String get uploadFile => '$_baseUrlNew/api/files/upload';
+
+  static String getAllTelas(String id) => '$_baseUrlNew/api/telas?nome=$id';
+
+  static String getAllpreferencias(String id, String setor) =>
+      ('$_baseUrlNew/api/$id/user-preferences/$setor');
 }

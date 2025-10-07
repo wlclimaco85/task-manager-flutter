@@ -67,7 +67,7 @@ dynamic pegarEmpresaLogada() {
   return (empresaId != null && empresaId != 0) ? empresaId : null;
 }
 
-dynamic pegarUsuarioLogado() {
+int? pegarUsuarioLogado() {
   final user = AuthUtility.userInfo?.login;
   final empresaId = user?.id;
 
@@ -75,6 +75,6 @@ dynamic pegarUsuarioLogado() {
   print('Usuário: ${AuthUtility.userInfo}');
   print('Empresa ID: $empresaId');
 
-  // Se 0 não for um valor válido, retorne null
+  // Retorna null se for 0 ou null
   return (empresaId != null && empresaId != 0) ? empresaId : null;
 }

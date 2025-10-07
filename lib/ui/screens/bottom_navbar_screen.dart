@@ -11,6 +11,7 @@ import 'package:task_manager_flutter/ui/screens/documento_screen.dart';
 import 'package:task_manager_flutter/ui/screens/file_upload_screen.dart';
 import 'package:task_manager_flutter/ui/screens/negociacao_screen.dart';
 import 'package:task_manager_flutter/ui/screens/parceiro_grid_screen.dart';
+import 'package:task_manager_flutter/ui/screens/chamado_grid_screen_dynamic.dart';
 
 class BottomNavBarScreen extends StatefulWidget {
   const BottomNavBarScreen({super.key});
@@ -81,6 +82,12 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
             ),
           ),
         );
+        break;
+      case "Teste":
+        Navigator.push(
+            context,
+            MaterialPageRoute(
+                builder: (context) => const ChamadosScreenDinamic()));
         break;
       case "Sair":
         Navigator.pop(context);
@@ -174,6 +181,11 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
               leading: const Icon(Icons.bar_chart),
               title: const Text('Dashboard'),
               onTap: () => onMenuOptionSelected('Dashboard'),
+            ),
+            ListTile(
+              leading: const Icon(Icons.text_increase_rounded),
+              title: const Text('teste'),
+              onTap: () => onMenuOptionSelected('Teste'),
             ),
             ListTile(
               leading: const Icon(Icons.exit_to_app),

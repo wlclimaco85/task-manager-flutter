@@ -1,5 +1,5 @@
 import 'package:task_manager_flutter/data/customization/generic_grid_card.dart';
-import 'package:intl/intl.dart';
+import 'package:flutter/material.dart';
 
 class TelaConfig {
   final int id;
@@ -38,21 +38,21 @@ class TelaConfig {
 
   factory TelaConfig.fromJson(Map<String, dynamic> json) {
     return TelaConfig(
-      id: json['id'],
-      nome: json['nome'],
-      descricao: json['descricao'],
-      titulo: json['titulo'],
-      fetchEndpoint: json['fetchEndpoint'],
-      createEndpoint: json['createEndpoint'],
-      updateEndpoint: json['updateEndpoint'],
-      deleteEndpoint: json['deleteEndpoint'],
+      id: json['id'] ?? 0,
+      nome: json['nome'] ?? '',
+      descricao: json['descricao'] ?? '',
+      titulo: json['titulo'] ?? '',
+      fetchEndpoint: json['fetchEndpoint'] ?? '',
+      createEndpoint: json['createEndpoint'] ?? '',
+      updateEndpoint: json['updateEndpoint'] ?? '',
+      deleteEndpoint: json['deleteEndpoint'] ?? '',
       idFieldName: json['idFieldName'] ?? 'id',
       dateFieldName: json['dateFieldName'],
       storageKey: json['storageKey'],
       enableSearch: json['enableSearch'] ?? true,
       enableDebugMode: json['enableDebugMode'] ?? false,
       useUserBannerAppBar: json['useUserBannerAppBar'] ?? false,
-      fields: (json['fields'] as List)
+      fields: (json['fields'] as List? ?? [])
           .map((field) => TelaField.fromJson(field))
           .toList(),
     );
@@ -153,10 +153,20 @@ class TelaField {
   });
 
   factory TelaField.fromJson(Map<String, dynamic> json) {
+    // Converte string de data para DateTime
+    DateTime? parseDate(String? dateString) {
+      if (dateString == null) return null;
+      try {
+        return DateTime.parse(dateString);
+      } catch (e) {
+        return null;
+      }
+    }
+
     return TelaField(
-      id: json['id'],
-      label: json['label'],
-      fieldName: json['fieldName'],
+      id: json['id'] ?? 0,
+      label: json['label'] ?? '',
+      fieldName: json['fieldName'] ?? '',
       displayFieldName: json['displayFieldName'],
       fieldType: _parseFieldType(json['fieldType']),
       isFilterable: json['isFilterable'] ?? true,
@@ -174,10 +184,8 @@ class TelaField {
       dropdownDisplayField: json['dropdownDisplayField'] ?? 'label',
       dropdownEndpoint: json['dropdownEndpoint'],
       dateFormat: json['dateFormat'] ?? 'dd/MM/yyyy',
-      firstDate:
-          json['firstDate'] != null ? DateTime.parse(json['firstDate']) : null,
-      lastDate:
-          json['lastDate'] != null ? DateTime.parse(json['lastDate']) : null,
+      firstDate: parseDate(json['firstDate']),
+      lastDate: parseDate(json['lastDate']),
       showInInsert: json['showInInsert'] ?? true,
       showInUpdate: json['showInUpdate'] ?? true,
       showInGrid: json['showInGrid'] ?? true,
@@ -186,10 +194,12 @@ class TelaField {
       defaultValue: json['defaultValue'],
       dropdownSelectedValue: json['dropdownSelectedValue'],
       allowedExtensions: json['allowedExtensions'] != null
-          ? (json['allowedExtensions'] as String)
-              .split(',')
-              .map((e) => e.trim())
-              .toList()
+          ? (json['allowedExtensions'] is String
+              ? (json['allowedExtensions'] as String)
+                  .split(',')
+                  .map((e) => e.trim())
+                  .toList()
+              : (json['allowedExtensions'] as List).cast<String>())
           : [],
       allowMultipleFiles: json['allowMultipleFiles'] ?? false,
       maxFileSize: json['maxFileSize'] ?? 5242880,
@@ -200,7 +210,9 @@ class TelaField {
     );
   }
 
-  static FieldType _parseFieldType(String type) {
+  static FieldType _parseFieldType(String? type) {
+    if (type == null) return FieldType.text;
+
     switch (type.toLowerCase()) {
       case 'number':
         return FieldType.number;
@@ -262,22 +274,44 @@ class TelaField {
     return iconMap[iconName];
   }
 
-  FileConfig get fileConfig {
-    return FileConfig(
-      allowedExtensions: allowedExtensions,
-      allowMultiple: allowMultipleFiles,
-      maxFileSize: maxFileSize,
-      fileFieldName: fileFieldName,
-    );
-  }
-
-  List<Map<String, dynamic>> get dropdownOptionsMap {
-    return dropdownOptions
-        .map((option) => {
-              'value': option.optionValue,
-              'label': option.optionLabel,
-            })
-        .toList();
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'label': label,
+      'fieldName': fieldName,
+      'displayFieldName': displayFieldName,
+      'fieldType': fieldType.toString().split('.').last,
+      'isFilterable': isFilterable,
+      'isInForm': isInForm,
+      'isVisibleByDefault': isVisibleByDefault,
+      'isFixed': isFixed,
+      'isRequired': isRequired,
+      'enabled': enabled,
+      'showInCard': showInCard,
+      'flex': flex,
+      'maxLines': maxLines,
+      'iconName': iconName,
+      'isSortable': isSortable,
+      'dropdownValueField': dropdownValueField,
+      'dropdownDisplayField': dropdownDisplayField,
+      'dropdownEndpoint': dropdownEndpoint,
+      'dateFormat': dateFormat,
+      'firstDate': firstDate?.toIso8601String(),
+      'lastDate': lastDate?.toIso8601String(),
+      'showInInsert': showInInsert,
+      'showInUpdate': showInUpdate,
+      'showInGrid': showInGrid,
+      'fieldOrder': fieldOrder,
+      'formSection': formSection,
+      'defaultValue': defaultValue,
+      'dropdownSelectedValue': dropdownSelectedValue,
+      'allowedExtensions': allowedExtensions,
+      'allowMultipleFiles': allowMultipleFiles,
+      'maxFileSize': maxFileSize,
+      'fileFieldName': fileFieldName,
+      'dropdownOptions':
+          dropdownOptions.map((option) => option.toJson()).toList(),
+    };
   }
 }
 
@@ -296,11 +330,20 @@ class FieldDropdownOption {
 
   factory FieldDropdownOption.fromJson(Map<String, dynamic> json) {
     return FieldDropdownOption(
-      id: json['id'],
-      optionValue: json['optionValue'],
-      optionLabel: json['optionLabel'],
+      id: json['id'] ?? 0,
+      optionValue: json['optionValue'] ?? '',
+      optionLabel: json['optionLabel'] ?? '',
       optionOrder: json['optionOrder'] ?? 0,
     );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'optionValue': optionValue,
+      'optionLabel': optionLabel,
+      'optionOrder': optionOrder,
+    };
   }
 }
 
@@ -325,10 +368,11 @@ class UserFieldPreference {
 
   factory UserFieldPreference.fromJson(Map<String, dynamic> json) {
     return UserFieldPreference(
-      id: json['id'],
-      userId: json['userId'],
-      telaId: json['tela']['id'],
-      fieldName: json['fieldName'],
+      id: json['id'] ?? 0,
+      userId: json['userId'] ?? 0,
+      telaId: json['telaId'] ??
+          (json['tela'] != null ? json['tela']['id'] ?? 0 : 0),
+      fieldName: json['fieldName'] ?? '',
       isVisible: json['isVisible'] ?? true,
       widthPreference: json['widthPreference']?.toDouble(),
       orderPreference: json['orderPreference'] ?? 0,

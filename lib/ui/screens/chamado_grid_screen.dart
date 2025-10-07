@@ -23,7 +23,7 @@ class ChamadoGridScreen extends StatelessWidget {
           if (item == null) {
             // DADOS PARA CRIAÇÃO
             return {
-              'usuarioAberturaId': pegarUsuarioLogado,
+              'usuarioAberturaId': pegarUsuarioLogado(),
               'dataAbertura': DateTime.now().millisecondsSinceEpoch,
             };
           } else {

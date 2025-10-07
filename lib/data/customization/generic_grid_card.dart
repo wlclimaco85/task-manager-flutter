@@ -961,11 +961,12 @@ class _GenericMobileGridScreenState<T>
 
         final options = snapshot.data ?? [];
 
-        final uniqueOptions = <dynamic, Map<String, dynamic>>{};
+        // **CORREÇÃO: Remove duplicatas de forma mais robusta**
+        final uniqueOptions = <String, Map<String, dynamic>>{};
         for (final option in options) {
           try {
-            final value = option[config.dropdownValueField];
-            if (value != null && !uniqueOptions.containsKey(value)) {
+            final value = option[config.dropdownValueField]?.toString() ?? '';
+            if (value.isNotEmpty && !uniqueOptions.containsKey(value)) {
               uniqueOptions[value] = option;
             }
           } catch (e) {
@@ -975,54 +976,93 @@ class _GenericMobileGridScreenState<T>
 
         final uniqueOptionsList = uniqueOptions.values.toList();
 
+        // **CORREÇÃO COMPLETA: Obter e validar o valor atual**
         dynamic currentValue = _getCurrentValue(config, controller);
 
-        // Adicione debug para verificar os valores
-        print('dropdownSelectedValue: ${config.dropdownSelectedValue}');
-        print('currentValue inicial: $currentValue');
-        print('controller.text: ${controller.text}');
-
-        if (controller.text.isEmpty && config.dropdownSelectedValue != null) {
-          // Force o mesmo tipo que será usado nas opções
-          currentValue = config.dropdownSelectedValue is int
-              ? config.dropdownSelectedValue
-              : int.tryParse(config.dropdownSelectedValue.toString());
+        // **DEBUG: Log para troubleshooting**
+        if (widget.enableDebugMode) {
+          print('=== DEBUG DROPDOWN ${config.fieldName} ===');
+          print('Valor atual: $currentValue (${currentValue?.runtimeType})');
+          print('Opções disponíveis:');
+          uniqueOptionsList.forEach((opt) {
+            final optValue = opt[config.dropdownValueField];
+            print(
+                '  - $optValue (${optValue.runtimeType}) -> ${opt[config.dropdownDisplayField]}');
+          });
         }
 
-        bool valueExists = uniqueOptionsList.any((option) {
-          try {
-            final optionValue = option[config.dropdownValueField];
-            final optionInt = int.tryParse(optionValue.toString());
-            final currentInt = currentValue is int
-                ? currentValue
-                : int.tryParse(currentValue.toString());
+        // **CORREÇÃO: Validação robusta do valor atual**
+        bool valueExists = false;
+        dynamic safeValue = null;
 
-            final exists = optionInt != null &&
-                currentInt != null &&
-                optionInt == currentInt;
+        for (final option in uniqueOptionsList) {
+          final optionValue = option[config.dropdownValueField];
 
-            if (exists) {
-              print('COMPARAÇÃO BEM SUCEDIDA:');
-              print('  optionValue: $optionValue -> $optionInt (int)');
-              print('  currentValue: $currentValue -> $currentInt (int)');
-            }
-
-            return exists;
-          } catch (e) {
-            return false;
+          // Tenta diferentes formas de comparação
+          if (_valuesMatch(currentValue, optionValue)) {
+            valueExists = true;
+            safeValue = optionValue; // Usa o valor exato da opção
+            break;
           }
-        });
+        }
 
         if (!valueExists) {
-          currentValue = null;
+          safeValue = null;
+          // **CORREÇÃO: Limpa o controller se o valor não existe**
+          if (controller.text.isNotEmpty && currentValue != null) {
+            controller.clear();
+          }
         }
+
+        // **CORREÇÃO: Constrói os itens do dropdown de forma segura**
+        final dropdownItems = <DropdownMenuItem<dynamic>>[];
+
+        // Adiciona item vazio se não for obrigatório
+        if (!config.isRequired || safeValue == null) {
+          dropdownItems.add(
+            const DropdownMenuItem<dynamic>(
+              value: null,
+              child: Text(
+                'Selecione uma opção',
+                style: TextStyle(color: Colors.grey),
+              ),
+            ),
+          );
+        }
+
+        // Adiciona as opções únicas
+        for (final option in uniqueOptionsList) {
+          try {
+            final optionValue = option[config.dropdownValueField];
+            final optionLabel =
+                option[config.dropdownDisplayField]?.toString() ??
+                    optionValue?.toString() ??
+                    'Sem label';
+
+            dropdownItems.add(
+              DropdownMenuItem<dynamic>(
+                value: optionValue,
+                child: Text(optionLabel),
+              ),
+            );
+          } catch (e) {
+            // Ignora opções com erro
+            continue;
+          }
+        }
+
+        // **VERIFICAÇÃO FINAL DE SEGURANÇA**
+        final validSafeValue =
+            dropdownItems.any((item) => item.value == safeValue)
+                ? safeValue
+                : null;
+
         return AbsorbPointer(
-          absorbing:
-              !config.enabled, // Desabilita quando config.enabled = false
+          absorbing: !config.enabled,
           child: Opacity(
-            opacity: config.enabled ? 1.0 : 0.6, // Visualmente desabilitado
+            opacity: config.enabled ? 1.0 : 0.6,
             child: DropdownButtonFormField<dynamic>(
-              value: currentValue,
+              value: validSafeValue,
               decoration: InputDecoration(
                 labelText: config.label + (config.isRequired ? ' *' : ''),
                 border: OutlineInputBorder(
@@ -1054,37 +1094,7 @@ class _GenericMobileGridScreenState<T>
                     : Colors.transparent,
               ),
               isExpanded: true,
-              items: [
-                if (!config.isRequired || currentValue == null)
-                  const DropdownMenuItem<dynamic>(
-                    value: null,
-                    child: Text(
-                      'Selecione uma opção',
-                      style: TextStyle(color: Colors.grey),
-                    ),
-                  ),
-                ...uniqueOptionsList.map<DropdownMenuItem<dynamic>>((option) {
-                  try {
-                    final optionValue = option[config.dropdownValueField];
-                    final optionLabel =
-                        option[config.dropdownDisplayField]?.toString() ??
-                            optionValue?.toString() ??
-                            'Sem label';
-
-                    return DropdownMenuItem<dynamic>(
-                      value: optionValue is int
-                          ? optionValue
-                          : int.tryParse(optionValue.toString()),
-                      child: Text(optionLabel),
-                    );
-                  } catch (e) {
-                    return DropdownMenuItem<dynamic>(
-                      value: UniqueKey().toString(),
-                      child: const Text('Erro na opção'),
-                    );
-                  }
-                }),
-              ],
+              items: dropdownItems,
               onChanged: config.enabled
                   ? (dynamic newValue) {
                       setState(() {
@@ -1095,10 +1105,9 @@ class _GenericMobileGridScreenState<T>
                         }
                       });
                     }
-                  : null, // Desabilita onChanged quando não enabled
+                  : null,
               validator: (dynamic value) {
-                if (config.isRequired &&
-                    (value == null || value.toString().isEmpty)) {
+                if (config.isRequired && (value == null)) {
                   return '${config.label} é obrigatório';
                 }
                 return config.validator?.call(value?.toString());
@@ -1110,6 +1119,55 @@ class _GenericMobileGridScreenState<T>
     );
   }
 
+// **NOVO MÉTODO: Comparação robusta de valores**
+  bool _valuesMatch(dynamic value1, dynamic value2) {
+    if (value1 == null && value2 == null) return true;
+    if (value1 == null || value2 == null) return false;
+
+    // Converte ambos para string para comparação
+    final str1 = value1.toString();
+    final str2 = value2.toString();
+
+    // Tenta comparar como números se ambos forem numéricos
+    if (_isNumeric(str1) && _isNumeric(str2)) {
+      final num1 = num.tryParse(str1);
+      final num2 = num.tryParse(str2);
+      if (num1 != null && num2 != null) {
+        return num1 == num2;
+      }
+    }
+
+    // Comparação como string
+    return str1 == str2;
+  }
+
+// **NOVO MÉTODO: Verifica se string é numérica**
+  bool _isNumeric(String str) {
+    if (str.isEmpty) return false;
+    return double.tryParse(str) != null;
+  }
+
+// **ATUALIZE também o método _getCurrentValue:**
+  dynamic _getCurrentValue(
+      FieldConfig config, TextEditingController controller) {
+    // Prioridade 1: Valor do controller (edição)
+    if (controller.text.isNotEmpty) {
+      return controller.text;
+    }
+
+    // Prioridade 2: Valor padrão da configuração
+    if (config.defaultValue != null) {
+      return config.defaultValue;
+    }
+
+    // Prioridade 3: Valor selecionado da configuração
+    if (config.dropdownSelectedValue != null) {
+      return config.dropdownSelectedValue;
+    }
+
+    return null;
+  }
+/*
   dynamic _getCurrentValue(
       FieldConfig config, TextEditingController controller) {
     bool expectInteger = _isIntegerField(config);
@@ -1125,11 +1183,14 @@ class _GenericMobileGridScreenState<T>
     } else {
       return null;
     }
-  }
+  } */
 
   bool _isIntegerField(FieldConfig config) {
     return config.dropdownValueField == 'id' ||
-        config.fieldName.toLowerCase().contains('id');
+        config.fieldName.toLowerCase().contains('id') ||
+        config.fieldName.toLowerCase().endsWith('id') ||
+        config.fieldName.toLowerCase().contains('codigo') ||
+        config.fieldName.toLowerCase().contains('code');
   }
 
   TextInputType _getKeyboardType(FieldType fieldType) {
@@ -1236,7 +1297,18 @@ class _GenericMobileGridScreenState<T>
               formData[config.fieldName] = controller.text;
             }
           } else {
-            _addToFormData(formData, config.fieldName, fieldValue);
+            // **CORREÇÃO: Para dropdowns, usa o valor do controller diretamente**
+            if (config.fieldType == FieldType.dropdown) {
+              // Tenta converter para número se for um campo ID
+              final value = controller.text;
+              if (_isIntegerField(config) && _isNumeric(value)) {
+                formData[config.fieldName] = int.tryParse(value) ?? value;
+              } else {
+                formData[config.fieldName] = value;
+              }
+            } else {
+              _addToFormData(formData, config.fieldName, fieldValue);
+            }
           }
         }
       }

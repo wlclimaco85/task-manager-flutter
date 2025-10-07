@@ -1,16 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:task_manager_flutter/data/customization/generic_grid_card.dart';
 import 'package:task_manager_flutter/data/services/network_caller.dart';
 import 'package:task_manager_flutter/data/services/tela_caller.dart';
 
 import '../models/telas_model.dart';
-// ==============================================
-// MOBILE GRID SCREEN - MATERIAL DESIGN 3 COMPLETO
-// ==============================================
 
-// screens/dynamic_grid_screen.dart
-class DynamicGridScreen<T> extends StatefulWidget {
+class DynamicGridDynamicScreen<T> extends StatefulWidget {
   final String telaNome;
   final FromJson<T> fromJson;
   final ToJson<T> toJson;
@@ -24,7 +19,7 @@ class DynamicGridScreen<T> extends StatefulWidget {
   final Map<String, dynamic>? additionalFormData;
   final Map<String, dynamic> Function(T? item)? dynamicAdditionalFormData;
 
-  const DynamicGridScreen({
+  const DynamicGridDynamicScreen({
     super.key,
     required this.telaNome,
     required this.fromJson,
@@ -41,37 +36,35 @@ class DynamicGridScreen<T> extends StatefulWidget {
   });
 
   @override
-  State<DynamicGridScreen<T>> createState() => _DynamicGridScreenState<T>();
+  State<DynamicGridDynamicScreen<T>> createState() =>
+      _DynamicGridDynamicScreenState<T>();
 }
 
-class _DynamicGridScreenState<T> extends State<DynamicGridScreen<T>> {
+class _DynamicGridDynamicScreenState<T>
+    extends State<DynamicGridDynamicScreen<T>> {
   late Future<TelaConfig> _telaFuture;
-  final TelaService _telaService = TelaService(
-    networkCaller: NetworkCaller(),
-    prefs: SharedPreferences.getInstance() as SharedPreferences,
-  );
+  late TelaService _telaService;
 
   @override
   void initState() {
     super.initState();
+    _telaService = TelaService(networkCaller: NetworkCaller());
     _telaFuture = _loadTelaConfig();
   }
 
   Future<TelaConfig> _loadTelaConfig() async {
-    // Tenta carregar do cache primeiro
-    final cachedTela = await _telaService.getTelaFromCache(widget.telaNome);
-    if (cachedTela != null) {
-      return cachedTela;
-    }
+    print('🔄 Carregando configuração da tela: ${widget.telaNome}');
 
-    // Se não encontrou no cache, busca da API
-    final tela = await _telaService.getTelaByNome(widget.telaNome);
+    // Tenta do cache (que já tem fallback para API)
+    final tela = await _telaService.getTelaFromCache(widget.telaNome);
+
     if (tela != null) {
-      await _telaService.saveTelaToCache(widget.telaNome, tela);
+      print('✅ Configuração carregada com sucesso');
       return tela;
     }
 
-    throw Exception('Tela ${widget.telaNome} não encontrada');
+    throw Exception(
+        'Tela ${widget.telaNome} não encontrada no cache nem na API');
   }
 
   List<FieldConfig> _convertToFieldConfigs(List<TelaField> fields,
@@ -81,6 +74,40 @@ class _DynamicGridScreenState<T> extends State<DynamicGridScreen<T>> {
       if (forUpdate && !field.showInUpdate) return false;
       return field.isInForm;
     }).map((field) {
+      // **CORREÇÃO: Garantir que dropdownOptions seja único e válido**
+      List<Map<String, dynamic>>? dropdownOptions;
+      if (field.dropdownOptions.isNotEmpty) {
+        // Remove duplicatas baseado no valor
+        final uniqueOptions = <String, Map<String, dynamic>>{};
+        for (final option in field.dropdownOptions) {
+          final value = option.optionValue?.toString() ?? '';
+          if (value.isNotEmpty && !uniqueOptions.containsKey(value)) {
+            uniqueOptions[value] = {
+              'value': option.optionValue,
+              'label':
+                  option.optionLabel ?? option.optionValue?.toString() ?? '',
+            };
+          }
+        }
+        dropdownOptions = uniqueOptions.values.toList();
+
+        // Debug para verificar as opções
+        print(
+            'Dropdown ${field.fieldName}: ${dropdownOptions.length} opções únicas');
+      }
+
+      // **CORREÇÃO: Tratar dropdownSelectedValue para evitar valores inválidos**
+      dynamic selectedValue = field.dropdownSelectedValue;
+      if (selectedValue != null && dropdownOptions != null) {
+        final valueExists = dropdownOptions.any((option) =>
+            option['value']?.toString() == selectedValue?.toString());
+        if (!valueExists) {
+          print(
+              '⚠️ Valor selecionado $selectedValue não existe nas opções para ${field.fieldName}');
+          selectedValue = null;
+        }
+      }
+
       return FieldConfig(
         label: field.label,
         fieldName: field.fieldName,
@@ -92,7 +119,7 @@ class _DynamicGridScreenState<T> extends State<DynamicGridScreen<T>> {
         icon: field.iconData,
         isSortable: field.isSortable,
         fieldType: field.fieldType,
-        dropdownOptions: field.dropdownOptionsMap,
+        dropdownOptions: dropdownOptions, // Usa a lista tratada
         dropdownFutureBuilder: field.dropdownEndpoint != null
             ? _createDropdownFutureBuilder(field.dropdownEndpoint!)
             : null,
@@ -104,8 +131,15 @@ class _DynamicGridScreenState<T> extends State<DynamicGridScreen<T>> {
         isFixed: field.isFixed,
         enabled: field.enabled,
         defaultValue: field.defaultValue,
-        fileConfig: field.fieldType == FieldType.file ? field.fileConfig : null,
-        dropdownSelectedValue: field.dropdownSelectedValue,
+        fileConfig: field.fieldType == FieldType.file
+            ? FileConfig(
+                allowedExtensions: field.allowedExtensions,
+                allowMultiple: field.allowMultipleFiles,
+                maxFileSize: field.maxFileSize,
+                fileFieldName: field.fileFieldName,
+              )
+            : null,
+        dropdownSelectedValue: selectedValue, // Usa o valor tratado
         showInCard: field.showInCard,
         firstDate: field.firstDate,
         lastDate: field.lastDate,
@@ -121,11 +155,35 @@ class _DynamicGridScreenState<T> extends State<DynamicGridScreen<T>> {
         final response = await NetworkCaller().getRequest(endpoint);
         if (response.isSuccess && response.body != null) {
           final data = response.body!['data'] ?? response.body!;
-          return (data as List).cast<Map<String, dynamic>>();
+          if (data is List) {
+            final List<Map<String, dynamic>> items =
+                data.cast<Map<String, dynamic>>();
+
+            // **CORREÇÃO: Remove itens duplicados e garante valores únicos**
+            final uniqueItems = <String, Map<String, dynamic>>{};
+            for (final item in items) {
+              final value =
+                  item['value']?.toString() ?? item['id']?.toString() ?? '';
+              if (value.isNotEmpty && !uniqueItems.containsKey(value)) {
+                uniqueItems[value] = {
+                  'value': item['value'] ?? item['id'],
+                  'label': item['label'] ??
+                      item['name'] ??
+                      item['value']?.toString() ??
+                      'Sem label',
+                };
+              }
+            }
+
+            print(
+                '✅ Dropdown carregado: ${uniqueItems.length} itens únicos de $endpoint');
+            return uniqueItems.values.toList();
+          }
         }
+        print('⚠️ Dropdown vazio ou erro na resposta de $endpoint');
         return [];
       } catch (e) {
-        print('Erro ao carregar dropdown: $e');
+        print('❌ Erro ao carregar dropdown de $endpoint: $e');
         return [];
       }
     };
@@ -170,13 +228,15 @@ class _DynamicGridScreenState<T> extends State<DynamicGridScreen<T>> {
   }
 
   bool _validateCPF(String cpf) {
-    // Implementação da validação de CPF
-    return true;
+    // Implementação simplificada - substitua pela validação real
+    final cleaned = cpf.replaceAll(RegExp(r'[^\d]'), '');
+    return cleaned.length == 11;
   }
 
   bool _validateCNPJ(String cnpj) {
-    // Implementação da validação de CNPJ
-    return true;
+    // Implementação simplificada - substitua pela validação real
+    final cleaned = cnpj.replaceAll(RegExp(r'[^\d]'), '');
+    return cleaned.length == 14;
   }
 
   @override
@@ -225,6 +285,9 @@ class _DynamicGridScreenState<T> extends State<DynamicGridScreen<T>> {
 
         final telaConfig = snapshot.data!;
 
+        // **CORREÇÃO: Debug para verificar os campos com dropdown**
+        _debugDropdownFields(telaConfig.fields);
+
         return GenericMobileGridScreen<T>(
           title: telaConfig.titulo,
           fetchEndpoint: telaConfig.fetchEndpoint,
@@ -253,5 +316,36 @@ class _DynamicGridScreenState<T> extends State<DynamicGridScreen<T>> {
         );
       },
     );
+  }
+
+  // **NOVO MÉTODO: Debug para campos dropdown**
+  void _debugDropdownFields(List<TelaField> fields) {
+    for (final field in fields) {
+      if (field.dropdownOptions.isNotEmpty || field.dropdownEndpoint != null) {
+        print('🔍 Dropdown Field: ${field.fieldName}');
+        print('   - Tipo: ${field.fieldType}');
+        print('   - Opções locais: ${field.dropdownOptions.length}');
+        print('   - Endpoint: ${field.dropdownEndpoint}');
+        print('   - Valor selecionado: ${field.dropdownSelectedValue}');
+
+        if (field.dropdownOptions.isNotEmpty) {
+          final values =
+              field.dropdownOptions.map((o) => o.optionValue).toList();
+          print('   - Valores disponíveis: $values');
+
+          // Verifica duplicatas
+          final valueSet = <dynamic>{};
+          final duplicates = <dynamic>[];
+          for (final value in values) {
+            if (!valueSet.add(value)) {
+              duplicates.add(value);
+            }
+          }
+          if (duplicates.isNotEmpty) {
+            print('   ⚠️ VALORES DUPLICADOS: $duplicates');
+          }
+        }
+      }
+    }
   }
 }

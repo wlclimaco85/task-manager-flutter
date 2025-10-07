@@ -189,7 +189,7 @@ class Chamado {
         {'value': 'Fechado', 'label': 'Fechado'},
         {'value': 'Cancelado', 'label': 'Cancelado'},
       ], //('MENSAL', 'TRIMESTRAL', 'ANUAL', 'SEMESTRAL'))
-      dropdownSelectedValue: 0, // Valor padrão selecionado
+      dropdownSelectedValue: 'Aberto', // Valor padrão selecionado
       dropdownValueField: 'value',
       dropdownDisplayField: 'label',
       enabled: false,
@@ -226,6 +226,7 @@ class Chamado {
       isRequired: true,
       isVisibleByDefault: true,
       isFixed: false,
+      dropdownSelectedValue: 0, // Valor padrão selecionado
     ),
     const FieldConfig(
       label: "Motivo Fechamento",
