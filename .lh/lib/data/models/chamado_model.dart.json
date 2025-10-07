@@ -3,7 +3,7 @@
     "activeCommit": 0,
     "commits": [
         {
-            "activePatchIndex": 18,
+            "activePatchIndex": 21,
             "patches": [
                 {
                     "date": 1758829284349,
@@ -80,6 +80,18 @@
                 {
                     "date": 1759876951349,
                     "content": "Index: \n===================================================================\n--- \n+++ \n@@ -188,9 +188,9 @@\n         {'value': 'Em Andamento', 'label': 'Em Andamento'},\r\n         {'value': 'Fechado', 'label': 'Fechado'},\r\n         {'value': 'Cancelado', 'label': 'Cancelado'},\r\n       ], //('MENSAL', 'TRIMESTRAL', 'ANUAL', 'SEMESTRAL'))\r\n-      dropdownSelectedValue: 0, // Valor padrão selecionado\r\n+      dropdownSelectedValue: 'Aberto', // Valor padrão selecionado\r\n       dropdownValueField: 'value',\r\n       dropdownDisplayField: 'label',\r\n       enabled: false,\r\n     ),\r\n"
+                },
+                {
+                    "date": 1759877897407,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -162,9 +162,9 @@\n       icon: Icons.title,\r\n       isInForm: true,\r\n       isFilterable: true,\r\n       isVisibleByDefault: true,\r\n-      isFixed: false,\r\n+      isFixed: true,\r\n       fieldType: FieldType.text,\r\n     ),\r\n     const FieldConfig(\r\n       label: \"Descrição\",\r\n"
+                },
+                {
+                    "date": 1759877996839,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -183,12 +183,12 @@\n       isVisibleByDefault: true,\r\n       isFixed: false,\r\n       fieldType: FieldType.dropdown,\r\n       dropdownOptions: [\r\n-        {'value': 'Aberto', 'label': 'Aberto'},\r\n-        {'value': 'Em Andamento', 'label': 'Em Andamento'},\r\n-        {'value': 'Fechado', 'label': 'Fechado'},\r\n-        {'value': 'Cancelado', 'label': 'Cancelado'},\r\n+        {'value': 'ABERTO', 'label': 'Aberto'},\r\n+        {'value': 'EM_ANDAMENTO', 'label': 'Em Andamento'},\r\n+        {'value': 'FECHADO', 'label': 'Fechado'},\r\n+        {'value': 'CANCELADO', 'label': 'Cancelado'},\r\n       ], //('MENSAL', 'TRIMESTRAL', 'ANUAL', 'SEMESTRAL'))\r\n       dropdownSelectedValue: 'Aberto', // Valor padrão selecionado\r\n       dropdownValueField: 'value',\r\n       dropdownDisplayField: 'label',\r\n"
+                },
+                {
+                    "date": 1759878997901,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -188,9 +188,9 @@\n         {'value': 'EM_ANDAMENTO', 'label': 'Em Andamento'},\r\n         {'value': 'FECHADO', 'label': 'Fechado'},\r\n         {'value': 'CANCELADO', 'label': 'Cancelado'},\r\n       ], //('MENSAL', 'TRIMESTRAL', 'ANUAL', 'SEMESTRAL'))\r\n-      dropdownSelectedValue: 'Aberto', // Valor padrão selecionado\r\n+      dropdownSelectedValue: 'ABERTO', // Valor padrão selecionado\r\n       dropdownValueField: 'value',\r\n       dropdownDisplayField: 'label',\r\n       enabled: false,\r\n     ),\r\n@@ -225,10 +225,10 @@\n       dropdownDisplayField: 'label',\r\n       isRequired: true,\r\n       isVisibleByDefault: true,\r\n       isFixed: false,\r\n-      dropdownSelectedValue: 0, // Valor padrão selecionado\r\n     ),\r\n+    \r\n     const FieldConfig(\r\n       label: \"Motivo Fechamento\",\r\n       fieldName: \"motivoFechamento\",\r\n       icon: Icons.close,\r\n"
                 }
             ],
             "date": 1758829284349,

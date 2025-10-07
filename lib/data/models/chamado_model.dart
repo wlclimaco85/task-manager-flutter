@@ -163,7 +163,7 @@ class Chamado {
       isInForm: true,
       isFilterable: true,
       isVisibleByDefault: true,
-      isFixed: false,
+      isFixed: true,
       fieldType: FieldType.text,
     ),
     const FieldConfig(
@@ -184,12 +184,12 @@ class Chamado {
       isFixed: false,
       fieldType: FieldType.dropdown,
       dropdownOptions: [
-        {'value': 'Aberto', 'label': 'Aberto'},
-        {'value': 'Em Andamento', 'label': 'Em Andamento'},
-        {'value': 'Fechado', 'label': 'Fechado'},
-        {'value': 'Cancelado', 'label': 'Cancelado'},
+        {'value': 'ABERTO', 'label': 'Aberto'},
+        {'value': 'EM_ANDAMENTO', 'label': 'Em Andamento'},
+        {'value': 'FECHADO', 'label': 'Fechado'},
+        {'value': 'CANCELADO', 'label': 'Cancelado'},
       ], //('MENSAL', 'TRIMESTRAL', 'ANUAL', 'SEMESTRAL'))
-      dropdownSelectedValue: 'Aberto', // Valor padrão selecionado
+      dropdownSelectedValue: 'ABERTO', // Valor padrão selecionado
       dropdownValueField: 'value',
       dropdownDisplayField: 'label',
       enabled: false,
@@ -226,7 +226,6 @@ class Chamado {
       isRequired: true,
       isVisibleByDefault: true,
       isFixed: false,
-      dropdownSelectedValue: 0, // Valor padrão selecionado
     ),
     const FieldConfig(
       label: "Motivo Fechamento",
