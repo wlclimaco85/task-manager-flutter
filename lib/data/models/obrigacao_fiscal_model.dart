@@ -86,7 +86,7 @@ class ObrigacaoFiscal {
   }
 
   static List<FieldConfig> fieldConfigs = [
-    FieldConfig(
+    const FieldConfig(
       label: "ID",
       fieldName: "id",
       icon: Icons.key,
@@ -95,7 +95,7 @@ class ObrigacaoFiscal {
       isVisibleByDefault: true,
       isFixed: true,
     ),
-    FieldConfig(
+    const FieldConfig(
       label: "Codigo",
       fieldName: "codigo",
       icon: Icons.attach_money,
@@ -103,7 +103,7 @@ class ObrigacaoFiscal {
       isVisibleByDefault: true,
       isFixed: false,
     ),
-    FieldConfig(
+    const FieldConfig(
       label: "Descricao",
       fieldName: "descricao",
       icon: Icons.description,
@@ -111,7 +111,7 @@ class ObrigacaoFiscal {
       isVisibleByDefault: true,
       isFixed: false,
     ),
-    FieldConfig(
+    const FieldConfig(
       label: "Periodicidade",
       fieldName: "periodicidade",
       icon: Icons.calendar_today,
@@ -131,7 +131,7 @@ class ObrigacaoFiscal {
       dropdownDisplayField: 'label',
       isRequired: true, // Altere para false se não for obrigatório
     ),
-    FieldConfig(
+    const FieldConfig(
       label: "Ativo",
       fieldName: "ativo",
       icon: Icons.check_circle,
@@ -141,7 +141,7 @@ class ObrigacaoFiscal {
       isVisibleByDefault: true,
       isFixed: false,
     ),
-    FieldConfig(
+    const FieldConfig(
       label: "Gerar Chamado",
       fieldName: "gerChamado",
       icon: Icons.assignment,
@@ -151,7 +151,7 @@ class ObrigacaoFiscal {
       isVisibleByDefault: true,
       isFixed: false,
     ),
-    FieldConfig(
+    const FieldConfig(
       label: "Dia Vencimento",
       fieldName: "diaVencimento",
       icon: Icons.calendar_today,
@@ -160,7 +160,7 @@ class ObrigacaoFiscal {
       isVisibleByDefault: true,
       isFixed: false,
     ),
-    FieldConfig(
+    const FieldConfig(
       label: "Descricao",
       fieldName: "descricao",
       icon: Icons.info,

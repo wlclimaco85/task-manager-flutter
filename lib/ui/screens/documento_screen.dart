@@ -167,16 +167,16 @@ class _CalendarScreenState extends State<CalendarScreen> {
 
   Widget _buildMonthNavigation() {
     return Container(
-      padding: EdgeInsets.all(8.0),
+      padding: const EdgeInsets.all(8.0),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          IconButton(icon: Icon(Icons.arrow_back), onPressed: _previousMonth),
+          IconButton(icon: const Icon(Icons.arrow_back), onPressed: _previousMonth),
           Text(
             DateFormat('MMMM de yyyy', 'pt_BR').format(_currentMonth),
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
           ),
-          IconButton(icon: Icon(Icons.arrow_forward), onPressed: _nextMonth),
+          IconButton(icon: const Icon(Icons.arrow_forward), onPressed: _nextMonth),
         ],
       ),
     );
@@ -187,23 +187,23 @@ class _CalendarScreenState extends State<CalendarScreen> {
       padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
       child: Row(
         children: [
-          Text('Legenda: '),
+          const Text('Legenda: '),
           Container(
-            padding: EdgeInsets.all(4.0),
+            padding: const EdgeInsets.all(4.0),
             decoration: BoxDecoration(
               color: Colors.red[100],
               borderRadius: BorderRadius.circular(5),
             ),
-            child: Text('Dias com docs novos', style: TextStyle(fontSize: 12)),
+            child: const Text('Dias com docs novos', style: TextStyle(fontSize: 12)),
           ),
-          SizedBox(width: 8),
+          const SizedBox(width: 8),
           Container(
-            padding: EdgeInsets.all(4.0),
+            padding: const EdgeInsets.all(4.0),
             decoration: BoxDecoration(
               color: Colors.grey[200],
               borderRadius: BorderRadius.circular(5),
             ),
-            child: Text(
+            child: const Text(
               'Dias com docs já lidos',
               style: TextStyle(fontSize: 12),
             ),
@@ -234,7 +234,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
     List<String> weekdays = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sab'];
 
     return Container(
-      padding: EdgeInsets.all(8.0),
+      padding: const EdgeInsets.all(8.0),
       child: Column(
         children: [
           // Cabeçalho com os dias da semana
@@ -242,11 +242,11 @@ class _CalendarScreenState extends State<CalendarScreen> {
             children: weekdays.map((day) {
               return Expanded(
                 child: Container(
-                  padding: EdgeInsets.symmetric(vertical: 8),
+                  padding: const EdgeInsets.symmetric(vertical: 8),
                   child: Center(
                     child: Text(
                       day,
-                      style: TextStyle(fontWeight: FontWeight.bold),
+                      style: const TextStyle(fontWeight: FontWeight.bold),
                     ),
                   ),
                 ),
@@ -257,8 +257,8 @@ class _CalendarScreenState extends State<CalendarScreen> {
           // Grid dos dias
           GridView.builder(
             shrinkWrap: true,
-            physics: NeverScrollableScrollPhysics(),
-            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+            physics: const NeverScrollableScrollPhysics(),
+            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
               crossAxisCount: 7,
               childAspectRatio: 1.2,
             ),
@@ -281,8 +281,8 @@ class _CalendarScreenState extends State<CalendarScreen> {
                   dayOffset >= daysInMonth) {
                 // Dia vazio (de outro mês)
                 return Container(
-                  margin: EdgeInsets.all(2),
-                  child: Center(child: Text('')),
+                  margin: const EdgeInsets.all(2),
+                  child: const Center(child: Text('')),
                 );
               }
 
@@ -291,7 +291,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
               return GestureDetector(
                 onTap: () => _loadDayDocuments(currentDay),
                 child: Container(
-                  margin: EdgeInsets.all(2),
+                  margin: const EdgeInsets.all(2),
                   decoration: BoxDecoration(
                     color: _getDayColor(currentDay),
                     borderRadius: BorderRadius.circular(8),
@@ -309,7 +309,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
                   child: Center(
                     child: Text(
                       '$dayNumber',
-                      style: TextStyle(
+                      style: const TextStyle(
                         fontWeight: FontWeight.bold,
                         color: Colors.black,
                       ),
@@ -326,8 +326,8 @@ class _CalendarScreenState extends State<CalendarScreen> {
 
   Widget _buildDailyDocuments() {
     if (_selectedDay == null) {
-      return Padding(
-        padding: const EdgeInsets.all(16.0),
+      return const Padding(
+        padding: EdgeInsets.all(16.0),
         child: Text(
           'Selecione um dia para ver os documentos',
           style: TextStyle(fontSize: 16, color: Colors.grey),
@@ -343,10 +343,10 @@ class _CalendarScreenState extends State<CalendarScreen> {
           children: [
             Text(
               'Documentos do dia ${DateFormat('dd/MM/yyyy').format(_selectedDay!)}',
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
             ),
-            SizedBox(height: 10),
-            Text(
+            const SizedBox(height: 10),
+            const Text(
               'Nenhum documento encontrado para este dia',
               style: TextStyle(color: Colors.grey),
             ),
@@ -362,17 +362,17 @@ class _CalendarScreenState extends State<CalendarScreen> {
         children: [
           Text(
             'Documentos do dia ${DateFormat('dd/MM/yyyy').format(_selectedDay!)}',
-            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
           ),
-          SizedBox(height: 10),
+          const SizedBox(height: 10),
           ListView.builder(
             shrinkWrap: true,
-            physics: NeverScrollableScrollPhysics(),
+            physics: const NeverScrollableScrollPhysics(),
             itemCount: _selectedDayDocuments.length,
             itemBuilder: (context, index) {
               final doc = _selectedDayDocuments[index];
               return Card(
-                margin: EdgeInsets.symmetric(vertical: 5),
+                margin: const EdgeInsets.symmetric(vertical: 5),
                 child: Padding(
                   padding: const EdgeInsets.all(12.0),
                   child: Row(
@@ -386,7 +386,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
                               Padding(
                                 padding: const EdgeInsets.only(left: 8.0),
                                 child: Container(
-                                  padding: EdgeInsets.symmetric(
+                                  padding: const EdgeInsets.symmetric(
                                     horizontal: 6,
                                     vertical: 2,
                                   ),
@@ -408,14 +408,14 @@ class _CalendarScreenState extends State<CalendarScreen> {
                       ),
                       Text(
                         'R\$${doc.valor.toStringAsFixed(2)}',
-                        style: TextStyle(
+                        style: const TextStyle(
                           fontWeight: FontWeight.bold,
                           color: Colors.red,
                         ),
                       ),
                       if (!doc.lido)
                         IconButton(
-                          icon: Icon(
+                          icon: const Icon(
                             Icons.check_circle_outline,
                             color: Colors.blue,
                           ),

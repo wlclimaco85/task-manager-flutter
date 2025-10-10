@@ -60,7 +60,7 @@ class RegimeTributario {
   }
 
   static List<FieldConfig> fieldConfigs = [
-    FieldConfig(
+    const FieldConfig(
       label: "Código",
       fieldName: "codigo",
       icon: Icons.qr_code,
@@ -68,7 +68,7 @@ class RegimeTributario {
       isFilterable: true,
       isRequired: true,
     ),
-    FieldConfig(
+    const FieldConfig(
       label: "Descrição",
       fieldName: "descricao",
       icon: Icons.description,

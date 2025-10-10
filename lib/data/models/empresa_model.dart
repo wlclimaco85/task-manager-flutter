@@ -109,7 +109,7 @@ class Empresa {
   }
 
   static List<FieldConfig> fieldConfigs = [
-    FieldConfig(
+    const FieldConfig(
       label: "Nome",
       fieldName: "nome",
       icon: Icons.business,
@@ -118,7 +118,7 @@ class Empresa {
       isVisibleByDefault: true,
       isFixed: false,
     ),
-    FieldConfig(
+    const FieldConfig(
       label: "Razão Social",
       fieldName: "razaoSocial",
       icon: Icons.apartment,
@@ -127,7 +127,7 @@ class Empresa {
       isVisibleByDefault: true,
       isFixed: false,
     ),
-    FieldConfig(
+    const FieldConfig(
       label: "Email",
       fieldName: "email",
       icon: Icons.email,
@@ -135,7 +135,7 @@ class Empresa {
       isVisibleByDefault: true,
       isFixed: false,
     ),
-    FieldConfig(
+    const FieldConfig(
       label: "Telefone",
       fieldName: "telefone",
       icon: Icons.phone,
@@ -143,7 +143,7 @@ class Empresa {
       isVisibleByDefault: true,
       isFixed: false,
     ),
-    FieldConfig(
+    const FieldConfig(
       label: "Telefone Contato",
       fieldName: "telefoneContato",
       icon: Icons.phone_in_talk,
@@ -151,7 +151,7 @@ class Empresa {
       isVisibleByDefault: false,
       isFixed: false,
     ),
-    FieldConfig(
+    const FieldConfig(
       label: "Email Contato",
       fieldName: "emailContato",
       icon: Icons.contact_mail,
@@ -159,7 +159,7 @@ class Empresa {
       isVisibleByDefault: false,
       isFixed: false,
     ),
-    FieldConfig(
+    const FieldConfig(
       label: "Rua",
       fieldName: "rua",
       icon: Icons.home,
@@ -167,7 +167,7 @@ class Empresa {
       isVisibleByDefault: false,
       isFixed: false,
     ),
-    FieldConfig(
+    const FieldConfig(
       label: "Número",
       fieldName: "numero",
       icon: Icons.confirmation_number,
@@ -175,7 +175,7 @@ class Empresa {
       isVisibleByDefault: false,
       isFixed: false,
     ),
-    FieldConfig(
+    const FieldConfig(
       label: "Cidade",
       fieldName: "cidade",
       icon: Icons.location_city,
@@ -184,7 +184,7 @@ class Empresa {
       isVisibleByDefault: false,
       isFixed: false,
     ),
-    FieldConfig(
+    const FieldConfig(
       label: "CEP",
       fieldName: "cep",
       icon: Icons.local_post_office,

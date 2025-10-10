@@ -50,7 +50,7 @@ class Diretorio {
   }
 
   static List<FieldConfig> fieldConfigs = [
-    FieldConfig(
+    const FieldConfig(
       label: "Nome",
       fieldName: "nome",
       icon: Icons.folder,
@@ -59,7 +59,7 @@ class Diretorio {
       isVisibleByDefault: true,
       isFixed: false,
     ),
-    FieldConfig(
+    const FieldConfig(
       label: "Descrição",
       fieldName: "descricao",
       icon: Icons.description,

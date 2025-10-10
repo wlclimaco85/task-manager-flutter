@@ -1,0 +1,26 @@
+{
+    "sourceFile": "android/gradle/wrapper/gradle-wrapper.properties",
+    "activeCommit": 0,
+    "commits": [
+        {
+            "activePatchIndex": 2,
+            "patches": [
+                {
+                    "date": 1760050466802,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n"
+                },
+                {
+                    "date": 1760051408770,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -1,5 +1,5 @@\n distributionBase=GRADLE_USER_HOME\r\n distributionPath=wrapper/dists\r\n-distributionUrl=https\\://services.gradle.org/distributions/gradle-7.5-all.zip\r\n+distributionUrl=https\\://services.gradle.org/distributions/gradle-8.4-all.zip\r\n zipStoreBase=GRADLE_USER_HOME\r\n zipStorePath=wrapper/dists\n\\ No newline at end of file\n"
+                },
+                {
+                    "date": 1760095824225,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -1,5 +1,5 @@\n distributionBase=GRADLE_USER_HOME\r\n distributionPath=wrapper/dists\r\n-distributionUrl=https\\://services.gradle.org/distributions/gradle-8.4-all.zip\r\n+distributionUrl=https\\://services.gradle.org/distributions/gradle-8.7-bin.zip\r\n zipStoreBase=GRADLE_USER_HOME\r\n zipStorePath=wrapper/dists\n\\ No newline at end of file\n"
+                }
+            ],
+            "date": 1760050466802,
+            "name": "Commit-0",
+            "content": "distributionBase=GRADLE_USER_HOME\r\ndistributionPath=wrapper/dists\r\ndistributionUrl=https\\://services.gradle.org/distributions/gradle-7.5-all.zip\r\nzipStoreBase=GRADLE_USER_HOME\r\nzipStorePath=wrapper/dists"
+        }
+    ]
+}

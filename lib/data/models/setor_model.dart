@@ -17,7 +17,7 @@ class Setor {
   }
 
   static List<FieldConfig> fieldConfigs = [
-    FieldConfig(
+    const FieldConfig(
       label: "Nome",
       fieldName: "nome",
       icon: Icons.apartment,

@@ -5,18 +5,18 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "task-manager-flutter",
+            "name": "task_manager_flutter",
             "request": "launch",
             "type": "dart"
         },
         {
-            "name": "task-manager-flutter (profile mode)",
+            "name": "task_manager_flutter (profile mode)",
             "request": "launch",
             "type": "dart",
             "flutterMode": "profile"
         },
         {
-            "name": "task-manager-flutter (release mode)",
+            "name": "task_manager_flutter (release mode)",
             "request": "launch",
             "type": "dart",
             "flutterMode": "release"

@@ -80,12 +80,12 @@ class _DynamicGridDynamicScreenState<T>
         // Remove duplicatas baseado no valor
         final uniqueOptions = <String, Map<String, dynamic>>{};
         for (final option in field.dropdownOptions) {
-          final value = option.optionValue?.toString() ?? '';
+          final value = option.optionValue.toString() ?? '';
           if (value.isNotEmpty && !uniqueOptions.containsKey(value)) {
             uniqueOptions[value] = {
               'value': option.optionValue,
               'label':
-                  option.optionLabel ?? option.optionValue?.toString() ?? '',
+                  option.optionLabel ?? option.optionValue.toString() ?? '',
             };
           }
         }

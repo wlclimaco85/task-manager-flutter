@@ -7,10 +7,6 @@ import 'package:task_manager_flutter/data/services/network_caller.dart';
 import 'package:task_manager_flutter/data/utils/api_links.dart';
 import 'package:task_manager_flutter/ui/screens/auth_screens/email_verification_screeen.dart';
 import 'package:task_manager_flutter/ui/screens/bottom_navbar_screen.dart';
-import 'package:task_manager_flutter/ui/widgets/custom_password_text_field.dart';
-import 'package:task_manager_flutter/ui/widgets/custom_text_form_field.dart';
-import 'package:task_manager_flutter/ui/screens/auth_screens/signup_form_screen.dart';
-import 'package:task_manager_flutter/data/constants/custom_colors.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});

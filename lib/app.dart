@@ -53,8 +53,8 @@ class TaskManagerApp extends StatelessWidget {
       themeMode: ThemeMode.light,
       home: const SplashScreen(),
       routes: {
-        '/login': (context) => LoginScreen(),
-        '/home': (context) => BottomNavBarScreen(),
+        '/login': (context) => const LoginScreen(),
+        '/home': (context) => const BottomNavBarScreen(),
       },
       onUnknownRoute: (settings) {
         return MaterialPageRoute(

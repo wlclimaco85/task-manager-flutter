@@ -242,8 +242,8 @@ class _GenericMobileGridScreenState<T>
   List<T> filtered = [];
   Set<String> selectedRows = {};
   bool isLoading = false;
-  bool _isUpdating = false;
-  bool _isDeleting = false;
+  final bool _isUpdating = false;
+  final bool _isDeleting = false;
   bool filtrosAbertos = false;
   final Map<String, List<PlatformFile>> _fileCache =
       {}; // NOVO: Cache para arquivos
@@ -658,7 +658,7 @@ class _GenericMobileGridScreenState<T>
                     ),
                   ),
                   trailing: IconButton(
-                    icon: Icon(Icons.delete, color: GridColors.error),
+                    icon: const Icon(Icons.delete, color: GridColors.error),
                     onPressed: () {
                       setState(() {
                         _fileCache[config.fieldName]?.remove(file);
@@ -822,7 +822,7 @@ class _GenericMobileGridScreenState<T>
           fontWeight: FontWeight.bold,
           fontSize: 16,
         ),
-        titleMedium: TextStyle(
+        titleMedium: const TextStyle(
           color: GridColors.textSecondary,
           fontWeight: FontWeight.bold,
           fontSize: 18,
@@ -831,11 +831,11 @@ class _GenericMobileGridScreenState<T>
       inputDecorationTheme: InputDecorationTheme(
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(8),
-          borderSide: BorderSide(color: GridColors.inputBorder),
+          borderSide: const BorderSide(color: GridColors.inputBorder),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(8),
-          borderSide: BorderSide(color: GridColors.primary, width: 2),
+          borderSide: const BorderSide(color: GridColors.primary, width: 2),
         ),
       ),
     );
@@ -984,16 +984,16 @@ class _GenericMobileGridScreenState<T>
           print('=== DEBUG DROPDOWN ${config.fieldName} ===');
           print('Valor atual: $currentValue (${currentValue?.runtimeType})');
           print('Opções disponíveis:');
-          uniqueOptionsList.forEach((opt) {
+          for (var opt in uniqueOptionsList) {
             final optValue = opt[config.dropdownValueField];
             print(
                 '  - $optValue (${optValue.runtimeType}) -> ${opt[config.dropdownDisplayField]}');
-          });
+          }
         }
 
         // **CORREÇÃO: Validação robusta do valor atual**
         bool valueExists = false;
-        dynamic safeValue = null;
+        dynamic safeValue;
 
         for (final option in uniqueOptionsList) {
           final optionValue = option[config.dropdownValueField];
@@ -1167,23 +1167,6 @@ class _GenericMobileGridScreenState<T>
 
     return null;
   }
-/*
-  dynamic _getCurrentValue(
-      FieldConfig config, TextEditingController controller) {
-    bool expectInteger = _isIntegerField(config);
-
-    if (controller.text.isNotEmpty) {
-      if (expectInteger) {
-        return int.tryParse(controller.text);
-      } else {
-        return controller.text;
-      }
-    } else if (config.dropdownSelectedValue != null) {
-      return config.dropdownSelectedValue;
-    } else {
-      return null;
-    }
-  } */
 
   bool _isIntegerField(FieldConfig config) {
     return config.dropdownValueField == 'id' ||
@@ -1353,7 +1336,7 @@ class _GenericMobileGridScreenState<T>
             : 'Item atualizado com sucesso!');
         _loadItems(reset: true);
       } else {
-        _showSnackBar('Erro ao salvar: ${response}', isError: true);
+        _showSnackBar('Erro ao salvar: $response', isError: true);
       }
     } catch (e) {
       _showSnackBar('Erro: $e', isError: true);
@@ -1393,7 +1376,7 @@ class _GenericMobileGridScreenState<T>
       // Converte para Map<String, dynamic> se necessário
       final nextMapString = (nextMap is Map<String, dynamic>)
           ? nextMap
-          : Map<String, dynamic>.from(nextMap as Map);
+          : Map<String, dynamic>.from(nextMap);
 
       map[currentPart] = nextMapString;
 
@@ -1438,7 +1421,7 @@ class _GenericMobileGridScreenState<T>
         _showSnackBar('Item excluído com sucesso!');
         _loadItems(reset: true);
       } else {
-        _showSnackBar('Erro ao excluir: ${response}', isError: true);
+        _showSnackBar('Erro ao excluir: $response', isError: true);
       }
     } catch (e) {
       _showSnackBar('Erro: $e', isError: true);
@@ -1920,7 +1903,7 @@ class _GenericMobileGridScreenState<T>
   }
 
   // ==============================================
-  // WIDGET PRINCIPAL COMPLETO
+  // WIDGET PRINCIPAL COMPLETO COM CARDS COMPACTOS
   // ==============================================
 
   @override
@@ -1929,9 +1912,9 @@ class _GenericMobileGridScreenState<T>
     final textTheme = Theme.of(context).textTheme;
 
     return Scaffold(
+      backgroundColor: GridColors.background, // Fundo verde
       appBar: widget.useUserBannerAppBar
           ? PreferredSize(
-              // preferredSize: const Size.fromHeight(94),
               preferredSize: Size.fromHeight(
                 widget.useUserBannerAppBar == true ? 94 : kToolbarHeight,
               ),
@@ -1941,12 +1924,9 @@ class _GenericMobileGridScreenState<T>
                 onRefresh:
                     widget.onBannerRefresh ?? () => _loadItems(reset: true),
                 isLoading: isLoading,
-                // NOVOS PARÂMETROS:
                 onFilterToggle: () =>
                     setState(() => filtrosAbertos = !filtrosAbertos),
                 showFilterButton: widget.useUserBannerAppBar ?? true,
-                // Adicione também se precisar:
-                // onFieldSettings: _showFieldSettings,
               ),
             )
           : (_isSelectionMode ? _buildSelectionAppBar() : _buildNormalAppBar()),
@@ -1956,41 +1936,6 @@ class _GenericMobileGridScreenState<T>
         children: [
           // Filtros (quando abertos)
           if (filtrosAbertos) _buildFilters(),
-
-          // Header de Informações
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 5),
-            decoration: BoxDecoration(
-              color: colorScheme.surfaceVariant.withOpacity(0.3),
-              border: Border(
-                bottom: BorderSide(color: colorScheme.outline.withOpacity(0.1)),
-              ),
-            ),
-            /*       child: Row(
-              children: [
-                Text(
-                  '${filtered.length} itens de $_totalItems encontrados',
-                  style: textTheme.bodyMedium?.copyWith(
-                    color: colorScheme.onSurface.withOpacity(0.7),
-                  ),
-                ),
-                const Spacer(),
-                if (_isSelectionMode)
-                  Text(
-                    '${selectedRows.length} selecionados',
-                    style: textTheme.bodyMedium?.copyWith(
-                      fontWeight: FontWeight.w600,
-                      color: colorScheme.primary,
-                    ),
-                  ),
-                // Botão de Refresh adicional no header
-                if (!_isSelectionMode) ...[
-                  const SizedBox(width: 16),
-                  _buildRefreshButton(),
-                ],
-              ],
-            ),*/
-          ),
 
           // Lista de Itens
           Expanded(
@@ -2068,11 +2013,10 @@ class _GenericMobileGridScreenState<T>
     );
   }
 
-  // ... (mantenha os métodos _buildItemCard, _buildVisibleFieldsForCard,
-  // _buildStatusBadge, _buildCardActions, _showSnackBar, _getNestedValue,
-  // _hasStatusField exatamente como estavam na versão anterior que eu forneci)
+  // ==============================================
+  // CARD COMPACTO COM LAYOUT EM LINHA
+  // ==============================================
 
-  // Restaurando métodos essenciais que podem estar faltando
   Widget _buildItemCard(T item, int index) {
     final itemMap = widget.toJson(item);
     final id = _getNestedValue(itemMap, widget.idFieldName).toString();
@@ -2080,77 +2024,100 @@ class _GenericMobileGridScreenState<T>
     final colorScheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
 
-    return Card(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-      elevation: 1,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-        side: isSelected
-            ? BorderSide(color: colorScheme.primary, width: 2)
-            : BorderSide(color: colorScheme.outline.withOpacity(0.2)),
-      ),
-      color: isSelected
-          ? colorScheme.primary.withOpacity(0.08)
-          : colorScheme.surface,
-      child: InkWell(
-        borderRadius: BorderRadius.circular(12),
-        onTap: _isSelectionMode
-            ? () => _toggleCardSelection(id, !isSelected)
-            : () => widget.onItemTap?.call(item, context),
-        onLongPress: () {
-          if (!_isSelectionMode) {
-            _toggleSelectionMode();
-            _toggleCardSelection(id, true);
-          }
-        },
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  if (_isSelectionMode)
-                    Padding(
-                      padding: const EdgeInsets.only(right: 12),
-                      child: Checkbox(
-                        value: isSelected,
-                        onChanged: (value) =>
-                            _toggleCardSelection(id, value ?? false),
-                        fillColor:
-                            MaterialStateProperty.all(colorScheme.primary),
-                      ),
-                    ),
-                  if (_fieldVisibility[widget.idFieldName] == true)
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 8, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: colorScheme.primary.withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(6),
-                      ),
-                      child: Text(
-                        '#$id',
-                        style: textTheme.labelSmall?.copyWith(
-                          fontWeight: FontWeight.w600,
-                          color: colorScheme.primary,
+    return Container(
+      margin: const EdgeInsets.symmetric(
+          horizontal: 12, vertical: 4), // Menor espaçamento
+      child: Card(
+        elevation: 2,
+        shadowColor:
+            GridColors.primary.withOpacity(0.3), // Sombra na cor primária
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
+          side: BorderSide(
+            color: isSelected
+                ? GridColors.primary
+                : GridColors.primary.withOpacity(0.3), // Borda na cor primária
+            width: isSelected ? 2 : 1,
+          ),
+        ),
+        color:
+            isSelected ? GridColors.primary.withOpacity(0.08) : GridColors.card,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(12),
+          onTap: _isSelectionMode
+              ? () => _toggleCardSelection(id, !isSelected)
+              : () => widget.onItemTap?.call(item, context),
+          onLongPress: () {
+            if (!_isSelectionMode) {
+              _toggleSelectionMode();
+              _toggleCardSelection(id, true);
+            }
+          },
+          child: Padding(
+            padding: const EdgeInsets.all(12), // Padding menor
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Header com ID, Status e Checkbox
+                Row(
+                  children: [
+                    if (_isSelectionMode)
+                      Padding(
+                        padding: const EdgeInsets.only(right: 8),
+                        child: Checkbox(
+                          value: isSelected,
+                          onChanged: (value) =>
+                              _toggleCardSelection(id, value ?? false),
+                          fillColor:
+                              MaterialStateProperty.all(GridColors.primary),
                         ),
                       ),
-                    ),
-                  const Spacer(),
-                  if (_hasStatusField(itemMap)) _buildStatusBadge(itemMap),
-                ],
-              ),
-              const SizedBox(height: 12),
-              ..._buildVisibleFieldsForCard(itemMap),
-              const SizedBox(height: 12),
-              if (!_isSelectionMode) _buildCardActions(item, itemMap),
-            ],
+
+                    // ID
+                    if (_fieldVisibility[widget.idFieldName] == true)
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 6, vertical: 2), // Menor padding
+                        decoration: BoxDecoration(
+                          color: GridColors.primary.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: Text(
+                          '#$id',
+                          style: textTheme.labelSmall?.copyWith(
+                            fontWeight: FontWeight.w600,
+                            color: GridColors.primary,
+                          ),
+                        ),
+                      ),
+
+                    const Spacer(),
+
+                    // Status
+                    if (_hasStatusField(itemMap)) _buildStatusBadge(itemMap),
+                  ],
+                ),
+
+                const SizedBox(height: 8), // Espaço menor
+
+                // Campos em linha (label e valor lado a lado)
+                ..._buildVisibleFieldsForCard(itemMap),
+
+                const SizedBox(height: 8), // Espaço menor
+
+                // Ações
+                if (!_isSelectionMode) _buildCardActions(item, itemMap),
+              ],
+            ),
           ),
         ),
       ),
     );
   }
+
+  // ==============================================
+  // CAMPOS EM LINHA (LABEL E VALOR LADO A LADO)
+  // ==============================================
 
   List<Widget> _buildVisibleFieldsForCard(Map<String, dynamic> itemMap) {
     final visibleConfigs = widget.fieldConfigs
@@ -2161,93 +2128,123 @@ class _GenericMobileGridScreenState<T>
         .toList();
 
     final textTheme = Theme.of(context).textTheme;
-    final colorScheme = Theme.of(context).colorScheme;
 
-    return visibleConfigs.map((config) {
-      if (config.fieldType == FieldType.file) {
-        final fileData = _extractFileData(itemMap, config);
-        final int fileId = fileData['id'] ?? 0;
-        final String fileName = fileData['nome'] ?? fileData['fileName'] ?? '';
+    // Divide os campos em linhas de 2 colunas
+    final rows = <Widget>[];
+    for (int i = 0; i < visibleConfigs.length; i += 2) {
+      final rowFields = <Widget>[];
 
-        if (fileId == 0 || fileName.isEmpty) {
-          return const SizedBox.shrink();
-        }
-
-        return Padding(
-          padding: const EdgeInsets.only(bottom: 8),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                config.label,
-                style: textTheme.labelMedium?.copyWith(
-                  fontWeight: FontWeight.w500,
-                  color: colorScheme.onSurface.withOpacity(0.7),
-                ),
-              ),
-              const SizedBox(height: 2),
-              InkWell(
-                onTap: () => _downloadFile(fileId, fileName),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(
-                      Icons.attach_file,
-                      size: 16,
-                      color: GridColors.primary,
-                    ),
-                    const SizedBox(width: 4),
-                    Flexible(
-                      child: Text(
-                        fileName,
-                        style: TextStyle(
-                          color: GridColors.primary,
-                          decoration: TextDecoration.underline,
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        );
-      } else {
-        final displayValue = _getNestedValue(
-                    itemMap, config.displayFieldName ?? config.fieldName)
-                ?.toString() ??
-            '';
-
-        if (displayValue.isEmpty) return const SizedBox.shrink();
-
-        return Padding(
-          padding: const EdgeInsets.only(bottom: 8),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                config.label,
-                style: textTheme.labelMedium?.copyWith(
-                  fontWeight: FontWeight.w500,
-                  color: colorScheme.onSurface.withOpacity(0.7),
-                ),
-              ),
-              const SizedBox(height: 2),
-              Text(
-                displayValue,
-                style: textTheme.bodyMedium?.copyWith(
-                  color: colorScheme.onSurface,
-                ),
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-              ),
-            ],
-          ),
-        );
+      // Primeira coluna
+      if (i < visibleConfigs.length) {
+        rowFields.add(_buildFieldInLine(visibleConfigs[i], itemMap));
       }
-    }).toList();
+
+      // Segunda coluna
+      if (i + 1 < visibleConfigs.length) {
+        rowFields.add(const SizedBox(width: 16));
+        rowFields.add(_buildFieldInLine(visibleConfigs[i + 1], itemMap));
+      }
+
+      rows.add(
+        Padding(
+          padding:
+              const EdgeInsets.only(bottom: 6), // Espaço menor entre linhas
+          child: Row(
+            children: rowFields,
+          ),
+        ),
+      );
+    }
+
+    return rows;
+  }
+
+  Widget _buildFieldInLine(FieldConfig config, Map<String, dynamic> itemMap) {
+    final textTheme = Theme.of(context).textTheme;
+
+    if (config.fieldType == FieldType.file) {
+      final fileData = _extractFileData(itemMap, config);
+      final int fileId = fileData['id'] ?? 0;
+      final String fileName = fileData['nome'] ?? fileData['fileName'] ?? '';
+
+      if (fileId == 0 || fileName.isEmpty) {
+        return const SizedBox.shrink();
+      }
+
+      return Expanded(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              config.label,
+              style: textTheme.labelSmall?.copyWith(
+                fontWeight: FontWeight.w500,
+                color: GridColors.textSecondary.withOpacity(0.7),
+              ),
+            ),
+            const SizedBox(height: 2),
+            InkWell(
+              onTap: () => _downloadFile(fileId, fileName),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(
+                    Icons.attach_file,
+                    size: 14,
+                    color: GridColors.primary,
+                  ),
+                  const SizedBox(width: 4),
+                  Flexible(
+                    child: Text(
+                      fileName,
+                      style: const TextStyle(
+                        fontSize: 12,
+                        color: GridColors.primary,
+                        decoration: TextDecoration.underline,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      );
+    } else {
+      final displayValue =
+          _getNestedValue(itemMap, config.displayFieldName ?? config.fieldName)
+                  ?.toString() ??
+              '';
+
+      if (displayValue.isEmpty) return const SizedBox.shrink();
+
+      return Expanded(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              config.label,
+              style: textTheme.labelSmall?.copyWith(
+                fontWeight: FontWeight.w500,
+                color: GridColors.textSecondary.withOpacity(0.7),
+              ),
+            ),
+            const SizedBox(height: 2),
+            Text(
+              displayValue,
+              style: textTheme.bodySmall?.copyWith(
+                color: GridColors.textSecondary,
+                fontWeight: FontWeight.w400,
+              ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ],
+        ),
+      );
+    }
   }
 
   Future<void> _downloadFile(int fileId, String fileName) async {
@@ -2256,7 +2253,7 @@ class _GenericMobileGridScreenState<T>
     if (response == 200) {
       _showSnackBar('Download realizado com sucesso');
     } else {
-      _showSnackBar('Falha no download: ${response}', isError: true);
+      _showSnackBar('Falha no download: $response', isError: true);
     }
   }
 
@@ -2334,7 +2331,6 @@ class _GenericMobileGridScreenState<T>
 
   Widget _buildStatusBadge(Map<String, dynamic> itemMap) {
     final status = _getNestedValue(itemMap, 'status')?.toString().toLowerCase();
-    final colorScheme = Theme.of(context).colorScheme;
 
     Color badgeColor;
     String badgeText;
@@ -2344,30 +2340,31 @@ class _GenericMobileGridScreenState<T>
       case 'true':
       case '1':
       case 'aberto':
-        badgeColor = colorScheme.primary;
+        badgeColor = GridColors.success;
         badgeText = 'Ativo';
         break;
       case 'inativo':
       case 'false':
       case '0':
       case 'fechado':
-        badgeColor = colorScheme.error;
+        badgeColor = GridColors.error;
         badgeText = 'Inativo';
         break;
       case 'pendente':
-        badgeColor = colorScheme.secondary;
+        badgeColor = GridColors.warning;
         badgeText = 'Pendente';
         break;
       default:
-        badgeColor = colorScheme.outline;
+        badgeColor = GridColors.primary;
         badgeText = status?.toUpperCase() ?? 'Status';
     }
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      padding: const EdgeInsets.symmetric(
+          horizontal: 6, vertical: 2), // Menor padding
       decoration: BoxDecoration(
         color: badgeColor.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(6),
+        borderRadius: BorderRadius.circular(4),
         border: Border.all(color: badgeColor.withOpacity(0.3)),
       ),
       child: Text(
@@ -2375,28 +2372,27 @@ class _GenericMobileGridScreenState<T>
         style: Theme.of(context).textTheme.labelSmall?.copyWith(
               color: badgeColor,
               fontWeight: FontWeight.w600,
+              fontSize: 10, // Fonte menor
             ),
       ),
     );
   }
 
   Widget _buildCardActions(T item, Map<String, dynamic> itemMap) {
-    final colorScheme = Theme.of(context).colorScheme;
-
     return Row(
       mainAxisAlignment: MainAxisAlignment.end,
       children: [
         if (widget.enableDebugMode)
           IconButton(
             icon: Icon(Icons.bug_report,
-                size: 18, color: colorScheme.onSurface.withOpacity(0.6)),
+                size: 16, color: GridColors.textSecondary.withOpacity(0.6)),
             onPressed: () => _showAllFieldsDebug(context, item),
             tooltip: 'Ver todos os campos',
           ),
         if (widget.detailScreenBuilder != null && widget.hasPermission('view'))
           IconButton(
             icon: Icon(Icons.visibility_outlined,
-                size: 18, color: colorScheme.onSurface.withOpacity(0.6)),
+                size: 16, color: GridColors.textSecondary.withOpacity(0.6)),
             onPressed: () {
               Navigator.push(
                 context,
@@ -2410,14 +2406,13 @@ class _GenericMobileGridScreenState<T>
         if (widget.hasPermission('edit'))
           IconButton(
             icon: Icon(Icons.edit_outlined,
-                size: 18, color: colorScheme.onSurface.withOpacity(0.6)),
+                size: 16, color: GridColors.textSecondary.withOpacity(0.6)),
             onPressed: () => _openForm(item: item),
             tooltip: 'Editar',
           ),
         if (widget.hasPermission('delete'))
           IconButton(
-            icon:
-                Icon(Icons.delete_outline, size: 18, color: colorScheme.error),
+            icon: const Icon(Icons.delete_outline, size: 16, color: GridColors.error),
             onPressed: () => _deleteItem(
               _getNestedValue(itemMap, widget.idFieldName).toString(),
             ),
@@ -2428,7 +2423,7 @@ class _GenericMobileGridScreenState<T>
             .map(
               (action) => IconButton(
                 icon: Icon(action.icon,
-                    size: 18, color: colorScheme.onSurface.withOpacity(0.6)),
+                    size: 16, color: GridColors.textSecondary.withOpacity(0.6)),
                 onPressed: () => action.onPressed(context, item),
                 tooltip: action.label,
               ),
@@ -2438,12 +2433,10 @@ class _GenericMobileGridScreenState<T>
   }
 
   void _showSnackBar(String message, {bool isError = false}) {
-    final colorScheme = Theme.of(context).colorScheme;
-
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(message),
-        backgroundColor: isError ? colorScheme.error : colorScheme.primary,
+        backgroundColor: isError ? GridColors.error : GridColors.primary,
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(8),

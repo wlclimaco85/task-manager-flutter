@@ -202,7 +202,7 @@ class ContaReceber {
       isVisibleByDefault: true,
       isFixed: false,
     ),
-    FieldConfig(
+    const FieldConfig(
       label: "Descrição",
       fieldName: "descricao",
       icon: Icons.description,
@@ -211,7 +211,7 @@ class ContaReceber {
       isVisibleByDefault: true,
       isFixed: false,
     ),
-    FieldConfig(
+    const FieldConfig(
       label: "Valor",
       fieldName: "valor",
       icon: Icons.attach_money,
@@ -219,7 +219,7 @@ class ContaReceber {
       isVisibleByDefault: true,
       isFixed: false,
     ),
-    FieldConfig(
+    const FieldConfig(
       label: "Data Vencimento",
       fieldName: "dataVencimento",
       icon: Icons.calendar_today,
@@ -228,7 +228,7 @@ class ContaReceber {
       isVisibleByDefault: true,
       isFixed: false,
     ),
-    FieldConfig(
+    const FieldConfig(
       label: "Status",
       fieldName: "status",
       icon: Icons.info,
@@ -237,7 +237,7 @@ class ContaReceber {
       isFixed: false,
       isInForm: false,
     ),
-    FieldConfig(
+    const FieldConfig(
       label: "Data Baixa",
       fieldName: "dataBaixa",
       icon: Icons.calendar_today,
@@ -245,7 +245,7 @@ class ContaReceber {
       isFixed: false,
       isInForm: false,
     ),
-    FieldConfig(
+    const FieldConfig(
       label: "Valor Baixa",
       fieldName: "valorBaixa",
       icon: Icons.attach_money,
@@ -253,7 +253,7 @@ class ContaReceber {
       isFixed: false,
       isInForm: false,
     ),
-    FieldConfig(
+    const FieldConfig(
       label: "Valor Multa",
       fieldName: "valorMulta",
       icon: Icons.attach_money,
@@ -261,7 +261,7 @@ class ContaReceber {
       isVisibleByDefault: false,
       isFixed: false,
     ),
-    FieldConfig(
+    const FieldConfig(
       label: "Valor Juros",
       fieldName: "valorJuros",
       icon: Icons.attach_money,
@@ -269,7 +269,7 @@ class ContaReceber {
       isVisibleByDefault: false,
       isFixed: false,
     ),
-    FieldConfig(
+    const FieldConfig(
       label: "Valor Desconto",
       fieldName: "valorDesconto",
       icon: Icons.attach_money,
@@ -292,7 +292,7 @@ class ContaReceber {
       isVisibleByDefault: true,
       isFixed: false,
     ),
-    FieldConfig(
+    const FieldConfig(
       label: "Status",
       fieldName: "status",
       icon: Icons.check_circle,
@@ -310,7 +310,7 @@ class ContaReceber {
       dropdownValueField: 'value',
       dropdownDisplayField: 'label',
     ),
-    FieldConfig(
+    const FieldConfig(
       label: "Anexo",
       fieldName: "file.id",
       displayFieldName: "file.nome",

@@ -32,7 +32,7 @@ class _ChatMessageScreenState extends State<ChatMessageScreen> {
   final TextEditingController _messageController = TextEditingController();
   List<ChatMessage> _messages = [];
   late WebSocketChannel _channel;
-  String _authToken = '${AuthUtility.userInfo?.token}';
+  final String _authToken = '${AuthUtility.userInfo?.token}';
   final ScrollController _scrollController = ScrollController();
   bool _isLoading = false;
 
@@ -59,7 +59,7 @@ class _ChatMessageScreenState extends State<ChatMessageScreen> {
         },
         onError: (error) {
           print('WebSocket error: $error');
-          Future.delayed(Duration(seconds: 3), _connectWebSocket);
+          Future.delayed(const Duration(seconds: 3), _connectWebSocket);
         },
         onDone: () {
           print('WebSocket closed');
@@ -75,7 +75,7 @@ class _ChatMessageScreenState extends State<ChatMessageScreen> {
     if (_scrollController.hasClients) {
       _scrollController.animateTo(
         _scrollController.position.maxScrollExtent,
-        duration: Duration(milliseconds: 300),
+        duration: const Duration(milliseconds: 300),
         curve: Curves.easeOut,
       );
     }
@@ -142,11 +142,11 @@ class _ChatMessageScreenState extends State<ChatMessageScreen> {
           // }).toList();
         });
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Chat finalizado com sucesso')),
+          const SnackBar(content: Text('Chat finalizado com sucesso')),
         );
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Falha ao finalizar o chat')),
+          const SnackBar(content: Text('Falha ao finalizar o chat')),
         );
       }
     } catch (e) {
@@ -168,11 +168,11 @@ class _ChatMessageScreenState extends State<ChatMessageScreen> {
           //_chats.removeWhere((c) => c.chatId == chat.chatId);
         });
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Chat excluído com sucesso')),
+          const SnackBar(content: Text('Chat excluído com sucesso')),
         );
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Falha ao excluir o chat')),
+          const SnackBar(content: Text('Falha ao excluir o chat')),
         );
       }
     } catch (e) {
@@ -288,12 +288,12 @@ class _ChatMessageScreenState extends State<ChatMessageScreen> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text('Abrir Chamado'),
-        content: Text('Deseja abrir um chamado para este assunto?'),
+        title: const Text('Abrir Chamado'),
+        content: const Text('Deseja abrir um chamado para este assunto?'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: Text('Cancelar'),
+            child: const Text('Cancelar'),
           ),
           TextButton(
             onPressed: () {
@@ -306,7 +306,7 @@ class _ChatMessageScreenState extends State<ChatMessageScreen> {
               }));
               Navigator.pop(context);
             },
-            child: Text('Confirmar'),
+            child: const Text('Confirmar'),
           ),
         ],
       ),
@@ -331,13 +331,13 @@ class _ChatMessageScreenState extends State<ChatMessageScreen> {
             Text('Chat - ${widget.sector}'),
             Text(
               widget.userName,
-              style: TextStyle(fontSize: 14, fontWeight: FontWeight.normal),
+              style: const TextStyle(fontSize: 14, fontWeight: FontWeight.normal),
             ),
           ],
         ),
         actions: [
           IconButton(
-            icon: Icon(Icons.more_vert),
+            icon: const Icon(Icons.more_vert),
             onPressed: () {
               // Adicionar menu de opções
             },
@@ -356,19 +356,19 @@ class _ChatMessageScreenState extends State<ChatMessageScreen> {
             ),
           ),
           Container(
-            padding: EdgeInsets.all(8),
+            padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
               color: Colors.grey[200],
-              border: Border(top: BorderSide(color: Colors.grey)),
+              border: const Border(top: BorderSide(color: Colors.grey)),
             ),
             child: Row(
               children: [
                 IconButton(
-                  icon: Icon(Icons.attach_file),
+                  icon: const Icon(Icons.attach_file),
                   onPressed: _uploadAndSendFile,
                 ),
                 IconButton(
-                  icon: Icon(Icons.support_agent),
+                  icon: const Icon(Icons.support_agent),
                   onPressed: _createTicket,
                 ),
                 Expanded(
@@ -379,12 +379,12 @@ class _ChatMessageScreenState extends State<ChatMessageScreen> {
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(25),
                       ),
-                      contentPadding: EdgeInsets.symmetric(horizontal: 16),
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 16),
                     ),
                   ),
                 ),
                 IconButton(
-                  icon: Icon(Icons.send),
+                  icon: const Icon(Icons.send),
                   onPressed: _sendMessage,
                 ),
               ],
@@ -399,7 +399,7 @@ class _ChatMessageScreenState extends State<ChatMessageScreen> {
     bool isMe = message.sender == widget.userName;
 
     return Container(
-      margin: EdgeInsets.symmetric(vertical: 4, horizontal: 8),
+      margin: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
       child: Row(
         mainAxisAlignment:
             isMe ? MainAxisAlignment.end : MainAxisAlignment.start,
@@ -409,7 +409,7 @@ class _ChatMessageScreenState extends State<ChatMessageScreen> {
               backgroundColor: Colors.grey,
               child: Text(
                 message.sender.isNotEmpty ? message.sender[0] : '?',
-                style: TextStyle(color: Colors.white),
+                style: const TextStyle(color: Colors.white),
               ),
             ),
           Flexible(
@@ -417,17 +417,17 @@ class _ChatMessageScreenState extends State<ChatMessageScreen> {
               constraints: BoxConstraints(
                 maxWidth: MediaQuery.of(context).size.width * 0.7,
               ),
-              padding: EdgeInsets.all(12),
-              margin: EdgeInsets.symmetric(horizontal: 8),
+              padding: const EdgeInsets.all(12),
+              margin: const EdgeInsets.symmetric(horizontal: 8),
               decoration: BoxDecoration(
-                color: isMe ? Color(0xFFDCF8C6) : Colors.white,
+                color: isMe ? const Color(0xFFDCF8C6) : Colors.white,
                 borderRadius: BorderRadius.circular(8),
                 boxShadow: [
                   BoxShadow(
                     color: Colors.grey.withOpacity(0.5),
                     spreadRadius: 1,
                     blurRadius: 1,
-                    offset: Offset(0, 1),
+                    offset: const Offset(0, 1),
                   ),
                 ],
               ),
@@ -528,7 +528,7 @@ class _ChatMessageScreenState extends State<ChatMessageScreen> {
         );
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
+          const SnackBar(
             content: Text('Falha ao baixar o arquivo'),
           ),
         );

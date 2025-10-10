@@ -129,7 +129,7 @@ class Comunicado {
         return null;
       },
     ),
-    FieldConfig(
+    const FieldConfig(
       label: "Conteúdo",
       fieldName: "conteudo",
       icon: Icons.description,
@@ -154,7 +154,7 @@ class Comunicado {
       dropdownDisplayField: 'descricao',
       isRequired: true,
     ),
-    FieldConfig(
+    const FieldConfig(
       label: "Autor",
       fieldName: "autor",
       icon: Icons.person,

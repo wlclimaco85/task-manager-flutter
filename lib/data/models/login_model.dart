@@ -124,7 +124,7 @@ class Login {
         return null;
       },
     ),
-    FieldConfig(
+    const FieldConfig(
       label: "Nome",
       fieldName: "nome",
       icon: Icons.person,
@@ -132,7 +132,7 @@ class Login {
       isInForm: true,
       isRequired: true,
     ),
-    FieldConfig(
+    const FieldConfig(
       label: "CPF/CNPJ",
       fieldName: "cpfCnpj",
       icon: Icons.badge,
@@ -207,8 +207,8 @@ class LoginModel {
     }
 
     // CORRIGIDO: estava salvando data em vez de login
-    if (this.login != null) {
-      data['login'] = this.login!.toJson();
+    if (login != null) {
+      data['login'] = login!.toJson();
     }
 
     return data;

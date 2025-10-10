@@ -74,7 +74,7 @@ class FormaPagamento {
   }
 
   static List<FieldConfig> fieldConfigs = [
-    FieldConfig(
+    const FieldConfig(
       label: "ID",
       fieldName: "id",
       icon: Icons.key,
@@ -83,7 +83,7 @@ class FormaPagamento {
       isVisibleByDefault: true,
       isFixed: true,
     ),
-    FieldConfig(
+    const FieldConfig(
       label: "Nome",
       fieldName: "nome",
       icon: Icons.payment,
@@ -92,7 +92,7 @@ class FormaPagamento {
       isVisibleByDefault: true,
       isFixed: false,
     ),
-    FieldConfig(
+    const FieldConfig(
       label: "Descrição",
       fieldName: "descricao",
       icon: Icons.description,
@@ -100,7 +100,7 @@ class FormaPagamento {
       isVisibleByDefault: true,
       isFixed: false,
     ),
-    FieldConfig(
+    const FieldConfig(
       label: "Status",
       fieldName: "status",
       icon: Icons.check_circle,
@@ -115,7 +115,7 @@ class FormaPagamento {
       dropdownValueField: 'value',
       dropdownDisplayField: 'label',
     ),
-    FieldConfig(
+    const FieldConfig(
       label: "Data Criação",
       fieldName: "audit.dataCreated", // 🔹 ajustado para usar audit
       icon: Icons.calendar_today,

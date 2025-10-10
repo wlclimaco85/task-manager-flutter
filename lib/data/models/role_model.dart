@@ -51,21 +51,21 @@ class Role {
   }
 
   static List<FieldConfig> fieldConfigs = [
-    FieldConfig(
+    const FieldConfig(
       label: "Descrição",
       fieldName: "description",
       icon: Icons.description,
       isInForm: true,
       isFilterable: true,
     ),
-    FieldConfig(
+    const FieldConfig(
       label: "Disponível",
       fieldName: "available",
       icon: Icons.check_circle,
       isInForm: true,
       isFilterable: true,
     ),
-    FieldConfig(
+    const FieldConfig(
       label: "Chave",
       fieldName: "key",
       icon: Icons.vpn_key,

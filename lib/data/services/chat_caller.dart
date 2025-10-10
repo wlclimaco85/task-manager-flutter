@@ -13,11 +13,11 @@ class ChatCaller {
     try {
       DadosPessoal dp =
           AuthUtility.userInfo?.data?.codDadosPessoal ?? DadosPessoal();
-      final eeee = ApiLinks.fecthChats + '?user=' + dp.email!;
+      final eeee = '${ApiLinks.fecthChats}?user=${dp.email!}';
       print('URL de requisição: $eeee');
 
       final NetworkResponse response = await NetworkCaller()
-          .getRequest(ApiLinks.fecthChats + '?user=' + dp.email!);
+          .getRequest('${ApiLinks.fecthChats}?user=${dp.email!}');
 
       if (response.statusCode == 200 && response.body != null) {
         models = ChatMessageModel.fromJson(response.body!);

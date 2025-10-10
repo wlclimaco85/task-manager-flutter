@@ -20,21 +20,21 @@ class Aplicativo {
   }
 
   static List<FieldConfig> fieldConfigs = [
-    FieldConfig(
+    const FieldConfig(
       label: "ID",
       fieldName: "id",
       icon: Icons.numbers,
       isInForm: true,
       isFilterable: true,
     ),
-    FieldConfig(
+    const FieldConfig(
       label: "Nome",
       fieldName: "nome",
       icon: Icons.label,
       isInForm: true,
       isFilterable: true,
     ),
-    FieldConfig(
+    const FieldConfig(
       label: "Observação",
       fieldName: "observacao",
       icon: Icons.description,

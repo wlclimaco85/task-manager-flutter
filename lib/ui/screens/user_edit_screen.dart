@@ -1,21 +1,12 @@
 import 'package:flutter/material.dart';
-import 'package:task_manager_flutter/data/utils/api_links.dart';
-import 'package:task_manager_flutter/ui/widgets/user_banners.dart';
-import 'package:task_manager_flutter/ui/screens/update_profile.dart';
-import 'package:task_manager_flutter/ui/widgets/home_list_model.dart';
-import 'package:task_manager_flutter/data/models/network_response.dart';
 import 'package:task_manager_flutter/data/services/network_caller.dart';
-import 'package:task_manager_flutter/ui/widgets/input_field_busca.dart';
-import 'package:task_manager_flutter/ui/widgets/itens_list_academia.dart';
-import 'package:task_manager_flutter/ui/widgets/academia_dynamic_form.dart';
 import 'dart:io';
-import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 
 class UserEditScreen extends StatefulWidget {
   final Map<String, dynamic> initialData;
 
-  const UserEditScreen({Key? key, required this.initialData}) : super(key: key);
+  const UserEditScreen({super.key, required this.initialData});
 
   @override
   _UserEditScreenState createState() => _UserEditScreenState();
@@ -247,15 +238,15 @@ class _UserEditScreenState extends State<UserEditScreen> {
           Navigator.pop(context, requestData);
 
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: const Text('Perfil atualizado com sucesso!'),
+            const SnackBar(
+              content: Text('Perfil atualizado com sucesso!'),
               backgroundColor: GridColors.success,
             ),
           );
         } else {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text('Erro ao atualizar: ${response}'),
+              content: Text('Erro ao atualizar: $response'),
               backgroundColor: GridColors.error,
             ),
           );

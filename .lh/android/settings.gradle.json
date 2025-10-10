@@ -1,0 +1,22 @@
+{
+    "sourceFile": "android/settings.gradle",
+    "activeCommit": 0,
+    "commits": [
+        {
+            "activePatchIndex": 1,
+            "patches": [
+                {
+                    "date": 1760050551772,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n"
+                },
+                {
+                    "date": 1760096205794,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -1,27 +1,29 @@\n pluginManagement {\r\n     def flutterSdkPath = {\r\n         def properties = new Properties()\r\n-        file(\"local.properties\").withInputStream { properties.load(it) }\r\n-        def flutterSdkPath = properties.getProperty(\"flutter.sdk\")\r\n-        assert flutterSdkPath != null, \"flutter.sdk not set in local.properties\"\r\n-        return flutterSdkPath\r\n-    }\r\n-    settings.ext.flutterSdkPath = flutterSdkPath()\r\n+        def localPropertiesFile = file(\"local.properties\")\r\n+        if (localPropertiesFile.exists()) {\r\n+            localPropertiesFile.withReader(\"UTF-8\") { reader ->\r\n+                properties.load(reader)\r\n+            }\r\n+        }\r\n+        def flutterSdk = properties.getProperty(\"flutter.sdk\")\r\n+        assert flutterSdk != null, \"flutter.sdk not set in local.properties\"\r\n+        return flutterSdk\r\n+    }()\r\n \r\n-    includeBuild(\"${settings.ext.flutterSdkPath}/packages/flutter_tools/gradle\")\r\n+    includeBuild(\"${flutterSdkPath}/packages/flutter_tools/gradle\")\r\n \r\n     repositories {\r\n         google()\r\n         mavenCentral()\r\n         gradlePluginPortal()\r\n     }\r\n-}\r\n \r\n-plugins {\r\n-    id \"dev.flutter.flutter-plugin-loader\" version \"1.0.0\"\r\n-    id \"com.android.application\" version \"7.3.0\" apply false\r\n-    id \"org.jetbrains.kotlin.android\" version \"1.7.10\" apply false\r\n+    plugins {\r\n+        id \"com.android.application\" version \"8.5.2\" apply false\r\n+        id \"org.jetbrains.kotlin.android\" version \"1.9.22\" apply false\r\n+    }\r\n }\r\n \r\n-include \":app\"\r\n-\r\n+include(\":app\")\r\n"
+                }
+            ],
+            "date": 1760050551772,
+            "name": "Commit-0",
+            "content": "pluginManagement {\r\n    def flutterSdkPath = {\r\n        def properties = new Properties()\r\n        file(\"local.properties\").withInputStream { properties.load(it) }\r\n        def flutterSdkPath = properties.getProperty(\"flutter.sdk\")\r\n        assert flutterSdkPath != null, \"flutter.sdk not set in local.properties\"\r\n        return flutterSdkPath\r\n    }\r\n    settings.ext.flutterSdkPath = flutterSdkPath()\r\n\r\n    includeBuild(\"${settings.ext.flutterSdkPath}/packages/flutter_tools/gradle\")\r\n\r\n    repositories {\r\n        google()\r\n        mavenCentral()\r\n        gradlePluginPortal()\r\n    }\r\n}\r\n\r\nplugins {\r\n    id \"dev.flutter.flutter-plugin-loader\" version \"1.0.0\"\r\n    id \"com.android.application\" version \"7.3.0\" apply false\r\n    id \"org.jetbrains.kotlin.android\" version \"1.7.10\" apply false\r\n}\r\n\r\ninclude \":app\"\r\n\r\n"
+        }
+    ]
+}

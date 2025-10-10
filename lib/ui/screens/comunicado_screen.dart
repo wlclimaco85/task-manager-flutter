@@ -270,7 +270,7 @@ class _ComunicadoScreenState extends State<ComunicadoScreen> {
                           ],
                         ],
                       ),
-                      Icon(
+                      const Icon(
                         Icons.arrow_forward_ios_rounded,
                         size: 16,
                         color: GridColors.primary,
@@ -348,9 +348,9 @@ class _ComunicadoScreenState extends State<ComunicadoScreen> {
             // Header do modal
             Container(
               padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
+              decoration: const BoxDecoration(
                 color: GridColors.primary,
-                borderRadius: const BorderRadius.only(
+                borderRadius: BorderRadius.only(
                   topLeft: Radius.circular(24),
                   topRight: Radius.circular(24),
                 ),

@@ -51,7 +51,7 @@ class UserBannerAppBar extends StatefulWidget implements PreferredSizeWidget {
   @override
   Size get preferredSize {
     // Ajusta a altura baseada no showFilterButton
-    final baseHeight = kToolbarHeight;
+    const baseHeight = kToolbarHeight;
     final filterBarHeight = (showFilterButton == true) ? 52.0 : 0.0;
     return Size.fromHeight(baseHeight + filterBarHeight);
   }
@@ -314,8 +314,8 @@ class _UserBannerAppBarState extends State<UserBannerAppBar> {
                         ).then((updatedData) {
                           if (updatedData != null) {
                             ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: const Text(
+                              const SnackBar(
+                                content: Text(
                                     'Perfil atualizado com sucesso!'),
                                 backgroundColor: GridColors.success,
                               ),

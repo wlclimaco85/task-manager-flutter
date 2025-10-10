@@ -1,5 +1,3 @@
-import 'dart:convert';
-import 'package:task_manager_flutter/data/models/parceiro_model.dart';
 
 class ChatMessage {
   final String sender;

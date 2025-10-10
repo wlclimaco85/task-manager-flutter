@@ -28,7 +28,7 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
         AuthUtility.userInfo!.data!.id! > 1;
 
     return [
-      CalendarScreen(),
+      const CalendarScreen(),
       AuthUtility.userInfo?.data?.email != null
           ? ChatListScreen(userName: AuthUtility.userInfo?.data?.email ?? '')
           : const ChatListScreen(userName: 'Usuário'),

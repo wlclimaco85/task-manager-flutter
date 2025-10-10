@@ -28,8 +28,8 @@ class FileAttachment {
       fileName: json['fileName'],
       fileType: json['fileType'],
       uploadDate: DateTime.parse(json['uploadDate']) ?? DateTime.now(),
-      diretorioId: json['diretorioId'] != null ? json['diretorioId'] : null,
-      empresaId: json['empresaId'] != null ? json['empresaId'] : 0,
+      diretorioId: json['diretorioId'],
+      empresaId: json['empresaId'] ?? 0,
     );
   }
 
@@ -64,7 +64,7 @@ class FileAttachment {
   }
 
   static List<FieldConfig> fieldConfigs = [
-    FieldConfig(
+    const FieldConfig(
       label: "Nome do Arquivo",
       fieldName: "fileName",
       icon: Icons.file_present,
@@ -73,7 +73,7 @@ class FileAttachment {
       isVisibleByDefault: true,
       isFixed: false,
     ),
-    FieldConfig(
+    const FieldConfig(
       label: "Tipo",
       fieldName: "fileType",
       icon: Icons.type_specimen,
@@ -81,7 +81,7 @@ class FileAttachment {
       isVisibleByDefault: true,
       isFixed: false,
     ),
-    FieldConfig(
+    const FieldConfig(
       label: "Data de Upload",
       fieldName: "uploadDate",
       icon: Icons.calendar_today,

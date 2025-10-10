@@ -167,7 +167,7 @@ class TelaService {
 
           // Se não for a última tentativa, espera um pouco antes de tentar novamente
           if (tentativa < maxTentativas) {
-            await Future.delayed(Duration(seconds: 1)); // Espera 1 segundo
+            await Future.delayed(const Duration(seconds: 1)); // Espera 1 segundo
           }
         }
       } catch (e) {
@@ -175,7 +175,7 @@ class TelaService {
 
         // Se não for a última tentativa, espera um pouco antes de tentar novamente
         if (tentativa < maxTentativas) {
-          await Future.delayed(Duration(seconds: 1)); // Espera 1 segundo
+          await Future.delayed(const Duration(seconds: 1)); // Espera 1 segundo
         }
       }
     }

@@ -91,7 +91,7 @@ class _ChatListScreenState extends State<ChatListScreen> {
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: Text('Selecionar Setor'),
+          title: const Text('Selecionar Setor'),
           content: SizedBox(
             width: double.maxFinite,
             child: ListView.builder(
@@ -122,8 +122,8 @@ class _ChatListScreenState extends State<ChatListScreen> {
           child: Wrap(
             children: <Widget>[
               ListTile(
-                leading: Icon(Icons.visibility),
-                title: Text('Visualizar Chat'),
+                leading: const Icon(Icons.visibility),
+                title: const Text('Visualizar Chat'),
                 onTap: () {
                   Navigator.pop(context);
                   Navigator.push(
@@ -139,24 +139,24 @@ class _ChatListScreenState extends State<ChatListScreen> {
                 },
               ),
               ListTile(
-                leading: Icon(Icons.check_circle, color: Colors.green),
-                title: Text('Finalizar Chat'),
+                leading: const Icon(Icons.check_circle, color: Colors.green),
+                title: const Text('Finalizar Chat'),
                 onTap: () {
                   Navigator.pop(context);
                   _finalizeChat(chat);
                 },
               ),
               ListTile(
-                leading: Icon(Icons.delete, color: Colors.red),
-                title: Text('Excluir Chat'),
+                leading: const Icon(Icons.delete, color: Colors.red),
+                title: const Text('Excluir Chat'),
                 onTap: () {
                   Navigator.pop(context);
                   _deleteChat(chat);
                 },
               ),
               ListTile(
-                leading: Icon(Icons.cancel),
-                title: Text('Cancelar'),
+                leading: const Icon(Icons.cancel),
+                title: const Text('Cancelar'),
                 onTap: () => Navigator.pop(context),
               ),
             ],
@@ -171,12 +171,12 @@ class _ChatListScreenState extends State<ChatListScreen> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text('Finalizar Chat'),
+        title: const Text('Finalizar Chat'),
         content: Text('Deseja finalizar o chat com ${chat.sector}?'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: Text('Cancelar'),
+            child: const Text('Cancelar'),
           ),
           TextButton(
             onPressed: () {
@@ -198,10 +198,10 @@ class _ChatListScreenState extends State<ChatListScreen> {
               });
               Navigator.pop(context);
               ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text('Chat finalizado com sucesso')),
+                const SnackBar(content: Text('Chat finalizado com sucesso')),
               );
             },
-            child: Text('Confirmar'),
+            child: const Text('Confirmar'),
           ),
         ],
       ),
@@ -213,12 +213,12 @@ class _ChatListScreenState extends State<ChatListScreen> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text('Excluir Chat'),
+        title: const Text('Excluir Chat'),
         content: Text('Deseja excluir o chat com ${chat.sector}?'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: Text('Cancelar'),
+            child: const Text('Cancelar'),
           ),
           TextButton(
             onPressed: () {
@@ -228,10 +228,10 @@ class _ChatListScreenState extends State<ChatListScreen> {
               });
               Navigator.pop(context);
               ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text('Chat excluído com sucesso')),
+                const SnackBar(content: Text('Chat excluído com sucesso')),
               );
             },
-            child: Text('Excluir'),
+            child: const Text('Excluir'),
           ),
         ],
       ),
@@ -264,9 +264,9 @@ class _ChatListScreenState extends State<ChatListScreen> {
         // },
       ),
       body: _isLoading
-          ? Center(child: CircularProgressIndicator())
+          ? const Center(child: CircularProgressIndicator())
           : _chats.isEmpty
-              ? Center(
+              ? const Center(
                   child: Text('Nenhum chat iniciado'),
                 )
               : ListView.separated(
@@ -296,11 +296,11 @@ class _ChatListScreenState extends State<ChatListScreen> {
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                             ),
-                            SizedBox(height: 4),
+                            const SizedBox(height: 4),
                             Row(
                               children: [
                                 Container(
-                                  padding: EdgeInsets.symmetric(
+                                  padding: const EdgeInsets.symmetric(
                                       horizontal: 8, vertical: 2),
                                   decoration: BoxDecoration(
                                     color: _getStatusColor(chat.status)
@@ -329,13 +329,13 @@ class _ChatListScreenState extends State<ChatListScreen> {
                           children: [
                             Text(
                               DateFormat('HH:mm').format(chat.timestamp),
-                              style: TextStyle(
+                              style: const TextStyle(
                                 fontSize: 12,
                                 color: Colors.grey,
                               ),
                             ),
                             IconButton(
-                              icon: Icon(Icons.more_vert),
+                              icon: const Icon(Icons.more_vert),
                               onPressed: () => _showChatActions(context, chat),
                             ),
                           ],
@@ -359,8 +359,8 @@ class _ChatListScreenState extends State<ChatListScreen> {
                 ),
       floatingActionButton: FloatingActionButton(
         onPressed: _showSectorSelectionDialog,
-        child: Icon(Icons.chat),
         tooltip: 'Novo Chat',
+        child: const Icon(Icons.chat),
       ),
     );
   }
