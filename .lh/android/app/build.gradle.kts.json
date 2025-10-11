@@ -1,0 +1,38 @@
+{
+    "sourceFile": "android/app/build.gradle.kts",
+    "activeCommit": 0,
+    "commits": [
+        {
+            "activePatchIndex": 5,
+            "patches": [
+                {
+                    "date": 1760102152131,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n"
+                },
+                {
+                    "date": 1760102157416,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -36,9 +36,9 @@\n             // Signing with the debug keys for now, so `flutter run --release` works.\r\n             signingConfig = signingConfigs.getByName(\"debug\")\r\n         }\r\n     }\r\n-     signingConfigs {\r\n+    signingConfigs {\r\n         release {\r\n             storeFile file(\"jks.jks\")\r\n             storePassword \"123Mudar\\$\"\r\n             keyAlias \"key0\"\r\n"
+                },
+                {
+                    "date": 1760102335562,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -37,13 +37,13 @@\n             signingConfig = signingConfigs.getByName(\"debug\")\r\n         }\r\n     }\r\n     signingConfigs {\r\n-        release {\r\n-            storeFile file(\"jks.jks\")\r\n-            storePassword \"123Mudar\\$\"\r\n-            keyAlias \"key0\"\r\n-            keyPassword \"123Mudar\\$\"\r\n+        create(\"release\") {\r\n+            storeFile = file(\"jks.jks\")\r\n+            storePassword = \"123Mudar$\"\r\n+            keyAlias = \"key0\"\r\n+            keyPassword = \"123Mudar$\"\r\n         }\r\n     }\r\n }\r\n \r\n"
+                },
+                {
+                    "date": 1760102694970,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -29,24 +29,28 @@\n         versionCode = flutter.versionCode\r\n         versionName = flutter.versionName\r\n     }\r\n \r\n-    buildTypes {\r\n-        release {\r\n-            // TODO: Add your own signing config for the release build.\r\n-            // Signing with the debug keys for now, so `flutter run --release` works.\r\n-            signingConfig = signingConfigs.getByName(\"debug\")\r\n-        }\r\n-    }\r\n     signingConfigs {\r\n-        create(\"release\") {\r\n-            storeFile = file(\"jks.jks\")\r\n-            storePassword = \"123Mudar$\"\r\n-            keyAlias = \"key0\"\r\n-            keyPassword = \"123Mudar$\"\r\n-        }\r\n+    create(\"release\") {\r\n+        storeFile = file(\"jks.jks\")\r\n+        storePassword = \"123Mudar$\"\r\n+        keyAlias = \"key0\"\r\n+        keyPassword = \"123Mudar$\"\r\n     }\r\n }\r\n \r\n+buildTypes {\r\n+    getByName(\"release\") {\r\n+        signingConfig = signingConfigs.getByName(\"release\")\r\n+        isMinifyEnabled = false\r\n+        isShrinkResources = false\r\n+    }\r\n+    getByName(\"debug\") {\r\n+        signingConfig = signingConfigs.getByName(\"release\")\r\n+    }\r\n+}\r\n+}\r\n+\r\n flutter {\r\n     source = \"../..\"\r\n }\r\n"
+                },
+                {
+                    "date": 1760102715758,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -36,10 +36,10 @@\n         storePassword = \"123Mudar$\"\r\n         keyAlias = \"key0\"\r\n         keyPassword = \"123Mudar$\"\r\n     }\r\n-}\r\n \r\n+\r\n buildTypes {\r\n     getByName(\"release\") {\r\n         signingConfig = signingConfigs.getByName(\"release\")\r\n         isMinifyEnabled = false\r\n"
+                },
+                {
+                    "date": 1760102727605,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -30,27 +30,27 @@\n         versionName = flutter.versionName\r\n     }\r\n \r\n     signingConfigs {\r\n-    create(\"release\") {\r\n-        storeFile = file(\"jks.jks\")\r\n-        storePassword = \"123Mudar$\"\r\n-        keyAlias = \"key0\"\r\n-        keyPassword = \"123Mudar$\"\r\n+        create(\"release\") {\r\n+            storeFile = file(\"jks.jks\")\r\n+            storePassword = \"123Mudar$\"\r\n+            keyAlias = \"key0\"\r\n+            keyPassword = \"123Mudar$\"\r\n+        }\r\n     }\r\n \r\n-\r\n-buildTypes {\r\n-    getByName(\"release\") {\r\n-        signingConfig = signingConfigs.getByName(\"release\")\r\n-        isMinifyEnabled = false\r\n-        isShrinkResources = false\r\n+    buildTypes {\r\n+        getByName(\"release\") {\r\n+            signingConfig = signingConfigs.getByName(\"release\")\r\n+            isMinifyEnabled = false\r\n+            isShrinkResources = false\r\n+        }\r\n+        getByName(\"debug\") {\r\n+            signingConfig = signingConfigs.getByName(\"release\")\r\n+        }\r\n     }\r\n-    getByName(\"debug\") {\r\n-        signingConfig = signingConfigs.getByName(\"release\")\r\n-    }\r\n }\r\n-}\r\n \r\n flutter {\r\n     source = \"../..\"\r\n }\r\n"
+                }
+            ],
+            "date": 1760102152131,
+            "name": "Commit-0",
+            "content": "plugins {\r\n    id(\"com.android.application\")\r\n    id(\"kotlin-android\")\r\n    // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.\r\n    id(\"dev.flutter.flutter-gradle-plugin\")\r\n}\r\n\r\nandroid {\r\n    namespace = \"com.washingtonclimaco.task_manager_flutter\"\r\n    compileSdk = flutter.compileSdkVersion\r\n    ndkVersion = flutter.ndkVersion\r\n\r\n    compileOptions {\r\n        sourceCompatibility = JavaVersion.VERSION_11\r\n        targetCompatibility = JavaVersion.VERSION_11\r\n    }\r\n\r\n    kotlinOptions {\r\n        jvmTarget = JavaVersion.VERSION_11.toString()\r\n    }\r\n\r\n    defaultConfig {\r\n        // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).\r\n        applicationId = \"com.washingtonclimaco.task_manager_flutter\"\r\n        // You can update the following values to match your application needs.\r\n        // For more information, see: https://flutter.dev/to/review-gradle-config.\r\n        minSdk = flutter.minSdkVersion\r\n        targetSdk = flutter.targetSdkVersion\r\n        versionCode = flutter.versionCode\r\n        versionName = flutter.versionName\r\n    }\r\n\r\n    buildTypes {\r\n        release {\r\n            // TODO: Add your own signing config for the release build.\r\n            // Signing with the debug keys for now, so `flutter run --release` works.\r\n            signingConfig = signingConfigs.getByName(\"debug\")\r\n        }\r\n    }\r\n     signingConfigs {\r\n        release {\r\n            storeFile file(\"jks.jks\")\r\n            storePassword \"123Mudar\\$\"\r\n            keyAlias \"key0\"\r\n            keyPassword \"123Mudar\\$\"\r\n        }\r\n    }\r\n}\r\n\r\nflutter {\r\n    source = \"../..\"\r\n}\r\n"
+        }
+    ]
+}
