@@ -384,15 +384,16 @@ class _GenericMobileGridScreenState<T>
         final processedData = data.map((json) {
           final itemMap = json is Map ? Map<String, dynamic>.from(json) : {};
 
-          for (final config in widget.fieldConfigs.where(
-            (c) => c.fieldType == FieldType.file,
-          )) {
-            final fileField = config.fieldName.split('.')[0];
-            if (!itemMap.containsKey(fileField)) {
-              itemMap[fileField] = {'id': 0, 'nome': ''};
+          if (json['file'] != null) {
+            for (final config in widget.fieldConfigs.where(
+              (c) => c.fieldType == FieldType.file,
+            )) {
+              final fileField = config.fieldName.split('.')[0];
+              if (!itemMap.containsKey(fileField)) {
+                itemMap[fileField] = {'id': 0, 'nome': ''};
+              }
             }
           }
-
           return itemMap;
         }).toList();
 
@@ -1234,13 +1235,12 @@ class _GenericMobileGridScreenState<T>
     try {
       final Map<String, dynamic> formData = {};
 
-      // ==============================================
-      // NOVO: ADICIONAR DADOS EXTRAS AO FORM DATA
-      // ==============================================
+      // ==================================================
+      // ADICIONA DADOS ADICIONAIS FIXOS
+      // ==================================================
       if (widget.additionalFormData != null) {
-        formData.addAll(widget.additionalFormData!);
+        _addAllNested(formData, widget.additionalFormData!);
 
-        // DEBUG: Mostrar dados adicionais
         if (widget.enableDebugMode) {
           print('=== DADOS ADICIONAIS DO FORMULÁRIO ===');
           widget.additionalFormData!.forEach((key, value) {
@@ -1250,69 +1250,57 @@ class _GenericMobileGridScreenState<T>
         }
       }
 
-      // Dados dinâmicos (create vs update)
+      // ==================================================
+      // ADICIONA DADOS DINÂMICOS (create vs update)
+      // ==================================================
       if (widget.dynamicAdditionalFormData != null) {
         final dynamicData = widget.dynamicAdditionalFormData!(item);
-        formData.addAll(dynamicData);
+        _addAllNested(formData, dynamicData);
       }
 
-      // Adiciona ao formData
-      if (formData.isNotEmpty) {
-        formData.addAll(formData);
-
-        // DEBUG: Mostrar dados adicionais
-        if (widget.enableDebugMode) {
-          print('=== DADOS ADICIONAIS DO FORMULÁRIO ===');
-          print('Tipo: ${item == null ? "CREATE" : "UPDATE"}');
-          formData.forEach((key, value) {
-            print('$key: $value (${value.runtimeType})');
-          });
-          print('=====================================');
-        }
-      }
-
-      // ADICIONE ESTA PARTE SIMPLES - Processa dropdowns com valor selecionado
+      // ==================================================
+      // PROCESSA DROPDOWNS COM VALOR SELECIONADO PADRÃO
+      // ==================================================
       for (final config in widget.fieldConfigs) {
         if (config.fieldType == FieldType.dropdown &&
             config.dropdownSelectedValue != null) {
           final value = config.dropdownSelectedValue;
-          // Usa o valor direto, sem verificar tipo
           _addToFormData(formData, config.fieldName, value);
         }
       }
 
+      // ==================================================
+      // PROCESSA CAMPOS DE FORMULÁRIO (CONTROLLERS)
+      // ==================================================
       for (final config in widget.fieldConfigs
           .where((c) => c.isInForm && c.fieldType != FieldType.file)) {
         final controller = controllers[config.fieldName];
         if (controller != null && controller.text.isNotEmpty) {
           final fieldValue = controller.text;
-          // FORMATAÇÃO ESPECIAL PARA DATAS
+
           if (config.fieldType == FieldType.date) {
-            // Converte de "MM/dd/yyyy" para "yyyy-MM-dd"
             final dateValue = _parseDates(controller.text);
             if (dateValue != null) {
-              formData[config.fieldName] = dateValue;
+              _addToFormData(formData, config.fieldName, dateValue);
             } else {
-              formData[config.fieldName] = controller.text;
+              _addToFormData(formData, config.fieldName, controller.text);
             }
+          } else if (config.fieldType == FieldType.dropdown) {
+            final value = controller.text;
+            final dynamic finalValue =
+                (_isIntegerField(config) && _isNumeric(value))
+                    ? (int.tryParse(value) ?? value)
+                    : value;
+            _addToFormData(formData, config.fieldName, finalValue);
           } else {
-            // **CORREÇÃO: Para dropdowns, usa o valor do controller diretamente**
-            if (config.fieldType == FieldType.dropdown) {
-              // Tenta converter para número se for um campo ID
-              final value = controller.text;
-              if (_isIntegerField(config) && _isNumeric(value)) {
-                formData[config.fieldName] = int.tryParse(value) ?? value;
-              } else {
-                formData[config.fieldName] = value;
-              }
-            } else {
-              _addToFormData(formData, config.fieldName, fieldValue);
-            }
+            _addToFormData(formData, config.fieldName, fieldValue);
           }
         }
       }
 
-      // Processa arquivos
+      // ==================================================
+      // PROCESSA ARQUIVOS (UPLOAD)
+      // ==================================================
       final filesToUpload = <String, List<PlatformFile>>{};
       for (final config
           in widget.fieldConfigs.where((c) => c.fieldType == FieldType.file)) {
@@ -1326,23 +1314,33 @@ class _GenericMobileGridScreenState<T>
           ? widget.createEndpoint
           : widget.updateEndpoint.replaceFirst(':id', _getItemId(item));
 
+      // Upload de arquivos antes da requisição principal
       if (filesToUpload.isNotEmpty) {
-        // CORREÇÃO: Para criação (item == null), usa um ID temporário ou vazio
         final itemId = item == null ? '0' : _getItemId(item);
         final fileId =
             await UploadFileCaller().uploadFiles(itemId, filesToUpload);
         if (fileId > 0) {
-          formData['file'] = {'id': fileId};
+          _addToFormData(formData, 'file.id', fileId);
         }
       }
 
+      // ==================================================
+      // NORMALIZA CAMPOS COM PONTO (formaPagamento.id -> { formaPagamento: {id:...} })
+      // ==================================================
+      final normalized = _normalizeDotted(formData);
+
+      if (widget.enableDebugMode) {
+        print('=== PAYLOAD FINAL NORMALIZADO ===');
+        print('=================================');
+      }
+
       final NetworkResponse response = item == null
-          ? await NetworkCaller().postRequest(endpoint, formData)
-          : await NetworkCaller().putRequest(endpoint, formData);
+          ? await NetworkCaller().postRequest(endpoint, normalized)
+          : await NetworkCaller().putRequest(endpoint, normalized);
 
       if (response.isSuccess) {
         Navigator.pop(context);
-        // Limpa o cache de arquivos após sucesso
+        // Limpa o cache de arquivos
         for (final config in widget.fieldConfigs
             .where((c) => c.fieldType == FieldType.file)) {
           _fileCache.remove(config.fieldName);
@@ -1352,13 +1350,17 @@ class _GenericMobileGridScreenState<T>
             : 'Item atualizado com sucesso!');
         _loadItems(reset: true);
       } else {
-        _showSnackBar('Erro ao salvar: $response', isError: true);
+        _showSnackBar('Erro ao salvar: ${response.body ?? response.statusCode}',
+            isError: true);
       }
     } catch (e) {
       _showSnackBar('Erro: $e', isError: true);
     }
   }
 
+  // ==========================================================
+// SUPORTE A CAMPOS ANINHADOS COM PONTO (formaPagamento.id)
+// ==========================================================
   void _addToFormData(
       Map<String, dynamic> formData, String fieldName, dynamic value) {
     if (fieldName.contains('.')) {
@@ -1371,52 +1373,52 @@ class _GenericMobileGridScreenState<T>
 
   void _buildNestedStructure(
       Map<String, dynamic> map, List<String> parts, dynamic value) {
-    final currentPart = parts[0];
+    final currentPart = parts.first;
 
     if (parts.length == 1) {
-      // Última parte - atribui o valor
       map[currentPart] = value;
-    } else {
-      // Precisa criar estrutura aninhada
-      if (!map.containsKey(currentPart)) {
-        map[currentPart] = <String, dynamic>{};
-      }
+      return;
+    }
 
-      // Garante que é um Map
-      var nextMap = map[currentPart];
-      if (nextMap is! Map) {
-        nextMap = <String, dynamic>{};
-        map[currentPart] = nextMap;
-      }
+    // Cria o próximo nível se necessário
+    if (!map.containsKey(currentPart) || map[currentPart] == null) {
+      map[currentPart] = <String, dynamic>{};
+    }
 
-      // Converte para Map<String, dynamic> se necessário
-      final nextMapString = (nextMap is Map<String, dynamic>)
-          ? nextMap
-          : Map<String, dynamic>.from(nextMap);
+    if (map[currentPart] is! Map<String, dynamic>) {
+      map[currentPart] = <String, dynamic>{};
+    }
 
-      map[currentPart] = nextMapString;
+    _buildNestedStructure(
+        map[currentPart] as Map<String, dynamic>, parts.sublist(1), value);
+  }
 
-      // Continua recursivamente
-      _buildNestedStructure(nextMapString, parts.sublist(1), value);
+  void _addAllNested(Map<String, dynamic> target, Map<String, dynamic> src) {
+    for (final entry in src.entries) {
+      _addToFormData(target, entry.key, entry.value);
     }
   }
 
+  Map<String, dynamic> _normalizeDotted(Map<String, dynamic> input) {
+    final out = <String, dynamic>{};
+    for (final e in input.entries) {
+      _addToFormData(out, e.key, e.value);
+    }
+    return out;
+  }
+
+  // Mantém compatibilidade se for usada em outro ponto
   void _addNestedField(
       Map<String, dynamic> map, List<String> parts, dynamic value) {
     if (parts.isEmpty) return;
 
-    final currentPart = parts[0];
-
+    final currentPart = parts.first;
     if (parts.length == 1) {
-      // Última parte, adiciona o valor
       map[currentPart] = value;
     } else {
-      // Ainda tem partes aninhadas
       if (!map.containsKey(currentPart) || map[currentPart] is! Map) {
-        map[currentPart] = {};
+        map[currentPart] = <String, dynamic>{};
       }
-
-      // Chama recursivamente para o próximo nível
       _addNestedField(
           map[currentPart] as Map<String, dynamic>, parts.sublist(1), value);
     }

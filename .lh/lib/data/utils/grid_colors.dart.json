@@ -3,11 +3,19 @@
     "activeCommit": 0,
     "commits": [
         {
-            "activePatchIndex": 0,
+            "activePatchIndex": 2,
             "patches": [
                 {
                     "date": 1760391463408,
                     "content": "Index: \n===================================================================\n--- \n+++ \n"
+                },
+                {
+                    "date": 1760392517681,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -11,5 +11,20 @@\n   static const Color card = Color(0xFFFFFFFF);\r\n   static const Color filterBackground = Color(0xFFEFEFEF);\r\n   static const Color warning = Color(0xFFFFA000);\r\n   static const Color success = Color(0xFF2E7D32);\r\n+  static const Color primaryDark = Color(0xFF6A0507);\r\n+  static const Color primaryLight = Color(0xFFB84042);\r\n+  static const Color secondaryLight = Color(0xFF2E7D32);\r\n+  static const Color secondaryDark = Color(0xFF003D1A);\r\n+  static const Color link = Color(0xFFFF0000);\r\n+  static const Color inputBackground = Color(0xFFFFFFFF);\r\n+  static const Color inputBorder = Color(0xFF93070A);\r\n+  static const Color buttonBackground = Color(0xFF93070A);\r\n+  static const Color buttonText = Color(0xFFFFFFFF);\r\n+  static const Color background = Color(0xFF005826);\r\n+  static const Color info = Color(0xFF1976D2);\r\n+  static const Color hover = Color(0x1A000000);\r\n+  static const Color selectedRow = Color(0xFFE3F2FD);\r\n+  static const Color dialogBackground = Color(0xFFFFFFFF);\r\n+  static const Color shadow = Color(0x26000000);\r\n }\r\n"
+                },
+                {
+                    "date": 1760395553760,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -24,7 +24,7 @@\n   static const Color background = Color(0xFF005826);\r\n   static const Color info = Color(0xFF1976D2);\r\n   static const Color hover = Color(0x1A000000);\r\n   static const Color selectedRow = Color(0xFFE3F2FD);\r\n-  static const Color dialogBackground = Color(0xFFFFFFFF);\r\n+  static const Color dialogBackground = Color(0xFF93070A);\r\n   static const Color shadow = Color(0x26000000);\r\n }\r\n"
                 }
             ],
             "date": 1760391463408,

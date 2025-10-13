@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:task_manager_flutter/data/models/documento_model.dart';
 import 'package:task_manager_flutter/data/services/documentoService.dart';
-// Make sure to import your UserBannerAppBar
-import 'package:task_manager_flutter/ui/widgets/user_banners.dart'; // Adjust path as needed
+import 'package:task_manager_flutter/ui/widgets/user_banners.dart';
+import 'package:task_manager_flutter/data/utils/grid_colors.dart'; // ★ adicionado para aplicar o tema
 
 class CalendarScreen extends StatefulWidget {
   const CalendarScreen({super.key});
@@ -19,8 +19,8 @@ class _CalendarScreenState extends State<CalendarScreen> {
   List<DateTime> _datesWithReadDocs = [];
   List<Documento> _selectedDayDocuments = [];
   DateTime? _selectedDay;
-  final int _usuarioId = 1; // ID do usuário logado (deve vir da autenticação)
-  bool _isLoading = false; // To control refresh indicator state
+  final int _usuarioId = 1;
+  bool _isLoading = false;
 
   @override
   void initState() {
@@ -63,7 +63,6 @@ class _CalendarScreenState extends State<CalendarScreen> {
     try {
       final documentos = await _documentoService.getDocumentosPorData(day);
 
-      // Verificar quais documentos estão marcados como lidos
       for (var doc in documentos) {
         final isRead = await _documentoService.verificarSeLido(
           doc.id,
@@ -84,8 +83,6 @@ class _CalendarScreenState extends State<CalendarScreen> {
   Future<void> _marcarDocumentoComoLido(int documentoId) async {
     try {
       await _documentoService.marcarComoLido(documentoId, _usuarioId);
-
-      // Atualizar a lista de documentos
       setState(() {
         _selectedDayDocuments = _selectedDayDocuments.map((doc) {
           if (doc.id == documentoId) {
@@ -101,8 +98,6 @@ class _CalendarScreenState extends State<CalendarScreen> {
           return doc;
         }).toList();
       });
-
-      // Recarregar as datas para atualizar as cores no calendário
       _loadDatesWithDocuments();
     } catch (e) {
       print('Erro ao marcar documento como lido: $e');
@@ -129,9 +124,9 @@ class _CalendarScreenState extends State<CalendarScreen> {
 
   Color _getDayColor(DateTime date) {
     if (_datesWithNewDocs.any((d) => _isSameDay(d, date))) {
-      return Colors.red[100]!;
+      return GridColors.primary.withOpacity(0.15); // ★ vermelho suave
     } else if (_datesWithReadDocs.any((d) => _isSameDay(d, date))) {
-      return Colors.grey[200]!;
+      return GridColors.secondary.withOpacity(0.10); // ★ verde suave
     }
     return Colors.transparent;
   }
@@ -139,15 +134,12 @@ class _CalendarScreenState extends State<CalendarScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      // Replaced standard AppBar with UserBannerAppBar
+      backgroundColor: GridColors.filterBackground, // ★ fundo da tela
       appBar: UserBannerAppBar(
         screenTitle: 'Calendário Financeiro',
-        onRefresh: _loadDatesWithDocuments, // Connects refresh button
-        isLoading: true, // Controls refresh indicator state
+        onRefresh: _loadDatesWithDocuments,
+        isLoading: _isLoading,
         showFilterButton: false,
-        // onFilterToggle: () {
-        //   Add filter functionality here if needed later
-        // },
       ),
       body: Column(
         children: [
@@ -168,15 +160,26 @@ class _CalendarScreenState extends State<CalendarScreen> {
   Widget _buildMonthNavigation() {
     return Container(
       padding: const EdgeInsets.all(8.0),
+      color: GridColors.card, // ★ fundo branco do topo
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          IconButton(icon: const Icon(Icons.arrow_back), onPressed: _previousMonth),
+          IconButton(
+              icon: const Icon(Icons.arrow_back,
+                  color: GridColors.secondary), // ★
+              onPressed: _previousMonth),
           Text(
             DateFormat('MMMM de yyyy', 'pt_BR').format(_currentMonth),
-            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            style: const TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              color: GridColors.primary, // ★
+            ),
           ),
-          IconButton(icon: const Icon(Icons.arrow_forward), onPressed: _nextMonth),
+          IconButton(
+              icon: const Icon(Icons.arrow_forward,
+                  color: GridColors.secondary), // ★
+              onPressed: _nextMonth),
         ],
       ),
     );
@@ -187,25 +190,30 @@ class _CalendarScreenState extends State<CalendarScreen> {
       padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
       child: Row(
         children: [
-          const Text('Legenda: '),
+          const Text('Legenda:',
+              style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  color: GridColors.secondary)), // ★
+          const SizedBox(width: 8),
           Container(
             padding: const EdgeInsets.all(4.0),
             decoration: BoxDecoration(
-              color: Colors.red[100],
+              color: GridColors.primary.withOpacity(0.15), // ★
               borderRadius: BorderRadius.circular(5),
             ),
-            child: const Text('Dias com docs novos', style: TextStyle(fontSize: 12)),
+            child: const Text('Novos documentos',
+                style: TextStyle(fontSize: 12, color: GridColors.primary)), // ★
           ),
           const SizedBox(width: 8),
           Container(
             padding: const EdgeInsets.all(4.0),
             decoration: BoxDecoration(
-              color: Colors.grey[200],
+              color: GridColors.secondary.withOpacity(0.10), // ★
               borderRadius: BorderRadius.circular(5),
             ),
             child: const Text(
-              'Dias com docs já lidos',
-              style: TextStyle(fontSize: 12),
+              'Documentos lidos',
+              style: TextStyle(fontSize: 12, color: GridColors.secondary), // ★
             ),
           ),
         ],
@@ -226,18 +234,14 @@ class _CalendarScreenState extends State<CalendarScreen> {
       1,
     );
 
-    // Corrigido: O domingo é 7 no DateTime, mas queremos que seja 0 para o grid
     final int firstWeekday = firstDayOfMonth.weekday;
-    final int startingDay =
-        firstWeekday % 7; // Isso faz Dom=0, Seg=1, ..., Sab=6
-
+    final int startingDay = firstWeekday % 7;
     List<String> weekdays = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sab'];
 
     return Container(
       padding: const EdgeInsets.all(8.0),
       child: Column(
         children: [
-          // Cabeçalho com os dias da semana
           Row(
             children: weekdays.map((day) {
               return Expanded(
@@ -246,15 +250,15 @@ class _CalendarScreenState extends State<CalendarScreen> {
                   child: Center(
                     child: Text(
                       day,
-                      style: const TextStyle(fontWeight: FontWeight.bold),
+                      style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          color: GridColors.secondary), // ★
                     ),
                   ),
                 ),
               );
             }).toList(),
           ),
-
-          // Grid dos dias
           GridView.builder(
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
@@ -262,9 +266,8 @@ class _CalendarScreenState extends State<CalendarScreen> {
               crossAxisCount: 7,
               childAspectRatio: 1.2,
             ),
-            itemCount: 42, // 6 semanas * 7 dias (máximo que pode precisar)
+            itemCount: 42,
             itemBuilder: (context, index) {
-              // Calcular qual dia este índice representa
               final dayOffset = index - startingDay;
               final currentDay = DateTime(
                 _currentMonth.year,
@@ -272,14 +275,12 @@ class _CalendarScreenState extends State<CalendarScreen> {
                 1 + dayOffset,
               );
 
-              // Verificar se este dia pertence ao mês atual
               final bool isCurrentMonth =
                   currentDay.month == _currentMonth.month;
 
               if (!isCurrentMonth ||
                   dayOffset < 0 ||
                   dayOffset >= daysInMonth) {
-                // Dia vazio (de outro mês)
                 return Container(
                   margin: const EdgeInsets.all(2),
                   child: const Center(child: Text('')),
@@ -298,8 +299,8 @@ class _CalendarScreenState extends State<CalendarScreen> {
                     border: Border.all(
                       color: _selectedDay != null &&
                               _isSameDay(_selectedDay!, currentDay)
-                          ? Colors.blue
-                          : Colors.grey[300]!,
+                          ? GridColors.primary // ★ dia selecionado vermelho
+                          : GridColors.divider, // ★ borda padrão cinza
                       width: _selectedDay != null &&
                               _isSameDay(_selectedDay!, currentDay)
                           ? 2
@@ -311,7 +312,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
                       '$dayNumber',
                       style: const TextStyle(
                         fontWeight: FontWeight.bold,
-                        color: Colors.black,
+                        color: GridColors.textSecondary, // ★ preto
                       ),
                     ),
                   ),
@@ -330,7 +331,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
         padding: EdgeInsets.all(16.0),
         child: Text(
           'Selecione um dia para ver os documentos',
-          style: TextStyle(fontSize: 16, color: Colors.grey),
+          style: TextStyle(fontSize: 16, color: GridColors.secondary), // ★
         ),
       );
     }
@@ -343,12 +344,15 @@ class _CalendarScreenState extends State<CalendarScreen> {
           children: [
             Text(
               'Documentos do dia ${DateFormat('dd/MM/yyyy').format(_selectedDay!)}',
-              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+              style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: GridColors.primary), // ★
             ),
             const SizedBox(height: 10),
             const Text(
               'Nenhum documento encontrado para este dia',
-              style: TextStyle(color: Colors.grey),
+              style: TextStyle(color: GridColors.secondary), // ★
             ),
           ],
         ),
@@ -362,7 +366,10 @@ class _CalendarScreenState extends State<CalendarScreen> {
         children: [
           Text(
             'Documentos do dia ${DateFormat('dd/MM/yyyy').format(_selectedDay!)}',
-            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+            style: const TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+                color: GridColors.primary), // ★
           ),
           const SizedBox(height: 10),
           ListView.builder(
@@ -372,6 +379,8 @@ class _CalendarScreenState extends State<CalendarScreen> {
             itemBuilder: (context, index) {
               final doc = _selectedDayDocuments[index];
               return Card(
+                color: GridColors.card, // ★
+                elevation: 2,
                 margin: const EdgeInsets.symmetric(vertical: 5),
                 child: Padding(
                   padding: const EdgeInsets.all(12.0),
@@ -381,7 +390,9 @@ class _CalendarScreenState extends State<CalendarScreen> {
                       Expanded(
                         child: Row(
                           children: [
-                            Text(doc.descricao),
+                            Text(doc.descricao,
+                                style: const TextStyle(
+                                    color: GridColors.textSecondary)), // ★
                             if (!doc.lido)
                               Padding(
                                 padding: const EdgeInsets.only(left: 8.0),
@@ -391,15 +402,15 @@ class _CalendarScreenState extends State<CalendarScreen> {
                                     vertical: 2,
                                   ),
                                   decoration: BoxDecoration(
-                                    color: Colors.green[100],
+                                    color: GridColors.secondary
+                                        .withOpacity(0.15), // ★
                                     borderRadius: BorderRadius.circular(3),
                                   ),
-                                  child: Text(
+                                  child: const Text(
                                     'Novo',
                                     style: TextStyle(
-                                      fontSize: 10,
-                                      color: Colors.green[800],
-                                    ),
+                                        fontSize: 10,
+                                        color: GridColors.secondary), // ★
                                   ),
                                 ),
                               ),
@@ -410,14 +421,14 @@ class _CalendarScreenState extends State<CalendarScreen> {
                         'R\$${doc.valor.toStringAsFixed(2)}',
                         style: const TextStyle(
                           fontWeight: FontWeight.bold,
-                          color: Colors.red,
+                          color: GridColors.primary, // ★
                         ),
                       ),
                       if (!doc.lido)
                         IconButton(
                           icon: const Icon(
                             Icons.check_circle_outline,
-                            color: Colors.blue,
+                            color: GridColors.secondary, // ★
                           ),
                           onPressed: () => _marcarDocumentoComoLido(doc.id),
                           tooltip: 'Marcar como lido',

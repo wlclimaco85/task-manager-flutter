@@ -454,9 +454,21 @@ class Estado {
   });
 
   factory Estado.fromJson(Map<String, dynamic> json) {
+    final nomeRaw = json['nome'];
+    String nomeFinal;
+
+    try {
+      // converte Latin1 para UTF-8 se for string válida
+      nomeFinal = (nomeRaw is String)
+          ? utf8.decode(latin1.encode(nomeRaw))
+          : 'Sem nome';
+    } catch (_) {
+      nomeFinal = nomeRaw?.toString() ?? 'Sem nome';
+    }
+
     return Estado(
       id: json['id'],
-      nome: utf8.decode(latin1.encode(json['nome'])),
+      nome: nomeFinal,
       uf: json['uf'],
       ibge: json['ibge'],
       pais: (json['pais'] != null && json['pais'] is Map<String, dynamic>)
@@ -468,9 +480,10 @@ class Estado {
               iso2: 'BR',
               iso3: 'BRA',
               bacen: 1058,
-            ), // Criar um objeto padrão
+            ),
     );
   }
+
   // Método para serializar o objeto Parceiro em JSON
   Map<String, dynamic> toJson() {
     final Map<String, dynamic> data = <String, dynamic>{};

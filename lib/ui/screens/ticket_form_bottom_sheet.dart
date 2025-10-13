@@ -6,6 +6,8 @@ import 'package:task_manager_flutter/data/models/empresa_model.dart';
 import 'package:task_manager_flutter/data/models/setor_model.dart';
 import 'package:task_manager_flutter/data/models/login_model.dart';
 import 'package:task_manager_flutter/data/utils/utils.dart';
+// ★ adicionando paleta de cores
+import 'package:task_manager_flutter/data/utils/grid_colors.dart';
 
 class TicketFormBottomSheet extends StatefulWidget {
   final String sectorDescricao; // nome do setor vindo do chat
@@ -21,7 +23,6 @@ class _TicketFormBottomSheetState extends State<TicketFormBottomSheet> {
   final _titulo = TextEditingController();
   final _descricao = TextEditingController();
 
-  // dropdowns
   String _status = 'ABERTO';
   String _prioridade = 'MEDIA';
 
@@ -41,7 +42,6 @@ class _TicketFormBottomSheetState extends State<TicketFormBottomSheet> {
     final itens = await Chamado.loadSetores();
     setState(() {
       _setores = itens;
-      // tentar pré-selecionar pelo nome do setor vindo do chat
       final found = _setores.firstWhere(
         (e) =>
             (e['label'] as String).toLowerCase().trim() ==
@@ -69,17 +69,8 @@ class _TicketFormBottomSheetState extends State<TicketFormBottomSheet> {
       final token = AuthUtility.userInfo?.token ?? '';
       final user = AuthUtility.userInfo?.data;
 
-// Monta o objeto Empresa manualmente, já que Data não tem esse campo
-      final empresa = Empresa(
-        id: pegarEmpresaLogada(),
-      );
-
-// Converte o usuário logado (Data) em Login, se necessário
-      final usuarioAbertura = Login(
-        id: user?.id ?? 0,
-      );
-
-// Cria o Setor apenas com ID, já que o model não tem `descricao`
+      final empresa = Empresa(id: pegarEmpresaLogada());
+      final usuarioAbertura = Login(id: user?.id ?? 0);
       final setor = Setor(id: _setorId!);
 
       final chamado = Chamado(
@@ -92,19 +83,29 @@ class _TicketFormBottomSheetState extends State<TicketFormBottomSheet> {
         setor: setor,
         dataAbertura: DateTime.now(),
       );
+
       final criado = await ChamadoCaller().createChamado(chamado, token: token);
 
       if (mounted) {
-        Navigator.pop(context, criado); // volta pro chat com o Chamado criado
+        Navigator.pop(context, criado);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-              content: Text('Chamado aberto com sucesso (ID ${criado.id})')),
+            backgroundColor: GridColors.secondary, // ★ verde sucesso
+            content: Text(
+              'Chamado aberto com sucesso (ID ${criado.id})',
+              style: const TextStyle(color: GridColors.textPrimary),
+            ),
+          ),
         );
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Erro ao abrir chamado: $e')),
+          SnackBar(
+            backgroundColor: GridColors.error, // ★ vermelho erro
+            content: Text('Erro ao abrir chamado: $e',
+                style: const TextStyle(color: GridColors.textPrimary)),
+          ),
         );
       }
     } finally {
@@ -115,13 +116,23 @@ class _TicketFormBottomSheetState extends State<TicketFormBottomSheet> {
   @override
   Widget build(BuildContext context) {
     return SafeArea(
-      child: Padding(
+      child: Container(
+        decoration: const BoxDecoration(
+          color: GridColors.card, // ★ fundo branco do card
+          borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+        ),
         padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Text('Abrir Chamado',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+            const Text(
+              'Abrir Chamado',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: GridColors.primary, // ★ título vermelho logo
+              ),
+            ),
             const SizedBox(height: 12),
             Form(
               key: _formKey,
@@ -129,7 +140,13 @@ class _TicketFormBottomSheetState extends State<TicketFormBottomSheet> {
                 children: [
                   TextFormField(
                     controller: _titulo,
-                    decoration: const InputDecoration(labelText: 'Título'),
+                    decoration: const InputDecoration(
+                      labelText: 'Título',
+                      labelStyle: TextStyle(color: GridColors.secondary), // ★
+                      focusedBorder: OutlineInputBorder(
+                        borderSide: BorderSide(color: GridColors.primary), // ★
+                      ),
+                    ),
                     validator: (v) => (v == null || v.trim().isEmpty)
                         ? 'Informe o título'
                         : null,
@@ -138,17 +155,24 @@ class _TicketFormBottomSheetState extends State<TicketFormBottomSheet> {
                   TextFormField(
                     controller: _descricao,
                     maxLines: 3,
-                    decoration: const InputDecoration(labelText: 'Descrição'),
+                    decoration: const InputDecoration(
+                      labelText: 'Descrição',
+                      labelStyle: TextStyle(color: GridColors.secondary), // ★
+                      focusedBorder: OutlineInputBorder(
+                        borderSide: BorderSide(color: GridColors.primary), // ★
+                      ),
+                    ),
                     validator: (v) => (v == null || v.trim().isEmpty)
                         ? 'Informe a descrição'
                         : null,
                   ),
                   const SizedBox(height: 8),
-
-                  // Prioridade
                   DropdownButtonFormField<String>(
                     value: _prioridade,
-                    decoration: const InputDecoration(labelText: 'Prioridade'),
+                    decoration: const InputDecoration(
+                      labelText: 'Prioridade',
+                      labelStyle: TextStyle(color: GridColors.secondary), // ★
+                    ),
                     items: const [
                       DropdownMenuItem(value: 'BAIXA', child: Text('Baixa')),
                       DropdownMenuItem(value: 'MEDIA', child: Text('Média')),
@@ -160,11 +184,12 @@ class _TicketFormBottomSheetState extends State<TicketFormBottomSheet> {
                         setState(() => _prioridade = v ?? 'MEDIA'),
                   ),
                   const SizedBox(height: 8),
-
-                  // Status (fixo "ABERTO" mas deixei dropdown se quiser)
                   DropdownButtonFormField<String>(
                     value: _status,
-                    decoration: const InputDecoration(labelText: 'Status'),
+                    decoration: const InputDecoration(
+                      labelText: 'Status',
+                      labelStyle: TextStyle(color: GridColors.secondary), // ★
+                    ),
                     items: const [
                       DropdownMenuItem(value: 'ABERTO', child: Text('Aberto')),
                       DropdownMenuItem(
@@ -177,12 +202,13 @@ class _TicketFormBottomSheetState extends State<TicketFormBottomSheet> {
                     onChanged: (v) => setState(() => _status = v ?? 'ABERTO'),
                   ),
                   const SizedBox(height: 8),
-
-                  // Setor (dinâmico do backend)
                   DropdownButtonFormField<int>(
                     value: _setorId,
                     isExpanded: true,
-                    decoration: const InputDecoration(labelText: 'Setor'),
+                    decoration: const InputDecoration(
+                      labelText: 'Setor',
+                      labelStyle: TextStyle(color: GridColors.secondary), // ★
+                    ),
                     items: _setores.map((e) {
                       return DropdownMenuItem<int>(
                         value: e['value'] as int,
@@ -209,6 +235,10 @@ class _TicketFormBottomSheetState extends State<TicketFormBottomSheet> {
                   child: OutlinedButton(
                     onPressed:
                         _submitting ? null : () => Navigator.pop(context),
+                    style: OutlinedButton.styleFrom(
+                      side: const BorderSide(color: GridColors.secondary), // ★
+                      foregroundColor: GridColors.secondary, // ★
+                    ),
                     child: const Text('Cancelar'),
                   ),
                 ),
@@ -216,11 +246,18 @@ class _TicketFormBottomSheetState extends State<TicketFormBottomSheet> {
                 Expanded(
                   child: ElevatedButton(
                     onPressed: _submitting ? null : _submit,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: GridColors.primary, // ★
+                      foregroundColor: GridColors.textPrimary, // ★
+                    ),
                     child: _submitting
                         ? const SizedBox(
                             height: 20,
                             width: 20,
-                            child: CircularProgressIndicator(strokeWidth: 2))
+                            child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: GridColors.textPrimary), // ★
+                          )
                         : const Text('Abrir Chamado'),
                   ),
                 ),

@@ -7,20 +7,7 @@ import 'package:task_manager_flutter/data/models/auth_utility.dart';
 import 'package:task_manager_flutter/data/services/alert_caller.dart';
 import 'package:task_manager_flutter/ui/screens/auth_screens/login_screen.dart';
 import 'package:task_manager_flutter/ui/screens/user_edit_screen.dart';
-
-// Paleta da logo
-class GridColors {
-  static const Color primary = Color(0xFF93070A); // vermelho logo
-  static const Color secondary = Color(0xFF005826); // verde logo
-  static const Color textPrimary = Color(0xFFFFFFFF); // branco
-  static const Color textSecondary = Color(0xFF000000); // preto
-  static const Color error = Color(0xFFD32F2F);
-  static const Color divider = Color(0xFFBDBDBD);
-  static const Color card = Color(0xFFFFFFFF);
-  static const Color filterBackground = Color(0xFFEFEFEF);
-  static const Color warning = Color(0xFFFFA000);
-  static const Color success = Color(0xFF2E7D32);
-}
+import 'package:task_manager_flutter/data/utils/grid_colors.dart'; // ★ adicionado para aplicar o tema
 
 // AppBar customizado (apenas cabeçalho)
 class UserBannerAppBar extends StatefulWidget implements PreferredSizeWidget {
@@ -315,8 +302,7 @@ class _UserBannerAppBarState extends State<UserBannerAppBar> {
                           if (updatedData != null) {
                             ScaffoldMessenger.of(context).showSnackBar(
                               const SnackBar(
-                                content: Text(
-                                    'Perfil atualizado com sucesso!'),
+                                content: Text('Perfil atualizado com sucesso!'),
                                 backgroundColor: GridColors.success,
                               ),
                             );

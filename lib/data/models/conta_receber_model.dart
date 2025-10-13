@@ -1,9 +1,7 @@
-// conta_receber_model.dart
 import 'package:flutter/material.dart';
-import 'package:task_manager_flutter/data/models/network_response.dart';
-import 'package:task_manager_flutter/data/services/network_caller.dart';
-import 'package:task_manager_flutter/data/utils/api_links.dart';
-
+import 'package:task_manager_flutter/data/utils/utils.dart';
+import 'package:task_manager_flutter/data/services/parceiro_caller.dart';
+import 'package:task_manager_flutter/data/services/formaPagamento_caller.dart';
 import '../customization/generic_grid_card.dart';
 import 'audit_model.dart';
 import 'empresa_model.dart';
@@ -11,7 +9,7 @@ import 'file_attachment_model.dart';
 import 'forma_pagamento_model.dart';
 import 'parceiro_model.dart';
 
-enum StatusContaReceber { ABERTA, BAIXADA, CANCELADA }
+enum StatusConta { ABERTA, BAIXADA, CANCELADA }
 
 class ContaReceber {
   int? id;
@@ -23,7 +21,7 @@ class ContaReceber {
   double? valorMulta;
   double? valorJuros;
   double? valorDesconto;
-  StatusContaReceber status;
+  StatusConta status;
   Empresa empresa;
   Parceiro? cliente;
   Parceiro? clienteDev;
@@ -77,41 +75,41 @@ class ContaReceber {
     );
   }
 
-  static StatusContaReceber _parseStatus(dynamic status) {
+  static StatusConta _parseStatus(dynamic status) {
     if (status is int) {
       switch (status) {
         case 0:
-          return StatusContaReceber.ABERTA;
+          return StatusConta.ABERTA;
         case 1:
-          return StatusContaReceber.BAIXADA;
+          return StatusConta.BAIXADA;
         case 2:
-          return StatusContaReceber.CANCELADA;
+          return StatusConta.CANCELADA;
         default:
-          return StatusContaReceber.ABERTA;
+          return StatusConta.ABERTA;
       }
     } else if (status is String) {
       switch (status) {
         case 'ABERTA':
-          return StatusContaReceber.ABERTA;
+          return StatusConta.ABERTA;
         case 'BAIXADA':
-          return StatusContaReceber.BAIXADA;
+          return StatusConta.BAIXADA;
         case 'CANCELADA':
-          return StatusContaReceber.CANCELADA;
+          return StatusConta.CANCELADA;
         default:
-          return StatusContaReceber.ABERTA;
+          return StatusConta.ABERTA;
       }
     } else {
-      return StatusContaReceber.ABERTA;
+      return StatusConta.ABERTA;
     }
   }
 
-  int _statusToInt(StatusContaReceber status) {
+  int _statusToInt(StatusConta status) {
     switch (status) {
-      case StatusContaReceber.ABERTA:
+      case StatusConta.ABERTA:
         return 0;
-      case StatusContaReceber.BAIXADA:
+      case StatusConta.BAIXADA:
         return 1;
-      case StatusContaReceber.CANCELADA:
+      case StatusConta.CANCELADA:
         return 2;
     }
   }
@@ -137,56 +135,24 @@ class ContaReceber {
     };
   }
 
-  // Classes auxiliares para as entidades relacionadas
-  static Future<List<Map<String, dynamic>>> loadFormasPagamento() async {
-    final NetworkResponse response = await NetworkCaller().getRequest(
-      ApiLinks.allFormasPagamento,
-    );
-
-    if (response.isSuccess && response.body != null) {
-      final List<dynamic> data = response.body!['data']['dados'] ?? [];
-      return data
-          .map(
-            (item) => {'value': item['id'], 'label': item['nome'].toString()},
-          )
-          .toList();
-    }
-    return [];
-  }
-
-  static Future<List<Map<String, dynamic>>> loadClientes() async {
-    final NetworkResponse response = await NetworkCaller().getRequest(
-      ApiLinks
-          .allParceiros, // Ou ApiLinks.allClientes se tiver endpoint específico
-    );
-
-    if (response.isSuccess && response.body != null) {
-      final List<dynamic> data = response.body!['data']['dados'] ?? [];
-      return data
-          .map(
-            (item) => {'value': item['id'], 'label': item['nome'].toString()},
-          )
-          .toList();
-    }
-    return [];
-  }
-
   static List<FieldConfig> fieldConfigs = [
     FieldConfig(
-      label: "Cliente",
-      fieldName: "parceiro.id",
-      displayFieldName: "parceiro.nome",
-      icon: Icons.person,
-      isInForm: true,
-      isFilterable: true,
-      fieldType: FieldType.dropdown,
-      dropdownFutureBuilder: () async => await loadClientes(),
-      dropdownValueField: 'value',
-      dropdownDisplayField: 'label',
-      isRequired: true,
-      isVisibleByDefault: true,
-      isFixed: false,
-    ),
+        label: "Cliente",
+        fieldName: "parceiro.id",
+        displayFieldName: "parceiro.nome",
+        icon: Icons.person,
+        isInForm: true,
+        isFilterable: true,
+        fieldType: FieldType.dropdown,
+        dropdownFutureBuilder: () async =>
+            await ParceiroCaller().fetchParceiroDropdown(),
+        dropdownValueField: 'value',
+        dropdownDisplayField: 'label',
+        isRequired: true,
+        isVisibleByDefault: true,
+        isFixed: false,
+        enabled: false,
+        dropdownSelectedValue: pegarEmpresaLogada()),
     FieldConfig(
       label: "Cliente Dev",
       fieldName: "parceiroRec.id",
@@ -195,7 +161,8 @@ class ContaReceber {
       isInForm: true,
       isFilterable: true,
       fieldType: FieldType.dropdown,
-      dropdownFutureBuilder: () async => await loadClientes(),
+      dropdownFutureBuilder: () async =>
+          await ParceiroCaller().fetchParceiroDropdown(),
       dropdownValueField: 'value',
       dropdownDisplayField: 'label',
       isRequired: true,
@@ -218,6 +185,7 @@ class ContaReceber {
       isInForm: true,
       isVisibleByDefault: true,
       isFixed: false,
+      fieldType: FieldType.number,
     ),
     const FieldConfig(
       label: "Data Vencimento",
@@ -227,15 +195,7 @@ class ContaReceber {
       isFilterable: true,
       isVisibleByDefault: true,
       isFixed: false,
-    ),
-    const FieldConfig(
-      label: "Status",
-      fieldName: "status",
-      icon: Icons.info,
-      isFilterable: true,
-      isVisibleByDefault: true,
-      isFixed: false,
-      isInForm: false,
+      fieldType: FieldType.date,
     ),
     const FieldConfig(
       label: "Data Baixa",
@@ -244,6 +204,7 @@ class ContaReceber {
       isVisibleByDefault: false,
       isFixed: false,
       isInForm: false,
+      fieldType: FieldType.date,
     ),
     const FieldConfig(
       label: "Valor Baixa",
@@ -252,6 +213,7 @@ class ContaReceber {
       isVisibleByDefault: false,
       isFixed: false,
       isInForm: false,
+      fieldType: FieldType.number,
     ),
     const FieldConfig(
       label: "Valor Multa",
@@ -260,6 +222,7 @@ class ContaReceber {
       isInForm: true,
       isVisibleByDefault: false,
       isFixed: false,
+      fieldType: FieldType.number,
     ),
     const FieldConfig(
       label: "Valor Juros",
@@ -268,6 +231,7 @@ class ContaReceber {
       isInForm: true,
       isVisibleByDefault: false,
       isFixed: false,
+      fieldType: FieldType.number,
     ),
     const FieldConfig(
       label: "Valor Desconto",
@@ -276,6 +240,7 @@ class ContaReceber {
       isInForm: true,
       isVisibleByDefault: false,
       isFixed: false,
+      fieldType: FieldType.number,
     ),
     FieldConfig(
       label: "Forma Pagamento",
@@ -285,7 +250,8 @@ class ContaReceber {
       isInForm: true,
       isFilterable: true,
       fieldType: FieldType.dropdown,
-      dropdownFutureBuilder: () async => await loadFormasPagamento(),
+      dropdownFutureBuilder: () async =>
+          await FormaPagamentoCaller().fetchFormasPagamentoDropDown(),
       dropdownValueField: 'value',
       dropdownDisplayField: 'label',
       isRequired: true,
@@ -297,15 +263,15 @@ class ContaReceber {
       fieldName: "status",
       icon: Icons.check_circle,
       isFilterable: true,
-      isVisibleByDefault: true,
+      isVisibleByDefault: false,
       isFixed: false,
       fieldType: FieldType.dropdown,
       dropdownOptions: [
-        {'value': 0, 'label': 'Aberta'},
-        {'value': 1, 'label': 'Baixada'},
-        {'value': 2, 'label': 'Cancelada'},
+        {'value': 0, 'label': 'Aberto'},
+        {'value': 1, 'label': 'Baixada '},
+        {'value': 2, 'label': 'Cancelado'},
       ],
-      dropdownSelectedValue: 0,
+      dropdownSelectedValue: 0, // Valor padrão selecionado
       enabled: false,
       dropdownValueField: 'value',
       dropdownDisplayField: 'label',
@@ -315,7 +281,6 @@ class ContaReceber {
       fieldName: "file.id",
       displayFieldName: "file.nome",
       fieldType: FieldType.file,
-      enabled: true,
     ),
   ];
 }

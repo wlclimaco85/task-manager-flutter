@@ -3,7 +3,7 @@
     "activeCommit": 0,
     "commits": [
         {
-            "activePatchIndex": 5,
+            "activePatchIndex": 6,
             "patches": [
                 {
                     "date": 1759603487723,
@@ -28,6 +28,10 @@
                 {
                     "date": 1759605911991,
                     "content": "Index: \n===================================================================\n--- \n+++ \n@@ -234,11 +234,11 @@\n               : widget.initialData['photo'],\r\n         };\r\n \r\n         // Faz a chamada POST para atualizar o usuário\r\n-        final response = await NetworkCaller().post(\r\n-          url: '/api/usuario/atualizar', // Ajuste a URL conforme sua API\r\n-          body: requestData,\r\n+        final response = await NetworkCaller().postRequest(\r\n+           '/api/usuario/atualizar', // Ajuste a URL conforme sua API\r\n+           requestData,\r\n         );\r\n \r\n         // Fecha o loading\r\n         Navigator.pop(context);\r\n@@ -254,9 +254,9 @@\n           );\r\n         } else {\r\n           ScaffoldMessenger.of(context).showSnackBar(\r\n             SnackBar(\r\n-              content: Text('Erro ao atualizar: ${response.errorMessage}'),\r\n+              content: Text('Erro ao atualizar: ${response}'),\r\n               backgroundColor: GridColors.error,\r\n             ),\r\n           );\r\n         }\r\n"
+                },
+                {
+                    "date": 1760392478636,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -1,8 +1,9 @@\n import 'package:flutter/material.dart';\r\n import 'package:task_manager_flutter/data/services/network_caller.dart';\r\n import 'dart:io';\r\n import 'package:image_picker/image_picker.dart';\r\n+import 'package:task_manager_flutter/data/utils/grid_colors.dart'; // ★ adicionado para aplicar o tema\r\n \r\n class UserEditScreen extends StatefulWidget {\r\n   final Map<String, dynamic> initialData;\r\n \r\n@@ -11,36 +12,10 @@\n   @override\r\n   _UserEditScreenState createState() => _UserEditScreenState();\r\n }\r\n \r\n-class GridColors {\r\n-  static const Color primary = Color(0xFF93070A);\r\n-  static const Color primaryDark = Color(0xFF6A0507);\r\n-  static const Color primaryLight = Color(0xFFB84042);\r\n-  static const Color secondary = Color(0xFF005826);\r\n-  static const Color secondaryLight = Color(0xFF2E7D32);\r\n-  static const Color secondaryDark = Color(0xFF003D1A);\r\n-  static const Color textPrimary = Color(0xFFFFFFFF);\r\n-  static const Color textSecondary = Color(0xFF000000);\r\n-  static const Color link = Color(0xFFFF0000);\r\n-  static const Color inputBackground = Color(0xFFFFFFFF);\r\n-  static const Color inputBorder = Color(0xFF93070A);\r\n-  static const Color buttonBackground = Color(0xFF93070A);\r\n-  static const Color buttonText = Color(0xFFFFFFFF);\r\n-  static const Color background = Color(0xFF005826);\r\n-  static const Color card = Color(0xFFFFFFFF);\r\n-  static const Color error = Color(0xFFD32F2F);\r\n-  static const Color warning = Color(0xFFFFA000);\r\n-  static const Color success = Color(0xFF2E7D32);\r\n-  static const Color info = Color(0xFF1976D2);\r\n-  static const Color divider = Color(0xFFBDBDBD);\r\n-  static const Color filterBackground = Color(0xFFEFEFEF);\r\n-  static const Color hover = Color(0x1A000000);\r\n-  static const Color selectedRow = Color(0xFFE3F2FD);\r\n-  static const Color dialogBackground = Color(0xFFFFFFFF);\r\n-  static const Color shadow = Color(0x26000000);\r\n-}\r\n \r\n+\r\n class _UserEditScreenState extends State<UserEditScreen> {\r\n   final _formKey = GlobalKey<FormState>();\r\n   final ImagePicker _imagePicker = ImagePicker();\r\n   File? _selectedImage;\r\n"
                 }
             ],
             "date": 1759603487723,

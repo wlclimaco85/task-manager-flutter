@@ -23,15 +23,16 @@ class ContaReceberGridScreen extends StatelessWidget {
       hasPermission: hasPermission,
       fieldConfigs: ContaReceber.fieldConfigs,
       idFieldName: 'id',
-      dateFieldName: 'createdAt',
+      dateFieldName: 'audit.createdAt',
       customActions: () => [
         CustomAction<ContaReceber>(
           icon: Icons.payment,
           label: 'Baixar',
           onPressed: (context, object) => _showBaixaDialog(context, object),
-          isVisible: (object) => object.status == StatusContaReceber.ABERTA,
+          isVisible: (object) => object.status == StatusConta.ABERTA,
         ),
       ],
+      useUserBannerAppBar: true,
       paginationConfig: const PaginationConfig(
         defaultRowsPerPage: 10,
         availableRowsPerPage: [10, 25, 50],

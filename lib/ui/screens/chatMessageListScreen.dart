@@ -4,6 +4,9 @@ import 'package:task_manager_flutter/ui/screens/chatMenssageScreen.dart';
 import 'package:task_manager_flutter/data/services/chat_caller.dart';
 import 'package:task_manager_flutter/ui/widgets/user_banners.dart'; // Adjust path as needed
 import 'package:task_manager_flutter/data/models/chamado_model.dart';
+import 'package:task_manager_flutter/data/utils/grid_colors.dart'; // ★ adicionado para aplicar o tema
+
+// ★ ADIÇÃO: paleta de cores do sistema
 
 class ChatListScreen extends StatefulWidget {
   final String userName;
@@ -115,7 +118,13 @@ class _ChatListScreenState extends State<ChatListScreen> {
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: const Text('Selecionar Setor'),
+          // ★ Aplicar cor do card
+          backgroundColor: GridColors.card,
+          title: const Text(
+            'Selecionar Setor',
+            // ★ Título com cor primária
+            style: TextStyle(color: GridColors.primary),
+          ),
           content: SizedBox(
             width: double.maxFinite,
             child: _setores.isEmpty
@@ -151,7 +160,8 @@ class _ChatListScreenState extends State<ChatListScreen> {
           child: Wrap(
             children: <Widget>[
               ListTile(
-                leading: const Icon(Icons.visibility),
+                leading: const Icon(Icons.visibility,
+                    color: GridColors.secondary), // ★
                 title: const Text('Visualizar Chat'),
                 onTap: () {
                   Navigator.pop(context);
@@ -168,7 +178,8 @@ class _ChatListScreenState extends State<ChatListScreen> {
                 },
               ),
               ListTile(
-                leading: const Icon(Icons.check_circle, color: Colors.green),
+                leading: const Icon(Icons.check_circle,
+                    color: GridColors.success), // ★
                 title: const Text('Finalizar Chat'),
                 onTap: () {
                   Navigator.pop(context);
@@ -176,17 +187,16 @@ class _ChatListScreenState extends State<ChatListScreen> {
                 },
               ),
               ListTile(
-                leading: const Icon(Icons.delete, color: Colors.red),
+                leading: const Icon(Icons.delete, color: GridColors.error), // ★
                 title: const Text('Excluir Chat'),
                 onTap: () {
                   Navigator.pop(context);
                   _deleteChat(chat);
                 },
               ),
-              ListTile(
-                leading: const Icon(Icons.cancel),
-                title: const Text('Cancelar'),
-                onTap: () => Navigator.pop(context),
+              const ListTile(
+                leading: Icon(Icons.cancel, color: GridColors.divider), // ★
+                title: Text('Cancelar'),
               ),
             ],
           ),
@@ -200,12 +210,15 @@ class _ChatListScreenState extends State<ChatListScreen> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Finalizar Chat'),
+        backgroundColor: GridColors.card, // ★
+        title: const Text('Finalizar Chat',
+            style: TextStyle(color: GridColors.primary)), // ★
         content: Text('Deseja finalizar o chat com ${chat.sector}?'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Cancelar'),
+            child: const Text('Cancelar',
+                style: TextStyle(color: GridColors.secondary)), // ★
           ),
           TextButton(
             onPressed: () {
@@ -230,7 +243,8 @@ class _ChatListScreenState extends State<ChatListScreen> {
                 const SnackBar(content: Text('Chat finalizado com sucesso')),
               );
             },
-            child: const Text('Confirmar'),
+            child: const Text('Confirmar',
+                style: TextStyle(color: GridColors.primary)), // ★
           ),
         ],
       ),
@@ -242,12 +256,15 @@ class _ChatListScreenState extends State<ChatListScreen> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Excluir Chat'),
+        backgroundColor: GridColors.card, // ★
+        title: const Text('Excluir Chat',
+            style: TextStyle(color: GridColors.primary)), // ★
         content: Text('Deseja excluir o chat com ${chat.sector}?'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Cancelar'),
+            child: const Text('Cancelar',
+                style: TextStyle(color: GridColors.secondary)), // ★
           ),
           TextButton(
             onPressed: () {
@@ -260,7 +277,8 @@ class _ChatListScreenState extends State<ChatListScreen> {
                 const SnackBar(content: Text('Chat excluído com sucesso')),
               );
             },
-            child: const Text('Excluir'),
+            child: const Text('Excluir',
+                style: TextStyle(color: GridColors.error)), // ★
           ),
         ],
       ),
@@ -268,55 +286,64 @@ class _ChatListScreenState extends State<ChatListScreen> {
   }
 
   Color _getStatusColor(String status) {
+    // ★ Aplicar paleta do sistema
     switch (status) {
       case 'Ativo':
-        return Colors.green;
+        return GridColors.success;
       case 'Finalizado':
-        return Colors.blue;
+        return GridColors.secondary;
       case 'Pendente':
-        return Colors.orange;
+        return GridColors.warning;
       default:
-        return Colors.grey;
+        return GridColors.divider;
     }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      // ★ Fundo da tela seguindo a paleta
+      backgroundColor: GridColors.filterBackground,
       appBar: UserBannerAppBar(
         screenTitle: 'Meus Chats',
         onRefresh: _bootstrap,
         isLoading: _isLoading, // Controls refresh indicator state
         showFilterButton: false,
-        // onFilterToggle: () {
-        //   Add filter functionality here if needed later
-        // },
+        // ★ Se seu UserBannerAppBar aceitar, pode expor:
+        // backgroundColor: GridColors.primary,
+        // titleColor: GridColors.textPrimary,
       ),
       body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
+          ? const Center(
+              child:
+                  CircularProgressIndicator(color: GridColors.secondary)) // ★
           : _chats.isEmpty
               ? const Center(
                   child: Text('Nenhum chat iniciado'),
                 )
               : ListView.separated(
                   itemCount: _chats.length,
-                  separatorBuilder: (context, index) => Divider(
+                  separatorBuilder: (context, index) => const Divider(
                     height: 1,
-                    color: Colors.grey[300],
+                    color: GridColors.divider, // ★
                   ),
                   itemBuilder: (context, index) {
                     final chat = _chats[index];
                     return Container(
-                      decoration: BoxDecoration(
+                      decoration: const BoxDecoration(
                         border: Border(
                           bottom: BorderSide(
-                            color: Colors.grey.shade300,
+                            color: GridColors.divider, // ★
                             width: 1.0,
                           ),
                         ),
                       ),
                       child: ListTile(
-                        title: Text(chat.sector),
+                        title: Text(
+                          chat.sector,
+                          // ★ Título em negrito para legibilidade (mantendo seu Text)
+                          style: const TextStyle(fontWeight: FontWeight.w600),
+                        ),
                         subtitle: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
@@ -364,7 +391,8 @@ class _ChatListScreenState extends State<ChatListScreen> {
                               ),
                             ),
                             IconButton(
-                              icon: const Icon(Icons.more_vert),
+                              icon: const Icon(Icons.more_vert,
+                                  color: GridColors.secondary), // ★
                               onPressed: () => _showChatActions(context, chat),
                             ),
                           ],
@@ -390,6 +418,9 @@ class _ChatListScreenState extends State<ChatListScreen> {
         onPressed: _showSectorSelectionDialog,
         tooltip: 'Novo Chat',
         child: const Icon(Icons.chat),
+        // ★ Cores do FAB conforme paleta
+        backgroundColor: GridColors.secondary,
+        foregroundColor: GridColors.textPrimary,
       ),
     );
   }
