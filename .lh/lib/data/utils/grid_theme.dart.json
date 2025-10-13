@@ -1,0 +1,26 @@
+{
+    "sourceFile": "lib/data/utils/grid_theme.dart",
+    "activeCommit": 0,
+    "commits": [
+        {
+            "activePatchIndex": 2,
+            "patches": [
+                {
+                    "date": 1760391396179,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n"
+                },
+                {
+                    "date": 1760391417202,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -1,7 +1,21 @@\n import 'package:flutter/material.dart';\r\n import 'grid_colors.dart';\r\n \r\n+// Paleta da logo\r\n+class GridColors {\r\n+  static const Color primary = Color(0xFF93070A); // vermelho logo\r\n+  static const Color secondary = Color(0xFF005826); // verde logo\r\n+  static const Color textPrimary = Color(0xFFFFFFFF); // branco\r\n+  static const Color textSecondary = Color(0xFF000000); // preto\r\n+  static const Color error = Color(0xFFD32F2F);\r\n+  static const Color divider = Color(0xFFBDBDBD);\r\n+  static const Color card = Color(0xFFFFFFFF);\r\n+  static const Color filterBackground = Color(0xFFEFEFEF);\r\n+  static const Color warning = Color(0xFFFFA000);\r\n+  static const Color success = Color(0xFF2E7D32);\r\n+}\r\n+\r\n ThemeData appTheme() {\r\n   return ThemeData(\r\n     useMaterial3: true,\r\n     colorScheme: ColorScheme.fromSeed(\r\n"
+                },
+                {
+                    "date": 1760391466042,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -1,21 +1,7 @@\n import 'package:flutter/material.dart';\r\n import 'grid_colors.dart';\r\n \r\n-// Paleta da logo\r\n-class GridColors {\r\n-  static const Color primary = Color(0xFF93070A); // vermelho logo\r\n-  static const Color secondary = Color(0xFF005826); // verde logo\r\n-  static const Color textPrimary = Color(0xFFFFFFFF); // branco\r\n-  static const Color textSecondary = Color(0xFF000000); // preto\r\n-  static const Color error = Color(0xFFD32F2F);\r\n-  static const Color divider = Color(0xFFBDBDBD);\r\n-  static const Color card = Color(0xFFFFFFFF);\r\n-  static const Color filterBackground = Color(0xFFEFEFEF);\r\n-  static const Color warning = Color(0xFFFFA000);\r\n-  static const Color success = Color(0xFF2E7D32);\r\n-}\r\n-\r\n ThemeData appTheme() {\r\n   return ThemeData(\r\n     useMaterial3: true,\r\n     colorScheme: ColorScheme.fromSeed(\r\n"
+                }
+            ],
+            "date": 1760391396179,
+            "name": "Commit-0",
+            "content": "import 'package:flutter/material.dart';\r\nimport 'grid_colors.dart';\r\n\r\nThemeData appTheme() {\r\n  return ThemeData(\r\n    useMaterial3: true,\r\n    colorScheme: ColorScheme.fromSeed(\r\n      seedColor: GridColors.primary,\r\n      primary: GridColors.primary,\r\n      secondary: GridColors.secondary,\r\n      error: GridColors.error,\r\n      surface: GridColors.card,\r\n      onPrimary: GridColors.textPrimary,\r\n      onSecondary: GridColors.textPrimary,\r\n    ),\r\n    appBarTheme: const AppBarTheme(\r\n      backgroundColor: GridColors.primary,\r\n      foregroundColor: GridColors.textPrimary,\r\n      centerTitle: false,\r\n      elevation: 2,\r\n    ),\r\n    floatingActionButtonTheme: const FloatingActionButtonThemeData(\r\n      backgroundColor: GridColors.secondary,\r\n      foregroundColor: GridColors.textPrimary,\r\n    ),\r\n    inputDecorationTheme: InputDecorationTheme(\r\n      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),\r\n      filled: true,\r\n      fillColor: Colors.white,\r\n      focusedBorder: OutlineInputBorder(\r\n        borderSide: const BorderSide(color: GridColors.primary, width: 2),\r\n        borderRadius: BorderRadius.circular(12),\r\n      ),\r\n      labelStyle: const TextStyle(color: GridColors.secondary),\r\n    ),\r\n    elevatedButtonTheme: ElevatedButtonThemeData(\r\n      style: ElevatedButton.styleFrom(\r\n        backgroundColor: GridColors.primary,\r\n        foregroundColor: GridColors.textPrimary,\r\n        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),\r\n        padding: const EdgeInsets.symmetric(vertical: 12),\r\n      ),\r\n    ),\r\n    outlinedButtonTheme: OutlinedButtonThemeData(\r\n      style: OutlinedButton.styleFrom(\r\n        foregroundColor: GridColors.secondary,\r\n        side: const BorderSide(color: GridColors.secondary),\r\n        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),\r\n        padding: const EdgeInsets.symmetric(vertical: 12),\r\n      ),\r\n    ),\r\n    dividerColor: GridColors.divider,\r\n    cardColor: GridColors.card,\r\n    snackBarTheme: const SnackBarThemeData(\r\n      backgroundColor: GridColors.secondary,\r\n      contentTextStyle: TextStyle(color: GridColors.textPrimary),\r\n    ),\r\n  );\r\n}\r\n"
+        }
+    ]
+}

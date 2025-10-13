@@ -1,4 +1,3 @@
-
 class ChatMessage {
   final String sender;
   final String content;
@@ -6,6 +5,7 @@ class ChatMessage {
   final int? fileId;
   final String? fileName;
   final String? timestamp;
+  final String? fileUrl; // <- novo
 
   // Novos campos do payload
   final int? empId;
@@ -32,6 +32,7 @@ class ChatMessage {
     this.chatId,
     this.uploadDate,
     this.text,
+    this.fileUrl,
   });
 
   // Construtor a partir de JSON

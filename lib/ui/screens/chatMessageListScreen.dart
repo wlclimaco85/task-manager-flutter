@@ -3,6 +3,7 @@ import 'package:intl/intl.dart';
 import 'package:task_manager_flutter/ui/screens/chatMenssageScreen.dart';
 import 'package:task_manager_flutter/data/services/chat_caller.dart';
 import 'package:task_manager_flutter/ui/widgets/user_banners.dart'; // Adjust path as needed
+import 'package:task_manager_flutter/data/models/chamado_model.dart';
 
 class ChatListScreen extends StatefulWidget {
   final String userName;
@@ -37,11 +38,34 @@ class _ChatListScreenState extends State<ChatListScreen> {
     'Departamento Pessoal',
     'Fiscal'
   ];
+  List<Map<String, dynamic>> _setores = []; // <- dinâmico
 
   @override
   void initState() {
     super.initState();
-    _loadChats();
+    _bootstrap();
+  }
+
+  Future<void> _bootstrap() async {
+    setState(() => _isLoading = true);
+    try {
+      await Future.wait([_loadSetores(), _loadChats()]);
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
+  Future<void> _loadSetores() async {
+    try {
+      final itens = await Chamado.loadSetores();
+      setState(() {
+        _setores = itens;
+      });
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Erro ao carregar setores: $e')),
+      );
+    }
   }
 
   Future<void> _loadChats() async {
@@ -94,20 +118,25 @@ class _ChatListScreenState extends State<ChatListScreen> {
           title: const Text('Selecionar Setor'),
           content: SizedBox(
             width: double.maxFinite,
-            child: ListView.builder(
-              shrinkWrap: true,
-              itemCount: _availableSectors.length,
-              itemBuilder: (BuildContext context, int index) {
-                final sector = _availableSectors[index];
-                return ListTile(
-                  title: Text(sector),
-                  onTap: () {
-                    Navigator.pop(context);
-                    _startNewChat(sector);
-                  },
-                );
-              },
-            ),
+            child: _setores.isEmpty
+                ? const Padding(
+                    padding: EdgeInsets.all(8.0),
+                    child: Text('Nenhum setor encontrado.'),
+                  )
+                : ListView.builder(
+                    shrinkWrap: true,
+                    itemCount: _setores.length,
+                    itemBuilder: (BuildContext context, int index) {
+                      final sector = _setores[index]['label'] as String;
+                      return ListTile(
+                        title: Text(sector),
+                        onTap: () {
+                          Navigator.pop(context);
+                          _startNewChat(sector);
+                        },
+                      );
+                    },
+                  ),
           ),
         );
       },
@@ -255,8 +284,8 @@ class _ChatListScreenState extends State<ChatListScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: UserBannerAppBar(
-        screenTitle: 'CMeus Chats',
-        onRefresh: _loadChats, // Connects refresh button
+        screenTitle: 'Meus Chats',
+        onRefresh: _bootstrap,
         isLoading: _isLoading, // Controls refresh indicator state
         showFilterButton: false,
         // onFilterToggle: () {

@@ -27,4 +27,17 @@ class ChamadoCaller {
     final chamados = await fetchAllChamados();
     return chamados.map((c) => {'value': c.id, 'label': c.titulo}).toList();
   }
+
+  Future<Chamado> createChamado(Chamado chamado,
+      {required String token}) async {
+    final NetworkResponse response = await NetworkCaller()
+        .postRequest(ApiLinks.allChamados, chamado.toJson());
+
+    if (response.isSuccess && response.body != null) {
+      final data = response.body ?? response.body!;
+      return Chamado.fromJson(data);
+    } else {
+      throw Exception('Falha ao criar chamado (${response.statusCode})');
+    }
+  }
 }

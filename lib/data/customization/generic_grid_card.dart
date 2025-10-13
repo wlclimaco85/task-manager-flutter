@@ -800,43 +800,59 @@ class _GenericMobileGridScreenState<T>
     final textTheme = Theme.of(context).textTheme;
 
     return ThemeData(
-      colorScheme: const ColorScheme.light(
-        primary: GridColors.primary, // Sua cor primária
-        onPrimary: GridColors.textPrimary, // Texto sobre a cor primária
-        surface: GridColors.card, // Cor de fundo
-        onSurface: GridColors.textSecondary, // Texto principal
-        background: GridColors.background, // Cor de fundo alternativa
+      useMaterial3: true,
+      colorScheme: ColorScheme.fromSeed(
+        seedColor: GridColors.primary,
+        primary: GridColors.primary,
+        secondary: GridColors.secondary,
+        error: GridColors.error,
+        surface: GridColors.card,
+        onPrimary: GridColors.textPrimary,
+        onSecondary: GridColors.textPrimary,
       ),
-      dialogBackgroundColor: GridColors.dialogBackground,
-      textTheme: textTheme.copyWith(
-        bodyLarge: const TextStyle(
-          color: GridColors.textSecondary,
-          fontSize: 16,
-        ),
-        bodyMedium: const TextStyle(
-          color: GridColors.textSecondary,
-          fontSize: 14,
-        ),
-        labelLarge: const TextStyle(
-          color: GridColors.primary,
-          fontWeight: FontWeight.bold,
-          fontSize: 16,
-        ),
-        titleMedium: const TextStyle(
-          color: GridColors.textSecondary,
-          fontWeight: FontWeight.bold,
-          fontSize: 18,
-        ),
+      appBarTheme: const AppBarTheme(
+        backgroundColor: GridColors.primary,
+        foregroundColor: GridColors.textPrimary,
+        centerTitle: false,
+        elevation: 2,
+      ),
+      floatingActionButtonTheme: const FloatingActionButtonThemeData(
+        backgroundColor: GridColors.secondary,
+        foregroundColor: GridColors.textPrimary,
       ),
       inputDecorationTheme: InputDecorationTheme(
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8),
-          borderSide: const BorderSide(color: GridColors.inputBorder),
-        ),
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+        filled: true,
+        fillColor: Colors.white,
         focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8),
           borderSide: const BorderSide(color: GridColors.primary, width: 2),
+          borderRadius: BorderRadius.circular(12),
         ),
+        labelStyle: const TextStyle(color: GridColors.secondary),
+      ),
+      elevatedButtonTheme: ElevatedButtonThemeData(
+        style: ElevatedButton.styleFrom(
+          backgroundColor: GridColors.primary,
+          foregroundColor: GridColors.textPrimary,
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+          padding: const EdgeInsets.symmetric(vertical: 12),
+        ),
+      ),
+      outlinedButtonTheme: OutlinedButtonThemeData(
+        style: OutlinedButton.styleFrom(
+          foregroundColor: GridColors.secondary,
+          side: const BorderSide(color: GridColors.secondary),
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+          padding: const EdgeInsets.symmetric(vertical: 12),
+        ),
+      ),
+      dividerColor: GridColors.divider,
+      cardColor: GridColors.card,
+      snackBarTheme: const SnackBarThemeData(
+        backgroundColor: GridColors.secondary,
+        contentTextStyle: TextStyle(color: GridColors.textPrimary),
       ),
     );
   }
@@ -2412,7 +2428,8 @@ class _GenericMobileGridScreenState<T>
           ),
         if (widget.hasPermission('delete'))
           IconButton(
-            icon: const Icon(Icons.delete_outline, size: 16, color: GridColors.error),
+            icon: const Icon(Icons.delete_outline,
+                size: 16, color: GridColors.error),
             onPressed: () => _deleteItem(
               _getNestedValue(itemMap, widget.idFieldName).toString(),
             ),

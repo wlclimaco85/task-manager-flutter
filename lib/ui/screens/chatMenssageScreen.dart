@@ -11,11 +11,15 @@ import 'package:task_manager_flutter/data/models/auth_utility.dart';
 import 'dart:typed_data';
 import 'package:task_manager_flutter/data/models/chat_model.dart';
 import 'package:task_manager_flutter/data/services/chat_caller.dart';
+import 'package:url_launcher/url_launcher.dart';
+import 'package:open_filex/open_filex.dart';
+
+import 'ticket_form_bottom_sheet.dart';
 
 class ChatMessageScreen extends StatefulWidget {
   final String sector;
   final String userName;
-  final String chatId; // Adicionando o ID do chat
+  final String chatId;
 
   const ChatMessageScreen({
     super.key,
@@ -46,7 +50,7 @@ class _ChatMessageScreenState extends State<ChatMessageScreen> {
   void _connectWebSocket() {
     try {
       _channel = IOWebSocketChannel.connect(
-        ApiLinks.chatStart('Washington', widget.sector),
+        ApiLinks.chatStart(widget.userName, widget.sector),
       );
 
       _channel.stream.listen(
@@ -58,33 +62,27 @@ class _ChatMessageScreenState extends State<ChatMessageScreen> {
           });
         },
         onError: (error) {
-          print('WebSocket error: $error');
           Future.delayed(const Duration(seconds: 3), _connectWebSocket);
         },
         onDone: () {
-          print('WebSocket closed');
           _connectWebSocket();
         },
       );
-    } catch (e) {
-      print('Connection error: $e');
-    }
+    } catch (_) {}
   }
 
   void _scrollToBottom() {
     if (_scrollController.hasClients) {
       _scrollController.animateTo(
         _scrollController.position.maxScrollExtent,
-        duration: const Duration(milliseconds: 300),
+        duration: const Duration(milliseconds: 250),
         curve: Curves.easeOut,
       );
     }
   }
 
   Future<void> _loadInitialMessages() async {
-    setState(() {
-      _isLoading = true;
-    });
+    setState(() => _isLoading = true);
     try {
       final data = await ChatCaller().fetchChatsById(context, widget.chatId);
       setState(() {
@@ -92,7 +90,7 @@ class _ChatMessageScreenState extends State<ChatMessageScreen> {
             .map((msg) => ChatMessage(
                   sender: msg.sender ?? '',
                   content: msg.text ?? '',
-                  type: 'text', // Ajuste conforme necessário
+                  type: msg.type ?? 'text',
                   timestamp: msg.uploadDate,
                   empId: msg.empId,
                   codApp: msg.codApp,
@@ -102,101 +100,24 @@ class _ChatMessageScreenState extends State<ChatMessageScreen> {
                   chatId: msg.chatId,
                   uploadDate: msg.uploadDate,
                   text: msg.text,
-                  // fileId e fileName serão null a menos que a mensagem seja do tipo arquivo
+                  fileId: msg.fileId,
+                  fileName: msg.fileName,
+                  fileUrl: msg.fileUrl, // suporte a URL pública se existir
                 ))
             .toList();
         WidgetsBinding.instance.addPostFrameCallback((_) => _scrollToBottom());
       });
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Erro ao carregar chats: $e')),
+        SnackBar(content: Text('Erro ao carregar mensagens: $e')),
       );
     } finally {
-      setState(() {
-        _isLoading = false;
-      });
-    }
-  }
-
-  Future<void> _finalizeChat(Chat chat) async {
-    try {
-      final response = await http.put(
-        Uri.parse(ApiLinks.chatStartfetch(chat.chatId)),
-        headers: {'Authorization': 'Bearer $_authToken'},
-        body: json.encode({'status': 'Finalizado'}),
-      );
-      if (response.statusCode == 200) {
-        setState(() {
-          // Atualizar localmente o status do chat
-          // _chats = _chats.map((c) {
-          //   if (c.chatId == chat.chatId) {
-          //     return Chat(
-          //       chatId: c.chatId,
-          //       sector: c.sector,
-          //       lastMessage: c.lastMessage,
-          //       timestamp: c.timestamp,
-          //       status: 'Finalizado',
-          //     );
-          //   }
-          //   return c;
-          // }).toList();
-        });
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Chat finalizado com sucesso')),
-        );
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Falha ao finalizar o chat')),
-        );
-      }
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Erro ao finalizar o chat: $e')),
-      );
-    }
-  }
-
-  Future<void> _deleteChat(Chat chat) async {
-    try {
-      final response = await http.delete(
-        Uri.parse(
-            'http://192.168.114.1:8088/boletobancos/api/chat/${chat.chatId}'),
-        headers: {'Authorization': 'Bearer $_authToken'},
-      );
-      if (response.statusCode == 200) {
-        setState(() {
-          //_chats.removeWhere((c) => c.chatId == chat.chatId);
-        });
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Chat excluído com sucesso')),
-        );
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Falha ao excluir o chat')),
-        );
-      }
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Erro ao excluir o chat: $e')),
-      );
-    }
-  }
-
-  Color _getStatusColor(String status) {
-    switch (status) {
-      case 'Ativo':
-        return Colors.green;
-      case 'Finalizado':
-        return Colors.red; // Alterado para vermelho
-      case 'Pendente':
-        return Colors.orange;
-      default:
-        return Colors.grey;
+      setState(() => _isLoading = false);
     }
   }
 
   Future<void> _sendMessage() async {
-    final String content = _messageController.text;
+    final String content = _messageController.text.trim();
     if (content.isEmpty) return;
 
     _channel.sink.add(json.encode({
@@ -205,6 +126,7 @@ class _ChatMessageScreenState extends State<ChatMessageScreen> {
       'sector': widget.sector,
       'type': 'text',
       'timestamp': DateTime.now().toIso8601String(),
+      'chatId': widget.chatId,
     }));
 
     _messageController.clear();
@@ -212,105 +134,185 @@ class _ChatMessageScreenState extends State<ChatMessageScreen> {
 
   Future<void> _uploadAndSendFile() async {
     try {
-      FilePickerResult? result = await FilePicker.platform.pickFiles(
+      final result = await FilePicker.platform.pickFiles(
         type: FileType.custom,
         allowedExtensions: ['pdf', 'jpg', 'jpeg', 'png'],
+        withData: true,
       );
 
-      if (result != null) {
-        PlatformFile file = result.files.first;
-        Uint8List? fileBytes = file.bytes;
-        String fileName = file.name;
+      if (result == null) return;
 
-        if (fileBytes == null && file.path != null) {
-          File ioFile = File(file.path!);
-          fileBytes = await ioFile.readAsBytes();
-        }
+      final file = result.files.first;
+      Uint8List? fileBytes = file.bytes;
 
-        var request = http.MultipartRequest(
-          'POST',
-          Uri.parse('http://192.168.114.1:8088/boletobancos/api/files/upload'),
+      if (fileBytes == null && file.path != null) {
+        fileBytes = await File(file.path!).readAsBytes();
+      }
+      if (fileBytes == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+              content: Text('Não foi possível ler o arquivo selecionado')),
         );
+        return;
+      }
 
-        request.files.add(http.MultipartFile.fromBytes(
-          'file',
-          fileBytes!,
-          filename: fileName,
-        ));
+      final request = http.MultipartRequest(
+        'POST',
+        Uri.parse(ApiLinks.uploadFile),
+      );
 
-        request.fields['user'] = widget.userName;
-        request.fields['sector'] = widget.sector;
+      request.files.add(http.MultipartFile.fromBytes(
+        'file',
+        fileBytes,
+        filename: file.name,
+      ));
 
-        if (_authToken.isNotEmpty) {
-          request.headers['Authorization'] = 'Bearer $_authToken';
+      request.fields['user'] = widget.userName;
+      request.fields['sector'] = widget.sector;
+      request.fields['chatId'] =
+          widget.chatId; // importante pro backend vincular
+
+      if (_authToken.isNotEmpty) {
+        request.headers['Authorization'] = 'Bearer $_authToken';
+      }
+
+      final response = await request.send();
+      final responseBody = await response.stream.bytesToString();
+
+      if (response.statusCode == 200) {
+        final jsonResponse = json.decode(responseBody) as Map<String, dynamic>;
+
+        // id e url do arquivo (ajuste as chaves conforme seu backend)
+        int? fileId;
+        final rawId = jsonResponse['fileId'] ?? jsonResponse['data']?['fileId'];
+        if (rawId is int) {
+          fileId = rawId;
+        } else if (rawId is String) {
+          fileId = int.tryParse(rawId);
         }
 
-        var response = await request.send();
+        // Se o backend já devolver uma URL, use-a; senão, gere via helper
+        String? fileUrl = (jsonResponse['fileUrl'] ??
+            jsonResponse['data']?['fileUrl']) as String?;
+        fileUrl ??= (fileId != null) ? ApiLinks.publicFileUrl(fileId) : null;
 
-        if (response.statusCode == 200) {
-          String responseBody = await response.stream.bytesToString();
-          Map<String, dynamic> jsonResponse = json.decode(responseBody);
-
-          // Converta dynamic para int? de forma segura
-          int? fileId;
-          if (jsonResponse['fileId'] != null) {
-            if (jsonResponse['fileId'] is int) {
-              fileId = jsonResponse['fileId'];
-            } else if (jsonResponse['fileId'] is String) {
-              fileId = int.tryParse(jsonResponse['fileId']);
-            }
-          }
-
-          if (fileId != null) {
-            _channel.sink.add(json.encode({
-              'sender': widget.userName,
-              'content': 'Arquivo anexado: $fileName',
-              'sector': widget.sector,
-              'type': 'file',
-              'fileName': fileName,
-              'fileId': fileId, // Agora é um int
-              'timestamp': DateTime.now().toIso8601String(),
-            }));
-          } else {
-            print(
-                'ID do arquivo não encontrado ou inválido na resposta do servidor');
-          }
+        if (fileId != null) {
+          _channel.sink.add(json.encode({
+            'sender': widget.userName,
+            'content': 'Arquivo: ${file.name}',
+            'sector': widget.sector,
+            'type': 'file',
+            'fileName': file.name,
+            'fileId': fileId,
+            'fileUrl': fileUrl, // agora a msg carrega o link
+            'timestamp': DateTime.now().toIso8601String(),
+            'chatId': widget.chatId,
+          }));
         } else {
-          print('Upload failed with status: ${response.statusCode}');
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+                content: Text('Upload ok, mas ID do arquivo ausente')),
+          );
         }
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Falha no upload (${response.statusCode})')),
+        );
       }
     } catch (e) {
-      print('Error uploading file: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Erro no upload: $e')),
+      );
     }
   }
 
-  void _createTicket() {
-    showDialog(
+  Future<void> _openOrDownload(int fileId, String fileName,
+      {String? fileUrl}) async {
+    // 1) se houver URL pública, tentar abrir
+    if (fileUrl != null && fileUrl.isNotEmpty) {
+      final uri = Uri.parse(fileUrl);
+      if (await canLaunchUrl(uri)) {
+        await launchUrl(uri, mode: LaunchMode.externalApplication);
+        return;
+      }
+    }
+    // 2) fallback: baixar e abrir localmente
+    await _downloadFile(fileId, fileName, openAfter: true);
+  }
+
+  Future<void> _downloadFile(int fileId, String fileName,
+      {bool openAfter = false}) async {
+    try {
+      final response = await http.get(
+        Uri.parse(ApiLinks.downloadFile(fileId.toString())),
+        headers: {'Authorization': 'Bearer $_authToken'},
+      );
+
+      if (response.statusCode == 200) {
+        final directory = await getApplicationDocumentsDirectory();
+        final file = File('${directory.path}/$fileName');
+        await file.writeAsBytes(response.bodyBytes);
+
+        if (openAfter) {
+          await OpenFilex.open(file.path);
+        }
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Arquivo salvo em: ${file.path}')),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Falha ao baixar (${response.statusCode})')),
+        );
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Erro ao baixar: $e')),
+      );
+    }
+  }
+
+  Future<void> _createTicket() async {
+    final result = await showModalBottomSheet(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Abrir Chamado'),
-        content: const Text('Deseja abrir um chamado para este assunto?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancelar'),
-          ),
-          TextButton(
-            onPressed: () {
-              _channel.sink.add(json.encode({
-                'sender': widget.userName,
-                'content': 'Solicitação de abertura de chamado',
-                'sector': widget.sector,
-                'type': 'ticket',
-                'timestamp': DateTime.now().toIso8601String(),
-              }));
-              Navigator.pop(context);
-            },
-            child: const Text('Confirmar'),
-          ),
-        ],
+      isScrollControlled: true,
+      builder: (ctx) => DraggableScrollableSheet(
+        expand: false,
+        initialChildSize: 0.75,
+        minChildSize: 0.5,
+        maxChildSize: 0.9,
+        builder: (_, controller) => SingleChildScrollView(
+          controller: controller,
+          child: TicketFormBottomSheet(sectorDescricao: widget.sector),
+        ),
       ),
     );
+
+    // Se criou, “anuncia” no chat
+    if (result != null && mounted) {
+      try {
+        final criado = result; // Chamado retornado
+        final id = (criado as dynamic).id;
+        _channel.sink.add(json.encode({
+          'sender': widget.userName,
+          'content': 'Chamado aberto com sucesso (ID $id)',
+          'sector': widget.sector,
+          'type': 'ticket',
+          'ticketId': id,
+          'timestamp': DateTime.now().toIso8601String(),
+          'chatId': widget.chatId,
+        }));
+      } catch (_) {}
+    }
+  }
+
+  String _formatTime(String? timestamp) {
+    if (timestamp == null) return '';
+    final time = DateTime.tryParse(timestamp);
+    if (time == null) return '';
+    final hh = time.hour.toString().padLeft(2, '0');
+    final mm = time.minute.toString().padLeft(2, '0');
+    return '$hh:$mm';
   }
 
   @override
@@ -329,30 +331,20 @@ class _ChatMessageScreenState extends State<ChatMessageScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text('Chat - ${widget.sector}'),
-            Text(
-              widget.userName,
-              style: const TextStyle(fontSize: 14, fontWeight: FontWeight.normal),
-            ),
+            Text(widget.userName,
+                style: const TextStyle(
+                    fontSize: 14, fontWeight: FontWeight.normal)),
           ],
         ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.more_vert),
-            onPressed: () {
-              // Adicionar menu de opções
-            },
-          ),
-        ],
       ),
       body: Column(
         children: [
+          if (_isLoading) const LinearProgressIndicator(),
           Expanded(
             child: ListView.builder(
               controller: _scrollController,
               itemCount: _messages.length,
-              itemBuilder: (context, index) {
-                return _buildMessage(_messages[index]);
-              },
+              itemBuilder: (context, index) => _buildMessage(_messages[index]),
             ),
           ),
           Container(
@@ -379,8 +371,10 @@ class _ChatMessageScreenState extends State<ChatMessageScreen> {
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(25),
                       ),
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 16),
+                      contentPadding:
+                          const EdgeInsets.symmetric(horizontal: 16),
                     ),
+                    onSubmitted: (_) => _sendMessage(),
                   ),
                 ),
                 IconButton(
@@ -396,7 +390,7 @@ class _ChatMessageScreenState extends State<ChatMessageScreen> {
   }
 
   Widget _buildMessage(ChatMessage message) {
-    bool isMe = message.sender == widget.userName;
+    final isMe = message.sender == widget.userName;
 
     return Container(
       margin: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
@@ -415,8 +409,7 @@ class _ChatMessageScreenState extends State<ChatMessageScreen> {
           Flexible(
             child: Container(
               constraints: BoxConstraints(
-                maxWidth: MediaQuery.of(context).size.width * 0.7,
-              ),
+                  maxWidth: MediaQuery.of(context).size.width * 0.7),
               padding: const EdgeInsets.all(12),
               margin: const EdgeInsets.symmetric(horizontal: 8),
               decoration: BoxDecoration(
@@ -424,9 +417,9 @@ class _ChatMessageScreenState extends State<ChatMessageScreen> {
                 borderRadius: BorderRadius.circular(8),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.grey.withOpacity(0.5),
+                    color: Colors.grey.withOpacity(0.3),
                     spreadRadius: 1,
-                    blurRadius: 1,
+                    blurRadius: 2,
                     offset: const Offset(0, 1),
                   ),
                 ],
@@ -438,27 +431,26 @@ class _ChatMessageScreenState extends State<ChatMessageScreen> {
                     Text(
                       message.sender,
                       style: const TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 12,
-                        color: Colors.blue,
-                      ),
+                          fontWeight: FontWeight.bold,
+                          fontSize: 12,
+                          color: Colors.blue),
                     ),
                   if (message.type == 'text')
-                    Text(
-                      message.content,
-                      style: const TextStyle(fontSize: 16),
-                    ),
+                    Text(message.content, style: const TextStyle(fontSize: 16)),
                   if (message.type == 'file')
                     InkWell(
-                      onTap: () =>
-                          _downloadFile(message.fileId!, message.fileName!),
+                      onTap: () => _openOrDownload(
+                        message.fileId!,
+                        message.fileName ?? 'arquivo',
+                        fileUrl: message.fileUrl,
+                      ),
                       child: Row(
                         children: [
                           const Icon(Icons.attach_file, size: 16),
                           const SizedBox(width: 4),
                           Flexible(
                             child: Text(
-                              message.fileName!,
+                              message.fileName ?? 'arquivo',
                               style: const TextStyle(
                                 color: Colors.blue,
                                 decoration: TextDecoration.underline,
@@ -470,9 +462,11 @@ class _ChatMessageScreenState extends State<ChatMessageScreen> {
                       ),
                     ),
                   if (message.type == 'ticket')
-                    const Text(
-                      '📋 Solicitação de chamado criada',
-                      style: TextStyle(fontStyle: FontStyle.italic),
+                    Text(
+                      message.content.isNotEmpty
+                          ? message.content
+                          : '📋 Solicitação de chamado criada',
+                      style: const TextStyle(fontStyle: FontStyle.italic),
                     ),
                   const SizedBox(height: 4),
                   Row(
@@ -493,7 +487,7 @@ class _ChatMessageScreenState extends State<ChatMessageScreen> {
             CircleAvatar(
               backgroundColor: Colors.green,
               child: Text(
-                message.sender[0],
+                message.sender.isNotEmpty ? message.sender[0] : '?',
                 style: const TextStyle(color: Colors.white),
               ),
             ),
@@ -501,61 +495,4 @@ class _ChatMessageScreenState extends State<ChatMessageScreen> {
       ),
     );
   }
-
-  String _formatTime(String? timestamp) {
-    if (timestamp == null) return '';
-    final time = DateTime.parse(timestamp);
-    return '${time.hour}:${time.minute.toString().padLeft(2, '0')}';
-  }
-
-  Future<void> _downloadFile(int fileId, String fileName) async {
-    try {
-      final response = await http.get(
-        Uri.parse('http://192.168.114.1:8088/boletobancos/api/files/$fileId'),
-        headers: {'Authorization': 'Bearer $_authToken'},
-      );
-
-      if (response.statusCode == 200) {
-        // Salvar o arquivo localmente
-        final directory = await getApplicationDocumentsDirectory();
-        final file = File('${directory.path}/$fileName');
-        await file.writeAsBytes(response.bodyBytes);
-
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Arquivo salvo em: ${file.path}'),
-          ),
-        );
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Falha ao baixar o arquivo'),
-          ),
-        );
-      }
-    } catch (e) {
-      print('Error downloading file: $e');
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Erro ao baixar o arquivo: $e'),
-        ),
-      );
-    }
-  }
-}
-
-class Chat {
-  final String chatId; // Adicionando o ID do chat
-  final String sector;
-  final String lastMessage;
-  final DateTime timestamp;
-  final String status; // Novo campo para status
-
-  Chat({
-    required this.chatId,
-    required this.sector,
-    required this.lastMessage,
-    required this.timestamp,
-    required this.status,
-  });
 }

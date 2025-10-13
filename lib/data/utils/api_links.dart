@@ -1,7 +1,7 @@
 class ApiLinks {
   ApiLinks._();
-  static const String _baseIp = // "http://192.168.56.1:8088";
-      "https://appacademia-production-be7e.up.railway.app";
+  static const String _baseIp = "http://192.168.56.1:8088";
+  // "https://appacademia-production-be7e.up.railway.app";
   //static const String _chatId = 'ws://192.168.114.1:8088/boletobancos';
 
   static const String _chatId =
@@ -326,4 +326,8 @@ class ApiLinks {
 
   static String getAllpreferencias(String id, String setor) =>
       ('$_baseUrlNew/api/$id/user-preferences/$setor');
+
+  // Caso seu backend também sirva link público direto:
+  static String publicFileUrl(int fileId) =>
+      '$_baseUrlNew/files/public/$fileId';
 }
