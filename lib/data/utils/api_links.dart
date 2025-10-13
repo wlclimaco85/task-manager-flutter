@@ -330,4 +330,7 @@ class ApiLinks {
   // Caso seu backend também sirva link público direto:
   static String publicFileUrl(int fileId) =>
       '$_baseUrlNew/files/public/$fileId';
+
+  static String atualizarUsuario(int fileId) =>
+      '$_baseUrlNew/api/usuario/atualizar/$fileId';
 }

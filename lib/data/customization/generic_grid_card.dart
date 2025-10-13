@@ -516,6 +516,8 @@ class _GenericMobileGridScreenState<T>
     _itemParaEditar = item;
     showDialog(
       context: context,
+      barrierColor:
+          GridColors.primary.withOpacity(1.8), // 🔴 fundo vermelho translúcido
       builder: (context) => _buildFormDialog(item),
     );
   }
@@ -533,31 +535,45 @@ class _GenericMobileGridScreenState<T>
     }
 
     return Dialog(
+      backgroundColor: GridColors.primary, // 🔴 fundo vermelho principal
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      insetPadding: const EdgeInsets.all(24),
       child: Container(
         constraints: BoxConstraints(
-            maxWidth: 500, maxHeight: MediaQuery.of(context).size.height * 0.8),
+          maxWidth: 500,
+          maxHeight: MediaQuery.of(context).size.height * 0.8,
+        ),
         padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          color: GridColors.primary, // 🔴 Fundo do card (vermelho)
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(
+              color: GridColors.primaryDark.withOpacity(0.4),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Row(
               children: [
-                Icon(Icons.edit,
-                    color: Theme.of(context).colorScheme.primary, size: 24),
+                const Icon(Icons.edit, color: GridColors.textPrimary, size: 24),
                 const SizedBox(width: 8),
                 Text(
                   item == null ? 'Adicionar Novo' : 'Editar Item',
-                  style: TextStyle(
+                  style: const TextStyle(
                     fontSize: 20,
                     fontWeight: FontWeight.bold,
-                    color: Theme.of(context).colorScheme.primary,
+                    color: GridColors.textPrimary, // branco no título
                   ),
                 ),
                 const Spacer(),
                 IconButton(
-                  icon: const Icon(Icons.close),
+                  icon: const Icon(Icons.close, color: GridColors.textPrimary),
                   onPressed: () => Navigator.pop(context),
                 ),
               ],
@@ -580,6 +596,10 @@ class _GenericMobileGridScreenState<T>
                 Expanded(
                   child: OutlinedButton(
                     onPressed: () => Navigator.pop(context),
+                    style: OutlinedButton.styleFrom(
+                      side: const BorderSide(color: GridColors.textPrimary),
+                      foregroundColor: GridColors.textPrimary,
+                    ),
                     child: const Text('Cancelar'),
                   ),
                 ),
@@ -588,8 +608,8 @@ class _GenericMobileGridScreenState<T>
                   child: ElevatedButton(
                     onPressed: () => _saveForm(item, formControllers, context),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: Theme.of(context).colorScheme.primary,
-                      foregroundColor: Theme.of(context).colorScheme.onPrimary,
+                      backgroundColor: GridColors.textPrimary,
+                      foregroundColor: GridColors.primary,
                     ),
                     child: Text(item == null ? 'Adicionar' : 'Salvar'),
                   ),

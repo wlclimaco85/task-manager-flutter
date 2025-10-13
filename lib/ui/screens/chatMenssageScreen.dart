@@ -13,7 +13,7 @@ import 'package:task_manager_flutter/data/models/chat_model.dart';
 import 'package:task_manager_flutter/data/services/chat_caller.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:open_filex/open_filex.dart';
-
+import 'package:task_manager_flutter/data/utils/grid_colors.dart';
 import 'ticket_form_bottom_sheet.dart';
 
 class ChatMessageScreen extends StatefulWidget {
@@ -40,6 +40,12 @@ class _ChatMessageScreenState extends State<ChatMessageScreen> {
   final ScrollController _scrollController = ScrollController();
   bool _isLoading = false;
 
+  String get _loggedUserEmail =>
+      AuthUtility.userInfo?.login?.email ?? widget.userName;
+
+  String get _loggedUserName =>
+      AuthUtility.userInfo?.login?.nome ?? widget.userName;
+
   @override
   void initState() {
     super.initState();
@@ -50,7 +56,7 @@ class _ChatMessageScreenState extends State<ChatMessageScreen> {
   void _connectWebSocket() {
     try {
       _channel = IOWebSocketChannel.connect(
-        ApiLinks.chatStart(widget.userName, widget.sector),
+        ApiLinks.chatStart(_loggedUserEmail, widget.sector),
       );
 
       _channel.stream.listen(
@@ -102,7 +108,7 @@ class _ChatMessageScreenState extends State<ChatMessageScreen> {
                   text: msg.text,
                   fileId: msg.fileId,
                   fileName: msg.fileName,
-                  fileUrl: msg.fileUrl, // suporte a URL pública se existir
+                  fileUrl: msg.fileUrl,
                 ))
             .toList();
         WidgetsBinding.instance.addPostFrameCallback((_) => _scrollToBottom());
@@ -121,7 +127,7 @@ class _ChatMessageScreenState extends State<ChatMessageScreen> {
     if (content.isEmpty) return;
 
     _channel.sink.add(json.encode({
-      'sender': widget.userName,
+      'sender': _loggedUserEmail,
       'content': content,
       'sector': widget.sector,
       'type': 'text',
@@ -167,10 +173,9 @@ class _ChatMessageScreenState extends State<ChatMessageScreen> {
         filename: file.name,
       ));
 
-      request.fields['user'] = widget.userName;
+      request.fields['user'] = _loggedUserEmail;
       request.fields['sector'] = widget.sector;
-      request.fields['chatId'] =
-          widget.chatId; // importante pro backend vincular
+      request.fields['chatId'] = widget.chatId;
 
       if (_authToken.isNotEmpty) {
         request.headers['Authorization'] = 'Bearer $_authToken';
@@ -181,8 +186,6 @@ class _ChatMessageScreenState extends State<ChatMessageScreen> {
 
       if (response.statusCode == 200) {
         final jsonResponse = json.decode(responseBody) as Map<String, dynamic>;
-
-        // id e url do arquivo (ajuste as chaves conforme seu backend)
         int? fileId;
         final rawId = jsonResponse['fileId'] ?? jsonResponse['data']?['fileId'];
         if (rawId is int) {
@@ -191,28 +194,22 @@ class _ChatMessageScreenState extends State<ChatMessageScreen> {
           fileId = int.tryParse(rawId);
         }
 
-        // Se o backend já devolver uma URL, use-a; senão, gere via helper
         String? fileUrl = (jsonResponse['fileUrl'] ??
             jsonResponse['data']?['fileUrl']) as String?;
         fileUrl ??= (fileId != null) ? ApiLinks.publicFileUrl(fileId) : null;
 
         if (fileId != null) {
           _channel.sink.add(json.encode({
-            'sender': widget.userName,
+            'sender': _loggedUserEmail,
             'content': 'Arquivo: ${file.name}',
             'sector': widget.sector,
             'type': 'file',
             'fileName': file.name,
             'fileId': fileId,
-            'fileUrl': fileUrl, // agora a msg carrega o link
+            'fileUrl': fileUrl,
             'timestamp': DateTime.now().toIso8601String(),
             'chatId': widget.chatId,
           }));
-        } else {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-                content: Text('Upload ok, mas ID do arquivo ausente')),
-          );
         }
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -228,7 +225,6 @@ class _ChatMessageScreenState extends State<ChatMessageScreen> {
 
   Future<void> _openOrDownload(int fileId, String fileName,
       {String? fileUrl}) async {
-    // 1) se houver URL pública, tentar abrir
     if (fileUrl != null && fileUrl.isNotEmpty) {
       final uri = Uri.parse(fileUrl);
       if (await canLaunchUrl(uri)) {
@@ -236,7 +232,6 @@ class _ChatMessageScreenState extends State<ChatMessageScreen> {
         return;
       }
     }
-    // 2) fallback: baixar e abrir localmente
     await _downloadFile(fileId, fileName, openAfter: true);
   }
 
@@ -276,6 +271,7 @@ class _ChatMessageScreenState extends State<ChatMessageScreen> {
     final result = await showModalBottomSheet(
       context: context,
       isScrollControlled: true,
+      backgroundColor: GridColors.secondary,
       builder: (ctx) => DraggableScrollableSheet(
         expand: false,
         initialChildSize: 0.75,
@@ -288,13 +284,12 @@ class _ChatMessageScreenState extends State<ChatMessageScreen> {
       ),
     );
 
-    // Se criou, “anuncia” no chat
     if (result != null && mounted) {
       try {
-        final criado = result; // Chamado retornado
+        final criado = result;
         final id = (criado as dynamic).id;
         _channel.sink.add(json.encode({
-          'sender': widget.userName,
+          'sender': _loggedUserEmail,
           'content': 'Chamado aberto com sucesso (ID $id)',
           'sector': widget.sector,
           'type': 'ticket',
@@ -326,63 +321,84 @@ class _ChatMessageScreenState extends State<ChatMessageScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: GridColors.secondary,
       appBar: AppBar(
+        backgroundColor: GridColors.primary,
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Chat - ${widget.sector}'),
-            Text(widget.userName,
-                style: const TextStyle(
-                    fontSize: 14, fontWeight: FontWeight.normal)),
+            Text(
+              'Chat - ${widget.sector}',
+              style: const TextStyle(
+                  color: GridColors.textPrimary, fontWeight: FontWeight.bold),
+            ),
+            Text(
+              _loggedUserName,
+              style:
+                  const TextStyle(color: GridColors.textPrimary, fontSize: 13),
+            ),
           ],
         ),
       ),
       body: Column(
         children: [
-          if (_isLoading) const LinearProgressIndicator(),
+          if (_isLoading)
+            const LinearProgressIndicator(color: GridColors.secondary),
           Expanded(
-            child: ListView.builder(
-              controller: _scrollController,
-              itemCount: _messages.length,
-              itemBuilder: (context, index) => _buildMessage(_messages[index]),
+            child: Container(
+              color: GridColors.primary.withOpacity(0.1),
+              child: ListView.builder(
+                controller: _scrollController,
+                itemCount: _messages.length,
+                itemBuilder: (context, index) =>
+                    _buildMessage(_messages[index]),
+              ),
             ),
           ),
-          Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: Colors.grey[200],
-              border: const Border(top: BorderSide(color: Colors.grey)),
+          _buildMessageInput(),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildMessageInput() {
+    return Container(
+      padding: const EdgeInsets.all(8),
+      decoration: const BoxDecoration(
+        color: GridColors.card,
+        border: Border(top: BorderSide(color: GridColors.divider)),
+      ),
+      child: Row(
+        children: [
+          IconButton(
+            icon: const Icon(Icons.attach_file, color: GridColors.secondary),
+            onPressed: _uploadAndSendFile,
+          ),
+          IconButton(
+            icon: const Icon(Icons.support_agent, color: GridColors.primary),
+            onPressed: _createTicket,
+          ),
+          Expanded(
+            child: TextField(
+              controller: _messageController,
+              decoration: InputDecoration(
+                hintText: 'Digite sua mensagem...',
+                hintStyle: const TextStyle(color: GridColors.divider),
+                filled: true,
+                fillColor: Colors.white,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(25),
+                  borderSide: const BorderSide(color: GridColors.divider),
+                ),
+                contentPadding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 0),
+              ),
+              onSubmitted: (_) => _sendMessage(),
             ),
-            child: Row(
-              children: [
-                IconButton(
-                  icon: const Icon(Icons.attach_file),
-                  onPressed: _uploadAndSendFile,
-                ),
-                IconButton(
-                  icon: const Icon(Icons.support_agent),
-                  onPressed: _createTicket,
-                ),
-                Expanded(
-                  child: TextField(
-                    controller: _messageController,
-                    decoration: InputDecoration(
-                      hintText: 'Digite sua mensagem...',
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(25),
-                      ),
-                      contentPadding:
-                          const EdgeInsets.symmetric(horizontal: 16),
-                    ),
-                    onSubmitted: (_) => _sendMessage(),
-                  ),
-                ),
-                IconButton(
-                  icon: const Icon(Icons.send),
-                  onPressed: _sendMessage,
-                ),
-              ],
-            ),
+          ),
+          IconButton(
+            icon: const Icon(Icons.send, color: GridColors.secondary),
+            onPressed: _sendMessage,
           ),
         ],
       ),
@@ -390,53 +406,67 @@ class _ChatMessageScreenState extends State<ChatMessageScreen> {
   }
 
   Widget _buildMessage(ChatMessage message) {
-    final isMe = message.sender == widget.userName;
+    final isMe = message.sender == _loggedUserEmail;
 
     return Container(
       margin: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
       child: Row(
         mainAxisAlignment:
             isMe ? MainAxisAlignment.end : MainAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.end,
         children: [
           if (!isMe)
-            CircleAvatar(
-              backgroundColor: Colors.grey,
-              child: Text(
-                message.sender.isNotEmpty ? message.sender[0] : '?',
-                style: const TextStyle(color: Colors.white),
-              ),
+            Column(
+              children: [
+                CircleAvatar(
+                  backgroundColor: GridColors.secondary,
+                  child: Text(
+                    message.sender.isNotEmpty
+                        ? message.sender[0].toUpperCase()
+                        : '?',
+                    style: const TextStyle(color: Colors.white),
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  message.sender,
+                  style: const TextStyle(
+                    fontSize: 11,
+                    color: GridColors.secondary,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
             ),
+          const SizedBox(width: 8),
           Flexible(
             child: Container(
-              constraints: BoxConstraints(
-                  maxWidth: MediaQuery.of(context).size.width * 0.7),
-              padding: const EdgeInsets.all(12),
-              margin: const EdgeInsets.symmetric(horizontal: 8),
+              padding: const EdgeInsets.all(10),
               decoration: BoxDecoration(
-                color: isMe ? const Color(0xFFDCF8C6) : Colors.white,
-                borderRadius: BorderRadius.circular(8),
+                color: isMe
+                    ? GridColors.primary.withOpacity(0.9)
+                    : GridColors.card,
+                borderRadius: BorderRadius.circular(10),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.grey.withOpacity(0.3),
-                    spreadRadius: 1,
-                    blurRadius: 2,
-                    offset: const Offset(0, 1),
-                  ),
+                    color: GridColors.divider.withOpacity(0.5),
+                    blurRadius: 4,
+                    offset: const Offset(0, 2),
+                  )
                 ],
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  if (!isMe)
-                    Text(
-                      message.sender,
-                      style: const TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 12,
-                          color: Colors.blue),
-                    ),
                   if (message.type == 'text')
-                    Text(message.content, style: const TextStyle(fontSize: 16)),
+                    Text(
+                      message.content,
+                      style: TextStyle(
+                        color: isMe
+                            ? GridColors.textPrimary
+                            : GridColors.textSecondary,
+                      ),
+                    ),
                   if (message.type == 'file')
                     InkWell(
                       onTap: () => _openOrDownload(
@@ -446,13 +476,14 @@ class _ChatMessageScreenState extends State<ChatMessageScreen> {
                       ),
                       child: Row(
                         children: [
-                          const Icon(Icons.attach_file, size: 16),
+                          const Icon(Icons.attach_file,
+                              color: GridColors.secondary, size: 16),
                           const SizedBox(width: 4),
                           Flexible(
                             child: Text(
                               message.fileName ?? 'arquivo',
                               style: const TextStyle(
-                                color: Colors.blue,
+                                color: GridColors.secondary,
                                 decoration: TextDecoration.underline,
                               ),
                               overflow: TextOverflow.ellipsis,
@@ -465,31 +496,49 @@ class _ChatMessageScreenState extends State<ChatMessageScreen> {
                     Text(
                       message.content.isNotEmpty
                           ? message.content
-                          : '📋 Solicitação de chamado criada',
-                      style: const TextStyle(fontStyle: FontStyle.italic),
+                          : '📋 Chamado criado com sucesso!',
+                      style: const TextStyle(
+                        fontStyle: FontStyle.italic,
+                        color: GridColors.secondary,
+                      ),
                     ),
                   const SizedBox(height: 4),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.end,
-                    children: [
-                      Text(
-                        _formatTime(message.timestamp),
-                        style:
-                            const TextStyle(fontSize: 10, color: Colors.grey),
+                  Align(
+                    alignment: Alignment.bottomRight,
+                    child: Text(
+                      _formatTime(message.timestamp),
+                      style: const TextStyle(
+                        fontSize: 10,
+                        color: GridColors.divider,
                       ),
-                    ],
+                    ),
                   ),
                 ],
               ),
             ),
           ),
           if (isMe)
-            CircleAvatar(
-              backgroundColor: Colors.green,
-              child: Text(
-                message.sender.isNotEmpty ? message.sender[0] : '?',
-                style: const TextStyle(color: Colors.white),
-              ),
+            Column(
+              children: [
+                CircleAvatar(
+                  backgroundColor: GridColors.primary,
+                  child: Text(
+                    _loggedUserName.isNotEmpty
+                        ? _loggedUserName[0].toUpperCase()
+                        : '?',
+                    style: const TextStyle(color: Colors.white),
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  _loggedUserName,
+                  style: const TextStyle(
+                    fontSize: 11,
+                    color: GridColors.primary,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
             ),
         ],
       ),

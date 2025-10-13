@@ -2,11 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:task_manager_flutter/ui/screens/chatMenssageScreen.dart';
 import 'package:task_manager_flutter/data/services/chat_caller.dart';
-import 'package:task_manager_flutter/ui/widgets/user_banners.dart'; // Adjust path as needed
+import 'package:task_manager_flutter/ui/widgets/user_banners.dart';
 import 'package:task_manager_flutter/data/models/chamado_model.dart';
-import 'package:task_manager_flutter/data/utils/grid_colors.dart'; // ★ adicionado para aplicar o tema
-
-// ★ ADIÇÃO: paleta de cores do sistema
+import 'package:task_manager_flutter/data/utils/grid_colors.dart';
 
 class ChatListScreen extends StatefulWidget {
   final String userName;
@@ -18,11 +16,11 @@ class ChatListScreen extends StatefulWidget {
 }
 
 class Chat {
-  final String chatId; // Adicionando o ID do chat
+  final String chatId;
   final String sector;
   final String lastMessage;
   final DateTime timestamp;
-  final String status; // Novo campo para status
+  final String status;
 
   Chat({
     required this.chatId,
@@ -41,7 +39,7 @@ class _ChatListScreenState extends State<ChatListScreen> {
     'Departamento Pessoal',
     'Fiscal'
   ];
-  List<Map<String, dynamic>> _setores = []; // <- dinâmico
+  List<Map<String, dynamic>> _setores = [];
 
   @override
   void initState() {
@@ -66,7 +64,10 @@ class _ChatListScreenState extends State<ChatListScreen> {
       });
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Erro ao carregar setores: $e')),
+        SnackBar(
+          backgroundColor: GridColors.error,
+          content: Text('Erro ao carregar setores: $e'),
+        ),
       );
     }
   }
@@ -80,18 +81,21 @@ class _ChatListScreenState extends State<ChatListScreen> {
       setState(() {
         _chats = data
             .map((msg) => Chat(
-                  chatId: msg.chatId ?? '0', // Use o ID do chat do modelo
+                  chatId: msg.chatId ?? '0',
                   sector: msg.sector ?? 'Setor Desconhecido',
                   lastMessage: msg.text ?? 'Sem mensagem',
                   timestamp:
                       DateTime.tryParse(msg.uploadDate ?? '') ?? DateTime.now(),
-                  status: 'Ativo', // Defina o status apropriado aqui
+                  status: 'Ativo',
                 ))
             .toList();
       });
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Erro ao carregar chats: $e')),
+        SnackBar(
+          backgroundColor: GridColors.error,
+          content: Text('Erro ao carregar chats: $e'),
+        ),
       );
     } finally {
       setState(() {
@@ -107,7 +111,7 @@ class _ChatListScreenState extends State<ChatListScreen> {
         builder: (context) => ChatMessageScreen(
           sector: sector,
           userName: widget.userName,
-          chatId: '0', // Novo chat, ID inicial 0
+          chatId: '0',
         ),
       ),
     );
@@ -118,11 +122,9 @@ class _ChatListScreenState extends State<ChatListScreen> {
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          // ★ Aplicar cor do card
           backgroundColor: GridColors.card,
           title: const Text(
             'Selecionar Setor',
-            // ★ Título com cor primária
             style: TextStyle(color: GridColors.primary),
           ),
           content: SizedBox(
@@ -160,8 +162,8 @@ class _ChatListScreenState extends State<ChatListScreen> {
           child: Wrap(
             children: <Widget>[
               ListTile(
-                leading: const Icon(Icons.visibility,
-                    color: GridColors.secondary), // ★
+                leading:
+                    const Icon(Icons.visibility, color: GridColors.secondary),
                 title: const Text('Visualizar Chat'),
                 onTap: () {
                   Navigator.pop(context);
@@ -171,15 +173,15 @@ class _ChatListScreenState extends State<ChatListScreen> {
                       builder: (context) => ChatMessageScreen(
                         sector: chat.sector,
                         userName: widget.userName,
-                        chatId: chat.chatId, // Passando o ID do chat existente
+                        chatId: chat.chatId,
                       ),
                     ),
                   );
                 },
               ),
               ListTile(
-                leading: const Icon(Icons.check_circle,
-                    color: GridColors.success), // ★
+                leading:
+                    const Icon(Icons.check_circle, color: GridColors.success),
                 title: const Text('Finalizar Chat'),
                 onTap: () {
                   Navigator.pop(context);
@@ -187,7 +189,7 @@ class _ChatListScreenState extends State<ChatListScreen> {
                 },
               ),
               ListTile(
-                leading: const Icon(Icons.delete, color: GridColors.error), // ★
+                leading: const Icon(Icons.delete, color: GridColors.error),
                 title: const Text('Excluir Chat'),
                 onTap: () {
                   Navigator.pop(context);
@@ -195,7 +197,7 @@ class _ChatListScreenState extends State<ChatListScreen> {
                 },
               ),
               const ListTile(
-                leading: Icon(Icons.cancel, color: GridColors.divider), // ★
+                leading: Icon(Icons.cancel, color: GridColors.divider),
                 title: Text('Cancelar'),
               ),
             ],
@@ -206,25 +208,22 @@ class _ChatListScreenState extends State<ChatListScreen> {
   }
 
   void _finalizeChat(Chat chat) {
-    // Implementar lógica para finalizar o chat
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        backgroundColor: GridColors.card, // ★
+        backgroundColor: GridColors.card,
         title: const Text('Finalizar Chat',
-            style: TextStyle(color: GridColors.primary)), // ★
+            style: TextStyle(color: GridColors.primary)),
         content: Text('Deseja finalizar o chat com ${chat.sector}?'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
             child: const Text('Cancelar',
-                style: TextStyle(color: GridColors.secondary)), // ★
+                style: TextStyle(color: GridColors.secondary)),
           ),
           TextButton(
             onPressed: () {
-              // Lógica para finalizar o chat
               setState(() {
-                // Atualizar status do chat para "Finalizado"
                 _chats = _chats.map((c) {
                   if (c.sector == chat.sector) {
                     return Chat(
@@ -240,11 +239,14 @@ class _ChatListScreenState extends State<ChatListScreen> {
               });
               Navigator.pop(context);
               ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Chat finalizado com sucesso')),
+                const SnackBar(
+                  backgroundColor: GridColors.success,
+                  content: Text('Chat finalizado com sucesso'),
+                ),
               );
             },
             child: const Text('Confirmar',
-                style: TextStyle(color: GridColors.primary)), // ★
+                style: TextStyle(color: GridColors.primary)),
           ),
         ],
       ),
@@ -252,33 +254,34 @@ class _ChatListScreenState extends State<ChatListScreen> {
   }
 
   void _deleteChat(Chat chat) {
-    // Implementar lógica para excluir o chat
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        backgroundColor: GridColors.card, // ★
+        backgroundColor: GridColors.card,
         title: const Text('Excluir Chat',
-            style: TextStyle(color: GridColors.primary)), // ★
+            style: TextStyle(color: GridColors.primary)),
         content: Text('Deseja excluir o chat com ${chat.sector}?'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
             child: const Text('Cancelar',
-                style: TextStyle(color: GridColors.secondary)), // ★
+                style: TextStyle(color: GridColors.secondary)),
           ),
           TextButton(
             onPressed: () {
-              // Lógica para excluir o chat
               setState(() {
                 _chats.removeWhere((c) => c.sector == chat.sector);
               });
               Navigator.pop(context);
               ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Chat excluído com sucesso')),
+                const SnackBar(
+                  backgroundColor: GridColors.success,
+                  content: Text('Chat excluído com sucesso'),
+                ),
               );
             },
             child: const Text('Excluir',
-                style: TextStyle(color: GridColors.error)), // ★
+                style: TextStyle(color: GridColors.error)),
           ),
         ],
       ),
@@ -286,7 +289,6 @@ class _ChatListScreenState extends State<ChatListScreen> {
   }
 
   Color _getStatusColor(String status) {
-    // ★ Aplicar paleta do sistema
     switch (status) {
       case 'Ativo':
         return GridColors.success;
@@ -302,21 +304,17 @@ class _ChatListScreenState extends State<ChatListScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      // ★ Fundo da tela seguindo a paleta
-      backgroundColor: GridColors.filterBackground,
+      extendBodyBehindAppBar: false,
+      backgroundColor: GridColors.secondary,
       appBar: UserBannerAppBar(
         screenTitle: 'Meus Chats',
         onRefresh: _bootstrap,
-        isLoading: _isLoading, // Controls refresh indicator state
+        isLoading: _isLoading,
         showFilterButton: false,
-        // ★ Se seu UserBannerAppBar aceitar, pode expor:
-        // backgroundColor: GridColors.primary,
-        // titleColor: GridColors.textPrimary,
       ),
       body: _isLoading
           ? const Center(
-              child:
-                  CircularProgressIndicator(color: GridColors.secondary)) // ★
+              child: CircularProgressIndicator(color: GridColors.secondary))
           : _chats.isEmpty
               ? const Center(
                   child: Text('Nenhum chat iniciado'),
@@ -325,7 +323,7 @@ class _ChatListScreenState extends State<ChatListScreen> {
                   itemCount: _chats.length,
                   separatorBuilder: (context, index) => const Divider(
                     height: 1,
-                    color: GridColors.divider, // ★
+                    color: GridColors.divider,
                   ),
                   itemBuilder: (context, index) {
                     final chat = _chats[index];
@@ -333,7 +331,7 @@ class _ChatListScreenState extends State<ChatListScreen> {
                       decoration: const BoxDecoration(
                         border: Border(
                           bottom: BorderSide(
-                            color: GridColors.divider, // ★
+                            color: GridColors.divider,
                             width: 1.0,
                           ),
                         ),
@@ -341,7 +339,6 @@ class _ChatListScreenState extends State<ChatListScreen> {
                       child: ListTile(
                         title: Text(
                           chat.sector,
-                          // ★ Título em negrito para legibilidade (mantendo seu Text)
                           style: const TextStyle(fontWeight: FontWeight.w600),
                         ),
                         subtitle: Column(
@@ -392,7 +389,7 @@ class _ChatListScreenState extends State<ChatListScreen> {
                             ),
                             IconButton(
                               icon: const Icon(Icons.more_vert,
-                                  color: GridColors.secondary), // ★
+                                  color: GridColors.secondary),
                               onPressed: () => _showChatActions(context, chat),
                             ),
                           ],
@@ -404,8 +401,7 @@ class _ChatListScreenState extends State<ChatListScreen> {
                               builder: (context) => ChatMessageScreen(
                                 sector: chat.sector,
                                 userName: widget.userName,
-                                chatId: chat
-                                    .chatId, // Passando o ID do chat existente
+                                chatId: chat.chatId,
                               ),
                             ),
                           );
@@ -418,7 +414,6 @@ class _ChatListScreenState extends State<ChatListScreen> {
         onPressed: _showSectorSelectionDialog,
         tooltip: 'Novo Chat',
         child: const Icon(Icons.chat),
-        // ★ Cores do FAB conforme paleta
         backgroundColor: GridColors.secondary,
         foregroundColor: GridColors.textPrimary,
       ),

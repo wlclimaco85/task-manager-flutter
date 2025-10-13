@@ -3,6 +3,7 @@ import 'package:task_manager_flutter/data/services/network_caller.dart';
 import 'dart:io';
 import 'package:image_picker/image_picker.dart';
 import 'package:task_manager_flutter/data/utils/grid_colors.dart'; // ★ adicionado para aplicar o tema
+import 'package:task_manager_flutter/data/utils/api_links.dart';
 
 class UserEditScreen extends StatefulWidget {
   final Map<String, dynamic> initialData;
@@ -200,7 +201,8 @@ class _UserEditScreenState extends State<UserEditScreen> {
 
         // Faz a chamada POST para atualizar o usuário
         final response = await NetworkCaller().postRequest(
-          '/api/usuario/atualizar', // Ajuste a URL conforme sua API
+          ApiLinks.atualizarUsuario(
+              widget.initialData['id']), // Ajuste a URL conforme sua API
           requestData,
         );
 
