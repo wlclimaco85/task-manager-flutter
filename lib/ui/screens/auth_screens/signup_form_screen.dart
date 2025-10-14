@@ -79,12 +79,10 @@ class _SignUpFormScreenState extends State<SignUpFormScreen> {
         colorScheme: const ColorScheme.light(
           primary: GridColors.primary, // Vermelho da logo
           secondary: GridColors.secondary, // Verde da logo
-          surface: GridColors.card, // Branco para superfícies
-          background: GridColors.background, // Verde para fundo
+          surface: GridColors.card, // Verde para fundo
           onPrimary: GridColors.textPrimary, // Branco para texto sobre vermelho
           onSecondary: GridColors.textPrimary, // Branco para texto sobre verde
-          onSurface: GridColors.textSecondary, // Preto para texto sobre branco
-          onBackground: GridColors.textPrimary, // Branco para texto sobre verde
+          onSurface: GridColors.textSecondary, // Branco para texto sobre verde
           error: GridColors.error, // Vermelho para errors
         ),
         // Você também pode personalizar componentes específicos

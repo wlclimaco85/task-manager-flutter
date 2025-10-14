@@ -3,7 +3,7 @@
     "activeCommit": 0,
     "commits": [
         {
-            "activePatchIndex": 5,
+            "activePatchIndex": 12,
             "patches": [
                 {
                     "date": 1760102152131,
@@ -28,6 +28,34 @@
                 {
                     "date": 1760102727605,
                     "content": "Index: \n===================================================================\n--- \n+++ \n@@ -30,27 +30,27 @@\n         versionName = flutter.versionName\r\n     }\r\n \r\n     signingConfigs {\r\n-    create(\"release\") {\r\n-        storeFile = file(\"jks.jks\")\r\n-        storePassword = \"123Mudar$\"\r\n-        keyAlias = \"key0\"\r\n-        keyPassword = \"123Mudar$\"\r\n+        create(\"release\") {\r\n+            storeFile = file(\"jks.jks\")\r\n+            storePassword = \"123Mudar$\"\r\n+            keyAlias = \"key0\"\r\n+            keyPassword = \"123Mudar$\"\r\n+        }\r\n     }\r\n \r\n-\r\n-buildTypes {\r\n-    getByName(\"release\") {\r\n-        signingConfig = signingConfigs.getByName(\"release\")\r\n-        isMinifyEnabled = false\r\n-        isShrinkResources = false\r\n+    buildTypes {\r\n+        getByName(\"release\") {\r\n+            signingConfig = signingConfigs.getByName(\"release\")\r\n+            isMinifyEnabled = false\r\n+            isShrinkResources = false\r\n+        }\r\n+        getByName(\"debug\") {\r\n+            signingConfig = signingConfigs.getByName(\"release\")\r\n+        }\r\n     }\r\n-    getByName(\"debug\") {\r\n-        signingConfig = signingConfigs.getByName(\"release\")\r\n-    }\r\n }\r\n-}\r\n \r\n flutter {\r\n     source = \"../..\"\r\n }\r\n"
+                },
+                {
+                    "date": 1760465016325,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -25,10 +25,10 @@\n         // You can update the following values to match your application needs.\r\n         // For more information, see: https://flutter.dev/to/review-gradle-config.\r\n         minSdk = flutter.minSdkVersion\r\n         targetSdk = flutter.targetSdkVersion\r\n-        versionCode = flutter.versionCode\r\n-        versionName = flutter.versionName\r\n+        versionCode = 1.0.1.toInt()\r\n+        versionName = 1.0.1.toString()\r\n     }\r\n \r\n     signingConfigs {\r\n         create(\"release\") {\r\n"
+                },
+                {
+                    "date": 1760465046592,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -25,10 +25,10 @@\n         // You can update the following values to match your application needs.\r\n         // For more information, see: https://flutter.dev/to/review-gradle-config.\r\n         minSdk = flutter.minSdkVersion\r\n         targetSdk = flutter.targetSdkVersion\r\n-        versionCode = 1.0.1.toInt()\r\n-        versionName = 1.0.1.toString()\r\n+        versionCode = 1.0.1\r\n+        versionName = 1.0.1\r\n     }\r\n \r\n     signingConfigs {\r\n         create(\"release\") {\r\n"
+                },
+                {
+                    "date": 1760465074501,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -25,10 +25,10 @@\n         // You can update the following values to match your application needs.\r\n         // For more information, see: https://flutter.dev/to/review-gradle-config.\r\n         minSdk = flutter.minSdkVersion\r\n         targetSdk = flutter.targetSdkVersion\r\n-        versionCode = 1.0.1\r\n-        versionName = 1.0.1\r\n+        versionCode = 1.0.1;\r\n+        versionName = 1.0.1;\r\n     }\r\n \r\n     signingConfigs {\r\n         create(\"release\") {\r\n"
+                },
+                {
+                    "date": 1760465104599,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -25,10 +25,10 @@\n         // You can update the following values to match your application needs.\r\n         // For more information, see: https://flutter.dev/to/review-gradle-config.\r\n         minSdk = flutter.minSdkVersion\r\n         targetSdk = flutter.targetSdkVersion\r\n-        versionCode = 1.0.1;\r\n-        versionName = 1.0.1;\r\n+        versionCode = 1.01\r\n+        versionName = 1.0.1\r\n     }\r\n \r\n     signingConfigs {\r\n         create(\"release\") {\r\n"
+                },
+                {
+                    "date": 1760465122249,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -25,9 +25,9 @@\n         // You can update the following values to match your application needs.\r\n         // For more information, see: https://flutter.dev/to/review-gradle-config.\r\n         minSdk = flutter.minSdkVersion\r\n         targetSdk = flutter.targetSdkVersion\r\n-        versionCode = 1.01\r\n+        versionCode = 2\r\n         versionName = 1.0.1\r\n     }\r\n \r\n     signingConfigs {\r\n"
+                },
+                {
+                    "date": 1760465142329,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -26,9 +26,9 @@\n         // For more information, see: https://flutter.dev/to/review-gradle-config.\r\n         minSdk = flutter.minSdkVersion\r\n         targetSdk = flutter.targetSdkVersion\r\n         versionCode = 2\r\n-        versionName = 1.0.1\r\n+        versionName = 2\r\n     }\r\n \r\n     signingConfigs {\r\n         create(\"release\") {\r\n"
+                },
+                {
+                    "date": 1760465162486,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -26,9 +26,9 @@\n         // For more information, see: https://flutter.dev/to/review-gradle-config.\r\n         minSdk = flutter.minSdkVersion\r\n         targetSdk = flutter.targetSdkVersion\r\n         versionCode = 2\r\n-        versionName = 2\r\n+        versionName = \"1.0.1\"\r\n     }\r\n \r\n     signingConfigs {\r\n         create(\"release\") {\r\n"
                 }
             ],
             "date": 1760102152131,

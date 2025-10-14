@@ -1099,7 +1099,7 @@ class _GenericMobileGridScreenState<T>
           child: Opacity(
             opacity: config.enabled ? 1.0 : 0.6,
             child: DropdownButtonFormField<dynamic>(
-              value: validSafeValue,
+              initialValue: validSafeValue,
               decoration: InputDecoration(
                 labelText: config.label + (config.isRequired ? ' *' : ''),
                 border: OutlineInputBorder(
@@ -1689,7 +1689,8 @@ class _GenericMobileGridScreenState<T>
                             )
                           : null,
                       filled: true,
-                      fillColor: colorScheme.surfaceVariant.withOpacity(0.3),
+                      fillColor:
+                          colorScheme.surfaceContainerHighest.withOpacity(0.3),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(8),
                         borderSide: BorderSide.none,
@@ -1741,8 +1742,8 @@ class _GenericMobileGridScreenState<T>
                                   )
                                 : null,
                             filled: true,
-                            fillColor:
-                                colorScheme.surfaceVariant.withOpacity(0.3),
+                            fillColor: colorScheme.surfaceContainerHighest
+                                .withOpacity(0.3),
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(8),
                               borderSide: BorderSide.none,
@@ -1776,7 +1777,7 @@ class _GenericMobileGridScreenState<T>
                   FilledButton.tonal(
                     onPressed: _clearFilters,
                     style: FilledButton.styleFrom(
-                      backgroundColor: colorScheme.surfaceVariant,
+                      backgroundColor: colorScheme.surfaceContainerHighest,
                       foregroundColor: colorScheme.onSurfaceVariant,
                     ),
                     child: const Row(
@@ -2107,7 +2108,7 @@ class _GenericMobileGridScreenState<T>
                           onChanged: (value) =>
                               _toggleCardSelection(id, value ?? false),
                           fillColor:
-                              MaterialStateProperty.all(GridColors.primary),
+                              WidgetStateProperty.all(GridColors.primary),
                         ),
                       ),
 

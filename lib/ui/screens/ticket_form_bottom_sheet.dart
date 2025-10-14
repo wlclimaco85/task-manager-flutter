@@ -48,7 +48,7 @@ class _TicketFormBottomSheetState extends State<TicketFormBottomSheet> {
             widget.sectorDescricao.toLowerCase().trim(),
         orElse: () => {},
       );
-      if (found is Map && found.isNotEmpty) {
+      if (found.isNotEmpty) {
         _setorId = found['value'] as int;
         _setorDesc = found['label'] as String;
       }
@@ -168,7 +168,7 @@ class _TicketFormBottomSheetState extends State<TicketFormBottomSheet> {
                   ),
                   const SizedBox(height: 8),
                   DropdownButtonFormField<String>(
-                    value: _prioridade,
+                    initialValue: _prioridade,
                     decoration: const InputDecoration(
                       labelText: 'Prioridade',
                       labelStyle: TextStyle(color: GridColors.secondary), // ★
@@ -185,7 +185,7 @@ class _TicketFormBottomSheetState extends State<TicketFormBottomSheet> {
                   ),
                   const SizedBox(height: 8),
                   DropdownButtonFormField<String>(
-                    value: _status,
+                    initialValue: _status,
                     decoration: const InputDecoration(
                       labelText: 'Status',
                       labelStyle: TextStyle(color: GridColors.secondary), // ★
@@ -203,7 +203,7 @@ class _TicketFormBottomSheetState extends State<TicketFormBottomSheet> {
                   ),
                   const SizedBox(height: 8),
                   DropdownButtonFormField<int>(
-                    value: _setorId,
+                    initialValue: _setorId,
                     isExpanded: true,
                     decoration: const InputDecoration(
                       labelText: 'Setor',

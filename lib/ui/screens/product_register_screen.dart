@@ -407,7 +407,7 @@ class _ProductRegisterScreenState extends State<ProductRegisterScreen> {
                           ),
                         const SizedBox(height: 16),
                         DropdownButtonFormField<String>(
-                          value: selectedTipoProduto,
+                          initialValue: selectedTipoProduto,
                           decoration: customInputDecoration('Tipo de Produto'),
                           items: ['Arroz em Casca', 'Arroz Esbramado']
                               .map((tipo) => DropdownMenuItem<String>(
@@ -423,7 +423,7 @@ class _ProductRegisterScreenState extends State<ProductRegisterScreen> {
                         ),
                         const SizedBox(height: 16),
                         DropdownButtonFormField<String>(
-                          value: selectedTipoGrao,
+                          initialValue: selectedTipoGrao,
                           decoration: customInputDecoration('Tipo de Grão'),
                           items: ['Verde', 'Seco']
                               .map((tipo) => DropdownMenuItem<String>(
@@ -439,7 +439,7 @@ class _ProductRegisterScreenState extends State<ProductRegisterScreen> {
                         ),
                         const SizedBox(height: 16),
                         DropdownButtonFormField<String>(
-                          value: selectedSafra,
+                          initialValue: selectedSafra,
                           decoration: customInputDecoration('Safra'),
                           items: ['2023/2024', '2024/2025']
                               .map((safra) => DropdownMenuItem<String>(
@@ -465,7 +465,7 @@ class _ProductRegisterScreenState extends State<ProductRegisterScreen> {
                         ),
                         const SizedBox(height: 16),
                         DropdownButtonFormField<String>(
-                          value: selectedTipoNegociacao,
+                          initialValue: selectedTipoNegociacao,
                           decoration:
                               customInputDecoration('Tipo de Negociação'),
                           items: [

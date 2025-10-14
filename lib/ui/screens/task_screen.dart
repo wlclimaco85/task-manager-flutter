@@ -181,11 +181,8 @@ class _TaskScreenState extends State<TaskScreens> {
     }
     final NetworkResponse newTaskResponse =
         await NetworkCaller().getRequest(ApiLinks.newTaskStatus);
-    TaskListModel newTaskModel = TaskListModel.fromJson((newTaskResponse != null
-        ? newTaskResponse.body != null
-            ? newTaskResponse.body!
-            : {}
-        : {}));
+    TaskListModel newTaskModel = TaskListModel.fromJson(
+        (newTaskResponse.body != null ? newTaskResponse.body! : {}));
 
     if (mounted) {
       setState(() {
@@ -195,12 +192,8 @@ class _TaskScreenState extends State<TaskScreens> {
 
     final cancelledTaskResponse =
         await NetworkCaller().getRequest(ApiLinks.cancelledTaskStatus);
-    TaskListModel cancelledTaskModel =
-        TaskListModel.fromJson(cancelledTaskResponse != null
-            ? cancelledTaskResponse.body != null
-                ? cancelledTaskResponse.body!
-                : {}
-            : {});
+    TaskListModel cancelledTaskModel = TaskListModel.fromJson(
+        cancelledTaskResponse.body != null ? cancelledTaskResponse.body! : {});
     if (mounted) {
       setState(() {
         count2 = cancelledTaskModel.data?.length ?? 0;
@@ -210,12 +203,8 @@ class _TaskScreenState extends State<TaskScreens> {
     final completedTaskResponse =
         await NetworkCaller().getRequest(ApiLinks.completedTaskStatus);
 
-    TaskListModel completedTaskModel =
-        TaskListModel.fromJson(completedTaskResponse != null
-            ? completedTaskResponse.body != null
-                ? completedTaskResponse.body!
-                : {}
-            : {});
+    TaskListModel completedTaskModel = TaskListModel.fromJson(
+        completedTaskResponse.body != null ? completedTaskResponse.body! : {});
     if (mounted) {
       setState(() {
         count3 = completedTaskModel.data?.length ?? 0;
@@ -224,12 +213,8 @@ class _TaskScreenState extends State<TaskScreens> {
 
     final inProgressResponse =
         await NetworkCaller().getRequest(ApiLinks.inProgressTaskStatus);
-    TaskListModel inProgressTaskModel =
-        TaskListModel.fromJson(inProgressResponse != null
-            ? inProgressResponse.body != null
-                ? inProgressResponse.body!
-                : {}
-            : {});
+    TaskListModel inProgressTaskModel = TaskListModel.fromJson(
+        inProgressResponse.body != null ? inProgressResponse.body! : {});
     if (mounted) {
       setState(() {
         count4 = inProgressTaskModel.data?.length ?? 0;

@@ -3,7 +3,7 @@
     "activeCommit": 0,
     "commits": [
         {
-            "activePatchIndex": 16,
+            "activePatchIndex": 17,
             "patches": [
                 {
                     "date": 1709673438329,
@@ -72,6 +72,10 @@
                 {
                     "date": 1740664077435,
                     "content": "Index: \n===================================================================\n--- \n+++ \n@@ -148,9 +148,9 @@\n                   hint: Text(\r\n                     'Tipo Refeição',\r\n                     style: TextStyle(\r\n                       fontSize: 14,\r\n-                      color: CustomColors().getAppLabelBotton(),\r\n+                      color: CustomColors().getLightGreenBackground(),\r\n                     ),\r\n                   ),\r\n                   items: dias.map((item) {\r\n                     return DropdownMenuItem(\r\n@@ -231,9 +231,9 @@\n                       borderRadius: BorderRadius.circular(14),\r\n                       border: Border.all(\r\n                         color: Colors.black26,\r\n                       ),\r\n-                      color: CustomColors().getAppBotton(),\r\n+                      color: CustomColors().getLightGreenBackground(),\r\n                     ),\r\n                     elevation: 2,\r\n                   ),\r\n                   iconStyleData: const IconStyleData(\r\n@@ -248,9 +248,9 @@\n                     maxHeight: 200,\r\n                     width: 200,\r\n                     decoration: BoxDecoration(\r\n                       borderRadius: BorderRadius.circular(14),\r\n-                      color: CustomColors().getAppBotton(),\r\n+                      color: CustomColors().getLightGreenBackground(),\r\n                     ),\r\n                     offset: const Offset(-20, 0),\r\n                     scrollbarTheme: ScrollbarThemeData(\r\n                       radius: const Radius.circular(40),\r\n@@ -272,9 +272,9 @@\n   Widget form(int key) => Padding(\r\n         padding: const EdgeInsets.only(bottom: 15.0),\r\n         child: Container(\r\n           padding: EdgeInsets.zero,\r\n-          color: CustomColors().getAppFundoClaro(),\r\n+          color: CustomColors().getLightGreenBackground(),\r\n           child: Column(\r\n             mainAxisAlignment: MainAxisAlignment.center,\r\n             children: <Widget>[\r\n               selected(\r\n"
+                },
+                {
+                    "date": 1760465529144,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -253,10 +253,10 @@\n                     ),\r\n                     offset: const Offset(-20, 0),\r\n                     scrollbarTheme: ScrollbarThemeData(\r\n                       radius: const Radius.circular(40),\r\n-                      thickness: MaterialStateProperty.all(6),\r\n-                      thumbVisibility: MaterialStateProperty.all(true),\r\n+                      thickness: WidgetStateProperty.all(6),\r\n+                      thumbVisibility: WidgetStateProperty.all(true),\r\n                     ),\r\n                   ),\r\n                   menuItemStyleData: const MenuItemStyleData(\r\n                     height: 40,\r\n"
                 }
             ],
             "date": 1709673438329,

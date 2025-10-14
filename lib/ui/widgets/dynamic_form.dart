@@ -402,7 +402,7 @@ class _DynamicFormState extends State<DynamicForm> {
   dropDownWidget(List<Options>? items, String value) {
     return DropdownButtonFormField<Options>(
       // Initial Value
-      value: dropdownvalue,
+      initialValue: dropdownvalue,
       decoration: InputDecoration(
         border: const OutlineInputBorder(
           borderRadius: BorderRadius.all(

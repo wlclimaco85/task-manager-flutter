@@ -113,7 +113,7 @@ class _LocalizacaoWidgetState extends State<LocalizacaoWidget> {
             labelText: 'País',
             border: OutlineInputBorder(),
           ),
-          value: selectedPais,
+          initialValue: selectedPais,
           items: paises
               .map((pais) => DropdownMenuItem<Pais>(
                     value: pais,
@@ -160,7 +160,7 @@ class _LocalizacaoWidgetState extends State<LocalizacaoWidget> {
             labelText: 'Estado',
             border: OutlineInputBorder(),
           ),
-          value: selectedEstado,
+          initialValue: selectedEstado,
           items: estados
               .map((estado) => DropdownMenuItem<Estado>(
                     value: estado,
@@ -207,7 +207,7 @@ class _LocalizacaoWidgetState extends State<LocalizacaoWidget> {
             labelText: 'Cidade',
             border: OutlineInputBorder(),
           ),
-          value: selectedCidade,
+          initialValue: selectedCidade,
           items: cidades
               .map((cidade) => DropdownMenuItem<Cidade>(
                     value: cidade,

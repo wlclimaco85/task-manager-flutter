@@ -13,7 +13,7 @@ import 'package:task_manager_flutter/data/models/chat_model.dart';
 import 'package:task_manager_flutter/data/services/chat_caller.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:open_filex/open_filex.dart';
-import 'package:task_manager_flutter/data/utils/grid_colors.dart';
+
 import 'ticket_form_bottom_sheet.dart';
 
 class ChatMessageScreen extends StatefulWidget {
@@ -33,6 +33,12 @@ class ChatMessageScreen extends StatefulWidget {
 }
 
 class _ChatMessageScreenState extends State<ChatMessageScreen> {
+  // === PALETA LOCAL (sem novos imports) ===
+  static const Color _kPrimaryRed = Color(0xFF93070A);
+  static const Color _kGreenDark = Color(0xFF005826);
+  static const Color _kGreenLightBubble = Color(0xFFE8F5E9);
+  static const Color _kGreenPage = Color(0xFFF1F8F4);
+
   final TextEditingController _messageController = TextEditingController();
   List<ChatMessage> _messages = [];
   late WebSocketChannel _channel;
@@ -40,11 +46,11 @@ class _ChatMessageScreenState extends State<ChatMessageScreen> {
   final ScrollController _scrollController = ScrollController();
   bool _isLoading = false;
 
-  String get _loggedUserEmail =>
-      AuthUtility.userInfo?.login?.email ?? widget.userName;
-
+  // Nome/e-mail do usuário logado
   String get _loggedUserName =>
       AuthUtility.userInfo?.login?.nome ?? widget.userName;
+  String get _loggedUserEmail =>
+      AuthUtility.userInfo?.login?.email ?? widget.userName;
 
   @override
   void initState() {
@@ -56,7 +62,7 @@ class _ChatMessageScreenState extends State<ChatMessageScreen> {
   void _connectWebSocket() {
     try {
       _channel = IOWebSocketChannel.connect(
-        ApiLinks.chatStart(_loggedUserEmail, widget.sector),
+        ApiLinks.chatStart(widget.userName, widget.sector),
       );
 
       _channel.stream.listen(
@@ -108,7 +114,7 @@ class _ChatMessageScreenState extends State<ChatMessageScreen> {
                   text: msg.text,
                   fileId: msg.fileId,
                   fileName: msg.fileName,
-                  fileUrl: msg.fileUrl,
+                  fileUrl: msg.fileUrl, // suporte a URL pública se existir
                 ))
             .toList();
         WidgetsBinding.instance.addPostFrameCallback((_) => _scrollToBottom());
@@ -126,8 +132,11 @@ class _ChatMessageScreenState extends State<ChatMessageScreen> {
     final String content = _messageController.text.trim();
     if (content.isEmpty) return;
 
+    // Envie nome e email (sem quebrar o que já funciona)
     _channel.sink.add(json.encode({
-      'sender': _loggedUserEmail,
+      'sender': _loggedUserName, // mantém nome para exibição
+      'senderName': _loggedUserName, // redundância segura
+      'senderEmail': _loggedUserEmail, // envia e-mail correto p/ backend
       'content': content,
       'sector': widget.sector,
       'type': 'text',
@@ -173,9 +182,14 @@ class _ChatMessageScreenState extends State<ChatMessageScreen> {
         filename: file.name,
       ));
 
-      request.fields['user'] = _loggedUserEmail;
+      // Envie e-mail e nome nos campos (e preserva 'user' para compat)
+      request.fields['user'] =
+          _loggedUserEmail; // muitos backends esperam 'user' como email
+      request.fields['userEmail'] = _loggedUserEmail;
+      request.fields['userName'] = _loggedUserName;
       request.fields['sector'] = widget.sector;
-      request.fields['chatId'] = widget.chatId;
+      request.fields['chatId'] =
+          widget.chatId; // importante pro backend vincular
 
       if (_authToken.isNotEmpty) {
         request.headers['Authorization'] = 'Bearer $_authToken';
@@ -186,6 +200,8 @@ class _ChatMessageScreenState extends State<ChatMessageScreen> {
 
       if (response.statusCode == 200) {
         final jsonResponse = json.decode(responseBody) as Map<String, dynamic>;
+
+        // id e url do arquivo (ajuste as chaves conforme seu backend)
         int? fileId;
         final rawId = jsonResponse['fileId'] ?? jsonResponse['data']?['fileId'];
         if (rawId is int) {
@@ -194,22 +210,30 @@ class _ChatMessageScreenState extends State<ChatMessageScreen> {
           fileId = int.tryParse(rawId);
         }
 
+        // Se o backend já devolver uma URL, use-a; senão, gere via helper
         String? fileUrl = (jsonResponse['fileUrl'] ??
             jsonResponse['data']?['fileUrl']) as String?;
         fileUrl ??= (fileId != null) ? ApiLinks.publicFileUrl(fileId) : null;
 
         if (fileId != null) {
           _channel.sink.add(json.encode({
-            'sender': _loggedUserEmail,
+            'sender': _loggedUserName, // exibição
+            'senderName': _loggedUserName, // redundância segura
+            'senderEmail': _loggedUserEmail, // backend
             'content': 'Arquivo: ${file.name}',
             'sector': widget.sector,
             'type': 'file',
             'fileName': file.name,
             'fileId': fileId,
-            'fileUrl': fileUrl,
+            'fileUrl': fileUrl, // agora a msg carrega o link
             'timestamp': DateTime.now().toIso8601String(),
             'chatId': widget.chatId,
           }));
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+                content: Text('Upload ok, mas ID do arquivo ausente')),
+          );
         }
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -225,6 +249,7 @@ class _ChatMessageScreenState extends State<ChatMessageScreen> {
 
   Future<void> _openOrDownload(int fileId, String fileName,
       {String? fileUrl}) async {
+    // 1) se houver URL pública, tentar abrir
     if (fileUrl != null && fileUrl.isNotEmpty) {
       final uri = Uri.parse(fileUrl);
       if (await canLaunchUrl(uri)) {
@@ -232,6 +257,7 @@ class _ChatMessageScreenState extends State<ChatMessageScreen> {
         return;
       }
     }
+    // 2) fallback: baixar e abrir localmente
     await _downloadFile(fileId, fileName, openAfter: true);
   }
 
@@ -271,7 +297,6 @@ class _ChatMessageScreenState extends State<ChatMessageScreen> {
     final result = await showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      backgroundColor: GridColors.secondary,
       builder: (ctx) => DraggableScrollableSheet(
         expand: false,
         initialChildSize: 0.75,
@@ -284,12 +309,15 @@ class _ChatMessageScreenState extends State<ChatMessageScreen> {
       ),
     );
 
+    // Se criou, “anuncia” no chat
     if (result != null && mounted) {
       try {
-        final criado = result;
+        final criado = result; // Chamado retornado
         final id = (criado as dynamic).id;
         _channel.sink.add(json.encode({
-          'sender': _loggedUserEmail,
+          'sender': _loggedUserName, // exibição
+          'senderName': _loggedUserName,
+          'senderEmail': _loggedUserEmail, // backend
           'content': 'Chamado aberto com sucesso (ID $id)',
           'sector': widget.sector,
           'type': 'ticket',
@@ -321,84 +349,89 @@ class _ChatMessageScreenState extends State<ChatMessageScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: GridColors.secondary,
+      // Fundo geral VERDE
+      backgroundColor: _kGreenPage,
       appBar: AppBar(
-        backgroundColor: GridColors.primary,
+        backgroundColor: _kPrimaryRed,
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              'Chat - ${widget.sector}',
-              style: const TextStyle(
-                  color: GridColors.textPrimary, fontWeight: FontWeight.bold),
+            const Text(
+              'Chat',
+              style: TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+              ),
             ),
             Text(
-              _loggedUserName,
-              style:
-                  const TextStyle(color: GridColors.textPrimary, fontSize: 13),
+              'Setor: ${widget.sector}',
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 13,
+              ),
             ),
           ],
         ),
       ),
       body: Column(
         children: [
-          if (_isLoading)
-            const LinearProgressIndicator(color: GridColors.secondary),
+          if (_isLoading) const LinearProgressIndicator(color: _kGreenDark),
           Expanded(
-            child: Container(
-              color: GridColors.primary.withOpacity(0.1),
-              child: ListView.builder(
-                controller: _scrollController,
-                itemCount: _messages.length,
-                itemBuilder: (context, index) =>
-                    _buildMessage(_messages[index]),
-              ),
+            child: ListView.builder(
+              controller: _scrollController,
+              itemCount: _messages.length,
+              itemBuilder: (context, index) => _buildMessage(_messages[index]),
             ),
           ),
-          _buildMessageInput(),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildMessageInput() {
-    return Container(
-      padding: const EdgeInsets.all(8),
-      decoration: const BoxDecoration(
-        color: GridColors.card,
-        border: Border(top: BorderSide(color: GridColors.divider)),
-      ),
-      child: Row(
-        children: [
-          IconButton(
-            icon: const Icon(Icons.attach_file, color: GridColors.secondary),
-            onPressed: _uploadAndSendFile,
-          ),
-          IconButton(
-            icon: const Icon(Icons.support_agent, color: GridColors.primary),
-            onPressed: _createTicket,
-          ),
-          Expanded(
-            child: TextField(
-              controller: _messageController,
-              decoration: InputDecoration(
-                hintText: 'Digite sua mensagem...',
-                hintStyle: const TextStyle(color: GridColors.divider),
-                filled: true,
-                fillColor: Colors.white,
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(25),
-                  borderSide: const BorderSide(color: GridColors.divider),
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: const BoxDecoration(
+              color: Colors.white,
+              border: Border(top: BorderSide(color: _kPrimaryRed, width: 1)),
+            ),
+            child: Row(
+              children: [
+                IconButton(
+                  icon: const Icon(Icons.attach_file, color: _kGreenDark),
+                  onPressed: _uploadAndSendFile,
                 ),
-                contentPadding:
-                    const EdgeInsets.symmetric(horizontal: 16, vertical: 0),
-              ),
-              onSubmitted: (_) => _sendMessage(),
+                IconButton(
+                  icon: const Icon(Icons.support_agent, color: _kPrimaryRed),
+                  onPressed: _createTicket,
+                ),
+                Expanded(
+                  child: TextField(
+                    controller: _messageController,
+                    decoration: InputDecoration(
+                      hintText: 'Digite sua mensagem...',
+                      hintStyle: const TextStyle(color: Colors.black54),
+                      filled: true,
+                      fillColor: _kGreenPage,
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(25),
+                        borderSide: const BorderSide(color: _kPrimaryRed),
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(25),
+                        borderSide: const BorderSide(color: _kPrimaryRed),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(25),
+                        borderSide:
+                            const BorderSide(color: _kPrimaryRed, width: 2),
+                      ),
+                      contentPadding:
+                          const EdgeInsets.symmetric(horizontal: 16),
+                    ),
+                    onSubmitted: (_) => _sendMessage(),
+                  ),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.send, color: _kGreenDark),
+                  onPressed: _sendMessage,
+                ),
+              ],
             ),
-          ),
-          IconButton(
-            icon: const Icon(Icons.send, color: GridColors.secondary),
-            onPressed: _sendMessage,
           ),
         ],
       ),
@@ -406,50 +439,57 @@ class _ChatMessageScreenState extends State<ChatMessageScreen> {
   }
 
   Widget _buildMessage(ChatMessage message) {
-    final isMe = message.sender == _loggedUserEmail;
+    // Mantém a semântica original: compara pelo NOME (exibição)
+    final isMe = (message.sender == _loggedUserName);
+
+    // Avatar com BORDA VERMELHA
+    Widget avatar(String initial) {
+      return Container(
+        padding: const EdgeInsets.all(2),
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          border: Border.all(color: _kPrimaryRed, width: 2),
+        ),
+        child: CircleAvatar(
+          backgroundColor: _kGreenDark,
+          child: Text(
+            initial.isNotEmpty ? initial[0].toUpperCase() : '?',
+            style: const TextStyle(color: Colors.white),
+          ),
+        ),
+      );
+    }
+
+    // Nome para exibir no topo da bolha
+    final displayName =
+        (message.sender.isNotEmpty ? message.sender : _loggedUserName);
 
     return Container(
-      margin: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
+      margin: const EdgeInsets.symmetric(vertical: 6, horizontal: 8),
       child: Row(
         mainAxisAlignment:
             isMe ? MainAxisAlignment.end : MainAxisAlignment.start,
         crossAxisAlignment: CrossAxisAlignment.end,
         children: [
-          if (!isMe)
-            Column(
-              children: [
-                CircleAvatar(
-                  backgroundColor: GridColors.secondary,
-                  child: Text(
-                    message.sender.isNotEmpty
-                        ? message.sender[0].toUpperCase()
-                        : '?',
-                    style: const TextStyle(color: Colors.white),
-                  ),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  message.sender,
-                  style: const TextStyle(
-                    fontSize: 11,
-                    color: GridColors.secondary,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-              ],
-            ),
-          const SizedBox(width: 8),
+          if (!isMe) ...[
+            avatar(displayName),
+            const SizedBox(width: 8),
+          ],
           Flexible(
             child: Container(
+              constraints: BoxConstraints(
+                maxWidth: MediaQuery.of(context).size.width * 0.75,
+              ),
               padding: const EdgeInsets.all(10),
+              margin: const EdgeInsets.symmetric(horizontal: 4),
               decoration: BoxDecoration(
-                color: isMe
-                    ? GridColors.primary.withOpacity(0.9)
-                    : GridColors.card,
+                color: isMe ? _kGreenDark : _kGreenLightBubble, // VERDES
                 borderRadius: BorderRadius.circular(10),
+                border: Border.all(
+                    color: _kPrimaryRed, width: 1.5), // BORDA VERMELHA
                 boxShadow: [
                   BoxShadow(
-                    color: GridColors.divider.withOpacity(0.5),
+                    color: _kPrimaryRed.withOpacity(0.15),
                     blurRadius: 4,
                     offset: const Offset(0, 2),
                   )
@@ -458,13 +498,22 @@ class _ChatMessageScreenState extends State<ChatMessageScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  // NOME DENTRO DO BOX (para ambos)
+                  Text(
+                    displayName,
+                    style: TextStyle(
+                      fontWeight: FontWeight.w700,
+                      fontSize: 12,
+                      color: isMe ? Colors.white : _kGreenDark,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
                   if (message.type == 'text')
                     Text(
                       message.content,
                       style: TextStyle(
-                        color: isMe
-                            ? GridColors.textPrimary
-                            : GridColors.textSecondary,
+                        fontSize: 16,
+                        color: isMe ? Colors.white : Colors.black87,
                       ),
                     ),
                   if (message.type == 'file')
@@ -476,14 +525,17 @@ class _ChatMessageScreenState extends State<ChatMessageScreen> {
                       ),
                       child: Row(
                         children: [
-                          const Icon(Icons.attach_file,
-                              color: GridColors.secondary, size: 16),
+                          Icon(
+                            Icons.attach_file,
+                            size: 16,
+                            color: isMe ? Colors.white : _kGreenDark,
+                          ),
                           const SizedBox(width: 4),
                           Flexible(
                             child: Text(
                               message.fileName ?? 'arquivo',
-                              style: const TextStyle(
-                                color: GridColors.secondary,
+                              style: TextStyle(
+                                color: isMe ? Colors.white : _kGreenDark,
                                 decoration: TextDecoration.underline,
                               ),
                               overflow: TextOverflow.ellipsis,
@@ -496,20 +548,20 @@ class _ChatMessageScreenState extends State<ChatMessageScreen> {
                     Text(
                       message.content.isNotEmpty
                           ? message.content
-                          : '📋 Chamado criado com sucesso!',
-                      style: const TextStyle(
+                          : '📋 Solicitação de chamado criada',
+                      style: TextStyle(
                         fontStyle: FontStyle.italic,
-                        color: GridColors.secondary,
+                        color: isMe ? Colors.white : _kGreenDark,
                       ),
                     ),
-                  const SizedBox(height: 4),
+                  const SizedBox(height: 6),
                   Align(
                     alignment: Alignment.bottomRight,
                     child: Text(
                       _formatTime(message.timestamp),
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 10,
-                        color: GridColors.divider,
+                        color: isMe ? Colors.white70 : Colors.black54,
                       ),
                     ),
                   ),
@@ -517,29 +569,10 @@ class _ChatMessageScreenState extends State<ChatMessageScreen> {
               ),
             ),
           ),
-          if (isMe)
-            Column(
-              children: [
-                CircleAvatar(
-                  backgroundColor: GridColors.primary,
-                  child: Text(
-                    _loggedUserName.isNotEmpty
-                        ? _loggedUserName[0].toUpperCase()
-                        : '?',
-                    style: const TextStyle(color: Colors.white),
-                  ),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  _loggedUserName,
-                  style: const TextStyle(
-                    fontSize: 11,
-                    color: GridColors.primary,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-              ],
-            ),
+          if (isMe) ...[
+            const SizedBox(width: 8),
+            avatar(displayName),
+          ],
         ],
       ),
     );

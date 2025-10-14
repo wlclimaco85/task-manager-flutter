@@ -413,9 +413,9 @@ class _ChatListScreenState extends State<ChatListScreen> {
       floatingActionButton: FloatingActionButton(
         onPressed: _showSectorSelectionDialog,
         tooltip: 'Novo Chat',
-        child: const Icon(Icons.chat),
         backgroundColor: GridColors.secondary,
         foregroundColor: GridColors.textPrimary,
+        child: const Icon(Icons.chat),
       ),
     );
   }
