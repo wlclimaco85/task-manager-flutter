@@ -3,7 +3,7 @@
     "activeCommit": 0,
     "commits": [
         {
-            "activePatchIndex": 12,
+            "activePatchIndex": 13,
             "patches": [
                 {
                     "date": 1760102152131,
@@ -56,6 +56,10 @@
                 {
                     "date": 1760465162486,
                     "content": "Index: \n===================================================================\n--- \n+++ \n@@ -26,9 +26,9 @@\n         // For more information, see: https://flutter.dev/to/review-gradle-config.\r\n         minSdk = flutter.minSdkVersion\r\n         targetSdk = flutter.targetSdkVersion\r\n         versionCode = 2\r\n-        versionName = 2\r\n+        versionName = \"1.0.1\"\r\n     }\r\n \r\n     signingConfigs {\r\n         create(\"release\") {\r\n"
+                },
+                {
+                    "date": 1760533767973,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -25,10 +25,10 @@\n         // You can update the following values to match your application needs.\r\n         // For more information, see: https://flutter.dev/to/review-gradle-config.\r\n         minSdk = flutter.minSdkVersion\r\n         targetSdk = flutter.targetSdkVersion\r\n-        versionCode = 2\r\n-        versionName = \"1.0.1\"\r\n+        versionCode = 3\r\n+        versionName = \"1.0.2\"\r\n     }\r\n \r\n     signingConfigs {\r\n         create(\"release\") {\r\n"
                 }
             ],
             "date": 1760102152131,

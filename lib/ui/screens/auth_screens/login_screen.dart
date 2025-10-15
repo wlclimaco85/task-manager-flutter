@@ -58,7 +58,10 @@ class _LoginScreenState extends State<LoginScreen>
       if (mounted) {
         _passwordController.clear();
         ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Incorrect email or password')));
+          SnackBar(
+            content: Text("Incorrect email or password - ${ApiLinks.login}"),
+          ),
+        );
       }
     }
   }
