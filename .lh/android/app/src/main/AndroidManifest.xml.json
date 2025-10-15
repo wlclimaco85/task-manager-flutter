@@ -3,11 +3,15 @@
     "activeCommit": 0,
     "commits": [
         {
-            "activePatchIndex": 0,
+            "activePatchIndex": 1,
             "patches": [
                 {
                     "date": 1760096702084,
                     "content": "Index: \n===================================================================\n--- \n+++ \n"
+                },
+                {
+                    "date": 1760538505339,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -2,12 +2,14 @@\n     <application\r\n         android:label=\"task_manager_flutter\"\r\n         android:name=\"${applicationName}\"\r\n         android:icon=\"@mipmap/ic_launcher\">\r\n+        android:networkSecurityConfig=\"@xml/network_security_config\"\r\n         <activity\r\n             android:name=\".MainActivity\"\r\n             android:exported=\"true\"\r\n             android:launchMode=\"singleTop\"\r\n+            android:taskAffinity=\"\"\r\n             android:theme=\"@style/LaunchTheme\"\r\n             android:configChanges=\"orientation|keyboardHidden|keyboard|screenSize|smallestScreenSize|locale|layoutDirection|fontScale|screenLayout|density|uiMode\"\r\n             android:hardwareAccelerated=\"true\"\r\n             android:windowSoftInputMode=\"adjustResize\">\r\n@@ -29,5 +31,16 @@\n         <meta-data\r\n             android:name=\"flutterEmbedding\"\r\n             android:value=\"2\" />\r\n     </application>\r\n+    <!-- Required to query activities that can process text, see:\r\n+         https://developer.android.com/training/package-visibility and\r\n+         https://developer.android.com/reference/android/content/Intent#ACTION_PROCESS_TEXT.\r\n+\r\n+         In particular, this is used by the Flutter engine in io.flutter.plugin.text.ProcessTextPlugin. -->\r\n+    <queries>\r\n+        <intent>\r\n+            <action android:name=\"android.intent.action.PROCESS_TEXT\"/>\r\n+            <data android:mimeType=\"text/plain\"/>\r\n+        </intent>\r\n+    </queries>\r\n </manifest>\r\n"
                 }
             ],
             "date": 1760096702084,

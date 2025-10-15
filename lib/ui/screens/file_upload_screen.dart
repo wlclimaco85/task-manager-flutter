@@ -1,232 +1,456 @@
 import 'dart:io';
 import 'dart:typed_data';
-
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
-import 'package:task_manager_flutter/data/models/network_response.dart';
-import 'package:task_manager_flutter/data/services/network_caller.dart';
-import 'package:task_manager_flutter/data/utils/api_links.dart';
-import 'package:task_manager_flutter/data/customization/generic_grid_card.dart';
+import 'package:task_manager_flutter/data/services/file_caller.dart';
+import 'package:task_manager_flutter/data/services/diretorio_caller.dart';
+import 'package:task_manager_flutter/ui/widgets/user_banners.dart';
 
-class FileUploadScreen extends StatefulWidget {
-  final SecurityCheck hasPermission;
-
-  const FileUploadScreen({super.key, required this.hasPermission});
+class FileManagerScreen extends StatefulWidget {
+  const FileManagerScreen({super.key});
 
   @override
-  _FileUploadScreenState createState() => _FileUploadScreenState();
+  State<FileManagerScreen> createState() => _FileManagerScreenState();
 }
 
-class _FileUploadScreenState extends State<FileUploadScreen> {
-  final _formKey = GlobalKey<FormState>();
-  int? _diretorioId;
-  int? _empresaId;
-  PlatformFile? _selectedFile;
-  bool _isUploading = false;
-
-  final List<Map<String, dynamic>> _diretorios = [];
-  final List<Map<String, dynamic>> _empresas = [];
+class _FileManagerScreenState extends State<FileManagerScreen> {
+  final FileCaller _caller = FileCaller();
+  List<Map<String, dynamic>> _diretorios = [];
+  Map<int, List<Map<String, dynamic>>> _arquivos = {};
+  bool _isLoading = false;
+  Set<int> _expandedTiles = {};
 
   @override
   void initState() {
     super.initState();
     _loadDiretorios();
-    _loadEmpresas();
   }
 
   Future<void> _loadDiretorios() async {
-    final NetworkResponse response = await NetworkCaller().getRequest(
-      ApiLinks.allDiretorios,
-    );
-
-    if (response.isSuccess && response.body != null) {
-      final List<dynamic> data = response.body!['data']['dados'] ?? [];
-      setState(() {
-        _diretorios.clear();
-        _diretorios.addAll(
-          data
-              .map((item) => {'value': item['id'], 'label': item['nome']})
-              .toList(),
-        );
-      });
-    }
+    setState(() => _isLoading = true);
+    _diretorios = await _caller.fetchDiretorios();
+    setState(() => _isLoading = false);
   }
 
-  Future<void> _loadEmpresas() async {
-    final NetworkResponse response = await NetworkCaller().getRequest(
-      ApiLinks.allEmpresas,
-    );
-
-    if (response.isSuccess && response.body != null) {
-      final List<dynamic> data = response.body!['data']['dados'] ?? [];
-      setState(() {
-        _empresas.clear();
-        _empresas.addAll(
-          data
-              .map((item) => {'value': item['id'], 'label': item['nome']})
-              .toList(),
-        );
-      });
-    }
-  }
-
-  Future<void> _selectFile() async {
-    FilePickerResult? result = await FilePicker.platform.pickFiles();
-
-    if (result != null) {
-      setState(() {
-        _selectedFile = result.files.first;
-      });
-    }
-  }
-
-  // file_upload_screen.dart
-  Future<void> _uploadFile() async {
-    if (_selectedFile == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Selecione um arquivo primeiro')),
-      );
-      return;
-    }
-
+  Future<void> _loadArquivos(int diretorioId) async {
+    final arquivos = await _caller.fetchArquivosPorDiretorio(diretorioId);
     setState(() {
-      _isUploading = true;
+      _arquivos[diretorioId] = arquivos;
     });
+  }
 
-    try {
-      Uint8List? fileBytes = _selectedFile!.bytes;
-      String fileName = _selectedFile!.name;
+  Future<void> _marcarComoLido(int id, int dirId) async {
+    await _caller.marcarComoLido(id);
+    _loadArquivos(dirId);
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Arquivo marcado como lido.'),
+        backgroundColor: Colors.green,
+      ),
+    );
+  }
 
-      // Se não temos os bytes em memória, ler do arquivo
-      if (fileBytes == null && _selectedFile!.path != null) {
-        File ioFile = File(_selectedFile!.path!);
-        fileBytes = await ioFile.readAsBytes();
-      }
+  void _confirmDelete(int id, int dirId) {
+    showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text("Excluir Documento"),
+        content: const Text("Deseja realmente excluir este documento?"),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child:
+                const Text("Cancelar", style: TextStyle(color: Colors.green)),
+          ),
+          TextButton(
+            onPressed: () async {
+              Navigator.pop(context);
+              await _caller.deleteArquivo(id);
+              _loadArquivos(dirId);
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  backgroundColor: Colors.green,
+                  content: Text("Arquivo excluído com sucesso!"),
+                ),
+              );
+            },
+            child: const Text("Excluir", style: TextStyle(color: Colors.red)),
+          ),
+        ],
+      ),
+    );
+  }
 
-      if (fileBytes == null) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Não foi possível ler o arquivo')),
-        );
-        return;
-      }
+  Future<void> _showUploadDialog() async {
+    final _formKey = GlobalKey<FormState>();
+    final diretorioCaller = DiretorioCaller();
+    final diretorios = await diretorioCaller.fetchDiretoriosDropdown();
+    int? diretorioSelecionado;
+    String? fileType;
+    Uint8List? fileBytes;
+    FilePickerResult? result;
+    final TextEditingController nomeController = TextEditingController();
 
-      var request = http.MultipartRequest(
-        'POST',
-        Uri.parse(ApiLinks.uploadArquivo),
+    await showDialog(
+      context: context,
+      builder: (_) => StatefulBuilder(
+        builder: (context, setStateDialog) => AlertDialog(
+          title: const Text(
+            "Enviar Arquivo",
+            style: TextStyle(color: Colors.green, fontWeight: FontWeight.bold),
+          ),
+          backgroundColor: Colors.white,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+            side: const BorderSide(color: Colors.red, width: 2),
+          ),
+          content: SingleChildScrollView(
+            child: Form(
+              key: _formKey,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // Botão para selecionar arquivo
+                  OutlinedButton.icon(
+                    icon: const Icon(Icons.attach_file, color: Colors.green),
+                    label: const Text("Selecionar Arquivo",
+                        style: TextStyle(color: Colors.green)),
+                    style: OutlinedButton.styleFrom(
+                      side: const BorderSide(color: Colors.red),
+                    ),
+                    onPressed: () async {
+                      result = await FilePicker.platform.pickFiles();
+                      if (result != null) {
+                        final file = result!.files.first;
+                        fileBytes = file.bytes;
+                        if (fileBytes == null && file.path != null) {
+                          fileBytes = await File(file.path!).readAsBytes();
+                        }
+                        final ext = file.name.split('.').last;
+                        setStateDialog(() {
+                          fileType = ".$ext";
+                          nomeController.text = file.name;
+                        });
+                      }
+                    },
+                  ),
+                  const SizedBox(height: 8),
+                  if (nomeController.text.isNotEmpty)
+                    Text(
+                      "Arquivo selecionado: ${nomeController.text}",
+                      style:
+                          const TextStyle(fontSize: 13, color: Colors.black54),
+                    ),
+                  const SizedBox(height: 16),
+
+                  // Campo nome
+                  TextFormField(
+                    controller: nomeController,
+                    decoration: const InputDecoration(
+                      labelText: "Nome do Arquivo",
+                      border: OutlineInputBorder(
+                        borderSide: BorderSide(color: Colors.red),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderSide: BorderSide(color: Colors.red, width: 2),
+                      ),
+                    ),
+                    validator: (v) => v == null || v.isEmpty
+                        ? "Informe o nome do arquivo"
+                        : null,
+                  ),
+                  const SizedBox(height: 12),
+
+                  // Dropdown de diretório
+                  DropdownButtonFormField<int>(
+                    decoration: const InputDecoration(
+                      labelText: "Diretório",
+                      border: OutlineInputBorder(
+                        borderSide: BorderSide(color: Colors.red),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderSide: BorderSide(color: Colors.red, width: 2),
+                      ),
+                    ),
+                    items: diretorios
+                        .map((e) => DropdownMenuItem<int>(
+                              value: e['value'],
+                              child: Text(e['label']),
+                            ))
+                        .toList(),
+                    onChanged: (v) => setStateDialog(() {
+                      diretorioSelecionado = v;
+                    }),
+                    validator: (v) =>
+                        v == null ? "Selecione um diretório" : null,
+                  ),
+                  const SizedBox(height: 12),
+
+                  // Campo tipo de arquivo (automático)
+                  TextFormField(
+                    readOnly: true,
+                    controller:
+                        TextEditingController(text: fileType ?? "(nenhum)"),
+                    decoration: const InputDecoration(
+                      labelText: "Tipo de Arquivo (automático)",
+                      border: OutlineInputBorder(
+                        borderSide: BorderSide(color: Colors.red),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child:
+                  const Text("Cancelar", style: TextStyle(color: Colors.red)),
+            ),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.green,
+                foregroundColor: Colors.white,
+              ),
+              onPressed: () async {
+                if (_formKey.currentState!.validate()) {
+                  if (fileBytes == null) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        backgroundColor: Colors.red,
+                        content: Text("Selecione um arquivo antes de enviar."),
+                      ),
+                    );
+                    return;
+                  }
+
+                  final success = await _caller.uploadArquivo(
+                    bytes: fileBytes!,
+                    fileName: nomeController.text,
+                    diretorioId: diretorioSelecionado!,
+                    empresaId: 1,
+                  );
+
+                  if (success) {
+                    Navigator.pop(context);
+                    _loadDiretorios();
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        backgroundColor: Colors.green,
+                        content: Text("Arquivo enviado com sucesso!"),
+                      ),
+                    );
+                  } else {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        backgroundColor: Colors.red,
+                        content: Text("Erro ao enviar arquivo!"),
+                      ),
+                    );
+                  }
+                }
+              },
+              child: const Text("Enviar"),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildArquivosList(int diretorioId) {
+    final arquivos = _arquivos[diretorioId] ?? [];
+
+    if (arquivos.isEmpty) {
+      return const Padding(
+        padding: EdgeInsets.all(12),
+        child: Text("Nenhum arquivo disponível",
+            style: TextStyle(color: Colors.grey)),
       );
-
-      request.files.add(
-        http.MultipartFile.fromBytes('file', fileBytes, filename: fileName),
-      );
-
-      // Adicionar campos adicionais
-      if (_diretorioId != null) {
-        request.fields['diretorioId'] = _diretorioId!.toString();
-      }
-      if (_empresaId != null) {
-        request.fields['empresaId'] = _empresaId!.toString();
-      }
-
-      // Adicionar headers de autenticação se necessário
-      // request.headers['Authorization'] = 'Bearer seu_token';
-
-      var response = await request.send();
-
-      if (response.statusCode == 200) {
-        String responseBody = await response.stream.bytesToString();
-        // Processar a resposta conforme necessário
-
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Arquivo enviado com sucesso!')),
-        );
-        Navigator.of(context).pop(true);
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Falha no upload: ${response.statusCode}')),
-        );
-      }
-    } catch (e) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Erro: $e')));
-    } finally {
-      setState(() {
-        _isUploading = false;
-      });
     }
+
+    return Column(
+      children: arquivos.map((arq) {
+        final lido = arq['lido'] == true;
+        return Container(
+          margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            border: Border.all(color: Colors.red, width: 1.2),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: ListTile(
+            title: Text(arq['nome'] ?? "Sem nome"),
+            subtitle: Text(
+              lido ? "Lido" : "Não lido",
+              style: TextStyle(color: lido ? Colors.green : Colors.red),
+            ),
+            trailing: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                IconButton(
+                  icon: const Icon(Icons.download, color: Colors.green),
+                  onPressed: () => _marcarComoLido(arq['id'], diretorioId),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.delete, color: Colors.red),
+                  onPressed: () => _confirmDelete(arq['id'], diretorioId),
+                ),
+              ],
+            ),
+          ),
+        );
+      }).toList(),
+    );
+  }
+
+  Widget _buildDiretorioBox(Map<String, dynamic> dir) {
+    final id = dir['id'];
+    final nome = dir['nome'] ?? 'Sem nome';
+    final total = dir['totalArquivos'] ?? 0;
+    final naoLidos = dir['naoLidos'] ?? 0;
+
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        border: Border.all(color: Colors.red, width: 1.5),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: ExpansionTile(
+        tilePadding: const EdgeInsets.symmetric(horizontal: 16),
+        onExpansionChanged: (expanded) {
+          setState(() {
+            if (expanded) {
+              _expandedTiles.add(id);
+              _loadArquivos(id);
+            } else {
+              _expandedTiles.remove(id);
+            }
+          });
+        },
+        title: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              nome,
+              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+            ),
+            Row(
+              children: [
+                if (naoLidos > 0)
+                  Container(
+                    margin: const EdgeInsets.only(right: 8),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: Colors.red,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Text("$naoLidos não lidos",
+                        style:
+                            const TextStyle(color: Colors.white, fontSize: 12)),
+                  ),
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: Colors.amber,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Text("$total docs",
+                      style:
+                          const TextStyle(color: Colors.black, fontSize: 12)),
+                ),
+              ],
+            ),
+          ],
+        ),
+        children: [
+          Padding(
+            padding: const EdgeInsets.only(bottom: 12),
+            child: _buildArquivosList(id),
+          ),
+        ],
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Upload de Arquivo')),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Form(
-          key: _formKey,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              DropdownButtonFormField<int>(
-                decoration: const InputDecoration(
-                  labelText: 'Diretório',
-                  border: OutlineInputBorder(),
+      backgroundColor: Colors.green[900],
+      appBar: UserBannerAppBar(
+        screenTitle: "Gerenciador de Arquivos",
+        isLoading: _isLoading,
+        showFilterButton: false,
+        onRefresh: _loadDiretorios,
+      ),
+      body: _isLoading
+          ? const Center(child: CircularProgressIndicator(color: Colors.red))
+          : _diretorios.isEmpty
+              ? const Center(
+                  child: Text(
+                    "Nenhum diretório disponível",
+                    style: TextStyle(color: Colors.white),
+                  ),
+                )
+              : ListView.builder(
+                  itemCount: _diretorios.length,
+                  itemBuilder: (context, i) =>
+                      _buildDiretorioBox(_diretorios[i]),
                 ),
-                items: _diretorios.map((diretorio) {
-                  return DropdownMenuItem<int>(
-                    value: diretorio['value'],
-                    child: Text(diretorio['label']),
-                  );
-                }).toList(),
-                onChanged: (value) {
-                  setState(() {
-                    _diretorioId = value;
-                  });
-                },
-                isExpanded: true,
-              ),
-              const SizedBox(height: 16),
-              DropdownButtonFormField<int>(
-                decoration: const InputDecoration(
-                  labelText: 'Empresa',
-                  border: OutlineInputBorder(),
+      floatingActionButton: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.end,
+        children: [
+          Container(
+            margin: const EdgeInsets.only(bottom: 10),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              border: Border.all(color: Colors.red, width: 2),
+              shape: BoxShape.circle,
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.red.withOpacity(0.3),
+                  blurRadius: 8,
+                  spreadRadius: 2,
                 ),
-                items: _empresas.map((empresa) {
-                  return DropdownMenuItem<int>(
-                    value: empresa['value'],
-                    child: Text(empresa['label']),
-                  );
-                }).toList(),
-                onChanged: (value) {
-                  setState(() {
-                    _empresaId = value;
-                  });
-                },
-                isExpanded: true,
-              ),
-              const SizedBox(height: 16),
-              OutlinedButton(
-                onPressed: _selectFile,
-                child: const Text('Selecionar Arquivo'),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                _selectedFile != null
-                    ? 'Arquivo selecionado: ${_selectedFile!.name}'
-                    : 'Nenhum arquivo selecionado',
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 24),
-              ElevatedButton(
-                onPressed: _isUploading ? null : _uploadFile,
-                child: _isUploading
-                    ? const CircularProgressIndicator()
-                    : const Text('Fazer Upload'),
-              ),
-            ],
+              ],
+            ),
+            child: FloatingActionButton(
+              heroTag: "refresh",
+              backgroundColor: Colors.white,
+              foregroundColor: Colors.green,
+              elevation: 0,
+              onPressed: _loadDiretorios,
+              child: const Icon(Icons.refresh),
+            ),
           ),
-        ),
+          Container(
+            decoration: BoxDecoration(
+              color: Colors.white,
+              border: Border.all(color: Colors.red, width: 2),
+              shape: BoxShape.circle,
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.red.withOpacity(0.3),
+                  blurRadius: 8,
+                  spreadRadius: 2,
+                ),
+              ],
+            ),
+            child: FloatingActionButton(
+              heroTag: "add",
+              backgroundColor: Colors.white,
+              foregroundColor: Colors.green,
+              elevation: 0,
+              onPressed: _showUploadDialog,
+              child: const Icon(Icons.add),
+            ),
+          ),
+        ],
       ),
     );
   }

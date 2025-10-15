@@ -32,12 +32,9 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
       AuthUtility.userInfo?.login?.email != null
           ? ChatListScreen(userName: AuthUtility.userInfo?.login?.email ?? '')
           : const ChatListScreen(userName: 'Usuário'),
-      ComunicadoScreen(
-        apiLink: ApiLinks.allComunicados,
-        screenStatus: 'In Progress',
-      ),
+      const ComunicadoScreen(),
       ChamadoGridScreen(hasPermission: (action) => true),
-      FileUploadScreen(hasPermission: (perm) => true),
+      const FileManagerScreen(),
       // Tela placeholder para o item "Mais" - não será mostrada pois o item abre um menu
       Container(),
     ];

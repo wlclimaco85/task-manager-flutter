@@ -1,485 +1,213 @@
 import 'package:flutter/material.dart';
-import 'package:task_manager_flutter/data/utils/api_links.dart';
-import 'package:task_manager_flutter/data/models/comunicados_model.dart';
-import 'package:task_manager_flutter/data/models/network_response.dart';
-import 'package:task_manager_flutter/data/services/network_caller.dart';
 import 'package:intl/intl.dart';
+import 'package:task_manager_flutter/data/models/comunicados_model.dart';
+import 'package:task_manager_flutter/data/services/comunicado_caller.dart';
+import 'package:task_manager_flutter/data/models/setor_model.dart';
 import 'package:task_manager_flutter/ui/widgets/user_banners.dart';
+import 'package:task_manager_flutter/data/utils/grid_colors.dart';
+import 'package:task_manager_flutter/data/services/setor_caller.dart';
 
 class ComunicadoScreen extends StatefulWidget {
-  final String screenStatus;
-  final String apiLink;
-  final bool showAllSummeryCard;
-  final bool floatingActionButton;
-
-  const ComunicadoScreen({
-    super.key,
-    required this.screenStatus,
-    required this.apiLink,
-    this.showAllSummeryCard = false,
-    this.floatingActionButton = true,
-  });
+  const ComunicadoScreen({super.key});
 
   @override
   State<ComunicadoScreen> createState() => _ComunicadoScreenState();
 }
 
-class ComunicadoModel {
-  String? status;
-  String? token;
-  List<Comunicado>? data;
-
-  ComunicadoModel({this.status, this.token, this.data});
-
-  ComunicadoModel.fromJson(Map<String, dynamic> json) {
-    status = json['status'];
-    token = json['token'];
-
-    // Verifica se 'data' é uma lista de listas
-    if (json['data'] != null) {
-      /*  data = [];
-    // Itera sobre cada lista no 'data'
-    for (var list in json['data']) {
-      // Adiciona à lista de 'data' uma lista de Map<String, dynamic>
-      data.add(List<Map<String, dynamic>>.from(list.map((item) => Map<String, dynamic>.from(item))));
-    } */
-      //  List<Data> dataList = Data.fromJsonList2(json['data']['noticiasDTO']);
-      List<Comunicado> dataList =
-          Comunicado.fromJsonList(json['data']['dados']);
-      data =
-          dataList; //json['data'] != null ? Data.fromJson(json['data']) : null;
-    } else {
-      data = null;
-    }
-
-    //data = json['data'] != null ? Data.fromJson(json['data']) : null;
-  }
-
-  /* Map<String, dynamic> toJson() {
-    final Map<String, dynamic> data = <String, dynamic>{};
-    data['status'] = status;
-    data['token'] = token;
-    if (this.data != null) {
-      data['data'] = this.data!.toJson();
-    }
-    return data;
-  }*/
-
-  Map<String, dynamic> toJson() {
-    final Map<String, dynamic> data = <String, dynamic>{};
-    data['status'] = status;
-    data['token'] = token;
-    if (this.data != null) {
-      // Mapeia cada item da lista 'data' para o formato JSON
-      data['data'] = this.data!.map((item) => item.toJson()).toList();
-    }
-    return data;
-  }
-}
-
-// ==============================================
-// MOBILE GRID SCREEN - CARD BASED
-// ==============================================
-class GridColors {
-  static const Color primary = Color(0xFF93070A);
-  static const Color primaryDark = Color(0xFF6A0507);
-  static const Color primaryLight = Color(0xFFB84042);
-  static const Color secondary = Color(0xFF005826);
-  static const Color secondaryLight = Color(0xFF2E7D32);
-  static const Color secondaryDark = Color(0xFF003D1A);
-  static const Color textPrimary = Color(0xFFFFFFFF);
-  static const Color textSecondary = Color(0xFF000000);
-  static const Color link = Color(0xFFFF0000);
-  static const Color inputBackground = Color(0xFFFFFFFF);
-  static const Color inputBorder = Color(0xFF93070A);
-  static const Color buttonBackground = Color(0xFF93070A);
-  static const Color buttonText = Color(0xFFFFFFFF);
-  static const Color background = Color(0xFF005826);
-  static const Color card = Color(0xFFFFFFFF);
-  static const Color error = Color(0xFFD32F2F);
-  static const Color warning = Color(0xFFFFA000);
-  static const Color success = Color(0xFF2E7D32);
-  static const Color info = Color(0xFF1976D2);
-  static const Color divider = Color(0xFFBDBDBD);
-  static const Color filterBackground = Color(0xFFEFEFEF);
-  static const Color hover = Color(0x1A000000);
-  static const Color selectedRow = Color(0xFFE3F2FD);
-  static const Color dialogBackground = Color(0xFFFFFFFF);
-  static const Color shadow = Color(0x26000000);
-}
-
 class _ComunicadoScreenState extends State<ComunicadoScreen> {
-  List<Comunicado> newsList = [];
-  bool isLoading = false;
-  bool _isRefreshing = false;
-  final ScrollController _controller = ScrollController();
+  final ComunicadoCaller _caller = ComunicadoCaller();
+  final SetorCaller _setorCaller = SetorCaller();
+  List<Comunicado> _comunicados = [];
+  bool _isLoading = false;
 
   @override
   void initState() {
     super.initState();
-    _fetchNews();
-    _controller.addListener(_onScroll);
+    _loadComunicados();
   }
 
-  Future<void> _fetchNews({bool isRefresh = false}) async {
-    if (isRefresh) {
-      setState(() => _isRefreshing = true);
-    } else {
-      setState(() => isLoading = true);
-    }
-
-    try {
-      final NetworkResponse response =
-          await NetworkCaller().getRequest(ApiLinks.allComunicados);
-
-      if (response.statusCode == 200 && response.body != null) {
-        final model = ComunicadoModel.fromJson(response.body!);
-        if (model.data != null) {
-          setState(() {
-            if (isRefresh) newsList.clear();
-            newsList.addAll(model.data!);
-          });
-        }
-      } else {
-        _showErrorSnackBar('Falha ao carregar comunicados');
-      }
-    } catch (e) {
-      _showErrorSnackBar('Erro: $e');
-    } finally {
-      setState(() {
-        isLoading = false;
-        _isRefreshing = false;
-      });
-    }
+  Future<void> _loadComunicados() async {
+    setState(() => _isLoading = true);
+    _comunicados = await _caller.fetchAllComunicados();
+    setState(() => _isLoading = false);
   }
 
-  void _showErrorSnackBar(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: GridColors.error,
-        behavior: SnackBarBehavior.floating,
-      ),
-    );
-  }
+  Future<void> _showComunicadoForm({Comunicado? comunicado}) async {
+    final formKey = GlobalKey<FormState>();
+    final TextEditingController tituloCtrl =
+        TextEditingController(text: comunicado?.titulo ?? '');
+    final TextEditingController conteudoCtrl =
+        TextEditingController(text: comunicado?.conteudo ?? '');
+    final TextEditingController autorCtrl =
+        TextEditingController(text: comunicado?.autor ?? '');
+    List<Map<String, dynamic>> setores = await Comunicado.loadSetoresDropdown();
+    int? setorSelecionado = comunicado?.setor?.id;
 
-  void _onScroll() {
-    if (_controller.position.pixels == _controller.position.maxScrollExtent &&
-        !isLoading &&
-        newsList.isNotEmpty) {
-      _fetchNews();
-    }
-  }
-
-  Future<void> _refreshNews() async {
-    await _fetchNews(isRefresh: true);
-  }
-
-  Widget _buildNewsItem(Comunicado news, int index) {
-    return Card(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      elevation: 4,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      child: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              GridColors.card,
-              GridColors.primaryLight.withOpacity(0.05),
-            ],
-          ),
+    await showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: Colors.white,
+        shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(16),
+          side: const BorderSide(color: Colors.red, width: 2),
         ),
-        child: InkWell(
-          onTap: () => _showNewsDetail(news),
-          borderRadius: BorderRadius.circular(16),
-          child: Padding(
-            padding: const EdgeInsets.all(20),
+        title: Text(
+          comunicado == null ? "Novo Comunicado" : "Editar Comunicado",
+          style:
+              const TextStyle(color: Colors.green, fontWeight: FontWeight.bold),
+        ),
+        content: SingleChildScrollView(
+          child: Form(
+            key: formKey,
             child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Header com título e status
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Expanded(
-                      child: Text(
-                        news.titulo ?? 'Sem título',
-                        style: const TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                          height: 1.3,
-                        ),
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                      ),
+                TextFormField(
+                  controller: tituloCtrl,
+                  decoration: const InputDecoration(
+                    labelText: "Título",
+                    border: OutlineInputBorder(
+                      borderSide: BorderSide(color: Colors.red),
                     ),
-                    const SizedBox(width: 12),
-                    _buildStatusIndicator(news.autor),
-                  ],
+                    focusedBorder: OutlineInputBorder(
+                      borderSide: BorderSide(color: Colors.red, width: 2),
+                    ),
+                  ),
+                  validator: (v) =>
+                      v == null || v.isEmpty ? "Informe o título" : null,
                 ),
-
                 const SizedBox(height: 12),
-
-                // Conteúdo
-                Text(
-                  news.conteudo ?? 'Conteúdo não disponível',
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: Colors.grey[700],
-                    height: 1.4,
-                  ),
+                TextFormField(
+                  controller: conteudoCtrl,
                   maxLines: 3,
-                  overflow: TextOverflow.ellipsis,
+                  decoration: const InputDecoration(
+                    labelText: "Conteúdo",
+                    border: OutlineInputBorder(
+                      borderSide: BorderSide(color: Colors.red),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderSide: BorderSide(color: Colors.red, width: 2),
+                    ),
+                  ),
+                  validator: (v) =>
+                      v == null || v.isEmpty ? "Informe o conteúdo" : null,
                 ),
-
-                const SizedBox(height: 16),
-
-                // Footer com metadados
-                Container(
-                  padding: const EdgeInsets.only(top: 12),
-                  decoration: BoxDecoration(
-                    border: Border(top: BorderSide(color: Colors.grey[300]!)),
+                const SizedBox(height: 12),
+                DropdownButtonFormField<int>(
+                  initialValue: setorSelecionado,
+                  items: setores
+                      .map(
+                        (e) => DropdownMenuItem<int>(
+                          value: e['value'],
+                          child: Text(e['label']),
+                        ),
+                      )
+                      .toList(),
+                  onChanged: (v) => setorSelecionado = v,
+                  decoration: const InputDecoration(
+                    labelText: "Setor",
+                    border: OutlineInputBorder(
+                      borderSide: BorderSide(color: Colors.red),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderSide: BorderSide(color: Colors.red, width: 2),
+                    ),
                   ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Por: ${news.autor ?? 'Autor desconhecido'}',
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: Colors.grey[600],
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                          if (news.dhCreatedAt != null) ...[
-                            const SizedBox(height: 4),
-                            Text(
-                              DateFormat('dd/MM/yyyy • HH:mm')
-                                  .format(news.dhCreatedAt!.toLocal()),
-                              style: TextStyle(
-                                fontSize: 11,
-                                color: Colors.grey[500],
-                              ),
-                            ),
-                          ],
-                        ],
-                      ),
-                      const Icon(
-                        Icons.arrow_forward_ios_rounded,
-                        size: 16,
-                        color: GridColors.primary,
-                      ),
-                    ],
+                  validator: (v) => v == null ? "Selecione um setor" : null,
+                ),
+                const SizedBox(height: 12),
+                TextFormField(
+                  controller: autorCtrl,
+                  decoration: const InputDecoration(
+                    labelText: "Autor",
+                    border: OutlineInputBorder(
+                      borderSide: BorderSide(color: Colors.red),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderSide: BorderSide(color: Colors.red, width: 2),
+                    ),
                   ),
+                  validator: (v) =>
+                      v == null || v.isEmpty ? "Informe o autor" : null,
                 ),
               ],
             ),
           ),
         ),
-      ),
-    );
-  }
-
-  Widget _buildStatusIndicator(String? status) {
-    Color indicatorColor;
-    String statusText;
-
-    switch (status?.toLowerCase()) {
-      case 'urgente':
-        indicatorColor = GridColors.error;
-        statusText = 'URGENTE';
-        break;
-      case 'importante':
-        indicatorColor = GridColors.warning;
-        statusText = 'IMPORTANTE';
-        break;
-      default:
-        indicatorColor = GridColors.success;
-        statusText = 'NORMAL';
-    }
-
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-      decoration: BoxDecoration(
-        color: indicatorColor.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(6),
-        border: Border.all(color: indicatorColor.withOpacity(0.3)),
-      ),
-      child: Text(
-        statusText,
-        style: TextStyle(
-          fontSize: 10,
-          fontWeight: FontWeight.bold,
-          color: indicatorColor,
-        ),
-      ),
-    );
-  }
-
-  void _showNewsDetail(Comunicado news) {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (context) => Container(
-        height: MediaQuery.of(context).size.height * 0.85,
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: const BorderRadius.only(
-            topLeft: Radius.circular(24),
-            topRight: Radius.circular(24),
+        actions: [
+          TextButton(
+            child: const Text("Cancelar", style: TextStyle(color: Colors.red)),
+            onPressed: () => Navigator.pop(context),
           ),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.2),
-              blurRadius: 20,
-              offset: const Offset(0, -5),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.green,
+              foregroundColor: Colors.white,
             ),
-          ],
-        ),
-        child: Column(
-          children: [
-            // Header do modal
-            Container(
-              padding: const EdgeInsets.all(20),
-              decoration: const BoxDecoration(
-                color: GridColors.primary,
-                borderRadius: BorderRadius.only(
-                  topLeft: Radius.circular(24),
-                  topRight: Radius.circular(24),
-                ),
-              ),
-              child: Row(
-                children: [
-                  const Icon(Icons.announcement, color: Colors.white, size: 24),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Text(
-                      news.titulo ?? 'Comunicado',
-                      style: const TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
-                      ),
+            child: const Text("Salvar"),
+            onPressed: () async {
+              if (formKey.currentState!.validate()) {
+                final novo = Comunicado(
+                  id: comunicado?.id,
+                  titulo: tituloCtrl.text,
+                  conteudo: conteudoCtrl.text,
+                  autor: autorCtrl.text,
+                  setor: Setor(id: setorSelecionado, nome: ""),
+                  dataPublicacao: DateTime.now(),
+                  dhCreatedAt: DateTime.now(),
+                );
+                bool ok = comunicado == null
+                    ? await _caller.createComunicado(novo)
+                    : await _caller.updateComunicado(novo);
+                if (ok) {
+                  Navigator.pop(context);
+                  _loadComunicados();
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      backgroundColor: Colors.green,
+                      content: Text("Comunicado salvo com sucesso!"),
                     ),
-                  ),
-                  IconButton(
-                    icon: const Icon(Icons.close, color: Colors.white),
-                    onPressed: () => Navigator.pop(context),
-                  ),
-                ],
-              ),
-            ),
-
-            // Conteúdo
-            Expanded(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.all(20),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      news.conteudo ?? 'Conteúdo não disponível',
-                      style: const TextStyle(
-                        fontSize: 16,
-                        height: 1.6,
-                      ),
+                  );
+                } else {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text("Erro ao salvar comunicado"),
+                      backgroundColor: Colors.red,
                     ),
-
-                    const SizedBox(height: 24),
-
-                    // Informações adicionais
-                    Container(
-                      padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        color: Colors.grey[50],
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: Colors.grey[200]!),
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          _buildInfoRow(
-                              'Autor:', news.autor ?? 'Não informado'),
-                          _buildInfoRow(
-                              'Data:',
-                              news.dhCreatedAt != null
-                                  ? DateFormat('dd/MM/yyyy às HH:mm')
-                                      .format(news.dhCreatedAt!.toLocal())
-                                  : 'Não informada'),
-                          _buildInfoRow('Status:', news.autor ?? 'Normal'),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildInfoRow(String label, String value) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 6),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            label,
-            style: const TextStyle(
-              fontWeight: FontWeight.bold,
-              fontSize: 14,
-            ),
-          ),
-          const SizedBox(width: 8),
-          Expanded(
-            child: Text(
-              value,
-              style: const TextStyle(
-                fontSize: 14,
-              ),
-            ),
+                  );
+                }
+              }
+            },
           ),
         ],
       ),
     );
   }
 
-  Widget _buildEmptyState() {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(
-            Icons.announcement_outlined,
-            size: 80,
-            color: Colors.grey[300],
+  void _confirmDelete(Comunicado c) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text("Excluir Comunicado"),
+        content: const Text("Deseja realmente excluir este comunicado?"),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child:
+                const Text("Cancelar", style: TextStyle(color: Colors.green)),
           ),
-          const SizedBox(height: 16),
-          Text(
-            'Nenhum comunicado disponível',
-            style: TextStyle(
-              fontSize: 18,
-              color: Colors.grey[500],
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            'Novos comunicados aparecerão aqui',
-            style: TextStyle(
-              fontSize: 14,
-              color: Colors.grey[400],
-            ),
+          TextButton(
+            onPressed: () async {
+              Navigator.pop(context);
+              await _caller.deleteComunicado(c.id!);
+              _loadComunicados();
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  backgroundColor: Colors.green,
+                  content: Text("Comunicado excluído com sucesso!"),
+                ),
+              );
+            },
+            child: const Text("Excluir", style: TextStyle(color: Colors.red)),
           ),
         ],
       ),
@@ -489,50 +217,114 @@ class _ComunicadoScreenState extends State<ComunicadoScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.grey[50],
+      backgroundColor: Colors.green[900],
       appBar: UserBannerAppBar(
         screenTitle: "Comunicados",
-        isLoading: isLoading,
-        onRefresh: _refreshNews,
+        isLoading: _isLoading,
         showFilterButton: false,
+        onRefresh: _loadComunicados,
       ),
-      body: RefreshIndicator(
-        onRefresh: _refreshNews,
-        backgroundColor: Colors.white,
-        color: GridColors.primary,
-        child: newsList.isEmpty && !isLoading
-            ? _buildEmptyState()
-            : ListView.builder(
-                controller: _controller,
-                itemCount: newsList.length + (isLoading ? 1 : 0),
-                itemBuilder: (context, index) {
-                  if (index == newsList.length) {
-                    return isLoading
-                        ? const Padding(
-                            padding: EdgeInsets.all(24.0),
-                            child: Center(
-                              child: CircularProgressIndicator(),
+      body: _isLoading
+          ? const Center(child: CircularProgressIndicator(color: Colors.red))
+          : _comunicados.isEmpty
+              ? const Center(
+                  child: Text(
+                    "Nenhum comunicado disponível",
+                    style: TextStyle(color: Colors.white),
+                  ),
+                )
+              : ListView.builder(
+                  itemCount: _comunicados.length,
+                  itemBuilder: (context, i) {
+                    final c = _comunicados[i];
+                    return Container(
+                      margin: const EdgeInsets.symmetric(
+                          horizontal: 10, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        border: Border.all(color: Colors.red, width: 1.5),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: ListTile(
+                        title: Text(c.titulo ?? "Sem título",
+                            style:
+                                const TextStyle(fontWeight: FontWeight.bold)),
+                        subtitle: Text(
+                          c.conteudo ?? "",
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        trailing: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            IconButton(
+                              icon: const Icon(Icons.edit, color: Colors.green),
+                              onPressed: () =>
+                                  _showComunicadoForm(comunicado: c),
                             ),
-                          )
-                        : const SizedBox.shrink();
-                  }
-                  return _buildNewsItem(newsList[index], index);
-                },
-              ),
+                            IconButton(
+                              icon: const Icon(Icons.delete, color: Colors.red),
+                              onPressed: () => _confirmDelete(c),
+                            ),
+                          ],
+                        ),
+                      ),
+                    );
+                  },
+                ),
+      floatingActionButton: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.end,
+        children: [
+          // Botão de refresh
+          Container(
+            margin: const EdgeInsets.only(bottom: 10),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              border: Border.all(color: Colors.red, width: 2),
+              shape: BoxShape.circle,
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.red.withOpacity(0.3),
+                  blurRadius: 8,
+                  spreadRadius: 2,
+                ),
+              ],
+            ),
+            child: FloatingActionButton(
+              heroTag: "refreshBtn",
+              backgroundColor: Colors.white,
+              foregroundColor: Colors.green,
+              elevation: 0,
+              onPressed: _loadComunicados,
+              child: const Icon(Icons.refresh),
+            ),
+          ),
+          // Botão de adicionar comunicado
+          Container(
+            decoration: BoxDecoration(
+              color: Colors.white,
+              border: Border.all(color: Colors.red, width: 2),
+              shape: BoxShape.circle,
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.red.withOpacity(0.3),
+                  blurRadius: 8,
+                  spreadRadius: 2,
+                ),
+              ],
+            ),
+            child: FloatingActionButton(
+              heroTag: "addBtn",
+              backgroundColor: Colors.white,
+              foregroundColor: Colors.green,
+              elevation: 0,
+              onPressed: () => _showComunicadoForm(),
+              child: const Icon(Icons.add),
+            ),
+          ),
+        ],
       ),
-      floatingActionButton: widget.floatingActionButton
-          ? FloatingActionButton(
-              onPressed: _refreshNews,
-              backgroundColor: GridColors.primary,
-              child: const Icon(Icons.refresh, color: Colors.white),
-            )
-          : null,
     );
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
   }
 }

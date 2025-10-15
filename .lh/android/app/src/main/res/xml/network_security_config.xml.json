@@ -1,0 +1,18 @@
+{
+    "sourceFile": "android/app/src/main/res/xml/network_security_config.xml",
+    "activeCommit": 0,
+    "commits": [
+        {
+            "activePatchIndex": 0,
+            "patches": [
+                {
+                    "date": 1760538479294,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n"
+                }
+            ],
+            "date": 1760538479294,
+            "name": "Commit-0",
+            "content": "<?xml version=\"1.0\" encoding=\"utf-8\"?>\r\n<network-security-config>\r\n    <domain-config cleartextTrafficPermitted=\"true\">\r\n        <domain includeSubdomains=\"true\">appacademia-production-be7e.up.railway.app</domain>\r\n    </domain-config>\r\n</network-security-config>"
+        }
+    ]
+}

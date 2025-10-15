@@ -333,4 +333,7 @@ class ApiLinks {
 
   static String atualizarUsuario(int fileId) =>
       '$_baseUrlNew/api/parceiro/atualizar/$fileId';
+
+  static String updateArquivoLido(int fileId) =>
+      '$_baseUrlNew/api/parceiro/atualizar/$fileId';
 }

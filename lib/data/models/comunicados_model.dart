@@ -1,9 +1,6 @@
-import 'package:flutter/material.dart';
 import 'package:task_manager_flutter/data/models/network_response.dart';
 import 'package:task_manager_flutter/data/services/network_caller.dart';
 import 'package:task_manager_flutter/data/utils/api_links.dart';
-
-import '../customization/generic_grid_card.dart';
 import 'setor_model.dart';
 
 class Comunicado {
@@ -16,7 +13,6 @@ class Comunicado {
   Setor? setor;
   DateTime? dhCreatedAt;
   DateTime? dataPublicacao;
-  DateTime? dhUpdatedAt;
 
   Comunicado({
     this.id,
@@ -28,43 +24,33 @@ class Comunicado {
     this.setor,
     this.dhCreatedAt,
     this.dataPublicacao,
-    this.dhUpdatedAt,
   });
 
   Map<String, dynamic> toJson() {
     return {
-      '_id': id,
+      'id': id,
       'empId': empId,
       'codApp': codApp,
       'titulo': titulo,
       'conteudo': conteudo,
       'setor': setor?.toJson(),
-      'dataPublicacao': dataPublicacao?.toIso8601String(),
       'autor': autor,
+      'dataPublicacao': dataPublicacao?.toIso8601String(),
       'dhCreatedAt': dhCreatedAt?.toIso8601String(),
     };
   }
 
   Comunicado.fromJson(Map<String, dynamic> json) {
-    if (json.isNotEmpty) {
-      id = json['id'];
-      empId = json['empId'];
-      codApp = json['codApp'];
-      titulo = json['titulo'] ?? '';
-      autor = json['autor'] ?? '';
-      conteudo = json['conteudo'] ?? '';
-      //  conteudo = json['conteudo'] != null
-      //     ? utf8.decode(latin1.encode(json['conteudo']))
-      //    : 'conteudo não disponível';
-      // titulo = json['titulo'] != null
-      //    ? utf8.decode(latin1.encode(json['titulo']))
-      //     : 'Título não disponível';
-      // autor = json['autor'] != null
-      //      ? utf8.decode(latin1.encode(json['autor']))
-      //     : 'autor não disponível';
-      setor = json['setor'] != null ? Setor.fromJson(json['setor']) : null;
-      dataPublicacao = DateTime.parse(json['dataPublicacao']);
-    }
+    id = json['id'];
+    empId = json['empId'];
+    codApp = json['codApp'];
+    titulo = json['titulo'] ?? '';
+    conteudo = json['conteudo'] ?? '';
+    autor = json['autor'] ?? '';
+    setor = json['setor'] != null ? Setor.fromJson(json['setor']) : null;
+    dataPublicacao = json['dataPublicacao'] != null
+        ? DateTime.tryParse(json['dataPublicacao'])
+        : null;
   }
 
   static List<Comunicado> fromJsonList(List<dynamic> jsonList) {
@@ -73,94 +59,18 @@ class Comunicado {
         .toList();
   }
 
-  Comunicado.fromJson2(Map<String, dynamic> json) {
-    if (json['comunicacaoDTO'] != null && json['comunicacaoDTO'].isNotEmpty) {
-      var comunicacaoDTO = json['comunicacaoDTO'][0];
-      id = comunicacaoDTO['id'];
-      codApp = comunicacaoDTO['codApp'];
-      empId = comunicacaoDTO['empId'];
-      titulo = comunicacaoDTO['titulo'];
-      conteudo = comunicacaoDTO['conteudo'];
-      autor = comunicacaoDTO['autor'];
-      setor = comunicacaoDTO['setor'] != null
-          ? Setor.fromJson(comunicacaoDTO['setor'])
-          : null;
-      dataPublicacao = comunicacaoDTO['dataPublicacao'];
-      dhUpdatedAt = comunicacaoDTO['dhUpdatedAt'];
-    }
-  }
-
-  static List<Comunicado> fromJsonList2(List<Map<String, dynamic>> jsonList) {
-    List<Comunicado> dataList = [];
-    for (var json in jsonList) {}
-    return dataList;
-  }
-
-  static Future<List<Map<String, dynamic>>> loadCategorias() async {
-    final NetworkResponse response = await NetworkCaller().getRequest(
-      ApiLinks.getCategorias,
-    );
-
+  static Future<List<Map<String, dynamic>>> loadSetoresDropdown() async {
+    final NetworkResponse response =
+        await NetworkCaller().getRequest(ApiLinks.allSetores);
     if (response.isSuccess && response.body != null) {
-      final List<dynamic> data = response.body!['data']['account'] ?? [];
+      final List<dynamic> data = response.body!['data']['dados'] ?? [];
       return data
-          .map(
-            (item) => {
-              'value': item['id'].toString(),
-              'label': item['descricao'],
-            },
-          )
+          .map((item) => {
+                'value': item['id'],
+                'label': item['nome'],
+              })
           .toList();
     }
     return [];
   }
-
-  static List<FieldConfig> fieldConfigs = [
-    FieldConfig(
-      label: "Título",
-      fieldName: "titulo",
-      icon: Icons.title,
-      isFilterable: true,
-      isInForm: true,
-      isRequired: true,
-      validator: (value) {
-        if (value == null || value.isEmpty) return 'Título é obrigatório';
-        if (value.length < 3) return 'Título deve ter pelo menos 3 caracteres';
-        return null;
-      },
-    ),
-    const FieldConfig(
-      label: "Conteúdo",
-      fieldName: "conteudo",
-      icon: Icons.description,
-      isFilterable: true,
-      isInForm: true,
-      maxLines: 3,
-      fieldType: FieldType.multiline,
-      isRequired: true,
-    ),
-    FieldConfig(
-      label: "Categoria",
-      fieldName: "setor",
-      icon: Icons.category,
-      isFilterable: true,
-      isInForm: true,
-      fieldType: FieldType.dropdown,
-      dropdownFutureBuilder: () async {
-        // Sua função que retorna um Future<List<Map<String, dynamic>>>
-        return await loadCategorias();
-      },
-      dropdownValueField: 'id',
-      dropdownDisplayField: 'descricao',
-      isRequired: true,
-    ),
-    const FieldConfig(
-      label: "Autor",
-      fieldName: "autor",
-      icon: Icons.person,
-      isFilterable: true,
-      isInForm: true,
-      isRequired: true,
-    ),
-  ];
 }

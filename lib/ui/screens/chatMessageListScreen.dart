@@ -305,7 +305,7 @@ class _ChatListScreenState extends State<ChatListScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       extendBodyBehindAppBar: false,
-      backgroundColor: GridColors.secondary,
+      backgroundColor: Colors.green[900], // Fundo verde escuro
       appBar: UserBannerAppBar(
         screenTitle: 'Meus Chats',
         onRefresh: _bootstrap,
@@ -328,14 +328,16 @@ class _ChatListScreenState extends State<ChatListScreen> {
                   itemBuilder: (context, index) {
                     final chat = _chats[index];
                     return Container(
-                      decoration: const BoxDecoration(
-                        border: Border(
-                          bottom: BorderSide(
-                            color: GridColors.divider,
-                            width: 1.0,
-                          ),
+                      decoration: BoxDecoration(
+                        color: Colors.white, // Fundo claro dos boxes
+                        border: Border.all(
+                          color: Colors.red, // Borda vermelha
+                          width: 1.5,
                         ),
+                        borderRadius: BorderRadius.circular(8),
                       ),
+                      margin: const EdgeInsets.symmetric(
+                          horizontal: 8, vertical: 4),
                       child: ListTile(
                         title: Text(
                           chat.sector,
@@ -410,12 +412,27 @@ class _ChatListScreenState extends State<ChatListScreen> {
                     );
                   },
                 ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _showSectorSelectionDialog,
-        tooltip: 'Novo Chat',
-        backgroundColor: GridColors.secondary,
-        foregroundColor: GridColors.textPrimary,
-        child: const Icon(Icons.chat),
+      floatingActionButton: Container(
+        decoration: BoxDecoration(
+          color: Colors.white, // Fundo claro
+          border: Border.all(color: Colors.red, width: 2), // Borda vermelha
+          shape: BoxShape.circle,
+          boxShadow: [
+            BoxShadow(
+              color: Colors.red.withOpacity(0.4),
+              blurRadius: 8,
+              spreadRadius: 2,
+            ),
+          ],
+        ),
+        child: FloatingActionButton(
+          onPressed: _showSectorSelectionDialog,
+          tooltip: 'Novo Chat',
+          backgroundColor: Colors.white,
+          foregroundColor: Colors.red, // Ícone vermelho
+          elevation: 0,
+          child: const Icon(Icons.chat),
+        ),
       ),
     );
   }
