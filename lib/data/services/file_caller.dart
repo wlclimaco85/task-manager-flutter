@@ -3,6 +3,9 @@ import 'package:task_manager_flutter/data/services/network_caller.dart';
 import 'package:http/http.dart' as http;
 import 'dart:typed_data';
 import 'package:task_manager_flutter/data/utils/utils.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:share_plus/share_plus.dart';
+import 'package:task_manager_flutter/data/models/auth_utility.dart';
 
 class FileCaller {
   Future<List<Map<String, dynamic>>> fetchDiretorios() async {
@@ -33,15 +36,20 @@ class FileCaller {
     required int diretorioId,
     required int parceiroId,
   }) async {
-    try {
-      // Pega empresa logada
-      final empresa = await pegarEmpresaLogada();
-      final empresaId = empresa['id'];
+    // Pega empresa logada
+    final empresaId = await pegarEmpresaLogada();
+    final String authToken = '${AuthUtility.userInfo?.token}';
 
+    try {
       var request = http.MultipartRequest(
         'POST',
-        Uri.parse(ApiLinks.uploadArquivo),
+        Uri.parse(ApiLinks.uploadFile),
       );
+
+      // Adicionar headers de autenticação
+      if (authToken.isNotEmpty) {
+        request.headers['Authorization'] = 'Bearer $authToken';
+      }
 
       request.files.add(
         http.MultipartFile.fromBytes('fileData', fileBytes, filename: fileName),
@@ -49,9 +57,9 @@ class FileCaller {
 
       request.fields['fileName'] = fileName;
       request.fields['fileType'] = fileType;
-      request.fields['diretorioId'] = diretorioId.toString();
-      request.fields['empresaId'] = empresaId.toString();
-      request.fields['parceiroId'] = parceiroId.toString();
+      request.fields['diretorio'] = {"id": diretorioId}.toString();
+      request.fields['empresa'] = {"id": empresaId}.toString();
+      request.fields['parceiro'] = {"id": parceiroId}.toString();
 
       final response = await request.send();
 

@@ -6,6 +6,7 @@ import 'package:task_manager_flutter/data/models/network_response.dart';
 import 'package:task_manager_flutter/data/services/network_caller.dart';
 import 'package:task_manager_flutter/data/models/auth_utility.dart';
 import 'package:task_manager_flutter/ui/screens/LoginPopup_screens.dart';
+import 'package:task_manager_flutter/data/utils/utils.dart';
 
 class ParceiroCaller {
   Future<List<Parceiro>> fetchParceiros(
@@ -163,7 +164,7 @@ class ParceiroCaller {
     List<Parceiro> list = [];
     try {
       final NetworkResponse response = await NetworkCaller().getRequest(
-        ApiLinks.allParceiros,
+        ApiLinks.allParceirosPorEmp(pegarEmpresaLogada().toString()),
       );
 
       if (response.isSuccess && response.body != null) {

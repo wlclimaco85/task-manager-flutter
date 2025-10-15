@@ -185,6 +185,9 @@ class ApiLinks {
   static String deleteParceiro(String id) =>
       '$_baseUrlNew/api/parceiro/delete/$id';
 
+  static String allParceirosPorEmp(String id) =>
+      '$_baseUrlNew/api/parceiro/empresa/$id';
+
   // Personal
   static String allPersonais = '$_baseUrlNew/api/personais';
   static String createPersonal = '$_baseUrlNew/api/personais/insert';
