@@ -1,11 +1,10 @@
-import 'package:task_manager_flutter/data/utils/api_links.dart';
-import 'package:task_manager_flutter/data/services/network_caller.dart';
-import 'package:http/http.dart' as http;
 import 'dart:typed_data';
-import 'package:task_manager_flutter/data/utils/utils.dart';
-import 'package:path_provider/path_provider.dart';
-import 'package:share_plus/share_plus.dart';
+
+import 'package:http/http.dart' as http;
 import 'package:task_manager_flutter/data/models/auth_utility.dart';
+import 'package:task_manager_flutter/data/services/network_caller.dart';
+import 'package:task_manager_flutter/data/utils/api_links.dart';
+import 'package:task_manager_flutter/data/utils/utils.dart';
 
 class FileCaller {
   Future<List<Map<String, dynamic>>> fetchDiretorios() async {

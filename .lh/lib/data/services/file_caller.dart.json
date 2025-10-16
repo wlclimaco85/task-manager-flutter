@@ -3,7 +3,7 @@
     "activeCommit": 0,
     "commits": [
         {
-            "activePatchIndex": 21,
+            "activePatchIndex": 22,
             "patches": [
                 {
                     "date": 1760536351950,
@@ -92,6 +92,10 @@
                 {
                     "date": 1760544514724,
                     "content": "Index: \n===================================================================\n--- \n+++ \n@@ -51,9 +51,9 @@\n         request.headers['Authorization'] = 'Bearer $authToken';\r\n       }\r\n \r\n       request.files.add(\r\n-        http.MultipartFile.fromBytes('fileData', fileBytes, filename: fileName),\r\n+        http.MultipartFile.fromBytes('file', fileBytes, filename: fileName),\r\n       );\r\n \r\n       request.fields['fileName'] = fileName;\r\n       request.fields['fileType'] = fileType;\r\n"
+                },
+                {
+                    "date": 1760641391970,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -1,12 +1,11 @@\n+import 'dart:typed_data';\r\n+\r\n+import 'package:http/http.dart' as http;\r\n+import 'package:task_manager_flutter/data/models/auth_utility.dart';\r\n+import 'package:task_manager_flutter/data/services/network_caller.dart';\r\n import 'package:task_manager_flutter/data/utils/api_links.dart';\r\n-import 'package:task_manager_flutter/data/services/network_caller.dart';\r\n-import 'package:http/http.dart' as http;\r\n-import 'dart:typed_data';\r\n import 'package:task_manager_flutter/data/utils/utils.dart';\r\n-import 'package:path_provider/path_provider.dart';\r\n-import 'package:share_plus/share_plus.dart';\r\n-import 'package:task_manager_flutter/data/models/auth_utility.dart';\r\n \r\n class FileCaller {\r\n   Future<List<Map<String, dynamic>>> fetchDiretorios() async {\r\n     final response = await NetworkCaller().getRequest(ApiLinks.allDiretorios);\r\n"
                 }
             ],
             "date": 1760536351950,
