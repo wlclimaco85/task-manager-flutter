@@ -3,7 +3,7 @@
     "activeCommit": 0,
     "commits": [
         {
-            "activePatchIndex": 18,
+            "activePatchIndex": 21,
             "patches": [
                 {
                     "date": 1760536351950,
@@ -80,6 +80,18 @@
                 {
                     "date": 1760544112945,
                     "content": "Index: \n===================================================================\n--- \n+++ \n@@ -54,8 +54,10 @@\n       request.files.add(\r\n         http.MultipartFile.fromBytes('fileData', fileBytes, filename: fileName),\r\n       );\r\n \r\n+      \r\n+\r\n       request.fields['fileName'] = fileName;\r\n       request.fields['fileType'] = fileType;\r\n       request.fields['diretorio'] = {\"id\": diretorioId}.toString();\r\n       request.fields['empresa'] = {\"id\": empresaId}.toString();\r\n"
+                },
+                {
+                    "date": 1760544388341,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -60,8 +60,11 @@\n       request.fields['diretorio'] = {\"id\": diretorioId}.toString();\r\n       request.fields['empresa'] = {\"id\": empresaId}.toString();\r\n       request.fields['parceiro'] = {\"id\": parceiroId}.toString();\r\n \r\n+      request.headers['Content-Type'] = 'multipart/form-data';\r\n+request.headers['Accept'] = 'application/json';\r\n+\r\n       final response = await request.send();\r\n \r\n       if (response.statusCode == 200) {\r\n         return true;\r\n"
+                },
+                {
+                    "date": 1760544395625,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -54,18 +54,16 @@\n       request.files.add(\r\n         http.MultipartFile.fromBytes('fileData', fileBytes, filename: fileName),\r\n       );\r\n \r\n-      \r\n-\r\n       request.fields['fileName'] = fileName;\r\n       request.fields['fileType'] = fileType;\r\n       request.fields['diretorio'] = {\"id\": diretorioId}.toString();\r\n       request.fields['empresa'] = {\"id\": empresaId}.toString();\r\n       request.fields['parceiro'] = {\"id\": parceiroId}.toString();\r\n \r\n       request.headers['Content-Type'] = 'multipart/form-data';\r\n-request.headers['Accept'] = 'application/json';\r\n+      request.headers['Accept'] = 'application/json';\r\n \r\n       final response = await request.send();\r\n \r\n       if (response.statusCode == 200) {\r\n"
+                },
+                {
+                    "date": 1760544514724,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -51,9 +51,9 @@\n         request.headers['Authorization'] = 'Bearer $authToken';\r\n       }\r\n \r\n       request.files.add(\r\n-        http.MultipartFile.fromBytes('fileData', fileBytes, filename: fileName),\r\n+        http.MultipartFile.fromBytes('file', fileBytes, filename: fileName),\r\n       );\r\n \r\n       request.fields['fileName'] = fileName;\r\n       request.fields['fileType'] = fileType;\r\n"
                 }
             ],
             "date": 1760536351950,

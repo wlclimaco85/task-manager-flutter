@@ -52,7 +52,7 @@ class FileCaller {
       }
 
       request.files.add(
-        http.MultipartFile.fromBytes('fileData', fileBytes, filename: fileName),
+        http.MultipartFile.fromBytes('file', fileBytes, filename: fileName),
       );
 
       request.fields['fileName'] = fileName;
@@ -60,6 +60,9 @@ class FileCaller {
       request.fields['diretorio'] = {"id": diretorioId}.toString();
       request.fields['empresa'] = {"id": empresaId}.toString();
       request.fields['parceiro'] = {"id": parceiroId}.toString();
+
+      request.headers['Content-Type'] = 'multipart/form-data';
+      request.headers['Accept'] = 'application/json';
 
       final response = await request.send();
 
