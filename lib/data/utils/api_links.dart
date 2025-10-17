@@ -341,11 +341,10 @@ class ApiLinks {
       '$_baseUrlNew/api/parceiro/atualizar/$fileId';
 
   static String get getFinance => '$_baseUrlNew/api/dashboard/finance/series';
-  static String get statusCounts =>
-      '$_baseUrlNew/api/dashboard/tickets/statusCounts';
+  static String get statusCounts => '$_baseUrlNew/api/dashboard/statusCounts';
   static String get chatDaily => '$_baseUrlNew/api/dashboard/chats/daily';
 
-  static String get chatDailys => '$_baseUrlNew/api/dashboard/chats/daily';
+  static String get chatDailys => '$_baseUrlNew/api/dashboard/chats/dailys';
 
   static String get quarterlyComparison =>
       '$_baseUrlNew/api/dashboard/finance/quarterlyComparison';

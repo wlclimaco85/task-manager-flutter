@@ -35,14 +35,12 @@ class TicketTrendPoint {
 }
 
 class TicketsTrendChart extends StatefulWidget {
-  final String baseUrl;
   final int empresaId;
   final int? parceiroId;
   final int months;
 
   const TicketsTrendChart({
     super.key,
-    required this.baseUrl,
     required this.empresaId,
     this.parceiroId,
     this.months = 6,

@@ -12,6 +12,7 @@ import 'package:task_manager_flutter/ui/screens/dashboard_client_distribution_sc
 import 'package:task_manager_flutter/ui/screens/dashboard_finance_trend_screen.dart';
 import 'package:task_manager_flutter/ui/screens/dashboard_quarterly_screen.dart';
 import 'package:task_manager_flutter/ui/screens/chats_daily_chart.dart';
+import 'package:task_manager_flutter/ui/screens/dashboard_tickets_trend_screen.dart';
 import 'package:task_manager_flutter/data/utils/utils.dart';
 
 class DashboardPage extends StatefulWidget {
@@ -28,10 +29,8 @@ class _DashboardPageState extends State<DashboardPage> {
   bool loading = true;
   String? error;
 
-  final int empresaId =
-      pegarEmpresaLogada(); // ajuste para o ID da empresa logada
-  final int? parceiroId =
-      pegarParceiroLogada(); // ajuste se houver parceiro selecionado
+  final int empresaId = pegarEmpresaLogada();
+  final int? parceiroId = pegarParceiroLogada();
 
   @override
   void initState() {
@@ -40,19 +39,52 @@ class _DashboardPageState extends State<DashboardPage> {
   }
 
   Future<void> _load() async {
+    setState(() => loading = true);
+    debugPrint('[_load] start');
+
+    Future<List<FinancePoint>> seriesF() async {
+      try {
+        return await DashboardApiClient().fetchFinanceSeries(months: 6);
+      } catch (e, st) {
+        debugPrint('[finance] FAILED: $e\n$st');
+        return [];
+      }
+    }
+
+    Future<TicketStatusCounts> ticketF() async {
+      try {
+        return await DashboardApiClient().fetchTicketStatusCounts();
+      } catch (e, st) {
+        debugPrint('[tickets] FAILED: $e\n$st');
+        return TicketStatusCounts(open: 0, inProgress: 0, closed: 0);
+      }
+    }
+
+    Future<List<ChatsDailyPoint>> chatsF() async {
+      try {
+        return await DashboardApiClient().fetchChatsDaily(days: 7);
+      } catch (e, st) {
+        debugPrint('[chats] FAILED: $e\n$st');
+        return [];
+      }
+    }
+
     try {
       final results = await Future.wait([
-        DashboardApiClient().fetchFinanceSeries(months: 6),
-        DashboardApiClient().fetchTicketStatusCounts(),
-        DashboardApiClient().fetchChatsDaily(days: 7),
-      ]);
+        seriesF(),
+        ticketF(),
+        chatsF(),
+      ], eagerError: false);
+
       setState(() {
         finance = results[0] as List<FinancePoint>;
         tickets = results[1] as TicketStatusCounts;
         chats = results[2] as List<ChatsDailyPoint>;
         loading = false;
       });
-    } catch (e) {
+      debugPrint('[_load] SUCCESS (some graphs may have partial data)');
+    } catch (e, st) {
+      debugPrint('[_load] unexpected global fail: $e\n$st');
       setState(() {
         error = e.toString();
         loading = false;
@@ -128,12 +160,24 @@ class _DashboardPageState extends State<DashboardPage> {
             const SizedBox(height: 16),
             _financeChart(),
             const SizedBox(height: 28),
+
             _sectionTitle('📞 Chamados'),
             const SizedBox(height: 8),
             _ticketsCards(),
             const SizedBox(height: 16),
             _ticketsPie(),
             const SizedBox(height: 28),
+
+            // 🔹 NOVO BLOCO — Tendência de Chamados
+            _sectionTitle('📈 Tendência de Chamados (últimos meses)'),
+            const SizedBox(height: 8),
+            TicketsTrendChart(
+              empresaId: empresaId,
+              parceiroId: parceiroId,
+              months: 6,
+            ),
+            const SizedBox(height: 28),
+
             _sectionTitle('💬 Chats (últimos 7 dias)'),
             const SizedBox(height: 8),
             _chatsLine(),
