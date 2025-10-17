@@ -1,12 +1,12 @@
 class ApiLinks {
   ApiLinks._();
   static const String _baseIp = "http://192.168.56.1:8088";
-  //    "https://appacademia-production-be7e.up.railway.app";
+  // "https://appacademia-production-be7e.up.railway.app";
   //static const String _chatId = 'ws://192.168.114.1:8088/boletobancos';
 
   static const String _chatId = 'ws://192.168.114.1:8088/boletobancos';
-  //"wss://appacademia-production-be7e.up.railway.app/boletobancos";
-  // "http://192.168.100.41:8088";
+  // "wss://appacademia-production-be7e.up.railway.app/boletobancos";
+  //    "http://192.168.100.41:8088";
   //  "http://192.168.114.1:8088";
   // "http://192.168.100.113:8088";
   //  "http://192.168.146.1:8088";
@@ -339,4 +339,9 @@ class ApiLinks {
 
   static String updateArquivoLido(int fileId) =>
       '$_baseUrlNew/api/parceiro/atualizar/$fileId';
+
+  static String get getFinance => '$_baseUrlNew/api/dashboard/finance/series';
+  static String get statusCounts =>
+      '$_baseUrlNew/api/dashboard/tickets/statusCounts';
+  static String get chatDaily => '$_baseUrlNew/api/dashboard/chats/daily';
 }

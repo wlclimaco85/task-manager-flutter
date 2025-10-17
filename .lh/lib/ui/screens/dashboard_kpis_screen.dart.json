@@ -1,0 +1,18 @@
+{
+    "sourceFile": "lib/ui/screens/dashboard_kpis_screen.dart",
+    "activeCommit": 0,
+    "commits": [
+        {
+            "activePatchIndex": 0,
+            "patches": [
+                {
+                    "date": 1760730022148,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n"
+                }
+            ],
+            "date": 1760730022148,
+            "name": "Commit-0",
+            "content": "// lib/dashboard/dashboard_page.dart\r\nimport 'dart:convert';\r\n\r\nimport 'package:flutter/material.dart';\r\nimport 'package:http/http.dart' as http;\r\nimport 'package:task_manager_flutter/data/utils/grid_colors.dart';\r\n\r\nclass Kpis {\r\n  final double receitas, despesas, lucro;\r\n  final double margem;\r\n  Kpis(this.receitas, this.despesas, this.lucro, this.margem);\r\n  factory Kpis.fromJson(Map<String, dynamic> j) => Kpis(\r\n    (j['totalReceitasMes'] as num).toDouble(),\r\n    (j['totalDespesasMes'] as num).toDouble(),\r\n    (j['lucroBrutoMes'] as num).toDouble(),\r\n    (j['margemLiquidaPerc'] as num).toDouble(),\r\n  );\r\n}\r\n\r\nclass KpiCards extends StatefulWidget {\r\n  final String baseUrl;\r\n  final int empresaId;\r\n  final int? parceiroId;\r\n  const KpiCards({super.key, required this.baseUrl, required this.empresaId, this.parceiroId});\r\n\r\n  @override\r\n  State<KpiCards> createState() => _KpiCardsState();\r\n}\r\n\r\nclass _KpiCardsState extends State<KpiCards> {\r\n  Kpis? kpis; bool loading = true; String? error;\r\n\r\n  @override\r\n  void initState() { super.initState(); _load(); }\r\n\r\n  Future<void> _load() async {\r\n    try {\r\n      final uri = Uri.parse('${widget.baseUrl}/api/dashboard/kpis').replace(queryParameters: {\r\n        'empresaId': widget.empresaId.toString(),\r\n        if (widget.parceiroId != null) 'parceiroId': widget.parceiroId.toString(),\r\n      });\r\n      final res = await http.get(uri);\r\n      if (res.statusCode != 200) throw Exception('HTTP ${res.statusCode}');\r\n      setState(() { kpis = Kpis.fromJson(jsonDecode(res.body)); loading = false; });\r\n    } catch (e) { setState(() { error = e.toString(); loading = false; }); }\r\n  }\r\n\r\n  Widget _card(String title, String value, Color color) {\r\n    return Expanded(\r\n      child: Container(\r\n        height: 90,\r\n        margin: const EdgeInsets.symmetric(horizontal: 6),\r\n        decoration: BoxDecoration(color: color.withOpacity(.1), borderRadius: BorderRadius.circular(16)),\r\n        child: Center(\r\n          child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [\r\n            Text(value, style: TextStyle(color: color, fontSize: 18, fontWeight: FontWeight.bold)),\r\n            const SizedBox(height: 6),\r\n            Text(title, style: const TextStyle(color: GridColors.textSecondary, fontSize: 12)),\r\n          ]),\r\n        ),\r\n      ),\r\n    );\r\n  }\r\n\r\n  @override\r\n  Widget build(BuildContext context) {\r\n    if (loading) return const SizedBox(height: 100, child: Center(child: CircularProgressIndicator()));\r\n    if (error != null) return SizedBox(height: 100, child: Center(child: Text(error!, style: const TextStyle(color: Colors.red))));\r\n\r\n    final r = kpis!;\r\n    return Row(\r\n      children: [\r\n        _card('Receitas (mês)', 'R\\$ ${r.receitas.toStringAsFixed(2)}', Colors.green),\r\n        _card('Despesas (mês)', 'R\\$ ${r.despesas.toStringAsFixed(2)}', Colors.red),\r\n        _card('Margem', '${r.margem.toStringAsFixed(1)}%', GridColors.primary),\r\n      ],\r\n    );\r\n  }\r\n}"
+        }
+    ]
+}

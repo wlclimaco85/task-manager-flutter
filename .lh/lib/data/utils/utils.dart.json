@@ -3,7 +3,7 @@
     "activeCommit": 0,
     "commits": [
         {
-            "activePatchIndex": 3,
+            "activePatchIndex": 4,
             "patches": [
                 {
                     "date": 1759607404416,
@@ -20,6 +20,10 @@
                 {
                     "date": 1759877168851,
                     "content": "Index: \n===================================================================\n--- \n+++ \n@@ -66,15 +66,15 @@\n   // Se 0 não for um valor válido, retorne null\r\n   return (empresaId != null && empresaId != 0) ? empresaId : null;\r\n }\r\n \r\n-dynamic pegarUsuarioLogado() {\r\n+int? pegarUsuarioLogado() {\r\n   final user = AuthUtility.userInfo?.login;\r\n   final empresaId = user?.id;\r\n \r\n   // Debug para verificar o que está retornando\r\n   print('Usuário: ${AuthUtility.userInfo}');\r\n   print('Empresa ID: $empresaId');\r\n \r\n-  // Se 0 não for um valor válido, retorne null\r\n+  // Retorna null se for 0 ou null\r\n   return (empresaId != null && empresaId != 0) ? empresaId : null;\r\n }\r\n"
+                },
+                {
+                    "date": 1760725051654,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -66,8 +66,20 @@\n   // Se 0 não for um valor válido, retorne null\r\n   return (empresaId != null && empresaId != 0) ? empresaId : null;\r\n }\r\n \r\n+dynamic pegarParceiroLogada() {\r\n+  final user = AuthUtility.userInfo?.login;\r\n+  final empresaId = user?.empresa?.id;\r\n+\r\n+  // Debug para verificar o que está retornando\r\n+  print('Usuário: ${AuthUtility.userInfo}');\r\n+  print('Empresa ID: $empresaId');\r\n+\r\n+  // Se 0 não for um valor válido, retorne null\r\n+  return (empresaId != null && empresaId != 0) ? empresaId : null;\r\n+}\r\n+\r\n int? pegarUsuarioLogado() {\r\n   final user = AuthUtility.userInfo?.login;\r\n   final empresaId = user?.id;\r\n \r\n"
                 }
             ],
             "date": 1759607404416,

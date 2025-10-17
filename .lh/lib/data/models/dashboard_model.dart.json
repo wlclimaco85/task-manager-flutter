@@ -1,0 +1,18 @@
+{
+    "sourceFile": "lib/data/models/dashboard_model.dart",
+    "activeCommit": 0,
+    "commits": [
+        {
+            "activePatchIndex": 0,
+            "patches": [
+                {
+                    "date": 1760721716475,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n"
+                }
+            ],
+            "date": 1760721716475,
+            "name": "Commit-0",
+            "content": "\r\n// lib/dashboard/models.dart\r\nclass FinancePoint {\r\nfinal String month; // ex: '2025-06'\r\nfinal double receivable;\r\nfinal double payable;\r\nFinancePoint(this.month, this.receivable, this.payable);\r\n}\r\n\r\n\r\nclass TicketStatusCounts {\r\nfinal int open;\r\nfinal int inProgress;\r\nfinal int closed;\r\nTicketStatusCounts({required this.open, required this.inProgress, required this.closed});\r\n}\r\n\r\n\r\nclass ChatsDailyPoint {\r\nfinal DateTime date;\r\nfinal int openChats;\r\nChatsDailyPoint(this.date, this.openChats);\r\n}\r\n\r\n"
+        }
+    ]
+}

@@ -1,17 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:task_manager_flutter/data/constants/custom_colors.dart';
 import 'package:task_manager_flutter/data/models/auth_utility.dart';
-import 'package:task_manager_flutter/data/utils/api_links.dart';
 import 'package:task_manager_flutter/ui/screens/chamado_grid_screen.dart';
+import 'package:task_manager_flutter/ui/screens/chamado_grid_screen_dynamic.dart';
 import 'package:task_manager_flutter/ui/screens/chatMessageListScreen.dart';
 import 'package:task_manager_flutter/ui/screens/comunicado_screen.dart';
 import 'package:task_manager_flutter/ui/screens/conta_pagar_grid_screen.dart';
 import 'package:task_manager_flutter/ui/screens/conta_receber_grid_screen.dart';
+import 'package:task_manager_flutter/ui/screens/dashboard_screen.dart';
 import 'package:task_manager_flutter/ui/screens/documento_screen.dart';
 import 'package:task_manager_flutter/ui/screens/file_upload_screen.dart';
-import 'package:task_manager_flutter/ui/screens/negociacao_screen.dart';
 import 'package:task_manager_flutter/ui/screens/parceiro_grid_screen.dart';
-import 'package:task_manager_flutter/ui/screens/chamado_grid_screen_dynamic.dart';
 
 class BottomNavBarScreen extends StatefulWidget {
   const BottomNavBarScreen({super.key});
@@ -69,15 +68,7 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
       case "Dashboard":
         Navigator.push(
           context,
-          MaterialPageRoute(
-            builder: (context) => NegociacaoCatalogPage(
-              title: 'Dashboard',
-              apiUrl:
-                  '${ApiLinks.negociacaoFindByUser}${AuthUtility.userInfo?.data?.id}',
-              actionIcon: Icons.edit,
-              actionTooltip: 'Dashboard',
-            ),
-          ),
+          MaterialPageRoute(builder: (context) => DashboardPage()),
         );
         break;
       case "Teste":
