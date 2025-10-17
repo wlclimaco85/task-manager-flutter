@@ -5,6 +5,13 @@ import 'package:task_manager_flutter/data/models/dashboard_model.dart';
 import 'package:task_manager_flutter/data/services/dashboard_caller.dart';
 import 'package:task_manager_flutter/data/utils/grid_colors.dart';
 
+// novos imports dos widgets de dashboard
+import 'package:task_manager_flutter/dashboard/widgets/kpi_cards_screen.dart';
+import 'package:task_manager_flutter/dashboard/widgets/finance_trend_chart.dart';
+import 'package:task_manager_flutter/dashboard/widgets/client_distribution_pie.dart';
+import 'package:task_manager_flutter/dashboard/widgets/quarterly_bars.dart';
+import 'package:task_manager_flutter/dashboard/widgets/alerts_panel.dart';
+
 class DashboardPage extends StatefulWidget {
   const DashboardPage({super.key});
 
@@ -18,6 +25,11 @@ class _DashboardPageState extends State<DashboardPage> {
   List<ChatsDailyPoint> chats = [];
   bool loading = true;
   String? error;
+
+  final int empresaId = 1; // ajuste para o ID da empresa logada
+  final int? parceiroId = null; // ajuste se houver parceiro selecionado
+  final String baseUrl =
+      "https://appacademia-production-be7e.up.railway.app/boletobancos";
 
   @override
   void initState() {
@@ -77,6 +89,42 @@ class _DashboardPageState extends State<DashboardPage> {
         child: ListView(
           padding: const EdgeInsets.all(16),
           children: [
+            // 🔹 NOVO BLOCO 1 — KPIs
+            _sectionTitle('📈 Indicadores-Chave'),
+            const SizedBox(height: 8),
+            KpiCards(
+                baseUrl: baseUrl, empresaId: empresaId, parceiroId: parceiroId),
+            const SizedBox(height: 28),
+
+            // 🔹 NOVO BLOCO 2 — Tendência Financeira
+            _sectionTitle('📊 Tendência Financeira (últimos 6 meses)'),
+            const SizedBox(height: 8),
+            FinanceTrendChart(
+                baseUrl: baseUrl, empresaId: empresaId, parceiroId: parceiroId),
+            const SizedBox(height: 28),
+
+            // 🔹 NOVO BLOCO 3 — Distribuição por Clientes
+            _sectionTitle('👥 Distribuição por Clientes'),
+            const SizedBox(height: 8),
+            ClientDistributionPie(
+                baseUrl: baseUrl, empresaId: empresaId, parceiroId: parceiroId),
+            const SizedBox(height: 28),
+
+            // 🔹 NOVO BLOCO 4 — Comparativo Trimestral
+            _sectionTitle('📆 Comparativo Trimestral'),
+            const SizedBox(height: 8),
+            QuarterlyBars(
+                baseUrl: baseUrl, empresaId: empresaId, parceiroId: parceiroId),
+            const SizedBox(height: 28),
+
+            // 🔹 NOVO BLOCO 5 — Alertas e Vencimentos
+            _sectionTitle('⚠️ Alertas de Vencimentos'),
+            const SizedBox(height: 8),
+            AlertsPanel(
+                baseUrl: baseUrl, empresaId: empresaId, parceiroId: parceiroId),
+            const SizedBox(height: 28),
+
+            // 🔹 SEÇÕES EXISTENTES
             _sectionTitle('📊 Financeiro'),
             const SizedBox(height: 8),
             _financeCards(),
