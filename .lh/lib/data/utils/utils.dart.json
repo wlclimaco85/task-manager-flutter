@@ -3,7 +3,7 @@
     "activeCommit": 0,
     "commits": [
         {
-            "activePatchIndex": 4,
+            "activePatchIndex": 6,
             "patches": [
                 {
                     "date": 1759607404416,
@@ -24,6 +24,14 @@
                 {
                     "date": 1760725051654,
                     "content": "Index: \n===================================================================\n--- \n+++ \n@@ -66,8 +66,20 @@\n   // Se 0 não for um valor válido, retorne null\r\n   return (empresaId != null && empresaId != 0) ? empresaId : null;\r\n }\r\n \r\n+dynamic pegarParceiroLogada() {\r\n+  final user = AuthUtility.userInfo?.login;\r\n+  final empresaId = user?.empresa?.id;\r\n+\r\n+  // Debug para verificar o que está retornando\r\n+  print('Usuário: ${AuthUtility.userInfo}');\r\n+  print('Empresa ID: $empresaId');\r\n+\r\n+  // Se 0 não for um valor válido, retorne null\r\n+  return (empresaId != null && empresaId != 0) ? empresaId : null;\r\n+}\r\n+\r\n int? pegarUsuarioLogado() {\r\n   final user = AuthUtility.userInfo?.login;\r\n   final empresaId = user?.id;\r\n \r\n"
+                },
+                {
+                    "date": 1760741268446,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -68,9 +68,9 @@\n }\r\n \r\n dynamic pegarParceiroLogada() {\r\n   final user = AuthUtility.userInfo?.login;\r\n-  final empresaId = user?.empresa?.id;\r\n+  final empresaId = user?.parceiro?.id;\r\n \r\n   // Debug para verificar o que está retornando\r\n   print('Usuário: ${AuthUtility.userInfo}');\r\n   print('Empresa ID: $empresaId');\r\n"
+                },
+                {
+                    "date": 1760741275559,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -1,16 +1,9 @@\n // Copyright 2019 Aleksander Woźniak\r\n // SPDX-License-Identifier: Apache-2.0\r\n \r\n+import 'package:flutter/material.dart';\r\n import 'package:flutter/widgets.dart';\r\n-import 'dart:convert';\r\n-import 'package:flutter/material.dart';\r\n-import 'package:task_manager_flutter/data/customization/generic_grid_card.dart';\r\n-import 'package:task_manager_flutter/data/models/empresa_model.dart';\r\n-import 'package:task_manager_flutter/data/utils/api_links.dart';\r\n-import 'package:task_manager_flutter/data/models/network_response.dart';\r\n-import 'package:task_manager_flutter/data/services/network_caller.dart';\r\n-import 'package:task_manager_flutter/data/models/regime_tributario_model.dart';\r\n import 'package:task_manager_flutter/data/models/auth_utility.dart';\r\n \r\n /// Signature for a function that creates a widget for a given `day`.\r\n typedef DayBuilder = Widget? Function(BuildContext context, DateTime day);\r\n"
                 }
             ],
             "date": 1759607404416,

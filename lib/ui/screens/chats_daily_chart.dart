@@ -4,6 +4,11 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:task_manager_flutter/data/utils/grid_colors.dart';
+import 'package:task_manager_flutter/data/utils/api_links.dart';
+import 'package:task_manager_flutter/data/models/auth_utility.dart';
+
+final token =
+    AuthUtility.userInfo?.token; // Assuming userInfo.token is available
 
 class ChatDailyPoint {
   final DateTime date;
@@ -16,13 +21,12 @@ class ChatDailyPoint {
 }
 
 class ChatsDailyChart extends StatefulWidget {
-  final String baseUrl;
   final int empresaId;
   final int? parceiroId;
   final int days;
+
   const ChatsDailyChart({
     super.key,
-    required this.baseUrl,
     required this.empresaId,
     this.parceiroId,
     this.days = 7,
@@ -36,6 +40,7 @@ class _ChatsDailyChartState extends State<ChatsDailyChart> {
   List<ChatDailyPoint> data = [];
   bool loading = true;
   String? error;
+  bool animateIn = false;
 
   @override
   void initState() {
@@ -45,20 +50,30 @@ class _ChatsDailyChartState extends State<ChatsDailyChart> {
 
   Future<void> _load() async {
     try {
-      final uri = Uri.parse('${widget.baseUrl}/api/dashboard/chats/daily')
-          .replace(queryParameters: {
+      final uri = Uri.parse(ApiLinks.chatDailys).replace(queryParameters: {
         'days': widget.days.toString(),
         'empresaId': widget.empresaId.toString(),
         if (widget.parceiroId != null)
           'parceiroId': widget.parceiroId.toString(),
       });
 
-      final res = await http.get(uri);
+      final res = await http.get(
+        uri,
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Accept': 'application/json', // Important: Add Accept header
+        },
+      );
       if (res.statusCode != 200) throw Exception('HTTP ${res.statusCode}');
       final arr = jsonDecode(res.body) as List;
+
       setState(() {
         data = arr.map((e) => ChatDailyPoint.fromJson(e)).toList();
         loading = false;
+      });
+
+      Future.delayed(const Duration(milliseconds: 100), () {
+        if (mounted) setState(() => animateIn = true);
       });
     } catch (e) {
       setState(() {
@@ -72,24 +87,26 @@ class _ChatsDailyChartState extends State<ChatsDailyChart> {
   Widget build(BuildContext context) {
     if (loading) {
       return const SizedBox(
-        height: 230,
+        height: 260,
         child: Center(child: CircularProgressIndicator()),
       );
     }
 
     if (error != null) {
       return SizedBox(
-        height: 230,
+        height: 260,
         child: Center(
-          child: Text(error!,
-              style: const TextStyle(color: Colors.red, fontSize: 14)),
+          child: Text(
+            error!,
+            style: const TextStyle(color: Colors.redAccent, fontSize: 14),
+          ),
         ),
       );
     }
 
     if (data.isEmpty) {
       return const SizedBox(
-        height: 230,
+        height: 260,
         child: Center(
           child: Text(
             'Nenhum dado de chat nos últimos dias.',
@@ -99,65 +116,107 @@ class _ChatsDailyChartState extends State<ChatsDailyChart> {
       );
     }
 
-    return Container(
-      height: 260,
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: LineChart(
-        LineChartData(
-          gridData: FlGridData(show: false),
-          borderData: FlBorderData(show: false),
-          titlesData: FlTitlesData(
-            leftTitles: const AxisTitles(
-                sideTitles: SideTitles(showTitles: true, reservedSize: 36)),
-            rightTitles:
-                const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-            topTitles:
-                const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-            bottomTitles: AxisTitles(
-              sideTitles: SideTitles(
-                showTitles: true,
-                getTitlesWidget: (v, _) {
-                  final i = v.toInt();
-                  if (i < 0 || i >= data.length) return const SizedBox.shrink();
-                  final d = data[i].date;
-                  return Padding(
-                    padding: const EdgeInsets.only(top: 6),
-                    child: Text(
-                      '${d.day}/${d.month}',
-                      style: const TextStyle(
-                          fontSize: 10, color: GridColors.textSecondary),
-                    ),
-                  );
+    final spots = [
+      for (int i = 0; i < data.length; i++)
+        FlSpot(i.toDouble(), data[i].count.toDouble()),
+    ];
+
+    return AnimatedOpacity(
+      opacity: animateIn ? 1.0 : 0.0,
+      duration: const Duration(milliseconds: 600),
+      curve: Curves.easeOutCubic,
+      child: Container(
+        height: 260,
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(
+              color: GridColors.primary.withOpacity(0.1),
+              blurRadius: 6,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: LineChart(
+          LineChartData(
+            gridData: FlGridData(show: false),
+            borderData: FlBorderData(show: false),
+            lineTouchData: LineTouchData(
+              handleBuiltInTouches: true,
+              touchTooltipData: LineTouchTooltipData(
+                getTooltipColor: (LineBarSpot touchedSpot) {
+                  return GridColors.primary.withOpacity(0.85);
+                },
+                getTooltipItems: (List<LineBarSpot> touchedSpots) {
+                  return touchedSpots.map((spot) {
+                    final d = data[spot.spotIndex].date;
+                    return LineTooltipItem(
+                      '${d.day}/${d.month}\n${spot.y.toInt()} mensagens',
+                      const TextStyle(
+                        color: Colors.white,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    );
+                  }).toList();
                 },
               ),
             ),
-          ),
-          lineBarsData: [
-            LineChartBarData(
-              isCurved: true,
-              color: GridColors.secondary,
-              spots: [
-                for (int i = 0; i < data.length; i++)
-                  FlSpot(i.toDouble(), data[i].count.toDouble()),
-              ],
-              dotData: FlDotData(show: true),
-              belowBarData: BarAreaData(
-                show: true,
-                gradient: LinearGradient(
-                  colors: [
-                    GridColors.secondary.withOpacity(0.3),
-                    Colors.transparent
-                  ],
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
+            titlesData: FlTitlesData(
+              bottomTitles: AxisTitles(
+                sideTitles: SideTitles(
+                  showTitles: true,
+                  reservedSize: 26,
+                  getTitlesWidget: (v, _) {
+                    final i = v.toInt();
+                    if (i < 0 || i >= data.length) return const SizedBox();
+                    final d = data[i].date;
+                    return Padding(
+                      padding: const EdgeInsets.only(top: 4),
+                      child: Text(
+                        '${d.day}/${d.month}',
+                        style: const TextStyle(
+                          fontSize: 10,
+                          color: GridColors.textSecondary,
+                        ),
+                      ),
+                    );
+                  },
                 ),
               ),
+              leftTitles: const AxisTitles(
+                sideTitles: SideTitles(showTitles: true, reservedSize: 32),
+              ),
+              rightTitles:
+                  const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+              topTitles:
+                  const AxisTitles(sideTitles: SideTitles(showTitles: false)),
             ),
-          ],
+            lineBarsData: [
+              LineChartBarData(
+                isCurved: true,
+                color: GridColors.secondary,
+                barWidth: 3,
+                isStrokeCapRound: true,
+                dotData: FlDotData(show: true),
+                belowBarData: BarAreaData(
+                  show: true,
+                  gradient: LinearGradient(
+                    colors: [
+                      GridColors.secondary.withOpacity(0.35),
+                      Colors.transparent
+                    ],
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                  ),
+                ),
+                spots: spots,
+              )
+            ],
+            minY: 0,
+          ),
         ),
       ),
     );

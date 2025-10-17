@@ -344,4 +344,24 @@ class ApiLinks {
   static String get statusCounts =>
       '$_baseUrlNew/api/dashboard/tickets/statusCounts';
   static String get chatDaily => '$_baseUrlNew/api/dashboard/chats/daily';
+
+  static String get chatDailys => '$_baseUrlNew/api/dashboard/chats/daily';
+
+  static String get quarterlyComparison =>
+      '$_baseUrlNew/api/dashboard/finance/quarterlyComparison';
+
+  static String get overdue =>
+      '$_baseUrlNew/api/dashboard/finance/alerts/overdue';
+
+  static String get dueSoon =>
+      '$_baseUrlNew/api/dashboard/finance/alerts/dueSoon';
+
+  static String get kpis => '$_baseUrlNew/api/dashboard/kpis';
+
+  static String get clientDistribution =>
+      '$_baseUrlNew/api/dashboard/finance/clientDistribution';
+
+  static String get trend => '$_baseUrlNew/api/dashboard/finance/trend';
+
+  static String get ticketsTrend => '$_baseUrlNew/api/dashboard/tickets/trend';
 }

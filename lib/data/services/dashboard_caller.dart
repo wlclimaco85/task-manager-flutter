@@ -38,13 +38,16 @@ class DashboardApiClient {
     if (res.statusCode != 200)
       throw Exception('Finance series error ${res.statusCode}');
     final data = jsonDecode(res.body) as List;
-    return data
-        .map((e) => FinancePoint(
-              e['month'] as String,
-              (e['receivable'] as num).toDouble(),
-              (e['payable'] as num).toDouble(),
-            ))
-        .toList();
+    return data.map((e) {
+      final receivable = (e['receivable'] ?? 0) as num;
+      final payable = (e['payable'] ?? 0) as num;
+
+      return FinancePoint(
+        e['month'] as String? ?? '',
+        receivable.toDouble(),
+        payable.toDouble(),
+      );
+    }).toList();
   }
 
   Future<TicketStatusCounts> fetchTicketStatusCounts() async {

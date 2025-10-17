@@ -5,6 +5,11 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:task_manager_flutter/data/utils/grid_colors.dart';
+import 'package:task_manager_flutter/data/utils/api_links.dart';
+import 'package:task_manager_flutter/data/models/auth_utility.dart';
+
+final token =
+    AuthUtility.userInfo?.token; // Assuming userInfo.token is available
 
 class QuarterPoint {
   final String label; // "2025 Q3"
@@ -18,16 +23,11 @@ class QuarterPoint {
 }
 
 class QuarterlyBars extends StatefulWidget {
-  final String baseUrl;
   final int empresaId;
   final int? parceiroId;
   final int count;
   const QuarterlyBars(
-      {super.key,
-      required this.baseUrl,
-      required this.empresaId,
-      this.parceiroId,
-      this.count = 4});
+      {super.key, required this.empresaId, this.parceiroId, this.count = 4});
 
   @override
   State<QuarterlyBars> createState() => _QuarterlyBarsState();
@@ -46,15 +46,20 @@ class _QuarterlyBarsState extends State<QuarterlyBars> {
 
   Future<void> _load() async {
     try {
-      final uri = Uri.parse(
-              '${widget.baseUrl}/api/dashboard/finance/quarterlyComparison')
-          .replace(queryParameters: {
+      final uri =
+          Uri.parse(ApiLinks.quarterlyComparison).replace(queryParameters: {
         'empresaId': widget.empresaId.toString(),
         if (widget.parceiroId != null)
           'parceiroId': widget.parceiroId.toString(),
         'count': widget.count.toString()
       });
-      final res = await http.get(uri);
+      final res = await http.get(
+        uri,
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Accept': 'application/json', // Important: Add Accept header
+        },
+      );
       if (res.statusCode != 200) throw Exception('HTTP ${res.statusCode}');
       final arr = jsonDecode(res.body) as List;
       setState(() {

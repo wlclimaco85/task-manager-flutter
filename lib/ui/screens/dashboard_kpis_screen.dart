@@ -4,6 +4,11 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:task_manager_flutter/data/utils/grid_colors.dart';
+import 'package:task_manager_flutter/data/utils/api_links.dart';
+import 'package:task_manager_flutter/data/models/auth_utility.dart';
+
+final token =
+    AuthUtility.userInfo?.token; // Assuming userInfo.token is available
 
 class Kpis {
   final double receitas, despesas, lucro;
@@ -18,14 +23,9 @@ class Kpis {
 }
 
 class KpiCards extends StatefulWidget {
-  final String baseUrl;
   final int empresaId;
   final int? parceiroId;
-  const KpiCards(
-      {super.key,
-      required this.baseUrl,
-      required this.empresaId,
-      this.parceiroId});
+  const KpiCards({super.key, required this.empresaId, this.parceiroId});
 
   @override
   State<KpiCards> createState() => _KpiCardsState();
@@ -44,13 +44,18 @@ class _KpiCardsState extends State<KpiCards> {
 
   Future<void> _load() async {
     try {
-      final uri = Uri.parse('${widget.baseUrl}/api/dashboard/kpis')
-          .replace(queryParameters: {
+      final uri = Uri.parse(ApiLinks.kpis).replace(queryParameters: {
         'empresaId': widget.empresaId.toString(),
         if (widget.parceiroId != null)
           'parceiroId': widget.parceiroId.toString(),
       });
-      final res = await http.get(uri);
+      final res = await http.get(
+        uri,
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Accept': 'application/json', // Important: Add Accept header
+        },
+      );
       if (res.statusCode != 200) throw Exception('HTTP ${res.statusCode}');
       setState(() {
         kpis = Kpis.fromJson(jsonDecode(res.body));

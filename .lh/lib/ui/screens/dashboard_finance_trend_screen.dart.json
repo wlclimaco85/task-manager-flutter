@@ -3,11 +3,19 @@
     "activeCommit": 0,
     "commits": [
         {
-            "activePatchIndex": 0,
+            "activePatchIndex": 2,
             "patches": [
                 {
                     "date": 1760725974049,
                     "content": "Index: \n===================================================================\n--- \n+++ \n"
+                },
+                {
+                    "date": 1760739025008,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -17,15 +17,13 @@\n           (j['payable'] as num).toDouble());\r\n }\r\n \r\n class FinanceTrendChart extends StatefulWidget {\r\n-  final String baseUrl; // https://.../boletobancos\r\n   final int empresaId;\r\n   final int? parceiroId;\r\n   final int months;\r\n   const FinanceTrendChart({\r\n     super.key,\r\n-    required this.baseUrl,\r\n     required this.empresaId,\r\n     this.parceiroId,\r\n     this.months = 6,\r\n   });\r\n"
+                },
+                {
+                    "date": 1760739670345,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -44,9 +44,9 @@\n   }\r\n \r\n   Future<void> _load() async {\r\n     try {\r\n-      final uri = Uri.parse('${widget.baseUrl}/api/dashboard/finance/trend')\r\n+      final uri = Uri.parse(ApiLinks.trend)\r\n           .replace(queryParameters: {\r\n         'months': widget.months.toString(),\r\n         'empresaId': widget.empresaId.toString(),\r\n         if (widget.parceiroId != null)\r\n"
                 }
             ],
             "date": 1760725974049,

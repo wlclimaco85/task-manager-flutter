@@ -4,6 +4,11 @@ import 'dart:convert';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:task_manager_flutter/data/utils/api_links.dart';
+import 'package:task_manager_flutter/data/models/auth_utility.dart';
+
+final token =
+    AuthUtility.userInfo?.token; // Assuming userInfo.token is available
 
 class ClientBucket {
   final String cliente;
@@ -15,16 +20,11 @@ class ClientBucket {
 }
 
 class ClientDistributionPie extends StatefulWidget {
-  final String baseUrl;
   final int empresaId;
   final int? parceiroId;
   final int limit;
   const ClientDistributionPie(
-      {super.key,
-      required this.baseUrl,
-      required this.empresaId,
-      this.parceiroId,
-      this.limit = 5});
+      {super.key, required this.empresaId, this.parceiroId, this.limit = 5});
 
   @override
   State<ClientDistributionPie> createState() => _ClientDistributionPieState();
@@ -43,15 +43,20 @@ class _ClientDistributionPieState extends State<ClientDistributionPie> {
 
   Future<void> _load() async {
     try {
-      final uri = Uri.parse(
-              '${widget.baseUrl}/api/dashboard/finance/clientDistribution')
-          .replace(queryParameters: {
+      final uri =
+          Uri.parse(ApiLinks.clientDistribution).replace(queryParameters: {
         'empresaId': widget.empresaId.toString(),
         if (widget.parceiroId != null)
           'parceiroId': widget.parceiroId.toString(),
         'limit': widget.limit.toString()
       });
-      final res = await http.get(uri);
+      final res = await http.get(
+        uri,
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Accept': 'application/json', // Important: Add Accept header
+        },
+      );
       if (res.statusCode != 200) throw Exception('HTTP ${res.statusCode}');
       final arr = jsonDecode(res.body) as List;
       setState(() {

@@ -3,7 +3,7 @@
     "activeCommit": 0,
     "commits": [
         {
-            "activePatchIndex": 10,
+            "activePatchIndex": 11,
             "patches": [
                 {
                     "date": 1760721600769,
@@ -48,6 +48,10 @@
                 {
                     "date": 1760725115892,
                     "content": "Index: \n===================================================================\n--- \n+++ \n@@ -2,8 +2,9 @@\n import 'dart:convert';\r\n import 'package:http/http.dart' as http;\r\n import 'package:task_manager_flutter/data/models/dashboard_model.dart';\r\n import 'package:task_manager_flutter/data/utils/api_links.dart';\r\n+import 'package:task_manager_flutter/data/utils/utils.dart';\r\n import 'package:task_manager_flutter/data/models/auth_utility.dart';\r\n \r\n class DashboardApiClient {\r\n   DashboardApiClient();\r\n"
+                },
+                {
+                    "date": 1760741921924,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -37,15 +37,18 @@\n     );\r\n     if (res.statusCode != 200)\r\n       throw Exception('Finance series error ${res.statusCode}');\r\n     final data = jsonDecode(res.body) as List;\r\n-    return data\r\n-        .map((e) => FinancePoint(\r\n-              e['month'] as String,\r\n-              (e['receivable'] as num).toDouble(),\r\n-              (e['payable'] as num).toDouble(),\r\n-            ))\r\n-        .toList();\r\n+    return data.map((e) {\r\n+  final receivable = (e['receivable'] ?? 0) as num;\r\n+  final payable = (e['payable'] ?? 0) as num;\r\n+\r\n+  return FinancePoint(\r\n+    e['month'] as String? ?? '',\r\n+    receivable.toDouble(),\r\n+    payable.toDouble(),\r\n+  );\r\n+}).toList();\r\n   }\r\n \r\n   Future<TicketStatusCounts> fetchTicketStatusCounts() async {\r\n     final uri =\r\n"
                 }
             ],
             "date": 1760721600769,

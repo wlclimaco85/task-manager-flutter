@@ -4,6 +4,11 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:task_manager_flutter/data/utils/grid_colors.dart';
+import 'package:task_manager_flutter/data/utils/api_links.dart';
+import 'package:task_manager_flutter/data/models/auth_utility.dart';
+
+final token =
+    AuthUtility.userInfo?.token; // Assuming userInfo.token is available
 
 class AlertItem {
   final String tipo; // PAGAR/RECEBER
@@ -23,16 +28,11 @@ class AlertItem {
 }
 
 class AlertsPanel extends StatefulWidget {
-  final String baseUrl;
   final int empresaId;
   final int? parceiroId;
   final int daysSoon;
   const AlertsPanel(
-      {super.key,
-      required this.baseUrl,
-      required this.empresaId,
-      this.parceiroId,
-      this.daysSoon = 5});
+      {super.key, required this.empresaId, this.parceiroId, this.daysSoon = 5});
 
   @override
   State<AlertsPanel> createState() => _AlertsPanelState();
@@ -52,23 +52,31 @@ class _AlertsPanelState extends State<AlertsPanel> {
 
   Future<void> _load() async {
     try {
-      final overdueUri =
-          Uri.parse('${widget.baseUrl}/api/dashboard/finance/alerts/overdue')
-              .replace(queryParameters: {
+      final overdueUri = Uri.parse(ApiLinks.overdue).replace(queryParameters: {
         'empresaId': widget.empresaId.toString(),
         if (widget.parceiroId != null)
           'parceiroId': widget.parceiroId.toString(),
       });
-      final dueUri =
-          Uri.parse('${widget.baseUrl}/api/dashboard/finance/alerts/dueSoon')
-              .replace(queryParameters: {
+      final dueUri = Uri.parse(ApiLinks.dueSoon).replace(queryParameters: {
         'empresaId': widget.empresaId.toString(),
         if (widget.parceiroId != null)
           'parceiroId': widget.parceiroId.toString(),
         'days': widget.daysSoon.toString(),
       });
-      final r1 = await http.get(overdueUri);
-      final r2 = await http.get(dueUri);
+      final r1 = await http.get(
+        overdueUri,
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Accept': 'application/json', // Important: Add Accept header
+        },
+      );
+      final r2 = await http.get(
+        dueUri,
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Accept': 'application/json', // Important: Add Accept header
+        },
+      );
       if (r1.statusCode != 200 || r2.statusCode != 200)
         throw Exception('HTTP ${r1.statusCode}/${r2.statusCode}');
       setState(() {

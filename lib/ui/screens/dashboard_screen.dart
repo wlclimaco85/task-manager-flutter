@@ -6,11 +6,13 @@ import 'package:task_manager_flutter/data/services/dashboard_caller.dart';
 import 'package:task_manager_flutter/data/utils/grid_colors.dart';
 
 // novos imports dos widgets de dashboard
-import 'package:task_manager_flutter/dashboard/widgets/kpi_cards_screen.dart';
-import 'package:task_manager_flutter/dashboard/widgets/finance_trend_chart.dart';
-import 'package:task_manager_flutter/dashboard/widgets/client_distribution_pie.dart';
-import 'package:task_manager_flutter/dashboard/widgets/quarterly_bars.dart';
-import 'package:task_manager_flutter/dashboard/widgets/alerts_panel.dart';
+import 'package:task_manager_flutter/ui/screens/dashboard_alerts_screen.dart';
+import 'package:task_manager_flutter/ui/screens/dashboard_kpis_screen.dart';
+import 'package:task_manager_flutter/ui/screens/dashboard_client_distribution_screen.dart';
+import 'package:task_manager_flutter/ui/screens/dashboard_finance_trend_screen.dart';
+import 'package:task_manager_flutter/ui/screens/dashboard_quarterly_screen.dart';
+import 'package:task_manager_flutter/ui/screens/chats_daily_chart.dart';
+import 'package:task_manager_flutter/data/utils/utils.dart';
 
 class DashboardPage extends StatefulWidget {
   const DashboardPage({super.key});
@@ -26,10 +28,10 @@ class _DashboardPageState extends State<DashboardPage> {
   bool loading = true;
   String? error;
 
-  final int empresaId = 1; // ajuste para o ID da empresa logada
-  final int? parceiroId = null; // ajuste se houver parceiro selecionado
-  final String baseUrl =
-      "https://appacademia-production-be7e.up.railway.app/boletobancos";
+  final int empresaId =
+      pegarEmpresaLogada(); // ajuste para o ID da empresa logada
+  final int? parceiroId =
+      pegarParceiroLogada(); // ajuste se houver parceiro selecionado
 
   @override
   void initState() {
@@ -92,36 +94,31 @@ class _DashboardPageState extends State<DashboardPage> {
             // 🔹 NOVO BLOCO 1 — KPIs
             _sectionTitle('📈 Indicadores-Chave'),
             const SizedBox(height: 8),
-            KpiCards(
-                baseUrl: baseUrl, empresaId: empresaId, parceiroId: parceiroId),
+            KpiCards(empresaId: empresaId, parceiroId: parceiroId),
             const SizedBox(height: 28),
 
             // 🔹 NOVO BLOCO 2 — Tendência Financeira
             _sectionTitle('📊 Tendência Financeira (últimos 6 meses)'),
             const SizedBox(height: 8),
-            FinanceTrendChart(
-                baseUrl: baseUrl, empresaId: empresaId, parceiroId: parceiroId),
+            FinanceTrendChart(empresaId: empresaId, parceiroId: parceiroId),
             const SizedBox(height: 28),
 
             // 🔹 NOVO BLOCO 3 — Distribuição por Clientes
             _sectionTitle('👥 Distribuição por Clientes'),
             const SizedBox(height: 8),
-            ClientDistributionPie(
-                baseUrl: baseUrl, empresaId: empresaId, parceiroId: parceiroId),
+            ClientDistributionPie(empresaId: empresaId, parceiroId: parceiroId),
             const SizedBox(height: 28),
 
             // 🔹 NOVO BLOCO 4 — Comparativo Trimestral
             _sectionTitle('📆 Comparativo Trimestral'),
             const SizedBox(height: 8),
-            QuarterlyBars(
-                baseUrl: baseUrl, empresaId: empresaId, parceiroId: parceiroId),
+            QuarterlyBars(empresaId: empresaId, parceiroId: parceiroId),
             const SizedBox(height: 28),
 
             // 🔹 NOVO BLOCO 5 — Alertas e Vencimentos
             _sectionTitle('⚠️ Alertas de Vencimentos'),
             const SizedBox(height: 8),
-            AlertsPanel(
-                baseUrl: baseUrl, empresaId: empresaId, parceiroId: parceiroId),
+            AlertsPanel(empresaId: empresaId, parceiroId: parceiroId),
             const SizedBox(height: 28),
 
             // 🔹 SEÇÕES EXISTENTES
@@ -140,6 +137,16 @@ class _DashboardPageState extends State<DashboardPage> {
             _sectionTitle('💬 Chats (últimos 7 dias)'),
             const SizedBox(height: 8),
             _chatsLine(),
+            const SizedBox(height: 28),
+
+            // 🔹 NOVO BLOCO — Chat Diário
+            _sectionTitle('📅 Atividade de Chats Diária'),
+            const SizedBox(height: 8),
+            ChatsDailyChart(
+              empresaId: empresaId,
+              parceiroId: parceiroId,
+              days: 7,
+            ),
             const SizedBox(height: 20),
           ],
         ),

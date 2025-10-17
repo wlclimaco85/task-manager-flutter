@@ -5,6 +5,11 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:task_manager_flutter/data/utils/grid_colors.dart';
+import 'package:task_manager_flutter/data/utils/api_links.dart';
+import 'package:task_manager_flutter/data/models/auth_utility.dart';
+
+final token =
+    AuthUtility.userInfo?.token; // Assuming userInfo.token is available
 
 class FinanceTrendPoint {
   final String month; // '2025-07'
@@ -18,13 +23,11 @@ class FinanceTrendPoint {
 }
 
 class FinanceTrendChart extends StatefulWidget {
-  final String baseUrl; // https://.../boletobancos
   final int empresaId;
   final int? parceiroId;
   final int months;
   const FinanceTrendChart({
     super.key,
-    required this.baseUrl,
     required this.empresaId,
     this.parceiroId,
     this.months = 6,
@@ -47,14 +50,19 @@ class _FinanceTrendChartState extends State<FinanceTrendChart> {
 
   Future<void> _load() async {
     try {
-      final uri = Uri.parse('${widget.baseUrl}/api/dashboard/finance/trend')
-          .replace(queryParameters: {
+      final uri = Uri.parse(ApiLinks.trend).replace(queryParameters: {
         'months': widget.months.toString(),
         'empresaId': widget.empresaId.toString(),
         if (widget.parceiroId != null)
           'parceiroId': widget.parceiroId.toString(),
       });
-      final res = await http.get(uri);
+      final res = await http.get(
+        uri,
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Accept': 'application/json', // Important: Add Accept header
+        },
+      );
       if (res.statusCode != 200) throw Exception('HTTP ${res.statusCode}');
       final arr = jsonDecode(res.body) as List;
       setState(() {

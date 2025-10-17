@@ -69,7 +69,7 @@ dynamic pegarEmpresaLogada() {
 
 dynamic pegarParceiroLogada() {
   final user = AuthUtility.userInfo?.login;
-  final empresaId = user?.empresa?.id;
+  final empresaId = user?.parceiro?.id;
 
   // Debug para verificar o que está retornando
   print('Usuário: ${AuthUtility.userInfo}');
