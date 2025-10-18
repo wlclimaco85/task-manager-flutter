@@ -4,16 +4,16 @@ import 'package:flutter/material.dart';
 import 'package:task_manager_flutter/data/models/dashboard_model.dart';
 import 'package:task_manager_flutter/data/services/dashboard_caller.dart';
 import 'package:task_manager_flutter/data/utils/grid_colors.dart';
-
+import 'package:task_manager_flutter/data/utils/utils.dart';
+import 'package:task_manager_flutter/ui/screens/chats_daily_chart.dart';
 // novos imports dos widgets de dashboard
 import 'package:task_manager_flutter/ui/screens/dashboard_alerts_screen.dart';
-import 'package:task_manager_flutter/ui/screens/dashboard_kpis_screen.dart';
 import 'package:task_manager_flutter/ui/screens/dashboard_client_distribution_screen.dart';
+import 'package:task_manager_flutter/ui/screens/dashboard_finance_fluxo_diario_screen.dart';
 import 'package:task_manager_flutter/ui/screens/dashboard_finance_trend_screen.dart';
+import 'package:task_manager_flutter/ui/screens/dashboard_kpis_screen.dart';
 import 'package:task_manager_flutter/ui/screens/dashboard_quarterly_screen.dart';
-import 'package:task_manager_flutter/ui/screens/chats_daily_chart.dart';
 import 'package:task_manager_flutter/ui/screens/dashboard_tickets_trend_screen.dart';
-import 'package:task_manager_flutter/data/utils/utils.dart';
 
 class DashboardPage extends StatefulWidget {
   const DashboardPage({super.key});
@@ -123,44 +123,54 @@ class _DashboardPageState extends State<DashboardPage> {
         child: ListView(
           padding: const EdgeInsets.all(16),
           children: [
-            // 🔹 NOVO BLOCO 1 — KPIs
+            // 🔹 1) KPIs
             _sectionTitle('📈 Indicadores-Chave'),
             const SizedBox(height: 8),
             KpiCards(empresaId: empresaId, parceiroId: parceiroId),
             const SizedBox(height: 28),
 
-            // 🔹 NOVO BLOCO 2 — Tendência Financeira
+            // 🔹 2) Financeiro (cards)
+            _sectionTitle('📊 Financeiro'),
+            const SizedBox(height: 8),
+            _financeCards(),
+            const SizedBox(height: 16),
+
+            // 🔹 3) Fluxo Diário –10 / +30 (NOVO)
+            _sectionTitle('💵 Fluxo Diário (–10 dias / +30 dias)'),
+            const SizedBox(height: 8),
+            FinanceFluxoDiarioChart(
+              empresaId: empresaId,
+              parceiroId: parceiroId,
+              daysBack: 10,
+              daysForward: 30,
+            ),
+            const SizedBox(height: 28),
+
+            // 🔹 4) Tendência Financeira
             _sectionTitle('📊 Tendência Financeira (últimos 6 meses)'),
             const SizedBox(height: 8),
             FinanceTrendChart(empresaId: empresaId, parceiroId: parceiroId),
             const SizedBox(height: 28),
 
-            // 🔹 NOVO BLOCO 3 — Distribuição por Clientes
+            // 🔹 5) Distribuição por Clientes
             _sectionTitle('👥 Distribuição por Clientes'),
             const SizedBox(height: 8),
             ClientDistributionPie(empresaId: empresaId, parceiroId: parceiroId),
             const SizedBox(height: 28),
 
-            // 🔹 NOVO BLOCO 4 — Comparativo Trimestral
+            // 🔹 6) Comparativo Trimestral
             _sectionTitle('📆 Comparativo Trimestral'),
             const SizedBox(height: 8),
             QuarterlyBars(empresaId: empresaId, parceiroId: parceiroId),
             const SizedBox(height: 28),
 
-            // 🔹 NOVO BLOCO 5 — Alertas e Vencimentos
+            // 🔹 7) Alertas e Vencimentos
             _sectionTitle('⚠️ Alertas de Vencimentos'),
             const SizedBox(height: 8),
             AlertsPanel(empresaId: empresaId, parceiroId: parceiroId),
             const SizedBox(height: 28),
 
-            // 🔹 SEÇÕES EXISTENTES
-            _sectionTitle('📊 Financeiro'),
-            const SizedBox(height: 8),
-            _financeCards(),
-            const SizedBox(height: 16),
-            _financeChart(),
-            const SizedBox(height: 28),
-
+            // 🔹 8) Chamados atuais (cards + pizza)
             _sectionTitle('📞 Chamados'),
             const SizedBox(height: 8),
             _ticketsCards(),
@@ -168,7 +178,7 @@ class _DashboardPageState extends State<DashboardPage> {
             _ticketsPie(),
             const SizedBox(height: 28),
 
-            // 🔹 NOVO BLOCO — Tendência de Chamados
+            // 🔹 9) Tendência de Chamados
             _sectionTitle('📈 Tendência de Chamados (últimos meses)'),
             const SizedBox(height: 8),
             TicketsTrendChart(
@@ -178,12 +188,13 @@ class _DashboardPageState extends State<DashboardPage> {
             ),
             const SizedBox(height: 28),
 
+            // 🔹 10) Chats
             _sectionTitle('💬 Chats (últimos 7 dias)'),
             const SizedBox(height: 8),
             _chatsLine(),
             const SizedBox(height: 28),
 
-            // 🔹 NOVO BLOCO — Chat Diário
+            // 🔹 11) Chat diário
             _sectionTitle('📅 Atividade de Chats Diária'),
             const SizedBox(height: 8),
             ChatsDailyChart(
