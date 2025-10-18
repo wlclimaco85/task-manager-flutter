@@ -363,4 +363,7 @@ class ApiLinks {
   static String get trend => '$_baseUrlNew/api/dashboard/finance/trend';
 
   static String get ticketsTrend => '$_baseUrlNew/api/dashboard/tickets/trend';
+
+  static String get financeFluxoDiario =>
+      '$_baseUrlNew/api/dashboard/finance/fluxo-diario';
 }
