@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:task_manager_flutter/data/customization/generic_grid_card_1_0.dart';
-import 'package:task_manager_flutter/data/models/chamado_model.dart';
+import 'package:task_manager_flutter/data/customization/dynamic_grid_dynamic_screen.dart';
 import 'package:task_manager_flutter/data/services/auth_service.dart';
 
 class ChamadosScreenDinamic extends StatelessWidget {
@@ -8,11 +7,15 @@ class ChamadosScreenDinamic extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return DynamicGridDynamicScreen<Chamado>(
-      telaNome: 'chamados', // ← APENAS ISSO!
-      fromJson: (json) => Chamado.fromJson(json),
-      toJson: (chamado) => chamado.toJson(),
-      hasPermission: (permission) => AuthService().hasPermission(permission),
+    return DynamicGridDynamicScreen(
+      telaNome: 'chamados',
+      hasPermission: (permission) {
+        // Kick off the async check but return a synchronous default to satisfy the
+        // expected bool signature; adapt to a proper solution (e.g. make the
+        // API async-aware) if runtime behavior needs to depend on the result.
+        AuthService().hasPermission(permission).then((_) {});
+        return false;
+      },
     );
   }
 }

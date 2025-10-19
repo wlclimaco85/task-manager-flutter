@@ -52,10 +52,4 @@ class AuthService {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setStringList(_permissionsKey, permissions);
   }
-
-  // Método para obter o ID do usuário atual
-  int getCurrentUserId() {
-    // Retorna um ID fixo para testes - substitua pela sua lógica
-    return 1;
-  }
 }

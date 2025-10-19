@@ -1,10 +1,7 @@
-// services/tela_service.dart
 import 'dart:convert';
-
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:task_manager_flutter/data/services/network_caller.dart';
 import 'package:task_manager_flutter/data/utils/api_links.dart';
-
 import '../models/telas_model.dart';
 
 class TelaService {
@@ -15,57 +12,75 @@ class TelaService {
     _prefs = SharedPreferences.getInstance();
   }
 
+  // 🔍 Busca tela por nome diretamente da API
   Future<TelaConfig?> getTelaByNome(String nome) async {
     try {
-      final response =
-          await networkCaller.getRequest(ApiLinks.getAllTelas(nome));
+      final url = ApiLinks.getAllTelas(nome);
+      print('🌐 [TelaService] Chamando API para obter tela "$nome" → $url');
 
-      print('Response status: ${response.isSuccess}');
+      final response = await networkCaller.getRequest(url);
+
+      print('📡 [TelaService] Resposta recebida: '
+          'status=${response.statusCode}, sucesso=${response.isSuccess}');
+      print('🧠 [TelaService] Corpo bruto: ${response.body}');
+
+      if (response.statusCode == -1) {
+        print('⚠️ [TelaService] NetworkCaller retornou status -1 → '
+            'provável erro de conexão, timeout ou URL inválida.');
+      }
 
       if (response.isSuccess && response.body != null) {
-        // CORREÇÃO: Não usar forEach diretamente no response.body!
-        // Mostra a estrutura completa de forma segura
-        final data = response.body!['data'];
+        final body = response.body!;
+        final data = body['data'];
         final dados = data != null ? data['dados'] : null;
 
-        if (dados != null) {
-          if (dados is List) {
-            print('📋 É uma lista com ${dados.length} elementos');
-            if (dados.isNotEmpty) {
-              final primeiroItem = dados.first;
-              if (primeiroItem is Map<String, dynamic>) {
-                print('✅ Convertendo primeiro item para TelaConfig');
-                return TelaConfig.fromJson(primeiroItem);
-              } else {
-                print('❌ Primeiro item não é um Map válido');
-              }
-            } else {
-              print('❌ Lista vazia');
-            }
-          } else if (dados is Map<String, dynamic>) {
-            print('✅ Dados é um Map, convertendo diretamente');
-            return TelaConfig.fromJson(dados);
-          } else {
-            print('❌ Tipo não suportado');
-          }
-        } else {
-          print('❌ Dados é null');
+        if (dados == null) {
+          print('⚠️ [TelaService] Nenhum campo "dados" encontrado. '
+              'Estrutura recebida: ${response.body}');
+          return null;
         }
+
+        if (dados is List && dados.isNotEmpty) {
+          print(
+              '✅ [TelaService] Estrutura de lista detectada (${dados.length} itens).');
+          final primeiro = dados.first;
+          if (primeiro is Map<String, dynamic>) {
+            print('✅ [TelaService] Convertendo primeiro item em TelaConfig.');
+            return TelaConfig.fromJson(Map<String, dynamic>.from(primeiro));
+          } else {
+            print(
+                '❌ [TelaService] Tipo inesperado dentro da lista: ${primeiro.runtimeType}');
+          }
+        } else if (dados is Map<String, dynamic>) {
+          print('✅ [TelaService] Estrutura única detectada, convertendo...');
+          return TelaConfig.fromJson(dados);
+        } else {
+          print(
+              '❌ [TelaService] Tipo de "dados" não suportado: ${dados.runtimeType}');
+        }
+      } else {
+        print(
+            '❌ [TelaService] Requisição falhou: status=${response.statusCode}');
       }
 
       return null;
-    } catch (e) {
-      print('❌ Erro ao buscar tela: $e');
-      print('🎯 StackTrace: ${e.toString()}');
+    } catch (e, stack) {
+      print('💥 [TelaService] Erro ao buscar tela "$nome": $e');
+      print('📄 StackTrace: $stack');
       return null;
     }
   }
 
+  // 🔧 Buscar preferências de campos
   Future<List<UserFieldPreference>> getUserPreferences(
       int telaId, int userId) async {
     try {
       final response = await networkCaller.getRequest(
-          ApiLinks.getAllpreferencias(telaId.toString(), userId.toString()));
+        ApiLinks.getAllpreferencias(telaId.toString(), userId.toString()),
+      );
+
+      print(
+          '⚙️ [TelaService] getUserPreferences resposta: ${response.statusCode}');
 
       if (response.isSuccess && response.body != null) {
         return (response.body! as List)
@@ -74,11 +89,12 @@ class TelaService {
       }
       return [];
     } catch (e) {
-      print('Erro ao buscar preferências: $e');
+      print('💥 [TelaService] Erro ao buscar preferências: $e');
       return [];
     }
   }
 
+  // 💾 Salvar preferências do usuário
   Future<bool> saveUserPreferences(
       int telaId, int userId, Map<String, bool> fieldVisibility) async {
     try {
@@ -87,100 +103,98 @@ class TelaService {
         fieldVisibility,
       );
 
+      print('💾 [TelaService] Salvando preferências → ${response.statusCode}');
       return response.isSuccess;
     } catch (e) {
-      print('Erro ao salvar preferências: $e');
+      print('💥 [TelaService] Erro ao salvar preferências: $e');
       return false;
     }
   }
 
+  // 🧱 Salvar tela em cache local
   Future<void> saveTelaToCache(String nome, TelaConfig tela) async {
     final prefs = await _prefs;
-
-    print('Salvando tela no cache: $nome');
     final jsonData = tela.toJson();
-    print('JSON a ser salvo: $jsonData');
+
+    print('💾 [TelaService] Salvando tela "$nome" no cache...');
+    print('📦 JSON salvo: $jsonData');
 
     await prefs.setString('tela_$nome', json.encode(jsonData));
   }
 
+  // 🔍 Buscar tela do cache ou API se necessário
   Future<TelaConfig?> getTelaFromCache(String nome) async {
     try {
       final prefs = await _prefs;
       final cached = prefs.getString('tela_$nome');
 
       if (cached == null || cached.isEmpty) {
-        print('❌ Nenhum cache encontrado para: $nome');
+        print(
+            '❌ [TelaService] Nenhum cache encontrado para "$nome". Indo para API.');
         return await _getFromApiWithRetry(nome);
       }
 
-      print('✅ Cache encontrado para: $nome');
+      print('✅ [TelaService] Cache encontrado para "$nome".');
+      final decoded = json.decode(cached);
 
-      try {
-        final decoded = json.decode(cached);
-        print('📦 JSON recuperado do cache: $decoded');
+      if (decoded is! Map<String, dynamic>) {
+        print('⚠️ [TelaService] Cache inválido (não é Map): $decoded');
+        return await _getFromApiWithRetry(nome);
+      }
 
-        // Validação do cache - SE ID == 0 OU NULL, CHAMA API
-        if (_isCacheValid(decoded)) {
-          final tela = TelaConfig.fromJson(decoded);
-          print(
-              '✅ Tela reconstruída do cache: ID=${tela.id}, Nome=${tela.nome}');
-          return tela;
-        } else {
-          print('⚠️ Cache inválido para: $nome (ID: ${decoded['id']})');
-          return await _getFromApiWithRetry(nome);
-        }
-      } catch (e) {
-        print('❌ Erro ao decodificar cache: $e');
+      if (_isCacheValid(decoded)) {
+        print('🧩 [TelaService] Cache válido. Reconstruindo TelaConfig...');
+        final tela = TelaConfig.fromJson(decoded);
+        print(
+            '✅ [TelaService] Tela reconstruída: ID=${tela.id}, Nome=${tela.nome}');
+        return tela;
+      } else {
+        print(
+            '⚠️ [TelaService] Cache inválido (ID ou Nome nulos). Atualizando...');
         return await _getFromApiWithRetry(nome);
       }
     } catch (e) {
-      print('❌ Erro geral no cache: $e');
+      print('💥 [TelaService] Erro ao acessar cache: $e');
       return await _getFromApiWithRetry(nome);
     }
   }
 
   bool _isCacheValid(Map<String, dynamic> decoded) {
     return decoded['id'] != null &&
-        decoded['id'] > 1 &&
+        decoded['id'] > 0 &&
         decoded['nome'] != null &&
-        decoded['nome'].isNotEmpty;
+        decoded['nome'].toString().isNotEmpty;
   }
 
-  // MÉTODO QUE TENTA A API ATÉ 3 VEZES
+  // 🔁 Tenta buscar a tela até 3 vezes da API
   Future<TelaConfig?> _getFromApiWithRetry(String nome) async {
     const maxTentativas = 3;
-
     for (int tentativa = 1; tentativa <= maxTentativas; tentativa++) {
-      try {
-        print(
-            '🔄 Tentativa $tentativa/$maxTentativas para buscar tela "$nome" da API...');
+      print(
+          '🔄 [TelaService] Tentativa $tentativa/$maxTentativas para buscar "$nome"...');
 
+      try {
         final freshTela = await getTelaByNome(nome);
 
         if (freshTela != null) {
-          print('✅ Tela encontrada na API: ID=${freshTela.id}');
+          print(
+              '✅ [TelaService] Tela encontrada na tentativa $tentativa: ${freshTela.nome}');
           await saveTelaToCache(nome, freshTela);
           return freshTela;
         } else {
-          print('❌ Tentativa $tentativa falhou - API retornou null');
-
-          // Se não for a última tentativa, espera um pouco antes de tentar novamente
-          if (tentativa < maxTentativas) {
-            await Future.delayed(const Duration(seconds: 1)); // Espera 1 segundo
-          }
+          print(
+              '⚠️ [TelaService] Tentativa $tentativa falhou (retornou null).');
+          if (tentativa < maxTentativas)
+            await Future.delayed(const Duration(seconds: 1));
         }
       } catch (e) {
-        print('❌ Erro na tentativa $tentativa: $e');
-
-        // Se não for a última tentativa, espera um pouco antes de tentar novamente
-        if (tentativa < maxTentativas) {
-          await Future.delayed(const Duration(seconds: 1)); // Espera 1 segundo
-        }
+        print('💥 [TelaService] Erro na tentativa $tentativa: $e');
+        if (tentativa < maxTentativas)
+          await Future.delayed(const Duration(seconds: 1));
       }
     }
 
-    print('💥 Todas as $maxTentativas tentativas falharam para a tela "$nome"');
+    print('💀 [TelaService] Todas as tentativas falharam para "$nome".');
     return null;
   }
 }

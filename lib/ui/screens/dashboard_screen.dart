@@ -15,6 +15,10 @@ import 'package:task_manager_flutter/ui/screens/dashboard_kpis_screen.dart';
 import 'package:task_manager_flutter/ui/screens/dashboard_quarterly_screen.dart';
 import 'package:task_manager_flutter/ui/screens/dashboard_tickets_trend_screen.dart';
 
+// 🔹 novos imports dos gráficos de contas bancárias
+import 'package:task_manager_flutter/ui/screens/dashboard_contas_balances_screen.dart';
+import 'package:task_manager_flutter/ui/screens/dashboard_conta_evolucao_screen.dart';
+
 class DashboardPage extends StatefulWidget {
   const DashboardPage({super.key});
 
@@ -202,7 +206,24 @@ class _DashboardPageState extends State<DashboardPage> {
               parceiroId: parceiroId,
               days: 7,
             ),
-            const SizedBox(height: 20),
+            const SizedBox(height: 28),
+
+            // 🔹 12) Saldo por Conta Bancária (NOVO)
+            _sectionTitle('🏦 Saldo por Conta Bancária'),
+            const SizedBox(height: 8),
+            ContasBalancesChart(
+              empresaId: empresaId,
+              parceiroId: parceiroId,
+            ),
+            const SizedBox(height: 28),
+
+            // 🔹 13) Evolução de Saldos (NOVO)
+            _sectionTitle('📈 Evolução de Saldos (últimos 30 dias)'),
+            const SizedBox(height: 8),
+            ContaEvolucaoChart(
+              contaId: 1, //TODO: passar contaId correta
+            ),
+            const SizedBox(height: 28),
           ],
         ),
       ),
