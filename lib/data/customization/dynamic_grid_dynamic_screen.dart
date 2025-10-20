@@ -1,11 +1,24 @@
+// lib/data/customization/dynamic_grid_dynamic_screen.dart
+// ------------------------------------------------------------
+// DynamicGridDynamicScreen
+// - Carrega TelaConfig (cache + API)
+// - Converte TelaField (modelo) -> FieldConfig (UI) sem colisões de enum
+// - Mapeia actions (TelaAction) -> ServerAction e passa para o grid 1_1
+// - Passa asyncHasPermission para liberar botões (create/edit/delete)
+// - Mantém tudo que você já usava, só adiciona o suporte às ações
+// ------------------------------------------------------------
+
 import 'package:flutter/material.dart';
+import 'dart:convert';
+
 import 'package:task_manager_flutter/data/customization/generic_grid_card_1_1.dart';
 import 'package:task_manager_flutter/data/services/network_caller.dart';
 import 'package:task_manager_flutter/data/services/tela_caller.dart';
 import 'package:task_manager_flutter/data/utils/api_links.dart';
-import 'package:task_manager_flutter/data/utils/app_logger.dart'; // ⬅️ adiciona o console flutuante
+import 'package:task_manager_flutter/data/utils/app_logger.dart';
 
 import '../models/telas_model.dart';
+import '../services/auth_service.dart'; // para asyncHasPermission
 
 typedef SecurityCheck = bool Function(String permission);
 typedef OnItemTap = void Function(
@@ -55,51 +68,54 @@ class _DynamicGridDynamicScreenState extends State<DynamicGridDynamicScreen> {
   }
 
   Future<TelaConfig> _loadTelaConfig() async {
-    print(
-        '🚀 [DynamicGridDynamicScreen] Iniciando carregamento da tela: ${widget.telaNome}');
+    AppLogger.i.info(
+        '🚀 [DynamicGridDynamicScreen] Carregando tela: ${widget.telaNome}');
     try {
       final tela = await _telaService.getTelaFromCache(widget.telaNome);
 
+      if (tela?.actions != null) {
+        AppLogger.i.info(
+            '🧩 Ações dinâmicas carregadas: ${tela?.actions!.map((a) => a.label).join(', ')}');
+      }
+
       if (tela != null) {
-        print('✅ [DynamicGridDynamicScreen] Tela carregada com sucesso.');
-        print('🧩 Campos: ${tela.fields.length}');
+        AppLogger.i.info(
+            '✅ Tela carregada. Campos: ${tela.fields.length}, actions: ${tela.actions.length}');
         return tela;
       } else {
-        print('❌ [DynamicGridDynamicScreen] Nenhuma tela retornada (null).');
+        AppLogger.i.error('❌ Nenhuma tela retornada (null).');
         throw Exception('Tela ${widget.telaNome} não encontrada');
       }
     } catch (e, stack) {
-      print('💥 [DynamicGridDynamicScreen] Erro em _loadTelaConfig(): $e');
-      print('📄 StackTrace: $stack');
+      AppLogger.i.error('💥 Erro em _loadTelaConfig(): $e\n$stack');
       rethrow;
     }
   }
 
   List<FieldConfig> _convertToFieldConfigs(List<TelaField> fields,
       {bool forInsert = true, bool forUpdate = false}) {
-    print(
-        '🧱 [DynamicGridDynamicScreen] Convertendo ${fields.length} campos...');
+    AppLogger.i.info('🧱 Convertendo ${fields.length} campos...');
     return fields.where((field) {
       if (forInsert && !field.showInInsert) return false;
       if (forUpdate && !field.showInUpdate) return false;
       return field.isInForm;
     }).map((field) {
-      print('⚙️ Campo: ${field.label} (${field.fieldType})');
+      AppLogger.i.debug('⚙️ Campo: ${field.label} (${field.fieldType})');
 
       List<Map<String, dynamic>>? dropdownOptions;
       if (field.dropdownOptions.isNotEmpty) {
-        final uniqueOptions = <String, Map<String, dynamic>>{};
+        final unique = <String, Map<String, dynamic>>{};
         for (final option in field.dropdownOptions) {
           final value = option.optionValue?.toString() ?? '';
-          if (value.isNotEmpty && !uniqueOptions.containsKey(value)) {
-            uniqueOptions[value] = {
+          if (value.isNotEmpty && !unique.containsKey(value)) {
+            unique[value] = {
               'value': option.optionValue,
               'label':
                   option.optionLabel ?? option.optionValue?.toString() ?? '',
             };
           }
         }
-        dropdownOptions = uniqueOptions.values.toList();
+        dropdownOptions = unique.values.toList();
       }
 
       dynamic selectedValue = field.dropdownSelectedValue;
@@ -120,6 +136,7 @@ class _DynamicGridDynamicScreenState extends State<DynamicGridDynamicScreen> {
         maxLines: field.maxLines,
         icon: field.iconData,
         isSortable: field.isSortable,
+        // 🔀 mapeia enum de modelo -> UI por índice
         fieldType: FieldType.values[field.fieldType.index],
         dropdownOptions: dropdownOptions,
         dropdownFutureBuilder: field.dropdownEndpoint != null
@@ -133,7 +150,7 @@ class _DynamicGridDynamicScreenState extends State<DynamicGridDynamicScreen> {
         isFixed: field.isFixed,
         enabled: field.enabled,
         defaultValue: field.defaultValue,
-        fileConfig: field.fieldType == FieldType.file
+        fileConfig: field.fieldType == TelaFieldType.file
             ? FileConfig(
                 allowedExtensions: field.allowedExtensions,
                 allowMultiple: field.allowMultipleFiles,
@@ -150,10 +167,8 @@ class _DynamicGridDynamicScreenState extends State<DynamicGridDynamicScreen> {
     }).toList();
   }
 
-  // 🔧 Corrigido: suporta List e Map para evitar erro _Map<String, dynamic> is not List
   Future<List<Map<String, dynamic>>> Function()? _createDropdownFutureBuilder(
-    String endpoint,
-  ) {
+      String endpoint) {
     return () async {
       print('🌐 [DynamicGridDynamicScreen] Carregando dropdown de $endpoint');
       try {
@@ -162,12 +177,10 @@ class _DynamicGridDynamicScreenState extends State<DynamicGridDynamicScreen> {
 
         if (response.isSuccess && response.body != null) {
           final body = response.body!;
-          // Tenta extrair lista robustamente a partir de body['data'] ou do body inteiro
-          final list = _extractAnyList(
-            (body is Map ? (body['data'] ?? body['dados'] ?? body) : body),
-          );
+          final list = _extractAnyList(body['data'] ?? body['dados'] ?? body);
 
-          // Padroniza no formato {value, label}
+          print('🧩 Dropdown retornou ${list.length} itens');
+
           return list.map<Map<String, dynamic>>((it) {
             final map = Map<String, dynamic>.from(it);
             final value = map['value'] ?? map['id'];
@@ -176,6 +189,7 @@ class _DynamicGridDynamicScreenState extends State<DynamicGridDynamicScreen> {
             return {'value': value, 'label': label};
           }).toList();
         }
+
         return [];
       } catch (e, st) {
         print('❌ [DynamicGridDynamicScreen] Erro ao carregar dropdown: $e');
@@ -185,30 +199,43 @@ class _DynamicGridDynamicScreenState extends State<DynamicGridDynamicScreen> {
     };
   }
 
-// --- helpers locais (podem ficar dentro da classe) ---
+  // 🔧 Corrigido: converte qualquer formato (Map, List, etc) para lista segura de Map<String, dynamic>
   List<Map<String, dynamic>> _extractAnyList(dynamic body) {
+    if (body == null) return [];
+
     if (body is List) {
+      // Lista já válida
       return body
           .whereType<Map>()
-          .map<Map<String, dynamic>>((e) => Map<String, dynamic>.from(e))
+          .map((e) => Map<String, dynamic>.from(e))
           .toList();
     }
-    if (body is Map) {
-      final map = Map<String, dynamic>.from(body);
-      // campos clássicos
-      dynamic inner =
-          map['data'] ?? map['dados'] ?? map['content'] ?? map['items'];
-      if (inner != null) return _extractAnyList(inner);
 
-      // tenta valores
-      for (final v in map.values) {
-        final got = _tryList(v);
-        if (got != null) return got;
+    if (body is Map) {
+      // Se for map, tenta achar lista dentro de data/dados/content/items
+      final inner =
+          body['data'] ?? body['dados'] ?? body['content'] ?? body['items'];
+
+      if (inner is List) {
+        return inner
+            .whereType<Map>()
+            .map((e) => Map<String, dynamic>.from(e))
+            .toList();
       }
-      // um único item
-      return [map];
+
+      // 🔧 NOVO: se for um mapa simples tipo {"id": "1", "name": "teste"}
+      // retorna como uma lista de 1 item
+      return [Map<String, dynamic>.from(body)];
     }
-    return <Map<String, dynamic>>[];
+
+    if (body is String) {
+      try {
+        final decoded = jsonDecode(body);
+        return _extractAnyList(decoded);
+      } catch (_) {}
+    }
+
+    return [];
   }
 
   List<Map<String, dynamic>>? _tryList(dynamic v) {
@@ -247,8 +274,7 @@ class _DynamicGridDynamicScreenState extends State<DynamicGridDynamicScreen> {
                   body: Center(child: CircularProgressIndicator()));
             }
             if (s.hasError) {
-              print(
-                  '💥 [DynamicGridDynamicScreen] Erro FutureBuilder: ${s.error}');
+              AppLogger.i.error('💥 FutureBuilder erro: ${s.error}');
               return Scaffold(
                 appBar: AppBar(title: const Text('Erro')),
                 body: Center(
@@ -272,20 +298,28 @@ class _DynamicGridDynamicScreenState extends State<DynamicGridDynamicScreen> {
             }
 
             if (!s.hasData) {
-              print(
-                  '⚠️ [DynamicGridDynamicScreen] Nenhum dado retornado pelo Future.');
+              AppLogger.i.warn('⚠️ Nenhum dado retornado pelo Future.');
               return const Scaffold(
                   body: Center(child: Text('Tela não encontrada')));
             }
 
             final tela = s.data!;
-            print(
-                '✅ [DynamicGridDynamicScreen] Renderizando tela "${tela.nome}"');
-            print('   ↳ fetchEndpoint: ${tela.fetchEndpoint}');
-            print('   ↳ createEndpoint: ${tela.createEndpoint}');
-            print('   ↳ updateEndpoint: ${tela.updateEndpoint}');
-            print('   ↳ deleteEndpoint: ${tela.deleteEndpoint}');
-            print('   ↳ Campos: ${tela.fields.length}');
+            AppLogger.i.info(
+                '✅ Renderizando "${tela.nome}" fetch=${tela.fetchEndpoint} '
+                'create=${tela.createEndpoint} update=${tela.updateEndpoint} delete=${tela.deleteEndpoint} '
+                'campos=${tela.fields.length} actions=${tela.actions.length}');
+
+            // Mapeia ações do modelo -> ServerAction do grid
+            final serverActions = tela.actions.map((a) {
+              return ServerAction(
+                label: a.label,
+                icon: _iconFromName(a.icon),
+                method: a.method,
+                endpoint: ApiLinks.baseUrl + a.endpoint,
+                confirmMessage: a.confirmMessage,
+                requiredPermission: a.requiredPermission,
+              );
+            }).toList();
 
             return GenericMobileGridScreen(
               title: tela.titulo,
@@ -294,6 +328,8 @@ class _DynamicGridDynamicScreenState extends State<DynamicGridDynamicScreen> {
               updateEndpoint: ApiLinks.baseUrl + tela.updateEndpoint,
               deleteEndpoint: ApiLinks.baseUrl + tela.deleteEndpoint,
               hasPermission: widget.hasPermission,
+              asyncHasPermission:
+                  AuthService().hasPermission, // 🔥 libera botões
               fieldConfigs: _convertToFieldConfigs(tela.fields),
               idFieldName: tela.idFieldName,
               dateFieldName: tela.dateFieldName,
@@ -310,13 +346,42 @@ class _DynamicGridDynamicScreenState extends State<DynamicGridDynamicScreen> {
               onBannerRefresh: widget.onBannerRefresh,
               additionalFormData: widget.additionalFormData,
               dynamicAdditionalFormData: widget.dynamicAdditionalFormData,
+              serverActions: serverActions,
             );
           },
         ),
 
-        // 🧠 Console flutuante de debug com botão copiar
+        // Console flutuante (mantém)
         const AppLoggerOverlay(),
       ],
     );
+  }
+
+  IconData? _iconFromName(String? name) {
+    if (name == null) return null;
+    switch (name) {
+      case 'add':
+        return Icons.add;
+      case 'edit':
+        return Icons.edit;
+      case 'delete':
+        return Icons.delete;
+      case 'visibility':
+      case 'view':
+        return Icons.visibility;
+      case 'file':
+        return Icons.attach_file;
+      case 'email':
+        return Icons.email;
+      case 'phone':
+        return Icons.phone;
+      case 'calendar':
+        return Icons.calendar_today;
+      case 'check':
+      case 'ok':
+        return Icons.check_circle;
+      default:
+        return Icons.play_circle_outline;
+    }
   }
 }

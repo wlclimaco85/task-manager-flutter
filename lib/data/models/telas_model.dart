@@ -1,349 +1,410 @@
-import 'package:task_manager_flutter/data/customization/generic_grid_card.dart';
+// lib/data/models/telas_model.dart
+// ------------------------------------------------------------
+// Modelo de tela (TelaConfig) + campos (TelaField) + ações (TelaAction)
+// - Suporta actions vindas do banco (lista "actions")
+// - Parser resiliente para estruturas com "data", "dados", etc.
+// - Enum TelaFieldType (modelo) separado do FieldType do UI para evitar conflitos.
+// ------------------------------------------------------------
+
 import 'package:flutter/material.dart';
+
+/// Enum de tipos de campo vindo do servidor.
+/// (Separado do FieldType do grid para evitar colisão de tipos.)
+enum TelaFieldType {
+  text,
+  number,
+  email,
+  date,
+  multiline,
+  dropdown,
+  boolean,
+  file,
+  password,
+  phone,
+  cpf,
+  cnpj,
+  currency,
+  percentage,
+  url,
+}
+
+class DropdownOption {
+  final dynamic optionValue;
+  final String? optionLabel;
+
+  DropdownOption({required this.optionValue, this.optionLabel});
+
+  factory DropdownOption.fromJson(Map<String, dynamic> json) {
+    return DropdownOption(
+      optionValue: json['optionValue'] ?? json['value'] ?? json['id'],
+      optionLabel: json['optionLabel'] ?? json['label'] ?? json['name'],
+    );
+  }
+
+  Map<String, dynamic> toJson() => {
+        'optionValue': optionValue,
+        'optionLabel': optionLabel,
+      };
+}
+
+class TelaField {
+  final String label;
+  final String fieldName;
+  final String? displayFieldName;
+
+  final bool isFilterable;
+  final bool isInForm;
+  final bool showInInsert; // para filtrar no insert
+  final bool showInUpdate; // para filtrar no update
+  final bool isSortable;
+
+  final int flex;
+  final int maxLines;
+
+  final String? icon; // nome textual recebido do back
+  final IconData? iconData; // derivado do "icon", se quiser usar direto
+  final TelaFieldType fieldType;
+
+  final List<DropdownOption> dropdownOptions;
+  final String? dropdownEndpoint;
+  final String dropdownValueField;
+  final String dropdownDisplayField;
+  final dynamic dropdownSelectedValue;
+
+  final bool isRequired;
+  final bool isVisibleByDefault;
+  final bool isFixed; // não pode ocultar no selector
+  final bool enabled;
+  final dynamic defaultValue;
+
+  // arquivo
+  final List<String> allowedExtensions;
+  final bool allowMultipleFiles;
+  final int maxFileSize;
+  final String fileFieldName;
+
+  // data
+  final DateTime? firstDate;
+  final DateTime? lastDate;
+  final String dateFormat;
+
+  final bool showInCard;
+
+  TelaField({
+    required this.label,
+    required this.fieldName,
+    this.displayFieldName,
+    this.isFilterable = true,
+    this.isInForm = true,
+    this.showInInsert = true,
+    this.showInUpdate = true,
+    this.isSortable = true,
+    this.flex = 1,
+    this.maxLines = 1,
+    this.icon,
+    this.iconData,
+    this.fieldType = TelaFieldType.text,
+    this.dropdownOptions = const [],
+    this.dropdownEndpoint,
+    this.dropdownValueField = 'value',
+    this.dropdownDisplayField = 'label',
+    this.dateFormat = 'dd/MM/yyyy',
+    this.firstDate,
+    this.lastDate,
+    this.defaultValue,
+    this.dropdownSelectedValue,
+    this.isRequired = false,
+    this.isVisibleByDefault = true,
+    this.isFixed = false,
+    this.enabled = true,
+    this.allowedExtensions = const ['pdf', 'doc', 'docx', 'jpg', 'jpeg', 'png'],
+    this.allowMultipleFiles = false,
+    this.maxFileSize = 5 * 1024 * 1024,
+    this.fileFieldName = 'file',
+    this.showInCard = true,
+  });
+
+  factory TelaField.fromJson(Map<String, dynamic> json) {
+    final typeIndex = json['fieldType'] is int
+        ? json['fieldType'] as int
+        : (json['fieldTypeIndex'] as int?) ?? 0;
+    final tftValues = TelaFieldType.values;
+    final tft = typeIndex >= 0 && typeIndex < tftValues.length
+        ? tftValues[typeIndex]
+        : TelaFieldType.text;
+
+    final iconName = json['icon']?.toString();
+    return TelaField(
+      label: json['label']?.toString() ?? json['titulo']?.toString() ?? 'Campo',
+      fieldName:
+          json['fieldName']?.toString() ?? json['nome']?.toString() ?? '',
+      displayFieldName: json['displayFieldName']?.toString(),
+      isFilterable:
+          json['isFilterable'] == null ? true : (json['isFilterable'] == true),
+      isInForm:
+          json['isInForm'] == null ? true : (json['isInForm'] as bool? ?? true),
+      showInInsert: json['showInInsert'] == null
+          ? true
+          : (json['showInInsert'] as bool? ?? true),
+      showInUpdate: json['showInUpdate'] == null
+          ? true
+          : (json['showInUpdate'] as bool? ?? true),
+      isSortable: json['isSortable'] == null
+          ? true
+          : (json['isSortable'] as bool? ?? true),
+      flex: json['flex'] is int ? json['flex'] as int : 1,
+      maxLines: json['maxLines'] is int ? json['maxLines'] as int : 1,
+      icon: iconName,
+      iconData: _iconFromName(iconName),
+      fieldType: tft,
+      dropdownOptions: (json['dropdownOptions'] is List
+              ? (json['dropdownOptions'] as List)
+              : const [])
+          .whereType<Map>()
+          .map((e) => DropdownOption.fromJson(Map<String, dynamic>.from(e)))
+          .toList(),
+      dropdownEndpoint: json['dropdownEndpoint']?.toString(),
+      dropdownValueField: json['dropdownValueField']?.toString() ?? 'value',
+      dropdownDisplayField: json['dropdownDisplayField']?.toString() ?? 'label',
+      dropdownSelectedValue: json['dropdownSelectedValue'],
+      isRequired: json['isRequired'] == true,
+      isVisibleByDefault: json['isVisibleByDefault'] == null
+          ? true
+          : json['isVisibleByDefault'],
+      isFixed: json['isFixed'] == true,
+      enabled:
+          json['enabled'] == null ? true : (json['enabled'] as bool? ?? true),
+      defaultValue: json['defaultValue'],
+      allowedExtensions: (json['allowedExtensions'] is List
+              ? (json['allowedExtensions'] as List)
+              : const [])
+          .whereType<String>()
+          .toList(),
+      allowMultipleFiles: json['allowMultipleFiles'] == true,
+      maxFileSize:
+          json['maxFileSize'] is int ? json['maxFileSize'] : 5 * 1024 * 1024,
+      fileFieldName: json['fileFieldName']?.toString() ?? 'file',
+      firstDate: json['firstDate'] != null
+          ? DateTime.tryParse(json['firstDate'].toString())
+          : null,
+      lastDate: json['lastDate'] != null
+          ? DateTime.tryParse(json['lastDate'].toString())
+          : null,
+      dateFormat: json['dateFormat']?.toString() ?? 'dd/MM/yyyy',
+      showInCard: json['showInCard'] == null
+          ? true
+          : (json['showInCard'] as bool? ?? true),
+    );
+  }
+
+  static IconData? _iconFromName(String? name) {
+    if (name == null) return null;
+    switch (name) {
+      case 'add':
+        return Icons.add;
+      case 'edit':
+        return Icons.edit;
+      case 'delete':
+        return Icons.delete;
+      case 'visibility':
+      case 'view':
+        return Icons.visibility;
+      case 'file':
+        return Icons.attach_file;
+      case 'email':
+        return Icons.email;
+      case 'phone':
+        return Icons.phone;
+      case 'calendar':
+        return Icons.calendar_today;
+      default:
+        return null;
+    }
+  }
+
+  Map<String, dynamic> toJson() => {
+        'label': label,
+        'fieldName': fieldName,
+        'displayFieldName': displayFieldName,
+        'isFilterable': isFilterable,
+        'isInForm': isInForm,
+        'showInInsert': showInInsert,
+        'showInUpdate': showInUpdate,
+        'isSortable': isSortable,
+        'flex': flex,
+        'maxLines': maxLines,
+        'icon': icon,
+        'fieldType': fieldType.index,
+        'dropdownOptions': dropdownOptions.map((e) => e.toJson()).toList(),
+        'dropdownEndpoint': dropdownEndpoint,
+        'dropdownValueField': dropdownValueField,
+        'dropdownDisplayField': dropdownDisplayField,
+        'dropdownSelectedValue': dropdownSelectedValue,
+        'isRequired': isRequired,
+        'isVisibleByDefault': isVisibleByDefault,
+        'isFixed': isFixed,
+        'enabled': enabled,
+        'defaultValue': defaultValue,
+        'allowedExtensions': allowedExtensions,
+        'allowMultipleFiles': allowMultipleFiles,
+        'maxFileSize': maxFileSize,
+        'fileFieldName': fileFieldName,
+        'firstDate': firstDate?.toIso8601String(),
+        'lastDate': lastDate?.toIso8601String(),
+        'dateFormat': dateFormat,
+        'showInCard': showInCard,
+      };
+}
+
+class TelaAction {
+  final String label;
+  final String? icon; // nome textual
+  final String method; // GET/POST/PUT/DELETE
+  final String endpoint; // pode conter :id
+  final String? confirmMessage; // opcional (se não vier, usa padrão)
+
+  // opcional (se quiser permissionamento por ação):
+  final String? requiredPermission; // ex: "approve", "close" etc.
+
+  TelaAction({
+    required this.label,
+    this.icon,
+    required this.method,
+    required this.endpoint,
+    this.confirmMessage,
+    this.requiredPermission,
+  });
+
+  factory TelaAction.fromJson(Map<String, dynamic> json) {
+    return TelaAction(
+      label: json['label']?.toString() ?? 'Ação',
+      icon: json['icon']?.toString(),
+      method: (json['method']?.toString() ?? 'GET').toUpperCase(),
+      endpoint: json['endpoint']?.toString() ?? '',
+      confirmMessage: json['confirmMessage']?.toString(),
+      requiredPermission: json['requiredPermission']?.toString(),
+    );
+  }
+
+  Map<String, dynamic> toJson() => {
+        'label': label,
+        'icon': icon,
+        'method': method,
+        'endpoint': endpoint,
+        'confirmMessage': confirmMessage,
+        'requiredPermission': requiredPermission,
+      };
+}
 
 class TelaConfig {
   final int id;
   final String nome;
-  final String descricao;
   final String titulo;
+
   final String fetchEndpoint;
   final String createEndpoint;
-  final String updateEndpoint;
-  final String deleteEndpoint;
+  final String updateEndpoint; // ':id'
+  final String deleteEndpoint; // ':id'
+
+  final List<TelaField> fields;
+
   final String idFieldName;
   final String? dateFieldName;
   final String? storageKey;
+
   final bool enableSearch;
   final bool enableDebugMode;
   final bool useUserBannerAppBar;
-  final List<TelaField> fields;
+
+  // 🔥 novas ações vindas do banco
+  final List<TelaAction> actions;
 
   TelaConfig({
     required this.id,
     required this.nome,
-    required this.descricao,
     required this.titulo,
     required this.fetchEndpoint,
     required this.createEndpoint,
     required this.updateEndpoint,
     required this.deleteEndpoint,
+    required this.fields,
     this.idFieldName = 'id',
     this.dateFieldName,
     this.storageKey,
     this.enableSearch = true,
     this.enableDebugMode = false,
     this.useUserBannerAppBar = false,
-    required this.fields,
+    this.actions = const [],
   });
 
-  factory TelaConfig.fromJson(Map<String, dynamic> json) {
+  factory TelaConfig.fromJson(Map<String, dynamic> raw) {
+    // aceita tanto "direto" quanto {data: {...}} ou {dados: {...}}
+    final json = _unwrapDataOrDados(raw);
+
+    final fieldsJson = (json['fields'] is List ? json['fields'] as List : [])
+        .whereType<Map>()
+        .map((e) => TelaField.fromJson(Map<String, dynamic>.from(e)))
+        .toList();
+
+    final actionsJson =
+        (json['actions'] is List ? json['actions'] as List : const [])
+            .whereType<Map>()
+            .map((e) => TelaAction.fromJson(Map<String, dynamic>.from(e)))
+            .toList();
+
     return TelaConfig(
-      id: json['id'] ?? 0,
-      nome: json['nome'] ?? '',
-      descricao: json['descricao'] ?? '',
-      titulo: json['titulo'] ?? '',
-      fetchEndpoint: json['fetchEndpoint'] ?? '',
-      createEndpoint: json['createEndpoint'] ?? '',
-      updateEndpoint: json['updateEndpoint'] ?? '',
-      deleteEndpoint: json['deleteEndpoint'] ?? '',
-      idFieldName: json['idFieldName'] ?? 'id',
-      dateFieldName: json['dateFieldName'],
-      storageKey: json['storageKey'],
-      enableSearch: json['enableSearch'] ?? true,
-      enableDebugMode: json['enableDebugMode'] ?? false,
-      useUserBannerAppBar: json['useUserBannerAppBar'] ?? false,
-      fields: (json['fields'] as List? ?? [])
-          .map((field) => TelaField.fromJson(field))
-          .toList(),
+      id: json['id'] is int ? json['id'] : int.tryParse('${json['id']}') ?? 0,
+      nome: json['nome']?.toString() ?? 'tela',
+      titulo: json['titulo']?.toString() ?? json['title']?.toString() ?? 'Tela',
+      fetchEndpoint: json['fetchEndpoint']?.toString() ?? '',
+      createEndpoint: json['createEndpoint']?.toString() ?? '',
+      updateEndpoint: json['updateEndpoint']?.toString() ?? '',
+      deleteEndpoint: json['deleteEndpoint']?.toString() ?? '',
+      fields: fieldsJson,
+      idFieldName: json['idFieldName']?.toString() ?? 'id',
+      dateFieldName: json['dateFieldName']?.toString(),
+      storageKey: json['storageKey']?.toString(),
+      enableSearch: json['enableSearch'] == null
+          ? true
+          : (json['enableSearch'] as bool? ?? true),
+      enableDebugMode: json['enableDebugMode'] == true,
+      useUserBannerAppBar: json['useUserBannerAppBar'] == true,
+      actions: actionsJson,
     );
   }
 
-  Map<String, dynamic> toJson() {
-    return {
-      'id': id,
-      'nome': nome,
-      'descricao': descricao,
-      'titulo': titulo,
-      'fetchEndpoint': fetchEndpoint,
-      'createEndpoint': createEndpoint,
-      'updateEndpoint': updateEndpoint,
-      'deleteEndpoint': deleteEndpoint,
-      'idFieldName': idFieldName,
-      'dateFieldName': dateFieldName,
-      'storageKey': storageKey,
-      'enableSearch': enableSearch,
-      'enableDebugMode': enableDebugMode,
-      'useUserBannerAppBar': useUserBannerAppBar,
-      'fields': fields.map((field) => field.toJson()).toList(),
-    };
-  }
-}
+  Map<String, dynamic> toJson() => {
+        'id': id,
+        'nome': nome,
+        'titulo': titulo,
+        'fetchEndpoint': fetchEndpoint,
+        'createEndpoint': createEndpoint,
+        'updateEndpoint': updateEndpoint,
+        'deleteEndpoint': deleteEndpoint,
+        'fields': fields.map((e) => e.toJson()).toList(),
+        'idFieldName': idFieldName,
+        'dateFieldName': dateFieldName,
+        'storageKey': storageKey,
+        'enableSearch': enableSearch,
+        'enableDebugMode': enableDebugMode,
+        'useUserBannerAppBar': useUserBannerAppBar,
+        'actions': actions.map((e) => e.toJson()).toList(),
+      };
 
-class TelaField {
-  final int id;
-  final String label;
-  final String fieldName;
-  final String? displayFieldName;
-  final FieldType fieldType;
-  final bool isFilterable;
-  final bool isInForm;
-  final bool isVisibleByDefault;
-  final bool isFixed;
-  final bool isRequired;
-  final bool enabled;
-  final bool showInCard;
-  final int flex;
-  final int maxLines;
-  final String? iconName;
-  final bool isSortable;
-  final String dropdownValueField;
-  final String dropdownDisplayField;
-  final String? dropdownEndpoint;
-  final String dateFormat;
-  final DateTime? firstDate;
-  final DateTime? lastDate;
-  final bool showInInsert;
-  final bool showInUpdate;
-  final bool showInGrid;
-  final int fieldOrder;
-  final String formSection;
-  final dynamic defaultValue;
-  final dynamic dropdownSelectedValue;
-  final List<String> allowedExtensions;
-  final bool allowMultipleFiles;
-  final int maxFileSize;
-  final String fileFieldName;
-  final List<FieldDropdownOption> dropdownOptions;
-
-  TelaField({
-    required this.id,
-    required this.label,
-    required this.fieldName,
-    this.displayFieldName,
-    required this.fieldType,
-    this.isFilterable = true,
-    this.isInForm = true,
-    this.isVisibleByDefault = true,
-    this.isFixed = false,
-    this.isRequired = false,
-    this.enabled = true,
-    this.showInCard = true,
-    this.flex = 1,
-    this.maxLines = 1,
-    this.iconName,
-    this.isSortable = true,
-    this.dropdownValueField = 'value',
-    this.dropdownDisplayField = 'label',
-    this.dropdownEndpoint,
-    this.dateFormat = 'dd/MM/yyyy',
-    this.firstDate,
-    this.lastDate,
-    this.showInInsert = true,
-    this.showInUpdate = true,
-    this.showInGrid = true,
-    this.fieldOrder = 0,
-    this.formSection = 'Geral',
-    this.defaultValue,
-    this.dropdownSelectedValue,
-    this.allowedExtensions = const [],
-    this.allowMultipleFiles = false,
-    this.maxFileSize = 5242880,
-    this.fileFieldName = 'file',
-    this.dropdownOptions = const [],
-  });
-
-  factory TelaField.fromJson(Map<String, dynamic> json) {
-    // Converte string de data para DateTime
-    DateTime? parseDate(String? dateString) {
-      if (dateString == null) return null;
-      try {
-        return DateTime.parse(dateString);
-      } catch (e) {
-        return null;
+  static Map<String, dynamic> _unwrapDataOrDados(Map<String, dynamic> raw) {
+    dynamic cur = raw;
+    if (cur is Map && (cur['data'] != null || cur['dados'] != null)) {
+      final sub = cur['data'] ?? cur['dados'];
+      if (sub is Map) return Map<String, dynamic>.from(sub);
+      if (sub is List && sub.isNotEmpty && sub.first is Map) {
+        return Map<String, dynamic>.from(sub.first as Map);
       }
     }
-
-    return TelaField(
-      id: json['id'] ?? 0,
-      label: json['label'] ?? '',
-      fieldName: json['fieldName'] ?? '',
-      displayFieldName: json['displayFieldName'],
-      fieldType: _parseFieldType(json['fieldType']),
-      isFilterable: json['isFilterable'] ?? true,
-      isInForm: json['isInForm'] ?? true,
-      isVisibleByDefault: json['isVisibleByDefault'] ?? true,
-      isFixed: json['isFixed'] ?? false,
-      isRequired: json['isRequired'] ?? false,
-      enabled: json['enabled'] ?? true,
-      showInCard: json['showInCard'] ?? true,
-      flex: json['flex'] ?? 1,
-      maxLines: json['maxLines'] ?? 1,
-      iconName: json['iconName'],
-      isSortable: json['isSortable'] ?? true,
-      dropdownValueField: json['dropdownValueField'] ?? 'value',
-      dropdownDisplayField: json['dropdownDisplayField'] ?? 'label',
-      dropdownEndpoint: json['dropdownEndpoint'],
-      dateFormat: json['dateFormat'] ?? 'dd/MM/yyyy',
-      firstDate: parseDate(json['firstDate']),
-      lastDate: parseDate(json['lastDate']),
-      showInInsert: json['showInInsert'] ?? true,
-      showInUpdate: json['showInUpdate'] ?? true,
-      showInGrid: json['showInGrid'] ?? true,
-      fieldOrder: json['fieldOrder'] ?? 0,
-      formSection: json['formSection'] ?? 'Geral',
-      defaultValue: json['defaultValue'],
-      dropdownSelectedValue: json['dropdownSelectedValue'],
-      allowedExtensions: json['allowedExtensions'] != null
-          ? (json['allowedExtensions'] is String
-              ? (json['allowedExtensions'] as String)
-                  .split(',')
-                  .map((e) => e.trim())
-                  .toList()
-              : (json['allowedExtensions'] as List).cast<String>())
-          : [],
-      allowMultipleFiles: json['allowMultipleFiles'] ?? false,
-      maxFileSize: json['maxFileSize'] ?? 5242880,
-      fileFieldName: json['fileFieldName'] ?? 'file',
-      dropdownOptions: (json['dropdownOptions'] as List? ?? [])
-          .map((option) => FieldDropdownOption.fromJson(option))
-          .toList(),
-    );
-  }
-
-  static FieldType _parseFieldType(String? type) {
-    if (type == null) return FieldType.text;
-
-    switch (type.toLowerCase()) {
-      case 'number':
-        return FieldType.number;
-      case 'email':
-        return FieldType.email;
-      case 'date':
-        return FieldType.date;
-      case 'multiline':
-        return FieldType.multiline;
-      case 'dropdown':
-        return FieldType.dropdown;
-      case 'boolean':
-        return FieldType.boolean;
-      case 'file':
-        return FieldType.file;
-      case 'password':
-        return FieldType.password;
-      case 'phone':
-        return FieldType.phone;
-      case 'cpf':
-        return FieldType.cpf;
-      case 'cnpj':
-        return FieldType.cnpj;
-      case 'currency':
-        return FieldType.currency;
-      case 'percentage':
-        return FieldType.percentage;
-      case 'url':
-        return FieldType.url;
-      default:
-        return FieldType.text;
+    if (cur is Map && cur.containsKey('content') && cur['content'] is Map) {
+      return Map<String, dynamic>.from(cur['content']);
     }
-  }
-
-  IconData? get iconData {
-    if (iconName == null) return null;
-
-    // Mapeamento de ícones Material Icons
-    final iconMap = {
-      'title': Icons.title,
-      'description': Icons.description,
-      'info': Icons.info,
-      'priority_high': Icons.priority_high,
-      'business': Icons.business,
-      'close': Icons.close,
-      'calendar_today': Icons.calendar_today,
-      'event_available': Icons.event_available,
-      'attach_file': Icons.attach_file,
-      'person': Icons.person,
-      'email': Icons.email,
-      'phone': Icons.phone,
-      'location_on': Icons.location_on,
-      'money': Icons.money,
-      'percentage': Icons.percent,
-      'link': Icons.link,
-      'lock': Icons.lock,
-    };
-
-    return iconMap[iconName];
-  }
-
-  Map<String, dynamic> toJson() {
-    return {
-      'id': id,
-      'label': label,
-      'fieldName': fieldName,
-      'displayFieldName': displayFieldName,
-      'fieldType': fieldType.toString().split('.').last,
-      'isFilterable': isFilterable,
-      'isInForm': isInForm,
-      'isVisibleByDefault': isVisibleByDefault,
-      'isFixed': isFixed,
-      'isRequired': isRequired,
-      'enabled': enabled,
-      'showInCard': showInCard,
-      'flex': flex,
-      'maxLines': maxLines,
-      'iconName': iconName,
-      'isSortable': isSortable,
-      'dropdownValueField': dropdownValueField,
-      'dropdownDisplayField': dropdownDisplayField,
-      'dropdownEndpoint': dropdownEndpoint,
-      'dateFormat': dateFormat,
-      'firstDate': firstDate?.toIso8601String(),
-      'lastDate': lastDate?.toIso8601String(),
-      'showInInsert': showInInsert,
-      'showInUpdate': showInUpdate,
-      'showInGrid': showInGrid,
-      'fieldOrder': fieldOrder,
-      'formSection': formSection,
-      'defaultValue': defaultValue,
-      'dropdownSelectedValue': dropdownSelectedValue,
-      'allowedExtensions': allowedExtensions,
-      'allowMultipleFiles': allowMultipleFiles,
-      'maxFileSize': maxFileSize,
-      'fileFieldName': fileFieldName,
-      'dropdownOptions':
-          dropdownOptions.map((option) => option.toJson()).toList(),
-    };
-  }
-}
-
-class FieldDropdownOption {
-  final int id;
-  final String optionValue;
-  final String optionLabel;
-  final int optionOrder;
-
-  FieldDropdownOption({
-    required this.id,
-    required this.optionValue,
-    required this.optionLabel,
-    required this.optionOrder,
-  });
-
-  factory FieldDropdownOption.fromJson(Map<String, dynamic> json) {
-    return FieldDropdownOption(
-      id: json['id'] ?? 0,
-      optionValue: json['optionValue'] ?? '',
-      optionLabel: json['optionLabel'] ?? '',
-      optionOrder: json['optionOrder'] ?? 0,
-    );
-  }
-
-  Map<String, dynamic> toJson() {
-    return {
-      'id': id,
-      'optionValue': optionValue,
-      'optionLabel': optionLabel,
-      'optionOrder': optionOrder,
-    };
+    if (cur is Map) return Map<String, dynamic>.from(cur);
+    return <String, dynamic>{};
   }
 }
 
