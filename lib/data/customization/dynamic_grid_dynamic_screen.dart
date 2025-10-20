@@ -152,53 +152,79 @@ class _DynamicGridDynamicScreenState extends State<DynamicGridDynamicScreen> {
 
   // 🔧 Corrigido: suporta List e Map para evitar erro _Map<String, dynamic> is not List
   Future<List<Map<String, dynamic>>> Function()? _createDropdownFutureBuilder(
-      String endpoint) {
+    String endpoint,
+  ) {
     return () async {
       print('🌐 [DynamicGridDynamicScreen] Carregando dropdown de $endpoint');
       try {
         final response = await NetworkCaller().getRequest(endpoint);
-        print('📡 [Dropdown] Status: ${response.statusCode}');
-        print('📦 [Dropdown] Body: ${response.body}');
+        print('📡 Dropdown response: ${response.statusCode}');
 
         if (response.isSuccess && response.body != null) {
           final body = response.body!;
-          final data = body['data'] ?? body;
+          // Tenta extrair lista robustamente a partir de body['data'] ou do body inteiro
+          final list = _extractAnyList(
+            (body is Map ? (body['data'] ?? body['dados'] ?? body) : body),
+          );
 
-          if (data is List) {
-            print('✅ Dropdown data é uma LISTA (${data.length})');
-            return data.map<Map<String, dynamic>>((it) {
-              return {
-                'value': it['value'] ?? it['id'],
-                'label': it['label'] ??
-                    it['name'] ??
-                    it['value']?.toString() ??
-                    'Sem label',
-              };
-            }).toList();
-          }
-
-          if (data is Map<String, dynamic>) {
-            print('✅ Dropdown data é um MAP, convertendo para lista');
-            return [
-              {
-                'value': data['value'] ?? data['id'],
-                'label': data['label'] ??
-                    data['name'] ??
-                    data['value']?.toString() ??
-                    'Sem label',
-              }
-            ];
-          }
-
-          print('⚠️ Tipo inesperado em dropdown: ${data.runtimeType}');
+          // Padroniza no formato {value, label}
+          return list.map<Map<String, dynamic>>((it) {
+            final map = Map<String, dynamic>.from(it);
+            final value = map['value'] ?? map['id'];
+            final label =
+                map['label'] ?? map['name'] ?? value?.toString() ?? 'Sem label';
+            return {'value': value, 'label': label};
+          }).toList();
         }
         return [];
-      } catch (e, stack) {
-        print('❌ [Dropdown] Erro ao carregar: $e');
-        print('📄 Stack: $stack');
+      } catch (e, st) {
+        print('❌ [DynamicGridDynamicScreen] Erro ao carregar dropdown: $e');
+        print(st);
         return [];
       }
     };
+  }
+
+// --- helpers locais (podem ficar dentro da classe) ---
+  List<Map<String, dynamic>> _extractAnyList(dynamic body) {
+    if (body is List) {
+      return body
+          .whereType<Map>()
+          .map<Map<String, dynamic>>((e) => Map<String, dynamic>.from(e))
+          .toList();
+    }
+    if (body is Map) {
+      final map = Map<String, dynamic>.from(body);
+      // campos clássicos
+      dynamic inner =
+          map['data'] ?? map['dados'] ?? map['content'] ?? map['items'];
+      if (inner != null) return _extractAnyList(inner);
+
+      // tenta valores
+      for (final v in map.values) {
+        final got = _tryList(v);
+        if (got != null) return got;
+      }
+      // um único item
+      return [map];
+    }
+    return <Map<String, dynamic>>[];
+  }
+
+  List<Map<String, dynamic>>? _tryList(dynamic v) {
+    if (v is List) {
+      return v
+          .whereType<Map>()
+          .map<Map<String, dynamic>>((e) => Map<String, dynamic>.from(e))
+          .toList();
+    }
+    if (v is Map) {
+      final map = Map<String, dynamic>.from(v);
+      dynamic inner =
+          map['data'] ?? map['dados'] ?? map['content'] ?? map['items'];
+      if (inner != null) return _extractAnyList(inner);
+    }
+    return null;
   }
 
   String? Function(String?)? _createValidator(TelaField field) {
@@ -289,7 +315,7 @@ class _DynamicGridDynamicScreenState extends State<DynamicGridDynamicScreen> {
         ),
 
         // 🧠 Console flutuante de debug com botão copiar
-        const FloatingConsoleOverlay(),
+        const AppLoggerOverlay(),
       ],
     );
   }

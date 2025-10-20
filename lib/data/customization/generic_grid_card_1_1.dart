@@ -332,15 +332,19 @@ class _GenericMobileGridScreenState extends State<GenericMobileGridScreen> {
 
       if (resp.statusCode == 200 && resp.body != null) {
         final body = resp.body!;
-        final List data = body['data'] ??
-            body['dados'] ??
-            (body is List ? body : <dynamic>[]);
-        final total = body['totalElements'] ?? body['total'] ?? data.length;
 
-        final newItems = data
-            .map<Map<String, dynamic>>(
-                (e) => Map<String, dynamic>.from(e as Map))
-            .toList();
+        // 🔍 Loga estrutura que veio (útil p/ depurar)
+        // print('🔎 body: $body');
+
+        // Total (tentamos campos comuns)
+        final total = body is Map
+            ? (body['totalElements'] ?? body['total'] ?? body['count'] ?? 0)
+            : 0;
+
+        // Lista robusta
+        final newItems = _extractDataList(
+          (body is Map ? (body['data'] ?? body['dados'] ?? body) : body),
+        );
 
         setState(() {
           if (reset) {
@@ -349,7 +353,7 @@ class _GenericMobileGridScreenState extends State<GenericMobileGridScreen> {
             items.addAll(newItems);
           }
           filtered = List.from(items);
-          _totalItems = total;
+          _totalItems = (total is int && total > 0) ? total : items.length;
           _hasMoreItems = items.length < _totalItems;
           _currentPage++;
         });
@@ -674,6 +678,63 @@ class _GenericMobileGridScreenState extends State<GenericMobileGridScreen> {
 
   dynamic _getId(Map<String, dynamic> item) {
     return _getNestedValue(item, widget.idFieldName) ?? '';
+  }
+
+  // --- Helper robusto p/ extrair lista de qualquer formato de resposta ---
+  List<Map<String, dynamic>> _extractDataList(dynamic body) {
+    // 1) Se já veio uma lista de mapas
+    if (body is List) {
+      return body
+          .whereType<Map>() // garante Map
+          .map<Map<String, dynamic>>((e) => Map<String, dynamic>.from(e))
+          .toList();
+    }
+
+    // 2) Se é um mapa, tenta campos comuns (data/dados/content/items)
+    if (body is Map) {
+      final map = Map<String, dynamic>.from(body);
+
+      dynamic inner = map['data'];
+      inner ??= map['dados'];
+      inner ??= map['content'];
+      inner ??= map['items'];
+
+      if (inner != null) {
+        return _extractDataList(inner);
+      }
+
+      // 3) Algumas APIs mandam algo tipo { data: { content: [...] } }
+      for (final v in map.values) {
+        final extracted = _tryExtractListFromAny(v);
+        if (extracted != null) return extracted;
+      }
+
+      // 4) Se o próprio body for um único objeto, embrulha em lista
+      return [map];
+    }
+
+    // 5) Se não deu pra interpretar, retorna lista vazia
+    return <Map<String, dynamic>>[];
+  }
+
+// tenta extrair uma lista a partir de qualquer coisa
+  List<Map<String, dynamic>>? _tryExtractListFromAny(dynamic v) {
+    if (v is List) {
+      return v
+          .whereType<Map>()
+          .map<Map<String, dynamic>>((e) => Map<String, dynamic>.from(e))
+          .toList();
+    }
+    if (v is Map) {
+      // tenta novamente campos clássicos
+      final map = Map<String, dynamic>.from(v);
+      dynamic inner =
+          map['data'] ?? map['dados'] ?? map['content'] ?? map['items'];
+      if (inner != null) {
+        return _extractDataList(inner);
+      }
+    }
+    return null;
   }
 
   @override
