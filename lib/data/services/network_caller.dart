@@ -9,6 +9,7 @@ import 'package:task_manager_flutter/ui/screens/auth_screens/login_screen.dart';
 import 'package:task_manager_flutter/ui/screens/LoginPopup_screens.dart';
 import 'package:task_manager_flutter/data/utils/api_links.dart';
 import 'package:task_manager_flutter/data/models/login_model.dart';
+import 'package:task_manager_flutter/data/utils/app_logger.dart';
 
 class NetworkCaller {
   Future<NetworkResponse> getRequest(String url) async {
@@ -36,7 +37,13 @@ class NetworkCaller {
           'Accept-Encoding': 'gzip',
         },
       );
+
+      AppLogger.i.info(
+          '⚙️ [request get principal] url : ${uri.toString()} | statusCode: ${response.statusCode}');
+
       if (response.statusCode == 200) {
+        AppLogger.i
+            .info('⚙️ [request get principal] response : ${response.body}');
         return NetworkResponse(
           true,
           response.statusCode,
@@ -219,8 +226,7 @@ class NetworkCaller {
       body?['audit'] = {};
       body?['empresa']['id'] = user?.empresa?.id;
 
-      body?['aplicativo']['id'] =
-          user?.aplicativo?.id;
+      body?['aplicativo']['id'] = user?.aplicativo?.id;
       if (user?.parceiro?.id != null) {
         body?['parceiro'] = {};
         body?['parceiro']['id'] = user?.parceiro?.id;

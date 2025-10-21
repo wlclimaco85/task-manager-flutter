@@ -2,23 +2,22 @@
 // ------------------------------------------------------------
 // DynamicGridDynamicScreen
 // - Carrega TelaConfig (cache + API)
-// - Converte TelaField (modelo) -> FieldConfig (UI) sem colisões de enum
-// - Mapeia actions (TelaAction) -> ServerAction e passa para o grid 1_1
-// - Passa asyncHasPermission para liberar botões (create/edit/delete)
-// - Mantém tudo que você já usava, só adiciona o suporte às ações
+// - Converte TelaField (modelo) -> FieldConfig (UI)
+// - Mapeia actions (TelaAction) -> ServerAction e passa para o grid
+// - Passa asyncHasPermission (AuthService) para liberar botões
+// - Inclui console flutuante e logs AppLogger
+// - Corrigido erro _Map<String, String?> is not Iterable<dynamic>
 // ------------------------------------------------------------
 
-import 'package:flutter/material.dart';
 import 'dart:convert';
-
+import 'package:flutter/material.dart';
 import 'package:task_manager_flutter/data/customization/generic_grid_card_1_1.dart';
 import 'package:task_manager_flutter/data/services/network_caller.dart';
 import 'package:task_manager_flutter/data/services/tela_caller.dart';
 import 'package:task_manager_flutter/data/utils/api_links.dart';
 import 'package:task_manager_flutter/data/utils/app_logger.dart';
-
 import '../models/telas_model.dart';
-import '../services/auth_service.dart'; // para asyncHasPermission
+import '../services/auth_service.dart';
 
 typedef SecurityCheck = bool Function(String permission);
 typedef OnItemTap = void Function(
@@ -68,22 +67,21 @@ class _DynamicGridDynamicScreenState extends State<DynamicGridDynamicScreen> {
   }
 
   Future<TelaConfig> _loadTelaConfig() async {
-    AppLogger.i.info(
-        '🚀 [DynamicGridDynamicScreen] Carregando tela: ${widget.telaNome}');
+    AppLogger.i.info('🚀 Carregando tela: ${widget.telaNome}');
     try {
       final tela = await _telaService.getTelaFromCache(widget.telaNome);
 
       if (tela?.actions != null) {
         AppLogger.i.info(
-            '🧩 Ações dinâmicas carregadas: ${tela?.actions!.map((a) => a.label).join(', ')}');
+            '🧩 Ações carregadas: ${tela?.actions!.map((a) => a.label).join(', ')}');
       }
 
       if (tela != null) {
         AppLogger.i.info(
-            '✅ Tela carregada. Campos: ${tela.fields.length}, actions: ${tela.actions.length}');
+            '✅ Tela carregada: ${tela.nome} (Campos=${tela.fields.length}, Actions=${tela.actions.length})');
         return tela;
       } else {
-        AppLogger.i.error('❌ Nenhuma tela retornada (null).');
+        AppLogger.i.error('❌ Nenhuma tela retornada.');
         throw Exception('Tela ${widget.telaNome} não encontrada');
       }
     } catch (e, stack) {
@@ -136,7 +134,6 @@ class _DynamicGridDynamicScreenState extends State<DynamicGridDynamicScreen> {
         maxLines: field.maxLines,
         icon: field.iconData,
         isSortable: field.isSortable,
-        // 🔀 mapeia enum de modelo -> UI por índice
         fieldType: FieldType.values[field.fieldType.index],
         dropdownOptions: dropdownOptions,
         dropdownFutureBuilder: field.dropdownEndpoint != null
@@ -167,19 +164,20 @@ class _DynamicGridDynamicScreenState extends State<DynamicGridDynamicScreen> {
     }).toList();
   }
 
+  // ✅ Corrigido: trata qualquer formato (map, list, etc)
   Future<List<Map<String, dynamic>>> Function()? _createDropdownFutureBuilder(
       String endpoint) {
     return () async {
-      print('🌐 [DynamicGridDynamicScreen] Carregando dropdown de $endpoint');
+      AppLogger.i.debug('🌐 Carregando dropdown de $endpoint');
       try {
         final response = await NetworkCaller().getRequest(endpoint);
-        print('📡 Dropdown response: ${response.statusCode}');
+        AppLogger.i.debug('📡 Resposta dropdown: ${response.statusCode}');
 
         if (response.isSuccess && response.body != null) {
           final body = response.body!;
           final list = _extractAnyList(body['data'] ?? body['dados'] ?? body);
 
-          print('🧩 Dropdown retornou ${list.length} itens');
+          AppLogger.i.debug('🧩 Dropdown retornou ${list.length} itens');
 
           return list.map<Map<String, dynamic>>((it) {
             final map = Map<String, dynamic>.from(it);
@@ -192,66 +190,58 @@ class _DynamicGridDynamicScreenState extends State<DynamicGridDynamicScreen> {
 
         return [];
       } catch (e, st) {
-        print('❌ [DynamicGridDynamicScreen] Erro ao carregar dropdown: $e');
-        print(st);
+        AppLogger.i.error('❌ Erro ao carregar dropdown: $e\n$st');
         return [];
       }
     };
   }
 
-  // 🔧 Corrigido: converte qualquer formato (Map, List, etc) para lista segura de Map<String, dynamic>
+  // ✅ Conversão robusta para lista segura
   List<Map<String, dynamic>> _extractAnyList(dynamic body) {
     if (body == null) return [];
 
-    if (body is List) {
-      // Lista já válida
-      return body
-          .whereType<Map>()
-          .map((e) => Map<String, dynamic>.from(e))
-          .toList();
-    }
-
-    if (body is Map) {
-      // Se for map, tenta achar lista dentro de data/dados/content/items
-      final inner =
-          body['data'] ?? body['dados'] ?? body['content'] ?? body['items'];
-
-      if (inner is List) {
-        return inner
+    try {
+      if (body is List) {
+        return body
             .whereType<Map>()
             .map((e) => Map<String, dynamic>.from(e))
             .toList();
       }
 
-      // 🔧 NOVO: se for um mapa simples tipo {"id": "1", "name": "teste"}
-      // retorna como uma lista de 1 item
-      return [Map<String, dynamic>.from(body)];
-    }
+      if (body is Map) {
+        // Se for Map simples, retorna como lista de 1
+        if (!body.containsKey('data') &&
+            !body.containsKey('dados') &&
+            !body.containsKey('items') &&
+            !body.containsKey('content')) {
+          return [Map<String, dynamic>.from(body)];
+        }
 
-    if (body is String) {
-      try {
+        final inner =
+            body['data'] ?? body['dados'] ?? body['items'] ?? body['content'];
+
+        if (inner is List) {
+          return inner
+              .whereType<Map>()
+              .map((e) => Map<String, dynamic>.from(e))
+              .toList();
+        }
+
+        if (inner is Map) {
+          return [Map<String, dynamic>.from(inner)];
+        }
+      }
+
+      if (body is String) {
         final decoded = jsonDecode(body);
         return _extractAnyList(decoded);
-      } catch (_) {}
-    }
+      }
 
-    return [];
-  }
-
-  List<Map<String, dynamic>>? _tryList(dynamic v) {
-    if (v is List) {
-      return v
-          .whereType<Map>()
-          .map<Map<String, dynamic>>((e) => Map<String, dynamic>.from(e))
-          .toList();
+      return [];
+    } catch (e) {
+      AppLogger.i.error('💥 Erro em _extractAnyList: $e');
+      return [];
     }
-    if (v is Map) {
-      final map = Map<String, dynamic>.from(v);
-      dynamic inner =
-          map['data'] ?? map['dados'] ?? map['content'] ?? map['items'];
-      if (inner != null) return _extractAnyList(inner);
-    }
-    return null;
   }
 
   String? Function(String?)? _createValidator(TelaField field) {
@@ -271,8 +261,10 @@ class _DynamicGridDynamicScreenState extends State<DynamicGridDynamicScreen> {
           builder: (context, s) {
             if (s.connectionState == ConnectionState.waiting) {
               return const Scaffold(
-                  body: Center(child: CircularProgressIndicator()));
+                body: Center(child: CircularProgressIndicator()),
+              );
             }
+
             if (s.hasError) {
               AppLogger.i.error('💥 FutureBuilder erro: ${s.error}');
               return Scaffold(
@@ -309,7 +301,6 @@ class _DynamicGridDynamicScreenState extends State<DynamicGridDynamicScreen> {
                 'create=${tela.createEndpoint} update=${tela.updateEndpoint} delete=${tela.deleteEndpoint} '
                 'campos=${tela.fields.length} actions=${tela.actions.length}');
 
-            // Mapeia ações do modelo -> ServerAction do grid
             final serverActions = tela.actions.map((a) {
               return ServerAction(
                 label: a.label,
@@ -329,7 +320,7 @@ class _DynamicGridDynamicScreenState extends State<DynamicGridDynamicScreen> {
               deleteEndpoint: ApiLinks.baseUrl + tela.deleteEndpoint,
               hasPermission: widget.hasPermission,
               asyncHasPermission:
-                  AuthService().hasPermission, // 🔥 libera botões
+                  AuthService().hasPermission, // libera botões dinamicamente
               fieldConfigs: _convertToFieldConfigs(tela.fields),
               idFieldName: tela.idFieldName,
               dateFieldName: tela.dateFieldName,
@@ -351,7 +342,7 @@ class _DynamicGridDynamicScreenState extends State<DynamicGridDynamicScreen> {
           },
         ),
 
-        // Console flutuante (mantém)
+        // 🧠 Console flutuante
         const AppLoggerOverlay(),
       ],
     );

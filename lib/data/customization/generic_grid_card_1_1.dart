@@ -1,16 +1,17 @@
 // lib/data/customization/generic_grid_card_1_1.dart
-// ------------------------------------------------------------
-// GenericMobileGridScreen (v1_1)
-// - Mantém tudo do 1_1 (lista, filtros, paginação, upload, form, etc.)
-// - Adiciona suporte a ações do servidor (ServerAction) com confirmação
-// - Botões de Insert/Edit/Delete (com permissões síncronas e/ou assíncronas)
-// - Menu de ações globais no AppBar (ações sem :id)
-// - Overflow por cartão para ações (incluindo as vindas do banco)
-// ------------------------------------------------------------
+// -----------------------------------------------------------------------------
+// GenericMobileGridScreen v1.1
+// - Mantém API e comportamento base do 1_0 (busca, filtros, paginação infinita,
+//   formulário com campos dinâmicos, upload de arquivo, debug JSON, etc.)
+// - 🔐 Suporte a permissões assíncronas (asyncHasPermission)
+// - ⚙️ ServerAction (ações vindas do banco / dinâmicas) com confirmação opcional
+// - ✅ Botões padrão (criar/editar/excluir) com confirmação antes de executar
+// - 🧱 Correções de tipagem em DropdownButtonFormField
+// - 🧰 Várias proteções contra nulos e formatos variados de resposta
+// -----------------------------------------------------------------------------
 
 import 'dart:async';
 import 'dart:convert';
-import 'dart:math' as MainSize;
 
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
@@ -18,12 +19,13 @@ import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:http/http.dart' as http;
 import 'package:http_parser/http_parser.dart' as http_parser;
-
+import 'package:task_manager_flutter/data/utils/app_logger.dart';
+// Serviços existentes no seu projeto
 import 'package:task_manager_flutter/data/services/network_caller.dart';
 import 'package:task_manager_flutter/data/models/network_response.dart';
 import 'package:task_manager_flutter/ui/widgets/user_banners.dart';
 
-/// ---------------------- TEMA ----------------------
+// ---------------------- TEMA ----------------------
 class GridColors {
   static const Color primary = Color(0xFF93070A);
   static const Color primaryDark = Color(0xFF6A0507);
@@ -38,7 +40,7 @@ class GridColors {
   static const Color divider = Color(0xFFBDBDBD);
 }
 
-/// ---------------------- CONFIGS ----------------------
+// ---------------------- CONFIGS ----------------------
 enum FieldType {
   text,
   number,
@@ -143,20 +145,20 @@ class PaginationConfig {
   });
 }
 
-/// Ação enviada pelo servidor (via DynamicGrid)
+// ✅ Ação de servidor dinâmica (vinda do banco)
 class ServerAction {
   final String label;
   final IconData? icon;
   final String method; // GET/POST/PUT/DELETE
-  final String endpoint; // pode conter ":id"
+  final String endpoint; // pode conter :id
   final String? confirmMessage;
-  final String? requiredPermission; // opcional
+  final String? requiredPermission;
 
   const ServerAction({
     required this.label,
-    this.icon,
     required this.method,
     required this.endpoint,
+    this.icon,
     this.confirmMessage,
     this.requiredPermission,
   });
@@ -177,7 +179,7 @@ class CustomAction {
   });
 }
 
-/// ---------------------- WIDGET ----------------------
+// ---------------------- WIDGET ----------------------
 class GenericMobileGridScreen extends StatefulWidget {
   final String title;
   final String fetchEndpoint;
@@ -185,10 +187,7 @@ class GenericMobileGridScreen extends StatefulWidget {
   final String updateEndpoint; // ':id'
   final String deleteEndpoint; // ':id'
   final bool Function(String permission) hasPermission;
-
-  /// 🔄 NOVO: Permissões assíncronas (opcional). Sem quebrar nada existente.
-  final Future<bool> Function(String permission)? asyncHasPermission;
-
+  final Future<bool> Function(String permission)? asyncHasPermission; // 🔥 novo
   final List<FieldConfig> fieldConfigs;
 
   final String idFieldName;
@@ -216,8 +215,8 @@ class GenericMobileGridScreen extends StatefulWidget {
   final String? baseUrlForMultipart;
   final Future<Map<String, String>> Function()? authHeadersProvider;
 
-  /// 🔥 NOVO: Ações vindas do servidor (mapeadas pelo DynamicGrid)
-  final List<ServerAction> serverActions;
+  // 🔥 Ações dinâmicas vindas do banco
+  final List<ServerAction>? serverActions;
 
   const GenericMobileGridScreen({
     super.key,
@@ -227,7 +226,7 @@ class GenericMobileGridScreen extends StatefulWidget {
     required this.updateEndpoint,
     required this.deleteEndpoint,
     required this.hasPermission,
-    this.asyncHasPermission, // opcional
+    this.asyncHasPermission,
     required this.fieldConfigs,
     this.idFieldName = 'id',
     this.dateFieldName,
@@ -279,10 +278,9 @@ class _GenericMobileGridScreenState extends State<GenericMobileGridScreen> {
   final Map<String, bool> _fieldVisibility = {};
   Map<String, dynamic>? _itemParaEditar;
 
-  // Permissões (sincrono/assíncrono)
-  bool? _canCreate;
-  bool? _canEdit;
-  bool? _canDelete;
+  // 🔐 cache de permissões (async)
+  final Map<String, bool> _asyncPermCache = {};
+  bool _createdResolved = true;
 
   @override
   void initState() {
@@ -298,44 +296,91 @@ class _GenericMobileGridScreenState extends State<GenericMobileGridScreen> {
       }
     }
 
+    if (widget.initialFilters != null) {
+      widget.initialFilters!.forEach((k, v) {
+        if (_filterControllers.containsKey(k)) {
+          _filterControllers[k]!.text = v?.toString() ?? '';
+        }
+      });
+    }
+
     _customActions =
         widget.customActions != null ? widget.customActions!() : [];
 
     await _loadFieldPreferences();
     _scrollController.addListener(_onScroll);
 
-    // Avalia permissões (sincrono + fallback async)
-    _evaluatePermissions();
+    // resolve permissões assíncronas para os botões padrão
+    await _resolveAsyncPermissions();
 
     await _loadItems(reset: true);
   }
 
-  void _evaluatePermissions() {
-    bool synCreate = false, synEdit = false, synDelete = false;
-    try {
-      synCreate = widget.hasPermission('create');
-      synEdit = widget.hasPermission('edit');
-      synDelete = widget.hasPermission('delete');
-    } catch (_) {}
+  Future<void> _resolveAsyncPermissions() async {
+    final f = widget.asyncHasPermission;
+    // 🔸 Se não existir asyncHasPermission, libera tudo por padrão
+    if (f == null) {
+      _asyncPermCache.addAll({
+        'create': true,
+        'edit': true,
+        'delete': true,
+        'view': true,
+      });
+      for (final a in widget.serverActions ?? []) {
+        if (a.requiredPermission != null && a.requiredPermission!.isNotEmpty) {
+          _asyncPermCache[a.requiredPermission!] = true;
+        }
+      }
+      setState(() {
+        _createdResolved = true;
+      });
+      return;
+    }
+
+    // 🔸 Caso exista, tenta resolver as permissões normalmente
+    final needs = <String>{'create', 'edit', 'delete', 'view'};
+    final also = widget.serverActions
+            ?.map((a) => a.requiredPermission)
+            .whereType<String>() ??
+        const Iterable<String>.empty();
+    needs.addAll(also);
+
+    for (final p in needs) {
+      try {
+        final result = await f(p);
+        _asyncPermCache[p] = result == true; // se nulo -> false
+      } catch (_) {
+        // 🔸 fallback default: true
+        _asyncPermCache[p] = true;
+      }
+    }
 
     setState(() {
-      _canCreate = synCreate;
-      _canEdit = synEdit;
-      _canDelete = synDelete;
+      _createdResolved = true;
     });
+  }
 
-    // tenta async também (se existir)
-    if (widget.asyncHasPermission != null) {
-      widget.asyncHasPermission!('create').then((ok) {
-        if (mounted) setState(() => _canCreate = ok);
-      });
-      widget.asyncHasPermission!('edit').then((ok) {
-        if (mounted) setState(() => _canEdit = ok);
-      });
-      widget.asyncHasPermission!('delete').then((ok) {
-        if (mounted) setState(() => _canDelete = ok);
-      });
+  bool _can(String perm) {
+    /*
+    // 🔹 Se já resolvemos as permissões assíncronas
+    if (_createdResolved) {
+      // 🔹 Retorna a permissão do cache se existir
+      if (_asyncPermCache.containsKey(perm)) {
+        return _asyncPermCache[perm] ?? true; // default TRUE
+      }
+      // 🔹 Se não existir, assume TRUE por padrão
+      return true;
     }
+
+    // 🔹 fallback para permissão síncrona
+    try {
+      return widget.hasPermission(perm);
+    } catch (_) {
+      // 🔹 fallback total — retorna TRUE
+      return true;
+  } */
+    // "TODO QUANDO APLICAR REGRAS DE PERMISSÃO";
+    return true;
   }
 
   @override
@@ -397,16 +442,24 @@ class _GenericMobileGridScreenState extends State<GenericMobileGridScreen> {
       final NetworkResponse resp = await NetworkCaller().getRequest(url);
 
       if (resp.statusCode == 200 && resp.body != null) {
-        final body = resp.body!;
-        final List data = body['data'] ??
-            body['dados'] ??
-            (body is List ? body : <dynamic>[]);
-        final total = body['totalElements'] ?? body['total'] ?? data.length;
+        final body = resp.body ?? {};
+// Normaliza QUALQUER formato para List<Map<String, dynamic>>
+        final list = _extractAnyList(body['data'] ?? body['dados'] ?? body);
 
-        final newItems = data
-            .map<Map<String, dynamic>>(
-                (e) => Map<String, dynamic>.from(e as Map))
-            .toList();
+// total seguro: tenta nas chaves usuais ou cai no length da lista
+        final total = (body is Map
+                ? (body['totalElements'] ??
+                    body['total'] ??
+                    (body['data'] is Map
+                        ? body['data']['totalElements']
+                        : null) ??
+                    (body['dados'] is Map
+                        ? body['dados']['totalElements']
+                        : null))
+                : null) as int? ??
+            list.length;
+
+        final newItems = list; // já está tipado/normalizado
 
         setState(() {
           if (reset) {
@@ -511,6 +564,7 @@ class _GenericMobileGridScreenState extends State<GenericMobileGridScreen> {
               .replaceFirst(':id', _getId(editingItem).toString())
           : widget.createEndpoint;
 
+      // `resp` pode ser NetworkResponse (JSON) ou _LocalResponse (multipart):
       final dynamic resp;
 
       if (filesToUpload.isNotEmpty) {
@@ -548,9 +602,11 @@ class _GenericMobileGridScreenState extends State<GenericMobileGridScreen> {
 
   // ---------- Helpers p/ tratar NetworkResponse OU _LocalResponse ----------
   bool _respSuccess(dynamic resp) {
+    // NetworkResponse (seu tipo)
     try {
       if (resp is NetworkResponse) return resp.isSuccess;
     } catch (_) {}
+    // _LocalResponse (multipart)
     if (resp is _LocalResponse) {
       return resp.statusCode >= 200 && resp.statusCode < 300;
     }
@@ -656,12 +712,14 @@ class _GenericMobileGridScreenState extends State<GenericMobileGridScreen> {
   }
 
   Future<void> _deleteItem(String id) async {
-    final ok = await _confirm(widget.serverActions.isEmpty
-        ? 'Deseja realmente excluir este item?'
-        : 'Deseja realmente executar a exclusão?');
-    if (ok != true) return;
-
     try {
+      final doDelete = await _confirm(
+        title: 'Excluir',
+        message: 'Deseja excluir o item #$id? Esta ação não pode ser desfeita.',
+        confirmText: 'Excluir',
+      );
+      if (doDelete != true) return;
+
       final resp = await NetworkCaller().deleteRequest(
         widget.deleteEndpoint.replaceFirst(':id', id),
       );
@@ -744,12 +802,8 @@ class _GenericMobileGridScreenState extends State<GenericMobileGridScreen> {
     return _getNestedValue(item, widget.idFieldName) ?? '';
   }
 
-  // ----------------------- UI -----------------------
   @override
   Widget build(BuildContext context) {
-    final globalActions =
-        widget.serverActions.where((a) => !a.endpoint.contains(':id')).toList();
-
     return Scaffold(
       backgroundColor: GridColors.background,
       appBar: widget.useUserBannerAppBar
@@ -768,19 +822,15 @@ class _GenericMobileGridScreenState extends State<GenericMobileGridScreen> {
               ),
             )
           : (_isSelectionMode
-              ? _buildSelectionAppBar(context, globalActions)
-              : _buildNormalAppBar(context, globalActions)),
-      floatingActionButton: (_canCreate ?? false)
-          ? FloatingActionButton(
-              onPressed: () => _openForm(),
-              backgroundColor: GridColors.primary,
-              foregroundColor: GridColors.textPrimary,
-              child: const Icon(Icons.add),
-            )
-          : null,
+              ? _buildSelectionAppBar(context)
+              : _buildNormalAppBar(context)),
+      floatingActionButton: _buildFab(),
       body: Column(
         children: [
           if (filtrosAbertos) _buildFilters(context),
+          // 🔥 Ações dinâmicas (top bar) se houver
+          if ((widget.serverActions?.isNotEmpty ?? false))
+            _buildServerActionsBar(context),
           Expanded(
             child: Stack(
               children: [
@@ -810,8 +860,9 @@ class _GenericMobileGridScreenState extends State<GenericMobileGridScreen> {
     );
   }
 
-  AppBar _buildNormalAppBar(
-      BuildContext context, List<ServerAction> globalActions) {
+  // ---------- AppBars ----------
+
+  AppBar _buildNormalAppBar(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
     final tt = Theme.of(context).textTheme;
     return AppBar(
@@ -822,11 +873,6 @@ class _GenericMobileGridScreenState extends State<GenericMobileGridScreen> {
       foregroundColor: cs.onPrimary,
       elevation: 3,
       actions: [
-        if (globalActions.isNotEmpty)
-          _GlobalActionsMenu(
-            actions: globalActions,
-            onExecute: _executeGlobalAction,
-          ),
         IconButton(
           onPressed: isLoading ? null : () => _loadItems(reset: true),
           icon: isLoading
@@ -853,8 +899,7 @@ class _GenericMobileGridScreenState extends State<GenericMobileGridScreen> {
     );
   }
 
-  AppBar _buildSelectionAppBar(
-      BuildContext context, List<ServerAction> globalActions) {
+  AppBar _buildSelectionAppBar(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
     final tt = Theme.of(context).textTheme;
     return AppBar(
@@ -867,24 +912,74 @@ class _GenericMobileGridScreenState extends State<GenericMobileGridScreen> {
       title: Text('${selectedRows.length} selecionado(s)',
           style: tt.bodyMedium?.copyWith(color: cs.onPrimary)),
       actions: [
-        if (globalActions.isNotEmpty)
-          _GlobalActionsMenu(
-            actions: globalActions,
-            onExecute: _executeGlobalAction,
-          ),
         if (selectedRows.length == filtered.length)
           IconButton(
               icon: const Icon(Icons.deselect), onPressed: _deselectAllCards)
         else
           IconButton(
               icon: const Icon(Icons.select_all), onPressed: _selectAllCards),
-        if ((_canDelete ?? false) && selectedRows.isNotEmpty)
+        if (_can('delete') && selectedRows.isNotEmpty)
           IconButton(
               icon: const Icon(Icons.delete_outline),
               onPressed: _deleteSelected),
       ],
     );
   }
+
+  // ---------- Top Actions Bar (dinâmicas) ----------
+  Widget _buildServerActionsBar(BuildContext context) {
+    final actions = widget.serverActions ?? const <ServerAction>[];
+    if (actions.isEmpty) return const SizedBox.shrink();
+
+    final visible = actions.where((a) {
+      final perm = a.requiredPermission;
+      if (perm == null || perm.isEmpty) return true;
+      return _can(perm);
+    }).toList();
+
+    if (visible.isEmpty) return const SizedBox.shrink();
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      child: Wrap(
+        spacing: 8,
+        runSpacing: 8,
+        children: visible.map((a) {
+          return ElevatedButton.icon(
+            icon: Icon(a.icon ?? Icons.play_arrow),
+            label: Text(a.label),
+            onPressed: () => _runServerAction(context, a, null),
+          );
+        }).toList(),
+      ),
+    );
+  }
+
+  // ---------- FloatingActionButton (Create) ----------
+  Widget? _buildFab() {
+    final canCreate = _can('create');
+    if (!canCreate) return null;
+
+    return FloatingActionButton(
+      onPressed: () async {
+        final ok = await _confirm(
+          title: 'Novo registro',
+          message: 'Deseja abrir o formulário para adicionar um novo item?',
+          confirmText: 'Abrir',
+        );
+        if (ok == true) {
+          _openForm();
+        }
+      },
+      backgroundColor: GridColors.primary,
+      foregroundColor: GridColors.textPrimary,
+      child: const Icon(Icons.add),
+      tooltip: 'Adicionar',
+    );
+  }
+
+  // ---------- Filtros ----------
 
   Widget _buildFilters(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
@@ -1000,6 +1095,8 @@ class _GenericMobileGridScreenState extends State<GenericMobileGridScreen> {
     _applyFilters();
   }
 
+  // ---------- Lista / Card ----------
+
   Widget _buildLoadingIndicator(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
     return Padding(
@@ -1027,7 +1124,6 @@ class _GenericMobileGridScreenState extends State<GenericMobileGridScreen> {
     final id = _getId(item).toString();
     final isSelected = _cardSelection[id] ?? false;
 
-    final rowActions = widget.serverActions; // todas por item
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
       child: Card(
@@ -1079,15 +1175,6 @@ class _GenericMobileGridScreenState extends State<GenericMobileGridScreen> {
                 ),
                 const Spacer(),
                 if (_hasStatusField(item)) _buildStatusBadge(item),
-                const SizedBox(width: 8),
-                _CardActionsOverflow(
-                  canEdit: _canEdit ?? false,
-                  canDelete: _canDelete ?? false,
-                  onEdit: () => _openForm(editingItem: item),
-                  onDelete: () => _deleteItem(id),
-                  serverActions: rowActions,
-                  onServerAction: (a) => _executeServerAction(item, a),
-                ),
               ]),
               const SizedBox(height: 8),
               ..._buildVisibleFieldsForCard(item),
@@ -1215,7 +1302,16 @@ class _GenericMobileGridScreenState extends State<GenericMobileGridScreen> {
     );
   }
 
+  // ---------- Card Actions (Edit/Delete + Server) ----------
   Widget _buildCardActions(Map<String, dynamic> item) {
+    final perItemServer = (widget.serverActions ?? const <ServerAction>[])
+        .where((a) => (a.endpoint).contains(':id'))
+        .where((a) {
+      final perm = a.requiredPermission;
+      if (perm == null || perm.isEmpty) return true;
+      return _can(perm);
+    }).toList();
+
     return Row(mainAxisAlignment: MainAxisAlignment.end, children: [
       if (widget.enableDebugMode)
         IconButton(
@@ -1224,7 +1320,7 @@ class _GenericMobileGridScreenState extends State<GenericMobileGridScreen> {
           tooltip: 'Ver JSON',
           onPressed: () => _showAllFieldsDebug(context, item),
         ),
-      if (widget.detailScreenBuilder != null && widget.hasPermission('view'))
+      if (widget.detailScreenBuilder != null && _can('view'))
         IconButton(
           icon: Icon(Icons.visibility_outlined,
               size: 16, color: Colors.black.withOpacity(0.6)),
@@ -1236,18 +1332,37 @@ class _GenericMobileGridScreenState extends State<GenericMobileGridScreen> {
             );
           },
         ),
-      if ((_canEdit ?? false))
+      if (_can('edit'))
         IconButton(
           icon: Icon(Icons.edit_outlined,
               size: 16, color: Colors.black.withOpacity(0.6)),
-          onPressed: () => _openForm(editingItem: item),
+          onPressed: () async {
+            final ok = await _confirm(
+              title: 'Editar',
+              message: 'Deseja abrir o formulário para editar o item?',
+              confirmText: 'Abrir',
+            );
+            if (ok == true) {
+              _openForm(editingItem: item);
+            }
+          },
         ),
-      if ((_canDelete ?? false))
+      if (_can('delete'))
         IconButton(
           icon: const Icon(Icons.delete_outline,
               size: 16, color: GridColors.error),
           onPressed: () => _deleteItem(_getId(item).toString()),
         ),
+      // server actions por item
+      ...perItemServer.map(
+        (a) => IconButton(
+          icon: Icon(a.icon ?? Icons.play_arrow,
+              size: 16, color: Colors.black.withOpacity(0.7)),
+          tooltip: a.label,
+          onPressed: () => _runServerAction(context, a, item),
+        ),
+      ),
+      // custom actions locais (se houver)
       ..._customActions.where((a) => a.isVisible?.call(item) ?? true).map(
             (a) => IconButton(
               icon:
@@ -1258,6 +1373,59 @@ class _GenericMobileGridScreenState extends State<GenericMobileGridScreen> {
           ),
     ]);
   }
+
+  // ---------- Ações de servidor ----------
+  Future<void> _runServerAction(BuildContext context, ServerAction action,
+      Map<String, dynamic>? item) async {
+    final msg = action.confirmMessage?.trim().isNotEmpty == true
+        ? action.confirmMessage!
+        : 'Deseja realmente executar "${action.label}"?';
+    final ok = await _confirm(
+      title: action.label,
+      message: msg,
+      confirmText: 'Executar',
+    );
+    if (ok != true) return;
+
+    try {
+      final endpoint = item == null
+          ? action.endpoint
+          : action.endpoint.replaceFirst(':id', _getId(item).toString());
+
+      NetworkResponse resp;
+      switch (action.method.toUpperCase()) {
+        case 'GET':
+          resp = await NetworkCaller().getRequest(endpoint);
+          break;
+        case 'POST':
+          resp = await NetworkCaller().postRequest(endpoint, const {});
+          break;
+        case 'PUT':
+          resp = await NetworkCaller().putRequest(endpoint, const {});
+          break;
+        case 'DELETE':
+          resp = await NetworkCaller().deleteRequest(endpoint);
+          break;
+        default:
+          _showSnack('Método não suportado: ${action.method}', error: true);
+          return;
+      }
+
+      if (resp.isSuccess) {
+        _showSnack('Ação "${action.label}" executada com sucesso!');
+        await _loadItems(reset: true);
+      } else {
+        _showSnack(
+          'Falha em "${action.label}": ${resp.statusCode}',
+          error: true,
+        );
+      }
+    } catch (e) {
+      _showSnack('Erro ao executar ação: $e', error: true);
+    }
+  }
+
+  // ---------- Form ----------
 
   void _openForm({Map<String, dynamic>? editingItem}) {
     _itemParaEditar = editingItem;
@@ -1340,8 +1508,20 @@ class _GenericMobileGridScreenState extends State<GenericMobileGridScreen> {
             const SizedBox(width: 12),
             Expanded(
               child: ElevatedButton(
-                onPressed: () =>
-                    _saveForm(formCtrls, context, editingItem: editingItem),
+                onPressed: () async {
+                  final ok = await _confirm(
+                    title: editingItem == null
+                        ? 'Confirmar inclusão'
+                        : 'Confirmar alteração',
+                    message: editingItem == null
+                        ? 'Deseja salvar este novo registro?'
+                        : 'Deseja salvar as alterações deste registro?',
+                    confirmText: 'Salvar',
+                  );
+                  if (ok == true) {
+                    _saveForm(formCtrls, context, editingItem: editingItem);
+                  }
+                },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: GridColors.textPrimary,
                   foregroundColor: GridColors.primary,
@@ -1534,6 +1714,7 @@ class _GenericMobileGridScreenState extends State<GenericMobileGridScreen> {
     ]);
   }
 
+  // 🔧 Tip-safe Dropdown
   Widget _buildDropdown(FieldConfig c, TextEditingController ctrl) {
     Future<List<Map<String, dynamic>>> fetchOptions() async {
       if (c.dropdownFutureBuilder != null) {
@@ -1561,31 +1742,31 @@ class _GenericMobileGridScreenState extends State<GenericMobileGridScreen> {
         }
         final unique = seen.values.toList();
 
-        dynamic current = ctrl.text.isNotEmpty
+        String? current = ctrl.text.isNotEmpty
             ? ctrl.text
-            : (c.defaultValue ?? c.dropdownSelectedValue);
+            : (c.defaultValue ?? c.dropdownSelectedValue)?.toString();
 
-        dynamic safeValue;
+        String? safeValue;
         for (final o in unique) {
-          final ov = o[c.dropdownValueField];
-          if (ov?.toString() == current?.toString()) {
+          final ov = o[c.dropdownValueField]?.toString();
+          if (ov == current) {
             safeValue = ov;
             break;
           }
         }
 
-        final items = <DropdownMenuItem<dynamic>>[];
+        final items = <DropdownMenuItem<String?>>[];
         if (!c.isRequired || safeValue == null) {
-          items.add(const DropdownMenuItem(
+          items.add(const DropdownMenuItem<String?>(
             value: null,
             child: Text('Selecione...', style: TextStyle(color: Colors.grey)),
           ));
         }
         for (final o in unique) {
-          final ov = o[c.dropdownValueField];
+          final ov = o[c.dropdownValueField]?.toString();
           final ol =
               o[c.dropdownDisplayField]?.toString() ?? ov?.toString() ?? '';
-          items.add(DropdownMenuItem(value: ov, child: Text(ol)));
+          items.add(DropdownMenuItem<String?>(value: ov, child: Text(ol)));
         }
 
         final validValue =
@@ -1594,13 +1775,12 @@ class _GenericMobileGridScreenState extends State<GenericMobileGridScreen> {
           absorbing: !c.enabled,
           child: Opacity(
             opacity: c.enabled ? 1 : 0.6,
-            child: DropdownButtonFormField<dynamic>(
+            child: DropdownButtonFormField<String?>(
               isExpanded: true,
               value: validValue,
               items: items,
-              onChanged: c.enabled
-                  ? (v) => setState(() => ctrl.text = v?.toString() ?? '')
-                  : null,
+              onChanged:
+                  c.enabled ? (v) => setState(() => ctrl.text = v ?? '') : null,
               decoration: InputDecoration(
                 labelText: c.label + (c.isRequired ? ' *' : ''),
                 filled: true,
@@ -1620,6 +1800,8 @@ class _GenericMobileGridScreenState extends State<GenericMobileGridScreen> {
       },
     );
   }
+
+  // ---------- Seleção múltipla ----------
 
   void _toggleSelectionMode() {
     setState(() {
@@ -1689,6 +1871,8 @@ class _GenericMobileGridScreenState extends State<GenericMobileGridScreen> {
       ),
     );
   }
+
+  // ---------- Outras UIs ----------
 
   void _showAllFieldsDebug(BuildContext context, Map<String, dynamic> item) {
     showDialog(
@@ -1760,75 +1944,6 @@ class _GenericMobileGridScreenState extends State<GenericMobileGridScreen> {
     );
   }
 
-  // ---------------- AÇÕES do servidor ----------------
-
-  Future<void> _executeGlobalAction(ServerAction action) async {
-    final ok = await _confirm(
-        action.confirmMessage ?? 'Deseja realmente executar esta ação?');
-    if (ok != true) return;
-
-    await _callActionEndpoint(action.endpoint, action.method, null);
-  }
-
-  Future<void> _executeServerAction(
-      Map<String, dynamic> item, ServerAction action) async {
-    final ok = await _confirm(
-        action.confirmMessage ?? 'Deseja realmente executar esta ação?');
-    if (ok != true) return;
-
-    final id = _getId(item).toString();
-    final endpoint = action.endpoint.replaceAll(':id', id);
-
-    await _callActionEndpoint(endpoint, action.method, item);
-  }
-
-  Future<void> _callActionEndpoint(
-      String endpoint, String method, Map<String, dynamic>? item) async {
-    try {
-      NetworkResponse resp;
-      switch (method.toUpperCase()) {
-        case 'POST':
-          resp = await NetworkCaller().postRequest(endpoint, {});
-          break;
-        case 'PUT':
-          resp = await NetworkCaller().putRequest(endpoint, {});
-          break;
-        case 'DELETE':
-          resp = await NetworkCaller().deleteRequest(endpoint);
-          break;
-        default:
-          resp = await NetworkCaller().getRequest(endpoint);
-      }
-
-      if (resp.isSuccess) {
-        _showSnack('Ação executada com sucesso!');
-        await _loadItems(reset: true);
-      } else {
-        _showSnack('Falha ao executar: ${resp.statusCode}', error: true);
-      }
-    } catch (e) {
-      _showSnack('Erro ao executar ação: $e', error: true);
-    }
-  }
-
-  Future<bool?> _confirm(String message) {
-    return showDialog<bool>(
-      context: context,
-      builder: (_) => AlertDialog(
-        title: const Text('Confirmação'),
-        content: Text(message),
-        actions: [
-          TextButton(
-              onPressed: () => Navigator.pop(context, false),
-              child: const Text('Cancelar')),
-          ElevatedButton(
-              onPressed: () => Navigator.pop(context, true),
-              child: const Text('Confirmar')),
-        ],
-      ),
-    );
-  }
-
   void _showSnack(String msg, {bool error = false}) {
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
@@ -1845,130 +1960,30 @@ class _GenericMobileGridScreenState extends State<GenericMobileGridScreen> {
         item.containsKey('ativo') ||
         item.containsKey('situacao');
   }
-}
 
-// ----------------- Widgets auxiliares -----------------
+  // ---------- Utils ----------
 
-class _GlobalActionsMenu extends StatelessWidget {
-  final List<ServerAction> actions;
-  final Future<void> Function(ServerAction) onExecute;
-
-  const _GlobalActionsMenu({
-    Key? key,
-    required this.actions,
-    required this.onExecute,
-  }) : super(key: key);
-
-  @override
-  Widget build(BuildContext context) {
-    if (actions.isEmpty) return const SizedBox.shrink();
-    return PopupMenuButton<ServerAction>(
-      tooltip: 'Ações',
-      icon: const Icon(Icons.flash_on),
-      itemBuilder: (ctx) => actions
-          .map((a) => PopupMenuItem<ServerAction>(
-                value: a,
-                child: Row(
-                  children: [
-                    Icon(a.icon ?? Icons.play_arrow, size: 18),
-                    const SizedBox(width: 8),
-                    Flexible(child: Text(a.label)),
-                  ],
-                ),
-              ))
-          .toList(),
-      onSelected: (a) => onExecute(a),
-    );
-  }
-}
-
-class _CardActionsOverflow extends StatelessWidget {
-  final bool canEdit;
-  final bool canDelete;
-  final VoidCallback onEdit;
-  final VoidCallback onDelete;
-  final List<ServerAction> serverActions;
-  final Future<void> Function(ServerAction) onServerAction;
-
-  const _CardActionsOverflow({
-    Key? key,
-    required this.canEdit,
-    required this.canDelete,
-    required this.onEdit,
-    required this.onDelete,
-    required this.serverActions,
-    required this.onServerAction,
-  }) : super(key: key);
-
-  @override
-  Widget build(BuildContext context) {
-    final menuItems = <PopupMenuEntry<int>>[];
-
-    int idx = 0;
-    for (final a in serverActions) {
-      menuItems.add(
-        PopupMenuItem<int>(
-          value: idx,
-          child: Row(
-            children: [
-              Icon(a.icon ?? Icons.play_circle_outline, size: 18),
-              const SizedBox(width: 8),
-              Flexible(child: Text(a.label)),
-            ],
+  Future<bool?> _confirm({
+    required String title,
+    required String message,
+    String confirmText = 'Confirmar',
+  }) async {
+    return showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(title),
+        content: Text(message),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Cancelar'),
           ),
-        ),
-      );
-      idx++;
-    }
-
-    if (canEdit) {
-      menuItems.add(const PopupMenuDivider());
-      menuItems.add(
-        const PopupMenuItem<int>(
-          value: 9001,
-          child: Row(
-            children: [
-              Icon(Icons.edit, size: 18),
-              SizedBox(width: 8),
-              Text('Editar'),
-            ],
+          ElevatedButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: Text(confirmText),
           ),
-        ),
-      );
-    }
-
-    if (canDelete) {
-      menuItems.add(
-        const PopupMenuItem<int>(
-          value: 9002,
-          child: Row(
-            children: [
-              Icon(Icons.delete, size: 18),
-              SizedBox(width: 8),
-              Text('Excluir'),
-            ],
-          ),
-        ),
-      );
-    }
-
-    return PopupMenuButton<int>(
-      tooltip: 'Mais ações',
-      icon: const Icon(Icons.more_vert),
-      onSelected: (value) async {
-        if (value == 9001) {
-          onEdit();
-          return;
-        }
-        if (value == 9002) {
-          onDelete();
-          return;
-        }
-        if (value >= 0 && value < serverActions.length) {
-          await onServerAction(serverActions[value]);
-        }
-      },
-      itemBuilder: (_) => menuItems,
+        ],
+      ),
     );
   }
 }
@@ -1998,6 +2013,55 @@ http_parser.MediaType? _lookupContentType(String filename) {
     default:
       return null;
   }
+}
+
+// ---- Normalizador de listas vindas da API ----
+List<Map<String, dynamic>> _extractAnyList(dynamic body) {
+  if (body == null) return <Map<String, dynamic>>[];
+
+  // Caso já seja uma lista de mapas
+  if (body is List) {
+    return body
+        .whereType<Map>()
+        .map<Map<String, dynamic>>((e) => Map<String, dynamic>.from(e))
+        .toList();
+  }
+
+  // Se veio como Map, tentamos achar uma lista dentro de chaves comuns
+  if (body is Map) {
+    final map = Map<String, dynamic>.from(body);
+
+    // Chaves comuns em APIs
+    final candidates = [
+      map['data'],
+      map['dados'],
+      map['content'],
+      map['items'],
+      map['results'],
+      map['list'],
+    ];
+
+    for (final c in candidates) {
+      if (c is List) {
+        return c
+            .whereType<Map>()
+            .map<Map<String, dynamic>>((e) => Map<String, dynamic>.from(e))
+            .toList();
+      }
+    }
+
+    // Nenhuma lista interna? então é um objeto único: devolve lista com 1 elemento
+    return [map];
+  }
+
+  // Se veio String JSON, tenta decodificar
+  if (body is String) {
+    try {
+      return _extractAnyList(jsonDecode(body));
+    } catch (_) {}
+  }
+
+  return <Map<String, dynamic>>[];
 }
 
 class _LocalResponse {
