@@ -141,7 +141,7 @@ class _ChatsDailyChartState extends State<ChatsDailyChart> {
         ),
         child: LineChart(
           LineChartData(
-            gridData: FlGridData(show: false),
+            gridData: const FlGridData(show: false),
             borderData: FlBorderData(show: false),
             lineTouchData: LineTouchData(
               handleBuiltInTouches: true,
@@ -200,7 +200,7 @@ class _ChatsDailyChartState extends State<ChatsDailyChart> {
                 color: GridColors.secondary,
                 barWidth: 3,
                 isStrokeCapRound: true,
-                dotData: FlDotData(show: true),
+                dotData: const FlDotData(show: true),
                 belowBarData: BarAreaData(
                   show: true,
                   gradient: LinearGradient(

@@ -135,9 +135,9 @@ class _TicketsTrendChartState extends State<TicketsTrendChart> {
       child: Column(
         children: [
           // legend
-          Row(
+          const Row(
             mainAxisAlignment: MainAxisAlignment.center,
-            children: const [
+            children: [
               _LegendDot(color: Colors.orange, label: 'Abertos'),
               SizedBox(width: 12),
               _LegendDot(color: Colors.blue, label: 'Andamento'),
@@ -149,7 +149,7 @@ class _TicketsTrendChartState extends State<TicketsTrendChart> {
           Expanded(
             child: LineChart(
               LineChartData(
-                gridData: FlGridData(show: false),
+                gridData: const FlGridData(show: false),
                 borderData: FlBorderData(show: false),
                 lineTouchData: LineTouchData(
                   touchTooltipData: LineTouchTooltipData(
@@ -183,8 +183,9 @@ class _TicketsTrendChartState extends State<TicketsTrendChart> {
                       reservedSize: 28,
                       getTitlesWidget: (v, _) {
                         final i = v.toInt();
-                        if (i < 0 || i >= data.length)
+                        if (i < 0 || i >= data.length) {
                           return const SizedBox.shrink();
+                        }
                         return Padding(
                           padding: const EdgeInsets.only(top: 4),
                           child: Text(
@@ -203,21 +204,21 @@ class _TicketsTrendChartState extends State<TicketsTrendChart> {
                     isCurved: true,
                     color: Colors.orange,
                     barWidth: 3,
-                    dotData: FlDotData(show: true),
+                    dotData: const FlDotData(show: true),
                     spots: openSpots,
                   ),
                   LineChartBarData(
                     isCurved: true,
                     color: Colors.blue,
                     barWidth: 3,
-                    dotData: FlDotData(show: true),
+                    dotData: const FlDotData(show: true),
                     spots: progSpots,
                   ),
                   LineChartBarData(
                     isCurved: true,
                     color: Colors.green,
                     barWidth: 3,
-                    dotData: FlDotData(show: true),
+                    dotData: const FlDotData(show: true),
                     spots: closedSpots,
                   ),
                 ],
@@ -233,8 +234,7 @@ class _TicketsTrendChartState extends State<TicketsTrendChart> {
 class _LegendDot extends StatelessWidget {
   final Color color;
   final String label;
-  const _LegendDot({required this.color, required this.label, Key? key})
-      : super(key: key);
+  const _LegendDot({required this.color, required this.label});
 
   @override
   Widget build(BuildContext context) {

@@ -77,8 +77,9 @@ class _AlertsPanelState extends State<AlertsPanel> {
           'Accept': 'application/json', // Important: Add Accept header
         },
       );
-      if (r1.statusCode != 200 || r2.statusCode != 200)
+      if (r1.statusCode != 200 || r2.statusCode != 200) {
         throw Exception('HTTP ${r1.statusCode}/${r2.statusCode}');
+      }
       setState(() {
         overdue = (jsonDecode(r1.body) as List)
             .map((e) => AlertItem.fromJson(e))
@@ -98,14 +99,16 @@ class _AlertsPanelState extends State<AlertsPanel> {
 
   @override
   Widget build(BuildContext context) {
-    if (loading)
+    if (loading) {
       return const SizedBox(
           height: 180, child: Center(child: CircularProgressIndicator()));
-    if (error != null)
+    }
+    if (error != null) {
       return SizedBox(
           height: 180,
           child: Center(
               child: Text(error!, style: const TextStyle(color: Colors.red))));
+    }
 
     Widget list(String title, List<AlertItem> items, Color color) {
       return Container(

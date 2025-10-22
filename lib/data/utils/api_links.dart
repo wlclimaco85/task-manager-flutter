@@ -375,5 +375,5 @@ class ApiLinks {
   static String get financeFluxoDiarioPdf =>
       '$_baseUrlNew/api/contas/extrato/pdf';
 
-  static String get baseUrl => '$_baseUrlNew';
+  static String get baseUrl => _baseUrlNew;
 }

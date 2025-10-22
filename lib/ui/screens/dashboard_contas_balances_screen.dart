@@ -45,18 +45,21 @@ class _ContasBalancesChartState extends State<ContasBalancesChart> {
 
   @override
   Widget build(BuildContext context) {
-    if (loading)
+    if (loading) {
       return const SizedBox(
           height: 260, child: Center(child: CircularProgressIndicator()));
-    if (error != null)
+    }
+    if (error != null) {
       return SizedBox(
           height: 260,
           child: Center(
               child: Text(error!,
                   style: const TextStyle(color: Colors.redAccent))));
-    if (contas.isEmpty)
+    }
+    if (contas.isEmpty) {
       return const SizedBox(
           height: 260, child: Center(child: Text('Sem contas bancárias.')));
+    }
 
     final total = contas.fold<double>(0, (p, c) => p + c.saldo.abs());
     final sections = <PieChartSectionData>[];

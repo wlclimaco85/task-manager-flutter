@@ -220,7 +220,7 @@ class _DashboardPageState extends State<DashboardPage> {
             // 🔹 13) Evolução de Saldos (NOVO)
             _sectionTitle('📈 Evolução de Saldos (últimos 30 dias)'),
             const SizedBox(height: 8),
-            ContaEvolucaoChart(
+            const ContaEvolucaoChart(
               contaId: 1, //TODO: passar contaId correta
             ),
             const SizedBox(height: 28),
@@ -307,7 +307,7 @@ class _DashboardPageState extends State<DashboardPage> {
       height: 230,
       child: BarChart(
         BarChartData(
-          gridData: FlGridData(show: false),
+          gridData: const FlGridData(show: false),
           borderData: FlBorderData(show: false),
           titlesData: FlTitlesData(
             leftTitles: const AxisTitles(
@@ -415,7 +415,7 @@ class _DashboardPageState extends State<DashboardPage> {
       height: 230,
       child: LineChart(
         LineChartData(
-          gridData: FlGridData(show: false),
+          gridData: const FlGridData(show: false),
           titlesData: FlTitlesData(
             bottomTitles: AxisTitles(
               sideTitles: SideTitles(
@@ -456,7 +456,7 @@ class _DashboardPageState extends State<DashboardPage> {
                 for (int i = 0; i < points.length; i++)
                   FlSpot(i.toDouble(), points[i].openChats.toDouble()),
               ],
-              dotData: FlDotData(show: true),
+              dotData: const FlDotData(show: true),
               belowBarData: BarAreaData(
                 show: true,
                 gradient: LinearGradient(

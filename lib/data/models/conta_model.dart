@@ -1,6 +1,3 @@
-import 'package:task_manager_flutter/data/models/training_block.dart';
-import 'package:task_manager_flutter/data/models/user_abstract.dart';
-
 // lib/data/models/conta_models.dart
 class ContaBancariaModel {
   final int id;

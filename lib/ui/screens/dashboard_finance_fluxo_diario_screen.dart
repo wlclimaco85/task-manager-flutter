@@ -141,7 +141,7 @@ class _FinanceFluxoDiarioChartState extends State<FinanceFluxoDiarioChart> {
       ),
       child: BarChart(
         BarChartData(
-          gridData: FlGridData(show: false),
+          gridData: const FlGridData(show: false),
           borderData: FlBorderData(show: false),
           titlesData: FlTitlesData(
             topTitles:

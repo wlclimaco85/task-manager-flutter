@@ -79,14 +79,16 @@ class _FinanceTrendChartState extends State<FinanceTrendChart> {
 
   @override
   Widget build(BuildContext context) {
-    if (loading)
+    if (loading) {
       return const SizedBox(
           height: 220, child: Center(child: CircularProgressIndicator()));
-    if (error != null)
+    }
+    if (error != null) {
       return SizedBox(
           height: 220,
           child: Center(
               child: Text(error!, style: const TextStyle(color: Colors.red))));
+    }
 
     return Container(
       height: 260,
@@ -95,7 +97,7 @@ class _FinanceTrendChartState extends State<FinanceTrendChart> {
           color: Colors.white, borderRadius: BorderRadius.circular(16)),
       child: LineChart(
         LineChartData(
-          gridData: FlGridData(show: false),
+          gridData: const FlGridData(show: false),
           borderData: FlBorderData(show: false),
           titlesData: FlTitlesData(
             bottomTitles: AxisTitles(
@@ -136,7 +138,7 @@ class _FinanceTrendChartState extends State<FinanceTrendChart> {
                     Colors.green.withOpacity(.3),
                     Colors.transparent
                   ], begin: Alignment.topCenter, end: Alignment.bottomCenter)),
-              dotData: FlDotData(show: true),
+              dotData: const FlDotData(show: true),
             ),
             LineChartBarData(
               isCurved: true,
@@ -151,7 +153,7 @@ class _FinanceTrendChartState extends State<FinanceTrendChart> {
                       colors: [Colors.red.withOpacity(.25), Colors.transparent],
                       begin: Alignment.topCenter,
                       end: Alignment.bottomCenter)),
-              dotData: FlDotData(show: true),
+              dotData: const FlDotData(show: true),
             ),
           ],
         ),

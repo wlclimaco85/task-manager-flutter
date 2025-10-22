@@ -94,14 +94,16 @@ class _KpiCardsState extends State<KpiCards> {
 
   @override
   Widget build(BuildContext context) {
-    if (loading)
+    if (loading) {
       return const SizedBox(
           height: 100, child: Center(child: CircularProgressIndicator()));
-    if (error != null)
+    }
+    if (error != null) {
       return SizedBox(
           height: 100,
           child: Center(
               child: Text(error!, style: const TextStyle(color: Colors.red))));
+    }
 
     final r = kpis!;
     return Row(

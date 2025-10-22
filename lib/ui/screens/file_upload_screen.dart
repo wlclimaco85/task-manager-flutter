@@ -56,7 +56,7 @@ class _FileManagerScreenState extends State<FileManagerScreen> {
   }
 
   Future<void> _showUploadDialog() async {
-    final _formKey = GlobalKey<FormState>();
+    final formKey = GlobalKey<FormState>();
     final diretorioCaller = DiretorioCaller();
     final parceiroCaller = ParceiroCaller();
 
@@ -89,7 +89,7 @@ class _FileManagerScreenState extends State<FileManagerScreen> {
           ),
           content: SingleChildScrollView(
             child: Form(
-              key: _formKey,
+              key: formKey,
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
@@ -222,7 +222,7 @@ class _FileManagerScreenState extends State<FileManagerScreen> {
                     borderRadius: BorderRadius.circular(8)),
               ),
               onPressed: () async {
-                if (_formKey.currentState!.validate()) {
+                if (formKey.currentState!.validate()) {
                   if (fileBytes == null) {
                     _showSnackBar("Selecione um arquivo antes de enviar.",
                         GridColors.warning, Icons.warning_amber);

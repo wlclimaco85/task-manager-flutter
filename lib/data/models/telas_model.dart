@@ -128,7 +128,7 @@ class TelaField {
     final typeIndex = json['fieldType'] is int
         ? json['fieldType'] as int
         : (json['fieldTypeIndex'] as int?) ?? 0;
-    final tftValues = TelaFieldType.values;
+    const tftValues = TelaFieldType.values;
     final tft = typeIndex >= 0 && typeIndex < tftValues.length
         ? tftValues[typeIndex]
         : TelaFieldType.text;
@@ -168,9 +168,7 @@ class TelaField {
       dropdownDisplayField: json['dropdownDisplayField']?.toString() ?? 'label',
       dropdownSelectedValue: json['dropdownSelectedValue'],
       isRequired: json['isRequired'] == true,
-      isVisibleByDefault: json['isVisibleByDefault'] == null
-          ? true
-          : json['isVisibleByDefault'],
+      isVisibleByDefault: json['isVisibleByDefault'] ?? true,
       isFixed: json['isFixed'] == true,
       enabled:
           json['enabled'] == null ? true : (json['enabled'] as bool? ?? true),

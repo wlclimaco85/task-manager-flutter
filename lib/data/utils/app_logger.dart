@@ -11,9 +11,9 @@ import 'package:flutter/services.dart';
 // ====== Dependências opcionais p/ exportar & abrir/compartilhar ======
 // Adicione ao pubspec.yaml se quiser habilitar os botões de exportar/abrir/compartilhar.
 // Caso não estejam presentes, o código faz fallback e mostra aviso.
-import 'package:path_provider/path_provider.dart' as _pp;
-import 'package:open_filex/open_filex.dart' as _open;
-import 'package:share_plus/share_plus.dart' as _share;
+import 'package:path_provider/path_provider.dart' as pp;
+import 'package:open_filex/open_filex.dart' as open;
+import 'package:share_plus/share_plus.dart' as share;
 
 // ------------------------------- MODELOS -------------------------------
 
@@ -117,7 +117,7 @@ class AppLogger {
         add(AppLogEntry(
             ts: DateTime.now(), message: msg, level: LogLevel.debug));
       }
-      originalDebugPrint?.call(msg, wrapWidth: wrapWidth);
+      originalDebugPrint.call(msg, wrapWidth: wrapWidth);
     };
 
     // Captura FlutterError
@@ -192,10 +192,10 @@ class AppLogger {
 
       // Tenta abrir; se não der, oferece compartilhar.
       try {
-        await _open.OpenFilex.open(file.path);
+        await open.OpenFilex.open(file.path);
       } catch (_) {
         try {
-          await _share.Share.shareXFiles([_share.XFile(file.path)],
+          await share.Share.shareXFiles([share.XFile(file.path)],
               text: 'Logs do console');
         } catch (_) {}
       }
@@ -215,7 +215,7 @@ class AppLogger {
 
   Future<Directory> _safeDocsDir() async {
     try {
-      final d = await _pp.getApplicationDocumentsDirectory();
+      final d = await pp.getApplicationDocumentsDirectory();
       return d;
     } catch (_) {
       // fallback se path_provider não estiver instalado

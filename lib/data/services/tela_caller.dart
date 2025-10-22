@@ -191,13 +191,15 @@ class TelaService {
         } else {
           AppLogger.i.info(
               '⚠️ [TelaService] Tentativa $tentativa falhou (retornou null).');
-          if (tentativa < maxTentativas)
+          if (tentativa < maxTentativas) {
             await Future.delayed(const Duration(seconds: 1));
+          }
         }
       } catch (e) {
         AppLogger.i.info('💥 [TelaService] Erro na tentativa $tentativa: $e');
-        if (tentativa < maxTentativas)
+        if (tentativa < maxTentativas) {
           await Future.delayed(const Duration(seconds: 1));
+        }
       }
     }
 

@@ -68,7 +68,7 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
       case "Dashboard":
         Navigator.push(
           context,
-          MaterialPageRoute(builder: (context) => DashboardPage()),
+          MaterialPageRoute(builder: (context) => const DashboardPage()),
         );
         break;
       case "Teste":

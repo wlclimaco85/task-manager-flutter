@@ -44,18 +44,21 @@ class _ContaEvolucaoChartState extends State<ContaEvolucaoChart> {
 
   @override
   Widget build(BuildContext context) {
-    if (loading)
+    if (loading) {
       return const SizedBox(
           height: 260, child: Center(child: CircularProgressIndicator()));
-    if (error != null)
+    }
+    if (error != null) {
       return SizedBox(
           height: 260,
           child: Center(
               child: Text(error!,
                   style: const TextStyle(color: Colors.redAccent))));
-    if (serie.isEmpty)
+    }
+    if (serie.isEmpty) {
       return const SizedBox(
           height: 260, child: Center(child: Text('Sem dados de evolução.')));
+    }
 
     final spots = <FlSpot>[
       for (int i = 0; i < serie.length; i++)
@@ -68,7 +71,7 @@ class _ContaEvolucaoChartState extends State<ContaEvolucaoChart> {
       decoration: BoxDecoration(
           color: Colors.white, borderRadius: BorderRadius.circular(16)),
       child: LineChart(LineChartData(
-        gridData: FlGridData(show: false),
+        gridData: const FlGridData(show: false),
         borderData: FlBorderData(show: false),
         titlesData: FlTitlesData(
           rightTitles:
@@ -100,7 +103,7 @@ class _ContaEvolucaoChartState extends State<ContaEvolucaoChart> {
             isCurved: true,
             color: GridColors.secondary,
             barWidth: 3,
-            dotData: FlDotData(show: true),
+            dotData: const FlDotData(show: true),
             spots: spots,
             belowBarData: BarAreaData(
               show: true,

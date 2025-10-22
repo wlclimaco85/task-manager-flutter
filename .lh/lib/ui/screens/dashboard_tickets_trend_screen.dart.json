@@ -3,7 +3,7 @@
     "activeCommit": 0,
     "commits": [
         {
-            "activePatchIndex": 5,
+            "activePatchIndex": 7,
             "patches": [
                 {
                     "date": 1760743107492,
@@ -28,6 +28,14 @@
                 {
                     "date": 1760744099324,
                     "content": "Index: \n===================================================================\n--- \n+++ \n@@ -34,16 +34,14 @@\n   }\r\n }\r\n \r\n class TicketsTrendChart extends StatefulWidget {\r\n-  final String baseUrl;\r\n   final int empresaId;\r\n   final int? parceiroId;\r\n   final int months;\r\n \r\n   const TicketsTrendChart({\r\n     super.key,\r\n-    required this.baseUrl,\r\n     required this.empresaId,\r\n     this.parceiroId,\r\n     this.months = 6,\r\n   });\r\n"
+                },
+                {
+                    "date": 1761082100156,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -134,11 +134,11 @@\n       ),\r\n       child: Column(\r\n         children: [\r\n           // legend\r\n-          Row(\r\n+          const Row(\r\n             mainAxisAlignment: MainAxisAlignment.center,\r\n-            children: const [\r\n+            children: [\r\n               _LegendDot(color: Colors.orange, label: 'Abertos'),\r\n               SizedBox(width: 12),\r\n               _LegendDot(color: Colors.blue, label: 'Andamento'),\r\n               SizedBox(width: 12),\r\n@@ -148,9 +148,9 @@\n           const SizedBox(height: 8),\r\n           Expanded(\r\n             child: LineChart(\r\n               LineChartData(\r\n-                gridData: FlGridData(show: false),\r\n+                gridData: const FlGridData(show: false),\r\n                 borderData: FlBorderData(show: false),\r\n                 lineTouchData: LineTouchData(\r\n                   touchTooltipData: LineTouchTooltipData(\r\n                     getTooltipColor: (touched) =>\r\n@@ -182,10 +182,11 @@\n                       showTitles: true,\r\n                       reservedSize: 28,\r\n                       getTitlesWidget: (v, _) {\r\n                         final i = v.toInt();\r\n-                        if (i < 0 || i >= data.length)\r\n+                        if (i < 0 || i >= data.length) {\r\n                           return const SizedBox.shrink();\r\n+                        }\r\n                         return Padding(\r\n                           padding: const EdgeInsets.only(top: 4),\r\n                           child: Text(\r\n                             _mm(data[i].month),\r\n@@ -202,23 +203,23 @@\n                   LineChartBarData(\r\n                     isCurved: true,\r\n                     color: Colors.orange,\r\n                     barWidth: 3,\r\n-                    dotData: FlDotData(show: true),\r\n+                    dotData: const FlDotData(show: true),\r\n                     spots: openSpots,\r\n                   ),\r\n                   LineChartBarData(\r\n                     isCurved: true,\r\n                     color: Colors.blue,\r\n                     barWidth: 3,\r\n-                    dotData: FlDotData(show: true),\r\n+                    dotData: const FlDotData(show: true),\r\n                     spots: progSpots,\r\n                   ),\r\n                   LineChartBarData(\r\n                     isCurved: true,\r\n                     color: Colors.green,\r\n                     barWidth: 3,\r\n-                    dotData: FlDotData(show: true),\r\n+                    dotData: const FlDotData(show: true),\r\n                     spots: closedSpots,\r\n                   ),\r\n                 ],\r\n               ),\r\n@@ -232,10 +233,9 @@\n \r\n class _LegendDot extends StatelessWidget {\r\n   final Color color;\r\n   final String label;\r\n-  const _LegendDot({required this.color, required this.label, Key? key})\r\n-      : super(key: key);\r\n+  const _LegendDot({required this.color, required this.label, super.key});\r\n \r\n   @override\r\n   Widget build(BuildContext context) {\r\n     return Row(\r\n"
+                },
+                {
+                    "date": 1761082133394,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -233,9 +233,9 @@\n \r\n class _LegendDot extends StatelessWidget {\r\n   final Color color;\r\n   final String label;\r\n-  const _LegendDot({required this.color, required this.label, super.key});\r\n+  const _LegendDot({required this.color, required this.label});\r\n \r\n   @override\r\n   Widget build(BuildContext context) {\r\n     return Row(\r\n"
                 }
             ],
             "date": 1760743107492,

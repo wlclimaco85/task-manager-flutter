@@ -1,10 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
 import 'package:task_manager_flutter/data/models/comunicados_model.dart';
 import 'package:task_manager_flutter/data/services/comunicado_caller.dart';
 import 'package:task_manager_flutter/data/models/setor_model.dart';
 import 'package:task_manager_flutter/ui/widgets/user_banners.dart';
-import 'package:task_manager_flutter/data/utils/grid_colors.dart';
 import 'package:task_manager_flutter/data/services/setor_caller.dart';
 
 class ComunicadoScreen extends StatefulWidget {

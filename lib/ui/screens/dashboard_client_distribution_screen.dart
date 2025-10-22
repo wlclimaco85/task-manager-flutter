@@ -73,14 +73,16 @@ class _ClientDistributionPieState extends State<ClientDistributionPie> {
 
   @override
   Widget build(BuildContext context) {
-    if (loading)
+    if (loading) {
       return const SizedBox(
           height: 220, child: Center(child: CircularProgressIndicator()));
-    if (error != null)
+    }
+    if (error != null) {
       return SizedBox(
           height: 220,
           child: Center(
               child: Text(error!, style: const TextStyle(color: Colors.red))));
+    }
 
     final total =
         data.fold<double>(0, (p, e) => p + e.valor).clamp(1, double.infinity);

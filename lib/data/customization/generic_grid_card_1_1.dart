@@ -19,7 +19,6 @@ import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:http/http.dart' as http;
 import 'package:http_parser/http_parser.dart' as http_parser;
-import 'package:task_manager_flutter/data/utils/app_logger.dart';
 // Serviços existentes no seu projeto
 import 'package:task_manager_flutter/data/services/network_caller.dart';
 import 'package:task_manager_flutter/data/models/network_response.dart';
@@ -447,16 +446,12 @@ class _GenericMobileGridScreenState extends State<GenericMobileGridScreen> {
         final list = _extractAnyList(body['data'] ?? body['dados'] ?? body);
 
 // total seguro: tenta nas chaves usuais ou cai no length da lista
-        final total = (body is Map
-                ? (body['totalElements'] ??
-                    body['total'] ??
-                    (body['data'] is Map
-                        ? body['data']['totalElements']
-                        : null) ??
-                    (body['dados'] is Map
-                        ? body['dados']['totalElements']
-                        : null))
-                : null) as int? ??
+        final total = ((body['totalElements'] ??
+                body['total'] ??
+                (body['data'] is Map ? body['data']['totalElements'] : null) ??
+                (body['dados'] is Map
+                    ? body['dados']['totalElements']
+                    : null))) as int? ??
             list.length;
 
         final newItems = list; // já está tipado/normalizado
@@ -672,7 +667,6 @@ class _GenericMobileGridScreenState extends State<GenericMobileGridScreen> {
     Map<String, dynamic>? body;
     try {
       body = res.body.isNotEmpty ? (jsonDecode(res.body) as dynamic) : null;
-      if (body is! Map<String, dynamic>?) body = null;
     } catch (_) {
       body = null;
     }
@@ -974,8 +968,8 @@ class _GenericMobileGridScreenState extends State<GenericMobileGridScreen> {
       },
       backgroundColor: GridColors.primary,
       foregroundColor: GridColors.textPrimary,
-      child: const Icon(Icons.add),
       tooltip: 'Adicionar',
+      child: const Icon(Icons.add),
     );
   }
 
@@ -1090,7 +1084,9 @@ class _GenericMobileGridScreenState extends State<GenericMobileGridScreen> {
 
   void _applyFilters() => _loadItems(reset: true);
   void _clearFilters() {
-    for (final c in _filterControllers.values) c.clear();
+    for (final c in _filterControllers.values) {
+      c.clear();
+    }
     _searchController.clear();
     _applyFilters();
   }
@@ -1777,7 +1773,7 @@ class _GenericMobileGridScreenState extends State<GenericMobileGridScreen> {
             opacity: c.enabled ? 1 : 0.6,
             child: DropdownButtonFormField<String?>(
               isExpanded: true,
-              value: validValue,
+              initialValue: validValue,
               items: items,
               onChanged:
                   c.enabled ? (v) => setState(() => ctrl.text = v ?? '') : null,
@@ -1789,7 +1785,7 @@ class _GenericMobileGridScreenState extends State<GenericMobileGridScreen> {
                     OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
               ),
               validator: (v) {
-                if (c.isRequired && (v == null || (v is String && v.isEmpty))) {
+                if (c.isRequired && (v == null || (v.isEmpty))) {
                   return '${c.label} é obrigatório';
                 }
                 return c.validator?.call(v?.toString());

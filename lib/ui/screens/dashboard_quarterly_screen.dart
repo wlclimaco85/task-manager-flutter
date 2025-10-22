@@ -76,15 +76,17 @@ class _QuarterlyBarsState extends State<QuarterlyBars> {
 
   @override
   Widget build(BuildContext context) {
-    if (loading)
+    if (loading) {
       return const SizedBox(
           height: 220, child: Center(child: CircularProgressIndicator()));
-    if (error != null)
+    }
+    if (error != null) {
       return SizedBox(
           height: 220,
           child: Center(
               child:
                   Text(error!, style: TextStyle(color: Colors.red.shade700))));
+    }
 
     return Container(
       height: 260,
@@ -93,7 +95,7 @@ class _QuarterlyBarsState extends State<QuarterlyBars> {
           color: Colors.white, borderRadius: BorderRadius.circular(16)),
       child: BarChart(
         BarChartData(
-          gridData: FlGridData(show: false),
+          gridData: const FlGridData(show: false),
           borderData: FlBorderData(show: false),
           titlesData: FlTitlesData(
             leftTitles: const AxisTitles(
@@ -107,8 +109,9 @@ class _QuarterlyBarsState extends State<QuarterlyBars> {
                   showTitles: true,
                   getTitlesWidget: (v, _) {
                     final i = v.toInt();
-                    if (i < 0 || i >= data.length)
+                    if (i < 0 || i >= data.length) {
                       return const SizedBox.shrink();
+                    }
                     return Padding(
                       padding: const EdgeInsets.only(top: 6),
                       child: Text(data[i].label,
