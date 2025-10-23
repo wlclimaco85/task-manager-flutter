@@ -376,4 +376,10 @@ class ApiLinks {
       '$_baseUrlNew/api/contas/extrato/pdf';
 
   static String get baseUrl => _baseUrlNew;
+
+  static const String contasBancarias = '$_baseUrlNew/contas';
+  static const String allContasBancarias = '$contasBancarias/saldos';
+  static const String createContaBancaria = '$contasBancarias';
+  static String updateContaBancaria(String id) => '$contasBancarias/$id';
+  static String deleteContaBancaria(String id) => '$contasBancarias/$id';
 }

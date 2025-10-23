@@ -516,8 +516,7 @@ class _GenericMobileGridScreenState<T>
     _itemParaEditar = item;
     showDialog(
       context: context,
-      barrierColor:
-          GridColors.primary.withOpacity(1.8), // 🔴 fundo vermelho translúcido
+      barrierColor: GridColors.background, // 🔴 fundo vermelho translúcido
       builder: (context) => _buildFormDialog(item),
     );
   }

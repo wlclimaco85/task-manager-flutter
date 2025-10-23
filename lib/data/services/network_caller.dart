@@ -10,6 +10,8 @@ import 'package:task_manager_flutter/ui/screens/LoginPopup_screens.dart';
 import 'package:task_manager_flutter/data/utils/api_links.dart';
 import 'package:task_manager_flutter/data/models/login_model.dart';
 import 'package:task_manager_flutter/data/utils/app_logger.dart';
+import 'dart:typed_data';
+import 'package:http/http.dart' as http;
 
 class NetworkCaller {
   Future<NetworkResponse> getRequest(String url) async {
@@ -315,6 +317,25 @@ class NetworkCaller {
       log(e.toString());
       return NetworkResponse(false, -1, null);
     }
+  }
+
+  /// 🔽 Faz uma requisição GET que retorna dados binários (ex: PDF)
+  Future<Uint8List?> getRawBytes(String url,
+      {Map<String, String>? headers}) async {
+    try {
+      final response = await http.get(Uri.parse(url), headers: headers);
+
+      if (response.statusCode == 200) {
+        debugPrint('📄 Download binário bem-sucedido: $url');
+        return response.bodyBytes;
+      } else {
+        debugPrint(
+            '⚠️ Erro ao buscar bytes. Status: ${response.statusCode}, URL: $url');
+      }
+    } catch (e) {
+      debugPrint('❌ Erro em getRawBytes: $e');
+    }
+    return null;
   }
 }
 

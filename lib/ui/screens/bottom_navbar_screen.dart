@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:task_manager_flutter/data/constants/custom_colors.dart';
 import 'package:task_manager_flutter/data/models/auth_utility.dart';
 import 'package:task_manager_flutter/ui/screens/chamado_grid_screen.dart';
-import 'package:task_manager_flutter/ui/screens/chamado_grid_screen_dynamic.dart';
 import 'package:task_manager_flutter/ui/screens/chatMessageListScreen.dart';
 import 'package:task_manager_flutter/ui/screens/comunicado_screen.dart';
+import 'package:task_manager_flutter/ui/screens/conta_bancaria_grid_screen.dart';
 import 'package:task_manager_flutter/ui/screens/conta_pagar_grid_screen.dart';
 import 'package:task_manager_flutter/ui/screens/conta_receber_grid_screen.dart';
 import 'package:task_manager_flutter/ui/screens/dashboard_screen.dart';
@@ -71,11 +71,14 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
           MaterialPageRoute(builder: (context) => const DashboardPage()),
         );
         break;
-      case "Teste":
+      case "Contas Bancarias":
         Navigator.push(
-            context,
-            MaterialPageRoute(
-                builder: (context) => const ChamadosScreenDinamic()));
+          context,
+          MaterialPageRoute(
+            builder: (context) =>
+                ContaBancariaGridScreen(hasPermission: (action) => true),
+          ),
+        );
         break;
       case "Sair":
         Navigator.pop(context);
@@ -172,8 +175,8 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
             ),
             ListTile(
               leading: const Icon(Icons.text_increase_rounded),
-              title: const Text('teste'),
-              onTap: () => onMenuOptionSelected('Teste'),
+              title: const Text('Contas Bancarias'),
+              onTap: () => onMenuOptionSelected('Contas Bancarias'),
             ),
             ListTile(
               leading: const Icon(Icons.exit_to_app),
