@@ -200,4 +200,17 @@ class ParceiroCaller {
     }
     return list;
   }
+
+  static Future<List<Map<String, dynamic>>> loadParceiros() async {
+    final NetworkResponse response =
+        await NetworkCaller().getRequest(ApiLinks.allParceiros);
+    if (response.isSuccess && response.body != null) {
+      final List<dynamic> data = response.body!['data']['dados'] ?? [];
+      return data
+          .map(
+              (item) => {'value': item['id'], 'label': item['nome'].toString()})
+          .toList();
+    }
+    return [];
+  }
 }

@@ -85,10 +85,10 @@ class DocumentoService {
     int usuarioId,
   ) async {
     final NetworkResponse response = await NetworkCaller().getRequest(
-      '$baseUrl/datas/novos/mes/$mes/ano/$ano/usuario/$usuarioId',
+      '$baseUrl/datas/novos/mes/$mes/ano/$ano',
     );
 
-    print('$baseUrl/datas/novos/mes/$mes/ano/$ano/usuario/$usuarioId');
+    print('$baseUrl/datas/novos/mes/$mes/ano/$ano');
 
     if (response.statusCode == 200) {
       final body = response.body;
@@ -110,7 +110,7 @@ class DocumentoService {
     int usuarioId,
   ) async {
     final NetworkResponse response = await NetworkCaller().getRequest(
-      '$baseUrl/datas/lidos/mes/$mes/ano/$ano/usuario/$usuarioId',
+      '$baseUrl/datas/lidos/mes/$mes/ano/$ano',
     );
 
     if (response.statusCode == 200) {
@@ -130,7 +130,7 @@ class DocumentoService {
 
   Future<void> marcarComoLido(int documentoId, int usuarioId) async {
     final NetworkResponse response = await NetworkCaller().postRequest(
-      '$baseUrl/$documentoId/ler/usuario/$usuarioId',
+      '$baseUrl/$documentoId/ler',
       {}, // corpo vazio
     );
 
@@ -141,7 +141,7 @@ class DocumentoService {
 
   Future<bool> verificarSeLido(int documentoId, int usuarioId) async {
     final NetworkResponse response = await NetworkCaller().getRequest(
-      '$baseUrl/$documentoId/lido/usuario/$usuarioId',
+      '$baseUrl/$documentoId/lido/',
     );
 
     if (response.statusCode == 200) {

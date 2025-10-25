@@ -3,7 +3,7 @@
     "activeCommit": 0,
     "commits": [
         {
-            "activePatchIndex": 1,
+            "activePatchIndex": 3,
             "patches": [
                 {
                     "date": 1759690755788,
@@ -12,6 +12,14 @@
                 {
                     "date": 1759692689544,
                     "content": "Index: \n===================================================================\n--- \n+++ \n@@ -115,9 +115,9 @@\n \r\n     if (response.statusCode == 200) {\r\n       final body = response.body;\r\n \r\n-      final List<DateTime> datas = (body?['data'] as List<dynamic>)\r\n+      final List<DateTime> datas = (body?['data']['dados'] as List<dynamic>)\r\n           .map<DateTime>((d) => DateTime.parse(d.toString()))\r\n           .toList();\r\n \r\n       return datas;\r\n"
+                },
+                {
+                    "date": 1761332761961,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -84,12 +84,12 @@\n     int ano,\r\n     int usuarioId,\r\n   ) async {\r\n     final NetworkResponse response = await NetworkCaller().getRequest(\r\n-      '$baseUrl/datas/novos/mes/$mes/ano/$ano/usuario/$usuarioId',\r\n+      '$baseUrl/datas/novos/mes/$mes/ano/$ano',\r\n     );\r\n \r\n-    print('$baseUrl/datas/novos/mes/$mes/ano/$ano/usuario/$usuarioId');\r\n+    print('$baseUrl/datas/novos/mes/$mes/ano/$ano');\r\n \r\n     if (response.statusCode == 200) {\r\n       final body = response.body;\r\n \r\n@@ -109,9 +109,9 @@\n     int ano,\r\n     int usuarioId,\r\n   ) async {\r\n     final NetworkResponse response = await NetworkCaller().getRequest(\r\n-      '$baseUrl/datas/lidos/mes/$mes/ano/$ano/usuario/$usuarioId',\r\n+      '$baseUrl/datas/lidos/mes/$mes/ano/$ano',\r\n     );\r\n \r\n     if (response.statusCode == 200) {\r\n       final body = response.body;\r\n@@ -129,9 +129,9 @@\n   }\r\n \r\n   Future<void> marcarComoLido(int documentoId, int usuarioId) async {\r\n     final NetworkResponse response = await NetworkCaller().postRequest(\r\n-      '$baseUrl/$documentoId/ler/usuario/$usuarioId',\r\n+      '$baseUrl/$documentoId/ler',\r\n       {}, // corpo vazio\r\n     );\r\n \r\n     if (response.statusCode != 200) {\r\n"
+                },
+                {
+                    "date": 1761332775019,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -140,9 +140,9 @@\n   }\r\n \r\n   Future<bool> verificarSeLido(int documentoId, int usuarioId) async {\r\n     final NetworkResponse response = await NetworkCaller().getRequest(\r\n-      '$baseUrl/$documentoId/lido/usuario/$usuarioId',\r\n+      '$baseUrl/$documentoId/lido/',\r\n     );\r\n \r\n     if (response.statusCode == 200) {\r\n       return response.body?['data'] as bool? ?? false;\r\n"
                 }
             ],
             "date": 1759690755788,

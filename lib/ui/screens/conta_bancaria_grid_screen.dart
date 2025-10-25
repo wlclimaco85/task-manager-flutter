@@ -19,13 +19,14 @@ class ContaBancariaGridScreen extends StatelessWidget {
     return Scaffold(
       body: GenericMobileGridScreen<ContaBancaria>(
         title: "Gerenciamento de Contas Bancárias",
-        fetchEndpoint: ApiLinks.allContasBancarias,
+        fetchEndpoint: ApiLinks.contasBancarias,
         createEndpoint: ApiLinks.createContaBancaria,
         updateEndpoint: ApiLinks.updateContaBancaria(":id"),
         deleteEndpoint: ApiLinks.deleteContaBancaria(":id"),
         dynamicAdditionalFormData: (item) {
           return {
-            'empresa': {'id': pegarEmpresaLogada()},
+            'empresaId': pegarEmpresaLogada(),
+            'parceiroId': pegarParceiroLogada()
           };
         },
         useUserBannerAppBar: true,
@@ -42,20 +43,20 @@ class ContaBancariaGridScreen extends StatelessWidget {
         enableSearch: true,
         storageKey: 'contas_bancarias_grid',
         customActions: () => [
-          // 🔁 Ativar/Desativar
+          // 🔁 Ativar / Desativar
           CustomAction<ContaBancaria>(
             icon: Icons.toggle_on,
             label: 'Ativar/Desativar',
             onPressed: (context, item) async {
               final caller = ContaBancariaCaller();
+              _showLoadingDialog(context, "Atualizando status...");
               final sucesso = await caller.ativarConta(item.id!, !(item.ativo));
-              if (context.mounted) {
+              Navigator.pop(context); // fechar loading
+              if (sucesso && context.mounted) {
+                _showSuccessDialog(context, "Status atualizado!");
+              } else {
                 ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text(sucesso
-                        ? 'Status da conta atualizado!'
-                        : 'Falha ao atualizar status.'),
-                  ),
+                  const SnackBar(content: Text('Falha ao atualizar.')),
                 );
               }
             },
@@ -83,7 +84,7 @@ class ContaBancariaGridScreen extends StatelessWidget {
     );
   }
 
-  // 🔁 Diálogo de transferência
+  // 🔄 Diálogo de transferência com loading
   void _showTransferDialog(BuildContext context, ContaBancaria contaOrigem) {
     final valorController = TextEditingController();
     final historicoController = TextEditingController();
@@ -94,7 +95,7 @@ class ContaBancariaGridScreen extends StatelessWidget {
       builder: (ctx) => AlertDialog(
         title: const Text('Transferir Saldo'),
         content: FutureBuilder<List<Map<String, dynamic>>>(
-          future: ContaBancariaCaller.loadContas(), // ✅ agora puxa contas reais
+          future: ContaBancariaCaller.loadContas(),
           builder: (context, snapshot) {
             if (snapshot.connectionState == ConnectionState.waiting) {
               return const Center(child: CircularProgressIndicator());
@@ -122,8 +123,7 @@ class ContaBancariaGridScreen extends StatelessWidget {
                 TextField(
                   controller: valorController,
                   keyboardType: TextInputType.number,
-                  decoration: const InputDecoration(
-                      labelText: 'Valor da transferência'),
+                  decoration: const InputDecoration(labelText: 'Valor'),
                 ),
                 TextField(
                   controller: historicoController,
@@ -149,6 +149,7 @@ class ContaBancariaGridScreen extends StatelessWidget {
                 return;
               }
 
+              _showLoadingDialog(context, "Processando transferência...");
               final caller = ContaBancariaCaller();
               final sucesso = await caller.transferirSaldo(
                 contaOrigemId: contaOrigem.id!,
@@ -159,14 +160,14 @@ class ContaBancariaGridScreen extends StatelessWidget {
                 historico: historicoController.text,
               );
 
-              if (context.mounted) {
-                Navigator.pop(ctx);
+              Navigator.pop(context); // fecha o loading
+              Navigator.pop(ctx); // fecha o dialog
+
+              if (sucesso && context.mounted) {
+                _showSuccessDialog(context, "Transferência concluída!");
+              } else {
                 ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text(sucesso
-                        ? 'Transferência realizada com sucesso!'
-                        : 'Erro ao transferir saldo.'),
-                  ),
+                  const SnackBar(content: Text('Erro ao transferir saldo.')),
                 );
               }
             },
@@ -177,7 +178,7 @@ class ContaBancariaGridScreen extends StatelessWidget {
     );
   }
 
-  // 📄 Diálogo de extrato PDF
+  // 📄 Diálogo para gerar extrato PDF com loading
   void _showExtratoDialog(BuildContext context, ContaBancaria conta) {
     final deController = TextEditingController();
     final ateController = TextEditingController();
@@ -219,6 +220,7 @@ class ContaBancariaGridScreen extends StatelessWidget {
                 return;
               }
 
+              _showLoadingDialog(context, "Gerando extrato PDF...");
               final caller = ContaBancariaCaller();
               final pdfBytes = await caller.gerarExtratoPdf(
                 contaId: conta.id!,
@@ -228,12 +230,17 @@ class ContaBancariaGridScreen extends StatelessWidget {
                 ate: ate,
               );
 
+              Navigator.pop(context); // fecha o loading
+
               if (pdfBytes != null) {
                 final dir = await getTemporaryDirectory();
                 final file = File('${dir.path}/extrato_${conta.id}.pdf');
                 await file.writeAsBytes(pdfBytes);
                 await OpenFilex.open(file.path);
-                if (context.mounted) Navigator.pop(ctx);
+                if (context.mounted) {
+                  _showSuccessDialog(context, "PDF gerado com sucesso!");
+                  Navigator.pop(ctx);
+                }
               } else {
                 if (context.mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(
@@ -248,5 +255,68 @@ class ContaBancariaGridScreen extends StatelessWidget {
         ],
       ),
     );
+  }
+
+  /// 🔄 Mostra um diálogo de carregamento modal
+  void _showLoadingDialog(BuildContext context, String message) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => WillPopScope(
+        onWillPop: () async => false,
+        child: Dialog(
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          child: Padding(
+            padding: const EdgeInsets.all(20),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const CircularProgressIndicator(),
+                const SizedBox(width: 20),
+                Flexible(
+                  child: Text(
+                    message,
+                    style: const TextStyle(fontSize: 16),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// ✅ Mostra um diálogo animado de sucesso (✔️)
+  void _showSuccessDialog(BuildContext context, String message) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => Dialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        child: Padding(
+          padding: const EdgeInsets.all(25),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(Icons.check_circle, color: Colors.green, size: 70),
+              const SizedBox(height: 15),
+              Text(
+                message,
+                style:
+                    const TextStyle(fontSize: 17, fontWeight: FontWeight.w500),
+                textAlign: TextAlign.center,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+
+    // Fecha o diálogo automaticamente após 1,2s
+    Future.delayed(const Duration(milliseconds: 1200), () {
+      if (Navigator.canPop(context)) Navigator.pop(context);
+    });
   }
 }

@@ -534,88 +534,155 @@ class _GenericMobileGridScreenState<T>
     }
 
     return Dialog(
-      backgroundColor: GridColors.primary, // 🔴 fundo vermelho principal
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      insetPadding: const EdgeInsets.all(24),
-      child: Container(
-        constraints: BoxConstraints(
-          maxWidth: 500,
-          maxHeight: MediaQuery.of(context).size.height * 0.8,
+      backgroundColor: Colors.transparent,
+      insetPadding: const EdgeInsets.all(40),
+      child: TweenAnimationBuilder<double>(
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeOutCubic,
+        tween: Tween(begin: 0.0, end: 1.0),
+        builder: (context, value, child) => Opacity(
+          opacity: value,
+          child: Transform.translate(
+            offset: Offset(0, (1 - value) * 30),
+            child: child,
+          ),
         ),
-        padding: const EdgeInsets.all(20),
-        decoration: BoxDecoration(
-          color: GridColors.primary, // 🔴 Fundo do card (vermelho)
-          borderRadius: BorderRadius.circular(16),
-          boxShadow: [
-            BoxShadow(
-              color: GridColors.primaryDark.withOpacity(0.4),
-              blurRadius: 10,
-              offset: const Offset(0, 4),
-            ),
-          ],
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Row(
-              children: [
-                const Icon(Icons.edit, color: GridColors.textPrimary, size: 24),
-                const SizedBox(width: 8),
-                Text(
-                  item == null ? 'Adicionar Novo' : 'Editar Item',
+        child: Container(
+          constraints: BoxConstraints(
+            maxWidth: 550,
+            maxHeight: MediaQuery.of(context).size.height * 0.85,
+          ),
+          padding: const EdgeInsets.all(24),
+          decoration: BoxDecoration(
+            color: GridColors.card, // fundo branco
+            borderRadius: BorderRadius.circular(20),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.15),
+                blurRadius: 12,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              const SizedBox(height: 8),
+
+              // 🧾 Título do popup
+              Center(
+                child: Text(
+                  item == null
+                      ? 'Nova Conta Bancária'
+                      : 'Editar Conta Bancária',
                   style: const TextStyle(
                     fontSize: 20,
                     fontWeight: FontWeight.bold,
-                    color: GridColors.textPrimary, // branco no título
+                    color: GridColors.primary,
                   ),
-                ),
-                const Spacer(),
-                IconButton(
-                  icon: const Icon(Icons.close, color: GridColors.textPrimary),
-                  onPressed: () => Navigator.pop(context),
-                ),
-              ],
-            ),
-            const SizedBox(height: 20),
-            Expanded(
-              child: SingleChildScrollView(
-                child: Column(
-                  children: widget.fieldConfigs
-                      .where((config) => config.isInForm)
-                      .map((config) => _buildFormField(
-                          config, formControllers[config.fieldName]!))
-                      .toList(),
                 ),
               ),
-            ),
-            const SizedBox(height: 20),
-            Row(
-              children: [
-                Expanded(
-                  child: OutlinedButton(
-                    onPressed: () => Navigator.pop(context),
-                    style: OutlinedButton.styleFrom(
-                      side: const BorderSide(color: GridColors.textPrimary),
-                      foregroundColor: GridColors.textPrimary,
-                    ),
-                    child: const Text('Cancelar'),
+              const SizedBox(height: 16),
+
+              // 🧩 Campos do formulário
+              Expanded(
+                child: SingleChildScrollView(
+                  child: Column(
+                    children: widget.fieldConfigs
+                        .where((c) => c.isInForm)
+                        .map((config) => _buildFormField(
+                            config, formControllers[config.fieldName]!))
+                        .toList(),
                   ),
                 ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: ElevatedButton(
-                    onPressed: () => _saveForm(item, formControllers, context),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: GridColors.textPrimary,
-                      foregroundColor: GridColors.primary,
+              ),
+
+              const SizedBox(height: 20),
+
+              // 🧠 Botões com animação (Cancelar / Salvar)
+              Row(
+                children: [
+                  // 🔴 Botão Cancelar
+                  Expanded(
+                    child: MouseRegion(
+                      onEnter: (_) => setState(() {}),
+                      onExit: (_) => setState(() {}),
+                      child: AnimatedScale(
+                        duration: const Duration(milliseconds: 200),
+                        scale: 1.0,
+                        curve: Curves.easeOut,
+                        child: ElevatedButton(
+                          onPressed: () => Navigator.pop(context),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: GridColors.primary,
+                            foregroundColor: GridColors.textPrimary,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            padding: const EdgeInsets.symmetric(vertical: 14),
+                            elevation: 4,
+                            shadowColor: GridColors.primary.withOpacity(0.4),
+                          ).copyWith(
+                            overlayColor: WidgetStateProperty.all(
+                              GridColors.primaryLight.withOpacity(0.25),
+                            ),
+                          ),
+                          child: const Text(
+                            'Cancelar',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                      ),
                     ),
-                    child: Text(item == null ? 'Adicionar' : 'Salvar'),
                   ),
-                ),
-              ],
-            ),
-          ],
+
+                  const SizedBox(width: 16),
+
+                  // 🟢 Botão Salvar
+                  Expanded(
+                    child: MouseRegion(
+                      onEnter: (_) => setState(() {}),
+                      onExit: (_) => setState(() {}),
+                      child: AnimatedScale(
+                        duration: const Duration(milliseconds: 200),
+                        scale: 1.0,
+                        curve: Curves.easeOut,
+                        child: ElevatedButton(
+                          onPressed: () =>
+                              _saveForm(item, formControllers, context),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: GridColors.secondary,
+                            foregroundColor: GridColors.textPrimary,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            padding: const EdgeInsets.symmetric(vertical: 14),
+                            elevation: 4,
+                            shadowColor: GridColors.secondary.withOpacity(0.4),
+                          ).copyWith(
+                            overlayColor: WidgetStateProperty.all(
+                              GridColors.secondaryLight.withOpacity(0.25),
+                            ),
+                          ),
+                          child: Text(
+                            item == null ? 'Adicionar' : 'Salvar',
+                            style: const TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -763,7 +830,7 @@ class _GenericMobileGridScreenState<T>
         ),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(8),
-          borderSide: BorderSide(color: colorScheme.outline),
+          borderSide: const BorderSide(color: GridColors.primary, width: 1.5),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(8),
@@ -845,7 +912,7 @@ class _GenericMobileGridScreenState<T>
         filled: true,
         fillColor: Colors.white,
         focusedBorder: OutlineInputBorder(
-          borderSide: const BorderSide(color: GridColors.primary, width: 2),
+          borderSide: const BorderSide(color: GridColors.primary, width: 1.5),
           borderRadius: BorderRadius.circular(12),
         ),
         labelStyle: const TextStyle(color: GridColors.secondary),
@@ -922,13 +989,12 @@ class _GenericMobileGridScreenState<T>
       decoration: InputDecoration(
         hintText: 'Digite ${config.label.toLowerCase()}',
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8),
-          borderSide: BorderSide(color: Theme.of(context).colorScheme.outline),
+          borderRadius: BorderRadius.circular(10),
+          borderSide: const BorderSide(color: GridColors.primary, width: 1.5),
         ),
         focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8),
-          borderSide: BorderSide(
-              color: Theme.of(context).colorScheme.primary, width: 2),
+          borderRadius: BorderRadius.circular(10),
+          borderSide: const BorderSide(color: GridColors.primary, width: 2.5),
         ),
       ),
       keyboardType: _getKeyboardType(config.fieldType),
@@ -944,13 +1010,12 @@ class _GenericMobileGridScreenState<T>
       decoration: InputDecoration(
         hintText: 'Digite ${config.label.toLowerCase()}',
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8),
-          borderSide: BorderSide(color: Theme.of(context).colorScheme.outline),
+          borderRadius: BorderRadius.circular(10),
+          borderSide: const BorderSide(color: GridColors.primary, width: 1.5),
         ),
         focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8),
-          borderSide: BorderSide(
-              color: Theme.of(context).colorScheme.primary, width: 2),
+          borderRadius: BorderRadius.circular(10),
+          borderSide: const BorderSide(color: GridColors.primary, width: 2.5),
         ),
       ),
       maxLines: 4,
@@ -960,17 +1025,47 @@ class _GenericMobileGridScreenState<T>
 
   Widget _buildBooleanField(
       FieldConfig config, TextEditingController controller) {
-    return Row(
-      children: [
-        Checkbox(
-          value: controller.text.toLowerCase() == 'true',
-          onChanged: (value) {
-            controller.text = value.toString();
-            setState(() {});
-          },
-        ),
-        Text(config.label),
-      ],
+    bool currentValue = controller.text.toLowerCase() == 'true';
+
+    return StatefulBuilder(
+      builder: (context, setState) {
+        return InkWell(
+          onTap: config.enabled
+              ? () {
+                  setState(() {
+                    currentValue = !currentValue;
+                    controller.text = currentValue.toString();
+                  });
+                }
+              : null,
+          borderRadius: BorderRadius.circular(8),
+          child: Row(
+            children: [
+              Checkbox(
+                value: currentValue,
+                activeColor: GridColors.primary,
+                onChanged: config.enabled
+                    ? (value) {
+                        setState(() {
+                          currentValue = value ?? false;
+                          controller.text = currentValue.toString();
+                        });
+                      }
+                    : null,
+              ),
+              Text(
+                config.label,
+                style: TextStyle(
+                  color: config.enabled
+                      ? GridColors.textSecondary
+                      : GridColors.textSecondary.withOpacity(0.5),
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ],
+          ),
+        );
+      },
     );
   }
 
@@ -1102,14 +1197,14 @@ class _GenericMobileGridScreenState<T>
               decoration: InputDecoration(
                 labelText: config.label + (config.isRequired ? ' *' : ''),
                 border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8),
+                  borderRadius: BorderRadius.circular(10),
                   borderSide:
-                      BorderSide(color: Theme.of(context).colorScheme.outline),
+                      const BorderSide(color: GridColors.primary, width: 1.5),
                 ),
                 focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8),
-                  borderSide: BorderSide(
-                      color: Theme.of(context).colorScheme.primary, width: 2),
+                  borderRadius: BorderRadius.circular(10),
+                  borderSide:
+                      const BorderSide(color: GridColors.primary, width: 2.5),
                 ),
                 enabledBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(8),

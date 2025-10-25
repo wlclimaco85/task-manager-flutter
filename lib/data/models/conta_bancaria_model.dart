@@ -1,8 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:task_manager_flutter/data/customization/generic_grid_card.dart';
-import 'package:task_manager_flutter/data/models/network_response.dart';
-import 'package:task_manager_flutter/data/services/network_caller.dart';
-import 'package:task_manager_flutter/data/utils/api_links.dart';
 
 import 'empresa_model.dart';
 import 'parceiro_model.dart';
@@ -59,33 +56,6 @@ class ContaBancaria {
     };
   }
 
-  // 🔄 Métodos auxiliares para dropdowns
-  static Future<List<Map<String, dynamic>>> loadEmpresas() async {
-    final NetworkResponse response =
-        await NetworkCaller().getRequest(ApiLinks.allEmpresas);
-    if (response.isSuccess && response.body != null) {
-      final List<dynamic> data = response.body!['data']['dados'] ?? [];
-      return data
-          .map((item) =>
-              {'value': item['id'], 'label': item['nomeFantasia'].toString()})
-          .toList();
-    }
-    return [];
-  }
-
-  static Future<List<Map<String, dynamic>>> loadParceiros() async {
-    final NetworkResponse response =
-        await NetworkCaller().getRequest(ApiLinks.allParceiros);
-    if (response.isSuccess && response.body != null) {
-      final List<dynamic> data = response.body!['data']['dados'] ?? [];
-      return data
-          .map(
-              (item) => {'value': item['id'], 'label': item['nome'].toString()})
-          .toList();
-    }
-    return [];
-  }
-
   // ⚙️ Configuração do grid e formulários
   static List<FieldConfig> fieldConfigs = [
     const FieldConfig(
@@ -124,31 +94,6 @@ class ContaBancaria {
       isVisibleByDefault: true,
       isFixed: false,
       fieldType: FieldType.text,
-    ),
-    FieldConfig(
-      label: "Empresa",
-      fieldName: "empresa.id",
-      displayFieldName: "empresa.nomeFantasia",
-      icon: Icons.apartment,
-      isInForm: true,
-      isFilterable: true,
-      fieldType: FieldType.dropdown,
-      dropdownFutureBuilder: () async => await loadEmpresas(),
-      dropdownValueField: 'value',
-      dropdownDisplayField: 'label',
-      isRequired: true,
-    ),
-    FieldConfig(
-      label: "Parceiro",
-      fieldName: "parceiro.id",
-      displayFieldName: "parceiro.nome",
-      icon: Icons.people,
-      isInForm: true,
-      isFilterable: true,
-      fieldType: FieldType.dropdown,
-      dropdownFutureBuilder: () async => await loadParceiros(),
-      dropdownValueField: 'value',
-      dropdownDisplayField: 'label',
     ),
     const FieldConfig(
       label: "Saldo Atual",

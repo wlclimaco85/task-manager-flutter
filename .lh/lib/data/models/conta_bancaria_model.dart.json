@@ -3,7 +3,7 @@
     "activeCommit": 0,
     "commits": [
         {
-            "activePatchIndex": 2,
+            "activePatchIndex": 4,
             "patches": [
                 {
                     "date": 1761231003467,
@@ -16,6 +16,14 @@
                 {
                     "date": 1761231042686,
                     "content": "Index: \n===================================================================\n--- \n+++ \n@@ -156,17 +156,17 @@\n       icon: Icons.monetization_on,\r\n       isInForm: false,\r\n       isVisibleByDefault: true,\r\n       isFixed: false,\r\n-      fieldType: FieldType.decimal,\r\n+      fieldType: FieldType.currency,\r\n     ),\r\n     const FieldConfig(\r\n       label: \"Ativo\",\r\n       fieldName: \"ativo\",\r\n       icon: Icons.toggle_on,\r\n       isInForm: true,\r\n       isVisibleByDefault: true,\r\n       isFixed: false,\r\n-      fieldType: FieldType.bool,\r\n+      fieldType: FieldType.boolean,\r\n     ),\r\n   ];\r\n }\r\n"
+                },
+                {
+                    "date": 1761256787320,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -1,9 +1,6 @@\n import 'package:flutter/material.dart';\r\n import 'package:task_manager_flutter/data/customization/generic_grid_card.dart';\r\n-import 'package:task_manager_flutter/data/models/network_response.dart';\r\n-import 'package:task_manager_flutter/data/services/network_caller.dart';\r\n-import 'package:task_manager_flutter/data/utils/api_links.dart';\r\n \r\n import 'empresa_model.dart';\r\n import 'parceiro_model.dart';\r\n \r\n@@ -58,35 +55,8 @@\n       'ativo': ativo,\r\n     };\r\n   }\r\n \r\n-  // 🔄 Métodos auxiliares para dropdowns\r\n-  static Future<List<Map<String, dynamic>>> loadEmpresas() async {\r\n-    final NetworkResponse response =\r\n-        await NetworkCaller().getRequest(ApiLinks.allEmpresas);\r\n-    if (response.isSuccess && response.body != null) {\r\n-      final List<dynamic> data = response.body!['data']['dados'] ?? [];\r\n-      return data\r\n-          .map((item) =>\r\n-              {'value': item['id'], 'label': item['nomeFantasia'].toString()})\r\n-          .toList();\r\n-    }\r\n-    return [];\r\n-  }\r\n-\r\n-  static Future<List<Map<String, dynamic>>> loadParceiros() async {\r\n-    final NetworkResponse response =\r\n-        await NetworkCaller().getRequest(ApiLinks.allParceiros);\r\n-    if (response.isSuccess && response.body != null) {\r\n-      final List<dynamic> data = response.body!['data']['dados'] ?? [];\r\n-      return data\r\n-          .map(\r\n-              (item) => {'value': item['id'], 'label': item['nome'].toString()})\r\n-          .toList();\r\n-    }\r\n-    return [];\r\n-  }\r\n-\r\n   // ⚙️ Configuração do grid e formulários\r\n   static List<FieldConfig> fieldConfigs = [\r\n     const FieldConfig(\r\n       label: \"Banco\",\r\n"
+                },
+                {
+                    "date": 1761256819415,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -94,33 +94,8 @@\n       isVisibleByDefault: true,\r\n       isFixed: false,\r\n       fieldType: FieldType.text,\r\n     ),\r\n-    FieldConfig(\r\n-      label: \"Empresa\",\r\n-      fieldName: \"empresa.id\",\r\n-      displayFieldName: \"empresa.nomeFantasia\",\r\n-      icon: Icons.apartment,\r\n-      isInForm: true,\r\n-      isFilterable: true,\r\n-      fieldType: FieldType.dropdown,\r\n-      dropdownFutureBuilder: () async => await loadEmpresas(),\r\n-      dropdownValueField: 'value',\r\n-      dropdownDisplayField: 'label',\r\n-      isRequired: true,\r\n-    ),\r\n-    FieldConfig(\r\n-      label: \"Parceiro\",\r\n-      fieldName: \"parceiro.id\",\r\n-      displayFieldName: \"parceiro.nome\",\r\n-      icon: Icons.people,\r\n-      isInForm: true,\r\n-      isFilterable: true,\r\n-      fieldType: FieldType.dropdown,\r\n-      dropdownFutureBuilder: () async => await loadParceiros(),\r\n-      dropdownValueField: 'value',\r\n-      dropdownDisplayField: 'label',\r\n-    ),\r\n     const FieldConfig(\r\n       label: \"Saldo Atual\",\r\n       fieldName: \"saldoAtual\",\r\n       icon: Icons.monetization_on,\r\n"
                 }
             ],
             "date": 1761231003467,
