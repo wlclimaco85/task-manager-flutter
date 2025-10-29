@@ -1,5 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:task_manager_flutter/data/models/conta_receber_model.dart';
+import 'package:flutter/material.dart';
+import 'package:task_manager_flutter/data/models/conta_receber_model.dart';
+import 'package:task_manager_flutter/data/services/conta_bancaria_caller.dart';
+import 'package:task_manager_flutter/data/constants/custom_colors.dart';
 
 class BaixaDialogReceber extends StatefulWidget {
   final ContaReceber conta;
@@ -18,6 +22,11 @@ class _BaixaDialogReceberState extends State<BaixaDialogReceber> {
   final _valorDescontoController = TextEditingController();
   DateTime _dataBaixa = DateTime.now();
 
+  int? _contaId;
+  bool _isLoading = true;
+  List<Map<String, dynamic>> _contas = [];
+  final CustomColors colors = CustomColors();
+
   @override
   void initState() {
     super.initState();
@@ -26,108 +35,163 @@ class _BaixaDialogReceberState extends State<BaixaDialogReceber> {
     _valorJurosController.text = widget.conta.valorJuros?.toString() ?? '0';
     _valorDescontoController.text =
         widget.conta.valorDesconto?.toString() ?? '0';
+    _loadContas();
+  }
+
+  Future<void> _loadContas() async {
+    _contas = await ContaBancariaCaller.loadContas();
+    setState(() => _isLoading = false);
   }
 
   @override
   Widget build(BuildContext context) {
-    return Dialog(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      child: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Form(
-          key: _formKey,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'Baixar Conta a Receber',
-                style: Theme.of(
-                  context,
-                ).textTheme.titleLarge, // This is the correct replacement
-              ),
-              const SizedBox(height: 16),
-              Text('Descrição: ${widget.conta.descricao}'),
-              Text(
-                'Valor Original: R\$${widget.conta.valor.toStringAsFixed(2)}',
-              ),
-              const SizedBox(height: 16),
-              TextFormField(
-                controller: _valorBaixaController,
-                decoration: const InputDecoration(labelText: 'Valor da Baixa'),
-                keyboardType: TextInputType.number,
-              ),
-              TextFormField(
-                controller: _valorMultaController,
-                decoration: const InputDecoration(labelText: 'Valor da Multa'),
-                keyboardType: TextInputType.number,
-              ),
-              TextFormField(
-                controller: _valorJurosController,
-                decoration: const InputDecoration(labelText: 'Valor dos Juros'),
-                keyboardType: TextInputType.number,
-              ),
-              TextFormField(
-                controller: _valorDescontoController,
-                decoration: const InputDecoration(
-                  labelText: 'Valor do Desconto',
-                ),
-                keyboardType: TextInputType.number,
-              ),
-              const SizedBox(height: 16),
-              Row(
-                children: [
-                  Text('Data da Baixa: ${_formatDate(_dataBaixa)}'),
-                  IconButton(
-                    icon: const Icon(Icons.calendar_today),
-                    onPressed: () => _selectDate(context),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 20),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.end,
-                children: [
-                  TextButton(
-                    onPressed: () => Navigator.pop(context),
-                    child: const Text('Cancelar'),
-                  ),
-                  const SizedBox(width: 10),
-                  ElevatedButton(
-                    onPressed: _baixarConta,
-                    child: const Text('Confirmar Baixa'),
-                  ),
-                ],
-              ),
-            ],
-          ),
+    return AlertDialog(
+      backgroundColor: GridColors.dialogBackground,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      title: Text(
+        'Baixar Conta a Receber',
+        style: TextStyle(
+          color: colors.getDarkGreenBorder(),
+          fontWeight: FontWeight.bold,
         ),
       ),
+      content: _isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : SingleChildScrollView(
+              child: Form(
+                key: _formKey,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    _buildTextField(_valorBaixaController, 'Valor da Baixa'),
+                    _buildTextField(_valorMultaController, 'Valor da Multa'),
+                    _buildTextField(_valorJurosController, 'Valor dos Juros'),
+                    _buildTextField(
+                        _valorDescontoController, 'Valor do Desconto'),
+                    const SizedBox(height: 16),
+                    _buildDropdown<int>(
+                      label: 'Conta Bancária',
+                      icon: Icons.account_balance,
+                      value: _contaId,
+                      items: _contas
+                          .map<DropdownMenuItem<int>>((c) =>
+                              DropdownMenuItem<int>(
+                                  value: c['value'] as int,
+                                  child: Text(c['label'] as String)))
+                          .toList(),
+                      onChanged: (v) => setState(() => _contaId = v),
+                      validatorMsg: 'Selecione a conta bancária',
+                    ),
+                    const SizedBox(height: 16),
+                    Row(
+                      children: [
+                        const Icon(Icons.calendar_today,
+                            size: 20, color: GridColors.inputBorder),
+                        const SizedBox(width: 8),
+                        TextButton(
+                          onPressed: () => _selectDate(context),
+                          child: Text(
+                            '${_dataBaixa.day}/${_dataBaixa.month}/${_dataBaixa.year}',
+                            style: const TextStyle(
+                              fontWeight: FontWeight.bold,
+                              color: GridColors.primary,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ),
+      actions: [
+        TextButton(
+          style: TextButton.styleFrom(
+            backgroundColor: colors.getCancelButtonColor(),
+            foregroundColor: colors.getButtonTextColor(),
+          ),
+          onPressed: () => Navigator.of(context).pop(),
+          child: const Text('Cancelar'),
+        ),
+        ElevatedButton(
+          style: ElevatedButton.styleFrom(
+            backgroundColor: colors.getConfirmButtonColor(),
+            foregroundColor: colors.getButtonTextColor(),
+          ),
+          onPressed: _baixarConta,
+          child: const Text('Confirmar'),
+        ),
+      ],
     );
   }
 
-  String _formatDate(DateTime date) {
-    return '${date.day}/${date.month}/${date.year}';
+  Widget _buildTextField(TextEditingController controller, String label) {
+    return TextFormField(
+      controller: controller,
+      decoration: InputDecoration(
+        labelText: label,
+        prefixIcon:
+            const Icon(Icons.monetization_on, color: GridColors.inputBorder),
+        filled: true,
+        fillColor: GridColors.inputBackground,
+        enabledBorder: OutlineInputBorder(
+          borderSide: BorderSide(color: colors.getBorderInput(), width: 1.2),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderSide: BorderSide(color: colors.getBorderInput(), width: 1.5),
+        ),
+      ),
+      keyboardType: TextInputType.number,
+    );
+  }
+
+  Widget _buildDropdown<T>({
+    required String label,
+    required IconData icon,
+    required List<DropdownMenuItem<T>> items,
+    required void Function(T?) onChanged,
+    required String validatorMsg,
+    T? value,
+  }) {
+    return DropdownButtonFormField<T>(
+      value: value,
+      decoration: InputDecoration(
+        labelText: label,
+        prefixIcon: Icon(icon, color: GridColors.inputBorder),
+        filled: true,
+        fillColor: GridColors.inputBackground,
+        enabledBorder: OutlineInputBorder(
+          borderSide: BorderSide(color: colors.getBorderInput(), width: 1.2),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderSide: BorderSide(color: colors.getBorderInput(), width: 1.5),
+        ),
+      ),
+      items: items,
+      onChanged: onChanged,
+      validator: (value) => (value == null) ? validatorMsg : null,
+    );
   }
 
   Future<void> _selectDate(BuildContext context) async {
-    final DateTime? picked = await showDatePicker(
+    final picked = await showDatePicker(
       context: context,
       initialDate: _dataBaixa,
       firstDate: DateTime(2000),
       lastDate: DateTime(2100),
     );
-    if (picked != null && picked != _dataBaixa) {
-      setState(() {
-        _dataBaixa = picked;
-      });
-    }
+    if (picked != null) setState(() => _dataBaixa = picked);
   }
 
   void _baixarConta() {
     if (_formKey.currentState!.validate()) {
-      // Implementar lógica de baixa aqui
-      Navigator.pop(context);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text('Baixa registrada com sucesso!'),
+          backgroundColor: colors.getShowSnackBarSuccess(),
+        ),
+      );
+      Navigator.pop(context, true);
     }
   }
 

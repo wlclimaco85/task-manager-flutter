@@ -11,7 +11,7 @@ class ContaBancariaCaller {
 
     try {
       final NetworkResponse response =
-          await NetworkCaller().getRequest(ApiLinks.allContasBancarias);
+          await NetworkCaller().getRequest(ApiLinks.contasBancarias);
 
       if (response.isSuccess && response.body != null) {
         final List<dynamic> data = response.body!['data']['dados'] ?? [];
@@ -89,6 +89,21 @@ class ContaBancariaCaller {
   }
 
   static Future<List<Map<String, dynamic>>> loadContas() async {
+    final NetworkResponse response =
+        await NetworkCaller().getRequest(ApiLinks.contasBancarias);
+    if (response.isSuccess && response.body != null) {
+      final List<dynamic> data = response.body!['data']['dados'] ?? [];
+      return data
+          .map((item) => {
+                'value': item['id'],
+                'label': '${item['banco'] ?? ''} - ${item['numero'] ?? ''}',
+              })
+          .toList();
+    }
+    return [];
+  }
+
+  static Future<List<Map<String, dynamic>>> loadContas2() async {
     final NetworkResponse response =
         await NetworkCaller().getRequest(ApiLinks.allContasBancarias);
     if (response.isSuccess && response.body != null) {
