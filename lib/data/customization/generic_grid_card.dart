@@ -2156,11 +2156,13 @@ class _GenericMobileGridScreenState<T>
   // CARD COMPACTO COM LAYOUT EM LINHA
   // ==============================================
 
+// ========================
+// CARD COMPLETO FINAL
+// ========================
   Widget _buildItemCard(T item, int index) {
     final itemMap = widget.toJson(item);
     final id = _getNestedValue(itemMap, widget.idFieldName).toString();
     final isSelected = _cardSelection[id] ?? false;
-
     bool isHovered = false;
 
     return StatefulBuilder(
@@ -2172,8 +2174,7 @@ class _GenericMobileGridScreenState<T>
             duration: const Duration(milliseconds: 200),
             curve: Curves.easeOutCubic,
             margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-            transform: Matrix4.translationValues(
-                0, isHovered ? -2 : 0, 0), // 🪶 efeito “slide up”
+            transform: Matrix4.translationValues(0, isHovered ? -2 : 0, 0),
             decoration: BoxDecoration(
               boxShadow: isHovered
                   ? [
@@ -2216,7 +2217,6 @@ class _GenericMobileGridScreenState<T>
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // Header: ID + Status
                       Row(
                         children: [
                           if (_isSelectionMode)
@@ -2251,7 +2251,6 @@ class _GenericMobileGridScreenState<T>
                           _buildStatusBadge(itemMap),
                         ],
                       ),
-
                       const SizedBox(height: 8),
                       ..._buildVisibleFieldsForCard(itemMap),
                       const SizedBox(height: 6),
@@ -2655,56 +2654,87 @@ class _GenericMobileGridScreenState<T>
     );
   }
 
+  // ========================
+// BOX VERMELHO COM BOTÕES
+// ========================
   Widget _buildCardActions(T item, Map<String, dynamic> itemMap) {
-    return Container(
-      width: double.infinity,
-      height: 42, // 🔧 altura fixa compacta (~30% menor)
-      padding: const EdgeInsets.only(right: 8), // 🔧 menos padding geral
-      decoration: const BoxDecoration(
-        color: GridColors.primary,
-        borderRadius: BorderRadius.vertical(bottom: Radius.circular(10)),
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.end,
-        children: [
-          if (widget.hasPermission('edit'))
-            Tooltip(
-              message: 'Editar',
-              waitDuration: const Duration(milliseconds: 300),
-              child: _actionIconBtn(
-                icon: Icons.edit,
-                onPressed: () => _openForm(item: item),
+    bool isHovered = false;
+
+    return StatefulBuilder(
+      builder: (context, setState) {
+        return MouseRegion(
+          onEnter: (_) => setState(() => isHovered = true),
+          onExit: (_) => setState(() => isHovered = false),
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 200),
+            curve: Curves.easeInOut,
+            width: double.infinity,
+            height: 38,
+            padding: const EdgeInsets.only(right: 8),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: isHovered
+                    ? [
+                        GridColors.primaryDark,
+                        GridColors.primary.withOpacity(0.95),
+                      ]
+                    : [
+                        GridColors.primary,
+                        GridColors.primary.withOpacity(0.85),
+                      ],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
               ),
+              borderRadius:
+                  const BorderRadius.vertical(bottom: Radius.circular(10)),
             ),
-          const SizedBox(width: 4),
-          if (widget.hasPermission('delete'))
-            Tooltip(
-              message: 'Excluir',
-              waitDuration: const Duration(milliseconds: 300),
-              child: _actionIconBtn(
-                icon: Icons.delete_outline,
-                onPressed: () => _deleteItem(
-                  _getNestedValue(itemMap, widget.idFieldName).toString(),
-                ),
-              ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                if (widget.hasPermission('edit'))
+                  Tooltip(
+                    message: 'Editar',
+                    waitDuration: const Duration(milliseconds: 300),
+                    child: _actionIconBtn(
+                      icon: Icons.edit,
+                      onPressed: () => _openForm(item: item),
+                    ),
+                  ),
+                const SizedBox(width: 4),
+                if (widget.hasPermission('delete'))
+                  Tooltip(
+                    message: 'Excluir',
+                    waitDuration: const Duration(milliseconds: 300),
+                    child: _actionIconBtn(
+                      icon: Icons.delete_outline,
+                      onPressed: () => _deleteItem(
+                        _getNestedValue(itemMap, widget.idFieldName).toString(),
+                      ),
+                    ),
+                  ),
+                for (final action in _customActions
+                    .where((a) => a.isVisible?.call(item) ?? true)) ...[
+                  const SizedBox(width: 4),
+                  Tooltip(
+                    message: action.label,
+                    waitDuration: const Duration(milliseconds: 300),
+                    child: _actionIconBtn(
+                      icon: action.icon,
+                      onPressed: () => action.onPressed(context, item),
+                    ),
+                  ),
+                ],
+              ],
             ),
-          for (final action in _customActions
-              .where((a) => a.isVisible?.call(item) ?? true)) ...[
-            const SizedBox(width: 4),
-            Tooltip(
-              message: action.label,
-              waitDuration: const Duration(milliseconds: 300),
-              child: _actionIconBtn(
-                icon: action.icon,
-                onPressed: () => action.onPressed(context, item),
-              ),
-            ),
-          ],
-        ],
-      ),
+          ),
+        );
+      },
     );
   }
 
+// ========================
+// BOTÕES VERDES ANIMADOS
+// ========================
   Widget _actionIconBtn({
     required IconData icon,
     required VoidCallback onPressed,
@@ -2717,7 +2747,7 @@ class _GenericMobileGridScreenState<T>
           onEnter: (_) => setState(() => isHovered = true),
           onExit: (_) => setState(() => isHovered = false),
           child: AnimatedScale(
-            scale: isHovered ? 1.1 : 1.0, // 🔍 Zoom leve no hover
+            scale: isHovered ? 1.1 : 1.0,
             duration: const Duration(milliseconds: 150),
             curve: Curves.easeOutCubic,
             child: IconButton.filled(

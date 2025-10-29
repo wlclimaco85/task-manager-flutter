@@ -1,0 +1,18 @@
+{
+    "sourceFile": "lib/data/constants/show_general_dialog.dart",
+    "activeCommit": 0,
+    "commits": [
+        {
+            "activePatchIndex": 0,
+            "patches": [
+                {
+                    "date": 1761771080067,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n"
+                }
+            ],
+            "date": 1761771080067,
+            "name": "Commit-0",
+            "content": "import 'package:flutter/material.dart';\r\nimport 'dart:ui';\r\nimport 'package:flutter/material.dart';\r\n\r\nFuture<T?> showM3Dialog<T>({\r\n  required BuildContext context,\r\n  required Widget child,\r\n  String barrierLabel = 'Dialog',\r\n}) {\r\n  return showGeneralDialog<T>(\r\n    context: context,\r\n    barrierLabel: barrierLabel,\r\n    barrierDismissible: true,\r\n    barrierColor: Colors.black38,\r\n    transitionDuration: const Duration(milliseconds: 220),\r\n    pageBuilder: (_, __, ___) => Center(\r\n      child: Material(color: Colors.transparent, child: child),\r\n    ),\r\n    transitionBuilder: (_, anim, __, dialogChild) {\r\n      final offsetAnim = Tween<Offset>(\r\n        begin: const Offset(0, 0.08),\r\n        end: Offset.zero,\r\n      ).animate(CurvedAnimation(parent: anim, curve: Curves.easeOutCubic));\r\n      return BackdropFilter(\r\n        filter: ImageFilter.blur(sigmaX: 5, sigmaY: 5),\r\n        child: FadeTransition(\r\n          opacity: anim,\r\n          child: SlideTransition(position: offsetAnim, child: dialogChild),\r\n        ),\r\n      );\r\n    },\r\n  );\r\n}\r\n"
+        }
+    ]
+}
