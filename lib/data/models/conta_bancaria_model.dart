@@ -11,8 +11,8 @@ class ContaBancaria {
   String? numero;
   String? descricao;
   double? saldoAtual;
-  Empresa empresa;
-  Parceiro? parceiro;
+  int empresa;
+  int? parceiro;
   bool ativo;
 
   ContaBancaria({
@@ -35,9 +35,8 @@ class ContaBancaria {
       numero: json['numero'],
       descricao: json['descricao'],
       saldoAtual: (json['saldoAtual'] ?? 0).toDouble(),
-      empresa: Empresa.fromJson(json['empresa']),
-      parceiro:
-          json['parceiro'] != null ? Parceiro.fromJson(json['parceiro']) : null,
+      empresa: json['empresaId'],
+      parceiro: json['parceiroId'],
       ativo: json['ativo'] ?? true,
     );
   }
@@ -50,8 +49,8 @@ class ContaBancaria {
       'numero': numero,
       'descricao': descricao,
       'saldoAtual': saldoAtual,
-      'empresa': empresa.toJson(),
-      if (parceiro != null) 'parceiro': parceiro!.toJson(),
+      'empresa': empresa,
+      if (parceiro != null) 'parceiro': parceiro!,
       'ativo': ativo,
     };
   }

@@ -3,7 +3,7 @@
     "activeCommit": 0,
     "commits": [
         {
-            "activePatchIndex": 2,
+            "activePatchIndex": 3,
             "patches": [
                 {
                     "date": 1761086792300,
@@ -16,6 +16,10 @@
                 {
                     "date": 1761088834092,
                     "content": "Index: \n===================================================================\n--- \n+++ \n@@ -1,8 +1,9 @@\n // lib/data/customization/grid_network.dart\r\n import 'dart:convert';\r\n import 'dart:io';\r\n import 'package:http/http.dart' as http;\r\n+import 'package:http_parser/http_parser.dart'; // 👈 IMPORT NECESSÁRIO\r\n import 'package:task_manager_flutter/data/utils/app_logger.dart';\r\n \r\n /// Estrutura de resposta simplificada\r\n class NetworkResponse {\r\n@@ -28,12 +29,9 @@\n     {Map<String, String>? headers}) async {\r\n   L.d('[POST] $url');\r\n   final resp = await http.post(\r\n     Uri.parse(url),\r\n-    headers: {\r\n-      'Content-Type': 'application/json',\r\n-      ...?headers,\r\n-    },\r\n+    headers: {'Content-Type': 'application/json', ...?headers},\r\n     body: jsonEncode(body),\r\n   );\r\n   return _parseResponse(resp);\r\n }\r\n@@ -42,12 +40,9 @@\n     {Map<String, String>? headers}) async {\r\n   L.d('[PUT] $url');\r\n   final resp = await http.put(\r\n     Uri.parse(url),\r\n-    headers: {\r\n-      'Content-Type': 'application/json',\r\n-      ...?headers,\r\n-    },\r\n+    headers: {'Content-Type': 'application/json', ...?headers},\r\n     body: jsonEncode(body),\r\n   );\r\n   return _parseResponse(resp);\r\n }\r\n@@ -149,20 +144,20 @@\n String respStatus(NetworkResponse resp) => resp.statusCode.toString();\r\n dynamic respBody(NetworkResponse resp) => resp.body;\r\n bool respSuccess(NetworkResponse resp) => resp.isSuccess;\r\n \r\n-http_parser.MediaType _mimeFromName(String name) {\r\n+MediaType _mimeFromName(String name) {\r\n   final lower = name.toLowerCase();\r\n   if (lower.endsWith('.jpg') || lower.endsWith('.jpeg')) {\r\n-    return http_parser.MediaType('image', 'jpeg');\r\n+    return MediaType('image', 'jpeg');\r\n   } else if (lower.endsWith('.png')) {\r\n-    return http_parser.MediaType('image', 'png');\r\n+    return MediaType('image', 'png');\r\n   } else if (lower.endsWith('.pdf')) {\r\n-    return http_parser.MediaType('application', 'pdf');\r\n+    return MediaType('application', 'pdf');\r\n   } else if (lower.endsWith('.doc')) {\r\n-    return http_parser.MediaType('application', 'msword');\r\n+    return MediaType('application', 'msword');\r\n   } else if (lower.endsWith('.docx')) {\r\n-    return http_parser.MediaType('application',\r\n+    return MediaType('application',\r\n         'vnd.openxmlformats-officedocument.wordprocessingml.document');\r\n   }\r\n-  return http_parser.MediaType('application', 'octet-stream');\r\n+  return MediaType('application', 'octet-stream');\r\n }\r\n"
+                },
+                {
+                    "date": 1761589221545,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -1,7 +1,6 @@\n // lib/data/customization/grid_network.dart\r\n import 'dart:convert';\r\n-import 'dart:io';\r\n import 'package:http/http.dart' as http;\r\n import 'package:http_parser/http_parser.dart'; // 👈 IMPORT NECESSÁRIO\r\n import 'package:task_manager_flutter/data/utils/app_logger.dart';\r\n \r\n"
                 }
             ],
             "date": 1761086792300,

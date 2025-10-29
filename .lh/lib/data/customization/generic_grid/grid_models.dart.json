@@ -3,11 +3,15 @@
     "activeCommit": 0,
     "commits": [
         {
-            "activePatchIndex": 0,
+            "activePatchIndex": 1,
             "patches": [
                 {
                     "date": 1761083489461,
                     "content": "Index: \n===================================================================\n--- \n+++ \n"
+                },
+                {
+                    "date": 1761589221535,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -2,9 +2,8 @@\n // -----------------------------------------------------------------------------\r\n // 🧩 Modelos e Configurações principais do Grid\r\n // -----------------------------------------------------------------------------\r\n import 'package:flutter/material.dart';\r\n-import 'package:file_picker/file_picker.dart';\r\n \r\n // ---------------------- CONFIGS ----------------------\r\n enum FieldType {\r\n   text,\r\n"
                 }
             ],
             "date": 1761083489461,

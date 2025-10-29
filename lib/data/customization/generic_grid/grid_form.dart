@@ -365,7 +365,7 @@ class _GridFormDialogState extends State<GridFormDialog> {
 
         return DropdownButtonFormField<String?>(
           isExpanded: true,
-          value: validValue,
+          initialValue: validValue,
           items: items,
           onChanged: c.enabled
               ? (v) {

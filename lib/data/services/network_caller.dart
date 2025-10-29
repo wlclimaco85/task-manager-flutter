@@ -40,6 +40,8 @@ class NetworkCaller {
         },
       );
 
+      debugPrint("Url get = $uri");
+
       AppLogger.i.info(
           '⚙️ [request get principal] url : ${uri.toString()} | statusCode: ${response.statusCode}');
 

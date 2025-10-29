@@ -1,6 +1,5 @@
 // lib/data/customization/grid_network.dart
 import 'dart:convert';
-import 'dart:io';
 import 'package:http/http.dart' as http;
 import 'package:http_parser/http_parser.dart'; // 👈 IMPORT NECESSÁRIO
 import 'package:task_manager_flutter/data/utils/app_logger.dart';

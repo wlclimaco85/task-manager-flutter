@@ -3,7 +3,6 @@
 // 🧩 Modelos e Configurações principais do Grid
 // -----------------------------------------------------------------------------
 import 'package:flutter/material.dart';
-import 'package:file_picker/file_picker.dart';
 
 // ---------------------- CONFIGS ----------------------
 enum FieldType {
