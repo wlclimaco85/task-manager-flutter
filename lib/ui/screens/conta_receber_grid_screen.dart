@@ -24,6 +24,13 @@ class ContaReceberGridScreen extends StatelessWidget {
       fieldConfigs: ContaReceber.fieldConfigs,
       idFieldName: 'id',
       dateFieldName: 'audit.createdAt',
+      // 🔹 NOVOS PARÂMETROS
+      statusFieldName: 'status',
+      editableStatus: true,
+      statusEnumMap: StatusConta.values
+          .asMap()
+          .map((key, value) => MapEntry(value, value.name)),
+
       customActions: () => [
         CustomAction<ContaReceber>(
           icon: Icons.payment,

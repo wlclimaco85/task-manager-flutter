@@ -24,6 +24,14 @@ class ContaPagarGridScreen extends StatelessWidget {
       fieldConfigs: ContaPagar.fieldConfigs,
       idFieldName: 'id',
       dateFieldName: 'audit.createdAt',
+
+      // 🔹 NOVOS PARÂMETROS
+      statusFieldName: 'status',
+      editableStatus: true,
+      statusEnumMap: StatusConta.values
+          .asMap()
+          .map((key, value) => MapEntry(value, value.name)),
+
       customActions: () => [
         CustomAction<ContaPagar>(
           icon: Icons.payment,

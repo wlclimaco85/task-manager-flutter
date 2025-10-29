@@ -201,6 +201,9 @@ class GenericMobileGridScreen<T> extends StatefulWidget {
   // NOVA PROPRIEDADE SIMPLES
   final Map<String, dynamic>? additionalFormData;
   final Map<String, dynamic> Function(T? item)? dynamicAdditionalFormData;
+  final String? statusFieldName; // nome do campo que vai aparecer no badge
+  final bool editableStatus; // se pode editar esse campo
+  final Map<dynamic, String>? statusEnumMap;
 
   const GenericMobileGridScreen({
     super.key,
@@ -229,6 +232,9 @@ class GenericMobileGridScreen<T> extends StatefulWidget {
     this.onBannerRefresh,
     this.additionalFormData, // NOVO PARÂMETRO
     this.dynamicAdditionalFormData, // NOVO: Para dados dinâmicos
+    this.statusFieldName,
+    this.editableStatus = false,
+    this.statusEnumMap,
   });
 
   @override
@@ -2154,97 +2160,110 @@ class _GenericMobileGridScreenState<T>
     final itemMap = widget.toJson(item);
     final id = _getNestedValue(itemMap, widget.idFieldName).toString();
     final isSelected = _cardSelection[id] ?? false;
-    final colorScheme = Theme.of(context).colorScheme;
-    final textTheme = Theme.of(context).textTheme;
 
-    return Container(
-      margin: const EdgeInsets.symmetric(
-          horizontal: 12, vertical: 4), // Menor espaçamento
-      child: Card(
-        elevation: 2,
-        shadowColor:
-            GridColors.primary.withOpacity(0.3), // Sombra na cor primária
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
-          side: BorderSide(
-            color: isSelected
-                ? GridColors.primary
-                : GridColors.primary.withOpacity(0.3), // Borda na cor primária
-            width: isSelected ? 2 : 1,
-          ),
-        ),
-        color:
-            isSelected ? GridColors.primary.withOpacity(0.08) : GridColors.card,
-        child: InkWell(
-          borderRadius: BorderRadius.circular(12),
-          onTap: _isSelectionMode
-              ? () => _toggleCardSelection(id, !isSelected)
-              : () => widget.onItemTap?.call(item, context),
-          onLongPress: () {
-            if (!_isSelectionMode) {
-              _toggleSelectionMode();
-              _toggleCardSelection(id, true);
-            }
-          },
-          child: Padding(
-            padding: const EdgeInsets.all(12), // Padding menor
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Header com ID, Status e Checkbox
-                Row(
-                  children: [
-                    if (_isSelectionMode)
-                      Padding(
-                        padding: const EdgeInsets.only(right: 8),
-                        child: Checkbox(
-                          value: isSelected,
-                          onChanged: (value) =>
-                              _toggleCardSelection(id, value ?? false),
-                          fillColor:
-                              WidgetStateProperty.all(GridColors.primary),
-                        ),
+    bool isHovered = false;
+
+    return StatefulBuilder(
+      builder: (context, setState) {
+        return MouseRegion(
+          onEnter: (_) => setState(() => isHovered = true),
+          onExit: (_) => setState(() => isHovered = false),
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 200),
+            curve: Curves.easeOutCubic,
+            margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+            transform: Matrix4.translationValues(
+                0, isHovered ? -2 : 0, 0), // 🪶 efeito “slide up”
+            decoration: BoxDecoration(
+              boxShadow: isHovered
+                  ? [
+                      BoxShadow(
+                        color: GridColors.primary.withOpacity(0.25),
+                        blurRadius: 8,
+                        offset: const Offset(0, 3),
                       ),
-
-                    // ID
-                    if (_fieldVisibility[widget.idFieldName] == true)
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 6, vertical: 2), // Menor padding
-                        decoration: BoxDecoration(
-                          color: GridColors.primary.withOpacity(0.1),
-                          borderRadius: BorderRadius.circular(4),
-                        ),
-                        child: Text(
-                          '#$id',
-                          style: textTheme.labelSmall?.copyWith(
-                            fontWeight: FontWeight.w600,
-                            color: GridColors.primary,
-                          ),
-                        ),
-                      ),
-
-                    const Spacer(),
-
-                    // Status
-                    if (_hasStatusField(itemMap)) _buildStatusBadge(itemMap),
-                  ],
+                    ]
+                  : [],
+            ),
+            child: Card(
+              elevation: isHovered ? 4 : 2,
+              shadowColor: GridColors.primary.withOpacity(0.4),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+                side: BorderSide(
+                  color: isSelected
+                      ? GridColors.primary
+                      : GridColors.primary.withOpacity(0.25),
+                  width: isSelected ? 2 : 1,
                 ),
+              ),
+              color: isSelected
+                  ? GridColors.primary.withOpacity(0.06)
+                  : GridColors.card,
+              child: InkWell(
+                borderRadius: BorderRadius.circular(12),
+                onTap: _isSelectionMode
+                    ? () => _toggleCardSelection(id, !isSelected)
+                    : () => widget.onItemTap?.call(item, context),
+                onLongPress: () {
+                  if (!_isSelectionMode) {
+                    _toggleSelectionMode();
+                    _toggleCardSelection(id, true);
+                  }
+                },
+                child: Padding(
+                  padding: const EdgeInsets.all(12),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Header: ID + Status
+                      Row(
+                        children: [
+                          if (_isSelectionMode)
+                            Padding(
+                              padding: const EdgeInsets.only(right: 8),
+                              child: Checkbox(
+                                value: isSelected,
+                                onChanged: (value) =>
+                                    _toggleCardSelection(id, value ?? false),
+                                fillColor:
+                                    WidgetStateProperty.all(GridColors.primary),
+                              ),
+                            ),
+                          if (_fieldVisibility[widget.idFieldName] == true)
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 6, vertical: 2),
+                              decoration: BoxDecoration(
+                                color: GridColors.primary.withOpacity(0.1),
+                                borderRadius: BorderRadius.circular(4),
+                              ),
+                              child: Text(
+                                '#$id',
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.w600,
+                                  color: GridColors.primary,
+                                  fontSize: 11,
+                                ),
+                              ),
+                            ),
+                          const Spacer(),
+                          _buildStatusBadge(itemMap),
+                        ],
+                      ),
 
-                const SizedBox(height: 8), // Espaço menor
-
-                // Campos em linha (label e valor lado a lado)
-                ..._buildVisibleFieldsForCard(itemMap),
-
-                const SizedBox(height: 8), // Espaço menor
-
-                // Ações
-                if (!_isSelectionMode) _buildCardActions(item, itemMap),
-              ],
+                      const SizedBox(height: 8),
+                      ..._buildVisibleFieldsForCard(itemMap),
+                      const SizedBox(height: 6),
+                      if (!_isSelectionMode) _buildCardActions(item, itemMap),
+                    ],
+                  ),
+                ),
+              ),
             ),
           ),
-        ),
-      ),
+        );
+      },
     );
   }
 
@@ -2463,106 +2482,273 @@ class _GenericMobileGridScreenState<T>
   }
 
   Widget _buildStatusBadge(Map<String, dynamic> itemMap) {
-    final status = _getNestedValue(itemMap, 'status')?.toString().toLowerCase();
+    final field = widget.statusFieldName ?? 'status';
+    final raw = _getNestedValue(itemMap, field);
 
-    Color badgeColor;
-    String badgeText;
+    if (raw == null) return const SizedBox.shrink();
 
-    switch (status) {
-      case 'ativo':
-      case 'true':
-      case '1':
-      case 'aberto':
-        badgeColor = GridColors.success;
-        badgeText = 'Ativo';
-        break;
-      case 'inativo':
-      case 'false':
-      case '0':
-      case 'fechado':
-        badgeColor = GridColors.error;
-        badgeText = 'Inativo';
-        break;
-      case 'pendente':
-        badgeColor = GridColors.warning;
-        badgeText = 'Pendente';
-        break;
-      default:
-        badgeColor = GridColors.primary;
-        badgeText = status?.toUpperCase() ?? 'Status';
+    // 🔧 Mapeia se existir enumMap
+    final text = resolveEnumValue(raw);
+
+    print(
+        'Status raw: $raw, mapeado para: $text, = widget.statusEnumMap  = ${widget.statusEnumMap}');
+
+    if (text.isEmpty) return const SizedBox.shrink();
+
+    final lower = text.toLowerCase();
+    Color color = lower.contains('inativ')
+        ? GridColors.error
+        : (lower.contains('pago') || lower.contains('fechad'))
+            ? GridColors.secondary
+            : (lower.contains('ativ') || lower.contains('abert'))
+                ? GridColors.success
+                : GridColors.info;
+
+    return Align(
+      alignment: Alignment.topRight,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+        decoration: BoxDecoration(
+          color: color.withOpacity(0.12),
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(color: color.withOpacity(0.35)),
+        ),
+        child: Text(
+          text,
+          style: TextStyle(
+            color: color,
+            fontWeight: FontWeight.w600,
+            fontSize: 12,
+          ),
+        ),
+      ),
+    );
+  }
+
+  String resolveEnumValue(dynamic raw) {
+    if (widget.statusEnumMap == null) return raw.toString();
+
+    final map = widget.statusEnumMap!;
+    // 1. Casamento direto
+    final found = map.entries.firstWhere(
+      (e) =>
+          e.key.toString().split('.').last.toUpperCase() ==
+              raw.toString().toUpperCase() ||
+          e.value.toUpperCase() == raw.toString().toUpperCase(),
+      orElse: () => const MapEntry(null, ''),
+    );
+
+    if (found.key != null && found.value.isNotEmpty) {
+      return found.value;
     }
 
-    return Container(
-      padding: const EdgeInsets.symmetric(
-          horizontal: 6, vertical: 2), // Menor padding
-      decoration: BoxDecoration(
-        color: badgeColor.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(4),
-        border: Border.all(color: badgeColor.withOpacity(0.3)),
-      ),
-      child: Text(
-        badgeText,
-        style: Theme.of(context).textTheme.labelSmall?.copyWith(
-              color: badgeColor,
-              fontWeight: FontWeight.w600,
-              fontSize: 10, // Fonte menor
+    // 2. Índice numérico
+    final keys = map.keys.toList();
+    if (raw is int && raw >= 0 && raw < keys.length) {
+      return map[keys[raw]]!;
+    }
+
+    return raw.toString();
+  }
+
+  Future<void> _toggleStatus(
+    Map<String, dynamic> itemMap,
+    String field,
+    String? current,
+  ) async {
+    final id = _getNestedValue(itemMap, widget.idFieldName).toString();
+    final isAberto =
+        current == 'aberto' || current == 'aberta' || current == '1';
+    final novoStatus = isAberto ? 'PAGO' : 'ABERTO';
+
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (_) => AlertDialog(
+        backgroundColor: GridColors.card,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        title: Row(
+          children: [
+            const Icon(Icons.sync_alt, color: GridColors.secondary),
+            const SizedBox(width: 8),
+            const Text('Alterar Status'),
+          ],
+        ),
+        content: Text(
+          'Deseja realmente alterar o status para "$novoStatus"?',
+          style: const TextStyle(fontSize: 15),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text(
+              'Cancelar',
+              style: TextStyle(color: GridColors.error),
             ),
+          ),
+          ElevatedButton.icon(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: GridColors.secondary,
+              foregroundColor: GridColors.textPrimary,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+            ),
+            icon: const Icon(Icons.check_circle_outline, size: 18),
+            label: const Text('Confirmar'),
+            onPressed: () => Navigator.pop(context, true),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm != true) return;
+
+    try {
+      final endpoint = widget.updateEndpoint.replaceFirst(':id', id);
+      final response =
+          await NetworkCaller().putRequest(endpoint, {field: novoStatus});
+
+      if (response.isSuccess) {
+        _showSnackBar('Status alterado para "$novoStatus" com sucesso!');
+        await Future.delayed(const Duration(milliseconds: 400));
+        _loadItems(reset: true);
+      } else {
+        _showSnackBar('Erro ao alterar status', isError: true);
+      }
+    } catch (e) {
+      _showSnackBar('Falha: $e', isError: true);
+    }
+  }
+
+  void _editStatusField(Map<String, dynamic> itemMap, String fieldName,
+      {String? currentValue}) {
+    final controller = TextEditingController(text: currentValue ?? '');
+
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text('Editar ${fieldName.toUpperCase()}'),
+        content: TextField(
+          controller: controller,
+          decoration: const InputDecoration(labelText: 'Novo valor'),
+        ),
+        actions: [
+          TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text('Cancelar')),
+          ElevatedButton(
+            onPressed: () async {
+              Navigator.pop(ctx);
+              final id =
+                  _getNestedValue(itemMap, widget.idFieldName).toString();
+              await NetworkCaller().putRequest(
+                widget.updateEndpoint.replaceFirst(':id', id),
+                {fieldName: controller.text},
+              );
+              _showSnackBar('Campo atualizado!');
+              _loadItems(reset: true);
+            },
+            child: const Text('Salvar'),
+          ),
+        ],
       ),
     );
   }
 
   Widget _buildCardActions(T item, Map<String, dynamic> itemMap) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.end,
-      children: [
-        if (widget.enableDebugMode)
-          IconButton(
-            icon: Icon(Icons.bug_report,
-                size: 16, color: GridColors.textSecondary.withOpacity(0.6)),
-            onPressed: () => _showAllFieldsDebug(context, item),
-            tooltip: 'Ver todos os campos',
-          ),
-        if (widget.detailScreenBuilder != null && widget.hasPermission('view'))
-          IconButton(
-            icon: Icon(Icons.visibility_outlined,
-                size: 16, color: GridColors.textSecondary.withOpacity(0.6)),
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => widget.detailScreenBuilder!(item),
-                ),
-              );
-            },
-            tooltip: 'Visualizar',
-          ),
-        if (widget.hasPermission('edit'))
-          IconButton(
-            icon: Icon(Icons.edit_outlined,
-                size: 16, color: GridColors.textSecondary.withOpacity(0.6)),
-            onPressed: () => _openForm(item: item),
-            tooltip: 'Editar',
-          ),
-        if (widget.hasPermission('delete'))
-          IconButton(
-            icon: const Icon(Icons.delete_outline,
-                size: 16, color: GridColors.error),
-            onPressed: () => _deleteItem(
-              _getNestedValue(itemMap, widget.idFieldName).toString(),
-            ),
-            tooltip: 'Excluir',
-          ),
-        ..._customActions
-            .where((action) => action.isVisible?.call(item) ?? true)
-            .map(
-              (action) => IconButton(
-                icon: Icon(action.icon,
-                    size: 16, color: GridColors.textSecondary.withOpacity(0.6)),
-                onPressed: () => action.onPressed(context, item),
-                tooltip: action.label,
+    return Container(
+      width: double.infinity,
+      height: 42, // 🔧 altura fixa compacta (~30% menor)
+      padding: const EdgeInsets.only(right: 8), // 🔧 menos padding geral
+      decoration: const BoxDecoration(
+        color: GridColors.primary,
+        borderRadius: BorderRadius.vertical(bottom: Radius.circular(10)),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.end,
+        children: [
+          if (widget.hasPermission('edit'))
+            Tooltip(
+              message: 'Editar',
+              waitDuration: const Duration(milliseconds: 300),
+              child: _actionIconBtn(
+                icon: Icons.edit,
+                onPressed: () => _openForm(item: item),
               ),
             ),
-      ],
+          const SizedBox(width: 4),
+          if (widget.hasPermission('delete'))
+            Tooltip(
+              message: 'Excluir',
+              waitDuration: const Duration(milliseconds: 300),
+              child: _actionIconBtn(
+                icon: Icons.delete_outline,
+                onPressed: () => _deleteItem(
+                  _getNestedValue(itemMap, widget.idFieldName).toString(),
+                ),
+              ),
+            ),
+          for (final action in _customActions
+              .where((a) => a.isVisible?.call(item) ?? true)) ...[
+            const SizedBox(width: 4),
+            Tooltip(
+              message: action.label,
+              waitDuration: const Duration(milliseconds: 300),
+              child: _actionIconBtn(
+                icon: action.icon,
+                onPressed: () => action.onPressed(context, item),
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _actionIconBtn({
+    required IconData icon,
+    required VoidCallback onPressed,
+  }) {
+    bool isHovered = false;
+
+    return StatefulBuilder(
+      builder: (context, setState) {
+        return MouseRegion(
+          onEnter: (_) => setState(() => isHovered = true),
+          onExit: (_) => setState(() => isHovered = false),
+          child: AnimatedScale(
+            scale: isHovered ? 1.1 : 1.0, // 🔍 Zoom leve no hover
+            duration: const Duration(milliseconds: 150),
+            curve: Curves.easeOutCubic,
+            child: IconButton.filled(
+              onPressed: onPressed,
+              icon: Icon(icon, size: 18),
+              style: ButtonStyle(
+                backgroundColor:
+                    WidgetStateProperty.resolveWith<Color>((states) {
+                  if (states.contains(WidgetState.pressed) ||
+                      states.contains(WidgetState.hovered) ||
+                      states.contains(WidgetState.focused)) {
+                    return GridColors.secondaryDark.withOpacity(0.95);
+                  }
+                  return GridColors.secondary;
+                }),
+                foregroundColor:
+                    WidgetStateProperty.all(GridColors.textPrimary),
+                shape: WidgetStateProperty.all(const CircleBorder()),
+                fixedSize: WidgetStateProperty.all(const Size(28, 28)),
+                padding: WidgetStateProperty.all(EdgeInsets.zero),
+                elevation: WidgetStateProperty.all(3),
+                shadowColor: WidgetStateProperty.all(
+                    GridColors.secondary.withOpacity(0.4)),
+                overlayColor: WidgetStateProperty.all(
+                  GridColors.secondaryLight.withOpacity(0.25),
+                ),
+              ),
+            ),
+          ),
+        );
+      },
     );
   }
 
