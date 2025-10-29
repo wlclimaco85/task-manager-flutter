@@ -89,8 +89,16 @@ class _BaixaDialogState extends State<BaixaDialog> {
                       icon: Icons.payment,
                       value: _formaPagamentoId,
                       items: _formasPagamento
-                          .map((f) => DropdownMenuItem(
-                              value: f.id, child: Text(f.nome ?? '')))
+                          .map(
+                            (f) => DropdownMenuItem<int>(
+                              value: f.id,
+                              child: Text(
+                                f.nome ?? '',
+                                overflow: TextOverflow.ellipsis,
+                                maxLines: 1,
+                              ),
+                            ),
+                          )
                           .toList(),
                       onChanged: (v) => setState(() => _formaPagamentoId = v),
                       validatorMsg: 'Selecione a forma de pagamento',
@@ -101,9 +109,16 @@ class _BaixaDialogState extends State<BaixaDialog> {
                       icon: Icons.account_balance,
                       value: _contaId,
                       items: _contas
-                          .map((c) => DropdownMenuItem<int>(
-                              value: c['value'] as int,
-                              child: Text(c['label']?.toString() ?? '')))
+                          .map(
+                            (c) => DropdownMenuItem<int>(
+                              value: c['value'],
+                              child: Text(
+                                c['label'],
+                                overflow: TextOverflow.ellipsis,
+                                maxLines: 1,
+                              ),
+                            ),
+                          )
                           .toList(),
                       onChanged: (v) => setState(() => _contaId = v),
                       validatorMsg: 'Selecione a conta bancária',
@@ -187,6 +202,7 @@ class _BaixaDialogState extends State<BaixaDialog> {
     T? value,
   }) {
     return DropdownButtonFormField<T>(
+      isExpanded: true,
       value: value,
       decoration: InputDecoration(
         labelText: label,

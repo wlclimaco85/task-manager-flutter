@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:task_manager_flutter/data/models/conta_receber_model.dart';
-import 'package:flutter/material.dart';
-import 'package:task_manager_flutter/data/models/conta_receber_model.dart';
 import 'package:task_manager_flutter/data/services/conta_bancaria_caller.dart';
 import 'package:task_manager_flutter/data/constants/custom_colors.dart';
 
@@ -74,10 +72,16 @@ class _BaixaDialogReceberState extends State<BaixaDialogReceber> {
                       icon: Icons.account_balance,
                       value: _contaId,
                       items: _contas
-                          .map<DropdownMenuItem<int>>((c) =>
-                              DropdownMenuItem<int>(
-                                  value: c['value'] as int,
-                                  child: Text(c['label'] as String)))
+                          .map(
+                            (c) => DropdownMenuItem<int>(
+                              value: c['value'],
+                              child: Text(
+                                c['label'],
+                                overflow: TextOverflow.ellipsis,
+                                maxLines: 1,
+                              ),
+                            ),
+                          )
                           .toList(),
                       onChanged: (v) => setState(() => _contaId = v),
                       validatorMsg: 'Selecione a conta bancária',
@@ -154,6 +158,7 @@ class _BaixaDialogReceberState extends State<BaixaDialogReceber> {
     T? value,
   }) {
     return DropdownButtonFormField<T>(
+      isExpanded: true,
       value: value,
       decoration: InputDecoration(
         labelText: label,
