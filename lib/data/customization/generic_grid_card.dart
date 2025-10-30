@@ -6,10 +6,11 @@ import 'package:task_manager_flutter/data/models/network_response.dart';
 import 'package:task_manager_flutter/data/services/network_caller.dart';
 import 'package:task_manager_flutter/data/services/upload_file_caller.dart';
 import 'package:task_manager_flutter/ui/widgets/user_banners.dart';
+import 'package:task_manager_flutter/data/constants/custom_colors.dart';
 // ==============================================
 // MOBILE GRID SCREEN - MATERIAL DESIGN 3 COMPLETO
 // ==============================================
-
+/*
 class GridColors {
   static const Color primary = Color(0xFF93070A);
   static const Color primaryDark = Color(0xFF6A0507);
@@ -36,7 +37,7 @@ class GridColors {
   static const Color selectedRow = Color(0xFFE3F2FD);
   static const Color dialogBackground = Color(0xFFFFFFFF);
   static const Color shadow = Color(0x26000000);
-}
+} */
 
 // Enum para tipos de campo
 enum FieldType {

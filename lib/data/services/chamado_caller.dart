@@ -40,4 +40,49 @@ class ChamadoCaller {
       throw Exception('Falha ao criar chamado (${response.statusCode})');
     }
   }
+
+  // 🔹 Pegar (assumir) chamado
+  Future<bool> pegarChamado(int id) async {
+    final response = await NetworkCaller()
+        .postRequest("${ApiLinks.workflowChamados}/$id/pegar", {});
+    return response.isSuccess;
+  }
+
+  // 🔹 Transferir chamado
+  Future<bool> transferirChamado(int id, int usuarioId) async {
+    final response = await NetworkCaller().postRequest(
+      "${ApiLinks.workflowChamados}/$id/transferir",
+      {'destinatarioId': usuarioId},
+    );
+    return response.isSuccess;
+  }
+
+  // 🔹 Atribuir chamado
+  Future<bool> atribuirChamado(int id, int usuarioId) async {
+    final response = await NetworkCaller().postRequest(
+      "${ApiLinks.workflowChamados}/$id/atribuir",
+      {'usuarioId': usuarioId},
+    );
+    return response.isSuccess;
+  }
+
+  // 🔹 Fechar chamado
+  Future<bool> fecharChamado(int id, String motivo) async {
+    final response = await NetworkCaller().postRequest(
+      "${ApiLinks.workflowChamados}/$id/fechar",
+      {'motivoFechamento': motivo},
+    );
+    return response.isSuccess;
+  }
+
+  // 🔹 Histórico do chamado
+  Future<List<Map<String, dynamic>>> getHistoricoChamado(int id) async {
+    final response = await NetworkCaller()
+        .getRequest(ApiLinks.getAllChamados(id.toString()));
+    if (response.isSuccess && response.body != null) {
+      return List<Map<String, dynamic>>.from(
+          response.body!['data']['dados'] ?? []);
+    }
+    throw Exception('Erro ao buscar histórico (${response.statusCode})');
+  }
 }

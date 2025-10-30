@@ -1,34 +1,28 @@
 import 'package:flutter/material.dart';
+import 'package:task_manager_flutter/data/services/network_caller.dart';
+import 'package:task_manager_flutter/data/utils/api_links.dart';
 
-// Certifique-se de que esta classe inclui o parâmetro `onLoginSuccess`.
-class LoginPopup extends StatelessWidget {
-  final VoidCallback? onLoginSuccess;
+class LoginCaller {
+  /// 🔹 Busca todos os logins de uma empresa
+  Future<List<Map<String, dynamic>>> fetchUsuariosEmpresa(
+      int? empresaId) async {
+    if (empresaId == null) return [];
 
-  const LoginPopup({super.key, this.onLoginSuccess});
+    try {
+      final response = await NetworkCaller().getRequest(ApiLinks.allLogins);
 
-  @override
-  Widget build(BuildContext context) {
-    return AlertDialog(
-      title: const Text('Login'),
-      content: const Text('Por favor, faça login para continuar.'),
-      actions: [
-        TextButton(
-          onPressed: () {
-            Navigator.of(context).pop();
-          },
-          child: const Text('Cancelar'),
-        ),
-        ElevatedButton(
-          onPressed: () {
-            // Simulação de login bem-sucedido
-            if (onLoginSuccess != null) {
-              onLoginSuccess!();
-            }
-            Navigator.of(context).pop();
-          },
-          child: const Text('Login'),
-        ),
-      ],
-    );
+      if (response.isSuccess && response.body != null) {
+        final List<dynamic> dados = response.body!['data']['dados'] ?? [];
+        return dados
+            .map((e) => {
+                  'value': e['id'],
+                  'label': "${e['nome']} (${e['email'] ?? ''})",
+                })
+            .toList();
+      }
+    } catch (e) {
+      debugPrint('Erro ao buscar logins: $e');
+    }
+    return [];
   }
 }

@@ -386,4 +386,9 @@ class ApiLinks {
   static const String createContaBancaria = contasBancarias;
   static String updateContaBancaria(String id) => '$contasBancarias/$id';
   static String deleteContaBancaria(String id) => '$contasBancarias/$id';
+
+  static const String workflowChamados = '$_baseUrlNew/api/workflow/chamados';
+
+  static String getAllChamados(String id) =>
+      '$_baseUrlNew/api/workflow/chamados/$id/historico';
 }
