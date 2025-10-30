@@ -247,6 +247,8 @@ class ApiLinks {
   // Contas a Pagar
   static String get allContasPagar => '$_baseUrlNew/api/contas-pagar';
   static String get createContaPagar => '$_baseUrlNew/api/contas-pagar';
+  static String desfazerContaPagar(String id) =>
+      '$_baseUrlNew/api/contas-pagar/desfazer/$id';
   static String updateContaPagar(String id) =>
       '$_baseUrlNew/api/contas-pagar/$id';
   static String deleteContaPagar(String id) =>
@@ -259,6 +261,8 @@ class ApiLinks {
   static String get createContaReceber => '$_baseUrlNew/api/contas-receber';
   static String updateContaReceber(String id) =>
       '$_baseUrlNew/api/contas-receber/$id';
+  static String desfazerContaReceber(String id) =>
+      '$_baseUrlNew/api/contas-receber/desfazer/$id';
   static String deleteContaReceber(String id) =>
       '$_baseUrlNew/api/contas-receber/$id';
   static String registrarBaixaContaReceber(String id) =>

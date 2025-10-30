@@ -4,6 +4,7 @@ import 'package:task_manager_flutter/data/utils/api_links.dart';
 import 'package:task_manager_flutter/data/customization/generic_grid_card.dart';
 import 'package:task_manager_flutter/data/models/conta_pagar_model.dart';
 import 'package:task_manager_flutter/ui/screens/baixa_dialog.dart';
+import 'package:task_manager_flutter/ui/screens/desfazer_baixa_dialog.dart';
 
 class ContaPagarGridScreen extends StatelessWidget {
   final SecurityCheck hasPermission;
@@ -38,6 +39,23 @@ class ContaPagarGridScreen extends StatelessWidget {
           label: 'Baixar',
           onPressed: (context, object) => _showBaixaDialog(context, object),
           isVisible: (object) => object.status == StatusConta.ABERTA,
+        ),
+        CustomAction<ContaPagar>(
+          icon: Icons.undo,
+          label: 'Desfazer Baixa',
+          isVisible: (obj) => obj.status == StatusConta.BAIXADA,
+          onPressed: (context, object) {
+            DesfazerBaixaDialog.show(
+              context,
+              tipo: 'pagar',
+              contaId: object.id!,
+              dataBaixa: object.dataBaixa!,
+              valorBaixa: object.valorBaixa!,
+              contaLabel: object.contaBaixa?.descricao ?? 'Conta não informada',
+              formaPagamentoLabel:
+                  object.formaPagamento?.nome ?? 'Forma não informada',
+            );
+          },
         ),
       ],
       useUserBannerAppBar: true,

@@ -8,6 +8,7 @@ import 'empresa_model.dart';
 import 'file_attachment_model.dart';
 import 'forma_pagamento_model.dart';
 import 'parceiro_model.dart';
+import 'conta_bancaria_model.dart';
 
 enum StatusConta { ABERTA, BAIXADA, CANCELADA }
 
@@ -28,6 +29,7 @@ class ContaReceber {
   FileAttachment? file;
   FormaPagamento? formaPagamento;
   Audit audit;
+  ContaBancaria? contaBaixa;
 
   ContaReceber({
     this.id,
@@ -46,6 +48,7 @@ class ContaReceber {
     this.file,
     this.formaPagamento,
     required this.audit,
+    this.contaBaixa,
   });
 
   factory ContaReceber.fromJson(Map<String, dynamic> json) {
@@ -72,6 +75,9 @@ class ContaReceber {
           ? FormaPagamento.fromJson(json['formaPagamento'])
           : null,
       audit: Audit.fromJson(json['audit'] ?? {}),
+      contaBaixa: json['contaBaixa'] != null
+          ? ContaBancaria.fromJson(json['contaBaixa'])
+          : null,
     );
   }
 
@@ -132,6 +138,7 @@ class ContaReceber {
       'file': file?.toJson(),
       'formaPagamento': formaPagamento?.toJson(),
       'audit': audit.toJson(),
+      'contaBaixa': contaBaixa?.toJson(),
     };
   }
 

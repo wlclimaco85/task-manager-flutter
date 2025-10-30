@@ -155,8 +155,8 @@ class ContaBancariaGridScreen extends StatelessWidget {
                 contaOrigemId: contaOrigem.id!,
                 contaDestinoId: contaDestinoId!,
                 valor: double.parse(valorController.text),
-                empresaId: contaOrigem.empresa,
-                parceiroId: contaOrigem.parceiro,
+                empresaId: contaOrigem.empresa!.id!,
+                parceiroId: contaOrigem.parceiro!.id!,
                 historico: historicoController.text,
               );
 
@@ -224,8 +224,8 @@ class ContaBancariaGridScreen extends StatelessWidget {
               final caller = ContaBancariaCaller();
               final pdfBytes = await caller.gerarExtratoPdf(
                 contaId: conta.id!,
-                empresaId: conta.empresa,
-                parceiroId: conta.parceiro,
+                empresaId: conta.empresa!.id!,
+                parceiroId: conta.parceiro!.id!,
                 de: de,
                 ate: ate,
               );
