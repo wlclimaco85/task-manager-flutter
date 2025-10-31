@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_pdfview/flutter_pdfview.dart';
 import 'package:http/http.dart' as http;
 import 'package:dropdown_search/dropdown_search.dart';
+import 'package:intl/intl.dart';
 
 import 'package:task_manager_flutter/data/constants/custom_colors.dart';
 import 'package:task_manager_flutter/data/services/diretorio_caller.dart';
@@ -30,10 +31,7 @@ class _FileManagerScreenState extends State<FileManagerScreen> {
   bool _isUploading = false;
   bool _isDownloading = false;
 
-  /// controla quais diretórios estão abertos (accordion)
   final Set<int> _expandedTiles = {};
-
-  /// busca
   String _searchQuery = '';
 
   @override
@@ -46,8 +44,13 @@ class _FileManagerScreenState extends State<FileManagerScreen> {
     setState(() => _isLoading = true);
     try {
       // Espera-se que o FileCaller().fetchDiretorios() retorne algo como:
-      // [{"id":1,"nome":"Pasta A","files":[{"id":10,"fileName":"a.pdf","lido":false,"dataUpload":"2025-10-10"}, ...]}, ...]
-      _diretorios = await _caller.fetchDiretorios();
+      // [{"id":1,"nome":"Pasta A","files":[{"id":10,"fileName":"a.pdf", ...}, ...]}, ...]
+      final fetched = await _caller.fetchDiretorios();
+
+      // Garante estrutura segura
+      _diretorios = (fetched as List)
+          .map<Map<String, dynamic>>((e) => Map<String, dynamic>.from(e as Map))
+          .toList();
     } catch (e) {
       _showSnackBar(
           "Erro ao carregar diretórios: $e", GridColors.error, Icons.error);
@@ -778,6 +781,18 @@ class _FileManagerScreenState extends State<FileManagerScreen> {
                         ? (arq['id'] as int)
                         : int.tryParse('${arq['id']}') ?? 0;
 
+                    // JSON real usa "uploadDate"
+                    final String dataUploadIso =
+                        (arq['uploadDate'] ?? arq['dataUpload'] ?? '--')
+                            .toString();
+                    String dataFmt = '--';
+                    if (dataUploadIso != '--') {
+                      try {
+                        dataFmt = DateFormat('dd/MM/yyyy HH:mm')
+                            .format(DateTime.parse(dataUploadIso));
+                      } catch (_) {}
+                    }
+
                     return Container(
                       margin: const EdgeInsets.symmetric(
                           horizontal: 8, vertical: 4),
@@ -815,11 +830,8 @@ class _FileManagerScreenState extends State<FileManagerScreen> {
                           style: const TextStyle(fontWeight: FontWeight.w600),
                         ),
                         subtitle: Text(
-                          "Upload: $dataUpload • ${lido ? 'Lido' : 'Não lido'}",
-                          style: TextStyle(
-                            color: lido ? GridColors.success : GridColors.error,
-                            fontSize: 12,
-                          ),
+                          "Upload: $dataFmt",
+                          style: const TextStyle(fontSize: 12),
                         ),
                         trailing: Row(
                           mainAxisSize: MainAxisSize.min,
@@ -835,8 +847,9 @@ class _FileManagerScreenState extends State<FileManagerScreen> {
                                     .registerFileOpened(fileId);
                                 await UploadFileCaller()
                                     .downloadFile(fileId, fileName);
-                                if (mounted)
+                                if (mounted) {
                                   setState(() => _isDownloading = false);
+                                }
                               },
                             ),
                             IconButton(
