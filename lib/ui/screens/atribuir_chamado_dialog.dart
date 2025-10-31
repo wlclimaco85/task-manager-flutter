@@ -8,9 +8,9 @@ import 'package:intl/intl.dart';
 class HistoricoChamadoDialog {
   static Future<Object?> show(BuildContext context, int chamadoId) async {
     final colors = CustomColors();
-    bool _isLoading = true;
-    List<Map<String, dynamic>> _historico = [];
-    String? _erro;
+    bool isLoading = true;
+    List<Map<String, dynamic>> historico = [];
+    String? erro;
 
     // 🔹 Chama o backend
     try {
@@ -19,15 +19,15 @@ class HistoricoChamadoDialog {
 
       if (response.isSuccess && response.body != null) {
         final data = response.body!['data']['dados'] ?? [];
-        _historico = List<Map<String, dynamic>>.from(data);
+        historico = List<Map<String, dynamic>>.from(data);
       } else {
-        _erro = 'Não foi possível carregar o histórico';
+        erro = 'Não foi possível carregar o histórico';
       }
     } catch (e) {
-      _erro = 'Erro ao consultar o histórico: $e';
+      erro = 'Erro ao consultar o histórico: $e';
     }
 
-    _isLoading = false;
+    isLoading = false;
 
     return showGeneralDialog(
       context: context,
@@ -71,16 +71,16 @@ class HistoricoChamadoDialog {
                 content: SizedBox(
                   width: MediaQuery.of(context).size.width * 0.9,
                   height: MediaQuery.of(context).size.height * 0.55,
-                  child: _isLoading
+                  child: isLoading
                       ? const Center(child: CircularProgressIndicator())
-                      : _erro != null
+                      : erro != null
                           ? Center(
                               child: Text(
-                                _erro!,
+                                erro,
                                 style: const TextStyle(color: GridColors.error),
                               ),
                             )
-                          : _historico.isEmpty
+                          : historico.isEmpty
                               ? const Center(
                                   child: Text(
                                     'Nenhum registro encontrado',
@@ -91,10 +91,10 @@ class HistoricoChamadoDialog {
                                   ),
                                 )
                               : ListView.separated(
-                                  itemCount: _historico.length,
+                                  itemCount: historico.length,
                                   separatorBuilder: (_, __) => const Divider(),
                                   itemBuilder: (ctx, i) {
-                                    final item = _historico[i];
+                                    final item = historico[i];
                                     final usuario =
                                         item['usuario']?['nome'] ?? '---';
                                     final dataHora =

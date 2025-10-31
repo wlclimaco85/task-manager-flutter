@@ -10,6 +10,18 @@ import 'package:task_manager_flutter/data/constants/custom_colors.dart';
 // ==============================================
 // MOBILE GRID SCREEN - MATERIAL DESIGN 3 COMPLETO
 // ==============================================
+
+class _ActionButtonData {
+  final IconData icon;
+  final String tooltip;
+  final VoidCallback onPressed;
+
+  _ActionButtonData({
+    required this.icon,
+    required this.tooltip,
+    required this.onPressed,
+  });
+}
 /*
 class GridColors {
   static const Color primary = Color(0xFF93070A);
@@ -2566,11 +2578,11 @@ class _GenericMobileGridScreenState<T>
       builder: (_) => AlertDialog(
         backgroundColor: GridColors.card,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        title: Row(
+        title: const Row(
           children: [
-            const Icon(Icons.sync_alt, color: GridColors.secondary),
-            const SizedBox(width: 8),
-            const Text('Alterar Status'),
+            Icon(Icons.sync_alt, color: GridColors.secondary),
+            SizedBox(width: 8),
+            Text('Alterar Status'),
           ],
         ),
         content: Text(
@@ -2670,66 +2682,165 @@ class _GenericMobileGridScreenState<T>
             duration: const Duration(milliseconds: 200),
             curve: Curves.easeInOut,
             width: double.infinity,
-            height: 38,
-            padding: const EdgeInsets.only(right: 8),
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
             decoration: BoxDecoration(
               gradient: LinearGradient(
-                colors: isHovered
-                    ? [
-                        GridColors.primaryDark,
-                        GridColors.primary.withOpacity(0.95),
-                      ]
-                    : [
-                        GridColors.primary,
-                        GridColors.primary.withOpacity(0.85),
-                      ],
+                colors: [
+                  GridColors.primaryDark.withOpacity(isHovered ? 1.0 : 0.95),
+                  GridColors.primary.withOpacity(isHovered ? 0.9 : 0.85),
+                ],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
               ),
-              borderRadius:
-                  const BorderRadius.vertical(bottom: Radius.circular(10)),
+              borderRadius: const BorderRadius.vertical(
+                bottom: Radius.circular(12),
+              ),
+              boxShadow: [
+                if (isHovered)
+                  BoxShadow(
+                    color: GridColors.primary.withOpacity(0.4),
+                    blurRadius: 8,
+                    offset: const Offset(0, 3),
+                  ),
+              ],
             ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.end,
-              children: [
-                if (widget.hasPermission('edit'))
-                  Tooltip(
-                    message: 'Editar',
-                    waitDuration: const Duration(milliseconds: 300),
-                    child: _actionIconBtn(
-                      icon: Icons.edit,
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                final maxWidth = constraints.maxWidth;
+                final isCompact = maxWidth < 360;
+
+                // 🔹 Lista de ações básicas
+                final List<_ActionButtonData> actions = [];
+
+                if (widget.hasPermission('edit')) {
+                  actions.add(
+                    _ActionButtonData(
+                      icon: Icons.edit_rounded,
+                      tooltip: 'Editar',
                       onPressed: () => _openForm(item: item),
                     ),
-                  ),
-                const SizedBox(width: 4),
-                if (widget.hasPermission('delete'))
-                  Tooltip(
-                    message: 'Excluir',
-                    waitDuration: const Duration(milliseconds: 300),
-                    child: _actionIconBtn(
-                      icon: Icons.delete_outline,
+                  );
+                }
+
+                if (widget.hasPermission('delete')) {
+                  actions.add(
+                    _ActionButtonData(
+                      icon: Icons.delete_outline_rounded,
+                      tooltip: 'Excluir',
                       onPressed: () => _deleteItem(
                         _getNestedValue(itemMap, widget.idFieldName).toString(),
                       ),
                     ),
-                  ),
+                  );
+                }
+
                 for (final action in _customActions
-                    .where((a) => a.isVisible?.call(item) ?? true)) ...[
-                  const SizedBox(width: 4),
-                  Tooltip(
-                    message: action.label,
-                    waitDuration: const Duration(milliseconds: 300),
-                    child: _actionIconBtn(
+                    .where((a) => a.isVisible?.call(item) ?? true)) {
+                  actions.add(
+                    _ActionButtonData(
                       icon: action.icon,
+                      tooltip: action.label,
                       onPressed: () => action.onPressed(context, item),
                     ),
-                  ),
-                ],
-              ],
+                  );
+                }
+
+                // 🔸 Compacta quando há pouco espaço
+                final visible = isCompact ? actions.take(2).toList() : actions;
+                final overflow = isCompact
+                    ? actions.skip(2).toList()
+                    : <_ActionButtonData>[];
+
+                return Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    for (final act in visible) _buildGreenButton(act),
+                    if (overflow.isNotEmpty)
+                      _buildOverflowMenu(context, overflow),
+                  ],
+                );
+              },
             ),
           ),
         );
       },
+    );
+  }
+
+  /// ✅ Botão verde com hover bonito
+  Widget _buildGreenButton(_ActionButtonData data) {
+    bool isHovered = false;
+
+    return StatefulBuilder(
+      builder: (context, setState) {
+        return Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 2),
+          child: Tooltip(
+            message: data.tooltip,
+            waitDuration: const Duration(milliseconds: 250),
+            child: MouseRegion(
+              onEnter: (_) => setState(() => isHovered = true),
+              onExit: (_) => setState(() => isHovered = false),
+              child: AnimatedScale(
+                scale: isHovered ? 1.1 : 1.0,
+                duration: const Duration(milliseconds: 150),
+                child: IconButton.filled(
+                  onPressed: data.onPressed,
+                  icon: Icon(data.icon, size: 20),
+                  style: ButtonStyle(
+                    backgroundColor: WidgetStateProperty.all(
+                      GridColors.secondary.withOpacity(isHovered ? 1.0 : 0.9),
+                    ),
+                    foregroundColor:
+                        WidgetStateProperty.all(GridColors.textPrimary),
+                    shape: WidgetStateProperty.all(const CircleBorder()),
+                    fixedSize: WidgetStateProperty.all(const Size(38, 38)),
+                    elevation: WidgetStateProperty.all(4),
+                    shadowColor: WidgetStateProperty.all(
+                      GridColors.secondary.withOpacity(0.4),
+                    ),
+                    overlayColor: WidgetStateProperty.all(
+                      GridColors.secondaryLight.withOpacity(0.25),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  /// 🔽 Menu “Mais opções” ⋮ verde dentro do fundo vermelho
+  Widget _buildOverflowMenu(
+      BuildContext context, List<_ActionButtonData> extraButtons) {
+    return PopupMenuButton<int>(
+      tooltip: 'Mais opções',
+      color: GridColors.card,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      icon: const Icon(Icons.more_vert_rounded, color: Colors.white),
+      itemBuilder: (context) => extraButtons
+          .asMap()
+          .entries
+          .map(
+            (entry) => PopupMenuItem<int>(
+              value: entry.key,
+              child: ListTile(
+                dense: true,
+                leading: Icon(entry.value.icon, color: GridColors.secondary),
+                title: Text(
+                  entry.value.tooltip,
+                  style: const TextStyle(fontSize: 14),
+                ),
+                onTap: () {
+                  Navigator.pop(context);
+                  entry.value.onPressed();
+                },
+              ),
+            ),
+          )
+          .toList(),
     );
   }
 

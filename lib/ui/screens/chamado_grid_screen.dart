@@ -8,6 +8,7 @@ import 'package:task_manager_flutter/data/services/login_caller.dart';
 import 'package:task_manager_flutter/data/services/chamado_caller.dart';
 import 'package:task_manager_flutter/data/utils/api_links.dart';
 import 'package:task_manager_flutter/data/utils/utils.dart';
+import 'historico_chamado_dialog.dart';
 
 // ✅ TELA PRINCIPAL
 class ChamadoGridScreen extends StatelessWidget {
@@ -114,7 +115,8 @@ class ChamadoGridScreen extends StatelessWidget {
             ),
             onPressed: () async {
               Navigator.pop(context);
-              final success = await ChamadoCaller().pegarChamado(chamado.id!);
+              final success = await ChamadoCaller()
+                  .pegarChamado(chamado.id!, pegarUsuarioLogado()!);
               ScaffoldMessenger.of(context).showSnackBar(SnackBar(
                 content: Text(success
                     ? 'Chamado #${chamado.id} assumido com sucesso!'
@@ -136,15 +138,15 @@ class ChamadoGridScreen extends StatelessWidget {
   // ===========================
   static void _transferirChamado(BuildContext context, Chamado chamado) async {
     final colors = CustomColors();
-    final _formKey = GlobalKey<FormState>();
-    int? _usuarioId;
-    bool _isLoading = true;
-    List<Map<String, dynamic>> _usuarios = [];
+    final formKey = GlobalKey<FormState>();
+    int? usuarioId;
+    bool isLoading = true;
+    List<Map<String, dynamic>> usuarios = [];
 
     try {
-      _usuarios = await LoginCaller().fetchUsuariosEmpresa(chamado.empresa?.id);
+      usuarios = await LoginCaller().fetchUsuariosEmpresa(chamado.empresa.id);
     } catch (_) {}
-    _isLoading = false;
+    isLoading = false;
 
     showGeneralDialog(
       context: context,
@@ -175,12 +177,12 @@ class ChamadoGridScreen extends StatelessWidget {
                     fontWeight: FontWeight.bold,
                   ),
                 ),
-                content: _isLoading
+                content: isLoading
                     ? const SizedBox(
                         height: 64,
                         child: Center(child: CircularProgressIndicator()))
                     : Form(
-                        key: _formKey,
+                        key: formKey,
                         child: DropdownButtonFormField<int>(
                           isExpanded: true,
                           decoration: InputDecoration(
@@ -198,14 +200,14 @@ class ChamadoGridScreen extends StatelessWidget {
                                   color: colors.getBorderInput(), width: 1.5),
                             ),
                           ),
-                          items: _usuarios
+                          items: usuarios
                               .map((u) => DropdownMenuItem<int>(
                                     value: u['value'],
                                     child: Text(u['label'],
                                         overflow: TextOverflow.ellipsis),
                                   ))
                               .toList(),
-                          onChanged: (v) => _usuarioId = v,
+                          onChanged: (v) => usuarioId = v,
                           validator: (v) =>
                               v == null ? 'Selecione o usuário' : null,
                         ),
@@ -225,13 +227,13 @@ class ChamadoGridScreen extends StatelessWidget {
                       foregroundColor: colors.getButtonTextColor(),
                     ),
                     onPressed: () async {
-                      if (_formKey.currentState!.validate()) {
+                      if (formKey.currentState!.validate()) {
                         Navigator.pop(context);
-                        final success = await ChamadoCaller()
-                            .transferirChamado(chamado.id!, _usuarioId!);
+                        final success = await ChamadoCaller().transferirChamado(
+                            chamado.id!, usuarioId!, pegarUsuarioLogado()!);
                         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
                           content: Text(success
-                              ? 'Chamado #${chamado.id} transferido para o usuário $_usuarioId'
+                              ? 'Chamado #${chamado.id} transferido para o usuário $usuarioId'
                               : 'Falha ao transferir o chamado #${chamado.id}'),
                           backgroundColor: success
                               ? colors.getShowSnackBarSuccess()
@@ -255,7 +257,7 @@ class ChamadoGridScreen extends StatelessWidget {
   // ===========================
   static void _fecharChamado(BuildContext context, Chamado chamado) {
     final colors = CustomColors();
-    final _formKey = GlobalKey<FormState>();
+    final formKey = GlobalKey<FormState>();
     final motivoCtrl = TextEditingController();
 
     showGeneralDialog(
@@ -288,7 +290,7 @@ class ChamadoGridScreen extends StatelessWidget {
                   ),
                 ),
                 content: Form(
-                  key: _formKey,
+                  key: formKey,
                   child: TextFormField(
                     controller: motivoCtrl,
                     decoration: InputDecoration(
@@ -327,10 +329,12 @@ class ChamadoGridScreen extends StatelessWidget {
                       foregroundColor: colors.getButtonTextColor(),
                     ),
                     onPressed: () async {
-                      if (_formKey.currentState!.validate()) {
+                      if (formKey.currentState!.validate()) {
                         Navigator.pop(context);
-                        final success = await ChamadoCaller()
-                            .fecharChamado(chamado.id!, motivoCtrl.text.trim());
+                        final success = await ChamadoCaller().fecharChamado(
+                            chamado.id!,
+                            motivoCtrl.text.trim(),
+                            pegarUsuarioLogado()!);
                         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
                           content: Text(success
                               ? 'Chamado #${chamado.id} fechado com sucesso!'
@@ -359,18 +363,18 @@ class ChamadoGridScreen extends StatelessWidget {
 class AtribuirChamadoDialog {
   static Future<Object?> show(BuildContext context, Chamado chamado) async {
     final colors = CustomColors();
-    final _formKey = GlobalKey<FormState>();
-    int? _usuarioId;
-    bool _isLoading = true;
-    List<Map<String, dynamic>> _usuarios = [];
+    final formKey = GlobalKey<FormState>();
+    int? usuarioId;
+    bool isLoading = true;
+    List<Map<String, dynamic>> usuarios = [];
 
     // Carrega usuários da empresa
     try {
-      _usuarios = await LoginCaller().fetchUsuariosEmpresa(chamado.empresa?.id);
+      usuarios = await LoginCaller().fetchUsuariosEmpresa(chamado.empresa.id);
     } catch (e) {
       debugPrint('Erro ao carregar usuários: $e');
     }
-    _isLoading = false;
+    isLoading = false;
 
     return showGeneralDialog(
       context: context,
@@ -403,12 +407,12 @@ class AtribuirChamadoDialog {
                     fontSize: 18,
                   ),
                 ),
-                content: _isLoading
+                content: isLoading
                     ? const SizedBox(
                         height: 64,
                         child: Center(child: CircularProgressIndicator()))
                     : Form(
-                        key: _formKey,
+                        key: formKey,
                         child: DropdownButtonFormField<int>(
                           isExpanded: true,
                           decoration: InputDecoration(
@@ -430,7 +434,7 @@ class AtribuirChamadoDialog {
                               ),
                             ),
                           ),
-                          items: _usuarios
+                          items: usuarios
                               .map((u) => DropdownMenuItem<int>(
                                     value: u['value'],
                                     child: Text(
@@ -439,7 +443,7 @@ class AtribuirChamadoDialog {
                                     ),
                                   ))
                               .toList(),
-                          onChanged: (v) => _usuarioId = v,
+                          onChanged: (v) => usuarioId = v,
                           validator: (v) =>
                               v == null ? 'Selecione o usuário' : null,
                         ),
@@ -459,13 +463,13 @@ class AtribuirChamadoDialog {
                       foregroundColor: colors.getButtonTextColor(),
                     ),
                     onPressed: () async {
-                      if (_formKey.currentState!.validate()) {
+                      if (formKey.currentState!.validate()) {
                         Navigator.pop(context);
                         final success = await ChamadoCaller()
-                            .atribuirChamado(chamado.id!, _usuarioId!);
+                            .atribuirChamado(chamado.id!, usuarioId!);
                         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
                           content: Text(success
-                              ? "Chamado #${chamado.id} atribuído ao usuário $_usuarioId"
+                              ? "Chamado #${chamado.id} atribuído ao usuário $usuarioId"
                               : "Falha ao atribuir o chamado #${chamado.id}"),
                           backgroundColor: success
                               ? colors.getShowSnackBarSuccess()
@@ -474,158 +478,6 @@ class AtribuirChamadoDialog {
                       }
                     },
                     child: const Text("Confirmar"),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        );
-      },
-    );
-  }
-}
-
-// =======================================================
-// POPUP: HISTÓRICO DO CHAMADO (dados reais do backend)
-// =======================================================
-class HistoricoChamadoDialog {
-  static Future<Object?> show(BuildContext context, int chamadoId) async {
-    final colors = CustomColors();
-    bool _isLoading = true;
-    List<Map<String, dynamic>> _historico = [];
-    String? _erro;
-
-    try {
-      _historico = await ChamadoCaller().getHistoricoChamado(chamadoId);
-    } catch (e) {
-      _erro = 'Erro ao buscar histórico: $e';
-    }
-
-    _isLoading = false;
-
-    return showGeneralDialog(
-      context: context,
-      barrierLabel: "Histórico do Chamado",
-      barrierDismissible: true,
-      barrierColor: Colors.black45,
-      transitionDuration: const Duration(milliseconds: 250),
-      pageBuilder: (_, __, ___) => const SizedBox.shrink(),
-      transitionBuilder: (_, anim, __, child) {
-        final offset =
-            Tween(begin: const Offset(0, 0.08), end: Offset.zero).animate(
-          CurvedAnimation(parent: anim, curve: Curves.easeOutCubic),
-        );
-
-        return BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 6, sigmaY: 6),
-          child: FadeTransition(
-            opacity: anim,
-            child: SlideTransition(
-              position: offset,
-              child: AlertDialog(
-                backgroundColor: GridColors.dialogBackground.withOpacity(0.97),
-                shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(16)),
-                title: Row(
-                  children: [
-                    const Icon(Icons.history_rounded,
-                        color: GridColors.secondary),
-                    const SizedBox(width: 8),
-                    Text(
-                      "Histórico do Chamado #$chamadoId",
-                      style: const TextStyle(
-                        color: GridColors.secondaryDark,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 18,
-                      ),
-                    ),
-                  ],
-                ),
-                content: SizedBox(
-                  width: MediaQuery.of(context).size.width * 0.9,
-                  height: MediaQuery.of(context).size.height * 0.55,
-                  child: _isLoading
-                      ? const Center(child: CircularProgressIndicator())
-                      : _erro != null
-                          ? Center(
-                              child: Text(
-                                _erro!,
-                                style: const TextStyle(color: GridColors.error),
-                              ),
-                            )
-                          : _historico.isEmpty
-                              ? const Center(
-                                  child: Text(
-                                    'Nenhum registro encontrado',
-                                    style: TextStyle(
-                                      color: GridColors.secondaryDark,
-                                      fontStyle: FontStyle.italic,
-                                    ),
-                                  ),
-                                )
-                              : ListView.separated(
-                                  itemCount: _historico.length,
-                                  separatorBuilder: (_, __) => const Divider(),
-                                  itemBuilder: (ctx, i) {
-                                    final item = _historico[i];
-                                    final usuario =
-                                        item['usuario']?['nome'] ?? '---';
-                                    final dataHora =
-                                        item['dataHora'] ?? item['data'] ?? '';
-                                    final status = item['status'] ?? '';
-                                    final obs = item['observacao'] ?? '';
-
-                                    return ListTile(
-                                      leading: const Icon(Icons.timeline,
-                                          color: GridColors.primary),
-                                      title: Text(
-                                        status.isEmpty
-                                            ? 'Alteração registrada'
-                                            : status,
-                                        style: const TextStyle(
-                                          fontWeight: FontWeight.bold,
-                                          fontSize: 14,
-                                        ),
-                                      ),
-                                      subtitle: Column(
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.start,
-                                        children: [
-                                          if (obs.isNotEmpty)
-                                            Padding(
-                                              padding:
-                                                  const EdgeInsets.only(top: 4),
-                                              child: Text(
-                                                obs,
-                                                style: const TextStyle(
-                                                  fontStyle: FontStyle.italic,
-                                                  fontSize: 13,
-                                                ),
-                                              ),
-                                            ),
-                                          const SizedBox(height: 4),
-                                          Text(
-                                            'Por $usuario em $dataHora',
-                                            style: const TextStyle(
-                                              fontSize: 12,
-                                              color: Colors.black54,
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    );
-                                  },
-                                ),
-                ),
-                actions: [
-                  ElevatedButton.icon(
-                    icon: const Icon(Icons.close_rounded, size: 18),
-                    label: const Text('Fechar'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: colors.getCancelButtonColor(),
-                      foregroundColor: colors.getButtonTextColor(),
-                    ),
-                    onPressed: () => Navigator.pop(context),
                   ),
                 ],
               ),

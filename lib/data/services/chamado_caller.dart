@@ -42,34 +42,36 @@ class ChamadoCaller {
   }
 
   // 🔹 Pegar (assumir) chamado
-  Future<bool> pegarChamado(int id) async {
-    final response = await NetworkCaller()
-        .postRequest("${ApiLinks.workflowChamados}/$id/pegar", {});
+  Future<bool> pegarChamado(int id, int userId) async {
+    final response = await NetworkCaller().postRequest(
+        "${ApiLinks.workflowChamados}/$id/atribuir?usuarioId=$userId", {});
     return response.isSuccess;
   }
 
+  //	@RequestParam Integer origemId,
+  //	@RequestParam Integer destinoId) {
   // 🔹 Transferir chamado
-  Future<bool> transferirChamado(int id, int usuarioId) async {
+  Future<bool> transferirChamado(
+      int id, int usuarioId, int usuarioOrigem) async {
     final response = await NetworkCaller().postRequest(
-      "${ApiLinks.workflowChamados}/$id/transferir",
-      {'destinatarioId': usuarioId},
-    );
+        "${ApiLinks.workflowChamados}/$id/transferir?origemId=$usuarioOrigem&destinoId=$usuarioId",
+        {});
     return response.isSuccess;
   }
 
   // 🔹 Atribuir chamado
   Future<bool> atribuirChamado(int id, int usuarioId) async {
     final response = await NetworkCaller().postRequest(
-      "${ApiLinks.workflowChamados}/$id/atribuir",
+      "${ApiLinks.workflowChamados}/$id/atribuir?usuarioId=$usuarioId",
       {'usuarioId': usuarioId},
     );
     return response.isSuccess;
   }
 
   // 🔹 Fechar chamado
-  Future<bool> fecharChamado(int id, String motivo) async {
+  Future<bool> fecharChamado(int id, String motivo, int userId) async {
     final response = await NetworkCaller().postRequest(
-      "${ApiLinks.workflowChamados}/$id/fechar",
+      "${ApiLinks.workflowChamados}/$id/fechar?usuarioId=$userId&motivo=$motivo",
       {'motivoFechamento': motivo},
     );
     return response.isSuccess;

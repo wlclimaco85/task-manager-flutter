@@ -3,11 +3,15 @@
     "activeCommit": 0,
     "commits": [
         {
-            "activePatchIndex": 0,
+            "activePatchIndex": 1,
             "patches": [
                 {
                     "date": 1761847961204,
                     "content": "Index: \n===================================================================\n--- \n+++ \n"
+                },
+                {
+                    "date": 1761919890153,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -23,14 +23,14 @@\n }\r\n \r\n class TransferirChamadoDialog {\r\n   static Future<void> show(BuildContext context, Chamado chamado) {\r\n-    final TextEditingController _destino = TextEditingController();\r\n+    final TextEditingController destino = TextEditingController();\r\n     return _baseDialog(\r\n       context,\r\n       title: \"Transferir Chamado\",\r\n       contentWidget: TextFormField(\r\n-        controller: _destino,\r\n+        controller: destino,\r\n         decoration: const InputDecoration(\r\n           labelText: \"ID ou Nome do Usuário Destino\",\r\n           prefixIcon: Icon(Icons.person),\r\n         ),\r\n@@ -41,23 +41,23 @@\n         Navigator.pop(context);\r\n         ScaffoldMessenger.of(context).showSnackBar(\r\n           SnackBar(\r\n               content:\r\n-                  Text(\"Chamado transferido para ${_destino.text.trim()}!\")),\r\n+                  Text(\"Chamado transferido para ${destino.text.trim()}!\")),\r\n         );\r\n       },\r\n     );\r\n   }\r\n }\r\n \r\n class AtribuirChamadoDialog {\r\n   static Future<void> show(BuildContext context, Chamado chamado) {\r\n-    final TextEditingController _usuario = TextEditingController();\r\n+    final TextEditingController usuario = TextEditingController();\r\n     return _baseDialog(\r\n       context,\r\n       title: \"Atribuir Chamado\",\r\n       contentWidget: TextFormField(\r\n-        controller: _usuario,\r\n+        controller: usuario,\r\n         decoration: const InputDecoration(\r\n           labelText: \"Usuário Responsável\",\r\n           prefixIcon: Icon(Icons.person_add_alt_1),\r\n         ),\r\n@@ -68,9 +68,9 @@\n         Navigator.pop(context);\r\n         ScaffoldMessenger.of(context).showSnackBar(\r\n           SnackBar(\r\n               content: Text(\r\n-                  \"Chamado atribuído ao usuário ${_usuario.text.trim()}!\")),\r\n+                  \"Chamado atribuído ao usuário ${usuario.text.trim()}!\")),\r\n         );\r\n       },\r\n     );\r\n   }\r\n"
                 }
             ],
             "date": 1761847961204,

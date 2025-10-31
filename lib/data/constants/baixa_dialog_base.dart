@@ -57,7 +57,7 @@ class BaixaDialogBase {
       padding: kDialogContentPadding,
       child: DropdownButtonFormField<T>(
         isExpanded: true,
-        value: value,
+        initialValue: value,
         decoration: InputDecoration(
           labelText: label,
           prefixIcon: Icon(icon, color: GridColors.inputBorder),

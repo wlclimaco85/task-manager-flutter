@@ -24,12 +24,12 @@ class PegarChamadoDialog {
 
 class TransferirChamadoDialog {
   static Future<void> show(BuildContext context, Chamado chamado) {
-    final TextEditingController _destino = TextEditingController();
+    final TextEditingController destino = TextEditingController();
     return _baseDialog(
       context,
       title: "Transferir Chamado",
       contentWidget: TextFormField(
-        controller: _destino,
+        controller: destino,
         decoration: const InputDecoration(
           labelText: "ID ou Nome do Usuário Destino",
           prefixIcon: Icon(Icons.person),
@@ -42,7 +42,7 @@ class TransferirChamadoDialog {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
               content:
-                  Text("Chamado transferido para ${_destino.text.trim()}!")),
+                  Text("Chamado transferido para ${destino.text.trim()}!")),
         );
       },
     );
@@ -51,12 +51,12 @@ class TransferirChamadoDialog {
 
 class AtribuirChamadoDialog {
   static Future<void> show(BuildContext context, Chamado chamado) {
-    final TextEditingController _usuario = TextEditingController();
+    final TextEditingController usuario = TextEditingController();
     return _baseDialog(
       context,
       title: "Atribuir Chamado",
       contentWidget: TextFormField(
-        controller: _usuario,
+        controller: usuario,
         decoration: const InputDecoration(
           labelText: "Usuário Responsável",
           prefixIcon: Icon(Icons.person_add_alt_1),
@@ -69,7 +69,7 @@ class AtribuirChamadoDialog {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
               content: Text(
-                  "Chamado atribuído ao usuário ${_usuario.text.trim()}!")),
+                  "Chamado atribuído ao usuário ${usuario.text.trim()}!")),
         );
       },
     );
