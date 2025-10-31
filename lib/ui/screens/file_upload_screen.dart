@@ -4,6 +4,7 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_pdfview/flutter_pdfview.dart';
 import 'package:http/http.dart' as http;
+import 'package:dropdown_search/dropdown_search.dart';
 
 import 'package:task_manager_flutter/data/constants/custom_colors.dart';
 import 'package:task_manager_flutter/data/services/diretorio_caller.dart';
@@ -26,6 +27,8 @@ class _FileManagerScreenState extends State<FileManagerScreen> {
 
   List<Map<String, dynamic>> _diretorios = [];
   bool _isLoading = false;
+  bool _isUploading = false;
+  bool _isDownloading = false;
 
   /// controla quais diretórios estão abertos (accordion)
   final Set<int> _expandedTiles = {};
@@ -41,8 +44,16 @@ class _FileManagerScreenState extends State<FileManagerScreen> {
 
   Future<void> _loadDiretorios() async {
     setState(() => _isLoading = true);
-    _diretorios = await _caller.fetchDiretorios();
-    setState(() => _isLoading = false);
+    try {
+      // Espera-se que o FileCaller().fetchDiretorios() retorne algo como:
+      // [{"id":1,"nome":"Pasta A","files":[{"id":10,"fileName":"a.pdf","lido":false,"dataUpload":"2025-10-10"}, ...]}, ...]
+      _diretorios = await _caller.fetchDiretorios();
+    } catch (e) {
+      _showSnackBar(
+          "Erro ao carregar diretórios: $e", GridColors.error, Icons.error);
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
   }
 
   // ========= Upload =========
@@ -60,8 +71,23 @@ class _FileManagerScreenState extends State<FileManagerScreen> {
     final diretorioCaller = DiretorioCaller();
     final parceiroCaller = ParceiroCaller();
 
-    final diretorios = await diretorioCaller.fetchDiretoriosDropdown();
-    final parceiros = await parceiroCaller.fetchParceiross();
+    List<Map<String, dynamic>> diretorios = [];
+    List<Map<String, dynamic>> parceirosMap = [];
+
+    try {
+      // fetchDiretoriosDropdown deve entregar lista com {"value": id, "label": nome}
+      diretorios = await diretorioCaller.fetchDiretoriosDropdown();
+
+      // fetchParceiross() retornava objetos; transformamos em map para dropdown_search
+      final parceiros = await parceiroCaller.fetchParceiross();
+      parceirosMap = parceiros
+          .map<Map<String, dynamic>>(
+              (p) => {'id': p.id, 'nome': p.nome ?? 'Sem nome'})
+          .toList();
+    } catch (e) {
+      _showSnackBar(
+          "Erro ao carregar combos: $e", GridColors.error, Icons.error);
+    }
 
     int? diretorioSelecionado;
     int? parceiroSelecionado;
@@ -119,56 +145,80 @@ class _FileManagerScreenState extends State<FileManagerScreen> {
                       labelText: "Nome do Arquivo",
                       labelStyle: TextStyle(color: GridColors.textSecondary),
                       border: OutlineInputBorder(
-                          borderSide: BorderSide(color: GridColors.primary)),
+                        borderSide: BorderSide(color: GridColors.primary),
+                      ),
                       focusedBorder: OutlineInputBorder(
-                          borderSide:
-                              BorderSide(color: GridColors.primary, width: 2)),
+                        borderSide:
+                            BorderSide(color: GridColors.primary, width: 2),
+                      ),
                     ),
                     validator: (v) =>
                         v == null || v.isEmpty ? "Informe o nome" : null,
                   ),
                   const SizedBox(height: 12),
-                  DropdownButtonFormField<int>(
-                    decoration: const InputDecoration(
-                      labelText: "Diretório",
-                      border: OutlineInputBorder(
-                          borderSide: BorderSide(color: GridColors.primary)),
-                      focusedBorder: OutlineInputBorder(
-                          borderSide:
-                              BorderSide(color: GridColors.primary, width: 2)),
+
+                  // Combo pesquisável: Diretório
+                  DropdownSearch<Map<String, dynamic>>(
+                    items: diretorios,
+                    itemAsString: (e) => e['label'] ?? '',
+                    onChanged: (v) => diretorioSelecionado = v?['value'],
+                    popupProps: const PopupProps.menu(
+                      showSearchBox: true,
+                      searchFieldProps: TextFieldProps(
+                        decoration: InputDecoration(
+                          hintText: "Buscar diretório...",
+                          prefixIcon: Icon(Icons.search),
+                        ),
+                      ),
                     ),
-                    items: diretorios
-                        .map((e) => DropdownMenuItem<int>(
-                            value: e['value'], child: Text(e['label'])))
-                        .toList(),
-                    onChanged: (v) =>
-                        setStateDialog(() => diretorioSelecionado = v),
+                    dropdownDecoratorProps: const DropDownDecoratorProps(
+                      dropdownSearchDecoration: InputDecoration(
+                        labelText: "Diretório",
+                        border: OutlineInputBorder(),
+                        focusedBorder: OutlineInputBorder(
+                          borderSide:
+                              BorderSide(color: GridColors.primary, width: 2),
+                        ),
+                      ),
+                    ),
                     validator: (v) =>
                         v == null ? "Selecione um diretório" : null,
                   ),
                   const SizedBox(height: 12),
-                  DropdownButtonFormField<int>(
-                    decoration: const InputDecoration(
-                      labelText: "Parceiro",
-                      border: OutlineInputBorder(
-                          borderSide: BorderSide(color: GridColors.primary)),
-                      focusedBorder: OutlineInputBorder(
-                          borderSide:
-                              BorderSide(color: GridColors.primary, width: 2)),
+
+                  // Combo pesquisável: Parceiro
+                  DropdownSearch<Map<String, dynamic>>(
+                    items: parceirosMap,
+                    itemAsString: (p) => p['nome'] ?? '',
+                    onChanged: (v) => parceiroSelecionado = v?['id'],
+                    popupProps: const PopupProps.menu(
+                      showSearchBox: true,
+                      searchFieldProps: TextFieldProps(
+                        decoration: InputDecoration(
+                          hintText: "Buscar parceiro...",
+                          prefixIcon: Icon(Icons.search),
+                        ),
+                      ),
                     ),
-                    items: parceiros
-                        .map((p) => DropdownMenuItem<int>(
-                            value: p.id, child: Text(p.nome ?? 'Sem nome')))
-                        .toList(),
-                    onChanged: (v) =>
-                        setStateDialog(() => parceiroSelecionado = v),
+                    dropdownDecoratorProps: const DropDownDecoratorProps(
+                      dropdownSearchDecoration: InputDecoration(
+                        labelText: "Parceiro",
+                        border: OutlineInputBorder(),
+                        focusedBorder: OutlineInputBorder(
+                          borderSide:
+                              BorderSide(color: GridColors.primary, width: 2),
+                        ),
+                      ),
+                    ),
                     validator: (v) =>
                         v == null ? "Selecione um parceiro" : null,
                   ),
                   const SizedBox(height: 12),
+
                   if (fileType != null)
                     Text("Tipo: $fileType",
                         style: const TextStyle(color: GridColors.primaryLight)),
+
                   if (fileBytes != null)
                     Padding(
                       padding: const EdgeInsets.only(top: 12),
@@ -213,7 +263,13 @@ class _FileManagerScreenState extends State<FileManagerScreen> {
                   style: TextStyle(color: GridColors.error)),
             ),
             ElevatedButton.icon(
-              icon: const Icon(Icons.upload, color: GridColors.textPrimary),
+              icon: _isUploading
+                  ? const SizedBox(
+                      width: 18,
+                      height: 18,
+                      child: CircularProgressIndicator(
+                          strokeWidth: 2, color: GridColors.textPrimary))
+                  : const Icon(Icons.upload, color: GridColors.textPrimary),
               label: const Text("Enviar"),
               style: ElevatedButton.styleFrom(
                 backgroundColor: GridColors.success,
@@ -222,12 +278,14 @@ class _FileManagerScreenState extends State<FileManagerScreen> {
                     borderRadius: BorderRadius.circular(8)),
               ),
               onPressed: () async {
+                if (_isUploading) return;
                 if (formKey.currentState!.validate()) {
                   if (fileBytes == null) {
                     _showSnackBar("Selecione um arquivo antes de enviar.",
                         GridColors.warning, Icons.warning_amber);
                     return;
                   }
+                  setStateDialog(() => _isUploading = true);
                   final ok = await _caller.insertFileAttachment(
                     fileBytes: fileBytes!,
                     fileName: nomeController.text,
@@ -235,6 +293,7 @@ class _FileManagerScreenState extends State<FileManagerScreen> {
                     diretorioId: diretorioSelecionado!,
                     parceiroId: parceiroSelecionado!,
                   );
+                  setStateDialog(() => _isUploading = false);
                   if (ok) {
                     if (mounted) Navigator.pop(context);
                     await _loadDiretorios();
@@ -270,146 +329,181 @@ class _FileManagerScreenState extends State<FileManagerScreen> {
     }
   }
 
-  void _openPreviewSheet(int fileId, String fileName, {required int dirId}) {
+  void _openPreviewSheet(int fileId, String fileName,
+      {required int dirId}) async {
+    // registra abertura ao abrir/visualizar
+    await UploadFileCaller().registerFileOpened(fileId);
+
     final ext = fileName.split('.').last.toLowerCase();
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (_) => Container(
-        height: MediaQuery.of(context).size.height * 0.85,
-        decoration: const BoxDecoration(
-          color: GridColors.card,
-          borderRadius: BorderRadius.only(
-              topLeft: Radius.circular(20), topRight: Radius.circular(20)),
-        ),
-        child: Column(
+      builder: (_) => StatefulBuilder(
+        builder: (context, setStateDialog) => Stack(
           children: [
-            // Header
             Container(
-              padding: const EdgeInsets.all(16),
+              height: MediaQuery.of(context).size.height * 0.85,
               decoration: const BoxDecoration(
-                color: GridColors.primary,
+                color: GridColors.card,
                 borderRadius: BorderRadius.only(
-                    topLeft: Radius.circular(20),
-                    topRight: Radius.circular(20)),
+                  topLeft: Radius.circular(20),
+                  topRight: Radius.circular(20),
+                ),
               ),
-              child: Row(
+              child: Column(
                 children: [
-                  _fileTypeIcon(ext, size: 20, color: GridColors.textPrimary),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      fileName,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                          color: GridColors.textPrimary,
-                          fontWeight: FontWeight.bold),
-                    ),
-                  ),
-                  IconButton(
-                    icon:
-                        const Icon(Icons.close, color: GridColors.textPrimary),
-                    onPressed: () => Navigator.pop(context),
-                  )
-                ],
-              ),
-            ),
-
-            // Body (preview)
-            Expanded(
-              child: FutureBuilder<Uint8List?>(
-                future: _fetchFileBytes(fileId),
-                builder: (context, snap) {
-                  if (snap.connectionState == ConnectionState.waiting) {
-                    return const Center(
-                        child: CircularProgressIndicator(
-                            color: GridColors.secondary));
-                  }
-                  final bytes = snap.data;
-                  if (bytes == null) {
-                    return const Center(
-                      child: Padding(
-                        padding: EdgeInsets.all(24),
-                        child: Text(
-                          'Não foi possível gerar a pré-visualização.\nVocê pode fazer o download do arquivo.',
-                          textAlign: TextAlign.center,
-                        ),
+                  // Header
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: const BoxDecoration(
+                      color: GridColors.primary,
+                      borderRadius: BorderRadius.only(
+                        topLeft: Radius.circular(20),
+                        topRight: Radius.circular(20),
                       ),
-                    );
-                  }
-
-                  if (ext == 'pdf') {
-                    return FutureBuilder<File>(
-                      future: _writeTempFile(bytes,
-                          name:
-                              'preview_${DateTime.now().millisecondsSinceEpoch}.pdf'),
-                      builder: (context, pdfSnap) {
-                        if (!pdfSnap.hasData) {
-                          return const Center(
-                              child: CircularProgressIndicator(
-                                  color: GridColors.secondary));
-                        }
-                        return PDFView(filePath: pdfSnap.data!.path);
-                      },
-                    );
-                  } else if (['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp']
-                      .contains(ext)) {
-                    return Center(child: Image.memory(bytes));
-                  } else if (['txt', 'csv', 'log'].contains(ext)) {
-                    try {
-                      final txt = String.fromCharCodes(bytes);
-                      return SingleChildScrollView(
-                        padding: const EdgeInsets.all(16),
-                        child: Text(txt),
-                      );
-                    } catch (_) {
-                      return const Center(
+                    ),
+                    child: Row(
+                      children: [
+                        _fileTypeIcon(ext,
+                            size: 20, color: GridColors.textPrimary),
+                        const SizedBox(width: 8),
+                        Expanded(
                           child: Text(
-                              'Prévia indisponível para este tipo de arquivo.'));
-                    }
-                  } else {
-                    return const Center(
-                        child: Text(
-                            'Prévia indisponível para este tipo de arquivo.'));
-                  }
-                },
-              ),
-            ),
+                            fileName,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              color: GridColors.textPrimary,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.close,
+                              color: GridColors.textPrimary),
+                          onPressed: () => Navigator.pop(context),
+                        )
+                      ],
+                    ),
+                  ),
 
-            // Footer (ações)
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
-              child: Row(
-                children: [
+                  // Body (preview)
                   Expanded(
-                    child: OutlinedButton.icon(
-                      icon: const Icon(Icons.download,
-                          color: GridColors.secondary),
-                      label: const Text('Baixar',
-                          style: TextStyle(color: GridColors.secondary)),
-                      style: OutlinedButton.styleFrom(
-                          side: const BorderSide(color: GridColors.primary)),
-                      onPressed: () async {
-                        await UploadFileCaller().downloadFile(fileId, fileName);
+                    child: FutureBuilder<Uint8List?>(
+                      future: _fetchFileBytes(fileId),
+                      builder: (context, snap) {
+                        if (snap.connectionState == ConnectionState.waiting) {
+                          return const Center(
+                            child: CircularProgressIndicator(
+                                color: GridColors.secondary),
+                          );
+                        }
+                        final bytes = snap.data;
+                        if (bytes == null) {
+                          return const Center(
+                            child: Padding(
+                              padding: EdgeInsets.all(24),
+                              child: Text(
+                                'Não foi possível gerar a pré-visualização.\nVocê pode fazer o download do arquivo.',
+                                textAlign: TextAlign.center,
+                              ),
+                            ),
+                          );
+                        }
+
+                        if (ext == 'pdf') {
+                          return FutureBuilder<File>(
+                            future: _writeTempFile(
+                              bytes,
+                              name:
+                                  'preview_${DateTime.now().millisecondsSinceEpoch}.pdf',
+                            ),
+                            builder: (context, pdfSnap) {
+                              if (!pdfSnap.hasData) {
+                                return const Center(
+                                  child: CircularProgressIndicator(
+                                      color: GridColors.secondary),
+                                );
+                              }
+                              return PDFView(filePath: pdfSnap.data!.path);
+                            },
+                          );
+                        } else if (['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp']
+                            .contains(ext)) {
+                          return Center(child: Image.memory(bytes));
+                        } else if (['txt', 'csv', 'log'].contains(ext)) {
+                          try {
+                            final txt = String.fromCharCodes(bytes);
+                            return SingleChildScrollView(
+                              padding: const EdgeInsets.all(16),
+                              child: Text(txt),
+                            );
+                          } catch (_) {
+                            return const Center(
+                                child: Text(
+                                    'Prévia indisponível para este tipo de arquivo.'));
+                          }
+                        } else {
+                          return const Center(
+                              child: Text(
+                                  'Prévia indisponível para este tipo de arquivo.'));
+                        }
                       },
                     ),
                   ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: OutlinedButton.icon(
-                      icon: const Icon(Icons.delete, color: GridColors.error),
-                      label: const Text('Excluir',
-                          style: TextStyle(color: GridColors.error)),
-                      style: OutlinedButton.styleFrom(
-                          side: const BorderSide(color: GridColors.primary)),
-                      onPressed: () => _confirmDelete(fileId, dirId),
+
+                  // Footer (ações)
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: OutlinedButton.icon(
+                            icon: const Icon(Icons.download,
+                                color: GridColors.secondary),
+                            label: const Text('Baixar',
+                                style: TextStyle(color: GridColors.secondary)),
+                            style: OutlinedButton.styleFrom(
+                              side: const BorderSide(color: GridColors.primary),
+                            ),
+                            onPressed: () async {
+                              if (_isDownloading) return;
+                              setStateDialog(() => _isDownloading = true);
+                              await UploadFileCaller().registerFileOpened(
+                                  fileId); // registra também no download
+                              await UploadFileCaller()
+                                  .downloadFile(fileId, fileName);
+                              setStateDialog(() => _isDownloading = false);
+                            },
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: OutlinedButton.icon(
+                            icon: const Icon(Icons.delete,
+                                color: GridColors.error),
+                            label: const Text('Excluir',
+                                style: TextStyle(color: GridColors.error)),
+                            style: OutlinedButton.styleFrom(
+                              side: const BorderSide(color: GridColors.primary),
+                            ),
+                            onPressed: () => _confirmDelete(fileId, dirId),
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                 ],
               ),
             ),
+            if (_isDownloading)
+              Container(
+                color: Colors.black26,
+                child: const Center(
+                  child: CircularProgressIndicator(color: GridColors.secondary),
+                ),
+              ),
           ],
         ),
       ),
@@ -445,10 +539,20 @@ class _FileManagerScreenState extends State<FileManagerScreen> {
           TextButton(
             onPressed: () async {
               Navigator.pop(context);
-              await _caller.deleteArquivo(id);
-              await _loadDiretorios();
-              _showSnackBar("Arquivo excluído com sucesso!", GridColors.success,
-                  Icons.delete_forever);
+              try {
+                final ok = await _caller.deleteArquivo(id);
+                if (ok) {
+                  await _loadDiretorios();
+                  _showSnackBar("Arquivo excluído com sucesso!",
+                      GridColors.success, Icons.delete_forever);
+                } else {
+                  _showSnackBar("Falha ao excluir o arquivo", GridColors.error,
+                      Icons.error);
+                }
+              } catch (e) {
+                _showSnackBar(
+                    "Erro ao excluir: $e", GridColors.error, Icons.error);
+              }
             },
             child: const Text("Excluir",
                 style: TextStyle(color: GridColors.error)),
@@ -461,6 +565,7 @@ class _FileManagerScreenState extends State<FileManagerScreen> {
   // ========= UI helpers =========
 
   void _showSnackBar(String msg, Color color, IconData icon) {
+    if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         backgroundColor: color,
@@ -469,7 +574,10 @@ class _FileManagerScreenState extends State<FileManagerScreen> {
           children: [
             Icon(icon, color: GridColors.textPrimary),
             const SizedBox(width: 8),
-            Text(msg, style: const TextStyle(color: GridColors.textPrimary)),
+            Expanded(
+              child: Text(msg,
+                  style: const TextStyle(color: GridColors.textPrimary)),
+            ),
           ],
         ),
       ),
@@ -492,37 +600,45 @@ class _FileManagerScreenState extends State<FileManagerScreen> {
       case 'jpeg':
       case 'gif':
       case 'webp':
+      case 'bmp':
         return Icon(Icons.image, color: c, size: size);
       default:
         return Icon(Icons.insert_drive_file, color: c, size: size);
     }
   }
 
+  // ========= Busca/Filtragem =========
+  //
+  // Mantém a pasta se o nome da pasta bate com a busca,
+  // ou mantém a pasta com apenas os arquivos que batem.
   List<Map<String, dynamic>> _filteredDiretorios() {
     final q = _searchQuery.trim().toLowerCase();
     if (q.isEmpty) return List<Map<String, dynamic>>.from(_diretorios);
 
     final result = _diretorios
         .map<Map<String, dynamic>>((dir) {
-          final nome = (dir['nome'] ?? '').toString().toLowerCase();
-          final arquivos =
-              (dir['arquivos'] as List?)?.cast<Map<String, dynamic>>() ?? [];
+          final pastaNome = (dir['nome'] ?? '').toString().toLowerCase();
+
+          final List files = (dir['files'] ?? []) is List
+              ? (dir['files'] as List)
+              : <dynamic>[];
+          final arquivos = files
+              .map<Map<String, dynamic>>(
+                  (e) => Map<String, dynamic>.from(e as Map))
+              .toList();
+
           final arquivosFiltrados = arquivos.where((a) {
-            final n = (a['nome'] ?? '').toString().toLowerCase();
+            final n = (a['fileName'] ?? '').toString().toLowerCase();
             return n.contains(q);
           }).toList();
 
-          final pastaBate = nome.contains(q);
-          if (pastaBate) {
+          if (pastaNome.contains(q)) {
             // mantém todos os arquivos se a pasta bate
             return Map<String, dynamic>.from(dir);
           } else if (arquivosFiltrados.isNotEmpty) {
             // mantém a pasta, porém só com os arquivos filtrados
             final copy = Map<String, dynamic>.from(dir);
-            copy['arquivos'] = arquivosFiltrados;
-            copy['totalArquivos'] = arquivosFiltrados.length;
-            copy['naoLidos'] =
-                arquivosFiltrados.where((a) => a['lido'] != true).length;
+            copy['files'] = arquivosFiltrados;
             return copy;
           } else {
             // pasta não entra
@@ -536,11 +652,18 @@ class _FileManagerScreenState extends State<FileManagerScreen> {
   }
 
   Widget _buildDiretorioBox(Map<String, dynamic> dir) {
-    final id = dir['id'];
-    final nome = dir['nome'] ?? 'Sem nome';
-    final total = dir['files'].length ?? 0;
-    final naoLidos = dir['naoLidos'] ?? 0;
-    final arquivos = List<Map<String, dynamic>>.from(dir['files'] ?? []);
+    final int id =
+        dir['id'] is int ? dir['id'] as int : int.tryParse('${dir['id']}') ?? 0;
+    final String nome = (dir['nome'] ?? 'Sem nome').toString();
+
+    final List filesList =
+        (dir['files'] ?? []) is List ? (dir['files'] as List) : <dynamic>[];
+    final List<Map<String, dynamic>> arquivos = filesList
+        .map<Map<String, dynamic>>((e) => Map<String, dynamic>.from(e as Map))
+        .toList();
+
+    final int total = arquivos.length;
+    final int naoLidos = arquivos.where((a) => a['lido'] != true).length;
 
     return AnimatedContainer(
       duration: const Duration(milliseconds: 200),
@@ -569,7 +692,7 @@ class _FileManagerScreenState extends State<FileManagerScreen> {
           onExpansionChanged: (expanded) {
             setState(() {
               if (expanded) {
-                _expandedTiles.clear(); // accordion
+                _expandedTiles.clear(); // accordion (só um aberto)
                 _expandedTiles.add(id);
               } else {
                 _expandedTiles.remove(id);
@@ -581,15 +704,19 @@ class _FileManagerScreenState extends State<FileManagerScreen> {
             children: [
               Row(
                 children: [
-                  Icon(Icons.folder,
-                      color: _expandedTiles.contains(id)
-                          ? GridColors.secondaryLight
-                          : GridColors.secondary),
+                  Icon(
+                    Icons.folder,
+                    color: _expandedTiles.contains(id)
+                        ? GridColors.secondaryLight
+                        : GridColors.secondary,
+                  ),
                   const SizedBox(width: 8),
-                  Text(nome,
-                      style: const TextStyle(
-                          fontWeight: FontWeight.bold,
-                          color: GridColors.textSecondary)),
+                  Text(
+                    nome,
+                    style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: GridColors.textSecondary),
+                  ),
                 ],
               ),
               Row(
@@ -602,9 +729,11 @@ class _FileManagerScreenState extends State<FileManagerScreen> {
                       decoration: BoxDecoration(
                           color: GridColors.error,
                           borderRadius: BorderRadius.circular(12)),
-                      child: Text("$naoLidos não lidos",
-                          style: const TextStyle(
-                              color: GridColors.textPrimary, fontSize: 12)),
+                      child: Text(
+                        "$naoLidos não lidos",
+                        style: const TextStyle(
+                            color: GridColors.textPrimary, fontSize: 12),
+                      ),
                     ),
                   Container(
                     padding:
@@ -612,9 +741,11 @@ class _FileManagerScreenState extends State<FileManagerScreen> {
                     decoration: BoxDecoration(
                         color: GridColors.warning,
                         borderRadius: BorderRadius.circular(12)),
-                    child: Text("$total docs",
-                        style: const TextStyle(
-                            color: GridColors.textSecondary, fontSize: 12)),
+                    child: Text(
+                      "$total docs",
+                      style: const TextStyle(
+                          color: GridColors.textSecondary, fontSize: 12),
+                    ),
                   ),
                 ],
               ),
@@ -628,17 +759,25 @@ class _FileManagerScreenState extends State<FileManagerScreen> {
                   : CrossFadeState.showSecond,
               firstChild: const Padding(
                 padding: EdgeInsets.all(12),
-                child: Text("Nenhum arquivo disponível",
-                    style: TextStyle(color: GridColors.textSecondary)),
+                child: Text(
+                  "Nenhum arquivo disponível",
+                  style: TextStyle(color: GridColors.textSecondary),
+                ),
               ),
               secondChild: Padding(
                 padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
                 child: Column(
                   children: arquivos.map((arq) {
-                    final lido = arq['lido'] == true;
-                    final fileName = (arq['fileName'] ?? 'Sem nome') as String;
-                    final dataUpload = arq['dataUpload'] ?? '--';
-                    final ext = fileName.split('.').last.toLowerCase();
+                    final bool lido = arq['lido'] == true;
+                    final String fileName =
+                        (arq['fileName'] ?? 'Sem nome').toString();
+                    final String dataUpload =
+                        (arq['dataUpload'] ?? '--').toString();
+                    final String ext = fileName.split('.').last.toLowerCase();
+                    final int fileId = arq['id'] is int
+                        ? (arq['id'] as int)
+                        : int.tryParse('${arq['id']}') ?? 0;
+
                     return Container(
                       margin: const EdgeInsets.symmetric(
                           horizontal: 8, vertical: 4),
@@ -651,7 +790,7 @@ class _FileManagerScreenState extends State<FileManagerScreen> {
                       ),
                       child: ListTile(
                         onTap: () =>
-                            _openPreviewSheet(arq['id'], fileName, dirId: id),
+                            _openPreviewSheet(fileId, fileName, dirId: id),
                         leading: Stack(
                           clipBehavior: Clip.none,
                           children: [
@@ -669,17 +808,18 @@ class _FileManagerScreenState extends State<FileManagerScreen> {
                               ),
                           ],
                         ),
-                        title: Text(fileName,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style:
-                                const TextStyle(fontWeight: FontWeight.w600)),
+                        title: Text(
+                          fileName,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(fontWeight: FontWeight.w600),
+                        ),
                         subtitle: Text(
                           "Upload: $dataUpload • ${lido ? 'Lido' : 'Não lido'}",
                           style: TextStyle(
-                              color:
-                                  lido ? GridColors.success : GridColors.error,
-                              fontSize: 12),
+                            color: lido ? GridColors.success : GridColors.error,
+                            fontSize: 12,
+                          ),
                         ),
                         trailing: Row(
                           mainAxisSize: MainAxisSize.min,
@@ -688,14 +828,22 @@ class _FileManagerScreenState extends State<FileManagerScreen> {
                               tooltip: 'Baixar',
                               icon: const Icon(Icons.download,
                                   color: GridColors.secondary),
-                              onPressed: () async => UploadFileCaller()
-                                  .downloadFile(arq['id'], fileName),
+                              onPressed: () async {
+                                if (_isDownloading) return;
+                                setState(() => _isDownloading = true);
+                                await UploadFileCaller()
+                                    .registerFileOpened(fileId);
+                                await UploadFileCaller()
+                                    .downloadFile(fileId, fileName);
+                                if (mounted)
+                                  setState(() => _isDownloading = false);
+                              },
                             ),
                             IconButton(
                               tooltip: 'Excluir',
                               icon: const Icon(Icons.delete,
                                   color: GridColors.error),
-                              onPressed: () => _confirmDelete(arq['id'], id),
+                              onPressed: () => _confirmDelete(fileId, id),
                             ),
                           ],
                         ),

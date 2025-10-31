@@ -391,4 +391,7 @@ class ApiLinks {
 
   static String getAllChamados(String id) =>
       '$_baseUrlNew/api/workflow/chamados/$id/historico';
+
+  static String registerFileOpened(String id) =>
+      '$_baseUrlNew/api/workflow/chamados/$id/historico';
 }

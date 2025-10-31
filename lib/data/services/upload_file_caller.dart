@@ -107,4 +107,27 @@ class UploadFileCaller {
     }
     return 0;
   }
+
+  Future<void> registerFileOpened(int fileId) async {
+    try {
+      final token = '${AuthUtility.userInfo?.token}';
+      final url = Uri.parse(ApiLinks.registerFileOpened(fileId.toString()));
+
+      final res = await http.post(
+        url,
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Content-Type': 'application/json',
+        },
+      );
+
+      if (res.statusCode == 200) {
+        print('📄 Registro de abertura enviado com sucesso para $fileId');
+      } else {
+        print('⚠️ Falha ao registrar abertura (${res.statusCode})');
+      }
+    } catch (e) {
+      print('❌ Erro ao registrar arquivo aberto: $e');
+    }
+  }
 }
