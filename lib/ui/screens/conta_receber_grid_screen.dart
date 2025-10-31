@@ -31,6 +31,9 @@ class ContaReceberGridScreen extends StatelessWidget {
       enumMaps: {
         'status': StatusConta.map,
       },
+      statusEnumMap: StatusConta.values
+          .asMap()
+          .map((key, value) => MapEntry(value, value.name)),
 
       customActions: () => [
         CustomAction<ContaReceber>(

@@ -3,7 +3,7 @@
     "activeCommit": 0,
     "commits": [
         {
-            "activePatchIndex": 9,
+            "activePatchIndex": 10,
             "patches": [
                 {
                     "date": 1759268828634,
@@ -44,6 +44,10 @@
                 {
                     "date": 1761939717418,
                     "content": "Index: \n===================================================================\n--- \n+++ \n@@ -31,9 +31,11 @@\n       editableStatus: true,\r\n       enumMaps: {\r\n         'status': StatusConta.map,\r\n       },\r\n-\r\n+      statusEnumMap: StatusConta.values\r\n+          .asMap()\r\n+          .map((key, value) => MapEntry(value, value.name)),\r\n       customActions: () => [\r\n         CustomAction<ContaPagar>(\r\n           icon: Icons.payment,\r\n           label: 'Baixar',\r\n"
+                },
+                {
+                    "date": 1761941270818,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -34,8 +34,9 @@\n       },\r\n       statusEnumMap: StatusConta.values\r\n           .asMap()\r\n           .map((key, value) => MapEntry(value, value.name)),\r\n+          \r\n       customActions: () => [\r\n         CustomAction<ContaPagar>(\r\n           icon: Icons.payment,\r\n           label: 'Baixar',\r\n"
                 }
             ],
             "date": 1759268828634,

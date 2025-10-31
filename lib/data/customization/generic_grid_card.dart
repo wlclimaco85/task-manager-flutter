@@ -2619,37 +2619,55 @@ class _GenericMobileGridScreenState<T>
 
   String resolveEnumValue(String fieldName, dynamic raw) {
     try {
-      // 1️⃣ Novo formato: múltiplos enums
-      if (widget.enumMaps != null && widget.enumMaps!.containsKey(fieldName)) {
-        final map = widget.enumMaps![fieldName]!;
+      if (raw == null) return '';
 
-        // Casamento direto por valor ou nome
-        final found = map.entries.firstWhere(
-          (e) {
-            final keyStr = e.key.toString().split('.').last.toUpperCase();
-            final valStr = e.value.toUpperCase();
-            final rawStr = raw.toString().toUpperCase();
-            return keyStr == rawStr || valStr == rawStr;
-          },
-          orElse: () =>
-              MapEntry(map.keys.first, ''), // 🔧 evita conflito de tipo
-        );
+      // 🧭 Verifica se temos enumMaps
+      final enums = widget.enumMaps;
+      if (enums != null && enums.containsKey(fieldName)) {
+        final map = enums[fieldName]!;
 
-        if (found.value.isNotEmpty) {
-          return found.value;
+        // 1️⃣ Se a chave do map for int e o raw for número ou string numérica
+        final parsedInt = int.tryParse(raw.toString());
+        if (parsedInt != null && map.containsKey(parsedInt)) {
+          return map[parsedInt]!;
         }
 
-        // Se for índice numérico e existir no mapa
-        if (raw is int && map.containsKey(raw)) {
-          return map[raw]!;
+        // 2️⃣ Se a chave do map for string e o raw for texto igual
+        final foundByString = map.entries.firstWhere(
+          (e) =>
+              e.key.toString().split('.').last.toUpperCase() ==
+                  raw.toString().toUpperCase() ||
+              e.value.toUpperCase() == raw.toString().toUpperCase(),
+          orElse: () => MapEntry(null, ''),
+        );
+        if (foundByString.key != null && foundByString.value.isNotEmpty) {
+          return foundByString.value;
+        }
+
+        // 3️⃣ Se a chave for Enum (StatusChamadoEnum.ABERTO, etc.)
+        for (final entry in map.entries) {
+          final keyStr = entry.key.toString().split('.').last.toUpperCase();
+          if (keyStr == raw.toString().toUpperCase()) {
+            return entry.value;
+          }
         }
       }
 
-      // 2️⃣ Fallback: se não achar nada, retorna o texto puro
-      return raw?.toString() ?? '';
+      // 4️⃣ Fallback: tenta o statusEnumMap, se configurado
+      if (widget.statusEnumMap != null) {
+        final map = widget.statusEnumMap!;
+        final parsedInt = int.tryParse(raw.toString());
+        if (parsedInt != null && map.containsKey(parsedInt)) {
+          return map[parsedInt]!;
+        }
+        if (map.containsKey(raw)) return map[raw]!;
+      }
+
+      // 5️⃣ Último recurso: devolve texto cru
+      return raw.toString();
     } catch (e) {
-      debugPrint('Erro ao resolver enum ($fieldName): $e');
-      return raw?.toString() ?? '';
+      debugPrint('❌ Erro em resolveEnumValue($fieldName): $e');
+      return raw.toString();
     }
   }
 

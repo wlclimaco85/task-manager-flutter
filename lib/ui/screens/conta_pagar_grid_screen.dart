@@ -35,6 +35,7 @@ class ContaPagarGridScreen extends StatelessWidget {
       statusEnumMap: StatusConta.values
           .asMap()
           .map((key, value) => MapEntry(value, value.name)),
+
       customActions: () => [
         CustomAction<ContaPagar>(
           icon: Icons.payment,
