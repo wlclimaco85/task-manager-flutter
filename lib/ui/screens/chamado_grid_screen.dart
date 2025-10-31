@@ -52,6 +52,16 @@ class ChamadoGridScreen extends StatelessWidget {
             };
           }
         },
+        // 🔹 NOVOS PARÂMETROS
+        statusFieldName: 'status',
+        editableStatus: true,
+        enumMaps: {
+          'status': StatusChamadoEnum.map,
+          'prioridade': PrioridadeChamadoEnum.map,
+        },
+        statusEnumMap: StatusChamadoEnum.values
+            .asMap()
+            .map((key, value) => MapEntry(value, value.name)),
 
         // ✅ Botões extras no rodapé vermelho do card (verde, só ícone + tooltip)
         customActions: () => [

@@ -13,7 +13,9 @@ enum StatusChamadoEnum {
   ABERTO(1, "Aberto"),
   EM_ANDAMENTO(2, "Em Andamento"),
   FECHADO(3, "Fechado"),
-  CANCELADO(4, "Cancelado");
+  CANCELADO(4, "Cancelado"),
+  AGUARDANDO_CLIENTE(5, "Aguardando Retorno Cliente"),
+  BLOQUEADO(6, "Bloqueado");
 
   const StatusChamadoEnum(this.value, this.label);
   final int value;
@@ -25,6 +27,21 @@ enum StatusChamadoEnum {
 
   static StatusChamadoEnum fromString(String name) {
     return values.firstWhere((e) => e.name.toUpperCase() == name.toUpperCase());
+  }
+
+  static Map<int, String> get map => Map.fromEntries(
+        StatusChamadoEnum.values.asMap().entries.map(
+              (entry) => MapEntry(entry.key + 1, _format(entry.value.name)),
+            ),
+      );
+
+  static String _format(String name) {
+    return name
+        .replaceAll("_", " ")
+        .toLowerCase()
+        .split(' ')
+        .map((w) => w[0].toUpperCase() + w.substring(1))
+        .join(' ');
   }
 }
 
@@ -44,6 +61,21 @@ enum PrioridadeChamadoEnum {
 
   static PrioridadeChamadoEnum fromString(String name) {
     return values.firstWhere((e) => e.name.toUpperCase() == name.toUpperCase());
+  }
+
+  static Map<int, String> get map => Map.fromEntries(
+        PrioridadeChamadoEnum.values.asMap().entries.map(
+              (entry) => MapEntry(entry.key + 1, _format(entry.value.name)),
+            ),
+      );
+
+  static String _format(String name) {
+    return name
+        .replaceAll("_", " ")
+        .toLowerCase()
+        .split(' ')
+        .map((w) => w[0].toUpperCase() + w.substring(1))
+        .join(' ');
   }
 }
 

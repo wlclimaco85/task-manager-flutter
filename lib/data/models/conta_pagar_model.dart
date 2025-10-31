@@ -10,7 +10,39 @@ import 'forma_pagamento_model.dart';
 import 'parceiro_model.dart';
 import 'conta_bancaria_model.dart';
 
-enum StatusConta { ABERTA, BAIXADA, CANCELADA }
+enum StatusConta {
+  ABERTO(1, "Aberto"),
+  BAIXADA(2, "Baixado"),
+  ANTECIPADA(3, "Antecipado"),
+  CANCELADA(4, "Cancelado");
+
+  const StatusConta(this.value, this.label);
+  final int value;
+  final String label;
+
+  static StatusConta fromValue(int value) {
+    return values.firstWhere((e) => e.value == value);
+  }
+
+  static StatusConta fromString(String name) {
+    return values.firstWhere((e) => e.name.toUpperCase() == name.toUpperCase());
+  }
+
+  static Map<int, String> get map => Map.fromEntries(
+        StatusConta.values.asMap().entries.map(
+              (entry) => MapEntry(entry.key + 1, _format(entry.value.name)),
+            ),
+      );
+
+  static String _format(String name) {
+    return name
+        .replaceAll("_", " ")
+        .toLowerCase()
+        .split(' ')
+        .map((w) => w[0].toUpperCase() + w.substring(1))
+        .join(' ');
+  }
+}
 
 class ContaPagar {
   int? id;
@@ -85,38 +117,40 @@ class ContaPagar {
     if (status is int) {
       switch (status) {
         case 0:
-          return StatusConta.ABERTA;
+          return StatusConta.ABERTO;
         case 1:
           return StatusConta.BAIXADA;
         case 2:
           return StatusConta.CANCELADA;
         default:
-          return StatusConta.ABERTA;
+          return StatusConta.ABERTO;
       }
     } else if (status is String) {
       switch (status) {
         case 'ABERTA':
-          return StatusConta.ABERTA;
+          return StatusConta.ABERTO;
         case 'BAIXADA':
           return StatusConta.BAIXADA;
         case 'CANCELADA':
           return StatusConta.CANCELADA;
         default:
-          return StatusConta.ABERTA;
+          return StatusConta.ABERTO;
       }
     } else {
-      return StatusConta.ABERTA;
+      return StatusConta.ABERTO;
     }
   }
 
   int _statusToInt(StatusConta status) {
     switch (status) {
-      case StatusConta.ABERTA:
+      case StatusConta.ABERTO:
         return 0;
       case StatusConta.BAIXADA:
         return 1;
       case StatusConta.CANCELADA:
         return 2;
+      case StatusConta.ANTECIPADA:
+        return 3;
     }
   }
 

@@ -3,7 +3,7 @@
     "activeCommit": 0,
     "commits": [
         {
-            "activePatchIndex": 11,
+            "activePatchIndex": 12,
             "patches": [
                 {
                     "date": 1759268792493,
@@ -52,6 +52,10 @@
                 {
                     "date": 1761797128169,
                     "content": "Index: \n===================================================================\n--- \n+++ \n@@ -49,10 +49,9 @@\n               tipo: 'receber',\r\n               contaId: object.id!,\r\n               dataBaixa: object.dataBaixa!,\r\n               valorBaixa: object.valorBaixa!,\r\n-              contaLabel:\r\n-                  object.formaPagamento?.descricao ?? 'Conta não informada',\r\n+              contaLabel: object.contaBaixa?.descricao ?? 'Conta não informada',\r\n               formaPagamentoLabel:\r\n                   object.formaPagamento?.nome ?? 'Forma não informada',\r\n             );\r\n           },\r\n"
+                },
+                {
+                    "date": 1761938776565,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -27,12 +27,16 @@\n       dateFieldName: 'audit.createdAt',\r\n       // 🔹 NOVOS PARÂMETROS\r\n       statusFieldName: 'status',\r\n       editableStatus: true,\r\n-      statusEnumMap: StatusConta.values\r\n-          .asMap()\r\n-          .map((key, value) => MapEntry(value, value.name)),\r\n+      // 🔹 NOVOS PARÂMETROS\r\n+      statusFieldName: 'status',\r\n+      editableStatus: true,\r\n+      enumMaps: {\r\n+        'status': StatusConta.map,\r\n+      },\r\n \r\n+\r\n       customActions: () => [\r\n         CustomAction<ContaReceber>(\r\n           icon: Icons.payment,\r\n           label: 'Baixar',\r\n"
                 }
             ],
             "date": 1759268792493,

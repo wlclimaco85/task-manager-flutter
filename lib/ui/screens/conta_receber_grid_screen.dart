@@ -28,16 +28,16 @@ class ContaReceberGridScreen extends StatelessWidget {
       // 🔹 NOVOS PARÂMETROS
       statusFieldName: 'status',
       editableStatus: true,
-      statusEnumMap: StatusConta.values
-          .asMap()
-          .map((key, value) => MapEntry(value, value.name)),
+      enumMaps: {
+        'status': StatusConta.map,
+      },
 
       customActions: () => [
         CustomAction<ContaReceber>(
           icon: Icons.payment,
           label: 'Baixar',
           onPressed: (context, object) => _showBaixaDialog(context, object),
-          isVisible: (object) => object.status == StatusConta.ABERTA,
+          isVisible: (object) => object.status == StatusConta.ABERTO,
         ),
         CustomAction<ContaReceber>(
           icon: Icons.undo,

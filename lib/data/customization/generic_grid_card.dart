@@ -216,6 +216,8 @@ class GenericMobileGridScreen<T> extends StatefulWidget {
   final Map<String, dynamic> Function(T? item)? dynamicAdditionalFormData;
   final String? statusFieldName; // nome do campo que vai aparecer no badge
   final bool editableStatus; // se pode editar esse campo
+  /// Novo: aceita múltiplos enums
+  final Map<String, Map<dynamic, String>>? enumMaps;
   final Map<dynamic, String>? statusEnumMap;
 
   const GenericMobileGridScreen({
@@ -247,6 +249,7 @@ class GenericMobileGridScreen<T> extends StatefulWidget {
     this.dynamicAdditionalFormData, // NOVO: Para dados dinâmicos
     this.statusFieldName,
     this.editableStatus = false,
+    this.enumMaps,
     this.statusEnumMap,
   });
 
@@ -2377,10 +2380,33 @@ class _GenericMobileGridScreenState<T>
         ),
       );
     } else {
-      final displayValue =
-          _getNestedValue(itemMap, config.displayFieldName ?? config.fieldName)
-                  ?.toString() ??
-              '';
+      dynamic rawValue =
+          _getNestedValue(itemMap, config.displayFieldName ?? config.fieldName);
+      String displayValue = '';
+
+      if (rawValue != null) {
+        // Se o widget tiver um mapa de enums configurado
+        if (widget.enumMaps != null &&
+            widget.enumMaps!.containsKey(config.fieldName)) {
+          final enumMap = widget.enumMaps![config.fieldName]!;
+          if (enumMap.containsKey(rawValue)) {
+            displayValue = enumMap[rawValue]!;
+          }
+        }
+        // Se for um número e o config tiver dropdownOptions
+        else if (config.dropdownOptions != null) {
+          final match = config.dropdownOptions!.firstWhere(
+              (opt) => opt['value'].toString() == rawValue.toString(),
+              orElse: () => {});
+          if (match.isNotEmpty) {
+            displayValue = match['label'] ?? rawValue.toString();
+          } else {
+            displayValue = rawValue.toString();
+          }
+        } else {
+          displayValue = rawValue.toString();
+        }
+      }
 
       if (displayValue.isEmpty) return const SizedBox.shrink();
 
@@ -2499,68 +2525,132 @@ class _GenericMobileGridScreenState<T>
 
     if (raw == null) return const SizedBox.shrink();
 
-    // 🔧 Mapeia se existir enumMap
-    final text = resolveEnumValue(raw);
-
-    print(
-        'Status raw: $raw, mapeado para: $text, = widget.statusEnumMap  = ${widget.statusEnumMap}');
-
+    // 🧠 Resolve o valor do enum
+    final text = resolveEnumValue(field, raw).trim();
     if (text.isEmpty) return const SizedBox.shrink();
 
+    // 🎨 Define cor baseada no texto (case-insensitive)
     final lower = text.toLowerCase();
-    Color color = lower.contains('inativ')
-        ? GridColors.error
-        : (lower.contains('pago') || lower.contains('fechad'))
-            ? GridColors.secondary
-            : (lower.contains('ativ') || lower.contains('abert'))
-                ? GridColors.success
-                : GridColors.info;
+    Color color;
 
+    if (lower.contains('erro') ||
+        lower.contains('inativ') ||
+        lower.contains('cancel') ||
+        lower.contains('falh') ||
+        lower.contains('negado')) {
+      color = GridColors.error; // vermelho
+    } else if (lower.contains('pago') ||
+        lower.contains('conclu') ||
+        lower.contains('finaliz') ||
+        lower.contains('ok') ||
+        lower.contains('sucesso')) {
+      color = GridColors.secondary; // verde
+    } else if (lower.contains('pendente') ||
+        lower.contains('aguardando') ||
+        lower.contains('espera')) {
+      color = GridColors.warning; // amarelo
+    } else if (lower.contains('ativ') ||
+        lower.contains('abert') ||
+        lower.contains('process') ||
+        lower.contains('em andamento')) {
+      color = GridColors.info; // azul
+    } else {
+      color = Colors.grey; // neutro
+    }
+
+    // 🏷️ Badge visual refinado
     return Align(
       alignment: Alignment.topRight,
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
         decoration: BoxDecoration(
-          color: color.withOpacity(0.12),
+          color: color.withOpacity(0.15),
           borderRadius: BorderRadius.circular(10),
-          border: Border.all(color: color.withOpacity(0.35)),
+          border: Border.all(color: color.withOpacity(0.4), width: 1.2),
         ),
-        child: Text(
-          text,
-          style: TextStyle(
-            color: color,
-            fontWeight: FontWeight.w600,
-            fontSize: 12,
-          ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              _getStatusIcon(lower),
+              size: 14,
+              color: color.withOpacity(0.9),
+            ),
+            const SizedBox(width: 5),
+            Text(
+              text,
+              style: TextStyle(
+                color: color.withOpacity(0.95),
+                fontWeight: FontWeight.w700,
+                fontSize: 12.5,
+                letterSpacing: 0.3,
+              ),
+            ),
+          ],
         ),
       ),
     );
   }
 
-  String resolveEnumValue(dynamic raw) {
-    if (widget.statusEnumMap == null) return raw.toString();
-
-    final map = widget.statusEnumMap!;
-    // 1. Casamento direto
-    final found = map.entries.firstWhere(
-      (e) =>
-          e.key.toString().split('.').last.toUpperCase() ==
-              raw.toString().toUpperCase() ||
-          e.value.toUpperCase() == raw.toString().toUpperCase(),
-      orElse: () => const MapEntry(null, ''),
-    );
-
-    if (found.key != null && found.value.isNotEmpty) {
-      return found.value;
+  IconData _getStatusIcon(String lower) {
+    if (lower.contains('erro') ||
+        lower.contains('inativ') ||
+        lower.contains('cancel') ||
+        lower.contains('falh')) {
+      return Icons.cancel_rounded;
+    } else if (lower.contains('pago') ||
+        lower.contains('conclu') ||
+        lower.contains('finaliz') ||
+        lower.contains('ok')) {
+      return Icons.check_circle_rounded;
+    } else if (lower.contains('pendente') ||
+        lower.contains('aguardando') ||
+        lower.contains('espera')) {
+      return Icons.hourglass_bottom_rounded;
+    } else if (lower.contains('ativ') ||
+        lower.contains('abert') ||
+        lower.contains('process') ||
+        lower.contains('andamento')) {
+      return Icons.autorenew_rounded;
+    } else {
+      return Icons.info_outline_rounded;
     }
+  }
 
-    // 2. Índice numérico
-    final keys = map.keys.toList();
-    if (raw is int && raw >= 0 && raw < keys.length) {
-      return map[keys[raw]]!;
+  String resolveEnumValue(String fieldName, dynamic raw) {
+    try {
+      // 1️⃣ Novo formato: múltiplos enums
+      if (widget.enumMaps != null && widget.enumMaps!.containsKey(fieldName)) {
+        final map = widget.enumMaps![fieldName]!;
+
+        // Casamento direto por valor ou nome
+        final found = map.entries.firstWhere(
+          (e) {
+            final keyStr = e.key.toString().split('.').last.toUpperCase();
+            final valStr = e.value.toUpperCase();
+            final rawStr = raw.toString().toUpperCase();
+            return keyStr == rawStr || valStr == rawStr;
+          },
+          orElse: () =>
+              MapEntry(map.keys.first, ''), // 🔧 evita conflito de tipo
+        );
+
+        if (found.value.isNotEmpty) {
+          return found.value;
+        }
+
+        // Se for índice numérico e existir no mapa
+        if (raw is int && map.containsKey(raw)) {
+          return map[raw]!;
+        }
+      }
+
+      // 2️⃣ Fallback: se não achar nada, retorna o texto puro
+      return raw?.toString() ?? '';
+    } catch (e) {
+      debugPrint('Erro ao resolver enum ($fieldName): $e');
+      return raw?.toString() ?? '';
     }
-
-    return raw.toString();
   }
 
   Future<void> _toggleStatus(

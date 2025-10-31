@@ -29,16 +29,18 @@ class ContaPagarGridScreen extends StatelessWidget {
       // 🔹 NOVOS PARÂMETROS
       statusFieldName: 'status',
       editableStatus: true,
+      enumMaps: {
+        'status': StatusConta.map,
+      },
       statusEnumMap: StatusConta.values
           .asMap()
           .map((key, value) => MapEntry(value, value.name)),
-
       customActions: () => [
         CustomAction<ContaPagar>(
           icon: Icons.payment,
           label: 'Baixar',
           onPressed: (context, object) => _showBaixaDialog(context, object),
-          isVisible: (object) => object.status == StatusConta.ABERTA,
+          isVisible: (object) => object.status == StatusConta.ABERTO,
         ),
         CustomAction<ContaPagar>(
           icon: Icons.undo,

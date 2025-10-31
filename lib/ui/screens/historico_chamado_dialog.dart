@@ -49,7 +49,7 @@ class HistoricoChamadoDialog {
                 title: Row(
                   children: [
                     const Icon(Icons.timeline_rounded,
-                        color: GridColors.primary, size: 26),
+                        color: Colors.green, size: 26),
                     const SizedBox(width: 10),
                     Text(
                       "Histórico do Chamado #$chamadoId",
@@ -69,7 +69,7 @@ class HistoricoChamadoDialog {
                       : erro != null
                           ? Center(
                               child: Text(
-                                erro,
+                                erro!,
                                 style: const TextStyle(color: GridColors.error),
                               ),
                             )
@@ -114,37 +114,56 @@ class HistoricoChamadoDialog {
                                     return TweenAnimationBuilder<double>(
                                       tween: Tween(begin: 0, end: 1),
                                       duration: Duration(
-                                          milliseconds: 200 + (i * 80)),
-                                      curve: Curves.easeOutBack,
-                                      builder: (context, scale, child) {
-                                        return Transform.scale(
-                                          scale: scale,
-                                          alignment: Alignment.centerLeft,
-                                          child: _timelineItem(
-                                            context,
-                                            colors,
-                                            dataFormatada,
-                                            usuarioOrigem,
-                                            usuarioDestino,
-                                            observacao,
-                                            acao,
-                                            i == historico.length - 1,
+                                          milliseconds: 250 + (i * 80)),
+                                      curve: Curves.easeOutCubic,
+                                      builder: (context, value, child) {
+                                        return Opacity(
+                                          opacity: value,
+                                          child: Transform.translate(
+                                            offset: Offset(0, (1 - value) * 25),
+                                            child: child,
                                           ),
                                         );
                                       },
+                                      child: _timelineItem(
+                                        context,
+                                        colors,
+                                        dataFormatada,
+                                        usuarioOrigem,
+                                        usuarioDestino,
+                                        observacao,
+                                        acao,
+                                        i == historico.length - 1,
+                                      ),
                                     );
                                   },
                                 ),
                 ),
+                actionsAlignment: MainAxisAlignment.center,
                 actions: [
-                  ElevatedButton.icon(
-                    icon: const Icon(Icons.close_rounded, size: 18),
-                    label: const Text('Fechar'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: colors.getCancelButtonColor(),
-                      foregroundColor: colors.getButtonTextColor(),
+                  const SizedBox(width: 3),
+                  SizedBox(
+                    width: 160,
+                    height: 48,
+                    child: ElevatedButton.icon(
+                      icon: const Icon(Icons.close_rounded, size: 20),
+                      label: const Text(
+                        'Fechar',
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          letterSpacing: 0.5,
+                        ),
+                      ),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor:
+                            GridColors.primary, // 🔴 Vermelho padrão
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10)),
+                        padding: const EdgeInsets.symmetric(horizontal: 20),
+                      ),
+                      onPressed: () => Navigator.pop(context),
                     ),
-                    onPressed: () => Navigator.pop(context),
                   ),
                 ],
               ),
@@ -165,6 +184,32 @@ class HistoricoChamadoDialog {
     String acao,
     bool isLast,
   ) {
+    // Define ícone e cor conforme tipo de ação
+    IconData icone;
+    Color corIcone;
+
+    switch (acao.toUpperCase()) {
+      case 'TRANSFERÊNCIA':
+        icone = Icons.swap_horiz_rounded;
+        corIcone = Colors.blueAccent;
+        break;
+      case 'ATRIBUIÇÃO':
+        icone = Icons.assignment_ind_rounded;
+        corIcone = Colors.deepPurple;
+        break;
+      case 'FECHAMENTO':
+        icone = Icons.check_circle_rounded;
+        corIcone = Colors.green;
+        break;
+      case 'ABERTURA':
+        icone = Icons.play_circle_fill_rounded;
+        corIcone = Colors.orange;
+        break;
+      default:
+        icone = Icons.history_edu;
+        corIcone = Colors.teal;
+    }
+
     return Stack(
       children: [
         // Linha vertical da timeline
@@ -174,7 +219,7 @@ class HistoricoChamadoDialog {
           bottom: isLast ? 12 : 0,
           child: Container(
             width: 2,
-            color: GridColors.primary.withOpacity(0.4),
+            color: Colors.green.withOpacity(0.6),
           ),
         ),
 
@@ -182,12 +227,12 @@ class HistoricoChamadoDialog {
         Padding(
           padding: const EdgeInsets.only(left: 56, right: 8, bottom: 16),
           child: Container(
-            padding: const EdgeInsets.all(12),
+            padding: const EdgeInsets.all(14),
             decoration: BoxDecoration(
               gradient: LinearGradient(
                 colors: [
                   Colors.white,
-                  GridColors.primary.withOpacity(0.05),
+                  Colors.green.withOpacity(0.05),
                 ],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
@@ -204,17 +249,23 @@ class HistoricoChamadoDialog {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Ação
-                Text(
-                  acao,
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                    color: GridColors.primary,
-                  ),
+                // Ação principal com ícone colorido
+                Row(
+                  children: [
+                    Icon(icone, color: corIcone, size: 18),
+                    const SizedBox(width: 6),
+                    Text(
+                      acao,
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: corIcone,
+                      ),
+                    ),
+                  ],
                 ),
 
-                const SizedBox(height: 4),
+                const SizedBox(height: 6),
 
                 // Data
                 Row(
@@ -233,22 +284,40 @@ class HistoricoChamadoDialog {
                   ],
                 ),
 
-                const SizedBox(height: 6),
+                const SizedBox(height: 8),
 
-                // Usuário origem e destino
-                Text(
-                  usuarioDestino != null
-                      ? "De $usuarioOrigem → Para $usuarioDestino"
-                      : "Por $usuarioOrigem",
-                  style: const TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w600,
-                    color: GridColors.secondaryDark,
-                  ),
+                // Usuários
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      usuarioDestino != null
+                          ? "De $usuarioOrigem"
+                          : "Por $usuarioOrigem",
+                      style: const TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                        color: GridColors.secondaryDark,
+                      ),
+                    ),
+                    if (usuarioDestino != null)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 3),
+                        child: Text(
+                          "Para $usuarioDestino",
+                          style: const TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w600,
+                            color: GridColors.secondaryDark,
+                          ),
+                        ),
+                      ),
+                  ],
                 ),
 
+                // Observação
                 if (observacao.isNotEmpty) ...[
-                  const SizedBox(height: 6),
+                  const SizedBox(height: 8),
                   Text(
                     observacao,
                     style: const TextStyle(
@@ -257,20 +326,20 @@ class HistoricoChamadoDialog {
                       color: Colors.black87,
                     ),
                   ),
-                ]
+                ],
               ],
             ),
           ),
         ),
 
-        // Ícone da timeline
-        const Positioned(
+        // Ícone fixo da timeline
+        Positioned(
           left: 16,
           top: 12,
           child: CircleAvatar(
             radius: 10,
-            backgroundColor: GridColors.primary,
-            child: Icon(Icons.history_edu, color: Colors.white, size: 12),
+            backgroundColor: corIcone,
+            child: Icon(icone, color: Colors.white, size: 12),
           ),
         ),
       ],
