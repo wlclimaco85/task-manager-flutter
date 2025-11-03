@@ -7,6 +7,14 @@ import 'package:task_manager_flutter/data/services/network_caller.dart';
 import 'package:task_manager_flutter/data/services/upload_file_caller.dart';
 import 'package:task_manager_flutter/ui/widgets/user_banners.dart';
 import 'package:task_manager_flutter/data/constants/custom_colors.dart';
+import 'package:dropdown_search/dropdown_search.dart';
+import 'package:excel/excel.dart' as xlsx;
+import 'dart:typed_data';
+import 'dart:io';
+import 'dart:typed_data';
+import 'package:path_provider/path_provider.dart';
+import 'package:open_filex/open_filex.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 // ==============================================
 // MOBILE GRID SCREEN - MATERIAL DESIGN 3 COMPLETO
 // ==============================================
@@ -285,6 +293,10 @@ class _GenericMobileGridScreenState<T>
 
   bool _isSelectionMode = false;
   final Map<String, bool> _cardSelection = {};
+
+  final Map<String, DateTime> _dropdownCacheTimestamps = {};
+  final Duration cacheDuration = Duration(minutes: 10);
+
   T? _itemParaEditar;
 
   @override
@@ -1091,7 +1103,96 @@ class _GenericMobileGridScreenState<T>
     );
   }
 
+  void _refreshDropdownInBackground(FieldConfig config) async {
+    try {
+      if (config.dropdownFutureBuilder != null) {
+        final data = await config.dropdownFutureBuilder!();
+        setState(() {
+          _dropdownCache[config.fieldName] = data;
+          _dropdownCacheTimestamps[config.fieldName] = DateTime.now();
+        });
+      }
+    } catch (_) {}
+  }
+
   Widget _buildDropdownField(
+      FieldConfig config, TextEditingController controller) {
+    Future<List<Map<String, dynamic>>> getOptions() async {
+      if (config.dropdownFutureBuilder != null) {
+        // Verifica se há cache antes de buscar novamente
+        if (_dropdownCache.containsKey(config.fieldName)) {
+          final lastFetch = _dropdownCacheTimestamps[config.fieldName];
+          final expired = lastFetch == null ||
+              DateTime.now().difference(lastFetch) > cacheDuration;
+
+          if (!expired) {
+            return _dropdownCache[config.fieldName]!;
+          }
+
+          // Retorna cache antigo enquanto recarrega em background
+          _refreshDropdownInBackground(config);
+          return _dropdownCache[config.fieldName]!;
+        }
+
+        final data = await config.dropdownFutureBuilder!();
+        _dropdownCache[config.fieldName] = data;
+        return data;
+      }
+      return config.dropdownOptions ?? [];
+    }
+
+    return FutureBuilder<List<Map<String, dynamic>>>(
+      future: getOptions(),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Center(child: CircularProgressIndicator());
+        }
+        if (snapshot.hasError) return Text('Erro: ${snapshot.error}');
+
+        final options = snapshot.data ?? [];
+        return DropdownSearch<Map<String, dynamic>>(
+          items: options,
+          selectedItem: options.firstWhere(
+            (opt) =>
+                opt[config.dropdownValueField].toString() == controller.text,
+            orElse: () => {},
+          ),
+          itemAsString: (item) =>
+              item[config.dropdownDisplayField]?.toString() ?? '',
+          onChanged: config.enabled
+              ? (value) {
+                  controller.text =
+                      value?[config.dropdownValueField]?.toString() ?? '';
+                }
+              : null,
+          popupProps: const PopupProps.menu(
+            showSearchBox: true,
+            searchFieldProps: TextFieldProps(
+              decoration: InputDecoration(
+                hintText: 'Buscar...',
+                prefixIcon: Icon(Icons.search),
+              ),
+            ),
+          ),
+          dropdownDecoratorProps: DropDownDecoratorProps(
+            dropdownSearchDecoration: InputDecoration(
+              labelText: config.label,
+              border:
+                  OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+              focusedBorder: const OutlineInputBorder(
+                borderSide: BorderSide(color: GridColors.primary, width: 2),
+              ),
+            ),
+          ),
+          validator: (v) => config.isRequired && v == null
+              ? 'Selecione ${config.label}'
+              : null,
+        );
+      },
+    );
+  }
+
+  Widget _buildDropdownFieldd(
       FieldConfig config, TextEditingController controller) {
     Future<List<Map<String, dynamic>>> getOptions() async {
       if (config.dropdownFutureBuilder != null) {
@@ -1971,6 +2072,12 @@ class _GenericMobileGridScreenState<T>
       shadowColor: colorScheme.shadow,
       surfaceTintColor: Colors.transparent,
       actions: [
+        IconButton(
+          icon: const Icon(Icons.download),
+          tooltip: 'Exportar para Excel',
+          onPressed: _exportToExcel,
+        ),
+
         // Botão de Refresh
         _buildRefreshButton(),
 
@@ -2081,6 +2188,7 @@ class _GenericMobileGridScreenState<T>
                 isLoading: isLoading,
                 onFilterToggle: () =>
                     setState(() => filtrosAbertos = !filtrosAbertos),
+                onExportToExcel: _exportToExcel, // 👈 novo parâmetro aqui
                 showFilterButton: widget.useUserBannerAppBar ?? true,
               ),
             )
@@ -2614,6 +2722,41 @@ class _GenericMobileGridScreenState<T>
       return Icons.autorenew_rounded;
     } else {
       return Icons.info_outline_rounded;
+    }
+  }
+
+  Future<void> _exportToExcel() async {
+    try {
+      final excel = xlsx.Excel.createExcel();
+      final sheet = excel['Dados'];
+      final headers = widget.fieldConfigs.map((f) => f.label).toList();
+      sheet.appendRow(headers);
+
+      // Linhas de dados
+      for (final item in items) {
+        final map = widget.toJson(item);
+        final row = widget.fieldConfigs
+            .map((f) => _getNestedValue(map, f.fieldName)?.toString() ?? '')
+            .toList();
+        sheet.appendRow(row);
+      }
+
+      // Converte para bytes
+      final bytes = excel.encode()!;
+      final fileName =
+          '${widget.title}_${DateTime.now().millisecondsSinceEpoch}.xlsx';
+
+      // 🔹 Para Mobile/Desktop: salva arquivo localmente
+      final dir = await getApplicationDocumentsDirectory();
+      final filePath = '${dir.path}/$fileName';
+      final file = File(filePath);
+      await file.writeAsBytes(bytes);
+
+      // Abre o arquivo ou exibe snackbar
+      await OpenFilex.open(filePath);
+      _showSnackBar('Arquivo exportado para: ${file.path}');
+    } catch (e) {
+      _showSnackBar('Erro ao exportar Excel: $e', isError: true);
     }
   }
 

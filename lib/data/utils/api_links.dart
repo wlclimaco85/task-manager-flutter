@@ -5,7 +5,7 @@ class ApiLinks {
   //static const String _chatId = 'ws://192.168.114.1:8088/boletobancos';
 
   static const String _chatId = 'ws://192.168.114.1:8088/boletobancos';
-  //  "wss://appacademia-production-be7e.up.railway.app/boletobancos";
+  // "wss://appacademia-production-be7e.up.railway.app/boletobancos";
   //    "http://192.168.100.41:8088";
   //  "http://192.168.114.1:8088";
   // "http://192.168.100.113:8088";

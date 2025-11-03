@@ -3,7 +3,7 @@
     "activeCommit": 0,
     "commits": [
         {
-            "activePatchIndex": 11,
+            "activePatchIndex": 12,
             "patches": [
                 {
                     "date": 1761231003467,
@@ -52,6 +52,10 @@
                 {
                     "date": 1761798442211,
                     "content": "Index: \n===================================================================\n--- \n+++ \n@@ -34,10 +34,12 @@\n       agencia: json['agencia'],\r\n       numero: json['numero'],\r\n       descricao: json['descricao'],\r\n       saldoAtual: (json['saldoAtual'] ?? 0).toDouble(),\r\n-      empresa: json['empresaId'],\r\n-      parceiro: json['parceiroId'],\r\n+      empresa: Empresa.fromJson(json['empresa']),\r\n+      parceiro: json['parceiro'] != null\r\n+          ? Parceiro.fromJson(json['parceiro'])\r\n+          : null,\r\n       ativo: json['ativo'] ?? true,\r\n     );\r\n   }\r\n \r\n"
+                },
+                {
+                    "date": 1762199398514,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -10,10 +10,10 @@\n   String? agencia;\r\n   String? numero;\r\n   String? descricao;\r\n   double? saldoAtual;\r\n-  Empresa empresa;\r\n-  Parceiro? parceiro;\r\n+  int empresa;\r\n+  int? parceiro;\r\n   bool ativo;\r\n \r\n   ContaBancaria({\r\n     this.id,\r\n@@ -34,11 +34,10 @@\n       agencia: json['agencia'],\r\n       numero: json['numero'],\r\n       descricao: json['descricao'],\r\n       saldoAtual: (json['saldoAtual'] ?? 0).toDouble(),\r\n-      empresa: Empresa.fromJson(json['empresa']),\r\n-      parceiro:\r\n-          json['parceiro'] != null ? Parceiro.fromJson(json['parceiro']) : null,\r\n+      empresa: json['empresaId'],\r\n+      parceiro: json['parceiroId'],\r\n       ativo: json['ativo'] ?? true,\r\n     );\r\n   }\r\n \r\n"
                 }
             ],
             "date": 1761231003467,

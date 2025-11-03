@@ -29,6 +29,8 @@ class ContaBancariaGridScreen extends StatelessWidget {
             'parceiroId': pegarParceiroLogada()
           };
         },
+        statusFieldName: 'saldoAtual',
+        editableStatus: true,
         useUserBannerAppBar: true,
         fromJson: (json) =>
             ContaBancaria.fromJson(Map<String, dynamic>.from(json)),
@@ -155,8 +157,8 @@ class ContaBancariaGridScreen extends StatelessWidget {
                 contaOrigemId: contaOrigem.id!,
                 contaDestinoId: contaDestinoId!,
                 valor: double.parse(valorController.text),
-                empresaId: contaOrigem.empresa.id!,
-                parceiroId: contaOrigem.parceiro!.id!,
+                empresaId: contaOrigem.empresa!,
+                parceiroId: contaOrigem.parceiro!,
                 historico: historicoController.text,
               );
 
@@ -224,8 +226,8 @@ class ContaBancariaGridScreen extends StatelessWidget {
               final caller = ContaBancariaCaller();
               final pdfBytes = await caller.gerarExtratoPdf(
                 contaId: conta.id!,
-                empresaId: conta.empresa.id!,
-                parceiroId: conta.parceiro!.id!,
+                empresaId: conta.empresa,
+                parceiroId: conta.parceiro!,
                 de: de,
                 ate: ate,
               );

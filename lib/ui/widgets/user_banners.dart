@@ -19,6 +19,7 @@ class UserBannerAppBar extends StatefulWidget implements PreferredSizeWidget {
   final VoidCallback? onUserTap;
   final VoidCallback? onFilterToggle;
   final bool? showFilterButton;
+  final VoidCallback? onExportToExcel;
 
   const UserBannerAppBar({
     super.key,
@@ -30,6 +31,7 @@ class UserBannerAppBar extends StatefulWidget implements PreferredSizeWidget {
     this.onUserTap,
     this.onFilterToggle,
     this.showFilterButton = true,
+    this.onExportToExcel,
   });
 
   @override
@@ -435,6 +437,7 @@ class _UserBannerAppBarState extends State<UserBannerAppBar> {
                 onRefresh: widget.onRefresh,
                 isLoading: widget.isLoading,
                 onFilterToggle: widget.onFilterToggle,
+                onExportToExcel: widget.onExportToExcel,
               ),
             )
           : null,
@@ -447,12 +450,14 @@ class FilterActionBar extends StatelessWidget {
   final VoidCallback? onRefresh;
   final bool? isLoading;
   final VoidCallback? onFilterToggle;
+  final VoidCallback? onExportToExcel; // 👈 novo
 
   const FilterActionBar({
     super.key,
     this.onRefresh,
     this.isLoading,
     this.onFilterToggle,
+    this.onExportToExcel, // 👈 novo
   });
 
   @override
@@ -506,6 +511,27 @@ class FilterActionBar extends StatelessWidget {
             onPressed: onFilterToggle,
             tooltip: 'Mostrar/ocultar filtros',
           ),
+          if (onExportToExcel != null)
+            Container(
+              margin: const EdgeInsets.symmetric(horizontal: 4),
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.15),
+                shape: BoxShape.circle,
+              ),
+              child: IconButton(
+                icon: const Icon(Icons.download_rounded, color: Colors.white),
+                tooltip: 'Exportar para Excel',
+                onPressed: onExportToExcel,
+                splashRadius: 22,
+                style: ButtonStyle(
+                  backgroundColor: WidgetStateProperty.all(
+                      const Color(0xFF93070A)), // 🔴 vermelho principal
+                  foregroundColor: WidgetStateProperty.all(Colors.white),
+                  overlayColor: WidgetStateProperty.all(Colors.white24),
+                  shape: WidgetStateProperty.all(const CircleBorder()),
+                ),
+              ),
+            ),
         ],
       ),
     );
