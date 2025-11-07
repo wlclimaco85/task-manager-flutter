@@ -7,7 +7,11 @@ import 'package:task_manager_flutter/data/utils/api_links.dart';
 import 'package:task_manager_flutter/data/models/network_response.dart';
 import 'package:task_manager_flutter/data/services/network_caller.dart';
 import 'package:task_manager_flutter/data/models/regime_tributario_model.dart';
+import 'package:task_manager_flutter/data/models/file_attachment_model.dart';
 import 'package:task_manager_flutter/data/utils/utils.dart';
+import 'package:task_manager_flutter/data/models/aplicativo_model.dart';
+import 'package:task_manager_flutter/data/models/audit_model.dart';
+import 'package:task_manager_flutter/data/models/aplicativo_model.dart';
 
 class Endereco {
   int? id;
@@ -100,9 +104,13 @@ class Parceiro {
   String? status;
   Endereco? endereco;
   Empresa? empresa;
-  RegimeTributario? regime; // pode depois virar um model específico
+  Parceiro? parceiro; // autorreferência
+  RegimeTributario? regime;
+  FileAttachment? fileAttachment; // novo campo do backend
   double? valorMensal;
   String? observacao;
+  String? tipoCliente; // novo campo
+  String? ie; // novo campo
 
   Parceiro({
     this.id,
@@ -118,12 +126,16 @@ class Parceiro {
     this.status,
     this.endereco,
     this.empresa,
+    this.parceiro,
     this.regime,
+    this.fileAttachment,
     this.valorMensal,
     this.observacao,
+    this.tipoCliente,
+    this.ie,
   });
 
-  // Deserialização
+  // Deserialização (fromJson)
   Parceiro.fromJson(Map<String, dynamic> json) {
     id = json['id'];
     nome = json['nome'];
@@ -136,18 +148,29 @@ class Parceiro {
     codPersonal = json['codPersonal'];
     incrMun = json['incrMun'];
     status = json['status'];
+
     endereco =
         json['endereco'] != null ? Endereco.fromJson(json['endereco']) : null;
     empresa =
         json['empresa'] != null ? Empresa.fromJson(json['empresa']) : null;
+    parceiro =
+        json['parceiro'] != null ? Parceiro.fromJson(json['parceiro']) : null;
     regime = json['regime'] != null
         ? RegimeTributario.fromJson(json['regime'])
         : null;
-    valorMensal = json['valorMensal']?.toDouble();
+    fileAttachment = json['fileAttachment'] != null
+        ? FileAttachment.fromJson(json['fileAttachment'])
+        : null;
+
+    valorMensal = json['valorMensal'] != null
+        ? double.tryParse(json['valorMensal'].toString())
+        : null;
     observacao = json['observacao'];
+    tipoCliente = json['tipoCliente'];
+    ie = json['ie'];
   }
 
-  // Serialização
+  // Serialização (toJson)
   Map<String, dynamic> toJson() {
     final Map<String, dynamic> data = <String, dynamic>{};
     data['id'] = id;
@@ -161,12 +184,19 @@ class Parceiro {
     data['codPersonal'] = codPersonal;
     data['incrMun'] = incrMun;
     data['status'] = status;
+
     if (endereco != null) data['endereco'] = endereco!.toJson();
     if (empresa != null) data['empresa'] = empresa!.toJson();
+    if (parceiro != null) data['parceiro'] = parceiro!.toJson();
     if (regime != null) data['regime'] = regime!.toJson();
-    data['regime'] = regime;
+    if (fileAttachment != null) {
+      data['fileAttachment'] = fileAttachment!.toJson();
+    }
+
     data['valorMensal'] = valorMensal;
     data['observacao'] = observacao;
+    data['tipoCliente'] = tipoCliente;
+    data['ie'] = ie;
     return data;
   }
 

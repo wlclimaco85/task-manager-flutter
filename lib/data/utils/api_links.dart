@@ -4,9 +4,9 @@ class ApiLinks {
   // "https://appacademia-production-be7e.up.railway.app";
   //static const String _chatId = 'ws://192.168.114.1:8088/boletobancos';
 
-  static const String _chatId = 'ws://192.168.114.1:8088/boletobancos';
-  // "wss://appacademia-production-be7e.up.railway.app/boletobancos";
-  //    "http://192.168.100.41:8088";
+  static const String _chatId = //'ws://192.168.114.1:8088/boletobancos';
+      // "wss://appacademia-production-be7e.up.railway.app/boletobancos";
+      "http://192.168.100.41:8088";
   //  "http://192.168.114.1:8088";
   // "http://192.168.100.113:8088";
   //  "http://192.168.146.1:8088";
@@ -384,6 +384,8 @@ class ApiLinks {
   static const String contasBancarias = '$_baseUrlNew/api/contas-bancaria';
   static const String allContasBancarias = '$contasBancarias/saldos';
   static const String createContaBancaria = contasBancarias;
+
+  static const String buscarPaises = '$_baseUrlNew/api/pais';
   static String updateContaBancaria(String id) => '$contasBancarias/$id';
   static String deleteContaBancaria(String id) => '$contasBancarias/$id';
 
@@ -394,4 +396,13 @@ class ApiLinks {
 
   static String registerFileOpened(String id) =>
       '$_baseUrlNew/api/workflow/chamados/$id/historico';
+
+  static String buscarEstados(String id) =>
+      '$_baseUrlNew/api/estados/by-pais/$id'; //buscarCidades
+
+  static String buscarCidades(String id) =>
+      '$_baseUrlNew/api/cidade/by-estado/$id'; //
+
+  static String atualizarDadosPessoais(String id) =>
+      '$_baseUrlNew/api/dadospessoais/$id';
 }

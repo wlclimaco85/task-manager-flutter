@@ -1,9 +1,17 @@
+import 'dart:typed_data';
+
 import 'package:flutter/material.dart';
-import 'package:task_manager_flutter/data/utils/api_links.dart';
-import 'package:task_manager_flutter/data/models/network_response.dart';
-import 'package:task_manager_flutter/data/services/network_caller.dart';
 import 'package:task_manager_flutter/data/models/aplicativo_model.dart';
+import 'package:task_manager_flutter/data/models/audit_model.dart';
+import 'package:task_manager_flutter/data/models/file_attachment_model.dart';
+import 'package:task_manager_flutter/data/models/network_response.dart';
+import 'package:task_manager_flutter/data/models/regime_tributario_model.dart';
+import 'package:task_manager_flutter/data/services/network_caller.dart';
+import 'package:task_manager_flutter/data/utils/api_links.dart';
+
 import '../customization/generic_grid_card.dart';
+
+enum Ambiente { HOMOLOGACAO, PRODUCAO }
 
 class Empresa {
   int? id;
@@ -19,7 +27,13 @@ class Empresa {
   String? numero;
   String? cidade;
   String? cep;
-  Aplicativo? aplicativo; // Pode ser detalhado depois como um model separado
+  String? cnpj;
+  String? ie;
+  Ambiente? ambiente;
+  Aplicativo? aplicativo;
+  RegimeTributario? regime;
+  FileAttachment? fileAttachment;
+  Audit? audit;
 
   Empresa({
     this.id,
@@ -35,9 +49,16 @@ class Empresa {
     this.numero,
     this.cidade,
     this.cep,
+    this.cnpj,
+    this.ie,
+    this.ambiente,
     this.aplicativo,
+    this.regime,
+    this.fileAttachment,
+    this.audit,
   });
 
+  // === Deserialização (fromJson)
   Empresa.fromJson(Map<String, dynamic> json) {
     id = json['id'];
     nome = json['nome'];
@@ -52,28 +73,91 @@ class Empresa {
     numero = json['numero'];
     cidade = json['cidade'];
     cep = json['cep'];
+    cnpj = json['cnpj'];
+    ie = json['ie'];
+
+    if (json['ambiente'] != null) {
+      ambiente = Ambiente.values.firstWhere(
+        (e) =>
+            e.name.toUpperCase() == json['ambiente'].toString().toUpperCase(),
+        orElse: () => Ambiente.HOMOLOGACAO,
+      );
+    }
+
     aplicativo = json['aplicativo'] != null
         ? Aplicativo.fromJson(json['aplicativo'])
-        : null; // pode ser adaptado se tiver DTO no back
+        : null;
+
+    regime = json['regime'] != null
+        ? RegimeTributario.fromJson(json['regime'])
+        : null;
+
+    fileAttachment = json['fileAttachment'] != null
+        ? FileAttachment.fromJson(json['fileAttachment'])
+        : null;
+
+    audit = json['audit'] != null ? Audit.fromJson(json['audit']) : null;
   }
 
+  // === Serialização (toJson)
   Map<String, dynamic> toJson() {
-    return {
-      'id': id,
-      'nome': nome,
-      'razaoSocial': razaoSocial,
-      'email': email,
-      'site': site,
-      'contato': contato,
-      'emailContato': emailContato,
-      'telefoneContato': telefoneContato,
-      'telefone': telefone,
-      'rua': rua,
-      'numero': numero,
-      'cidade': cidade,
-      'cep': cep,
-      'aplicativo': aplicativo?.toJson(),
-    };
+    final Map<String, dynamic> data = <String, dynamic>{};
+    data['id'] = id;
+    data['nome'] = nome;
+    data['razaoSocial'] = razaoSocial;
+    data['email'] = email;
+    data['site'] = site;
+    data['contato'] = contato;
+    data['emailContato'] = emailContato;
+    data['telefoneContato'] = telefoneContato;
+    data['telefone'] = telefone;
+    data['rua'] = rua;
+    data['numero'] = numero;
+    data['cidade'] = cidade;
+    data['cep'] = cep;
+    data['cnpj'] = cnpj;
+    data['ie'] = ie;
+    data['ambiente'] = ambiente?.name;
+
+    if (aplicativo != null) data['aplicativo'] = aplicativo!.toJson();
+    if (regime != null) data['regime'] = regime!.toJson();
+    if (fileAttachment != null) {
+      data['fileAttachment'] = fileAttachment!.toJson();
+    }
+    if (audit != null) data['audit'] = audit!.toJson();
+    return data;
+  }
+
+  // === NOVO: Helper para exibir logo (imagem da empresa)
+  Uint8List get logoBytes {
+    if (fileAttachment?.fileData != null &&
+        fileAttachment!.fileData!.isNotEmpty) {
+      return Uint8List.fromList(fileAttachment!.fileData!);
+    }
+    return Uint8List(0);
+  }
+
+  Widget logoWidget({
+    double size = 64,
+    BoxFit fit = BoxFit.cover,
+    Widget? fallback,
+  }) {
+    if (logoBytes.isNotEmpty) {
+      return ClipOval(
+        child: Image.memory(
+          logoBytes,
+          width: size,
+          height: size,
+          fit: fit,
+          errorBuilder: (context, error, stack) {
+            return fallback ??
+                Icon(Icons.business, color: Colors.grey[600], size: size / 2);
+          },
+        ),
+      );
+    }
+    return fallback ??
+        Icon(Icons.business, color: Colors.grey[600], size: size / 2);
   }
 
   static Future<List<Map<String, dynamic>>> loadAplicativos() async {

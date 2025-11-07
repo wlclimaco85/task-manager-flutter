@@ -339,6 +339,60 @@ class NetworkCaller {
     }
     return null;
   }
+
+  Future<NetworkResponse> patchRequest(
+      String url, Map<String, dynamic>? body) async {
+    try {
+      final user = AuthUtility.userInfo?.login;
+
+      // 🔧 Adiciona empresa, parceiro e aplicativo ao body (igual aos outros)
+      body ??= {};
+      body['empresa'] = {'id': user?.empresa?.id};
+      body['aplicativo'] = {'id': user?.aplicativo?.id};
+      body['audit'] = {
+        'empresaId': user?.empresa?.id,
+        'appId': user?.aplicativo?.id,
+        'userLogadoId': user?.id,
+      };
+
+      if (user?.parceiro?.id != null) {
+        body['parceiro'] = {'id': user?.parceiro?.id};
+        body['audit']['parceiroId'] = user?.parceiro?.id;
+      }
+
+      // 🔹 Faz o PATCH request
+      final response = await http.patch(
+        Uri.parse(url),
+        headers: {
+          'Content-Type': 'application/json;charset=UTF-8',
+          'Authorization': 'Bearer ${AuthUtility.userInfo?.token}',
+          'Accept-Encoding': 'gzip',
+          'Access-Control-Allow-Origin': '*',
+          'Access-Control-Allow-Credentials': 'true',
+          'Access-Control-Allow-Methods': 'GET, POST, OPTIONS, PATCH',
+          'Access-Control-Allow-Headers': 'Origin, Content-Type, Accept',
+        },
+        body: jsonEncode(body),
+      );
+
+      debugPrint('PATCH $url');
+      debugPrint('Request Body: ${jsonEncode(body)}');
+      debugPrint('Response Status: ${response.statusCode}');
+
+      if (response.statusCode == 200 || response.statusCode == 204) {
+        // Se houver corpo, decodifica JSON, senão retorna vazio
+        final responseBody =
+            response.body.isNotEmpty ? jsonDecode(response.body) : {};
+        return NetworkResponse(true, response.statusCode, responseBody);
+      } else {
+        debugPrint('Erro no PATCH: ${response.body}');
+        return NetworkResponse(false, response.statusCode, null);
+      }
+    } catch (e) {
+      debugPrint('❌ Erro em patchRequest: $e');
+      return NetworkResponse(false, -1, {'error': e.toString()});
+    }
+  }
 }
 
 void moveToLogin() async {

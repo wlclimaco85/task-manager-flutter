@@ -1,13 +1,16 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:task_manager_flutter/data/models/alert_model.dart';
 import 'package:task_manager_flutter/data/models/auth_utility.dart';
 import 'package:task_manager_flutter/data/services/alert_caller.dart';
-import 'package:task_manager_flutter/ui/screens/auth_screens/login_screen.dart';
-import 'package:task_manager_flutter/ui/screens/user_edit_screen.dart';
 import 'package:task_manager_flutter/data/utils/grid_colors.dart'; // ★ adicionado para aplicar o tema
+import 'package:task_manager_flutter/ui/screens/auth_screens/login_screen.dart';
+import 'package:task_manager_flutter/ui/screens/dados_pessoais_edit_screen.dart'; // ★ novo
+import 'package:task_manager_flutter/ui/screens/empresa_edit_screen.dart'; // ★ novo
+import 'package:task_manager_flutter/ui/screens/parceiro_edit_screen.dart'; // ★ novo
 
 // AppBar customizado (apenas cabeçalho)
 class UserBannerAppBar extends StatefulWidget implements PreferredSizeWidget {
@@ -218,6 +221,90 @@ class _UserBannerAppBarState extends State<UserBannerAppBar> {
     return Uint8List(0);
   }
 
+  /// ★ NOVO: helpers para editar logo/usuário
+  bool get _hasParceiro => (AuthUtility.userInfo?.login?.parceiro?.id ?? 0) > 0;
+  bool get _hasEmpresa => (AuthUtility.userInfo?.login?.empresa?.id ?? 0) > 0;
+
+  /// Retorna a imagem da logo do Parceiro ou Empresa como bytes (Uint8List)
+  Uint8List _empresaOuParceiroLogo() {
+    final parceiro = AuthUtility.userInfo?.login?.parceiro;
+    final empresa = AuthUtility.userInfo?.login?.empresa;
+
+    final fileAttachment = _hasParceiro
+        ? parceiro?.fileAttachment
+        : _hasEmpresa
+            ? empresa?.fileAttachment
+            : null;
+
+    if (fileAttachment?.fileData != null &&
+        fileAttachment!.fileData!.isNotEmpty) {
+      try {
+        if (fileAttachment.fileData is String) {
+          return base64.decode(fileAttachment.fileData as String);
+        } else if (fileAttachment.fileData is List<int>) {
+          return Uint8List.fromList(fileAttachment.fileData as List<int>);
+        }
+      } catch (e) {
+        debugPrint('Erro ao decodificar logo: $e');
+      }
+    }
+
+    return Uint8List(0);
+  }
+
+  Uint8List _getImageFromBase64(String? base64String) {
+    if (base64String != null && base64String.trim().isNotEmpty) {
+      try {
+        final UriData? data =
+            Uri.parse("data:image/png;base64,$base64String").data;
+        if (data != null) return data.contentAsBytes();
+      } catch (_) {}
+    }
+    return Uint8List(0);
+  }
+
+// Helpers para logo/edição
+  bool get _hasParceiros =>
+      (AuthUtility.userInfo?.login?.parceiro?.id ?? 0) > 0;
+  bool get _hasEmpresas => (AuthUtility.userInfo?.login?.empresa?.id ?? 0) > 0;
+
+  void _openEmpresaOrParceiroEdit() {
+    final parceiro = AuthUtility.userInfo?.login?.parceiro;
+    final empresa = AuthUtility.userInfo?.login?.empresa;
+
+    if (_hasParceiros && parceiro != null) {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => ParceiroEditScreen(initialData: parceiro.toJson()),
+        ),
+      );
+      return;
+    }
+
+    if (_hasEmpresas && empresa != null) {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => EmpresaEditScreen(initialData: empresa.toJson()),
+        ),
+      );
+    }
+  }
+
+  void _openDadosPessoaisEdit() {
+    final dados = AuthUtility.userInfo?.data?.codDadosPessoal;
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => DadosPessoaisEditScreen(
+          initialData: dados?.toJson() ?? {},
+        ),
+      ),
+    );
+  }
+  // ★ FIM NOVO
+
   String _getCompanyName() {
     return AuthUtility.userInfo?.login?.empresa?.nome ?? "Empresa";
   }
@@ -234,6 +321,8 @@ class _UserBannerAppBarState extends State<UserBannerAppBar> {
     final isLoggedIn = AuthUtility.userInfo?.data?.id != null &&
         AuthUtility.userInfo!.data!.id! > 0;
 
+    final logoBytes = _empresaOuParceiroLogo(); // ★ novo uso da logo
+
     return AppBar(
       backgroundColor: GridColors.primary,
       title: Container(
@@ -243,74 +332,41 @@ class _UserBannerAppBarState extends State<UserBannerAppBar> {
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Image.asset(
-              'assets/images/iconApp.png',
-              width: 36,
-              height: 36,
-              errorBuilder: (_, __, ___) {
-                return const Icon(Icons.apps, color: GridColors.textPrimary);
-              },
+            // LOGO (empresa ou parceiro)
+            GestureDetector(
+              onTap: _openEmpresaOrParceiroEdit, // ★ novo clique
+              child: Container(
+                width: 36,
+                height: 36,
+                margin: const EdgeInsets.only(right: 8),
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  border: Border.all(color: Colors.white, width: 2),
+                ),
+                child: logoBytes.isNotEmpty
+                    ? ClipOval(
+                        child: Image.memory(
+                          logoBytes,
+                          fit: BoxFit.cover,
+                          errorBuilder: (_, __, ___) => const Icon(
+                            Icons.business,
+                            color: Colors.white,
+                          ),
+                        ),
+                      )
+                    : const Icon(Icons.business,
+                        color: Colors.white), // fallback padrão
+              ),
             ),
-            const SizedBox(width: 12),
+
             if (isLoggedIn) ...[
               Flexible(
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    // CORREÇÃO: GestureDetector apenas no CircleAvatar
+                    // FOTO DO USUÁRIO
                     GestureDetector(
-                      onTap: () {
-                        // Prepara os dados atuais do usuário
-                        final userData = {
-                          'id': AuthUtility.userInfo?.data?.codDadosPessoal?.id,
-                          'nome':
-                              AuthUtility.userInfo?.data?.codDadosPessoal?.nome,
-                          'cpf':
-                              AuthUtility.userInfo?.data?.codDadosPessoal?.cpf,
-                          'telefone1': AuthUtility
-                              .userInfo?.data?.codDadosPessoal?.telefone1,
-                          'logradouro': AuthUtility
-                              .userInfo?.data?.codDadosPessoal?.logradouro,
-                          'numero': AuthUtility
-                              .userInfo?.data?.codDadosPessoal?.numero,
-                          'cep':
-                              AuthUtility.userInfo?.data?.codDadosPessoal?.cep,
-                          'bairro': AuthUtility
-                              .userInfo?.data?.codDadosPessoal?.bairro,
-                          'cidade': AuthUtility
-                              .userInfo?.data?.codDadosPessoal?.cidade,
-                          'estado': AuthUtility
-                              .userInfo?.data?.codDadosPessoal?.estado,
-                          'pais':
-                              AuthUtility.userInfo?.data?.codDadosPessoal?.pais,
-                          'email': AuthUtility
-                              .userInfo?.data?.codDadosPessoal?.email,
-                          'photo': AuthUtility
-                              .userInfo?.data?.codDadosPessoal?.photo,
-                          'incrMun': AuthUtility
-                              .userInfo?.data?.codDadosPessoal?.incrMun,
-                          'razaoSocial': AuthUtility
-                              .userInfo?.data?.codDadosPessoal?.razaoSocial,
-                        };
-
-                        // Navega para a tela de edição
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) =>
-                                UserEditScreen(initialData: userData),
-                          ),
-                        ).then((updatedData) {
-                          if (updatedData != null) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text('Perfil atualizado com sucesso!'),
-                                backgroundColor: GridColors.success,
-                              ),
-                            );
-                          }
-                        });
-                      },
+                      onTap: _openDadosPessoaisEdit, // ★ novo clique
                       child: CircleAvatar(
                         radius: 16,
                         backgroundColor: Colors.white,
@@ -321,7 +377,6 @@ class _UserBannerAppBarState extends State<UserBannerAppBar> {
                                   width: 32,
                                   height: 32,
                                   fit: BoxFit.cover,
-                                  // CORREÇÃO: Adicionar errorBuilder para evitar NaN
                                   errorBuilder: (context, error, stackTrace) {
                                     return const Icon(
                                       Icons.person,
@@ -344,16 +399,20 @@ class _UserBannerAppBarState extends State<UserBannerAppBar> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Text(
-                            AuthUtility.userInfo?.data?.codDadosPessoal?.nome ??
-                                "Usuário",
-                            style: const TextStyle(
-                              fontSize: 12,
-                              fontWeight: FontWeight.bold,
-                              color: GridColors.textPrimary,
-                              overflow: TextOverflow.ellipsis,
+                          GestureDetector(
+                            onTap: _openDadosPessoaisEdit, // ★ nome também abre
+                            child: Text(
+                              AuthUtility
+                                      .userInfo?.data?.codDadosPessoal?.nome ??
+                                  "Usuário",
+                              style: const TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.bold,
+                                color: GridColors.textPrimary,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                              maxLines: 1,
                             ),
-                            maxLines: 1,
                           ),
                           Text(
                             _getCompanyName(),
