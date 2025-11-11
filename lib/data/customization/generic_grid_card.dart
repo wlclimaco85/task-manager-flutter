@@ -1,20 +1,18 @@
+import 'dart:io';
+
+import 'package:dropdown_search/dropdown_search.dart';
+import 'package:excel/excel.dart' as xlsx;
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:open_filex/open_filex.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:task_manager_flutter/data/constants/custom_colors.dart';
 import 'package:task_manager_flutter/data/models/network_response.dart';
 import 'package:task_manager_flutter/data/services/network_caller.dart';
 import 'package:task_manager_flutter/data/services/upload_file_caller.dart';
 import 'package:task_manager_flutter/ui/widgets/user_banners.dart';
-import 'package:task_manager_flutter/data/constants/custom_colors.dart';
-import 'package:dropdown_search/dropdown_search.dart';
-import 'package:excel/excel.dart' as xlsx;
-import 'dart:typed_data';
-import 'dart:io';
-import 'dart:typed_data';
-import 'package:path_provider/path_provider.dart';
-import 'package:open_filex/open_filex.dart';
-import 'package:flutter/foundation.dart' show kIsWeb;
 // ==============================================
 // MOBILE GRID SCREEN - MATERIAL DESIGN 3 COMPLETO
 // ==============================================

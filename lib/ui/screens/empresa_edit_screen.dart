@@ -1,10 +1,13 @@
 import 'dart:io';
-
 import 'package:flutter/material.dart';
+import 'package:flutter_multi_formatter/flutter_multi_formatter.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:dropdown_search/dropdown_search.dart';
+import 'package:task_manager_flutter/data/constants/custom_colors.dart';
 import 'package:task_manager_flutter/data/services/network_caller.dart';
 import 'package:task_manager_flutter/data/utils/api_links.dart';
-import 'package:task_manager_flutter/data/utils/grid_colors.dart'; // ★ adicionado para aplicar o tema
+import 'package:task_manager_flutter/ui/widgets/edit_form_helpers.dart';
+import 'package:task_manager_flutter/data/models/regime_tributario_model.dart';
 
 class EmpresaEditScreen extends StatefulWidget {
   final Map<String, dynamic> initialData;
@@ -16,13 +19,20 @@ class EmpresaEditScreen extends StatefulWidget {
 
 class _EmpresaEditScreenState extends State<EmpresaEditScreen> {
   final _formKey = GlobalKey<FormState>();
-  final ImagePicker _imagePicker = ImagePicker();
-  File? _selectedLogo;
+  final CustomColors _colors = CustomColors();
 
+  File? _logo;
+  String? _logoBase64;
+  bool _imageTooLarge = false;
+
+  // Controllers
   late TextEditingController _nome;
   late TextEditingController _razaoSocial;
   late TextEditingController _email;
   late TextEditingController _site;
+  late TextEditingController _contato;
+  late TextEditingController _emailContato;
+  late TextEditingController _telefoneContato;
   late TextEditingController _telefone;
   late TextEditingController _rua;
   late TextEditingController _numero;
@@ -31,163 +41,83 @@ class _EmpresaEditScreenState extends State<EmpresaEditScreen> {
   late TextEditingController _cnpj;
   late TextEditingController _ie;
 
+  // Campos relacionados
+  String? _ambiente;
+  RegimeTributario? _regimeSelecionado;
+  List<RegimeTributario> _regimes = [];
+
+  // Localização
+  List<PaisModel> _paises = [];
+  List<EstadoModel> _estados = [];
+  List<CidadeModel> _cidades = [];
+  PaisModel? _paisSelecionado;
+  EstadoModel? _estadoSelecionado;
+  CidadeModel? _cidadeSelecionada;
+
+  // App em cache
+  Map<String, dynamic>? _appCache;
+
   @override
   void initState() {
     super.initState();
     final d = widget.initialData;
-    _nome = TextEditingController(text: d['nome'] ?? '');
-    _razaoSocial = TextEditingController(text: d['razaoSocial'] ?? '');
-    _email = TextEditingController(text: d['email'] ?? '');
-    _site = TextEditingController(text: d['site'] ?? '');
-    _telefone = TextEditingController(text: d['telefone'] ?? '');
-    _rua = TextEditingController(text: d['rua'] ?? '');
-    _numero = TextEditingController(text: d['numero'] ?? '');
-    _cidade = TextEditingController(text: d['cidade'] ?? '');
-    _cep = TextEditingController(text: d['cep'] ?? '');
-    _cnpj = TextEditingController(text: d['cnpj'] ?? '');
-    _ie = TextEditingController(text: d['ie'] ?? '');
+    _nome = TextEditingController(text: safeToString(d['nome']));
+    _razaoSocial = TextEditingController(text: safeToString(d['razaoSocial']));
+    _email = TextEditingController(text: safeToString(d['email']));
+    _site = TextEditingController(text: safeToString(d['site']));
+    _contato = TextEditingController(text: safeToString(d['contato']));
+    _emailContato =
+        TextEditingController(text: safeToString(d['emailContato']));
+    _telefoneContato =
+        TextEditingController(text: safeToString(d['telefoneContato']));
+    _telefone = TextEditingController(text: safeToString(d['telefone']));
+    _rua = TextEditingController(text: safeToString(d['rua']));
+    _numero = TextEditingController(text: safeToString(d['numero']));
+    _cidade = TextEditingController(text: safeToString(d['cidade']));
+    _cep = TextEditingController(text: safeToString(d['cep']));
+    _cnpj = TextEditingController(text: safeToString(d['cnpj']));
+    _ie = TextEditingController(text: safeToString(d['ie']));
+    _ambiente = safeToString(d['ambiente']).isNotEmpty ? d['ambiente'] : null;
+    _bootstrap();
   }
 
-  @override
-  void dispose() {
-    _nome.dispose();
-    _razaoSocial.dispose();
-    _email.dispose();
-    _site.dispose();
-    _telefone.dispose();
-    _rua.dispose();
-    _numero.dispose();
-    _cidade.dispose();
-    _cep.dispose();
-    _cnpj.dispose();
-    _ie.dispose();
-    super.dispose();
+  Future<void> _bootstrap() async {
+    _paises = await fetchPaises();
+    _appCache = {'id': 1, 'nome': 'AppAcademia'};
+    await RegimeTributario.loadDropdownData();
+    setState(() {});
   }
 
-  Future<void> _pickLogo(ImageSource source) async {
-    try {
-      final XFile? f = await _imagePicker.pickImage(
-          source: source, maxWidth: 800, maxHeight: 800, imageQuality: 80);
-      if (f == null) return;
-      final file = File(f.path);
-      if (await file.length() > 2 * 1024 * 1024) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-          content: Text('A imagem deve ter no máximo 2MB'),
-          backgroundColor: GridColors.error,
-        ));
-        return;
-      }
-      setState(() => _selectedLogo = file);
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text('Erro ao selecionar imagem: $e'),
-        backgroundColor: GridColors.error,
-      ));
+  Future<void> _pickLogo(ImageSource src) async {
+    final (file, base64Str) = await pickImageWithValidation(src);
+    if (base64Str == 'LIMITE_EXCEDIDO') {
+      setState(() => _imageTooLarge = true);
+      return;
+    }
+    if (file != null) {
+      setState(() {
+        _logo = file;
+        _logoBase64 = base64Str;
+        _imageTooLarge = false;
+      });
     }
   }
 
-  void _showImageSourceDialog() {
-    showDialog(
-      context: context,
-      builder: (_) => AlertDialog(
-        backgroundColor: GridColors.dialogBackground,
-        title: const Text('Selecionar logo',
-            style: TextStyle(color: GridColors.textSecondary)),
-        actions: [
-          TextButton(
-              onPressed: () {
-                Navigator.pop(context);
-                _pickLogo(ImageSource.camera);
-              },
-              child: const Text('Câmera',
-                  style: TextStyle(color: GridColors.primary))),
-          TextButton(
-              onPressed: () {
-                Navigator.pop(context);
-                _pickLogo(ImageSource.gallery);
-              },
-              child: const Text('Galeria',
-                  style: TextStyle(color: GridColors.primary))),
-        ],
+  InputDecoration _inputStyle(String label, IconData icon) {
+    return InputDecoration(
+      labelText: label,
+      prefixIcon: Icon(icon, color: GridColors.inputBorder),
+      filled: true,
+      fillColor: GridColors.inputBackground,
+      contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(10),
+        borderSide: BorderSide(color: _colors.getBorderInput(), width: 1.2),
       ),
-    );
-  }
-
-  Widget _buildLogo() {
-    final String? logoUrl = widget.initialData['logo'];
-    return GestureDetector(
-      onTap: _showImageSourceDialog,
-      child: Container(
-        width: 120,
-        height: 120,
-        decoration: BoxDecoration(
-          color: GridColors.inputBackground,
-          borderRadius: BorderRadius.circular(60),
-          border: Border.all(color: GridColors.inputBorder, width: 2),
-        ),
-        child: Stack(
-          children: [
-            if (_selectedLogo != null)
-              ClipOval(
-                  child: Image.file(_selectedLogo!,
-                      width: 116, height: 116, fit: BoxFit.cover))
-            else if (logoUrl != null && logoUrl.isNotEmpty)
-              ClipOval(
-                  child: Image.network(
-                logoUrl,
-                width: 116,
-                height: 116,
-                fit: BoxFit.cover,
-                errorBuilder: (_, __, ___) => const Icon(Icons.apartment,
-                    size: 50, color: GridColors.primary),
-              ))
-            else
-              const Icon(Icons.apartment, size: 50, color: GridColors.primary),
-            Positioned(
-              bottom: 0,
-              right: 0,
-              child: Container(
-                width: 36,
-                height: 36,
-                decoration: BoxDecoration(
-                    color: GridColors.primary,
-                    shape: BoxShape.circle,
-                    border: Border.all(color: Colors.white, width: 2)),
-                child:
-                    const Icon(Icons.camera_alt, size: 18, color: Colors.white),
-              ),
-            )
-          ],
-        ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(10),
+        borderSide: BorderSide(color: _colors.getBorderInput(), width: 1.6),
       ),
-    );
-  }
-
-  Widget _field(String label, TextEditingController c,
-      {TextInputType type = TextInputType.text, bool required = false}) {
-    return TextFormField(
-      controller: c,
-      keyboardType: type,
-      style: const TextStyle(color: GridColors.textSecondary, fontSize: 16),
-      decoration: InputDecoration(
-        labelText: label,
-        labelStyle: const TextStyle(color: GridColors.textSecondary),
-        filled: true,
-        fillColor: GridColors.inputBackground,
-        border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: const BorderSide(color: GridColors.inputBorder)),
-        focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: const BorderSide(color: GridColors.primary, width: 2)),
-        enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: const BorderSide(color: GridColors.inputBorder)),
-      ),
-      validator: (v) {
-        if (required && (v == null || v.isEmpty)) return 'Obrigatório';
-        return null;
-      },
     );
   }
 
@@ -195,18 +125,25 @@ class _EmpresaEditScreenState extends State<EmpresaEditScreen> {
     if (!_formKey.currentState!.validate()) return;
 
     showDialog(
-        context: context,
-        barrierDismissible: false,
-        builder: (_) => const Center(
-            child: CircularProgressIndicator(
-                valueColor: AlwaysStoppedAnimation(GridColors.primary))));
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => const Center(
+        child: CircularProgressIndicator(
+          valueColor: AlwaysStoppedAnimation(GridColors.primary),
+        ),
+      ),
+    );
+
     try {
-      final body = {
+      final rawBody = {
         'id': widget.initialData['id'],
         'nome': _nome.text.trim(),
         'razaoSocial': _razaoSocial.text.trim(),
         'email': _email.text.trim(),
         'site': _site.text.trim(),
+        'contato': _contato.text.trim(),
+        'emailContato': _emailContato.text.trim(),
+        'telefoneContato': _telefoneContato.text.trim(),
         'telefone': _telefone.text.trim(),
         'rua': _rua.text.trim(),
         'numero': _numero.text.trim(),
@@ -214,28 +151,41 @@ class _EmpresaEditScreenState extends State<EmpresaEditScreen> {
         'cep': _cep.text.trim(),
         'cnpj': _cnpj.text.trim(),
         'ie': _ie.text.trim(),
-        'logo': _selectedLogo != null
-            ? _selectedLogo!.path
-            : widget.initialData['logo'],
+        'ambiente': _ambiente ?? '',
+        'paisId': _paisSelecionado?.id,
+        'estadoId': _estadoSelecionado?.id,
+        'cidadeId': _cidadeSelecionada?.id,
+        'regimeId': _regimeSelecionado?.id,
+        'aplicativoId': _appCache?['id'],
+        'logoBase64': _logoBase64 ?? '',
       };
+
+      final body = rawBody.map((k, v) => MapEntry(k, v?.toString() ?? ''));
 
       final resp = await NetworkCaller()
           .postRequest(ApiLinks.updateEmpresa(widget.initialData['id']), body);
-      Navigator.pop(context); // fecha loading
+
+      if (!mounted) return;
+      Navigator.pop(context);
 
       if (resp.isSuccess) {
         Navigator.pop(context, body);
         ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-            content: Text('Empresa atualizada!'),
-            backgroundColor: GridColors.success));
+          content: Text('Empresa atualizada com sucesso!'),
+          backgroundColor: GridColors.success,
+        ));
       } else {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-            content: Text('Erro: $resp'), backgroundColor: GridColors.error));
+          content: Text('Erro: ${resp.body ?? "Falha ao atualizar"}'),
+          backgroundColor: GridColors.error,
+        ));
       }
     } catch (e) {
       Navigator.pop(context);
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text('Erro: $e'), backgroundColor: GridColors.error));
+        content: Text('Erro ao salvar: $e'),
+        backgroundColor: GridColors.error,
+      ));
     }
   }
 
@@ -244,94 +194,179 @@ class _EmpresaEditScreenState extends State<EmpresaEditScreen> {
     return Scaffold(
       backgroundColor: GridColors.background,
       appBar: AppBar(
-          title: const Text('Editar Empresa',
-              style: TextStyle(
-                  color: GridColors.textPrimary, fontWeight: FontWeight.bold)),
-          backgroundColor: GridColors.primary,
-          iconTheme: const IconThemeData(color: GridColors.textPrimary),
-          actions: [
-            IconButton(icon: const Icon(Icons.save), onPressed: _save)
-          ]),
+        title: const Text('Editar Empresa',
+            style: TextStyle(
+                color: GridColors.textPrimary, fontWeight: FontWeight.bold)),
+        backgroundColor: GridColors.primary,
+        iconTheme: const IconThemeData(color: GridColors.textPrimary),
+        actions: [IconButton(icon: const Icon(Icons.save), onPressed: _save)],
+      ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Form(
           key: _formKey,
-          child: Column(children: [
-            _buildLogo(),
-            const SizedBox(height: 12),
-            const Text('Clique na logo para alterar',
-                style: TextStyle(color: GridColors.textPrimary, fontSize: 12)),
-            const SizedBox(height: 24),
-            Card(
-              color: GridColors.card,
-              elevation: 4,
-              shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16)),
-              child: Padding(
-                padding: const EdgeInsets.all(20),
-                child: Column(children: [
-                  const Align(
-                      alignment: Alignment.centerLeft,
-                      child: Text('Dados da Empresa',
-                          style: TextStyle(
-                              color: GridColors.primary,
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold))),
-                  const SizedBox(height: 16),
-                  _field('Nome *', _nome, required: true),
-                  const SizedBox(height: 12),
-                  _field('Razão Social', _razaoSocial),
-                  const SizedBox(height: 12),
-                  _field('CNPJ', _cnpj),
-                  const SizedBox(height: 12),
-                  _field('IE', _ie),
-                  const SizedBox(height: 12),
-                  _field('Email', _email, type: TextInputType.emailAddress),
-                  const SizedBox(height: 12),
-                  _field('Site', _site),
-                  const SizedBox(height: 12),
-                  _field('Telefone', _telefone, type: TextInputType.phone),
+          child: Card(
+            color: GridColors.card,
+            shape:
+                RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            elevation: 5,
+            child: Padding(
+              padding: const EdgeInsets.all(20),
+              child: Column(
+                children: [
+                  EditableImageCircle(
+                    file: _logo,
+                    imageUrl: widget.initialData['logo'],
+                    placeholderIcon: Icons.apartment,
+                    onTap: () => showImageSourceDialog(context, _pickLogo),
+                  ),
+                  if (_imageTooLarge)
+                    const Padding(
+                      padding: EdgeInsets.only(top: 8),
+                      child: Text('⚠️ A imagem deve ter no máximo 2MB',
+                          style: TextStyle(color: Colors.red, fontSize: 13)),
+                    ),
                   const SizedBox(height: 24),
-                  const Align(
-                      alignment: Alignment.centerLeft,
-                      child: Text('Endereço',
-                          style: TextStyle(
-                              color: GridColors.primary,
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold))),
+                  buildTextField('Nome *', _nome, required: true),
+                  buildTextField('Razão Social', _razaoSocial),
+                  buildTextFieldMasked('CNPJ', _cnpj,
+                      mask: MaskedInputFormatter('00.000.000/0000-00'),
+                      required: true,
+                      type: TextInputType.number),
+                  buildTextFieldMasked('IE', _ie,
+                      mask: MaskedInputFormatter('000.000.000.000'),
+                      type: TextInputType.number),
+                  buildTextField('Email', _email,
+                      type: TextInputType.emailAddress),
+                  buildTextField('Site', _site),
+
                   const SizedBox(height: 16),
-                  _field('Rua', _rua),
-                  const SizedBox(height: 12),
-                  Row(children: [
-                    Expanded(child: _field('Número', _numero)),
-                    const SizedBox(width: 12),
-                    Expanded(
-                        child: _field('CEP', _cep, type: TextInputType.number)),
-                  ]),
-                  const SizedBox(height: 12),
-                  _field('Cidade', _cidade),
-                ]),
+
+                  // 🔹 Regime Tributário (DropdownSearch)
+                  DropdownSearch<RegimeTributario>(
+                    items: _regimes,
+                    selectedItem: _regimeSelecionado,
+                    itemAsString: (item) => item.descricao ?? '',
+                    onChanged: (v) => setState(() => _regimeSelecionado = v),
+                    dropdownDecoratorProps: DropDownDecoratorProps(
+                      dropdownSearchDecoration: _inputStyle(
+                        'Regime Tributário',
+                        Icons.account_balance,
+                      ),
+                    ),
+                    validator: (v) =>
+                        v == null ? 'Selecione um regime tributário' : null,
+                    popupProps: const PopupProps.menu(
+                      showSearchBox: true,
+                      searchFieldProps: TextFieldProps(
+                        decoration: InputDecoration(
+                          hintText: 'Pesquisar regime...',
+                        ),
+                      ),
+                    ),
+                  ),
+
+                  const SizedBox(height: 16),
+
+                  DropdownSearch<String>(
+                    items: const ['HOMOLOGACAO', 'PRODUCAO'],
+                    selectedItem: _ambiente,
+                    onChanged: (v) => setState(() => _ambiente = v),
+                    dropdownDecoratorProps: DropDownDecoratorProps(
+                      dropdownSearchDecoration:
+                          _inputStyle('Ambiente', Icons.settings),
+                    ),
+                    validator: (v) => v == null ? 'Selecione o ambiente' : null,
+                    popupProps: const PopupProps.menu(
+                      showSearchBox: false,
+                    ),
+                  ),
+
+                  const SizedBox(height: 16),
+
+                  // 🔹 País
+                  DropdownSearch<PaisModel>(
+                    items: _paises,
+                    itemAsString: (p) => p.nome,
+                    selectedItem: _paisSelecionado,
+                    onChanged: (v) async {
+                      setState(() {
+                        _paisSelecionado = v;
+                        _estadoSelecionado = null;
+                        _cidadeSelecionada = null;
+                      });
+                      if (v != null) {
+                        _estados = await fetchEstados(v.id);
+                        setState(() {});
+                      }
+                    },
+                    dropdownDecoratorProps: DropDownDecoratorProps(
+                      dropdownSearchDecoration: _inputStyle('País', Icons.flag),
+                    ),
+                    validator: (v) => v == null ? 'Selecione o país' : null,
+                    popupProps: const PopupProps.menu(showSearchBox: true),
+                  ),
+
+                  const SizedBox(height: 16),
+
+                  // 🔹 Estado
+                  DropdownSearch<EstadoModel>(
+                    items: _estados,
+                    itemAsString: (e) => e.nome,
+                    selectedItem: _estadoSelecionado,
+                    onChanged: (v) async {
+                      setState(() {
+                        _estadoSelecionado = v;
+                        _cidadeSelecionada = null;
+                      });
+                      if (v != null) {
+                        _cidades = await fetchCidades(v.id);
+                        setState(() {});
+                      }
+                    },
+                    dropdownDecoratorProps: DropDownDecoratorProps(
+                      dropdownSearchDecoration:
+                          _inputStyle('Estado', Icons.map_outlined),
+                    ),
+                    validator: (v) => v == null ? 'Selecione o estado' : null,
+                    popupProps: const PopupProps.menu(showSearchBox: true),
+                  ),
+
+                  const SizedBox(height: 16),
+
+                  // 🔹 Cidade
+                  DropdownSearch<CidadeModel>(
+                    items: _cidades,
+                    itemAsString: (c) => c.nome,
+                    selectedItem: _cidadeSelecionada,
+                    onChanged: (v) => setState(() => _cidadeSelecionada = v),
+                    dropdownDecoratorProps: DropDownDecoratorProps(
+                      dropdownSearchDecoration:
+                          _inputStyle('Cidade', Icons.location_city),
+                    ),
+                    validator: (v) => v == null ? 'Selecione a cidade' : null,
+                    popupProps: const PopupProps.menu(showSearchBox: true),
+                  ),
+
+                  const SizedBox(height: 24),
+                  ElevatedButton(
+                    onPressed: _save,
+                    style: ElevatedButton.styleFrom(
+                        backgroundColor: GridColors.buttonBackground,
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12)),
+                        elevation: 2,
+                        minimumSize: const Size(double.infinity, 56)),
+                    child: const Text('SALVAR ALTERAÇÕES',
+                        style: TextStyle(
+                            color: GridColors.buttonText,
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold)),
+                  ),
+                ],
               ),
             ),
-            const SizedBox(height: 24),
-            SizedBox(
-              width: double.infinity,
-              height: 56,
-              child: ElevatedButton(
-                onPressed: _save,
-                style: ElevatedButton.styleFrom(
-                    backgroundColor: GridColors.buttonBackground,
-                    shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12)),
-                    elevation: 2),
-                child: const Text('SALVAR ALTERAÇÕES',
-                    style: TextStyle(
-                        color: GridColors.buttonText,
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold)),
-              ),
-            ),
-          ]),
+          ),
         ),
       ),
     );
