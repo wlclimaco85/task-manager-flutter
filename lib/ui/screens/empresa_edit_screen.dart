@@ -41,7 +41,6 @@ class _EmpresaEditScreenState extends State<EmpresaEditScreen> {
   late TextEditingController _cnpj;
   late TextEditingController _ie;
 
-  // Campos relacionados
   String? _ambiente;
   RegimeTributario? _regimeSelecionado;
   List<RegimeTributario> _regimes = [];
@@ -54,7 +53,9 @@ class _EmpresaEditScreenState extends State<EmpresaEditScreen> {
   EstadoModel? _estadoSelecionado;
   CidadeModel? _cidadeSelecionada;
 
-  // App em cache
+  bool _isLoadingEstados = false;
+  bool _isLoadingCidades = false;
+
   Map<String, dynamic>? _appCache;
 
   @override
@@ -84,8 +85,31 @@ class _EmpresaEditScreenState extends State<EmpresaEditScreen> {
   Future<void> _bootstrap() async {
     _paises = await fetchPaises();
     _appCache = {'id': 1, 'nome': 'AppAcademia'};
-    await RegimeTributario.loadDropdownData();
+    await _loadRegimes();
     setState(() {});
+  }
+
+  Future<void> _loadRegimes() async {
+    try {
+      final List<Map<String, dynamic>> items =
+          await RegimeTributario.loadDropdownData();
+      _regimes = items
+          .map((m) => RegimeTributario(
+                id: int.tryParse(m['value']?.toString() ?? ''),
+                descricao: m['label']?.toString(),
+              ))
+          .where((r) => r.id != null)
+          .cast<RegimeTributario>()
+          .toList();
+
+      final regimeId = safeToInt(widget.initialData['regimeId']);
+      if (regimeId != null) {
+        _regimeSelecionado = _regimes.firstWhere((r) => r.id == regimeId,
+            orElse: () => RegimeTributario());
+      }
+    } catch (e) {
+      debugPrint('Erro carregar regimes: $e');
+    }
   }
 
   Future<void> _pickLogo(ImageSource src) async {
@@ -119,6 +143,18 @@ class _EmpresaEditScreenState extends State<EmpresaEditScreen> {
         borderSide: BorderSide(color: _colors.getBorderInput(), width: 1.6),
       ),
     );
+  }
+
+  Future<void> _loadEstados(PaisModel pais) async {
+    setState(() => _isLoadingEstados = true);
+    _estados = await fetchEstados(pais.id);
+    setState(() => _isLoadingEstados = false);
+  }
+
+  Future<void> _loadCidades(EstadoModel estado) async {
+    setState(() => _isLoadingCidades = true);
+    _cidades = await fetchCidades(estado.id);
+    setState(() => _isLoadingCidades = false);
   }
 
   Future<void> _save() async {
@@ -161,7 +197,6 @@ class _EmpresaEditScreenState extends State<EmpresaEditScreen> {
       };
 
       final body = rawBody.map((k, v) => MapEntry(k, v?.toString() ?? ''));
-
       final resp = await NetworkCaller()
           .postRequest(ApiLinks.updateEmpresa(widget.initialData['id']), body);
 
@@ -212,159 +247,145 @@ class _EmpresaEditScreenState extends State<EmpresaEditScreen> {
             elevation: 5,
             child: Padding(
               padding: const EdgeInsets.all(20),
-              child: Column(
-                children: [
-                  EditableImageCircle(
-                    file: _logo,
-                    imageUrl: widget.initialData['logo'],
-                    placeholderIcon: Icons.apartment,
-                    onTap: () => showImageSourceDialog(context, _pickLogo),
+              child: Column(children: [
+                EditableImageCircle(
+                  file: _logo,
+                  imageUrl: widget.initialData['logo'],
+                  placeholderIcon: Icons.apartment,
+                  onTap: () => showImageSourceDialog(context, _pickLogo),
+                ),
+                if (_imageTooLarge)
+                  const Padding(
+                    padding: EdgeInsets.only(top: 8),
+                    child: Text('⚠️ A imagem deve ter no máximo 2MB',
+                        style: TextStyle(color: Colors.red, fontSize: 13)),
                   ),
-                  if (_imageTooLarge)
-                    const Padding(
-                      padding: EdgeInsets.only(top: 8),
-                      child: Text('⚠️ A imagem deve ter no máximo 2MB',
-                          style: TextStyle(color: Colors.red, fontSize: 13)),
-                    ),
-                  const SizedBox(height: 24),
-                  buildTextField('Nome *', _nome, required: true),
-                  buildTextField('Razão Social', _razaoSocial),
-                  buildTextFieldMasked('CNPJ', _cnpj,
-                      mask: MaskedInputFormatter('00.000.000/0000-00'),
-                      required: true,
-                      type: TextInputType.number),
-                  buildTextFieldMasked('IE', _ie,
-                      mask: MaskedInputFormatter('000.000.000.000'),
-                      type: TextInputType.number),
-                  buildTextField('Email', _email,
-                      type: TextInputType.emailAddress),
-                  buildTextField('Site', _site),
-
-                  const SizedBox(height: 16),
-
-                  // 🔹 Regime Tributário (DropdownSearch)
-                  DropdownSearch<RegimeTributario>(
-                    items: _regimes,
-                    selectedItem: _regimeSelecionado,
-                    itemAsString: (item) => item.descricao ?? '',
-                    onChanged: (v) => setState(() => _regimeSelecionado = v),
-                    dropdownDecoratorProps: DropDownDecoratorProps(
-                      dropdownSearchDecoration: _inputStyle(
-                        'Regime Tributário',
-                        Icons.account_balance,
-                      ),
-                    ),
-                    validator: (v) =>
-                        v == null ? 'Selecione um regime tributário' : null,
-                    popupProps: const PopupProps.menu(
-                      showSearchBox: true,
-                      searchFieldProps: TextFieldProps(
-                        decoration: InputDecoration(
-                          hintText: 'Pesquisar regime...',
+                const SizedBox(height: 24),
+                buildTextField('Nome *', _nome, required: true),
+                buildTextField('Razão Social', _razaoSocial),
+                buildTextFieldMasked('CNPJ', _cnpj,
+                    mask: MaskedInputFormatter('00.000.000/0000-00'),
+                    required: true,
+                    type: TextInputType.number),
+                buildTextFieldMasked('IE', _ie,
+                    mask: MaskedInputFormatter('000.000.000.000'),
+                    type: TextInputType.number),
+                buildTextField('Email', _email,
+                    type: TextInputType.emailAddress),
+                buildTextField('Site', _site),
+                const SizedBox(height: 16),
+                DropdownSearch<RegimeTributario>(
+                  items: _regimes,
+                  selectedItem: _regimeSelecionado,
+                  itemAsString: (item) => item.descricao ?? '',
+                  onChanged: (v) => setState(() => _regimeSelecionado = v),
+                  dropdownDecoratorProps: DropDownDecoratorProps(
+                    dropdownSearchDecoration:
+                        _inputStyle('Regime Tributário', Icons.account_balance),
+                  ),
+                  validator: (v) => v == null ? 'Selecione o regime' : null,
+                  popupProps: const PopupProps.menu(showSearchBox: true),
+                ),
+                const SizedBox(height: 16),
+                DropdownSearch<String>(
+                  items: const ['HOMOLOGACAO', 'PRODUCAO'],
+                  selectedItem: _ambiente,
+                  onChanged: (v) => setState(() => _ambiente = v),
+                  dropdownDecoratorProps: DropDownDecoratorProps(
+                    dropdownSearchDecoration:
+                        _inputStyle('Ambiente', Icons.settings),
+                  ),
+                  validator: (v) => v == null ? 'Selecione o ambiente' : null,
+                ),
+                const SizedBox(height: 16),
+                DropdownSearch<PaisModel>(
+                  items: _paises,
+                  itemAsString: (p) => p.nome,
+                  selectedItem: _paisSelecionado,
+                  onChanged: (v) async {
+                    if (v == null) return;
+                    setState(() {
+                      _paisSelecionado = v;
+                      _estadoSelecionado = null;
+                      _cidadeSelecionada = null;
+                      _estados = [];
+                      _cidades = [];
+                    });
+                    await _loadEstados(v);
+                  },
+                  dropdownDecoratorProps: DropDownDecoratorProps(
+                    dropdownSearchDecoration: _inputStyle('País', Icons.flag),
+                  ),
+                  validator: (v) => v == null ? 'Selecione o país' : null,
+                  popupProps: const PopupProps.menu(showSearchBox: true),
+                ),
+                const SizedBox(height: 16),
+                _isLoadingEstados
+                    ? const Center(
+                        child: Padding(
+                          padding: EdgeInsets.all(8.0),
+                          child: CircularProgressIndicator(),
                         ),
+                      )
+                    : DropdownSearch<EstadoModel>(
+                        items: _estados,
+                        itemAsString: (e) => e.nome,
+                        selectedItem: _estadoSelecionado,
+                        onChanged: (v) async {
+                          if (v == null) return;
+                          setState(() {
+                            _estadoSelecionado = v;
+                            _cidadeSelecionada = null;
+                            _cidades = [];
+                          });
+                          await _loadCidades(v);
+                        },
+                        dropdownDecoratorProps: DropDownDecoratorProps(
+                          dropdownSearchDecoration:
+                              _inputStyle('Estado', Icons.map_outlined),
+                        ),
+                        validator: (v) =>
+                            v == null ? 'Selecione o estado' : null,
+                        popupProps: const PopupProps.menu(showSearchBox: true),
                       ),
-                    ),
-                  ),
-
-                  const SizedBox(height: 16),
-
-                  DropdownSearch<String>(
-                    items: const ['HOMOLOGACAO', 'PRODUCAO'],
-                    selectedItem: _ambiente,
-                    onChanged: (v) => setState(() => _ambiente = v),
-                    dropdownDecoratorProps: DropDownDecoratorProps(
-                      dropdownSearchDecoration:
-                          _inputStyle('Ambiente', Icons.settings),
-                    ),
-                    validator: (v) => v == null ? 'Selecione o ambiente' : null,
-                    popupProps: const PopupProps.menu(
-                      showSearchBox: false,
-                    ),
-                  ),
-
-                  const SizedBox(height: 16),
-
-                  // 🔹 País
-                  DropdownSearch<PaisModel>(
-                    items: _paises,
-                    itemAsString: (p) => p.nome,
-                    selectedItem: _paisSelecionado,
-                    onChanged: (v) async {
-                      setState(() {
-                        _paisSelecionado = v;
-                        _estadoSelecionado = null;
-                        _cidadeSelecionada = null;
-                      });
-                      if (v != null) {
-                        _estados = await fetchEstados(v.id);
-                        setState(() {});
-                      }
-                    },
-                    dropdownDecoratorProps: DropDownDecoratorProps(
-                      dropdownSearchDecoration: _inputStyle('País', Icons.flag),
-                    ),
-                    validator: (v) => v == null ? 'Selecione o país' : null,
-                    popupProps: const PopupProps.menu(showSearchBox: true),
-                  ),
-
-                  const SizedBox(height: 16),
-
-                  // 🔹 Estado
-                  DropdownSearch<EstadoModel>(
-                    items: _estados,
-                    itemAsString: (e) => e.nome,
-                    selectedItem: _estadoSelecionado,
-                    onChanged: (v) async {
-                      setState(() {
-                        _estadoSelecionado = v;
-                        _cidadeSelecionada = null;
-                      });
-                      if (v != null) {
-                        _cidades = await fetchCidades(v.id);
-                        setState(() {});
-                      }
-                    },
-                    dropdownDecoratorProps: DropDownDecoratorProps(
-                      dropdownSearchDecoration:
-                          _inputStyle('Estado', Icons.map_outlined),
-                    ),
-                    validator: (v) => v == null ? 'Selecione o estado' : null,
-                    popupProps: const PopupProps.menu(showSearchBox: true),
-                  ),
-
-                  const SizedBox(height: 16),
-
-                  // 🔹 Cidade
-                  DropdownSearch<CidadeModel>(
-                    items: _cidades,
-                    itemAsString: (c) => c.nome,
-                    selectedItem: _cidadeSelecionada,
-                    onChanged: (v) => setState(() => _cidadeSelecionada = v),
-                    dropdownDecoratorProps: DropDownDecoratorProps(
-                      dropdownSearchDecoration:
-                          _inputStyle('Cidade', Icons.location_city),
-                    ),
-                    validator: (v) => v == null ? 'Selecione a cidade' : null,
-                    popupProps: const PopupProps.menu(showSearchBox: true),
-                  ),
-
-                  const SizedBox(height: 24),
-                  ElevatedButton(
-                    onPressed: _save,
-                    style: ElevatedButton.styleFrom(
-                        backgroundColor: GridColors.buttonBackground,
-                        shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12)),
-                        elevation: 2,
-                        minimumSize: const Size(double.infinity, 56)),
-                    child: const Text('SALVAR ALTERAÇÕES',
-                        style: TextStyle(
-                            color: GridColors.buttonText,
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold)),
-                  ),
-                ],
-              ),
+                const SizedBox(height: 16),
+                _isLoadingCidades
+                    ? const Center(
+                        child: Padding(
+                          padding: EdgeInsets.all(8.0),
+                          child: CircularProgressIndicator(),
+                        ),
+                      )
+                    : DropdownSearch<CidadeModel>(
+                        items: _cidades,
+                        itemAsString: (c) => c.nome,
+                        selectedItem: _cidadeSelecionada,
+                        onChanged: (v) =>
+                            setState(() => _cidadeSelecionada = v),
+                        dropdownDecoratorProps: DropDownDecoratorProps(
+                          dropdownSearchDecoration:
+                              _inputStyle('Cidade', Icons.location_city),
+                        ),
+                        validator: (v) =>
+                            v == null ? 'Selecione a cidade' : null,
+                        popupProps: const PopupProps.menu(showSearchBox: true),
+                      ),
+                const SizedBox(height: 24),
+                ElevatedButton(
+                  onPressed: _save,
+                  style: ElevatedButton.styleFrom(
+                      backgroundColor: GridColors.buttonBackground,
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12)),
+                      elevation: 2,
+                      minimumSize: const Size(double.infinity, 56)),
+                  child: const Text('SALVAR ALTERAÇÕES',
+                      style: TextStyle(
+                          color: GridColors.buttonText,
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold)),
+                ),
+              ]),
             ),
           ),
         ),
