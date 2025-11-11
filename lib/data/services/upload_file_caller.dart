@@ -76,6 +76,64 @@ class UploadFileCaller {
     return 0;
   }
 
+  Future<int> uploadFiless({
+    required PlatformFile file,
+    required int empresaId,
+    int? parceiroId,
+    int? diretorioId,
+  }) async {
+    final String authToken = '${AuthUtility.userInfo?.token}';
+    final uri = Uri.parse(ApiLinks.uploadFile);
+
+    try {
+      // 🔹 Cria a requisição multipart
+      var request = http.MultipartRequest('POST', uri);
+
+      // ---- Campos obrigatórios do BE ----
+      request.fields['fileName'] = file.name;
+      request.fields['fileType'] = file.extension ?? 'application/octet-stream';
+      request.fields['diretorio'] =
+          jsonEncode({'id': diretorioId ?? 1}); // exemplo padrão
+      request.fields['empresa'] = jsonEncode({'id': empresaId});
+      request.fields['parceiro'] = jsonEncode({'id': parceiroId ?? 0});
+
+      // ---- Adiciona o arquivo ----
+      final Uint8List fileBytes =
+          file.bytes ?? await File(file.path!).readAsBytes();
+      request.files.add(http.MultipartFile.fromBytes(
+        'file', // precisa bater com o @RequestParam("file")
+        fileBytes,
+        filename: file.name,
+      ));
+
+      // ---- Header de autenticação ----
+      if (authToken.isNotEmpty) {
+        request.headers['Authorization'] = 'Bearer $authToken';
+      }
+
+      print('📤 Enviando arquivo: ${file.name} (${file.size} bytes)');
+      print('🧾 Campos: ${request.fields}');
+
+      // ---- Envia a requisição ----
+      final response = await request.send();
+
+      // ---- Lê o corpo da resposta ----
+      final responseBody = await response.stream.bytesToString();
+      print('📨 Resposta (${response.statusCode}): $responseBody');
+
+      if (response.statusCode == 200) {
+        final decoded = jsonDecode(responseBody);
+        return decoded['fileId'] ?? 0;
+      } else {
+        print('❌ Erro no upload: ${response.statusCode}');
+      }
+    } catch (e) {
+      print('🚨 Exceção no upload: $e');
+    }
+
+    return 0;
+  }
+
   Future<int> downloadFile(int fileId, String fileName) async {
     try {
       final String authToken = '${AuthUtility.userInfo?.token}';

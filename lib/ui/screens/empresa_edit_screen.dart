@@ -1,18 +1,17 @@
-import 'dart:io';
 import 'dart:convert';
-import 'package:flutter/material.dart';
-import 'package:image_picker/image_picker.dart';
+import 'dart:io';
+
 import 'package:dropdown_search/dropdown_search.dart';
+import 'package:file_picker/file_picker.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_multi_formatter/flutter_multi_formatter.dart';
-
-import 'package:task_manager_flutter/data/services/network_caller.dart';
-import 'package:task_manager_flutter/data/utils/api_links.dart';
-import 'package:task_manager_flutter/data/utils/grid_colors.dart';
-
-// Helper grande (já existente, NÃO alterado)
-import 'package:task_manager_flutter/ui/widgets/edit_form_helpers.dart';
-// Model de regime (seu arquivo)
+import 'package:image_picker/image_picker.dart';
+import 'package:task_manager_flutter/data/constants/custom_colors.dart';
 import 'package:task_manager_flutter/data/models/regime_tributario_model.dart';
+import 'package:task_manager_flutter/data/services/network_caller.dart';
+import 'package:task_manager_flutter/data/services/upload_file_caller.dart';
+import 'package:task_manager_flutter/data/utils/api_links.dart';
+import 'package:task_manager_flutter/ui/widgets/edit_form_helpers.dart';
 
 class EmpresaEditScreen extends StatefulWidget {
   final Map<String, dynamic> initialData;
@@ -24,10 +23,10 @@ class EmpresaEditScreen extends StatefulWidget {
 
 class _EmpresaEditScreenState extends State<EmpresaEditScreen> {
   final _formKey = GlobalKey<FormState>();
+  final UploadFileCaller _uploadCaller = UploadFileCaller();
 
-  // Imagem
   File? _logo;
-  String? _logoBase64;
+  int? _fileId;
   bool _imageTooLarge = false;
 
   // Controllers
@@ -41,7 +40,6 @@ class _EmpresaEditScreenState extends State<EmpresaEditScreen> {
   late TextEditingController _telefone;
   late TextEditingController _rua;
   late TextEditingController _numero;
-  late TextEditingController _cidadeTxt; // texto livre (mantido)
   late TextEditingController _cep;
   late TextEditingController _cnpj;
   late TextEditingController _ie;
@@ -49,10 +47,8 @@ class _EmpresaEditScreenState extends State<EmpresaEditScreen> {
   // Ambientes
   static const _ambientes = ['HOMOLOGACAO', 'PRODUCAO'];
   String? _ambiente;
-
-  // Regime
-  List<RegimeTributario> _regimes = [];
   RegimeTributario? _regimeSelecionado;
+  List<RegimeTributario> _regimes = [];
 
   // Localização
   List<PaisModel> _paises = [];
@@ -62,7 +58,6 @@ class _EmpresaEditScreenState extends State<EmpresaEditScreen> {
   EstadoModel? _estadoSelecionado;
   CidadeModel? _cidadeSelecionada;
 
-  // Carregando dropdowns
   bool _loadingEstados = false;
   bool _loadingCidades = false;
 
@@ -86,11 +81,9 @@ class _EmpresaEditScreenState extends State<EmpresaEditScreen> {
     _telefone = TextEditingController(text: safeToString(d['telefone']));
     _rua = TextEditingController(text: safeToString(d['rua']));
     _numero = TextEditingController(text: safeToString(d['numero']));
-    _cidadeTxt = TextEditingController(text: safeToString(d['cidade']));
     _cep = TextEditingController(text: safeToString(d['cep']));
     _cnpj = TextEditingController(text: safeToString(d['cnpj']));
     _ie = TextEditingController(text: safeToString(d['ie']));
-
     _ambiente = safeToString(d['ambiente']).isNotEmpty ? d['ambiente'] : null;
 
     // App do login (ajuste para pegar do seu cache real)
@@ -100,7 +93,6 @@ class _EmpresaEditScreenState extends State<EmpresaEditScreen> {
   }
 
   Future<void> _bootstrap() async {
-    // Países
     _paises = await fetchPaises();
 
     // Pré-seleção (se vierem IDs)
@@ -179,13 +171,12 @@ class _EmpresaEditScreenState extends State<EmpresaEditScreen> {
     if (file != null) {
       setState(() {
         _logo = file;
-        _logoBase64 = base64Str;
         _imageTooLarge = false;
       });
     }
   }
 
-  InputDecoration _dec(String label, IconData icon, {Widget? suffix}) {
+  InputDecoration _inputStyle(String label, IconData icon, {Widget? suffix}) {
     return InputDecoration(
       labelText: label,
       prefixIcon: Icon(icon, color: GridColors.inputBorder),
@@ -241,13 +232,32 @@ class _EmpresaEditScreenState extends State<EmpresaEditScreen> {
       barrierDismissible: false,
       builder: (_) => const Center(
         child: CircularProgressIndicator(
-          valueColor: AlwaysStoppedAnimation(GridColors.primary),
-        ),
+            valueColor: AlwaysStoppedAnimation(GridColors.primary)),
       ),
     );
 
     try {
-      // Monte o body mantendo tipos corretos (texto como String, IDs como int)
+      int? uploadedFileId;
+      if (_logo != null) {
+        final fileBytes = await _logo!.readAsBytes();
+        final fileSize = await _logo!.length();
+
+        final platformFile = PlatformFile(
+          name: _logo!.path.split('/').last,
+          path: _logo!.path,
+          bytes: fileBytes,
+          size: fileSize,
+        );
+
+        uploadedFileId = await _uploadCaller.uploadFiless(
+          file: platformFile,
+          empresaId: widget.initialData['id'], // vem do cache
+          diretorioId: 1, // pode ser alterado depois
+        );
+
+        debugPrint('📁 File uploaded. ID: $uploadedFileId');
+      }
+
       final Map<String, dynamic> body = {
         'id': safeToInt(widget.initialData['id']),
         'nome': _nome.text.trim(),
@@ -259,55 +269,44 @@ class _EmpresaEditScreenState extends State<EmpresaEditScreen> {
         'telefoneContato': _telefoneContato.text.trim(),
         'telefone': _telefone.text.trim(),
         'rua': _rua.text.trim(),
-        'numero': _numero.text.trim(), // String no entity
-        'cidade': _cidadeTxt.text.trim(), // String no entity (campo livre)
+        'numero': _numero.text.trim(),
         'cep': _cep.text.trim(),
         'cnpj': _cnpj.text.trim(),
         'ie': _ie.text.trim(),
-        'ambiente': _ambiente, // enum como String
-        'regimeId': _regimeSelecionado?.id, // inteiro (relacionamento)
-        'aplicativoId': _appCache?['id'], // inteiro (cache do login)
-        // Caso seu backend aceite estes campos para endereçamento
-        'paisId': _paisSelecionado?.id,
-        'estadoId': _estadoSelecionado?.id,
-        'cidadeId': _cidadeSelecionada?.id,
-        'logoBase64': _logoBase64 ?? '',
+        'ambiente': _ambiente,
+        'regime': {'id': _regimeSelecionado?.id},
+        'aplicativo': {'id': 1}, // valor fixo até buscar app
+        'pais': {'id': _paisSelecionado?.id},
+        'estado': {'id': _estadoSelecionado?.id},
+        'cidade': {'id': _cidadeSelecionada?.id},
+        if (uploadedFileId != null && uploadedFileId > 0)
+          'fileAttachment': {'id': uploadedFileId},
       };
 
-      // LOG detalhado: JSON + tipos
-      debugPrint('--- EMPRESA SAVE BODY (JSON) ---');
+      debugPrint('--- EMPRESA SAVE PAYLOAD ---');
       debugPrint(const JsonEncoder.withIndent('  ').convert(body));
-      debugPrint('--- EMPRESA SAVE BODY (TYPES) ---');
-      body.forEach((k, v) {
-        debugPrint('$k => ${v == null ? "null" : v.runtimeType}');
-      });
 
-      debugPrint('--- ------------- ---');
-      debugPrint(ApiLinks.updateEmpresa(widget.initialData['id'].toString()));
-      debugPrint('--- ------------- ---');
-
-      final resp = await NetworkCaller().postRequest(
-          ApiLinks.updateEmpresa(widget.initialData['id'].toString()), body);
+      final resp = await NetworkCaller()
+          .putRequest(ApiLinks.updateEmpresa(widget.initialData['id']), body);
 
       if (!mounted) return;
       Navigator.pop(context);
 
       if (resp.isSuccess) {
-        if (mounted) {
-          Navigator.pop(context, body);
-          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-            content: Text('Empresa atualizada com sucesso!'),
-            backgroundColor: GridColors.success,
-          ));
-        }
+        Navigator.pop(context, body);
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+          content: Text('Empresa atualizada com sucesso!'),
+          backgroundColor: GridColors.success,
+        ));
       } else {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text('Erro: ${resp.body ?? "Falha ao atualizar"}'),
+          content: Text('Erro: ${resp.body ?? "Falha ao atualizar a empresa"}'),
           backgroundColor: GridColors.error,
         ));
       }
     } catch (e) {
       Navigator.pop(context);
+      debugPrint('Erro ao salvar empresa: $e');
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
         content: Text('Erro ao salvar: $e'),
         backgroundColor: GridColors.error,
@@ -327,7 +326,6 @@ class _EmpresaEditScreenState extends State<EmpresaEditScreen> {
     _telefone.dispose();
     _rua.dispose();
     _numero.dispose();
-    _cidadeTxt.dispose();
     _cep.dispose();
     _cnpj.dispose();
     _ie.dispose();
@@ -339,11 +337,9 @@ class _EmpresaEditScreenState extends State<EmpresaEditScreen> {
     return Scaffold(
       backgroundColor: GridColors.background,
       appBar: AppBar(
-        title: const Text(
-          'Editar Empresa',
-          style: TextStyle(
-              color: GridColors.textPrimary, fontWeight: FontWeight.bold),
-        ),
+        title: const Text('Editar Empresa',
+            style: TextStyle(
+                color: GridColors.textPrimary, fontWeight: FontWeight.bold)),
         backgroundColor: GridColors.primary,
         iconTheme: const IconThemeData(color: GridColors.textPrimary),
         actions: [IconButton(icon: const Icon(Icons.save), onPressed: _save)],
@@ -370,14 +366,10 @@ class _EmpresaEditScreenState extends State<EmpresaEditScreen> {
                   if (_imageTooLarge)
                     const Padding(
                       padding: EdgeInsets.only(top: 8),
-                      child: Text(
-                        '⚠️ A imagem deve ter no máximo 2MB',
-                        style: TextStyle(color: Colors.red, fontSize: 13),
-                      ),
+                      child: Text('⚠️ A imagem deve ter no máximo 2MB',
+                          style: TextStyle(color: Colors.red, fontSize: 13)),
                     ),
                   const SizedBox(height: 24),
-
-                  // Dados da empresa
                   buildTextField('Nome *', _nome, required: true),
                   buildTextField('Razão Social', _razaoSocial),
                   buildTextFieldMasked('CNPJ', _cnpj,
@@ -399,10 +391,7 @@ class _EmpresaEditScreenState extends State<EmpresaEditScreen> {
                   buildTextFieldMasked('Telefone', _telefone,
                       mask: MaskedInputFormatter('(00) 00000-0000'),
                       type: TextInputType.phone),
-
                   const SizedBox(height: 16),
-
-                  // Regime Tributário
                   DropdownSearch<RegimeTributario>(
                     items: _regimes,
                     selectedItem: _regimeSelecionado,
@@ -410,126 +399,100 @@ class _EmpresaEditScreenState extends State<EmpresaEditScreen> {
                     onChanged: (v) => setState(() => _regimeSelecionado = v),
                     dropdownDecoratorProps: DropDownDecoratorProps(
                       dropdownSearchDecoration:
-                          _dec('Regime Tributário', Icons.account_balance),
+                          _inputStyle('Regime Tributário', Icons.balance),
                     ),
                     validator: (v) =>
                         v == null ? 'Selecione um regime tributário' : null,
                     popupProps: const PopupProps.menu(
-                      showSearchBox: true,
-                      searchFieldProps: TextFieldProps(
-                        decoration:
-                            InputDecoration(hintText: 'Pesquisar regime...'),
-                      ),
-                    ),
+                        showSearchBox: true,
+                        searchFieldProps: TextFieldProps(
+                            decoration:
+                                InputDecoration(hintText: 'Pesquisar...'))),
                   ),
-
                   const SizedBox(height: 16),
-
-                  // Ambiente
                   DropdownSearch<String>(
                     items: _ambientes,
                     selectedItem: _ambiente,
                     onChanged: (v) => setState(() => _ambiente = v),
                     dropdownDecoratorProps: DropDownDecoratorProps(
                       dropdownSearchDecoration:
-                          _dec('Ambiente', Icons.settings),
+                          _inputStyle('Ambiente', Icons.settings),
                     ),
                     validator: (v) => v == null ? 'Selecione o ambiente' : null,
                     popupProps: const PopupProps.menu(showSearchBox: false),
                   ),
-
                   const SizedBox(height: 24),
-
-                  // Endereço
                   buildTextField('Rua', _rua),
-                  Row(
-                    children: [
-                      Expanded(child: buildTextField('Número', _numero)),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: buildTextFieldMasked('CEP', _cep,
-                            mask: MaskedInputFormatter('00000-000'),
-                            type: TextInputType.number),
-                      ),
-                    ],
-                  ),
-                  buildTextField('Cidade (texto livre)', _cidadeTxt),
-
+                  Row(children: [
+                    Expanded(child: buildTextField('Número', _numero)),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: buildTextFieldMasked('CEP', _cep,
+                          mask: MaskedInputFormatter('00000-000'),
+                          type: TextInputType.number),
+                    ),
+                  ]),
                   const SizedBox(height: 16),
-
-                  // País
                   DropdownSearch<PaisModel>(
                     items: _paises,
                     selectedItem: _paisSelecionado,
                     itemAsString: (p) => p.nome,
                     onChanged: _onPaisChanged,
                     dropdownDecoratorProps: DropDownDecoratorProps(
-                      dropdownSearchDecoration: _dec('País', Icons.flag),
+                      dropdownSearchDecoration: _inputStyle('País', Icons.flag),
                     ),
                     validator: (v) => v == null ? 'Selecione o país' : null,
                     popupProps: const PopupProps.menu(showSearchBox: true),
                   ),
-
                   const SizedBox(height: 16),
-
-                  // Estado (com loading)
                   DropdownSearch<EstadoModel>(
                     items: _estados,
                     selectedItem: _estadoSelecionado,
                     itemAsString: (e) => e.nome,
                     onChanged: _onEstadoChanged,
                     dropdownDecoratorProps: DropDownDecoratorProps(
-                      dropdownSearchDecoration: _dec(
+                      dropdownSearchDecoration: _inputStyle(
                         _loadingEstados ? 'Estado (carregando...)' : 'Estado',
                         Icons.map_outlined,
                         suffix: _loadingEstados
                             ? const Padding(
                                 padding: EdgeInsets.only(right: 10),
                                 child: SizedBox(
-                                  width: 16,
-                                  height: 16,
-                                  child:
-                                      CircularProgressIndicator(strokeWidth: 2),
-                                ),
-                              )
+                                    width: 16,
+                                    height: 16,
+                                    child: CircularProgressIndicator(
+                                        strokeWidth: 2)))
                             : null,
                       ),
                     ),
                     validator: (v) => v == null ? 'Selecione o estado' : null,
                     popupProps: const PopupProps.menu(showSearchBox: true),
                   ),
-
                   const SizedBox(height: 16),
-
-                  // Cidade (com loading)
                   DropdownSearch<CidadeModel>(
                     items: _cidades,
                     selectedItem: _cidadeSelecionada,
                     itemAsString: (c) => c.nome,
                     onChanged: (v) => setState(() => _cidadeSelecionada = v),
                     dropdownDecoratorProps: DropDownDecoratorProps(
-                      dropdownSearchDecoration: _dec(
+                      dropdownSearchDecoration: _inputStyle(
                         _loadingCidades ? 'Cidade (carregando...)' : 'Cidade',
                         Icons.location_city,
                         suffix: _loadingCidades
                             ? const Padding(
                                 padding: EdgeInsets.only(right: 10),
                                 child: SizedBox(
-                                  width: 16,
-                                  height: 16,
-                                  child:
-                                      CircularProgressIndicator(strokeWidth: 2),
-                                ),
-                              )
+                                    width: 16,
+                                    height: 16,
+                                    child: CircularProgressIndicator(
+                                        strokeWidth: 2)))
                             : null,
                       ),
                     ),
                     validator: (v) => v == null ? 'Selecione a cidade' : null,
                     popupProps: const PopupProps.menu(showSearchBox: true),
                   ),
-
                   const SizedBox(height: 24),
-
                   ElevatedButton(
                     onPressed: _save,
                     style: ElevatedButton.styleFrom(
@@ -539,15 +502,12 @@ class _EmpresaEditScreenState extends State<EmpresaEditScreen> {
                       elevation: 2,
                       minimumSize: const Size(double.infinity, 56),
                     ),
-                    child: const Text(
-                      'SALVAR ALTERAÇÕES',
-                      style: TextStyle(
-                        color: GridColors.buttonText,
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
+                    child: const Text('SALVAR ALTERAÇÕES',
+                        style: TextStyle(
+                            color: GridColors.buttonText,
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold)),
+                  )
                 ],
               ),
             ),
