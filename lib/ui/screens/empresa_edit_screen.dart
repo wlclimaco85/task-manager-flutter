@@ -6,6 +6,7 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_multi_formatter/flutter_multi_formatter.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:task_manager_flutter/data/constants/custom_colors.dart';
 import 'package:task_manager_flutter/data/models/regime_tributario_model.dart';
 import 'package:task_manager_flutter/data/services/network_caller.dart';
@@ -26,7 +27,6 @@ class _EmpresaEditScreenState extends State<EmpresaEditScreen> {
   final UploadFileCaller _uploadCaller = UploadFileCaller();
 
   File? _logo;
-  int? _fileId;
   bool _imageTooLarge = false;
 
   // Controllers
@@ -44,7 +44,7 @@ class _EmpresaEditScreenState extends State<EmpresaEditScreen> {
   late TextEditingController _cnpj;
   late TextEditingController _ie;
 
-  // Ambientes
+  // Ambiente e Regime
   static const _ambientes = ['HOMOLOGACAO', 'PRODUCAO'];
   String? _ambiente;
   RegimeTributario? _regimeSelecionado;
@@ -61,14 +61,12 @@ class _EmpresaEditScreenState extends State<EmpresaEditScreen> {
   bool _loadingEstados = false;
   bool _loadingCidades = false;
 
-  // Aplicativo em cache (simulado; pegue do seu cache real)
   Map<String, dynamic>? _appCache;
 
   @override
   void initState() {
     super.initState();
     final d = widget.initialData;
-
     _nome = TextEditingController(text: safeToString(d['nome']));
     _razaoSocial = TextEditingController(text: safeToString(d['razaoSocial']));
     _email = TextEditingController(text: safeToString(d['email']));
@@ -86,55 +84,86 @@ class _EmpresaEditScreenState extends State<EmpresaEditScreen> {
     _ie = TextEditingController(text: safeToString(d['ie']));
     _ambiente = safeToString(d['ambiente']).isNotEmpty ? d['ambiente'] : null;
 
-    // App do login (ajuste para pegar do seu cache real)
     _appCache = {'id': 1, 'nome': 'AppAcademia'};
 
     _bootstrap();
   }
 
   Future<void> _bootstrap() async {
-    _paises = await fetchPaises();
+    final prefs = await SharedPreferences.getInstance();
 
-    // Pré-seleção (se vierem IDs)
-    final paisId = safeToInt(widget.initialData['paisId']);
-    final estadoId = safeToInt(widget.initialData['estadoId']);
-    final cidadeId = safeToInt(widget.initialData['cidadeId']);
+    try {
+      // Verifica cache
+      final cachedPaisId = prefs.getInt('cachedPaisId');
+      final cachedEstadoId = prefs.getInt('cachedEstadoId');
 
-    if (paisId != null) {
-      _paisSelecionado = _paises.firstWhere(
-        (p) => p.id == paisId,
-        orElse: () => PaisModel(id: 0, nome: ''),
-      );
-      if (_paisSelecionado!.id != 0) {
-        _loadingEstados = true;
-        setState(() {});
-        _estados = await fetchEstados(_paisSelecionado!.id);
-        _loadingEstados = false;
+      // Carrega países
+      _paises = await fetchPaises();
 
-        if (estadoId != null) {
-          _estadoSelecionado = _estados.firstWhere(
-            (e) => e.id == estadoId,
-            orElse: () => EstadoModel(id: 0, nome: '', paisId: 0),
-          );
-          if (_estadoSelecionado!.id != 0) {
-            _loadingCidades = true;
-            setState(() {});
-            _cidades = await fetchCidades(_estadoSelecionado!.id);
-            _loadingCidades = false;
-
-            if (cidadeId != null) {
-              _cidadeSelecionada = _cidades.firstWhere(
-                (c) => c.id == cidadeId,
-                orElse: () => CidadeModel(id: 0, nome: '', estadoId: 0),
-              );
-            }
-          }
-        }
+      if (_paises.isEmpty) {
+        debugPrint('⚠️ Nenhum país retornado do backend.');
       }
-    }
 
-    // Regimes
-    await _loadRegimes();
+      // Se tiver cache, tenta usar
+      if (cachedPaisId != null) {
+        _paisSelecionado = _paises.firstWhere(
+          (p) => p.id == cachedPaisId,
+          orElse: () => _paises.firstWhere(
+            (p) => p.nome.toLowerCase().contains('brasil'),
+            orElse: () => _paises.first,
+          ),
+        );
+      } else {
+        // Fallback “Brasil”
+        _paisSelecionado = _paises.firstWhere(
+          (p) => p.nome.toLowerCase().contains('brasil'),
+          orElse: () => _paises.first,
+        );
+      }
+
+      // Estados
+      _loadingEstados = true;
+      setState(() {});
+      _estados = await fetchEstados(_paisSelecionado!.id);
+      _loadingEstados = false;
+
+      if (_estados.isEmpty) {
+        debugPrint('⚠️ Nenhum estado retornado do backend.');
+      }
+
+      // Estado cacheado ou padrão “Minas Gerais”
+      if (cachedEstadoId != null) {
+        _estadoSelecionado = _estados.firstWhere(
+          (e) => e.id == cachedEstadoId,
+          orElse: () => _estados.firstWhere(
+            (e) => e.nome.toLowerCase().contains('minas'),
+            orElse: () => _estados.first,
+          ),
+        );
+      } else {
+        _estadoSelecionado = _estados.firstWhere(
+          (e) => e.nome.toLowerCase().contains('minas'),
+          orElse: () => _estados.first,
+        );
+      }
+
+      // Cidades
+      if (_estadoSelecionado != null) {
+        _loadingCidades = true;
+        setState(() {});
+        _cidades = await fetchCidades(_estadoSelecionado!.id);
+        _loadingCidades = false;
+      }
+
+      // Atualiza cache
+      await prefs.setInt('cachedPaisId', _paisSelecionado!.id);
+      await prefs.setInt('cachedEstadoId', _estadoSelecionado!.id);
+
+      // Regimes
+      await _loadRegimes();
+    } catch (e) {
+      debugPrint('❌ Erro no bootstrap: $e');
+    }
 
     setState(() {});
   }
@@ -195,35 +224,6 @@ class _EmpresaEditScreenState extends State<EmpresaEditScreen> {
     );
   }
 
-  Future<void> _onPaisChanged(PaisModel? v) async {
-    setState(() {
-      _paisSelecionado = v;
-      _estadoSelecionado = null;
-      _cidadeSelecionada = null;
-      _estados = [];
-      _cidades = [];
-      _loadingEstados = v != null;
-      _loadingCidades = false;
-    });
-    if (v != null) {
-      _estados = await fetchEstados(v.id);
-    }
-    setState(() => _loadingEstados = false);
-  }
-
-  Future<void> _onEstadoChanged(EstadoModel? v) async {
-    setState(() {
-      _estadoSelecionado = v;
-      _cidadeSelecionada = null;
-      _cidades = [];
-      _loadingCidades = v != null;
-    });
-    if (v != null) {
-      _cidades = await fetchCidades(v.id);
-    }
-    setState(() => _loadingCidades = false);
-  }
-
   Future<void> _save() async {
     if (!_formKey.currentState!.validate()) return;
 
@@ -240,23 +240,26 @@ class _EmpresaEditScreenState extends State<EmpresaEditScreen> {
       int? uploadedFileId;
       if (_logo != null) {
         final fileBytes = await _logo!.readAsBytes();
-        final fileSize = await _logo!.length();
-
         final platformFile = PlatformFile(
           name: _logo!.path.split('/').last,
           path: _logo!.path,
           bytes: fileBytes,
-          size: fileSize,
+          size: await _logo!.length(),
         );
 
         uploadedFileId = await _uploadCaller.uploadFiless(
           file: platformFile,
-          empresaId: widget.initialData['id'], // vem do cache
-          diretorioId: 1, // pode ser alterado depois
+          empresaId: widget.initialData['id'],
+          diretorioId: 1,
         );
 
         debugPrint('📁 File uploaded. ID: $uploadedFileId');
       }
+
+      String clean(String text) =>
+          text.replaceAll(RegExp(r'[^0-9a-zA-Z@.\s-]'), '');
+
+      String onlyDigits(String? s) => (s ?? '').replaceAll(RegExp(r'\D'), '');
 
       final Map<String, dynamic> body = {
         'id': safeToInt(widget.initialData['id']),
@@ -266,16 +269,16 @@ class _EmpresaEditScreenState extends State<EmpresaEditScreen> {
         'site': _site.text.trim(),
         'contato': _contato.text.trim(),
         'emailContato': _emailContato.text.trim(),
-        'telefoneContato': _telefoneContato.text.trim(),
-        'telefone': _telefone.text.trim(),
+        'telefoneContato': clean(_telefoneContato.text),
+        'telefone': clean(onlyDigits(_telefone.text)),
         'rua': _rua.text.trim(),
         'numero': _numero.text.trim(),
-        'cep': _cep.text.trim(),
-        'cnpj': _cnpj.text.trim(),
-        'ie': _ie.text.trim(),
+        'cep': clean(onlyDigits(clean(_cep.text))),
+        'cnpj': clean(onlyDigits(clean(_cnpj.text))),
+        'ie': clean(onlyDigits(clean(_ie.text))),
         'ambiente': _ambiente,
         'regime': {'id': _regimeSelecionado?.id},
-        'aplicativo': {'id': 1}, // valor fixo até buscar app
+        'aplicativo': {'id': _appCache?['id'] ?? 1},
         'pais': {'id': _paisSelecionado?.id},
         'estado': {'id': _estadoSelecionado?.id},
         'cidade': {'id': _cidadeSelecionada?.id},
@@ -286,8 +289,8 @@ class _EmpresaEditScreenState extends State<EmpresaEditScreen> {
       debugPrint('--- EMPRESA SAVE PAYLOAD ---');
       debugPrint(const JsonEncoder.withIndent('  ').convert(body));
 
-      final resp = await NetworkCaller()
-          .putRequest(ApiLinks.updateEmpresa(widget.initialData['id']), body);
+      final resp = await NetworkCaller().putRequest(
+          ApiLinks.updateEmpresa(widget.initialData['id'].toString()), body);
 
       if (!mounted) return;
       Navigator.pop(context);
@@ -391,7 +394,86 @@ class _EmpresaEditScreenState extends State<EmpresaEditScreen> {
                   buildTextFieldMasked('Telefone', _telefone,
                       mask: MaskedInputFormatter('(00) 00000-0000'),
                       type: TextInputType.phone),
+
                   const SizedBox(height: 16),
+                  DropdownSearch<PaisModel>(
+                    items: _paises,
+                    selectedItem: _paisSelecionado,
+                    itemAsString: (p) => p.nome,
+                    onChanged: (v) async {
+                      setState(() => _paisSelecionado = v);
+                      if (v != null) {
+                        final prefs = await SharedPreferences.getInstance();
+                        await prefs.setInt('cachedPaisId', v.id);
+                        _estados = await fetchEstados(v.id);
+                        setState(() {});
+                      }
+                    },
+                    dropdownDecoratorProps: DropDownDecoratorProps(
+                      dropdownSearchDecoration: _inputStyle('País', Icons.flag),
+                    ),
+                    validator: (v) => v == null ? 'Selecione o país' : null,
+                    popupProps: const PopupProps.menu(showSearchBox: true),
+                  ),
+                  const SizedBox(height: 16),
+
+                  DropdownSearch<EstadoModel>(
+                    items: _estados,
+                    selectedItem: _estadoSelecionado,
+                    itemAsString: (e) => e.nome,
+                    onChanged: (v) async {
+                      setState(() => _estadoSelecionado = v);
+                      if (v != null) {
+                        final prefs = await SharedPreferences.getInstance();
+                        await prefs.setInt('cachedEstadoId', v.id);
+                        _cidades = await fetchCidades(v.id);
+                        setState(() {});
+                      }
+                    },
+                    dropdownDecoratorProps: DropDownDecoratorProps(
+                      dropdownSearchDecoration: _inputStyle(
+                        _loadingEstados ? 'Estado (carregando...)' : 'Estado',
+                        Icons.map_outlined,
+                      ),
+                    ),
+                    validator: (v) => v == null ? 'Selecione o estado' : null,
+                    popupProps: const PopupProps.menu(showSearchBox: true),
+                  ),
+                  const SizedBox(height: 16),
+
+                  DropdownSearch<CidadeModel>(
+                    items: _cidades,
+                    selectedItem: _cidadeSelecionada,
+                    itemAsString: (c) => c.nome,
+                    onChanged: (v) => setState(() => _cidadeSelecionada = v),
+                    dropdownDecoratorProps: DropDownDecoratorProps(
+                      dropdownSearchDecoration: _inputStyle(
+                        _loadingCidades ? 'Cidade (carregando...)' : 'Cidade',
+                        Icons.location_city,
+                      ),
+                    ),
+                    validator: (v) => v == null ? 'Selecione a cidade' : null,
+                    popupProps: const PopupProps.menu(showSearchBox: true),
+                  ),
+
+                  const SizedBox(height: 24),
+
+                  // Localização (agora no topo)
+
+                  buildTextField('Rua', _rua),
+                  Row(
+                    children: [
+                      Expanded(child: buildTextField('Número', _numero)),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: buildTextFieldMasked('CEP', _cep,
+                            mask: MaskedInputFormatter('00000-000'),
+                            type: TextInputType.number),
+                      ),
+                    ],
+                  ),
+
+                  const SizedBox(height: 24),
                   DropdownSearch<RegimeTributario>(
                     items: _regimes,
                     selectedItem: _regimeSelecionado,
@@ -421,77 +503,7 @@ class _EmpresaEditScreenState extends State<EmpresaEditScreen> {
                     validator: (v) => v == null ? 'Selecione o ambiente' : null,
                     popupProps: const PopupProps.menu(showSearchBox: false),
                   ),
-                  const SizedBox(height: 24),
-                  buildTextField('Rua', _rua),
-                  Row(children: [
-                    Expanded(child: buildTextField('Número', _numero)),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: buildTextFieldMasked('CEP', _cep,
-                          mask: MaskedInputFormatter('00000-000'),
-                          type: TextInputType.number),
-                    ),
-                  ]),
-                  const SizedBox(height: 16),
-                  DropdownSearch<PaisModel>(
-                    items: _paises,
-                    selectedItem: _paisSelecionado,
-                    itemAsString: (p) => p.nome,
-                    onChanged: _onPaisChanged,
-                    dropdownDecoratorProps: DropDownDecoratorProps(
-                      dropdownSearchDecoration: _inputStyle('País', Icons.flag),
-                    ),
-                    validator: (v) => v == null ? 'Selecione o país' : null,
-                    popupProps: const PopupProps.menu(showSearchBox: true),
-                  ),
-                  const SizedBox(height: 16),
-                  DropdownSearch<EstadoModel>(
-                    items: _estados,
-                    selectedItem: _estadoSelecionado,
-                    itemAsString: (e) => e.nome,
-                    onChanged: _onEstadoChanged,
-                    dropdownDecoratorProps: DropDownDecoratorProps(
-                      dropdownSearchDecoration: _inputStyle(
-                        _loadingEstados ? 'Estado (carregando...)' : 'Estado',
-                        Icons.map_outlined,
-                        suffix: _loadingEstados
-                            ? const Padding(
-                                padding: EdgeInsets.only(right: 10),
-                                child: SizedBox(
-                                    width: 16,
-                                    height: 16,
-                                    child: CircularProgressIndicator(
-                                        strokeWidth: 2)))
-                            : null,
-                      ),
-                    ),
-                    validator: (v) => v == null ? 'Selecione o estado' : null,
-                    popupProps: const PopupProps.menu(showSearchBox: true),
-                  ),
-                  const SizedBox(height: 16),
-                  DropdownSearch<CidadeModel>(
-                    items: _cidades,
-                    selectedItem: _cidadeSelecionada,
-                    itemAsString: (c) => c.nome,
-                    onChanged: (v) => setState(() => _cidadeSelecionada = v),
-                    dropdownDecoratorProps: DropDownDecoratorProps(
-                      dropdownSearchDecoration: _inputStyle(
-                        _loadingCidades ? 'Cidade (carregando...)' : 'Cidade',
-                        Icons.location_city,
-                        suffix: _loadingCidades
-                            ? const Padding(
-                                padding: EdgeInsets.only(right: 10),
-                                child: SizedBox(
-                                    width: 16,
-                                    height: 16,
-                                    child: CircularProgressIndicator(
-                                        strokeWidth: 2)))
-                            : null,
-                      ),
-                    ),
-                    validator: (v) => v == null ? 'Selecione a cidade' : null,
-                    popupProps: const PopupProps.menu(showSearchBox: true),
-                  ),
+
                   const SizedBox(height: 24),
                   ElevatedButton(
                     onPressed: _save,
