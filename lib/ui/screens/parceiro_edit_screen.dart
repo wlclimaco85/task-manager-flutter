@@ -1,13 +1,16 @@
 import 'dart:io';
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:flutter_multi_formatter/flutter_multi_formatter.dart';
 import 'package:dropdown_search/dropdown_search.dart';
-import 'package:task_manager_flutter/data/constants/custom_colors.dart';
+import 'package:flutter_multi_formatter/flutter_multi_formatter.dart';
+
 import 'package:task_manager_flutter/data/services/network_caller.dart';
 import 'package:task_manager_flutter/data/utils/api_links.dart';
+import 'package:task_manager_flutter/data/utils/grid_colors.dart';
+
+// Helper grande (já existente, NÃO alterado)
 import 'package:task_manager_flutter/ui/widgets/edit_form_helpers.dart';
-import 'package:task_manager_flutter/data/models/regime_tributario_model.dart';
 
 class ParceiroEditScreen extends StatefulWidget {
   final Map<String, dynamic> initialData;
@@ -19,28 +22,28 @@ class ParceiroEditScreen extends StatefulWidget {
 
 class _ParceiroEditScreenState extends State<ParceiroEditScreen> {
   final _formKey = GlobalKey<FormState>();
-  final CustomColors _colors = CustomColors();
 
   File? _logo;
   String? _logoBase64;
   bool _imageTooLarge = false;
 
-  // Controllers
   late TextEditingController _nome;
   late TextEditingController _cpf;
   late TextEditingController _telefone1;
+  late TextEditingController _telefone2;
   late TextEditingController _email;
   late TextEditingController _razaoSocial;
   late TextEditingController _incrMun;
   late TextEditingController _observacao;
   late TextEditingController _valorMensal;
   late TextEditingController _ie;
+
   late TextEditingController _logradouro;
   late TextEditingController _numero;
   late TextEditingController _cep;
   late TextEditingController _bairro;
 
-  // Dropdowns
+  // Localização
   List<PaisModel> _paises = [];
   List<EstadoModel> _estados = [];
   List<CidadeModel> _cidades = [];
@@ -48,84 +51,78 @@ class _ParceiroEditScreenState extends State<ParceiroEditScreen> {
   EstadoModel? _estadoSelecionado;
   CidadeModel? _cidadeSelecionada;
 
-  List<RegimeTributario> _regimes = [];
-  RegimeTributario? _regimeSelecionado;
-
-  bool _isLoadingEstados = false;
-  bool _isLoadingCidades = false;
-
-  Map<String, dynamic>? _appCache;
+  // Carregando dropdowns
+  bool _loadingEstados = false;
+  bool _loadingCidades = false;
 
   @override
   void initState() {
     super.initState();
     final d = widget.initialData;
+
     _nome = TextEditingController(text: safeToString(d['nome']));
     _cpf = TextEditingController(text: safeToString(d['cpf']));
     _telefone1 = TextEditingController(text: safeToString(d['telefone1']));
+    _telefone2 = TextEditingController(text: safeToString(d['telefone2']));
     _email = TextEditingController(text: safeToString(d['email']));
     _razaoSocial = TextEditingController(text: safeToString(d['razaoSocial']));
     _incrMun = TextEditingController(text: safeToString(d['incrMun']));
     _observacao = TextEditingController(text: safeToString(d['observacao']));
     _valorMensal = TextEditingController(text: safeToString(d['valorMensal']));
     _ie = TextEditingController(text: safeToString(d['ie']));
-    _logradouro = TextEditingController(text: safeToString(d['logradouro']));
-    _numero = TextEditingController(text: safeToString(d['numero']));
-    _cep = TextEditingController(text: safeToString(d['cep']));
-    _bairro = TextEditingController(text: safeToString(d['bairro']));
 
-    _bootstrap();
+    final end = (d['endereco'] is Map<String, dynamic>)
+        ? d['endereco'] as Map<String, dynamic>
+        : <String, dynamic>{};
+    _logradouro = TextEditingController(text: safeToString(end['logradouro']));
+    _numero = TextEditingController(text: safeToString(end['numero']));
+    _cep = TextEditingController(text: safeToString(end['cep']));
+    _bairro = TextEditingController(text: safeToString(end['bairro']));
+
+    final paisId = safeToInt(end['paisId'] ?? d['paisId']);
+    final estadoId = safeToInt(end['estadoId'] ?? d['estadoId']);
+    final cidadeId = safeToInt(end['cidadeId'] ?? d['cidadeId']);
+
+    _bootstrap(paisId, estadoId, cidadeId);
   }
 
-  Future<void> _bootstrap() async {
+  Future<void> _bootstrap(int? paisId, int? estadoId, int? cidadeId) async {
     _paises = await fetchPaises();
-    _appCache = {'id': 1, 'nome': 'AppAcademia'};
-    final dropdownData = await RegimeTributario.loadDropdownData();
-    _regimes = dropdownData
-        .map((e) => RegimeTributario(
-              id: int.tryParse(e['value'].toString()),
-              descricao: e['label'],
-            ))
-        .toList();
+
+    if (paisId != null) {
+      _paisSelecionado = _paises.firstWhere(
+        (p) => p.id == paisId,
+        orElse: () => PaisModel(id: 0, nome: ''),
+      );
+      if (_paisSelecionado!.id != 0) {
+        _loadingEstados = true;
+        setState(() {});
+        _estados = await fetchEstados(_paisSelecionado!.id);
+        _loadingEstados = false;
+
+        if (estadoId != null) {
+          _estadoSelecionado = _estados.firstWhere(
+            (e) => e.id == estadoId,
+            orElse: () => EstadoModel(id: 0, nome: '', paisId: 0),
+          );
+          if (_estadoSelecionado!.id != 0) {
+            _loadingCidades = true;
+            setState(() {});
+            _cidades = await fetchCidades(_estadoSelecionado!.id);
+            _loadingCidades = false;
+
+            if (cidadeId != null) {
+              _cidadeSelecionada = _cidades.firstWhere(
+                (c) => c.id == cidadeId,
+                orElse: () => CidadeModel(id: 0, nome: '', estadoId: 0),
+              );
+            }
+          }
+        }
+      }
+    }
+
     setState(() {});
-  }
-
-  Future<void> _loadEstados(PaisModel pais) async {
-    setState(() => _isLoadingEstados = true);
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Carregando estados...')),
-    );
-    _estados = await fetchEstados(pais.id);
-    ScaffoldMessenger.of(context).hideCurrentSnackBar();
-    setState(() => _isLoadingEstados = false);
-  }
-
-  Future<void> _loadCidades(EstadoModel estado) async {
-    setState(() => _isLoadingCidades = true);
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Carregando cidades...')),
-    );
-    _cidades = await fetchCidades(estado.id);
-    ScaffoldMessenger.of(context).hideCurrentSnackBar();
-    setState(() => _isLoadingCidades = false);
-  }
-
-  InputDecoration _inputStyle(String label, IconData icon) {
-    return InputDecoration(
-      labelText: label,
-      prefixIcon: Icon(icon, color: GridColors.inputBorder),
-      filled: true,
-      fillColor: GridColors.inputBackground,
-      contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-      enabledBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(10),
-        borderSide: BorderSide(color: _colors.getBorderInput(), width: 1.2),
-      ),
-      focusedBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(10),
-        borderSide: BorderSide(color: _colors.getBorderInput(), width: 1.6),
-      ),
-    );
   }
 
   Future<void> _pickLogo(ImageSource src) async {
@@ -143,6 +140,54 @@ class _ParceiroEditScreenState extends State<ParceiroEditScreen> {
     }
   }
 
+  InputDecoration _dec(String label, IconData icon, {Widget? suffix}) {
+    return InputDecoration(
+      labelText: label,
+      prefixIcon: Icon(icon, color: GridColors.inputBorder),
+      suffixIcon: suffix,
+      filled: true,
+      fillColor: GridColors.inputBackground,
+      contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(10),
+        borderSide: const BorderSide(color: GridColors.inputBorder, width: 1.2),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(10),
+        borderSide: const BorderSide(color: GridColors.inputBorder, width: 1.6),
+      ),
+    );
+  }
+
+  Future<void> _onPaisChanged(PaisModel? v) async {
+    setState(() {
+      _paisSelecionado = v;
+      _estadoSelecionado = null;
+      _cidadeSelecionada = null;
+      _estados = [];
+      _cidades = [];
+      _loadingEstados = v != null;
+      _loadingCidades = false;
+    });
+    if (v != null) {
+      _estados = await fetchEstados(v.id);
+    }
+    setState(() => _loadingEstados = false);
+  }
+
+  Future<void> _onEstadoChanged(EstadoModel? v) async {
+    setState(() {
+      _estadoSelecionado = v;
+      _cidadeSelecionada = null;
+      _cidades = [];
+      _loadingCidades = v != null;
+    });
+    if (v != null) {
+      _cidades = await fetchCidades(v.id);
+    }
+    setState(() => _loadingCidades = false);
+  }
+
   Future<void> _save() async {
     if (!_formKey.currentState!.validate()) return;
 
@@ -157,9 +202,17 @@ class _ParceiroEditScreenState extends State<ParceiroEditScreen> {
     );
 
     try {
-      final endereco = {
+      // valorMensal: converte string para double (ou null)
+      double? valorMensal;
+      final rawValor =
+          _valorMensal.text.replaceAll('.', '').replaceAll(',', '.').trim();
+      if (rawValor.isNotEmpty) {
+        valorMensal = double.tryParse(rawValor);
+      }
+
+      final Map<String, dynamic> endereco = {
         'logradouro': _logradouro.text.trim(),
-        'numero': _numero.text.trim(),
+        'numero': _numero.text.trim(), // String
         'cep': _cep.text.trim(),
         'bairro': _bairro.text.trim(),
         'paisId': _paisSelecionado?.id,
@@ -167,33 +220,41 @@ class _ParceiroEditScreenState extends State<ParceiroEditScreen> {
         'cidadeId': _cidadeSelecionada?.id,
       };
 
-      final body = {
-        'id': safeToString(widget.initialData['id']),
+      final Map<String, dynamic> req = {
+        'id': safeToInt(widget.initialData['id']),
         'nome': _nome.text.trim(),
         'cpf': _cpf.text.trim(),
         'telefone1': _telefone1.text.trim(),
+        'telefone2': _telefone2.text.trim(),
         'email': _email.text.trim(),
         'razaoSocial': _razaoSocial.text.trim(),
         'incrMun': _incrMun.text.trim(),
         'observacao': _observacao.text.trim(),
-        'valorMensal': _valorMensal.text.trim(),
+        'valorMensal': valorMensal,
         'ie': _ie.text.trim(),
         'endereco': endereco,
-        'regimeId': _regimeSelecionado?.id,
-        'empresaId': _appCache?['id'],
         'logoBase64': _logoBase64 ?? '',
       };
 
+      // Logs
+      debugPrint('--- PARCEIRO SAVE BODY (JSON) ---');
+      debugPrint(const JsonEncoder.withIndent('  ').convert(req));
+      debugPrint('--- PARCEIRO SAVE BODY (TYPES) ---');
+      req.forEach(
+          (k, v) => debugPrint('$k => ${v == null ? "null" : v.runtimeType}'));
+      debugPrint(
+          'endereco => ${endereco.map((k, v) => MapEntry(k, v == null ? "null" : v.runtimeType))}');
+
       final resp = await NetworkCaller()
-          .postRequest(ApiLinks.updateParceiro(widget.initialData['id']), body);
+          .postRequest(ApiLinks.updateParceiro(widget.initialData['id']), req);
 
       if (!mounted) return;
       Navigator.pop(context);
 
       if (resp.isSuccess) {
-        Navigator.pop(context, body);
+        Navigator.pop(context, req);
         ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-          content: Text('Parceiro atualizado com sucesso!'),
+          content: Text('Parceiro atualizado!'),
           backgroundColor: GridColors.success,
         ));
       } else {
@@ -212,13 +273,34 @@ class _ParceiroEditScreenState extends State<ParceiroEditScreen> {
   }
 
   @override
+  void dispose() {
+    _nome.dispose();
+    _cpf.dispose();
+    _telefone1.dispose();
+    _telefone2.dispose();
+    _email.dispose();
+    _razaoSocial.dispose();
+    _incrMun.dispose();
+    _observacao.dispose();
+    _valorMensal.dispose();
+    _ie.dispose();
+    _logradouro.dispose();
+    _numero.dispose();
+    _cep.dispose();
+    _bairro.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: GridColors.background,
       appBar: AppBar(
-        title: const Text('Editar Parceiro',
-            style: TextStyle(
-                color: GridColors.textPrimary, fontWeight: FontWeight.bold)),
+        title: const Text(
+          'Editar Parceiro',
+          style: TextStyle(
+              color: GridColors.textPrimary, fontWeight: FontWeight.bold),
+        ),
         backgroundColor: GridColors.primary,
         iconTheme: const IconThemeData(color: GridColors.textPrimary),
         actions: [IconButton(icon: const Icon(Icons.save), onPressed: _save)],
@@ -245,16 +327,23 @@ class _ParceiroEditScreenState extends State<ParceiroEditScreen> {
                   if (_imageTooLarge)
                     const Padding(
                       padding: EdgeInsets.only(top: 8),
-                      child: Text('⚠️ A imagem deve ter no máximo 2MB',
-                          style: TextStyle(color: Colors.red, fontSize: 13)),
+                      child: Text(
+                        '⚠️ A imagem deve ter no máximo 2MB',
+                        style: TextStyle(color: Colors.red, fontSize: 13),
+                      ),
                     ),
                   const SizedBox(height: 24),
+
+                  // Dados
                   buildTextField('Nome *', _nome, required: true),
                   buildTextFieldMasked('CPF', _cpf,
                       mask: MaskedInputFormatter('000.000.000-00'),
                       required: true,
                       type: TextInputType.number),
-                  buildTextFieldMasked('Telefone', _telefone1,
+                  buildTextFieldMasked('Telefone 1', _telefone1,
+                      mask: MaskedInputFormatter('(00) 00000-0000'),
+                      type: TextInputType.phone),
+                  buildTextFieldMasked('Telefone 2', _telefone2,
                       mask: MaskedInputFormatter('(00) 00000-0000'),
                       type: TextInputType.phone),
                   buildTextField('Email', _email,
@@ -268,124 +357,113 @@ class _ParceiroEditScreenState extends State<ParceiroEditScreen> {
                       mask: MaskedInputFormatter('000000'),
                       type: TextInputType.number),
                   buildTextField('Observação', _observacao),
-                  const SizedBox(height: 16),
-                  DropdownSearch<RegimeTributario>(
-                    items: _regimes,
-                    itemAsString: (r) => r.descricao ?? '',
-                    selectedItem: _regimeSelecionado,
-                    onChanged: (v) => setState(() => _regimeSelecionado = v),
-                    dropdownDecoratorProps: DropDownDecoratorProps(
-                      dropdownSearchDecoration: _inputStyle(
-                        'Regime Tributário',
-                        Icons.account_balance,
-                      ),
-                    ),
-                    validator: (v) =>
-                        v == null ? 'Selecione um regime tributário' : null,
-                    popupProps: const PopupProps.menu(showSearchBox: true),
-                  ),
+
                   const SizedBox(height: 24),
-                  const Align(
-                    alignment: Alignment.centerLeft,
-                    child: Text('Endereço',
-                        style: TextStyle(
-                            color: GridColors.primary,
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold)),
-                  ),
+
+                  // Endereço
                   buildTextField('Logradouro', _logradouro),
-                  Row(children: [
-                    Expanded(child: buildTextField('Número', _numero)),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: buildTextFieldMasked(
-                        'CEP',
-                        _cep,
-                        mask: MaskedInputFormatter('00000-000'),
-                        type: TextInputType.number,
+                  Row(
+                    children: [
+                      Expanded(child: buildTextField('Número', _numero)),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: buildTextFieldMasked('CEP', _cep,
+                            mask: MaskedInputFormatter('00000-000'),
+                            type: TextInputType.number),
                       ),
-                    ),
-                  ]),
+                    ],
+                  ),
                   buildTextField('Bairro', _bairro),
+
                   const SizedBox(height: 16),
+
                   DropdownSearch<PaisModel>(
                     items: _paises,
-                    itemAsString: (p) => p.nome,
                     selectedItem: _paisSelecionado,
-                    onChanged: (v) async {
-                      if (v == null) return;
-                      setState(() {
-                        _paisSelecionado = v;
-                        _estadoSelecionado = null;
-                        _cidadeSelecionada = null;
-                        _estados = [];
-                        _cidades = [];
-                      });
-                      await _loadEstados(v);
-                    },
+                    itemAsString: (p) => p.nome,
+                    onChanged: _onPaisChanged,
                     dropdownDecoratorProps: DropDownDecoratorProps(
-                      dropdownSearchDecoration: _inputStyle('País', Icons.flag),
+                      dropdownSearchDecoration: _dec('País', Icons.flag),
                     ),
                     validator: (v) => v == null ? 'Selecione o país' : null,
                     popupProps: const PopupProps.menu(showSearchBox: true),
                   ),
+
                   const SizedBox(height: 16),
-                  _isLoadingEstados
-                      ? const CircularProgressIndicator()
-                      : DropdownSearch<EstadoModel>(
-                          items: _estados,
-                          itemAsString: (e) => e.nome,
-                          selectedItem: _estadoSelecionado,
-                          onChanged: (v) async {
-                            if (v == null) return;
-                            setState(() {
-                              _estadoSelecionado = v;
-                              _cidadeSelecionada = null;
-                              _cidades = [];
-                            });
-                            await _loadCidades(v);
-                          },
-                          dropdownDecoratorProps: DropDownDecoratorProps(
-                            dropdownSearchDecoration:
-                                _inputStyle('Estado', Icons.map_outlined),
-                          ),
-                          validator: (v) =>
-                              v == null ? 'Selecione o estado' : null,
-                          popupProps:
-                              const PopupProps.menu(showSearchBox: true),
-                        ),
+
+                  DropdownSearch<EstadoModel>(
+                    items: _estados,
+                    selectedItem: _estadoSelecionado,
+                    itemAsString: (e) => e.nome,
+                    onChanged: _onEstadoChanged,
+                    dropdownDecoratorProps: DropDownDecoratorProps(
+                      dropdownSearchDecoration: _dec(
+                        _loadingEstados ? 'Estado (carregando...)' : 'Estado',
+                        Icons.map_outlined,
+                        suffix: _loadingEstados
+                            ? const Padding(
+                                padding: EdgeInsets.only(right: 10),
+                                child: SizedBox(
+                                  width: 16,
+                                  height: 16,
+                                  child:
+                                      CircularProgressIndicator(strokeWidth: 2),
+                                ),
+                              )
+                            : null,
+                      ),
+                    ),
+                    validator: (v) => v == null ? 'Selecione o estado' : null,
+                    popupProps: const PopupProps.menu(showSearchBox: true),
+                  ),
+
                   const SizedBox(height: 16),
-                  _isLoadingCidades
-                      ? const CircularProgressIndicator()
-                      : DropdownSearch<CidadeModel>(
-                          items: _cidades,
-                          itemAsString: (c) => c.nome,
-                          selectedItem: _cidadeSelecionada,
-                          onChanged: (v) =>
-                              setState(() => _cidadeSelecionada = v),
-                          dropdownDecoratorProps: DropDownDecoratorProps(
-                            dropdownSearchDecoration:
-                                _inputStyle('Cidade', Icons.location_city),
-                          ),
-                          validator: (v) =>
-                              v == null ? 'Selecione a cidade' : null,
-                          popupProps:
-                              const PopupProps.menu(showSearchBox: true),
-                        ),
+
+                  DropdownSearch<CidadeModel>(
+                    items: _cidades,
+                    selectedItem: _cidadeSelecionada,
+                    itemAsString: (c) => c.nome,
+                    onChanged: (v) => setState(() => _cidadeSelecionada = v),
+                    dropdownDecoratorProps: DropDownDecoratorProps(
+                      dropdownSearchDecoration: _dec(
+                        _loadingCidades ? 'Cidade (carregando...)' : 'Cidade',
+                        Icons.location_city,
+                        suffix: _loadingCidades
+                            ? const Padding(
+                                padding: EdgeInsets.only(right: 10),
+                                child: SizedBox(
+                                  width: 16,
+                                  height: 16,
+                                  child:
+                                      CircularProgressIndicator(strokeWidth: 2),
+                                ),
+                              )
+                            : null,
+                      ),
+                    ),
+                    validator: (v) => v == null ? 'Selecione a cidade' : null,
+                    popupProps: const PopupProps.menu(showSearchBox: true),
+                  ),
+
                   const SizedBox(height: 24),
+
                   ElevatedButton(
                     onPressed: _save,
                     style: ElevatedButton.styleFrom(
-                        backgroundColor: GridColors.buttonBackground,
-                        shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12)),
-                        elevation: 2,
-                        minimumSize: const Size(double.infinity, 56)),
-                    child: const Text('SALVAR ALTERAÇÕES',
-                        style: TextStyle(
-                            color: GridColors.buttonText,
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold)),
+                      backgroundColor: GridColors.buttonBackground,
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12)),
+                      elevation: 2,
+                      minimumSize: const Size(double.infinity, 56),
+                    ),
+                    child: const Text(
+                      'SALVAR ALTERAÇÕES',
+                      style: TextStyle(
+                        color: GridColors.buttonText,
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
                   ),
                 ],
               ),
