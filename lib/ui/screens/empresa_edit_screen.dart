@@ -197,6 +197,9 @@ class _EmpresaEditScreenState extends State<EmpresaEditScreen> {
       };
 
       final body = rawBody.map((k, v) => MapEntry(k, v?.toString() ?? ''));
+
+      print('Body para salvar empresa: $body');
+      print(ApiLinks.updateEmpresa(widget.initialData['id']));
       final resp = await NetworkCaller()
           .postRequest(ApiLinks.updateEmpresa(widget.initialData['id']), body);
 

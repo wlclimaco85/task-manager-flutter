@@ -1,18 +1,47 @@
+// lib/ui/widgets/edit_form_helpers.dart
+// ===============================================================
+// Helper compartilhado para telas de edição
+// - Safe converters
+// - Modelos (País/Estado/Cidade)
+// - Fetchers tolerantes (pode vir body como List ou {data:{dados:[]}} ou {dados:[]})
+// - TextFields e mascaras
+// - Dropdowns (Material + DropdownSearch com loader)
+// - Imagem (picker + dialog + avatar editável)
+// - inputStyle padronizado
+// - normalizeBody com LOG p/ eliminar erro de conversão int->String
+// ===============================================================
+
 import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_multi_formatter/flutter_multi_formatter.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:dropdown_search/dropdown_search.dart';
+
 import 'package:task_manager_flutter/data/services/network_caller.dart';
 import 'package:task_manager_flutter/data/utils/api_links.dart';
-import 'package:task_manager_flutter/data/utils/grid_colors.dart';
-
-String safeToString(dynamic v) => v?.toString() ?? '';
-int? safeToInt(dynamic v) =>
-    v == null ? null : (v is int ? v : int.tryParse(v.toString() ?? ''));
+import 'package:task_manager_flutter/data/constants/custom_colors.dart';
 
 /// ===============================================================
-/// MODELOS
+/// SAFE CONVERTERS
+/// ===============================================================
+String safeToString(dynamic v) => v?.toString() ?? '';
+int? safeToInt(dynamic v) {
+  if (v == null) return null;
+  if (v is int) return v;
+  final s = v.toString();
+  if (s.isEmpty) return null;
+  return int.tryParse(s);
+}
+
+double? safeToDouble(dynamic v) {
+  if (v == null) return null;
+  if (v is num) return v.toDouble();
+  return double.tryParse(v.toString());
+}
+
+/// ===============================================================
+/// MODELOS (com == e hashCode por id, para Dropdowns funcionarem sem asserts)
 /// ===============================================================
 class PaisModel {
   final int id;
@@ -22,7 +51,15 @@ class PaisModel {
 
   factory PaisModel.fromJson(Map<String, dynamic> j) => PaisModel(
         id: safeToInt(j['id']) ?? 0,
-        nome: safeToString(j['nomePt'].isEmpty ? j['nome'] : j['nomePt']),
+        // aceita nomePt ou nome
+        nome: (() {
+          final nomePt = j['nomePt'];
+          final nome = j['nome'];
+          if (nomePt != null && safeToString(nomePt).isNotEmpty) {
+            return safeToString(nomePt);
+          }
+          return safeToString(nome);
+        })(),
       );
 
   @override
@@ -76,21 +113,33 @@ class CidadeModel {
 }
 
 /// ===============================================================
-/// SERVICES - Fetch País / Estado / Cidade
+/// SERVICES - Fetch País / Estado / Cidade (tolerantes a diferentes formatos)
 /// ===============================================================
+List<dynamic>? _extractList(dynamic data) {
+  // Aceita: List
+  if (data is List) return data;
+  // Aceita: {data:{dados:[...]}} OU {dados:[...]}
+  if (data is Map) {
+    final dataNode = data['data'];
+    if (dataNode is Map && dataNode['dados'] is List) {
+      return dataNode['dados'] as List;
+    }
+    if (data['dados'] is List) {
+      return data['dados'] as List;
+    }
+  }
+  return null;
+}
+
 Future<List<PaisModel>> fetchPaises() async {
   try {
     final resp = await NetworkCaller().getRequest(ApiLinks.buscarPaises);
     if (resp.isSuccess) {
-      final dynamic data = resp.body ?? {};
-      final List<dynamic>? list = data is List
-          ? data
-          : (data is Map &&
-                  (data['data']?['dados'] is List || data['dados'] is List))
-              ? (data['data']?['dados'] ?? data['dados']) as List
-              : null;
+      final list = _extractList(resp.body);
       if (list != null) {
-        return list.map((e) => PaisModel.fromJson(e)).toList();
+        return list
+            .map((e) => PaisModel.fromJson(Map<String, dynamic>.from(e)))
+            .toList();
       }
     }
   } catch (e) {
@@ -104,15 +153,11 @@ Future<List<EstadoModel>> fetchEstados(int paisId) async {
     final resp = await NetworkCaller()
         .getRequest(ApiLinks.buscarEstados(paisId.toString()));
     if (resp.isSuccess) {
-      final dynamic data = resp.body ?? {};
-      final List<dynamic>? list = data is List
-          ? data
-          : (data is Map &&
-                  (data['data']?['dados'] is List || data['dados'] is List))
-              ? (data['data']?['dados'] ?? data['dados']) as List
-              : null;
+      final list = _extractList(resp.body);
       if (list != null) {
-        return list.map((e) => EstadoModel.fromJson(e)).toList();
+        return list
+            .map((e) => EstadoModel.fromJson(Map<String, dynamic>.from(e)))
+            .toList();
       }
     }
   } catch (e) {
@@ -126,15 +171,11 @@ Future<List<CidadeModel>> fetchCidades(int estadoId) async {
     final resp = await NetworkCaller()
         .getRequest(ApiLinks.buscarCidades(estadoId.toString()));
     if (resp.isSuccess) {
-      final dynamic data = resp.body ?? {};
-      final List<dynamic>? list = data is List
-          ? data
-          : (data is Map &&
-                  (data['data']?['dados'] is List || data['dados'] is List))
-              ? (data['data']?['dados'] ?? data['dados']) as List
-              : null;
+      final list = _extractList(resp.body);
       if (list != null) {
-        return list.map((e) => CidadeModel.fromJson(e)).toList();
+        return list
+            .map((e) => CidadeModel.fromJson(Map<String, dynamic>.from(e)))
+            .toList();
       }
     }
   } catch (e) {
@@ -144,12 +185,15 @@ Future<List<CidadeModel>> fetchCidades(int estadoId) async {
 }
 
 /// ===============================================================
-/// TEXTFIELDS
+/// INPUTS (TextFields com e sem máscara)
 /// ===============================================================
-Widget buildTextField(String label, TextEditingController c,
-    {TextInputType type = TextInputType.text,
-    bool required = false,
-    bool readOnly = false}) {
+Widget buildTextField(
+  String label,
+  TextEditingController c, {
+  TextInputType type = TextInputType.text,
+  bool required = false,
+  bool readOnly = false,
+}) {
   return Padding(
     padding: const EdgeInsets.symmetric(vertical: 6),
     child: TextFormField(
@@ -172,10 +216,13 @@ Widget buildTextField(String label, TextEditingController c,
   );
 }
 
-Widget buildTextFieldMasked(String label, TextEditingController c,
-    {MaskedInputFormatter? mask,
-    bool required = false,
-    TextInputType type = TextInputType.text}) {
+Widget buildTextFieldMasked(
+  String label,
+  TextEditingController c, {
+  MaskedInputFormatter? mask,
+  bool required = false,
+  TextInputType type = TextInputType.text,
+}) {
   return Padding(
     padding: const EdgeInsets.symmetric(vertical: 6),
     child: TextFormField(
@@ -199,7 +246,7 @@ Widget buildTextFieldMasked(String label, TextEditingController c,
 }
 
 /// ===============================================================
-/// DROPDOWNS
+/// DROPDOWNS - Material (mantidos por compatibilidade)
 /// ===============================================================
 Widget buildDropdown<T>({
   required String label,
@@ -208,7 +255,7 @@ Widget buildDropdown<T>({
   required String Function(T) labelBuilder,
   required void Function(T?) onChanged,
 }) {
-  // evita erro de valor duplicado ou não encontrado
+  // evita erro de valor duplicado ou inexistente
   final validValue = items.contains(value) ? value : null;
 
   return Padding(
@@ -217,8 +264,10 @@ Widget buildDropdown<T>({
       value: validValue,
       isExpanded: true,
       items: items
-          .map((e) =>
-              DropdownMenuItem<T>(value: e, child: Text(labelBuilder(e))))
+          .map((e) => DropdownMenuItem<T>(
+                value: e,
+                child: Text(labelBuilder(e)),
+              ))
           .toList(),
       onChanged: onChanged,
       decoration: InputDecoration(
@@ -262,12 +311,193 @@ Widget buildDropdownInt({
 }
 
 /// ===============================================================
-/// IMAGEM
+/// DROPDOWN SEARCH (com loader, estilo, popup com busca)
+/// ===============================================================
+
+/// Estilo padronizado (mesmo visual solicitado nas telas)
+InputDecoration inputStyle(String label, IconData icon, CustomColors colors) {
+  return InputDecoration(
+    labelText: label,
+    prefixIcon: Icon(icon, color: GridColors.inputBorder),
+    filled: true,
+    fillColor: GridColors.inputBackground,
+    contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+    enabledBorder: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(10),
+      borderSide: BorderSide(color: colors.getBorderInput(), width: 1.2),
+    ),
+    focusedBorder: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(10),
+      borderSide: BorderSide(color: colors.getBorderInput(), width: 1.6),
+    ),
+  );
+}
+
+/// Generics (sincrono) — já com loading controlado via [isLoading]
+Widget buildDropdownSearchSync<T>({
+  required String label,
+  required IconData icon,
+  required T? selected,
+  required List<T> items,
+  required String Function(T) itemAsString,
+  required void Function(T?) onChanged,
+  String? validatorMsg,
+  required bool isLoading,
+  bool showSearchBox = true,
+  CustomColors? colors,
+}) {
+  final _colors = colors ?? CustomColors();
+  return Padding(
+    padding: const EdgeInsets.symmetric(vertical: 6),
+    child: IgnorePointer(
+      ignoring: isLoading,
+      child: Stack(
+        children: [
+          DropdownSearch<T>(
+            items: items,
+            selectedItem: items.contains(selected) ? selected : null,
+            itemAsString: (item) => item == null ? '' : itemAsString(item),
+            onChanged: onChanged,
+            dropdownDecoratorProps: DropDownDecoratorProps(
+              dropdownSearchDecoration: inputStyle(label, icon, _colors),
+            ),
+            validator: (v) =>
+                (validatorMsg != null && v == null) ? validatorMsg : null,
+            popupProps: PopupProps.menu(
+              showSearchBox: showSearchBox,
+              searchFieldProps: const TextFieldProps(
+                decoration: InputDecoration(hintText: 'Pesquisar...'),
+              ),
+            ),
+          ),
+          if (isLoading)
+            const Positioned.fill(
+              child: _DropdownBlockingLoader(),
+            ),
+        ],
+      ),
+    ),
+  );
+}
+
+/// Generics (assíncrono) — usa asyncItems
+Widget buildDropdownSearchAsync<T>({
+  required String label,
+  required IconData icon,
+  required T? selected,
+  required Future<List<T>> Function(String?) asyncItems,
+  required String Function(T) itemAsString,
+  required void Function(T?) onChanged,
+  String? validatorMsg,
+  bool showSearchBox = true,
+  CustomColors? colors,
+}) {
+  final _colors = colors ?? CustomColors();
+  return Padding(
+    padding: const EdgeInsets.symmetric(vertical: 6),
+    child: DropdownSearch<T>(
+      selectedItem: selected,
+      asyncItems: (filter) => asyncItems(filter),
+      itemAsString: (item) => item == null ? '' : itemAsString(item),
+      onChanged: onChanged,
+      dropdownDecoratorProps: DropDownDecoratorProps(
+        dropdownSearchDecoration: inputStyle(label, icon, _colors),
+      ),
+      validator: (v) =>
+          (validatorMsg != null && v == null) ? validatorMsg : null,
+      popupProps: PopupProps.menu(
+        showSearchBox: showSearchBox,
+        searchFieldProps: const TextFieldProps(
+          decoration: InputDecoration(hintText: 'Pesquisar...'),
+        ),
+      ),
+    ),
+  );
+}
+
+/// Versão INT (id/label) síncrona
+Widget buildDropdownSearchInt({
+  required String label,
+  required IconData icon,
+  required int? selectedId,
+  required List<Map<String, dynamic>> items, // [{'id':1,'label':'...'}]
+  required void Function(int?) onChanged,
+  String idKey = 'id',
+  String labelKey = 'label',
+  String? validatorMsg,
+  required bool isLoading,
+  bool showSearchBox = true,
+  CustomColors? colors,
+}) {
+  final _colors = colors ?? CustomColors();
+  final selectedMap =
+      items.firstWhere((e) => e[idKey] == selectedId, orElse: () => {});
+  return Padding(
+    padding: const EdgeInsets.symmetric(vertical: 6),
+    child: IgnorePointer(
+      ignoring: isLoading,
+      child: Stack(
+        children: [
+          DropdownSearch<Map<String, dynamic>>(
+            items: items,
+            selectedItem: selectedMap.isEmpty ? null : selectedMap,
+            itemAsString: (m) => m == null ? '' : safeToString(m[labelKey]),
+            onChanged: (m) => onChanged(m == null ? null : m[idKey] as int?),
+            dropdownDecoratorProps: DropDownDecoratorProps(
+              dropdownSearchDecoration: inputStyle(label, icon, _colors),
+            ),
+            validator: (m) =>
+                (validatorMsg != null && m == null) ? validatorMsg : null,
+            popupProps: PopupProps.menu(
+              showSearchBox: showSearchBox,
+              searchFieldProps: const TextFieldProps(
+                decoration: InputDecoration(hintText: 'Pesquisar...'),
+              ),
+            ),
+          ),
+          if (isLoading)
+            const Positioned.fill(
+              child: _DropdownBlockingLoader(),
+            ),
+        ],
+      ),
+    ),
+  );
+}
+
+/// Overlay de loading para dropdowns
+class _DropdownBlockingLoader extends StatelessWidget {
+  const _DropdownBlockingLoader();
+
+  @override
+  Widget build(BuildContext context) {
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: Colors.black.withOpacity(0.05),
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: const Center(
+        child: SizedBox(
+          width: 22,
+          height: 22,
+          child: CircularProgressIndicator(strokeWidth: 2),
+        ),
+      ),
+    );
+  }
+}
+
+/// ===============================================================
+/// IMAGEM (picker + dialog + círculo editável)
 /// ===============================================================
 Future<(File?, String?)> pickImageWithValidation(ImageSource src) async {
   final picker = ImagePicker();
   final XFile? file = await picker.pickImage(
-      source: src, maxWidth: 800, maxHeight: 800, imageQuality: 80);
+    source: src,
+    maxWidth: 800,
+    maxHeight: 800,
+    imageQuality: 80,
+  );
   if (file == null) return (null, null);
   final f = File(file.path);
   if (await f.length() > 2 * 1024 * 1024) return (null, 'LIMITE_EXCEDIDO');
@@ -276,7 +506,9 @@ Future<(File?, String?)> pickImageWithValidation(ImageSource src) async {
 }
 
 Future<void> showImageSourceDialog(
-    BuildContext context, Future<void> Function(ImageSource) onPicked) async {
+  BuildContext context,
+  Future<void> Function(ImageSource) onPicked,
+) async {
   showDialog(
     context: context,
     builder: (_) => AlertDialog(
@@ -322,9 +554,6 @@ Future<void> showImageSourceDialog(
   );
 }
 
-/// ===============================================================
-/// IMAGEM CIRCULAR EDITÁVEL
-/// ===============================================================
 class EditableImageCircle extends StatelessWidget {
   final File? file;
   final String? imageUrl;
@@ -402,4 +631,22 @@ class EditableImageCircle extends StatelessWidget {
       ),
     );
   }
+}
+
+/// ===============================================================
+/// NORMALIZAÇÃO DE BODY + LOG (mata o erro de conversão int->String)
+/// ===============================================================
+/// Use assim no save():
+///   final rawBody = { 'id': 1, 'nome': _nome.text, 'endereco': {...}, 'regimeId': 3 };
+///   final body = normalizeBody(rawBody);
+///   final resp = await NetworkCaller().postRequest(ApiLinks.updateEmpresa(id), body);
+Map<String, String> normalizeBody(Map<String, dynamic> rawBody) {
+  final normalized = rawBody.map((k, v) {
+    if (v == null) return MapEntry(k, '');
+    if (v is Map || v is List) return MapEntry(k, jsonEncode(v));
+    return MapEntry(k, v.toString());
+  });
+
+  debugPrint('🛰️ Body normalizado => ${jsonEncode(normalized)}');
+  return normalized;
 }
