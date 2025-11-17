@@ -85,7 +85,7 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
         Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (context) => const PontoScreen(),
+            builder: (context) => const PontoScreen(parceiroId: 1),
           ),
         );
         break;

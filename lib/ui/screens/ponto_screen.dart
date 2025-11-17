@@ -1,28 +1,64 @@
-import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
-import 'package:task_manager_flutter/data/constants/custom_colors.dart';
+import 'dart:async';
 
-class PontoScreen extends StatefulWidget {
-  const PontoScreen({super.key});
+import 'package:downloads_path_provider_28/downloads_path_provider_28.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:intl/intl.dart';
+
+import '../../data/constants/custom_colors.dart';
+import '../../data/controller/ponto_controller.dart';
+import 'pdf_preview_dialog.dart';
+import 'ponto_controller.dart';
+
+class PontoScreen extends ConsumerStatefulWidget {
+  /// parceiroId vindo da sessão/login (você já tem em cache)
+  final int parceiroId;
+
+  const PontoScreen({
+    super.key,
+    required this.parceiroId,
+  });
 
   @override
-  State<PontoScreen> createState() => _PontoScreenState();
+  ConsumerState<PontoScreen> createState() => _PontoScreenState();
 }
 
-class _PontoScreenState extends State<PontoScreen> {
-  bool _isRegistering = false;
-  DateTime now = DateTime.now();
+class _PontoScreenState extends ConsumerState<PontoScreen> {
+  late DateTime now;
+  Timer? _timer;
 
-  List<Map<String, dynamic>> marcacoes = [
-    {"entrada": "08:14", "saida": "12:44"},
-    {"entrada": "13:51", "saida": "18:17"},
-  ];
+  @override
+  void initState() {
+    super.initState();
+    now = DateTime.now();
 
-  String get horasTrabalhadas => "8h 56min";
-  String get intervalo => "1h 07min";
+    // Atualiza o relógio a cada segundo
+    _timer = Timer.periodic(const Duration(seconds: 1), (_) {
+      setState(() {
+        now = DateTime.now();
+      });
+    });
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
+  }
+
+  Future<void> _mostrarSnack(String msg) async {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(msg)),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
+    final pontoState = ref.watch(pontoControllerProvider(widget.parceiroId));
+    final controller =
+        ref.read(pontoControllerProvider(widget.parceiroId).notifier);
+
     return Scaffold(
       backgroundColor: GridColors.background,
       appBar: AppBar(
@@ -42,25 +78,91 @@ class _PontoScreenState extends State<PontoScreen> {
           ),
         ],
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          children: [
-            _buildClockCard(),
-            const SizedBox(height: 20),
-            _buildMarcacoesCard(),
-            const SizedBox(height: 20),
-            _buildActionButtons(context),
-            const SizedBox(height: 30),
-            _buildHumorSection(),
-          ],
+      body: RefreshIndicator(
+        onRefresh: () => controller.carregarDiaAtual(),
+        child: SingleChildScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            children: [
+              _buildClockCard(
+                registering: pontoState.registering,
+                onRegistrar: () async {
+                  final ok = await controller.registrarPontoAutomatico();
+                  if (ok) {
+                    await _mostrarSnack('Ponto registrado com sucesso!');
+                  } else {
+                    await _mostrarSnack(
+                      pontoState.error ?? 'Erro ao registrar ponto',
+                    );
+                  }
+                },
+              ),
+              const SizedBox(height: 20),
+              _buildMarcacoesCard(
+                marcacoes: controller.marcacoesAgrupadas,
+                horasTrabalhadas: controller.horasTrabalhadasFormatada,
+                intervalo: controller.intervaloFormatado,
+                loading: pontoState.loading,
+              ),
+              const SizedBox(height: 20),
+              _buildActionButtons(
+                context,
+                onPdf: () async {
+                  final bytes = await controller.gerarRelatorioPdf();
+                  if (bytes == null) {
+                    await _mostrarSnack(
+                        'Não foi possível gerar o PDF de batidas');
+                    return;
+                  }
+
+                  if (!mounted) return;
+                  showDialog(
+                    context: context,
+                    builder: (_) => PdfPreviewDialog(bytes: bytes),
+                  );
+                },
+                onBancoHoras: () async {
+                  final valor = await controller.carregarBancoHorasMesAtual();
+                  if (valor == null) {
+                    await _mostrarSnack(
+                      pontoState.error ?? 'Erro ao carregar banco de horas',
+                    );
+                    return;
+                  }
+
+                  if (!mounted) return;
+                  showDialog(
+                    context: context,
+                    builder: (_) => AlertDialog(
+                      title: const Text('Banco de Horas'),
+                      content: Text(
+                        'Saldo: ${valor.toStringAsFixed(2)} horas',
+                      ),
+                      actions: [
+                        TextButton(
+                          onPressed: () => Navigator.pop(context),
+                          child: const Text('OK'),
+                        ),
+                      ],
+                    ),
+                  );
+                },
+              ),
+              const SizedBox(height: 30),
+              _buildHumorSection(),
+            ],
+          ),
         ),
       ),
     );
   }
 
   // === RELÓGIO E BOTÃO DE REGISTRAR
-  Widget _buildClockCard() {
+  Widget _buildClockCard({
+    required bool registering,
+    required VoidCallback onRegistrar,
+  }) {
     return Card(
       color: GridColors.card,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
@@ -95,17 +197,10 @@ class _PontoScreenState extends State<PontoScreen> {
                 padding:
                     const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
               ),
-              onPressed: _isRegistering
-                  ? null
-                  : () {
-                      setState(() => _isRegistering = true);
-                      Future.delayed(const Duration(seconds: 2), () {
-                        setState(() => _isRegistering = false);
-                      });
-                    },
+              onPressed: registering ? null : onRegistrar,
               icon: const Icon(Icons.fingerprint, color: Colors.white),
               label: Text(
-                _isRegistering ? "Registrando..." : "Registrar Ponto",
+                registering ? 'Registrando...' : 'Registrar Ponto',
                 style: const TextStyle(
                   fontWeight: FontWeight.bold,
                   fontSize: 16,
@@ -115,8 +210,11 @@ class _PontoScreenState extends State<PontoScreen> {
             ),
             const SizedBox(height: 8),
             const Text(
-              "Mantenha o botão pressionado para registrar",
-              style: TextStyle(fontSize: 13, color: GridColors.textSecondary),
+              'Clique para registrar sua entrada/saída automaticamente',
+              style: TextStyle(
+                fontSize: 13,
+                color: GridColors.textSecondary,
+              ),
             ),
           ],
         ),
@@ -125,7 +223,12 @@ class _PontoScreenState extends State<PontoScreen> {
   }
 
   // === MARCAÇÕES DO DIA
-  Widget _buildMarcacoesCard() {
+  Widget _buildMarcacoesCard({
+    required List<Map<String, String>> marcacoes,
+    required String horasTrabalhadas,
+    required String intervalo,
+    required bool loading,
+  }) {
     return Card(
       color: GridColors.card,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
@@ -139,7 +242,7 @@ class _PontoScreenState extends State<PontoScreen> {
                 Icon(Icons.schedule, color: GridColors.primary),
                 SizedBox(width: 8),
                 Text(
-                  "Marcações de Hoje",
+                  'Marcações de Hoje',
                   style: TextStyle(
                     fontWeight: FontWeight.bold,
                     color: GridColors.textPrimary,
@@ -149,27 +252,53 @@ class _PontoScreenState extends State<PontoScreen> {
               ],
             ),
             const Divider(height: 20),
-            Column(
-              children: marcacoes
-                  .map(
-                    (m) => Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 6),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          _buildTimeBadge(Icons.login, m['entrada'], true),
-                          const Icon(Icons.swap_horiz,
-                              color: GridColors.textSecondary),
-                          _buildTimeBadge(Icons.logout, m['saida'], false),
-                        ],
+            if (loading)
+              const Padding(
+                padding: EdgeInsets.all(8.0),
+                child: Center(
+                  child: CircularProgressIndicator(),
+                ),
+              )
+            else if (marcacoes.isEmpty)
+              const Padding(
+                padding: EdgeInsets.all(8.0),
+                child: Text(
+                  'Nenhuma marcação registrada hoje.',
+                  style: TextStyle(color: GridColors.textSecondary),
+                ),
+              )
+            else
+              Column(
+                children: marcacoes
+                    .map(
+                      (m) => Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 6),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            _buildTimeBadge(
+                              Icons.login,
+                              m['entrada'] ?? '--:--',
+                              true,
+                            ),
+                            const Icon(
+                              Icons.swap_horiz,
+                              color: GridColors.textSecondary,
+                            ),
+                            _buildTimeBadge(
+                              Icons.logout,
+                              m['saida'] ?? '--:--',
+                              false,
+                            ),
+                          ],
+                        ),
                       ),
-                    ),
-                  )
-                  .toList(),
-            ),
+                    )
+                    .toList(),
+              ),
             const SizedBox(height: 16),
-            _buildInfoRow("Horas trabalhadas hoje", horasTrabalhadas),
-            _buildInfoRow("Intervalos", intervalo),
+            _buildInfoRow('Horas trabalhadas hoje', horasTrabalhadas),
+            _buildInfoRow('Intervalos', intervalo),
           ],
         ),
       ),
@@ -187,8 +316,11 @@ class _PontoScreenState extends State<PontoScreen> {
       ),
       child: Row(
         children: [
-          Icon(icon,
-              color: start ? GridColors.success : GridColors.error, size: 18),
+          Icon(
+            icon,
+            color: start ? GridColors.success : GridColors.error,
+            size: 18,
+          ),
           const SizedBox(width: 6),
           Text(
             time,
@@ -208,59 +340,75 @@ class _PontoScreenState extends State<PontoScreen> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(label, style: const TextStyle(color: GridColors.textSecondary)),
-          Text(value,
-              style: const TextStyle(
-                  color: GridColors.textPrimary, fontWeight: FontWeight.bold)),
+          Text(
+            label,
+            style: const TextStyle(color: GridColors.textSecondary),
+          ),
+          Text(
+            value,
+            style: const TextStyle(
+              color: GridColors.textPrimary,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
         ],
       ),
     );
   }
 
   // === BOTÕES ADICIONAIS
-  Widget _buildActionButtons(BuildContext context) {
+  Widget _buildActionButtons(
+    BuildContext context, {
+    required VoidCallback onPdf,
+    required VoidCallback onBancoHoras,
+  }) {
     return Column(
       children: [
         ElevatedButton.icon(
-          onPressed: () {},
+          onPressed: () {
+            // aqui você pode abrir uma tela para solicitar ajuste de ponto
+          },
           icon: const Icon(Icons.edit_calendar, color: Colors.white),
-          label: const Text("Solicitar Ajuste de Ponto"),
+          label: const Text('Solicitar Ajuste de Ponto'),
           style: ElevatedButton.styleFrom(
             backgroundColor: GridColors.primary,
             minimumSize: const Size(double.infinity, 52),
-            shape:
-                RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
           ),
         ),
         const SizedBox(height: 12),
         ElevatedButton.icon(
-          onPressed: () {},
+          onPressed: onPdf,
           icon: const Icon(Icons.picture_as_pdf, color: Colors.white),
-          label: const Text("Visualizar Batidas em PDF"),
+          label: const Text('Visualizar Batidas em PDF'),
           style: ElevatedButton.styleFrom(
             backgroundColor: GridColors.buttonBackground,
             minimumSize: const Size(double.infinity, 52),
-            shape:
-                RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
           ),
         ),
         const SizedBox(height: 12),
         ElevatedButton.icon(
-          onPressed: () {},
+          onPressed: onBancoHoras,
           icon: const Icon(Icons.timelapse, color: Colors.white),
-          label: const Text("Saldo do Banco de Horas"),
+          label: const Text('Saldo do Banco de Horas'),
           style: ElevatedButton.styleFrom(
             backgroundColor: GridColors.success,
             minimumSize: const Size(double.infinity, 52),
-            shape:
-                RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
           ),
         ),
       ],
     );
   }
 
-  // === SEÇÃO DE HUMOR (opcional)
+  // === SEÇÃO DE HUMOR
   Widget _buildHumorSection() {
     final icons = [
       Icons.sentiment_very_satisfied,
@@ -274,7 +422,7 @@ class _PontoScreenState extends State<PontoScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const Text(
-          "Como está seu humor hoje?",
+          'Como está seu humor hoje?',
           style: TextStyle(
             color: GridColors.textPrimary,
             fontWeight: FontWeight.bold,
@@ -288,7 +436,9 @@ class _PontoScreenState extends State<PontoScreen> {
               .map(
                 (icon) => IconButton(
                   icon: Icon(icon, size: 34, color: GridColors.primary),
-                  onPressed: () {},
+                  onPressed: () {
+                    // aqui você pode enviar o humor pro backend se quiser
+                  },
                 ),
               )
               .toList(),

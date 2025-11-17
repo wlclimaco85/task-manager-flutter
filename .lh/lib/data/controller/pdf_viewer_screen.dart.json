@@ -1,0 +1,18 @@
+{
+    "sourceFile": "lib/data/controller/pdf_viewer_screen.dart",
+    "activeCommit": 0,
+    "commits": [
+        {
+            "activePatchIndex": 0,
+            "patches": [
+                {
+                    "date": 1763417529089,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n"
+                }
+            ],
+            "date": 1763417529089,
+            "name": "Commit-0",
+            "content": "import 'dart:io';\r\nimport 'package:flutter/material.dart';\r\nimport 'package:flutter_pdfview/flutter_pdfview.dart';\r\n\r\nclass PdfViewerScreen extends StatelessWidget {\r\n  final File file;\r\n\r\n  const PdfViewerScreen({super.key, required this.file});\r\n\r\n  @override\r\n  Widget build(BuildContext context) {\r\n    return Scaffold(\r\n      appBar: AppBar(title: const Text(\"Visualizar PDF\")),\r\n      body: PDFView(\r\n        filePath: file.path,\r\n        autoSpacing: true,\r\n        enableSwipe: true,\r\n        pageFling: true,\r\n      ),\r\n    );\r\n  }\r\n}\r\n"
+        }
+    ]
+}

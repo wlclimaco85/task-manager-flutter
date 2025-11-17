@@ -1,0 +1,22 @@
+{
+    "sourceFile": "lib/ui/screens/pdf_preview_dialog.dart",
+    "activeCommit": 0,
+    "commits": [
+        {
+            "activePatchIndex": 1,
+            "patches": [
+                {
+                    "date": 1763417560502,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n"
+                },
+                {
+                    "date": 1763418524247,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -0,0 +1,31 @@\n+import 'dart:typed_data';\r\n+\r\n+import 'package:flutter/material.dart';\r\n+import 'package:syncfusion_flutter_pdfviewer/pdfviewer.dart';\r\n+\r\n+class PdfPreviewDialog extends StatelessWidget {\r\n+  final Uint8List bytes;\r\n+\r\n+  const PdfPreviewDialog({\r\n+    super.key,\r\n+    required this.bytes,\r\n+  });\r\n+\r\n+  @override\r\n+  Widget build(BuildContext context) {\r\n+    return AlertDialog(\r\n+      title: const Text('Visualizar PDF'),\r\n+      content: SizedBox(\r\n+        width: 400,\r\n+        height: 500,\r\n+        child: SfPdfViewer.memory(bytes),\r\n+      ),\r\n+      actions: [\r\n+        TextButton(\r\n+          onPressed: () => Navigator.pop(context),\r\n+          child: const Text('Fechar'),\r\n+        ),\r\n+      ],\r\n+    );\r\n+  }\r\n+}\r\n"
+                }
+            ],
+            "date": 1763417560502,
+            "name": "Commit-0",
+            "content": "import 'dart:typed_data';\r\nimport 'package:flutter/material.dart';\r\nimport 'package:syncfusion_flutter_pdfviewer/pdfviewer.dart';\r\n\r\nclass PdfPreviewDialog extends StatelessWidget {\r\n  final Uint8List bytes;\r\n\r\n  const PdfPreviewDialog({super.key, required this.bytes});\r\n\r\n  @override\r\n  Widget build(BuildContext context) {\r\n    return AlertDialog(\r\n      title: const Text(\"Visualizar PDF\"),\r\n      content: SizedBox(\r\n        width: 400,\r\n        height: 500,\r\n        child: SfPdfViewer.memory(bytes),\r\n      ),\r\n      actions: [\r\n        TextButton(\r\n          onPressed: () => Navigator.pop(context),\r\n          child: const Text(\"Fechar\"),\r\n        )\r\n      ],\r\n    );\r\n  }\r\n}\r\n"
+        }
+    ]
+}

@@ -69,6 +69,8 @@ dependencies:
   dropdown_search: ^5.0.6
   excel: ^2.0.6
   flutter_multi_formatter: ^2.11.0
+  flutter_riverpod: ^2.5.0
+  syncfusion_flutter_pdfviewer: ^23.1.41
 dev_dependencies:
   flutter_test:
     sdk: flutter
