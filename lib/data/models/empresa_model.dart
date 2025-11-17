@@ -1,14 +1,15 @@
 import 'dart:typed_data';
-
 import 'package:flutter/material.dart';
 import 'package:task_manager_flutter/data/models/aplicativo_model.dart';
 import 'package:task_manager_flutter/data/models/audit_model.dart';
 import 'package:task_manager_flutter/data/models/file_attachment_model.dart';
 import 'package:task_manager_flutter/data/models/network_response.dart';
 import 'package:task_manager_flutter/data/models/regime_tributario_model.dart';
+import 'package:task_manager_flutter/data/models/pais_model.dart';
+import 'package:task_manager_flutter/data/models/estado_model.dart';
+import 'package:task_manager_flutter/data/models/cidade_model.dart';
 import 'package:task_manager_flutter/data/services/network_caller.dart';
 import 'package:task_manager_flutter/data/utils/api_links.dart';
-
 import '../customization/generic_grid_card.dart';
 
 enum Ambiente { HOMOLOGACAO, PRODUCAO }
@@ -25,14 +26,17 @@ class Empresa {
   String? telefone;
   String? rua;
   String? numero;
-  String? cidade;
   String? cep;
   String? cnpj;
   String? ie;
   Ambiente? ambiente;
+
   Aplicativo? aplicativo;
   RegimeTributario? regime;
   FileAttachment? fileAttachment;
+  PaisModel? pais;
+  EstadoModel? estado;
+  CidadeModel? cidade;
   Audit? audit;
 
   Empresa({
@@ -47,7 +51,6 @@ class Empresa {
     this.telefone,
     this.rua,
     this.numero,
-    this.cidade,
     this.cep,
     this.cnpj,
     this.ie,
@@ -55,53 +58,58 @@ class Empresa {
     this.aplicativo,
     this.regime,
     this.fileAttachment,
+    this.pais,
+    this.estado,
+    this.cidade,
     this.audit,
   });
 
   // === Deserialização (fromJson)
-  Empresa.fromJson(Map<String, dynamic> json) {
-    id = json['id'];
-    nome = json['nome'];
-    razaoSocial = json['razaoSocial'];
-    email = json['email'];
-    site = json['site'];
-    contato = json['contato'];
-    emailContato = json['emailContato'];
-    telefoneContato = json['telefoneContato'];
-    telefone = json['telefone'];
-    rua = json['rua'];
-    numero = json['numero'];
-    cidade = json['cidade'];
-    cep = json['cep'];
-    cnpj = json['cnpj'];
-    ie = json['ie'];
-
-    if (json['ambiente'] != null) {
-      ambiente = Ambiente.values.firstWhere(
-        (e) =>
-            e.name.toUpperCase() == json['ambiente'].toString().toUpperCase(),
-        orElse: () => Ambiente.HOMOLOGACAO,
-      );
-    }
-
-    aplicativo = json['aplicativo'] != null
-        ? Aplicativo.fromJson(json['aplicativo'])
-        : null;
-
-    regime = json['regime'] != null
-        ? RegimeTributario.fromJson(json['regime'])
-        : null;
-
-    fileAttachment = json['fileAttachment'] != null
-        ? FileAttachment.fromJson(json['fileAttachment'])
-        : null;
-
-    audit = json['audit'] != null ? Audit.fromJson(json['audit']) : null;
+  factory Empresa.fromJson(Map<String, dynamic> json) {
+    return Empresa(
+      id: json['id'] is int ? json['id'] : int.tryParse('${json['id']}'),
+      nome: json['nome'],
+      razaoSocial: json['razaoSocial'],
+      email: json['email'],
+      site: json['site'],
+      contato: json['contato'],
+      emailContato: json['emailContato'],
+      telefoneContato: json['telefoneContato'],
+      telefone: json['telefone'],
+      rua: json['rua'],
+      numero: json['numero'],
+      cep: json['cep'],
+      cnpj: json['cnpj'],
+      ie: json['ie'],
+      ambiente: json['ambiente'] != null
+          ? Ambiente.values.firstWhere(
+              (e) =>
+                  e.name.toUpperCase() ==
+                  json['ambiente'].toString().toUpperCase(),
+              orElse: () => Ambiente.HOMOLOGACAO,
+            )
+          : null,
+      aplicativo: json['aplicativo'] != null
+          ? Aplicativo.fromJson(json['aplicativo'])
+          : null,
+      regime: json['regime'] != null
+          ? RegimeTributario.fromJson(json['regime'])
+          : null,
+      fileAttachment: json['fileAttachment'] != null
+          ? FileAttachment.fromJson(json['fileAttachment'])
+          : null,
+      pais: json['pais'] != null ? PaisModel.fromJson(json['pais']) : null,
+      estado:
+          json['estado'] != null ? EstadoModel.fromJson(json['estado']) : null,
+      cidade:
+          json['cidade'] != null ? CidadeModel.fromJson(json['cidade']) : null,
+      audit: json['audit'] != null ? Audit.fromJson(json['audit']) : null,
+    );
   }
 
   // === Serialização (toJson)
   Map<String, dynamic> toJson() {
-    final Map<String, dynamic> data = <String, dynamic>{};
+    final data = <String, dynamic>{};
     data['id'] = id;
     data['nome'] = nome;
     data['razaoSocial'] = razaoSocial;
@@ -113,7 +121,6 @@ class Empresa {
     data['telefone'] = telefone;
     data['rua'] = rua;
     data['numero'] = numero;
-    data['cidade'] = cidade;
     data['cep'] = cep;
     data['cnpj'] = cnpj;
     data['ie'] = ie;
@@ -124,11 +131,14 @@ class Empresa {
     if (fileAttachment != null) {
       data['fileAttachment'] = fileAttachment!.toJson();
     }
+    if (pais != null) data['pais'] = pais!.toJson();
+    if (estado != null) data['estado'] = estado!.toJson();
+    if (cidade != null) data['cidade'] = cidade!.toJson();
     if (audit != null) data['audit'] = audit!.toJson();
     return data;
   }
 
-  // === NOVO: Helper para exibir logo (imagem da empresa)
+  // === Helper para exibir logo (imagem da empresa)
   Uint8List get logoBytes {
     if (fileAttachment?.fileData != null &&
         fileAttachment!.fileData!.isNotEmpty) {
@@ -160,38 +170,44 @@ class Empresa {
         Icon(Icons.business, color: Colors.grey[600], size: size / 2);
   }
 
+  // === Funções auxiliares (para dropdowns e grids)
   static Future<List<Map<String, dynamic>>> loadAplicativos() async {
-    final NetworkResponse response = await NetworkCaller().getRequest(
-      ApiLinks.allAplicativos,
-    );
+    final NetworkResponse response =
+        await NetworkCaller().getRequest(ApiLinks.allAplicativos);
 
     if (response.isSuccess && response.body != null) {
       final List<dynamic> data = response.body!['data']['dados'] ?? [];
       return data
           .map(
-            (item) => {'value': item['id'].toString(), 'label': item['nome']},
+            (item) => {
+              'value': item['id'].toString(),
+              'label': item['nome'] ?? '',
+            },
           )
           .toList();
     }
     return [];
   }
 
-  static Future<List<Map<String, dynamic>>> loadCategorias() async {
-    final NetworkResponse response = await NetworkCaller().getRequest(
-      ApiLinks.allRegimetributario,
-    );
+  static Future<List<Map<String, dynamic>>> loadRegimes() async {
+    final NetworkResponse response =
+        await NetworkCaller().getRequest(ApiLinks.allRegimetributario);
 
     if (response.isSuccess && response.body != null) {
       final List<dynamic> data = response.body!['data']['dados'] ?? [];
       return data
           .map(
-            (item) => {'value': item['id'].toString(), 'label': item['codigo']},
+            (item) => {
+              'value': item['id'].toString(),
+              'label': item['codigo'] ?? '',
+            },
           )
           .toList();
     }
     return [];
   }
 
+  // === Configurações para o grid/form genérico
   static List<FieldConfig> fieldConfigs = [
     const FieldConfig(
       label: "Nome",
@@ -199,8 +215,6 @@ class Empresa {
       icon: Icons.business,
       isInForm: true,
       isFilterable: true,
-      isVisibleByDefault: true,
-      isFixed: false,
     ),
     const FieldConfig(
       label: "Razão Social",
@@ -208,73 +222,24 @@ class Empresa {
       icon: Icons.apartment,
       isInForm: true,
       isFilterable: true,
-      isVisibleByDefault: true,
-      isFixed: false,
     ),
     const FieldConfig(
       label: "Email",
       fieldName: "email",
       icon: Icons.email,
       isInForm: true,
-      isVisibleByDefault: true,
-      isFixed: false,
     ),
     const FieldConfig(
       label: "Telefone",
       fieldName: "telefone",
       icon: Icons.phone,
       isInForm: true,
-      isVisibleByDefault: true,
-      isFixed: false,
     ),
     const FieldConfig(
-      label: "Telefone Contato",
-      fieldName: "telefoneContato",
-      icon: Icons.phone_in_talk,
+      label: "Contato",
+      fieldName: "contato",
+      icon: Icons.person,
       isInForm: true,
-      isVisibleByDefault: false,
-      isFixed: false,
-    ),
-    const FieldConfig(
-      label: "Email Contato",
-      fieldName: "emailContato",
-      icon: Icons.contact_mail,
-      isInForm: true,
-      isVisibleByDefault: false,
-      isFixed: false,
-    ),
-    const FieldConfig(
-      label: "Rua",
-      fieldName: "rua",
-      icon: Icons.home,
-      isInForm: true,
-      isVisibleByDefault: false,
-      isFixed: false,
-    ),
-    const FieldConfig(
-      label: "Número",
-      fieldName: "numero",
-      icon: Icons.confirmation_number,
-      isInForm: true,
-      isVisibleByDefault: false,
-      isFixed: false,
-    ),
-    const FieldConfig(
-      label: "Cidade",
-      fieldName: "cidade",
-      icon: Icons.location_city,
-      isInForm: true,
-      isFilterable: true,
-      isVisibleByDefault: false,
-      isFixed: false,
-    ),
-    const FieldConfig(
-      label: "CEP",
-      fieldName: "cep",
-      icon: Icons.local_post_office,
-      isInForm: true,
-      isVisibleByDefault: false,
-      isFixed: false,
     ),
     FieldConfig(
       label: "Aplicativo",
@@ -282,33 +247,23 @@ class Empresa {
       displayFieldName: "aplicativo.nome",
       icon: Icons.apps,
       isInForm: true,
-      isFilterable: true,
       fieldType: FieldType.dropdown,
-      dropdownFutureBuilder: () async {
-        return await loadAplicativos();
-      },
-      dropdownValueField: 'id',
-      dropdownDisplayField: 'nome',
+      dropdownFutureBuilder: () async => await loadAplicativos(),
+      dropdownValueField: 'value',
+      dropdownDisplayField: 'label',
       isRequired: true,
-      isVisibleByDefault: true,
-      isFixed: false,
     ),
     FieldConfig(
-      label: "Regime",
-      fieldName: "regime", // Para o formulário (dropdown)
-      displayFieldName: "regime.codigo", // Para exibição na grid
-      icon: Icons.business_center,
+      label: "Regime Tributário",
+      fieldName: "regime",
+      displayFieldName: "regime.codigo",
+      icon: Icons.balance,
       isInForm: true,
-      isFilterable: true,
       fieldType: FieldType.dropdown,
-      dropdownFutureBuilder: () async {
-        return await loadCategorias();
-      },
-      dropdownValueField: 'id',
-      dropdownDisplayField: 'codigo',
+      dropdownFutureBuilder: () async => await loadRegimes(),
+      dropdownValueField: 'value',
+      dropdownDisplayField: 'label',
       isRequired: true,
-      isVisibleByDefault: true,
-      isFixed: false,
     ),
   ];
 }

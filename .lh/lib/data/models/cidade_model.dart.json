@@ -1,0 +1,22 @@
+{
+    "sourceFile": "lib/data/models/cidade_model.dart",
+    "activeCommit": 0,
+    "commits": [
+        {
+            "activePatchIndex": 1,
+            "patches": [
+                {
+                    "date": 1762898632553,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n"
+                },
+                {
+                    "date": 1762898642355,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -0,0 +1,43 @@\n+import 'package:task_manager_flutter/data/models/estado_model.dart';\r\n+\r\n+class CidadeModel {\r\n+  int? id;\r\n+  String? nome;\r\n+  int? ibge;\r\n+  String? latLon;\r\n+  EstadoModel? estado;\r\n+\r\n+  CidadeModel({\r\n+    this.id,\r\n+    this.nome,\r\n+    this.ibge,\r\n+    this.latLon,\r\n+    this.estado,\r\n+  });\r\n+\r\n+  factory CidadeModel.fromJson(Map<String, dynamic> json) {\r\n+    return CidadeModel(\r\n+      id: json['id'] is int ? json['id'] : int.tryParse(json['id'].toString()),\r\n+      nome: json['nome'],\r\n+      ibge: json['ibge'] is int\r\n+          ? json['ibge']\r\n+          : int.tryParse(json['ibge']?.toString() ?? ''),\r\n+      latLon: json['latLon'],\r\n+      estado:\r\n+          json['estado'] != null ? EstadoModel.fromJson(json['estado']) : null,\r\n+    );\r\n+  }\r\n+\r\n+  Map<String, dynamic> toJson() {\r\n+    return {\r\n+      'id': id,\r\n+      'nome': nome,\r\n+      'ibge': ibge,\r\n+      'latLon': latLon,\r\n+      if (estado != null) 'estado': estado!.toJson(),\r\n+    };\r\n+  }\r\n+\r\n+  @override\r\n+  String toString() => nome ?? '-';\r\n+}\r\n"
+                }
+            ],
+            "date": 1762898632553,
+            "name": "Commit-0",
+            "content": "import 'package:task_manager_flutter/data/models/estado_model.dart';\r\n\r\nclass CidadeModel {\r\n  int? id;\r\n  String? nome;\r\n  int? ibge;\r\n  String? latLon;\r\n  EstadoModel? estado;\r\n\r\n  CidadeModel({\r\n    this.id,\r\n    this.nome,\r\n    this.ibge,\r\n    this.latLon,\r\n    this.estado,\r\n  });\r\n\r\n  factory CidadeModel.fromJson(Map<String, dynamic> json) {\r\n    return CidadeModel(\r\n      id: json['id'] is int ? json['id'] : int.tryParse(json['id'].toString()),\r\n      nome: json['nome'],\r\n      ibge: json['ibge'] is int\r\n          ? json['ibge']\r\n          : int.tryParse(json['ibge']?.toString() ?? ''),\r\n      latLon: json['latLon'],\r\n      estado: json['estado'] != null\r\n          ? EstadoModel.fromJson(json['estado'])\r\n          : null,\r\n    );\r\n  }\r\n\r\n  Map<String, dynamic> toJson() {\r\n    return {\r\n      'id': id,\r\n      'nome': nome,\r\n      'ibge': ibge,\r\n      'latLon': latLon,\r\n      if (estado != null) 'estado': estado!.toJson(),\r\n    };\r\n  }\r\n\r\n  @override\r\n  String toString() => nome ?? '-';\r\n}\r\n"
+        }
+    ]
+}

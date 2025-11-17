@@ -11,6 +11,7 @@ import 'package:task_manager_flutter/ui/screens/dashboard_screen.dart';
 import 'package:task_manager_flutter/ui/screens/documento_screen.dart';
 import 'package:task_manager_flutter/ui/screens/file_upload_screen.dart';
 import 'package:task_manager_flutter/ui/screens/parceiro_grid_screen.dart';
+import 'package:task_manager_flutter/ui/screens/ponto_screen.dart';
 
 class BottomNavBarScreen extends StatefulWidget {
   const BottomNavBarScreen({super.key});
@@ -77,6 +78,14 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
           MaterialPageRoute(
             builder: (context) =>
                 ContaBancariaGridScreen(hasPermission: (action) => true),
+          ),
+        );
+        break;
+      case "Bater Ponto":
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => const PontoScreen(),
           ),
         );
         break;
@@ -177,6 +186,11 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
               leading: const Icon(Icons.text_increase_rounded),
               title: const Text('Contas Bancarias'),
               onTap: () => onMenuOptionSelected('Contas Bancarias'),
+            ),
+            ListTile(
+              leading: const Icon(Icons.access_alarm_rounded),
+              title: const Text('Bater Ponto'),
+              onTap: () => onMenuOptionSelected('Bater Ponto'),
             ),
             ListTile(
               leading: const Icon(Icons.exit_to_app),

@@ -122,6 +122,8 @@ class ApiLinks {
   static String deleteEmpresa(String id) =>
       '$_baseUrlNew/api/empresa/delete/$id';
 
+  static String empresaById(String id) => '$_baseUrlNew/api/empresa/$id';
+
   // Exame
   static String allExames = '$_baseUrlNew/api/exames';
   static String createExame = '$_baseUrlNew/api/exames/insert';

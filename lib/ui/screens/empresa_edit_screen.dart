@@ -13,6 +13,8 @@ import 'package:task_manager_flutter/data/services/network_caller.dart';
 import 'package:task_manager_flutter/data/services/upload_file_caller.dart';
 import 'package:task_manager_flutter/data/utils/api_links.dart';
 import 'package:task_manager_flutter/ui/widgets/edit_form_helpers.dart';
+import 'package:task_manager_flutter/data/models/auth_utility.dart';
+import 'package:task_manager_flutter/data/models/empresa_model.dart';
 
 class EmpresaEditScreen extends StatefulWidget {
   final Map<String, dynamic> initialData;
@@ -232,7 +234,8 @@ class _EmpresaEditScreenState extends State<EmpresaEditScreen> {
       barrierDismissible: false,
       builder: (_) => const Center(
         child: CircularProgressIndicator(
-            valueColor: AlwaysStoppedAnimation(GridColors.primary)),
+          valueColor: AlwaysStoppedAnimation(GridColors.primary),
+        ),
       ),
     );
 
@@ -258,7 +261,6 @@ class _EmpresaEditScreenState extends State<EmpresaEditScreen> {
 
       String clean(String text) =>
           text.replaceAll(RegExp(r'[^0-9a-zA-Z@.\s-]'), '');
-
       String onlyDigits(String? s) => (s ?? '').replaceAll(RegExp(r'\D'), '');
 
       final Map<String, dynamic> body = {
@@ -290,16 +292,158 @@ class _EmpresaEditScreenState extends State<EmpresaEditScreen> {
       debugPrint(const JsonEncoder.withIndent('  ').convert(body));
 
       final resp = await NetworkCaller().putRequest(
-          ApiLinks.updateEmpresa(widget.initialData['id'].toString()), body);
+        ApiLinks.updateEmpresa(widget.initialData['id'].toString()),
+        body,
+      );
 
       if (!mounted) return;
-      Navigator.pop(context);
+      Navigator.pop(context); // Fecha o loading inicial
 
       if (resp.isSuccess) {
-        Navigator.pop(context, body);
+        // Mostra o modal de recarregamento
+        showGeneralDialog(
+          context: context,
+          barrierDismissible: false,
+          barrierColor: Colors.black.withOpacity(0.35),
+          transitionDuration: const Duration(milliseconds: 400),
+          pageBuilder: (_, __, ___) => const SizedBox.shrink(),
+          transitionBuilder: (context, anim1, anim2, child) {
+            final scale = Tween<double>(begin: 0.8, end: 1.0).animate(
+              CurvedAnimation(parent: anim1, curve: Curves.easeOutBack),
+            );
+            return Opacity(
+              opacity: anim1.value,
+              child: Transform.scale(
+                scale: scale.value,
+                child: Center(
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                        vertical: 24, horizontal: 28),
+                    margin: const EdgeInsets.symmetric(horizontal: 40),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(18),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.25),
+                          blurRadius: 12,
+                          offset: const Offset(0, 5),
+                        ),
+                      ],
+                    ),
+                    child: const Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        CircularProgressIndicator(
+                          strokeWidth: 2.8,
+                          valueColor:
+                              AlwaysStoppedAnimation(GridColors.primary),
+                        ),
+                        SizedBox(height: 16),
+                        Text(
+                          'Recarregando empresa...',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            color: Colors.black87,
+                            fontWeight: FontWeight.w600,
+                            fontSize: 16,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            );
+          },
+        );
+
+        // Faz o fetch da empresa atualizada
+        final refreshed = await NetworkCaller().getRequest(
+            ApiLinks.empresaById(widget.initialData['id'].toString()));
+
+        await Future.delayed(const Duration(milliseconds: 600));
+        if (Navigator.canPop(context))
+          Navigator.pop(context); // Fecha recarregando
+
+        if (refreshed.isSuccess && refreshed.body != null) {
+          widget.initialData
+            ..clear()
+            ..addAll(Map<String, dynamic>.from(refreshed.body!));
+
+          final d = widget.initialData;
+          _nome.text = safeToString(d['nome']);
+          _razaoSocial.text = safeToString(d['razaoSocial']);
+          _email.text = safeToString(d['email']);
+          _site.text = safeToString(d['site']);
+          _contato.text = safeToString(d['contato']);
+          _emailContato.text = safeToString(d['emailContato']);
+          _telefoneContato.text = safeToString(d['telefoneContato']);
+          _telefone.text = safeToString(d['telefone']);
+          _rua.text = safeToString(d['rua']);
+          _numero.text = safeToString(d['numero']);
+          _cep.text = safeToString(d['cep']);
+          _cnpj.text = safeToString(d['cnpj']);
+          _ie.text = safeToString(d['ie']);
+          _ambiente =
+              safeToString(d['ambiente']).isNotEmpty ? d['ambiente'] : null;
+
+          // Atualiza o cache global corretamente
+          if (AuthUtility.userInfo?.login != null && refreshed.body != null) {
+            final empresaAtualizada = Empresa.fromJson(refreshed.body!);
+            AuthUtility.userInfo!.login!.empresa = empresaAtualizada;
+            await AuthUtility.setUserInfo(AuthUtility.userInfo!);
+            debugPrint('✅ Empresa atualizada em AuthUtility com sucesso');
+          }
+
+          setState(() {});
+        }
+
+        // Exibe o check verde
+        await showGeneralDialog(
+          context: context,
+          barrierDismissible: false,
+          barrierColor: Colors.black.withOpacity(0.2),
+          transitionDuration: const Duration(milliseconds: 500),
+          pageBuilder: (_, __, ___) => const SizedBox.shrink(),
+          transitionBuilder: (context, anim1, anim2, child) {
+            final scale = Tween<double>(begin: 0.6, end: 1.0).animate(
+              CurvedAnimation(parent: anim1, curve: Curves.elasticOut),
+            );
+            return Opacity(
+              opacity: anim1.value,
+              child: Transform.scale(
+                scale: scale.value,
+                child: Center(
+                  child: Container(
+                    padding: const EdgeInsets.all(30),
+                    decoration: const BoxDecoration(
+                      color: Colors.white,
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(
+                      Icons.check_circle,
+                      color: Colors.green,
+                      size: 80,
+                    ),
+                  ),
+                ),
+              ),
+            );
+          },
+        );
+
+        // Fecha o ícone verde corretamente
+        await Future.delayed(const Duration(seconds: 1));
+        if (Navigator.of(context, rootNavigator: true).canPop()) {
+          Navigator.of(context, rootNavigator: true).pop();
+        }
+
         ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
           content: Text('Empresa atualizada com sucesso!'),
           backgroundColor: GridColors.success,
+          behavior: SnackBarBehavior.floating,
+          duration: Duration(seconds: 3),
         ));
       } else {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
@@ -309,7 +453,7 @@ class _EmpresaEditScreenState extends State<EmpresaEditScreen> {
       }
     } catch (e) {
       Navigator.pop(context);
-      debugPrint('Erro ao salvar empresa: $e');
+      debugPrint('❌ Erro ao salvar empresa: $e');
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
         content: Text('Erro ao salvar: $e'),
         backgroundColor: GridColors.error,
