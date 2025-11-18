@@ -44,7 +44,6 @@ dependencies:
   image_picker: ^1.0.1
   #font_awesome_flutter: ^10.4.0
   fluttertoast: ^8.2.2
-  intl: ^0.20.2
   simple_gesture_detector: ^0.2.0
   modal_bottom_sheet: ^3.0.0
   dropdown_button2: ^2.3.8
@@ -70,7 +69,7 @@ dependencies:
   excel: ^2.0.6
   flutter_multi_formatter: ^2.11.0
   flutter_riverpod: ^2.5.0
-  syncfusion_flutter_pdfviewer: ^23.1.41
+  syncfusion_flutter_pdfviewer: ^31.2.12
 dev_dependencies:
   flutter_test:
     sdk: flutter

@@ -3,7 +3,7 @@
     "activeCommit": 0,
     "commits": [
         {
-            "activePatchIndex": 60,
+            "activePatchIndex": 63,
             "patches": [
                 {
                     "date": 1707188005314,
@@ -248,6 +248,18 @@
                 {
                     "date": 1763418589328,
                     "content": "Index: \n===================================================================\n--- \n+++ \n@@ -69,8 +69,9 @@\n   dropdown_search: ^5.0.6\r\n   excel: ^2.0.6\r\n   flutter_multi_formatter: ^2.11.0\r\n   flutter_riverpod: ^2.5.0\r\n+  syncfusion_flutter_pdfviewer: ^23.1.41\r\n dev_dependencies:\r\n   flutter_test:\r\n     sdk: flutter\r\n \r\n"
+                },
+                {
+                    "date": 1763419046009,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -43,9 +43,9 @@\n   shared_preferences: ^2.3.2\r\n   image_picker: ^1.0.1\r\n   #font_awesome_flutter: ^10.4.0\r\n   fluttertoast: ^8.2.2\r\n-  intl: ^0.20.2\r\n+  intl: ^0.18.0\r\n   simple_gesture_detector: ^0.2.0\r\n   modal_bottom_sheet: ^3.0.0\r\n   dropdown_button2: ^2.3.8\r\n   simple_tags: ^0.0.6\r\n"
+                },
+                {
+                    "date": 1763419126670,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -43,9 +43,8 @@\n   shared_preferences: ^2.3.2\r\n   image_picker: ^1.0.1\r\n   #font_awesome_flutter: ^10.4.0\r\n   fluttertoast: ^8.2.2\r\n-  intl: ^0.18.0\r\n   simple_gesture_detector: ^0.2.0\r\n   modal_bottom_sheet: ^3.0.0\r\n   dropdown_button2: ^2.3.8\r\n   simple_tags: ^0.0.6\r\n"
+                },
+                {
+                    "date": 1763499328023,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -68,9 +68,9 @@\n   dropdown_search: ^5.0.6\r\n   excel: ^2.0.6\r\n   flutter_multi_formatter: ^2.11.0\r\n   flutter_riverpod: ^2.5.0\r\n-  syncfusion_flutter_pdfviewer: ^23.1.41\r\n+  syncfusion_flutter_pdfviewer: ^31.2.12\r\n dev_dependencies:\r\n   flutter_test:\r\n     sdk: flutter\r\n \r\n"
                 }
             ],
             "date": 1707188005314,

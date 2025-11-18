@@ -1,14 +1,12 @@
 import 'dart:async';
 
-import 'package:downloads_path_provider_28/downloads_path_provider_28.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:intl/intl.dart';
+import 'package:intl/intl.dart'; //  <-- ESTA LINHA
 
 import '../../data/constants/custom_colors.dart';
 import '../../data/controller/ponto_controller.dart';
 import 'pdf_preview_dialog.dart';
-import 'ponto_controller.dart';
 
 class PontoScreen extends ConsumerStatefulWidget {
   /// parceiroId vindo da sessão/login (você já tem em cache)
