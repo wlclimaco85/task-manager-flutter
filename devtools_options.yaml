@@ -1,3 +1,49 @@
-description: This file stores settings for Dart & Flutter DevTools.
-documentation: https://docs.flutter.dev/tools/devtools/extensions#configure-extension-enablement-states
-extensions:
+
+trigger:
+  branches:
+    include:
+      - damiao-1.0  # Altere para o nome da sua branch principal
+
+pool:
+  vmImage: 'macos-latest'  # Use uma imagem de macOS, pois você precisa para gerar o IPA
+
+steps:
+
+# Passo 1: Preparar o ambiente Flutter
+- task: UseFlutter@0
+  inputs:
+    version: 'latest'  # Ou a versão do Flutter que você está usando
+
+# Passo 2: Restaurar dependências do Flutter
+- script: |
+    flutter pub get
+  displayName: 'Restaurar dependências do Flutter'
+
+# Passo 3: Compilar o APK para Android
+- script: |
+    flutter build apk --release
+  displayName: 'Compilar APK para Android'
+
+# Passo 4: Compilar o IPA para iOS (necessário ter um certificado válido e perfil de provisionamento)
+- script: |
+    flutter build ios --release --no-codesign
+  displayName: 'Compilar IPA para iOS'
+
+# Passo 5: Publicar APK no Google Play (utilizando o Google Play Developer API)
+- task: GooglePlayRelease@4
+  inputs:
+    serviceEndpoint: 'GooglePlay'  # Este serviço deve ser configurado nas conexões de serviço
+    action: 'Release'
+    appId: 'com.seuapp.android'  # Substitua com o ID do seu app Android
+    apkFile: 'build/app/outputs/flutter-apk/app-release.apk'
+    track: 'production'  # Você pode usar 'alpha', 'beta' ou 'production'
+
+# Passo 6: Publicar IPA na Apple App Store (utilizando o Fastlane)
+- task: UseFastLane@1
+  inputs:
+    fastLaneAction: 'upload_to_app_store'
+    ipaPath: 'build/ios/iphoneos/Runner.ipa'
+    appIdentifier: 'com.seuapp.ios'  # Substitua com o ID do seu app iOS
+    appleId: 'seu-email@apple.com'  # Substitua com seu ID Apple
+    itcTeamId: 'team_id'  # Seu ID de equipe do Apple Developer
+    appSpecificPassword: $(AppSpecificPassword)  # Crie e armazene a senha específica no Azure DevOps Secrets
