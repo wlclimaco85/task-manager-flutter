@@ -2,7 +2,7 @@
 trigger:
   branches:
     include:
-      - damiao-1.0  # Altere para o nome da sua branch principal
+      - damiao_1.0  # Altere para o nome da sua branch principal
 
 pool:
   vmImage: 'macos-latest'  # Use uma imagem de macOS, pois você precisa para gerar o IPA
