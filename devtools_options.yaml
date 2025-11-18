@@ -1,50 +1,50 @@
-
 trigger:
   branches:
     include:
-      - damiao_1.0  # Altere para o nome da sua branch principal
+      - damiao-1.0
 
 pool:
-  vmImage: 'macos-latest'  # Use uma imagem de macOS, pois você precisa para gerar o IPA
+  vmImage: 'ubuntu-latest'
 
 steps:
 
-# Passo 1: Preparar o ambiente Flutter
-- task: UseFlutter@0
+# 1. Instalar Flutter
+- script: |
+    git clone https://github.com/flutter/flutter.git -b stable
+    echo "##vso[task.prependpath]`pwd`/flutter/bin"
+    flutter --version
+  displayName: "Instalar Flutter"
+
+# 2. Restaurar dependências
+- script: flutter pub get
+  displayName: "Instalar dependências"
+
+# 3. Build APK Release
+- script: flutter build apk --release
+  displayName: "Build APK Release"
+
+# 4. Instalar Fastlane
+- script: |
+    sudo gem install fastlane -NV
+    fastlane --version
+  displayName: "Instalar Fastlane"
+
+# 5. Upload para Google Play
+- script: |
+    cd android
+
+    # O arquivo JSON precisa ser configurado no Azure DevOps (Secure Files)
+    echo "Usando JSON: $(googlePlayJson.secureFilePath)"
+
+    fastlane supply \
+      --json_key "$(googlePlayJson.secureFilePath)" \
+      --package_name "com.washingtonclimaco.task_manager_flutter" \
+      --apk "../build/app/outputs/flutter-apk/app-release.apk" \
+      --track production \
+      --skip_upload_changelogs true
+  displayName: "Enviar APK para Google Play"
+  env:
+    FASTLANE_DISABLE_COLORS: '1'
+    SUPPLY_SKIP_UPLOAD_CHANGELOGS: '1'
   inputs:
-    version: 'latest'  # Ou a versão do Flutter que você está usando
-
-# Passo 2: Restaurar dependências do Flutter
-- script: |
-    flutter pub get
-  displayName: 'Restaurar dependências do Flutter'
-
-# Passo 3: Compilar o APK para Android
-- script: |
-    flutter build apk --release
-  displayName: 'Compilar APK para Android'
-
-# Passo 4: Compilar o IPA para iOS (necessário ter um certificado válido e perfil de provisionamento)
-- script: |
-    flutter build ios --release --no-codesign
-  displayName: 'Compilar IPA para iOS'
-
-# Passo 5: Publicar APK no Google Play (utilizando o Google Play Developer API)
-# Passo 5: Publicar APK no Google Play
-- task: GooglePlayRelease@4
-  inputs:
-    serviceEndpoint: 'GooglePlay'          # conexão de serviço criada no DevOps
-    action: 'Release'
-    appId: 'com.washingtonclimaco.task_manager_flutter'   # <-- APPID CORRETO
-    apkFile: 'build/app/outputs/flutter-apk/app-release.apk'
-    track: 'production'      # ou 'alpha' / 'beta'
-
-# Passo 6: Publicar IPA na Apple App Store (utilizando o Fastlane)
-# - task: UseFastLane@1
-#   inputs:
-#     fastLaneAction: 'upload_to_app_store'
-#     ipaPath: 'build/ios/iphoneos/Runner.ipa'
-#     appIdentifier: 'com.seuapp.ios'  # Substitua com o ID do seu app iOS
-#     appleId: 'seu-email@apple.com'  # Substitua com seu ID Apple
-#     itcTeamId: 'team_id'  # Seu ID de equipe do Apple Developer
-#     appSpecificPassword: $(AppSpecificPassword)  # Crie e armazene a senha específica no Azure DevOps Secrets
+    secureFile: google_play.json
