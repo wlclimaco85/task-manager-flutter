@@ -30,20 +30,21 @@ steps:
   displayName: 'Compilar IPA para iOS'
 
 # Passo 5: Publicar APK no Google Play (utilizando o Google Play Developer API)
+# Passo 5: Publicar APK no Google Play
 - task: GooglePlayRelease@4
   inputs:
-    serviceEndpoint: 'GooglePlay'  # Este serviço deve ser configurado nas conexões de serviço
+    serviceEndpoint: 'GooglePlay'          # conexão de serviço criada no DevOps
     action: 'Release'
-    appId: 'com.seuapp.android'  # Substitua com o ID do seu app Android
+    appId: 'com.washingtonclimaco.task_manager_flutter'   # <-- APPID CORRETO
     apkFile: 'build/app/outputs/flutter-apk/app-release.apk'
-    track: 'production'  # Você pode usar 'alpha', 'beta' ou 'production'
+    track: 'production'      # ou 'alpha' / 'beta'
 
 # Passo 6: Publicar IPA na Apple App Store (utilizando o Fastlane)
-- task: UseFastLane@1
-  inputs:
-    fastLaneAction: 'upload_to_app_store'
-    ipaPath: 'build/ios/iphoneos/Runner.ipa'
-    appIdentifier: 'com.seuapp.ios'  # Substitua com o ID do seu app iOS
-    appleId: 'seu-email@apple.com'  # Substitua com seu ID Apple
-    itcTeamId: 'team_id'  # Seu ID de equipe do Apple Developer
-    appSpecificPassword: $(AppSpecificPassword)  # Crie e armazene a senha específica no Azure DevOps Secrets
+# - task: UseFastLane@1
+#   inputs:
+#     fastLaneAction: 'upload_to_app_store'
+#     ipaPath: 'build/ios/iphoneos/Runner.ipa'
+#     appIdentifier: 'com.seuapp.ios'  # Substitua com o ID do seu app iOS
+#     appleId: 'seu-email@apple.com'  # Substitua com seu ID Apple
+#     itcTeamId: 'team_id'  # Seu ID de equipe do Apple Developer
+#     appSpecificPassword: $(AppSpecificPassword)  # Crie e armazene a senha específica no Azure DevOps Secrets
