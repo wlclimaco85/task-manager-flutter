@@ -1,50 +1,103 @@
 trigger:
   branches:
     include:
-      - damiao-1.0
+      - damiao_1.0
 
 pool:
-  vmImage: 'ubuntu-latest'
+  vmImage: "ubuntu-latest"
+
+variables:
+  packageName: "com.washingtonclimaco.task_manager_flutter"
+  track: "internal"   # internal / alpha / beta / production
 
 steps:
 
+# ---------------------------
 # 1. Instalar Flutter
+# ---------------------------
 - script: |
     git clone https://github.com/flutter/flutter.git -b stable
     echo "##vso[task.prependpath]`pwd`/flutter/bin"
     flutter --version
   displayName: "Instalar Flutter"
 
-# 2. Restaurar dependências
+# ---------------------------
+# 2. Incrementar versionCode
+# ---------------------------
+- script: |
+    echo "### Incrementando versionCode ###"
+
+    GRADLE_FILE="android/app/build.gradle"
+    CURRENT=$(grep versionCode $GRADLE_FILE | awk '{print $2}')
+    NEXT=$((CURRENT + 1))
+
+    echo "VersionCode atual: $CURRENT"
+    echo "Novo VersionCode:  $NEXT"
+
+    sed -i "s/versionCode $CURRENT/versionCode $NEXT/" $GRADLE_FILE
+
+    echo "VersionCode atualizado:"
+    grep versionCode $GRADLE_FILE
+  displayName: "Incrementar versionCode"
+
+# ---------------------------
+# 3. Pub Get
+# ---------------------------
 - script: flutter pub get
   displayName: "Instalar dependências"
 
-# 3. Build APK Release
-- script: flutter build apk --release
-  displayName: "Build APK Release"
+# ---------------------------
+# 4. Build APK + AAB
+# ---------------------------
+- script: |
+    flutter build apk --release
+    flutter build appbundle --release
+  displayName: "Gerar APK + AAB"
 
-# 4. Instalar Fastlane
+# ---------------------------
+# 5. Instalar Fastlane
+# ---------------------------
 - script: |
     sudo gem install fastlane -NV
     fastlane --version
   displayName: "Instalar Fastlane"
 
-# 5. Upload para Google Play
+# ---------------------------
+# 6. Download JSON do Google Play
+# ---------------------------
+- task: DownloadSecureFile@1
+  name: googleJson
+  inputs:
+    secureFile: google_play.json
+  displayName: "Baixar credenciais Google Play"
+
+# ---------------------------
+# 7. Publicar no Google Play
+# ---------------------------
 - script: |
     cd android
 
-    # O arquivo JSON precisa ser configurado no Azure DevOps (Secure Files)
-    echo "Usando JSON: $(googlePlayJson.secureFilePath)"
+    JSON_KEY="$(googleJson.secureFilePath)"
+    PACKAGE="$(packageName)"
+    CHANGELOG=$(cat ../CHANGELOG.md | head -20)
+
+    AAB="../build/app/outputs/bundle/release/app-release.aab"
+    APK="../build/app/outputs/flutter-apk/app-release.apk"
+
+    echo "### Changelog ###"
+    echo "$CHANGELOG"
 
     fastlane supply \
-      --json_key "$(googlePlayJson.secureFilePath)" \
-      --package_name "com.washingtonclimaco.task_manager_flutter" \
-      --apk "../build/app/outputs/flutter-apk/app-release.apk" \
-      --track production \
-      --skip_upload_changelogs true
-  displayName: "Enviar APK para Google Play"
+      --json_key "$JSON_KEY" \
+      --package_name "$PACKAGE" \
+      --track "$(track)" \
+      --aab "$AAB" \
+      --apk "$APK" \
+      --skip_upload_metadata true \
+      --skip_upload_images true \
+      --skip_upload_screenshots true \
+      --skip_upload_changelogs false \
+      --changelog "$CHANGELOG"
+  displayName: "Publicar no Google Play"
   env:
-    FASTLANE_DISABLE_COLORS: '1'
-    SUPPLY_SKIP_UPLOAD_CHANGELOGS: '1'
-  inputs:
-    secureFile: google_play.json
+    FASTLANE_DISABLE_COLORS: "1"
