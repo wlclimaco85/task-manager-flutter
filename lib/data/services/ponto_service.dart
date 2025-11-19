@@ -21,9 +21,9 @@ class PontoCaller {
     String? observacao,
   }) async {
     try {
+      final login = AuthUtility.userInfo?.login;
       // se o usuário precisar relogar
-      if (AuthUtility.userInfo?.data?.id != null &&
-          AuthUtility.userInfo?.data?.id == 1) {
+      if (login?.id == null) {
         await showDialog(
           context: context,
           builder: (_) => const LoginPopup(),
@@ -31,9 +31,18 @@ class PontoCaller {
       }
 
       final Map<String, dynamic> body = {
-        "parceiroId": parceiroId,
+        "login": {
+          "id": login?.id,
+        },
+        "empresa": {
+          "id": login?.empresa?.id,
+        },
+        if (login?.parceiro != null)
+          "parceiro": {
+            "id": login?.parceiro?.id,
+          },
         "tipo": tipo.apiValue,
-        if (observacao != null && observacao.isNotEmpty)
+        if (observacao != null && observacao!.isNotEmpty)
           "observacao": observacao,
       };
 
