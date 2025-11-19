@@ -1,79 +1,146 @@
-import 'dart:convert';
 import 'dart:typed_data';
 
+import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
-import '../models/ponto_model.dart';
+import 'package:task_manager_flutter/data/models/auth_utility.dart';
+import 'package:task_manager_flutter/data/models/network_response.dart';
+import 'package:task_manager_flutter/data/services/network_caller.dart';
 import 'package:task_manager_flutter/data/utils/api_links.dart';
+import 'package:task_manager_flutter/ui/screens/LoginPopup_screens.dart';
 
-class PontoService {
-  /// Ajuste aqui o endereço do seu backend
-  static final String baseUrl = '${ApiLinks.baseUrl}/api/pontos';
-  Future<PontoModel?> registrarPonto({
+import '../models/ponto_model.dart';
+
+class PontoCaller {
+  ///
+  /// 🔥 REGISTRAR ENTRADA/SAÍDA AUTOMÁTICA
+  ///
+  Future<PontoModel?> registrarPonto(
+    BuildContext context, {
     required int parceiroId,
     required TipoRegistro tipo,
     String? observacao,
   }) async {
-    final uri = Uri.parse("$baseUrl/registrar").replace(queryParameters: {
-      "parceiroId": parceiroId.toString(),
-      "tipo": tipo.apiValue,
-      if (observacao != null && observacao.isNotEmpty) "observacao": observacao,
-    });
+    try {
+      // se o usuário precisar relogar
+      if (AuthUtility.userInfo?.data?.id != null &&
+          AuthUtility.userInfo?.data?.id == 1) {
+        await showDialog(
+          context: context,
+          builder: (_) => const LoginPopup(),
+        );
+      }
 
-    final response = await http.post(uri);
+      final Map<String, dynamic> body = {
+        "parceiroId": parceiroId,
+        "tipo": tipo.apiValue,
+        if (observacao != null && observacao.isNotEmpty)
+          "observacao": observacao,
+      };
 
-    if (response.statusCode == 200) {
-      final body = json.decode(utf8.decode(response.bodyBytes));
-      return PontoModel.fromJson(body);
+      final NetworkResponse response = await NetworkCaller().postRequest(
+        ApiLinks.pontoRegistrar,
+        body,
+      );
+
+      if (response.statusCode == 200 && response.body != null) {
+        return PontoModel.fromJson(response.body!);
+      }
+
+      return null;
+    } catch (e) {
+      print("❌ Erro registrar ponto: $e");
+      return null;
     }
-
-    return null;
   }
 
+  ///
+  /// 🔥 LISTAR MARCAÇÕES DO DIA
+  ///
   Future<List<PontoModel>> listarPorDia({
     required int parceiroId,
     required DateTime data,
   }) async {
-    final dataStr = data.toIso8601String().split("T")[0]; // yyyy-MM-dd
-    final uri = Uri.parse("$baseUrl/listar/$parceiroId?data=$dataStr");
+    try {
+      final String d = data.toIso8601String().split("T")[0];
 
-    final response = await http.get(uri);
+      final NetworkResponse response = await NetworkCaller().getRequest(
+        "${ApiLinks.pontoListar}/$parceiroId?data=$d",
+      );
 
-    if (response.statusCode != 200) return [];
+      if (response.statusCode == 200 && response.body != null) {
+        final List lista = response.body as List;
+        return lista.map((e) => PontoModel.fromJson(e)).toList();
+      }
 
-    final List body = json.decode(utf8.decode(response.bodyBytes));
-    return body.map((e) => PontoModel.fromJson(e)).toList();
+      return [];
+    } catch (e) {
+      print("❌ Erro ao listar pontos: $e");
+      return [];
+    }
   }
 
+  ///
+  /// 🔥 CALCULAR BANCO DE HORAS
+  ///
   Future<double> calcularBancoHoras({
     required int parceiroId,
-    required DateTime mesReferencia,
+    required DateTime mes,
   }) async {
-    final mesStr = mesReferencia.toIso8601String().split("T")[0];
-    final uri =
-        Uri.parse("$baseUrl/banco-horas/$parceiroId?mesReferencia=$mesStr");
+    try {
+      final mesStr = mes.toIso8601String().split("T")[0];
 
-    final response = await http.get(uri);
+      final NetworkResponse response = await NetworkCaller().getRequest(
+        "${ApiLinks.pontoBancoHoras}/$parceiroId?mesReferencia=$mesStr",
+      );
 
-    if (response.statusCode != 200) return 0;
+      if (response.statusCode == 200 && response.body != null) {
+        return double.tryParse(response.body.toString()) ?? 0;
+      }
 
-    return double.tryParse(response.body) ?? 0;
+      return 0;
+    } catch (e) {
+      print("❌ Erro calcular banco: $e");
+      return 0;
+    }
   }
 
-  Future<Uint8List?> gerarRelatorioPdf({
+  ///
+  /// 🔥 GERAR PDF (HTTP + TOKEN)
+  ///
+  Future<Uint8List?> gerarPdf({
     required int parceiroId,
     required DateTime inicio,
     required DateTime fim,
   }) async {
-    final inicioStr = inicio.toIso8601String().split("T")[0];
-    final fimStr = fim.toIso8601String().split("T")[0];
+    try {
+      final i = inicio.toIso8601String().split("T")[0];
+      final f = fim.toIso8601String().split("T")[0];
+      // TOKEN IGUAL AO NETWORKCALLER
+      // If you have a token available in AuthUtility, replace the null assignment below
+      // with the appropriate accessor (e.g. AuthUtility.userInfo?.data?.token).
+      final String? token = AuthUtility.userInfo?.token;
 
-    final uri =
-        Uri.parse("$baseUrl/pdf/$parceiroId?inicio=$inicioStr&fim=$fimStr");
+      final uri = Uri.parse(
+        "${ApiLinks.pontoPdf}/$parceiroId?inicio=$i&fim=$f",
+      );
 
-    final response = await http.get(uri);
+      final response = await http.get(
+        uri,
+        headers: {
+          "Content-Type": "application/json",
+          if (token != null) "Authorization": "Bearer $token",
+        },
+      );
 
-    if (response.statusCode != 200) return null;
+      if (response.statusCode == 200) {
+        return response.bodyBytes; // PDF
+      }
 
-    return response.bodyBytes;
+      print("❌ Erro PDF status: ${response.statusCode}");
+      return null;
+    } catch (e) {
+      print("❌ Erro gerar PDF: $e");
+      return null;
+    }
   }
 }

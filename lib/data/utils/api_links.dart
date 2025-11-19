@@ -407,4 +407,9 @@ class ApiLinks {
 
   static String atualizarDadosPessoais(String id) =>
       '$_baseUrlNew/api/dadospessoais/$id';
+
+  static String pontoRegistrar = "$baseUrl/api/pontos/registrar";
+  static String pontoListar = "$baseUrl/api/pontos/listar";
+  static String pontoPdf = "$baseUrl/api/pontos/pdf";
+  static String pontoBancoHoras = "$baseUrl/api/pontos/banco-horas";
 }

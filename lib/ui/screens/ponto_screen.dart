@@ -86,7 +86,7 @@ class _PontoScreenState extends ConsumerState<PontoScreen> {
               _buildClockCard(
                 registering: pontoState.registering,
                 onRegistrar: () async {
-                  final ok = await controller.registrarPontoAutomatico();
+                  final ok = await controller.registrarPontoAutomatico(context);
                   if (ok) {
                     await _mostrarSnack('Ponto registrado com sucesso!');
                   } else {

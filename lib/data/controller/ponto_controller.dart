@@ -1,9 +1,12 @@
 import 'dart:typed_data';
 
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../data/models/ponto_model.dart';
 import '../../data/services/ponto_service.dart';
+
+/// ====== STATE ======
 
 class PontoState {
   final bool loading;
@@ -37,40 +40,42 @@ class PontoState {
   }
 }
 
-/// Provider do service
-final pontoServiceProvider = Provider<PontoService>((ref) {
-  return PontoService();
+/// ====== PROVIDERS ======
+
+final pontoCallerProvider = Provider<PontoCaller>((ref) {
+  return PontoCaller();
 });
 
-/// Controller por parceiroId (family)
 final pontoControllerProvider =
     StateNotifierProvider.family<PontoController, PontoState, int>(
   (ref, parceiroId) {
-    final service = ref.watch(pontoServiceProvider);
+    final caller = ref.watch(pontoCallerProvider);
     return PontoController(
-      service: service,
+      caller: caller,
       parceiroId: parceiroId,
     )..carregarDiaAtual();
   },
 );
 
+/// ====== CONTROLLER ======
+
 class PontoController extends StateNotifier<PontoState> {
-  final PontoService service;
+  final PontoCaller caller;
   final int parceiroId;
 
   PontoController({
-    required this.service,
+    required this.caller,
     required this.parceiroId,
   }) : super(const PontoState());
 
   DateTime get _hoje => DateTime.now();
 
-  /// Carrega as marcações do dia atual
+  /// 🔥 CARREGAR REGISTROS DO DIA
   Future<void> carregarDiaAtual() async {
     try {
       state = state.copyWith(loading: true, error: null);
 
-      final registros = await service.listarPorDia(
+      final registros = await caller.listarPorDia(
         parceiroId: parceiroId,
         data: _hoje,
       );
@@ -89,13 +94,14 @@ class PontoController extends StateNotifier<PontoState> {
     }
   }
 
-  /// Define automaticamente se é ENTRADA ou SAIDA
+  /// 🔥 DEFINIR AUTOMATICAMENTE ENTRADA/SAÍDA
   TipoRegistro _proximoTipo() {
     if (state.registros.isEmpty) {
       return TipoRegistro.entrada;
     }
 
     final ultimo = state.registros.last;
+
     if (ultimo.tipo == TipoRegistro.entrada) {
       return TipoRegistro.saida;
     } else {
@@ -103,14 +109,16 @@ class PontoController extends StateNotifier<PontoState> {
     }
   }
 
-  /// Registra ponto automático (ENTRADA/SAIDA)
-  Future<bool> registrarPontoAutomatico({String? observacao}) async {
+  /// 🔥 REGISTRAR PONTO (ENTRADA/SAÍDA AUTOMÁTICO)
+  Future<bool> registrarPontoAutomatico(BuildContext context,
+      {String? observacao}) async {
     try {
       state = state.copyWith(registering: true, error: null);
 
       final tipo = _proximoTipo();
 
-      final novo = await service.registrarPonto(
+      final novo = await caller.registrarPonto(
+        context,
         parceiroId: parceiroId,
         tipo: tipo,
         observacao: observacao,
@@ -124,6 +132,7 @@ class PontoController extends StateNotifier<PontoState> {
           registering: false,
           registros: lista,
         );
+
         return true;
       } else {
         state = state.copyWith(
@@ -141,16 +150,16 @@ class PontoController extends StateNotifier<PontoState> {
     }
   }
 
-  /// Carrega banco de horas para o mês atual
+  /// 🔥 CALCULAR BANCO DE HORAS
   Future<double?> carregarBancoHorasMesAtual() async {
     try {
       state = state.copyWith(loading: true, error: null);
 
       final agora = DateTime.now();
 
-      final valor = await service.calcularBancoHoras(
+      final valor = await caller.calcularBancoHoras(
         parceiroId: parceiroId,
-        mesReferencia: agora,
+        mes: agora,
       );
 
       state = state.copyWith(
@@ -168,13 +177,13 @@ class PontoController extends StateNotifier<PontoState> {
     }
   }
 
-  /// Gera PDF de batidas (últimos 30 dias, por exemplo)
+  /// 🔥 GERAR PDF
   Future<Uint8List?> gerarRelatorioPdf() async {
     try {
       final fim = DateTime.now();
       final inicio = fim.subtract(const Duration(days: 30));
 
-      return await service.gerarRelatorioPdf(
+      return await caller.gerarPdf(
         parceiroId: parceiroId,
         inicio: inicio,
         fim: fim,
@@ -187,7 +196,9 @@ class PontoController extends StateNotifier<PontoState> {
     }
   }
 
-  // ====== CÁLCULOS DE HORAS ======
+  // ========================================
+  // 🔥 CÁLCULOS DE HORAS TRABALHADAS
+  // ========================================
 
   Duration get horasTrabalhadas {
     final registros = [...state.registros]
@@ -233,11 +244,11 @@ class PontoController extends StateNotifier<PontoState> {
 
   String _formatDuration(Duration d) {
     final horas = d.inHours;
-    final minutos = d.inMinutes.remainder(60);
-    return '${horas}h ${minutos.toString().padLeft(2, '0')}min';
+    final min = d.inMinutes.remainder(60);
+    return '${horas}h ${min.toString().padLeft(2, '0')}min';
   }
 
-  /// Lista de pares Entrada/Saída para exibir na tela
+  /// 🔥 GERAR LISTA DE PAR ENTRADA/SAÍDA PARA A TELA
   List<Map<String, String>> get marcacoesAgrupadas {
     final registros = [...state.registros]
       ..sort((a, b) => a.dataHora.compareTo(b.dataHora));
