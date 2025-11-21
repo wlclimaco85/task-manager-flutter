@@ -2,7 +2,7 @@ import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-
+import 'package:task_manager_flutter/data/models/auth_utility.dart';
 import '../../data/models/ponto_model.dart';
 import '../../data/services/ponto_service.dart';
 
@@ -14,6 +14,7 @@ class PontoState {
   final List<PontoModel> registros;
   final double? bancoHoras;
   final String? error;
+  final List<PontoModel> pontosHoje;
 
   const PontoState({
     this.loading = false,
@@ -21,6 +22,7 @@ class PontoState {
     this.registros = const [],
     this.bancoHoras,
     this.error,
+    this.pontosHoje = const [],
   });
 
   PontoState copyWith({
@@ -29,6 +31,7 @@ class PontoState {
     List<PontoModel>? registros,
     double? bancoHoras,
     String? error,
+    List<PontoModel>? pontosHoje,
   }) {
     return PontoState(
       loading: loading ?? this.loading,
@@ -36,6 +39,7 @@ class PontoState {
       registros: registros ?? this.registros,
       bancoHoras: bancoHoras ?? this.bancoHoras,
       error: error,
+      pontosHoje: pontosHoje ?? this.pontosHoje,
     );
   }
 }
@@ -76,7 +80,6 @@ class PontoController extends StateNotifier<PontoState> {
       state = state.copyWith(loading: true, error: null);
 
       final registros = await caller.listarPorDia(
-        parceiroId: parceiroId,
         data: _hoje,
       );
 
@@ -109,38 +112,50 @@ class PontoController extends StateNotifier<PontoState> {
     }
   }
 
-  /// 🔥 REGISTRAR PONTO (ENTRADA/SAÍDA AUTOMÁTICO)
-  Future<bool> registrarPontoAutomatico(BuildContext context,
-      {String? observacao}) async {
+  Future<bool> registrarPontoAutomatico(BuildContext context) async {
+    final login = AuthUtility.userInfo?.login;
+    if (login == null || login.id == null) {
+      state = state.copyWith(error: 'Login não encontrado na sessão');
+      return false;
+    }
+
+    final empresaId = login.empresa?.id;
+    if (empresaId == null) {
+      state = state.copyWith(error: 'Empresa não encontrada na sessão');
+      return false;
+    }
+
+    final parceiroId = login.parceiro?.id;
+
+    final tipo = _decidirProximoTipo();
+
+    state = state.copyWith(registering: true, error: null);
+
     try {
-      state = state.copyWith(registering: true, error: null);
-
-      final tipo = _proximoTipo();
-
-      final novo = await caller.registrarPonto(
+      final ponto = await caller.registrarPonto(
         context,
-        parceiroId: parceiroId,
         tipo: tipo,
-        observacao: observacao,
       );
 
-      if (novo != null) {
-        final lista = [...state.registros, novo]
-          ..sort((a, b) => a.dataHora.compareTo(b.dataHora));
-
+      if (ponto == null) {
         state = state.copyWith(
           registering: false,
-          registros: lista,
-        );
-
-        return true;
-      } else {
-        state = state.copyWith(
-          registering: false,
-          error: 'Não foi possível registrar o ponto.',
+          error: 'Falha ao registrar ponto',
         );
         return false;
       }
+
+      // -----------------------------------------
+      // 🔥 AQUI É O PULO DO GATO:
+      // Após registrar o ponto, recarregar TUDO:
+      // -----------------------------------------
+
+      await carregarDiaAtual(); // 🔄 Recarrega pontos
+      _recalcularTudo(); // 🔢 horas + intervalo
+      await carregarBancoHorasMesAtual(); // 📊 banco horas (opcional, se quiser)
+
+      state = state.copyWith(registering: false);
+      return true;
     } catch (e) {
       state = state.copyWith(
         registering: false,
@@ -148,6 +163,27 @@ class PontoController extends StateNotifier<PontoState> {
       );
       return false;
     }
+  }
+
+  TipoRegistro _decidirProximoTipo() {
+    if (state.registros.isEmpty) {
+      return TipoRegistro.entrada;
+    }
+
+    final ultimo = state.registros.last;
+
+    if (ultimo.tipo == TipoRegistro.entrada) {
+      return TipoRegistro.saida;
+    } else {
+      return TipoRegistro.entrada;
+    }
+  }
+
+  void _recalcularTudo() {
+    state = state.copyWith(
+      registros: [...state.registros],
+      error: null,
+    );
   }
 
   /// 🔥 CALCULAR BANCO DE HORAS
@@ -158,7 +194,6 @@ class PontoController extends StateNotifier<PontoState> {
       final agora = DateTime.now();
 
       final valor = await caller.calcularBancoHoras(
-        parceiroId: parceiroId,
         mes: agora,
       );
 
@@ -184,7 +219,6 @@ class PontoController extends StateNotifier<PontoState> {
       final inicio = fim.subtract(const Duration(days: 30));
 
       return await caller.gerarPdf(
-        parceiroId: parceiroId,
         inicio: inicio,
         fim: fim,
       );

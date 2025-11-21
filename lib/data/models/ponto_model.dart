@@ -16,49 +16,46 @@ extension TipoRegistroApi on TipoRegistro {
 
 class PontoModel {
   final int id;
-  final int parceiroId;
   final DateTime dataHora;
   final TipoRegistro tipo;
+  final int? empresaId;
+  final int? parceiroId;
+  final int? loginId;
   final String? observacao;
+  final bool ajustado;
 
   PontoModel({
     required this.id,
-    required this.parceiroId,
     required this.dataHora,
     required this.tipo,
+    this.empresaId,
+    this.parceiroId,
+    this.loginId,
     this.observacao,
+    required this.ajustado,
   });
 
-  /// Ajuste esse parse caso o JSON do backend seja diferente.
-  /// Aqui estou assumindo algo assim:
-  /// {
-  ///   "id": 1,
-  ///   "parceiroId": 10,
-  ///   "data": "2025-11-17",
-  ///   "hora": "08:14:00",
-  ///   "tipo": "ENTRADA",
-  ///   "observacao": null
-  /// }
   factory PontoModel.fromJson(Map<String, dynamic> json) {
-    final dataStr = json['data'] as String?;
-    final horaStr = json['hora'] as String?;
-
-    DateTime dataHora;
-
-    if (dataStr != null && horaStr != null) {
-      dataHora = DateTime.parse('${dataStr}T$horaStr');
-    } else if (json['dataHora'] != null) {
-      dataHora = DateTime.parse(json['dataHora'] as String);
-    } else {
-      dataHora = DateTime.now();
-    }
+    print("Url get = $json");
 
     return PontoModel(
       id: json['id'] as int,
-      parceiroId: json['parceiroId'] as int,
-      dataHora: dataHora,
-      tipo: TipoRegistroApi.fromApi(json['tipo'] as String),
+      dataHora: DateTime.parse(json['dataHoraRegistro']),
+      tipo: TipoRegistroApi.fromApi(json['tipo']),
+      empresaId: json['empresa']?['id'] as int?,
+      parceiroId: json['parceiro']?['id'] as int?,
+      loginId: (() {
+        final login = json['login'];
+
+        if (login == null) return null; // login: null
+        if (login is int) return login; // login: 5
+        if (login is Map && login['id'] is int)
+          return login['id']; // login: { id: 5 }
+
+        return null;
+      })(),
       observacao: json['observacao'] as String?,
+      ajustado: json['ajustado'] == true,
     );
   }
 

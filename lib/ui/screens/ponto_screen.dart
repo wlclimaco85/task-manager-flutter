@@ -2,20 +2,16 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:intl/intl.dart'; //  <-- ESTA LINHA
+import 'package:intl/intl.dart';
 
-import '../../data/constants/custom_colors.dart';
-import '../../data/controller/ponto_controller.dart';
+import 'package:task_manager_flutter/data/constants/custom_colors.dart';
+import 'package:task_manager_flutter/data/controller/ponto_controller.dart';
+import 'package:task_manager_flutter/data/models/auth_utility.dart';
+
 import 'pdf_preview_dialog.dart';
 
 class PontoScreen extends ConsumerStatefulWidget {
-  /// parceiroId vindo da sessão/login (você já tem em cache)
-  final int parceiroId;
-
-  const PontoScreen({
-    super.key,
-    required this.parceiroId,
-  });
+  const PontoScreen({super.key});
 
   @override
   ConsumerState<PontoScreen> createState() => _PontoScreenState();
@@ -30,7 +26,6 @@ class _PontoScreenState extends ConsumerState<PontoScreen> {
     super.initState();
     now = DateTime.now();
 
-    // Atualiza o relógio a cada segundo
     _timer = Timer.periodic(const Duration(seconds: 1), (_) {
       setState(() {
         now = DateTime.now();
@@ -53,9 +48,19 @@ class _PontoScreenState extends ConsumerState<PontoScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final pontoState = ref.watch(pontoControllerProvider(widget.parceiroId));
-    final controller =
-        ref.read(pontoControllerProvider(widget.parceiroId).notifier);
+    final login = AuthUtility.userInfo?.login;
+    if (login == null || login.id == null) {
+      return const Scaffold(
+        body: Center(
+          child: Text('Login não encontrado na sessão'),
+        ),
+      );
+    }
+
+    final loginId = login.id!;
+
+    final pontoState = ref.watch(pontoControllerProvider(loginId));
+    final controller = ref.read(pontoControllerProvider(loginId).notifier);
 
     return Scaffold(
       backgroundColor: GridColors.background,
@@ -156,7 +161,6 @@ class _PontoScreenState extends ConsumerState<PontoScreen> {
     );
   }
 
-  // === RELÓGIO E BOTÃO DE REGISTRAR
   Widget _buildClockCard({
     required bool registering,
     required VoidCallback onRegistrar,
@@ -220,7 +224,6 @@ class _PontoScreenState extends ConsumerState<PontoScreen> {
     );
   }
 
-  // === MARCAÇÕES DO DIA
   Widget _buildMarcacoesCard({
     required List<Map<String, String>> marcacoes,
     required String horasTrabalhadas,
@@ -354,7 +357,6 @@ class _PontoScreenState extends ConsumerState<PontoScreen> {
     );
   }
 
-  // === BOTÕES ADICIONAIS
   Widget _buildActionButtons(
     BuildContext context, {
     required VoidCallback onPdf,
@@ -363,11 +365,12 @@ class _PontoScreenState extends ConsumerState<PontoScreen> {
     return Column(
       children: [
         ElevatedButton.icon(
-          onPressed: () {
-            // aqui você pode abrir uma tela para solicitar ajuste de ponto
-          },
+          onPressed: () {},
           icon: const Icon(Icons.edit_calendar, color: Colors.white),
-          label: const Text('Solicitar Ajuste de Ponto'),
+          label: const Text(
+            'Solicitar Ajuste de Ponto',
+            style: TextStyle(color: Colors.white),
+          ),
           style: ElevatedButton.styleFrom(
             backgroundColor: GridColors.primary,
             minimumSize: const Size(double.infinity, 52),
@@ -380,7 +383,10 @@ class _PontoScreenState extends ConsumerState<PontoScreen> {
         ElevatedButton.icon(
           onPressed: onPdf,
           icon: const Icon(Icons.picture_as_pdf, color: Colors.white),
-          label: const Text('Visualizar Batidas em PDF'),
+          label: const Text(
+            'Gerar PDF',
+            style: TextStyle(color: Colors.white),
+          ),
           style: ElevatedButton.styleFrom(
             backgroundColor: GridColors.buttonBackground,
             minimumSize: const Size(double.infinity, 52),
@@ -393,7 +399,10 @@ class _PontoScreenState extends ConsumerState<PontoScreen> {
         ElevatedButton.icon(
           onPressed: onBancoHoras,
           icon: const Icon(Icons.timelapse, color: Colors.white),
-          label: const Text('Saldo do Banco de Horas'),
+          label: const Text(
+            'Saldo do Banco de Horas',
+            style: TextStyle(color: Colors.white),
+          ),
           style: ElevatedButton.styleFrom(
             backgroundColor: GridColors.success,
             minimumSize: const Size(double.infinity, 52),
@@ -406,7 +415,6 @@ class _PontoScreenState extends ConsumerState<PontoScreen> {
     );
   }
 
-  // === SEÇÃO DE HUMOR
   Widget _buildHumorSection() {
     final icons = [
       Icons.sentiment_very_satisfied,
@@ -434,9 +442,7 @@ class _PontoScreenState extends ConsumerState<PontoScreen> {
               .map(
                 (icon) => IconButton(
                   icon: Icon(icon, size: 34, color: GridColors.primary),
-                  onPressed: () {
-                    // aqui você pode enviar o humor pro backend se quiser
-                  },
+                  onPressed: () {},
                 ),
               )
               .toList(),

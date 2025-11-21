@@ -16,7 +16,6 @@ class PontoCaller {
   ///
   Future<PontoModel?> registrarPonto(
     BuildContext context, {
-    required int parceiroId,
     required TipoRegistro tipo,
     String? observacao,
   }) async {
@@ -66,18 +65,25 @@ class PontoCaller {
   /// 🔥 LISTAR MARCAÇÕES DO DIA
   ///
   Future<List<PontoModel>> listarPorDia({
-    required int parceiroId,
     required DateTime data,
   }) async {
     try {
       final String d = data.toIso8601String().split("T")[0];
 
+      // Pegue o ID corretamente
+      final login = AuthUtility.userInfo?.login;
+      final int? loginId = login?.id;
+
+      if (loginId == null) {
+        throw Exception("Login ID está nulo");
+      }
+
       final NetworkResponse response = await NetworkCaller().getRequest(
-        "${ApiLinks.pontoListar}/$parceiroId?data=$d",
+        "${ApiLinks.pontoListar}/$loginId?data=$d",
       );
 
       if (response.statusCode == 200 && response.body != null) {
-        final List lista = response.body as List;
+        final List lista = (response.body!["data"] as List<dynamic>).toList();
         return lista.map((e) => PontoModel.fromJson(e)).toList();
       }
 
@@ -92,14 +98,18 @@ class PontoCaller {
   /// 🔥 CALCULAR BANCO DE HORAS
   ///
   Future<double> calcularBancoHoras({
-    required int parceiroId,
     required DateTime mes,
   }) async {
     try {
       final mesStr = mes.toIso8601String().split("T")[0];
+      final login = AuthUtility.userInfo?.login;
+      final int? loginId = login?.id;
 
+      if (loginId == null) {
+        throw Exception("Login ID está nulo");
+      }
       final NetworkResponse response = await NetworkCaller().getRequest(
-        "${ApiLinks.pontoBancoHoras}/$parceiroId?mesReferencia=$mesStr",
+        "${ApiLinks.pontoBancoHoras}/$loginId?mesReferencia=$mesStr",
       );
 
       if (response.statusCode == 200 && response.body != null) {
@@ -117,7 +127,6 @@ class PontoCaller {
   /// 🔥 GERAR PDF (HTTP + TOKEN)
   ///
   Future<Uint8List?> gerarPdf({
-    required int parceiroId,
     required DateTime inicio,
     required DateTime fim,
   }) async {
@@ -128,9 +137,9 @@ class PontoCaller {
       // If you have a token available in AuthUtility, replace the null assignment below
       // with the appropriate accessor (e.g. AuthUtility.userInfo?.data?.token).
       final String? token = AuthUtility.userInfo?.token;
-
+      final login = AuthUtility.userInfo?.login;
       final uri = Uri.parse(
-        "${ApiLinks.pontoPdf}/$parceiroId?inicio=$i&fim=$f",
+        "${ApiLinks.pontoPdf}/$login.id?inicio=$i&fim=$f",
       );
 
       final response = await http.get(

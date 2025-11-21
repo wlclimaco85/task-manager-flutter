@@ -35,7 +35,6 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
       const ComunicadoScreen(),
       ChamadoGridScreen(hasPermission: (action) => true),
       const FileManagerScreen(),
-      // Tela placeholder para o item "Mais" - não será mostrada pois o item abre um menu
       Container(),
     ];
   }
@@ -85,7 +84,7 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
         Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (context) => const PontoScreen(parceiroId: 1),
+            builder: (context) => const PontoScreen(),
           ),
         );
         break;
@@ -93,7 +92,7 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
         Navigator.pop(context);
         break;
       case "Voltar":
-        Navigator.pop(context); // Fecha o menu
+        Navigator.pop(context);
         break;
     }
   }
@@ -123,7 +122,6 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
           type: BottomNavigationBarType.fixed,
           onTap: (int index) {
             if (index == 5) {
-              // Agora o índice 5 é o item "Mais"
               _showMenuOptions(context);
             } else {
               setState(() {
@@ -151,60 +149,122 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
     );
   }
 
+  // ------------------------- MENU PREMIUM COMPLETO -------------------------------- //
+
   void _showMenuOptions(BuildContext context) {
-    showModalBottomSheet(
+    showGeneralDialog(
+      barrierLabel: "Menu",
+      barrierDismissible: true,
+      barrierColor: Colors.black54,
+      transitionDuration: const Duration(milliseconds: 250),
       context: context,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      backgroundColor: CustomColors().getLightGreenBackground(),
-      builder: (BuildContext context) {
-        return Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            ListTile(
-              leading: const Icon(Icons.payments),
-              title: const Text('Contas Pagar'),
-              onTap: () => onMenuOptionSelected('Contas Pagar'),
+      pageBuilder: (_, __, ___) {
+        return Align(
+          alignment: Alignment.bottomCenter,
+          child: Material(
+            color: CustomColors().getLightGreenBackground(),
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+            child: SafeArea(
+              top: false,
+              child: Container(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    // -------- CABEÇALHO ESTILIZADO -------- //
+                    Text(
+                      "Mais Opções",
+                      style: TextStyle(
+                        fontSize: 22,
+                        fontWeight: FontWeight.bold,
+                        color: CustomColors().getDarkGreenBorder(),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    Divider(
+                      color: CustomColors().getDarkGreenBorder(),
+                      thickness: 1.2,
+                    ),
+                    const SizedBox(height: 20),
+
+                    // ---------------- GRID 3xN ---------------- //
+                    GridView.count(
+                      shrinkWrap: true,
+                      crossAxisCount: 3, // <- você escolheu B (3 colunas)
+                      crossAxisSpacing: 14,
+                      mainAxisSpacing: 14,
+                      physics: const NeverScrollableScrollPhysics(),
+                      childAspectRatio: 0.85,
+                      children: [
+                        _menuItem(Icons.payments, "Contas Pagar"),
+                        _menuItem(
+                            Icons.account_balance_wallet, "Contas Receber"),
+                        _menuItem(Icons.people, "Parceiros"),
+                        _menuItem(Icons.bar_chart, "Dashboard"),
+                        _menuItem(
+                            Icons.text_increase_rounded, "Contas Bancarias"),
+                        _menuItem(Icons.access_alarm_rounded, "Bater Ponto"),
+                        _menuItem(Icons.exit_to_app, "Sair"),
+                        _menuItem(Icons.arrow_back, "Voltar"),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
             ),
-            ListTile(
-              leading: const Icon(Icons.account_balance_wallet),
-              title: const Text('Contas Receber'),
-              onTap: () => onMenuOptionSelected('Contas Receber'),
-            ),
-            ListTile(
-              leading: const Icon(Icons.people),
-              title: const Text('Parceiros'),
-              onTap: () => onMenuOptionSelected('Parceiros'),
-            ),
-            ListTile(
-              leading: const Icon(Icons.bar_chart),
-              title: const Text('Dashboard'),
-              onTap: () => onMenuOptionSelected('Dashboard'),
-            ),
-            ListTile(
-              leading: const Icon(Icons.text_increase_rounded),
-              title: const Text('Contas Bancarias'),
-              onTap: () => onMenuOptionSelected('Contas Bancarias'),
-            ),
-            ListTile(
-              leading: const Icon(Icons.access_alarm_rounded),
-              title: const Text('Bater Ponto'),
-              onTap: () => onMenuOptionSelected('Bater Ponto'),
-            ),
-            ListTile(
-              leading: const Icon(Icons.exit_to_app),
-              title: const Text('Sair'),
-              onTap: () => onMenuOptionSelected('Sair'),
-            ),
-            ListTile(
-              leading: const Icon(Icons.arrow_back),
-              title: const Text('Voltar'),
-              onTap: () => onMenuOptionSelected('Voltar'),
-            ),
-          ],
+          ),
         );
       },
+
+      // -------- ANIMAÇÃO SUAVE (SLIDE + FADE) -------- //
+      transitionBuilder: (_, anim, __, child) {
+        return SlideTransition(
+          position: Tween(begin: const Offset(0, 1), end: Offset.zero)
+              .animate(CurvedAnimation(
+            parent: anim,
+            curve: Curves.fastOutSlowIn,
+          )),
+          child: FadeTransition(
+            opacity: anim,
+            child: child,
+          ),
+        );
+      },
+    );
+  }
+
+  // ----------------------- ITEM DO GRID ----------------------- //
+
+  Widget _menuItem(IconData icon, String title) {
+    return GestureDetector(
+      onTap: () => onMenuOptionSelected(title),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: CustomColors().getDarkGreenBorder().withOpacity(0.08),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(
+              icon,
+              size: 32,
+              color: CustomColors().getDarkGreenBorder(),
+            ),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            title,
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontSize: 14,
+              color: CustomColors().getDarkGreenBorder(),
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

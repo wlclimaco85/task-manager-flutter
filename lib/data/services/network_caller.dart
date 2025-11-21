@@ -46,13 +46,24 @@ class NetworkCaller {
           '⚙️ [request get principal] url : ${uri.toString()} | statusCode: ${response.statusCode}');
 
       if (response.statusCode == 200) {
+        final decoded = jsonDecode(response.body);
         AppLogger.i
             .info('⚙️ [request get principal] response : ${response.body}');
-        return NetworkResponse(
-          true,
-          response.statusCode,
-          jsonDecode(response.body),
-        );
+        if (decoded is List) {
+          // empacota em um Map para não quebrar o tipo do NetworkResponse
+          return NetworkResponse(
+            true,
+            response.statusCode,
+            {"data": decoded},
+          );
+        } else {
+          // já é Map
+          return NetworkResponse(
+            true,
+            response.statusCode,
+            decoded,
+          );
+        }
       } else if (AuthUtility.userInfo?.data?.id == null ||
           AuthUtility.userInfo?.data?.id == 1 && response.statusCode == 403) {
         loginPadrao();
