@@ -49,8 +49,9 @@ class PontoModel {
 
         if (login == null) return null; // login: null
         if (login is int) return login; // login: 5
-        if (login is Map && login['id'] is int)
+        if (login is Map && login['id'] is int) {
           return login['id']; // login: { id: 5 }
+        }
 
         return null;
       })(),

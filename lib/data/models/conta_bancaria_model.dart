@@ -1,9 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:task_manager_flutter/data/customization/generic_grid_card.dart';
 
-import 'empresa_model.dart';
-import 'parceiro_model.dart';
-
 class ContaBancaria {
   int? id;
   String? banco;

@@ -261,7 +261,7 @@ Widget buildDropdown<T>({
   return Padding(
     padding: const EdgeInsets.symmetric(vertical: 6),
     child: DropdownButtonFormField<T>(
-      value: validValue,
+      initialValue: validValue,
       isExpanded: true,
       items: items
           .map((e) => DropdownMenuItem<T>(
@@ -291,7 +291,7 @@ Widget buildDropdownInt({
   return Padding(
     padding: const EdgeInsets.symmetric(vertical: 6),
     child: DropdownButtonFormField<int>(
-      value: validValue,
+      initialValue: validValue,
       isExpanded: true,
       items: items
           .map((e) => DropdownMenuItem<int>(
@@ -346,7 +346,7 @@ Widget buildDropdownSearchSync<T>({
   bool showSearchBox = true,
   CustomColors? colors,
 }) {
-  final _colors = colors ?? CustomColors();
+  final colors0 = colors ?? CustomColors();
   return Padding(
     padding: const EdgeInsets.symmetric(vertical: 6),
     child: IgnorePointer(
@@ -359,7 +359,7 @@ Widget buildDropdownSearchSync<T>({
             itemAsString: (item) => item == null ? '' : itemAsString(item),
             onChanged: onChanged,
             dropdownDecoratorProps: DropDownDecoratorProps(
-              dropdownSearchDecoration: inputStyle(label, icon, _colors),
+              dropdownSearchDecoration: inputStyle(label, icon, colors0),
             ),
             validator: (v) =>
                 (validatorMsg != null && v == null) ? validatorMsg : null,
@@ -392,7 +392,7 @@ Widget buildDropdownSearchAsync<T>({
   bool showSearchBox = true,
   CustomColors? colors,
 }) {
-  final _colors = colors ?? CustomColors();
+  final colors0 = colors ?? CustomColors();
   return Padding(
     padding: const EdgeInsets.symmetric(vertical: 6),
     child: DropdownSearch<T>(
@@ -401,7 +401,7 @@ Widget buildDropdownSearchAsync<T>({
       itemAsString: (item) => item == null ? '' : itemAsString(item),
       onChanged: onChanged,
       dropdownDecoratorProps: DropDownDecoratorProps(
-        dropdownSearchDecoration: inputStyle(label, icon, _colors),
+        dropdownSearchDecoration: inputStyle(label, icon, colors0),
       ),
       validator: (v) =>
           (validatorMsg != null && v == null) ? validatorMsg : null,
@@ -429,7 +429,7 @@ Widget buildDropdownSearchInt({
   bool showSearchBox = true,
   CustomColors? colors,
 }) {
-  final _colors = colors ?? CustomColors();
+  final colors0 = colors ?? CustomColors();
   final selectedMap =
       items.firstWhere((e) => e[idKey] == selectedId, orElse: () => {});
   return Padding(
@@ -441,10 +441,10 @@ Widget buildDropdownSearchInt({
           DropdownSearch<Map<String, dynamic>>(
             items: items,
             selectedItem: selectedMap.isEmpty ? null : selectedMap,
-            itemAsString: (m) => m == null ? '' : safeToString(m[labelKey]),
+            itemAsString: (m) => safeToString(m[labelKey]),
             onChanged: (m) => onChanged(m == null ? null : m[idKey] as int?),
             dropdownDecoratorProps: DropDownDecoratorProps(
-              dropdownSearchDecoration: inputStyle(label, icon, _colors),
+              dropdownSearchDecoration: inputStyle(label, icon, colors0),
             ),
             validator: (m) =>
                 (validatorMsg != null && m == null) ? validatorMsg : null,

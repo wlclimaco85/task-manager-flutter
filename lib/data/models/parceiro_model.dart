@@ -9,9 +9,6 @@ import 'package:task_manager_flutter/data/services/network_caller.dart';
 import 'package:task_manager_flutter/data/models/regime_tributario_model.dart';
 import 'package:task_manager_flutter/data/models/file_attachment_model.dart';
 import 'package:task_manager_flutter/data/utils/utils.dart';
-import 'package:task_manager_flutter/data/models/aplicativo_model.dart';
-import 'package:task_manager_flutter/data/models/audit_model.dart';
-import 'package:task_manager_flutter/data/models/aplicativo_model.dart';
 
 class Endereco {
   int? id;

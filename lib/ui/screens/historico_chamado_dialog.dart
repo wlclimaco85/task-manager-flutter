@@ -69,7 +69,7 @@ class HistoricoChamadoDialog {
                       : erro != null
                           ? Center(
                               child: Text(
-                                erro!,
+                                erro,
                                 style: const TextStyle(color: GridColors.error),
                               ),
                             )

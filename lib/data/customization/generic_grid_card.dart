@@ -2779,7 +2779,7 @@ class _GenericMobileGridScreenState<T>
               e.key.toString().split('.').last.toUpperCase() ==
                   raw.toString().toUpperCase() ||
               e.value.toUpperCase() == raw.toString().toUpperCase(),
-          orElse: () => MapEntry(null, ''),
+          orElse: () => const MapEntry(null, ''),
         );
         if (foundByString.key != null && foundByString.value.isNotEmpty) {
           return foundByString.value;

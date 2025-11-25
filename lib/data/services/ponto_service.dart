@@ -41,7 +41,7 @@ class PontoCaller {
             "id": login?.parceiro?.id,
           },
         "tipo": tipo.apiValue,
-        if (observacao != null && observacao!.isNotEmpty)
+        if (observacao != null && observacao.isNotEmpty)
           "observacao": observacao,
       };
 

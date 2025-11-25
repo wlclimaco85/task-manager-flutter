@@ -363,8 +363,9 @@ class _EmpresaEditScreenState extends State<EmpresaEditScreen> {
             ApiLinks.empresaById(widget.initialData['id'].toString()));
 
         await Future.delayed(const Duration(milliseconds: 600));
-        if (Navigator.canPop(context))
+        if (Navigator.canPop(context)) {
           Navigator.pop(context); // Fecha recarregando
+        }
 
         if (refreshed.isSuccess && refreshed.body != null) {
           widget.initialData
