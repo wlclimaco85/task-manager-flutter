@@ -89,7 +89,7 @@ class ContaBancariaGridScreen extends StatelessWidget {
             onPressed: (context, item) async {
               final caller = ContaBancariaCaller();
               final saldos = await caller.listarSaldos(
-                empresaId: item.empresa,
+                empresaId: item.empresa.id!,
                 parceiroId: item.parceiro,
               );
               debugPrint('Saldos: $saldos');
@@ -163,7 +163,7 @@ class ContaBancariaGridScreen extends StatelessWidget {
                 contaOrigemId: conta.id!,
                 contaDestinoId: contaDestinoId!,
                 valor: double.parse(valorController.text),
-                empresaId: conta.empresa,
+                empresaId: conta.empresa.id!,
                 parceiroId: conta.parceiro,
                 historico: historicoController.text,
               );
@@ -216,7 +216,7 @@ class ContaBancariaGridScreen extends StatelessWidget {
               _showLoadingDialog(context, "Gerando PDF...");
               final pdf = await caller.gerarExtratoPdf(
                 contaId: conta.id!,
-                empresaId: conta.empresa,
+                empresaId: conta.empresa.id!,
                 parceiroId: conta.parceiro,
                 de: de,
                 ate: ate,

@@ -14,6 +14,25 @@ import '../customization/generic_grid_card.dart';
 
 enum Ambiente { HOMOLOGACAO, PRODUCAO }
 
+// --------------------------------------------
+// Helper genérico para tratar string ou objeto
+// --------------------------------------------
+T? parseModel<T>(dynamic value, T Function(Map<String, dynamic>) fromJson) {
+  if (value == null) return null;
+
+  if (value is String) {
+    // Caso venha só o nome
+    return fromJson({'nome': value});
+  }
+
+  if (value is Map<String, dynamic>) {
+    // Caso venha objeto completo
+    return fromJson(value);
+  }
+
+  return null;
+}
+
 class Empresa {
   int? id;
   String? nome;
@@ -81,6 +100,7 @@ class Empresa {
       cep: json['cep'],
       cnpj: json['cnpj'],
       ie: json['ie'],
+
       ambiente: json['ambiente'] != null
           ? Ambiente.values.firstWhere(
               (e) =>
@@ -89,20 +109,26 @@ class Empresa {
               orElse: () => Ambiente.HOMOLOGACAO,
             )
           : null,
+
       aplicativo: json['aplicativo'] != null
           ? Aplicativo.fromJson(json['aplicativo'])
           : null,
+
       regime: json['regime'] != null
           ? RegimeTributario.fromJson(json['regime'])
           : null,
+
       fileAttachment: json['fileAttachment'] != null
           ? FileAttachment.fromJson(json['fileAttachment'])
           : null,
-      pais: json['pais'] != null ? PaisModel.fromJson(json['pais']) : null,
-      estado:
-          json['estado'] != null ? EstadoModel.fromJson(json['estado']) : null,
-      cidade:
-          json['cidade'] != null ? CidadeModel.fromJson(json['cidade']) : null,
+
+      // ------------------------------
+      // Tratamento melhorado aqui
+      // ------------------------------
+      pais: parseModel(json['pais'], (m) => PaisModel.fromJson(m)),
+      estado: parseModel(json['estado'], (m) => EstadoModel.fromJson(m)),
+      cidade: parseModel(json['cidade'], (m) => CidadeModel.fromJson(m)),
+
       audit: json['audit'] != null ? Audit.fromJson(json['audit']) : null,
     );
   }
@@ -128,13 +154,13 @@ class Empresa {
 
     if (aplicativo != null) data['aplicativo'] = aplicativo!.toJson();
     if (regime != null) data['regime'] = regime!.toJson();
-    if (fileAttachment != null) {
+    if (fileAttachment != null)
       data['fileAttachment'] = fileAttachment!.toJson();
-    }
     if (pais != null) data['pais'] = pais!.toJson();
     if (estado != null) data['estado'] = estado!.toJson();
     if (cidade != null) data['cidade'] = cidade!.toJson();
     if (audit != null) data['audit'] = audit!.toJson();
+
     return data;
   }
 

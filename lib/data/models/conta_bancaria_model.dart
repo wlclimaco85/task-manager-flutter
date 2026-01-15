@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:task_manager_flutter/data/customization/generic_grid_card.dart';
+import 'empresa_model.dart';
 
 class ContaBancaria {
   int? id;
@@ -8,7 +9,7 @@ class ContaBancaria {
   String? numero;
   String? descricao;
   double? saldoAtual;
-  int empresa;
+  Empresa empresa;
   int? parceiro;
   bool ativo;
 
@@ -32,8 +33,8 @@ class ContaBancaria {
       numero: json['numero'],
       descricao: json['descricao'],
       saldoAtual: (json['saldoAtual'] ?? 0).toDouble(),
-      empresa: json['empresaId'],
-      parceiro: json['parceiroId'],
+      empresa: Empresa.fromJson(json['empresa']),
+      parceiro: json['parceiroId'] ?? 1,
       ativo: json['ativo'] ?? true,
     );
   }

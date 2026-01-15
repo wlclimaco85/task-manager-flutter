@@ -1,11 +1,11 @@
 class ApiLinks {
   ApiLinks._();
-  static const String _baseIp = // "http://192.168.56.1:8088";
-      "https://appacademia-production-be7e.up.railway.app";
+  static const String _baseIp = "http://192.168.56.1:8088";
+  //  "https://appacademia-production-be7e.up.railway.app";
   //static const String _chatId = 'ws://192.168.114.1:8088/boletobancos';
 
-  static const String _chatId = //'ws://192.168.114.1:8088/boletobancos';
-      "wss://appacademia-production-be7e.up.railway.app/boletobancos";
+  static const String _chatId = 'ws://192.168.114.1:8088/boletobancos';
+  //"wss://appacademia-production-be7e.up.railway.app/boletobancos";
   //"http://192.168.100.41:8088";
   //  "http://192.168.114.1:8088";
   // "http://192.168.100.113:8088";
@@ -412,4 +412,6 @@ class ApiLinks {
   static String pontoListar = "$baseUrl/api/pontos/listar";
   static String pontoPdf = "$baseUrl/api/pontos/pdf";
   static String pontoBancoHoras = "$baseUrl/api/pontos/banco-horas";
+
+  static String contasPagarBoleto = "$baseUrl/api/boletos/importar-boleto";
 }
