@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:task_manager_flutter/data/constants/custom_colors.dart';
-import 'package:task_manager_flutter/ui/screens/auth_screens/login_screen.dart';
 import 'package:task_manager_flutter/data/models/auth_utility.dart';
 import 'package:task_manager_flutter/data/utils/security_matrix.dart';
+import 'package:task_manager_flutter/ui/screens/sem_acesso_screen.dart';
 import 'package:task_manager_flutter/ui/screens/chamado_grid_screen.dart';
 import 'package:task_manager_flutter/ui/screens/chatMessageListScreen.dart';
 import 'package:task_manager_flutter/ui/screens/comunicado_screen.dart';
@@ -163,15 +163,9 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
     final safeIndex = selectedIndex.clamp(0, screens.length - 1);
 
     // BottomNavigationBar exige no mínimo 2 itens; se o perfil não tem acesso
-    // redireciona para o login.
+    // redireciona para a tela de sem acesso.
     if (navItems.length < 2) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        Navigator.of(context).pushAndRemoveUntil(
-          MaterialPageRoute(builder: (_) => const LoginScreen()),
-          (_) => false,
-        );
-      });
-      return const Scaffold(body: SizedBox.shrink());
+      return const SemAcessoScreen();
     }
 
     return Scaffold(
