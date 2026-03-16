@@ -1,5 +1,19 @@
 # build_flutter.ps1
-# Script completo para limpar, atualizar e buildar Flutter AppBundle no Windows
+# Roda os testes de integração e só faz o build se todos passarem.
+
+Write-Host "🧪 Rodando testes antes do build..."
+flutter test test/services/ --reporter expanded
+
+if ($LASTEXITCODE -ne 0) {
+    Write-Host ""
+    Write-Host "❌ Testes falharam! Build cancelado." -ForegroundColor Red
+    Write-Host "   Corrija os erros acima e tente novamente." -ForegroundColor Yellow
+    exit 1
+}
+
+Write-Host ""
+Write-Host "✅ Todos os testes passaram! Iniciando build..." -ForegroundColor Green
+Write-Host ""
 
 # 1️⃣ Fechar possíveis processos travados
 Write-Host "Matando processos Java e Gradle..."
@@ -30,17 +44,14 @@ if (Test-Path $gradleWrapper) {
     Write-Host "Gradle-wrapper atualizado."
 }
 
-# 4️⃣ Atualizar Android Gradle Plugin (AGP) via settings.gradle/plugins block
-Write-Host "Verifique se android/settings.gradle está configurado para AGP 8.5.2..."
-# (O usuário precisa garantir manualmente se não estiver usando Flutter template atualizado)
-
-# 5️⃣ Limpar Flutter e baixar dependências
+# 4️⃣ Limpar Flutter e baixar dependências
 Write-Host "Executando flutter clean e flutter pub get..."
 flutter clean
 flutter pub get
 
-# 6️⃣ Buildar AppBundle
+# 5️⃣ Buildar AppBundle
 Write-Host "Gerando AppBundle (.aab) em modo --profile..."
 flutter build appbundle --profile
 
-Write-Host "✅ Build finalizado!"
+Write-Host ""
+Write-Host "🚀 Build finalizado com sucesso!" -ForegroundColor Green

@@ -234,28 +234,32 @@ class NetworkCaller {
   ) async {
     try {
       final user = AuthUtility.userInfo?.login;
+      final isLoginRequest =
+          url.contains('login') || url.contains('inserirAluno');
 
-      // Adiciona empresa, parceiro e aplicativo ao body
-      body?['empresa'] = {};
-      body?['aplicativo'] = {};
-      body?['audit'] = {};
-      body?['empresa']['id'] = user?.empresa?.id;
+      // Não injeta campos de contexto em chamadas de autenticação
+      if (!isLoginRequest) {
+        body?['empresa'] = {};
+        body?['aplicativo'] = {};
+        body?['audit'] = {};
+        body?['empresa']['id'] = user?.empresa?.id;
 
-      body?['aplicativo']['id'] = user?.aplicativo?.id;
-      if (user?.parceiro?.id != null) {
-        body?['parceiro'] = {};
-        body?['parceiro']['id'] = user?.parceiro?.id;
-        body?['audit']?['parceiroId'] = user!.parceiro!.id ?? 0;
+        body?['aplicativo']['id'] = user?.aplicativo?.id;
+        if (user?.parceiro?.id != null) {
+          body?['parceiro'] = {};
+          body?['parceiro']['id'] = user?.parceiro?.id;
+          body?['audit']?['parceiroId'] = user!.parceiro!.id ?? 0;
+        }
+        body?['audit']['empresaId'] = user?.empresa?.id;
+        body?['audit']['appId'] = user?.aplicativo?.id;
+        body?['audit']['userLogadoId'] = user?.id;
       }
-      body?['audit']['empresaId'] = user?.empresa?.id;
-      body?['audit']['appId'] = user?.aplicativo?.id;
-      body?['audit']['userLogadoId'] = user?.id;
 
       Response response = await post(
         Uri.parse(url),
         headers: {
           'Content-Type': 'application/json;charset=UTF-8',
-          'Authorization': url.contains('login') || url.contains('inserirAluno')
+          'Authorization': isLoginRequest
               ? 'c2Fua2h5YTpzdXA='
               : 'Bearer ${AuthUtility.userInfo?.token}',
           'Access-Control-Allow-Origin': '*',

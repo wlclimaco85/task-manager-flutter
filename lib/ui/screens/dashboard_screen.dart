@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:task_manager_flutter/data/models/dashboard_model.dart';
 import 'package:task_manager_flutter/data/services/dashboard_caller.dart';
 import 'package:task_manager_flutter/data/utils/grid_colors.dart';
+import 'package:task_manager_flutter/data/utils/security_matrix.dart';
 import 'package:task_manager_flutter/data/utils/utils.dart';
 import 'package:task_manager_flutter/ui/screens/chats_daily_chart.dart';
 // novos imports dos widgets de dashboard
@@ -116,6 +117,8 @@ class _DashboardPageState extends State<DashboardPage> {
       );
     }
 
+    final sec = SecurityMatrix.current();
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Dashboard'),
@@ -128,102 +131,128 @@ class _DashboardPageState extends State<DashboardPage> {
           padding: const EdgeInsets.all(16),
           children: [
             // 🔹 1) KPIs
-            _sectionTitle('📈 Indicadores-Chave'),
-            const SizedBox(height: 8),
-            KpiCards(empresaId: empresaId, parceiroId: parceiroId),
-            const SizedBox(height: 28),
+            if (sec.canView(AppScreen.dashKpis)) ...[
+              _sectionTitle('📈 Indicadores-Chave'),
+              const SizedBox(height: 8),
+              KpiCards(empresaId: empresaId, parceiroId: parceiroId),
+              const SizedBox(height: 28),
+            ],
 
             // 🔹 2) Financeiro (cards)
-            _sectionTitle('📊 Financeiro'),
-            const SizedBox(height: 8),
-            _financeCards(),
-            const SizedBox(height: 16),
+            if (sec.canView(AppScreen.dashFinanceCards)) ...[
+              _sectionTitle('📊 Financeiro'),
+              const SizedBox(height: 8),
+              _financeCards(),
+              const SizedBox(height: 16),
+            ],
 
-            // 🔹 3) Fluxo Diário –10 / +30 (NOVO)
-            _sectionTitle('💵 Fluxo Diário (–10 dias / +30 dias)'),
-            const SizedBox(height: 8),
-            FinanceFluxoDiarioChart(
-              empresaId: empresaId,
-              parceiroId: parceiroId,
-              daysBack: 10,
-              daysForward: 30,
-            ),
-            const SizedBox(height: 28),
+            // 🔹 3) Fluxo Diário
+            if (sec.canView(AppScreen.dashFluxoDiario)) ...[
+              _sectionTitle('💵 Fluxo Diário (–10 dias / +30 dias)'),
+              const SizedBox(height: 8),
+              FinanceFluxoDiarioChart(
+                empresaId: empresaId,
+                parceiroId: parceiroId,
+                daysBack: 10,
+                daysForward: 30,
+              ),
+              const SizedBox(height: 28),
+            ],
 
             // 🔹 4) Tendência Financeira
-            _sectionTitle('📊 Tendência Financeira (últimos 6 meses)'),
-            const SizedBox(height: 8),
-            FinanceTrendChart(empresaId: empresaId, parceiroId: parceiroId),
-            const SizedBox(height: 28),
+            if (sec.canView(AppScreen.dashTendenciaFinanceira)) ...[
+              _sectionTitle('📊 Tendência Financeira (últimos 6 meses)'),
+              const SizedBox(height: 8),
+              FinanceTrendChart(empresaId: empresaId, parceiroId: parceiroId),
+              const SizedBox(height: 28),
+            ],
 
             // 🔹 5) Distribuição por Clientes
-            _sectionTitle('👥 Distribuição por Clientes'),
-            const SizedBox(height: 8),
-            ClientDistributionPie(empresaId: empresaId, parceiroId: parceiroId),
-            const SizedBox(height: 28),
+            if (sec.canView(AppScreen.dashDistribuicaoClientes)) ...[
+              _sectionTitle('👥 Distribuição por Clientes'),
+              const SizedBox(height: 8),
+              ClientDistributionPie(empresaId: empresaId, parceiroId: parceiroId),
+              const SizedBox(height: 28),
+            ],
 
             // 🔹 6) Comparativo Trimestral
-            _sectionTitle('📆 Comparativo Trimestral'),
-            const SizedBox(height: 8),
-            QuarterlyBars(empresaId: empresaId, parceiroId: parceiroId),
-            const SizedBox(height: 28),
+            if (sec.canView(AppScreen.dashComparativoTrimestral)) ...[
+              _sectionTitle('📆 Comparativo Trimestral'),
+              const SizedBox(height: 8),
+              QuarterlyBars(empresaId: empresaId, parceiroId: parceiroId),
+              const SizedBox(height: 28),
+            ],
 
             // 🔹 7) Alertas e Vencimentos
-            _sectionTitle('⚠️ Alertas de Vencimentos'),
-            const SizedBox(height: 8),
-            AlertsPanel(empresaId: empresaId, parceiroId: parceiroId),
-            const SizedBox(height: 28),
+            if (sec.canView(AppScreen.dashAlertas)) ...[
+              _sectionTitle('⚠️ Alertas de Vencimentos'),
+              const SizedBox(height: 8),
+              AlertsPanel(empresaId: empresaId, parceiroId: parceiroId),
+              const SizedBox(height: 28),
+            ],
 
-            // 🔹 8) Chamados atuais (cards + pizza)
-            _sectionTitle('📞 Chamados'),
-            const SizedBox(height: 8),
-            _ticketsCards(),
-            const SizedBox(height: 16),
-            _ticketsPie(),
-            const SizedBox(height: 28),
+            // 🔹 8) Chamados (cards + pizza)
+            if (sec.canView(AppScreen.dashChamadosCards)) ...[
+              _sectionTitle('📞 Chamados'),
+              const SizedBox(height: 8),
+              _ticketsCards(),
+              const SizedBox(height: 16),
+            ],
+            if (sec.canView(AppScreen.dashChamadosPie)) ...[
+              _ticketsPie(),
+              const SizedBox(height: 28),
+            ],
 
             // 🔹 9) Tendência de Chamados
-            _sectionTitle('📈 Tendência de Chamados (últimos meses)'),
-            const SizedBox(height: 8),
-            TicketsTrendChart(
-              empresaId: empresaId,
-              parceiroId: parceiroId,
-              months: 6,
-            ),
-            const SizedBox(height: 28),
+            if (sec.canView(AppScreen.dashTendenciaChamados)) ...[
+              _sectionTitle('📈 Tendência de Chamados (últimos meses)'),
+              const SizedBox(height: 8),
+              TicketsTrendChart(
+                empresaId: empresaId,
+                parceiroId: parceiroId,
+                months: 6,
+              ),
+              const SizedBox(height: 28),
+            ],
 
-            // 🔹 10) Chats
-            _sectionTitle('💬 Chats (últimos 7 dias)'),
-            const SizedBox(height: 8),
-            _chatsLine(),
-            const SizedBox(height: 28),
+            // 🔹 10) Chats linha
+            if (sec.canView(AppScreen.dashChatsLinha)) ...[
+              _sectionTitle('💬 Chats (últimos 7 dias)'),
+              const SizedBox(height: 8),
+              _chatsLine(),
+              const SizedBox(height: 28),
+            ],
 
             // 🔹 11) Chat diário
-            _sectionTitle('📅 Atividade de Chats Diária'),
-            const SizedBox(height: 8),
-            ChatsDailyChart(
-              empresaId: empresaId,
-              parceiroId: parceiroId,
-              days: 7,
-            ),
-            const SizedBox(height: 28),
+            if (sec.canView(AppScreen.dashChatsDiario)) ...[
+              _sectionTitle('📅 Atividade de Chats Diária'),
+              const SizedBox(height: 8),
+              ChatsDailyChart(
+                empresaId: empresaId,
+                parceiroId: parceiroId,
+                days: 7,
+              ),
+              const SizedBox(height: 28),
+            ],
 
-            // 🔹 12) Saldo por Conta Bancária (NOVO)
-            _sectionTitle('🏦 Saldo por Conta Bancária'),
-            const SizedBox(height: 8),
-            ContasBalancesChart(
-              empresaId: empresaId,
-              parceiroId: parceiroId,
-            ),
-            const SizedBox(height: 28),
+            // 🔹 12) Saldo por Conta Bancária
+            if (sec.canView(AppScreen.dashSaldoContas)) ...[
+              _sectionTitle('🏦 Saldo por Conta Bancária'),
+              const SizedBox(height: 8),
+              ContasBalancesChart(
+                empresaId: empresaId,
+                parceiroId: parceiroId,
+              ),
+              const SizedBox(height: 28),
+            ],
 
-            // 🔹 13) Evolução de Saldos (NOVO)
-            _sectionTitle('📈 Evolução de Saldos (últimos 30 dias)'),
-            const SizedBox(height: 8),
-            const ContaEvolucaoChart(
-              contaId: 1, //TODO: passar contaId correta
-            ),
-            const SizedBox(height: 28),
+            // 🔹 13) Evolução de Saldos
+            if (sec.canView(AppScreen.dashEvolucaoSaldos)) ...[
+              _sectionTitle('📈 Evolução de Saldos (últimos 30 dias)'),
+              const SizedBox(height: 8),
+              const ContaEvolucaoChart(contaId: 1),
+              const SizedBox(height: 28),
+            ],
           ],
         ),
       ),
@@ -289,71 +318,6 @@ class _DashboardPageState extends State<DashboardPage> {
         _infoCard(
             'Saldo', 'R\$ ${saldo.toStringAsFixed(2)}', GridColors.primary),
       ],
-    );
-  }
-
-  Widget _financeChart() {
-    final display = List<FinancePoint>.from(finance);
-    while (display.length < 6) {
-      display.insert(0, FinancePoint('—', 0, 0));
-    }
-
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-      ),
-      height: 230,
-      child: BarChart(
-        BarChartData(
-          gridData: const FlGridData(show: false),
-          borderData: FlBorderData(show: false),
-          titlesData: FlTitlesData(
-            leftTitles: const AxisTitles(
-                sideTitles: SideTitles(showTitles: true, reservedSize: 32)),
-            bottomTitles: AxisTitles(
-              sideTitles: SideTitles(
-                showTitles: true,
-                getTitlesWidget: (v, meta) {
-                  final i = v.toInt();
-                  if (i < 0 || i >= display.length) {
-                    return const SizedBox.shrink();
-                  }
-                  final label = display[i].month.length >= 7
-                      ? display[i].month.substring(5, 7)
-                      : display[i].month;
-                  return Padding(
-                    padding: const EdgeInsets.only(top: 5),
-                    child: Text(label,
-                        style: const TextStyle(
-                            fontSize: 10, color: GridColors.textSecondary)),
-                  );
-                },
-              ),
-            ),
-            rightTitles:
-                const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-            topTitles:
-                const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-          ),
-          barGroups: [
-            for (int i = 0; i < display.length; i++)
-              BarChartGroupData(
-                x: i,
-                barsSpace: 6,
-                barRods: [
-                  BarChartRodData(
-                      toY: display[i].receivable,
-                      color: Colors.green,
-                      width: 8),
-                  BarChartRodData(
-                      toY: display[i].payable, color: Colors.red, width: 8),
-                ],
-              ),
-          ],
-        ),
-      ),
     );
   }
 

@@ -3,6 +3,23 @@
 
 Write-Host "🚀 Iniciando rebuild completo do projeto Flutter..."
 
+# ─── TESTES ───────────────────────────────────────────────────────────────────
+Write-Host ""
+Write-Host "🧪 Rodando testes antes do build..."
+flutter test test/services/ --reporter expanded
+
+if ($LASTEXITCODE -ne 0) {
+    Write-Host ""
+    Write-Host "❌ Testes falharam! Build cancelado." -ForegroundColor Red
+    Write-Host "   Corrija os erros acima e tente novamente." -ForegroundColor Yellow
+    exit 1
+}
+
+Write-Host ""
+Write-Host "✅ Todos os testes passaram! Continuando rebuild..." -ForegroundColor Green
+Write-Host ""
+# ──────────────────────────────────────────────────────────────────────────────
+
 # 1️⃣ Caminhos dos arquivos
 $projectRoot = Resolve-Path "."
 $androidRoot = Join-Path $projectRoot "android"
