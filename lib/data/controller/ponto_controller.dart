@@ -83,7 +83,8 @@ class PontoController extends StateNotifier<PontoState> {
         data: _hoje,
       );
 
-      registros.sort((a, b) => a.dataHora.compareTo(b.dataHora));
+      registros.sort((a, b) =>
+          (a.dataHora ?? DateTime(0)).compareTo(b.dataHora ?? DateTime(0)));
 
       state = state.copyWith(
         loading: false,
@@ -235,8 +236,8 @@ class PontoController extends StateNotifier<PontoState> {
   // ========================================
 
   Duration get horasTrabalhadas {
-    final registros = [...state.registros]
-      ..sort((a, b) => a.dataHora.compareTo(b.dataHora));
+    final registros = [...state.registros]..sort((a, b) =>
+        (a.dataHora ?? DateTime(0)).compareTo(b.dataHora ?? DateTime(0)));
 
     Duration total = Duration.zero;
 
@@ -245,8 +246,10 @@ class PontoController extends StateNotifier<PontoState> {
       final prox = registros[i + 1];
 
       if (atual.tipo == TipoRegistro.entrada &&
-          prox.tipo == TipoRegistro.saida) {
-        total += prox.dataHora.difference(atual.dataHora);
+          prox.tipo == TipoRegistro.saida &&
+          prox.dataHora != null &&
+          atual.dataHora != null) {
+        total += prox.dataHora!.difference(atual.dataHora!);
       }
     }
 
@@ -254,8 +257,8 @@ class PontoController extends StateNotifier<PontoState> {
   }
 
   Duration get intervaloTotal {
-    final registros = [...state.registros]
-      ..sort((a, b) => a.dataHora.compareTo(b.dataHora));
+    final registros = [...state.registros]..sort((a, b) =>
+        (a.dataHora ?? DateTime(0)).compareTo(b.dataHora ?? DateTime(0)));
 
     Duration total = Duration.zero;
 
@@ -264,8 +267,10 @@ class PontoController extends StateNotifier<PontoState> {
       final prox = registros[i + 1];
 
       if (atual.tipo == TipoRegistro.saida &&
-          prox.tipo == TipoRegistro.entrada) {
-        total += prox.dataHora.difference(atual.dataHora);
+          prox.tipo == TipoRegistro.entrada &&
+          prox.dataHora != null &&
+          atual.dataHora != null) {
+        total += prox.dataHora!.difference(atual.dataHora!);
       }
     }
 
@@ -284,8 +289,8 @@ class PontoController extends StateNotifier<PontoState> {
 
   /// 🔥 GERAR LISTA DE PAR ENTRADA/SAÍDA PARA A TELA
   List<Map<String, String>> get marcacoesAgrupadas {
-    final registros = [...state.registros]
-      ..sort((a, b) => a.dataHora.compareTo(b.dataHora));
+    final registros = [...state.registros]..sort((a, b) =>
+        (a.dataHora ?? DateTime(0)).compareTo(b.dataHora ?? DateTime(0)));
 
     final List<Map<String, String>> lista = [];
 

@@ -125,13 +125,22 @@ class TelaField {
   });
 
   factory TelaField.fromJson(Map<String, dynamic> json) {
-    final typeIndex = json['fieldType'] is int
-        ? json['fieldType'] as int
-        : (json['fieldTypeIndex'] as int?) ?? 0;
-    const tftValues = TelaFieldType.values;
-    final tft = typeIndex >= 0 && typeIndex < tftValues.length
-        ? tftValues[typeIndex]
-        : TelaFieldType.text;
+    // Backend manda fieldType como string ("text", "dropdown", etc.)
+    // mas o cache local pode ter salvo como índice inteiro
+    TelaFieldType tft;
+    final rawType = json['fieldType'];
+    if (rawType is int) {
+      tft = rawType >= 0 && rawType < TelaFieldType.values.length
+          ? TelaFieldType.values[rawType]
+          : TelaFieldType.text;
+    } else if (rawType is String) {
+      tft = TelaFieldType.values.firstWhere(
+        (e) => e.name.toLowerCase() == rawType.toLowerCase(),
+        orElse: () => TelaFieldType.text,
+      );
+    } else {
+      tft = TelaFieldType.text;
+    }
 
     final iconName = json['icon']?.toString();
     return TelaField(

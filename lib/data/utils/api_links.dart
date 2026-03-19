@@ -333,6 +333,17 @@ class ApiLinks {
 
   static String getAllTelas(String id) => '$_baseUrlNew/api/telas?nome=$id';
 
+  // Busca tela por nome via PathVariable (retorna objeto direto com fields e actions)
+  static String getTelaByNome(String nome, {int? empId, int? clienteId}) {
+    final params = <String, String>{};
+    if (empId != null) params['empId'] = empId.toString();
+    if (clienteId != null) params['clienteId'] = clienteId.toString();
+    final query = params.isNotEmpty
+        ? '?${params.entries.map((e) => '${e.key}=${e.value}').join('&')}'
+        : '';
+    return '$_baseUrlNew/api/telas/$nome$query';
+  }
+
   static String getAllpreferencias(String id, String setor) =>
       ('$_baseUrlNew/api/$id/user-preferences/$setor');
 

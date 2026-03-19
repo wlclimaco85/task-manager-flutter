@@ -14,9 +14,10 @@ class TelaService {
   }
 
   // 🔍 Busca tela por nome diretamente da API
-  Future<TelaConfig?> getTelaByNome(String nome) async {
+  Future<TelaConfig?> getTelaByNome(String nome, {int? empId, int? clienteId}) async {
     try {
-      final url = ApiLinks.getAllTelas(nome);
+      // Chama /api/telas/{nome} com filtros opcionais
+      final url = ApiLinks.getTelaByNome(nome, empId: empId, clienteId: clienteId);
       AppLogger.i
           .info('🌐 [TelaService] Chamando API para obter tela "$nome" → $url');
 
@@ -33,34 +34,10 @@ class TelaService {
 
       if (response.isSuccess && response.body != null) {
         final body = response.body!;
-        final data = body['data'];
-        final dados = data != null ? data['dados'] : null;
-
-        if (dados == null) {
-          AppLogger.i.info('⚠️ [TelaService] Nenhum campo "dados" encontrado. '
-              'Estrutura recebida: ${response.body}');
-          return null;
-        }
-
-        if (dados is List && dados.isNotEmpty) {
-          AppLogger.i.info(
-              '✅ [TelaService] Estrutura de lista detectada (${dados.length} itens).');
-          final primeiro = dados.first;
-          if (primeiro is Map<String, dynamic>) {
-            AppLogger.i.info(
-                '✅ [TelaService] Convertendo primeiro item em TelaConfig.');
-            return TelaConfig.fromJson(Map<String, dynamic>.from(primeiro));
-          } else {
-            AppLogger.i.info(
-                '❌ [TelaService] Tipo inesperado dentro da lista: ${primeiro.runtimeType}');
-          }
-        } else if (dados is Map<String, dynamic>) {
-          AppLogger.i.info(
-              '✅ [TelaService] Estrutura única detectada, convertendo...');
-          return TelaConfig.fromJson(dados);
-        } else {
-          AppLogger.i.info(
-              '❌ [TelaService] Tipo de "dados" não suportado: ${dados.runtimeType}');
+        // O endpoint /{nome} retorna o objeto Tela diretamente
+        if (body is Map<String, dynamic>) {
+          AppLogger.i.info('✅ [TelaService] Objeto Tela recebido diretamente.');
+          return TelaConfig.fromJson(body);
         }
       } else {
         AppLogger.i.info(
@@ -128,7 +105,7 @@ class TelaService {
   }
 
   // 🔍 Buscar tela do cache ou API se necessário
-  Future<TelaConfig?> getTelaFromCache(String nome) async {
+  Future<TelaConfig?> getTelaFromCache(String nome, {int? empId, int? clienteId}) async {
     try {
       final prefs = await _prefs;
       final cached = prefs.getString('tela_$nome');
@@ -136,7 +113,7 @@ class TelaService {
       if (cached == null || cached.isEmpty) {
         AppLogger.i.info(
             '❌ [TelaService] Nenhum cache encontrado para "$nome". Indo para API.');
-        return await _getFromApiWithRetry(nome);
+        return await _getFromApiWithRetry(nome, empId: empId, clienteId: clienteId);
       }
 
       AppLogger.i.info('✅ [TelaService] Cache encontrado para "$nome".');
@@ -145,7 +122,7 @@ class TelaService {
       if (decoded is! Map<String, dynamic>) {
         AppLogger.i
             .info('⚠️ [TelaService] Cache inválido (não é Map): $decoded');
-        return await _getFromApiWithRetry(nome);
+        return await _getFromApiWithRetry(nome, empId: empId, clienteId: clienteId);
       }
 
       if (_isCacheValid(decoded)) {
@@ -158,11 +135,11 @@ class TelaService {
       } else {
         AppLogger.i.info(
             '⚠️ [TelaService] Cache inválido (ID ou Nome nulos). Atualizando...');
-        return await _getFromApiWithRetry(nome);
+        return await _getFromApiWithRetry(nome, empId: empId, clienteId: clienteId);
       }
     } catch (e) {
       AppLogger.i.info('💥 [TelaService] Erro ao acessar cache: $e');
-      return await _getFromApiWithRetry(nome);
+      return await _getFromApiWithRetry(nome, empId: empId, clienteId: clienteId);
     }
   }
 
@@ -174,14 +151,14 @@ class TelaService {
   }
 
   // 🔁 Tenta buscar a tela até 3 vezes da API
-  Future<TelaConfig?> _getFromApiWithRetry(String nome) async {
+  Future<TelaConfig?> _getFromApiWithRetry(String nome, {int? empId, int? clienteId}) async {
     const maxTentativas = 3;
     for (int tentativa = 1; tentativa <= maxTentativas; tentativa++) {
       AppLogger.i.info(
           '🔄 [TelaService] Tentativa $tentativa/$maxTentativas para buscar "$nome"...');
 
       try {
-        final freshTela = await getTelaByNome(nome);
+        final freshTela = await getTelaByNome(nome, empId: empId, clienteId: clienteId);
 
         if (freshTela != null) {
           AppLogger.i.info(

@@ -8,15 +8,7 @@ class ChamadosScreenDinamic extends StatelessWidget {
   Widget build(BuildContext context) {
     return DynamicGridDynamicScreen(
       telaNome: 'chamados',
-      hasPermission: (permission) {
-        // Kick off the async check but return a synchronous default to satisfy the
-        // expected bool signature; adapt to a proper solution (e.g. make the
-        // API async-aware) if runtime behavior needs to depend on the result.
-        //AuthService().hasPermission(permission).then((_) {});
-        hasPermission:
-        (permission) => true; // será complementado pelo async
-        return false;
-      },
+      hasPermission: (permission) => true,
     );
   }
 }
