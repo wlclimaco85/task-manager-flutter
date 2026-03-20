@@ -17,6 +17,7 @@ import 'package:task_manager_flutter/data/utils/api_links.dart';
 import 'package:task_manager_flutter/data/utils/app_logger.dart';
 
 import '../models/telas_model.dart';
+import '../models/auth_utility.dart';
 import '../services/auth_service.dart';
 
 typedef SecurityCheck = bool Function(String permission);
@@ -69,7 +70,15 @@ class _DynamicGridDynamicScreenState extends State<DynamicGridDynamicScreen> {
   Future<TelaConfig> _loadTelaConfig() async {
     L.i('🚀 Carregando tela dinâmica: ${widget.telaNome}');
     try {
-      final tela = await _telaService.getTelaFromCache(widget.telaNome);
+      final userInfo = AuthUtility.userInfo;
+      final empId = userInfo?.login?.empresa?.id;
+      final clienteId = userInfo?.data?.login?.empresa?.id ?? userInfo?.data?.login?.parceiro?.id;
+
+      final tela = await _telaService.getTelaFromCache(
+        widget.telaNome,
+        empId: empId,
+        clienteId: clienteId,
+      );
       if (tela != null) {
         L.i('✅ Tela carregada: ${tela.nome} '
             '(Campos=${tela.fields.length}, Actions=${tela.actions.length})');

@@ -14,6 +14,7 @@ import 'package:task_manager_flutter/ui/screens/documento_screen.dart';
 import 'package:task_manager_flutter/ui/screens/file_upload_screen.dart';
 import 'package:task_manager_flutter/ui/screens/parceiro_grid_screen.dart';
 import 'package:task_manager_flutter/ui/screens/ponto_screen.dart';
+import 'package:task_manager_flutter/ui/screens/system_test_screen.dart';
 
 class BottomNavBarScreen extends StatefulWidget {
   const BottomNavBarScreen({super.key});
@@ -214,6 +215,7 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
         _menuItem(Icons.text_increase_rounded, "Contas Bancarias", sec),
       if (sec.canView(AppScreen.ponto))
         _menuItem(Icons.access_alarm_rounded, "Bater Ponto", sec),
+      _menuItem(Icons.science_outlined, "Testes", sec),
       _menuItem(Icons.exit_to_app, "Sair", sec),
       _menuItem(Icons.arrow_back, "Voltar", sec),
     ];
