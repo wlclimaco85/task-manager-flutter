@@ -145,6 +145,12 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
           MaterialPageRoute(builder: (_) => const PontoScreen()),
         );
         break;
+      case "Testes":
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => const SystemTestScreen()),
+        );
+        break;
       case "Sair":
         Navigator.pop(context);
         break;
