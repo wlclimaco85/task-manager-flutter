@@ -30,23 +30,12 @@ android {
         versionName = "1.0.9"
     }
 
-    signingConfigs {
-        create("release") {
-            storeFile = file("jks.jks")
-            storePassword = "123Mudar$"
-            keyAlias = "key0"
-            keyPassword = "123Mudar$"
-        }
-    }
-
     buildTypes {
         getByName("release") {
-            signingConfig = signingConfigs.getByName("release")
             isMinifyEnabled = false
             isShrinkResources = false
         }
         getByName("debug") {
-            signingConfig = signingConfigs.getByName("release")
         }
     }
 }
