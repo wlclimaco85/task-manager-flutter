@@ -3,6 +3,13 @@
     <!-- ✅ A permissão deve ficar aqui, fora da tag <application> -->
     <uses-permission android:name="android.permission.INTERNET" />
 
+    <!-- Permissões necessárias para o fastlane screengrab (screenshots automáticos) -->
+    <uses-permission android:name="android.permission.DISABLE_KEYGUARD"/>
+    <uses-permission android:name="android.permission.WAKE_LOCK"/>
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"/>
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"/>
+    <uses-permission android:name="android.permission.CHANGE_CONFIGURATION"/>
+
     <application
         android:label="task_manager_flutter"
         android:name="${applicationName}"
