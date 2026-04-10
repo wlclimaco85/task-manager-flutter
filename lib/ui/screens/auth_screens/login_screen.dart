@@ -34,6 +34,7 @@ class _LoginScreenState extends State<LoginScreen>
   bool _obscurePassword = true;
 
   Future<void> login() async {
+    if (!_formKey.currentState!.validate()) return;
     setState(() => _loginInProgress = true);
 
     Map<String, dynamic> requestBody = {
@@ -45,7 +46,7 @@ class _LoginScreenState extends State<LoginScreen>
 
     setState(() => _loginInProgress = false);
 
-    if (response.isSuccess) {
+    if (response.isSuccess && response.body != null) {
       LoginModel model = LoginModel.fromJson(response.body!);
       await AuthUtility.setUserInfo(model);
       if (mounted) {
@@ -57,10 +58,13 @@ class _LoginScreenState extends State<LoginScreen>
     } else {
       if (mounted) {
         _passwordController.clear();
+        final msg = response.statusCode == 400 || response.statusCode == 401
+            ? 'Email ou senha invalidos'
+            : response.statusCode == -1
+                ? 'Sem conexao com o servidor\n${ApiLinks.login}'
+                : 'Erro ${response.statusCode}\n${ApiLinks.login}';
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text("Incorrect email or password - ${ApiLinks.login}"),
-          ),
+          SnackBar(content: Text(msg), duration: const Duration(seconds: 5)),
         );
       }
     }

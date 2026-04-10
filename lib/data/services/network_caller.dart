@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:developer';
 import 'package:http/http.dart';
@@ -38,7 +39,7 @@ class NetworkCaller {
           'Authorization': 'Bearer ${AuthUtility.userInfo?.token}',
           'Accept-Encoding': 'gzip',
         },
-      );
+      ).timeout(const Duration(seconds: 15));
 
       debugPrint("Url get = $uri");
 
@@ -268,7 +269,7 @@ class NetworkCaller {
           'Access-Control-Allow-Headers': 'Origin, Content-Type, Accept',
         },
         body: jsonEncode(body),
-      );
+      ).timeout(const Duration(seconds: 15));
 
       print('POST $url');
       print('Request Body: ${jsonEncode(body)}');

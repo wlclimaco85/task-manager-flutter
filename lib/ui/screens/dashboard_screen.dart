@@ -34,7 +34,7 @@ class _DashboardPageState extends State<DashboardPage> {
   bool loading = true;
   String? error;
 
-  final int empresaId = pegarEmpresaLogada();
+  final int empresaId = pegarEmpresaLogada() ?? 0;
   final int? parceiroId = pegarParceiroLogada();
 
   @override
