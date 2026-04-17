@@ -198,13 +198,16 @@ class SecurityMatrix {
   final LoginEnum? tipoLogin;
   final String? aplicativoNome;
 
+  /// Permissões vindas do banco (quando disponíveis).
+  final Map<String, Set<AppAction>> _backendPerms;
+
   const SecurityMatrix._({
     required this.profile,
     this.tipoLogin,
     this.aplicativoNome,
-  });
+    Map<String, Set<AppAction>> backendPerms = const {},
+  }) : _backendPerms = backendPerms;
 
-  /// Constrói a matriz a partir do usuário logado.
   factory SecurityMatrix.of(LoginModel? userInfo) {
     if (userInfo == null) {
       return const SecurityMatrix._(profile: UserProfile.semAcesso);
@@ -214,34 +217,30 @@ class SecurityMatrix {
     final tipoLogin = login?.tipoLogin;
     final aplicativoNome = login?.aplicativo?.nome;
 
-    // MASTER sempre tem acesso total
     if (tipoLogin == LoginEnum.MASTER) {
       return SecurityMatrix._(
         profile: UserProfile.system,
         tipoLogin: tipoLogin,
         aplicativoNome: aplicativoNome,
+        backendPerms: {},
       );
     }
 
-    // Verifica se é o aplicativo correto
-    final isContabilidade = aplicativoNome
-            ?.toLowerCase()
-            .contains('contabilidade') ??
-        false;
+    final isContabilidade =
+        aplicativoNome?.toLowerCase().contains('contabilidade') ?? false;
 
     if (!isContabilidade) {
       return SecurityMatrix._(
         profile: UserProfile.semAcesso,
         tipoLogin: tipoLogin,
         aplicativoNome: aplicativoNome,
+        backendPerms: {},
       );
     }
 
-    // Resolve perfil pelas roles
     final roles = login?.roles ?? [];
     UserProfile resolved = UserProfile.semAcesso;
 
-    // Prioridade: system > gerente > financeiro > faturista > ponto
     const priority = [
       UserProfile.system,
       UserProfile.gerente,
@@ -252,7 +251,9 @@ class SecurityMatrix {
 
     for (final p in priority) {
       final key = _roleKeyToProfile.entries
-          .firstWhere((e) => e.value == p, orElse: () => const MapEntry('', UserProfile.semAcesso))
+          .firstWhere(
+              (e) => e.value == p,
+              orElse: () => const MapEntry('', UserProfile.semAcesso))
           .key;
       if (roles.any((r) => r.key == key)) {
         resolved = p;
@@ -260,22 +261,35 @@ class SecurityMatrix {
       }
     }
 
+    // Constrói mapa de permissões do banco
+    final backendPerms = <String, Set<AppAction>>{};
+    if (userInfo.permissoes != null && userInfo.permissoes!.isNotEmpty) {
+      for (final p in userInfo.permissoes!) {
+        final existing = backendPerms[p.telaNome] ?? <AppAction>{};
+        if (p.podeVer)      existing.add(AppAction.view);
+        if (p.podeInserir)  existing.add(AppAction.insert);
+        if (p.podeEditar)   existing.add(AppAction.update);
+        if (p.podeDeletar)  existing.add(AppAction.delete);
+        backendPerms[p.telaNome] = existing;
+      }
+    }
+
     return SecurityMatrix._(
       profile: resolved,
       tipoLogin: tipoLogin,
       aplicativoNome: aplicativoNome,
+      backendPerms: backendPerms,
     );
   }
 
-  /// Atalho para o usuário logado atual.
-  factory SecurityMatrix.current() =>
-      SecurityMatrix.of(AuthUtility.userInfo);
-
-  // ── Verificações ────────────────────────────────────────────────────────────
+  factory SecurityMatrix.current() => SecurityMatrix.of(AuthUtility.userInfo);
 
   bool _can(AppScreen screen, AppAction action) {
-    final actions = _matrix[profile]?[screen];
-    return actions?.contains(action) ?? false;
+    if (profile == UserProfile.system || tipoLogin == LoginEnum.MASTER) return true;
+    if (_backendPerms.isNotEmpty) {
+      return _backendPerms[screen.name]?.contains(action) ?? false;
+    }
+    return _matrix[profile]?[screen]?.contains(action) ?? false;
   }
 
   bool canView(AppScreen screen)   => _can(screen, AppAction.view);
@@ -283,16 +297,15 @@ class SecurityMatrix {
   bool canUpdate(AppScreen screen) => _can(screen, AppAction.update);
   bool canDelete(AppScreen screen) => _can(screen, AppAction.delete);
 
-  /// Retorna true se o usuário tem pelo menos uma ação na tela.
-  bool hasAnyAccess(AppScreen screen) =>
-      (_matrix[profile]?[screen]?.isNotEmpty) ?? false;
+  bool hasAnyAccess(AppScreen screen) {
+    if (profile == UserProfile.system || tipoLogin == LoginEnum.MASTER) return true;
+    if (_backendPerms.isNotEmpty) return (_backendPerms[screen.name]?.isNotEmpty) ?? false;
+    return (_matrix[profile]?[screen]?.isNotEmpty) ?? false;
+  }
 
-  /// Lista todas as telas visíveis para o perfil atual.
-  List<AppScreen> get visibleScreens => AppScreen.values
-      .where((s) => canView(s))
-      .toList();
+  List<AppScreen> get visibleScreens =>
+      AppScreen.values.where((s) => canView(s)).toList();
 
-  /// Lista todas as telas do menu principal visíveis.
   List<AppScreen> get visibleMenuScreens => [
         AppScreen.calendario,
         AppScreen.chat,
@@ -307,7 +320,6 @@ class SecurityMatrix {
         AppScreen.ponto,
       ].where((s) => canView(s)).toList();
 
-  /// Lista os widgets do dashboard visíveis para o perfil.
   List<AppScreen> get visibleDashboardWidgets => [
         AppScreen.dashKpis,
         AppScreen.dashFinanceCards,
@@ -327,5 +339,5 @@ class SecurityMatrix {
 
   @override
   String toString() =>
-      'SecurityMatrix(profile: $profile, tipo: $tipoLogin, app: $aplicativoNome)';
+      'SecurityMatrix(profile: $profile, tipo: $tipoLogin, app: $aplicativoNome, backendPerms: ${_backendPerms.length} telas)';
 }
