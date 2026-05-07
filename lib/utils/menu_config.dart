@@ -1,0 +1,186 @@
+import 'package:flutter/material.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+
+/// Definição de um item de menu
+class MenuItem {
+  final String id;
+  final String label;
+  final IconData icon;
+  final int screenIndex; // índice na lista _screens (-1 = não implementado)
+
+  const MenuItem({
+    required this.id,
+    required this.label,
+    required this.icon,
+    required this.screenIndex,
+  });
+}
+
+/// Grupo de menu (submenu expansível)
+class MenuGroup {
+  final String id;
+  final String label;
+  final IconData icon;
+  final List<MenuItem> items;
+
+  const MenuGroup({
+    required this.id,
+    required this.label,
+    required this.icon,
+    required this.items,
+  });
+}
+
+/// Índices Windows _buildScreens:
+/// 0:Comunicado  1:Chat  2:ComunicadoComp  3:Aplicativo  4:Logins  5:ChatList
+/// 6,7:ProductRegister  8:Regime  9:Alimentos  10:Dietas  11:Empresas
+/// 12:Exames  13:Exercícios  14:GruposMusculares  15:Medicamentos
+/// 16:Mensalidades  17:Modalidades  18:Objetivos  19:Parceiros  20:Personais
+/// 21:Planos  22:Roles  23:Setores  24:Suplementos  25:ContasPagar
+/// 26:ContasReceber  27:Chamados  28:FormasPagamento  29:Diretorios
+/// 30:Arquivos  31:Calendario  32:ObrigacoesFiscais  33:Logins(dup)
+/// 34:CotacaoFrete  35:CalendarioGuias  36:Tickets  37:Dividendos
+/// 38:Ordens  39:Pedidos  40:ConfigAdmin  41:AlertaAluno  42:AvaliacaoFisica
+/// 43:ContaBancaria  44:Classificacao  45:Dashboard  46:Feriados
+/// 47:NFeEntrada  48:NFeSaida  49:Treino  50:Funcionarios  51:Kanban
+/// 52:EditorTelas  53:Produtos
+/// 54:NfeFinalidade  55:NfeSerie  56:NfeTipoOperacao  57:UnidadeMedida
+/// 58:CatalagoProduto  59:Permissoes  60:Ponto  61:SolicitarAjuste
+/// 62:AjustePonto  63:ConfigSistema  64:Chat  65:Teste  66:CadastroEmpresa
+
+class MenuConfig {
+  MenuConfig._();
+
+  static const List<MenuGroup> groups = [
+    MenuGroup(
+      id: 'app_academia',
+      label: 'App Academia',
+      icon: FontAwesomeIcons.dumbbell,
+      items: [
+        MenuItem(id: 'alimentos',         label: 'Alimentos',         icon: FontAwesomeIcons.appleWhole,    screenIndex: 9),
+        MenuItem(id: 'avaliacao_fisica',   label: 'Avaliação Física',  icon: FontAwesomeIcons.clipboardList, screenIndex: 42),
+        MenuItem(id: 'dietas',            label: 'Dietas',            icon: FontAwesomeIcons.bowlFood,      screenIndex: 10),
+        MenuItem(id: 'exercicios',        label: 'Exercícios',        icon: FontAwesomeIcons.dumbbell,      screenIndex: 13),
+        MenuItem(id: 'grupos_musculares', label: 'Grupos Musculares', icon: FontAwesomeIcons.peopleGroup,   screenIndex: 14),
+        MenuItem(id: 'medicamentos',      label: 'Medicamentos',      icon: FontAwesomeIcons.pills,         screenIndex: 15),
+        MenuItem(id: 'modalidades',       label: 'Modalidades',       icon: FontAwesomeIcons.tableList,     screenIndex: 17),
+        MenuItem(id: 'objetivos',         label: 'Objetivos',         icon: FontAwesomeIcons.bullseye,      screenIndex: 18),
+        MenuItem(id: 'personais',         label: 'Personais',         icon: FontAwesomeIcons.userTie,       screenIndex: 20),
+        MenuItem(id: 'suplementos',       label: 'Suplementos',       icon: FontAwesomeIcons.capsules,      screenIndex: 24),
+        MenuItem(id: 'treino',            label: 'Treino',            icon: FontAwesomeIcons.personRunning, screenIndex: 49),
+      ],
+    ),
+    MenuGroup(
+      id: 'comercial',
+      label: 'Comercial',
+      icon: FontAwesomeIcons.briefcase,
+      items: [
+        MenuItem(id: 'nfe_entrada',        label: 'NF-e Entrada',         icon: FontAwesomeIcons.fileImport,      screenIndex: 47),
+        MenuItem(id: 'nfe_finalidade',     label: 'NF-e Finalidade',      icon: FontAwesomeIcons.fileCircleCheck, screenIndex: 54),
+        MenuItem(id: 'nfe_saida',          label: 'NF-e Saída',           icon: FontAwesomeIcons.fileExport,      screenIndex: 48),
+        MenuItem(id: 'nfe_serie',          label: 'NF-e Série',           icon: FontAwesomeIcons.hashtag,         screenIndex: 55),
+        MenuItem(id: 'nfe_tipo_operacao',  label: 'NF-e Tipo Operação',   icon: FontAwesomeIcons.arrowsLeftRight, screenIndex: 56),
+        MenuItem(id: 'planos',             label: 'Planos',               icon: FontAwesomeIcons.listCheck,       screenIndex: 21),
+        MenuItem(id: 'servicos_contratados', label: 'Serviços Contratados', icon: FontAwesomeIcons.fileContract,  screenIndex: -1),
+        MenuItem(id: 'modulos_servicos',   label: 'Módulos/Serviços',     icon: FontAwesomeIcons.cubes,           screenIndex: -2),
+      ],
+    ),
+    MenuGroup(
+      id: 'configuracoes',
+      label: 'Configurações',
+      icon: FontAwesomeIcons.sliders,
+      items: [
+        MenuItem(id: 'logins',            label: 'Logins',             icon: FontAwesomeIcons.userLock,          screenIndex: 4),
+        MenuItem(id: 'obrigacoes_fiscais',label: 'Obrigações Fiscais', icon: FontAwesomeIcons.fileInvoiceDollar, screenIndex: 32),
+        MenuItem(id: 'regime_tributario', label: 'Regime Tributário',  icon: FontAwesomeIcons.taxi,              screenIndex: 8),
+        MenuItem(id: 'roles',             label: 'Roles',              icon: FontAwesomeIcons.userShield,        screenIndex: 22),
+      ],
+    ),
+    MenuGroup(
+      id: 'depto_pessoal',
+      label: 'Depto. Pessoal',
+      icon: FontAwesomeIcons.idCard,
+      items: [
+        MenuItem(id: 'ajuste_ponto',      label: 'Ajuste de Ponto',        icon: FontAwesomeIcons.clockRotateLeft, screenIndex: 62),
+        MenuItem(id: 'feriados',          label: 'Feriados',               icon: FontAwesomeIcons.umbrellaBeach,   screenIndex: 46),
+        MenuItem(id: 'funcionarios',      label: 'Funcionários',           icon: FontAwesomeIcons.idCard,          screenIndex: 50),
+        MenuItem(id: 'ponto',             label: 'Ponto',                  icon: FontAwesomeIcons.clock,           screenIndex: 60),
+        MenuItem(id: 'setores',           label: 'Setores',                icon: FontAwesomeIcons.sitemap,         screenIndex: 23),
+        MenuItem(id: 'solicitar_ajuste',  label: 'Solicitar Ajuste Ponto', icon: FontAwesomeIcons.penToSquare,     screenIndex: 61),
+      ],
+    ),
+    MenuGroup(
+      id: 'financeiro',
+      label: 'Financeiro',
+      icon: FontAwesomeIcons.moneyBillTrendUp,
+      items: [
+        MenuItem(id: 'calendario',        label: 'Calendário',          icon: FontAwesomeIcons.calendar,        screenIndex: 31),
+        MenuItem(id: 'calendario_guias',  label: 'Calendário de Guias', icon: FontAwesomeIcons.calendarDays,    screenIndex: 35),
+        MenuItem(id: 'conta_bancaria',    label: 'Conta Bancária',      icon: FontAwesomeIcons.buildingColumns, screenIndex: 43),
+        MenuItem(id: 'contas_pagar',      label: 'Contas a Pagar',      icon: FontAwesomeIcons.moneyBill,       screenIndex: 25),
+        MenuItem(id: 'contas_receber',    label: 'Contas a Receber',    icon: FontAwesomeIcons.moneyCheckDollar,screenIndex: 26),
+        MenuItem(id: 'formas_pagamento',  label: 'Formas de Pagamento', icon: FontAwesomeIcons.creditCard,      screenIndex: 28),
+      ],
+    ),
+    MenuGroup(
+      id: 'produtos',
+      label: 'Produtos',
+      icon: FontAwesomeIcons.box,
+      items: [
+        MenuItem(id: 'catalogo_produto',  label: 'Catálogo Produto',  icon: FontAwesomeIcons.boxOpen,          screenIndex: 58),
+        MenuItem(id: 'cotacao',           label: 'Cotação',           icon: FontAwesomeIcons.chartLine,        screenIndex: 2),
+        MenuItem(id: 'produtos',          label: 'Produtos',          icon: FontAwesomeIcons.box,              screenIndex: 53),
+        MenuItem(id: 'unidade_medida',    label: 'Unidade de Medida', icon: FontAwesomeIcons.rulerHorizontal,  screenIndex: 57),
+      ],
+    ),
+    MenuGroup(
+      id: 'sistema',
+      label: 'Sistema',
+      icon: FontAwesomeIcons.gear,
+      items: [
+        MenuItem(id: 'aplicativo',        label: 'Aplicativo',          icon: FontAwesomeIcons.appStore,          screenIndex: 3),
+        MenuItem(id: 'cadastro_empresa',  label: 'Cadastro Empresa',    icon: FontAwesomeIcons.building,          screenIndex: 66),
+        MenuItem(id: 'config_admin',      label: 'Configurações Admin', icon: FontAwesomeIcons.gear,              screenIndex: 40),
+        MenuItem(id: 'config_sistema',    label: 'Config. Sistema',     icon: FontAwesomeIcons.screwdriverWrench, screenIndex: 63),
+        MenuItem(id: 'editor_telas',      label: 'Editor de Telas',     icon: FontAwesomeIcons.tableColumns,      screenIndex: 52),
+        MenuItem(id: 'empresas',          label: 'Empresas',            icon: FontAwesomeIcons.buildingUser,      screenIndex: 11),
+        MenuItem(id: 'permissoes',        label: 'Permissões',          icon: FontAwesomeIcons.shieldHalved,      screenIndex: 59),
+        MenuItem(id: 'teste_endpoints',   label: 'Teste de Endpoints',  icon: FontAwesomeIcons.vials,             screenIndex: 65),
+      ],
+    ),
+  ];
+
+  static const List<MenuItem> loose = [
+    MenuItem(id: 'chamados',     label: 'Chamados',     icon: FontAwesomeIcons.ticketSimple, screenIndex: 27),
+    MenuItem(id: 'chat',         label: 'Chat',         icon: FontAwesomeIcons.comments,     screenIndex: 64),
+    MenuItem(id: 'comunicados',  label: 'Comunicados',  icon: FontAwesomeIcons.newspaper,    screenIndex: 0),
+    MenuItem(id: 'dashboard',    label: 'Dashboard',    icon: FontAwesomeIcons.chartBar,     screenIndex: 45),
+    MenuItem(id: 'ged',          label: 'GED',          icon: FontAwesomeIcons.folderOpen,   screenIndex: 30),
+    MenuItem(id: 'kanban',       label: 'Kanban',       icon: FontAwesomeIcons.trello,       screenIndex: 51),
+    MenuItem(id: 'mensalidades', label: 'Mensalidades', icon: FontAwesomeIcons.moneyBill,    screenIndex: 16),
+    MenuItem(id: 'noticias',     label: 'Notícias',     icon: FontAwesomeIcons.newspaper,    screenIndex: 0),
+    MenuItem(id: 'parceiros',    label: 'Parceiros',    icon: FontAwesomeIcons.handshake,    screenIndex: 19),
+    MenuItem(id: 'pedidos',      label: 'Pedidos',      icon: FontAwesomeIcons.cartFlatbed,  screenIndex: 39),
+  ];
+
+  static List<MenuItem> get allItems {
+    final all = <MenuItem>[];
+    for (final g in groups) all.addAll(g.items);
+    all.addAll(loose);
+    return all;
+  }
+
+  static List<MenuItem> search(String query) {
+    if (query.trim().isEmpty) return [];
+    final q = query.toLowerCase().trim();
+    return allItems.where((m) => m.label.toLowerCase().contains(q)).toList()
+      ..sort((a, b) => a.label.compareTo(b.label));
+  }
+
+  static MenuGroup? groupOf(String itemId) {
+    for (final g in groups) {
+      if (g.items.any((i) => i.id == itemId)) return g;
+    }
+    return null;
+  }
+}

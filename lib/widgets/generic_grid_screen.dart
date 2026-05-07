@@ -1,0 +1,2665 @@
+import 'dart:convert';
+import 'dart:io';
+import 'dart:typed_data';
+
+import 'package:data_table_2/data_table_2.dart';
+import 'package:file_picker/file_picker.dart';
+import 'package:file_saver/file_saver.dart';
+import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:http/http.dart' as http;
+import 'package:intl/intl.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import '../../../models/auth_utility.dart';
+import '../../../models/network_response.dart';
+import '../../../utils/api_links.dart';
+import '../../services/network_caller.dart';
+
+// ==============================================
+// ENUMS E CONFIGURAÇÕES
+// ==============================================
+
+// Cores centralizadas para todo o componente
+class GridColors {
+  static const Color primary = Color(0xFF93070A);
+  static const Color primaryDark = Color(0xFF6A0507);
+  static const Color primaryLight = Color(0xFFB84042);
+  static const Color secondary = Color(0xFF005826);
+  static const Color secondaryLight = Color(0xFF2E7D32);
+  static const Color secondaryDark = Color(0xFF003D1A);
+  static const Color textPrimary = Color(0xFFFFFFFF);
+  static const Color textSecondary = Color(0xFF000000);
+  static const Color link = Color(0xFFFF0000);
+  static const Color inputBackground = Color(0xFFFFFFFF);
+  static const Color inputBorder = Color(0xFF93070A);
+  static const Color buttonBackground = Color(0xFF93070A);
+  static const Color buttonText = Color(0xFFFFFFFF);
+  static const Color background = Color(0xFF005826);
+  static const Color card = Color(0xFFFFFFFF);
+  static const Color error = Color(0xFFD32F2F);
+  static const Color warning = Color(0xFFFFA000);
+  static const Color success = Color(0xFF2E7D32);
+  static const Color info = Color(0xFF1976D2);
+  static const Color divider = Color(0xFFBDBDBD);
+  static const Color filterBackground = Color(0xFFEFEFEF);
+  static const Color hover = Color(0x1A000000);
+  static const Color selectedRow = Color(0xFFE3F2FD);
+  static const Color dialogBackground = Color(0xFFFFFFFF);
+  static const Color shadow = Color(0x26000000);
+}
+
+// Enum para tipos de campo
+enum FieldType {
+  text,
+  number,
+  email,
+  date,
+  multiline,
+  dropdown,
+  boolean,
+  file,
+  password,
+  phone,
+  cpf,
+  cnpj,
+  currency,
+  percentage,
+  url,
+  multiselect,
+}
+
+// Configuração de arquivo
+class FileConfig {
+  final List<String> allowedExtensions;
+  final bool allowMultiple;
+  final int maxFileSize;
+  final String fileFieldName;
+
+  const FileConfig({
+    this.allowedExtensions = const ['pdf', 'doc', 'docx', 'jpg', 'jpeg', 'png'],
+    this.allowMultiple = false,
+    this.maxFileSize = 5 * 1024 * 1024,
+    this.fileFieldName = 'file',
+  });
+}
+
+// Configuração avançada de campo
+class FieldConfig {
+  final String label;
+  final String fieldName;
+  final bool isFilterable;
+  final bool isInForm;
+  final int flex;
+  final int maxLines;
+  final IconData? icon;
+  final bool isSortable;
+  final FieldType fieldType;
+  final List<Map<String, dynamic>>? dropdownOptions;
+  final Future<List<Map<String, dynamic>>> Function()? dropdownFutureBuilder;
+  final String dropdownValueField;
+  final String dropdownDisplayField;
+  final bool isRequired;
+  final String? Function(String?)? validator;
+  final String? displayFieldName;
+  final bool isVisibleByDefault;
+  final bool isFixed;
+  final bool enabled;
+  final dynamic defaultValue;
+  final FileConfig? fileConfig;
+  final dynamic dropdownSelectedValue;
+  final Map<String, dynamic>? fieldSpecificConfig;
+
+  const FieldConfig({
+    required this.label,
+    required this.fieldName,
+    this.isFilterable = true,
+    this.isInForm = true,
+    this.flex = 1,
+    this.maxLines = 1,
+    this.icon,
+    this.isSortable = true,
+    this.fieldType = FieldType.text,
+    this.dropdownOptions,
+    this.dropdownFutureBuilder,
+    this.dropdownValueField = 'value',
+    this.dropdownDisplayField = 'label',
+    this.isRequired = false,
+    this.validator,
+    this.displayFieldName,
+    this.isVisibleByDefault = true,
+    this.isFixed = false,
+    this.enabled = true,
+    this.defaultValue,
+    this.fileConfig,
+    this.dropdownSelectedValue,
+    this.fieldSpecificConfig,
+  });
+}
+
+// Configuração de exportação
+class ExportConfig {
+  final bool enableCsvExport;
+  final bool enablePdfExport;
+  final String filenamePrefix;
+
+  const ExportConfig({
+    this.enableCsvExport = true,
+    this.enablePdfExport = true,
+    this.filenamePrefix = 'export',
+  });
+}
+
+// Configuração de paginação
+class PaginationConfig {
+  final int defaultRowsPerPage;
+  final List<int> availableRowsPerPage;
+  final bool showItemsPerPageSelector;
+
+  const PaginationConfig({
+    this.defaultRowsPerPage = 25,
+    this.availableRowsPerPage = const [10, 25, 50, 100],
+    this.showItemsPerPageSelector = true,
+  });
+}
+
+// Configuração de ação personalizada
+class CustomAction<T> {
+  final IconData icon;
+  final String label;
+  final void Function(BuildContext context, T item) onPressed;
+  final bool Function(T item)? isVisible;
+
+  const CustomAction({
+    required this.icon,
+    required this.label,
+    required this.onPressed,
+    this.isVisible,
+  });
+}
+
+// ==============================================
+// FORMATAÇÃO E VALIDAÇÃO
+// ==============================================
+
+// Formatters específicos para diferentes tipos de campo
+class NumberInputFormatter extends TextInputFormatter {
+  final int decimalDigits;
+
+  NumberInputFormatter({this.decimalDigits = 2});
+
+  @override
+  TextEditingValue formatEditUpdate(
+    TextEditingValue oldValue,
+    TextEditingValue newValue,
+  ) {
+    if (newValue.text.isEmpty) return newValue;
+
+    final cleaned = newValue.text.replaceAll(RegExp(r'[^\d.]'), '');
+    final parts = cleaned.split('.');
+
+    if (parts.length > 2) return oldValue;
+    if (parts.length == 2 && parts[1].length > decimalDigits) {
+      return oldValue;
+    }
+
+    return newValue.copyWith(text: cleaned);
+  }
+}
+
+class CurrencyInputFormatter extends TextInputFormatter {
+  @override
+  TextEditingValue formatEditUpdate(
+    TextEditingValue oldValue,
+    TextEditingValue newValue,
+  ) {
+    if (newValue.text.isEmpty) return newValue;
+
+    final cleaned = newValue.text.replaceAll(RegExp(r'[^\d]'), '');
+    if (cleaned.isEmpty) return newValue;
+
+    final value = int.parse(cleaned) / 100;
+    final formatted = 'R\$ ${value.toStringAsFixed(2).replaceAll('.', ',')}';
+
+    return TextEditingValue(
+      text: formatted,
+      selection: TextSelection.collapsed(offset: formatted.length),
+    );
+  }
+}
+
+class PhoneInputFormatter extends TextInputFormatter {
+  @override
+  TextEditingValue formatEditUpdate(
+    TextEditingValue oldValue,
+    TextEditingValue newValue,
+  ) {
+    final cleaned = newValue.text.replaceAll(RegExp(r'[^\d]'), '');
+
+    if (cleaned.length <= 11) {
+      String formatted = cleaned;
+      if (cleaned.length > 2) {
+        formatted = '(${cleaned.substring(0, 2)}) ${cleaned.substring(2)}';
+      }
+      if (cleaned.length > 7) {
+        formatted =
+            '(${cleaned.substring(0, 2)}) ${cleaned.substring(2, 7)}-${cleaned.substring(7)}';
+      }
+      return TextEditingValue(
+        text: formatted,
+        selection: TextSelection.collapsed(offset: formatted.length),
+      );
+    }
+    return oldValue;
+  }
+}
+
+class CpfInputFormatter extends TextInputFormatter {
+  @override
+  TextEditingValue formatEditUpdate(
+    TextEditingValue oldValue,
+    TextEditingValue newValue,
+  ) {
+    final cleaned = newValue.text.replaceAll(RegExp(r'[^\d]'), '');
+
+    if (cleaned.length <= 11) {
+      String formatted = cleaned;
+      if (cleaned.length > 3) {
+        formatted = '${cleaned.substring(0, 3)}.${cleaned.substring(3)}';
+      }
+      if (cleaned.length > 6) {
+        formatted =
+            '${cleaned.substring(0, 3)}.${cleaned.substring(3, 6)}.${cleaned.substring(6)}';
+      }
+      if (cleaned.length > 9) {
+        formatted =
+            '${cleaned.substring(0, 3)}.${cleaned.substring(3, 6)}.${cleaned.substring(6, 9)}-${cleaned.substring(9)}';
+      }
+      return TextEditingValue(
+        text: formatted,
+        selection: TextSelection.collapsed(offset: formatted.length),
+      );
+    }
+    return oldValue;
+  }
+}
+
+class CnpjInputFormatter extends TextInputFormatter {
+  @override
+  TextEditingValue formatEditUpdate(
+    TextEditingValue oldValue,
+    TextEditingValue newValue,
+  ) {
+    final cleaned = newValue.text.replaceAll(RegExp(r'[^\d]'), '');
+
+    if (cleaned.length <= 14) {
+      String formatted = cleaned;
+      if (cleaned.length > 2) {
+        formatted = '${cleaned.substring(0, 2)}.${cleaned.substring(2)}';
+      }
+      if (cleaned.length > 5) {
+        formatted =
+            '${cleaned.substring(0, 2)}.${cleaned.substring(2, 5)}.${cleaned.substring(5)}';
+      }
+      if (cleaned.length > 8) {
+        formatted =
+            '${cleaned.substring(0, 2)}.${cleaned.substring(2, 5)}.${cleaned.substring(5, 8)}/${cleaned.substring(8)}';
+      }
+      if (cleaned.length > 12) {
+        formatted =
+            '${cleaned.substring(0, 2)}.${cleaned.substring(2, 5)}.${cleaned.substring(5, 8)}/${cleaned.substring(8, 12)}-${cleaned.substring(12)}';
+      }
+      return TextEditingValue(
+        text: formatted,
+        selection: TextSelection.collapsed(offset: formatted.length),
+      );
+    }
+    return oldValue;
+  }
+}
+
+// Validações comuns
+class FieldValidators {
+  static String? validateEmail(String? value) {
+    if (value == null || value.isEmpty) return null;
+    final regex = RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
+    return regex.hasMatch(value) ? null : 'Digite um email válido';
+  }
+
+  static String? validateRequired(String? value, String fieldName) {
+    if (value == null || value.isEmpty) {
+      return '$fieldName é obrigatório';
+    }
+    return null;
+  }
+
+  static String? validateMinLength(
+    String? value,
+    int minLength,
+    String fieldName,
+  ) {
+    if (value == null || value.length < minLength) {
+      return '$fieldName deve ter pelo menos $minLength caracteres';
+    }
+    return null;
+  }
+
+  static String? validatePhone(String? value) {
+    if (value == null || value.isEmpty) return null;
+    final cleaned = value.replaceAll(RegExp(r'[^\d]'), '');
+    return cleaned.length >= 10 ? null : 'Digite um telefone válido';
+  }
+
+  static String? validateCpf(String? value) {
+    if (value == null || value.isEmpty) return null;
+    final cleaned = value.replaceAll(RegExp(r'[^\d]'), '');
+    if (cleaned.length != 11) return 'CPF deve ter 11 dígitos';
+    return null;
+  }
+
+  static String? validateCnpj(String? value) {
+    if (value == null || value.isEmpty) return null;
+    final cleaned = value.replaceAll(RegExp(r'[^\d]'), '');
+    if (cleaned.length != 14) return 'CNPJ deve ter 14 dígitos';
+    return null;
+  }
+
+  static String? validateNumber(String? value, {double? min, double? max}) {
+    if (value == null || value.isEmpty) return null;
+    final number = double.tryParse(value.replaceAll(',', '.'));
+    if (number == null) return 'Digite um número válido';
+    if (min != null && number < min) return 'Valor mínimo: $min';
+    if (max != null && number > max) return 'Valor máximo: $max';
+    return null;
+  }
+}
+
+// ==============================================
+// FÁBRICA DE CAMPOS (FIELD FACTORY)
+// ==============================================
+
+class FieldFactory {
+  static Widget buildField({
+    required FieldConfig config,
+    required TextEditingController controller,
+    required BuildContext context,
+    required Map<String, List<PlatformFile>> fileCache,
+    required Map<String, List<Map<String, dynamic>>> dropdownCache,
+    dynamic item,
+  }) {
+    if (item == null &&
+        config.fieldType == FieldType.dropdown &&
+        config.dropdownSelectedValue != null &&
+        controller.text.isEmpty) {
+      controller.text = config.dropdownSelectedValue.toString();
+    }
+
+    final fieldWidget = _buildSpecificField(
+      config,
+      controller,
+      context,
+      fileCache,
+      dropdownCache,
+    );
+
+    return AbsorbPointer(
+      absorbing: !config.enabled,
+      child: Opacity(opacity: config.enabled ? 1.0 : 0.6, child: fieldWidget),
+    );
+  }
+
+  static Widget _buildSpecificField(
+    FieldConfig config,
+    TextEditingController controller,
+    BuildContext context,
+    Map<String, List<PlatformFile>> fileCache,
+    Map<String, List<Map<String, dynamic>>> dropdownCache,
+  ) {
+    switch (config.fieldType) {
+      case FieldType.number:
+        return _buildNumberField(config, controller);
+      case FieldType.email:
+        return _buildEmailField(config, controller);
+      case FieldType.date:
+        return _buildDateField(config, controller, context);
+      case FieldType.password:
+        return _buildPasswordField(config, controller);
+      case FieldType.phone:
+        return _buildPhoneField(config, controller);
+      case FieldType.cpf:
+        return _buildCpfField(config, controller);
+      case FieldType.cnpj:
+        return _buildCnpjField(config, controller);
+      case FieldType.multiline:
+        return _buildMultilineField(config, controller);
+      case FieldType.dropdown:
+        return _buildDropdownField(config, controller, dropdownCache);
+      case FieldType.file:
+        return _buildFileField(config, controller, fileCache, context);
+      case FieldType.boolean:
+        return _buildBooleanField(config, controller);
+      default:
+        return _buildTextField(config, controller);
+    }
+  }
+
+  static Widget _buildNumberField(
+    FieldConfig config,
+    TextEditingController controller,
+  ) {
+    return TextFormField(
+      controller: controller,
+      keyboardType: TextInputType.numberWithOptions(decimal: true),
+      decoration: _buildInputDecoration(config),
+      inputFormatters: [
+        NumberInputFormatter(
+          decimalDigits: config.fieldSpecificConfig?['decimalDigits'] ?? 2,
+        ),
+      ],
+      validator: (value) {
+        if (config.isRequired && (value == null || value.isEmpty)) {
+          return '${config.label} é obrigatório';
+        }
+        if (value != null && value.isNotEmpty) {
+          final number = double.tryParse(value.replaceAll(',', '.'));
+          if (number == null) {
+            return 'Digite um número válido';
+          }
+          if (config.fieldSpecificConfig?['minValue'] != null &&
+              number < config.fieldSpecificConfig!['minValue']) {
+            return 'Valor mínimo: ${config.fieldSpecificConfig!['minValue']}';
+          }
+          if (config.fieldSpecificConfig?['maxValue'] != null &&
+              number > config.fieldSpecificConfig!['maxValue']) {
+            return 'Valor máximo: ${config.fieldSpecificConfig!['maxValue']}';
+          }
+        }
+        return config.validator?.call(value);
+      },
+    );
+  }
+
+  static Widget _buildEmailField(
+    FieldConfig config,
+    TextEditingController controller,
+  ) {
+    return TextFormField(
+      controller: controller,
+      keyboardType: TextInputType.emailAddress,
+      decoration: _buildInputDecoration(config),
+      validator: (value) {
+        if (config.isRequired && (value == null || value.isEmpty)) {
+          return '${config.label} é obrigatório';
+        }
+        if (value != null && value.isNotEmpty && !_isValidEmail(value)) {
+          return 'Digite um email válido';
+        }
+        return config.validator?.call(value);
+      },
+    );
+  }
+
+  static Widget _buildDateField(
+    FieldConfig config,
+    TextEditingController controller,
+    BuildContext context,
+  ) {
+    return TextFormField(
+      controller: controller,
+      decoration: _buildInputDecoration(config),
+      readOnly: true,
+      onTap: () => _selectDate(context, controller),
+      validator: (value) {
+        if (config.isRequired && (value == null || value.isEmpty)) {
+          return '${config.label} é obrigatório';
+        }
+        return config.validator?.call(value);
+      },
+    );
+  }
+
+  static Widget _buildPasswordField(
+    FieldConfig config,
+    TextEditingController controller,
+  ) {
+    return TextFormField(
+      controller: controller,
+      obscureText: true,
+      decoration: _buildInputDecoration(config),
+      validator: (value) {
+        if (config.isRequired && (value == null || value.isEmpty)) {
+          return '${config.label} é obrigatório';
+        }
+        if (value != null && value.isNotEmpty && value.length < 6) {
+          return 'A senha deve ter pelo menos 6 caracteres';
+        }
+        return config.validator?.call(value);
+      },
+    );
+  }
+
+  static Widget _buildPhoneField(
+    FieldConfig config,
+    TextEditingController controller,
+  ) {
+    return TextFormField(
+      controller: controller,
+      keyboardType: TextInputType.phone,
+      decoration: _buildInputDecoration(config),
+      inputFormatters: [PhoneInputFormatter()],
+      validator: (value) {
+        if (config.isRequired && (value == null || value.isEmpty)) {
+          return '${config.label} é obrigatório';
+        }
+        if (value != null && value.isNotEmpty && !_isValidPhone(value)) {
+          return 'Digite um telefone válido';
+        }
+        return config.validator?.call(value);
+      },
+    );
+  }
+
+  static Widget _buildCpfField(
+    FieldConfig config,
+    TextEditingController controller,
+  ) {
+    return TextFormField(
+      controller: controller,
+      keyboardType: TextInputType.number,
+      decoration: _buildInputDecoration(config),
+      inputFormatters: [CpfInputFormatter()],
+      validator: (value) {
+        if (config.isRequired && (value == null || value.isEmpty)) {
+          return '${config.label} é obrigatório';
+        }
+        if (value != null && value.isNotEmpty && !_isValidCpf(value)) {
+          return 'CPF inválido';
+        }
+        return config.validator?.call(value);
+      },
+    );
+  }
+
+  static Widget _buildCnpjField(
+    FieldConfig config,
+    TextEditingController controller,
+  ) {
+    return TextFormField(
+      controller: controller,
+      keyboardType: TextInputType.number,
+      decoration: _buildInputDecoration(config),
+      inputFormatters: [CnpjInputFormatter()],
+      validator: (value) {
+        if (config.isRequired && (value == null || value.isEmpty)) {
+          return '${config.label} é obrigatório';
+        }
+        if (value != null && value.isNotEmpty && !_isValidCnpj(value)) {
+          return 'CNPJ inválido';
+        }
+        return config.validator?.call(value);
+      },
+    );
+  }
+
+  static Widget _buildTextField(
+    FieldConfig config,
+    TextEditingController controller,
+  ) {
+    return TextFormField(
+      controller: controller,
+      decoration: _buildInputDecoration(config),
+      maxLines: config.maxLines,
+      validator: config.validator,
+    );
+  }
+
+  static Widget _buildMultilineField(
+    FieldConfig config,
+    TextEditingController controller,
+  ) {
+    return TextFormField(
+      controller: controller,
+      decoration: _buildInputDecoration(config),
+      maxLines: config.maxLines,
+      validator: config.validator,
+    );
+  }
+
+  static Widget _buildBooleanField(
+    FieldConfig config,
+    TextEditingController controller,
+  ) {
+    return CheckboxListTile(
+      title: Text(config.label),
+      value: controller.text.toLowerCase() == 'true',
+      onChanged: (value) {
+        controller.text = value.toString();
+      },
+    );
+  }
+
+  static Widget _buildDropdownField(
+    FieldConfig config,
+    TextEditingController controller,
+    Map<String, List<Map<String, dynamic>>> dropdownCache,
+  ) {
+    final cacheKey = '${config.fieldName}_dropdown';
+
+    if (dropdownCache.containsKey(cacheKey)) {
+      return _buildDropdownContent(
+        config: config,
+        controller: controller,
+        options: dropdownCache[cacheKey]!,
+      );
+    } else if (config.dropdownFutureBuilder != null) {
+      return FutureBuilder<List<Map<String, dynamic>>>(
+        future: config.dropdownFutureBuilder!(),
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const CircularProgressIndicator();
+          } else if (snapshot.hasError) {
+            return Text('Erro ao carregar opções: ${snapshot.error}');
+          } else {
+            final options = snapshot.data ?? [];
+            dropdownCache[cacheKey] = options;
+            return _buildDropdownContent(
+              config: config,
+              controller: controller,
+              options: options,
+            );
+          }
+        },
+      );
+    } else {
+      return _buildDropdownContent(
+        config: config,
+        controller: controller,
+        options: config.dropdownOptions ?? [],
+      );
+    }
+  }
+
+  static Widget _buildDropdownContent({
+    required FieldConfig config,
+    required TextEditingController controller,
+    required List<Map<String, dynamic>> options,
+  }) {
+    bool expectInteger = _isIntegerField(config);
+    dynamic currentValue = _getCurrentValue(config, controller);
+
+    final uniqueOptions = options
+        .fold<Map<dynamic, Map<String, dynamic>>>({}, (map, item) {
+          dynamic key = item[config.dropdownValueField];
+          if (key != null && !map.containsKey(key)) {
+            map[key] = item;
+          }
+          return map;
+        })
+        .values
+        .toList();
+
+    bool valueExists = uniqueOptions.any(
+      (option) => option[config.dropdownValueField] == currentValue,
+    );
+
+    if (!valueExists && config.dropdownSelectedValue != null) {
+      currentValue = config.dropdownSelectedValue;
+    } else if (!valueExists) {
+      currentValue = null;
+    }
+
+    return DropdownButtonFormField<dynamic>(
+      initialValue: currentValue,
+      decoration: _buildInputDecoration(config),
+      isExpanded: true,
+      menuMaxHeight: 300,
+      itemHeight: 48,
+      items: uniqueOptions.map<DropdownMenuItem<dynamic>>((option) {
+        final optionValue = option[config.dropdownValueField];
+        final optionLabel =
+            option[config.dropdownDisplayField]?.toString() ?? '';
+        return DropdownMenuItem<dynamic>(
+          value: optionValue,
+          child: Text(optionLabel, overflow: TextOverflow.ellipsis),
+        );
+      }).toList(),
+      onChanged: (value) {
+        controller.text = value?.toString() ?? '';
+      },
+      validator: (value) {
+        if (config.validator != null) {
+          return config.validator!(value?.toString());
+        }
+        return null;
+      },
+    );
+  }
+
+  static Widget _buildFileField(
+    FieldConfig config,
+    TextEditingController controller,
+    Map<String, List<PlatformFile>> fileCache,
+    BuildContext context,
+  ) {
+    final fileConfig = config.fileConfig ?? const FileConfig();
+    final currentFiles = fileCache[config.fieldName] ?? [];
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        if (currentFiles.isNotEmpty)
+          ...currentFiles.map(
+            (file) => ListTile(
+              leading: const Icon(Icons.attach_file),
+              title: Text(file.name),
+              trailing: IconButton(
+                icon: const Icon(Icons.delete, color: GridColors.error),
+                onPressed: () {
+                  fileCache[config.fieldName]?.remove(file);
+                  controller.text = '';
+                },
+              ),
+            ),
+          ),
+        ElevatedButton.icon(
+          onPressed: () => _selectFiles(config, controller, fileCache, context),
+          icon: const Icon(Icons.attach_file),
+          label: Text(
+            currentFiles.isEmpty
+                ? 'Selecionar Arquivo'
+                : 'Adicionar Mais Arquivos',
+          ),
+          style: ElevatedButton.styleFrom(
+            backgroundColor: GridColors.primary,
+            foregroundColor: GridColors.card,
+          ),
+        ),
+        if (fileConfig.allowedExtensions.isNotEmpty)
+          Padding(
+            padding: const EdgeInsets.only(top: 8.0),
+            child: Text(
+              'Extensões permitidas: ${fileConfig.allowedExtensions.join(', ')}',
+              style: const TextStyle(
+                fontSize: 12,
+                color: GridColors.textSecondary,
+              ),
+            ),
+          ),
+      ],
+    );
+  }
+
+  static Future<void> _selectFiles(
+    FieldConfig config,
+    TextEditingController controller,
+    Map<String, List<PlatformFile>> fileCache,
+    BuildContext context,
+  ) async {
+    final fileConfig = config.fileConfig ?? const FileConfig();
+
+    try {
+      FilePickerResult? result = await FilePicker.platform.pickFiles(
+        type: FileType.custom,
+        allowedExtensions: fileConfig.allowedExtensions,
+        allowMultiple: fileConfig.allowMultiple,
+      );
+
+      if (result != null && result.files.isNotEmpty) {
+        fileCache[config.fieldName] = result.files;
+        controller.text = result.files.map((f) => f.name).join(', ');
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Erro ao selecionar arquivo: $e'),
+          backgroundColor: GridColors.error,
+        ),
+      );
+    }
+  }
+
+  static InputDecoration _buildInputDecoration(FieldConfig config) {
+    return InputDecoration(
+      labelText: config.label + (config.isRequired ? ' *' : ''),
+      labelStyle: TextStyle(color: GridColors.textSecondary, fontSize: 14),
+      isDense: true,
+      contentPadding: const EdgeInsets.symmetric(vertical: 12, horizontal: 12),
+      focusedBorder: OutlineInputBorder(
+        borderSide: BorderSide(color: GridColors.primary, width: 1.5),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      enabledBorder: OutlineInputBorder(
+        borderSide: BorderSide(color: GridColors.divider, width: 1.0),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      prefixIcon: config.icon != null
+          ? Icon(config.icon, size: 20, color: GridColors.primary)
+          : null,
+    );
+  }
+
+  static Future<void> _selectDate(
+    BuildContext context,
+    TextEditingController controller,
+  ) async {
+    final DateTime? picked = await showDatePicker(
+      context: context,
+      initialDate: DateTime.now(),
+      firstDate: DateTime(2000),
+      lastDate: DateTime(2100),
+    );
+
+    if (picked != null) {
+      controller.text = DateFormat('yyyy-MM-dd').format(picked);
+    }
+  }
+
+  // Métodos auxiliares
+  static dynamic _getCurrentValue(
+    FieldConfig config,
+    TextEditingController controller,
+  ) {
+    bool expectInteger = _isIntegerField(config);
+
+    if (controller.text.isNotEmpty) {
+      if (expectInteger) {
+        return int.tryParse(controller.text);
+      } else {
+        return controller.text;
+      }
+    } else {
+      return null;
+    }
+  }
+
+  static bool _isIntegerField(FieldConfig config) {
+    return config.dropdownValueField == 'id' ||
+        config.fieldName.toLowerCase().contains('id');
+  }
+
+  // Validações
+  static bool _isValidEmail(String email) {
+    final regex = RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
+    return regex.hasMatch(email);
+  }
+
+  static bool _isValidPhone(String phone) {
+    final cleaned = phone.replaceAll(RegExp(r'[^\d]'), '');
+    return cleaned.length >= 10;
+  }
+
+  static bool _isValidCpf(String cpf) {
+    final cleaned = cpf.replaceAll(RegExp(r'[^\d]'), '');
+    return cleaned.length == 11;
+  }
+
+  static bool _isValidCnpj(String cnpj) {
+    final cleaned = cnpj.replaceAll(RegExp(r'[^\d]'), '');
+    return cleaned.length == 14;
+  }
+}
+
+// ==============================================
+// COMPONENTE PRINCIPAL GENERIC GRID SCREEN
+// ==============================================
+
+typedef FromJson<T> = T Function(Map<String, dynamic> json);
+typedef ToJson<T> = Map<String, dynamic> Function(T item);
+typedef SecurityCheck = bool Function(String permission);
+typedef OnItemTap<T> = void Function(T item, BuildContext context);
+typedef CustomActionBuilder<T> = List<CustomAction<T>> Function();
+
+class GenericGridScreen<T> extends StatefulWidget {
+  final String title;
+  final String fetchEndpoint;
+  final String createEndpoint;
+  final String updateEndpoint;
+  final String deleteEndpoint;
+  final FromJson<T> fromJson;
+  final ToJson<T> toJson;
+  final SecurityCheck hasPermission;
+  final Map<String, bool> buttonPermissions;
+  final List<FieldConfig> fieldConfigs;
+  final String idFieldName;
+  final String dateFieldName;
+  final ExportConfig exportConfig;
+  final PaginationConfig paginationConfig;
+  final OnItemTap<T>? onItemTap;
+  final CustomActionBuilder<T>? customActions;
+  final bool enableSearch;
+  final bool enableColumnReorder;
+  final bool enableColumnResize;
+  final Map<String, dynamic>? initialFilters;
+  final String storageKey;
+  final Widget Function(T item)? detailScreenBuilder;
+  final Map<String, dynamic>? extraParams;
+
+  const GenericGridScreen({
+    super.key,
+    required this.title,
+    required this.fetchEndpoint,
+    required this.createEndpoint,
+    required this.updateEndpoint,
+    required this.deleteEndpoint,
+    required this.fromJson,
+    required this.toJson,
+    required this.hasPermission,
+    required this.fieldConfigs,
+    this.idFieldName = 'id',
+    this.dateFieldName = 'createdAt',
+    this.buttonPermissions = const {
+      'create': true,
+      'edit': true,
+      'delete': true,
+      'deleteMultiple': true,
+      'export': true,
+    },
+    this.exportConfig = const ExportConfig(),
+    this.paginationConfig = const PaginationConfig(),
+    this.onItemTap,
+    this.customActions,
+    this.enableSearch = true,
+    this.enableColumnReorder = false,
+    this.enableColumnResize = false,
+    this.initialFilters,
+    this.storageKey = 'generic_grid_settings',
+    this.detailScreenBuilder,
+    this.extraParams,
+  });
+
+  @override
+  State<GenericGridScreen<T>> createState() => _GenericGridScreenState<T>();
+}
+
+class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
+  List<T> items = [];
+  List<T> filtered = [];
+  Set<String> selectedRows = {};
+  int rowsPerPage = 25;
+  bool filtrosAbertos = false;
+  bool isLoading = false;
+  bool _isUpdating = false;
+  bool _isDeleting = false;
+  bool _isExporting = false;
+
+  int _currentPage = 0;
+  int _totalItems = 0;
+
+  late PaginatorController _paginatorController;
+
+  final Map<String, TextEditingController> _filterControllers = {};
+  final TextEditingController _searchController = TextEditingController();
+  final Map<String, List<Map<String, dynamic>>> _dropdownCache = {};
+  final Map<String, List<PlatformFile>> _fileCache = {};
+
+  int? sortColumnIndex;
+  bool sortAscending = true;
+  final Map<String, bool> _columnVisibility = {};
+  List<CustomAction<T>> _customActions = [];
+
+  @override
+  void initState() {
+    super.initState();
+    rowsPerPage = widget.paginationConfig.defaultRowsPerPage;
+    _paginatorController = PaginatorController();
+
+    for (final config in widget.fieldConfigs) {
+      _columnVisibility[config.fieldName] = config.isVisibleByDefault;
+    }
+
+    for (final config in widget.fieldConfigs.where((c) => c.isFilterable)) {
+      _filterControllers[config.fieldName] = TextEditingController();
+    }
+
+    if (widget.initialFilters != null) {
+      widget.initialFilters!.forEach((key, value) {
+        if (_filterControllers.containsKey(key)) {
+          _filterControllers[key]!.text = value.toString();
+        }
+      });
+    }
+
+    _loadColumnPreferences().then((_) {
+      _loadItems(_currentPage, rowsPerPage);
+    });
+
+    if (widget.customActions != null) {
+      _customActions = widget.customActions!();
+    }
+  }
+
+  Future<void> _loadColumnPreferences() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final key = '${widget.storageKey}_${widget.title}';
+
+      for (final config in widget.fieldConfigs) {
+        final savedValue = prefs.getBool('$key${config.fieldName}');
+        if (savedValue != null) {
+          _columnVisibility[config.fieldName] = savedValue;
+        }
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        print('Erro ao carregar preferências: $e');
+      }
+    }
+  }
+
+  Future<void> _saveColumnPreferences() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final key = '${widget.storageKey}_${widget.title}';
+
+      for (final config in widget.fieldConfigs) {
+        await prefs.setBool(
+          '$key${config.fieldName}',
+          _columnVisibility[config.fieldName] ?? config.isVisibleByDefault,
+        );
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        print('Erro ao salvar preferências: $e');
+      }
+    }
+  }
+
+  String buildUrl(String baseUrl, Map<String, dynamic> params) {
+    String url = baseUrl;
+
+    // Verifica se a URL já contém parâmetros
+    bool hasExistingParams = url.contains('?');
+
+    // Adiciona os parâmetros à URL
+    if (params.isNotEmpty) {
+      url += hasExistingParams ? '&' : '?';
+
+      // Converte os parâmetros para query string
+      url += params.entries
+          .map(
+            (entry) =>
+                '${Uri.encodeComponent(entry.key)}=${Uri.encodeComponent(entry.value.toString())}',
+          )
+          .join('&');
+    }
+
+    return url;
+  }
+
+  Future<void> _downloadFile(int fileId, String fileName) async {
+    try {
+      final String authToken = '${AuthUtility.userInfo?.token}';
+
+      final response = await http.get(
+        Uri.parse(ApiLinks.downloadFile(fileId)),
+        headers: {'Authorization': 'Bearer $authToken'},
+      );
+
+      if (response.statusCode == 200) {
+        await FileSaver.instance.saveFile(
+          name: fileName,
+          bytes: response.bodyBytes,
+          fileExtension: fileName.split('.').last,
+        );
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Download realizado com sucesso'),
+            backgroundColor: GridColors.success,
+          ),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Falha no download: ${response.statusCode}'),
+            backgroundColor: GridColors.error,
+          ),
+        );
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Erro no download: $e'),
+          backgroundColor: GridColors.error,
+        ),
+      );
+    }
+  }
+
+  String construirUrl(String baseUrl, int pagina, int tamanhoPagina) {
+    String url = baseUrl;
+    bool jaTemParametros = url.contains('?');
+
+    url += jaTemParametros ? '&' : '?';
+    url += 'pagina=$pagina&tamanho=$tamanhoPagina';
+
+    return url;
+  }
+
+  // No início do initState ou em um método de validação
+  void _validateFieldConfigs() {
+    for (final config in widget.fieldConfigs) {
+      if (config.fieldType == FieldType.file) {
+        print('Configuração File: ${config.fieldName}');
+        print('Display Field: ${config.displayFieldName}');
+
+        // Valida se a estrutura está correta
+        if (!config.fieldName.contains('.')) {
+          print('AVISO: Campo file deve ser aninhado (ex: "file.id")');
+        }
+      }
+    }
+  }
+
+  dynamic _getDefaultValueForField(String fieldName) {
+    // Analisa o nome do campo para determinar o tipo esperado
+    final lowerFieldName = fieldName.toLowerCase();
+
+    if (lowerFieldName.contains('id') ||
+        lowerFieldName.contains('codigo') ||
+        lowerFieldName.contains('numero')) {
+      return 0;
+    } else if (lowerFieldName.contains('data') ||
+        lowerFieldName.contains('date')) {
+      return '';
+    } else if (lowerFieldName.contains('file') ||
+        lowerFieldName.contains('anexo') ||
+        lowerFieldName.contains('nome') ||
+        lowerFieldName.contains('name')) {
+      return ''; // Campos de texto relacionados a arquivo
+    } else {
+      return '';
+    }
+  }
+
+  Future<void> _loadItems(int pagina, int tamanhoPagina) async {
+    if (isLoading) return; // evita chamadas concorrentes
+    setState(() => isLoading = true);
+
+    try {
+      String endpoint = construirUrl(
+        widget.fetchEndpoint,
+        pagina,
+        tamanhoPagina,
+      );
+      String url = endpoint;
+
+      if (sortColumnIndex != null &&
+          sortColumnIndex! < widget.fieldConfigs.length &&
+          widget.fieldConfigs[sortColumnIndex!].isSortable) {
+        final config = widget.fieldConfigs[sortColumnIndex!];
+        final direction = sortAscending ? 'ASC' : 'DESC';
+        url += '&ordenarPor=${config.fieldName}&direcao=$direction';
+      }
+
+      for (final config in widget.fieldConfigs.where((c) => c.isFilterable)) {
+        final filterValue = _filterControllers[config.fieldName]?.text;
+        if (filterValue != null && filterValue.isNotEmpty) {
+          url += '&${config.fieldName}=${Uri.encodeComponent(filterValue)}';
+        }
+      }
+
+      if (_searchController.text.isNotEmpty) {
+        url += '&busca=${Uri.encodeComponent(_searchController.text)}';
+      }
+
+      final NetworkResponse response = await NetworkCaller().getRequest(url);
+
+      if (response.statusCode == 200 && response.body != null) {
+        final responseData = response.body!['data'];
+        final List<dynamic> data = responseData is Map
+            ? responseData['dados'] ?? []
+            : responseData ?? [];
+
+        final processedData = data.map((json) {
+          final itemMap = json is Map ? Map<String, dynamic>.from(json) : {};
+
+          for (final config in widget.fieldConfigs.where(
+            (c) => c.fieldType == FieldType.file,
+          )) {
+            final fileField = config.fieldName.split('.')[0];
+            if (!itemMap.containsKey(fileField)) {
+              itemMap[fileField] = {'id': 0, 'nome': ''};
+            }
+          }
+
+          return itemMap;
+        }).toList();
+
+        setState(() {
+          items = processedData.map((json) {
+            Map<String, dynamic> jsonMap = Map<String, dynamic>.from(json);
+            return widget.fromJson(jsonMap);
+          }).toList();
+          filtered = List.from(items);
+          _totalItems = responseData is Map
+              ? responseData['totalElements'] ?? 0
+              : data.length;
+        });
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Falha ao carregar dados: ${response.statusCode}'),
+            backgroundColor: GridColors.error,
+          ),
+        );
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Erro ao carregar dados: $e'),
+          backgroundColor: GridColors.error,
+        ),
+      );
+    } finally {
+      setState(() => isLoading = false);
+    }
+  }
+
+  void _applyFilters() {
+    setState(() {
+      _currentPage = 0;
+    });
+    _loadItems(_currentPage, rowsPerPage);
+  }
+
+  void _sort<U>(
+    Comparable<U> Function(T c) getField,
+    int columnIndex,
+    bool asc,
+  ) {
+    setState(() {
+      sortColumnIndex = columnIndex;
+      sortAscending = asc;
+    });
+    _loadItems(_currentPage, rowsPerPage);
+  }
+
+  void _openForm({T? item}) {
+    final controllers = <String, TextEditingController>{};
+    final itemMap = item != null ? widget.toJson(item) : {};
+
+    for (final config in widget.fieldConfigs.where((c) => c.isInForm)) {
+      if (item == null && config.fieldName == widget.idFieldName) {
+        continue;
+      }
+
+      String initialValue = '';
+      if (item != null) {
+        final value = _getNestedValue(itemMap, config.fieldName);
+        if (value is Map) {
+          initialValue = value[config.dropdownValueField]?.toString() ?? '';
+        } else {
+          initialValue = value?.toString() ?? '';
+        }
+      } else if (config.defaultValue != null) {
+        initialValue = config.defaultValue.toString();
+      }
+
+      controllers[config.fieldName] = TextEditingController(text: initialValue);
+    }
+
+    showDialog(
+      context: context,
+      builder: (ctx) => _buildForm(ctx, item, controllers),
+    );
+  }
+
+  Widget _buildForm(
+    BuildContext context,
+    T? item,
+    Map<String, TextEditingController> controllers,
+  ) {
+    return Dialog(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16.0)),
+      elevation: 0,
+      backgroundColor: Colors.transparent,
+      child: Container(
+        constraints: const BoxConstraints(maxWidth: 600),
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          color: GridColors.dialogBackground,
+          shape: BoxShape.rectangle,
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: const [
+            BoxShadow(
+              color: GridColors.shadow,
+              blurRadius: 10.0,
+              offset: Offset(0.0, 10.0),
+            ),
+          ],
+        ),
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Container(
+                padding: const EdgeInsets.only(bottom: 16),
+                decoration: BoxDecoration(
+                  border: Border(
+                    bottom: BorderSide(color: GridColors.divider, width: 0.5),
+                  ),
+                ),
+                child: Text(
+                  item == null ? "Novo Item" : "Editar Item",
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    color: GridColors.primary,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              ),
+              const SizedBox(height: 20),
+              ...widget.fieldConfigs.where((config) {
+                if (item == null && config.fieldName == widget.idFieldName) {
+                  return false;
+                }
+                return config.isInForm;
+              }).map((config) {
+                return Padding(
+                  padding: const EdgeInsets.only(bottom: 16),
+                  child: FieldFactory.buildField(
+                    config: config,
+                    controller: controllers[config.fieldName]!,
+                    context: context,
+                    fileCache: _fileCache,
+                    dropdownCache: _dropdownCache,
+                    item: item,
+                  ),
+                );
+              }),
+              const SizedBox(height: 24),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  TextButton(
+                    onPressed: () => Navigator.pop(context),
+                    style: TextButton.styleFrom(
+                      foregroundColor: GridColors.textSecondary,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 20,
+                        vertical: 10,
+                      ),
+                    ),
+                    child: const Text("CANCELAR"),
+                  ),
+                  const SizedBox(width: 10),
+                  ElevatedButton(
+                    onPressed: _isUpdating
+                        ? null
+                        : () => _saveItem(item, controllers, context),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: GridColors.primary,
+                      foregroundColor: GridColors.card,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 20,
+                        vertical: 10,
+                      ),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                    ),
+                    child: _isUpdating
+                        ? const SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              valueColor: AlwaysStoppedAnimation(Colors.white),
+                            ),
+                          )
+                        : const Text("SALVAR"),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _saveItem(
+    T? item,
+    Map<String, TextEditingController> controllers,
+    BuildContext context,
+  ) async {
+    for (final config in widget.fieldConfigs.where(
+      (c) => c.isInForm && c.isRequired,
+    )) {
+      if (controllers[config.fieldName]?.text.isEmpty == true) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('${config.label} é obrigatório'),
+            backgroundColor: GridColors.error,
+          ),
+        );
+        return;
+      }
+
+      if (config.validator != null) {
+        final error = config.validator!(controllers[config.fieldName]?.text);
+        if (error != null) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(error), backgroundColor: GridColors.error),
+          );
+          return;
+        }
+      }
+    }
+
+    setState(() => _isUpdating = true);
+
+    final formData = <String, dynamic>{};
+
+    for (final config in widget.fieldConfigs.where(
+      (c) => c.fieldType == FieldType.file,
+    )) {
+      final files = _fileCache[config.fieldName];
+      if (files != null && files.isNotEmpty) {
+        formData[config.fieldName] = files;
+      }
+    }
+
+    for (final config in widget.fieldConfigs.where(
+      (c) => c.isInForm && c.fieldType != FieldType.file,
+    )) {
+      if (item == null && config.fieldName == widget.idFieldName) {
+        continue;
+      }
+
+      final value = controllers[config.fieldName]!.text;
+
+      if (config.fieldName.contains('.')) {
+        final parts = config.fieldName.split('.');
+        _setNestedValue(formData, parts, value);
+      } else {
+        formData[config.fieldName] = value;
+      }
+    }
+
+    if (item != null) {
+      final itemMap = widget.toJson(item);
+      formData[widget.idFieldName] = _getNestedValue(
+        itemMap,
+        widget.idFieldName,
+      );
+    }
+
+    final success = item == null
+        ? await _createItem(formData)
+        : await _updateItem(formData);
+
+    if (success) {
+      for (final config in widget.fieldConfigs.where(
+        (c) => c.fieldType == FieldType.file,
+      )) {
+        _fileCache.remove(config.fieldName);
+      }
+      Navigator.pop(context);
+      _loadItems(_currentPage, rowsPerPage);
+    }
+
+    setState(() => _isUpdating = false);
+  }
+
+  void _setNestedValue(
+    Map<String, dynamic> map,
+    List<String> parts,
+    dynamic value,
+  ) {
+    if (parts.isEmpty) return;
+
+    var current = map;
+    for (int i = 0; i < parts.length - 1; i++) {
+      final part = parts[i];
+      if (!current.containsKey(part) ||
+          current[part] is! Map<String, dynamic>) {
+        current[part] = <String, dynamic>{};
+      }
+      current = current[part];
+    }
+
+    current[parts.last] = value;
+  }
+
+  Future<bool> _createItem(Map<String, dynamic> formData) async {
+    if (!widget.hasPermission('create') ||
+        !widget.buttonPermissions['create']!) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Sem permissão para criar')));
+      return false;
+    }
+
+    final Map<String, dynamic> enrichedFormData = Map.from(formData);
+
+    if (widget.extraParams != null) {
+      enrichedFormData.addAll(widget.extraParams!);
+    }
+
+    final filesToUpload = <String, List<PlatformFile>>{};
+    final keysToRemove = <String>[];
+
+    for (final key in enrichedFormData.keys) {
+      final value = enrichedFormData[key];
+      if (value is List<PlatformFile>) {
+        filesToUpload[key] = value;
+        keysToRemove.add(key);
+      }
+    }
+
+    for (final key in keysToRemove) {
+      enrichedFormData.remove(key);
+    }
+
+    enrichedFormData.updateAll((key, value) {
+      if (value is String && value.isNotEmpty) {
+        try {
+          final parsedDate = DateFormat("dd/MM/yyyy").parseStrict(value);
+          return DateFormat("yyyy-MM-dd").format(parsedDate);
+        } catch (e) {
+          return value;
+        }
+      }
+      return value;
+    });
+
+    int fileId = 0;
+    if (filesToUpload.isNotEmpty) {
+      fileId = await _uploadFiles("", filesToUpload);
+      enrichedFormData["file"] = {"id": fileId};
+    }
+
+    print(enrichedFormData);
+
+    final response = await NetworkCaller().postRequest(
+      widget.createEndpoint,
+      enrichedFormData,
+    );
+
+    if (response.isSuccess) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Item criado com sucesso'),
+          backgroundColor: GridColors.success,
+        ),
+      );
+      return true;
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Falha ao criar item: ${response.statusCode}'),
+          backgroundColor: GridColors.error,
+        ),
+      );
+      return false;
+    }
+  }
+
+  Future<int> _uploadFiles(
+    String? itemId,
+    Map<String, List<PlatformFile>> filesToUpload,
+  ) async {
+    final String authToken = '${AuthUtility.userInfo?.token}';
+    if (itemId == null || filesToUpload.isEmpty) return 0;
+
+    try {
+      var request = http.MultipartRequest(
+        'POST',
+        Uri.parse(ApiLinks.uploadFile),
+      );
+
+      request.fields['itemId'] = itemId;
+
+      for (final entry in filesToUpload.entries) {
+        final String fieldName = entry.key;
+        final List<PlatformFile> files = entry.value;
+
+        for (final platformFile in files) {
+          Uint8List fileBytes;
+
+          if (platformFile.bytes != null) {
+            fileBytes = platformFile.bytes!;
+          } else if (platformFile.path != null) {
+            File ioFile = File(platformFile.path!);
+            fileBytes = await ioFile.readAsBytes();
+          } else {
+            continue;
+          }
+
+          request.files.add(
+            http.MultipartFile.fromBytes(
+              fieldName,
+              fileBytes,
+              filename: platformFile.name,
+            ),
+          );
+        }
+      }
+
+      // Adicionar headers de autenticação
+      if (authToken.isNotEmpty) {
+        request.headers['Authorization'] = 'Bearer $authToken';
+      }
+
+      print('Enviando ${filesToUpload.length} arquivo(s) para o item $itemId');
+
+      // Enviar a requisição
+      final response = await request.send();
+
+      // Verificar resposta
+      if (response.statusCode == 200) {
+        final responseBody = await response.stream.bytesToString();
+        print('Upload realizado com sucesso: $responseBody');
+        // Converter JSON para Map
+        final decoded = jsonDecode(responseBody);
+
+        // Retornar o fileId se existir
+        return decoded['fileId'] ?? 0;
+      } else {
+        final errorBody = await response.stream.bytesToString();
+        print('Erro no upload (${response.statusCode}): $errorBody');
+      }
+    } catch (e) {
+      print('Exceção durante o upload: $e');
+    }
+    return 0;
+  }
+
+  Map<String, dynamic> normalizeFormData(Map<String, dynamic> formData) {
+    final updated = Map<String, dynamic>.from(formData);
+
+    if (updated.containsKey("status")) {
+      final status = updated["status"];
+
+      if (status is String) {
+        if (status.toLowerCase() == "ativo") {
+          updated["status"] = 0;
+        } else if (status.toLowerCase() == "inativo") {
+          updated["status"] = 1;
+        } else {
+          updated["status"] = 0;
+        }
+      } else if (status == null) {
+        updated["status"] = 0;
+      }
+    } else {
+      updated["status"] = 0;
+    }
+
+    return updated;
+  }
+
+  Future<bool> _updateItem(Map<String, dynamic> formData) async {
+    if (!widget.hasPermission('edit') || !widget.buttonPermissions['edit']!) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Sem permissão para editar')),
+      );
+      return false;
+    }
+    final adjustedFormData = normalizeFormData(formData);
+
+    final response = await NetworkCaller().postRequest(
+      widget.updateEndpoint.replaceAll(
+        ':id',
+        adjustedFormData[widget.idFieldName].toString(),
+      ),
+      adjustedFormData,
+    );
+
+    if (response.isSuccess) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Item atualizado com sucesso'),
+          backgroundColor: GridColors.success,
+        ),
+      );
+      return true;
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Falha ao atualizar item: ${response.statusCode}'),
+          backgroundColor: GridColors.error,
+        ),
+      );
+      return false;
+    }
+  }
+
+  Future<void> _deleteItem(String id) async {
+    if (!widget.hasPermission('delete') ||
+        !widget.buttonPermissions['delete']!) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Sem permissão para excluir')),
+      );
+      return;
+    }
+
+    setState(() => _isDeleting = true);
+
+    final response = await NetworkCaller().getRequest(
+      widget.deleteEndpoint.replaceAll(':id', id),
+    );
+
+    setState(() => _isDeleting = false);
+
+    if (response.isSuccess) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Item excluído com sucesso'),
+          backgroundColor: GridColors.success,
+        ),
+      );
+      _loadItems(_currentPage, rowsPerPage);
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Falha ao excluir item: ${response.statusCode}'),
+          backgroundColor: GridColors.error,
+        ),
+      );
+    }
+  }
+
+  void _deleteSelected() {
+    if (!widget.hasPermission('deleteMultiple') ||
+        !widget.buttonPermissions['deleteMultiple']!) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Sem permissão para excluir múltiplos itens'),
+        ),
+      );
+      return;
+    }
+
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Confirmar Exclusão'),
+        content: Text(
+          'Deseja excluir ${selectedRows.length} item(s) selecionado(s)?',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Cancelar'),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              Navigator.pop(ctx);
+              for (final id in selectedRows) {
+                await _deleteItem(id);
+              }
+              setState(() => selectedRows.clear());
+            },
+            style: ElevatedButton.styleFrom(backgroundColor: GridColors.error),
+            child: const Text('Excluir'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _exportToCsv() async {
+    if (!widget.hasPermission('export') ||
+        !widget.buttonPermissions['export']!) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Sem permissão para exportar')),
+      );
+      return;
+    }
+
+    setState(() => _isExporting = true);
+
+    try {
+      final csvData = StringBuffer();
+
+      final visibleFields = widget.fieldConfigs.where(
+        (config) => _columnVisibility[config.fieldName] == true,
+      );
+      csvData.write(visibleFields.map((config) => config.label).join(','));
+      csvData.write(',Data\n');
+
+      for (final item in filtered) {
+        final itemMap = widget.toJson(item);
+        final row = visibleFields.map((config) {
+          final value = _getNestedValue(
+                itemMap,
+                config.displayFieldName ?? config.fieldName,
+              )?.toString() ??
+              '';
+          return value.contains(',') ? '"$value"' : value;
+        }).join(',');
+
+        final dateValue = _getNestedValue(itemMap, widget.dateFieldName);
+        String date = 'N/A';
+        if (dateValue != null) {
+          try {
+            final dateString = dateValue.toString();
+            final dateTime = DateTime.parse(dateString).toLocal();
+            date = DateFormat('dd/MM/yyyy HH:mm').format(dateTime);
+          } catch (e) {
+            date = 'Data inválida';
+          }
+        }
+
+        csvData.write('$row,$date\n');
+      }
+
+      if (kDebugMode) {
+        print(csvData.toString());
+      }
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Dados exportados com sucesso'),
+          backgroundColor: GridColors.success,
+        ),
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Falha ao exportar: $e'),
+          backgroundColor: GridColors.error,
+        ),
+      );
+    } finally {
+      setState(() => _isExporting = false);
+    }
+  }
+
+  Widget _buildLoadingOverlay() {
+    // Mostra overlay com fade quando carregando (paginação, filtros, etc.)
+    if (_isUpdating || _isDeleting || _isExporting || isLoading) {
+      return AnimatedOpacity(
+        opacity: (_isUpdating || _isDeleting || _isExporting || isLoading) ? 1.0 : 0.0,
+        duration: const Duration(milliseconds: 200),
+        child: Container(
+          color: Colors.black.withValues(alpha: 0.35),
+          child: Center(
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 36, vertical: 24),
+              decoration: BoxDecoration(
+                color: GridColors.primary,
+                borderRadius: BorderRadius.circular(12),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.3),
+                    blurRadius: 16,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+              ),
+              child: const Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  CircularProgressIndicator(
+                    valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                    strokeWidth: 3,
+                  ),
+                  SizedBox(height: 16),
+                  Text(
+                    'Aguarde',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                      letterSpacing: 0.5,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      );
+    }
+    return const SizedBox.shrink();
+  }
+
+  Widget _buildFilters() {
+    return Container(
+      decoration: BoxDecoration(
+        color: GridColors.filterBackground,
+        border: Border.all(color: GridColors.divider),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        children: [
+          // Header com título e X para fechar
+          Row(
+            children: [
+              const Text(
+                "Filtros",
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+              ),
+              const Spacer(),
+              IconButton(
+                icon: const Icon(Icons.close, size: 20),
+                tooltip: 'Fechar filtros',
+                onPressed: () => setState(() => filtrosAbertos = false),
+              ),
+            ],
+          ),
+          const Divider(),
+          if (widget.enableSearch) ...[
+            TextField(
+              controller: _searchController,
+              decoration: InputDecoration(
+                labelText: "Busca Global",
+                prefixIcon: const Icon(Icons.search),
+                suffixIcon: _searchController.text.isNotEmpty
+                    ? IconButton(
+                        icon: const Icon(Icons.clear),
+                        onPressed: () {
+                          _searchController.clear();
+                          _applyFilters();
+                        },
+                      )
+                    : null,
+              ),
+              onChanged: (_) => _applyFilters(),
+            ),
+            const SizedBox(height: 12),
+          ],
+          const Text(
+            "Filtros Avançados",
+            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+          ),
+          const SizedBox(height: 12),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              for (final config in widget.fieldConfigs.where((c) => c.isFilterable))
+                SizedBox(
+                  width: 200,
+                  child: TextField(
+                    controller: _filterControllers[config.fieldName],
+                    decoration: InputDecoration(
+                      labelText: "Filtrar ${config.label}",
+                      prefixIcon: Icon(config.icon ?? Icons.search),
+                      isDense: true,
+                      suffixIcon: (_filterControllers[config.fieldName]?.text.isNotEmpty ?? false)
+                          ? IconButton(
+                              icon: const Icon(Icons.clear, size: 16),
+                              onPressed: () {
+                                _filterControllers[config.fieldName]?.clear();
+                                _applyFilters();
+                              },
+                            )
+                          : null,
+                    ),
+                    onChanged: (_) {
+                      setState(() {}); // atualiza suffixIcon
+                      _applyFilters();
+                    },
+                  ),
+                ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Tags vermelhas de filtros ativos — visíveis mesmo com painel fechado
+  Widget _buildActiveFilterTags() {
+    final tags = <Widget>[];
+
+    if (_searchController.text.isNotEmpty) {
+      tags.add(_filterTag('Busca', _searchController.text, () {
+        _searchController.clear();
+        _applyFilters();
+      }));
+    }
+
+    for (final config in widget.fieldConfigs.where((c) => c.isFilterable)) {
+      final v = _filterControllers[config.fieldName]?.text ?? '';
+      if (v.isNotEmpty) {
+        tags.add(_filterTag(config.label, v, () {
+          _filterControllers[config.fieldName]?.clear();
+          _applyFilters();
+        }));
+      }
+    }
+
+    if (tags.isEmpty) return const SizedBox.shrink();
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+      child: Wrap(
+        spacing: 6,
+        runSpacing: 4,
+        children: tags,
+      ),
+    );
+  }
+
+  Widget _filterTag(String label, String value, VoidCallback onRemove) {
+    return Chip(
+      label: Text(
+        '$label: $value',
+        style: const TextStyle(color: Colors.white, fontSize: 11),
+      ),
+      deleteIcon: const Icon(Icons.close, size: 14, color: Colors.white),
+      onDeleted: onRemove,
+      backgroundColor: GridColors.primary,
+      materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+      padding: const EdgeInsets.symmetric(horizontal: 4),
+    );
+  }
+
+  Widget _buildColumnSettingsMenu() {
+    return PopupMenuButton(
+      icon: const Icon(Icons.settings),
+      tooltip: 'Configurar colunas',
+      itemBuilder: (context) => [
+        const PopupMenuItem(
+          value: 'settings',
+          child: Text('Configurar colunas visíveis'),
+        ),
+      ],
+      onSelected: (value) {
+        if (value == 'settings') {
+          _showColumnSettingsDialog();
+        }
+      },
+    );
+  }
+
+  void _showColumnSettingsDialog() {
+    showDialog(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (context, setState) {
+          return AlertDialog(
+            title: const Text('Colunas visíveis'),
+            content: SizedBox(
+              width: double.maxFinite,
+              child: ListView(
+                shrinkWrap: true,
+                children: widget.fieldConfigs.map((config) {
+                  return CheckboxListTile(
+                    title: Text(config.label),
+                    value: _columnVisibility[config.fieldName] ??
+                        config.isVisibleByDefault,
+                    onChanged: config.isFixed
+                        ? null
+                        : (value) {
+                            setState(() {
+                              _columnVisibility[config.fieldName] =
+                                  value ?? false;
+                            });
+                          },
+                  );
+                }).toList(),
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(ctx),
+                child: const Text('Cancelar'),
+              ),
+              ElevatedButton(
+                onPressed: () {
+                  _saveColumnPreferences();
+                  setState(() {});
+                  Navigator.pop(ctx);
+                  _applyFilters();
+                },
+                child: const Text('Aplicar'),
+              ),
+            ],
+          );
+        },
+      ),
+    );
+  }
+
+  List<DataColumn> _buildColumns() {
+    final columns = <DataColumn>[];
+
+    for (final config in widget.fieldConfigs.where(
+      (c) => _columnVisibility[c.fieldName] == true,
+    )) {
+      columns.add(
+        DataColumn(
+          label: Text(config.label),
+          onSort: config.isSortable
+              ? (columnIndex, ascending) {
+                  _sort<dynamic>(
+                    (c) {
+                      final value = _getNestedValue(
+                        widget.toJson(c),
+                        config.displayFieldName ?? config.fieldName,
+                      );
+                      return value is Comparable ? value : value.toString();
+                    },
+                    widget.fieldConfigs.indexOf(config),
+                    ascending,
+                  );
+                }
+              : null,
+        ),
+      );
+    }
+
+    columns.add(const DataColumn(label: Text("Ações")));
+
+    return columns;
+  }
+
+  Map<String, dynamic> _extractFileData(
+    Map<String, dynamic> itemMap,
+    FieldConfig config,
+  ) {
+    try {
+      final fileData =
+          _getNestedValue(itemMap, config.fieldName.split('.')[0]) ?? {};
+
+      if (fileData is Map) {
+        return {
+          'id': _getNestedValue(fileData, 'id') ?? 0,
+          'nome': _getNestedValue(fileData, 'nome') ?? '',
+          'fileName': _getNestedValue(fileData, 'fileName') ?? '',
+          'fileType': _getNestedValue(fileData, 'fileType') ?? '',
+        };
+      }
+
+      return {
+        'id': _getObjectProperty(fileData, 'id') ?? 0,
+        'nome': _getObjectProperty(fileData, 'nome') ??
+            _getObjectProperty(fileData, 'fileName') ??
+            '',
+        'fileName': _getObjectProperty(fileData, 'fileName') ??
+            _getObjectProperty(fileData, 'nome') ??
+            '',
+        'fileType': _getObjectProperty(fileData, 'fileType') ?? '',
+      };
+    } catch (e) {
+      return {'id': 0, 'nome': '', 'fileName': '', 'fileType': ''};
+    }
+  }
+
+  List<DataCell> _buildCells(T item, int index) {
+    final itemMap = widget.toJson(item);
+    final cells = <DataCell>[];
+
+    for (final config in widget.fieldConfigs.where(
+      (c) => _columnVisibility[c.fieldName] == true,
+    )) {
+      if (config.fieldType == FieldType.file) {
+        final fileData = _extractFileData(itemMap, config);
+
+        final int fileId = fileData['id'] is int
+            ? fileData['id']
+            : (fileData['id'] != null
+                ? int.tryParse(fileData['id'].toString()) ?? 0
+                : 0);
+
+        final String fileName = fileData['nome']?.toString().isNotEmpty == true
+            ? fileData['nome'].toString()
+            : fileData['fileName']?.toString().isNotEmpty == true
+                ? fileData['fileName'].toString()
+                : _getNestedValue(
+                      itemMap,
+                      config.displayFieldName ?? 'file.nome',
+                    )?.toString() ??
+                    '';
+
+        cells.add(
+          DataCell(
+            fileId > 0 && fileName.isNotEmpty
+                ? InkWell(
+                    onTap: () => _downloadFile(fileId, fileName),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          Icons.attach_file,
+                          size: 16,
+                          color: GridColors.primary,
+                        ),
+                        const SizedBox(width: 4),
+                        Flexible(
+                          child: Text(
+                            fileName,
+                            style: TextStyle(
+                              color: GridColors.primary,
+                              decoration: TextDecoration.underline,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ],
+                    ),
+                  )
+                : Text(
+                    'Nenhum arquivo',
+                    style: TextStyle(
+                      color: GridColors.textSecondary.withOpacity(0.5),
+                      fontStyle: FontStyle.italic,
+                    ),
+                  ),
+          ),
+        );
+      } else {
+        final displayValue = _getNestedValue(
+          itemMap,
+          config.displayFieldName ?? config.fieldName,
+        );
+
+        cells.add(
+          DataCell(
+            Text(
+              displayValue?.toString() ?? '',
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+            onTap: widget.onItemTap != null
+                ? () => widget.onItemTap!(item, context)
+                : null,
+          ),
+        );
+      }
+    }
+
+    cells.add(
+      DataCell(
+        Row(
+          children: [
+            if (widget.detailScreenBuilder != null &&
+                widget.hasPermission('view'))
+              IconButton(
+                icon: const Icon(Icons.visibility, size: 20),
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => widget.detailScreenBuilder!(item),
+                    ),
+                  );
+                },
+              ),
+            if (widget.hasPermission('edit') &&
+                widget.buttonPermissions['edit']!)
+              IconButton(
+                icon: const Icon(Icons.edit, size: 20),
+                onPressed: () => _openForm(item: item),
+              ),
+            if (widget.hasPermission('delete') &&
+                widget.buttonPermissions['delete']!)
+              IconButton(
+                icon: const Icon(Icons.delete, size: 20),
+                onPressed: () => _deleteItem(
+                  _getNestedValue(itemMap, widget.idFieldName).toString(),
+                ),
+              ),
+            ..._customActions
+                .where((action) => action.isVisible?.call(item) ?? true)
+                .map(
+                  (action) => IconButton(
+                    icon: Icon(action.icon, size: 20),
+                    onPressed: () => action.onPressed(context, item),
+                    tooltip: action.label,
+                  ),
+                ),
+          ],
+        ),
+      ),
+    );
+
+    return cells;
+  }
+
+  dynamic _getNestedValue(dynamic map, String fieldName) {
+    if (map == null) return null;
+
+    // Se não tem ponto, é acesso direto
+    if (!fieldName.contains('.')) {
+      return map is Map ? map[fieldName] : null;
+    }
+
+    final parts = fieldName.split('.');
+    dynamic value = map;
+
+    for (final part in parts) {
+      if (value == null) return null;
+
+      if (value is Map<dynamic, dynamic>) {
+        value = Map<String, dynamic>.from(value)[part];
+      } else if (value is Map<String, dynamic>) {
+        value = value[part];
+      } else if (value is List) {
+        final index = int.tryParse(part);
+        if (index != null && index >= 0 && index < value.length) {
+          value = value[index];
+        } else {
+          return null;
+        }
+      } else {
+        // PARA OBJETOS DART: tenta métodos específicos sem reflexão
+        value = _getObjectProperty(value, part);
+        if (value == null) return null;
+      }
+    }
+
+    return value;
+  }
+
+  dynamic _getObjectProperty(dynamic object, String propertyName) {
+    if (object == null) return null;
+
+    // Tratamento específico para objetos de arquivo
+    switch (propertyName.toLowerCase()) {
+      case 'id':
+        return object.id ??
+            object.ID ??
+            object.Id ??
+            object.fileId ??
+            object.fileID ??
+            0;
+      case 'nome':
+      case 'filename':
+      case 'name':
+        return object.nome ??
+            object.fileName ??
+            object.filename ??
+            object.name ??
+            '';
+      case 'filetype':
+      case 'type':
+        return object.fileType ?? object.type ?? object.contentType ?? '';
+      case 'tamanho':
+      case 'size':
+        return object.tamanho ?? object.size ?? object.fileSize ?? 0;
+      default:
+        // Tenta converter para mapa via toJson() se existir
+        try {
+          if (object.toJson != null) {
+            final jsonMap = object.toJson();
+            if (jsonMap is Map && jsonMap.containsKey(propertyName)) {
+              return jsonMap[propertyName];
+            }
+          }
+        } catch (e) {
+          // Ignora erro e retorna null
+        }
+        return null;
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final fixedColumnsCount = widget.fieldConfigs
+        .where((c) => _columnVisibility[c.fieldName] == true && c.isFixed)
+        .length;
+
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(widget.title),
+        backgroundColor: GridColors.primary,
+        foregroundColor: GridColors.card,
+        actions: [
+          _buildColumnSettingsMenu(),
+          if (widget.exportConfig.enableCsvExport &&
+              widget.hasPermission('export') &&
+              widget.buttonPermissions['export']!)
+            IconButton(
+              icon: _isExporting
+                  ? const CircularProgressIndicator(
+                      valueColor: AlwaysStoppedAnimation(Colors.white),
+                    )
+                  : const Icon(Icons.download),
+              onPressed: _isExporting ? null : _exportToCsv,
+              tooltip: "Exportar CSV",
+            ),
+        ],
+      ),
+      body: Stack(
+        children: [
+          Column(
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.all(16.0),
+                      child: Row(
+                        children: [
+                          Wrap(
+                            spacing: 12,
+                            runSpacing: 12,
+                            children: [
+                              if (widget.hasPermission('create') &&
+                                  widget.buttonPermissions['create']!)
+                                ElevatedButton.icon(
+                                  onPressed: () => _openForm(),
+                                  icon: const Icon(Icons.add),
+                                  label: const Text("Novo"),
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: GridColors.primary,
+                                    foregroundColor: GridColors.card,
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 16,
+                                      vertical: 12,
+                                    ),
+                                  ),
+                                ),
+                              if (widget.hasPermission('deleteMultiple') &&
+                                  widget.buttonPermissions['deleteMultiple']!)
+                                ElevatedButton.icon(
+                                  onPressed: selectedRows.isNotEmpty
+                                      ? _deleteSelected
+                                      : null,
+                                  icon: const Icon(Icons.delete),
+                                  label: const Text("Deletar Selecionados"),
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: GridColors.error,
+                                    foregroundColor: GridColors.card,
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 16,
+                                      vertical: 12,
+                                    ),
+                                  ),
+                                ),
+                            ],
+                          ),
+                          const Spacer(),
+                          IconButton(
+                            onPressed: () =>
+                                _loadItems(_currentPage, rowsPerPage),
+                            icon: const Icon(Icons.refresh),
+                            tooltip: "Recarregar",
+                          ),
+                          ElevatedButton.icon(
+                            onPressed: () => setState(
+                              () => filtrosAbertos = !filtrosAbertos,
+                            ),
+                            icon: Icon(
+                              filtrosAbertos
+                                  ? Icons.expand_less
+                                  : Icons.expand_more,
+                            ),
+                            label: Text(
+                              filtrosAbertos
+                                  ? "Ocultar Filtros"
+                                  : "Mostrar Filtros",
+                            ),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: GridColors.buttonBackground,
+                              foregroundColor: GridColors.textPrimary,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    if (filtrosAbertos) _buildFilters(),
+                    _buildActiveFilterTags(),
+                    Expanded(
+                      child: Stack(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(16.0),
+                            child: PaginatedDataTable2(
+                          columnSpacing: 12,
+                          horizontalMargin: 12,
+                          minWidth: 800,
+                          controller: _paginatorController,
+                          sortColumnIndex: sortColumnIndex,
+                          sortAscending: sortAscending,
+                          initialFirstRowIndex: _currentPage * rowsPerPage,
+                          header: _totalItems > 0 ? Text(
+                            'Página ${_currentPage + 1} de ${(_totalItems / rowsPerPage).ceil()}',
+                            style: const TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w600,
+                              color: GridColors.primary,
+                            ),
+                          ) : null,
+                          columns: _buildColumns(),
+                          source: _GenericDataSource<T>(
+                            items: filtered,
+                            selectedRows: selectedRows,
+                            cellBuilder: _buildCells,
+                            isLoading: isLoading,
+                            totalItems: _totalItems,
+                            currentPage: _currentPage,
+                            rowsPerPage: rowsPerPage,
+                            onSelect: (index, selected) {
+                              setState(() {
+                                final itemMap = widget.toJson(filtered[index]);
+                                final id = _getNestedValue(
+                                  itemMap,
+                                  widget.idFieldName,
+                                ).toString();
+                                selected
+                                    ? selectedRows.add(id)
+                                    : selectedRows.remove(id);
+                              });
+                            },
+                          ),
+                          rowsPerPage: rowsPerPage,
+                          availableRowsPerPage:
+                              widget.paginationConfig.availableRowsPerPage,
+                          onRowsPerPageChanged:
+                              widget.paginationConfig.showItemsPerPageSelector
+                                  ? (value) {
+                                      setState(() {
+                                        rowsPerPage = value ??
+                                            widget.paginationConfig
+                                                .defaultRowsPerPage;
+                                        _currentPage = 0;
+                                      });
+                                      _loadItems(_currentPage, rowsPerPage);
+                                    }
+                                  : null,
+                          onPageChanged: (pageIndex) {
+                            // Ignora eventos de página disparados durante carregamento
+                            if (isLoading) return;
+                            // pageIndex é o offset (primeira linha da página)
+                            // backend espera número da página (base 0)
+                            final numeroPagina = rowsPerPage > 0 ? pageIndex ~/ rowsPerPage : 0;
+                            // Ignora se já estamos nessa página
+                            if (numeroPagina == _currentPage) return;
+                            setState(() {
+                              _currentPage = numeroPagina;
+                            });
+                            _loadItems(_currentPage, rowsPerPage);
+                          },
+                          fixedLeftColumns: widget.fieldConfigs
+                              .where(
+                                (c) =>
+                                    _columnVisibility[c.fieldName] == true &&
+                                    c.isFixed,
+                              )
+                              .length,
+                          empty: Center(
+                            child: Container(
+                              padding: const EdgeInsets.all(20),
+                              child: const Text(
+                                "Nenhum item encontrado",
+                                style: TextStyle(
+                                  fontStyle: FontStyle.italic,
+                                  fontSize: 16,
+                                ),
+                              ),
+                            ),
+                          ),
+                          ),
+                        ),  // fecha Container
+                          // Overlay de loading durante paginação
+                          if (isLoading)
+                            Positioned.fill(
+                              child: Container(
+                                color: Colors.white.withOpacity(0.7),
+                                child: const Center(
+                                  child: CircularProgressIndicator(
+                                    color: GridColors.primary,
+                                  ),
+                                ),
+                              ),
+                            ),
+                        ],
+                      ),    // fecha Stack
+                    ),      // fecha Expanded
+                  ],
+                ),
+          _buildLoadingOverlay(),
+        ],
+      ),
+    );
+  }
+}
+
+class _GenericDataSource<T> extends DataTableSource {
+  final List<T> items;
+  final Set<String> selectedRows;
+  final List<DataCell> Function(T item, int index) cellBuilder;
+  final void Function(int index, bool selected) onSelect;
+  final int totalItems;
+  final bool isLoading;
+  final int currentPage;
+  final int rowsPerPage;
+
+  _GenericDataSource({
+    required this.items,
+    required this.selectedRows,
+    required this.cellBuilder,
+    required this.onSelect,
+    this.totalItems = 0,
+    this.isLoading = false,
+    this.currentPage = 0,
+    this.rowsPerPage = 25,
+  });
+
+  @override
+  DataRow? getRow(int index) {
+    // index é absoluto (ex: página 2 com 25 itens/pág → index começa em 25)
+    // converte para índice relativo dentro de items (que só tem a página atual)
+    final pageOffset = currentPage * rowsPerPage;
+    final localIndex = index - pageOffset;
+    if (localIndex < 0 || localIndex >= items.length) return null;
+    final item = items[localIndex];
+    final isSelected = selectedRows.contains(index.toString());
+
+    return DataRow(
+      selected: isSelected,
+      onSelectChanged: (selected) => onSelect(localIndex, selected ?? false),
+      cells: cellBuilder(item, localIndex),
+    );
+  }
+
+  @override
+  bool get isRowCountApproximate => false;
+
+  @override
+  int get rowCount => totalItems > 0 ? totalItems : items.length;
+
+  @override
+  int get selectedRowCount => selectedRows.length;
+}

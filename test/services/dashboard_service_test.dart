@@ -1,8 +1,8 @@
-// test/services/dashboard_service_test.dart
+﻿// test/services/dashboard_service_test.dart
 // Dashboard: apenas GET → todos devem retornar 200
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
-import 'package:task_manager_flutter/data/utils/api_links.dart';
+import 'package:task_manager_flutter/utils/api_links.dart';
 import 'test_helper.dart';
 
 void main() {

@@ -1,8 +1,8 @@
-// test/services/academia_service_test.dart
+﻿// test/services/academia_service_test.dart
 import 'dart:convert';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
-import 'package:task_manager_flutter/data/utils/api_links.dart';
+import 'package:task_manager_flutter/utils/api_links.dart';
 import 'test_helper.dart';
 
 void main() {
