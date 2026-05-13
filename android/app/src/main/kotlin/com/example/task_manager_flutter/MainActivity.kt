@@ -1,4 +1,4 @@
-package com.washingtonclimaco.task_manager_flutter
+package br.com.abracocontabilidade.app
 
 import io.flutter.embedding.android.FlutterActivity
 

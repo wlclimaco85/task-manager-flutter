@@ -33,6 +33,11 @@ class DynamicGridWindowsScreen<T> extends StatefulWidget {
   final CustomActionsBuilder<T>? customActions;
   final List<FieldConfigWindows>? fieldOverrides;
   final bool showAppBar;
+  // Overrides de endpoint — quando informados substituem os valores que viriam da config da tela
+  final String? fetchEndpointOverride;
+  final String? createEndpointOverride;
+  final String? updateEndpointOverride;
+  final String? deleteEndpointOverride;
 
   const DynamicGridWindowsScreen({
     super.key,
@@ -45,6 +50,10 @@ class DynamicGridWindowsScreen<T> extends StatefulWidget {
     this.customActions,
     this.fieldOverrides,
     this.showAppBar = true,
+    this.fetchEndpointOverride,
+    this.createEndpointOverride,
+    this.updateEndpointOverride,
+    this.deleteEndpointOverride,
   });
 
   @override
@@ -364,10 +373,10 @@ class _DynamicGridWindowsScreenState<T>
 
         return GenericGridScreen<T>(
           title: tela.titulo,
-          fetchEndpoint: ApiLinks.baseUrl + tela.fetchEndpoint,
-          createEndpoint: ApiLinks.baseUrl + tela.createEndpoint,
-          updateEndpoint: ApiLinks.baseUrl + tela.updateEndpoint,
-          deleteEndpoint: ApiLinks.baseUrl + tela.deleteEndpoint,
+          fetchEndpoint: widget.fetchEndpointOverride ?? (ApiLinks.baseUrl + tela.fetchEndpoint),
+          createEndpoint: widget.createEndpointOverride ?? (ApiLinks.baseUrl + tela.createEndpoint),
+          updateEndpoint: widget.updateEndpointOverride ?? (ApiLinks.baseUrl + tela.updateEndpoint),
+          deleteEndpoint: widget.deleteEndpointOverride ?? (ApiLinks.baseUrl + tela.deleteEndpoint),
           fromJson: widget.fromJson,
           toJson: widget.toJson,
           hasPermission: widget.hasPermission,

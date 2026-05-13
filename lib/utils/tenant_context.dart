@@ -131,6 +131,8 @@ class TenantContext {
     final request = http.MultipartRequest('POST', Uri.parse(applyToUrl(url)));
     final token = AuthUtility.userInfo?.token;
     if (token != null) request.headers['Authorization'] = 'Bearer $token';
+    // Força charset UTF-8 para que o Spring interprete os campos corretamente
+    request.headers['Accept-Charset'] = 'utf-8';
     if (fields != null) request.fields.addAll(fields);
     request.files.add(http.MultipartFile.fromBytes(
       fileField,

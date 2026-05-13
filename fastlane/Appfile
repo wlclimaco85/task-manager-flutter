@@ -1,8 +1,8 @@
 # ─── iOS ───────────────────────────────────────────────────────────────────────
-app_identifier("com.washingtonclimaco.taskManagerFlutter")
+app_identifier("br.com.abracocontabilidade.app")
 apple_id(ENV["APPLE_ID"])
 team_id(ENV["APPLE_TEAM_ID"])
 
 # ─── Android ───────────────────────────────────────────────────────────────────
-package_name("com.washingtonclimaco.task_manager_flutter")
+package_name("br.com.abracocontabilidade.app")
 json_key_file(ENV["GOOGLE_PLAY_JSON_KEY"] || "fastlane/google-play-key.json")

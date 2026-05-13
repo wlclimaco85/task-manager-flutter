@@ -63,7 +63,7 @@ platform :ios do
     match(
       type:           "appstore",
       readonly:       true,
-      app_identifier: "com.washingtonclimaco.taskManagerFlutter"
+      app_identifier: "br.com.abracocontabilidade.app"
     )
   end
 

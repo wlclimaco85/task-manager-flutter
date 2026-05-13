@@ -31,14 +31,14 @@ class MenuGroup {
   });
 }
 
-/// Índices Windows _buildScreens:
+/// Índices _buildScreens (Web e Windows):
 /// 0:Comunicado  1:Chat  2:ComunicadoComp  3:Aplicativo  4:Logins  5:ChatList
 /// 6,7:ProductRegister  8:Regime  9:Alimentos  10:Dietas  11:Empresas
 /// 12:Exames  13:Exercícios  14:GruposMusculares  15:Medicamentos
 /// 16:Mensalidades  17:Modalidades  18:Objetivos  19:Parceiros  20:Personais
 /// 21:Planos  22:Roles  23:Setores  24:Suplementos  25:ContasPagar
 /// 26:ContasReceber  27:Chamados  28:FormasPagamento  29:Diretorios
-/// 30:Arquivos  31:Calendario  32:ObrigacoesFiscais  33:Logins(dup)
+/// 30:Arquivos  31:Calendario  32:ObrigacoesFiscais  33:[ORPHAN-era Logins dup]
 /// 34:CotacaoFrete  35:CalendarioGuias  36:Tickets  37:Dividendos
 /// 38:Ordens  39:Pedidos  40:ConfigAdmin  41:AlertaAluno  42:AvaliacaoFisica
 /// 43:ContaBancaria  44:Classificacao  45:Dashboard  46:Feriados
@@ -47,6 +47,7 @@ class MenuGroup {
 /// 54:NfeFinalidade  55:NfeSerie  56:NfeTipoOperacao  57:UnidadeMedida
 /// 58:CatalagoProduto  59:Permissoes  60:Ponto  61:SolicitarAjuste
 /// 62:AjustePonto  63:ConfigSistema  64:Chat  65:Teste  66:CadastroEmpresa
+/// 67:TipoParceiro  68:ServicoContratado  69:ModuloServico  70:Alvaras
 
 class MenuConfig {
   MenuConfig._();
@@ -81,8 +82,9 @@ class MenuConfig {
         MenuItem(id: 'nfe_serie',          label: 'NF-e Série',           icon: FontAwesomeIcons.hashtag,         screenIndex: 55),
         MenuItem(id: 'nfe_tipo_operacao',  label: 'NF-e Tipo Operação',   icon: FontAwesomeIcons.arrowsLeftRight, screenIndex: 56),
         MenuItem(id: 'planos',             label: 'Planos',               icon: FontAwesomeIcons.listCheck,       screenIndex: 21),
-        MenuItem(id: 'servicos_contratados', label: 'Serviços Contratados', icon: FontAwesomeIcons.fileContract,  screenIndex: -1),
-        MenuItem(id: 'modulos_servicos',   label: 'Módulos/Serviços',     icon: FontAwesomeIcons.cubes,           screenIndex: -2),
+        MenuItem(id: 'tipo_parceiro',        label: 'Tipo de Parceiro',     icon: FontAwesomeIcons.tags,            screenIndex: 67),
+        MenuItem(id: 'servicos_contratados', label: 'Serviços Contratados', icon: FontAwesomeIcons.fileContract,  screenIndex: 68),
+        MenuItem(id: 'modulos_servicos',   label: 'Módulos/Serviços',     icon: FontAwesomeIcons.cubes,           screenIndex: 69),
       ],
     ),
     MenuGroup(
@@ -94,6 +96,7 @@ class MenuConfig {
         MenuItem(id: 'obrigacoes_fiscais',label: 'Obrigações Fiscais', icon: FontAwesomeIcons.fileInvoiceDollar, screenIndex: 32),
         MenuItem(id: 'regime_tributario', label: 'Regime Tributário',  icon: FontAwesomeIcons.taxi,              screenIndex: 8),
         MenuItem(id: 'roles',             label: 'Roles',              icon: FontAwesomeIcons.userShield,        screenIndex: 22),
+        MenuItem(id: 'alvaras',           label: 'Alvarás',            icon: FontAwesomeIcons.stamp,             screenIndex: 70),
       ],
     ),
     MenuGroup(

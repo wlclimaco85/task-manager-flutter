@@ -1,4 +1,4 @@
-// lib/data/customization/grid_form.dart
+﻿// lib/data/customization/grid_form.dart
 import 'dart:convert';
 
 import 'package:file_picker/file_picker.dart';
@@ -310,9 +310,7 @@ class _GridFormDialogState extends State<GridFormDialog> {
 
   Widget _buildDropdown(FieldConfig c, TextEditingController ctrl) {
     Future<List<Map<String, dynamic>>> fetchOptions() async {
-      if (c.dropdownFutureBuilder != null) {
-        return await c.dropdownFutureBuilder!();
-      }
+      if (c.dropdownFutureBuilder != null) return await c.dropdownFutureBuilder!();
       return c.dropdownOptions ?? [];
     }
 
@@ -322,72 +320,34 @@ class _GridFormDialogState extends State<GridFormDialog> {
         if (s.connectionState == ConnectionState.waiting) {
           return const LinearProgressIndicator();
         }
-        if (s.hasError) {
-          return const Text('Erro ao carregar opções',
-              style: TextStyle(color: Colors.white));
-        }
         final opts = s.data ?? [];
+        final valueField = c.dropdownValueField.isNotEmpty ? c.dropdownValueField : 'id';
+        final displayField = c.dropdownDisplayField.isNotEmpty ? c.dropdownDisplayField : 'nome';
 
-        final seen = <String, Map<String, dynamic>>{};
-        for (final o in opts) {
-          final v = o[c.dropdownValueField]?.toString() ?? '';
-          if (v.isNotEmpty && !seen.containsKey(v)) seen[v] = o;
-        }
-        final unique = seen.values.toList();
-
-        String? current = ctrl.text.isNotEmpty
+        // Resolve initial label
+        String? initVal = ctrl.text.isNotEmpty
             ? ctrl.text
             : (c.defaultValue ?? c.dropdownSelectedValue)?.toString();
-
-        String? safeValue;
-        for (final o in unique) {
-          final ov = o[c.dropdownValueField]?.toString();
-          if (ov == current) {
-            safeValue = ov;
+        String? initLabel;
+        for (final o in opts) {
+          if (o[valueField]?.toString() == initVal) {
+            initLabel = o[displayField]?.toString();
             break;
           }
         }
+        if (ctrl.text.isEmpty && initVal != null) ctrl.text = initVal;
 
-        final items = <DropdownMenuItem<String?>>[];
-        if (!c.isRequired || safeValue == null) {
-          items.add(const DropdownMenuItem<String?>(
-            value: null,
-            child: Text('Selecione...', style: TextStyle(color: Colors.grey)),
-          ));
-        }
-        for (final o in unique) {
-          final ov = o[c.dropdownValueField]?.toString();
-          final ol =
-              o[c.dropdownDisplayField]?.toString() ?? ov?.toString() ?? '';
-          items.add(DropdownMenuItem<String?>(value: ov, child: Text(ol)));
-        }
-
-        final validValue =
-            items.any((i) => i.value == safeValue) ? safeValue : null;
-
-        return DropdownButtonFormField<String?>(
-          isExpanded: true,
-          value: validValue,
-          items: items,
-          onChanged: c.enabled
-              ? (v) {
-                  ctrl.text = v ?? '';
-                  setState(() {});
-                }
-              : null,
-          decoration: InputDecoration(
-            labelText: c.label + (c.isRequired ? ' *' : ''),
-            filled: true,
-            fillColor: Colors.white,
-            border: _redBorder(),
-            enabledBorder: _redBorder(),
-            focusedBorder: _redBorder(),
-          ),
-          validator: (v) {
-            if (c.isRequired && (v == null || v.isEmpty)) {
-              return '${c.label} é obrigatório';
-            }
-            return c.validator?.call(v?.toString());
+        return _SearchableDropdownForm(
+          config: c,
+          controller: ctrl,
+          options: opts,
+          valueField: valueField,
+          displayField: displayField,
+          initialLabel: initLabel,
+          redBorder: _redBorder(),
+          onChanged: (v) {
+            ctrl.text = v ?? '';
+            setState(() {});
           },
         );
       },
@@ -667,6 +627,300 @@ class _GridMultiSelectDialogState extends State<_GridMultiSelectDialog> {
             ),
           ]),
         ]),
+      ),
+    );
+  }
+}
+
+// ─── Searchable Dropdown for grid_form ───────────────────────────────────────
+
+class _SearchableDropdownForm extends StatefulWidget {
+  final FieldConfig config;
+  final TextEditingController controller;
+  final List<Map<String, dynamic>> options;
+  final String valueField;
+  final String displayField;
+  final String? initialLabel;
+  final InputBorder redBorder;
+  final void Function(String?) onChanged;
+
+  const _SearchableDropdownForm({
+    required this.config,
+    required this.controller,
+    required this.options,
+    required this.valueField,
+    required this.displayField,
+    required this.redBorder,
+    required this.onChanged,
+    this.initialLabel,
+  });
+
+  @override
+  State<_SearchableDropdownForm> createState() =>
+      _SearchableDropdownFormState();
+}
+
+class _SearchableDropdownFormState extends State<_SearchableDropdownForm> {
+  String? _label;
+
+  @override
+  void initState() {
+    super.initState();
+    _label = widget.initialLabel;
+  }
+
+  Future<void> _open() async {
+    if (!widget.config.enabled) return;
+    final result = await showDialog<Map<String, dynamic>>(
+      context: context,
+      builder: (_) => _GridDropdownSearchDialog(
+        title: widget.config.label,
+        options: widget.options,
+        valueField: widget.valueField,
+        displayField: widget.displayField,
+        currentValue: widget.controller.text,
+      ),
+    );
+    if (result != null) {
+      final val = result[widget.valueField]?.toString() ?? '';
+      final lbl = result[widget.displayField]?.toString() ?? '';
+      setState(() => _label = lbl.isEmpty ? null : lbl);
+      widget.onChanged(val.isEmpty ? null : val);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final label = widget.config.label + (widget.config.isRequired ? ' *' : '');
+    final display = _label ?? widget.controller.text;
+    final isEmpty = display.isEmpty;
+    final isDisabled = !widget.config.enabled;
+
+    return FormField<String>(
+      initialValue: widget.controller.text,
+      validator: (v) {
+        if (widget.config.isRequired &&
+            (widget.controller.text.isEmpty)) {
+          return '${widget.config.label} é obrigatório';
+        }
+        return widget.config.validator?.call(widget.controller.text);
+      },
+      builder: (state) => InkWell(
+        onTap: isDisabled ? null : _open,
+        child: InputDecorator(
+          decoration: InputDecoration(
+            labelText: label,
+            filled: true,
+            fillColor: isDisabled ? const Color(0xFFF5F5F5) : Colors.white,
+            border: widget.redBorder,
+            enabledBorder: widget.redBorder,
+            disabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(8),
+              borderSide: const BorderSide(color: Color(0xFFBDBDBD)),
+            ),
+            suffixIcon: isDisabled
+                ? const Icon(Icons.lock_outline, size: 16, color: Colors.grey)
+                : const Icon(Icons.search, size: 18,
+                    color: GridColors.error),
+            errorText: state.errorText,
+          ),
+          child: Text(
+            isEmpty ? 'Selecione...' : display,
+            style: TextStyle(
+              fontSize: 13,
+              color: isEmpty || isDisabled ? Colors.grey : const Color(0xFF212121),
+            ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// ─── Dialog de busca para grid_form ──────────────────────────────────────────
+
+class _GridDropdownSearchDialog extends StatefulWidget {
+  final String title;
+  final List<Map<String, dynamic>> options;
+  final String valueField;
+  final String displayField;
+  final String? currentValue;
+
+  const _GridDropdownSearchDialog({
+    required this.title,
+    required this.options,
+    required this.valueField,
+    required this.displayField,
+    this.currentValue,
+  });
+
+  @override
+  State<_GridDropdownSearchDialog> createState() =>
+      _GridDropdownSearchDialogState();
+}
+
+class _GridDropdownSearchDialogState
+    extends State<_GridDropdownSearchDialog> {
+  final _ctrl = TextEditingController();
+  List<Map<String, dynamic>> _filtered = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _filtered = widget.options;
+  }
+
+  void _search(String q) {
+    final query = q.toLowerCase().trim();
+    setState(() {
+      _filtered = query.isEmpty
+          ? widget.options
+          : widget.options
+              .where((o) => (o[widget.displayField]?.toString() ?? '')
+                  .toLowerCase()
+                  .contains(query))
+              .toList();
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Dialog(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 480, maxHeight: 520),
+        child: Column(
+          children: [
+            // Header
+            Container(
+              decoration: const BoxDecoration(
+                color: GridColors.error,
+                borderRadius: BorderRadius.only(
+                  topLeft: Radius.circular(12),
+                  topRight: Radius.circular(12),
+                ),
+              ),
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              child: Row(
+                children: [
+                  const Icon(Icons.search, color: Colors.white, size: 18),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      widget.title,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 14,
+                      ),
+                    ),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.close,
+                        color: Colors.white, size: 18),
+                    padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints(),
+                    onPressed: () => Navigator.of(context).pop(),
+                  ),
+                ],
+              ),
+            ),
+            // Search
+            Padding(
+              padding: const EdgeInsets.all(12),
+              child: TextField(
+                controller: _ctrl,
+                autofocus: true,
+                onChanged: _search,
+                decoration: InputDecoration(
+                  hintText: 'Buscar...',
+                  prefixIcon: const Icon(Icons.search, size: 18),
+                  suffixIcon: _ctrl.text.isNotEmpty
+                      ? IconButton(
+                          icon: const Icon(Icons.clear, size: 16),
+                          onPressed: () {
+                            _ctrl.clear();
+                            _search('');
+                          },
+                        )
+                      : null,
+                  isDense: true,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    borderSide:
+                        const BorderSide(color: GridColors.error),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    borderSide: const BorderSide(
+                        color: GridColors.error, width: 2),
+                  ),
+                  contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 12, vertical: 10),
+                ),
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Row(
+                children: [
+                  Text('${_filtered.length} resultado(s)',
+                      style: const TextStyle(
+                          fontSize: 11, color: Colors.grey)),
+                  const Spacer(),
+                  TextButton(
+                    onPressed: () =>
+                        Navigator.of(context).pop(<String, dynamic>{}),
+                    child: const Text('Limpar',
+                        style: TextStyle(fontSize: 11)),
+                  ),
+                ],
+              ),
+            ),
+            const Divider(height: 1),
+            Expanded(
+              child: _filtered.isEmpty
+                  ? const Center(
+                      child: Text('Nenhum resultado',
+                          style: TextStyle(color: Colors.grey)))
+                  : ListView.builder(
+                      itemCount: _filtered.length,
+                      itemBuilder: (_, i) {
+                        final o = _filtered[i];
+                        final val = o[widget.valueField]?.toString();
+                        final lbl =
+                            o[widget.displayField]?.toString() ?? val ?? '';
+                        final isSel = val == widget.currentValue;
+                        return ListTile(
+                          dense: true,
+                          selected: isSel,
+                          selectedTileColor:
+                              GridColors.error.withOpacity(0.08),
+                          leading: isSel
+                              ? const Icon(Icons.check_circle,
+                                  color: GridColors.error, size: 18)
+                              : const Icon(Icons.radio_button_unchecked,
+                                  color: Colors.grey, size: 18),
+                          title: Text(lbl,
+                              style: TextStyle(
+                                fontSize: 13,
+                                fontWeight: isSel
+                                    ? FontWeight.bold
+                                    : FontWeight.normal,
+                                color: isSel
+                                    ? GridColors.error
+                                    : const Color(0xFF212121),
+                              )),
+                          onTap: () => Navigator.of(context).pop(o),
+                        );
+                      },
+                    ),
+            ),
+          ],
+        ),
       ),
     );
   }

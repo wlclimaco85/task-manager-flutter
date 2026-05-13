@@ -1,4 +1,4 @@
-import 'dart:convert';
+﻿import 'dart:convert';
 import 'dart:io';
 
 import 'package:data_table_2/data_table_2.dart';
@@ -828,55 +828,10 @@ class FieldFactory {
     required TextEditingController controller,
     required List<Map<String, dynamic>> options,
   }) {
-    bool expectInteger = _isIntegerField(config);
-    dynamic currentValue = _getCurrentValue(config, controller);
-
-    final uniqueOptions = options
-        .fold<Map<dynamic, Map<String, dynamic>>>({}, (map, item) {
-          dynamic key = item[config.dropdownValueField];
-          if (key != null && !map.containsKey(key)) {
-            map[key] = item;
-          }
-          return map;
-        })
-        .values
-        .toList();
-
-    bool valueExists = uniqueOptions.any(
-      (option) => option[config.dropdownValueField] == currentValue,
-    );
-
-    if (!valueExists && config.dropdownSelectedValue != null) {
-      currentValue = config.dropdownSelectedValue;
-    } else if (!valueExists) {
-      currentValue = null;
-    }
-
-    return DropdownButtonFormField<dynamic>(
-      initialValue: currentValue,
-      decoration: _buildInputDecoration(config),
-      isExpanded: true,
-      menuMaxHeight: 300,
-      itemHeight: 48,
-      items: uniqueOptions.isEmpty
-          ? [const DropdownMenuItem(value: null, child: Text('— Selecione —', style: TextStyle(color: Colors.grey)))]
-          : uniqueOptions.map<DropdownMenuItem<dynamic>>((option) {
-              final optionValue = option[config.dropdownValueField];
-              final optionLabel = option[config.dropdownDisplayField]?.toString() ?? '';
-              return DropdownMenuItem<dynamic>(
-                value: optionValue,
-                child: Text(optionLabel, overflow: TextOverflow.ellipsis),
-              );
-            }).toList(),
-      onChanged: (value) {
-        controller.text = value?.toString() ?? '';
-      },
-      validator: (value) {
-        if (config.validator != null) {
-          return config.validator!(value?.toString());
-        }
-        return null;
-      },
+    return _SearchableDropdownWindows(
+      config: config,
+      controller: controller,
+      options: options,
     );
   }
 
@@ -1918,11 +1873,6 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
         }
         if (initialValue.isEmpty && config.defaultValue != null) {
           initialValue = config.defaultValue.toString();
-        }
-        // Pré-preenche com dropdownSelectedValue (ex: empresa/parceiro do usuário logado)
-        if (initialValue.isEmpty && config.dropdownSelectedValue != null) {
-          initialValue = config.dropdownSelectedValue.toString();
-          preFilledFields.add(config.fieldName);
         }
       }
 
@@ -3548,4 +3498,322 @@ class _GenericDataSource<T> extends DataTableSource {
 
   @override
   int get selectedRowCount => selectedRows.length;
+}
+
+// ─── Searchable Dropdown (Windows/Web framework) ─────────────────────────────
+// Replaces DropdownButtonFormField with a tap-to-open dialog that has a
+// search field — works for any list size.
+
+class _SearchableDropdownWindows extends StatefulWidget {
+  final FieldConfigWindows config;
+  final TextEditingController controller;
+  final List<Map<String, dynamic>> options;
+
+  const _SearchableDropdownWindows({
+    required this.config,
+    required this.controller,
+    required this.options,
+  });
+
+  @override
+  State<_SearchableDropdownWindows> createState() =>
+      _SearchableDropdownWindowsState();
+}
+
+class _SearchableDropdownWindowsState
+    extends State<_SearchableDropdownWindows> {
+  String? _selectedLabel;
+
+  @override
+  void initState() {
+    super.initState();
+    _resolveLabel();
+  }
+
+  void _resolveLabel() {
+    final val = widget.controller.text.isNotEmpty
+        ? widget.controller.text
+        : widget.config.dropdownSelectedValue?.toString();
+    if (val == null || val.isEmpty) return;
+    for (final o in widget.options) {
+      final ov = o[widget.config.dropdownValueField]?.toString();
+      if (ov == val) {
+        _selectedLabel = o[widget.config.dropdownDisplayField]?.toString();
+        break;
+      }
+    }
+    // Pre-fill controller if empty
+    if (widget.controller.text.isEmpty && val.isNotEmpty) {
+      widget.controller.text = val;
+    }
+  }
+
+  Future<void> _openSearch() async {
+    if (!widget.config.enabled) return;
+    final result = await showDialog<Map<String, dynamic>>(
+      context: context,
+      builder: (_) => _DropdownSearchDialog(
+        title: widget.config.label,
+        options: widget.options,
+        valueField: widget.config.dropdownValueField,
+        displayField: widget.config.dropdownDisplayField,
+        currentValue: widget.controller.text,
+      ),
+    );
+    if (result != null) {
+      setState(() {
+        widget.controller.text =
+            result[widget.config.dropdownValueField]?.toString() ?? '';
+        _selectedLabel =
+            result[widget.config.dropdownDisplayField]?.toString();
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final label = widget.config.label +
+        (widget.config.isRequired ? ' *' : '');
+    final displayText = _selectedLabel ?? widget.controller.text;
+    final isEmpty = displayText.isEmpty;
+    final isDisabled = !widget.config.enabled;
+
+    return FormField<String>(
+      initialValue: widget.controller.text,
+      validator: (v) {
+        if (widget.config.validator != null) {
+          return widget.config.validator!(widget.controller.text);
+        }
+        return null;
+      },
+      builder: (state) => InkWell(
+        onTap: isDisabled ? null : _openSearch,
+        child: InputDecorator(
+          decoration: InputDecoration(
+            labelText: label,
+            labelStyle: const TextStyle(fontSize: 13),
+            filled: true,
+            fillColor: isDisabled
+                ? const Color(0xFFF5F5F5)
+                : Colors.white,
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(8),
+              borderSide: const BorderSide(color: GridColors.primary, width: 2),
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(8),
+              borderSide: const BorderSide(color: GridColors.primary, width: 2),
+            ),
+            disabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(8),
+              borderSide: const BorderSide(color: Color(0xFFBDBDBD)),
+            ),
+            suffixIcon: isDisabled
+                ? const Icon(Icons.lock_outline, size: 16, color: Colors.grey)
+                : const Icon(Icons.search, size: 18, color: GridColors.primary),
+            errorText: state.errorText,
+          ),
+          child: Text(
+            isEmpty ? '— Selecione —' : displayText,
+            style: TextStyle(
+              fontSize: 13,
+              color: isEmpty
+                  ? Colors.grey
+                  : isDisabled
+                      ? Colors.grey
+                      : const Color(0xFF212121),
+              overflow: TextOverflow.ellipsis,
+            ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// ─── Dialog de busca ─────────────────────────────────────────────────────────
+
+class _DropdownSearchDialog extends StatefulWidget {
+  final String title;
+  final List<Map<String, dynamic>> options;
+  final String valueField;
+  final String displayField;
+  final String? currentValue;
+
+  const _DropdownSearchDialog({
+    required this.title,
+    required this.options,
+    required this.valueField,
+    required this.displayField,
+    this.currentValue,
+  });
+
+  @override
+  State<_DropdownSearchDialog> createState() => _DropdownSearchDialogState();
+}
+
+class _DropdownSearchDialogState extends State<_DropdownSearchDialog> {
+  final _searchCtrl = TextEditingController();
+  List<Map<String, dynamic>> _filtered = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _filtered = widget.options;
+  }
+
+  void _onSearch(String q) {
+    final query = q.toLowerCase().trim();
+    setState(() {
+      _filtered = query.isEmpty
+          ? widget.options
+          : widget.options
+              .where((o) => (o[widget.displayField]?.toString() ?? '')
+                  .toLowerCase()
+                  .contains(query))
+              .toList();
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Dialog(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 480, maxHeight: 520),
+        child: Column(
+          children: [
+            // Header
+            Container(
+              decoration: const BoxDecoration(
+                color: GridColors.primary,
+                borderRadius: BorderRadius.only(
+                  topLeft: Radius.circular(12),
+                  topRight: Radius.circular(12),
+                ),
+              ),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              child: Row(
+                children: [
+                  const Icon(Icons.search, color: Colors.white, size: 18),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      widget.title,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 14,
+                      ),
+                    ),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.close, color: Colors.white, size: 18),
+                    padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints(),
+                    onPressed: () => Navigator.of(context).pop(),
+                  ),
+                ],
+              ),
+            ),
+            // Search field
+            Padding(
+              padding: const EdgeInsets.all(12),
+              child: TextField(
+                controller: _searchCtrl,
+                autofocus: true,
+                onChanged: _onSearch,
+                decoration: InputDecoration(
+                  hintText: 'Buscar ${widget.title.toLowerCase()}...',
+                  prefixIcon: const Icon(Icons.search, size: 18),
+                  suffixIcon: _searchCtrl.text.isNotEmpty
+                      ? IconButton(
+                          icon: const Icon(Icons.clear, size: 16),
+                          onPressed: () {
+                            _searchCtrl.clear();
+                            _onSearch('');
+                          },
+                        )
+                      : null,
+                  isDense: true,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    borderSide: const BorderSide(color: GridColors.primary),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    borderSide:
+                        const BorderSide(color: GridColors.primary, width: 2),
+                  ),
+                  contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 12, vertical: 10),
+                ),
+              ),
+            ),
+            // Option count
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Row(
+                children: [
+                  Text(
+                    '${_filtered.length} resultado(s)',
+                    style: const TextStyle(fontSize: 11, color: Colors.grey),
+                  ),
+                  const Spacer(),
+                  // Clear selection
+                  TextButton(
+                    onPressed: () => Navigator.of(context).pop(<String, dynamic>{}),
+                    child: const Text('Limpar seleção',
+                        style: TextStyle(fontSize: 11)),
+                  ),
+                ],
+              ),
+            ),
+            const Divider(height: 1),
+            // List
+            Expanded(
+              child: _filtered.isEmpty
+                  ? const Center(
+                      child: Text('Nenhum resultado',
+                          style: TextStyle(color: Colors.grey)))
+                  : ListView.builder(
+                      itemCount: _filtered.length,
+                      itemBuilder: (_, i) {
+                        final o = _filtered[i];
+                        final val = o[widget.valueField]?.toString();
+                        final label =
+                            o[widget.displayField]?.toString() ?? val ?? '';
+                        final isSelected = val == widget.currentValue;
+                        return ListTile(
+                          dense: true,
+                          selected: isSelected,
+                          selectedTileColor:
+                              GridColors.primary.withOpacity(0.08),
+                          leading: isSelected
+                              ? const Icon(Icons.check_circle,
+                                  color: GridColors.primary, size: 18)
+                              : const Icon(Icons.radio_button_unchecked,
+                                  color: Colors.grey, size: 18),
+                          title: Text(label,
+                              style: TextStyle(
+                                fontSize: 13,
+                                fontWeight: isSelected
+                                    ? FontWeight.bold
+                                    : FontWeight.normal,
+                                color: isSelected
+                                    ? GridColors.primary
+                                    : const Color(0xFF212121),
+                              )),
+                          onTap: () => Navigator.of(context).pop(o),
+                        );
+                      },
+                    ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 }

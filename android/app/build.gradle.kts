@@ -1,3 +1,5 @@
+import java.util.Properties
+
 plugins {
     id("com.android.application")
     id("kotlin-android")
@@ -5,8 +7,17 @@ plugins {
     id("dev.flutter.flutter-gradle-plugin")
 }
 
+// ── Lê key.properties (local) com fallback para variáveis de ambiente (CI/Fastlane) ──
+val keyPropertiesFile = rootProject.file("key.properties")
+val keyProperties = Properties()
+if (keyPropertiesFile.exists()) {
+    keyProperties.load(keyPropertiesFile.inputStream())
+}
+fun keyProp(name: String, envFallback: String) =
+    keyProperties.getProperty(name) ?: System.getenv(envFallback) ?: ""
+
 android {
-    namespace = "com.washingtonclimaco.task_manager_flutter"
+    namespace = "br.com.abracocontabilidade.app"
     compileSdk = flutter.compileSdkVersion
     ndkVersion = flutter.ndkVersion
 
@@ -21,7 +32,7 @@ android {
 
     defaultConfig {
         // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
-        applicationId = "com.washingtonclimaco.task_manager_flutter"
+        applicationId = "br.com.abracocontabilidade.app"
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
         minSdk = flutter.minSdkVersion
@@ -32,10 +43,10 @@ android {
 
     signingConfigs {
         create("release") {
-            storeFile     = file(System.getenv("ANDROID_KEYSTORE_PATH") ?: "keystore.jks")
-            storePassword = System.getenv("ANDROID_STORE_PASSWORD") ?: ""
-            keyAlias      = System.getenv("ANDROID_KEY_ALIAS") ?: "upload"
-            keyPassword   = System.getenv("ANDROID_KEY_PASSWORD") ?: ""
+            storeFile     = rootProject.file(keyProp("storeFile", "ANDROID_KEYSTORE_PATH").ifEmpty { "keystore.jks" })
+            storePassword = keyProp("storePassword", "ANDROID_STORE_PASSWORD")
+            keyAlias      = keyProp("keyAlias",      "ANDROID_KEY_ALIAS").ifEmpty { "upload" }
+            keyPassword   = keyProp("keyPassword",   "ANDROID_KEY_PASSWORD")
         }
     }
 
