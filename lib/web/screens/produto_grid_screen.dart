@@ -1,48 +1,28 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
 import '../../../customization/dynamic_grid_windows_screen.dart';
 import '../../../models/auth_utility.dart';
-import '../../../widgets/generic_grid_windows_screen.dart'
-    show FieldConfigWindows, FieldType;
 import '../../../utils/api_links.dart';
-import '../../../services/network_caller.dart';
+import '../../../widgets/generic_grid_windows_screen.dart'
+    show FieldConfigWindows, FieldType, CustomAction;
 
 class WebProdutoGridScreen extends StatelessWidget {
   final SecurityCheck hasPermission;
   const WebProdutoGridScreen({super.key, required this.hasPermission});
 
-  /// Carrega lista de empresas para o dropdown
-  static Future<List<Map<String, dynamic>>> _loadEmpresas() async {
-    final response = await NetworkCaller().getRequest(ApiLinks.allEmpresas);
-    if (response.isSuccess && response.body != null) {
-      final lista = response.body!['data']['dados'] as List;
-      return lista
-          .map((e) => {'id': e['id'].toString(), 'nome': e['nome']})
-          .toList();
-    }
-    return [];
-  }
-
-  /// Carrega lista de parceiros para o dropdown
-  static Future<List<Map<String, dynamic>>> _loadParceiros() async {
-    final response = await NetworkCaller().getRequest(ApiLinks.allParceiros);
-    if (response.isSuccess && response.body != null) {
-      final lista = response.body!['data']['dados'] as List;
-      return lista
-          .map((e) => {'id': e['id'].toString(), 'nome': e['nome']})
-          .toList();
-    }
-    return [];
-  }
-
   @override
   Widget build(BuildContext context) {
     final login = AuthUtility.userInfo?.login;
-    final empresaId = login?.empresa?.id?.toString();
-    final parceiroId = login?.parceiro?.id?.toString();
+    final empresa  = login?.empresa;
+    final parceiro = login?.parceiro;
 
-    // Só bloqueia se o usuário logado for parceiro/cliente (tem empresa ou parceiro na sessão)
-    final hasEmpresa = empresaId != null && empresaId.isNotEmpty;
-    final hasParceiro = parceiroId != null && parceiroId.isNotEmpty;
+    final hasEmpresa  = empresa?.id != null;
+    final hasParceiro = parceiro?.id != null;
+
+    final empresaIdStr  = empresa?.id?.toString() ?? '';
+    final empresaNome   = empresa?.nome ?? '';
+    final parceiroIdStr = parceiro?.id?.toString() ?? '';
+    final parceiroNome  = parceiro?.nome ?? 'Parceiro';
 
     final fieldOverrides = <FieldConfigWindows>[
       if (hasEmpresa)
@@ -54,26 +34,30 @@ class WebProdutoGridScreen extends StatelessWidget {
           isFilterable: true,
           isInForm: true,
           fieldType: FieldType.dropdown,
-          dropdownFutureBuilder: _loadEmpresas,
+          dropdownFutureBuilder: () async => [
+            {'id': empresaIdStr, 'nome': empresaNome},
+          ],
           dropdownValueField: 'id',
           dropdownDisplayField: 'nome',
-          dropdownSelectedValue: empresaId,
-          enabled: false, // campo bloqueado
+          dropdownSelectedValue: empresaIdStr,
+          enabled: false,
         ),
       if (hasParceiro)
         FieldConfigWindows(
-          label: 'Parceiro',
+          label: parceiroNome,
           fieldName: 'parceiro',
           displayFieldName: 'parceiro.nome',
           icon: Icons.person_outline,
           isFilterable: true,
           isInForm: true,
           fieldType: FieldType.dropdown,
-          dropdownFutureBuilder: _loadParceiros,
+          dropdownFutureBuilder: () async => [
+            {'id': parceiroIdStr, 'nome': parceiroNome},
+          ],
           dropdownValueField: 'id',
           dropdownDisplayField: 'nome',
-          dropdownSelectedValue: parceiroId,
-          enabled: false, // campo bloqueado
+          dropdownSelectedValue: parceiroIdStr,
+          enabled: false,
         ),
     ];
 
@@ -83,12 +67,64 @@ class WebProdutoGridScreen extends StatelessWidget {
       fromJson: (json) => json,
       toJson: (a) => a,
       fieldOverrides: fieldOverrides.isNotEmpty ? fieldOverrides : null,
-      // Força filtro de tenant na URL da grid
-      extraParams: {
-        if (hasEmpresa) 'empId': empresaId,
-        if (hasParceiro) 'parceiroId': parceiroId,
-        if (hasParceiro) 'clienteId': parceiroId,
-      },
+      // H4: ações de excluir na grid de produto
+      customActions: () => [
+        CustomAction<Map<String, dynamic>>(
+          icon: Icons.delete_outline,
+          label: 'Excluir',
+          onPressed: (ctx, item) => _confirmarExclusao(ctx, item),
+          isVisible: (_) => true,
+        ),
+      ],
     );
+  }
+
+  static Future<void> _confirmarExclusao(BuildContext context, Map<String, dynamic> item) async {
+    final id = item['id']?.toString() ?? '';
+    final nome = item['nome']?.toString() ?? item['xProd']?.toString() ?? '#$id';
+    if (id.isEmpty) return;
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text('Excluir Produto', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
+        content: Text('Deseja excluir o produto "$nome"?\nEsta ação não pode ser desfeita.',
+            style: const TextStyle(fontSize: 13)),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancelar')),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.red, foregroundColor: Colors.white),
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Excluir'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !context.mounted) return;
+
+    try {
+      final token = AuthUtility.userInfo?.token;
+      final resp = await http.delete(
+        Uri.parse('${ApiLinks.baseUrl}/api/produto/$id'),
+        headers: {
+          if (token != null) 'Authorization': 'Bearer $token',
+          'Content-Type': 'application/json',
+        },
+      );
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text(resp.statusCode == 200 || resp.statusCode == 204
+            ? 'Produto excluído com sucesso!'
+            : 'Erro ao excluir (${resp.statusCode})'),
+        backgroundColor: resp.statusCode == 200 || resp.statusCode == 204
+            ? Colors.green
+            : Colors.red,
+      ));
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Erro: $e'), backgroundColor: Colors.red));
+      }
+    }
   }
 }

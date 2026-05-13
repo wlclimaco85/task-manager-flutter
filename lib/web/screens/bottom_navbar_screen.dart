@@ -30,7 +30,7 @@ import './noticias_grid_screen.dart';
 import './conta_pagar_grid_screen.dart';
 import './conta_receber_grid_screen.dart';
 import './diretorio_grid_screen.dart';
-import './file_upload_screen.dart';
+import './ged_arquivos_screen.dart';
 import './forma_pagamento_grid_screen.dart';
 import './login_grid_screen.dart';
 import './obrigacao_fiscal_grid_screen.dart';
@@ -74,6 +74,7 @@ import './ponto_ajuste_screen.dart';
 import './configuracoes_sistema_screen.dart';
 import './chatMessageListScreen.dart';
 import '../../widgets/app_sidebar.dart';
+import './alvara_grid_screen.dart';
 
 class WebBottomNavBarScreen extends StatefulWidget {
   const WebBottomNavBarScreen({super.key});
@@ -135,86 +136,111 @@ class _WebBottomNavBarScreenState extends State<WebBottomNavBarScreen> {
     final isLoggedIn = (userInfo?.id != null) || (loginInfo?.id != null);
     if (!isLoggedIn) return [const LoginScreen()];
     return [
-      WebNoticiasGridScreen(hasPermission: (p) => true),              // 0:  Comunicados/Notícias
-      WebChatListScreen(userName: AuthUtility.userInfo?.login?.email ?? 'Usuário'), // 1: Chat
-      WebComunicadoGridComponentesScreen(hasPermission: (p) => true), // 2:  ComunicadoComp
-      WebAplicativoGridScreen(hasPermission: (p) => true),            // 3:  Aplicativo
-      WebLoginGridScreen(hasPermission: (p) => true),                 // 4:  Logins
-      WebChatListScreen(userName: AuthUtility.userInfo?.login?.email ?? 'Usuário'), // 5: ChatList
-      const WebProductRegisterScreen(),                               // 6:  placeholder
-      const WebProductRegisterScreen(),                               // 7:  placeholder
-      WebRegimeGridScreen(hasPermission: (p) => true),                // 8:  Regime
-      WebAlimentoGridScreen(hasPermission: (p) => true),              // 9:  Alimentos
-      WebDietaGridScreen(hasPermission: (p) => true),                 // 10: Dietas
-      WebEmpresaGridScreen(hasPermission: (p) => true),               // 11: Empresas
-      WebExameGridScreen(hasPermission: (p) => true),                 // 12: Exames
-      WebExercicioGridScreen(hasPermission: (p) => true),             // 13: Exercícios
-      WebGrupoMuscularGridScreen(hasPermission: (p) => true),         // 14: GruposMusculares
-      WebMedicamentoGridScreen(hasPermission: (p) => true),           // 15: Medicamentos
-      WebMensalidadeGridScreen(hasPermission: (p) => true),           // 16: Mensalidades
-      WebModalidadeGridScreen(hasPermission: (p) => true),            // 17: Modalidades
-      WebObjetivoGridScreen(hasPermission: (p) => true),              // 18: Objetivos
-      WebParceiroGridScreen(hasPermission: (p) => true),              // 19: Parceiros
-      WebPersonalGridScreen(hasPermission: (p) => true),              // 20: Personais
-      WebPlanoGridScreen(hasPermission: (p) => true),                 // 21: Planos
-      WebRoleGridScreen(hasPermission: (p) => true),                  // 22: Roles
-      WebSetorGridScreen(hasPermission: (p) => true),                 // 23: Setores
-      WebSuplementoGridScreen(hasPermission: (p) => true),            // 24: Suplementos
-      WebContaPagarGridScreen(hasPermission: (p) => true),            // 25: ContasPagar
-      WebContaReceberGridScreen(hasPermission: (p) => true),          // 26: ContasReceber
-      WebChamadoGridScreen(hasPermission: (p) => true),               // 27: Chamados
-      WebFormaPagamentoGridScreen(hasPermission: (p) => true),        // 28: FormasPagamento
-      WebDiretorioGridScreen(hasPermission: (p) => true),             // 29: Diretorios
-      WebFileUploadScreen(hasPermission: (p) => true),                // 30: Arquivos/GED
-      WebCalendarScreen(),                                            // 31: Calendario
-      WebObrigacaoFiscalGridScreen(hasPermission: (p) => true),       // 32: ObrigacoesFiscais
-      WebLoginGridScreen(hasPermission: (p) => true),                 // 33: Logins(dup)
-      WebCotacaoFreteGridScreen(hasPermission: (p) => true),          // 34: CotacaoFrete
-      WebCalendarioGuiasGridScreen(hasPermission: (p) => true),       // 35: CalendarioGuias
-      WebTicketGridScreen(hasPermission: (p) => true),                // 36: Tickets
-      WebDividendoGridScreen(hasPermission: (p) => true),             // 37: Dividendos
-      WebOrderGridScreen(hasPermission: (p) => true),                 // 38: Ordens
-      WebPedidoGridScreen(hasPermission: (p) => true),                // 39: Pedidos
-      WebConfiguracoesAdminScreen(hasPermission: (p) => true),        // 40: ConfigAdmin
-      WebAlertaAlunoGridScreen(hasPermission: (p) => true),           // 41: AlertaAluno
-      WebAvaliacaoFisicaGridScreen(hasPermission: (p) => true),       // 42: AvaliacaoFisica
-      WebContaBancariaGridScreen(hasPermission: (p) => true),         // 43: ContaBancaria
-      WebClassificacaoGridScreen(hasPermission: (p) => true),         // 44: Classificacao
-      const WebDashboardScreen(),                                     // 45: Dashboard
-      WebFeriadoGridScreen(hasPermission: (p) => true),               // 46: Feriados
-      const WebNfeGridScreen(entrada: true),                          // 47: NFeEntrada
-      const WebNfeGridScreen(entrada: false),                         // 48: NFeSaida
-      WebTreinoGridScreen(hasPermission: (p) => true),                // 49: Treino
-      WebFuncionarioGridScreen(hasPermission: (p) => true),           // 50: Funcionarios
-      const KanbanChamadosScreen(),                                   // 51: Kanban
-      const TelaEditorScreen(),                                       // 52: EditorTelas
-      WebProdutoGridScreen(hasPermission: (p) => true),               // 53: Produtos
-      WebNfeFinalidadeGridScreen(hasPermission: (p) => true),         // 54: NfeFinalidade
-      WebNfeSerieGridScreen(hasPermission: (p) => true),              // 55: NfeSerie
-      WebNfeTipoOperacaoGridScreen(hasPermission: (p) => true),       // 56: NfeTipoOperacao
-      WebUnidadeMedidaGridScreen(hasPermission: (p) => true),         // 57: UnidadeMedida
-      WebCatalagoProdutoGridScreen(hasPermission: (p) => true),       // 58: CatalagoProduto
-      const RolePermissaoScreen(),                                    // 59: Permissoes
-      const WebPontoScreen(),                                         // 60: Ponto
-      const WebPontoSolicitacaoScreen(),                              // 61: SolicitarAjuste
-      const WebPontoAjusteScreen(),                                   // 62: AjustePonto
-      const ConfiguracoesSistemaScreen(),                             // 63: ConfigSistema
-      WebChatListScreen(userName: AuthUtility.userInfo?.login?.email ?? 'Usuário'), // 64: Chat
-      const SystemTestScreen(),                                       // 65: Teste
-      const CadastroEmpresaWizard(),                                  // 66: CadastroEmpresa
-      WebTipoParceiroGridScreen(hasPermission: (p) => true),          // 67: TipoParceiro
-      WebServicoContratadoGridScreen(hasPermission: (p) => true),     // 68: ServicoContratado
-      WebModuloServicoGridScreen(hasPermission: (p) => true),         // 69: ModuloServico
+      WebNoticiasGridScreen(
+          hasPermission: (p) => true), // 0:  Comunicados/Notícias
+      WebChatListScreen(
+          userName: AuthUtility.userInfo?.login?.email ?? 'Usuário'), // 1: Chat
+      WebComunicadoGridComponentesScreen(
+          hasPermission: (p) => true), // 2:  ComunicadoComp
+      WebAplicativoGridScreen(hasPermission: (p) => true), // 3:  Aplicativo
+      WebLoginGridScreen(hasPermission: (p) => true), // 4:  Logins
+      WebChatListScreen(
+          userName:
+              AuthUtility.userInfo?.login?.email ?? 'Usuário'), // 5: ChatList
+      const WebProductRegisterScreen(), // 6:  placeholder
+      const WebProductRegisterScreen(), // 7:  placeholder
+      WebRegimeGridScreen(hasPermission: (p) => true), // 8:  Regime
+      WebAlimentoGridScreen(hasPermission: (p) => true), // 9:  Alimentos
+      WebDietaGridScreen(hasPermission: (p) => true), // 10: Dietas
+      WebEmpresaGridScreen(hasPermission: (p) => true), // 11: Empresas
+      WebExameGridScreen(hasPermission: (p) => true), // 12: Exames
+      WebExercicioGridScreen(hasPermission: (p) => true), // 13: Exercícios
+      WebGrupoMuscularGridScreen(
+          hasPermission: (p) => true), // 14: GruposMusculares
+      WebMedicamentoGridScreen(hasPermission: (p) => true), // 15: Medicamentos
+      WebMensalidadeGridScreen(hasPermission: (p) => true), // 16: Mensalidades
+      WebModalidadeGridScreen(hasPermission: (p) => true), // 17: Modalidades
+      WebObjetivoGridScreen(hasPermission: (p) => true), // 18: Objetivos
+      WebParceiroGridScreen(hasPermission: (p) => true), // 19: Parceiros
+      WebPersonalGridScreen(hasPermission: (p) => true), // 20: Personais
+      WebPlanoGridScreen(hasPermission: (p) => true), // 21: Planos
+      WebRoleGridScreen(hasPermission: (p) => true), // 22: Roles
+      WebSetorGridScreen(hasPermission: (p) => true), // 23: Setores
+      WebSuplementoGridScreen(hasPermission: (p) => true), // 24: Suplementos
+      WebContaPagarGridScreen(hasPermission: (p) => true), // 25: ContasPagar
+      WebContaReceberGridScreen(
+          hasPermission: (p) => true), // 26: ContasReceber
+      WebChamadoGridScreen(hasPermission: (p) => true), // 27: Chamados
+      WebFormaPagamentoGridScreen(
+          hasPermission: (p) => true), // 28: FormasPagamento
+      WebDiretorioGridScreen(hasPermission: (p) => true), // 29: Diretorios
+      const GedArquivosScreen(), // 30: GED — Arquivos
+      WebCalendarScreen(), // 31: Calendario
+      WebObrigacaoFiscalGridScreen(
+          hasPermission: (p) => true), // 32: ObrigacoesFiscais
+      WebLoginGridScreen(hasPermission: (p) => true), // 33: Logins(dup)
+      WebCotacaoFreteGridScreen(hasPermission: (p) => true), // 34: CotacaoFrete
+      WebCalendarioGuiasGridScreen(
+          hasPermission: (p) => true), // 35: CalendarioGuias
+      WebTicketGridScreen(hasPermission: (p) => true), // 36: Tickets
+      WebDividendoGridScreen(hasPermission: (p) => true), // 37: Dividendos
+      WebOrderGridScreen(hasPermission: (p) => true), // 38: Ordens
+      WebPedidoGridScreen(hasPermission: (p) => true), // 39: Pedidos
+      WebConfiguracoesAdminScreen(
+          hasPermission: (p) => true), // 40: ConfigAdmin
+      WebAlertaAlunoGridScreen(hasPermission: (p) => true), // 41: AlertaAluno
+      WebAvaliacaoFisicaGridScreen(
+          hasPermission: (p) => true), // 42: AvaliacaoFisica
+      WebContaBancariaGridScreen(
+          hasPermission: (p) => true), // 43: ContaBancaria
+      WebClassificacaoGridScreen(
+          hasPermission: (p) => true), // 44: Classificacao
+      const WebDashboardScreen(), // 45: Dashboard
+      WebFeriadoGridScreen(hasPermission: (p) => true), // 46: Feriados
+      const WebNfeGridScreen(entrada: true), // 47: NFeEntrada
+      const WebNfeGridScreen(entrada: false), // 48: NFeSaida
+      WebTreinoGridScreen(hasPermission: (p) => true), // 49: Treino
+      WebFuncionarioGridScreen(hasPermission: (p) => true), // 50: Funcionarios
+      const KanbanChamadosScreen(), // 51: Kanban
+      const TelaEditorScreen(), // 52: EditorTelas
+      WebProdutoGridScreen(hasPermission: (p) => true), // 53: Produtos
+      WebNfeFinalidadeGridScreen(
+          hasPermission: (p) => true), // 54: NfeFinalidade
+      WebNfeSerieGridScreen(hasPermission: (p) => true), // 55: NfeSerie
+      WebNfeTipoOperacaoGridScreen(
+          hasPermission: (p) => true), // 56: NfeTipoOperacao
+      WebUnidadeMedidaGridScreen(
+          hasPermission: (p) => true), // 57: UnidadeMedida
+      WebCatalagoProdutoGridScreen(
+          hasPermission: (p) => true), // 58: CatalagoProduto
+      const RolePermissaoScreen(), // 59: Permissoes
+      const WebPontoScreen(), // 60: Ponto
+      const WebPontoSolicitacaoScreen(), // 61: SolicitarAjuste
+      const WebPontoAjusteScreen(), // 62: AjustePonto
+      const ConfiguracoesSistemaScreen(), // 63: ConfigSistema
+      WebChatListScreen(
+          userName:
+              AuthUtility.userInfo?.login?.email ?? 'Usuário'), // 64: Chat
+      const SystemTestScreen(), // 65: Teste
+      const CadastroEmpresaWizard(), // 66: CadastroEmpresa
+      WebTipoParceiroGridScreen(hasPermission: (p) => true), // 67: TipoParceiro
+      WebServicoContratadoGridScreen(
+          hasPermission: (p) => true), // 68: ServicoContratado
+      WebModuloServicoGridScreen(
+          hasPermission: (p) => true), // 69: ModuloServico
+      WebAlvaraGridScreen(hasPermission: (p) => true), // 70: Alvaras
     ];
   }
 
   void _startPeriodicFetch() {
-    _periodicTimer = Timer.periodic(const Duration(minutes: 1), (_) => fetchAlerts());
+    _periodicTimer =
+        Timer.periodic(const Duration(minutes: 1), (_) => fetchAlerts());
   }
 
   Future<void> fetchAlerts() async {
     try {
-      final List<Alert> alertData = await AlertCaller().fetchItensAVenda(context);
+      final List<Alert> alertData =
+          await AlertCaller().fetchItensAVenda(context);
       if (!mounted) return;
       if (alertData.isNotEmpty) {
         setState(() {
@@ -264,7 +290,8 @@ class _WebBottomNavBarScreenState extends State<WebBottomNavBarScreen> {
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
               color: CustomColors().getLightGreenBackground(),
-              border: Border.all(color: CustomColors().getDarkGreenBorder(), width: 2),
+              border: Border.all(
+                  color: CustomColors().getDarkGreenBorder(), width: 2),
               borderRadius: BorderRadius.circular(8),
             ),
             child: Column(
@@ -273,9 +300,13 @@ class _WebBottomNavBarScreenState extends State<WebBottomNavBarScreen> {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text('Notificações',
-                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: CustomColors().getTextColor())),
+                        style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16,
+                            color: CustomColors().getTextColor())),
                     IconButton(
-                      icon: Icon(Icons.close, color: CustomColors().getCancelButtonColor()),
+                      icon: Icon(Icons.close,
+                          color: CustomColors().getCancelButtonColor()),
                       onPressed: closeNotificationDropdown,
                     ),
                   ],
@@ -284,8 +315,11 @@ class _WebBottomNavBarScreenState extends State<WebBottomNavBarScreen> {
                 ListTile(
                   dense: true,
                   title: Text('Deletar Tudo',
-                      style: TextStyle(fontSize: 14, color: CustomColors().getCancelButtonColor())),
-                  trailing: Icon(Icons.delete_forever, color: CustomColors().getCancelButtonColor(), size: 20),
+                      style: TextStyle(
+                          fontSize: 14,
+                          color: CustomColors().getCancelButtonColor())),
+                  trailing: Icon(Icons.delete_forever,
+                      color: CustomColors().getCancelButtonColor(), size: 20),
                   onTap: deleteAllNotifications,
                 ),
                 const Divider(color: Colors.green, thickness: 1),
@@ -301,11 +335,20 @@ class _WebBottomNavBarScreenState extends State<WebBottomNavBarScreen> {
                                 '${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}';
                             return ListTile(
                               title: Text(n.texto,
-                                  style: TextStyle(fontSize: 14, color: CustomColors().getButtonTextColor())),
+                                  style: TextStyle(
+                                      fontSize: 14,
+                                      color:
+                                          CustomColors().getButtonTextColor())),
                               subtitle: Text(fmt,
-                                  style: TextStyle(fontSize: 12, color: CustomColors().getButtonTextColor())),
+                                  style: TextStyle(
+                                      fontSize: 12,
+                                      color:
+                                          CustomColors().getButtonTextColor())),
                               trailing: IconButton(
-                                icon: Icon(Icons.delete, color: CustomColors().getCancelButtonColor(), size: 20),
+                                icon: Icon(Icons.delete,
+                                    color:
+                                        CustomColors().getCancelButtonColor(),
+                                    size: 20),
                                 onPressed: () => deleteNotification(n.id),
                               ),
                             );
@@ -313,7 +356,8 @@ class _WebBottomNavBarScreenState extends State<WebBottomNavBarScreen> {
                         )
                       : Center(
                           child: Text('Sem notificações',
-                              style: TextStyle(color: CustomColors().getButtonTextColor()))),
+                              style: TextStyle(
+                                  color: CustomColors().getButtonTextColor()))),
                 ),
               ],
             ),
@@ -329,23 +373,29 @@ class _WebBottomNavBarScreenState extends State<WebBottomNavBarScreen> {
       context: context,
       builder: (_) => AlertDialog(
         title: Text('Deseja realmente sair?',
-            style: TextStyle(fontWeight: FontWeight.bold, color: CustomColors().getTextColor())),
+            style: TextStyle(
+                fontWeight: FontWeight.bold,
+                color: CustomColors().getTextColor())),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: Text('Não', style: TextStyle(color: CustomColors().getTextColor())),
+            child: Text('Não',
+                style: TextStyle(color: CustomColors().getTextColor())),
           ),
           TextButton(
             onPressed: () {
               AuthUtility.clearUserInfo();
-              AuthUtility.setUserInfo(LoginModel(data: null, token: '', status: ''));
+              AuthUtility.setUserInfo(
+                  LoginModel(data: null, token: '', status: ''));
               Navigator.pushAndRemoveUntil(
                 context,
-                MaterialPageRoute(builder: (_) => const WebBottomNavBarScreen()),
+                MaterialPageRoute(
+                    builder: (_) => const WebBottomNavBarScreen()),
                 (route) => false,
               );
             },
-            child: Text('Sim', style: TextStyle(color: CustomColors().getTextColor())),
+            child: Text('Sim',
+                style: TextStyle(color: CustomColors().getTextColor())),
           ),
         ],
       ),
@@ -382,7 +432,8 @@ class _WebBottomNavBarScreenState extends State<WebBottomNavBarScreen> {
             onLogout: _handleLogout,
             userName: userName,
             userEmail: AuthUtility.userInfo?.data?.codDadosPessoal?.email ??
-                AuthUtility.userInfo?.login?.email ?? '',
+                AuthUtility.userInfo?.login?.email ??
+                '',
           ),
           // Conteúdo principal
           Expanded(

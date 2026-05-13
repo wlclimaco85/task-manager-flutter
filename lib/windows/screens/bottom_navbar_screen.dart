@@ -22,7 +22,7 @@ import '../../../windows/screens/diretorio_grid_screen.dart';
 import '../../../windows/screens/empresa_grid_screen.dart';
 import '../../../windows/screens/exame_grid_screen.dart';
 import '../../../windows/screens/exercicio_grid_screen.dart';
-import '../../../windows/screens/file_upload_screen.dart';
+import '../../web/screens/ged_arquivos_screen.dart';
 import '../../../windows/screens/forma_pagamento_grid_screen.dart';
 import '../../../windows/screens/grupo_muscular_grid_screen.dart';
 import '../../../windows/screens/login_grid_screen.dart';
@@ -68,6 +68,9 @@ import '../../web/screens/nfe_tipo_operacao_grid_screen.dart';
 import '../../web/screens/unidade_medida_grid_screen.dart';
 import '../../web/screens/catalago_produto_grid_screen.dart';
 import '../../web/screens/role_permissao_screen.dart';
+import '../../web/screens/tipo_parceiro_grid_screen.dart';
+import '../../web/screens/servico_contratado_grid_screen.dart';
+import '../../web/screens/modulo_servico_grid_screen.dart';
 import '../../web/screens/ponto_web_screen.dart';
 import '../../web/screens/ponto_solicitacao_screen.dart';
 import '../../web/screens/ponto_ajuste_screen.dart';
@@ -75,6 +78,7 @@ import '../../web/screens/configuracoes_sistema_screen.dart';
 import '../../web/screens/chatMessageListScreen.dart';
 import '../../web/screens/system_test_screen.dart';
 import '../../web/screens/cadastro_empresa_wizard.dart';
+import '../../web/screens/alvara_grid_screen.dart';
 
 class WindowsBottomNavBarScreen extends StatefulWidget {
   const WindowsBottomNavBarScreen({super.key});
@@ -84,8 +88,7 @@ class WindowsBottomNavBarScreen extends StatefulWidget {
       _WindowsBottomNavBarScreenState();
 }
 
-class _WindowsBottomNavBarScreenState
-    extends State<WindowsBottomNavBarScreen> {
+class _WindowsBottomNavBarScreenState extends State<WindowsBottomNavBarScreen> {
   int _selectedIndex = 31; // Calendário como tela inicial
   bool _isSidebarCollapsed = false;
   int unreadAlerts = 0;
@@ -155,7 +158,7 @@ class _WindowsBottomNavBarScreenState
         WindowsChamadoGridScreen(hasPermission: (perm) => true),
         WindowsFormaPagamentoGridScreen(hasPermission: (perm) => true),
         WindowsDiretorioGridScreen(hasPermission: (perm) => true),
-        WindowsFileUploadScreen(hasPermission: (perm) => true),
+        const GedArquivosScreen(), // 30: GED
         WindowsCalendarScreen(),
         WindowsObrigacaoFiscalGridScreen(hasPermission: (perm) => true),
         WindowsLoginGridScreen(hasPermission: (perm) => true),
@@ -181,19 +184,24 @@ class _WindowsBottomNavBarScreenState
         const TelaEditorScreen(),
         WindowsProdutoGridScreen(hasPermission: (perm) => true),
         // Telas adicionais (índices 54+)
-        WebNfeFinalidadeGridScreen(hasPermission: (perm) => true),    // 54
-        WebNfeSerieGridScreen(hasPermission: (perm) => true),         // 55
-        WebNfeTipoOperacaoGridScreen(hasPermission: (perm) => true),  // 56
-        WebUnidadeMedidaGridScreen(hasPermission: (perm) => true),    // 57
-        WebCatalagoProdutoGridScreen(hasPermission: (perm) => true),  // 58
-        const RolePermissaoScreen(),                                  // 59
-        const WebPontoScreen(),                                       // 60
-        const WebPontoSolicitacaoScreen(),                            // 61
-        const WebPontoAjusteScreen(),                                 // 62
-        const ConfiguracoesSistemaScreen(),                           // 63
-        WebChatListScreen(userName: AuthUtility.userInfo?.data?.email ?? 'Usuário'), // 64
-        const SystemTestScreen(),                                     // 65
-        const CadastroEmpresaWizard(),                                // 66
+        WebNfeFinalidadeGridScreen(hasPermission: (perm) => true), // 54
+        WebNfeSerieGridScreen(hasPermission: (perm) => true), // 55
+        WebNfeTipoOperacaoGridScreen(hasPermission: (perm) => true), // 56
+        WebUnidadeMedidaGridScreen(hasPermission: (perm) => true), // 57
+        WebCatalagoProdutoGridScreen(hasPermission: (perm) => true), // 58
+        const RolePermissaoScreen(), // 59
+        const WebPontoScreen(), // 60
+        const WebPontoSolicitacaoScreen(), // 61
+        const WebPontoAjusteScreen(), // 62
+        const ConfiguracoesSistemaScreen(), // 63
+        WebChatListScreen(
+            userName: AuthUtility.userInfo?.data?.email ?? 'Usuário'), // 64
+        const SystemTestScreen(), // 65
+        const CadastroEmpresaWizard(), // 66
+        WebTipoParceiroGridScreen(hasPermission: (perm) => true), // 67
+        WebServicoContratadoGridScreen(hasPermission: (perm) => true), // 68
+        WebModuloServicoGridScreen(hasPermission: (perm) => true), // 69
+        WebAlvaraGridScreen(hasPermission: (perm) => true), // 70
       ];
 
   String get userName {
@@ -205,8 +213,6 @@ class _WindowsBottomNavBarScreenState
     }
     return 'Usuário';
   }
-
-
 
   void _startPeriodicFetch() {
     Timer.periodic(const Duration(minutes: 1), (timer) {
@@ -376,8 +382,6 @@ class _WindowsBottomNavBarScreenState
     );
   }
 
-
-
   @override
   void dispose() {
     notificationOverlay?.remove();
@@ -387,8 +391,7 @@ class _WindowsBottomNavBarScreenState
   @override
   Widget build(BuildContext context) {
     if (_isLoading) {
-      return const Scaffold(
-          body: Center(child: CircularProgressIndicator()));
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
     return Scaffold(
       body: Row(
@@ -398,7 +401,8 @@ class _WindowsBottomNavBarScreenState
             selectedIndex: _selectedIndex,
             onSelect: (idx) => setState(() => _selectedIndex = idx),
             isCollapsed: _isSidebarCollapsed,
-            onToggleCollapse: () => setState(() => _isSidebarCollapsed = !_isSidebarCollapsed),
+            onToggleCollapse: () =>
+                setState(() => _isSidebarCollapsed = !_isSidebarCollapsed),
             unreadAlerts: unreadAlerts,
             onNotificationTap: () {
               final box = context.findRenderObject() as RenderBox;
@@ -426,7 +430,6 @@ class SidebarItem {
   final String label;
   SidebarItem({required this.icon, required this.label});
 }
-
 
 Uint8List showBase64Image(base64String) {
   if (base64String != null && base64String.toString().trim().isNotEmpty) {

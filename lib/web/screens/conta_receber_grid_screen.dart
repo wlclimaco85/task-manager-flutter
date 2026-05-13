@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import '../../../customization/dynamic_grid_windows_screen.dart';
 import '../../../models/conta_receber_model.dart';
-import '../../../widgets/generic_grid_windows_screen.dart' show CustomAction;
+import '../../../utils/api_links.dart';
+import '../../../widgets/generic_grid_windows_screen.dart' show CustomAction, FieldConfigWindows;
 import '../../../windows/screens/baixa_dialog_receber.dart';
 
 class WebContaReceberGridScreen extends StatelessWidget {
@@ -15,6 +16,16 @@ class WebContaReceberGridScreen extends StatelessWidget {
       hasPermission: hasPermission,
       fromJson: (json) => json,
       toJson: (a) => a,
+      fetchEndpointOverride: ApiLinks.allContasReceber,
+      createEndpointOverride: ApiLinks.createContaReceber,
+      updateEndpointOverride: ApiLinks.updateContaReceber(':id'),
+      deleteEndpointOverride: ApiLinks.deleteContaReceber(':id'),
+      // H12: ocultar coluna parceiro da grid CR
+      fieldOverrides: const [
+        FieldConfigWindows(fieldName: 'parceiro',    label: '', isInForm: false, isVisibleByDefault: false, enabled: false),
+        FieldConfigWindows(fieldName: 'parceiroDev', label: '', isInForm: false, isVisibleByDefault: false, enabled: false),
+        FieldConfigWindows(fieldName: 'parceiroRec', label: '', isInForm: false, isVisibleByDefault: false, enabled: false),
+      ],
       customActions: () => [
         CustomAction<Map<String, dynamic>>(
           icon: Icons.check_circle, label: 'Baixar',

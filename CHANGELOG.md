@@ -6,6 +6,24 @@ Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.0.0/).
 
 ## [Unreleased]
 
+## [1.2.0] — 2026-05-13
+
+### Adicionado
+
+- **NF07 — Models**: `nfe_pagamento_model.dart`, `nfe_fatura_model.dart`, `nfe_duplicata_model.dart` para entidades de pagamento/fatura/duplicata da NF-e.
+- **NF07 — UI**: aba "Pagamentos" em `nfe_detail_screen` com listagem de formas de pagamento, fatura e duplicatas, e botao "Gerar CP" para criacao de contas a pagar.
+- **NF03**: botao "Calcular ICMS" em `nfe_detail_screen` integrado ao endpoint backend `/calcular-icms`.
+- **NF01/NF02**: `nfe_model.dart` expandido com 6 campos de cabecalho (`natOp`, `indFinal`, `indPres`, `cNF`, `serie`, `nNF`) e campos PIS/COFINS em NfeItem (`cstPis`, `vBcPis`, `pPis`, `vPis`, `cstCofins`, `vBcCofins`, `pCofins`, `vCofins`).
+- **H6B**: `notificacoes_drawer.dart` com `NotificacoesDrawer` e `NotificacoesSinoButton` para alertas de vencimento de alvaras, CP e CR.
+- **H4**: botao "Excluir" na grid de Produto com dialogo de confirmacao (web e windows).
+- **H6**: campo `tipoAlvara` convertido para dropdown com valores fixos (Funcionamento, Sanitario, Bombeiros, Anuncio, Ambiental, Outros) no cadastro de Alvara.
+
+### Corrigido
+
+- **H12**: coluna "Parceiro" removida das grids de Contas a Pagar e Contas a Receber (web e windows), eliminando exibicao de dado redundante/nao desejado.
+
+---
+
 ## [1.1.0] — 2026-05-13
 
 ### Fixed

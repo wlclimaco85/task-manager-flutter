@@ -1,8 +1,9 @@
 // conta_pagar_grid_screen.dart
 import 'package:flutter/material.dart';
-import '../../../widgets/generic_grid_windows_screen.dart' show CustomAction;
+import '../../../widgets/generic_grid_windows_screen.dart' show CustomAction, FieldConfigWindows;
 import '../../../customization/dynamic_grid_windows_screen.dart';
 import '../../../models/conta_pagar_model.dart';
+import '../../../utils/api_links.dart';
 import '../../../windows/screens/baixa_dialog.dart';
 
 class WindowsContaPagarGridScreen extends StatelessWidget {
@@ -13,25 +14,26 @@ class WindowsContaPagarGridScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return DynamicGridWindowsScreen<ContaPagar>(
-      telaNome: 'conta_pagar', // nome da tela no banco
+      telaNome: 'conta_pagar',
       hasPermission: hasPermission,
       fromJson: (json) => ContaPagar.fromJson(json),
       toJson: (a) => a.toJson(),
-
-      // 🔥 AQUI entram os botões extras por linha
+      fetchEndpointOverride: ApiLinks.allContasPagar,
+      createEndpointOverride: ApiLinks.createContaPagar,
+      updateEndpointOverride: ApiLinks.updateContaPagar(':id'),
+      deleteEndpointOverride: ApiLinks.deleteContaPagar(':id'),
+      // H12: ocultar coluna parceiro da grid CP
+      fieldOverrides: const [
+        FieldConfigWindows(fieldName: 'parceiro',    label: '', isInForm: false, isVisibleByDefault: false, enabled: false),
+        FieldConfigWindows(fieldName: 'parceiroDev', label: '', isInForm: false, isVisibleByDefault: false, enabled: false),
+        FieldConfigWindows(fieldName: 'parceiroRec', label: '', isInForm: false, isVisibleByDefault: false, enabled: false),
+      ],
       customActions: () => [
         CustomAction<ContaPagar>(
           icon: Icons.check_circle,
           label: 'Baixar',
           onPressed: (context, object) => _showBaixaDialog(context, object),
-
-          // opcional: só mostra se ainda não estiver fechado
-          // ajusta de acordo com o seu modelo
-          isVisible: (chamado) {
-            // exemplo genérico, muda conforme seu ChamadoModel:
-            // return chamado.status != 'FECHADO';
-            return true;
-          },
+          isVisible: (_) => true,
         ),
       ],
     );
