@@ -264,29 +264,36 @@
   static String updateLogin(String id) => '$_baseUrlNew/api/logins/$id';
   static String deleteLogin(String id) => '$_baseUrlNew/api/logins/$id';
 
+  // Importacao CSV
+  static String get importacaoContaPagar =>
+      '$_baseUrlNew/api/importacao/conta-pagar';
+  static String get importacaoContaReceber =>
+      '$_baseUrlNew/api/importacao/conta-receber';
+  static String get importacaoPreview => '$_baseUrlNew/api/importacao/preview';
+
   // Contas a Pagar
-  static String get allContasPagar => '$_baseUrlNew/api/contas-pagar';
-  static String get createContaPagar => '$_baseUrlNew/api/contas-pagar';
+  static String get allContasPagar => '$_baseUrlNew/api/conta_pagar';
+  static String get createContaPagar => '$_baseUrlNew/api/conta_pagar';
   static String updateContaPagar(String id) =>
-      '$_baseUrlNew/api/contas-pagar/$id';
+      '$_baseUrlNew/api/conta_pagar/$id';
   static String deleteContaPagar(String id) =>
-      '$_baseUrlNew/api/contas-pagar/$id';
+      '$_baseUrlNew/api/conta_pagar/$id';
   static String registrarBaixaContaPagar(String id) =>
-      '$_baseUrlNew/api/contas-pagar/$id/baixa';
+      '$_baseUrlNew/api/conta_pagar/$id/baixa';
   static String desfazerContaPagar(String id) =>
-      '$_baseUrlNew/api/contas-pagar/desfazer/$id';
+      '$_baseUrlNew/api/conta_pagar/desfazer/$id';
 
   // Contas a Receber
-  static String get allContasReceber => '$_baseUrlNew/api/contas-receber';
-  static String get createContaReceber => '$_baseUrlNew/api/contas-receber';
+  static String get allContasReceber => '$_baseUrlNew/api/conta_receber';
+  static String get createContaReceber => '$_baseUrlNew/api/conta_receber';
   static String updateContaReceber(String id) =>
-      '$_baseUrlNew/api/contas-receber/$id';
+      '$_baseUrlNew/api/conta_receber/$id';
   static String deleteContaReceber(String id) =>
-      '$_baseUrlNew/api/contas-receber/$id';
+      '$_baseUrlNew/api/conta_receber/$id';
   static String registrarBaixaContaReceber(String id) =>
-      '$_baseUrlNew/api/contas-receber/$id/baixa';
+      '$_baseUrlNew/api/conta_receber/$id/baixa';
   static String desfazerContaReceber(String id) =>
-      '$_baseUrlNew/api/contas-receber/desfazer/$id';
+      '$_baseUrlNew/api/conta_receber/desfazer/$id';
 
   // Contas Bancárias
   static const String contasBancarias = '$_baseUrlNew/api/contas-bancaria';
@@ -330,7 +337,7 @@
   static String updateDiretorio(String id) => '$_baseUrlNew/api/diretorios/$id';
   static String deleteDiretorio(String id) => '$_baseUrlNew/api/diretorios/$id';
 
-  // Arquivos
+  // Arquivos / GED
   static String get allArquivos => '$_baseUrlNew/api/arquivos';
   static String get createArquivo => '$_baseUrlNew/api/arquivos';
   static String updateArquivo(String id) => '$_baseUrlNew/api/arquivos/$id';
@@ -340,6 +347,13 @@
       '$_baseUrlNew/api/arquivos/download/$id';
   static String arquivosPorDiretorio(String diretorioId) =>
       '$_baseUrlNew/api/arquivos/diretorio/$diretorioId';
+  /// Lista arquivos filtrando por empresa (obrigatório) e parceiro (opcional)
+  static String arquivosPorEmpresa(int empresaId, {int? parceiroId}) {
+    final q = parceiroId != null
+        ? '?empresaId=$empresaId&parceiroId=$parceiroId'
+        : '?empresaId=$empresaId';
+    return '$_baseUrlNew/api/arquivos$q';
+  }
 
   static String get fecthAllDocumentos => '$_baseUrlNew/api/documentos';
 

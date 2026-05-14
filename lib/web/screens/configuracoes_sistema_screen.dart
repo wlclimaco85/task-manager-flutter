@@ -1,4 +1,5 @@
 ﻿import 'dart:convert';
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
@@ -6,6 +7,7 @@ import '../../../models/auth_utility.dart';
 import '../../../services/tela_caller.dart';
 import '../../../utils/api_links.dart';
 import '../../../utils/tenant_context.dart';
+import '../../../widgets/searchable_dropdown.dart';
 
 const _primary = Color(0xFF93070A);
 const _green   = Color(0xFF005826);
@@ -77,6 +79,8 @@ class _ConfiguracoesSistemaScreenState extends State<ConfiguracoesSistemaScreen>
               icon: Icons.build_outlined, color: Colors.purple.shade700, onTap: _fixDb),
             _deleteEmpresaCard(),
           ]),
+          const SizedBox(height: 20),
+          _ImportacaoSection(baseUrl: ApiLinks.baseUrl),
           const SizedBox(height: 20),
           if (_resultados.isNotEmpty) _buildResultados(),
         ]),
@@ -727,6 +731,1058 @@ class _JobsSectionState extends State<_JobsSection> {
       return '${dt.day.toString().padLeft(2, '0')}/${dt.month.toString().padLeft(2, '0')}/${dt.year} '
           '${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}';
     } catch (_) { return iso; }
+  }
+}
+
+// ── Importacao CSV ────────────────────────────────────────────────────────────
+class _ImportacaoSection extends StatefulWidget {
+  final String baseUrl;
+  const _ImportacaoSection({required this.baseUrl});
+  @override
+  State<_ImportacaoSection> createState() => _ImportacaoSectionState();
+}
+
+class _ImportacaoSectionState extends State<_ImportacaoSection> {
+  // ── Empresa / Parceiro selecionados ───────────────────────────────────────
+  // Listas carregadas da API
+  List<Map<String, dynamic>> _empresas  = [];
+  List<Map<String, dynamic>> _parceiros = [];
+  bool _loadingEmpresas  = false;
+  bool _loadingParceiros = false;
+
+  // Valores selecionados nos dropdowns (null = usar o do TenantContext)
+  String? _empresaIdSelecionada;
+  String? _parceiroIdSelecionado;
+
+  // ── Estado Contas a Pagar ─────────────────────────────────────────────────
+  PlatformFile? _arquivoCP;
+  bool _importandoCP = false;
+  bool _upsertCP = false;
+  Map<String, dynamic>? _resultadoCP;
+  bool _mapeamentoExpandidoCP = false;
+  final Map<String, TextEditingController> _ctrlCP = {
+    'colDescricao':      TextEditingController(text: 'historico'),
+    'colValor':          TextEditingController(text: 'vlr_do_desdobramento'),
+    'colVencimento':     TextEditingController(text: 'dt_vencimento'),
+    'colParceiro':       TextEditingController(text: 'parceiro'),
+    'colFormaPagamento': TextEditingController(text: 'forma_pagamento'),
+    'colStatus':         TextEditingController(text: 'status'),
+    'colNumeroNota':     TextEditingController(text: 'nro_nota'),
+    'colObservacao':     TextEditingController(text: 'observacao'),
+    'colDataBaixa':      TextEditingController(text: ''),
+    'colValorBaixa':     TextEditingController(text: ''),
+    'colValorMulta':     TextEditingController(text: ''),
+    'colValorJuros':     TextEditingController(text: ''),
+    'colValorDesconto':  TextEditingController(text: ''),
+    'colParceiroDev':    TextEditingController(text: ''),
+    'colContaBancaria':  TextEditingController(text: ''),
+  };
+
+  // ── Estado Contas a Receber ───────────────────────────────────────────────
+  PlatformFile? _arquivoCR;
+  bool _importandoCR = false;
+  bool _upsertCR = false;
+  Map<String, dynamic>? _resultadoCR;
+  bool _mapeamentoExpandidoCR = false;
+  final Map<String, TextEditingController> _ctrlCR = {
+    'colDescricao':      TextEditingController(text: 'historico'),
+    'colValor':          TextEditingController(text: 'vlr_do_desdobramento'),
+    'colVencimento':     TextEditingController(text: 'dt_vencimento'),
+    'colParceiro':       TextEditingController(text: 'parceiro'),
+    'colFormaPagamento': TextEditingController(text: 'forma_pagamento'),
+    'colStatus':         TextEditingController(text: 'status'),
+    'colNumeroNota':     TextEditingController(text: 'nro_nota'),
+    'colObservacao':     TextEditingController(text: 'observacao'),
+    'colDataBaixa':      TextEditingController(text: ''),
+    'colValorBaixa':     TextEditingController(text: ''),
+    'colValorMulta':     TextEditingController(text: ''),
+    'colValorJuros':     TextEditingController(text: ''),
+    'colValorDesconto':  TextEditingController(text: ''),
+    'colParceiroDev':    TextEditingController(text: ''),
+    'colContaBancaria':  TextEditingController(text: ''),
+  };
+
+  static const _camposMapeamento = [
+    {'key': 'colDescricao',      'label': 'Coluna Descricao *'},
+    {'key': 'colValor',          'label': 'Coluna Valor *'},
+    {'key': 'colVencimento',     'label': 'Coluna Vencimento *'},
+    {'key': 'colParceiro',       'label': 'Coluna Parceiro'},
+    {'key': 'colFormaPagamento', 'label': 'Coluna Forma Pagamento'},
+    {'key': 'colStatus',         'label': 'Coluna Status'},
+    {'key': 'colNumeroNota',     'label': 'Coluna Numero Nota'},
+    {'key': 'colObservacao',     'label': 'Coluna Observacao'},
+    {'key': 'colDataBaixa',      'label': 'Coluna Data Baixa'},
+    {'key': 'colValorBaixa',     'label': 'Coluna Valor Baixa'},
+    {'key': 'colValorMulta',     'label': 'Coluna Valor Multa'},
+    {'key': 'colValorJuros',     'label': 'Coluna Valor Juros'},
+    {'key': 'colValorDesconto',  'label': 'Coluna Valor Desconto'},
+    {'key': 'colParceiroDev',    'label': 'Coluna Parceiro Dev'},
+    {'key': 'colContaBancaria',  'label': 'Coluna Conta Bancaria'},
+  ];
+
+  @override
+  void initState() {
+    super.initState();
+    // Sempre carrega empresas — mesmo quando fixada pelo login,
+    // precisamos da lista para resolver o nome a exibir no campo bloqueado.
+    _carregarEmpresas();
+    // Sempre carrega parceiros filtrados pela empresa (do contexto ou aguarda seleção)
+    if (TenantContext.hasEmpresa) {
+      _carregarParceiros(TenantContext.empresaId.toString());
+    }
+  }
+
+  Future<void> _carregarEmpresas() async {
+    setState(() => _loadingEmpresas = true);
+    try {
+      final resp = await TenantContext.get('${widget.baseUrl}/api/empresa');
+      if (resp.statusCode == 200) {
+        final body = jsonDecode(resp.body);
+        List lista = [];
+        if (body['data'] is Map && body['data']['dados'] is List) {
+          lista = body['data']['dados'] as List;
+        } else if (body['data'] is List) {
+          lista = body['data'] as List;
+        }
+        if (mounted) setState(() => _empresas = lista
+            .map<Map<String, dynamic>>((e) => {'id': e['id'].toString(), 'nome': e['nome']?.toString() ?? ''})
+            .toList());
+      }
+    } catch (_) {}
+    if (mounted) setState(() => _loadingEmpresas = false);
+  }
+
+  Future<void> _carregarParceiros([String? empresaId]) async {
+    setState(() { _loadingParceiros = true; _parceiros = []; _parceiroIdSelecionado = null; });
+    try {
+      // Usa empresa do contexto, ou a passada como parâmetro, ou carrega todos
+      final empId = empresaId
+          ?? (TenantContext.hasEmpresa ? TenantContext.empresaId.toString() : null);
+
+      final url = empId != null
+          ? '${widget.baseUrl}/api/parceiro/empresa/$empId'
+          : '${widget.baseUrl}/api/parceiro';
+
+      final resp = await TenantContext.get(url);
+      if (resp.statusCode == 200) {
+        final body = jsonDecode(resp.body);
+        List lista = [];
+        // /empresa/{id} retorna body['data']['dados'] ou body['data'] direto
+        if (body['data'] is Map && body['data']['dados'] is List) {
+          lista = body['data']['dados'] as List;
+        } else if (body['data'] is List) {
+          lista = body['data'] as List;
+        } else if (body is List) {
+          lista = body;
+        }
+        if (mounted) setState(() => _parceiros = lista
+            .map<Map<String, dynamic>>((e) => {'id': e['id'].toString(), 'nome': e['nome']?.toString() ?? ''})
+            .toList());
+      }
+    } catch (_) {}
+    if (mounted) setState(() => _loadingParceiros = false);
+  }
+
+  @override
+  void dispose() {
+    for (final c in _ctrlCP.values) c.dispose();
+    for (final c in _ctrlCR.values) c.dispose();
+    super.dispose();
+  }
+
+  // Colunas detectadas no CSV após seleção
+  List<String> _colunasCP = [];
+  List<String> _colunasCR = [];
+
+  Future<void> _selecionarArquivo(bool isCP) async {
+    final result = await FilePicker.platform.pickFiles(
+      type: FileType.custom,
+      allowedExtensions: ['csv'],
+      withData: true,
+    );
+    if (result != null && result.files.isNotEmpty) {
+      final file = result.files.first;
+
+      // Detecta colunas localmente (fallback rápido)
+      final colunasLocal = _detectarColunas(file.bytes);
+      setState(() {
+        if (isCP) {
+          _arquivoCP = file;
+          _resultadoCP = null;
+          _colunasCP = colunasLocal;
+          _autoMapear(_ctrlCP, colunasLocal);
+        } else {
+          _arquivoCR = file;
+          _resultadoCR = null;
+          _colunasCR = colunasLocal;
+          _autoMapear(_ctrlCR, colunasLocal);
+        }
+      });
+
+      // Chama o preview da API para detecção precisa (suporta tab, BOM, etc.)
+      try {
+        final resp = await TenantContext.postMultipart(
+          '${widget.baseUrl}/api/importacao/preview',
+          fileBytes: file.bytes!,
+          fileName: file.name,
+          fileField: 'arquivo',
+        );
+        if (resp.statusCode == 200) {
+          final body = jsonDecode(resp.body);
+          final colunas = (body['colunas'] as List?)?.cast<String>() ?? colunasLocal;
+          if (mounted) setState(() {
+            if (isCP) {
+              _colunasCP = colunas;
+              _autoMapear(_ctrlCP, colunas);
+            } else {
+              _colunasCR = colunas;
+              _autoMapear(_ctrlCR, colunas);
+            }
+          });
+        }
+      } catch (_) {
+        // Mantém detecção local se API falhar
+      }
+    }
+  }
+
+  /// Lê o cabeçalho do CSV e retorna os nomes das colunas
+  List<String> _detectarColunas(List<int>? bytes) {
+    if (bytes == null) return [];
+    try {
+      final texto = String.fromCharCodes(bytes).replaceAll('\uFEFF', '');
+      final primeiraLinha = texto.split(RegExp(r'\r?\n')).first;
+      final sep = primeiraLinha.contains(';') ? ';' : ',';
+      return primeiraLinha.split(sep).map((c) => c.trim().replaceAll('"', '')).where((c) => c.isNotEmpty).toList();
+    } catch (_) { return []; }
+  }
+
+  /// Normaliza string igual ao backend: minúsculo, sem acentos, underscore
+  String _normalizar(String s) {
+    const acentos = 'àáâãäåèéêëìíîïòóôõöùúûüýÿñçÀÁÂÃÄÅÈÉÊËÌÍÎÏÒÓÔÕÖÙÚÛÜÝÑÇ';
+    const semAcento = 'aaaaaaeeeeiiiioooooouuuuyyñcAAAAAAEEEEIIIIOOOOOUUUUYNC';
+    var r = s.toLowerCase();
+    for (var i = 0; i < acentos.length; i++) {
+      r = r.replaceAll(acentos[i], semAcento[i]);
+    }
+    return r.replaceAll(RegExp(r'\s+'), '_').replaceAll(RegExp(r'[^a-z0-9_]'), '');
+  }
+
+  /// Tenta mapear automaticamente as colunas detectadas para os campos conhecidos
+  void _autoMapear(Map<String, TextEditingController> ctrl, List<String> colunas) {
+    // Mapa de sinônimos: campo → lista de possíveis nomes normalizados
+    final sinonimos = <String, List<String>>{
+      'colDescricao':      ['descricao', 'description', 'historico', 'lancamento', 'titulo', 'nome', 'descricao_tipo_de_titulo', 'descricao_natureza'],
+      'colValor':          ['valor', 'value', 'montante', 'total', 'vlr', 'vl', 'valor_liquido', 'vlr_do_desdobramento'],
+      'colVencimento':     ['vencimento', 'data_vencimento', 'dt_vencimento', 'datavencimento', 'due_date', 'venc', 'dt_prevista_p_baixa'],
+      'colParceiro':       ['parceiro', 'fornecedor', 'cliente', 'partner', 'vendor', 'supplier', 'nome_parceiro_parceiro', 'nome_fantasia_empresa'],
+      'colFormaPagamento': ['forma_pagamento', 'formapagamento', 'payment_method', 'pagamento', 'forma', 'tipo_operacao', 'descricao_tipo_de_operacao'],
+      'colStatus':         ['status', 'situacao', 'state', 'tipo_de_movimento'],
+      'colNumeroNota':     ['numero_nota', 'numeronota', 'nota', 'nf', 'nfe', 'invoice', 'documento', 'nro_nota', 'nro_duplicata'],
+      'colObservacao':     ['observacao', 'obs', 'observation', 'nota', 'comentario', 'observacao_padrao'],
+      'colDataBaixa':      ['data_baixa', 'dt_baixa', 'databaixa', 'dtbaixa', 'data_pagamento', 'dt_pagamento', 'data_recebimento', 'dt_recebimento', 'data_quitacao'],
+      'colValorBaixa':     ['valor_baixa', 'vlr_baixa', 'valor_pago', 'vlr_pago', 'valor_recebido', 'vlr_recebido', 'valor_liquido', 'vlr_liquido'],
+      'colValorMulta':     ['valor_multa', 'vlr_multa', 'multa', 'vl_multa'],
+      'colValorJuros':     ['valor_juros', 'vlr_juros', 'juros', 'vl_juros', 'juro'],
+      'colValorDesconto':  ['valor_desconto', 'vlr_desconto', 'desconto', 'vl_desconto'],
+      'colParceiroDev':    ['parceiro_dev', 'parceiro_devedor', 'devedor', 'parceiro_rec', 'recebedor', 'nome_parceiro_dev'],
+      'colContaBancaria':  ['conta_bancaria', 'conta', 'banco', 'bank_account', 'conta_id', 'nome_conta'],
+    };
+
+    final colunasNorm = colunas.map((c) => _normalizar(c)).toList();
+
+    for (final entry in sinonimos.entries) {
+      final campo = entry.key;
+      final candidatos = entry.value;
+      for (final candidato in candidatos) {
+        final idx = colunasNorm.indexWhere((cn) => cn == candidato || cn.contains(candidato) || candidato.contains(cn));
+        if (idx >= 0) {
+          ctrl[campo]?.text = colunas[idx]; // usa o nome original da coluna
+          break;
+        }
+      }
+    }
+  }
+
+  Future<void> _importar(bool isCP) async {
+    final arquivo = isCP ? _arquivoCP : _arquivoCR;
+    if (arquivo == null || arquivo.bytes == null) return;
+
+    // empId vem do TenantContext (injetado automaticamente por applyToUrl),
+    // ou do dropdown quando o usuário não tem empresa no contexto.
+    final empIdCtx  = TenantContext.hasEmpresa  ? TenantContext.empresaId?.toString()  : _empresaIdSelecionada;
+    final parIdCtx  = TenantContext.hasParceiro ? TenantContext.parceiroId?.toString() : _parceiroIdSelecionado;
+
+    if (empIdCtx == null) {
+      _mostrarErro('Selecione uma empresa antes de importar.');
+      return;
+    }
+
+    setState(() { if (isCP) _importandoCP = true; else _importandoCR = true; });
+
+    try {
+      final ctrl     = isCP ? _ctrlCP : _ctrlCR;
+      final endpoint = isCP ? 'conta-pagar' : 'conta-receber';
+
+      // Monta URL com todos os parâmetros necessários.
+      // empId: se não está no TenantContext (applyToUrl não injeta), passa manualmente.
+      // parId: SEMPRE passa quando disponível — applyToUrl passa parceiroId/parcId mas
+      //         o endpoint de importação usa parId para vincular empresa/parceiro ao registro.
+      var url = '${widget.baseUrl}/api/importacao/$endpoint';
+      final upsert = isCP ? _upsertCP : _upsertCR;
+      {
+        final uri = Uri.parse(url);
+        final params = Map<String, String>.from(uri.queryParameters);
+        if (!TenantContext.hasEmpresa && empIdCtx != null) params['empId'] = empIdCtx;
+        // parId: vincula parceiro ao registro importado (independente do TenantContext)
+        if (parIdCtx != null) params['parId'] = parIdCtx;
+        if (upsert) params['upsert'] = 'true';
+        url = uri.replace(queryParameters: params).toString();
+      }
+
+      // Apenas campos de mapeamento de colunas vão no form-data
+      final fields = <String, String>{};
+      for (final entry in ctrl.entries) {
+        if (entry.value.text.trim().isNotEmpty) {
+          fields[entry.key] = entry.value.text.trim();
+        }
+      }
+
+      final resp = await TenantContext.postMultipart(
+        url,
+        fileBytes: arquivo.bytes!,
+        fileName: arquivo.name,
+        fileField: 'arquivo',
+        fields: fields,
+      );
+
+      dynamic body;
+      try { body = jsonDecode(resp.body); } catch (_) { body = {'error': resp.body}; }
+
+      setState(() {
+        if (isCP) _resultadoCP = resp.statusCode < 300 ? body : {'error': 'HTTP ${resp.statusCode}: ${resp.body}'};
+        else      _resultadoCR = resp.statusCode < 300 ? body : {'error': 'HTTP ${resp.statusCode}: ${resp.body}'};
+
+        // Se 100% ignorado, abre o mapeamento automaticamente para o usuário corrigir
+        if (resp.statusCode < 300 && body is Map) {
+          final s = body['sucesso'] as int? ?? 0;
+          final e = body['erros']   as int? ?? 0;
+          final ig = body['ignorados'] as int? ?? 0;
+          if (s == 0 && e == 0 && ig > 0) {
+            if (isCP) _mapeamentoExpandidoCP = true;
+            else      _mapeamentoExpandidoCR = true;
+          }
+        }
+      });
+    } catch (e) {
+      setState(() {
+        if (isCP) _resultadoCP = {'error': e.toString()};
+        else      _resultadoCR = {'error': e.toString()};
+      });
+    } finally {
+      setState(() { if (isCP) _importandoCP = false; else _importandoCR = false; });
+    }
+  }
+
+  void _mostrarErro(String msg) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(msg), backgroundColor: _primary));
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+      Row(children: [
+        const Icon(Icons.upload_file, color: _primary, size: 18), const SizedBox(width: 8),
+        const Text('Importacao CSV', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: _primary)),
+      ]),
+      const SizedBox(height: 10),
+
+      // ── Seleção de Empresa e Parceiro ─────────────────────────────────
+      Card(
+        margin: EdgeInsets.zero,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(8),
+          side: const BorderSide(color: _border)),
+        child: Padding(
+          padding: const EdgeInsets.all(14),
+          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            const Text('Destino da Importacao',
+              style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
+            const SizedBox(height: 4),
+            const Text(
+              'Selecione a empresa e/ou parceiro para os lancamentos importados. '
+              'Se ja estiver definido pelo login, o campo fica bloqueado.',
+              style: TextStyle(fontSize: 11, color: Colors.grey)),
+            const SizedBox(height: 12),
+            Row(children: [
+              // ── Empresa ──────────────────────────────────────────────
+              Expanded(child: _buildDropdownEmpresa()),
+              const SizedBox(width: 12),
+              // ── Parceiro ─────────────────────────────────────────────
+              Expanded(child: _buildDropdownParceiro()),
+            ]),
+          ]),
+        ),
+      ),
+      const SizedBox(height: 12),
+
+      _importCard(
+        isCP: true,
+        titulo: 'Importar Contas a Pagar',
+        subtitulo: 'Importa lancamentos de CP a partir de CSV. Cria Parceiros e Formas de Pagamento automaticamente.',
+        arquivo: _arquivoCP,
+        importando: _importandoCP,
+        upsert: _upsertCP,
+        resultado: _resultadoCP,
+        mapeamentoExpandido: _mapeamentoExpandidoCP,
+        onToggleMapeamento: () => setState(() => _mapeamentoExpandidoCP = !_mapeamentoExpandidoCP),
+        onToggleUpsert: () => setState(() => _upsertCP = !_upsertCP),
+        ctrl: _ctrlCP,
+      ),
+      const SizedBox(height: 12),
+      _importCard(
+        isCP: false,
+        titulo: 'Importar Contas a Receber',
+        subtitulo: 'Importa lancamentos de CR a partir de CSV. Cria Parceiros e Formas de Pagamento automaticamente.',
+        arquivo: _arquivoCR,
+        importando: _importandoCR,
+        upsert: _upsertCR,
+        resultado: _resultadoCR,
+        mapeamentoExpandido: _mapeamentoExpandidoCR,
+        onToggleMapeamento: () => setState(() => _mapeamentoExpandidoCR = !_mapeamentoExpandidoCR),
+        onToggleUpsert: () => setState(() => _upsertCR = !_upsertCR),
+        ctrl: _ctrlCR,
+      ),
+    ]);
+  }
+
+  // ── Dropdown Empresa ──────────────────────────────────────────────────────
+  Widget _buildDropdownEmpresa() {
+    final fixo = TenantContext.hasEmpresa;
+    final empresaIdCtx = TenantContext.empresaId?.toString();
+
+    // Label do valor fixo (do contexto)
+    String? labelFixo;
+    if (fixo && empresaIdCtx != null) {
+      // Tenta achar o nome na lista carregada; se não tiver, mostra o ID
+      final found = _empresas.where((e) => e['id'] == empresaIdCtx).firstOrNull;
+      labelFixo = found?['nome'] as String? ?? 'Empresa #$empresaIdCtx';
+    }
+
+    return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+      Row(children: [
+        const Icon(Icons.business, size: 14, color: Colors.grey),
+        const SizedBox(width: 4),
+        const Text('Empresa', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w500)),
+        if (fixo) ...[
+          const SizedBox(width: 6),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
+            decoration: BoxDecoration(
+              color: _green.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(4)),
+            child: const Text('do login', style: TextStyle(fontSize: 9, color: _green, fontWeight: FontWeight.bold))),
+        ],
+      ]),
+      const SizedBox(height: 4),
+      if (fixo)
+        // Campo desabilitado mostrando a empresa do login
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 11),
+          decoration: BoxDecoration(
+            color: Colors.grey.shade100,
+            border: Border.all(color: _border),
+            borderRadius: BorderRadius.circular(6)),
+          child: Row(children: [
+            const Icon(Icons.lock_outline, size: 14, color: Colors.grey),
+            const SizedBox(width: 8),
+            Expanded(child: Text(labelFixo ?? 'Empresa do login',
+              style: const TextStyle(fontSize: 13, color: Colors.grey))),
+          ]),
+        )
+      else
+        // Dropdown editável
+        _loadingEmpresas
+            ? const SizedBox(height: 44,
+                child: Center(child: SizedBox(width: 18, height: 18,
+                  child: CircularProgressIndicator(strokeWidth: 2, color: _primary))))
+            : SearchableDropdownField(
+                label: 'Empresa',
+                value: _empresaIdSelecionada,
+                items: _empresas,
+                valueField: 'id',
+                displayField: 'nome',
+                hintText: 'Selecione a empresa',
+                onChanged: (v) {
+                  setState(() => _empresaIdSelecionada = v);
+                  // Recarrega parceiros filtrados pela empresa selecionada
+                  if (!TenantContext.hasParceiro && v != null) {
+                    _carregarParceiros(v);
+                  }
+                },
+              ),
+    ]);
+  }
+
+  // ── Dropdown Parceiro ─────────────────────────────────────────────────────
+  Widget _buildDropdownParceiro() {
+    final fixo = TenantContext.hasParceiro;
+    final parceiroIdCtx = TenantContext.parceiroId?.toString();
+
+    String? labelFixo;
+    if (fixo && parceiroIdCtx != null) {
+      final found = _parceiros.where((e) => e['id'] == parceiroIdCtx).firstOrNull;
+      labelFixo = found?['nome'] as String? ?? 'Parceiro #$parceiroIdCtx';
+    }
+
+    return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+      Row(children: [
+        const Icon(Icons.person_outline, size: 14, color: Colors.grey),
+        const SizedBox(width: 4),
+        const Text('Parceiro (opcional)', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w500)),
+        if (fixo) ...[
+          const SizedBox(width: 6),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
+            decoration: BoxDecoration(
+              color: _green.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(4)),
+            child: const Text('do login', style: TextStyle(fontSize: 9, color: _green, fontWeight: FontWeight.bold))),
+        ],
+      ]),
+      const SizedBox(height: 4),
+      if (fixo)
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 11),
+          decoration: BoxDecoration(
+            color: Colors.grey.shade100,
+            border: Border.all(color: _border),
+            borderRadius: BorderRadius.circular(6)),
+          child: Row(children: [
+            const Icon(Icons.lock_outline, size: 14, color: Colors.grey),
+            const SizedBox(width: 8),
+            Expanded(child: Text(labelFixo ?? 'Parceiro do login',
+              style: const TextStyle(fontSize: 13, color: Colors.grey))),
+          ]),
+        )
+      else
+        _loadingParceiros
+            ? const SizedBox(height: 44,
+                child: Center(child: SizedBox(width: 18, height: 18,
+                  child: CircularProgressIndicator(strokeWidth: 2, color: _primary))))
+            : SearchableDropdownField(
+                label: 'Parceiro',
+                value: _parceiroIdSelecionado,
+                items: _parceiros,
+                valueField: 'id',
+                displayField: 'nome',
+                hintText: 'Nenhum (opcional)',
+                nullable: true,
+                nullLabel: 'Limpar seleção',
+                onChanged: (v) => setState(() => _parceiroIdSelecionado = v),
+              ),
+    ]);
+  }
+
+  Widget _importCard({
+    required bool isCP,
+    required String titulo,
+    required String subtitulo,
+    required PlatformFile? arquivo,
+    required bool importando,
+    required bool upsert,
+    required Map<String, dynamic>? resultado,
+    required bool mapeamentoExpandido,
+    required VoidCallback onToggleMapeamento,
+    required VoidCallback onToggleUpsert,
+    required Map<String, TextEditingController> ctrl,
+  }) {
+    final cor = isCP ? Colors.indigo.shade700 : Colors.teal.shade700;
+    final icone = isCP ? Icons.arrow_downward : Icons.arrow_upward;
+
+    return Card(
+      margin: EdgeInsets.zero,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(8),
+        side: BorderSide(color: cor.withValues(alpha: 0.35))),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          // ── Cabeçalho ──────────────────────────────────────────────────
+          Row(children: [
+            Container(width: 40, height: 40,
+              decoration: BoxDecoration(color: cor.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(8)),
+              child: Icon(icone, color: cor, size: 20)),
+            const SizedBox(width: 12),
+            Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Text(titulo, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14)),
+              Text(subtitulo, style: const TextStyle(fontSize: 11, color: Colors.grey)),
+            ])),
+          ]),
+          const SizedBox(height: 14),
+
+          // ── Seleção de arquivo ─────────────────────────────────────────
+          Row(children: [
+            Expanded(
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                decoration: BoxDecoration(
+                  border: Border.all(color: _border),
+                  borderRadius: BorderRadius.circular(6),
+                  color: Colors.grey.shade50),
+                child: Row(children: [
+                  Icon(Icons.attach_file, size: 16, color: Colors.grey.shade500),
+                  const SizedBox(width: 8),
+                  Expanded(child: Text(
+                    arquivo != null ? arquivo.name : 'Nenhum arquivo selecionado',
+                    style: TextStyle(fontSize: 13,
+                      color: arquivo != null ? Colors.black87 : Colors.grey.shade500),
+                    overflow: TextOverflow.ellipsis)),
+                  if (arquivo != null) ...[
+                    const SizedBox(width: 8),
+                    Text('${(arquivo.size / 1024).toStringAsFixed(1)} KB',
+                      style: const TextStyle(fontSize: 11, color: Colors.grey)),
+                  ],
+                ]),
+              ),
+            ),
+            const SizedBox(width: 10),
+            OutlinedButton.icon(
+              onPressed: importando ? null : () => _selecionarArquivo(isCP),
+              icon: const Icon(Icons.folder_open, size: 16),
+              label: const Text('Selecionar CSV'),
+              style: OutlinedButton.styleFrom(
+                foregroundColor: cor,
+                side: BorderSide(color: cor),
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12))),
+          ]),
+
+          // ── Colunas detectadas no CSV ──────────────────────────────────
+          if ((isCP ? _colunasCP : _colunasCR).isNotEmpty) ...[
+            const SizedBox(height: 8),
+            Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: cor.withValues(alpha: 0.04),
+                borderRadius: BorderRadius.circular(6),
+                border: Border.all(color: cor.withValues(alpha: 0.2))),
+              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                Row(children: [
+                  Icon(Icons.table_chart_outlined, size: 13, color: cor),
+                  const SizedBox(width: 5),
+                  Expanded(child: Text(
+                    'Colunas detectadas — clique para usar como Descricao:',
+                    style: TextStyle(fontSize: 11, color: cor, fontWeight: FontWeight.w500))),
+                ]),
+                const SizedBox(height: 6),
+                Wrap(
+                  spacing: 6, runSpacing: 4,
+                  children: (isCP ? _colunasCP : _colunasCR).map((col) => Tooltip(
+                    message: 'Usar "$col" como coluna de Descricao',
+                    child: InkWell(
+                      onTap: () {
+                        // Preenche o campo de descrição com o nome desta coluna
+                        ctrl['colDescricao']?.text = col;
+                        // Abre o mapeamento para o usuário ver o que foi preenchido
+                        if (!mapeamentoExpandido) onToggleMapeamento();
+                        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                          content: Text('"$col" definido como coluna de Descricao'),
+                          duration: const Duration(seconds: 2),
+                          backgroundColor: cor));
+                      },
+                      borderRadius: BorderRadius.circular(4),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                        decoration: BoxDecoration(
+                          color: cor.withValues(alpha: 0.08),
+                          borderRadius: BorderRadius.circular(4),
+                          border: Border.all(color: cor.withValues(alpha: 0.25))),
+                        child: Row(mainAxisSize: MainAxisSize.min, children: [
+                          Text(col, style: TextStyle(fontSize: 11, color: cor)),
+                          const SizedBox(width: 4),
+                          Icon(Icons.arrow_downward, size: 10, color: cor.withValues(alpha: 0.6)),
+                        ])),
+                    ),
+                  )).toList()),
+              ]),
+            ),
+          ],
+          const SizedBox(height: 10),
+
+          // ── Mapeamento de colunas (expansível) ─────────────────────────
+          InkWell(
+            onTap: onToggleMapeamento,
+            borderRadius: BorderRadius.circular(6),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+              decoration: BoxDecoration(
+                color: cor.withValues(alpha: 0.05),
+                borderRadius: BorderRadius.circular(6),
+                border: Border.all(color: cor.withValues(alpha: 0.2))),
+              child: Row(children: [
+                Icon(Icons.tune, size: 15, color: cor),
+                const SizedBox(width: 6),
+                Text('Mapeamento de colunas do CSV',
+                  style: TextStyle(fontSize: 12, color: cor, fontWeight: FontWeight.w500)),
+                const Spacer(),
+                Icon(mapeamentoExpandido ? Icons.expand_less : Icons.expand_more, size: 18, color: cor),
+              ]),
+            ),
+          ),
+          if (mapeamentoExpandido) ...[
+            const SizedBox(height: 10),
+            // Instrução contextual
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: Colors.blue.shade50,
+                borderRadius: BorderRadius.circular(6),
+                border: Border.all(color: Colors.blue.shade200)),
+              child: Row(children: [
+                Icon(Icons.info_outline, size: 14, color: Colors.blue.shade700),
+                const SizedBox(width: 6),
+                Expanded(child: Text(
+                  'Informe o nome exato da coluna no seu CSV para cada campo. '
+                  'Use os chips acima para preencher rapidamente.',
+                  style: TextStyle(fontSize: 11, color: Colors.blue.shade700))),
+              ]),
+            ),
+            const SizedBox(height: 10),
+            // Se temos colunas detectadas, mostra dropdown; senão, campo de texto
+            Wrap(spacing: 10, runSpacing: 10,
+              children: _camposMapeamento.map((campo) {
+                final colunas = isCP ? _colunasCP : _colunasCR;
+                return SizedBox(
+                  width: 220,
+                  child: colunas.isNotEmpty
+                    // Dropdown pesquisável com as colunas do CSV
+                    ? SearchableDropdownField(
+                        label: campo['label'] as String,
+                        value: colunas.contains(ctrl[campo['key']]?.text)
+                            ? ctrl[campo['key']]?.text
+                            : null,
+                        items: colunas
+                            .map((c) => <String, dynamic>{'id': c, 'nome': c})
+                            .toList(),
+                        valueField: 'id',
+                        displayField: 'nome',
+                        hintText: '— não importar —',
+                        nullable: true,
+                        nullLabel: '— não importar —',
+                        onChanged: (v) =>
+                            setState(() => ctrl[campo['key']]?.text = v ?? ''),
+                      )
+                    // Fallback: campo de texto livre
+                    : TextFormField(
+                        controller: ctrl[campo['key']],
+                        decoration: InputDecoration(
+                          labelText: campo['label'],
+                          labelStyle: const TextStyle(fontSize: 11),
+                          border: const OutlineInputBorder(),
+                          isDense: true,
+                          contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8)),
+                        style: const TextStyle(fontSize: 12)),
+                );
+              }).toList()),
+          ],
+          const SizedBox(height: 12),
+
+          // ── Opção Upsert ───────────────────────────────────────────────
+          InkWell(
+            onTap: onToggleUpsert,
+            borderRadius: BorderRadius.circular(6),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+              decoration: BoxDecoration(
+                color: upsert ? Colors.orange.shade50 : Colors.grey.shade50,
+                borderRadius: BorderRadius.circular(6),
+                border: Border.all(color: upsert ? Colors.orange.shade300 : _border)),
+              child: Row(children: [
+                Icon(upsert ? Icons.sync_alt : Icons.add_circle_outline,
+                  size: 16, color: upsert ? Colors.orange.shade700 : Colors.grey),
+                const SizedBox(width: 8),
+                Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                  Text(upsert ? 'Modo: Inserir + Atualizar (Upsert)' : 'Modo: Apenas Inserir',
+                    style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600,
+                      color: upsert ? Colors.orange.shade700 : Colors.grey.shade700)),
+                  Text(
+                    upsert
+                      ? 'Se o Numero de Nota ja existe na empresa, atualiza o registro. Novos sao inseridos.'
+                      : 'Sempre insere novos registros. Reimportar pode duplicar.',
+                    style: TextStyle(fontSize: 10, color: Colors.grey.shade600)),
+                ])),
+                Switch(
+                  value: upsert,
+                  onChanged: (_) => onToggleUpsert(),
+                  activeColor: Colors.orange.shade700,
+                  materialTapTargetSize: MaterialTapTargetSize.shrinkWrap),
+              ]),
+            ),
+          ),
+          const SizedBox(height: 10),
+
+          // ── Botão importar ─────────────────────────────────────────────
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton.icon(
+              onPressed: (arquivo == null || importando) ? null : () => _importar(isCP),
+              icon: importando
+                  ? const SizedBox(width: 16, height: 16,
+                      child: CircularProgressIndicator(strokeWidth: 2, color: _white))
+                  : const Icon(Icons.upload),
+              label: Text(importando ? 'Importando...' : 'Importar'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: cor, foregroundColor: _white,
+                padding: const EdgeInsets.symmetric(vertical: 14),
+                textStyle: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600))),
+          ),
+
+          // ── Resultado ─────────────────────────────────────────────────
+          if (resultado != null) ...[
+            const SizedBox(height: 14),
+            _buildResultadoImportacao(resultado, cor),
+          ],
+        ]),
+      ),
+    );
+  }
+
+  Widget _buildResultadoImportacao(Map<String, dynamic> resultado, Color cor) {
+    final erro = resultado['error'];
+    if (erro != null) {
+      return Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: _primary.withValues(alpha: 0.05),
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: _primary.withValues(alpha: 0.3))),
+        child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          const Icon(Icons.error_outline, color: _primary, size: 18),
+          const SizedBox(width: 8),
+          Expanded(child: SelectableText(erro.toString(),
+            style: const TextStyle(fontSize: 12, color: _primary, fontFamily: 'monospace'))),
+        ]),
+      );
+    }
+
+    final sucesso   = resultado['sucesso']   as int? ?? 0;
+    final erros     = resultado['erros']     as int? ?? 0;
+    final ignorados = resultado['ignorados'] as int? ?? 0;
+    final total     = resultado['total']     as int? ?? (sucesso + erros + ignorados);
+    final novosParceiros = resultado['novosParceiros'] as int? ?? 0;
+    final novasFormas    = resultado['novasFormasPagamento'] as int? ?? 0;
+    final detalhes  = (resultado['detalhes'] as List?)?.cast<Map<String, dynamic>>() ?? [];
+    final colunasCSV = (resultado['colunasCSV'] as List?)?.cast<String>() ?? [];
+    final avisoMapeamento = resultado['avisoMapeamento'] as String?;
+
+    // 100% ignorado = mapeamento errado
+    final tudo100Ignorado = total > 0 && sucesso == 0 && erros == 0 && ignorados == total;
+    final temErros = erros > 0 || tudo100Ignorado;
+    final corStatus = tudo100Ignorado ? _primary : (temErros ? Colors.orange.shade700 : _green);
+
+    return Container(
+      decoration: BoxDecoration(
+        color: corStatus.withValues(alpha: 0.05),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: corStatus.withValues(alpha: 0.3))),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        // ── Cabeçalho ───────────────────────────────────────────────────
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+          decoration: BoxDecoration(
+            color: corStatus.withValues(alpha: 0.08),
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(8))),
+          child: Row(children: [
+            Icon(tudo100Ignorado ? Icons.error_outline
+                : (temErros ? Icons.warning_amber_rounded : Icons.check_circle),
+              color: corStatus, size: 18),
+            const SizedBox(width: 8),
+            Text(
+              tudo100Ignorado ? 'Nenhum registro importado — verifique o mapeamento'
+                  : 'Importacao concluida',
+              style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13, color: corStatus)),
+            const Spacer(),
+            IconButton(
+              icon: const Icon(Icons.copy, size: 15),
+              tooltip: 'Copiar resultado',
+              color: corStatus,
+              padding: EdgeInsets.zero,
+              constraints: const BoxConstraints(minWidth: 28, minHeight: 28),
+              onPressed: () {
+                final txt = 'Total: $total | Sucesso: $sucesso | Erros: $erros | Ignorados: $ignorados'
+                    + (novosParceiros > 0 ? ' | Parceiros novos: $novosParceiros' : '')
+                    + (novasFormas > 0 ? ' | Formas novas: $novasFormas' : '');
+                Clipboard.setData(ClipboardData(text: txt));
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Copiado'), duration: Duration(seconds: 2)));
+              }),
+          ]),
+        ),
+
+        // ── Aviso de mapeamento incorreto ────────────────────────────────
+        if (avisoMapeamento != null) ...[
+          Container(
+            margin: const EdgeInsets.fromLTRB(14, 10, 14, 0),
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: _primary.withValues(alpha: 0.06),
+              borderRadius: BorderRadius.circular(6),
+              border: Border.all(color: _primary.withValues(alpha: 0.3))),
+            child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              const Icon(Icons.warning_amber_rounded, color: _primary, size: 16),
+              const SizedBox(width: 8),
+              Expanded(child: SelectableText(avisoMapeamento,
+                style: const TextStyle(fontSize: 11, color: _primary, height: 1.5))),
+            ]),
+          ),
+        ],
+
+        // ── Chips de contagem ────────────────────────────────────────────
+        Padding(
+          padding: const EdgeInsets.fromLTRB(14, 10, 14, 10),
+          child: Wrap(spacing: 10, runSpacing: 8, children: [
+            _chip('Total', total, Colors.grey.shade600),
+            _chip('Importados', sucesso, _green),
+            if (erros > 0) _chip('Erros', erros, _primary),
+            if (ignorados > 0) _chip('Ignorados', ignorados, Colors.orange.shade700),
+            if (novosParceiros > 0) _chip('Parceiros novos', novosParceiros, Colors.blue.shade700),
+            if (novasFormas > 0) _chip('Formas novas', novasFormas, Colors.purple.shade700),
+          ]),
+        ),
+
+        // ── Avisos de criação automática ─────────────────────────────────
+        if (novosParceiros > 0) ...[
+          Container(
+            margin: const EdgeInsets.fromLTRB(14, 0, 14, 8),
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: Colors.amber.shade50,
+              borderRadius: BorderRadius.circular(6),
+              border: Border.all(color: Colors.amber.shade300)),
+            child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Icon(Icons.warning_amber_rounded, color: Colors.amber.shade800, size: 16),
+              const SizedBox(width: 8),
+              Expanded(child: Text(
+                '$novosParceiros parceiro(s) criado(s) automaticamente — verifique e complete o cadastro',
+                style: TextStyle(fontSize: 11, color: Colors.amber.shade900, height: 1.5))),
+            ]),
+          ),
+        ],
+        if (novasFormas > 0) ...[
+          Container(
+            margin: const EdgeInsets.fromLTRB(14, 0, 14, 8),
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: Colors.orange.shade50,
+              borderRadius: BorderRadius.circular(6),
+              border: Border.all(color: Colors.orange.shade300)),
+            child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Icon(Icons.info_outline, color: Colors.orange.shade800, size: 16),
+              const SizedBox(width: 8),
+              Expanded(child: Text(
+                '$novasFormas forma(s) de pagamento criada(s) automaticamente — verifique e complete o cadastro',
+                style: TextStyle(fontSize: 11, color: Colors.orange.shade900, height: 1.5))),
+            ]),
+          ),
+        ],
+
+        // ── Colunas detectadas no CSV (do backend) ───────────────────────
+        if (colunasCSV.isNotEmpty) ...[
+          const Divider(height: 1),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(14, 8, 14, 4),
+            child: Row(children: [
+              Icon(Icons.table_chart_outlined, size: 13, color: Colors.grey.shade600),
+              const SizedBox(width: 5),
+              Text('Colunas lidas do CSV: ${colunasCSV.join(', ')}',
+                style: TextStyle(fontSize: 11, color: Colors.grey.shade600, fontStyle: FontStyle.italic)),
+            ]),
+          ),
+        ],
+
+        // ── Detalhes (erros e ignorados) ─────────────────────────────────
+        if (detalhes.any((d) => d['status'] != 'sucesso')) ...[
+          const Divider(height: 1),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(14, 8, 14, 4),
+            child: Row(children: [
+              Text('Detalhes de erros e ignorados',
+                style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.grey.shade700)),
+              const SizedBox(width: 8),
+              // Mostra só as primeiras 20 linhas para não travar
+              if (detalhes.where((d) => d['status'] != 'sucesso').length > 20)
+                Text('(mostrando primeiras 20 de ${detalhes.where((d) => d['status'] != 'sucesso').length})',
+                  style: TextStyle(fontSize: 10, color: Colors.grey.shade500)),
+              const Spacer(),
+              // ── Botão copiar todos os erros ──────────────────────────
+              TextButton.icon(
+                onPressed: () {
+                  final todos = detalhes.where((d) => d['status'] != 'sucesso').toList();
+                  final texto = todos.map((d) =>
+                    'Linha ${d['linha']} [${d['status']}]: ${d['mensagem']}').join('\n');
+                  Clipboard.setData(ClipboardData(text: texto));
+                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                    content: Text('${todos.length} erros copiados'),
+                    duration: const Duration(seconds: 2),
+                    backgroundColor: Colors.grey.shade700));
+                },
+                icon: const Icon(Icons.copy_all, size: 14),
+                label: Text(
+                  'Copiar todos (${detalhes.where((d) => d['status'] != 'sucesso').length})',
+                  style: const TextStyle(fontSize: 11)),
+                style: TextButton.styleFrom(
+                  foregroundColor: Colors.grey.shade700,
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  tapTargetSize: MaterialTapTargetSize.shrinkWrap)),
+            ])),
+          Container(
+            constraints: const BoxConstraints(maxHeight: 220),
+            child: Scrollbar(
+              child: ListView.builder(
+                shrinkWrap: true,
+                padding: const EdgeInsets.fromLTRB(14, 0, 14, 10),
+                itemCount: detalhes.where((d) => d['status'] != 'sucesso').take(20).length,
+                itemBuilder: (_, i) {
+                  final d = detalhes.where((d) => d['status'] != 'sucesso').take(20).toList()[i];
+                  final st = d['status'] as String? ?? '';
+                  final corD = st == 'erro' ? _primary : Colors.orange.shade700;
+                  return Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 2),
+                    child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                      Icon(st == 'erro' ? Icons.cancel : Icons.info_outline,
+                        size: 13, color: corD),
+                      const SizedBox(width: 6),
+                      Text('Linha ${d['linha']}: ',
+                        style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: corD)),
+                      Expanded(child: SelectableText(d['mensagem']?.toString() ?? '',
+                        style: TextStyle(fontSize: 11, color: corD))),
+                    ]),
+                  );
+                },
+              ),
+            ),
+          ),
+        ],
+      ]),
+    );
+  }
+
+  Widget _chip(String label, int valor, Color cor) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      decoration: BoxDecoration(
+        color: cor.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: cor.withValues(alpha: 0.3))),
+      child: Row(mainAxisSize: MainAxisSize.min, children: [
+        Text('$valor', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: cor)),
+        const SizedBox(width: 5),
+        Text(label, style: TextStyle(fontSize: 11, color: cor)),
+      ]),
+    );
   }
 }
 
