@@ -92,6 +92,10 @@ class FieldConfigWindows {
   final String fieldName;
   final bool isFilterable;
   final bool isInForm;
+  /// H12: quando false, o campo não aparece como coluna na grid,
+  /// mas continua disponível no formulário (diferente de isVisibleByDefault
+  /// que só oculta por padrão e pode ser reativado pelo usuário).
+  final bool isInGrid;
   final int flex;
   final int maxLines;
   final IconData? icon;
@@ -117,6 +121,7 @@ class FieldConfigWindows {
     required this.fieldName,
     this.isFilterable = true,
     this.isInForm = true,
+    this.isInGrid = true,
     this.flex = 1,
     this.maxLines = 1,
     this.icon,
@@ -1537,7 +1542,9 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
     _paginatorController = PaginatorController();
 
     for (final config in widget.FieldConfigWindowss) {
-      _columnVisibility[config.fieldName] = config.isVisibleByDefault;
+      // H12: campos com isInGrid=false nunca ficam visíveis na grid
+      _columnVisibility[config.fieldName] =
+          config.isInGrid && config.isVisibleByDefault;
     }
 
     for (final config
@@ -2826,7 +2833,7 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
     final columns = <DataColumn>[];
 
     for (final config in widget.FieldConfigWindowss.where(
-      (c) => _columnVisibility[c.fieldName] == true,
+      (c) => c.isInGrid && _columnVisibility[c.fieldName] == true,
     )) {
       columns.add(
         DataColumn(
@@ -2892,7 +2899,7 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
     final cells = <DataCell>[];
 
     for (final config in widget.FieldConfigWindowss.where(
-      (c) => _columnVisibility[c.fieldName] == true,
+      (c) => c.isInGrid && _columnVisibility[c.fieldName] == true,
     )) {
       if (config.fieldType == FieldType.file) {
         final fileData = _extractFileData(itemMap, config);

@@ -78,6 +78,7 @@ class MenuConfig {
       items: [
         MenuItem(id: 'nfe_entrada',        label: 'NF-e Entrada',         icon: FontAwesomeIcons.fileImport,      screenIndex: 47),
         MenuItem(id: 'nfe_finalidade',     label: 'NF-e Finalidade',      icon: FontAwesomeIcons.fileCircleCheck, screenIndex: 54),
+        MenuItem(id: 'nfe_import_csv',     label: 'Importar NF-e CSV',    icon: FontAwesomeIcons.fileCsv,         screenIndex: 71),
         MenuItem(id: 'nfe_saida',          label: 'NF-e Saída',           icon: FontAwesomeIcons.fileExport,      screenIndex: 48),
         MenuItem(id: 'nfe_serie',          label: 'NF-e Série',           icon: FontAwesomeIcons.hashtag,         screenIndex: 55),
         MenuItem(id: 'nfe_tipo_operacao',  label: 'NF-e Tipo Operação',   icon: FontAwesomeIcons.arrowsLeftRight, screenIndex: 56),

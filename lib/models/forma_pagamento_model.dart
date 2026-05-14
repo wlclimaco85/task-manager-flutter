@@ -3,6 +3,7 @@ import 'package:intl/intl.dart';
 import '../../../models/network_response.dart';
 import '../../services/network_caller.dart';
 import '../../../utils/api_links.dart';
+import '../../../utils/tenant_context.dart';
 
 import '../customization/generic_grid_card.dart';
 import 'audit_model.dart'; // importe seu Audit aqui
@@ -54,8 +55,9 @@ class FormaPagamento {
 
   /// Método estático para carregar todas as formas de pagamento
   static Future<List<Map<String, dynamic>>> loadFormasPagamento() async {
+    // FP3: aplica TenantContext para filtrar por empresa/parceiro do usuário logado
     final NetworkResponse response = await NetworkCaller().getRequest(
-      ApiLinks.allFormasPagamento,
+      TenantContext.applyToUrl(ApiLinks.allFormasPagamento),
     );
 
     if (response.isSuccess && response.body != null) {

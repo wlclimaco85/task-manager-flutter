@@ -6,6 +6,27 @@ Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.0.0/).
 
 ## [Unreleased]
 
+## [Sprint 2] — 2026-05-14
+
+### Adicionado
+
+- **NfeImportScreen** (`lib/web/screens/nfe_import_screen.dart`): tela de importacao CSV de NF-e integrada ao endpoint `POST /api/nfe/importar-csv`.
+- **ProdutoDetalhesDialog** (`lib/widgets/produto_detalhes_dialog.dart`): dialog com detalhes de produto incluindo custo e estoque minimo.
+- **ProdutoSaidasChartDialog** (`lib/widgets/produto_saidas_chart_dialog.dart`): dialog com grafico de saidas mensais do produto.
+- **produto_grid_screen.dart**: 2 CustomActions — "Detalhes" e "Saidas Mensais" — consumindo os novos endpoints do backend.
+- **generic_grid_windows_screen.dart**: campo `isInGrid` em `FieldConfigWindows` para controle de visibilidade de colunas.
+- **conta_pagar_grid_screen.dart** e **conta_receber_grid_screen.dart**: campo parceiro com `isInGrid: false` (sem coluna na grade).
+
+### Corrigido
+
+- **conta_bancaria_model.dart**: null-guard para campo `empresa` em `Empresa.fromJson`.
+- **forma_pagamento_model.dart**: usa `TenantContext.applyToUrl` para filtro por empresa.
+- **ged_arquivos_screen.dart**: `initState` pre-filtra por empresa/parceiro do `TenantContext`.
+- **funcionario_grid_screen.dart**: campos `empresa` e `parceiroContratante` configurados como `disabled` (pre-preenchidos pelo `TenantContext`).
+- **ponto_screen.dart**: busca funcionario via `GET /api/funcionario/por-login` em vez de listagem completa.
+
+---
+
 ## [1.2.0] — 2026-05-13
 
 ### Adicionado

@@ -20,11 +20,11 @@ class WebContaReceberGridScreen extends StatelessWidget {
       createEndpointOverride: ApiLinks.createContaReceber,
       updateEndpointOverride: ApiLinks.updateContaReceber(':id'),
       deleteEndpointOverride: ApiLinks.deleteContaReceber(':id'),
-      // H12: ocultar coluna parceiro da grid CR
+      // H12: ocultar coluna parceiro da grid CR mas manter no form
       fieldOverrides: const [
-        FieldConfigWindows(fieldName: 'parceiro',    label: '', isInForm: false, isVisibleByDefault: false, enabled: false),
-        FieldConfigWindows(fieldName: 'parceiroDev', label: '', isInForm: false, isVisibleByDefault: false, enabled: false),
-        FieldConfigWindows(fieldName: 'parceiroRec', label: '', isInForm: false, isVisibleByDefault: false, enabled: false),
+        FieldConfigWindows(fieldName: 'parceiro',    label: 'Parceiro',     isInForm: true, isInGrid: false, isVisibleByDefault: false),
+        FieldConfigWindows(fieldName: 'parceiroDev', label: 'Parceiro Dev', isInForm: true, isInGrid: false, isVisibleByDefault: false),
+        FieldConfigWindows(fieldName: 'parceiroRec', label: 'Parceiro Rec', isInForm: true, isInGrid: false, isVisibleByDefault: false),
       ],
       customActions: () => [
         CustomAction<Map<String, dynamic>>(

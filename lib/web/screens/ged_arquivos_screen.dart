@@ -11,6 +11,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../models/auth_utility.dart';
 import '../../../utils/api_links.dart';
+import '../../../utils/tenant_context.dart';
 import '../../services/network_caller.dart';
 import '../../../widgets/generic_grid_windows_screen.dart' show GridColors;
 
@@ -55,6 +56,19 @@ class _GedArquivosScreenState extends State<GedArquivosScreen> {
     super.initState();
     _carregarEmpresas();
     _carregarDiretorios();
+    // H5: pre-filtrar pela empresa/parceiro do TenantContext após os carregamentos
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (TenantContext.hasEmpresa) {
+        setState(() { _empresaFiltroId = TenantContext.empresaId; });
+        _carregarParceiros(TenantContext.empresaId!);
+      }
+      if (TenantContext.hasParceiro) {
+        setState(() { _parceiroFiltroId = TenantContext.parceiroId; });
+      }
+      if (TenantContext.hasEmpresa || TenantContext.hasParceiro) {
+        _buscarArquivos();
+      }
+    });
   }
 
   @override

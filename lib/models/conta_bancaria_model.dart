@@ -33,7 +33,7 @@ class ContaBancaria {
       numero: json['numero'],
       descricao: json['descricao'],
       saldoAtual: (json['saldoAtual'] ?? 0).toDouble(),
-      empresa: Empresa.fromJson(json['empresa']),
+      empresa: json['empresa'] != null ? Empresa.fromJson(json['empresa']) : Empresa(),
       parceiro: json['parceiroId'] ?? 1,
       ativo: json['ativo'] ?? true,
     );

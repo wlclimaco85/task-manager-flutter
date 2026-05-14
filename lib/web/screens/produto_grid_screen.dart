@@ -5,6 +5,8 @@ import '../../../models/auth_utility.dart';
 import '../../../utils/api_links.dart';
 import '../../../widgets/generic_grid_windows_screen.dart'
     show FieldConfigWindows, FieldType, CustomAction;
+import '../../../widgets/produto_detalhes_dialog.dart';
+import '../../../widgets/produto_saidas_chart_dialog.dart';
 
 class WebProdutoGridScreen extends StatelessWidget {
   final SecurityCheck hasPermission;
@@ -67,8 +69,26 @@ class WebProdutoGridScreen extends StatelessWidget {
       fromJson: (json) => json,
       toJson: (a) => a,
       fieldOverrides: fieldOverrides.isNotEmpty ? fieldOverrides : null,
-      // H4: ações de excluir na grid de produto
+      // H4: ações na grid de produto
       customActions: () => [
+        CustomAction<Map<String, dynamic>>(
+          icon: Icons.info_outline,
+          label: 'Detalhes',
+          onPressed: (ctx, item) => showDialog(
+            context: ctx,
+            builder: (_) => ProdutoDetalhesDialog(produto: item),
+          ),
+          isVisible: (_) => true,
+        ),
+        CustomAction<Map<String, dynamic>>(
+          icon: Icons.bar_chart,
+          label: 'Saídas Mensais',
+          onPressed: (ctx, item) => showDialog(
+            context: ctx,
+            builder: (_) => ProdutoSaidasChartDialog(produto: item),
+          ),
+          isVisible: (_) => true,
+        ),
         CustomAction<Map<String, dynamic>>(
           icon: Icons.delete_outline,
           label: 'Excluir',

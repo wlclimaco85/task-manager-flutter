@@ -79,6 +79,7 @@ import '../../web/screens/chatMessageListScreen.dart';
 import '../../web/screens/system_test_screen.dart';
 import '../../web/screens/cadastro_empresa_wizard.dart';
 import '../../web/screens/alvara_grid_screen.dart';
+import '../../web/screens/nfe_import_screen.dart';
 
 class WindowsBottomNavBarScreen extends StatefulWidget {
   const WindowsBottomNavBarScreen({super.key});
@@ -202,6 +203,7 @@ class _WindowsBottomNavBarScreenState extends State<WindowsBottomNavBarScreen> {
         WebServicoContratadoGridScreen(hasPermission: (perm) => true), // 68
         WebModuloServicoGridScreen(hasPermission: (perm) => true), // 69
         WebAlvaraGridScreen(hasPermission: (perm) => true), // 70
+        const NfeImportScreen(),                             // 71
       ];
 
   String get userName {

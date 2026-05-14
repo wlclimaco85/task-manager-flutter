@@ -20,11 +20,11 @@ class WebContaPagarGridScreen extends StatelessWidget {
       createEndpointOverride: ApiLinks.createContaPagar,
       updateEndpointOverride: ApiLinks.updateContaPagar(':id'),
       deleteEndpointOverride: ApiLinks.deleteContaPagar(':id'),
-      // H12: ocultar coluna parceiro da grid CP
+      // H12: ocultar coluna parceiro da grid CP mas manter no form
       fieldOverrides: const [
-        FieldConfigWindows(fieldName: 'parceiro',    label: '', isInForm: false, isVisibleByDefault: false, enabled: false),
-        FieldConfigWindows(fieldName: 'parceiroDev', label: '', isInForm: false, isVisibleByDefault: false, enabled: false),
-        FieldConfigWindows(fieldName: 'parceiroRec', label: '', isInForm: false, isVisibleByDefault: false, enabled: false),
+        FieldConfigWindows(fieldName: 'parceiro',    label: 'Parceiro',     isInForm: true, isInGrid: false, isVisibleByDefault: false),
+        FieldConfigWindows(fieldName: 'parceiroDev', label: 'Parceiro Dev', isInForm: true, isInGrid: false, isVisibleByDefault: false),
+        FieldConfigWindows(fieldName: 'parceiroRec', label: 'Parceiro Rec', isInForm: true, isInGrid: false, isVisibleByDefault: false),
       ],
       customActions: () => [
         CustomAction<Map<String, dynamic>>(
