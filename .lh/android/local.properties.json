@@ -1,0 +1,22 @@
+{
+    "sourceFile": "android/local.properties",
+    "activeCommit": 0,
+    "commits": [
+        {
+            "activePatchIndex": 1,
+            "patches": [
+                {
+                    "date": 1760456997654,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n"
+                },
+                {
+                    "date": 1760464582785,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -1,5 +1,5 @@\n sdk.dir=C:\\\\AndroidSDK\n flutter.sdk=C:\\\\flutter\n flutter.buildMode=release\n-flutter.versionName=1.0.0\n-flutter.versionCode=1\n\\ No newline at end of file\n+flutter.versionName=1.0.1\n+flutter.versionCode=1.0.1\n\\ No newline at end of file\n"
+                }
+            ],
+            "date": 1760456997654,
+            "name": "Commit-0",
+            "content": "sdk.dir=C:\\\\AndroidSDK\nflutter.sdk=C:\\\\flutter\nflutter.buildMode=release\nflutter.versionName=1.0.0\nflutter.versionCode=1"
+        }
+    ]
+}

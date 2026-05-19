@@ -1,0 +1,22 @@
+{
+    "sourceFile": "android/app/src/main/res/xml/network_security_config.xml",
+    "activeCommit": 0,
+    "commits": [
+        {
+            "activePatchIndex": 1,
+            "patches": [
+                {
+                    "date": 1760538479294,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n"
+                },
+                {
+                    "date": 1760707151997,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -1,6 +1,21 @@\n <?xml version=\"1.0\" encoding=\"utf-8\"?>\r\n <network-security-config>\r\n-    <domain-config cleartextTrafficPermitted=\"true\">\r\n+    <!-- Configuração padrão: apenas tráfego HTTPS/WSS permitido -->\r\n+    <base-config cleartextTrafficPermitted=\"false\">\r\n+        <trust-anchors>\r\n\\ No newline at end of file\n+            <!-- Usa certificados do sistema Android -->\r\n+            <certificates src=\"system\" />\r\n+        </trust-anchors>\r\n+    </base-config>\r\n+\r\n+    <!-- Libera acesso seguro ao seu backend e WebSocket (Railway) -->\r\n+    <domain-config cleartextTrafficPermitted=\"false\">\r\n+        <!-- Domínio principal do backend -->\r\n         <domain includeSubdomains=\"true\">appacademia-production-be7e.up.railway.app</domain>\r\n+\r\n+        <!-- Permite conexões WSS (WebSocket Secure) -->\r\n+        <trust-anchors>\r\n+            <certificates src=\"system\" />\r\n+        </trust-anchors>\r\n     </domain-config>\r\n-</network-security-config>\n+</network-security-config>\r\n"
+                }
+            ],
+            "date": 1760538479294,
+            "name": "Commit-0",
+            "content": "<?xml version=\"1.0\" encoding=\"utf-8\"?>\r\n<network-security-config>\r\n    <domain-config cleartextTrafficPermitted=\"true\">\r\n        <domain includeSubdomains=\"true\">appacademia-production-be7e.up.railway.app</domain>\r\n    </domain-config>\r\n</network-security-config>"
+        }
+    ]
+}

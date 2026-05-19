@@ -1,0 +1,46 @@
+{
+    "sourceFile": "lib/data/services/vendas_caller.dart",
+    "activeCommit": 0,
+    "commits": [
+        {
+            "activePatchIndex": 7,
+            "patches": [
+                {
+                    "date": 1734354746647,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n"
+                },
+                {
+                    "date": 1734355757019,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -1,6 +1,6 @@\n import 'dart:convert';\r\n-import 'package:task_manager_flutter/data/models/cotacao_model.dart';\r\n+import 'package:task_manager_flutter/data/models/venda_model.dart';\r\n import 'package:task_manager_flutter/data/utils/api_links.dart';\r\n import 'package:task_manager_flutter/data/models/network_response.dart';\r\n import 'package:task_manager_flutter/data/services/network_caller.dart';\r\n \r\n"
+                },
+                {
+                    "date": 1734356027939,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -4,20 +4,20 @@\n import 'package:task_manager_flutter/data/models/network_response.dart';\r\n import 'package:task_manager_flutter/data/services/network_caller.dart';\r\n \r\n class VendasCaller {\r\n-  Future<List<Cotacao>> fetchCotacoes() async {\r\n-    List<Cotacao>? model = [];\r\n-    CotacaoModel models;\r\n+  Future<List<Produto>> fetchCotacoes() async {\r\n+    List<Produto>? model = [];\r\n+    ProdutoModel models;\r\n     try {\r\n       final NetworkResponse response =\r\n           await NetworkCaller().getRequest(ApiLinks.allCotacoes);\r\n       String jsonString;\r\n \r\n       if (response.statusCode == 200 && response.body != null) {\r\n         jsonString = json.encode(response.body);\r\n-        models = CotacaoModel.fromJson(response.body!);\r\n-        model.addAll(models.data ?? []);\r\n+        models = ProdutoModel.fromJson(response.body!);\r\n+        model.addAll(models.produtos ?? []);\r\n \r\n         // if (model != null && model.data != null) {\r\n         //   newsList.addAll(model.data!);\r\n         // }\r\n"
+                },
+                {
+                    "date": 1734357035012,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -9,9 +9,9 @@\n     List<Produto>? model = [];\r\n     ProdutoModel models;\r\n     try {\r\n       final NetworkResponse response =\r\n-          await NetworkCaller().getRequest(ApiLinks.allCotacoes);\r\n+          await NetworkCaller().getRequest(ApiLinks.allVendas);\r\n       String jsonString;\r\n \r\n       if (response.statusCode == 200 && response.body != null) {\r\n         jsonString = json.encode(response.body);\r\n"
+                },
+                {
+                    "date": 1734378642106,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -13,8 +13,9 @@\n           await NetworkCaller().getRequest(ApiLinks.allVendas);\r\n       String jsonString;\r\n \r\n       if (response.statusCode == 200 && response.body != null) {\r\n+        \r\n         jsonString = json.encode(response.body);\r\n         models = ProdutoModel.fromJson(response.body!);\r\n         model.addAll(models.produtos ?? []);\r\n \r\n"
+                },
+                {
+                    "date": 1734463642216,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -30,5 +30,6 @@\n       throw Exception('Erro ao carregar cotações: $e');\r\n     }\r\n     return model;\r\n   }\r\n+  \r\n }\r\n"
+                },
+                {
+                    "date": 1734541433106,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -30,5 +30,32 @@\n       throw Exception('Erro ao carregar cotações: $e');\r\n     }\r\n     return model;\r\n   }\r\n+\r\n+  Future<List<Classificacao>> fetchClassificacao() async {\r\n+    List<Classificacao>? model = [];\r\n+    ClassificacaoModel models;\r\n+    try {\r\n+      final NetworkResponse response =\r\n+          await NetworkCaller().getRequest(ApiLinks.allClassificacao);\r\n+      String jsonString;\r\n+\r\n+      if (response.statusCode == 200 && response.body != null) {\r\n+        jsonString = json.encode(response.body);\r\n+        models = ClassificacaoModel.fromJson(response.body!);\r\n+        model.addAll(models.classificacao ?? []);\r\n+\r\n+        // if (model != null && model.data != null) {\r\n+        //   newsList.addAll(model.data!);\r\n+        // }\r\n+        // Use jsonString conforme necessário\r\n+      } else {\r\n+        // Trate o caso onde o data é nulo\r\n+      }\r\n+    } catch (e) {\r\n+      print('Erro: $e'); // Log do erro\r\n+      throw Exception('Erro ao carregar cotações: $e');\r\n+    }\r\n+    return model;\r\n+  }\r\n }\r\n"
+                },
+                {
+                    "date": 1734542999462,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -32,19 +32,19 @@\n     return model;\r\n   }\r\n \r\n   Future<List<Classificacao>> fetchClassificacao() async {\r\n-    List<Classificacao>? model = [];\r\n-    ClassificacaoModel models;\r\n+    List<Account>? model = [];\r\n+    ClassificacaoResponse models;\r\n     try {\r\n       final NetworkResponse response =\r\n           await NetworkCaller().getRequest(ApiLinks.allClassificacao);\r\n       String jsonString;\r\n \r\n       if (response.statusCode == 200 && response.body != null) {\r\n         jsonString = json.encode(response.body);\r\n-        models = ClassificacaoModel.fromJson(response.body!);\r\n-        model.addAll(models.classificacao ?? []);\r\n+        models = ClassificacaoResponse.fromJson(response.body!);\r\n+        model.addAll(models.Account ?? []);\r\n \r\n         // if (model != null && model.data != null) {\r\n         //   newsList.addAll(model.data!);\r\n         // }\r\n"
+                }
+            ],
+            "date": 1734354746647,
+            "name": "Commit-0",
+            "content": "import 'dart:convert';\r\nimport 'package:task_manager_flutter/data/models/cotacao_model.dart';\r\nimport 'package:task_manager_flutter/data/utils/api_links.dart';\r\nimport 'package:task_manager_flutter/data/models/network_response.dart';\r\nimport 'package:task_manager_flutter/data/services/network_caller.dart';\r\n\r\nclass VendasCaller {\r\n  Future<List<Cotacao>> fetchCotacoes() async {\r\n    List<Cotacao>? model = [];\r\n    CotacaoModel models;\r\n    try {\r\n      final NetworkResponse response =\r\n          await NetworkCaller().getRequest(ApiLinks.allCotacoes);\r\n      String jsonString;\r\n\r\n      if (response.statusCode == 200 && response.body != null) {\r\n        jsonString = json.encode(response.body);\r\n        models = CotacaoModel.fromJson(response.body!);\r\n        model.addAll(models.data ?? []);\r\n\r\n        // if (model != null && model.data != null) {\r\n        //   newsList.addAll(model.data!);\r\n        // }\r\n        // Use jsonString conforme necessário\r\n      } else {\r\n        // Trate o caso onde o data é nulo\r\n      }\r\n    } catch (e) {\r\n      print('Erro: $e'); // Log do erro\r\n      throw Exception('Erro ao carregar cotações: $e');\r\n    }\r\n    return model;\r\n  }\r\n}\r\n"
+        }
+    ]
+}

@@ -1,0 +1,63 @@
+[1mdiff --cc lib/ui/screens/dieta_add.dart[m
+[1mindex e12196c,d949bc8..0000000[m
+[1m--- a/lib/ui/screens/dieta_add.dart[m
+[1m+++ b/lib/ui/screens/dieta_add.dart[m
+[36m@@@ -235,10 -231,10 +235,17 @@@[m [mclass _DietaModalAddState extends State[m
+                      controller: _descricaoController,[m
+                      onPressed: (vale) => _onUpdate(0, "descricao", vale),[m
+                    ),[m
+[32m++<<<<<<< HEAD[m
+[32m +                  DatePickerExample(labels: "Data Consulta"),[m
+[32m +                  DatePickerExample(labels: "Data Ini dieta"),[m
+[32m +                  DatePickerExample(labels: "Data Fim dieta"),[m
+[32m +                  CustomDietaBoxForm(dataArray: _dataArrayMain),[m
+[32m++=======[m
+[32m+                   DatePickerExample(labels: "Data"),[m
+[32m+                 //  DatePickerExample(labels: "Data Ini dieta"),[m
+[32m+                //   DatePickerExample(labels: "Data Fim dieta"),[m
+[32m+                   const CustomDietaBoxForm(),[m
+[32m++>>>>>>> 9b735aa89bcba0e01ebefb5db433f3bfeceb73d9[m
+                  ],[m
+                ),[m
+              ),[m
+[1mdiff --cc lib/ui/widgets/custom_dieta_box_form.dart[m
+[1mindex a135a37,c9251f3..0000000[m
+[1m--- a/lib/ui/widgets/custom_dieta_box_form.dart[m
+[1m+++ b/lib/ui/widgets/custom_dieta_box_form.dart[m
+[36m@@@ -148,9 -141,7 +148,13 @@@[m [mclass _CustomDietaBoxForm extends State[m
+                selected([m
+                    key, "Titulo Plano", null, TextInputType.text, 'diaAtene'),[m
+                const SelectedFormRefeicao(),[m
+[32m++<<<<<<< HEAD[m
+[32m +              buildItens(context),[m
+[32m +              //CustomComboBoxDietaitensForm([m
+[32m +              //  parentId: key, dataArray: _dataArrayMain),[m
+[32m++=======[m
+[32m+               const CustomComboBoxDietaitensForm(),[m
+[32m++>>>>>>> 9b735aa89bcba0e01ebefb5db433f3bfeceb73d9[m
+              ],[m
+            ),[m
+          ),[m
+[1mdiff --cc lib/ui/widgets/custom_dieta_box_itens_form.dart[m
+[1mindex 46d4fa4,9369348..0000000[m
+[1m--- a/lib/ui/widgets/custom_dieta_box_itens_form.dart[m
+[1m+++ b/lib/ui/widgets/custom_dieta_box_itens_form.dart[m
+[36m@@@ -182,12 -126,9 +182,18 @@@[m [mclass _CustomComboBoxDietaitensFor[m
+            child: Column([m
+              mainAxisAlignment: MainAxisAlignment.center,[m
+              children: <Widget>[[m
+[32m++<<<<<<< HEAD[m
+[32m +              imput(key, "Refeição", null, TextInputType.text, 'nome'),[m
+[32m +              imput([m
+[32m +                  key, "Quantidade", null, TextInputType.number, 'quantidade'),[m
+[32m +              //const SelectedFormUniMed(),[m
+[32m +              selected([m
+[32m +                  key, "Unidade Medida", null, TextInputType.text, 'diaAtene'),[m
+[32m++=======[m
+[32m+               imput(key, "Refeição", null, TextInputType.text, 'refeicao'),[m
+[32m+               imput(key, "Quantidade", null, TextInputType.number, 'qtdAula'),[m
+[32m+               const SelectedFormUniMed(),[m
+[32m++>>>>>>> 9b735aa89bcba0e01ebefb5db433f3bfeceb73d9[m
+              ],[m
+            ),[m
+          ),[m

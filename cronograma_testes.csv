@@ -1,0 +1,54 @@
+Módulo,Tela / Arquivo,Listar (GET),Insert (POST),Update (PUT),Delete (DELETE),Observações
+Autenticação,login_screen.dart,N/A,✅ POST /rest/auth/login,N/A,N/A,Apenas login
+Autenticação,splash_screens.dart,N/A,N/A,N/A,N/A,Apenas navegação
+Autenticação,ForgotPasswordScreen_screens.dart,N/A,✅ POST RecoverVerifyEmail,N/A,N/A,Recuperação de senha
+Autenticação,SignUpScreen_screens.dart,N/A,✅ POST inserirAluno,N/A,N/A,Cadastro de aluno
+Financeiro,conta_pagar_grid_screen.dart,✅ GET /api/contas-pagar,✅ POST /api/contas-pagar,✅ PUT /api/contas-pagar/{id},✅ DELETE /api/contas-pagar/{id},Inclui baixa e desfazer baixa
+Financeiro,conta_receber_grid_screen.dart,✅ GET /api/contas-receber,✅ POST /api/contas-receber,✅ PUT /api/contas-receber/{id},✅ DELETE /api/contas-receber/{id},Inclui baixa e desfazer baixa
+Financeiro,conta_bancaria_grid_screen.dart,✅ GET /api/contas-bancaria/saldos,✅ POST /api/contas-bancaria,✅ PUT /api/contas-bancaria/{id},✅ DELETE /api/contas-bancaria/{id},Saldos e movimentações
+Cadastros,parceiro_grid_screen.dart,✅ GET /api/parceiro,✅ POST /api/parceiro/insert,✅ PUT /api/parceiro/update/{id},✅ DELETE /api/parceiro/delete/{id},CRUD completo
+Cadastros,parceiro_edit_screen.dart,N/A,N/A,✅ PUT /api/parceiro/update/{id},N/A,Formulário de edição
+Cadastros,empresa_edit_screen.dart,✅ GET /api/empresa,✅ POST /api/empresa/insert,✅ PUT /api/empresa/update/{id},✅ DELETE /api/empresa/delete/{id},CRUD completo
+Cadastros,user_edit_screen.dart,✅ GET /api/logins,✅ POST /api/logins,✅ PUT /api/logins/{id},✅ DELETE /api/logins/{id},Gestão de usuários
+Cadastros,dados_pessoais_edit_screen.dart,N/A,N/A,✅ PUT /api/dadospessoais/{id},N/A,Atualização de dados pessoais
+Suporte,chamado_grid_screen.dart,✅ GET /api/chamados,✅ POST /api/chamados,✅ PUT /api/chamados/{id},✅ DELETE /api/chamados/{id},Inclui update de status
+Comunicação,comunicado_screen.dart,✅ GET /api/comunicados,✅ POST /api/comunicados/insert,✅ PUT /api/comunicados/update/{id},✅ DELETE /api/comunicados/delete/{id},CRUD completo
+Comunicação,chatMessageListScreen.dart,✅ GET /api/chat/user,N/A,N/A,N/A,Apenas listagem
+Comunicação,chatMenssageScreen.dart,✅ GET /api/chat/messages,N/A,N/A,N/A,Apenas listagem (WebSocket)
+GED / Documentos,file_upload_screen.dart,✅ GET /api/arquivos,✅ POST /api/arquivos/upload,✅ PUT /api/arquivos/{id},✅ DELETE /api/arquivos/{id},Upload e gestão de arquivos
+GED / Documentos,documento_screen.dart,✅ GET /api/documentos,N/A,N/A,N/A,Apenas listagem
+Dashboard,dashboard_screen.dart,✅ GET /api/dashboard/finance/series,N/A,N/A,N/A,Apenas listagem
+Dashboard,dashboard_kpis_screen.dart,✅ GET /api/dashboard/kpis,N/A,N/A,N/A,Apenas listagem
+Dashboard,dashboard_alerts_screen.dart,✅ GET /api/dashboard/finance/alerts/overdue,N/A,N/A,N/A,Apenas listagem
+Dashboard,dashboard_quarterly_screen.dart,✅ GET /api/dashboard/finance/quarterlyComparison,N/A,N/A,N/A,Apenas listagem
+Dashboard,dashboard_finance_trend_screen.dart,✅ GET /api/dashboard/finance/trend,N/A,N/A,N/A,Apenas listagem
+Dashboard,dashboard_finance_fluxo_diario_screen.dart,✅ GET /api/dashboard/finance/fluxo-diario,N/A,N/A,N/A,Apenas listagem
+Dashboard,dashboard_tickets_trend_screen.dart,✅ GET /api/dashboard/tickets/trend,N/A,N/A,N/A,Apenas listagem
+Dashboard,dashboard_client_distribution_screen.dart,✅ GET /api/dashboard/finance/clientDistribution,N/A,N/A,N/A,Apenas listagem
+Dashboard,dashboard_contas_balances_screen.dart,✅ GET /api/contas/saldos,N/A,N/A,N/A,Apenas listagem
+Dashboard,dashboard_conta_evolucao_screen.dart,✅ GET /api/contas/{id}/evolucao,N/A,N/A,N/A,Apenas listagem
+Academia,academia_screen.dart,✅ GET /academia/findAll,N/A,N/A,N/A,Apenas listagem
+Academia,dieta_screen.dart,✅ GET /api/dietas,✅ POST /api/dietas/insert,✅ PUT /api/dietas/update/{id},✅ DELETE /api/dietas/delete/{id},CRUD completo
+Academia,dieta_list.dart,✅ GET /api/dietas,N/A,N/A,N/A,Apenas listagem
+Academia,dieta_add.dart,N/A,✅ POST /api/dietas/insert,N/A,N/A,Apenas inserção
+Academia,exames_screen.dart,✅ GET /api/exames,✅ POST /api/exames/insert,✅ PUT /api/exames/update/{id},✅ DELETE /api/exames/delete/{id},CRUD completo
+Academia,exames_list.dart,✅ GET /api/exames,N/A,N/A,N/A,Apenas listagem
+Academia,exames_add.dart,N/A,✅ POST /api/exames/insert,N/A,N/A,Apenas inserção
+Academia,medicamento_screen.dart,✅ GET /api/medicamentos,✅ POST /api/medicamentos/insert,✅ PUT /api/medicamentos/update/{id},✅ DELETE /api/medicamentos/delete/{id},CRUD completo
+Academia,medicamento_list.dart,✅ GET /api/medicamentos,N/A,N/A,N/A,Apenas listagem
+Academia,medicamento_add.dart,N/A,✅ POST /api/medicamentos/insert,N/A,N/A,Apenas inserção
+Academia,suplemento_screen.dart,✅ GET /api/suplementos,✅ POST /api/suplementos/insert,✅ PUT /api/suplementos/update/{id},✅ DELETE /api/suplementos/delete/{id},CRUD completo
+Academia,suplemento_list.dart,✅ GET /api/suplementos,N/A,N/A,N/A,Apenas listagem
+Academia,suplemento_add.dart,N/A,✅ POST /api/suplementos/insert,N/A,N/A,Apenas inserção
+Academia,personal_screen.dart,✅ GET /api/personais,✅ POST /api/personais/insert,✅ PUT /api/personais/update/{id},✅ DELETE /api/personais/delete/{id},CRUD completo
+RH,ponto_screen.dart,✅ GET /api/pontos/listar,✅ POST /api/pontos/registrar,N/A,N/A,Registro e listagem de ponto
+Vendas,vendas_screen.dart,✅ GET /api/produtos,✅ POST /api/produtos,N/A,N/A,Listagem e inserção
+Vendas,carrinho_vendas_screen.dart,✅ GET /api/produtos/vendedor/{id},N/A,N/A,N/A,Apenas listagem
+Vendas,carrinho_compras_screen.dart,✅ GET /api/produtos/comprador/{id},N/A,N/A,N/A,Apenas listagem
+Vendas,negociacao_screen.dart,✅ GET /api/negociacao,✅ POST /api/negociacao,N/A,N/A,Negociação entre parceiros
+Vendas,checkoutScreen.dart,N/A,✅ POST /api/negociacao/finalizar,N/A,N/A,Finalização de compra
+Notícias,noticias_screen.dart,✅ GET /api/noticias,N/A,N/A,N/A,Apenas listagem
+Notícias,newsDetailScreen.dart,N/A,N/A,N/A,N/A,Detalhe da notícia (local)
+Calendário,task_screen.dart,✅ GET listTaskByStatus,✅ POST createTask,✅ PUT updateTaskStatus,✅ DELETE deleteTask,CRUD de tarefas
+Calendário,table_calendar_base.dart,N/A,N/A,N/A,N/A,Componente base de calendário
+Perfil,update_profile.dart,N/A,N/A,✅ PUT profileUpdate,N/A,Atualização de perfil

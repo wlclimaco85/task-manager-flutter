@@ -1,6 +1,5 @@
-package com.example.task_manager_flutter
+package br.com.abracocontabilidade.app
 
 import io.flutter.embedding.android.FlutterActivity
 
-class MainActivity: FlutterActivity() {
-}
+class MainActivity : FlutterActivity()

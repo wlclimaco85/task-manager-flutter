@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<network-security-config>
+    <!-- Configuração padrão: apenas tráfego HTTPS/WSS permitido -->
+    <base-config cleartextTrafficPermitted="false">
+        <trust-anchors>
+            <!-- Usa certificados do sistema Android -->
+            <certificates src="system" />
+        </trust-anchors>
+    </base-config>
+
+    <!-- Libera acesso seguro ao seu backend e WebSocket (Railway) -->
+    <domain-config cleartextTrafficPermitted="false">
+        <!-- Domínio principal do backend -->
+        <domain includeSubdomains="true">appacademia-production-be7e.up.railway.app</domain>
+
+        <!-- Permite conexões WSS (WebSocket Secure) -->
+        <trust-anchors>
+            <certificates src="system" />
+        </trust-anchors>
+    </domain-config>
+
+    <!-- Permite HTTP para IPs locais do servidor -->
+    <domain-config cleartextTrafficPermitted="true">
+        <!-- Emulador Android → host da máquina -->
+        <domain includeSubdomains="false">10.0.2.2</domain>
+        <!-- IP local da rede (desenvolvimento) -->
+        <domain includeSubdomains="false">192.168.56.1</domain>
+        <domain includeSubdomains="false">192.168.1.1</domain>
+        <domain includeSubdomains="false">192.168.100.41</domain>
+        <domain includeSubdomains="false">localhost</domain>
+        <trust-anchors>
+            <certificates src="system" />
+        </trust-anchors>
+    </domain-config>
+</network-security-config>

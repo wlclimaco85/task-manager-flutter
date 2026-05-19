@@ -1,0 +1,18 @@
+{
+    "sourceFile": "lib/data/utils/auth_service.dart",
+    "activeCommit": 0,
+    "commits": [
+        {
+            "activePatchIndex": 0,
+            "patches": [
+                {
+                    "date": 1760904429238,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n"
+                }
+            ],
+            "date": 1760904429238,
+            "name": "Commit-0",
+            "content": "import 'package:flutter/material.dart';\r\nimport 'grid_colors.dart';\r\nimport 'package:shared_preferences/shared_preferences.dart';\r\n\r\nclass AuthService {\r\n  static const _tokenKey = 'auth_token';\r\n  static const _permissionsKey = 'user_permissions';\r\n\r\n  /// 🔑 Retorna o token JWT salvo localmente\r\n  Future<String?> getToken() async {\r\n    final prefs = await SharedPreferences.getInstance();\r\n    return prefs.getString(_tokenKey);\r\n  }\r\n\r\n  /// 💾 Salva o token JWT\r\n  Future<void> saveToken(String token) async {\r\n    final prefs = await SharedPreferences.getInstance();\r\n    await prefs.setString(_tokenKey, token);\r\n  }\r\n\r\n  /// ❌ Remove o token (logout)\r\n  Future<void> clearToken() async {\r\n    final prefs = await SharedPreferences.getInstance();\r\n    await prefs.remove(_tokenKey);\r\n  }\r\n\r\n  /// 📋 Headers para chamadas autenticadas JSON (NetworkCaller)\r\n  Future<Map<String, String>> jsonHeaders() async {\r\n    final token = await getToken();\r\n    return {\r\n      'Content-Type': 'application/json',\r\n      if (token != null && token.isNotEmpty) 'Authorization': 'Bearer $token',\r\n    };\r\n  }\r\n\r\n  /// 📦 Headers para uploads multipart (usado em authHeadersProvider)\r\n  Future<Map<String, String>> authHeaders() async {\r\n    final token = await getToken();\r\n    return {\r\n      if (token != null && token.isNotEmpty) 'Authorization': 'Bearer $token',\r\n    };\r\n  }\r\n\r\n  /// 🔐 Verifica se o usuário tem uma permissão específica\r\n  Future<bool> hasPermission(String permission) async {\r\n    final prefs = await SharedPreferences.getInstance();\r\n    final raw = prefs.getStringList(_permissionsKey);\r\n    if (raw == null) return false;\r\n    return raw.contains(permission);\r\n  }\r\n\r\n  /// 🔄 Atualiza a lista de permissões (ex.: após login)\r\n  Future<void> savePermissions(List<String> permissions) async {\r\n    final prefs = await SharedPreferences.getInstance();\r\n    await prefs.setStringList(_permissionsKey, permissions);\r\n  }\r\n}\r\n"
+        }
+    ]
+}

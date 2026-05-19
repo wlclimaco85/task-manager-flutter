@@ -1,0 +1,18 @@
+{
+    "sourceFile": "lib/ui/widgets/calendar_page.dart",
+    "activeCommit": 0,
+    "commits": [
+        {
+            "activePatchIndex": 0,
+            "patches": [
+                {
+                    "date": 1733243862182,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n"
+                }
+            ],
+            "date": 1733243862182,
+            "name": "Commit-0",
+            "content": "// Copyright 2019 Aleksander Woźniak\r\n// SPDX-License-Identifier: Apache-2.0\r\n\r\nimport 'package:flutter/widgets.dart';\r\n\r\nclass CalendarPage extends StatelessWidget {\r\n  final Widget Function(BuildContext context, DateTime day)? dowBuilder;\r\n  final Widget Function(BuildContext context, DateTime day) dayBuilder;\r\n  final Widget Function(BuildContext context, DateTime day)? weekNumberBuilder;\r\n  final List<DateTime> visibleDays;\r\n  final Decoration? dowDecoration;\r\n  final Decoration? rowDecoration;\r\n  final TableBorder? tableBorder;\r\n  final EdgeInsets? tablePadding;\r\n  final bool dowVisible;\r\n  final bool weekNumberVisible;\r\n  final double? dowHeight;\r\n\r\n  const CalendarPage({\r\n    super.key,\r\n    required this.visibleDays,\r\n    this.dowBuilder,\r\n    required this.dayBuilder,\r\n    this.weekNumberBuilder,\r\n    this.dowDecoration,\r\n    this.rowDecoration,\r\n    this.tableBorder,\r\n    this.tablePadding,\r\n    this.dowVisible = true,\r\n    this.weekNumberVisible = false,\r\n    this.dowHeight,\r\n  })  : assert(!dowVisible || (dowHeight != null && dowBuilder != null)),\r\n        assert(!weekNumberVisible || weekNumberBuilder != null);\r\n\r\n  @override\r\n  Widget build(BuildContext context) {\r\n    return Padding(\r\n      padding: tablePadding ?? EdgeInsets.zero,\r\n      child: Row(\r\n        crossAxisAlignment: CrossAxisAlignment.stretch,\r\n        children: [\r\n          if (weekNumberVisible) _buildWeekNumbers(context),\r\n          Expanded(\r\n            child: Table(\r\n              border: tableBorder,\r\n              children: [\r\n                if (dowVisible) _buildDaysOfWeek(context),\r\n                ..._buildCalendarDays(context),\r\n              ],\r\n            ),\r\n          ),\r\n        ],\r\n      ),\r\n    );\r\n  }\r\n\r\n  Widget _buildWeekNumbers(BuildContext context) {\r\n    final rowAmount = visibleDays.length ~/ 7;\r\n\r\n    return Column(\r\n      children: [\r\n        if (dowVisible) SizedBox(height: dowHeight ?? 0),\r\n        ...List.generate(rowAmount, (index) => index * 7)\r\n            .map((index) => Expanded(\r\n                  child: weekNumberBuilder!(context, visibleDays[index]),\r\n                ))\r\n            \r\n      ],\r\n    );\r\n  }\r\n\r\n  TableRow _buildDaysOfWeek(BuildContext context) {\r\n    return TableRow(\r\n      decoration: dowDecoration,\r\n      children: List.generate(\r\n        7,\r\n        (index) => dowBuilder!(context, visibleDays[index]),\r\n      ).toList(),\r\n    );\r\n  }\r\n\r\n  List<TableRow> _buildCalendarDays(BuildContext context) {\r\n    final rowAmount = visibleDays.length ~/ 7;\r\n\r\n    return List.generate(rowAmount, (index) => index * 7)\r\n        .map((index) => TableRow(\r\n              decoration: rowDecoration,\r\n              children: List.generate(\r\n                7,\r\n                (id) => dayBuilder(context, visibleDays[index + id]),\r\n              ),\r\n            ))\r\n        .toList();\r\n  }\r\n}\r\n"
+        }
+    ]
+}

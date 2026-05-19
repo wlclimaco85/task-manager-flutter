@@ -1,0 +1,18 @@
+{
+    "sourceFile": "lib/ui/widgets/screen_background.dart",
+    "activeCommit": 0,
+    "commits": [
+        {
+            "activePatchIndex": 0,
+            "patches": [
+                {
+                    "date": 1733243862178,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n"
+                }
+            ],
+            "date": 1733243862178,
+            "name": "Commit-0",
+            "content": "// ignore_for_file: public_member_api_docs, sort_constructors_first\r\nimport 'package:flutter/material.dart';\r\nimport 'package:flutter_svg/svg.dart';\r\nimport 'package:task_manager_flutter/ui/utils/assets_utils.dart';\r\n\r\nclass ScreenBackground extends StatelessWidget {\r\n  final Widget child;\r\n  const ScreenBackground({\r\n    super.key,\r\n    required this.child,\r\n  });\r\n\r\n  @override\r\n  Widget build(BuildContext context) {\r\n    return Stack(\r\n      children: [\r\n        SizedBox(\r\n          height: double.infinity,\r\n          width: double.infinity,\r\n          child: SvgPicture.asset(\r\n            AssetsUtils.backgroundSVG,\r\n            fit: BoxFit.cover,\r\n          ),\r\n        ),\r\n        SafeArea(child: child),\r\n      ],\r\n    );\r\n  }\r\n}\r\n"
+        }
+    ]
+}

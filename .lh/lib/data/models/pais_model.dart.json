@@ -1,0 +1,18 @@
+{
+    "sourceFile": "lib/data/models/pais_model.dart",
+    "activeCommit": 0,
+    "commits": [
+        {
+            "activePatchIndex": 0,
+            "patches": [
+                {
+                    "date": 1762898568651,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n"
+                }
+            ],
+            "date": 1762898568651,
+            "name": "Commit-0",
+            "content": "class PaisModel {\r\n  int? id;\r\n  String? nome;\r\n  String? nomePt;\r\n  String? iso2;\r\n  String? iso3;\r\n  int? bacen;\r\n\r\n  PaisModel({\r\n    this.id,\r\n    this.nome,\r\n    this.nomePt,\r\n    this.iso2,\r\n    this.iso3,\r\n    this.bacen,\r\n  });\r\n\r\n  factory PaisModel.fromJson(Map<String, dynamic> json) {\r\n    return PaisModel(\r\n      id: json['id'] is int ? json['id'] : int.tryParse(json['id'].toString()),\r\n      nome: json['nome'],\r\n      nomePt: json['nomePt'],\r\n      iso2: json['iso2'],\r\n      iso3: json['iso3'],\r\n      bacen: json['bacen'] is int\r\n          ? json['bacen']\r\n          : int.tryParse(json['bacen']?.toString() ?? ''),\r\n    );\r\n  }\r\n\r\n  Map<String, dynamic> toJson() {\r\n    return {\r\n      'id': id,\r\n      'nome': nome,\r\n      'nomePt': nomePt,\r\n      'iso2': iso2,\r\n      'iso3': iso3,\r\n      'bacen': bacen,\r\n    };\r\n  }\r\n\r\n  @override\r\n  String toString() => nome ?? '-';\r\n}\r\n"
+        }
+    ]
+}

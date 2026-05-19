@@ -1,0 +1,26 @@
+{
+    "sourceFile": "lib/main.dart",
+    "activeCommit": 0,
+    "commits": [
+        {
+            "activePatchIndex": 2,
+            "patches": [
+                {
+                    "date": 1759326464965,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n"
+                },
+                {
+                    "date": 1759326595433,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -1,40 +1,6 @@\n import 'package:flutter/material.dart';\r\n import 'package:task_manager_flutter/app.dart';\r\n \r\n-import 'package:flutter/material.dart';\r\n-import 'package:task_manager_flutter/ui/screens/auth_screens/login_screen.dart';\r\n-import 'package:task_manager_flutter/ui/screens/bottom_navbar_screen.dart';\r\n-\r\n void main() {\r\n   runApp(const TaskManagerApp());\r\n }\r\n-\r\n-class MyApp extends StatelessWidget {\r\n-  @override\r\n-  Widget build(BuildContext context) {\r\n-    return MaterialApp(\r\n-      title: 'Task Manager',\r\n-      theme: ThemeData(\r\n-          // seu tema aqui\r\n-          ),\r\n-      home: SplashScreen(), // sua tela inicial\r\n-      routes: {\r\n-        '/login': (context) => LoginScreen(),\r\n-        '/home': (context) => BottomNavBarScreen(),\r\n-      },\r\n-      onUnknownRoute: (settings) {\r\n-        return MaterialPageRoute(\r\n-          builder: (context) => Scaffold(\r\n-            body: Center(\r\n-              child: Text('Rota não encontrada: ${settings.name}'),\r\n-            ),\r\n-          ),\r\n-        );\r\n-      },\r\n-    );\r\n-  }\r\n-}\r\n-\r\n-void main() {\r\n-  runApp(const TaskManagerApp());\r\n-}\r\n"
+                },
+                {
+                    "date": 1760908290403,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -1,6 +1,8 @@\n import 'package:flutter/material.dart';\r\n import 'package:task_manager_flutter/app.dart';\r\n+import 'package:task_manager_flutter/data/utils/app_logger.dart';\r\n \r\n void main() {\r\n+  AppLogger.init();\r\n   runApp(const TaskManagerApp());\r\n }\r\n"
+                }
+            ],
+            "date": 1759326464965,
+            "name": "Commit-0",
+            "content": "import 'package:flutter/material.dart';\r\nimport 'package:task_manager_flutter/app.dart';\r\n\r\nimport 'package:flutter/material.dart';\r\nimport 'package:task_manager_flutter/ui/screens/auth_screens/login_screen.dart';\r\nimport 'package:task_manager_flutter/ui/screens/bottom_navbar_screen.dart';\r\n\r\nvoid main() {\r\n  runApp(const TaskManagerApp());\r\n}\r\n\r\nclass MyApp extends StatelessWidget {\r\n  @override\r\n  Widget build(BuildContext context) {\r\n    return MaterialApp(\r\n      title: 'Task Manager',\r\n      theme: ThemeData(\r\n        // seu tema aqui\r\n      ),\r\n      home: SplashScreen(), // sua tela inicial\r\n      routes: {\r\n        '/login': (context) => LoginScreen(),\r\n        '/home': (context) => BottomNavBarScreen(),\r\n      },\r\n      onUnknownRoute: (settings) {\r\n        return MaterialPageRoute(\r\n          builder: (context) => Scaffold(\r\n            body: Center(\r\n              child: Text('Rota não encontrada: ${settings.name}'),\r\n            ),\r\n          ),\r\n        );\r\n      },\r\n    );\r\n  }\r\n}\r\nvoid main() {\r\n  runApp(const TaskManagerApp());\r\n}\r\n"
+        }
+    ]
+}

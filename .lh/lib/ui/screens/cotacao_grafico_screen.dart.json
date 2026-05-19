@@ -1,0 +1,74 @@
+{
+    "sourceFile": "lib/ui/screens/cotacao_grafico_screen.dart",
+    "activeCommit": 0,
+    "commits": [
+        {
+            "activePatchIndex": 14,
+            "patches": [
+                {
+                    "date": 1729010590408,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n"
+                },
+                {
+                    "date": 1729010625352,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -11,8 +11,9 @@\n import 'package:task_manager_flutter/data/models/auth_utility.dart';\r\n import '../../data/models/login_model.dart';\r\n import 'package:flutter/material.dart';\r\n import 'package:fl_chart/fl_chart.dart';\r\n+import 'package:task_manager_flutter/data/models/cotacao_model.dart';\r\n \r\n class CotacaoScreen extends StatefulWidget {\r\n   @override\r\n   _CotacaoScreenState createState() => _CotacaoScreenState();\r\n"
+                },
+                {
+                    "date": 1729010658024,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -12,8 +12,9 @@\n import '../../data/models/login_model.dart';\r\n import 'package:flutter/material.dart';\r\n import 'package:fl_chart/fl_chart.dart';\r\n import 'package:task_manager_flutter/data/models/cotacao_model.dart';\r\n+import 'package:task_manager_flutter/data/services/cotacao_caller.dart';\r\n \r\n class CotacaoScreen extends StatefulWidget {\r\n   @override\r\n   _CotacaoScreenState createState() => _CotacaoScreenState();\r\n"
+                },
+                {
+                    "date": 1729010796122,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -26,9 +26,9 @@\n \r\n   @override\r\n   void initState() {\r\n     super.initState();\r\n-    fetchCotacoes().then((data) {\r\n+    CotacaoCaller.fetchCotacoes().then((data) {\r\n       setState(() {\r\n         cotacoes = data;\r\n         isLoading = false;\r\n       });\r\n"
+                },
+                {
+                    "date": 1729017502891,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -63,9 +63,11 @@\n                         borderData: FlBorderData(show: true),\r\n                         minX: 0,\r\n                         maxX: cotacoes.length.toDouble() - 1,\r\n                         minY: 0,\r\n-                        maxY: cotacoes.map((c) => c.valor!).reduce((a, b) => a > b ? a : b),\r\n+                        maxY: cotacoes\r\n+                            .map((c) => c.valor!)\r\n+                            .reduce((a, b) => a > b ? a : b),\r\n                         lineBarsData: [\r\n                           LineChartBarData(\r\n                             spots: cotacoes.asMap().entries.map((entry) {\r\n                               int index = entry.key;\r\n@@ -85,5 +87,5 @@\n               ),\r\n             ),\r\n     );\r\n   }\r\n-}\n\\ No newline at end of file\n+}\r\n"
+                },
+                {
+                    "date": 1729018607190,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -26,9 +26,9 @@\n \r\n   @override\r\n   void initState() {\r\n     super.initState();\r\n-    CotacaoCaller.fetchCotacoes().then((data) {\r\n+    CotacaoCaller().fetchCotacoes().then((data) {\r\n       setState(() {\r\n         cotacoes = data;\r\n         isLoading = false;\r\n       });\r\n"
+                },
+                {
+                    "date": 1729018835494,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -1,17 +1,5 @@\n import 'package:flutter/material.dart';\r\n-import 'package:task_manager_flutter/data/utils/api_links.dart';\r\n-import 'package:task_manager_flutter/ui/widgets/user_banners.dart';\r\n-import 'package:task_manager_flutter/ui/screens/update_profile.dart';\r\n-import 'package:task_manager_flutter/ui/widgets/home_list_model.dart';\r\n-import 'package:task_manager_flutter/data/models/network_response.dart';\r\n-import 'package:task_manager_flutter/data/services/network_caller.dart';\r\n-import 'package:task_manager_flutter/ui/widgets/input_field_busca.dart';\r\n-import 'package:task_manager_flutter/ui/screens/exames_add.dart';\r\n-import 'package:task_manager_flutter/ui/screens/exames_list.dart';\r\n-import 'package:task_manager_flutter/data/models/auth_utility.dart';\r\n-import '../../data/models/login_model.dart';\r\n-import 'package:flutter/material.dart';\r\n import 'package:fl_chart/fl_chart.dart';\r\n import 'package:task_manager_flutter/data/models/cotacao_model.dart';\r\n import 'package:task_manager_flutter/data/services/cotacao_caller.dart';\r\n \r\n"
+                },
+                {
+                    "date": 1729018855316,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -34,9 +34,9 @@\n           : Padding(\r\n               padding: const EdgeInsets.all(16.0),\r\n               child: Column(\r\n                 children: [\r\n-                  Text(\r\n+                 const Text(\r\n                     'Cotações de Ações',\r\n                     style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),\r\n                   ),\r\n                   SizedBox(height: 20),\r\n"
+                },
+                {
+                    "date": 1729026883870,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -8,9 +8,9 @@\n   _CotacaoScreenState createState() => _CotacaoScreenState();\r\n }\r\n \r\n class _CotacaoScreenState extends State<CotacaoScreen> {\r\n-  List<CotacaoDTO> cotacoes = [];\r\n+  List<Cotacao> cotacoes = [];\r\n   bool isLoading = true;\r\n \r\n   @override\r\n   void initState() {\r\n@@ -58,9 +58,9 @@\n                         lineBarsData: [\r\n                           LineChartBarData(\r\n                             spots: cotacoes.asMap().entries.map((entry) {\r\n                               int index = entry.key;\r\n-                              CotacaoDTO cotacao = entry.value;\r\n+                              Cotacao cotacao = entry.value;\r\n                               return FlSpot(index.toDouble(), cotacao.valor!);\r\n                             }).toList(),\r\n                             isCurved: true,\r\n                             colors: [Colors.blue],\r\n"
+                },
+                {
+                    "date": 1729027618456,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -34,9 +34,9 @@\n           : Padding(\r\n               padding: const EdgeInsets.all(16.0),\r\n               child: Column(\r\n                 children: [\r\n-                 const Text(\r\n+                  const Text(\r\n                     'Cotações de Ações',\r\n                     style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),\r\n                   ),\r\n                   SizedBox(height: 20),\r\n"
+                },
+                {
+                    "date": 1729028570167,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -26,8 +26,22 @@\n   @override\r\n   Widget build(BuildContext context) {\r\n     return Scaffold(\r\n       appBar: AppBar(\r\n+        title: const Text('Gráfico de Cotações'),\r\n+      ),\r\n+      body: Padding(\r\n+        padding: const EdgeInsets.all(16.0),\r\n+        child: CotacaoChart(cotacoes: cotacoes),\r\n+      ),\r\n+    );\r\n+  }\r\n+\r\n+/*\r\n+  @override\r\n+  Widget build(BuildContext context) {\r\n+    return Scaffold(\r\n+      appBar: AppBar(\r\n         title: Text('Cotações'),\r\n       ),\r\n       body: isLoading\r\n           ? Center(child: CircularProgressIndicator())\r\n@@ -74,6 +88,6 @@\n                 ],\r\n               ),\r\n             ),\r\n     );\r\n-  }\r\n+  } */\r\n }\r\n"
+                },
+                {
+                    "date": 1729028620677,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -1,8 +1,9 @@\n import 'package:flutter/material.dart';\r\n import 'package:fl_chart/fl_chart.dart';\r\n import 'package:task_manager_flutter/data/models/cotacao_model.dart';\r\n import 'package:task_manager_flutter/data/services/cotacao_caller.dart';\r\n+import 'package:task_manager_flutter/data/models/grafico_pilha.dart';\r\n \r\n class CotacaoScreen extends StatefulWidget {\r\n   @override\r\n   _CotacaoScreenState createState() => _CotacaoScreenState();\r\n"
+                },
+                {
+                    "date": 1729028655190,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -29,9 +29,11 @@\n     return Scaffold(\r\n       appBar: AppBar(\r\n         title: const Text('Gráfico de Cotações'),\r\n       ),\r\n-      body: Padding(\r\n+      body: isLoading\r\n+          ? Center(child: CircularProgressIndicator())\r\n+          : Padding(\r\n         padding: const EdgeInsets.all(16.0),\r\n         child: CotacaoChart(cotacoes: cotacoes),\r\n       ),\r\n     );\r\n"
+                },
+                {
+                    "date": 1729028660613,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -30,9 +30,9 @@\n       appBar: AppBar(\r\n         title: const Text('Gráfico de Cotações'),\r\n       ),\r\n       body: isLoading\r\n-          ? Center(child: CircularProgressIndicator())\r\n+          ? const Center(child: CircularProgressIndicator())\r\n           : Padding(\r\n               padding: const EdgeInsets.all(16.0),\r\n               child: CotacaoChart(cotacoes: cotacoes),\r\n             ),\r\n"
+                },
+                {
+                    "date": 1729032817660,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -1,9 +1,9 @@\n import 'package:flutter/material.dart';\r\n import 'package:fl_chart/fl_chart.dart';\r\n import 'package:task_manager_flutter/data/models/cotacao_model.dart';\r\n import 'package:task_manager_flutter/data/services/cotacao_caller.dart';\r\n-import 'package:task_manager_flutter/data/models/grafico_pilha.dart';\r\n+import 'package:task_manager_flutter/data/models/grafico_LineChartData.dart';\r\n \r\n class CotacaoScreen extends StatefulWidget {\r\n   @override\r\n   _CotacaoScreenState createState() => _CotacaoScreenState();\r\n"
+                }
+            ],
+            "date": 1729010590408,
+            "name": "Commit-0",
+            "content": "import 'package:flutter/material.dart';\r\nimport 'package:task_manager_flutter/data/utils/api_links.dart';\r\nimport 'package:task_manager_flutter/ui/widgets/user_banners.dart';\r\nimport 'package:task_manager_flutter/ui/screens/update_profile.dart';\r\nimport 'package:task_manager_flutter/ui/widgets/home_list_model.dart';\r\nimport 'package:task_manager_flutter/data/models/network_response.dart';\r\nimport 'package:task_manager_flutter/data/services/network_caller.dart';\r\nimport 'package:task_manager_flutter/ui/widgets/input_field_busca.dart';\r\nimport 'package:task_manager_flutter/ui/screens/exames_add.dart';\r\nimport 'package:task_manager_flutter/ui/screens/exames_list.dart';\r\nimport 'package:task_manager_flutter/data/models/auth_utility.dart';\r\nimport '../../data/models/login_model.dart';\r\nimport 'package:flutter/material.dart';\r\nimport 'package:fl_chart/fl_chart.dart';\r\n\r\nclass CotacaoScreen extends StatefulWidget {\r\n  @override\r\n  _CotacaoScreenState createState() => _CotacaoScreenState();\r\n}\r\n\r\nclass _CotacaoScreenState extends State<CotacaoScreen> {\r\n  List<CotacaoDTO> cotacoes = [];\r\n  bool isLoading = true;\r\n\r\n  @override\r\n  void initState() {\r\n    super.initState();\r\n    fetchCotacoes().then((data) {\r\n      setState(() {\r\n        cotacoes = data;\r\n        isLoading = false;\r\n      });\r\n    });\r\n  }\r\n\r\n  @override\r\n  Widget build(BuildContext context) {\r\n    return Scaffold(\r\n      appBar: AppBar(\r\n        title: Text('Cotações'),\r\n      ),\r\n      body: isLoading\r\n          ? Center(child: CircularProgressIndicator())\r\n          : Padding(\r\n              padding: const EdgeInsets.all(16.0),\r\n              child: Column(\r\n                children: [\r\n                  Text(\r\n                    'Cotações de Ações',\r\n                    style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),\r\n                  ),\r\n                  SizedBox(height: 20),\r\n                  Expanded(\r\n                    child: LineChart(\r\n                      LineChartData(\r\n                        gridData: FlGridData(show: false),\r\n                        titlesData: FlTitlesData(\r\n                          leftTitles: SideTitles(showTitles: true),\r\n                          bottomTitles: SideTitles(showTitles: true),\r\n                        ),\r\n                        borderData: FlBorderData(show: true),\r\n                        minX: 0,\r\n                        maxX: cotacoes.length.toDouble() - 1,\r\n                        minY: 0,\r\n                        maxY: cotacoes.map((c) => c.valor!).reduce((a, b) => a > b ? a : b),\r\n                        lineBarsData: [\r\n                          LineChartBarData(\r\n                            spots: cotacoes.asMap().entries.map((entry) {\r\n                              int index = entry.key;\r\n                              CotacaoDTO cotacao = entry.value;\r\n                              return FlSpot(index.toDouble(), cotacao.valor!);\r\n                            }).toList(),\r\n                            isCurved: true,\r\n                            colors: [Colors.blue],\r\n                            dotData: FlDotData(show: true),\r\n                            belowBarData: BarAreaData(show: false),\r\n                          ),\r\n                        ],\r\n                      ),\r\n                    ),\r\n                  ),\r\n                ],\r\n              ),\r\n            ),\r\n    );\r\n  }\r\n}"
+        }
+    ]
+}

@@ -1,0 +1,22 @@
+{
+    "sourceFile": "lib/data/models/setor_model.dart",
+    "activeCommit": 0,
+    "commits": [
+        {
+            "activePatchIndex": 1,
+            "patches": [
+                {
+                    "date": 1758829683387,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n"
+                },
+                {
+                    "date": 1758914184913,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -1,6 +1,5 @@\n import 'package:flutter/material.dart';\r\n-\r\n import '../customization/generic_grid_card.dart';\r\n \r\n class Setor {\r\n   int? id;\r\n"
+                }
+            ],
+            "date": 1758829683387,
+            "name": "Commit-0",
+            "content": "import 'package:flutter/material.dart';\r\n\r\nimport '../customization/generic_grid_card.dart';\r\n\r\nclass Setor {\r\n  int? id;\r\n  String? nome;\r\n\r\n  Setor({this.id, this.nome});\r\n\r\n  Setor.fromJson(Map<String, dynamic> json) {\r\n    id = json['id'];\r\n    nome = json['nome'];\r\n  }\r\n\r\n  Map<String, dynamic> toJson() {\r\n    return {'id': id, 'nome': nome};\r\n  }\r\n\r\n  static List<FieldConfig> fieldConfigs = [\r\n    FieldConfig(\r\n      label: \"Nome\",\r\n      fieldName: \"nome\",\r\n      icon: Icons.apartment,\r\n      isInForm: true,\r\n      isFilterable: true,\r\n    ),\r\n  ];\r\n}\r\n"
+        }
+    ]
+}

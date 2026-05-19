@@ -1,0 +1,94 @@
+{
+    "sourceFile": "android/app/build.gradle.kts",
+    "activeCommit": 0,
+    "commits": [
+        {
+            "activePatchIndex": 19,
+            "patches": [
+                {
+                    "date": 1760102152131,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n"
+                },
+                {
+                    "date": 1760102157416,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -36,9 +36,9 @@\n             // Signing with the debug keys for now, so `flutter run --release` works.\r\n             signingConfig = signingConfigs.getByName(\"debug\")\r\n         }\r\n     }\r\n-     signingConfigs {\r\n+    signingConfigs {\r\n         release {\r\n             storeFile file(\"jks.jks\")\r\n             storePassword \"123Mudar\\$\"\r\n             keyAlias \"key0\"\r\n"
+                },
+                {
+                    "date": 1760102335562,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -37,13 +37,13 @@\n             signingConfig = signingConfigs.getByName(\"debug\")\r\n         }\r\n     }\r\n     signingConfigs {\r\n-        release {\r\n-            storeFile file(\"jks.jks\")\r\n-            storePassword \"123Mudar\\$\"\r\n-            keyAlias \"key0\"\r\n-            keyPassword \"123Mudar\\$\"\r\n+        create(\"release\") {\r\n+            storeFile = file(\"jks.jks\")\r\n+            storePassword = \"123Mudar$\"\r\n+            keyAlias = \"key0\"\r\n+            keyPassword = \"123Mudar$\"\r\n         }\r\n     }\r\n }\r\n \r\n"
+                },
+                {
+                    "date": 1760102694970,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -29,24 +29,28 @@\n         versionCode = flutter.versionCode\r\n         versionName = flutter.versionName\r\n     }\r\n \r\n-    buildTypes {\r\n-        release {\r\n-            // TODO: Add your own signing config for the release build.\r\n-            // Signing with the debug keys for now, so `flutter run --release` works.\r\n-            signingConfig = signingConfigs.getByName(\"debug\")\r\n-        }\r\n-    }\r\n     signingConfigs {\r\n-        create(\"release\") {\r\n-            storeFile = file(\"jks.jks\")\r\n-            storePassword = \"123Mudar$\"\r\n-            keyAlias = \"key0\"\r\n-            keyPassword = \"123Mudar$\"\r\n-        }\r\n+    create(\"release\") {\r\n+        storeFile = file(\"jks.jks\")\r\n+        storePassword = \"123Mudar$\"\r\n+        keyAlias = \"key0\"\r\n+        keyPassword = \"123Mudar$\"\r\n     }\r\n }\r\n \r\n+buildTypes {\r\n+    getByName(\"release\") {\r\n+        signingConfig = signingConfigs.getByName(\"release\")\r\n+        isMinifyEnabled = false\r\n+        isShrinkResources = false\r\n+    }\r\n+    getByName(\"debug\") {\r\n+        signingConfig = signingConfigs.getByName(\"release\")\r\n+    }\r\n+}\r\n+}\r\n+\r\n flutter {\r\n     source = \"../..\"\r\n }\r\n"
+                },
+                {
+                    "date": 1760102715758,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -36,10 +36,10 @@\n         storePassword = \"123Mudar$\"\r\n         keyAlias = \"key0\"\r\n         keyPassword = \"123Mudar$\"\r\n     }\r\n-}\r\n \r\n+\r\n buildTypes {\r\n     getByName(\"release\") {\r\n         signingConfig = signingConfigs.getByName(\"release\")\r\n         isMinifyEnabled = false\r\n"
+                },
+                {
+                    "date": 1760102727605,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -30,27 +30,27 @@\n         versionName = flutter.versionName\r\n     }\r\n \r\n     signingConfigs {\r\n-    create(\"release\") {\r\n-        storeFile = file(\"jks.jks\")\r\n-        storePassword = \"123Mudar$\"\r\n-        keyAlias = \"key0\"\r\n-        keyPassword = \"123Mudar$\"\r\n+        create(\"release\") {\r\n+            storeFile = file(\"jks.jks\")\r\n+            storePassword = \"123Mudar$\"\r\n+            keyAlias = \"key0\"\r\n+            keyPassword = \"123Mudar$\"\r\n+        }\r\n     }\r\n \r\n-\r\n-buildTypes {\r\n-    getByName(\"release\") {\r\n-        signingConfig = signingConfigs.getByName(\"release\")\r\n-        isMinifyEnabled = false\r\n-        isShrinkResources = false\r\n+    buildTypes {\r\n+        getByName(\"release\") {\r\n+            signingConfig = signingConfigs.getByName(\"release\")\r\n+            isMinifyEnabled = false\r\n+            isShrinkResources = false\r\n+        }\r\n+        getByName(\"debug\") {\r\n+            signingConfig = signingConfigs.getByName(\"release\")\r\n+        }\r\n     }\r\n-    getByName(\"debug\") {\r\n-        signingConfig = signingConfigs.getByName(\"release\")\r\n-    }\r\n }\r\n-}\r\n \r\n flutter {\r\n     source = \"../..\"\r\n }\r\n"
+                },
+                {
+                    "date": 1760465016325,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -25,10 +25,10 @@\n         // You can update the following values to match your application needs.\r\n         // For more information, see: https://flutter.dev/to/review-gradle-config.\r\n         minSdk = flutter.minSdkVersion\r\n         targetSdk = flutter.targetSdkVersion\r\n-        versionCode = flutter.versionCode\r\n-        versionName = flutter.versionName\r\n+        versionCode = 1.0.1.toInt()\r\n+        versionName = 1.0.1.toString()\r\n     }\r\n \r\n     signingConfigs {\r\n         create(\"release\") {\r\n"
+                },
+                {
+                    "date": 1760465046592,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -25,10 +25,10 @@\n         // You can update the following values to match your application needs.\r\n         // For more information, see: https://flutter.dev/to/review-gradle-config.\r\n         minSdk = flutter.minSdkVersion\r\n         targetSdk = flutter.targetSdkVersion\r\n-        versionCode = 1.0.1.toInt()\r\n-        versionName = 1.0.1.toString()\r\n+        versionCode = 1.0.1\r\n+        versionName = 1.0.1\r\n     }\r\n \r\n     signingConfigs {\r\n         create(\"release\") {\r\n"
+                },
+                {
+                    "date": 1760465074501,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -25,10 +25,10 @@\n         // You can update the following values to match your application needs.\r\n         // For more information, see: https://flutter.dev/to/review-gradle-config.\r\n         minSdk = flutter.minSdkVersion\r\n         targetSdk = flutter.targetSdkVersion\r\n-        versionCode = 1.0.1\r\n-        versionName = 1.0.1\r\n+        versionCode = 1.0.1;\r\n+        versionName = 1.0.1;\r\n     }\r\n \r\n     signingConfigs {\r\n         create(\"release\") {\r\n"
+                },
+                {
+                    "date": 1760465104599,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -25,10 +25,10 @@\n         // You can update the following values to match your application needs.\r\n         // For more information, see: https://flutter.dev/to/review-gradle-config.\r\n         minSdk = flutter.minSdkVersion\r\n         targetSdk = flutter.targetSdkVersion\r\n-        versionCode = 1.0.1;\r\n-        versionName = 1.0.1;\r\n+        versionCode = 1.01\r\n+        versionName = 1.0.1\r\n     }\r\n \r\n     signingConfigs {\r\n         create(\"release\") {\r\n"
+                },
+                {
+                    "date": 1760465122249,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -25,9 +25,9 @@\n         // You can update the following values to match your application needs.\r\n         // For more information, see: https://flutter.dev/to/review-gradle-config.\r\n         minSdk = flutter.minSdkVersion\r\n         targetSdk = flutter.targetSdkVersion\r\n-        versionCode = 1.01\r\n+        versionCode = 2\r\n         versionName = 1.0.1\r\n     }\r\n \r\n     signingConfigs {\r\n"
+                },
+                {
+                    "date": 1760465142329,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -26,9 +26,9 @@\n         // For more information, see: https://flutter.dev/to/review-gradle-config.\r\n         minSdk = flutter.minSdkVersion\r\n         targetSdk = flutter.targetSdkVersion\r\n         versionCode = 2\r\n-        versionName = 1.0.1\r\n+        versionName = 2\r\n     }\r\n \r\n     signingConfigs {\r\n         create(\"release\") {\r\n"
+                },
+                {
+                    "date": 1760465162486,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -26,9 +26,9 @@\n         // For more information, see: https://flutter.dev/to/review-gradle-config.\r\n         minSdk = flutter.minSdkVersion\r\n         targetSdk = flutter.targetSdkVersion\r\n         versionCode = 2\r\n-        versionName = 2\r\n+        versionName = \"1.0.1\"\r\n     }\r\n \r\n     signingConfigs {\r\n         create(\"release\") {\r\n"
+                },
+                {
+                    "date": 1760533767973,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -25,10 +25,10 @@\n         // You can update the following values to match your application needs.\r\n         // For more information, see: https://flutter.dev/to/review-gradle-config.\r\n         minSdk = flutter.minSdkVersion\r\n         targetSdk = flutter.targetSdkVersion\r\n-        versionCode = 2\r\n-        versionName = \"1.0.1\"\r\n+        versionCode = 3\r\n+        versionName = \"1.0.2\"\r\n     }\r\n \r\n     signingConfigs {\r\n         create(\"release\") {\r\n"
+                },
+                {
+                    "date": 1760642913231,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -25,10 +25,10 @@\n         // You can update the following values to match your application needs.\r\n         // For more information, see: https://flutter.dev/to/review-gradle-config.\r\n         minSdk = flutter.minSdkVersion\r\n         targetSdk = flutter.targetSdkVersion\r\n-        versionCode = 3\r\n-        versionName = \"1.0.2\"\r\n+        versionCode = 4\r\n+        versionName = \"1.0.4\"\r\n     }\r\n \r\n     signingConfigs {\r\n         create(\"release\") {\r\n"
+                },
+                {
+                    "date": 1760708142811,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -25,10 +25,10 @@\n         // You can update the following values to match your application needs.\r\n         // For more information, see: https://flutter.dev/to/review-gradle-config.\r\n         minSdk = flutter.minSdkVersion\r\n         targetSdk = flutter.targetSdkVersion\r\n-        versionCode = 4\r\n-        versionName = \"1.0.4\"\r\n+        versionCode = 5\r\n+        versionName = \"1.0.5\"\r\n     }\r\n \r\n     signingConfigs {\r\n         create(\"release\") {\r\n"
+                },
+                {
+                    "date": 1760745780950,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -25,10 +25,10 @@\n         // You can update the following values to match your application needs.\r\n         // For more information, see: https://flutter.dev/to/review-gradle-config.\r\n         minSdk = flutter.minSdkVersion\r\n         targetSdk = flutter.targetSdkVersion\r\n-        versionCode = 5\r\n-        versionName = \"1.0.5\"\r\n+        versionCode = 6\r\n+        versionName = \"1.0.6\"\r\n     }\r\n \r\n     signingConfigs {\r\n         create(\"release\") {\r\n"
+                },
+                {
+                    "date": 1760831493266,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -25,10 +25,10 @@\n         // You can update the following values to match your application needs.\r\n         // For more information, see: https://flutter.dev/to/review-gradle-config.\r\n         minSdk = flutter.minSdkVersion\r\n         targetSdk = flutter.targetSdkVersion\r\n-        versionCode = 6\r\n-        versionName = \"1.0.6\"\r\n+        versionCode = 7\r\n+        versionName = \"1.0.7\"\r\n     }\r\n \r\n     signingConfigs {\r\n         create(\"release\") {\r\n"
+                },
+                {
+                    "date": 1761951114216,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -25,10 +25,10 @@\n         // You can update the following values to match your application needs.\r\n         // For more information, see: https://flutter.dev/to/review-gradle-config.\r\n         minSdk = flutter.minSdkVersion\r\n         targetSdk = flutter.targetSdkVersion\r\n-        versionCode = 7\r\n-        versionName = \"1.0.7\"\r\n+        versionCode = 8\r\n+        versionName = \"1.0.8\"\r\n     }\r\n \r\n     signingConfigs {\r\n         create(\"release\") {\r\n"
+                },
+                {
+                    "date": 1764192090902,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -25,10 +25,10 @@\n         // You can update the following values to match your application needs.\r\n         // For more information, see: https://flutter.dev/to/review-gradle-config.\r\n         minSdk = flutter.minSdkVersion\r\n         targetSdk = flutter.targetSdkVersion\r\n-        versionCode = 8\r\n-        versionName = \"1.0.8\"\r\n+        versionCode = 9\r\n+        versionName = \"1.0.9\"\r\n     }\r\n \r\n     signingConfigs {\r\n         create(\"release\") {\r\n"
+                }
+            ],
+            "date": 1760102152131,
+            "name": "Commit-0",
+            "content": "plugins {\r\n    id(\"com.android.application\")\r\n    id(\"kotlin-android\")\r\n    // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.\r\n    id(\"dev.flutter.flutter-gradle-plugin\")\r\n}\r\n\r\nandroid {\r\n    namespace = \"com.washingtonclimaco.task_manager_flutter\"\r\n    compileSdk = flutter.compileSdkVersion\r\n    ndkVersion = flutter.ndkVersion\r\n\r\n    compileOptions {\r\n        sourceCompatibility = JavaVersion.VERSION_11\r\n        targetCompatibility = JavaVersion.VERSION_11\r\n    }\r\n\r\n    kotlinOptions {\r\n        jvmTarget = JavaVersion.VERSION_11.toString()\r\n    }\r\n\r\n    defaultConfig {\r\n        // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).\r\n        applicationId = \"com.washingtonclimaco.task_manager_flutter\"\r\n        // You can update the following values to match your application needs.\r\n        // For more information, see: https://flutter.dev/to/review-gradle-config.\r\n        minSdk = flutter.minSdkVersion\r\n        targetSdk = flutter.targetSdkVersion\r\n        versionCode = flutter.versionCode\r\n        versionName = flutter.versionName\r\n    }\r\n\r\n    buildTypes {\r\n        release {\r\n            // TODO: Add your own signing config for the release build.\r\n            // Signing with the debug keys for now, so `flutter run --release` works.\r\n            signingConfig = signingConfigs.getByName(\"debug\")\r\n        }\r\n    }\r\n     signingConfigs {\r\n        release {\r\n            storeFile file(\"jks.jks\")\r\n            storePassword \"123Mudar\\$\"\r\n            keyAlias \"key0\"\r\n            keyPassword \"123Mudar\\$\"\r\n        }\r\n    }\r\n}\r\n\r\nflutter {\r\n    source = \"../..\"\r\n}\r\n"
+        }
+    ]
+}

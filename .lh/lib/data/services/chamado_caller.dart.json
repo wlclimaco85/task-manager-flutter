@@ -1,0 +1,26 @@
+{
+    "sourceFile": "lib/data/services/chamado_caller.dart",
+    "activeCommit": 0,
+    "commits": [
+        {
+            "activePatchIndex": 2,
+            "patches": [
+                {
+                    "date": 1760196648982,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n"
+                },
+                {
+                    "date": 1760196697516,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -29,8 +29,17 @@\n   }\r\n \r\n   Future<Chamado> createChamado(Chamado chamado,\r\n       {required String token}) async {\r\n+\r\n+ final NetworkResponse response = await NetworkCaller().postRequest(\r\n+        ApiLinks.allChamados,\r\n+        chamado.toJson()\r\n+      );\r\n+\r\n+\r\n+      if (response.isSuccess && response.body != null) {\r\n+\r\n     final resp = await http.post(\r\n       Uri.parse(ApiLinks.createChamado),\r\n       headers: {\r\n         'Authorization': 'Bearer $token',\r\n"
+                },
+                {
+                    "date": 1761851852795,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -39,5 +39,51 @@\n     } else {\r\n       throw Exception('Falha ao criar chamado (${response.statusCode})');\r\n     }\r\n   }\r\n+\r\n+  \r\n+  // 🔹 Pegar (assumir) chamado\r\n+  Future<bool> pegarChamado(int id) async {\r\n+    final response = await NetworkCaller()\r\n+        .postRequest(\"${ApiLinks.allChamados}/$id/pegar\", {});\r\n+    return response.isSuccess;\r\n+  }\r\n+\r\n+  // 🔹 Transferir chamado\r\n+  Future<bool> transferirChamado(int id, int usuarioId) async {\r\n+    final response = await NetworkCaller().postRequest(\r\n+      \"${ApiLinks.allChamados}/$id/transferir\",\r\n+      {'destinatarioId': usuarioId},\r\n+    );\r\n+    return response.isSuccess;\r\n+  }\r\n+\r\n+  // 🔹 Atribuir chamado\r\n+  Future<bool> atribuirChamado(int id, int usuarioId) async {\r\n+    final response = await NetworkCaller().postRequest(\r\n+      \"${ApiLinks.allChamados}/$id/atribuir\",\r\n+      {'usuarioId': usuarioId},\r\n+    );\r\n+    return response.isSuccess;\r\n+  }\r\n+\r\n+  // 🔹 Fechar chamado\r\n+  Future<bool> fecharChamado(int id, String motivo) async {\r\n+    final response = await NetworkCaller().postRequest(\r\n+      \"${ApiLinks.allChamados}/$id/fechar\",\r\n+      {'motivoFechamento': motivo},\r\n+    );\r\n+    return response.isSuccess;\r\n+  }\r\n+\r\n+  // 🔹 Histórico do chamado\r\n+  Future<List<Map<String, dynamic>>> getHistoricoChamado(int id) async {\r\n+    final response = await NetworkCaller()\r\n+        .getRequest(\"${ApiLinks.chamadoHistorico}/$id\");\r\n+    if (response.isSuccess && response.body != null) {\r\n+      return List<Map<String, dynamic>>.from(\r\n+          response.body!['data']['dados'] ?? []);\r\n+    }\r\n+    throw Exception('Erro ao buscar histórico (${response.statusCode})');\r\n+  }\r\n }\r\n"
+                }
+            ],
+            "date": 1760196648982,
+            "name": "Commit-0",
+            "content": "import 'package:task_manager_flutter/data/models/network_response.dart';\r\nimport 'package:task_manager_flutter/data/services/network_caller.dart';\r\nimport 'package:task_manager_flutter/data/utils/api_links.dart';\r\n\r\nimport '../models/chamado_model.dart';\r\n\r\nclass ChamadoCaller {\r\n  Future<List<Chamado>> fetchAllChamados() async {\r\n    List<Chamado> list = [];\r\n    try {\r\n      final NetworkResponse response = await NetworkCaller().getRequest(\r\n        ApiLinks.allChamados,\r\n      );\r\n\r\n      if (response.isSuccess && response.body != null) {\r\n        final data = response.body!['data']['dados'] ?? [];\r\n        list = (data as List).map((item) => Chamado.fromJson(item)).toList();\r\n      }\r\n    } catch (e) {\r\n      print('Erro ao carregar chamados: $e');\r\n      throw Exception('Erro ao carregar chamados: $e');\r\n    }\r\n    return list;\r\n  }\r\n\r\n  Future<List<Map<String, dynamic>>> fetchChamadoDropdown() async {\r\n    final chamados = await fetchAllChamados();\r\n    return chamados.map((c) => {'value': c.id, 'label': c.titulo}).toList();\r\n  }\r\n\r\n  Future<Chamado> createChamado(Chamado chamado, {required String token}) async {\r\n    final resp = await http.post(\r\n      Uri.parse(ApiLinks.createChamado),\r\n      headers: {\r\n        'Authorization': 'Bearer $token',\r\n        'Content-Type': 'application/json'\r\n      },\r\n      body: jsonEncode(chamado.toJson()),\r\n    );\r\n\r\n    if (resp.statusCode == 200 || resp.statusCode == 201) {\r\n      final map = jsonDecode(resp.body);\r\n      // Ajuste o caminho conforme o payload do seu backend\r\n      final data = (map['data']?['dados']) ?? map;\r\n      return Chamado.fromJson(data);\r\n    } else {\r\n      throw Exception('Falha ao criar chamado (${resp.statusCode})');\r\n    }\r\n  }\r\n}\r\n"
+        }
+    ]
+}

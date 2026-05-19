@@ -1,0 +1,18 @@
+{
+    "sourceFile": "lib/ui/widgets/custom_text_form_field.dart",
+    "activeCommit": 0,
+    "commits": [
+        {
+            "activePatchIndex": 0,
+            "patches": [
+                {
+                    "date": 1733243862179,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n"
+                }
+            ],
+            "date": 1733243862179,
+            "name": "Commit-0",
+            "content": "// ignore_for_file: public_member_api_docs, sort_constructors_first\r\nimport 'package:flutter/material.dart';\r\n\r\nclass CustomTextFormField extends StatelessWidget {\r\n  const CustomTextFormField({\r\n    super.key,\r\n    required this.hintText,\r\n    required this.controller,\r\n    this.obscureText,\r\n    this.maxLines,\r\n    this.validator,\r\n    this.readOnly,\r\n    required this.textInputType,\r\n    this.icon,\r\n  });\r\n\r\n  final String hintText;\r\n  final TextEditingController controller;\r\n  final bool? obscureText;\r\n  final int? maxLines;\r\n  final Function(String?)? validator;\r\n  final bool? readOnly;\r\n  final TextInputType textInputType;\r\n  final Icons? icon;\r\n\r\n  @override\r\n  Widget build(BuildContext context) {\r\n    return TextFormField(\r\n      maxLines: maxLines ?? 1,\r\n      readOnly: readOnly ?? false,\r\n      validator: (value) {\r\n        if (validator != null) {\r\n          return validator!(value);\r\n        }\r\n        return null;\r\n      },\r\n      controller: controller,\r\n      obscureText: obscureText ?? false,\r\n      decoration: InputDecoration(\r\n        fillColor: Colors.white,\r\n        hintText: hintText,\r\n        filled: true,\r\n        border: const OutlineInputBorder(borderSide: BorderSide.none),\r\n      ),\r\n      \r\n    );\r\n  }\r\n}\r\n"
+        }
+    ]
+}

@@ -1,0 +1,22 @@
+{
+    "sourceFile": "lib/data/models/dashboard_model.dart",
+    "activeCommit": 0,
+    "commits": [
+        {
+            "activePatchIndex": 1,
+            "patches": [
+                {
+                    "date": 1760721716475,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n"
+                },
+                {
+                    "date": 1760743511679,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -2,20 +2,76 @@\n class FinancePoint {\r\n   final String month; // ex: '2025-06'\r\n   final double receivable;\r\n   final double payable;\r\n+\r\n   FinancePoint(this.month, this.receivable, this.payable);\r\n+\r\n+  factory FinancePoint.fromJson(Map<String, dynamic> json) {\r\n+    return FinancePoint(\r\n+      (json['month'] ?? '').toString(),\r\n+      _toDouble(json['receivable']),\r\n+      _toDouble(json['payable']),\r\n+    );\r\n+  }\r\n }\r\n \r\n class TicketStatusCounts {\r\n   final int open;\r\n   final int inProgress;\r\n   final int closed;\r\n-  TicketStatusCounts(\r\n-      {required this.open, required this.inProgress, required this.closed});\r\n+\r\n+  TicketStatusCounts({\r\n+    required this.open,\r\n+    required this.inProgress,\r\n+    required this.closed,\r\n+  });\r\n+\r\n+  factory TicketStatusCounts.fromJson(Map<String, dynamic> json) {\r\n+    return TicketStatusCounts(\r\n+      open: _toInt(json['open']),\r\n+      inProgress: _toInt(json['inProgress']),\r\n+      closed: _toInt(json['closed']),\r\n+    );\r\n+  }\r\n }\r\n \r\n class ChatsDailyPoint {\r\n   final DateTime date;\r\n   final int openChats;\r\n+\r\n   ChatsDailyPoint(this.date, this.openChats);\r\n+\r\n+  factory ChatsDailyPoint.fromJson(Map<String, dynamic> json) {\r\n+    return ChatsDailyPoint(\r\n+      _toDate(json['date']),\r\n+      _toInt(json['openChats']),\r\n+    );\r\n+  }\r\n }\r\n+\r\n+/// ---------- Helpers de parsing seguros ----------\r\n+double _toDouble(dynamic v) {\r\n+  if (v == null) return 0.0;\r\n+  if (v is num) return v.toDouble();\r\n+  if (v is String && v.trim().isNotEmpty) {\r\n+    return double.tryParse(v) ?? 0.0;\r\n+  }\r\n+  return 0.0;\r\n+}\r\n+\r\n+int _toInt(dynamic v) {\r\n+  if (v == null) return 0;\r\n+  if (v is int) return v;\r\n+  if (v is num) return v.toInt();\r\n+  if (v is String && v.trim().isNotEmpty) {\r\n+    return int.tryParse(v) ?? 0;\r\n+  }\r\n+  return 0;\r\n+}\r\n+\r\n+DateTime _toDate(dynamic v) {\r\n+  if (v == null) return DateTime.now();\r\n+  if (v is DateTime) return v;\r\n+  final s = v.toString();\r\n+  return DateTime.tryParse(s) ?? DateTime.now();\r\n+}\r\n"
+                }
+            ],
+            "date": 1760721716475,
+            "name": "Commit-0",
+            "content": "\r\n// lib/dashboard/models.dart\r\nclass FinancePoint {\r\nfinal String month; // ex: '2025-06'\r\nfinal double receivable;\r\nfinal double payable;\r\nFinancePoint(this.month, this.receivable, this.payable);\r\n}\r\n\r\n\r\nclass TicketStatusCounts {\r\nfinal int open;\r\nfinal int inProgress;\r\nfinal int closed;\r\nTicketStatusCounts({required this.open, required this.inProgress, required this.closed});\r\n}\r\n\r\n\r\nclass ChatsDailyPoint {\r\nfinal DateTime date;\r\nfinal int openChats;\r\nChatsDailyPoint(this.date, this.openChats);\r\n}\r\n\r\n"
+        }
+    ]
+}

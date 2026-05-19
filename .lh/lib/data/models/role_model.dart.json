@@ -1,0 +1,18 @@
+{
+    "sourceFile": "lib/data/models/role_model.dart",
+    "activeCommit": 0,
+    "commits": [
+        {
+            "activePatchIndex": 0,
+            "patches": [
+                {
+                    "date": 1758914178343,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n"
+                }
+            ],
+            "date": 1758914178343,
+            "name": "Commit-0",
+            "content": "import 'package:flutter/material.dart';\r\nimport '../customization/generic_grid_card.dart';\r\nimport 'package:task_manager_flutter/data/models/aplicativo_model.dart';\r\nimport 'package:task_manager_flutter/data/utils/api_links.dart';\r\nimport 'package:task_manager_flutter/data/models/network_response.dart';\r\nimport 'package:task_manager_flutter/data/services/network_caller.dart';\r\n\r\nclass Role {\r\n  int? id;\r\n  String? description;\r\n  bool? available;\r\n  String? key;\r\n  Aplicativo? aplicativo;\r\n\r\n  Role({this.id, this.description, this.available, this.key, this.aplicativo});\r\n\r\n  Role.fromJson(Map<String, dynamic> json) {\r\n    id = json['id'];\r\n    description = json['description'];\r\n    available = json['available'];\r\n    key = json['key'];\r\n    aplicativo = json['aplicativo'] != null\r\n        ? Aplicativo.fromJson(json['aplicativo'])\r\n        : null;\r\n  }\r\n\r\n  Map<String, dynamic> toJson() {\r\n    return {\r\n      'id': id,\r\n      'description': description,\r\n      'available': available,\r\n      'key': key,\r\n      'aplicativo': aplicativo?.toJson(),\r\n    };\r\n  }\r\n\r\n  static Future<List<Map<String, dynamic>>> loadCategorias() async {\r\n    final NetworkResponse response = await NetworkCaller().getRequest(\r\n      ApiLinks.allAplicativos,\r\n    );\r\n\r\n    if (response.isSuccess && response.body != null) {\r\n      final List<dynamic> data = response.body!['data']['dados'] ?? [];\r\n      return data\r\n          .map(\r\n            (item) => {'value': item['id'].toString(), 'label': item['nome']},\r\n          )\r\n          .toList();\r\n    }\r\n    return [];\r\n  }\r\n\r\n  static List<FieldConfig> fieldConfigs = [\r\n    FieldConfig(\r\n      label: \"Descrição\",\r\n      fieldName: \"description\",\r\n      icon: Icons.description,\r\n      isInForm: true,\r\n      isFilterable: true,\r\n    ),\r\n    FieldConfig(\r\n      label: \"Disponível\",\r\n      fieldName: \"available\",\r\n      icon: Icons.check_circle,\r\n      isInForm: true,\r\n      isFilterable: true,\r\n    ),\r\n    FieldConfig(\r\n      label: \"Chave\",\r\n      fieldName: \"key\",\r\n      icon: Icons.vpn_key,\r\n      isInForm: true,\r\n      isFilterable: true,\r\n    ),\r\n    FieldConfig(\r\n      label: \"Aplicativo\",\r\n      fieldName: \"aplicativo\", // Para o formulário (dropdown)\r\n      displayFieldName: \"aplicativo.nome\", // Para exibição na grid\r\n      icon: Icons.apps,\r\n      isInForm: true,\r\n      isFilterable: true,\r\n      fieldType: FieldType.dropdown,\r\n      dropdownFutureBuilder: () async {\r\n        return await loadCategorias();\r\n      },\r\n      dropdownValueField: 'id',\r\n      dropdownDisplayField: 'nome',\r\n      isRequired: true,\r\n    ),\r\n  ];\r\n}\r\n"
+        }
+    ]
+}

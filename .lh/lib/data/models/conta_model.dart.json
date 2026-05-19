@@ -1,0 +1,18 @@
+{
+    "sourceFile": "lib/data/models/conta_model.dart",
+    "activeCommit": 0,
+    "commits": [
+        {
+            "activePatchIndex": 0,
+            "patches": [
+                {
+                    "date": 1761082100135,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n"
+                }
+            ],
+            "date": 1761082100135,
+            "name": "Commit-0",
+            "content": "// lib/data/models/conta_models.dart\r\nclass ContaBancariaModel {\r\n  final int id;\r\n  final String nome; // ex: \"Itaú 1234-56789\"\r\n  final double saldo;\r\n\r\n  ContaBancariaModel(\r\n      {required this.id, required this.nome, required this.saldo});\r\n\r\n  factory ContaBancariaModel.fromJson(Map<String, dynamic> j) {\r\n    return ContaBancariaModel(\r\n      id: j['contaId'] ?? j['id'],\r\n      nome: j['nomeConta'] ?? '${j['banco']} ${j['agencia']}-${j['numero']}',\r\n      saldo: (j['saldo'] as num).toDouble(),\r\n    );\r\n  }\r\n}\r\n\r\nclass ContaSaldoDia {\r\n  final DateTime day;\r\n  final double saldo;\r\n  ContaSaldoDia(this.day, this.saldo);\r\n\r\n  factory ContaSaldoDia.fromJson(Map<String, dynamic> j) {\r\n    return ContaSaldoDia(\r\n        DateTime.parse(j['day']), (j['saldo'] as num).toDouble());\r\n  }\r\n}\r\n"
+        }
+    ]
+}

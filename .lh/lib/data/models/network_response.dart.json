@@ -1,0 +1,30 @@
+{
+    "sourceFile": "lib/data/models/network_response.dart",
+    "activeCommit": 0,
+    "commits": [
+        {
+            "activePatchIndex": 3,
+            "patches": [
+                {
+                    "date": 1738269456282,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n"
+                },
+                {
+                    "date": 1738269616463,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -1,4 +1,5 @@\n+import 'dart:typed_data';\r\n class NetworkResponse {\r\n   final int statusCode;\r\n   final bool isSuccess;\r\n   final Map<String, dynamic>? body;\r\n@@ -7,7 +8,7 @@\n   NetworkResponse(\r\n     this.isSuccess,\r\n     this.statusCode,\r\n     this.body,\r\n-    this'bodyBytes,\r\n+    this.bodyBytes,\r\n   );\r\n }\r\n"
+                },
+                {
+                    "date": 1738269805175,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -3,13 +3,11 @@\n class NetworkResponse {\r\n   final int statusCode;\r\n   final bool isSuccess;\r\n   final Map<String, dynamic>? body;\r\n-  final Uint8List? bodyBytes;\r\n \r\n   NetworkResponse(\r\n     this.isSuccess,\r\n     this.statusCode,\r\n     this.body,\r\n-    this.bodyBytes,\r\n   );\r\n }\r\n"
+                },
+                {
+                    "date": 1760905158556,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -1,12 +1,6 @@\n-\r\n class NetworkResponse {\r\n+  final bool isSuccess;\r\n   final int statusCode;\r\n-  final bool isSuccess;\r\n   final Map<String, dynamic>? body;\r\n-\r\n-  NetworkResponse(\r\n-    this.isSuccess,\r\n-    this.statusCode,\r\n-    this.body,\r\n-  );\r\n-}\r\n+  NetworkResponse(this.isSuccess, this.statusCode, this.body);\r\n+}\n\\ No newline at end of file\n"
+                }
+            ],
+            "date": 1738269456282,
+            "name": "Commit-0",
+            "content": "class NetworkResponse {\r\n  final int statusCode;\r\n  final bool isSuccess;\r\n  final Map<String, dynamic>? body;\r\n  final Uint8List? bodyBytes; \r\n\r\n  NetworkResponse(\r\n    this.isSuccess,\r\n    this.statusCode,\r\n    this.body,\r\n    this'bodyBytes,\r\n  );\r\n}\r\n"
+        }
+    ]
+}

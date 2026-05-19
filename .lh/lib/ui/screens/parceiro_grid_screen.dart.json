@@ -1,0 +1,26 @@
+{
+    "sourceFile": "lib/ui/screens/parceiro_grid_screen.dart",
+    "activeCommit": 0,
+    "commits": [
+        {
+            "activePatchIndex": 2,
+            "patches": [
+                {
+                    "date": 1759325733774,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n"
+                },
+                {
+                    "date": 1759325798782,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -9,9 +9,9 @@\n   const ParceiroGridScreen({super.key, required this.hasPermission});\r\n \r\n   @override\r\n   Widget build(BuildContext context) {\r\n-    return GenericGridScreen<Parceiro>(\r\n+    return GenericMobileGridScreen<Parceiro>(\r\n       title: \"Parceiros\",\r\n       fetchEndpoint: ApiLinks.allParceiros,\r\n       createEndpoint: ApiLinks.createParceiro,\r\n       updateEndpoint: ApiLinks.updateParceiro(\":id\"),\r\n@@ -21,21 +21,12 @@\n       hasPermission: hasPermission,\r\n       fieldConfigs: Parceiro.fieldConfigs,\r\n       idFieldName: 'id',\r\n       dateFieldName: 'createdAt',\r\n-      exportConfig: const ExportConfig(\r\n-        enableCsvExport: true,\r\n-        filenamePrefix: 'parceiros',\r\n-      ),\r\n       paginationConfig: const PaginationConfig(\r\n         defaultRowsPerPage: 10,\r\n         availableRowsPerPage: [10, 25, 50],\r\n       ),\r\n       enableSearch: true,\r\n-      enableColumnReorder: true,\r\n-      detailScreenBuilder: (item) => ParceiroDetailScreen(\r\n-        item: item, // Agora está correto - passando o item\r\n-        hasPermission: hasPermission,\r\n-      ),\r\n     );\r\n   }\r\n }\r\n"
+                },
+                {
+                    "date": 1759532772066,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -21,8 +21,9 @@\n       hasPermission: hasPermission,\r\n       fieldConfigs: Parceiro.fieldConfigs,\r\n       idFieldName: 'id',\r\n       dateFieldName: 'createdAt',\r\n+      useUserBannerAppBar: true,\r\n       paginationConfig: const PaginationConfig(\r\n         defaultRowsPerPage: 10,\r\n         availableRowsPerPage: [10, 25, 50],\r\n       ),\r\n"
+                }
+            ],
+            "date": 1759325733774,
+            "name": "Commit-0",
+            "content": "import 'package:flutter/material.dart';\r\nimport 'package:task_manager_flutter/data/models/parceiro_model.dart';\r\nimport 'package:task_manager_flutter/data/utils/api_links.dart';\r\nimport 'package:task_manager_flutter/data/customization/generic_grid_card.dart';\r\n\r\nclass ParceiroGridScreen extends StatelessWidget {\r\n  final SecurityCheck hasPermission;\r\n\r\n  const ParceiroGridScreen({super.key, required this.hasPermission});\r\n\r\n  @override\r\n  Widget build(BuildContext context) {\r\n    return GenericGridScreen<Parceiro>(\r\n      title: \"Parceiros\",\r\n      fetchEndpoint: ApiLinks.allParceiros,\r\n      createEndpoint: ApiLinks.createParceiro,\r\n      updateEndpoint: ApiLinks.updateParceiro(\":id\"),\r\n      deleteEndpoint: ApiLinks.deleteParceiro(\":id\"),\r\n      fromJson: (json) => Parceiro.fromJson(json),\r\n      toJson: (p) => p.toJson(),\r\n      hasPermission: hasPermission,\r\n      fieldConfigs: Parceiro.fieldConfigs,\r\n      idFieldName: 'id',\r\n      dateFieldName: 'createdAt',\r\n      exportConfig: const ExportConfig(\r\n        enableCsvExport: true,\r\n        filenamePrefix: 'parceiros',\r\n      ),\r\n      paginationConfig: const PaginationConfig(\r\n        defaultRowsPerPage: 10,\r\n        availableRowsPerPage: [10, 25, 50],\r\n      ),\r\n      enableSearch: true,\r\n      enableColumnReorder: true,\r\n      detailScreenBuilder: (item) => ParceiroDetailScreen(\r\n        item: item, // Agora está correto - passando o item\r\n        hasPermission: hasPermission,\r\n      ),\r\n    );\r\n  }\r\n}\r\n"
+        }
+    ]
+}

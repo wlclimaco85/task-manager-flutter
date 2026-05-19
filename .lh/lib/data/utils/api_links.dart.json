@@ -1,0 +1,34 @@
+{
+    "sourceFile": "lib/data/utils/api_links.dart",
+    "activeCommit": 0,
+    "commits": [
+        {
+            "activePatchIndex": 4,
+            "patches": [
+                {
+                    "date": 1706820777655,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n"
+                },
+                {
+                    "date": 1706820802255,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -1,9 +1,9 @@\n class ApiLinks {\r\n   ApiLinks._();\r\n   static const String _baseUrl = 'https://task.teamrabbil.com/api/v1';\r\n   //static const String _baseUrlNew = 'http://192.168.56.1:8088/boletobancos';\r\n-  static const String _baseUrlNew = 'http://192.168.56.1:8088/boletobancos';\r\n+  static const String _baseUrlNew = 'https://academia-app-919f42758cd6.herokuapp.com/boletobancos';\r\n   static const String allPersonal = '$_baseUrlNew/personal/findAll';\r\n   static const String insertPersonal = '$_baseUrlNew/personal/inserir';\r\n   static String regestration = '$_baseUrl/registration';\r\n   static String profileUpdate = '$_baseUrl/profileUpdate';\r\n"
+                },
+                {
+                    "date": 1706820860929,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -10,9 +10,10 @@\n   static String profileUpdate = '$_baseUrl/profileUpdate';\r\n   // static String login = '$_baseUrl/login';\r\n   // static String login = '$_baseUrl/rest/auth/login';\r\n \r\n-  static String login = 'http://192.168.56.1:8088/boletobancos/rest/auth/login';\r\n+ // static String login = 'http://192.168.56.1:8088/boletobancos/rest/auth/login';\r\n+  static String login = '$_baseUrlNew/rest/auth/login';\r\n   static String recoverVerifyEmail(String email) =>\r\n       '$_baseUrl/RecoverVerifyEmail/$email';\r\n   static String recoverVerifyOTP(String email, String otp) =>\r\n       '$_baseUrl/RecoverVerifyOTP/$email/$otp';\r\n"
+                },
+                {
+                    "date": 1706825164651,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -1,9 +1,9 @@\n class ApiLinks {\r\n   ApiLinks._();\r\n   static const String _baseUrl = 'https://task.teamrabbil.com/api/v1';\r\n-  //static const String _baseUrlNew = 'http://192.168.56.1:8088/boletobancos';\r\n-  static const String _baseUrlNew =\r\n+  static const String _baseUrlNew = 'http://192.168.56.1:8088/boletobancos';\r\n+  //static const String _baseUrlNew =\r\n       'https://academia-app-919f42758cd6.herokuapp.com/boletobancos';\r\n   static const String allPersonal = '$_baseUrlNew/personal/findAll';\r\n   static const String insertPersonal = '$_baseUrlNew/personal/inserir';\r\n   static String regestration = '$_baseUrl/registration';\r\n"
+                },
+                {
+                    "date": 1706825176454,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -2,9 +2,9 @@\n   ApiLinks._();\r\n   static const String _baseUrl = 'https://task.teamrabbil.com/api/v1';\r\n   static const String _baseUrlNew = 'http://192.168.56.1:8088/boletobancos';\r\n   //static const String _baseUrlNew =\r\n-      'https://academia-app-919f42758cd6.herokuapp.com/boletobancos';\r\n+  //    'https://academia-app-919f42758cd6.herokuapp.com/boletobancos';\r\n   static const String allPersonal = '$_baseUrlNew/personal/findAll';\r\n   static const String insertPersonal = '$_baseUrlNew/personal/inserir';\r\n   static String regestration = '$_baseUrl/registration';\r\n   static String profileUpdate = '$_baseUrl/profileUpdate';\r\n"
+                }
+            ],
+            "date": 1706820777655,
+            "name": "Commit-0",
+            "content": "class ApiLinks {\r\n  ApiLinks._();\r\n  static const String _baseUrl = 'https://task.teamrabbil.com/api/v1';\r\n  //static const String _baseUrlNew = 'http://192.168.56.1:8088/boletobancos';\r\n  static const String _baseUrlNew = 'http://192.168.56.1:8088/boletobancos';\r\n  static const String allPersonal = '$_baseUrlNew/personal/findAll';\r\n  static const String insertPersonal = '$_baseUrlNew/personal/inserir';\r\n  static String regestration = '$_baseUrl/registration';\r\n  static String profileUpdate = '$_baseUrl/profileUpdate';\r\n  // static String login = '$_baseUrl/login';\r\n  // static String login = '$_baseUrl/rest/auth/login';\r\n\r\n  static String login = 'http://192.168.56.1:8088/boletobancos/rest/auth/login';\r\n  static String recoverVerifyEmail(String email) =>\r\n      '$_baseUrl/RecoverVerifyEmail/$email';\r\n  static String recoverVerifyOTP(String email, String otp) =>\r\n      '$_baseUrl/RecoverVerifyOTP/$email/$otp';\r\n  static String recoverResetPassword = '$_baseUrl/RecoverResetPass';\r\n\r\n  static String createTask = '$_baseUrl/createTask';\r\n  static String newTaskStatus = '$_baseUrl/listTaskByStatus/New';\r\n\r\n  static String completedTaskStatus = '$_baseUrl/listTaskByStatus/Completed';\r\n  static String inProgressTaskStatus = '$_baseUrl/listTaskByStatus/Progress';\r\n  static String cancelledTaskStatus = '$_baseUrl/listTaskByStatus/Canceled';\r\n  static String updateTask(String id, String status) =>\r\n      '$_baseUrl/updateTaskStatus/$id/$status';\r\n  static String taskStatusCount = '$_baseUrl/listTaskByStatus/taskStatusCount';\r\n  static String deleteTask(String taskId) => '$_baseUrl/deleteTask/$taskId';\r\n}\r\n"
+        }
+    ]
+}

@@ -1,0 +1,18 @@
+{
+    "sourceFile": "lib/ui/widgets/home_drawer.dart",
+    "activeCommit": 0,
+    "commits": [
+        {
+            "activePatchIndex": 0,
+            "patches": [
+                {
+                    "date": 1740664150235,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n"
+                }
+            ],
+            "date": 1740664150235,
+            "name": "Commit-0",
+            "content": "import 'package:flutter/material.dart';\r\nimport 'package:task_manager_flutter/data/constants/custom_colors.dart';\r\n\r\nDrawer getHomeDrawer() {\r\n  return Drawer(\r\n    child: ListView(\r\n      padding: EdgeInsets.zero,\r\n      children: [\r\n        const UserAccountsDrawerHeader(\r\n          decoration: BoxDecoration(color: Color(0xff0A6D92)),\r\n          accountName: Text(\"Ricarth Lima\"),\r\n          accountEmail: Text(\"rrsl@cin.ufpe.br\"),\r\n          currentAccountPicture: CircleAvatar(\r\n            backgroundColor: Colors.white,\r\n            child: Text(\r\n              \"RL\",\r\n              style: TextStyle(fontSize: 40),\r\n            ),\r\n          ),\r\n        ),\r\n        ListTile(\r\n          leading: Icon(\r\n            Icons.settings,\r\n            color: CustomColors().getLightGreenBackground(),\r\n          ),\r\n          title: const Text(\r\n            \"Configurações\",\r\n          ),\r\n        ),\r\n        ListTile(\r\n          leading: Icon(\r\n            Icons.arrow_back_sharp,\r\n            color: CustomColors().getLightGreenBackground(),\r\n          ),\r\n          title: const Text(\r\n            \"Sair\",\r\n          ),\r\n        )\r\n      ],\r\n    ),\r\n  );\r\n}\r\n"
+        }
+    ]
+}

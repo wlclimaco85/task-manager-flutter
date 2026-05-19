@@ -1,0 +1,18 @@
+{
+    "sourceFile": "lib/data/models/estado_model.dart",
+    "activeCommit": 0,
+    "commits": [
+        {
+            "activePatchIndex": 0,
+            "patches": [
+                {
+                    "date": 1762898602181,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n"
+                }
+            ],
+            "date": 1762898602181,
+            "name": "Commit-0",
+            "content": "import 'package:task_manager_flutter/data/models/pais_model.dart';\r\n\r\nclass EstadoModel {\r\n  int? id;\r\n  String? nome;\r\n  String? uf;\r\n  int? ibge;\r\n  PaisModel? pais;\r\n  String? ddd;\r\n\r\n  EstadoModel({\r\n    this.id,\r\n    this.nome,\r\n    this.uf,\r\n    this.ibge,\r\n    this.pais,\r\n    this.ddd,\r\n  });\r\n\r\n  factory EstadoModel.fromJson(Map<String, dynamic> json) {\r\n    return EstadoModel(\r\n      id: json['id'] is int ? json['id'] : int.tryParse(json['id'].toString()),\r\n      nome: json['nome'],\r\n      uf: json['uf'],\r\n      ibge: json['ibge'] is int\r\n          ? json['ibge']\r\n          : int.tryParse(json['ibge']?.toString() ?? ''),\r\n      pais: json['pais'] != null ? PaisModel.fromJson(json['pais']) : null,\r\n      ddd: json['ddd'],\r\n    );\r\n  }\r\n\r\n  Map<String, dynamic> toJson() {\r\n    return {\r\n      'id': id,\r\n      'nome': nome,\r\n      'uf': uf,\r\n      'ibge': ibge,\r\n      if (pais != null) 'pais': pais!.toJson(),\r\n      'ddd': ddd,\r\n    };\r\n  }\r\n\r\n  @override\r\n  String toString() => '$nome (${uf ?? \"\"})';\r\n}\r\n"
+        }
+    ]
+}

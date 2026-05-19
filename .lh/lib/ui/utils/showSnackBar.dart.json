@@ -1,0 +1,26 @@
+{
+    "sourceFile": "lib/ui/utils/showSnackBar.dart",
+    "activeCommit": 0,
+    "commits": [
+        {
+            "activePatchIndex": 2,
+            "patches": [
+                {
+                    "date": 1741375629990,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n"
+                },
+                {
+                    "date": 1741375670224,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -1,5 +1,22 @@\n import 'dart:typed_data';\r\n+import 'dart:convert';\r\n+import 'dart:io';\r\n+import 'package:flutter/material.dart';\r\n+import 'package:intl/intl.dart';\r\n+import 'package:intl/date_symbol_data_local.dart';\r\n+import 'package:image_picker/image_picker.dart';\r\n+import 'package:task_manager_flutter/data/models/venda_model.dart';\r\n+import 'package:task_manager_flutter/data/services/vendas_caller.dart';\r\n+import 'package:task_manager_flutter/data/services/parceiro_caller.dart';\r\n+import 'package:task_manager_flutter/data/models/parceiro_model.dart';\r\n+import 'package:task_manager_flutter/data/models/network_response.dart';\r\n+import 'package:task_manager_flutter/data/services/network_caller.dart';\r\n+import 'package:task_manager_flutter/data/utils/api_links.dart';\r\n+import 'package:task_manager_flutter/data/constants/custom_colors.dart';\r\n+import 'package:task_manager_flutter/data/models/auth_utility.dart';\r\n+import 'package:task_manager_flutter/ui/screens/update_profile.dart';\r\n+import 'package:task_manager_flutter/ui/widgets/user_banners.dart';\r\n \r\n void showSnackBar({required String message, required bool isError}) {\r\n   ScaffoldMessenger.of(context).showSnackBar(\r\n     SnackBar(\r\n"
+                },
+                {
+                    "date": 1741375680828,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -1,22 +1,5 @@\n-import 'dart:typed_data';\r\n-import 'dart:convert';\r\n-import 'dart:io';\r\n import 'package:flutter/material.dart';\r\n-import 'package:intl/intl.dart';\r\n-import 'package:intl/date_symbol_data_local.dart';\r\n-import 'package:image_picker/image_picker.dart';\r\n-import 'package:task_manager_flutter/data/models/venda_model.dart';\r\n-import 'package:task_manager_flutter/data/services/vendas_caller.dart';\r\n-import 'package:task_manager_flutter/data/services/parceiro_caller.dart';\r\n-import 'package:task_manager_flutter/data/models/parceiro_model.dart';\r\n-import 'package:task_manager_flutter/data/models/network_response.dart';\r\n-import 'package:task_manager_flutter/data/services/network_caller.dart';\r\n-import 'package:task_manager_flutter/data/utils/api_links.dart';\r\n-import 'package:task_manager_flutter/data/constants/custom_colors.dart';\r\n-import 'package:task_manager_flutter/data/models/auth_utility.dart';\r\n-import 'package:task_manager_flutter/ui/screens/update_profile.dart';\r\n-import 'package:task_manager_flutter/ui/widgets/user_banners.dart';\r\n \r\n void showSnackBar({required String message, required bool isError}) {\r\n   ScaffoldMessenger.of(context).showSnackBar(\r\n     SnackBar(\r\n"
+                }
+            ],
+            "date": 1741375629990,
+            "name": "Commit-0",
+            "content": "import 'dart:typed_data';\r\n\r\nvoid showSnackBar({required String message, required bool isError}) {\r\n    ScaffoldMessenger.of(context).showSnackBar(\r\n      SnackBar(\r\n        content: Text(\r\n          message,\r\n          style: const TextStyle(color: Colors.white),\r\n        ),\r\n        backgroundColor: isError ? Colors.red : Colors.green,\r\n        duration: const Duration(seconds: 3),\r\n      ),\r\n    );\r\n  }"
+        }
+    ]
+}
