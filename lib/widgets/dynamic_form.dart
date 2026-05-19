@@ -8,6 +8,8 @@ import '../../../utils/personal_validation.dart';
 import '../../../widgets/custom_input_dynamic_form.dart';
 import '../../../auth_screens/login_screen.dart';
 
+
+import 'package:task_manager_flutter/utils/app_logger.dart';
 final List<Map<String, dynamic>> _dataArray = []; //add this
 
 class DynamicForm extends StatefulWidget {
@@ -54,8 +56,8 @@ class _DynamicFormState extends State<DynamicForm> {
         if (entry.key == key && entry.value == chave) {
           _dataArray[key][chave] = value;
         }
-        print(entry.key);
-        print(entry.value);
+        L.d(entry.key);
+        L.d(entry.value);
       });
 
       for (var map in _dataArray) {
@@ -118,7 +120,7 @@ class _DynamicFormState extends State<DynamicForm> {
     Map<String, dynamic> requestBody = {
       "aluno": jsonDecode(aa),
     };
-    print(jsonEncode(requestBody));
+    L.d(jsonEncode(requestBody));
     final NetworkResponse response =
         await NetworkCaller().postRequest(ApiLinks.insertAluno, requestBody);
     isLoading = false;
@@ -171,7 +173,7 @@ class _DynamicFormState extends State<DynamicForm> {
       isLoading = false;
     });
 
-    print(formResponse.length);
+    L.d(formResponse.length);
   }
 
   @override

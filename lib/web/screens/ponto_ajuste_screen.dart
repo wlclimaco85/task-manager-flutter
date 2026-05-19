@@ -62,8 +62,9 @@ class _WebPontoAjusteScreenState extends State<WebPontoAjusteScreen> {
       List lista = [];
       if (body is Map) {
         final d = body['data'];
-        if (d is Map) lista = d['dados'] ?? d['content'] ?? [];
-        else if (d is List) lista = d;
+        if (d is Map) {
+          lista = d['dados'] ?? d['content'] ?? [];
+        } else if (d is List) lista = d;
       }
       setState(() => _funcionarios = lista);
     }
@@ -177,7 +178,7 @@ class _WebPontoAjusteScreenState extends State<WebPontoAjusteScreen> {
         Expanded(
           flex: 3,
           child: DropdownButtonFormField<int>(
-            value: _funcionarioId,
+            initialValue: _funcionarioId,
             decoration: const InputDecoration(
               labelText: 'Funcionário', border: OutlineInputBorder(), isDense: true,
               contentPadding: EdgeInsets.symmetric(horizontal: 10, vertical: 10),
@@ -199,7 +200,7 @@ class _WebPontoAjusteScreenState extends State<WebPontoAjusteScreen> {
         Expanded(
           flex: 2,
           child: DropdownButtonFormField<Map<String, dynamic>>(
-            value: _mesSelecionado,
+            initialValue: _mesSelecionado,
             decoration: InputDecoration(
               labelText: 'Mês',
               border: const OutlineInputBorder(), isDense: true,

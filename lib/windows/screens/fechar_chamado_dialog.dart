@@ -57,7 +57,7 @@ class _FecharChamadoDialogState extends State<FecharChamadoDialog> {
                     IconButton(
                       icon: Icon(
                         Icons.close,
-                        color: colorScheme.onSurface.withOpacity(0.6),
+                        color: colorScheme.onSurface.withValues(alpha: 0.6),
                       ),
                       onPressed: () => Navigator.of(context).pop(),
                       padding: EdgeInsets.zero,
@@ -72,7 +72,7 @@ class _FecharChamadoDialogState extends State<FecharChamadoDialog> {
               Text(
                 'Informe a solução aplicada para finalizar este chamado:',
                 style: textTheme.bodyMedium?.copyWith(
-                  color: colorScheme.onSurface.withOpacity(0.8),
+                  color: colorScheme.onSurface.withValues(alpha: 0.8),
                 ),
               ),
 
@@ -105,7 +105,7 @@ class _FecharChamadoDialogState extends State<FecharChamadoDialog> {
                           color: colorScheme.primary,
                         ),
                         filled: true,
-                        fillColor: colorScheme.surfaceVariant.withOpacity(0.3),
+                        fillColor: colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
                         contentPadding: const EdgeInsets.symmetric(
                           horizontal: 16,
                           vertical: 16,
@@ -139,7 +139,7 @@ class _FecharChamadoDialogState extends State<FecharChamadoDialog> {
                             Text(
                               'Fechando chamado...',
                               style: textTheme.bodyMedium?.copyWith(
-                                color: colorScheme.onSurface.withOpacity(0.7),
+                                color: colorScheme.onSurface.withValues(alpha: 0.7),
                               ),
                             ),
                           ],
@@ -159,7 +159,7 @@ class _FecharChamadoDialogState extends State<FecharChamadoDialog> {
                     TextButton(
                       onPressed: () => Navigator.of(context).pop(),
                       style: TextButton.styleFrom(
-                        foregroundColor: colorScheme.onSurface.withOpacity(0.7),
+                        foregroundColor: colorScheme.onSurface.withValues(alpha: 0.7),
                         padding: const EdgeInsets.symmetric(
                           horizontal: 20,
                           vertical: 10,

@@ -58,7 +58,7 @@ class WebObrigacaoFiscalGridScreen extends StatelessWidget {
       hasPermission: hasPermission,
       fromJson: (json) => ObrigacaoFiscal.fromJson(json),
       toJson: (a) => a.toJson(),
-      fieldOverrides: [
+      fieldOverrides: const [
         // ── Suprimir campos brutos de FK e duplicatas ──────────────────────
         FieldConfigWindows(fieldName: 'regime_tributario_id', label: '', isInForm: false, isVisibleByDefault: false, enabled: false),
         FieldConfigWindows(fieldName: 'setor_id',             label: '', isInForm: false, isVisibleByDefault: false, enabled: false),

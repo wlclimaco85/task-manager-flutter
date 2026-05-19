@@ -21,20 +21,20 @@ class Plano {
   }
 
   static List<FieldConfig> fieldConfigs = [
-    FieldConfig(
+    const FieldConfig(
       label: "Nome",
       fieldName: "nome",
       icon: Icons.assignment,
       isInForm: true,
       isFilterable: true,
     ),
-    FieldConfig(
+    const FieldConfig(
       label: "Descrição",
       fieldName: "descricao",
       icon: Icons.description,
       isInForm: true,
     ),
-    FieldConfig(
+    const FieldConfig(
       label: "Valor",
       fieldName: "valor",
       icon: Icons.attach_money,

@@ -10,6 +10,7 @@ import '../../../utils/tenant_context.dart';
 import '../../../models/login_model.dart';
 import '../../../utils/app_logger.dart';
 
+
 class NetworkCaller {
   Future<NetworkResponse> getRequest(String url) async {
     try {
@@ -147,9 +148,9 @@ class NetworkCaller {
       await AuthUtility.setUserInfo(model);
     } else {
       if (response.statusCode == 400) {
-        print('Senha ou usuário inválido');
+        L.d('Senha ou usuário inválido');
       } else {
-        print('Erro: ${response.statusCode}');
+        L.d('Erro: ${response.statusCode}');
       }
     }
   }

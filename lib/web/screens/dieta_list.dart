@@ -2,7 +2,7 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import '../../../widgets/calendar_screen.dart';
 import '../../../widgets/simple_tag.dart';
-import '../../../windows/screens/events_example.dart';
+import '../../../web/screens/events_example.dart';
 import '../../constants/custom_colors.dart';
 
 class ListItensDieta extends StatelessWidget {

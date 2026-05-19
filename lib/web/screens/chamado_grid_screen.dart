@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import '../../../customization/dynamic_grid_windows_screen.dart';
 import '../../../models/auth_utility.dart';
 import '../../../widgets/generic_grid_windows_screen.dart' show CustomAction;
-import '../../../windows/screens/fechar_chamado_dialog.dart';
+import '../../../web/screens/fechar_chamado_dialog.dart';
 
 class WebChamadoGridScreen extends StatelessWidget {
   final SecurityCheck hasPermission;
@@ -21,7 +21,7 @@ class WebChamadoGridScreen extends StatelessWidget {
       customActions: () => [
         CustomAction<Map<String, dynamic>>(
           icon: Icons.check_circle, label: 'Fechar',
-          onPressed: (context, chamado) => showDialog(context: context, builder: (ctx) => FecharChamadoDialog(chamadoId: chamado['id'] ?? 0)),
+          onPressed: (context, chamado) => showDialog(context: context, builder: (ctx) => WebFecharChamadoDialog(chamadoId: chamado['id'] ?? 0)),
           isVisible: (_) => true,
         ),
       ],

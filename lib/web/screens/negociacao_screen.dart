@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import '../../services/vendas_caller.dart';
 import '../../../utils/api_links.dart';
 import '../../../utils/fotos_util.dart';
-import '../../windows/screens/update_profile.dart';
+import '../../web/screens/update_profile.dart';
 import '../../../widgets/user_banners.dart';
 import '../../mobile/screens/checkoutScreen.dart';
 import '../../constants/custom_colors.dart';
@@ -66,7 +66,7 @@ class _WebNegociacaoCatalogPageState extends State<WebNegociacaoCatalogPage> {
           Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (context) => const WindowsUpdateProfileScreen(),
+              builder: (context) => const WebUpdateProfileScreen(),
             ),
           );
         },

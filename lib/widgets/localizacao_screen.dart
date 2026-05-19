@@ -7,6 +7,8 @@ import '../../../utils/api_links.dart';
 import '../../../models/network_response.dart';
 import '../../services/network_caller.dart';
 
+
+import 'package:task_manager_flutter/utils/app_logger.dart';
 class LocalizacaoWidget extends StatefulWidget {
   final Function(Pais?, Estado?, Cidade?) onChanged; // Renomeado para onChanged
   final bool required;
@@ -144,7 +146,7 @@ class _LocalizacaoWidgetState extends State<LocalizacaoWidget> {
         if (isLoadingPaises)
           Positioned.fill(
             child: Container(
-              color: Colors.white.withOpacity(0.7),
+              color: Colors.white.withValues(alpha: 0.7),
               child: const Center(child: CircularProgressIndicator()),
             ),
           ),
@@ -190,7 +192,7 @@ class _LocalizacaoWidgetState extends State<LocalizacaoWidget> {
         if (isLoadingEstados)
           Positioned.fill(
             child: Container(
-              color: Colors.white.withOpacity(0.7),
+              color: Colors.white.withValues(alpha: 0.7),
               child: const Center(child: CircularProgressIndicator()),
             ),
           ),
@@ -231,7 +233,7 @@ class _LocalizacaoWidgetState extends State<LocalizacaoWidget> {
         if (isLoadingCidades)
           Positioned.fill(
             child: Container(
-              color: Colors.white.withOpacity(0.7),
+              color: Colors.white.withValues(alpha: 0.7),
               child: const Center(child: CircularProgressIndicator()),
             ),
           ),
@@ -266,13 +268,13 @@ class _MeuWidgetPaiState extends State<MeuWidgetPai> {
 
             // Use os objetos selecionados aqui
             if (paisSelecionado != null) {
-              print("País selecionado: ${paisSelecionado!.nome}");
+              L.d("País selecionado: ${paisSelecionado!.nome}");
             }
             if (estadoSelecionado != null) {
-              print("Estado selecionado: ${estadoSelecionado!.nome}");
+              L.d("Estado selecionado: ${estadoSelecionado!.nome}");
             }
             if (cidadeSelecionada != null) {
-              print("Cidade selecionada: ${cidadeSelecionada!.nome}");
+              L.d("Cidade selecionada: ${cidadeSelecionada!.nome}");
             }
           },
           required: true,

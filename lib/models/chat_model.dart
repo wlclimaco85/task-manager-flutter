@@ -44,6 +44,7 @@ class ChatMessage {
       fileId: json['fileId'],
       fileName: json['fileName'],
       timestamp: json['timestamp'],
+      fileUrl: json['fileUrl'],
       empId: json['empId'],
       codApp: json['codApp'],
       codUsuOrig: json['codUsuOrig'],
@@ -64,6 +65,7 @@ class ChatMessage {
     data['fileId'] = fileId;
     data['fileName'] = fileName;
     data['timestamp'] = timestamp;
+    data['fileUrl'] = fileUrl;
 
     // Novos campos
     data['empId'] = empId;

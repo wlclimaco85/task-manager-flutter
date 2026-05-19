@@ -104,7 +104,9 @@ class _GenericDetailFormScreenState extends State<GenericDetailFormScreen>
 
   @override
   void dispose() {
-    for (final c in _controllers.values) c.dispose();
+    for (final c in _controllers.values) {
+      c.dispose();
+    }
     _tabController?.dispose();
     super.dispose();
   }
@@ -115,7 +117,9 @@ class _GenericDetailFormScreenState extends State<GenericDetailFormScreen>
       final fn = f.fieldName;
       final fnL = fn.toLowerCase();
       if (fnL == 'dhcreatedat' || fnL == 'dhupdatedat' ||
-          fnL == 'dh_created_at' || fnL == 'dh_updated_at') continue;
+          fnL == 'dh_created_at' || fnL == 'dh_updated_at') {
+        continue;
+      }
       final val = item[fn];
       if (f.fieldType == TelaFieldType.boolean) {
         _checkboxValues.putIfAbsent(fn, () => val == true);
@@ -274,42 +278,64 @@ class _GenericDetailFormScreenState extends State<GenericDetailFormScreen>
         }
 
         return Scaffold(
+          backgroundColor: const Color(0xFFF6F8FB),
           appBar: AppBar(
             title: Text(tela.titulo),
             backgroundColor: GridColors.primary,
             foregroundColor: Colors.white,
-            bottom: tabCount > 1
-                ? PreferredSize(
-                    preferredSize: const Size.fromHeight(48),
-                    child: Align(
-                      alignment: Alignment.centerLeft,
-                      child: TabBar(
-                        controller: _tabController,
-                        isScrollable: true,
-                        tabAlignment: TabAlignment.start,
-                        indicatorColor: Colors.white,
-                        labelColor: Colors.white,
-                        unselectedLabelColor: Colors.white70,
-                        tabs: [
-                          const Tab(icon: Icon(Icons.edit_note, size: 16), text: 'Cadastro'),
-                          ...allTabs.map((t) => Tab(icon: Icon(t.icon, size: 16), text: t.title)),
-                        ],
-                      ),
-                    ),
-                  )
-                : null,
+            elevation: 0,
           ),
-          body: tabCount > 1
-              ? TabBarView(
-                  controller: _tabController,
-                  children: [
-                    _buildFormTab(tela),
-                    ...allTabs.map(_buildAutoTab),
-                  ],
-                )
-              : _buildFormTab(tela),
+          body: Column(
+            children: [
+              if (tabCount > 1) _buildTopTabs(allTabs),
+              Expanded(
+                child: tabCount > 1
+                    ? TabBarView(
+                        controller: _tabController,
+                        children: [
+                          _buildFormTab(tela),
+                          ...allTabs.map(_buildAutoTab),
+                        ],
+                      )
+                    : _buildFormTab(tela),
+              ),
+            ],
+          ),
         );
       },
+    );
+  }
+
+  Widget _buildTopTabs(List<_AutoTab> tabs) {
+    return Container(
+      width: double.infinity,
+      color: GridColors.card,
+      padding: const EdgeInsets.fromLTRB(16, 10, 16, 0),
+      child: Align(
+        alignment: Alignment.centerLeft,
+        child: TabBar(
+          controller: _tabController,
+          isScrollable: true,
+          tabAlignment: TabAlignment.start,
+          dividerColor: Colors.transparent,
+          indicatorSize: TabBarIndicatorSize.tab,
+          indicator: BoxDecoration(
+            color: GridColors.primaryLight,
+            borderRadius: BorderRadius.circular(6),
+            border: Border.all(color: GridColors.divider),
+          ),
+          labelColor: GridColors.primary,
+          unselectedLabelColor: GridColors.textSecondary,
+          labelStyle: const TextStyle(fontWeight: FontWeight.w700),
+          unselectedLabelStyle: const TextStyle(fontWeight: FontWeight.w500),
+          tabs: [
+            const Tab(icon: Icon(Icons.edit_note, size: 18), text: 'Cadastro'),
+            ...tabs.map(
+              (t) => Tab(icon: Icon(t.icon, size: 18), text: t.title),
+            ),
+          ],
+        ),
+      ),
     );
   }
 
@@ -331,7 +357,9 @@ class _GenericDetailFormScreenState extends State<GenericDetailFormScreen>
       if (!f.isInForm) continue;
       final fnL = f.fieldName.toLowerCase();
       if (fnL == 'dh_created_at' || fnL == 'dh_updated_at' ||
-          fnL == 'dhcreatedat' || fnL == 'dhupdatedat') continue;
+          fnL == 'dhcreatedat' || fnL == 'dhupdatedat') {
+        continue;
+      }
       if (fnL == 'id') continue;
 
       // 1. Override explícito
@@ -390,31 +418,150 @@ class _GenericDetailFormScreenState extends State<GenericDetailFormScreen>
 
     return Form(
       key: _formKey,
-      child: ListView(
-        padding: const EdgeInsets.all(16),
-        children: [
-          ...effectiveFields.map(_buildField),
-          const SizedBox(height: 24),
-          SizedBox(
-            width: double.infinity,
-            child: ElevatedButton.icon(
-              onPressed: _saving ? null : () => _save(tela),
-              icon: _saving
-                  ? const SizedBox(width: 18, height: 18,
-                      child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                  : const Icon(Icons.save),
-              label: Text(_saving ? 'Salvando...' : 'SALVAR'),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: GridColors.primary,
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(vertical: 14),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          return SingleChildScrollView(
+            primary: false,
+            padding: const EdgeInsets.all(16),
+            child: Center(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 1280),
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: GridColors.card,
+                    border: Border.all(color: GridColors.divider),
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(18, 16, 18, 12),
+                        child: Row(
+                          children: [
+                            Container(
+                              width: 36,
+                              height: 36,
+                              decoration: BoxDecoration(
+                                color: GridColors.primaryLight,
+                                borderRadius: BorderRadius.circular(6),
+                              ),
+                              child: const Icon(
+                                Icons.edit_note,
+                                color: GridColors.primary,
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            const Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    'Cadastro',
+                                    style: TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.w700,
+                                      color: GridColors.secondary,
+                                    ),
+                                  ),
+                                  SizedBox(height: 2),
+                                  Text(
+                                    'Edite os dados principais do registro selecionado.',
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      color: GridColors.textSecondary,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const Divider(height: 1, color: GridColors.divider),
+                      Padding(
+                        padding: const EdgeInsets.all(16),
+                        child: LayoutBuilder(
+                          builder: (context, formConstraints) {
+                            final maxWidth = formConstraints.maxWidth;
+                            final columnCount = maxWidth >= 1100
+                                ? 3
+                                : maxWidth >= 720
+                                    ? 2
+                                    : 1;
+                            final gap = columnCount == 1 ? 0.0 : 12.0;
+                            final fieldWidth =
+                                (maxWidth - ((columnCount - 1) * gap)) /
+                                    columnCount;
+
+                            return Wrap(
+                              spacing: gap,
+                              runSpacing: 0,
+                              children: [
+                                for (final field in effectiveFields)
+                                  SizedBox(
+                                    width: _isWideField(field)
+                                        ? maxWidth
+                                        : fieldWidth,
+                                    child: _buildField(field),
+                                  ),
+                              ],
+                            );
+                          },
+                        ),
+                      ),
+                      const Divider(height: 1, color: GridColors.divider),
+                      Padding(
+                        padding: const EdgeInsets.all(16),
+                        child: Align(
+                          alignment: Alignment.centerRight,
+                          child: SizedBox(
+                            width: constraints.maxWidth < 560 ? double.infinity : 220,
+                            child: ElevatedButton.icon(
+                              onPressed: _saving ? null : () => _save(tela),
+                              icon: _saving
+                                  ? const SizedBox(
+                                      width: 18,
+                                      height: 18,
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2,
+                                        color: Colors.white,
+                                      ),
+                                    )
+                                  : const Icon(Icons.save_outlined),
+                              label: Text(
+                                _saving ? 'Salvando...' : 'Salvar alterações',
+                              ),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: GridColors.primary,
+                                foregroundColor: Colors.white,
+                                elevation: 0,
+                                padding: const EdgeInsets.symmetric(vertical: 14),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(6),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
               ),
             ),
-          ),
-        ],
+          );
+        },
       ),
     );
+  }
+
+  bool _isWideField(_EF field) {
+    final name = field.fieldName.toLowerCase();
+    return field.type == FieldType.multiline ||
+        name.contains('observacao') ||
+        name.contains('descricao') ||
+        name.contains('complemento');
   }
 
   Widget _buildAutoTab(_AutoTab tab) {
@@ -430,6 +577,7 @@ class _GenericDetailFormScreenState extends State<GenericDetailFormScreen>
         toJson: (obj) => obj,
         extraParams: tab.extraParams,
         fieldOverrides: tab.fieldOverrides,
+        showAppBar: false,
       );
     }
     final rows = tab.listData ?? [];
@@ -494,14 +642,20 @@ class _GenericDetailFormScreenState extends State<GenericDetailFormScreen>
   InputDecoration _dec(String label, {Widget? prefix, Widget? suffix, bool req = false}) =>
       InputDecoration(
         labelText: label + (req ? ' *' : ''),
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+        filled: true,
+        fillColor: const Color(0xFFFBFCFE),
+        labelStyle: const TextStyle(color: GridColors.textSecondary),
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(6)),
+        enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(6),
+            borderSide: const BorderSide(color: GridColors.divider)),
         focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(8),
+            borderRadius: BorderRadius.circular(6),
             borderSide: const BorderSide(color: GridColors.primary, width: 1.5)),
         prefixIcon: prefix,
         suffixIcon: suffix,
         isDense: true,
-        contentPadding: const EdgeInsets.symmetric(vertical: 14, horizontal: 12),
+        contentPadding: const EdgeInsets.symmetric(vertical: 13, horizontal: 12),
       );
 
   Widget _buildText(_EF ef, {TextInputType? keyboardType,
@@ -563,14 +717,21 @@ class _GenericDetailFormScreenState extends State<GenericDetailFormScreen>
   }
 
   Widget _buildCheckbox(_EF ef) => Padding(
-    padding: const EdgeInsets.only(bottom: 8),
-    child: CheckboxListTile(
-      title: Text(ef.label),
-      value: _checkboxValues[ef.fieldName] ?? false,
-      activeColor: GridColors.primary,
-      onChanged: (v) => setState(() => _checkboxValues[ef.fieldName] = v ?? false),
-      contentPadding: EdgeInsets.zero,
-      controlAffinity: ListTileControlAffinity.leading,
+    padding: const EdgeInsets.only(bottom: 16),
+    child: Container(
+      decoration: BoxDecoration(
+        color: const Color(0xFFFBFCFE),
+        border: Border.all(color: GridColors.divider),
+        borderRadius: BorderRadius.circular(6),
+      ),
+      child: CheckboxListTile(
+        title: Text(ef.label),
+        value: _checkboxValues[ef.fieldName] ?? false,
+        activeColor: GridColors.primary,
+        onChanged: (v) => setState(() => _checkboxValues[ef.fieldName] = v ?? false),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 10),
+        controlAffinity: ListTileControlAffinity.leading,
+      ),
     ),
   );
 
@@ -613,7 +774,7 @@ class _GenericDetailFormScreenState extends State<GenericDetailFormScreen>
     return Padding(
       padding: const EdgeInsets.only(bottom: 16),
       child: DropdownButtonFormField<dynamic>(
-        value: current,
+        initialValue: current,
         decoration: _dec(ef.label, req: ef.isRequired),
         isExpanded: true,
         menuMaxHeight: 300,
@@ -758,8 +919,9 @@ class _GenericDetailFormScreenState extends State<GenericDetailFormScreen>
     if (!isIdPattern) return false;
 
     String base;
-    if (fnLower.endsWith('_id')) base = fnLower.substring(0, fnLower.length - 3);
-    else if (fnLower.startsWith('id_')) base = fnLower.substring(3);
+    if (fnLower.endsWith('_id')) {
+      base = fnLower.substring(0, fnLower.length - 3);
+    } else if (fnLower.startsWith('id_')) base = fnLower.substring(3);
     else base = fnLower.substring(4); // cod_
 
     if (base.length < 2) return false;

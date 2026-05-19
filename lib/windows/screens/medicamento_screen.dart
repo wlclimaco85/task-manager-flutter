@@ -6,11 +6,13 @@ import '../../windows/screens/update_profile.dart';
 import '../../../models/network_response.dart';
 import '../../services/network_caller.dart';
 import '../../../widgets/input_field_busca.dart';
-import '../../windows/screens/Medicamento_add.dart';
-import '../../windows/screens/Medicamento_list.dart';
+import '../../windows/screens/medicamento_add.dart';
+import '../../windows/screens/medicamento_list.dart';
 import '../../../models/auth_utility.dart';
 import '../../models/login_model.dart';
 
+
+import 'package:task_manager_flutter/utils/app_logger.dart';
 class WindowsMedicamentoscreen extends StatefulWidget {
   const WindowsMedicamentoscreen({super.key});
 
@@ -38,7 +40,7 @@ class _MedicamentoscreenState extends State<WindowsMedicamentoscreen> {
   int count = 0;
   final List<String> modalidadeList = ['Musculação'];
 
-  void log(String message) => print(message);
+  void log(String message) => L.d(message);
 
   bool _addNewTaskLoading = false;
 

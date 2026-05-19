@@ -13,6 +13,8 @@ import '../../../widgets/custom_selected_padrao.dart';
 import '../../../widgets/custom_horario_box_form.dart';
 import '../../../widgets/custom_input_dynamic_form.dart';
 
+
+import 'package:task_manager_flutter/utils/app_logger.dart';
 final List<Map<String, dynamic>> _dataArray = []; //add this
 
 class AcademiaDynamicForm extends StatefulWidget {
@@ -61,8 +63,8 @@ class _AcademiaDynamicFormState extends State<AcademiaDynamicForm> {
         if (entry.key == key && entry.value == chave) {
           _dataArray[key][chave] = value;
         }
-        print(entry.key);
-        print(entry.value);
+        L.d(entry.key);
+        L.d(entry.value);
       });
 
       for (var map in _dataArray) {
@@ -229,10 +231,10 @@ class _AcademiaDynamicFormState extends State<AcademiaDynamicForm> {
     if (pickImage != null) {
       // var bytes = File(pickImage!.path).readAsBytesSync();
       // String base64Image = base64Encode(bytes);
-      print('upload proccess started');
+      L.d('upload proccess started');
       final bytess = io.File(pickImage!.path).readAsBytesSync();
       //  List<int> imageBytes = pickImage?.readAsBytesSync();
-      // print(imageBytes);
+      // L.d(imageBytes);
       //String base64Images = base64Encode(imageBytes);
       base64Imagess = base64Encode(bytess);
     }
@@ -270,7 +272,7 @@ class _AcademiaDynamicFormState extends State<AcademiaDynamicForm> {
     Map<String, dynamic> requestBody = {
       "aluno": jsonDecode(aa),
     };
-    print(jsonEncode(requestBodys));
+    L.d(jsonEncode(requestBodys));
 
     final NetworkResponse response = await NetworkCaller()
         .postRequest(ApiLinks.insertAcademia, requestBodys);
@@ -324,7 +326,7 @@ class _AcademiaDynamicFormState extends State<AcademiaDynamicForm> {
       isLoading = false;
     });
 
-    print(formResponse.length);
+    L.d(formResponse.length);
   }
 
   @override

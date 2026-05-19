@@ -4,6 +4,8 @@ import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../../models/login_model.dart';
 
+
+import 'package:task_manager_flutter/utils/app_logger.dart';
 class AuthUtility {
   static LoginModel? userInfo;
 
@@ -25,7 +27,7 @@ class AuthUtility {
       Map<String, dynamic> jsonData = jsonDecode(value);
       return LoginModel.fromJson(jsonData);
     } catch (e) {
-      print('Erro ao recuperar user_data: $e');
+      L.d('Erro ao recuperar user_data: $e');
       return null;
     }
   }

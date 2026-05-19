@@ -1,4 +1,4 @@
-﻿import 'dart:io';
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:path_provider/path_provider.dart';
@@ -7,11 +7,21 @@ import 'package:task_manager_flutter/models/conta_bancaria_model.dart';
 import 'package:task_manager_flutter/services/conta_bancaria_caller.dart';
 import 'package:task_manager_flutter/utils/api_links.dart';
 import 'package:task_manager_flutter/utils/utils.dart';
+import 'package:task_manager_flutter/widgets/searchable_dropdown.dart';
+import 'package:task_manager_flutter/widgets/finance/extrato_operacional_dialog.dart';
 
 class ContaBancariaGridScreen extends StatelessWidget {
   final SecurityCheck hasPermission;
 
   const ContaBancariaGridScreen({super.key, required this.hasPermission});
+
+  static String _contaLabel(ContaBancaria conta) {
+    final partes = [conta.banco, conta.agencia, conta.numero, conta.descricao]
+        .where((item) => item != null && item.trim().isNotEmpty)
+        .map((item) => item!.trim())
+        .toList();
+    return partes.isEmpty ? 'Conta bancária' : partes.join(' - ');
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -23,8 +33,8 @@ class ContaBancariaGridScreen extends StatelessWidget {
         updateEndpoint: ApiLinks.updateContaBancaria(":id"),
         deleteEndpoint: ApiLinks.deleteContaBancaria(":id"),
         dynamicAdditionalFormData: (item) => {
-          'empresaId': pegarEmpresaLogada(),
-          'parceiroId': pegarParceiroLogada(),
+          if (pegarEmpresaLogada() != null) 'empresa.id': pegarEmpresaLogada(),
+          if (pegarParceiroLogada() != null) 'parceiro.id': pegarParceiroLogada(),
         },
         fieldConfigs: ContaBancaria.fieldConfigs,
         idFieldName: 'id',
@@ -73,6 +83,16 @@ class ContaBancariaGridScreen extends StatelessWidget {
             onPressed: (context, item) =>
                 _showExtratoConsolidado(context, item),
           ),
+          CustomAction<ContaBancaria>(
+            icon: Icons.table_view,
+            label: 'Extrato Operacional',
+            onPressed: (context, item) => ExtratoOperacionalDialog.show(
+              context,
+              contaId: item.id!,
+              contaNome: _contaLabel(item),
+            ),
+            isVisible: (item) => item.id != null,
+          ),
         ],
       ),
     );
@@ -98,16 +118,21 @@ class ContaBancariaGridScreen extends StatelessWidget {
             return Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                DropdownButtonFormField<int>(
+                SearchableDropdownField(
+                  label: 'Conta destino',
+                  value: contaDestinoId?.toString(),
                   items: contas
                       .where((c) => c['value'] != conta.id)
-                      .map((c) => DropdownMenuItem<int>(
-                            value: c['value'],
-                            child: Text(c['label']),
-                          ))
+                      .map((c) => <String, dynamic>{
+                            'id': c['value']?.toString() ?? '',
+                            'nome': c['label']?.toString() ?? '',
+                          })
                       .toList(),
-                  decoration: const InputDecoration(labelText: "Conta destino"),
-                  onChanged: (v) => contaDestinoId = v,
+                  valueField: 'id',
+                  displayField: 'nome',
+                  isRequired: true,
+                  hintText: 'Selecione a conta destino',
+                  onChanged: (v) => contaDestinoId = int.tryParse(v ?? ''),
                 ),
                 TextField(
                   controller: valorController,
@@ -139,7 +164,7 @@ class ContaBancariaGridScreen extends StatelessWidget {
                 contaDestinoId: contaDestinoId!,
                 valor: double.parse(valorController.text),
                 empresaId: conta.empresa.id!,
-                parceiroId: conta.parceiro,
+                parceiroId: conta.parceiro?.id,
                 historico: historicoController.text,
               );
               if (context.mounted) Navigator.pop(context);
@@ -194,7 +219,7 @@ class ContaBancariaGridScreen extends StatelessWidget {
               final pdf = await caller.gerarExtratoPdf(
                 contaId: conta.id!,
                 empresaId: conta.empresa.id!,
-                parceiroId: conta.parceiro,
+                parceiroId: conta.parceiro?.id,
                 de: de,
                 ate: ate,
               );
@@ -256,7 +281,7 @@ class ContaBancariaGridScreen extends StatelessWidget {
               final pdf = await ContaBancariaCaller().gerarExtratoPdf(
                 contaId: conta.id!,
                 empresaId: conta.empresa.id!,
-                parceiroId: conta.parceiro,
+                parceiroId: conta.parceiro?.id,
                 de: de,
                 ate: ate,
               );

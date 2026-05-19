@@ -8,6 +8,8 @@ import '../../../utils/api_links.dart';
 import '../../../models/network_response.dart';
 import '../../services/network_caller.dart';
 
+
+import 'package:task_manager_flutter/utils/app_logger.dart';
 final List<Map<String, dynamic>> _dataArray = []; //add this
 String? _data = ""; //add this
 List<String> diasSelectedItems = [];
@@ -67,13 +69,13 @@ class _SelectedForm extends State<SelectedForm> {
       if (mounted) {
         // final datass = json.decode(response.body);
         final data = decoded['data'];
-        print(data[0]['nome']); // prints 3.672940
+        L.d(data[0]['nome']); // prints 3.672940
         dias = [];
         for (final name in data) {
           final value = name['nome'];
           modalidadeList.add(value);
           dias.add(value);
-          print('$name,$value'); // prints entries like "AED,3.672940"
+          L.d('$name,$value'); // prints entries like "AED,3.672940"
         }
       }
     } else {
@@ -110,8 +112,8 @@ class _SelectedForm extends State<SelectedForm> {
         if (entry.key == key && entry.value == chave) {
           _dataArray[key][chave] = value;
         }
-        print(entry.key);
-        print(entry.value);
+        L.d(entry.key);
+        L.d(entry.value);
       });
 
       for (var map in _dataArray) {
@@ -152,7 +154,7 @@ class _SelectedForm extends State<SelectedForm> {
                     ),
                   ),
                   items: dias.map((item) {
-                    return DropdownMenuItem(
+                    return DropdownItem(
                       value: item,
                       //disable default onTap to avoid closing menu when selecting an item
                       enabled: false,
@@ -170,7 +172,7 @@ class _SelectedForm extends State<SelectedForm> {
                               setState(() {});
                               //This rebuilds the dropdownMenu Widget to update the check mark
                               menuSetState(() {
-                                print(item);
+                                L.d(item);
                               });
                             },
                             child: Container(
@@ -201,8 +203,7 @@ class _SelectedForm extends State<SelectedForm> {
                     );
                   }).toList(),
                   //Use last selected item as the current value so if we've limited menu height, it scroll to last item.
-                  value:
-                      diasSelectedItems.isEmpty ? null : diasSelectedItems.last,
+                  valueListenable: ValueNotifier<String?>(diasSelectedItems.isEmpty ? null : diasSelectedItems.last),
                   onChanged: (vale) => _onUpdate(key, vale, chave),
 
                   selectedItemBuilder: (context) {
@@ -258,7 +259,6 @@ class _SelectedForm extends State<SelectedForm> {
                     ),
                   ),
                   menuItemStyleData: const MenuItemStyleData(
-                    height: 40,
                     padding: EdgeInsets.only(left: 14, right: 14),
                   ),
                 ),

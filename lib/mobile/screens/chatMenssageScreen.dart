@@ -1,18 +1,23 @@
-import 'package:flutter/material.dart';
-import '../../../utils/api_links.dart';
-import 'package:web_socket_channel/web_socket_channel.dart';
-import 'package:web_socket_channel/io.dart';
-import 'package:http/http.dart' as http;
-import 'package:file_picker/file_picker.dart';
-import 'package:path_provider/path_provider.dart';
 import 'dart:convert';
 import 'dart:io';
-import '../../../models/auth_utility.dart';
 import 'dart:typed_data';
-import '../../../models/chat_model.dart';
-import '../../services/chat_caller.dart';
-import 'package:url_launcher/url_launcher.dart';
 
+import 'package:file_picker/file_picker.dart';
+import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+import 'package:path_provider/path_provider.dart';
+import 'package:url_launcher/url_launcher.dart';
+import 'package:web_socket_channel/io.dart';
+import 'package:web_socket_channel/web_socket_channel.dart';
+
+import '../../../models/auth_utility.dart';
+import '../../../models/chat_model.dart';
+import '../../../utils/api_links.dart';
+import '../../../utils/grid_colors.dart';
+import '../../../utils/tenant_context.dart';
+import '../../../widgets/chat/chat_support_ui.dart';
+import '../../services/ai_assistant_service.dart';
+import '../../services/chat_caller.dart';
 import 'ticket_form_bottom_sheet.dart';
 
 class ChatMessageScreen extends StatefulWidget {
@@ -28,24 +33,17 @@ class ChatMessageScreen extends StatefulWidget {
   });
 
   @override
-  _ChatMessageScreenState createState() => _ChatMessageScreenState();
+  State<ChatMessageScreen> createState() => _ChatMessageScreenState();
 }
 
 class _ChatMessageScreenState extends State<ChatMessageScreen> {
-  // === PALETA LOCAL (sem novos imports) ===
-  static const Color _kPrimaryRed = Color(0xFF93070A);
-  static const Color _kGreenDark = Color(0xFF005826);
-  static const Color _kGreenLightBubble = Color(0xFFE8F5E9);
-  static const Color _kGreenPage = Color(0xFFF1F8F4);
-
   final TextEditingController _messageController = TextEditingController();
-  List<ChatMessage> _messages = [];
-  late WebSocketChannel _channel;
-  final String _authToken = '${AuthUtility.userInfo?.token}';
   final ScrollController _scrollController = ScrollController();
+  final List<ChatMessage> _messages = [];
+
+  WebSocketChannel? _channel;
   bool _isLoading = false;
 
-  // Nome/e-mail do usuário logado
   String get _loggedUserName =>
       AuthUtility.userInfo?.login?.nome ?? widget.userName;
   String get _loggedUserEmail =>
@@ -60,36 +58,24 @@ class _ChatMessageScreenState extends State<ChatMessageScreen> {
 
   void _connectWebSocket() {
     try {
+      _channel?.sink.close();
       _channel = IOWebSocketChannel.connect(
-        ApiLinks.chatStart(widget.userName, widget.sector),
+        TenantContext.applyToUrl(
+            ApiLinks.chatStart(_loggedUserEmail, widget.sector)),
       );
 
-      _channel.stream.listen(
+      _channel!.stream.listen(
         (message) {
-          final messageData = json.decode(message);
-          setState(() {
-            _messages.add(ChatMessage.fromJson(messageData));
-            _scrollToBottom();
-          });
+          final decoded = json.decode(message) as Map<String, dynamic>;
+          setState(() => _messages.add(ChatMessage.fromJson(decoded)));
+          _scrollToBottom();
         },
-        onError: (error) {
-          Future.delayed(const Duration(seconds: 3), _connectWebSocket);
-        },
-        onDone: () {
-          _connectWebSocket();
-        },
+        onError: (_) =>
+            Future.delayed(const Duration(seconds: 3), _connectWebSocket),
+        onDone: () =>
+            Future.delayed(const Duration(seconds: 3), _connectWebSocket),
       );
     } catch (_) {}
-  }
-
-  void _scrollToBottom() {
-    if (_scrollController.hasClients) {
-      _scrollController.animateTo(
-        _scrollController.position.maxScrollExtent,
-        duration: const Duration(milliseconds: 250),
-        curve: Curves.easeOut,
-      );
-    }
   }
 
   Future<void> _loadInitialMessages() async {
@@ -97,50 +83,54 @@ class _ChatMessageScreenState extends State<ChatMessageScreen> {
     try {
       final data = await ChatCaller().fetchChatsById(context, widget.chatId);
       setState(() {
-        _messages = data
-            .map((msg) => ChatMessage(
-                  sender: msg.sender ?? '',
-                  content: msg.text ?? '',
-                  type: msg.type ?? 'text',
-                  timestamp: msg.uploadDate,
-                  empId: msg.empId,
-                  codApp: msg.codApp,
-                  codUsuOrig: msg.codUsuOrig,
-                  codUsuDest: msg.codUsuDest,
-                  sector: msg.sector,
-                  chatId: msg.chatId,
-                  uploadDate: msg.uploadDate,
-                  text: msg.text,
-                  fileId: msg.fileId,
-                  fileName: msg.fileName,
-                  fileUrl: msg.fileUrl, // suporte a URL pública se existir
-                ))
-            .toList();
-        WidgetsBinding.instance.addPostFrameCallback((_) => _scrollToBottom());
+        _messages
+          ..clear()
+          ..addAll(data.map(_normalizeMessage));
       });
+      WidgetsBinding.instance.addPostFrameCallback((_) => _scrollToBottom());
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Erro ao carregar mensagens: $e')),
-      );
+      _showSnack('Erro ao carregar mensagens: $e', error: true);
     } finally {
-      setState(() => _isLoading = false);
+      if (mounted) setState(() => _isLoading = false);
     }
   }
 
-  Future<void> _sendMessage() async {
-    final String content = _messageController.text.trim();
-    if (content.isEmpty) return;
+  ChatMessage _normalizeMessage(ChatMessage msg) {
+    return ChatMessage(
+      sender: msg.sender,
+      content: msg.content.isNotEmpty ? msg.content : (msg.text ?? ''),
+      type: msg.type.isNotEmpty ? msg.type : 'text',
+      timestamp: msg.timestamp ?? msg.uploadDate,
+      empId: msg.empId,
+      codApp: msg.codApp,
+      codUsuOrig: msg.codUsuOrig,
+      codUsuDest: msg.codUsuDest,
+      sector: msg.sector,
+      chatId: msg.chatId,
+      uploadDate: msg.uploadDate,
+      text: msg.text,
+      fileId: msg.fileId,
+      fileName: msg.fileName,
+      fileUrl: msg.fileUrl,
+    );
+  }
 
-    // Envie nome e email (sem quebrar o que já funciona)
-    _channel.sink.add(json.encode({
-      'sender': _loggedUserName, // mantém nome para exibição
-      'senderName': _loggedUserName, // redundância segura
-      'senderEmail': _loggedUserEmail, // envia e-mail correto p/ backend
+  Future<void> _sendMessage() async {
+    final content = _messageController.text.trim();
+    if (content.isEmpty || _channel == null) return;
+
+    _channel!.sink.add(json.encode({
+      'sender': _loggedUserName,
+      'senderName': _loggedUserName,
+      'senderEmail': _loggedUserEmail,
       'content': content,
       'sector': widget.sector,
       'type': 'text',
       'timestamp': DateTime.now().toIso8601String(),
       'chatId': widget.chatId,
+      if (TenantContext.empresaId != null) 'empId': TenantContext.empresaId,
+      if (TenantContext.aplicativoId != null)
+        'codApp': TenantContext.aplicativoId,
     }));
 
     _messageController.clear();
@@ -148,150 +138,79 @@ class _ChatMessageScreenState extends State<ChatMessageScreen> {
 
   Future<void> _uploadAndSendFile() async {
     try {
-      final result = await FilePicker.platform.pickFiles(
+      final result = await FilePicker.pickFiles(
         type: FileType.custom,
         allowedExtensions: ['pdf', 'jpg', 'jpeg', 'png'],
         withData: true,
       );
-
-      if (result == null) return;
+      if (result == null || _channel == null) return;
 
       final file = result.files.first;
       Uint8List? fileBytes = file.bytes;
-
       if (fileBytes == null && file.path != null) {
         fileBytes = await File(file.path!).readAsBytes();
       }
       if (fileBytes == null) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-              content: Text('Não foi possível ler o arquivo selecionado')),
-        );
+        _showSnack('Nao foi possivel ler o arquivo selecionado', error: true);
         return;
       }
 
       final request = http.MultipartRequest(
         'POST',
-        Uri.parse(ApiLinks.uploadFile),
+        Uri.parse(TenantContext.applyToUrl(ApiLinks.uploadFile)),
       );
-
-      request.files.add(http.MultipartFile.fromBytes(
-        'file',
-        fileBytes,
-        filename: file.name,
-      ));
-
-      // Envie e-mail e nome nos campos (e preserva 'user' para compat)
-      request.fields['user'] =
-          _loggedUserEmail; // muitos backends esperam 'user' como email
-      request.fields['userEmail'] = _loggedUserEmail;
-      request.fields['userName'] = _loggedUserName;
-      request.fields['sector'] = widget.sector;
-      request.fields['chatId'] =
-          widget.chatId; // importante pro backend vincular
-
-      if (_authToken.isNotEmpty) {
-        request.headers['Authorization'] = 'Bearer $_authToken';
-      }
+      request.headers.addAll(TenantContext.headers);
+      request.files.add(
+        http.MultipartFile.fromBytes('file', fileBytes, filename: file.name),
+      );
+      request.fields.addAll({
+        'user': _loggedUserEmail,
+        'userEmail': _loggedUserEmail,
+        'userName': _loggedUserName,
+        'sector': widget.sector,
+        'chatId': widget.chatId,
+        if (TenantContext.empresaId != null)
+          'empId': TenantContext.empresaId.toString(),
+        if (TenantContext.parceiroId != null)
+          'parceiroId': TenantContext.parceiroId.toString(),
+      });
 
       final response = await request.send();
       final responseBody = await response.stream.bytesToString();
-
-      if (response.statusCode == 200) {
-        final jsonResponse = json.decode(responseBody) as Map<String, dynamic>;
-
-        // id e url do arquivo (ajuste as chaves conforme seu backend)
-        int? fileId;
-        final rawId = jsonResponse['fileId'] ?? jsonResponse['data']?['fileId'];
-        if (rawId is int) {
-          fileId = rawId;
-        } else if (rawId is String) {
-          fileId = int.tryParse(rawId);
-        }
-
-        // Se o backend já devolver uma URL, use-a; senão, gere via helper
-        String? fileUrl = (jsonResponse['fileUrl'] ??
-            jsonResponse['data']?['fileUrl']) as String?;
-        fileUrl ??= (fileId != null) ? ApiLinks.publicFileUrl(fileId) : null;
-
-        if (fileId != null) {
-          _channel.sink.add(json.encode({
-            'sender': _loggedUserName, // exibição
-            'senderName': _loggedUserName, // redundância segura
-            'senderEmail': _loggedUserEmail, // backend
-            'content': 'Arquivo: ${file.name}',
-            'sector': widget.sector,
-            'type': 'file',
-            'fileName': file.name,
-            'fileId': fileId,
-            'fileUrl': fileUrl, // agora a msg carrega o link
-            'timestamp': DateTime.now().toIso8601String(),
-            'chatId': widget.chatId,
-          }));
-        } else {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-                content: Text('Upload ok, mas ID do arquivo ausente')),
-          );
-        }
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Falha no upload (${response.statusCode})')),
-        );
-      }
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Erro no upload: $e')),
-      );
-    }
-  }
-
-  Future<void> _openOrDownload(int fileId, String fileName,
-      {String? fileUrl}) async {
-    // 1) se houver URL pública, tentar abrir
-    if (fileUrl != null && fileUrl.isNotEmpty) {
-      final uri = Uri.parse(fileUrl);
-      if (await canLaunchUrl(uri)) {
-        await launchUrl(uri, mode: LaunchMode.externalApplication);
+      if (response.statusCode != 200) {
+        _showSnack('Falha no upload (${response.statusCode})', error: true);
         return;
       }
-    }
-    // 2) fallback: baixar e abrir localmente
-    await _downloadFile(fileId, fileName, openAfter: true);
-  }
 
-  Future<void> _downloadFile(int fileId, String fileName,
-      {bool openAfter = false}) async {
-    try {
-      final response = await http.get(
-        Uri.parse(ApiLinks.downloadFile(fileId.toString())),
-        headers: {'Authorization': 'Bearer $_authToken'},
-      );
-
-      if (response.statusCode == 200) {
-        final directory = await getApplicationDocumentsDirectory();
-        final file = File('${directory.path}/$fileName');
-        await file.writeAsBytes(response.bodyBytes);
-
-        if (openAfter) {
-          final uri = Uri.file(file.path);
-          if (await canLaunchUrl(uri)) {
-            await launchUrl(uri, mode: LaunchMode.externalApplication);
-          }
-        }
-
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Arquivo salvo em: ${file.path}')),
-        );
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Falha ao baixar (${response.statusCode})')),
-        );
+      final jsonResponse = json.decode(responseBody) as Map<String, dynamic>;
+      final rawId = jsonResponse['fileId'] ?? jsonResponse['data']?['fileId'];
+      final fileId =
+          rawId is int ? rawId : int.tryParse(rawId?.toString() ?? '');
+      final fileUrl =
+          (jsonResponse['fileUrl'] ?? jsonResponse['data']?['fileUrl'])
+              ?.toString();
+      if (fileId == null) {
+        _showSnack('Upload concluido, mas o arquivo voltou sem identificador',
+            error: true);
+        return;
       }
+
+      _channel!.sink.add(json.encode({
+        'sender': _loggedUserName,
+        'senderName': _loggedUserName,
+        'senderEmail': _loggedUserEmail,
+        'content': 'Arquivo: ${file.name}',
+        'sector': widget.sector,
+        'type': 'file',
+        'fileName': file.name,
+        'fileId': fileId,
+        'fileUrl': fileUrl ?? ApiLinks.publicFileUrl(fileId),
+        'timestamp': DateTime.now().toIso8601String(),
+        'chatId': widget.chatId,
+        if (TenantContext.empresaId != null) 'empId': TenantContext.empresaId,
+      }));
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Erro ao baixar: $e')),
-      );
+      _showSnack('Erro no upload: $e', error: true);
     }
   }
 
@@ -299,51 +218,166 @@ class _ChatMessageScreenState extends State<ChatMessageScreen> {
     final result = await showModalBottomSheet(
       context: context,
       isScrollControlled: true,
+      backgroundColor: Colors.transparent,
       builder: (ctx) => DraggableScrollableSheet(
         expand: false,
-        initialChildSize: 0.75,
+        initialChildSize: 0.78,
         minChildSize: 0.5,
-        maxChildSize: 0.9,
-        builder: (_, controller) => SingleChildScrollView(
-          controller: controller,
-          child: TicketFormBottomSheet(sectorDescricao: widget.sector),
+        maxChildSize: 0.92,
+        builder: (_, controller) => DecoratedBox(
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(8)),
+          ),
+          child: SingleChildScrollView(
+            controller: controller,
+            child: TicketFormBottomSheet(sectorDescricao: widget.sector),
+          ),
         ),
       ),
     );
 
-    // Se criou, “anuncia” no chat
-    if (result != null && mounted) {
-      try {
-        final criado = result; // Chamado retornado
-        final id = (criado as dynamic).id;
-        _channel.sink.add(json.encode({
-          'sender': _loggedUserName, // exibição
-          'senderName': _loggedUserName,
-          'senderEmail': _loggedUserEmail, // backend
-          'content': 'Chamado aberto com sucesso (ID $id)',
-          'sector': widget.sector,
-          'type': 'ticket',
-          'ticketId': id,
-          'timestamp': DateTime.now().toIso8601String(),
-          'chatId': widget.chatId,
-        }));
-      } catch (_) {}
+    if (result == null || _channel == null || !mounted) return;
+    try {
+      final id = (result as dynamic).id;
+      _channel!.sink.add(json.encode({
+        'sender': _loggedUserName,
+        'senderName': _loggedUserName,
+        'senderEmail': _loggedUserEmail,
+        'content': 'Chamado aberto com sucesso (ID $id)',
+        'sector': widget.sector,
+        'type': 'ticket',
+        'ticketId': id,
+        'timestamp': DateTime.now().toIso8601String(),
+        'chatId': widget.chatId,
+        if (TenantContext.empresaId != null) 'empId': TenantContext.empresaId,
+      }));
+    } catch (_) {}
+  }
+
+  Future<void> _correctDraft() async {
+    final text = _messageController.text.trim();
+    if (text.isEmpty) return;
+    try {
+      final result = await AiAssistantService().correctMessage(text: text);
+      _messageController.text = result.correctedText;
+      _messageController.selection = TextSelection.collapsed(
+        offset: _messageController.text.length,
+      );
+    } catch (e) {
+      _showSnack('Erro ao corrigir mensagem: $e', error: true);
     }
   }
 
+  Future<void> _summarizeChat() async {
+    try {
+      final result = await AiAssistantService().summarizeChat(
+        chatId: widget.chatId,
+        messages: _messages
+            .map((m) => m.content.isNotEmpty ? m.content : (m.text ?? ''))
+            .where((m) => m.trim().isNotEmpty)
+            .toList(),
+      );
+      if (!mounted) return;
+      showDialog<void>(
+        context: context,
+        builder: (_) => AlertDialog(
+          title: const Text('Resumo do atendimento'),
+          content: Text(
+            '${result.summary}\n\nPrioridade: ${result.priority}\nSentimento: ${result.sentiment}',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Fechar'),
+            ),
+          ],
+        ),
+      );
+    } catch (e) {
+      _showSnack('Erro ao resumir atendimento: $e', error: true);
+    }
+  }
+
+  Future<void> _openOrDownload(int fileId, String fileName,
+      {String? fileUrl}) async {
+    if (fileUrl != null && fileUrl.isNotEmpty) {
+      final uri = Uri.parse(fileUrl);
+      if (await canLaunchUrl(uri)) {
+        await launchUrl(uri, mode: LaunchMode.externalApplication);
+        return;
+      }
+    }
+    await _downloadFile(fileId, fileName);
+  }
+
+  Future<void> _downloadFile(int fileId, String fileName) async {
+    try {
+      final response = await http.get(
+        Uri.parse(
+            TenantContext.applyToUrl(ApiLinks.downloadFile(fileId.toString()))),
+        headers: TenantContext.headers,
+      );
+      if (response.statusCode == 200) {
+        final directory = await getApplicationDocumentsDirectory();
+        final file = File('${directory.path}/$fileName');
+        await file.writeAsBytes(response.bodyBytes);
+
+        final uri = Uri.file(file.path);
+        if (await canLaunchUrl(uri)) {
+          await launchUrl(uri, mode: LaunchMode.externalApplication);
+        }
+        _showSnack('Arquivo salvo em: ${file.path}');
+      } else {
+        _showSnack('Falha ao baixar (${response.statusCode})', error: true);
+      }
+    } catch (e) {
+      _showSnack('Erro ao baixar: $e', error: true);
+    }
+  }
+
+  void _scrollToBottom() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!_scrollController.hasClients) return;
+      _scrollController.animateTo(
+        _scrollController.position.maxScrollExtent,
+        duration: const Duration(milliseconds: 250),
+        curve: Curves.easeOut,
+      );
+    });
+  }
+
+  bool _isMine(ChatMessage message) {
+    return message.sender == _loggedUserName ||
+        message.sender == _loggedUserEmail ||
+        message.codUsuOrig == TenantContext.userId;
+  }
+
+  String _displayName(ChatMessage message) {
+    if (message.sender.trim().isNotEmpty) return message.sender.trim();
+    return _isMine(message) ? _loggedUserName : widget.sector;
+  }
+
   String _formatTime(String? timestamp) {
-    if (timestamp == null) return '';
-    final time = DateTime.tryParse(timestamp);
+    final time = DateTime.tryParse(timestamp ?? '');
     if (time == null) return '';
-    final hh = time.hour.toString().padLeft(2, '0');
-    final mm = time.minute.toString().padLeft(2, '0');
-    return '$hh:$mm';
+    return '${time.hour.toString().padLeft(2, '0')}:${time.minute.toString().padLeft(2, '0')}';
+  }
+
+  void _showSnack(String message, {bool error = false}) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        backgroundColor: error ? GridColors.error : GridColors.success,
+        content: Text(message),
+      ),
+    );
   }
 
   @override
   void dispose() {
     _scrollController.dispose();
-    _channel.sink.close();
+    _channel?.sink.close();
     _messageController.dispose();
     super.dispose();
   }
@@ -351,230 +385,55 @@ class _ChatMessageScreenState extends State<ChatMessageScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      // Fundo geral VERDE
-      backgroundColor: _kGreenPage,
-      appBar: AppBar(
-        backgroundColor: _kPrimaryRed,
-        title: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              'Chat',
-              style: TextStyle(
-                color: Colors.white,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            Text(
-              'Setor: ${widget.sector}',
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 13,
-              ),
-            ),
-          ],
-        ),
-      ),
+      backgroundColor: ChatSupportPalette.page,
       body: Column(
         children: [
-          if (_isLoading) const LinearProgressIndicator(color: _kGreenDark),
+          ChatConversationHeader(
+            sector: widget.sector,
+            userName: _loggedUserEmail,
+            compact: true,
+            onBack: () => Navigator.pop(context),
+          ),
+          if (_isLoading)
+            const LinearProgressIndicator(color: GridColors.primary),
           Expanded(
-            child: ListView.builder(
-              controller: _scrollController,
-              itemCount: _messages.length,
-              itemBuilder: (context, index) => _buildMessage(_messages[index]),
-            ),
-          ),
-          Container(
-            padding: const EdgeInsets.all(8),
-            decoration: const BoxDecoration(
-              color: Colors.white,
-              border: Border(top: BorderSide(color: _kPrimaryRed, width: 1)),
-            ),
-            child: Row(
-              children: [
-                IconButton(
-                  icon: const Icon(Icons.attach_file, color: _kGreenDark),
-                  onPressed: _uploadAndSendFile,
-                ),
-                IconButton(
-                  icon: const Icon(Icons.support_agent, color: _kPrimaryRed),
-                  onPressed: _createTicket,
-                ),
-                Expanded(
-                  child: TextField(
-                    controller: _messageController,
-                    decoration: InputDecoration(
-                      hintText: 'Digite sua mensagem...',
-                      hintStyle: const TextStyle(color: Colors.black54),
-                      filled: true,
-                      fillColor: _kGreenPage,
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(25),
-                        borderSide: const BorderSide(color: _kPrimaryRed),
-                      ),
-                      enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(25),
-                        borderSide: const BorderSide(color: _kPrimaryRed),
-                      ),
-                      focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(25),
-                        borderSide:
-                            const BorderSide(color: _kPrimaryRed, width: 2),
-                      ),
-                      contentPadding:
-                          const EdgeInsets.symmetric(horizontal: 16),
-                    ),
-                    onSubmitted: (_) => _sendMessage(),
-                  ),
-                ),
-                IconButton(
-                  icon: const Icon(Icons.send, color: _kGreenDark),
-                  onPressed: _sendMessage,
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildMessage(ChatMessage message) {
-    // Mantém a semântica original: compara pelo NOME (exibição)
-    final isMe = (message.sender == _loggedUserName);
-
-    // Avatar com BORDA VERMELHA
-    Widget avatar(String initial) {
-      return Container(
-        padding: const EdgeInsets.all(2),
-        decoration: BoxDecoration(
-          shape: BoxShape.circle,
-          border: Border.all(color: _kPrimaryRed, width: 2),
-        ),
-        child: CircleAvatar(
-          backgroundColor: _kGreenDark,
-          child: Text(
-            initial.isNotEmpty ? initial[0].toUpperCase() : '?',
-            style: const TextStyle(color: Colors.white),
-          ),
-        ),
-      );
-    }
-
-    // Nome para exibir no topo da bolha
-    final displayName =
-        (message.sender.isNotEmpty ? message.sender : _loggedUserName);
-
-    return Container(
-      margin: const EdgeInsets.symmetric(vertical: 6, horizontal: 8),
-      child: Row(
-        mainAxisAlignment:
-            isMe ? MainAxisAlignment.end : MainAxisAlignment.start,
-        crossAxisAlignment: CrossAxisAlignment.end,
-        children: [
-          if (!isMe) ...[
-            avatar(displayName),
-            const SizedBox(width: 8),
-          ],
-          Flexible(
-            child: Container(
-              constraints: BoxConstraints(
-                maxWidth: MediaQuery.of(context).size.width * 0.75,
-              ),
-              padding: const EdgeInsets.all(10),
-              margin: const EdgeInsets.symmetric(horizontal: 4),
-              decoration: BoxDecoration(
-                color: isMe ? _kGreenDark : _kGreenLightBubble, // VERDES
-                borderRadius: BorderRadius.circular(10),
-                border: Border.all(
-                    color: _kPrimaryRed, width: 1.5), // BORDA VERMELHA
-                boxShadow: [
-                  BoxShadow(
-                    color: _kPrimaryRed.withOpacity(0.15),
-                    blurRadius: 4,
-                    offset: const Offset(0, 2),
+            child: _messages.isEmpty && !_isLoading
+                ? ChatEmptyState(
+                    title: 'Conversa vazia',
+                    message:
+                        'Envie a primeira mensagem para iniciar o atendimento deste setor.',
                   )
-                ],
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // NOME DENTRO DO BOX (para ambos)
-                  Text(
-                    displayName,
-                    style: TextStyle(
-                      fontWeight: FontWeight.w700,
-                      fontSize: 12,
-                      color: isMe ? Colors.white : _kGreenDark,
-                    ),
+                : ListView.builder(
+                    controller: _scrollController,
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    itemCount: _messages.length,
+                    itemBuilder: (context, index) {
+                      final message = _messages[index];
+                      return ChatMessageBubble(
+                        message: message,
+                        isMe: _isMine(message),
+                        displayName: _displayName(message),
+                        time: _formatTime(
+                            message.timestamp ?? message.uploadDate),
+                        onOpenFile: message.fileId == null
+                            ? null
+                            : () => _openOrDownload(
+                                  message.fileId!,
+                                  message.fileName ?? 'arquivo',
+                                  fileUrl: message.fileUrl,
+                                ),
+                      );
+                    },
                   ),
-                  const SizedBox(height: 4),
-                  if (message.type == 'text')
-                    Text(
-                      message.content,
-                      style: TextStyle(
-                        fontSize: 16,
-                        color: isMe ? Colors.white : Colors.black87,
-                      ),
-                    ),
-                  if (message.type == 'file')
-                    InkWell(
-                      onTap: () => _openOrDownload(
-                        message.fileId!,
-                        message.fileName ?? 'arquivo',
-                        fileUrl: message.fileUrl,
-                      ),
-                      child: Row(
-                        children: [
-                          Icon(
-                            Icons.attach_file,
-                            size: 16,
-                            color: isMe ? Colors.white : _kGreenDark,
-                          ),
-                          const SizedBox(width: 4),
-                          Flexible(
-                            child: Text(
-                              message.fileName ?? 'arquivo',
-                              style: TextStyle(
-                                color: isMe ? Colors.white : _kGreenDark,
-                                decoration: TextDecoration.underline,
-                              ),
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  if (message.type == 'ticket')
-                    Text(
-                      message.content.isNotEmpty
-                          ? message.content
-                          : '📋 Solicitação de chamado criada',
-                      style: TextStyle(
-                        fontStyle: FontStyle.italic,
-                        color: isMe ? Colors.white : _kGreenDark,
-                      ),
-                    ),
-                  const SizedBox(height: 6),
-                  Align(
-                    alignment: Alignment.bottomRight,
-                    child: Text(
-                      _formatTime(message.timestamp),
-                      style: TextStyle(
-                        fontSize: 10,
-                        color: isMe ? Colors.white70 : Colors.black54,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
           ),
-          if (isMe) ...[
-            const SizedBox(width: 8),
-            avatar(displayName),
-          ],
+          ChatComposer(
+            controller: _messageController,
+            onAttach: _uploadAndSendFile,
+            onTicket: _createTicket,
+            onSend: _sendMessage,
+            onCorrect: _correctDraft,
+            onSummarize: _summarizeChat,
+          ),
         ],
       ),
     );

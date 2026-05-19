@@ -81,7 +81,7 @@ class _CertificadoEmpresaScreenState extends State<CertificadoEmpresaScreen> {
 
   // ── Selecionar arquivo .pfx ───────────────────────────────────────────────
   Future<void> _selecionarArquivo() async {
-    final result = await FilePicker.platform.pickFiles(
+    final result = await FilePicker.pickFiles(
       type: FileType.custom,
       allowedExtensions: ['pfx', 'p12'],
       withData: true,
@@ -383,14 +383,14 @@ class _CertificadoEmpresaScreenState extends State<CertificadoEmpresaScreen> {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
-        border: Border.all(color: statusColor.withOpacity(0.4), width: 1.5),
+        border: Border.all(color: statusColor.withValues(alpha: 0.4), width: 1.5),
         borderRadius: BorderRadius.circular(10),
-        color: statusColor.withOpacity(0.04),
+        color: statusColor.withValues(alpha: 0.04),
       ),
       child: ListTile(
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         leading: CircleAvatar(
-          backgroundColor: statusColor.withOpacity(0.15),
+          backgroundColor: statusColor.withValues(alpha: 0.15),
           child: Icon(Icons.security, color: statusColor),
         ),
         title: Row(
@@ -431,8 +431,8 @@ class _CertificadoEmpresaScreenState extends State<CertificadoEmpresaScreen> {
     margin: const EdgeInsets.only(bottom: 12),
     padding: const EdgeInsets.all(12),
     decoration: BoxDecoration(
-      color: color.withOpacity(0.08),
-      border: Border.all(color: color.withOpacity(0.4)),
+      color: color.withValues(alpha: 0.08),
+      border: Border.all(color: color.withValues(alpha: 0.4)),
       borderRadius: BorderRadius.circular(8),
     ),
     child: Row(

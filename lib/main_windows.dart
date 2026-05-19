@@ -1,4 +1,4 @@
-﻿
+
 import 'package:flutter/material.dart';
 import 'windows/screens/home_screen.dart';
 
@@ -11,7 +11,7 @@ class TaskManagerWindowsApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
+    return const MaterialApp(
       debugShowCheckedModeBanner: false,
       title: 'Task Manager Windows',
       home: WindowsHomeScreen(),

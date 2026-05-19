@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import '../../../models/cotacao_model.dart';
 import '../../services/cotacao_caller.dart';
 import '../../../widgets/user_banners.dart';
-import '../../../windows/screens/update_profile.dart';
+import '../../../web/screens/update_profile.dart';
 import '../../../models/dollar_model.dart';
 import '../../constants/custom_colors.dart';
 
@@ -267,7 +267,7 @@ class _WebCotacaoScreenState extends State<WebCotacaoScreen> {
           Navigator.push(
               context,
               MaterialPageRoute(
-                  builder: (context) => const WindowsUpdateProfileScreen()));
+                  builder: (context) => const WebUpdateProfileScreen()));
         },
       ),
       body: isLoading

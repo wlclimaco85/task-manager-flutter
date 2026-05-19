@@ -72,7 +72,7 @@ class _WindowsFileUploadScreenState extends State<WindowsFileUploadScreen> {
   }
 
   Future<void> _selectFile() async {
-    FilePickerResult? result = await FilePicker.platform.pickFiles();
+    FilePickerResult? result = await FilePicker.pickFiles();
 
     if (result != null) {
       setState(() {

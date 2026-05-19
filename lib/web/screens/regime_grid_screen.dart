@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../customization/dynamic_grid_windows_screen.dart';
 import '../../../models/regime_tributario_model.dart';
-import '../../windows/screens/details/regime_tributario_detail.dart';
+import '../../web/screens/details/regime_tributario_detail.dart';
 
 class WebRegimeGridScreen extends StatelessWidget {
   final SecurityCheck hasPermission;
@@ -16,7 +16,7 @@ class WebRegimeGridScreen extends StatelessWidget {
       fromJson: (json) => RegimeTributario.fromJson(json),
       toJson: (a) => a.toJson(),
       detailScreenBuilder: (item) =>
-          WindowsRegimeDetailScreen(item: item, hasPermission: hasPermission),
+          WebRegimeDetailScreen(item: item, hasPermission: hasPermission),
     );
   }
 }

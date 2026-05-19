@@ -5,6 +5,7 @@ import '../../../../models/auth_utility.dart';
 import '../../../../utils/api_links.dart';
 import '../../../../widgets/generic_detail_form_screen.dart';
 import '../../../../widgets/generic_grid_windows_screen.dart' show SecurityCheck;
+import '../ged_arquivos_screen.dart';
 
 class WebFuncionarioDetailScreen extends StatefulWidget {
   final Map<String, dynamic> item;
@@ -23,7 +24,8 @@ class _WebFuncionarioDetailScreenState extends State<WebFuncionarioDetailScreen>
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 3, vsync: this);
+    // H5-21: 4 abas — Dados, Ponto, Acerto, GED
+    _tabController = TabController(length: 4, vsync: this);
   }
 
   @override
@@ -51,6 +53,7 @@ class _WebFuncionarioDetailScreenState extends State<WebFuncionarioDetailScreen>
             Tab(icon: Icon(Icons.person, size: 16), text: 'Dados'),
             Tab(icon: Icon(Icons.access_time, size: 16), text: 'Ponto'),
             Tab(icon: Icon(Icons.calculate, size: 16), text: 'Acerto'),
+            Tab(icon: Icon(Icons.folder_open, size: 16), text: 'GED'),
           ],
         ),
       ),
@@ -67,6 +70,12 @@ class _WebFuncionarioDetailScreenState extends State<WebFuncionarioDetailScreen>
           _PontoTab(funcionarioId: funcId is int ? funcId : int.tryParse(funcId?.toString() ?? '')),
           // ── Tab 3: Acerto de Ponto ────────────────────────────────────
           _AcertoTab(funcionarioId: funcId is int ? funcId : int.tryParse(funcId?.toString() ?? ''), nomeFuncionario: nome),
+          // ── Tab 4: GED — documentos do funcionário (H5-21) ───────────
+          GedArquivosScreen(
+            moduloOrigem: 'funcionario',
+            idOrigem: funcId is int ? funcId : int.tryParse(funcId?.toString() ?? ''),
+            nomeOrigem: nome,
+          ),
         ],
       ),
     );
@@ -464,7 +473,7 @@ class _TabelaDetalhes extends StatelessWidget {
     final batidas = (d['batidas'] as List?)?.join(' | ') ?? '';
     return TableRow(
       decoration: BoxDecoration(
-        color: fimSemana ? const Color(0xFF1A1D27).withOpacity(0.5) : Colors.transparent,
+        color: fimSemana ? const Color(0xFF1A1D27).withValues(alpha: 0.5) : Colors.transparent,
       ),
       children: [
         _cell(d['data']?.toString() ?? '', fimSemana ? Colors.white38 : Colors.white70),

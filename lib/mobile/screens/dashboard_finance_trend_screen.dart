@@ -135,7 +135,7 @@ class _FinanceTrendChartState extends State<FinanceTrendChart> {
               belowBarData: BarAreaData(
                   show: true,
                   gradient: LinearGradient(colors: [
-                    Colors.green.withOpacity(.3),
+                    Colors.green.withValues(alpha: .3),
                     Colors.transparent
                   ], begin: Alignment.topCenter, end: Alignment.bottomCenter)),
               dotData: const FlDotData(show: true),
@@ -150,7 +150,7 @@ class _FinanceTrendChartState extends State<FinanceTrendChart> {
               belowBarData: BarAreaData(
                   show: true,
                   gradient: LinearGradient(
-                      colors: [Colors.red.withOpacity(.25), Colors.transparent],
+                      colors: [Colors.red.withValues(alpha: .25), Colors.transparent],
                       begin: Alignment.topCenter,
                       end: Alignment.bottomCenter)),
               dotData: const FlDotData(show: true),

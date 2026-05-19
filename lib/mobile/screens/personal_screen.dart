@@ -9,6 +9,8 @@ import '../../services/network_caller.dart';
 import '../../../widgets/input_field_busca.dart';
 import '../../../widgets/itens_list_personal.dart';
 
+
+import 'package:task_manager_flutter/utils/app_logger.dart';
 class PersonalScreen extends StatefulWidget {
   const PersonalScreen({
     super.key,
@@ -37,7 +39,7 @@ class _PersonalScreenState extends State<PersonalScreen> {
   bool outlinedSelected = false;
   int count = 0;
 
-  void log(String message) => print(message);
+  void log(String message) => L.d(message);
 
   bool _addNewTaskLoading = false;
 

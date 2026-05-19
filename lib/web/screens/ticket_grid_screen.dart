@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import '../../../utils/api_links.dart';
 import '../../../widgets/generic_grid_screen.dart';
 import '../../../models/ticket_model.dart';

@@ -6,8 +6,8 @@ import '../../../customization/dynamic_grid_windows_screen.dart'
 import '../../../models/login_model.dart';
 import '../../../utils/api_links.dart';
 import '../../../services/network_caller.dart';
-import '../../windows/screens/details/login_detail_screen.dart';
-import '../../windows/screens/role_dialog.dart';
+import '../../web/screens/details/login_detail_screen.dart';
+import '../../web/screens/role_dialog.dart';
 
 class WebLoginGridScreen extends StatelessWidget {
   final SecurityCheck hasPermission;
@@ -81,7 +81,7 @@ class WebLoginGridScreen extends StatelessWidget {
       hasPermission: hasPermission,
       fromJson: (json) => Login.fromJson(json),
       toJson: (a) => a.toJson(),
-      fieldOverrides: [
+      fieldOverrides: const [
         // Dropdowns reais — os campos FK (empresa_id, parceiro_id, aplicativo_id)
         // e datas automáticas são ocultados automaticamente pelo _convert
         FieldConfigWindows(
@@ -141,7 +141,7 @@ class WebLoginGridScreen extends StatelessWidget {
           isVisible: (chamado) => true,
         ),
       ],
-      detailScreenBuilder: (item) => WindowsLoginDetailScreen(
+      detailScreenBuilder: (item) => WebLoginDetailScreen(
         item: item,
         hasPermission: hasPermission,
       ),
@@ -152,7 +152,7 @@ class WebLoginGridScreen extends StatelessWidget {
     showDialog(
       context: context,
       builder: (BuildContext context) {
-        return RoleDialog(loginId: conta.id ?? 0);
+        return WebRoleDialog(loginId: conta.id ?? 0);
       },
     );
   }

@@ -30,10 +30,10 @@ class Dividendo {
       };
 
   static List<FieldConfig> fieldConfigs = [
-    FieldConfig(label: "Ação", fieldName: "acao", icon: Icons.trending_up, isInForm: true, isFilterable: true),
-    FieldConfig(label: "Ticket ID", fieldName: "ticketId", icon: Icons.confirmation_number, isInForm: true),
-    FieldConfig(label: "Data Recebimento", fieldName: "dataRecebimento", icon: Icons.date_range, isInForm: true),
-    FieldConfig(label: "Valor por Ação", fieldName: "valorPorAcao", icon: Icons.attach_money, isInForm: true),
-    FieldConfig(label: "Valor Total", fieldName: "valorTotal", icon: Icons.monetization_on, isInForm: true),
+    const FieldConfig(label: "Ação", fieldName: "acao", icon: Icons.trending_up, isInForm: true, isFilterable: true),
+    const FieldConfig(label: "Ticket ID", fieldName: "ticketId", icon: Icons.confirmation_number, isInForm: true),
+    const FieldConfig(label: "Data Recebimento", fieldName: "dataRecebimento", icon: Icons.date_range, isInForm: true),
+    const FieldConfig(label: "Valor por Ação", fieldName: "valorPorAcao", icon: Icons.attach_money, isInForm: true),
+    const FieldConfig(label: "Valor Total", fieldName: "valorTotal", icon: Icons.monetization_on, isInForm: true),
   ];
 }

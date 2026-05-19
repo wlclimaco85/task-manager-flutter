@@ -5,11 +5,14 @@ import '../../services/formaPagamento_caller.dart';
 import '../../services/network_caller.dart';
 import '../customization/generic_grid_card.dart';
 import 'audit_model.dart';
+import 'categoria_financeira_model.dart';
+import 'centro_custo_model.dart';
 import 'conta_bancaria_model.dart';
 import 'empresa_model.dart';
 import 'file_attachment_model.dart';
 import 'forma_pagamento_model.dart';
 import 'parceiro_model.dart';
+import '../widgets/finance/financial_lookup_loader.dart';
 
 enum StatusConta { ABERTA, BAIXADA, CANCELADA }
 
@@ -29,6 +32,8 @@ class ContaPagar {
   Parceiro? parceiroDev;
   FileAttachment? file;
   FormaPagamento? formaPagamento;
+  CategoriaFinanceira? categoriaFinanceira;
+  CentroCusto? centroCusto;
   Audit audit;
   ContaBancaria? contaBaixa;
 
@@ -48,6 +53,8 @@ class ContaPagar {
     this.parceiroDev,
     this.file,
     this.formaPagamento,
+    this.categoriaFinanceira,
+    this.centroCusto,
     required this.audit,
     this.contaBaixa,
   });
@@ -75,6 +82,8 @@ class ContaPagar {
       formaPagamento: json['formaPagamento'] != null
           ? FormaPagamento.fromJson(json['formaPagamento'])
           : null,
+      categoriaFinanceira: _parseCategoriaFinanceira(json),
+      centroCusto: _parseCentroCusto(json),
       audit: Audit.fromJson(json['audit'] ?? {}),
       contaBaixa: json['contaBaixa'] != null
           ? ContaBancaria.fromJson(json['contaBaixa'])
@@ -138,6 +147,8 @@ class ContaPagar {
       'parceiroDev': parceiroDev?.toJson(),
       'file': file?.toJson(),
       'formaPagamento': formaPagamento?.toJson(),
+      'categoriaFinanceira': categoriaFinanceira?.toJson(),
+      'centroCusto': centroCusto?.toJson(),
       'audit': audit.toJson(),
       'contaBaixa': contaBaixa?.toJson(),
     };
@@ -231,6 +242,38 @@ class ContaPagar {
       isVisibleByDefault: true,
       isFixed: false,
     ),
+    FieldConfig(
+      label: "Categoria Financeira",
+      fieldName: "categoriaFinanceira.id",
+      displayFieldName: "categoriaFinanceira.descricao",
+      icon: Icons.category,
+      isInForm: true,
+      isFilterable: true,
+      fieldType: FieldType.dropdown,
+      dropdownFutureBuilder: () async =>
+          await FinancialLookupLoader.loadCategoriasFinanceiras(),
+      dropdownValueField: 'value',
+      dropdownDisplayField: 'label',
+      isRequired: false,
+      isVisibleByDefault: true,
+      isFixed: false,
+    ),
+    FieldConfig(
+      label: "Centro de Custo",
+      fieldName: "centroCusto.id",
+      displayFieldName: "centroCusto.nome",
+      icon: Icons.account_tree,
+      isInForm: true,
+      isFilterable: true,
+      fieldType: FieldType.dropdown,
+      dropdownFutureBuilder: () async =>
+          await FinancialLookupLoader.loadCentrosCusto(),
+      dropdownValueField: 'value',
+      dropdownDisplayField: 'label',
+      isRequired: false,
+      isVisibleByDefault: true,
+      isFixed: false,
+    ),
     // NFe — dropdown de pesquisa (NF-e de entrada para contas a pagar)
     FieldConfig(
       label: "NF-e",
@@ -266,5 +309,33 @@ class ContaPagar {
       return lista.map((e) => {'value': e['id'].toString(), 'label': 'NF ${e['numero'] ?? e['id']}'}).toList();
     }
     return [];
+  }
+
+  static CategoriaFinanceira? _parseCategoriaFinanceira(Map<String, dynamic> json) {
+    final raw = json['categoriaFinanceira'] ?? json['classificacao'];
+    if (raw is Map) {
+      return CategoriaFinanceira.fromJson(Map<String, dynamic>.from(raw));
+    }
+
+    final rawId = json['categoriaFinanceiraId'] ?? json['classificacaoId'];
+    if (rawId != null) {
+      return CategoriaFinanceira(id: rawId is num ? rawId.toInt() : int.tryParse(rawId.toString()));
+    }
+
+    return null;
+  }
+
+  static CentroCusto? _parseCentroCusto(Map<String, dynamic> json) {
+    final raw = json['centroCusto'] ?? json['centro_custo'];
+    if (raw is Map) {
+      return CentroCusto.fromJson(Map<String, dynamic>.from(raw));
+    }
+
+    final rawId = json['centroCustoId'] ?? json['centro_custo_id'];
+    if (rawId != null) {
+      return CentroCusto(id: rawId is num ? rawId.toInt() : int.tryParse(rawId.toString()));
+    }
+
+    return null;
   }
 }

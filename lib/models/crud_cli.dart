@@ -10,7 +10,7 @@ void main(List<String> args) {
   final lower = name.toLowerCase();
   final modelFile = "lib/models/${lower}_model.dart";
   final telaConfigFile = "lib/data/models/telas/${lower}_tela_config.dart";
-  final screenFile = "lib/screens/${lower}/${lower}_grid_screen.dart";
+  final screenFile = "lib/screens/$lower/${lower}_grid_screen.dart";
 
   print("Gerando CRUD para: $name");
 
@@ -28,9 +28,9 @@ class ${name}GridScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return CrudGenerator<${name}>(
+    return CrudGenerator<$name>(
       tela: ${name}TelaConfig.config,
-      fromJson: (json) => ${name}.fromJson(json),
+      fromJson: (json) => $name.fromJson(json),
       toJson: (e) => e.toJson(),
       permissionCheck: permission,
     ).buildGrid();

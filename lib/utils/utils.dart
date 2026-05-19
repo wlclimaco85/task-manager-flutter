@@ -5,6 +5,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
 import '../../../models/auth_utility.dart';
 
+
+import 'package:task_manager_flutter/utils/app_logger.dart';
 /// Signature for a function that creates a widget for a given `day`.
 typedef DayBuilder = Widget? Function(BuildContext context, DateTime day);
 
@@ -60,8 +62,8 @@ dynamic pegarEmpresaLogada() {
   final empresaId = user?.empresa?.id;
 
   // Debug para verificar o que está retornando
-  print('Usuário: ${AuthUtility.userInfo}');
-  print('Empresa ID: $empresaId');
+  L.d('Usuário: ${AuthUtility.userInfo}');
+  L.d('Empresa ID: $empresaId');
 
   // Se 0 não for um valor válido, retorne null
   return (empresaId != null && empresaId != 0) ? empresaId : null;
@@ -72,8 +74,8 @@ dynamic pegarParceiroLogada() {
   final empresaId = user?.parceiro?.id;
 
   // Debug para verificar o que está retornando
-  print('Usuário: ${AuthUtility.userInfo}');
-  print('Empresa ID: $empresaId');
+  L.d('Usuário: ${AuthUtility.userInfo}');
+  L.d('Empresa ID: $empresaId');
 
   // Se 0 não for um valor válido, retorne null
   return (empresaId != null && empresaId != 0) ? empresaId : null;
@@ -84,8 +86,8 @@ int? pegarUsuarioLogado() {
   final empresaId = user?.id;
 
   // Debug para verificar o que está retornando
-  print('Usuário: ${AuthUtility.userInfo}');
-  print('Empresa ID: $empresaId');
+  L.d('Usuário: ${AuthUtility.userInfo}');
+  L.d('Empresa ID: $empresaId');
 
   // Retorna null se for 0 ou null
   return (empresaId != null && empresaId != 0) ? empresaId : null;

@@ -27,9 +27,9 @@ class Pedido {
       };
 
   static List<FieldConfig> fieldConfigs = [
-    FieldConfig(label: "Usuário", fieldName: "usuario", icon: Icons.person, isInForm: true, isFilterable: true),
-    FieldConfig(label: "Total", fieldName: "total", icon: Icons.attach_money, isInForm: true),
-    FieldConfig(label: "Status", fieldName: "status", icon: Icons.info, isInForm: true, isFilterable: true),
-    FieldConfig(label: "Data Pedido", fieldName: "dataPedido", icon: Icons.date_range, isInForm: true),
+    const FieldConfig(label: "Usuário", fieldName: "usuario", icon: Icons.person, isInForm: true, isFilterable: true),
+    const FieldConfig(label: "Total", fieldName: "total", icon: Icons.attach_money, isInForm: true),
+    const FieldConfig(label: "Status", fieldName: "status", icon: Icons.info, isInForm: true, isFilterable: true),
+    const FieldConfig(label: "Data Pedido", fieldName: "dataPedido", icon: Icons.date_range, isInForm: true),
   ];
 }

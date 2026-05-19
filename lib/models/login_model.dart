@@ -191,7 +191,7 @@ class Login {
       dropdownDisplayField: 'label',
       isRequired: true,
     ),
-    FieldConfig(
+    const FieldConfig(
       label: "Empresa",
       fieldName: "empresa",
       displayFieldName: "empresa.nome",
@@ -203,7 +203,7 @@ class Login {
       dropdownValueField: 'value',
       dropdownDisplayField: 'label',
     ),
-    FieldConfig(
+    const FieldConfig(
       label: "Parceiro",
       fieldName: "parceiro",
       displayFieldName: "parceiro.nome",
@@ -215,7 +215,7 @@ class Login {
       dropdownValueField: 'value',
       dropdownDisplayField: 'label',
     ),
-    FieldConfig(
+    const FieldConfig(
       label: "Aplicativo",
       fieldName: "aplicativo",
       displayFieldName: "aplicativo.nome",

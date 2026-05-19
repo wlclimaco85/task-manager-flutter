@@ -68,7 +68,7 @@ class CheckoutCaller {
 
   static Future<void> uploadContract(int vendaID) async {
     try {
-      FilePickerResult? result = await FilePicker.platform.pickFiles(
+      FilePickerResult? result = await FilePicker.pickFiles(
         type: FileType.custom,
         allowedExtensions: ['pdf'],
       );

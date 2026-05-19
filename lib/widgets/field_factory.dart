@@ -75,7 +75,7 @@ class FieldFactory {
   ) {
     return TextFormField(
       controller: controller,
-      keyboardType: TextInputType.numberWithOptions(decimal: true),
+      keyboardType: const TextInputType.numberWithOptions(decimal: true),
       decoration: _buildInputDecoration(config),
       inputFormatters: [
         _NumberInputFormatter(
@@ -439,7 +439,7 @@ class FieldFactory {
     BuildContext context,
   ) async {
     try {
-      FilePickerResult? result = await FilePicker.platform.pickFiles(
+      FilePickerResult? result = await FilePicker.pickFiles(
         type: FileType.custom,
         allowedExtensions:
             config.fileConfig?.allowedExtensions ??

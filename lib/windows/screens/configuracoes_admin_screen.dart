@@ -43,7 +43,7 @@ class _WindowsConfiguracoesAdminScreenState extends State<WindowsConfiguracoesAd
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
           child: Row(
             children: [
-              Icon(FontAwesomeIcons.gear, size: 18, color: Colors.green[700]),
+              FaIcon(FontAwesomeIcons.gear, size: 18, color: Colors.green[700]),
               const SizedBox(width: 8),
               Text("Configurações Administrativas",
                   style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.green[800])),
@@ -96,7 +96,7 @@ class _WindowsConfiguracoesAdminScreenState extends State<WindowsConfiguracoesAd
 }
 
 class _AdminTab {
-  final IconData icon;
+  final FaIconData icon;
   final String label;
   final Widget screen;
   _AdminTab({required this.icon, required this.label, required this.screen});

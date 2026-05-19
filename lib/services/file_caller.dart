@@ -6,6 +6,8 @@ import '../../services/network_caller.dart';
 import '../../../utils/api_links.dart';
 import '../../../utils/utils.dart';
 
+
+import 'package:task_manager_flutter/utils/app_logger.dart';
 class FileCaller {
   Future<List<Map<String, dynamic>>> fetchDiretorios() async {
     final response = await NetworkCaller().getRequest(ApiLinks.allDiretorios);
@@ -69,11 +71,11 @@ class FileCaller {
         return true;
       } else {
         final msg = await response.stream.bytesToString();
-        print("Erro upload: ${response.statusCode} => $msg");
+        L.d("Erro upload: ${response.statusCode} => $msg");
         return false;
       }
     } catch (e) {
-      print("Erro ao enviar arquivo: $e");
+      L.d("Erro ao enviar arquivo: $e");
       return false;
     }
   }
@@ -119,11 +121,11 @@ class FileCaller {
         return true;
       } else {
         final respText = await response.stream.bytesToString();
-        print("Erro ao enviar: ${response.statusCode} -> $respText");
+        L.d("Erro ao enviar: ${response.statusCode} -> $respText");
         return false;
       }
     } catch (e) {
-      print("Erro ao enviar arquivo: $e");
+      L.d("Erro ao enviar arquivo: $e");
       return false;
     }
   }

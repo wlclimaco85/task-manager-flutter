@@ -1,10 +1,11 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import '../../../customization/dynamic_grid_windows_screen.dart';
 import '../../../models/auth_utility.dart';
 import '../../../utils/api_links.dart';
 import '../../../widgets/generic_grid_windows_screen.dart'
     show FieldConfigWindows, FieldType, CustomAction;
+import './ged_arquivos_screen.dart';
 
 class WebProdutoGridScreen extends StatelessWidget {
   final SecurityCheck hasPermission;
@@ -68,7 +69,24 @@ class WebProdutoGridScreen extends StatelessWidget {
       toJson: (a) => a,
       fieldOverrides: fieldOverrides.isNotEmpty ? fieldOverrides : null,
       // H4: ações de excluir na grid de produto
+      // H5-21: botão para abrir GED filtrado pelo produto
       customActions: () => [
+        CustomAction<Map<String, dynamic>>(
+          icon: Icons.folder_open,
+          label: 'Ver GED',
+          onPressed: (ctx, item) {
+            final id = item['id'] is int ? item['id'] as int : int.tryParse(item['id']?.toString() ?? '');
+            final nome = item['nome']?.toString() ?? item['xProd']?.toString() ?? '';
+            Navigator.push(ctx, MaterialPageRoute(
+              builder: (_) => GedArquivosScreen(
+                moduloOrigem: 'produto',
+                idOrigem: id,
+                nomeOrigem: nome,
+              ),
+            ));
+          },
+          isVisible: (_) => true,
+        ),
         CustomAction<Map<String, dynamic>>(
           icon: Icons.delete_outline,
           label: 'Excluir',

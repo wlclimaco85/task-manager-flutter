@@ -1,4 +1,3 @@
-﻿import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:task_manager_flutter/services/network_caller.dart';
@@ -273,7 +272,7 @@ class _ParceiroEditScreenState extends State<ParceiroEditScreen> {
   }
 
   Widget _buildPaisDropdown() => DropdownButtonFormField<PaisModel>(
-        value: _paises.contains(_paisSelecionado) ? _paisSelecionado : null,
+        initialValue: _paises.contains(_paisSelecionado) ? _paisSelecionado : null,
         items: _paises.map((p) => DropdownMenuItem(value: p, child: Text(p.nome))).toList(),
         decoration: InputDecoration(labelText: 'País', filled: true, fillColor: GridColors.inputBackground, border: OutlineInputBorder(borderRadius: BorderRadius.circular(12))),
         onChanged: (v) async {
@@ -284,7 +283,7 @@ class _ParceiroEditScreenState extends State<ParceiroEditScreen> {
       );
 
   Widget _buildEstadoDropdown() => DropdownButtonFormField<EstadoModel>(
-        value: _estados.contains(_estadoSelecionado) ? _estadoSelecionado : null,
+        initialValue: _estados.contains(_estadoSelecionado) ? _estadoSelecionado : null,
         items: _estados.map((e) => DropdownMenuItem(value: e, child: Text(e.nome))).toList(),
         decoration: InputDecoration(labelText: _loadingEstados ? 'Estado (carregando...)' : 'Estado', filled: true, fillColor: GridColors.inputBackground, border: OutlineInputBorder(borderRadius: BorderRadius.circular(12))),
         onChanged: (v) async {
@@ -295,7 +294,7 @@ class _ParceiroEditScreenState extends State<ParceiroEditScreen> {
       );
 
   Widget _buildCidadeDropdown() => DropdownButtonFormField<CidadeModel>(
-        value: _cidades.contains(_cidadeSelecionada) ? _cidadeSelecionada : null,
+        initialValue: _cidades.contains(_cidadeSelecionada) ? _cidadeSelecionada : null,
         items: _cidades.map((c) => DropdownMenuItem(value: c, child: Text(c.nome))).toList(),
         decoration: InputDecoration(labelText: _loadingCidades ? 'Cidade (carregando...)' : 'Cidade', filled: true, fillColor: GridColors.inputBackground, border: OutlineInputBorder(borderRadius: BorderRadius.circular(12))),
         onChanged: (v) => setState(() => _cidadeSelecionada = v),

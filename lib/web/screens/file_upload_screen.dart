@@ -71,7 +71,7 @@ class _WebFileUploadScreenState extends State<WebFileUploadScreen> {
   }
 
   Future<void> _selectFile() async {
-    FilePickerResult? result = await FilePicker.platform.pickFiles();
+    FilePickerResult? result = await FilePicker.pickFiles();
 
     if (result != null) {
       setState(() {

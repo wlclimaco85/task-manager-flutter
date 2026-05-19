@@ -93,7 +93,7 @@ class _ClientDistributionPieState extends State<ClientDistributionPie> {
       return PieChartSectionData(
         value: b.valor / total,
         title: b.cliente,
-        color: color.withOpacity(0.9 - (i * 0.08)),
+        color: color.withValues(alpha: 0.9 - (i * 0.08)),
         radius: 70,
       );
     }).toList();

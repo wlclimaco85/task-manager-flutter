@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+
+import 'package:task_manager_flutter/utils/app_logger.dart';
 int? selectedOption = 0;
 
 class GetFazAvaliacao {
@@ -80,7 +82,7 @@ class _LabeledCheckboxState extends State<LabeledCheckbox> {
                         onChanged: (value) {
                           setState(() {
                             selectedOption = value;
-                            print("Selected Option: $selectedOption");
+                            L.d("Selected Option: $selectedOption");
                           });
                         },
                       ),
@@ -110,7 +112,7 @@ class _LabeledCheckboxState extends State<LabeledCheckbox> {
                         onChanged: (int? value) {
                           setState(() {
                             selectedOption = value;
-                            print("Selected Option: $selectedOption");
+                            L.d("Selected Option: $selectedOption");
                           });
                         },
                       ),
@@ -135,7 +137,7 @@ class _LabeledCheckboxState extends State<LabeledCheckbox> {
                         onChanged: (value) {
                           setState(() {
                             selectedOption = value;
-                            print("Selected Option: $selectedOption");
+                            L.d("Selected Option: $selectedOption");
                           });
                         },
                       ),

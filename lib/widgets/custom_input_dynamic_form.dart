@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import '../../constants/custom_colors.dart';
 import 'package:task_manager_flutter/utils/ensure_visible_when_focused.dart';
 // Copyright 2019 Aleksander Woźniak

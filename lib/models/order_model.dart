@@ -42,13 +42,13 @@ class OrderItem {
       };
 
   static List<FieldConfig> fieldConfigs = [
-    FieldConfig(label: "Ação", fieldName: "acao", icon: Icons.trending_up, isInForm: true, isFilterable: true),
-    FieldConfig(label: "Valor Compra", fieldName: "valorCompra", icon: Icons.attach_money, isInForm: true),
-    FieldConfig(label: "Cotação Atual", fieldName: "cotacaoAtual", icon: Icons.show_chart, isInForm: true),
-    FieldConfig(label: "Lucro", fieldName: "lucro", icon: Icons.monetization_on, isInForm: true),
-    FieldConfig(label: "Status", fieldName: "status", icon: Icons.info, isInForm: true, isFilterable: true),
-    FieldConfig(label: "Tipo", fieldName: "tipo", icon: Icons.category, isInForm: true),
-    FieldConfig(label: "Estratégia", fieldName: "estrategia", icon: Icons.psychology, isInForm: true),
-    FieldConfig(label: "Robô", fieldName: "nomeRobo", icon: Icons.smart_toy, isInForm: true),
+    const FieldConfig(label: "Ação", fieldName: "acao", icon: Icons.trending_up, isInForm: true, isFilterable: true),
+    const FieldConfig(label: "Valor Compra", fieldName: "valorCompra", icon: Icons.attach_money, isInForm: true),
+    const FieldConfig(label: "Cotação Atual", fieldName: "cotacaoAtual", icon: Icons.show_chart, isInForm: true),
+    const FieldConfig(label: "Lucro", fieldName: "lucro", icon: Icons.monetization_on, isInForm: true),
+    const FieldConfig(label: "Status", fieldName: "status", icon: Icons.info, isInForm: true, isFilterable: true),
+    const FieldConfig(label: "Tipo", fieldName: "tipo", icon: Icons.category, isInForm: true),
+    const FieldConfig(label: "Estratégia", fieldName: "estrategia", icon: Icons.psychology, isInForm: true),
+    const FieldConfig(label: "Robô", fieldName: "nomeRobo", icon: Icons.smart_toy, isInForm: true),
   ];
 }

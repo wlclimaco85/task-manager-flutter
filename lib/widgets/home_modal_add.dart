@@ -15,6 +15,8 @@ import '../../../widgets/custom_plano_box_form.dart';
 import '../../../widgets/custom_check_box_form.dart';
 import '../../../widgets/custom_horario_box_form.dart';
 
+
+import 'package:task_manager_flutter/utils/app_logger.dart';
 class HomeModalAdd extends StatefulWidget {
   const HomeModalAdd({super.key});
   @override
@@ -69,7 +71,7 @@ class _HomeModalAddState extends State<HomeModalAdd> {
       const asciiDecoder = AsciiDecoder();
       final asciiValues = [104, 101, 108, 108, 111];
       return asciiValues;
-      print(response.exception);
+      L.d(response.exception);
     }
   }
 
@@ -192,10 +194,10 @@ class _HomeModalAddState extends State<HomeModalAdd> {
     if (pickImage != null) {
       // var bytes = File(pickImage!.path).readAsBytesSync();
       // String base64Image = base64Encode(bytes);
-      print('upload proccess started');
+      L.d('upload proccess started');
       final bytess = io.File(pickImage!.path).readAsBytesSync();
       //  List<int> imageBytes = pickImage?.readAsBytesSync();
-      // print(imageBytes);
+      // L.d(imageBytes);
       //String base64Images = base64Encode(imageBytes);
       base64Imagess = base64Encode(bytess);
     }
@@ -284,8 +286,8 @@ class _HomeModalAddState extends State<HomeModalAdd> {
         if (entry.key == key && entry.value == chave) {
           _dataArray[key][chave] = value;
         }
-        print(entry.key);
-        print(entry.value);
+        L.d(entry.key);
+        L.d(entry.value);
       });
 
       for (var map in _dataArray) {
@@ -434,7 +436,7 @@ class _HomeModalAddState extends State<HomeModalAdd> {
                                 ),
                               ),
                               items: sexo.map((item) {
-                                return DropdownMenuItem(
+                                return DropdownItem(
                                   value: item,
                                   //disable default onTap to avoid closing menu when selecting an item
                                   enabled: false,
@@ -482,9 +484,7 @@ class _HomeModalAddState extends State<HomeModalAdd> {
                                 );
                               }).toList(),
                               //Use last selected item as the current value so if we've limited menu height, it scroll to last item.
-                              value: sexoSelectedItems.isEmpty
-                                  ? null
-                                  : sexoSelectedItems.last,
+                              valueListenable: ValueNotifier<String?>(sexoSelectedItems.isEmpty ? null : sexoSelectedItems.last),
                               onChanged: (value) {},
                               selectedItemBuilder: (context) {
                                 return sexoSelectedItems.map(
@@ -543,7 +543,6 @@ class _HomeModalAddState extends State<HomeModalAdd> {
                                 ),
                               ),
                               menuItemStyleData: const MenuItemStyleData(
-                                height: 40,
                                 padding: EdgeInsets.only(left: 14, right: 14),
                               ),
                             ),

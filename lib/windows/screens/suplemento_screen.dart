@@ -9,6 +9,8 @@ import '../../../widgets/input_field_busca.dart';
 import '../../windows/screens/suplemento_list.dart';
 import '../../windows/screens/suplemento_add.dart';
 
+
+import 'package:task_manager_flutter/utils/app_logger.dart';
 class WindowsSuplementoScreen extends StatefulWidget {
   const WindowsSuplementoScreen({super.key});
 
@@ -36,7 +38,7 @@ class _SuplementoScreenState extends State<WindowsSuplementoScreen> {
   int count = 0;
   final List<String> modalidadeList = ['Musculação'];
 
-  void log(String message) => print(message);
+  void log(String message) => L.d(message);
 
   bool _addNewTaskLoading = false;
 

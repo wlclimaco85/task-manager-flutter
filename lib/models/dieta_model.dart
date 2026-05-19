@@ -47,39 +47,39 @@ class Dieta {
   }
 
   static List<FieldConfig> fieldConfigs = [
-    FieldConfig(
+    const FieldConfig(
       label: "Nutricionista",
       fieldName: "nutricionista",
       icon: Icons.person,
       isInForm: true,
       isFilterable: true,
     ),
-    FieldConfig(
+    const FieldConfig(
       label: "Objetivo",
       fieldName: "objetivo",
       icon: Icons.flag,
       isInForm: true,
       isFilterable: true,
     ),
-    FieldConfig(
+    const FieldConfig(
       label: "Descrição",
       fieldName: "descricao",
       icon: Icons.description,
       isInForm: true,
     ),
-    FieldConfig(
+    const FieldConfig(
       label: "Data Consulta",
       fieldName: "dtConsulta",
       icon: Icons.calendar_month,
       isInForm: true,
     ),
-    FieldConfig(
+    const FieldConfig(
       label: "Data Início",
       fieldName: "dtInicio",
       icon: Icons.calendar_today,
       isInForm: true,
     ),
-    FieldConfig(
+    const FieldConfig(
       label: "Data Final",
       fieldName: "dtFinal",
       icon: Icons.calendar_today,

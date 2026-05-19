@@ -61,7 +61,7 @@ class Alimento {
   }
 
   static List<FieldConfig> fieldConfigs = [
-    FieldConfig(
+    const FieldConfig(
       label: "ID",
       fieldName: "id",
       icon: Icons.numbers,
@@ -80,14 +80,14 @@ class Alimento {
         return null;
       },
     ),
-    FieldConfig(
+    const FieldConfig(
       label: "Grupo Alimentar",
       fieldName: "grupoAlimentar",
       icon: Icons.category,
       isFilterable: true,
       isInForm: true,
     ),
-    FieldConfig(
+    const FieldConfig(
       label: "Calorias",
       fieldName: "calorias",
       icon: Icons.local_fire_department,
@@ -95,7 +95,7 @@ class Alimento {
       isInForm: true,
       fieldType: FieldType.number,
     ),
-    FieldConfig(
+    const FieldConfig(
       label: "Proteínas",
       fieldName: "proteinas",
       icon: Icons.fitness_center,
@@ -103,7 +103,7 @@ class Alimento {
       isInForm: true,
       fieldType: FieldType.number,
     ),
-    FieldConfig(
+    const FieldConfig(
       label: "Carboidratos",
       fieldName: "carboidratos",
       icon: Icons.grain,
@@ -111,7 +111,7 @@ class Alimento {
       isInForm: true,
       fieldType: FieldType.number,
     ),
-    FieldConfig(
+    const FieldConfig(
       label: "Gorduras",
       fieldName: "gorduras",
       icon: Icons.opacity,
@@ -119,7 +119,7 @@ class Alimento {
       isInForm: true,
       fieldType: FieldType.number,
     ),
-    FieldConfig(
+    const FieldConfig(
       label: "Ativo",
       fieldName: "ativo",
       icon: Icons.check_circle,

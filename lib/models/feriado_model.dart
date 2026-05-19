@@ -17,8 +17,8 @@ class Feriado {
   Map<String, dynamic> toJson() => {'id': id, 'nome': nome, 'data': data, 'repeteAno': repeteAno};
 
   static List<FieldConfig> fieldConfigs = [
-    FieldConfig(label: "Nome", fieldName: "nome", icon: Icons.celebration, isInForm: true, isFilterable: true),
-    FieldConfig(label: "Data", fieldName: "data", icon: Icons.date_range, isInForm: true),
-    FieldConfig(label: "Repete Ano", fieldName: "repeteAno", icon: Icons.repeat, isInForm: true),
+    const FieldConfig(label: "Nome", fieldName: "nome", icon: Icons.celebration, isInForm: true, isFilterable: true),
+    const FieldConfig(label: "Data", fieldName: "data", icon: Icons.date_range, isInForm: true),
+    const FieldConfig(label: "Repete Ano", fieldName: "repeteAno", icon: Icons.repeat, isInForm: true),
   ];
 }

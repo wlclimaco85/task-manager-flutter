@@ -20,7 +20,7 @@ enum AppScreen {
   dashChamadosCards, dashChamadosPie, dashTendenciaChamados,
   dashChatsLinha, dashChatsDiario, dashSaldoContas, dashEvolucaoSaldos,
   // Web / Windows – Sidebar
-  noticias, logins, cotacao, comprar, aplicativo, vender, perfil,
+  noticias, logins, cotacao, trading, comprar, aplicativo, vender, perfil,
   regimeTributario, alimentos, dietas, empresas, exames, exercicios,
   gruposMusculares, medicamentos, mensalidades, modalidades, objetivos,
   personais, planos, roles, setores, suplementos,
@@ -37,7 +37,7 @@ enum AppScreen {
   // Produto
   produto,
   // Cadastros auxiliares NF-e e produto
-  unidadeMedida, catalogoProduto, nfeSerie,
+  unidadeMedida, catalogoProduto, nfeSerie, pdvNfce, configFiscal,
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -84,6 +84,7 @@ const _escritorioScreens = {
   AppScreen.nfeSerie:           _all,
   AppScreen.contasPagar:        _all,
   AppScreen.contasReceber:      _all,
+  AppScreen.trading:            _ro,
   AppScreen.chamados:           _all,
   AppScreen.formasPagamento:    _all,
   AppScreen.diretorios:         _all,
@@ -100,6 +101,8 @@ const _escritorioScreens = {
   AppScreen.kanbanChamados:     _all,
   AppScreen.nfeEntrada:         _all,
   AppScreen.nfeSaida:           _all,
+  AppScreen.pdvNfce:            _all,
+  AppScreen.configFiscal:       _all,
   AppScreen.dashKpis:                  _ro,
   AppScreen.dashFinanceCards:          _ro,
   AppScreen.dashFluxoDiario:           _ro,
@@ -133,6 +136,7 @@ final Map<UserProfile, Map<AppScreen, Set<AppAction>>> _fallbackMatrix = {
   UserProfile.financeiro: {
     AppScreen.parceiros:       _all,
     AppScreen.formasPagamento: _all,
+    AppScreen.trading:         _ro,
     AppScreen.diretorios:      _all,
     AppScreen.arquivos:        _all,
     AppScreen.contasBancarias: _all,
@@ -141,6 +145,8 @@ final Map<UserProfile, Map<AppScreen, Set<AppAction>>> _fallbackMatrix = {
     AppScreen.contasReceber:   _all,
     AppScreen.nfeEntrada:      _all,
     AppScreen.nfeSaida:        _all,
+    AppScreen.pdvNfce:         _all,
+    AppScreen.configFiscal:    _all,
     AppScreen.dashboard:       _ro,
     AppScreen.dashKpis:                  _ro,
     AppScreen.dashFinanceCards:          _ro,
@@ -174,6 +180,8 @@ final Map<UserProfile, Map<AppScreen, Set<AppAction>>> _fallbackMatrix = {
     AppScreen.contasReceber:   _all,
     AppScreen.nfeEntrada:      _all,
     AppScreen.nfeSaida:        _all,
+    AppScreen.pdvNfce:         _all,
+    AppScreen.configFiscal:    _all,
     AppScreen.noticias:        _ro,
     AppScreen.perfil:          _all,
     AppScreen.calendario:      _ro,
@@ -295,6 +303,17 @@ class SecurityMatrix {
   bool canInsert(AppScreen screen) => _can(screen, AppAction.insert);
   bool canUpdate(AppScreen screen) => _can(screen, AppAction.update);
   bool canDelete(AppScreen screen) => _can(screen, AppAction.delete);
+
+  bool hasRoleKey(String roleKey) {
+    final roles = AuthUtility.userInfo?.login?.roles ?? const [];
+    return roles.any((role) => role.key == roleKey);
+  }
+
+  bool get canManageFiscalEvents {
+    if (profile == UserProfile.system || tipoLogin == LoginEnum.MASTER) return true;
+    return hasRoleKey('ROLE_ADMIN') || hasRoleKey('ROLE_FISCAL');
+  }
+
   bool hasAnyAccess(AppScreen screen) {
     if (profile == UserProfile.system || tipoLogin == LoginEnum.MASTER) return true;
     if (_backendPerms.isNotEmpty) return (_backendPerms[screen.name]?.isNotEmpty) ?? false;
@@ -311,11 +330,12 @@ class SecurityMatrix {
     AppScreen.calendario, AppScreen.obrigacoesFiscais, AppScreen.pedidos,
     AppScreen.configuracoesAdmin, AppScreen.contasBancarias, AppScreen.contaBancaria,
     AppScreen.dashboard, AppScreen.feriados, AppScreen.funcionarios,
-    AppScreen.kanbanChamados, AppScreen.nfeEntrada, AppScreen.nfeSaida,
+    AppScreen.kanbanChamados, AppScreen.nfeEntrada, AppScreen.nfeSaida, AppScreen.pdvNfce, AppScreen.configFiscal,
     AppScreen.pontoWeb, AppScreen.solicitacaoAjustePonto, AppScreen.ajustePonto,
     AppScreen.noticias, AppScreen.perfil, AppScreen.roles,
     AppScreen.produto, AppScreen.unidadeMedida, AppScreen.catalogoProduto, AppScreen.nfeSerie,
     AppScreen.tipoParceiro, AppScreen.servicoContratado, AppScreen.moduloServico,
+    AppScreen.trading,
   ].where((s) => canView(s)).toList();
 
   List<AppScreen> get visibleDashboardWidgets => [
@@ -337,13 +357,13 @@ class SecurityMatrix {
 const Map<String, Set<AppScreen>> _moduloToScreens = {
   'Financeiro': {
     AppScreen.contasPagar, AppScreen.contasReceber, AppScreen.contasBancarias,
-    AppScreen.contaBancaria, AppScreen.formasPagamento,
+    AppScreen.contaBancaria, AppScreen.formasPagamento, AppScreen.trading,
     AppScreen.dashFinanceCards, AppScreen.dashFluxoDiario,
     AppScreen.dashTendenciaFinanceira, AppScreen.dashComparativoTrimestral,
     AppScreen.dashSaldoContas, AppScreen.dashEvolucaoSaldos,
   },
   'Notas Fiscais': {
-    AppScreen.nfeEntrada, AppScreen.nfeSaida, AppScreen.obrigacoesFiscais,
+    AppScreen.nfeEntrada, AppScreen.nfeSaida, AppScreen.pdvNfce, AppScreen.configFiscal, AppScreen.obrigacoesFiscais,
     AppScreen.produto, AppScreen.unidadeMedida, AppScreen.catalogoProduto, AppScreen.nfeSerie,
   },
   'Departamento Pessoal': {

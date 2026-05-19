@@ -154,7 +154,7 @@ class _TicketsTrendChartState extends State<TicketsTrendChart> {
                 lineTouchData: LineTouchData(
                   touchTooltipData: LineTouchTooltipData(
                     getTooltipColor: (touched) =>
-                        GridColors.primary.withOpacity(0.85),
+                        GridColors.primary.withValues(alpha: 0.85),
                     getTooltipItems: (spots) {
                       return spots.map((s) {
                         final i = s.spotIndex;

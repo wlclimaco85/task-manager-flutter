@@ -4,6 +4,8 @@ import '../../services/network_caller.dart';
 import '../../../models/auth_utility.dart';
 import '../../mobile/screens/LoginPopup_screens.dart';
 
+
+import 'package:task_manager_flutter/utils/app_logger.dart';
 class UtilCaller {
   Future<List<T>> fetchData<T>({
     required BuildContext context,
@@ -36,12 +38,12 @@ class UtilCaller {
             builder: (BuildContext context) => const LoginPopup(),
           );
         } else {
-          print(
+          L.d(
               'Erro: Nenhum dado retornado. Status Code: ${response.statusCode}');
         }
       }
     } catch (e) {
-      print('Erro ao carregar dados: $e');
+      L.d('Erro ao carregar dados: $e');
       throw Exception('Erro ao carregar dados: $e');
     }
     return items;

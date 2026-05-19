@@ -6,6 +6,8 @@ import '../../constants/custom_colors.dart';
 
 import 'package:dropdown_button2/dropdown_button2.dart';
 
+
+import 'package:task_manager_flutter/utils/app_logger.dart';
 final List<Map<String, dynamic>> _dataArray = []; //add this
 String? _data = ""; //add this
 
@@ -73,8 +75,8 @@ class _CustomDiasBoxForm extends State<CustomDiasBoxForm> {
         if (entry.key == key && entry.value == chave) {
           _dataArray[key][chave] = value;
         }
-        print(entry.key);
-        print(entry.value);
+        L.d(entry.key);
+        L.d(entry.value);
       });
 
       for (var map in _dataArray) {
@@ -115,7 +117,7 @@ class _CustomDiasBoxForm extends State<CustomDiasBoxForm> {
                     ),
                   ),
                   items: dias.map((item) {
-                    return DropdownMenuItem(
+                    return DropdownItem(
                       value: item,
                       //disable default onTap to avoid closing menu when selecting an item
                       enabled: false,
@@ -133,7 +135,7 @@ class _CustomDiasBoxForm extends State<CustomDiasBoxForm> {
                               setState(() {});
                               //This rebuilds the dropdownMenu Widget to update the check mark
                               menuSetState(() {
-                                print(item);
+                                L.d(item);
                               });
                             },
                             child: Container(
@@ -164,8 +166,7 @@ class _CustomDiasBoxForm extends State<CustomDiasBoxForm> {
                     );
                   }).toList(),
                   //Use last selected item as the current value so if we've limited menu height, it scroll to last item.
-                  value:
-                      diasSelectedItems.isEmpty ? null : diasSelectedItems.last,
+                  valueListenable: ValueNotifier<String?>(diasSelectedItems.isEmpty ? null : diasSelectedItems.last),
                   onChanged: (vale) => _onUpdate(key, vale, chave),
 
                   selectedItemBuilder: (context) {
@@ -221,7 +222,6 @@ class _CustomDiasBoxForm extends State<CustomDiasBoxForm> {
                     ),
                   ),
                   menuItemStyleData: const MenuItemStyleData(
-                    height: 40,
                     padding: EdgeInsets.only(left: 14, right: 14),
                   ),
                 ),

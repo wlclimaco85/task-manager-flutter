@@ -47,38 +47,38 @@ class Exame {
   }
 
   static List<FieldConfig> fieldConfigs = [
-    FieldConfig(
+    const FieldConfig(
       label: "Nome",
       fieldName: "nome",
       icon: Icons.text_fields,
       isInForm: true,
       isFilterable: true,
     ),
-    FieldConfig(
+    const FieldConfig(
       label: "Laboratório",
       fieldName: "laboratorio",
       icon: Icons.local_hospital,
       isInForm: true,
     ),
-    FieldConfig(
+    const FieldConfig(
       label: "Médico",
       fieldName: "medico",
       icon: Icons.person,
       isInForm: true,
     ),
-    FieldConfig(
+    const FieldConfig(
       label: "Resultado",
       fieldName: "resultado",
       icon: Icons.description,
       isInForm: true,
     ),
-    FieldConfig(
+    const FieldConfig(
       label: "Data Exame",
       fieldName: "dtExame",
       icon: Icons.calendar_month,
       isInForm: true,
     ),
-    FieldConfig(
+    const FieldConfig(
       label: "Entrega Resultado",
       fieldName: "dtEntregaResulExame",
       icon: Icons.event,

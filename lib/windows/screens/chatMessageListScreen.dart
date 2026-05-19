@@ -1,7 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import '../../../windows/screens/chatMenssageScreen.dart';
+
+import '../../../models/chamado_model.dart';
+import '../../../utils/grid_colors.dart';
+import '../../../widgets/chat/chat_support_ui.dart';
 import '../../services/chat_caller.dart';
+import '../../../windows/screens/chatMenssageScreen.dart';
 
 class WindowsChatListScreen extends StatefulWidget {
   final String userName;
@@ -9,15 +13,15 @@ class WindowsChatListScreen extends StatefulWidget {
   const WindowsChatListScreen({super.key, required this.userName});
 
   @override
-  _WindowsChatListScreenState createState() => _WindowsChatListScreenState();
+  State<WindowsChatListScreen> createState() => _WindowsChatListScreenState();
 }
 
 class Chat {
-  final String chatId; // Adicionando o ID do chat
+  final String chatId;
   final String sector;
   final String lastMessage;
   final DateTime timestamp;
-  final String status; // Novo campo para status
+  final String status;
 
   Chat({
     required this.chatId,
@@ -29,9 +33,12 @@ class Chat {
 }
 
 class _WindowsChatListScreenState extends State<WindowsChatListScreen> {
-  List<Chat> _chats = [];
+  final List<Chat> _chats = [];
+  final List<Map<String, dynamic>> _setores = [];
   bool _isLoading = false;
-  final List<String> _availableSectors = [
+  Chat? _selectedChat;
+
+  static const List<String> _fallbackSectors = [
     'Financeiro',
     'Departamento Pessoal',
     'Fiscal',
@@ -40,68 +47,104 @@ class _WindowsChatListScreenState extends State<WindowsChatListScreen> {
   @override
   void initState() {
     super.initState();
-    _loadChats();
+    _bootstrap();
   }
 
-  Future<void> _loadChats() async {
-    setState(() {
-      _isLoading = true;
-    });
+  Future<void> _bootstrap() async {
+    setState(() => _isLoading = true);
     try {
-      final data = await ChatCaller().fetchChats(context);
-      setState(() {
-        _chats = data
-            .map(
-              (msg) => Chat(
-                chatId: msg.chatId ?? '0', // Use o ID do chat do modelo
-                sector: msg.sector ?? 'Setor Desconhecido',
-                lastMessage: msg.text ?? 'Sem mensagem',
-                timestamp:
-                    DateTime.tryParse(msg.uploadDate ?? '') ?? DateTime.now(),
-                status: 'Ativo', // Defina o status apropriado aqui
-              ),
-            )
-            .toList();
-      });
-    } catch (e) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Erro ao carregar chats: $e')));
+      await Future.wait([_loadSetores(), _loadChats()]);
     } finally {
-      setState(() {
-        _isLoading = false;
-      });
+      if (mounted) setState(() => _isLoading = false);
     }
   }
 
-  void _startNewChat(String sector) {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => WindowsChatMessageScreen(
-          sector: sector,
-          userName: widget.userName,
-          chatId: '0', // Novo chat, ID inicial 0
-        ),
-      ),
-    );
+  Future<void> _loadSetores() async {
+    try {
+      final itens = await Chamado.loadSetores();
+      if (!mounted) return;
+      setState(() {
+        _setores
+          ..clear()
+          ..addAll(itens);
+      });
+    } catch (_) {}
   }
 
-  void _showSectorSelectionDialog() {
-    showDialog(
+  Future<void> _loadChats() async {
+    try {
+      final data = await ChatCaller().fetchChats(context);
+      final chats = data
+          .map(
+            (msg) => Chat(
+              chatId: msg.chatId ?? '0',
+              sector: msg.sector ?? 'Setor desconhecido',
+              lastMessage: msg.text ?? msg.content,
+              timestamp:
+                  DateTime.tryParse(msg.uploadDate ?? msg.timestamp ?? '') ??
+                      DateTime.now(),
+              status: 'Ativo',
+            ),
+          )
+          .toList();
+
+      if (!mounted) return;
+      setState(() {
+        _chats
+          ..clear()
+          ..addAll(chats);
+        if (_selectedChat != null &&
+            !_chats.any((chat) => chat.chatId == _selectedChat!.chatId)) {
+          _selectedChat = null;
+        }
+      });
+    } catch (e) {
+      _showSnack('Erro ao carregar chats: $e', error: true);
+    }
+  }
+
+  List<String> get _sectorLabels {
+    final labels = _setores
+        .map((item) =>
+            (item['label'] ?? item['descricao'] ?? item['nome'] ?? '')
+                .toString())
+        .where((label) => label.trim().isNotEmpty)
+        .toList();
+    return labels.isEmpty ? _fallbackSectors : labels;
+  }
+
+  void _startNewChat(String sector) {
+    setState(() {
+      _selectedChat = Chat(
+        chatId: '0',
+        sector: sector,
+        lastMessage: '',
+        timestamp: DateTime.now(),
+        status: 'Ativo',
+      );
+    });
+  }
+
+  Future<void> _showSectorSelectionDialog() async {
+    await showDialog<void>(
       context: context,
-      builder: (BuildContext context) {
+      builder: (context) {
         return AlertDialog(
-          title: const Text('Selecionar Setor'),
+          backgroundColor: GridColors.card,
+          title: const Text('Novo atendimento'),
           content: SizedBox(
-            width: double.maxFinite,
-            child: ListView.builder(
+            width: 420,
+            child: ListView.separated(
               shrinkWrap: true,
-              itemCount: _availableSectors.length,
-              itemBuilder: (BuildContext context, int index) {
-                final sector = _availableSectors[index];
+              itemCount: _sectorLabels.length,
+              separatorBuilder: (_, __) => const Divider(height: 1),
+              itemBuilder: (context, index) {
+                final sector = _sectorLabels[index];
                 return ListTile(
+                  leading: const Icon(Icons.support_agent,
+                      color: GridColors.primary),
                   title: Text(sector),
+                  trailing: const Icon(Icons.chevron_right),
                   onTap: () {
                     Navigator.pop(context);
                     _startNewChat(sector);
@@ -118,47 +161,35 @@ class _WindowsChatListScreenState extends State<WindowsChatListScreen> {
   void _showChatActions(BuildContext context, Chat chat) {
     showModalBottomSheet(
       context: context,
-      builder: (BuildContext context) {
+      builder: (context) {
         return SafeArea(
           child: Wrap(
-            children: <Widget>[
+            children: [
               ListTile(
-                leading: const Icon(Icons.visibility),
-                title: const Text('Visualizar Chat'),
+                leading: const Icon(Icons.visibility_outlined),
+                title: const Text('Visualizar'),
                 onTap: () {
                   Navigator.pop(context);
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => WindowsChatMessageScreen(
-                        sector: chat.sector,
-                        userName: widget.userName,
-                        chatId: chat.chatId, // Passando o ID do chat existente
-                      ),
-                    ),
-                  );
+                  setState(() => _selectedChat = chat);
                 },
               ),
               ListTile(
-                leading: const Icon(Icons.check_circle, color: Colors.green),
-                title: const Text('Finalizar Chat'),
+                leading: const Icon(Icons.check_circle_outline,
+                    color: GridColors.success),
+                title: const Text('Finalizar'),
                 onTap: () {
                   Navigator.pop(context);
                   _finalizeChat(chat);
                 },
               ),
               ListTile(
-                leading: const Icon(Icons.delete, color: Colors.red),
-                title: const Text('Excluir Chat'),
+                leading:
+                    const Icon(Icons.delete_outline, color: GridColors.error),
+                title: const Text('Excluir'),
                 onTap: () {
                   Navigator.pop(context);
                   _deleteChat(chat);
                 },
-              ),
-              ListTile(
-                leading: const Icon(Icons.cancel),
-                title: const Text('Cancelar'),
-                onTap: () => Navigator.pop(context),
               ),
             ],
           ),
@@ -168,191 +199,153 @@ class _WindowsChatListScreenState extends State<WindowsChatListScreen> {
   }
 
   void _finalizeChat(Chat chat) {
-    // Implementar lógica para finalizar o chat
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Finalizar Chat'),
-        content: Text('Deseja finalizar o chat com ${chat.sector}?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancelar'),
-          ),
-          TextButton(
-            onPressed: () {
-              // Lógica para finalizar o chat
-              setState(() {
-                // Atualizar status do chat para "Finalizado"
-                _chats = _chats.map((c) {
-                  if (c.sector == chat.sector) {
-                    return Chat(
-                      chatId: c.chatId,
-                      sector: c.sector,
-                      lastMessage: c.lastMessage,
-                      timestamp: c.timestamp,
-                      status: 'Finalizado',
-                    );
-                  }
-                  return c;
-                }).toList();
-              });
-              Navigator.pop(context);
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Chat finalizado com sucesso')),
-              );
-            },
-            child: const Text('Confirmar'),
-          ),
-        ],
-      ),
-    );
+    setState(() {
+      final index = _chats.indexWhere((item) => item.chatId == chat.chatId);
+      if (index >= 0) {
+        _chats[index] = Chat(
+          chatId: chat.chatId,
+          sector: chat.sector,
+          lastMessage: chat.lastMessage,
+          timestamp: chat.timestamp,
+          status: 'Finalizado',
+        );
+      }
+    });
+    _showSnack('Chat finalizado com sucesso');
   }
 
   void _deleteChat(Chat chat) {
-    // Implementar lógica para excluir o chat
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Excluir Chat'),
-        content: Text('Deseja excluir o chat com ${chat.sector}?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancelar'),
-          ),
-          TextButton(
-            onPressed: () {
-              // Lógica para excluir o chat
-              setState(() {
-                _chats.removeWhere((c) => c.sector == chat.sector);
-              });
-              Navigator.pop(context);
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Chat excluído com sucesso')),
-              );
-            },
-            child: const Text('Excluir'),
-          ),
-        ],
-      ),
-    );
+    setState(() {
+      _chats.removeWhere((item) => item.chatId == chat.chatId);
+      if (_selectedChat?.chatId == chat.chatId) _selectedChat = null;
+    });
+    _showSnack('Chat excluido com sucesso');
   }
 
-  Color _getStatusColor(String status) {
-    switch (status) {
-      case 'Ativo':
-        return Colors.green;
-      case 'Finalizado':
-        return Colors.blue;
-      case 'Pendente':
-        return Colors.orange;
-      default:
-        return Colors.grey;
-    }
+  void _showSnack(String message, {bool error = false}) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        backgroundColor: error ? GridColors.error : GridColors.success,
+        content: Text(message),
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('Meus Chats')),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : _chats.isEmpty
-              ? const Center(child: Text('Nenhum chat iniciado'))
-              : ListView.separated(
-                  itemCount: _chats.length,
-                  separatorBuilder: (context, index) =>
-                      Divider(height: 1, color: Colors.grey[300]),
-                  itemBuilder: (context, index) {
-                    final chat = _chats[index];
-                    return Container(
-                      decoration: BoxDecoration(
-                        border: Border(
-                          bottom: BorderSide(
-                            color: Colors.grey.shade300,
-                            width: 1.0,
-                          ),
+    return ColoredBox(
+      color: ChatSupportPalette.page,
+      child: Row(
+        children: [
+          SizedBox(
+            width: 360,
+            child: _buildSidebar(),
+          ),
+          const VerticalDivider(width: 1, color: GridColors.divider),
+          Expanded(
+            child: _selectedChat == null
+                ? ChatEmptyState(
+                    title: 'Atendimento',
+                    message:
+                        'Escolha uma conversa ou abra um novo atendimento por setor.',
+                    onStart: _showSectorSelectionDialog,
+                  )
+                : WindowsChatMessageScreen(
+                    key: ValueKey(
+                        '${_selectedChat!.chatId}-${_selectedChat!.sector}'),
+                    sector: _selectedChat!.sector,
+                    userName: widget.userName,
+                    chatId: _selectedChat!.chatId,
+                  ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSidebar() {
+    return DecoratedBox(
+      decoration: const BoxDecoration(color: GridColors.card),
+      child: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 14, 12, 12),
+            child: Row(
+              children: [
+                const Icon(Icons.chat_bubble_outline,
+                    color: GridColors.primary),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Atendimento',
+                        style: TextStyle(
+                          color: GridColors.textSecondary,
+                          fontSize: 18,
+                          fontWeight: FontWeight.w800,
                         ),
                       ),
-                      child: ListTile(
-                        title: Text(chat.sector),
-                        subtitle: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              chat.lastMessage,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                            const SizedBox(height: 4),
-                            Row(
-                              children: [
-                                Container(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 8,
-                                    vertical: 2,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    color: _getStatusColor(
-                                      chat.status,
-                                    ).withOpacity(0.1),
-                                    borderRadius: BorderRadius.circular(12),
-                                    border: Border.all(
-                                      color: _getStatusColor(chat.status),
-                                      width: 1,
-                                    ),
-                                  ),
-                                  child: Text(
-                                    chat.status,
-                                    style: TextStyle(
-                                      fontSize: 12,
-                                      color: _getStatusColor(chat.status),
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ],
+                      Text(
+                        '${_chats.length} conversas',
+                        style: TextStyle(
+                          color: Colors.black.withValues(alpha: 0.55),
+                          fontSize: 12,
                         ),
-                        trailing: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Text(
-                              DateFormat('HH:mm').format(chat.timestamp),
-                              style: const TextStyle(
-                                fontSize: 12,
-                                color: Colors.grey,
-                              ),
-                            ),
-                            IconButton(
-                              icon: const Icon(Icons.more_vert),
-                              onPressed: () => _showChatActions(context, chat),
-                            ),
-                          ],
-                        ),
-                        onTap: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => WindowsChatMessageScreen(
-                                sector: chat.sector,
-                                userName: widget.userName,
-                                chatId: chat
-                                    .chatId, // Passando o ID do chat existente
-                              ),
-                            ),
-                          );
-                        },
                       ),
-                    );
-                  },
+                    ],
+                  ),
                 ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _showSectorSelectionDialog,
-        tooltip: 'Novo Chat',
-        child: Icon(Icons.chat),
+                IconButton(
+                  tooltip: 'Atualizar',
+                  onPressed: _isLoading ? null : _bootstrap,
+                  icon: const Icon(Icons.refresh),
+                ),
+                FilledButton(
+                  style: FilledButton.styleFrom(
+                    backgroundColor: GridColors.primary,
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8)),
+                    padding: const EdgeInsets.symmetric(horizontal: 12),
+                  ),
+                  onPressed: _showSectorSelectionDialog,
+                  child: const Icon(Icons.add_comment_outlined, size: 18),
+                ),
+              ],
+            ),
+          ),
+          const Divider(height: 1),
+          if (_isLoading)
+            const LinearProgressIndicator(color: GridColors.primary),
+          Expanded(
+            child: _chats.isEmpty && !_isLoading
+                ? ChatEmptyState(
+                    title: 'Nenhum chat iniciado',
+                    message:
+                        'Abra um atendimento para falar com o setor responsavel.',
+                    onStart: _showSectorSelectionDialog,
+                  )
+                : ListView.builder(
+                    padding: const EdgeInsets.symmetric(vertical: 8),
+                    itemCount: _chats.length,
+                    itemBuilder: (context, index) {
+                      final chat = _chats[index];
+                      return ChatListTileCard(
+                        title: chat.sector,
+                        subtitle: chat.lastMessage,
+                        time: DateFormat('HH:mm').format(chat.timestamp),
+                        status: chat.status,
+                        selected: _selectedChat?.chatId == chat.chatId,
+                        onTap: () => setState(() => _selectedChat = chat),
+                        onMore: () => _showChatActions(context, chat),
+                      );
+                    },
+                  ),
+          ),
+        ],
       ),
     );
   }

@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:task_manager_flutter/constants/custom_colors.dart';
 import 'package:task_manager_flutter/models/auth_utility.dart';
 

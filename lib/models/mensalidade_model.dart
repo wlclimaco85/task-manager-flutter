@@ -37,26 +37,26 @@ class Mensalidade {
   }
 
   static List<FieldConfig> fieldConfigs = [
-    FieldConfig(
+    const FieldConfig(
       label: "Valor",
       fieldName: "valor",
       icon: Icons.attach_money,
       isInForm: true,
       isFilterable: true,
     ),
-    FieldConfig(
+    const FieldConfig(
       label: "Data Pagamento",
       fieldName: "dtPagamento",
       icon: Icons.date_range,
       isInForm: true,
     ),
-    FieldConfig(
+    const FieldConfig(
       label: "Aluno ID",
       fieldName: "alunoId",
       icon: Icons.person,
       isInForm: true,
     ),
-    FieldConfig(
+    const FieldConfig(
       label: "Plano ID",
       fieldName: "planoId",
       icon: Icons.assignment,

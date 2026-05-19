@@ -38,6 +38,7 @@ class DynamicGridWindowsScreen<T> extends StatefulWidget {
   final String? createEndpointOverride;
   final String? updateEndpointOverride;
   final String? deleteEndpointOverride;
+  final List<Widget>? headerActions;
 
   const DynamicGridWindowsScreen({
     super.key,
@@ -54,6 +55,7 @@ class DynamicGridWindowsScreen<T> extends StatefulWidget {
     this.createEndpointOverride,
     this.updateEndpointOverride,
     this.deleteEndpointOverride,
+    this.headerActions,
   });
 
   @override
@@ -391,6 +393,7 @@ class _DynamicGridWindowsScreenState<T>
           extraParams: widget.extraParams,
           customActions: widget.customActions,
           showAppBar: widget.showAppBar,
+          headerActions: widget.headerActions,
         );
       },
     );

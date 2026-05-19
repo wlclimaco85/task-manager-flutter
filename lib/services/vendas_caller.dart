@@ -10,6 +10,8 @@ import '../../mobile/screens/LoginPopup_screens.dart';
 import 'dart:io';
 import 'package:path_provider/path_provider.dart';
 import 'package:url_launcher/url_launcher.dart';
+
+import 'package:task_manager_flutter/utils/app_logger.dart';
 import 'package:http/http.dart' as http;
 
 class VendasCaller {
@@ -24,10 +26,10 @@ class VendasCaller {
         models = ProdutoModel.fromJson(response.body!);
         model.addAll(models.produtos ?? []);
       } else {
-        print('Erro: Nenhum dado retornado');
+        L.d('Erro: Nenhum dado retornado');
       }
     } catch (e) {
-      print('Erro: $e'); // Log do erro
+      L.d('Erro: $e'); // Log do erro
       throw Exception('Erro ao carregar cotações: $e');
     }
     return model;
@@ -47,10 +49,10 @@ class VendasCaller {
         models = ProductModel.fromJson(response.body!);
         model.addAll(models.produtos ?? []);
       } else {
-        print('Erro: Nenhum dado retornado');
+        L.d('Erro: Nenhum dado retornado');
       }
     } catch (e) {
-      print('Erro: $e'); // Log do erro
+      L.d('Erro: $e'); // Log do erro
       throw Exception('Erro ao carregar itens à venda: $e');
     }
     return model;
@@ -79,11 +81,11 @@ class VendasCaller {
         } else if (response.statusCode == 403) {
           // Mova o código que depende do BuildContext para este método.
         } else {
-          print('Erro: Nenhum dado retornado');
+          L.d('Erro: Nenhum dado retornado');
         }
       }
     } catch (e) {
-      print('Erro: $e'); // Log do erro
+      L.d('Erro: $e'); // Log do erro
       throw Exception('Erro ao carregar itens à compra: $e');
     }
     return model;
@@ -103,10 +105,10 @@ class VendasCaller {
         models = ProductModel.fromJson(response.body!);
         model.addAll(models.produtos ?? []);
       } else {
-        print('Erro: Nenhum dado retornado');
+        L.d('Erro: Nenhum dado retornado');
       }
     } catch (e) {
-      print('Erro: $e'); // Log do erro
+      L.d('Erro: $e'); // Log do erro
       throw Exception('Erro ao carregar itens a negociar: $e');
     }
     return model;
@@ -125,10 +127,10 @@ class VendasCaller {
         models = ClassificacaoResponse.fromJson(response.body!);
         model.addAll(models.data ?? []);
       } else {
-        print('Erro: Nenhum dado retornado');
+        L.d('Erro: Nenhum dado retornado');
       }
     } catch (e) {
-      print('Erro: $e'); // Log do erro
+      L.d('Erro: $e'); // Log do erro
       throw Exception('Erro ao carregar classificações: $e');
     }
     return model;
@@ -149,10 +151,10 @@ class VendasCaller {
         models = ProdutoModel.fromJson(response.body!);
         model.addAll(models.produtos ?? []);
       } else {
-        print('Erro: Nenhum dado retornado');
+        L.d('Erro: Nenhum dado retornado');
       }
     } catch (e) {
-      print('Erro: $e'); // Log do erro
+      L.d('Erro: $e'); // Log do erro
       throw Exception('Erro ao carregar cotações: $e');
     }
     return model;
@@ -230,10 +232,10 @@ class VendasCaller {
           const SnackBar(content: Text('Sucesso!!!')),
         );
       } else {
-        print('Erro: Nenhum dado retornado');
+        L.d('Erro: Nenhum dado retornado');
       }
     } catch (e) {
-      print('Erro: $e'); // Log do erro
+      L.d('Erro: $e'); // Log do erro
       throw Exception('Erro ao carregar itens à venda: $e');
     }
     return model;
@@ -254,10 +256,10 @@ class VendasCaller {
           const SnackBar(content: Text('Sucesso!!!')),
         );
       } else {
-        print('Erro: Nenhum dado retornado');
+        L.d('Erro: Nenhum dado retornado');
       }
     } catch (e) {
-      print('Erro: $e'); // Log do erro
+      L.d('Erro: $e'); // Log do erro
       throw Exception('Erro ao carregar itens à venda: $e');
     }
     return model;
@@ -292,10 +294,10 @@ class VendasCaller {
           const SnackBar(content: Text('Sucesso!!!')),
         );
       } else {
-        print('Erro: Nenhum dado retornado');
+        L.d('Erro: Nenhum dado retornado');
       }
     } catch (e) {
-      print('Erro: $e'); // Log do erro
+      L.d('Erro: $e'); // Log do erro
       throw Exception('Erro ao carregar itens à venda: $e');
     }
     return null;

@@ -75,6 +75,7 @@ Future<String> loginAndGetToken() async {
 Map<String, String> authHeaders(String token) => {
       'Content-Type': 'application/json;charset=UTF-8',
       'Authorization': 'Bearer $token',
+      if (_cachedEmpresaId != null) 'X-Tenant-ID': _cachedEmpresaId.toString(),
       'Access-Control-Allow-Origin': '*',
     };
 

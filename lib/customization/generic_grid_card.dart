@@ -6,6 +6,8 @@ import '../../../models/network_response.dart';
 import '../../services/network_caller.dart';
 import '../../services/upload_file_caller.dart';
 import '../../../widgets/user_banners.dart';
+
+import 'package:task_manager_flutter/utils/app_logger.dart';
 // ==============================================
 // MOBILE GRID SCREEN - MATERIAL DESIGN 3 COMPLETO
 // ==============================================
@@ -332,7 +334,7 @@ class _GenericMobileGridScreenState<T>
         }
       }
     } catch (e) {
-      print('Erro ao carregar preferências: $e');
+      L.d('Erro ao carregar preferências: $e');
     }
   }
 
@@ -348,7 +350,7 @@ class _GenericMobileGridScreenState<T>
         );
       }
     } catch (e) {
-      print('Erro ao salvar preferências: $e');
+      L.d('Erro ao salvar preferências: $e');
     }
   }
 
@@ -518,7 +520,7 @@ class _GenericMobileGridScreenState<T>
     showDialog(
       context: context,
       barrierColor:
-          GridColors.primary.withOpacity(1.8), // 🔴 fundo vermelho translúcido
+          GridColors.primary.withValues(alpha: 1.8), // 🔴 fundo vermelho translúcido
       builder: (context) => _buildFormDialog(item),
     );
   }
@@ -550,7 +552,7 @@ class _GenericMobileGridScreenState<T>
           borderRadius: BorderRadius.circular(16),
           boxShadow: [
             BoxShadow(
-              color: GridColors.primaryDark.withOpacity(0.4),
+              color: GridColors.primaryDark.withValues(alpha: 0.4),
               blurRadius: 10,
               offset: const Offset(0, 4),
             ),
@@ -675,7 +677,7 @@ class _GenericMobileGridScreenState<T>
                   subtitle: Text(
                     '${(file.size / 1024).toStringAsFixed(1)} KB',
                     style: TextStyle(
-                      color: colorScheme.onSurface.withOpacity(0.6),
+                      color: colorScheme.onSurface.withValues(alpha: 0.6),
                       fontSize: 12,
                     ),
                   ),
@@ -717,7 +719,7 @@ class _GenericMobileGridScreenState<T>
               'Extensões permitidas: ${fileConfig.allowedExtensions.join(', ')}',
               style: TextStyle(
                 fontSize: 12,
-                color: colorScheme.onSurface.withOpacity(0.6),
+                color: colorScheme.onSurface.withValues(alpha: 0.6),
               ),
             ),
           ),
@@ -730,7 +732,7 @@ class _GenericMobileGridScreenState<T>
     final fileConfig = config.fileConfig ?? const FileConfig();
 
     try {
-      FilePickerResult? result = await FilePicker.platform.pickFiles(
+      FilePickerResult? result = await FilePicker.pickFiles(
         type: FileType.custom,
         allowedExtensions: fileConfig.allowedExtensions,
         allowMultiple: fileConfig.allowMultiple,
@@ -761,7 +763,7 @@ class _GenericMobileGridScreenState<T>
           Icons.calendar_today,
           color: config.enabled
               ? colorScheme.primary
-              : colorScheme.onSurface.withOpacity(0.38),
+              : colorScheme.onSurface.withValues(alpha: 0.38),
         ),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(8),
@@ -778,17 +780,17 @@ class _GenericMobileGridScreenState<T>
         disabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(8),
           borderSide:
-              BorderSide(color: colorScheme.onSurface.withOpacity(0.38)),
+              BorderSide(color: colorScheme.onSurface.withValues(alpha: 0.38)),
         ),
         filled: !config.enabled,
         fillColor: !config.enabled
-            ? colorScheme.onSurface.withOpacity(0.04)
+            ? colorScheme.onSurface.withValues(alpha: 0.04)
             : Colors.transparent,
       ),
       style: TextStyle(
         color: config.enabled
             ? textTheme.bodyMedium?.color
-            : colorScheme.onSurface.withOpacity(0.38),
+            : colorScheme.onSurface.withValues(alpha: 0.38),
       ),
       onTap: config.enabled ? () => _selectDate(config, controller) : null,
       validator: config.validator,
@@ -1019,12 +1021,12 @@ class _GenericMobileGridScreenState<T>
 
         // **DEBUG: Log para troubleshooting**
         if (widget.enableDebugMode) {
-          print('=== DEBUG DROPDOWN ${config.fieldName} ===');
-          print('Valor atual: $currentValue (${currentValue?.runtimeType})');
-          print('Opções disponíveis:');
+          L.d('=== DEBUG DROPDOWN ${config.fieldName} ===');
+          L.d('Valor atual: $currentValue (${currentValue?.runtimeType})');
+          L.d('Opções disponíveis:');
           for (var opt in uniqueOptionsList) {
             final optValue = opt[config.dropdownValueField];
-            print(
+            L.d(
                 '  - $optValue (${optValue.runtimeType}) -> ${opt[config.dropdownDisplayField]}');
           }
         }
@@ -1124,11 +1126,11 @@ class _GenericMobileGridScreenState<T>
                       color: Theme.of(context)
                           .colorScheme
                           .onSurface
-                          .withOpacity(0.38)),
+                          .withValues(alpha: 0.38)),
                 ),
                 filled: !config.enabled,
                 fillColor: !config.enabled
-                    ? Theme.of(context).colorScheme.onSurface.withOpacity(0.04)
+                    ? Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.04)
                     : Colors.transparent,
               ),
               isExpanded: true,
@@ -1263,11 +1265,11 @@ class _GenericMobileGridScreenState<T>
         _addAllNested(formData, widget.additionalFormData!);
 
         if (widget.enableDebugMode) {
-          print('=== DADOS ADICIONAIS DO FORMULÁRIO ===');
+          L.d('=== DADOS ADICIONAIS DO FORMULÁRIO ===');
           widget.additionalFormData!.forEach((key, value) {
-            print('$key: $value (${value.runtimeType})');
+            L.d('$key: $value (${value.runtimeType})');
           });
-          print('=====================================');
+          L.d('=====================================');
         }
       }
 
@@ -1351,8 +1353,8 @@ class _GenericMobileGridScreenState<T>
       final normalized = _normalizeDotted(formData);
 
       if (widget.enableDebugMode) {
-        print('=== PAYLOAD FINAL NORMALIZADO ===');
-        print('=================================');
+        L.d('=== PAYLOAD FINAL NORMALIZADO ===');
+        L.d('=================================');
       }
 
       final NetworkResponse response = item == null
@@ -1654,7 +1656,7 @@ class _GenericMobileGridScreenState<T>
                 const Spacer(),
                 IconButton(
                   icon: Icon(Icons.close,
-                      color: colorScheme.onSurface.withOpacity(0.6)),
+                      color: colorScheme.onSurface.withValues(alpha: 0.6)),
                   onPressed: () => setState(() => filtrosAbertos = false),
                   tooltip: 'Fechar filtros',
                 ),
@@ -1671,7 +1673,7 @@ class _GenericMobileGridScreenState<T>
                     'Busca Global',
                     style: textTheme.bodyMedium?.copyWith(
                       fontWeight: FontWeight.w500,
-                      color: colorScheme.onSurface.withOpacity(0.8),
+                      color: colorScheme.onSurface.withValues(alpha: 0.8),
                     ),
                   ),
                   const SizedBox(height: 8),
@@ -1691,7 +1693,7 @@ class _GenericMobileGridScreenState<T>
                           : null,
                       filled: true,
                       fillColor:
-                          colorScheme.surfaceContainerHighest.withOpacity(0.3),
+                          colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(8),
                         borderSide: BorderSide.none,
@@ -1708,7 +1710,7 @@ class _GenericMobileGridScreenState<T>
               'Filtros por Campo',
               style: textTheme.bodyMedium?.copyWith(
                 fontWeight: FontWeight.w500,
-                color: colorScheme.onSurface.withOpacity(0.8),
+                color: colorScheme.onSurface.withValues(alpha: 0.8),
               ),
             ),
             const SizedBox(height: 12),
@@ -1744,7 +1746,7 @@ class _GenericMobileGridScreenState<T>
                                 : null,
                             filled: true,
                             fillColor: colorScheme.surfaceContainerHighest
-                                .withOpacity(0.3),
+                                .withValues(alpha: 0.3),
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(8),
                               borderSide: BorderSide.none,
@@ -1768,7 +1770,7 @@ class _GenericMobileGridScreenState<T>
               decoration: BoxDecoration(
                 border: Border(
                   top: BorderSide(
-                    color: colorScheme.outline.withOpacity(0.2),
+                    color: colorScheme.outline.withValues(alpha: 0.2),
                   ),
                 ),
               ),
@@ -1998,7 +2000,7 @@ class _GenericMobileGridScreenState<T>
                 // Overlay de carregamento
                 if (isLoading && filtered.isEmpty)
                   Container(
-                    color: Colors.black.withOpacity(0.1),
+                    color: Colors.black.withValues(alpha: 0.1),
                     child: const Center(
                       child: CircularProgressIndicator(),
                     ),
@@ -2029,20 +2031,20 @@ class _GenericMobileGridScreenState<T>
               Text(
                 'Carregando mais itens...',
                 style: textTheme.bodyMedium?.copyWith(
-                  color: colorScheme.onSurface.withOpacity(0.6),
+                  color: colorScheme.onSurface.withValues(alpha: 0.6),
                 ),
               ),
             ] else ...[
               Icon(
                 Icons.check_circle,
-                color: colorScheme.primary.withOpacity(0.5),
+                color: colorScheme.primary.withValues(alpha: 0.5),
                 size: 48,
               ),
               const SizedBox(height: 16),
               Text(
                 'Todos os itens foram carregados',
                 style: textTheme.bodyMedium?.copyWith(
-                  color: colorScheme.onSurface.withOpacity(0.5),
+                  color: colorScheme.onSurface.withValues(alpha: 0.5),
                   fontStyle: FontStyle.italic,
                 ),
               ),
@@ -2070,18 +2072,18 @@ class _GenericMobileGridScreenState<T>
       child: Card(
         elevation: 2,
         shadowColor:
-            GridColors.primary.withOpacity(0.3), // Sombra na cor primária
+            GridColors.primary.withValues(alpha: 0.3), // Sombra na cor primária
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(12),
           side: BorderSide(
             color: isSelected
                 ? GridColors.primary
-                : GridColors.primary.withOpacity(0.3), // Borda na cor primária
+                : GridColors.primary.withValues(alpha: 0.3), // Borda na cor primária
             width: isSelected ? 2 : 1,
           ),
         ),
         color:
-            isSelected ? GridColors.primary.withOpacity(0.08) : GridColors.card,
+            isSelected ? GridColors.primary.withValues(alpha: 0.08) : GridColors.card,
         child: InkWell(
           borderRadius: BorderRadius.circular(12),
           onTap: _isSelectionMode
@@ -2119,7 +2121,7 @@ class _GenericMobileGridScreenState<T>
                         padding: const EdgeInsets.symmetric(
                             horizontal: 6, vertical: 2), // Menor padding
                         decoration: BoxDecoration(
-                          color: GridColors.primary.withOpacity(0.1),
+                          color: GridColors.primary.withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(4),
                         ),
                         child: Text(
@@ -2219,7 +2221,7 @@ class _GenericMobileGridScreenState<T>
               config.label,
               style: textTheme.labelSmall?.copyWith(
                 fontWeight: FontWeight.w500,
-                color: GridColors.textSecondary.withOpacity(0.7),
+                color: GridColors.textSecondary.withValues(alpha: 0.7),
               ),
             ),
             const SizedBox(height: 2),
@@ -2268,7 +2270,7 @@ class _GenericMobileGridScreenState<T>
               config.label,
               style: textTheme.labelSmall?.copyWith(
                 fontWeight: FontWeight.w500,
-                color: GridColors.textSecondary.withOpacity(0.7),
+                color: GridColors.textSecondary.withValues(alpha: 0.7),
               ),
             ),
             const SizedBox(height: 2),
@@ -2403,9 +2405,9 @@ class _GenericMobileGridScreenState<T>
       padding: const EdgeInsets.symmetric(
           horizontal: 6, vertical: 2), // Menor padding
       decoration: BoxDecoration(
-        color: badgeColor.withOpacity(0.1),
+        color: badgeColor.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(4),
-        border: Border.all(color: badgeColor.withOpacity(0.3)),
+        border: Border.all(color: badgeColor.withValues(alpha: 0.3)),
       ),
       child: Text(
         badgeText,
@@ -2425,14 +2427,14 @@ class _GenericMobileGridScreenState<T>
         if (widget.enableDebugMode)
           IconButton(
             icon: Icon(Icons.bug_report,
-                size: 16, color: GridColors.textSecondary.withOpacity(0.6)),
+                size: 16, color: GridColors.textSecondary.withValues(alpha: 0.6)),
             onPressed: () => _showAllFieldsDebug(context, item),
             tooltip: 'Ver todos os campos',
           ),
         if (widget.detailScreenBuilder != null && widget.hasPermission('view'))
           IconButton(
             icon: Icon(Icons.visibility_outlined,
-                size: 16, color: GridColors.textSecondary.withOpacity(0.6)),
+                size: 16, color: GridColors.textSecondary.withValues(alpha: 0.6)),
             onPressed: () {
               Navigator.push(
                 context,
@@ -2446,7 +2448,7 @@ class _GenericMobileGridScreenState<T>
         if (widget.hasPermission('edit'))
           IconButton(
             icon: Icon(Icons.edit_outlined,
-                size: 16, color: GridColors.textSecondary.withOpacity(0.6)),
+                size: 16, color: GridColors.textSecondary.withValues(alpha: 0.6)),
             onPressed: () => _openForm(item: item),
             tooltip: 'Editar',
           ),
@@ -2464,7 +2466,7 @@ class _GenericMobileGridScreenState<T>
             .map(
               (action) => IconButton(
                 icon: Icon(action.icon,
-                    size: 16, color: GridColors.textSecondary.withOpacity(0.6)),
+                    size: 16, color: GridColors.textSecondary.withValues(alpha: 0.6)),
                 onPressed: () => action.onPressed(context, item),
                 tooltip: action.label,
               ),

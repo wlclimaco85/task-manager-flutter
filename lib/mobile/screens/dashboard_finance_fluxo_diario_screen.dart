@@ -1,177 +1,193 @@
-// lib/ui/screens/finance_fluxo_diario_chart.dart
-import 'dart:convert';
+import 'dart:math' as math;
 
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
-import '../../../models/auth_utility.dart';
-import '../../../utils/api_links.dart';
-import '../../../utils/grid_colors.dart';
+import 'package:intl/intl.dart';
 
-final token =
-    AuthUtility.userInfo?.token; // Assuming userInfo.token is available
+import '../../models/dashboard_model.dart';
+import '../../utils/grid_colors.dart';
 
-class FinanceFluxoPoint {
-  final DateTime day;
-  final double payable; // vermelho
-  final double receivable; // verde
-
-  FinanceFluxoPoint(this.day, this.payable, this.receivable);
-
-  factory FinanceFluxoPoint.fromJson(Map<String, dynamic> j) {
-    return FinanceFluxoPoint(
-      DateTime.parse(j['day']),
-      (j['payableTotal'] as num?)?.toDouble() ?? 0.0,
-      (j['receivableTotal'] as num?)?.toDouble() ?? 0.0,
-    );
-  }
-}
-
-class FinanceFluxoDiarioChart extends StatefulWidget {
-  final int empresaId;
-  final int? parceiroId;
-  final int daysBack;
-  final int daysForward;
-
-  const FinanceFluxoDiarioChart({
+class FinanceFluxoDiarioChart extends StatelessWidget {
+  FinanceFluxoDiarioChart({
     super.key,
-    required this.empresaId,
-    this.parceiroId,
-    this.daysBack = 10,
-    this.daysForward = 30,
+    required this.data,
   });
 
-  @override
-  State<FinanceFluxoDiarioChart> createState() =>
-      _FinanceFluxoDiarioChartState();
-}
+  final List<FinanceFluxoPoint> data;
+  final NumberFormat _compactCurrency =
+      NumberFormat.compactCurrency(locale: 'pt_BR', symbol: 'R\$');
 
-class _FinanceFluxoDiarioChartState extends State<FinanceFluxoDiarioChart> {
-  List<FinanceFluxoPoint> data = [];
-  bool loading = true;
-  String? error;
+  String _ddMM(DateTime d) => DateFormat('dd/MM').format(d);
 
-  @override
-  void initState() {
-    super.initState();
-    _load();
-  }
-
-  Future<void> _load() async {
-    try {
-      final uri =
-          Uri.parse(ApiLinks.financeFluxoDiario).replace(queryParameters: {
-        'empresaId': widget.empresaId.toString(),
-        if (widget.parceiroId != null)
-          'parceiroId': widget.parceiroId.toString(),
-        'daysBack': widget.daysBack.toString(),
-        'daysForward': widget.daysForward.toString(),
-      });
-
-      final res = await http.get(
-        uri,
-        headers: {
-          'Authorization': 'Bearer $token',
-          'Accept': 'application/json', // Important: Add Accept header
-        },
-      );
-      if (res.statusCode != 200) throw Exception('HTTP ${res.statusCode}');
-      final arr = (jsonDecode(res.body) as List).cast<Map<String, dynamic>>();
-
-      setState(() {
-        data = arr.map((e) => FinanceFluxoPoint.fromJson(e)).toList();
-        loading = false;
-      });
-    } catch (e) {
-      setState(() {
-        error = e.toString();
-        loading = false;
-      });
+  double _resolveMaxY() {
+    var maxValue = 0.0;
+    for (final item in data) {
+      maxValue = math.max(maxValue, item.receivable.abs());
+      maxValue = math.max(maxValue, item.payable.abs());
+      maxValue = math.max(maxValue, item.net.abs());
     }
-  }
 
-  String _ddMM(DateTime d) => '${d.day}/${d.month}';
+    if (maxValue <= 0) return 100;
+    return (maxValue * 1.2).ceilToDouble();
+  }
 
   @override
   Widget build(BuildContext context) {
-    if (loading) {
-      return const SizedBox(
-          height: 260, child: Center(child: CircularProgressIndicator()));
-    }
-    if (error != null) {
-      return SizedBox(
-        height: 260,
-        child: Center(
-          child: Text(
-            error!,
-            style: const TextStyle(color: Colors.redAccent, fontSize: 13),
-          ),
-        ),
-      );
-    }
     if (data.isEmpty) {
       return const SizedBox(
-        height: 260,
-        child: Center(child: Text('Sem dados de fluxo diário (–10 / +30).')),
+        height: 280,
+        child: Center(child: Text('Sem dados de fluxo de caixa no período.')),
       );
     }
 
-    // grupos de barras (duas por dia: receivable verde, payable vermelho)
-    final groups = <BarChartGroupData>[];
-    for (int i = 0; i < data.length; i++) {
-      final p = data[i];
-      groups.add(
-        BarChartGroupData(
-          x: i,
-          barsSpace: 6,
-          barRods: [
-            BarChartRodData(toY: p.receivable, color: Colors.green, width: 8),
-            BarChartRodData(toY: p.payable, color: Colors.red, width: 8),
-          ],
-        ),
-      );
-    }
+    final maxY = _resolveMaxY();
+    final labelStep = data.length > 20 ? 5 : data.length > 12 ? 3 : 1;
 
     return Container(
-      height: 280,
+      height: 320,
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
       ),
-      child: BarChart(
-        BarChartData(
-          gridData: const FlGridData(show: false),
-          borderData: FlBorderData(show: false),
-          titlesData: FlTitlesData(
-            topTitles:
-                const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-            rightTitles:
-                const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-            leftTitles: const AxisTitles(
-                sideTitles: SideTitles(showTitles: true, reservedSize: 36)),
-            bottomTitles: AxisTitles(
-              sideTitles: SideTitles(
-                showTitles: true,
-                reservedSize: 28,
-                getTitlesWidget: (v, _) {
-                  final i = v.toInt();
-                  if (i < 0 || i >= data.length) return const SizedBox.shrink();
-                  return Padding(
-                    padding: const EdgeInsets.only(top: 4),
-                    child: Text(
-                      _ddMM(data[i].day),
-                      style: const TextStyle(
-                          fontSize: 10, color: GridColors.textSecondary),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Wrap(
+            spacing: 12,
+            runSpacing: 8,
+            children: [
+              _LegendChip(color: Colors.green, label: 'Entradas'),
+              _LegendChip(color: Colors.red, label: 'Saídas'),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Expanded(
+            child: BarChart(
+              BarChartData(
+                minY: 0,
+                maxY: maxY,
+                gridData: FlGridData(
+                  show: true,
+                  drawVerticalLine: false,
+                  horizontalInterval: maxY / 4,
+                  getDrawingHorizontalLine: (_) => const FlLine(
+                    color: Color(0xFFE9EEF5),
+                    strokeWidth: 1,
+                  ),
+                ),
+                borderData: FlBorderData(show: false),
+                titlesData: FlTitlesData(
+                  topTitles: const AxisTitles(
+                    sideTitles: SideTitles(showTitles: false),
+                  ),
+                  rightTitles: const AxisTitles(
+                    sideTitles: SideTitles(showTitles: false),
+                  ),
+                  leftTitles: AxisTitles(
+                    sideTitles: SideTitles(
+                      showTitles: true,
+                      reservedSize: 52,
+                      interval: maxY / 4,
+                      getTitlesWidget: (value, _) => Padding(
+                        padding: const EdgeInsets.only(right: 8),
+                        child: Text(
+                          _compactCurrency.format(value),
+                          style: const TextStyle(
+                            fontSize: 10,
+                            color: GridColors.textSecondary,
+                          ),
+                        ),
+                      ),
                     ),
-                  );
-                },
+                  ),
+                  bottomTitles: AxisTitles(
+                    sideTitles: SideTitles(
+                      showTitles: true,
+                      reservedSize: 30,
+                      getTitlesWidget: (value, _) {
+                        final index = value.toInt();
+                        if (index < 0 || index >= data.length) {
+                          return const SizedBox.shrink();
+                        }
+                        final isEdge =
+                            index == 0 || index == data.length - 1;
+                        if (!isEdge && index % labelStep != 0) {
+                          return const SizedBox.shrink();
+                        }
+                        return Padding(
+                          padding: const EdgeInsets.only(top: 6),
+                          child: Text(
+                            _ddMM(data[index].day),
+                            style: const TextStyle(
+                              fontSize: 10,
+                              color: GridColors.textSecondary,
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                ),
+                barGroups: [
+                  for (int i = 0; i < data.length; i++)
+                    BarChartGroupData(
+                      x: i,
+                      barsSpace: 4,
+                      barRods: [
+                        BarChartRodData(
+                          toY: data[i].receivable,
+                          color: Colors.green,
+                          width: 7,
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        BarChartRodData(
+                          toY: data[i].payable,
+                          color: Colors.red,
+                          width: 7,
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                      ],
+                    ),
+                ],
               ),
             ),
           ),
-          barGroups: groups,
-        ),
+        ],
       ),
+    );
+  }
+}
+
+class _LegendChip extends StatelessWidget {
+  const _LegendChip({required this.color, required this.label});
+
+  final Color color;
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          width: 10,
+          height: 10,
+          decoration: BoxDecoration(
+            color: color,
+            shape: BoxShape.circle,
+          ),
+        ),
+        const SizedBox(width: 6),
+        Text(
+          label,
+          style: const TextStyle(
+            fontSize: 12,
+            color: GridColors.textSecondary,
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+      ],
     );
   }
 }

@@ -8,6 +8,8 @@ import 'package:table_calendar/table_calendar.dart';
 
 import '../../../utils/_utils.dart';
 
+
+import 'package:task_manager_flutter/utils/app_logger.dart';
 class TableMultiExample extends StatefulWidget {
   const TableMultiExample({super.key});
 
@@ -118,7 +120,7 @@ class _TableMultiExampleState extends State<TableMultiExample> {
                         borderRadius: BorderRadius.circular(12.0),
                       ),
                       child: ListTile(
-                        onTap: () => print('${value[index]}'),
+                        onTap: () => L.d('${value[index]}'),
                         title: Text('${value[index]}'),
                       ),
                     );

@@ -10,6 +10,8 @@ import '../../services/parceiro_caller.dart';
 import '../../../models/parceiro_model.dart';
 import '../../constants/custom_colors.dart';
 
+
+import 'package:task_manager_flutter/utils/app_logger.dart';
 int idParceiro = AuthUtility.userInfo?.data?.id ?? 0;
 
 class SignUpScreen extends StatefulWidget {
@@ -70,7 +72,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
       final XFile? photo = pickImage;
       return files;
     } else {
-      print(response.exception);
+      L.d(response.exception);
     }
     return null;
   }

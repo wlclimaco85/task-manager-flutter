@@ -46,7 +46,7 @@ class _AppSidebarState extends State<AppSidebar> {
   final TextEditingController _searchCtrl = TextEditingController();
   String _searchQuery = '';
   Set<String> _favorites = {};
-  Set<String> _expandedGroups = {};
+  final Set<String> _expandedGroups = {};
   String _userId = '';
 
   @override
@@ -114,7 +114,7 @@ class _AppSidebarState extends State<AppSidebar> {
       decoration: BoxDecoration(
         color: _bg,
         border: const Border(right: BorderSide(color: Color(0xFF004a20), width: 1)),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.3), blurRadius: 4, offset: const Offset(2, 0))],
+        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.3), blurRadius: 4, offset: const Offset(2, 0))],
       ),
       child: Column(
         children: [
@@ -304,7 +304,7 @@ class _AppSidebarState extends State<AppSidebar> {
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
             decoration: BoxDecoration(
-              color: hasSelected ? _bgSelected.withOpacity(0.5) : Colors.transparent,
+              color: hasSelected ? _bgSelected.withValues(alpha: 0.5) : Colors.transparent,
             ),
             child: Row(
               children: [
@@ -358,12 +358,12 @@ class _AppSidebarState extends State<AppSidebar> {
         child: Row(
           children: [
             FaIcon(item.icon, size: 13,
-                color: isSelected ? _primary : item.screenIndex < 0 ? _textMuted.withOpacity(0.5) : _textMuted),
+                color: isSelected ? _primary : item.screenIndex < 0 ? _textMuted.withValues(alpha: 0.5) : _textMuted),
             const SizedBox(width: 10),
             Expanded(
               child: Text(item.label,
                   style: TextStyle(
-                    color: isSelected ? _primary : item.screenIndex < 0 ? _textMuted.withOpacity(0.5) : _textColor,
+                    color: isSelected ? _primary : item.screenIndex < 0 ? _textMuted.withValues(alpha: 0.5) : _textColor,
                     fontSize: 13,
                     fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
                   )),
@@ -376,7 +376,7 @@ class _AppSidebarState extends State<AppSidebar> {
                 child: Icon(
                   isFav ? Icons.star : Icons.star_border,
                   size: 14,
-                  color: isFav ? Colors.amber : _textMuted.withOpacity(0.4),
+                  color: isFav ? Colors.amber : _textMuted.withValues(alpha: 0.4),
                 ),
               ),
             ),

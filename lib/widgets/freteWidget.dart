@@ -88,7 +88,7 @@ class FreteService {
                       color: Colors.white,
                       borderRadius: BorderRadius.circular(15),
                       border: Border.all(
-                          color: Colors.green[800]!.withOpacity(0.3)),
+                          color: Colors.green[800]!.withValues(alpha: 0.3)),
                     ),
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,

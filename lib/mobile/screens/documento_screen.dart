@@ -1,4 +1,4 @@
-﻿// Mobile Calendar Screen
+// Mobile Calendar Screen
 // Re-exports the full-featured financial calendar for mobile use.
 
 import 'package:flutter/material.dart';

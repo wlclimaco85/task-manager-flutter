@@ -54,7 +54,7 @@ class _GridFiltersState extends State<GridFilters> {
               const Spacer(),
               IconButton(
                 onPressed: widget.onClose,
-                icon: Icon(Icons.close, color: cs.onSurface.withOpacity(0.6)),
+                icon: Icon(Icons.close, color: cs.onSurface.withValues(alpha: 0.6)),
               ),
             ]),
             const SizedBox(height: 12),

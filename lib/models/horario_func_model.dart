@@ -17,8 +17,8 @@ class HorarioFunc {
   Map<String, dynamic> toJson() => {'id': id, 'nome': nome, 'tipo': tipo, 'ativo': ativo};
 
   static List<FieldConfig> fieldConfigs = [
-    FieldConfig(label: "Nome", fieldName: "nome", icon: Icons.schedule, isInForm: true, isFilterable: true),
-    FieldConfig(label: "Tipo", fieldName: "tipo", icon: Icons.category, isInForm: true),
-    FieldConfig(label: "Ativo", fieldName: "ativo", icon: Icons.check_circle, isInForm: true),
+    const FieldConfig(label: "Nome", fieldName: "nome", icon: Icons.schedule, isInForm: true, isFilterable: true),
+    const FieldConfig(label: "Tipo", fieldName: "tipo", icon: Icons.category, isInForm: true),
+    const FieldConfig(label: "Ativo", fieldName: "ativo", icon: Icons.check_circle, isInForm: true),
   ];
 }

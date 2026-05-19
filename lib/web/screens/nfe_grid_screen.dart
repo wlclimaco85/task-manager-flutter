@@ -8,6 +8,7 @@ import '../../../utils/api_links.dart';
 import '../../../utils/tenant_context.dart';
 import '../../../widgets/generic_grid_windows_screen.dart' show CustomAction;
 import 'details/nfe_detail_screen.dart';
+import '../../../widgets/searchable_dropdown.dart';
 
 const _red   = Color(0xFF93070A);
 const _green = Color(0xFF005826);
@@ -58,12 +59,11 @@ class _WebNfeGridScreenState extends State<WebNfeGridScreen> {
   }
 
   void _abrirNovo(BuildContext context) {
-    // Abre o NfeSankhyaDetailScreen com item vazio para inserção
     Navigator.push(context, MaterialPageRoute(
       builder: (_) => NfeSankhyaDetailScreen(item: {
         'tipoOperacao': widget.entrada ? 'ENTRADA' : 'SAIDA',
       }),
-    ));
+    )).then((_) => _aplicarFiltros());
   }
 
   @override
@@ -211,7 +211,7 @@ class _WebNfeGridScreenState extends State<WebNfeGridScreen> {
       return;
     }
     try {
-      final r = await TenantContext.post('${ApiLinks.baseUrl}/api/nfe/$id/cancelar', {'justificativa': motivoCtrl.text.trim()});
+      final r = await TenantContext.post(ApiLinks.cancelarNfe(id), {'justificativa': motivoCtrl.text.trim()});
       if (!context.mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
         content: Text(r.statusCode == 200 ? 'NF-e cancelada com sucesso!' : 'Erro ${r.statusCode}: ${r.body}'),
@@ -241,17 +241,22 @@ class _WebNfeGridScreenState extends State<WebNfeGridScreen> {
     );
     if (confirmed != true || !context.mounted) return;
     try {
-      final r = await TenantContext.post('${ApiLinks.baseUrl}/api/nfe/emissao', {
-        'empresaId': item['empresa'] is Map ? item['empresa']['id'] : item['empresa_id'],
-        'destinatarioId': item['destinatario'] is Map ? item['destinatario']['id'] : item['destinatario_id'],
-        'serie': item['serie'],
-        'numero': item['numero'],
-      });
+      // NF08: usa POST /api/nfe/{id}/emitir (geração de XML real e assinatura digital)
+      final r = await TenantContext.post(ApiLinks.emitirNfe(id), {});
       if (!context.mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text(r.statusCode == 200 ? 'NF-e emitida com sucesso!' : 'Erro ${r.statusCode}: ${r.body}'),
-        backgroundColor: r.statusCode == 200 ? _green : _red));
-      if (r.statusCode == 200) setState(() => _gridKey++);
+      if (r.statusCode == 200 || r.statusCode == 201) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+          content: Text('NF-e emitida com sucesso! XML gerado e assinado.'),
+          backgroundColor: _green));
+        setState(() => _gridKey++);
+      } else {
+        String msg = 'Erro ${r.statusCode}';
+        try {
+          final body = jsonDecode(r.body);
+          msg = body['message']?.toString() ?? body['mensagem']?.toString() ?? body['error']?.toString() ?? msg;
+        } catch (_) {}
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg), backgroundColor: _red));
+      }
     } catch (e) {
       if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Erro: $e'), backgroundColor: _red));
     }
@@ -260,7 +265,7 @@ class _WebNfeGridScreenState extends State<WebNfeGridScreen> {
   Future<void> _imprimirDanfe(BuildContext context, Map<String, dynamic> item) async {
     final id = item['id']?.toString() ?? '';
     try {
-      final r = await TenantContext.get('${ApiLinks.baseUrl}/api/nfe/$id/danfe');
+      final r = await TenantContext.get(ApiLinks.danfeNfe(id));
       if (!context.mounted) return;
       if (r.statusCode == 200) {
         await FileSaver.instance.saveFile(
@@ -280,7 +285,7 @@ class _WebNfeGridScreenState extends State<WebNfeGridScreen> {
   Future<void> _baixarXml(BuildContext context, Map<String, dynamic> item) async {
     final id = item['id']?.toString() ?? '';
     try {
-      final r = await TenantContext.get('${ApiLinks.baseUrl}/api/nfe/$id/xml');
+      final r = await TenantContext.get(ApiLinks.xmlNfe(id));
       if (!context.mounted) return;
       if (r.statusCode == 200) {
         await FileSaver.instance.saveFile(
@@ -300,7 +305,7 @@ class _WebNfeGridScreenState extends State<WebNfeGridScreen> {
   // ── Ações NF-e ENTRADA ────────────────────────────────────────────────────
 
   Future<void> _importarXml(BuildContext context) async {
-    final result = await FilePicker.platform.pickFiles(
+    final result = await FilePicker.pickFiles(
       type: FileType.custom,
       allowedExtensions: ['xml'],
       withData: true,
@@ -344,7 +349,7 @@ class _WebNfeGridScreenState extends State<WebNfeGridScreen> {
     );
     if (confirmed != true || !context.mounted) return;
     try {
-      final r = await TenantContext.post('${ApiLinks.baseUrl}/api/nfe/$id/aceitar', {});
+      final r = await TenantContext.post(ApiLinks.aceitarNfe(id), {});
       if (!context.mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
         content: Text(r.statusCode == 200 ? 'NF-e aceita!' : 'Erro ${r.statusCode}'),
@@ -374,7 +379,7 @@ class _WebNfeGridScreenState extends State<WebNfeGridScreen> {
     );
     if (confirmed != true || !context.mounted) return;
     try {
-      final r = await TenantContext.post('${ApiLinks.baseUrl}/api/nfe/$id/recusar', {});
+      final r = await TenantContext.post(ApiLinks.recusarNfe(id), {});
       if (!context.mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
         content: Text(r.statusCode == 200 ? 'NF-e recusada!' : 'Erro ${r.statusCode}'),
@@ -533,16 +538,18 @@ class _WebNfeGridScreenState extends State<WebNfeGridScreen> {
       border: OutlineInputBorder(borderRadius: BorderRadius.circular(4), borderSide: const BorderSide(color: _bord)),
       enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(4), borderSide: const BorderSide(color: _bord))));
 
-  Widget _drop(String? val, List<String> opts, void Function(String?) cb) => DropdownButtonFormField<String>(
-    value: val, isDense: true,
-    decoration: InputDecoration(filled: true, fillColor: Colors.white, isDense: true,
-      contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-      border: OutlineInputBorder(borderRadius: BorderRadius.circular(4), borderSide: const BorderSide(color: _bord)),
-      enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(4), borderSide: const BorderSide(color: _bord))),
-    hint: const Text('Todos', style: TextStyle(fontSize: 11)),
-    style: const TextStyle(fontSize: 12, color: _dark),
-    items: [const DropdownMenuItem(value: null, child: Text('Todos')), ...opts.map((o) => DropdownMenuItem(value: o, child: Text(o)))],
-    onChanged: cb);
+  Widget _drop(String? val, List<String> opts, void Function(String?) cb) =>
+    SearchableDropdownField(
+      label: '',
+      value: val,
+      items: opts.map((o) => <String, dynamic>{'id': o, 'nome': o}).toList(),
+      valueField: 'id',
+      displayField: 'nome',
+      nullable: true,
+      nullLabel: 'Todos',
+      hintText: 'Todos',
+      onChanged: cb,
+    );
 
   Widget _dateRange(DateTime? ini, DateTime? fim, void Function(DateTime?, DateTime?) cb) =>
     Row(children: [

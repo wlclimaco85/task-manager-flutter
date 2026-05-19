@@ -392,7 +392,7 @@ class _ConsolePanelState extends State<_ConsolePanel> {
 
     return Positioned.fill(
       child: Material(
-        color: Colors.black.withOpacity(0.35),
+        color: Colors.black.withValues(alpha: 0.35),
         child: SafeArea(
           child: Align(
             alignment: Alignment.bottomCenter,
@@ -409,13 +409,13 @@ class _ConsolePanelState extends State<_ConsolePanel> {
                     boxShadow: [
                       BoxShadow(
                         blurRadius: 18,
-                        color: Colors.black.withOpacity(0.25),
+                        color: Colors.black.withValues(alpha: 0.25),
                         spreadRadius: 2,
                         offset: const Offset(0, 8),
                       ),
                     ],
                     border:
-                        Border.all(color: theme.dividerColor.withOpacity(0.2)),
+                        Border.all(color: theme.dividerColor.withValues(alpha: 0.2)),
                   ),
                   child: DraggableScrollableSheet(
                     expand: false,
@@ -466,7 +466,7 @@ class _ConsolePanelState extends State<_ConsolePanel> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       decoration:
-          BoxDecoration(color: theme.colorScheme.primary.withOpacity(0.08)),
+          BoxDecoration(color: theme.colorScheme.primary.withValues(alpha: 0.08)),
       child: Row(
         children: [
           const Icon(Icons.terminal, size: 18),
@@ -589,9 +589,9 @@ class _LogTile extends StatelessWidget {
       margin: const EdgeInsets.symmetric(vertical: 4),
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.05),
+        color: color.withValues(alpha: 0.05),
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: color.withOpacity(0.25)),
+        border: Border.all(color: color.withValues(alpha: 0.25)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -628,7 +628,7 @@ class _LogTile extends StatelessWidget {
               width: double.infinity,
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: Colors.black.withOpacity(0.05),
+                color: Colors.black.withValues(alpha: 0.05),
                 borderRadius: BorderRadius.circular(6),
               ),
               child: SelectionArea(
@@ -652,8 +652,9 @@ class _LogTile extends StatelessWidget {
 // ------------------------------- HELPERS PÚBLICOS -------------------------------
 /// Azucar sintático, se você quiser logar rápido sem importar o singleton:
 class L {
-  static void i(String msg) => AppLogger.i.info(msg);
-  static void d(String msg) => AppLogger.i.debug(msg);
-  static void w(String msg) => AppLogger.i.warn(msg);
-  static void e(String msg, [StackTrace? st]) => AppLogger.i.error(msg, st);
+  static String _text(Object? msg) => msg?.toString() ?? 'null';
+  static void i(Object? msg) => AppLogger.i.info(_text(msg));
+  static void d(Object? msg) => AppLogger.i.debug(_text(msg));
+  static void w(Object? msg) => AppLogger.i.warn(_text(msg));
+  static void e(Object? msg, [StackTrace? st]) => AppLogger.i.error(_text(msg), st);
 }

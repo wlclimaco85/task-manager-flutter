@@ -75,7 +75,7 @@ class _KpiCardsState extends State<KpiCards> {
         height: 90,
         margin: const EdgeInsets.symmetric(horizontal: 6),
         decoration: BoxDecoration(
-            color: color.withOpacity(.1),
+            color: color.withValues(alpha: .1),
             borderRadius: BorderRadius.circular(16)),
         child: Center(
           child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [

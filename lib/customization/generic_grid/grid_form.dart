@@ -1,4 +1,4 @@
-﻿// lib/data/customization/grid_form.dart
+// lib/data/customization/grid_form.dart
 import 'dart:convert';
 
 import 'package:file_picker/file_picker.dart';
@@ -231,6 +231,20 @@ class _GridFormDialogState extends State<GridFormDialog> {
                 firstDate: c.firstDate ?? DateTime(1900),
                 lastDate: c.lastDate ?? DateTime(2100),
                 locale: const Locale('pt', 'BR'),
+                builder: (context, child) => Theme(
+                  data: Theme.of(context).copyWith(
+                    colorScheme: const ColorScheme.light(
+                      primary: GridColors.primary,
+                      onPrimary: Colors.white,
+                      secondary: GridColors.secondary,
+                      onSecondary: Colors.white,
+                      surface: Colors.white,
+                      onSurface: GridColors.textSecondary,
+                    ),
+                    dialogBackgroundColor: Colors.white,
+                  ),
+                  child: child!,
+                ),
               );
               if (picked != null) {
                 ctrl.text = DateFormat(c.dateFormat).format(picked);
@@ -272,7 +286,7 @@ class _GridFormDialogState extends State<GridFormDialog> {
         onPressed: c.enabled
             ? () async {
                 try {
-                  final res = await FilePicker.platform.pickFiles(
+                  final res = await FilePicker.pickFiles(
                     type: FileType.custom,
                     allowedExtensions: cfg.allowedExtensions,
                     allowMultiple: cfg.allowMultiple,
@@ -570,8 +584,11 @@ class _GridMultiSelectDialogState extends State<_GridMultiSelectDialog> {
 
   void _toggle(String val) {
     setState(() {
-      if (_isSelected(val)) _selected.remove(val);
-      else _selected.add(val);
+      if (_isSelected(val)) {
+        _selected.remove(val);
+      } else {
+        _selected.add(val);
+      }
     });
   }
 
@@ -898,7 +915,7 @@ class _GridDropdownSearchDialogState
                           dense: true,
                           selected: isSel,
                           selectedTileColor:
-                              GridColors.error.withOpacity(0.08),
+                              GridColors.error.withValues(alpha: 0.08),
                           leading: isSel
                               ? const Icon(Icons.check_circle,
                                   color: GridColors.error, size: 18)

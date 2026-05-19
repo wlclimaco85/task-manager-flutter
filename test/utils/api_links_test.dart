@@ -33,20 +33,24 @@ void main() {
     });
 
     test('registrarBaixaContaPagar usa /api/conta_pagar/{id}/baixa', () {
-      expect(ApiLinks.registrarBaixaContaPagar('1'), contains('/api/conta_pagar/1/baixa'));
+      expect(ApiLinks.registrarBaixaContaPagar('1'),
+          contains('/api/conta_pagar/1/baixa'));
     });
 
     test('desfazerContaPagar usa /api/conta_pagar/desfazer/{id}', () {
-      expect(ApiLinks.desfazerContaPagar('5'), contains('/api/conta_pagar/desfazer/5'));
+      expect(ApiLinks.desfazerContaPagar('5'),
+          contains('/api/conta_pagar/desfazer/5'));
     });
   });
 
   group('ApiLinks — Contas a Receber', () {
-    test('allContasReceber contém /api/conta_receber (underscore, singular)', () {
+    test('allContasReceber contém /api/conta_receber (underscore, singular)',
+        () {
       expect(ApiLinks.allContasReceber, contains('/api/conta_receber'));
     });
 
-    test('allContasReceber NÃO contém /api/contas-receber (plural com hífen)', () {
+    test('allContasReceber NÃO contém /api/contas-receber (plural com hífen)',
+        () {
       expect(ApiLinks.allContasReceber, isNot(contains('/api/contas-receber')));
     });
 
@@ -59,29 +63,36 @@ void main() {
     });
 
     test('updateContaReceber usa /api/conta_receber/{id}', () {
-      expect(ApiLinks.updateContaReceber('10'), contains('/api/conta_receber/10'));
+      expect(
+          ApiLinks.updateContaReceber('10'), contains('/api/conta_receber/10'));
     });
 
     test('deleteContaReceber usa /api/conta_receber/{id}', () {
-      expect(ApiLinks.deleteContaReceber('7'), contains('/api/conta_receber/7'));
+      expect(
+          ApiLinks.deleteContaReceber('7'), contains('/api/conta_receber/7'));
     });
 
     test('registrarBaixaContaReceber usa /api/conta_receber/{id}/baixa', () {
-      expect(ApiLinks.registrarBaixaContaReceber('3'), contains('/api/conta_receber/3/baixa'));
+      expect(ApiLinks.registrarBaixaContaReceber('3'),
+          contains('/api/conta_receber/3/baixa'));
     });
 
     test('desfazerContaReceber usa /api/conta_receber/desfazer/{id}', () {
-      expect(ApiLinks.desfazerContaReceber('8'), contains('/api/conta_receber/desfazer/8'));
+      expect(ApiLinks.desfazerContaReceber('8'),
+          contains('/api/conta_receber/desfazer/8'));
     });
   });
 
   group('ApiLinks — Importação CSV', () {
     test('importacaoContaPagar contém /api/importacao/conta-pagar (hífen)', () {
-      expect(ApiLinks.importacaoContaPagar, contains('/api/importacao/conta-pagar'));
+      expect(ApiLinks.importacaoContaPagar,
+          contains('/api/importacao/conta-pagar'));
     });
 
-    test('importacaoContaReceber contém /api/importacao/conta-receber (hífen)', () {
-      expect(ApiLinks.importacaoContaReceber, contains('/api/importacao/conta-receber'));
+    test('importacaoContaReceber contém /api/importacao/conta-receber (hífen)',
+        () {
+      expect(ApiLinks.importacaoContaReceber,
+          contains('/api/importacao/conta-receber'));
     });
 
     test('importacaoPreview contém /api/importacao/preview', () {
@@ -116,6 +127,56 @@ void main() {
 
     test('baseUrl expõe _baseUrlNew (contém /boletobancos)', () {
       expect(ApiLinks.baseUrl, contains('/boletobancos'));
+    });
+  });
+
+  group('ApiLinks — NFS-e', () {
+    test('nfseIssue aponta para /api/nfse/issue', () {
+      expect(ApiLinks.nfseIssue, contains('/api/nfse/issue'));
+    });
+
+    test('nfseStatusUrl codifica parâmetros especiais corretamente', () {
+      final url = ApiLinks.nfseStatusUrl('São Paulo', '123/A');
+      expect(url, contains('municipalityCode=S%C3%A3o%20Paulo'));
+      expect(url, contains('nfseNumber=123%2FA'));
+    });
+
+    test('nfseCancel aponta para /api/nfse/cancel', () {
+      expect(ApiLinks.nfseCancel, contains('/api/nfse/cancel'));
+    });
+
+    test('nfseContingency aponta para /api/nfse/contingency', () {
+      expect(ApiLinks.nfseContingency, contains('/api/nfse/contingency'));
+    });
+
+    test('nfseAudit aponta para /api/nfse/audit', () {
+      expect(ApiLinks.nfseAudit, contains('/api/nfse/audit'));
+    });
+  });
+
+  group('ApiLinks — CRM / Recorrências e Faturas', () {
+    test('allRecurringContracts aponta para /api/crm/contracts', () {
+      expect(ApiLinks.allRecurringContracts, contains('/api/crm/contracts'));
+    });
+
+    test('createRecurringContract aponta para /api/crm/contracts', () {
+      expect(ApiLinks.createRecurringContract, contains('/api/crm/contracts'));
+    });
+
+    test('allInvoiceRecords aponta para /api/crm/invoices', () {
+      expect(ApiLinks.allInvoiceRecords, contains('/api/crm/invoices'));
+    });
+
+    test('generateInvoice aponta para /api/crm/invoices', () {
+      expect(ApiLinks.generateInvoice, contains('/api/crm/invoices'));
+    });
+
+    test('allReminderNotifications aponta para /api/crm/reminders', () {
+      expect(ApiLinks.allReminderNotifications, contains('/api/crm/reminders'));
+    });
+
+    test('sendReminder aponta para /api/crm/reminders', () {
+      expect(ApiLinks.sendReminder, contains('/api/crm/reminders'));
     });
   });
 }

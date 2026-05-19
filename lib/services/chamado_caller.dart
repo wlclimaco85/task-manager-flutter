@@ -1,8 +1,10 @@
-﻿import '../models/chamado_model.dart';
+import '../models/chamado_model.dart';
 import 'package:task_manager_flutter/models/network_response.dart';
 import 'package:task_manager_flutter/services/network_caller.dart';
 import 'package:task_manager_flutter/utils/api_links.dart';
 
+
+import 'package:task_manager_flutter/utils/app_logger.dart';
 class ChamadoCaller {
   Future<List<Chamado>> fetchAllChamados() async {
     List<Chamado> list = [];
@@ -16,7 +18,7 @@ class ChamadoCaller {
         list = (data as List).map((item) => Chamado.fromJson(item)).toList();
       }
     } catch (e) {
-      print('Erro ao carregar chamados: $e');
+      L.d('Erro ao carregar chamados: $e');
       throw Exception('Erro ao carregar chamados: $e');
     }
     return list;

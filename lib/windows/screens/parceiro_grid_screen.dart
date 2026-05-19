@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../customization/dynamic_grid_windows_screen.dart';
-import '../../web/screens/details/parceiro_detail_screen.dart';
+import '../../windows/screens/details/parceiro_detail_screen.dart';
 
 class WindowsParceiroGridScreen extends StatelessWidget {
   final SecurityCheck hasPermission;
@@ -14,7 +14,7 @@ class WindowsParceiroGridScreen extends StatelessWidget {
       hasPermission: hasPermission,
       fromJson: (json) => json,
       toJson: (a) => a,
-      detailScreenBuilder: (item) => WebParceiroDetailScreen(item: item, hasPermission: hasPermission),
+      detailScreenBuilder: (item) => WindowsParceiroDetailScreen(item: item, hasPermission: hasPermission),
     );
   }
 }

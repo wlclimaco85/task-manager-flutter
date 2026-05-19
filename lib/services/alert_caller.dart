@@ -6,6 +6,8 @@ import '../../../models/network_response.dart';
 import '../../services/network_caller.dart';
 import '../../../models/auth_utility.dart';
 
+
+import 'package:task_manager_flutter/utils/app_logger.dart';
 class AlertCaller {
   Future<List<Alert>> fetchAllAlerts(BuildContext context) async {
     List<Alert>? model = [];
@@ -20,10 +22,10 @@ class AlertCaller {
         models = AlertResponse.fromJson(response.body!);
         model.addAll(models.account ?? []);
       } else {
-        print('Erro: Nenhum dado retornado');
+        L.d('Erro: Nenhum dado retornado');
       }
     } catch (e) {
-      print('Erro: $e'); // Log do erro
+      L.d('Erro: $e'); // Log do erro
       throw Exception('Erro ao carregar cotações: $e');
     }
     return model;
@@ -44,10 +46,10 @@ class AlertCaller {
           models = AlertResponse.fromJson(response.body!);
           model.addAll(models.account ?? []);
         } else {
-          print('Erro: Nenhum dado retornado');
+          L.d('Erro: Nenhum dado retornado');
         }
       } catch (e) {
-        print('Erro: $e'); // Log do erro
+        L.d('Erro: $e'); // Log do erro
         throw Exception('Erro ao carregar itens à venda: $e');
       }
       return model;

@@ -8,6 +8,8 @@ import '../../../widgets/negotiationDialog.dart';
 import '../../../models/auth_utility.dart';
 import '../../constants/custom_colors.dart';
 
+
+import 'package:task_manager_flutter/utils/app_logger.dart';
 // Tela de Detalhes
 class ProdutoDetailsScreen extends StatefulWidget {
   final int produtoId;
@@ -171,7 +173,7 @@ class _ProdutoDetailsScreenState extends State<ProdutoDetailsScreen> {
                                   ),
                                 );
                               } catch (e) {
-                                print('Error decoding base64 image: $e');
+                                L.d('Error decoding base64 image: $e');
                                 return Container(
                                   margin:
                                       const EdgeInsets.symmetric(horizontal: 8),

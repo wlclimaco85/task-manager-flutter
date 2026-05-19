@@ -35,26 +35,26 @@ class Medicamento {
   }
 
   static List<FieldConfig> fieldConfigs = [
-    FieldConfig(
+    const FieldConfig(
       label: "Nome",
       fieldName: "nome",
       icon: Icons.medication,
       isInForm: true,
       isFilterable: true,
     ),
-    FieldConfig(
+    const FieldConfig(
       label: "Descrição",
       fieldName: "descricao",
       icon: Icons.description,
       isInForm: true,
     ),
-    FieldConfig(
+    const FieldConfig(
       label: "Dosagem",
       fieldName: "dosagem",
       icon: Icons.scale,
       isInForm: true,
     ),
-    FieldConfig(
+    const FieldConfig(
       label: "Laboratório",
       fieldName: "laboratorio",
       icon: Icons.local_hospital,

@@ -15,6 +15,8 @@ import '../../../models/auth_utility.dart';
 import 'dart:io';
 import '../../../widgets/custom_insert_list_foto.dart';
 
+
+import 'package:task_manager_flutter/utils/app_logger.dart';
 class ExamesModalAdd extends StatefulWidget {
   const ExamesModalAdd({super.key});
   @override
@@ -63,7 +65,7 @@ class _ExamesModalAddState extends State<ExamesModalAdd> {
       const asciiDecoder = AsciiDecoder();
       final asciiValues = [104, 101, 108, 108, 111];
       return asciiValues;
-      print(response.exception);
+      L.d(response.exception);
     }
   }
 
@@ -80,10 +82,10 @@ class _ExamesModalAddState extends State<ExamesModalAdd> {
     if (pickImage != null) {
       // var bytes = File(pickImage!.path).readAsBytesSync();
       // String base64Image = base64Encode(bytes);
-      print('upload proccess started');
+      L.d('upload proccess started');
       final bytess = io.File(pickImage!.path).readAsBytesSync();
       //  List<int> imageBytes = pickImage?.readAsBytesSync();
-      // print(imageBytes);
+      // L.d(imageBytes);
       //String base64Images = base64Encode(imageBytes);
       base64Imagess = base64Encode(bytess);
     }
@@ -151,8 +153,8 @@ class _ExamesModalAddState extends State<ExamesModalAdd> {
         if (entry.key == key && entry.value == chave) {
           _dataArray[key][chave] = value;
         }
-        print(entry.key);
-        print(entry.value);
+        L.d(entry.key);
+        L.d(entry.value);
       });
 
       for (var map in _dataArray) {

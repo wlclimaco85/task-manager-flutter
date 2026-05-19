@@ -188,7 +188,9 @@ void main() {
       try {
         expect(ctrl.length, equals(15));
       } finally {
-        for (final c in ctrl.values) c.dispose();
+        for (final c in ctrl.values) {
+          c.dispose();
+        }
       }
     });
 
@@ -197,7 +199,9 @@ void main() {
       try {
         expect(ctrl.length, equals(15));
       } finally {
-        for (final c in ctrl.values) c.dispose();
+        for (final c in ctrl.values) {
+          c.dispose();
+        }
       }
     });
 
@@ -209,7 +213,9 @@ void main() {
               reason: '_ctrlCP deve conter "$campo"');
         }
       } finally {
-        for (final c in ctrl.values) c.dispose();
+        for (final c in ctrl.values) {
+          c.dispose();
+        }
       }
     });
 
@@ -221,7 +227,9 @@ void main() {
               reason: '_ctrlCR deve conter "$campo"');
         }
       } finally {
-        for (final c in ctrl.values) c.dispose();
+        for (final c in ctrl.values) {
+          c.dispose();
+        }
       }
     });
 
@@ -234,7 +242,9 @@ void main() {
         expect(keysCtrl, equals(keysMapa),
             reason: 'As chaves de _ctrlCP devem ser idênticas às de _camposMapeamento');
       } finally {
-        for (final c in ctrl.values) c.dispose();
+        for (final c in ctrl.values) {
+          c.dispose();
+        }
       }
     });
 
@@ -247,7 +257,9 @@ void main() {
         expect(keysCtrl, equals(keysMapa),
             reason: 'As chaves de _ctrlCR devem ser idênticas às de _camposMapeamento');
       } finally {
-        for (final c in ctrl.values) c.dispose();
+        for (final c in ctrl.values) {
+          c.dispose();
+        }
       }
     });
   });

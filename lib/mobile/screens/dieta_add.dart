@@ -16,6 +16,8 @@ import '../../../utils/personal_validation.dart';
 import '../../../widgets/data_picker_core_date.dart';
 import '../../../widgets/custom_dieta_box_form.dart';
 
+
+import 'package:task_manager_flutter/utils/app_logger.dart';
 class DietaModalAdd extends StatefulWidget {
   const DietaModalAdd({super.key});
   @override
@@ -65,7 +67,7 @@ class _DietaModalAddState extends State<DietaModalAdd> {
       const asciiDecoder = AsciiDecoder();
       final asciiValues = [104, 101, 108, 108, 111];
       return asciiValues;
-      print(response.exception);
+      L.d(response.exception);
     }
   }
 
@@ -82,10 +84,10 @@ class _DietaModalAddState extends State<DietaModalAdd> {
     if (pickImage != null) {
       // var bytes = File(pickImage!.path).readAsBytesSync();
       // String base64Image = base64Encode(bytes);
-      print('upload proccess started');
+      L.d('upload proccess started');
       final bytess = io.File(pickImage!.path).readAsBytesSync();
       //  List<int> imageBytes = pickImage?.readAsBytesSync();
-      // print(imageBytes);
+      // L.d(imageBytes);
       //String base64Images = base64Encode(imageBytes);
       base64Imagess = base64Encode(bytess);
     }
@@ -160,8 +162,8 @@ class _DietaModalAddState extends State<DietaModalAdd> {
         if (entry.key == key && entry.value == chave) {
           _dataArray[key][chave] = value;
         }
-        print(entry.key);
-        print(entry.value);
+        L.d(entry.key);
+        L.d(entry.value);
       });
 
       for (var map in _dataArray) {
