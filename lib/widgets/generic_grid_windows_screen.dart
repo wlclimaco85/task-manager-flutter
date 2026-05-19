@@ -17,6 +17,8 @@ import '../../../utils/api_links.dart';
 import '../../services/network_caller.dart';
 
 import 'package:task_manager_flutter/utils/app_logger.dart';
+import 'package:task_manager_flutter/models/tela_ajuda_model.dart';
+import 'package:task_manager_flutter/services/tela_ajuda_service.dart';
 // ==============================================
 // ENUMS E CONFIGURAÇÕES
 // ==============================================
@@ -1521,6 +1523,7 @@ class GenericGridScreen<T> extends StatefulWidget {
   final Map<String, dynamic>? extraParams;
   final bool showAppBar;
   final List<Widget>? headerActions;
+  final String? helpTelaNome;
 
   const GenericGridScreen({
     super.key,
@@ -1555,6 +1558,7 @@ class GenericGridScreen<T> extends StatefulWidget {
     this.extraParams,
     this.showAppBar = true,
     this.headerActions,
+    this.helpTelaNome,
   });
 
   @override
@@ -3030,7 +3034,21 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
     );
   }
 
-  void _showGridHelpDialog() {
+  Future<void> _showGridHelpDialog() async {
+    final telaNome = widget.helpTelaNome ?? widget.title;
+    TelaAjudaModel? ajuda;
+    try {
+      ajuda = await TelaAjudaService().buscarPorTela(telaNome);
+    } catch (e) {
+      L.e('Erro ao buscar ajuda da tela "$telaNome": $e');
+    }
+
+    if (!mounted) return;
+    if (ajuda != null) {
+      _showConfiguredHelpDialog(ajuda);
+      return;
+    }
+
     final visibleFields = widget.FieldConfigWindowss
         .where((c) =>
             c.isVisibleByDefault &&
@@ -3102,6 +3120,69 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
         ],
       ),
     );
+  }
+
+  void _showConfiguredHelpDialog(TelaAjudaModel ajuda) {
+    final sections = <MapEntry<String, String?>>[
+      MapEntry('Para que serve', ajuda.resumo),
+      MapEntry('Como usar', ajuda.comoUsar),
+      MapEntry('Campos importantes', ajuda.camposImportantes),
+      MapEntry('Observacoes', ajuda.observacoes),
+    ].where((entry) => entry.value?.trim().isNotEmpty == true).toList();
+
+    showDialog<void>(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: Row(
+          children: [
+            const Icon(Icons.help_outline, color: GridColors.primary),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                ajuda.titulo.trim().isEmpty
+                    ? 'Ajuda - ${widget.title}'
+                    : ajuda.titulo,
+              ),
+            ),
+          ],
+        ),
+        content: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 560),
+          child: SingleChildScrollView(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: sections.isEmpty
+                  ? [_helpBlock('Para que serve', [_purposeForTitle()])]
+                  : sections
+                      .expand(
+                        (section) => [
+                          _helpBlock(section.key, _splitHelpText(section.value!)),
+                          const SizedBox(height: 14),
+                        ],
+                      )
+                      .toList()
+                ..removeLast(),
+            ),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Fechar'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  List<String> _splitHelpText(String value) {
+    final lines = value
+        .split(RegExp(r'\r?\n'))
+        .map((line) => line.trim())
+        .where((line) => line.isNotEmpty)
+        .toList();
+    return lines.isEmpty ? [value.trim()] : lines;
   }
 
   String _purposeForTitle() {

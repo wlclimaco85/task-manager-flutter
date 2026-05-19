@@ -394,6 +394,7 @@ class _DynamicGridWindowsScreenState<T>
           customActions: widget.customActions,
           showAppBar: widget.showAppBar,
           headerActions: widget.headerActions,
+          helpTelaNome: tela.nome,
         );
       },
     );

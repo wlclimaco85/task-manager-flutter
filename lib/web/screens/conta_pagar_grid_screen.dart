@@ -115,7 +115,8 @@ class _WebContaPagarGridScreenState extends State<WebContaPagarGridScreen> {
       ],
       customActions: () => [
         CustomAction<Map<String, dynamic>>(
-          icon: Icons.check_circle, label: 'Baixar',
+          icon: Icons.check_circle,
+          label: 'Baixar',
           onPressed: (context, object) => showDialog(
             context: context,
             builder: (_) => WebBaixaDialog(conta: ContaPagar.fromJson(object)),

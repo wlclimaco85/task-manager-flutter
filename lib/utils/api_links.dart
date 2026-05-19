@@ -434,6 +434,10 @@ class ApiLinks {
     return '$_baseUrlNew/api/telas/$nome$query';
   }
 
+  static String get telaAjuda => '$_baseUrlNew/api/tela-ajuda';
+  static String telaAjudaPorTela(String telaNome) =>
+      '$_baseUrlNew/api/tela-ajuda/por-tela/${Uri.encodeComponent(telaNome)}';
+
   static String getAllpreferencias(String id, String setor) =>
       ('$_baseUrlNew/api/$id/user-preferences/$setor');
 
