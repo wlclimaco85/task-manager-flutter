@@ -311,6 +311,16 @@ class ApiLinks {
       '$_baseUrlNew/api/conta_receber/$id/baixa';
   static String desfazerContaReceber(String id) =>
       '$_baseUrlNew/api/conta_receber/desfazer/$id';
+  static String contaReceberRecorrencia(String id) =>
+      '$_baseUrlNew/api/conta_receber/$id/recorrencia';
+  static String contaReceberParcelar(String id) =>
+      '$_baseUrlNew/api/conta_receber/$id/parcelar';
+  static String contaReceberRenegociar(String id) =>
+      '$_baseUrlNew/api/conta_receber/$id/renegociar';
+  static String contaReceberBaixaParcial(String id) =>
+      '$_baseUrlNew/api/conta_receber/$id/baixa-parcial';
+  static String contaReceberHistorico(String id) =>
+      '$_baseUrlNew/api/conta_receber/$id/historico';
   static String contaReceberCobrancas(String id) =>
       '$_baseUrlNew/api/conta_receber/$id/cobrancas';
   static String contaReceberCobranca(String cobrancaId) =>
