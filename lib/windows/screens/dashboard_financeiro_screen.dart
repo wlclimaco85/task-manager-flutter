@@ -631,30 +631,30 @@ class _KpiData {
   final double valor;
   final Color color;
   final IconData icon;
-  _KpiData(this.label, this.valor, this.color, this.icon);
+  const _KpiData(this.label, this.valor, this.color, this.icon);
 }
 
 class _FluxoItem {
   final String semana;
   final double entrada;
   final double saida;
-  _FluxoItem(this.semana, this.entrada, this.saida);
+  const _FluxoItem(this.semana, this.entrada, this.saida);
 }
 
 class _CategoriaItem {
   final String nome;
   final double valor;
-  _CategoriaItem(this.nome, this.valor);
+  const _CategoriaItem(this.nome, this.valor);
 }
 
 class _ParceiroItem {
   final String nome;
   final double valor;
-  _ParceiroItem(this.nome, this.valor);
+  const _ParceiroItem(this.nome, this.valor);
 }
 
 class _PieData {
   final String nome;
   final double valor;
-  _PieData(this.nome, this.valor);
+  const _PieData(this.nome, this.valor);
 }

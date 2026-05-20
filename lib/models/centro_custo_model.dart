@@ -5,8 +5,8 @@ class CentroCusto {
   int? id;
   String? nome;
 
-  CentroCusto({this.id, this.nome});
-  CentroCusto.fromJson(Map<String, dynamic> json) { id = json['id']; nome = json['nome']; }
+  const CentroCusto({this.id, this.nome});
+  factory CentroCusto.fromJson(Map<String, dynamic> json) => CentroCusto(id: json['id'], nome: json['nome']);
   Map<String, dynamic> toJson() => {'id': id, 'nome': nome};
 
   static List<FieldConfig> fieldConfigs = [
