@@ -56,6 +56,7 @@ class MenuGroup {
   /// 99:ImportarExtrato  100:ConciliacaoBancaria  102:IntegracoesFinanceiras
   /// 103:Fornecedores
   /// 104:Orcamentos
+  /// 105:PedidosVenda
 
 class MenuConfig {
   MenuConfig._();
@@ -188,6 +189,11 @@ class MenuConfig {
             label: 'Orçamentos',
             icon: FontAwesomeIcons.fileInvoice,
             screenIndex: 104),
+        MenuItem(
+            id: 'pedidos_venda',
+            label: 'Pedidos de Venda',
+            icon: FontAwesomeIcons.cartShopping,
+            screenIndex: 105),
       ],
     ),
     MenuGroup(

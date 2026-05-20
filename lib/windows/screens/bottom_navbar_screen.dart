@@ -101,6 +101,7 @@ import '../../widgets/fiscal/fiscal_automation_screen.dart';
 import '../../windows/screens/integracoes_financeiras_screen.dart';
 import '../../windows/screens/tela_ajuda_grid_screen.dart';
 import '../../windows/screens/orcamento_grid_screen.dart';
+import '../../windows/screens/pedido_venda_grid_screen.dart';
 import '../../widgets/dp/dp_dashboard_screen.dart';
 import '../../widgets/dp/dp_dynamic_grid_screen.dart';
 import '../../widgets/dp/dp_portal_colaborador_screen.dart';
@@ -263,6 +264,7 @@ class _WindowsBottomNavBarScreenState extends State<WindowsBottomNavBarScreen> {
         const IntegracoesFinanceirasScreen(), // 102: IntegracoesFinanceiras
         WindowsFornecedorGridScreen(hasPermission: (perm) => true), // 103: Fornecedores
         const WindowsOrcamentoGridScreen(), // 104: Orçamentos
+        const WindowsPedidoVendaGridScreen(), // 105: Pedidos de Venda
       ];
 
   String get userName {

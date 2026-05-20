@@ -695,6 +695,16 @@ class ApiLinks {
   static String novaVersaoOrcamento(String id) => '$_baseUrlNew/api/comercial/orcamentos/$id/nova-versao';
   static String cancelarOrcamento(String id) => '$_baseUrlNew/api/comercial/orcamentos/$id/cancelar';
 
+  // Pedido de Venda
+  static const String pedidosVenda = '$_baseUrlNew/api/comercial/pedidos-venda';
+  static String pedidoVendaById(String id) => '$_baseUrlNew/api/comercial/pedidos-venda/$id';
+  static String aprovarPedidoVenda(String id) => '$_baseUrlNew/api/comercial/pedidos-venda/$id/aprovar';
+  static String rejeitarPedidoVenda(String id) => '$_baseUrlNew/api/comercial/pedidos-venda/$id/rejeitar';
+  static String faturarParcialPedidoVenda(String id) => '$_baseUrlNew/api/comercial/pedidos-venda/$id/faturar-parcial';
+  static String faturarTotalPedidoVenda(String id) => '$_baseUrlNew/api/comercial/pedidos-venda/$id/faturar-total';
+  static String cancelarPedidoVenda(String id) => '$_baseUrlNew/api/comercial/pedidos-venda/$id/cancelar';
+  static String criarPedidoVendaDeOrcamento(String orcamentoId) => '$_baseUrlNew/api/comercial/pedidos-venda/criar-de-orcamento/$orcamentoId';
+
   // Alerta Aluno
   static String get allAlertasAluno => '$_baseUrlNew/api/alertas-aluno';
 
