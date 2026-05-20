@@ -22,6 +22,7 @@ class RelatedGridTab {
   final String? telaNome;
   final Map<String, dynamic>? extraParams;
   final List<FieldConfigWindows>? fieldOverrides;
+
   /// Widget customizado — quando informado, ignora telaNome e exibe este widget na aba
   final Widget? customWidget;
 
@@ -41,6 +42,7 @@ class GenericDetailFormScreen extends StatefulWidget {
   final String telaNome;
   final SecurityCheck hasPermission;
   final List<FieldConfigWindows>? fieldOverrides;
+
   /// Explicit related grid tabs (e.g. roles, chamados).
   final List<RelatedGridTab>? relatedTabs;
 
@@ -54,7 +56,8 @@ class GenericDetailFormScreen extends StatefulWidget {
   });
 
   @override
-  State<GenericDetailFormScreen> createState() => _GenericDetailFormScreenState();
+  State<GenericDetailFormScreen> createState() =>
+      _GenericDetailFormScreenState();
 }
 
 class _GenericDetailFormScreenState extends State<GenericDetailFormScreen>
@@ -116,8 +119,10 @@ class _GenericDetailFormScreenState extends State<GenericDetailFormScreen>
     for (final f in tela.fields) {
       final fn = f.fieldName;
       final fnL = fn.toLowerCase();
-      if (fnL == 'dhcreatedat' || fnL == 'dhupdatedat' ||
-          fnL == 'dh_created_at' || fnL == 'dh_updated_at') {
+      if (fnL == 'dhcreatedat' ||
+          fnL == 'dhupdatedat' ||
+          fnL == 'dh_created_at' ||
+          fnL == 'dh_updated_at') {
         continue;
       }
       final val = item[fn];
@@ -127,7 +132,8 @@ class _GenericDetailFormScreenState extends State<GenericDetailFormScreen>
           f.fieldType == TelaFieldType.multiselect) {
         // handled below
       } else {
-        _controllers.putIfAbsent(fn, () => TextEditingController(text: _getValue(val)));
+        _controllers.putIfAbsent(
+            fn, () => TextEditingController(text: _getValue(val)));
       }
     }
     // Init overrides
@@ -145,23 +151,32 @@ class _GenericDetailFormScreenState extends State<GenericDetailFormScreen>
       } else if (o.fieldType == FieldType.multiselect) {
         if (!_multiValues.containsKey(fn)) {
           if (val is List) {
-            _multiValues[fn] = val.map((e) {
-              if (e is Map) return (e['id'] ?? e[o.dropdownValueField])?.toString();
-              return e?.toString();
-            }).whereType<String>().toList();
+            _multiValues[fn] = val
+                .map((e) {
+                  if (e is Map)
+                    return (e['id'] ?? e[o.dropdownValueField])?.toString();
+                  return e?.toString();
+                })
+                .whereType<String>()
+                .toList();
           } else {
             _multiValues[fn] = [];
           }
         }
       } else {
-        _controllers.putIfAbsent(fn, () => TextEditingController(text: _getValue(val)));
+        _controllers.putIfAbsent(
+            fn, () => TextEditingController(text: _getValue(val)));
       }
     }
   }
 
   String _getValue(dynamic val) {
     if (val == null) return '';
-    if (val is Map) return val['nome']?.toString() ?? val['name']?.toString() ?? val['id']?.toString() ?? '';
+    if (val is Map)
+      return val['nome']?.toString() ??
+          val['name']?.toString() ??
+          val['id']?.toString() ??
+          '';
     return val.toString();
   }
 
@@ -198,17 +213,23 @@ class _GenericDetailFormScreenState extends State<GenericDetailFormScreen>
         body[entry.key] = entry.value.map((v) => {'id': v}).toList();
       }
 
-      final endpoint = tela.updateEndpoint.replaceAll(':id', id?.toString() ?? '');
-      final url = endpoint.startsWith('http') ? endpoint : ApiLinks.baseUrl + endpoint;
+      final endpoint =
+          tela.updateEndpoint.replaceAll(':id', id?.toString() ?? '');
+      final url =
+          endpoint.startsWith('http') ? endpoint : ApiLinks.baseUrl + endpoint;
       final resp = await NetworkCaller().putRequest(url, body);
       if (!mounted) return;
       if (resp.isSuccess) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Salvo com sucesso'), backgroundColor: GridColors.secondary),
+          const SnackBar(
+              content: Text('Salvo com sucesso'),
+              backgroundColor: GridColors.secondary),
         );
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Erro ao salvar: ${resp.statusCode}'), backgroundColor: Colors.red),
+          SnackBar(
+              content: Text('Erro ao salvar: ${resp.statusCode}'),
+              backgroundColor: Colors.red),
         );
       }
     } catch (e) {
@@ -244,7 +265,8 @@ class _GenericDetailFormScreenState extends State<GenericDetailFormScreen>
       future: _telaFuture,
       builder: (ctx, snap) {
         if (snap.connectionState == ConnectionState.waiting) {
-          return const Scaffold(body: Center(child: CircularProgressIndicator()));
+          return const Scaffold(
+              body: Center(child: CircularProgressIndicator()));
         }
         if (snap.hasError || !snap.hasData) {
           return Scaffold(body: Center(child: Text('Erro: ${snap.error}')));
@@ -265,9 +287,8 @@ class _GenericDetailFormScreenState extends State<GenericDetailFormScreen>
         }).toList();
 
         // Se há explicitTabs, usa APENAS eles — sem auto-detect do backend para evitar duplicação
-        final autoTabs = explicitTabs.isNotEmpty
-            ? <_AutoTab>[]
-            : _detectAutoTabs(tela);
+        final autoTabs =
+            explicitTabs.isNotEmpty ? <_AutoTab>[] : _detectAutoTabs(tela);
 
         final allTabs = [...explicitTabs, ...autoTabs];
         final tabCount = 1 + allTabs.length;
@@ -310,7 +331,7 @@ class _GenericDetailFormScreenState extends State<GenericDetailFormScreen>
     return Container(
       width: double.infinity,
       color: GridColors.card,
-      padding: const EdgeInsets.fromLTRB(16, 10, 16, 0),
+      padding: const EdgeInsets.fromLTRB(12, 6, 12, 0),
       child: Align(
         alignment: Alignment.centerLeft,
         child: TabBar(
@@ -326,12 +347,23 @@ class _GenericDetailFormScreenState extends State<GenericDetailFormScreen>
           ),
           labelColor: GridColors.primary,
           unselectedLabelColor: GridColors.textSecondary,
-          labelStyle: const TextStyle(fontWeight: FontWeight.w700),
-          unselectedLabelStyle: const TextStyle(fontWeight: FontWeight.w500),
+          labelStyle:
+              const TextStyle(fontSize: 12, fontWeight: FontWeight.w700),
+          unselectedLabelStyle:
+              const TextStyle(fontSize: 12, fontWeight: FontWeight.w500),
+          labelPadding: const EdgeInsets.symmetric(horizontal: 10),
           tabs: [
-            const Tab(icon: Icon(Icons.edit_note, size: 18), text: 'Cadastro'),
+            const Tab(
+              height: 56,
+              icon: Icon(Icons.edit_note, size: 16),
+              text: 'Cadastro',
+            ),
             ...tabs.map(
-              (t) => Tab(icon: Icon(t.icon, size: 18), text: t.title),
+              (t) => Tab(
+                height: 56,
+                icon: Icon(t.icon, size: 16),
+                text: t.title,
+              ),
             ),
           ],
         ),
@@ -346,7 +378,8 @@ class _GenericDetailFormScreenState extends State<GenericDetailFormScreen>
     // Pré-computa todos os nomes de dropdown (overrides + backend) para suprimir IDs brutos
     final allDropdownNames = <String>{
       for (final o in (widget.fieldOverrides ?? []))
-        if (o.fieldType == FieldType.dropdown || o.fieldType == FieldType.multiselect)
+        if (o.fieldType == FieldType.dropdown ||
+            o.fieldType == FieldType.multiselect)
           o.fieldName.toLowerCase(),
       for (final f in tela.fields)
         if (f.dropdownEndpoint != null && f.dropdownEndpoint!.isNotEmpty)
@@ -356,8 +389,10 @@ class _GenericDetailFormScreenState extends State<GenericDetailFormScreen>
     for (final f in tela.fields) {
       if (!f.isInForm) continue;
       final fnL = f.fieldName.toLowerCase();
-      if (fnL == 'dh_created_at' || fnL == 'dh_updated_at' ||
-          fnL == 'dhcreatedat' || fnL == 'dhupdatedat') {
+      if (fnL == 'dh_created_at' ||
+          fnL == 'dh_updated_at' ||
+          fnL == 'dhcreatedat' ||
+          fnL == 'dhupdatedat') {
         continue;
       }
       if (fnL == 'id') continue;
@@ -373,7 +408,9 @@ class _GenericDetailFormScreenState extends State<GenericDetailFormScreen>
 
       // 2. Campo FK de um override (ex: empresa_id → override 'empresa')
       if (_suppressedFkFields.contains(fnL)) {
-        final base = fnL.endsWith('_id') ? fnL.substring(0, fnL.length - 3) : fnL.substring(3);
+        final base = fnL.endsWith('_id')
+            ? fnL.substring(0, fnL.length - 3)
+            : fnL.substring(3);
         if (_overrideMap.containsKey(base) && !inserted.contains(base)) {
           effectiveFields.add(_EF.fromOverride(_overrideMap[base]!));
           inserted.add(base);
@@ -389,22 +426,32 @@ class _GenericDetailFormScreenState extends State<GenericDetailFormScreen>
       if (val is List) continue;
 
       // 5. Auto-dropdown: campo com dropdownEndpoint do backend
-      if (f.dropdownEndpoint != null && f.dropdownEndpoint!.isNotEmpty && !inserted.contains(f.fieldName)) {
-        final isMulti = f.multiSelect || f.fieldType == TelaFieldType.multiselect;
+      if (f.dropdownEndpoint != null &&
+          f.dropdownEndpoint!.isNotEmpty &&
+          !inserted.contains(f.fieldName)) {
+        final isMulti =
+            f.multiSelect || f.fieldType == TelaFieldType.multiselect;
         effectiveFields.add(_EF(
           fieldName: f.fieldName,
           label: f.label,
           type: isMulti ? FieldType.multiselect : FieldType.dropdown,
           isRequired: f.isRequired,
-          vField: f.dropdownValueField.isNotEmpty && f.dropdownValueField != 'value' ? f.dropdownValueField : 'id',
-          dField: f.dropdownDisplayField.isNotEmpty && f.dropdownDisplayField != 'label' ? f.dropdownDisplayField : 'nome',
+          vField:
+              f.dropdownValueField.isNotEmpty && f.dropdownValueField != 'value'
+                  ? f.dropdownValueField
+                  : 'id',
+          dField: f.dropdownDisplayField.isNotEmpty &&
+                  f.dropdownDisplayField != 'label'
+              ? f.dropdownDisplayField
+              : 'nome',
           dropdownEndpoint: f.dropdownEndpoint,
         ));
         inserted.add(f.fieldName);
         continue;
       }
 
-      effectiveFields.add(_EF.fromTelaField(f, _telaType(f.fieldType, f.fieldName)));
+      effectiveFields
+          .add(_EF.fromTelaField(f, _telaType(f.fieldType, f.fieldName)));
       inserted.add(f.fieldName);
     }
 
@@ -516,7 +563,9 @@ class _GenericDetailFormScreenState extends State<GenericDetailFormScreen>
                         child: Align(
                           alignment: Alignment.centerRight,
                           child: SizedBox(
-                            width: constraints.maxWidth < 560 ? double.infinity : 220,
+                            width: constraints.maxWidth < 560
+                                ? double.infinity
+                                : 220,
                             child: ElevatedButton.icon(
                               onPressed: _saving ? null : () => _save(tela),
                               icon: _saving
@@ -536,7 +585,8 @@ class _GenericDetailFormScreenState extends State<GenericDetailFormScreen>
                                 backgroundColor: GridColors.primary,
                                 foregroundColor: Colors.white,
                                 elevation: 0,
-                                padding: const EdgeInsets.symmetric(vertical: 14),
+                                padding:
+                                    const EdgeInsets.symmetric(vertical: 14),
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(6),
                                 ),
@@ -582,7 +632,8 @@ class _GenericDetailFormScreenState extends State<GenericDetailFormScreen>
     }
     final rows = tab.listData ?? [];
     if (rows.isEmpty) {
-      return const Center(child: Text('Nenhum item', style: TextStyle(color: Colors.grey)));
+      return const Center(
+          child: Text('Nenhum item', style: TextStyle(color: Colors.grey)));
     }
     final cols = rows.first.keys.where((k) {
       final v = rows.first[k];
@@ -596,13 +647,21 @@ class _GenericDetailFormScreenState extends State<GenericDetailFormScreen>
         scrollDirection: Axis.horizontal,
         child: DataTable(
           headingRowColor: WidgetStateProperty.all(GridColors.primary),
-          headingTextStyle: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-          columns: cols.map((c) => DataColumn(label: Text(_toTitleCase(c)))).toList(),
-          rows: rows.map((row) => DataRow(
-            cells: cols.map((c) => DataCell(
-              Text(row[c]?.toString() ?? '', style: const TextStyle(fontSize: 13)),
-            )).toList(),
-          )).toList(),
+          headingTextStyle:
+              const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+          columns: cols
+              .map((c) => DataColumn(label: Text(_toTitleCase(c))))
+              .toList(),
+          rows: rows
+              .map((row) => DataRow(
+                    cells: cols
+                        .map((c) => DataCell(
+                              Text(row[c]?.toString() ?? '',
+                                  style: const TextStyle(fontSize: 13)),
+                            ))
+                        .toList(),
+                  ))
+              .toList(),
         ),
       ),
     );
@@ -610,36 +669,47 @@ class _GenericDetailFormScreenState extends State<GenericDetailFormScreen>
 
   Widget _buildField(_EF ef) {
     switch (ef.type) {
-      case FieldType.boolean: return _buildCheckbox(ef);
-      case FieldType.dropdown: return _buildDropdown(ef);
-      case FieldType.multiselect: return _buildMultiSelect(ef);
-      case FieldType.date: return _buildDate(ef);
-      case FieldType.password: return _buildPassword(ef);
+      case FieldType.boolean:
+        return _buildCheckbox(ef);
+      case FieldType.dropdown:
+        return _buildDropdown(ef);
+      case FieldType.multiselect:
+        return _buildMultiSelect(ef);
+      case FieldType.date:
+        return _buildDate(ef);
+      case FieldType.password:
+        return _buildPassword(ef);
       case FieldType.email:
-        return _buildText(ef, keyboardType: TextInputType.emailAddress,
+        return _buildText(ef,
+            keyboardType: TextInputType.emailAddress,
             prefix: const Icon(Icons.email_outlined));
       case FieldType.phone:
-        return _buildText(ef, keyboardType: TextInputType.phone,
+        return _buildText(ef,
+            keyboardType: TextInputType.phone,
             prefix: const Icon(Icons.phone_outlined));
       case FieldType.cpf:
       case FieldType.cnpj:
-        return _buildText(ef, keyboardType: TextInputType.number,
+        return _buildText(ef,
+            keyboardType: TextInputType.number,
             formatters: [FilteringTextInputFormatter.digitsOnly]);
       case FieldType.number:
-        return _buildText(ef, keyboardType: TextInputType.number,
+        return _buildText(ef,
+            keyboardType: TextInputType.number,
             formatters: [FilteringTextInputFormatter.digitsOnly]);
       case FieldType.currency:
         return _buildText(ef,
             keyboardType: const TextInputType.numberWithOptions(decimal: true),
             prefix: const Icon(Icons.attach_money));
       case FieldType.multiline:
-        return _buildText(ef, maxLines: 4, keyboardType: TextInputType.multiline);
+        return _buildText(ef,
+            maxLines: 4, keyboardType: TextInputType.multiline);
       default:
         return _buildText(ef);
     }
   }
 
-  InputDecoration _dec(String label, {Widget? prefix, Widget? suffix, bool req = false}) =>
+  InputDecoration _dec(String label,
+          {Widget? prefix, Widget? suffix, bool req = false}) =>
       InputDecoration(
         labelText: label + (req ? ' *' : ''),
         filled: true,
@@ -651,15 +721,20 @@ class _GenericDetailFormScreenState extends State<GenericDetailFormScreen>
             borderSide: const BorderSide(color: GridColors.divider)),
         focusedBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(6),
-            borderSide: const BorderSide(color: GridColors.primary, width: 1.5)),
+            borderSide:
+                const BorderSide(color: GridColors.primary, width: 1.5)),
         prefixIcon: prefix,
         suffixIcon: suffix,
         isDense: true,
-        contentPadding: const EdgeInsets.symmetric(vertical: 13, horizontal: 12),
+        contentPadding:
+            const EdgeInsets.symmetric(vertical: 13, horizontal: 12),
       );
 
-  Widget _buildText(_EF ef, {TextInputType? keyboardType,
-      List<TextInputFormatter>? formatters, Widget? prefix, int? maxLines}) {
+  Widget _buildText(_EF ef,
+      {TextInputType? keyboardType,
+      List<TextInputFormatter>? formatters,
+      Widget? prefix,
+      int? maxLines}) {
     _controllers.putIfAbsent(ef.fieldName, () => TextEditingController());
     return Padding(
       padding: const EdgeInsets.only(bottom: 16),
@@ -670,7 +745,9 @@ class _GenericDetailFormScreenState extends State<GenericDetailFormScreen>
         maxLines: maxLines ?? 1,
         decoration: _dec(ef.label, prefix: prefix, req: ef.isRequired),
         validator: ef.isRequired
-            ? (v) => (v == null || v.trim().isEmpty) ? '${ef.label} é obrigatório' : null
+            ? (v) => (v == null || v.trim().isEmpty)
+                ? '${ef.label} é obrigatório'
+                : null
             : null,
       ),
     );
@@ -701,7 +778,9 @@ class _GenericDetailFormScreenState extends State<GenericDetailFormScreen>
         onTap: () async {
           final picked = await showDatePicker(
             context: context,
-            initialDate: DateTime.tryParse(_controllers[ef.fieldName]?.text ?? '') ?? DateTime.now(),
+            initialDate:
+                DateTime.tryParse(_controllers[ef.fieldName]?.text ?? '') ??
+                    DateTime.now(),
             firstDate: DateTime(2000),
             lastDate: DateTime(2100),
           );
@@ -717,23 +796,24 @@ class _GenericDetailFormScreenState extends State<GenericDetailFormScreen>
   }
 
   Widget _buildCheckbox(_EF ef) => Padding(
-    padding: const EdgeInsets.only(bottom: 16),
-    child: Container(
-      decoration: BoxDecoration(
-        color: const Color(0xFFFBFCFE),
-        border: Border.all(color: GridColors.divider),
-        borderRadius: BorderRadius.circular(6),
-      ),
-      child: CheckboxListTile(
-        title: Text(ef.label),
-        value: _checkboxValues[ef.fieldName] ?? false,
-        activeColor: GridColors.primary,
-        onChanged: (v) => setState(() => _checkboxValues[ef.fieldName] = v ?? false),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 10),
-        controlAffinity: ListTileControlAffinity.leading,
-      ),
-    ),
-  );
+        padding: const EdgeInsets.only(bottom: 16),
+        child: Container(
+          decoration: BoxDecoration(
+            color: const Color(0xFFFBFCFE),
+            border: Border.all(color: GridColors.divider),
+            borderRadius: BorderRadius.circular(6),
+          ),
+          child: CheckboxListTile(
+            title: Text(ef.label),
+            value: _checkboxValues[ef.fieldName] ?? false,
+            activeColor: GridColors.primary,
+            onChanged: (v) =>
+                setState(() => _checkboxValues[ef.fieldName] = v ?? false),
+            contentPadding: const EdgeInsets.symmetric(horizontal: 10),
+            controlAffinity: ListTileControlAffinity.leading,
+          ),
+        ),
+      );
 
   Widget _buildDropdown(_EF ef) {
     if (_dropdownCache.containsKey(ef.fieldName)) {
@@ -770,7 +850,8 @@ class _GenericDetailFormScreenState extends State<GenericDetailFormScreen>
       return k != null && seen.add(k);
     }).toList();
     dynamic current = _dropdownValues[ef.fieldName];
-    if (!unique.any((o) => o[vf]?.toString() == current?.toString())) current = null;
+    if (!unique.any((o) => o[vf]?.toString() == current?.toString()))
+      current = null;
     return Padding(
       padding: const EdgeInsets.only(bottom: 16),
       child: DropdownButtonFormField<dynamic>(
@@ -778,13 +859,17 @@ class _GenericDetailFormScreenState extends State<GenericDetailFormScreen>
         decoration: _dec(ef.label, req: ef.isRequired),
         isExpanded: true,
         menuMaxHeight: 300,
-        items: unique.map((o) => DropdownMenuItem(
-          value: o[vf]?.toString(),
-          child: Text(o[df]?.toString() ?? o[vf].toString(),
-              overflow: TextOverflow.ellipsis),
-        )).toList(),
+        items: unique
+            .map((o) => DropdownMenuItem(
+                  value: o[vf]?.toString(),
+                  child: Text(o[df]?.toString() ?? o[vf].toString(),
+                      overflow: TextOverflow.ellipsis),
+                ))
+            .toList(),
         onChanged: (val) => setState(() => _dropdownValues[ef.fieldName] = val),
-        validator: ef.isRequired ? (v) => v == null ? '${ef.label} é obrigatório' : null : null,
+        validator: ef.isRequired
+            ? (v) => v == null ? '${ef.label} é obrigatório' : null
+            : null,
       ),
     );
   }
@@ -841,7 +926,8 @@ class _GenericDetailFormScreenState extends State<GenericDetailFormScreen>
           decoration: _dec(ef.label,
               suffix: const Icon(Icons.arrow_drop_down), req: ef.isRequired),
           child: chips.isEmpty
-              ? Text('Selecione...', style: TextStyle(color: Colors.grey.shade500))
+              ? Text('Selecione...',
+                  style: TextStyle(color: Colors.grey.shade500))
               : Wrap(spacing: 4, runSpacing: 4, children: chips),
         ),
       ),
@@ -864,7 +950,8 @@ class _GenericDetailFormScreenState extends State<GenericDetailFormScreen>
   }
 
   Future<List<Map<String, dynamic>>> _loadEndpoint(String endpoint) async {
-    final url = endpoint.startsWith('http') ? endpoint : ApiLinks.baseUrl + endpoint;
+    final url =
+        endpoint.startsWith('http') ? endpoint : ApiLinks.baseUrl + endpoint;
     final resp = await NetworkCaller().getRequest(url);
     if (!resp.isSuccess || resp.body == null) return [];
     dynamic raw = resp.body;
@@ -879,37 +966,61 @@ class _GenericDetailFormScreenState extends State<GenericDetailFormScreen>
         lista = d['dados'];
       }
     }
-    return lista.whereType<Map>().map((e) => Map<String, dynamic>.from(e)).toList();
+    return lista
+        .whereType<Map>()
+        .map((e) => Map<String, dynamic>.from(e))
+        .toList();
   }
 
   IconData _iconFromName(String? name) {
     switch (name) {
-      case 'people': return Icons.people;
-      case 'support_agent': return Icons.support_agent;
-      case 'account_balance': return Icons.account_balance;
-      case 'shopping_cart': return Icons.shopping_cart;
-      case 'inventory': return Icons.inventory;
-      case 'receipt': return Icons.receipt;
-      case 'description': return Icons.description;
-      case 'person': return Icons.person;
-      case 'location_on': return Icons.location_on;
-      case 'security': return Icons.security;
-      case 'roles': return Icons.security;
-      case 'chamados': return Icons.support_agent;
-      default: return Icons.list;
+      case 'people':
+        return Icons.people;
+      case 'support_agent':
+        return Icons.support_agent;
+      case 'account_balance':
+        return Icons.account_balance;
+      case 'shopping_cart':
+        return Icons.shopping_cart;
+      case 'inventory':
+        return Icons.inventory;
+      case 'receipt':
+        return Icons.receipt;
+      case 'description':
+        return Icons.description;
+      case 'person':
+        return Icons.person;
+      case 'location_on':
+        return Icons.location_on;
+      case 'security':
+        return Icons.security;
+      case 'roles':
+        return Icons.security;
+      case 'chamados':
+        return Icons.support_agent;
+      default:
+        return Icons.list;
     }
   }
 
   String _toTitleCase(String text) => text
       .split(RegExp(r'[_\s]+'))
-      .map((w) => w.isEmpty ? '' : w[0].toUpperCase() + w.substring(1).toLowerCase())
+      .map((w) =>
+          w.isEmpty ? '' : w[0].toUpperCase() + w.substring(1).toLowerCase())
       .join(' ');
 
   /// Suprime campos que são IDs brutos de FK quando já existe dropdown correspondente
   static bool _isRawIdField(String fnLower, Set<String> allDropdownNames) {
     const alwaysHide = {
-      'file_id', 'foto_id', 'foto_perfil_id', 'academia_id',
-      'cod_personal', 'cod_produtor', 'parent_id', 'user_id', 'audit_id',
+      'file_id',
+      'foto_id',
+      'foto_perfil_id',
+      'academia_id',
+      'cod_personal',
+      'cod_produtor',
+      'parent_id',
+      'user_id',
+      'audit_id',
     };
     if (alwaysHide.contains(fnLower)) return true;
 
@@ -921,13 +1032,16 @@ class _GenericDetailFormScreenState extends State<GenericDetailFormScreen>
     String base;
     if (fnLower.endsWith('_id')) {
       base = fnLower.substring(0, fnLower.length - 3);
-    } else if (fnLower.startsWith('id_')) base = fnLower.substring(3);
-    else base = fnLower.substring(4); // cod_
+    } else if (fnLower.startsWith('id_'))
+      base = fnLower.substring(3);
+    else
+      base = fnLower.substring(4); // cod_
 
     if (base.length < 2) return false;
 
     for (final name in allDropdownNames) {
-      if (name == base || name.contains(base) || base.contains(name)) return true;
+      if (name == base || name.contains(base) || base.contains(name))
+        return true;
     }
     return false;
   }
@@ -938,12 +1052,12 @@ class _GenericDetailFormScreenState extends State<GenericDetailFormScreen>
 // ---------------------------------------------------------------
 class _TelaServiceHelper {
   static Future<TelaConfig> load(String telaNome) async {
-    final tela = await TelaService(networkCaller: NetworkCaller())
-        .getTelaFromCache(
-          telaNome,
-          empId: TenantContext.empresaId,
-          clienteId: TenantContext.parceiroId,
-        );
+    final tela =
+        await TelaService(networkCaller: NetworkCaller()).getTelaFromCache(
+      telaNome,
+      empId: TenantContext.empresaId,
+      clienteId: TenantContext.parceiroId,
+    );
     if (tela == null) throw Exception('Tela $telaNome não encontrada no cache');
     return tela;
   }
@@ -960,7 +1074,14 @@ class _AutoTab {
   final Map<String, dynamic>? extraParams;
   final List<FieldConfigWindows>? fieldOverrides;
   final Widget? customWidget;
-  _AutoTab({required this.title, required this.icon, this.listData, this.gridTelaNome, this.extraParams, this.fieldOverrides, this.customWidget});
+  _AutoTab(
+      {required this.title,
+      required this.icon,
+      this.listData,
+      this.gridTelaNome,
+      this.extraParams,
+      this.fieldOverrides,
+      this.customWidget});
 }
 
 class _EF {
@@ -974,27 +1095,47 @@ class _EF {
   final Future<List<Map<String, dynamic>>> Function()? dropdownFutureBuilder;
   final List<Map<String, dynamic>>? dropdownOptions;
 
-  _EF({required this.fieldName, required this.label, required this.type,
-      this.isRequired = false, this.vField = 'id', this.dField = 'nome',
-      this.dropdownEndpoint, this.dropdownFutureBuilder, this.dropdownOptions});
+  _EF(
+      {required this.fieldName,
+      required this.label,
+      required this.type,
+      this.isRequired = false,
+      this.vField = 'id',
+      this.dField = 'nome',
+      this.dropdownEndpoint,
+      this.dropdownFutureBuilder,
+      this.dropdownOptions});
 
   factory _EF.fromTelaField(TelaField f, FieldType type) => _EF(
-    fieldName: f.fieldName, label: f.label, type: type, isRequired: f.isRequired,
-    vField: f.dropdownValueField.isNotEmpty ? f.dropdownValueField : 'id',
-    dField: f.dropdownDisplayField.isNotEmpty ? f.dropdownDisplayField : 'nome',
-    dropdownEndpoint: f.dropdownEndpoint,
-    dropdownOptions: f.dropdownOptions.map((e) =>
-        <String, dynamic>{'id': e.optionValue, 'nome': e.optionLabel ?? e.optionValue.toString()}).toList(),
-  );
+        fieldName: f.fieldName,
+        label: f.label,
+        type: type,
+        isRequired: f.isRequired,
+        vField: f.dropdownValueField.isNotEmpty ? f.dropdownValueField : 'id',
+        dField:
+            f.dropdownDisplayField.isNotEmpty ? f.dropdownDisplayField : 'nome',
+        dropdownEndpoint: f.dropdownEndpoint,
+        dropdownOptions: f.dropdownOptions
+            .map((e) => <String, dynamic>{
+                  'id': e.optionValue,
+                  'nome': e.optionLabel ?? e.optionValue.toString()
+                })
+            .toList(),
+      );
 
   factory _EF.fromOverride(FieldConfigWindows o) => _EF(
-    fieldName: o.fieldName, label: o.label, type: o.fieldType, isRequired: o.isRequired,
-    vField: o.dropdownValueField.isNotEmpty ? o.dropdownValueField : 'id',
-    dField: o.dropdownDisplayField.isNotEmpty ? o.dropdownDisplayField : 'nome',
-    dropdownFutureBuilder: o.dropdownFutureBuilder,
-    dropdownOptions: o.dropdownOptions?.map((e) =>
-        Map<String, dynamic>.from(e as Map)).toList(),
-  );
+        fieldName: o.fieldName,
+        label: o.label,
+        type: o.fieldType,
+        isRequired: o.isRequired,
+        vField: o.dropdownValueField.isNotEmpty ? o.dropdownValueField : 'id',
+        dField:
+            o.dropdownDisplayField.isNotEmpty ? o.dropdownDisplayField : 'nome',
+        dropdownFutureBuilder: o.dropdownFutureBuilder,
+        dropdownOptions: o.dropdownOptions
+            ?.map((e) => Map<String, dynamic>.from(e as Map))
+            .toList(),
+      );
 }
 
 // ---------------------------------------------------------------
@@ -1004,7 +1145,10 @@ class _PasswordField extends StatefulWidget {
   final TextEditingController controller;
   final String label;
   final bool isRequired;
-  const _PasswordField({required this.controller, required this.label, required this.isRequired});
+  const _PasswordField(
+      {required this.controller,
+      required this.label,
+      required this.isRequired});
   @override
   State<_PasswordField> createState() => _PasswordFieldState();
 }
@@ -1021,17 +1165,21 @@ class _PasswordFieldState extends State<_PasswordField> {
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
         focusedBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(8),
-            borderSide: const BorderSide(color: GridColors.primary, width: 1.5)),
+            borderSide:
+                const BorderSide(color: GridColors.primary, width: 1.5)),
         prefixIcon: const Icon(Icons.lock_outline),
         suffixIcon: IconButton(
           icon: Icon(_visible ? Icons.visibility_off : Icons.visibility),
           onPressed: () => setState(() => _visible = !_visible),
         ),
         isDense: true,
-        contentPadding: const EdgeInsets.symmetric(vertical: 14, horizontal: 12),
+        contentPadding:
+            const EdgeInsets.symmetric(vertical: 14, horizontal: 12),
       ),
       validator: widget.isRequired
-          ? (v) => (v == null || v.trim().isEmpty) ? '${widget.label} é obrigatório' : null
+          ? (v) => (v == null || v.trim().isEmpty)
+              ? '${widget.label} é obrigatório'
+              : null
           : null,
     );
   }
@@ -1046,8 +1194,12 @@ class _MultiSelectDialog extends StatefulWidget {
   final String valueField;
   final String displayField;
   final List<dynamic> initialSelected;
-  const _MultiSelectDialog({required this.title, required this.options,
-      required this.valueField, required this.displayField, required this.initialSelected});
+  const _MultiSelectDialog(
+      {required this.title,
+      required this.options,
+      required this.valueField,
+      required this.displayField,
+      required this.initialSelected});
   @override
   State<_MultiSelectDialog> createState() => _MultiSelectDialogState();
 }
@@ -1067,16 +1219,26 @@ class _MultiSelectDialogState extends State<_MultiSelectDialog> {
       setState(() {
         _filtered = q.isEmpty
             ? widget.options
-            : widget.options.where((o) =>
-                o[widget.displayField]?.toString().toLowerCase().contains(q) ?? false).toList();
+            : widget.options
+                .where((o) =>
+                    o[widget.displayField]
+                        ?.toString()
+                        .toLowerCase()
+                        .contains(q) ??
+                    false)
+                .toList();
       });
     });
   }
 
   @override
-  void dispose() { _ctrl.dispose(); super.dispose(); }
+  void dispose() {
+    _ctrl.dispose();
+    super.dispose();
+  }
 
-  bool _isSel(dynamic val) => _selected.any((s) => s.toString() == val?.toString());
+  bool _isSel(dynamic val) =>
+      _selected.any((s) => s.toString() == val?.toString());
   void _toggle(dynamic val) {
     setState(() {
       if (_isSel(val)) {
@@ -1103,8 +1265,12 @@ class _MultiSelectDialogState extends State<_MultiSelectDialog> {
             child: Row(children: [
               const Icon(Icons.checklist, color: Colors.white, size: 20),
               const SizedBox(width: 8),
-              Expanded(child: Text(widget.title,
-                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white))),
+              Expanded(
+                  child: Text(widget.title,
+                      style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white))),
               Text('${_selected.length} selecionado(s)',
                   style: const TextStyle(fontSize: 12, color: Colors.white70)),
             ]),
@@ -1117,22 +1283,27 @@ class _MultiSelectDialogState extends State<_MultiSelectDialog> {
               decoration: InputDecoration(
                 hintText: 'Buscar...',
                 prefixIcon: const Icon(Icons.search, color: GridColors.primary),
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                border:
+                    OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
                 focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(8),
-                    borderSide: const BorderSide(color: GridColors.primary, width: 1.5)),
+                    borderSide: const BorderSide(
+                        color: GridColors.primary, width: 1.5)),
                 isDense: true,
-                contentPadding: const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
+                contentPadding:
+                    const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
               ),
             ),
           ),
           const Divider(height: 1),
-          Expanded(child: ListView.builder(
+          Expanded(
+              child: ListView.builder(
             itemCount: _filtered.length,
             itemBuilder: (ctx, i) {
               final opt = _filtered[i];
               final val = opt[widget.valueField];
-              final label = opt[widget.displayField]?.toString() ?? val.toString();
+              final label =
+                  opt[widget.displayField]?.toString() ?? val.toString();
               return CheckboxListTile(
                 title: Text(label, style: const TextStyle(fontSize: 14)),
                 value: _isSel(val),
@@ -1157,8 +1328,10 @@ class _MultiSelectDialogState extends State<_MultiSelectDialog> {
                 style: ElevatedButton.styleFrom(
                   backgroundColor: GridColors.primary,
                   foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8)),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
                 ),
                 child: const Text('CONFIRMAR'),
               ),

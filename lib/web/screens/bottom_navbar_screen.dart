@@ -53,6 +53,7 @@ import './alerta_aluno_grid_screen.dart';
 import './avaliacao_fisica_grid_screen.dart';
 import './conta_bancaria_grid_screen.dart';
 import './centro_custo_grid_screen.dart';
+import './categoria_financeira_grid_screen.dart';
 import './classificacao_grid_screen.dart';
 import './dashboard_grid_screen.dart';
 import './feriado_grid_screen.dart';
@@ -213,10 +214,7 @@ class _WebBottomNavBarScreenState extends State<WebBottomNavBarScreen> {
       WebClassificacaoGridScreen(
           hasPermission: (p) => true), // 44: Classificacao
       const WebDashboardScreen(), // 45: Dashboard
-      WebCentroCustoGridScreen(hasPermission: (p) => true), // 46: CentroCusto
-      WebClassificacaoGridScreen(
-          hasPermission: (p) => true), // 47: CategoriasFinanceiras
-      WebFeriadoGridScreen(hasPermission: (p) => true), // 48: Feriados
+      WebFeriadoGridScreen(hasPermission: (p) => true), // 46: Feriados
       const WebNfeGridScreen(entrada: true), // 47: NFeEntrada
       const WebNfeGridScreen(entrada: false), // 48: NFeSaida
       WebTreinoGridScreen(hasPermission: (p) => true), // 49: Treino
@@ -250,19 +248,21 @@ class _WebBottomNavBarScreenState extends State<WebBottomNavBarScreen> {
           hasPermission: (p) => true), // 69: ModuloServico
       WebAlvaraGridScreen(hasPermission: (p) => true), // 70: Alvaras
       // indices 71-79: reservados para expansao futura
-      const NfeImportScreen(),  // 71: NfeImportCSV
-      const TradingDashboardScreen(),                            // 72: Painel Trading
-      const CrmPipelineScreen(),                                 // 73: CRM/Funil
-      const FiscalAutomationScreen(),                           // 74: Automacao Fiscal
-      const SinaisScreen(),                                      // 75: Sinais de Mercado
-      const OportunidadesScreen(),                              // 76: Oportunidades
-      const TradingDashboardScreen(initialTabIndex: 1),         // 77: Watchlist
-      const TradingDashboardScreen(initialTabIndex: 2),         // 78: Alertas de Preço
-      const TradingDashboardScreen(initialTabIndex: 3),         // 79: Operações Assistidas
-      const PdvScreen(),        // 80: PDV NFC-e
+      const NfeImportScreen(), // 71: NfeImportCSV
+      const TradingDashboardScreen(), // 72: Painel Trading
+      const CrmPipelineScreen(), // 73: CRM/Funil
+      const FiscalAutomationScreen(), // 74: Automacao Fiscal
+      const SinaisScreen(), // 75: Sinais de Mercado
+      const OportunidadesScreen(), // 76: Oportunidades
+      const TradingDashboardScreen(initialTabIndex: 1), // 77: Watchlist
+      const TradingDashboardScreen(initialTabIndex: 2), // 78: Alertas de Preço
+      const TradingDashboardScreen(
+          initialTabIndex: 3), // 79: Operações Assistidas
+      const PdvScreen(), // 80: PDV NFC-e
       const ConfigFiscalScreen(), // 81: Config. Fiscal
-      const SizedBox.shrink(), // 82
-      const SizedBox.shrink(), // 83
+      WebCentroCustoGridScreen(hasPermission: (p) => true), // 82: CentroCusto
+      WebCategoriaFinanceiraGridScreen(
+          hasPermission: (p) => true), // 83: CategoriasFinanceiras
       WebTelaAjudaGridScreen(hasPermission: (p) => true), // 84: Ajuda das Telas
       BacktestScreen(repository: BacktestRepository(ApiLinks.baseUrl, headers: TenantContext.jsonHeaders)), // 85: Backtest
       const DpPortalColaboradorScreen(), // 86: Portal do Colaborador

@@ -1917,12 +1917,11 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
   }
 
   Widget _buildLoadingOverlay() {
-    // Mostra overlay com fade quando carregando (paginação, filtros, etc.)
-    if (_isUpdating || _isDeleting || _isExporting || isLoading) {
+    // Loading da grade cobre filtros/paginacao; este overlay fica so para acoes bloqueantes.
+    final showBlockingOverlay = _isUpdating || _isDeleting || _isExporting;
+    if (showBlockingOverlay) {
       return AnimatedOpacity(
-        opacity: (_isUpdating || _isDeleting || _isExporting || isLoading)
-            ? 1.0
-            : 0.0,
+        opacity: showBlockingOverlay ? 1.0 : 0.0,
         duration: const Duration(milliseconds: 200),
         child: Container(
           color: Colors.black.withValues(alpha: 0.35),

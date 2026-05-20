@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../widgets/generic_detail_form_screen.dart';
-import '../../../widgets/generic_grid_windows_screen.dart' show SecurityCheck, FieldConfigWindows, FieldType;
+import '../../../widgets/generic_grid_windows_screen.dart'
+    show SecurityCheck, FieldConfigWindows, FieldType;
 import 'package:task_manager_flutter/web/screens/certificado_empresa_screen.dart';
 import '../ged_arquivos_screen.dart';
 
@@ -8,14 +9,21 @@ class WebParceiroDetailScreen extends StatelessWidget {
   final Map<String, dynamic> item;
   final SecurityCheck hasPermission;
 
-  const WebParceiroDetailScreen({super.key, required this.item, required this.hasPermission});
+  const WebParceiroDetailScreen(
+      {super.key, required this.item, required this.hasPermission});
 
   @override
   Widget build(BuildContext context) {
     final id = item['id']?.toString() ?? '';
     final parceiroId = item['id'] as int? ?? 0;
-    final parceiroNome = item['nome']?.toString() ?? item['razaoSocial']?.toString() ?? 'Parceiro';
-    final empresaId = (item['empresa'] is Map ? item['empresa']['id'] : item['empresa'])?.toString() ?? '';
+    final parceiroNome = item['nome']?.toString() ??
+        item['razaoSocial']?.toString() ??
+        'Parceiro';
+    final empresaId =
+        (item['empresa'] is Map ? item['empresa']['id'] : item['empresa'])
+                ?.toString() ??
+            '';
+    final empresaIdInt = int.tryParse(empresaId);
 
     // Dados da sessão — disponível para uso futuro (ex: pré-popular tipoLogin)
     // final sessao = AuthUtility.userInfo?.login;
@@ -56,11 +64,14 @@ class WebParceiroDetailScreen extends StatelessWidget {
               icon: Icons.person_outline,
               fieldType: FieldType.dropdown,
               dropdownOptions: parceiroId > 0
-                  ? [{'value': parceiroId.toString(), 'label': parceiroNome}]
+                  ? [
+                      {'value': parceiroId.toString(), 'label': parceiroNome}
+                    ]
                   : [],
               dropdownValueField: 'value',
               dropdownDisplayField: 'label',
-              dropdownSelectedValue: parceiroId > 0 ? parceiroId.toString() : null,
+              dropdownSelectedValue:
+                  parceiroId > 0 ? parceiroId.toString() : null,
               isInForm: true,
               isFilterable: false,
               enabled: false, // disabled — valor fixo
@@ -118,6 +129,7 @@ class WebParceiroDetailScreen extends StatelessWidget {
                   moduloOrigem: 'parceiro',
                   idOrigem: parceiroId,
                   nomeOrigem: parceiroNome,
+                  empresaId: empresaIdInt,
                 )
               : const Center(child: Text('ID do parceiro não disponível')),
         ),

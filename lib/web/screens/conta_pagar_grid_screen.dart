@@ -1,6 +1,4 @@
 import 'dart:convert';
-import 'dart:typed_data';
-
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import '../../../customization/dynamic_grid_windows_screen.dart';
@@ -8,7 +6,8 @@ import '../../../models/conta_pagar_model.dart';
 import '../../../utils/api_links.dart';
 import '../../../utils/grid_colors.dart';
 import '../../../utils/tenant_context.dart';
-import '../../../widgets/generic_grid_windows_screen.dart' show CustomAction, FieldConfigWindows;
+import '../../../widgets/generic_grid_windows_screen.dart'
+    show CustomAction, FieldConfigWindows;
 import '../../../web/screens/baixa_dialog.dart';
 import 'package:http/http.dart' as http;
 
@@ -33,9 +32,9 @@ class _WebContaPagarGridScreenState extends State<WebContaPagarGridScreen> {
     if (result == null || !mounted) return;
 
     final file = result.files.first;
-    final Uint8List? bytes = file.bytes;
+    final bytes = file.bytes;
     if (bytes == null) {
-      _snack('Não foi possível ler o arquivo', error: true);
+      _snack('Nao foi possivel ler o arquivo', error: true);
       return;
     }
 
@@ -60,9 +59,9 @@ class _WebContaPagarGridScreenState extends State<WebContaPagarGridScreen> {
       if (response.statusCode == 200) {
         final data = jsonDecode(body);
         final importados = data['importados'] ?? data['count'] ?? '?';
-        _snack('Importação concluída: $importados registro(s)');
+        _snack('ImportaÃ§Ã£o concluÃ­da: $importados registro(s)');
       } else {
-        _snack('Erro na importação (${response.statusCode})', error: true);
+        _snack('Erro na importaÃ§Ã£o (${response.statusCode})', error: true);
       }
     } catch (e) {
       if (mounted) _snack('Erro: $e', error: true);
@@ -89,10 +88,29 @@ class _WebContaPagarGridScreenState extends State<WebContaPagarGridScreen> {
       createEndpointOverride: ApiLinks.createContaPagar,
       updateEndpointOverride: ApiLinks.updateContaPagar(':id'),
       deleteEndpointOverride: ApiLinks.deleteContaPagar(':id'),
+      // H12: ocultar coluna parceiro da grid CP mas manter no form
       fieldOverrides: const [
-        FieldConfigWindows(fieldName: 'parceiro',    label: 'Parceiro',     isInForm: true, isInGrid: false, isVisibleByDefault: false),
-        FieldConfigWindows(fieldName: 'parceiroDev', label: 'Parceiro Dev', isInForm: true, isInGrid: false, isVisibleByDefault: false),
-        FieldConfigWindows(fieldName: 'parceiroRec', label: 'Parceiro Rec', isInForm: true, isInGrid: false, isVisibleByDefault: false),
+        FieldConfigWindows(
+          fieldName: 'parceiro',
+          label: 'Parceiro',
+          isInForm: true,
+          isInGrid: false,
+          isVisibleByDefault: false,
+        ),
+        FieldConfigWindows(
+          fieldName: 'parceiroDev',
+          label: 'Parceiro Dev',
+          isInForm: true,
+          isInGrid: false,
+          isVisibleByDefault: false,
+        ),
+        FieldConfigWindows(
+          fieldName: 'parceiroRec',
+          label: 'Parceiro Rec',
+          isInForm: true,
+          isInGrid: false,
+          isVisibleByDefault: false,
+        ),
       ],
       headerActions: [
         OutlinedButton.icon(
@@ -101,7 +119,8 @@ class _WebContaPagarGridScreenState extends State<WebContaPagarGridScreen> {
               ? const SizedBox(
                   width: 16,
                   height: 16,
-                  child: CircularProgressIndicator(strokeWidth: 2, color: GridColors.secondary),
+                  child: CircularProgressIndicator(
+                      strokeWidth: 2, color: GridColors.secondary),
                 )
               : const Icon(Icons.upload_file, size: 18),
           label: const Text('Importar Boleto'),
@@ -109,7 +128,8 @@ class _WebContaPagarGridScreenState extends State<WebContaPagarGridScreen> {
             foregroundColor: GridColors.secondary,
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
             side: const BorderSide(color: GridColors.divider),
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
+            shape:
+                RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
           ),
         ),
       ],

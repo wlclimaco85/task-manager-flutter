@@ -1,11 +1,9 @@
 // conta_pagar_grid_screen.dart
 import 'dart:convert';
-import 'dart:io';
-import 'dart:typed_data';
-
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
-import '../../../widgets/generic_grid_windows_screen.dart' show CustomAction, FieldConfigWindows;
+import '../../../widgets/generic_grid_windows_screen.dart'
+    show CustomAction, FieldConfigWindows;
 import '../../../customization/dynamic_grid_windows_screen.dart';
 import '../../../models/conta_pagar_model.dart';
 import '../../../utils/api_links.dart';
@@ -37,12 +35,9 @@ class _WindowsContaPagarGridScreenState
     if (result == null || !mounted) return;
 
     final file = result.files.first;
-    Uint8List? bytes = file.bytes;
-    if (bytes == null && file.path != null) {
-      bytes = await File(file.path!).readAsBytes();
-    }
+    final bytes = file.bytes;
     if (bytes == null) {
-      _snack('Não foi possível ler o arquivo', error: true);
+      _snack('Nao foi possivel ler o arquivo', error: true);
       return;
     }
 
@@ -67,9 +62,9 @@ class _WindowsContaPagarGridScreenState
       if (response.statusCode == 200) {
         final data = jsonDecode(body);
         final importados = data['importados'] ?? data['count'] ?? '?';
-        _snack('Importação concluída: $importados registro(s)');
+        _snack('ImportaÃ§Ã£o concluÃ­da: $importados registro(s)');
       } else {
-        _snack('Erro na importação (${response.statusCode})', error: true);
+        _snack('Erro na importaÃ§Ã£o (${response.statusCode})', error: true);
       }
     } catch (e) {
       if (mounted) _snack('Erro: $e', error: true);
@@ -97,9 +92,24 @@ class _WindowsContaPagarGridScreenState
       updateEndpointOverride: ApiLinks.updateContaPagar(':id'),
       deleteEndpointOverride: ApiLinks.deleteContaPagar(':id'),
       fieldOverrides: const [
-        FieldConfigWindows(fieldName: 'parceiro',    label: '', isInForm: false, isVisibleByDefault: false, enabled: false),
-        FieldConfigWindows(fieldName: 'parceiroDev', label: '', isInForm: false, isVisibleByDefault: false, enabled: false),
-        FieldConfigWindows(fieldName: 'parceiroRec', label: '', isInForm: false, isVisibleByDefault: false, enabled: false),
+        FieldConfigWindows(
+            fieldName: 'parceiro',
+            label: '',
+            isInForm: false,
+            isVisibleByDefault: false,
+            enabled: false),
+        FieldConfigWindows(
+            fieldName: 'parceiroDev',
+            label: '',
+            isInForm: false,
+            isVisibleByDefault: false,
+            enabled: false),
+        FieldConfigWindows(
+            fieldName: 'parceiroRec',
+            label: '',
+            isInForm: false,
+            isVisibleByDefault: false,
+            enabled: false),
       ],
       headerActions: [
         OutlinedButton.icon(
@@ -108,7 +118,8 @@ class _WindowsContaPagarGridScreenState
               ? const SizedBox(
                   width: 16,
                   height: 16,
-                  child: CircularProgressIndicator(strokeWidth: 2, color: GridColors.secondary),
+                  child: CircularProgressIndicator(
+                      strokeWidth: 2, color: GridColors.secondary),
                 )
               : const Icon(Icons.upload_file, size: 18),
           label: const Text('Importar Boleto'),
@@ -116,7 +127,8 @@ class _WindowsContaPagarGridScreenState
             foregroundColor: GridColors.secondary,
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
             side: const BorderSide(color: GridColors.divider),
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
+            shape:
+                RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
           ),
         ),
       ],

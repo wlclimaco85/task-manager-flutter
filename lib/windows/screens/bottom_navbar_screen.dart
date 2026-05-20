@@ -52,6 +52,7 @@ import '../../../windows/screens/avaliacao_fisica_grid_screen.dart';
 import '../../../windows/screens/conta_bancaria_grid_screen.dart';
 import '../../../windows/screens/centro_custo_grid_screen.dart';
 import '../../../windows/screens/classificacao_grid_screen.dart';
+import '../../../windows/screens/categoria_financeira_grid_screen.dart';
 import '../../../windows/screens/feriado_grid_screen.dart';
 import '../../../windows/screens/nota_fiscal_entrada_grid_screen.dart';
 import '../../../windows/screens/nota_fiscal_saida_grid_screen.dart';
@@ -69,7 +70,7 @@ import '../../../features/trading/services/backtest_repository.dart';
 import '../../../utils/api_links.dart';
 import '../../../utils/tenant_context.dart';
 import '../../../widgets/app_sidebar.dart';
-// Telas web reutilizadas no Windows
+// Telas adicionais Windows
 import '../../windows/screens/nfe_finalidade_grid_screen.dart';
 import '../../windows/screens/nfe_serie_grid_screen.dart';
 import '../../windows/screens/nfe_tipo_operacao_grid_screen.dart';
@@ -191,8 +192,6 @@ class _WindowsBottomNavBarScreenState extends State<WindowsBottomNavBarScreen> {
         WindowsContaBancariaGridScreen(hasPermission: (perm) => true),
         WindowsClassificacaoGridScreen(hasPermission: (perm) => true),
         const DashboardPage(),
-        WindowsCentroCustoGridScreen(hasPermission: (perm) => true),
-        WindowsClassificacaoGridScreen(hasPermission: (perm) => true),
         WindowsFeriadoGridScreen(hasPermission: (perm) => true),
         WindowsNotaFiscalEntradaGridScreen(hasPermission: (perm) => true),
         WindowsNotaFiscalSaidaGridScreen(hasPermission: (perm) => true),
@@ -220,20 +219,20 @@ class _WindowsBottomNavBarScreenState extends State<WindowsBottomNavBarScreen> {
         WindowsServicoContratadoGridScreen(hasPermission: (perm) => true), // 68
         WindowsModuloServicoGridScreen(hasPermission: (perm) => true), // 69
         WindowsAlvaraGridScreen(hasPermission: (perm) => true), // 70
-        // indices 71-79: reservados para expansao futura
-        const NfeImportScreen(),  // 71: NfeImportCSV
-        const TradingDashboardScreen(),                                                                    // 72: Painel Trading
-        const CrmPipelineScreen(),                                                                         // 73: CRM/Funil
-        const FiscalAutomationScreen(),                                                                    // 74: Automacao Fiscal
-        const SinaisScreen(),                                                                              // 75: Sinais de Mercado
-        const OportunidadesScreen(),                                                                       // 76: Oportunidades
-        const TradingDashboardScreen(initialTabIndex: 1),                                                  // 77: Watchlist
-        const TradingDashboardScreen(initialTabIndex: 2),                                                  // 78: Alertas de Preço
-        const TradingDashboardScreen(initialTabIndex: 3),                                                  // 79: Operações Assistidas
-        const PdvScreen(),        // 80: PDV NFC-e
+        const NfeImportScreen(), // 71: NfeImportCSV
+        const TradingDashboardScreen(), // 72: Painel Trading
+        const CrmPipelineScreen(), // 73: CRM/Funil
+        const FiscalAutomationScreen(), // 74: Automacao Fiscal
+        const SinaisScreen(), // 75: Sinais de Mercado
+        const OportunidadesScreen(), // 76: Oportunidades
+        const TradingDashboardScreen(initialTabIndex: 1), // 77: Watchlist
+        const TradingDashboardScreen(initialTabIndex: 2), // 78: Alertas de Preço
+        const TradingDashboardScreen(initialTabIndex: 3), // 79: Operações Assistidas
+        const PdvScreen(), // 80: PDV NFC-e
         const ConfigFiscalScreen(), // 81: Config. Fiscal
-        const SizedBox.shrink(), // 82
-        const SizedBox.shrink(), // 83
+        WindowsCentroCustoGridScreen(hasPermission: (perm) => true), // 82
+        WindowsCategoriaFinanceiraGridScreen(
+            hasPermission: (perm) => true), // 83
         WindowsTelaAjudaGridScreen(hasPermission: (perm) => true), // 84: Ajuda das Telas
         BacktestScreen(repository: BacktestRepository(ApiLinks.baseUrl, headers: TenantContext.jsonHeaders)), // 85: Backtest
         const DpPortalColaboradorScreen(), // 86: Portal do Colaborador

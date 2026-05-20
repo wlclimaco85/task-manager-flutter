@@ -74,6 +74,13 @@ class ApiLinks {
   static String allNoticias = '$_baseUrlNew/api/noticias';
   static String get noticiasPublicas =>
       '$_baseUrlNew/api/noticias/public/recentes';
+  static const String _windowsDownloadUrl = String.fromEnvironment(
+    'WINDOWS_DOWNLOAD_URL',
+    defaultValue: '',
+  );
+  static String get windowsDownloadUrl => _windowsDownloadUrl.isNotEmpty
+      ? _windowsDownloadUrl
+      : Uri.base.resolve('/downloads/app-academia-windows.zip').toString();
   static String get createNoticia => '$_baseUrlNew/api/noticias';
   static String updateNoticia(String id) => '$_baseUrlNew/api/noticias/$id';
   static String deleteNoticia(String id) => '$_baseUrlNew/api/noticias/$id';
@@ -626,6 +633,16 @@ class ApiLinks {
       '$_baseUrlNew/api/centro-custo/$id';
   static String deleteCentroCusto(String id) =>
       '$_baseUrlNew/api/centro-custo/$id';
+
+  // Categoria Financeira
+  static String get allCategoriasFinanceiras =>
+      '$_baseUrlNew/api/categoria-financeira';
+  static String get createCategoriaFinanceira =>
+      '$_baseUrlNew/api/categoria-financeira';
+  static String updateCategoriaFinanceira(String id) =>
+      '$_baseUrlNew/api/categoria-financeira/$id';
+  static String deleteCategoriaFinanceira(String id) =>
+      '$_baseUrlNew/api/categoria-financeira/$id';
 
   // Departamento
   static String get allDepartamentos => '$_baseUrlNew/api/departamento';

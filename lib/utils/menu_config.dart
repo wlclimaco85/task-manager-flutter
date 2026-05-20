@@ -49,7 +49,7 @@ class MenuGroup {
 /// 67:TipoParceiro  68:ServicoContratado  69:ModuloServico  70:Alvaras  71:NfeImportCSV
 /// 72:TradingPainel  73:CRM/Funil  74:AutomacaoFiscal
 /// 75:Sinais  76:Oportunidades  77:Watchlist  78:AlertasPreco  79:OperacoesAssistidas
-/// 80:PdvNfce  81:ConfigFiscal  84:AjudaTelas  85:Backtest
+/// 80:PdvNfce  81:ConfigFiscal  82:CentroCusto  83:CategoriaFinanceira  84:AjudaTelas  85:Backtest
 /// 86:PortalColaborador  87:DashboardDP  88:EscalasTurnos  89:Ferias
 /// 90:AdmissaoDigital  91:Rubricas  92:EventosFolha  93:Beneficios
 /// 94:Desligamentos  95:ObrigacoesTrabalhistas
@@ -389,12 +389,12 @@ class MenuConfig {
             id: 'centros_custo',
             label: 'Centros de Custo',
             icon: FontAwesomeIcons.sitemap,
-            screenIndex: 73),
+            screenIndex: 82),
         MenuItem(
             id: 'categorias_financeiras',
             label: 'Categorias Financeiras',
             icon: FontAwesomeIcons.tags,
-            screenIndex: 74),
+            screenIndex: 83),
       ],
     ),
     MenuGroup(

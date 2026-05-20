@@ -98,9 +98,9 @@ class FieldConfigWindows {
   final String fieldName;
   final bool isFilterable;
   final bool isInForm;
-
-  /// Quando false, o campo não aparece como coluna na grid,
-  /// mas continua disponível no formulário.
+  /// H12: quando false, o campo não aparece como coluna na grid,
+  /// mas continua disponível no formulário (diferente de isVisibleByDefault
+  /// que só oculta por padrão e pode ser reativado pelo usuário).
   final bool isInGrid;
   final int flex;
   final int maxLines;
@@ -1604,6 +1604,7 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
     _paginatorController = PaginatorController();
 
     for (final config in widget.FieldConfigWindowss) {
+      // H12: campos com isInGrid=false nunca ficam visíveis na grid
       _columnVisibility[config.fieldName] =
           config.isInGrid && config.isVisibleByDefault;
     }
@@ -2725,11 +2726,10 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
   }
 
   Widget _buildLoadingOverlay() {
-    if (_isUpdating || _isDeleting || _isExporting || isLoading) {
+    final showBlockingOverlay = _isUpdating || _isDeleting || _isExporting;
+    if (showBlockingOverlay) {
       return AnimatedOpacity(
-        opacity: (_isUpdating || _isDeleting || _isExporting || isLoading)
-            ? 1.0
-            : 0.0,
+        opacity: showBlockingOverlay ? 1.0 : 0.0,
         duration: const Duration(milliseconds: 200),
         child: Container(
           color: Colors.black.withValues(alpha: 0.35),
@@ -3474,7 +3474,7 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
     final columns = <DataColumn>[];
 
     for (final config in widget.FieldConfigWindowss.where(
-      (c) => _columnVisibility[c.fieldName] == true,
+      (c) => c.isInGrid && _columnVisibility[c.fieldName] == true,
     )) {
       columns.add(
         DataColumn(
@@ -3540,7 +3540,7 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
     final cells = <DataCell>[];
 
     for (final config in widget.FieldConfigWindowss.where(
-      (c) => _columnVisibility[c.fieldName] == true,
+      (c) => c.isInGrid && _columnVisibility[c.fieldName] == true,
     )) {
       if (config.fieldType == FieldType.file) {
         final fileData = _extractFileData(itemMap, config);

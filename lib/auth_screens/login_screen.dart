@@ -692,8 +692,10 @@ class _NoticiaCard extends StatelessWidget {
   String _proxyUrl(String url) {
     if (!kIsWeb) return url;
     if (url.isEmpty || url.startsWith('data:')) return url;
-    // Unsplash funciona direto no web sem proxy
-    if (url.contains('unsplash.com')) return url;
+    final host = Uri.tryParse(url)?.host.toLowerCase() ?? '';
+    if (host.endsWith('contabeis.com.br') || host.endsWith('unsplash.com')) {
+      return url;
+    }
     if (url.contains(ApiLinks.baseUrl)) return url;
     if (!url.startsWith('http')) return url;
     return '${ApiLinks.baseUrl}/api/image-proxy?url=${Uri.encodeComponent(url)}';
@@ -715,10 +717,14 @@ class _EmpresaFooter extends StatelessWidget {
   const _EmpresaFooter();
   static const Color _red = Color(0xFF93070A);
 
-  Future<void> _abrirLink(String url) async {
+  Future<void> _abrirLink(BuildContext context, String url) async {
     final uri = Uri.tryParse(url);
-    if (uri != null && await canLaunchUrl(uri)) {
-      await launchUrl(uri, mode: LaunchMode.externalApplication);
+    if (uri == null) return;
+    final opened = await launchUrl(uri, mode: LaunchMode.externalApplication);
+    if (!opened && context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Nao foi possivel abrir o download.')),
+      );
     }
   }
 
@@ -747,8 +753,7 @@ class _EmpresaFooter extends StatelessWidget {
             ])),
         const SizedBox(width: 16),
         OutlinedButton.icon(
-          onPressed: () => _abrirLink(
-              'https://github.com/wlclimaco85/task_manager_flutter/releases/tag/latest-windows'),
+          onPressed: () => _abrirLink(context, ApiLinks.windowsDownloadUrl),
           icon: const Icon(Icons.download, size: 16, color: Colors.white70),
           label: const Text('Download Windows',
               style: TextStyle(fontSize: 11, color: Colors.white70)),

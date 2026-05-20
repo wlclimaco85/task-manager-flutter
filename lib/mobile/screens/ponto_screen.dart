@@ -1,12 +1,20 @@
+<<<<<<< HEAD
+﻿import 'dart:async';
+import 'dart:convert';
+=======
 import 'dart:async';
+>>>>>>> 9c936e366a7278fea1fdb76d20b7c37879acbe59
 
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
 
 import 'package:task_manager_flutter/constants/custom_colors.dart';
 import 'package:task_manager_flutter/models/auth_utility.dart';
 import 'package:task_manager_flutter/models/ponto_model.dart';
 import 'package:task_manager_flutter/services/ponto_service.dart';
+import 'package:task_manager_flutter/utils/api_links.dart';
+import 'package:task_manager_flutter/utils/tenant_context.dart';
 
 import 'pdf_preview_dialog.dart';
 
@@ -26,6 +34,9 @@ class _PontoScreenState extends State<PontoScreen> {
 
   List<PontoModel> _pontos = [];
 
+  // H10: funcionário vinculado ao login logado
+  Map<String, dynamic>? _funcionario;
+
   @override
   void initState() {
     super.initState();
@@ -34,12 +45,32 @@ class _PontoScreenState extends State<PontoScreen> {
       setState(() => now = DateTime.now());
     });
     _carregarPontos();
+    _carregarFuncionario();
   }
 
   @override
   void dispose() {
     _timer?.cancel();
     super.dispose();
+  }
+
+  // H10: busca o funcionário vinculado ao login logado
+  Future<void> _carregarFuncionario() async {
+    final userId = TenantContext.userId;
+    if (userId == null) return;
+    try {
+      final url = TenantContext.applyToUrl(
+          '${ApiLinks.baseUrl}/api/funcionario/por-login?userId=$userId');
+      final resp = await http.get(Uri.parse(url), headers: TenantContext.headers);
+      if (resp.statusCode == 200 && mounted) {
+        final body = jsonDecode(resp.body);
+        setState(() {
+          _funcionario = body is Map<String, dynamic> ? body : body['data'];
+        });
+      }
+    } catch (e) {
+      debugPrint('H10: Erro ao carregar funcionário: $e');
+    }
   }
 
   Future<void> _carregarPontos() async {
