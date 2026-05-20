@@ -62,7 +62,13 @@ import '../../../windows/screens/funcionario_grid_screen.dart';
 import '../../windows/screens/kanban_chamados_screen.dart';
 import '../../windows/screens/tela_editor_screen.dart';
 import '../../mobile/screens/dashboard_screen.dart';
-import './market_overview_screen.dart';
+import '../../../features/trading/trading_dashboard_screen.dart';
+import '../../../features/trading/screens/sinais_screen.dart';
+import '../../../features/trading/screens/oportunidades_screen.dart';
+import '../../../features/trading/screens/backtest_screen.dart';
+import '../../../features/trading/services/backtest_repository.dart';
+import '../../../utils/api_links.dart';
+import '../../../utils/tenant_context.dart';
 import '../../../widgets/app_sidebar.dart';
 // Telas adicionais Windows
 import '../../windows/screens/nfe_finalidade_grid_screen.dart';
@@ -84,12 +90,9 @@ import '../../windows/screens/alvara_grid_screen.dart';
 import '../../windows/screens/nfe_import_screen.dart';
 import '../../windows/screens/nfce/pdv_screen.dart';
 import '../../windows/screens/nfce/config_fiscal_screen.dart';
-import '../../features/trading/screens/backtest_screen.dart';
-import '../../features/trading/services/backtest_repository.dart';
-import '../../utils/api_links.dart';
-import '../../utils/tenant_context.dart';
 import '../../widgets/crm/crm_pipeline_screen.dart';
 import '../../widgets/fiscal/fiscal_automation_screen.dart';
+import '../../windows/screens/tela_ajuda_grid_screen.dart';
 
 class WindowsBottomNavBarScreen extends StatefulWidget {
   const WindowsBottomNavBarScreen({super.key});
@@ -214,20 +217,20 @@ class _WindowsBottomNavBarScreenState extends State<WindowsBottomNavBarScreen> {
         WindowsModuloServicoGridScreen(hasPermission: (perm) => true), // 69
         WindowsAlvaraGridScreen(hasPermission: (perm) => true), // 70
         const NfeImportScreen(), // 71: NfeImportCSV
-        const WindowsMarketOverviewScreen(), // 72: Trading
+        const TradingDashboardScreen(), // 72: Painel Trading
         const CrmPipelineScreen(), // 73: CRM/Funil
         const FiscalAutomationScreen(), // 74: Automacao Fiscal
-        const SizedBox.shrink(), // 75
-        const SizedBox.shrink(), // 76
-        const SizedBox.shrink(), // 77
-        const SizedBox.shrink(), // 78
-        const SizedBox.shrink(), // 79
+        const SinaisScreen(), // 75: Sinais de Mercado
+        const OportunidadesScreen(), // 76: Oportunidades
+        const TradingDashboardScreen(initialTabIndex: 1), // 77: Watchlist
+        const TradingDashboardScreen(initialTabIndex: 2), // 78: Alertas de Preço
+        const TradingDashboardScreen(initialTabIndex: 3), // 79: Operações Assistidas
         const PdvScreen(), // 80: PDV NFC-e
         const ConfigFiscalScreen(), // 81: Config. Fiscal
         WindowsCentroCustoGridScreen(hasPermission: (perm) => true), // 82
         WindowsCategoriaFinanceiraGridScreen(
             hasPermission: (perm) => true), // 83
-        const SizedBox.shrink(), // 84
+        WindowsTelaAjudaGridScreen(hasPermission: (perm) => true), // 84: Ajuda das Telas
         BacktestScreen(
           repository: BacktestRepository(
             ApiLinks.baseUrl,

@@ -49,7 +49,7 @@ class MenuGroup {
 /// 67:TipoParceiro  68:ServicoContratado  69:ModuloServico  70:Alvaras  71:NfeImportCSV
 /// 72:TradingPainel  73:CRM/Funil  74:AutomacaoFiscal
 /// 75:Sinais  76:Oportunidades  77:Watchlist  78:AlertasPreco  79:OperacoesAssistidas
-/// 80:PdvNfce  81:ConfigFiscal  82:CentroCusto  83:CategoriaFinanceira  85:Backtest
+/// 80:PdvNfce  81:ConfigFiscal  82:CentroCusto  83:CategoriaFinanceira  84:AjudaTelas  85:Backtest
 
 class MenuConfig {
   MenuConfig._();
@@ -438,6 +438,11 @@ class MenuConfig {
             label: 'Editor de Telas',
             icon: FontAwesomeIcons.tableColumns,
             screenIndex: 52),
+        MenuItem(
+            id: 'ajuda_telas',
+            label: 'Ajuda das Telas',
+            icon: FontAwesomeIcons.circleQuestion,
+            screenIndex: 84),
         MenuItem(
             id: 'empresas',
             label: 'Empresas',

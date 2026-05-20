@@ -89,6 +89,7 @@ import './nfce/pdv_screen.dart';
 import './nfce/config_fiscal_screen.dart';
 import '../../widgets/crm/crm_pipeline_screen.dart';
 import '../../widgets/fiscal/fiscal_automation_screen.dart';
+import './tela_ajuda_grid_screen.dart';
 
 class WebBottomNavBarScreen extends StatefulWidget {
   const WebBottomNavBarScreen({super.key});
@@ -259,7 +260,7 @@ class _WebBottomNavBarScreenState extends State<WebBottomNavBarScreen> {
       WebCentroCustoGridScreen(hasPermission: (p) => true), // 82: CentroCusto
       WebCategoriaFinanceiraGridScreen(
           hasPermission: (p) => true), // 83: CategoriasFinanceiras
-      const SizedBox.shrink(), // 84
+      WebTelaAjudaGridScreen(hasPermission: (p) => true), // 84: Ajuda das Telas
       BacktestScreen(
           repository: BacktestRepository(ApiLinks.baseUrl,
               headers: TenantContext.jsonHeaders)), // 85: Backtest
