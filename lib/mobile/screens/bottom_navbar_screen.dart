@@ -22,6 +22,8 @@ import '../../features/trading/screens/backtest_screen.dart';
 import '../../features/trading/services/backtest_repository.dart';
 import '../../utils/api_links.dart';
 import '../../utils/tenant_context.dart';
+import '../../web/screens/nfce/pdv_screen.dart';
+import '../../web/screens/nfce/config_fiscal_screen.dart';
 import 'documento_screen.dart';
 import 'file_upload_screen.dart';
 import 'parceiro_grid_screen.dart';
@@ -289,6 +291,18 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
           ),
         );
         break;
+      case "PDV":
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => const PdvScreen()),
+        );
+        break;
+      case "Config Fiscal":
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => const ConfigFiscalScreen()),
+        );
+        break;
       case "CRM/Funil":
         Navigator.push(
           context,
@@ -417,6 +431,8 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
         _menuItem(Icons.show_chart, "Trading", sec),
       if (sec.canView(AppScreen.trading))
         _menuItem(Icons.analytics, "Backtesting", sec),
+      _menuItem(Icons.point_of_sale, "PDV", sec),
+      _menuItem(Icons.settings_applications, "Config Fiscal", sec),
       if (sec.canView(AppScreen.pedidos))
         _menuItem(Icons.trending_up, "CRM/Funil", sec),
       if (sec.canView(AppScreen.obrigacoesFiscais))
