@@ -815,4 +815,11 @@ class ApiLinks {
       '$_baseUrlNew/api/dp/export/dominio?competencia=${Uri.encodeComponent(competencia)}';
   static String dpPortal(String funcionarioId) =>
       '$_baseUrlNew/api/dp/portal/$funcionarioId';
+
+  // Anexos financeiros
+  static String get anexosFinanceiros => '$_baseUrlNew/api/financeiro/anexos';
+  static String anexoFinanceiro(String id) =>
+      '$_baseUrlNew/api/financeiro/anexos/$id';
+  static String anexoFinanceiroDownload(String id) =>
+      '$_baseUrlNew/api/financeiro/anexos/$id/download';
 }
