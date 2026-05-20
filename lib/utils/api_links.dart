@@ -686,6 +686,15 @@ class ApiLinks {
   static String updateFeriado(String id) => '$_baseUrlNew/api/feriado/$id';
   static String deleteFeriado(String id) => '$_baseUrlNew/api/feriado/$id';
 
+  // Orçamento Comercial
+  static const String orcamentos = '$_baseUrlNew/api/comercial/orcamentos';
+  static String orcamentoById(String id) => '$_baseUrlNew/api/comercial/orcamentos/$id';
+  static String aprovarOrcamento(String id) => '$_baseUrlNew/api/comercial/orcamentos/$id/aprovar';
+  static String reprovarOrcamento(String id) => '$_baseUrlNew/api/comercial/orcamentos/$id/reprovar';
+  static String converterOrcamento(String id) => '$_baseUrlNew/api/comercial/orcamentos/$id/converter';
+  static String novaVersaoOrcamento(String id) => '$_baseUrlNew/api/comercial/orcamentos/$id/nova-versao';
+  static String cancelarOrcamento(String id) => '$_baseUrlNew/api/comercial/orcamentos/$id/cancelar';
+
   // Alerta Aluno
   static String get allAlertasAluno => '$_baseUrlNew/api/alertas-aluno';
 

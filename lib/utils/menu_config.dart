@@ -55,6 +55,7 @@ class MenuGroup {
 /// 94:Desligamentos  95:ObrigacoesTrabalhistas  96:NfeImportXml 97:Noticias 98:LancamentosFinanceiros
   /// 99:ImportarExtrato  100:ConciliacaoBancaria  102:IntegracoesFinanceiras
   /// 103:Fornecedores
+  /// 104:Orcamentos
 
 class MenuConfig {
   MenuConfig._();
@@ -182,6 +183,11 @@ class MenuConfig {
             label: 'Módulos/Serviços',
             icon: FontAwesomeIcons.cubes,
             screenIndex: 69),
+        MenuItem(
+            id: 'orcamentos',
+            label: 'Orçamentos',
+            icon: FontAwesomeIcons.fileInvoice,
+            screenIndex: 104),
       ],
     ),
     MenuGroup(
