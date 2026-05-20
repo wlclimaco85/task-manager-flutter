@@ -11,6 +11,7 @@ import './aplicativo_screen.dart';
 import '../../../auth_screens/login_screen.dart';
 import './chamado_grid_screen.dart';
 import './alimento_grid_screen.dart';
+import './comunicado_screen.dart';
 import './comunicado_componente_screen.dart';
 import './dieta_grid_screen.dart';
 import './empresa_grid_screen.dart';
@@ -29,6 +30,7 @@ import './regime_grid_screen.dart';
 import './noticias_grid_screen.dart';
 import './conta_pagar_grid_screen.dart';
 import './conta_receber_grid_screen.dart';
+import './lancamento_financeiro_grid_screen.dart';
 import './diretorio_grid_screen.dart';
 import './ged_arquivos_screen.dart';
 import './forma_pagamento_grid_screen.dart';
@@ -71,6 +73,7 @@ import './nfe_serie_grid_screen.dart';
 import './nfe_tipo_operacao_grid_screen.dart';
 import './nfe_grid_screen.dart';
 import './nfe_import_screen.dart';
+import './nfe_import_xml_screen.dart';
 import './ponto_web_screen.dart';
 import './ponto_solicitacao_screen.dart';
 import './ponto_ajuste_screen.dart';
@@ -87,6 +90,8 @@ import '../../widgets/app_sidebar.dart';
 import './alvara_grid_screen.dart';
 import './nfce/pdv_screen.dart';
 import './nfce/config_fiscal_screen.dart';
+import './extrato_importacao_screen.dart';
+import './conciliacao_screen.dart';
 import '../../widgets/crm/crm_pipeline_screen.dart';
 import '../../widgets/fiscal/fiscal_automation_screen.dart';
 import './tela_ajuda_grid_screen.dart';
@@ -154,8 +159,7 @@ class _WebBottomNavBarScreenState extends State<WebBottomNavBarScreen> {
     final isLoggedIn = (userInfo?.id != null) || (loginInfo?.id != null);
     if (!isLoggedIn) return [const LoginScreen()];
     return [
-      WebNoticiasGridScreen(
-          hasPermission: (p) => true), // 0:  Comunicados/Notícias
+      const WebComunicadoGridScreen(), // 0:  Comunicados
       WebChatListScreen(
           userName: AuthUtility.userInfo?.login?.email ?? 'Usuário'), // 1: Chat
       WebComunicadoGridComponentesScreen(
@@ -264,17 +268,30 @@ class _WebBottomNavBarScreenState extends State<WebBottomNavBarScreen> {
       WebCategoriaFinanceiraGridScreen(
           hasPermission: (p) => true), // 83: CategoriasFinanceiras
       WebTelaAjudaGridScreen(hasPermission: (p) => true), // 84: Ajuda das Telas
-      BacktestScreen(repository: BacktestRepository(ApiLinks.baseUrl, headers: TenantContext.jsonHeaders)), // 85: Backtest
+      BacktestScreen(
+          repository: BacktestRepository(ApiLinks.baseUrl,
+              headers: TenantContext.jsonHeaders)), // 85: Backtest
       const DpPortalColaboradorScreen(), // 86: Portal do Colaborador
       const DpDashboardScreen(), // 87: Dashboard DP
-      const DpDynamicGridScreen(telaNome: 'dp_escala_turno'), // 88: Escalas e Turnos
+      const DpDynamicGridScreen(
+          telaNome: 'dp_escala_turno'), // 88: Escalas e Turnos
       const DpDynamicGridScreen(telaNome: 'dp_ferias'), // 89: Ferias
-      const DpDynamicGridScreen(telaNome: 'dp_admissao'), // 90: Admissao Digital
+      const DpDynamicGridScreen(
+          telaNome: 'dp_admissao'), // 90: Admissao Digital
       const DpDynamicGridScreen(telaNome: 'dp_rubrica'), // 91: Rubricas
-      const DpDynamicGridScreen(telaNome: 'dp_folha_evento'), // 92: Eventos da Folha
+      const DpDynamicGridScreen(
+          telaNome: 'dp_folha_evento'), // 92: Eventos da Folha
       const DpDynamicGridScreen(telaNome: 'dp_beneficio'), // 93: Beneficios
-      const DpDynamicGridScreen(telaNome: 'dp_desligamento'), // 94: Desligamentos
-      const DpDynamicGridScreen(telaNome: 'dp_obrigacao_trabalhista'), // 95: Obrigacoes Trabalhistas
+      const DpDynamicGridScreen(
+          telaNome: 'dp_desligamento'), // 94: Desligamentos
+      const DpDynamicGridScreen(
+          telaNome: 'dp_obrigacao_trabalhista'), // 95: Obrigacoes Trabalhistas
+      const WebNfeImportXmlScreen(), // 96: NfeImportXml
+      WebNoticiasGridScreen(hasPermission: (p) => true), // 97: Noticias
+      WebLancamentoFinanceiroGridScreen(
+          hasPermission: (p) => true), // 98: LancamentosFinanceiros
+      const ExtratoImportacaoScreen(), // 99: ImportarExtrato
+      const WebConciliacaoScreen(), // 100: ConciliacaoBancaria
     ];
   }
 

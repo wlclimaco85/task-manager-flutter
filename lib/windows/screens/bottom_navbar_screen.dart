@@ -17,6 +17,7 @@ import '../../../windows/screens/comunicado_componente_screen.dart';
 import '../../../windows/screens/comunicado_screen.dart';
 import '../../../windows/screens/conta_pagar_grid_screen.dart';
 import '../../../windows/screens/conta_receber_grid_screen.dart';
+import '../../../windows/screens/lancamento_financeiro_grid_screen.dart';
 import '../../../windows/screens/dieta_grid_screen.dart';
 import '../../../windows/screens/diretorio_grid_screen.dart';
 import '../../../windows/screens/empresa_grid_screen.dart';
@@ -41,6 +42,8 @@ import '../../../windows/screens/setor_grid_screen.dart';
 import '../../../windows/screens/suplemento_grid_screen.dart';
 import 'documento_screen.dart';
 import '../../../windows/screens/calendario_guias_grid_screen.dart';
+import '../../../windows/screens/extrato_importacao_screen.dart';
+import '../../../windows/screens/conciliacao_screen.dart';
 import '../../../windows/screens/configuracoes_admin_screen.dart';
 import '../../../windows/screens/cotacao_frete_grid_screen.dart';
 import '../../../windows/screens/dividendo_grid_screen.dart';
@@ -88,6 +91,7 @@ import '../../windows/screens/system_test_screen.dart';
 import '../../windows/screens/cadastro_empresa_wizard.dart';
 import '../../windows/screens/alvara_grid_screen.dart';
 import '../../windows/screens/nfe_import_screen.dart';
+import '../../windows/screens/nfe_import_xml_screen.dart';
 import '../../windows/screens/nfce/pdv_screen.dart';
 import '../../windows/screens/nfce/config_fiscal_screen.dart';
 import '../../widgets/crm/crm_pipeline_screen.dart';
@@ -245,6 +249,12 @@ class _WindowsBottomNavBarScreenState extends State<WindowsBottomNavBarScreen> {
         const DpDynamicGridScreen(telaNome: 'dp_beneficio'), // 93: Beneficios
         const DpDynamicGridScreen(telaNome: 'dp_desligamento'), // 94: Desligamentos
         const DpDynamicGridScreen(telaNome: 'dp_obrigacao_trabalhista'), // 95: Obrigacoes Trabalhistas
+        const WindowsNfeImportXmlScreen(), // 96: NfeImportXml
+        const SizedBox.shrink(), // 97: (vago)
+        WindowsLancamentoFinanceiroGridScreen(
+            hasPermission: (perm) => true), // 98: LancamentosFinanceiros
+        const ExtratoImportacaoScreen(), // 99: ImportarExtrato
+        const ConciliacaoScreen(), // 100: ConciliacaoBancaria
       ];
 
   String get userName {

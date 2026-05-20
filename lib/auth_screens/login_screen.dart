@@ -242,10 +242,13 @@ class _LoginBanner extends StatelessWidget {
                               Column(mainAxisSize: MainAxisSize.min, children: [
                         _field(
                             ctrl: emailCtrl,
-                            hint: 'Email',
-                            icon: Icons.email_outlined,
+                            hint: 'Usuario',
+                            icon: Icons.person_outline,
+                            keyboardType: TextInputType.emailAddress,
+                            autofillHints: const [AutofillHints.username],
+                            textInputAction: TextInputAction.next,
                             validator: (v) => (v == null || v.isEmpty)
-                                ? 'Informe o email'
+                                ? 'Informe o usuario'
                                 : null),
                         const SizedBox(height: 8),
                         _field(
@@ -253,6 +256,11 @@ class _LoginBanner extends StatelessWidget {
                             hint: 'Senha',
                             icon: Icons.lock_outline,
                             obscure: obscure,
+                            autofillHints: const [AutofillHints.password],
+                            textInputAction: TextInputAction.done,
+                            onFieldSubmitted: (_) {
+                              if (!loading) onLogin();
+                            },
                             suffix: IconButton(
                                 onPressed: onToggleObscure,
                                 icon: Icon(
@@ -452,12 +460,16 @@ class _LoginBanner extends StatelessWidget {
       required IconData icon,
       bool obscure = false,
       Widget? suffix,
+      TextInputType? keyboardType,
+      Iterable<String>? autofillHints,
       TextInputAction? textInputAction,
       ValueChanged<String>? onFieldSubmitted,
       String? Function(String?)? validator}) {
     return TextFormField(
       controller: ctrl,
       obscureText: obscure,
+      keyboardType: keyboardType,
+      autofillHints: autofillHints,
       textInputAction: textInputAction,
       onFieldSubmitted: onFieldSubmitted,
       style: const TextStyle(color: Colors.white, fontSize: 13),

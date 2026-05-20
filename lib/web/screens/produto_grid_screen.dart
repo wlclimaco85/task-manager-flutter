@@ -5,12 +5,9 @@ import '../../../models/auth_utility.dart';
 import '../../../utils/api_links.dart';
 import '../../../widgets/generic_grid_windows_screen.dart'
     show FieldConfigWindows, FieldType, CustomAction;
-<<<<<<< HEAD
 import '../../../widgets/produto_detalhes_dialog.dart';
 import '../../../widgets/produto_saidas_chart_dialog.dart';
-=======
 import './ged_arquivos_screen.dart';
->>>>>>> 9c936e366a7278fea1fdb76d20b7c37879acbe59
 
 class WebProdutoGridScreen extends StatelessWidget {
   final SecurityCheck hasPermission;
@@ -73,8 +70,7 @@ class WebProdutoGridScreen extends StatelessWidget {
       fromJson: (json) => json,
       toJson: (a) => a,
       fieldOverrides: fieldOverrides.isNotEmpty ? fieldOverrides : null,
-<<<<<<< HEAD
-      // H4: ações na grid de produto
+      // H4: ações na grid de produto; H5-21: GED filtrado pelo produto
       customActions: () => [
         CustomAction<Map<String, dynamic>>(
           icon: Icons.info_outline,
@@ -92,10 +88,8 @@ class WebProdutoGridScreen extends StatelessWidget {
             context: ctx,
             builder: (_) => ProdutoSaidasChartDialog(produto: item),
           ),
-=======
-      // H4: ações de excluir na grid de produto
-      // H5-21: botão para abrir GED filtrado pelo produto
-      customActions: () => [
+          isVisible: (_) => true,
+        ),
         CustomAction<Map<String, dynamic>>(
           icon: Icons.folder_open,
           label: 'Ver GED',
@@ -110,7 +104,6 @@ class WebProdutoGridScreen extends StatelessWidget {
               ),
             ));
           },
->>>>>>> 9c936e366a7278fea1fdb76d20b7c37879acbe59
           isVisible: (_) => true,
         ),
         CustomAction<Map<String, dynamic>>(

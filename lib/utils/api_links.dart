@@ -80,7 +80,7 @@ class ApiLinks {
   );
   static String get windowsDownloadUrl => _windowsDownloadUrl.isNotEmpty
       ? _windowsDownloadUrl
-      : Uri.base.resolve('/downloads/app-academia-windows.zip').toString();
+      : '$_baseUrlNew/api/downloads/windows';
   static String get createNoticia => '$_baseUrlNew/api/noticias';
   static String updateNoticia(String id) => '$_baseUrlNew/api/noticias/$id';
   static String deleteNoticia(String id) => '$_baseUrlNew/api/noticias/$id';
@@ -289,6 +289,16 @@ class ApiLinks {
       '$_baseUrlNew/api/conta_pagar/$id/baixa';
   static String desfazerContaPagar(String id) =>
       '$_baseUrlNew/api/conta_pagar/desfazer/$id';
+  static String contaPagarRecorrencia(String id) =>
+      '$_baseUrlNew/api/conta_pagar/$id/recorrencia';
+  static String contaPagarParcelar(String id) =>
+      '$_baseUrlNew/api/conta_pagar/$id/parcelar';
+  static String contaPagarRenegociar(String id) =>
+      '$_baseUrlNew/api/conta_pagar/$id/renegociar';
+  static String contaPagarBaixaParcial(String id) =>
+      '$_baseUrlNew/api/conta_pagar/$id/baixa-parcial';
+  static String contaPagarHistorico(String id) =>
+      '$_baseUrlNew/api/conta_pagar/$id/historico';
 
   // Contas a Receber
   static String get allContasReceber => '$_baseUrlNew/api/conta_receber';
@@ -777,6 +787,10 @@ class ApiLinks {
   static String get importMarketplaceOrder =>
       '$_baseUrlNew/api/crm/marketplace/orders';
 
+  // Lançamentos Financeiros (unificado)
+  static String get lancamentosFinanceiros =>
+      '$_baseUrlNew/api/financeiro/lancamentos';
+
   // IA assistiva para chat/GED
   static String get aiChatSummarize => '$_baseUrlNew/api/ai/chat/summarize';
   static String get aiTextCorrect => '$_baseUrlNew/api/ai/text/correct';
@@ -827,7 +841,8 @@ class ApiLinks {
 
   // Departamento Pessoal profissional
   static String get dpDashboard => '$_baseUrlNew/api/dp/dashboard';
-  static String get dpRelatorioResumo => '$_baseUrlNew/api/dp/relatorios/resumo';
+  static String get dpRelatorioResumo =>
+      '$_baseUrlNew/api/dp/relatorios/resumo';
   static String dpExportDominio(String competencia) =>
       '$_baseUrlNew/api/dp/export/dominio?competencia=${Uri.encodeComponent(competencia)}';
   static String dpPortal(String funcionarioId) =>
@@ -839,4 +854,18 @@ class ApiLinks {
       '$_baseUrlNew/api/financeiro/anexos/$id';
   static String anexoFinanceiroDownload(String id) =>
       '$_baseUrlNew/api/financeiro/anexos/$id/download';
+
+  // Conciliação Bancária
+  static const String conciliacaoPendentes =
+      '$_baseUrlNew/api/financeiro/conciliacao/pendentes';
+  static String conciliacaoSugestoes(int contaBancariaId) =>
+      '$_baseUrlNew/api/financeiro/conciliacao/$contaBancariaId/sugestoes';
+  static const String conciliacaoConciliar =
+      '$_baseUrlNew/api/financeiro/conciliacao/conciliar';
+  static String conciliacaoAuto(int contaBancariaId) =>
+      '$_baseUrlNew/api/financeiro/conciliacao/auto/$contaBancariaId';
+  static String conciliacaoDesfazer(int conciliacaoId) =>
+      '$_baseUrlNew/api/financeiro/conciliacao/$conciliacaoId';
+  static const String conciliacaoListar =
+      '$_baseUrlNew/api/financeiro/conciliacao';
 }

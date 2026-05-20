@@ -52,7 +52,8 @@ class MenuGroup {
 /// 80:PdvNfce  81:ConfigFiscal  82:CentroCusto  83:CategoriaFinanceira  84:AjudaTelas  85:Backtest
 /// 86:PortalColaborador  87:DashboardDP  88:EscalasTurnos  89:Ferias
 /// 90:AdmissaoDigital  91:Rubricas  92:EventosFolha  93:Beneficios
-/// 94:Desligamentos  95:ObrigacoesTrabalhistas
+/// 94:Desligamentos  95:ObrigacoesTrabalhistas  96:NfeImportXml 97:Noticias 98:LancamentosFinanceiros
+/// 99:ImportarExtrato  100:ConciliacaoBancaria
 
 class MenuConfig {
   MenuConfig._();
@@ -141,6 +142,11 @@ class MenuConfig {
             icon: FontAwesomeIcons.fileCsv,
             screenIndex: 71),
         MenuItem(
+            id: 'nfe_import_xml',
+            label: 'Importar XML NF-e',
+            icon: FontAwesomeIcons.fileCode,
+            screenIndex: 96),
+        MenuItem(
             id: 'nfe_saida',
             label: 'NF-e Saída',
             icon: FontAwesomeIcons.fileExport,
@@ -223,7 +229,7 @@ class MenuConfig {
             id: 'noticias',
             label: 'Notícias',
             icon: FontAwesomeIcons.newspaper,
-            screenIndex: 0),
+            screenIndex: 97),
         MenuItem(
             id: 'kanban',
             label: 'Kanban',
@@ -395,6 +401,21 @@ class MenuConfig {
             label: 'Categorias Financeiras',
             icon: FontAwesomeIcons.tags,
             screenIndex: 83),
+        MenuItem(
+            id: 'lancamentos_financeiros',
+            label: 'Lançamentos Financeiros',
+            icon: FontAwesomeIcons.moneyBillTransfer,
+            screenIndex: 98),
+        MenuItem(
+            id: 'importar_extrato',
+            label: 'Importar Extrato',
+            icon: FontAwesomeIcons.fileImport,
+            screenIndex: 99),
+        MenuItem(
+            id: 'conciliacao_bancaria',
+            label: 'Conciliação Bancária',
+            icon: FontAwesomeIcons.arrowsRotate,
+            screenIndex: 100),
       ],
     ),
     MenuGroup(

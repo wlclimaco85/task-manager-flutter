@@ -46,15 +46,11 @@ class ContaBancaria {
           : null,
       saldoAtual: (json['saldoAtual'] ?? 0).toDouble(),
       empresa: json['empresa'] != null ? Empresa.fromJson(json['empresa']) : Empresa(),
-<<<<<<< HEAD
-      parceiro: json['parceiroId'] ?? 1,
-=======
       parceiro: json['parceiro'] != null
           ? Parceiro.fromJson(Map<String, dynamic>.from(json['parceiro']))
           : ((json['parceiroId'] != null)
               ? Parceiro(id: json['parceiroId'])
               : null),
->>>>>>> 9c936e366a7278fea1fdb76d20b7c37879acbe59
       ativo: json['ativo'] ?? true,
     );
   }
