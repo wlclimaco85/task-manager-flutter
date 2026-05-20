@@ -50,6 +50,9 @@ class MenuGroup {
 /// 72:TradingPainel  73:CRM/Funil  74:AutomacaoFiscal
 /// 75:Sinais  76:Oportunidades  77:Watchlist  78:AlertasPreco  79:OperacoesAssistidas
 /// 80:PdvNfce  81:ConfigFiscal  84:AjudaTelas  85:Backtest
+/// 86:PortalColaborador  87:DashboardDP  88:EscalasTurnos  89:Ferias
+/// 90:AdmissaoDigital  91:Rubricas  92:EventosFolha  93:Beneficios
+/// 94:Desligamentos  95:ObrigacoesTrabalhistas
 
 class MenuConfig {
   MenuConfig._();
@@ -266,10 +269,55 @@ class MenuConfig {
       icon: FontAwesomeIcons.idCard,
       items: [
         MenuItem(
+            id: 'dp_dashboard',
+            label: 'Dashboard DP',
+            icon: FontAwesomeIcons.chartPie,
+            screenIndex: 87),
+        MenuItem(
+            id: 'portal_colaborador',
+            label: 'Portal Colaborador',
+            icon: FontAwesomeIcons.idBadge,
+            screenIndex: 86),
+        MenuItem(
             id: 'ajuste_ponto',
             label: 'Ajuste de Ponto',
             icon: FontAwesomeIcons.clockRotateLeft,
             screenIndex: 62),
+        MenuItem(
+            id: 'dp_admissao',
+            label: 'Admissao Digital',
+            icon: FontAwesomeIcons.userPlus,
+            screenIndex: 90),
+        MenuItem(
+            id: 'dp_beneficios',
+            label: 'Beneficios',
+            icon: FontAwesomeIcons.handHoldingHeart,
+            screenIndex: 93),
+        MenuItem(
+            id: 'dp_desligamentos',
+            label: 'Desligamentos',
+            icon: FontAwesomeIcons.userMinus,
+            screenIndex: 94),
+        MenuItem(
+            id: 'dp_escalas',
+            label: 'Escalas e Turnos',
+            icon: FontAwesomeIcons.calendarWeek,
+            screenIndex: 88),
+        MenuItem(
+            id: 'dp_eventos_folha',
+            label: 'Eventos da Folha',
+            icon: FontAwesomeIcons.receipt,
+            screenIndex: 92),
+        MenuItem(
+            id: 'dp_ferias',
+            label: 'Ferias',
+            icon: FontAwesomeIcons.umbrellaBeach,
+            screenIndex: 89),
+        MenuItem(
+            id: 'dp_obrigacoes_trabalhistas',
+            label: 'Obrigacoes Trabalhistas',
+            icon: FontAwesomeIcons.fileCircleCheck,
+            screenIndex: 95),
         MenuItem(
             id: 'feriados',
             label: 'Feriados',
@@ -285,6 +333,11 @@ class MenuConfig {
             label: 'Ponto',
             icon: FontAwesomeIcons.clock,
             screenIndex: 60),
+        MenuItem(
+            id: 'dp_rubricas',
+            label: 'Rubricas da Folha',
+            icon: FontAwesomeIcons.fileInvoiceDollar,
+            screenIndex: 91),
         MenuItem(
             id: 'setores',
             label: 'Setores',

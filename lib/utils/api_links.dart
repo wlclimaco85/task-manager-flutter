@@ -807,4 +807,12 @@ class ApiLinks {
       '$_baseUrlNew/api/trading/operacao-assistida/$id/status';
   static String tradingOperacao(String id) =>
       '$_baseUrlNew/api/trading/operacao-assistida/$id';
+
+  // Departamento Pessoal profissional
+  static String get dpDashboard => '$_baseUrlNew/api/dp/dashboard';
+  static String get dpRelatorioResumo => '$_baseUrlNew/api/dp/relatorios/resumo';
+  static String dpExportDominio(String competencia) =>
+      '$_baseUrlNew/api/dp/export/dominio?competencia=${Uri.encodeComponent(competencia)}';
+  static String dpPortal(String funcionarioId) =>
+      '$_baseUrlNew/api/dp/portal/$funcionarioId';
 }

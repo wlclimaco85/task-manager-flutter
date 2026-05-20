@@ -29,7 +29,7 @@ class _WindowsContaPagarGridScreenState
   bool _importing = false;
 
   Future<void> _importarBoleto() async {
-    final result = await FilePicker.platform.pickFiles(
+    final result = await FilePicker.pickFiles(
       type: FileType.custom,
       allowedExtensions: ['csv', 'rem', 'ret', 'txt'],
       withData: true,

@@ -89,6 +89,9 @@ import './nfce/config_fiscal_screen.dart';
 import '../../widgets/crm/crm_pipeline_screen.dart';
 import '../../widgets/fiscal/fiscal_automation_screen.dart';
 import './tela_ajuda_grid_screen.dart';
+import '../../widgets/dp/dp_dashboard_screen.dart';
+import '../../widgets/dp/dp_dynamic_grid_screen.dart';
+import '../../widgets/dp/dp_portal_colaborador_screen.dart';
 
 class WebBottomNavBarScreen extends StatefulWidget {
   const WebBottomNavBarScreen({super.key});
@@ -262,6 +265,16 @@ class _WebBottomNavBarScreenState extends State<WebBottomNavBarScreen> {
       const SizedBox.shrink(), // 83
       WebTelaAjudaGridScreen(hasPermission: (p) => true), // 84: Ajuda das Telas
       BacktestScreen(repository: BacktestRepository(ApiLinks.baseUrl, headers: TenantContext.jsonHeaders)), // 85: Backtest
+      const DpPortalColaboradorScreen(), // 86: Portal do Colaborador
+      const DpDashboardScreen(), // 87: Dashboard DP
+      const DpDynamicGridScreen(telaNome: 'dp_escala_turno'), // 88: Escalas e Turnos
+      const DpDynamicGridScreen(telaNome: 'dp_ferias'), // 89: Ferias
+      const DpDynamicGridScreen(telaNome: 'dp_admissao'), // 90: Admissao Digital
+      const DpDynamicGridScreen(telaNome: 'dp_rubrica'), // 91: Rubricas
+      const DpDynamicGridScreen(telaNome: 'dp_folha_evento'), // 92: Eventos da Folha
+      const DpDynamicGridScreen(telaNome: 'dp_beneficio'), // 93: Beneficios
+      const DpDynamicGridScreen(telaNome: 'dp_desligamento'), // 94: Desligamentos
+      const DpDynamicGridScreen(telaNome: 'dp_obrigacao_trabalhista'), // 95: Obrigacoes Trabalhistas
     ];
   }
 

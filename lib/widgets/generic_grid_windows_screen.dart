@@ -98,6 +98,10 @@ class FieldConfigWindows {
   final String fieldName;
   final bool isFilterable;
   final bool isInForm;
+
+  /// Quando false, o campo não aparece como coluna na grid,
+  /// mas continua disponível no formulário.
+  final bool isInGrid;
   final int flex;
   final int maxLines;
   final IconData? icon;
@@ -123,6 +127,7 @@ class FieldConfigWindows {
     required this.fieldName,
     this.isFilterable = true,
     this.isInForm = true,
+    this.isInGrid = true,
     this.flex = 1,
     this.maxLines = 1,
     this.icon,
@@ -1599,7 +1604,8 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
     _paginatorController = PaginatorController();
 
     for (final config in widget.FieldConfigWindowss) {
-      _columnVisibility[config.fieldName] = config.isVisibleByDefault;
+      _columnVisibility[config.fieldName] =
+          config.isInGrid && config.isVisibleByDefault;
     }
 
     for (final config

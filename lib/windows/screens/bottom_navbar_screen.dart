@@ -92,6 +92,9 @@ import '../../windows/screens/nfce/config_fiscal_screen.dart';
 import '../../widgets/crm/crm_pipeline_screen.dart';
 import '../../widgets/fiscal/fiscal_automation_screen.dart';
 import '../../windows/screens/tela_ajuda_grid_screen.dart';
+import '../../widgets/dp/dp_dashboard_screen.dart';
+import '../../widgets/dp/dp_dynamic_grid_screen.dart';
+import '../../widgets/dp/dp_portal_colaborador_screen.dart';
 
 class WindowsBottomNavBarScreen extends StatefulWidget {
   const WindowsBottomNavBarScreen({super.key});
@@ -233,6 +236,16 @@ class _WindowsBottomNavBarScreenState extends State<WindowsBottomNavBarScreen> {
         const SizedBox.shrink(), // 83
         WindowsTelaAjudaGridScreen(hasPermission: (perm) => true), // 84: Ajuda das Telas
         BacktestScreen(repository: BacktestRepository(ApiLinks.baseUrl, headers: TenantContext.jsonHeaders)), // 85: Backtest
+        const DpPortalColaboradorScreen(), // 86: Portal do Colaborador
+        const DpDashboardScreen(), // 87: Dashboard DP
+        const DpDynamicGridScreen(telaNome: 'dp_escala_turno'), // 88: Escalas e Turnos
+        const DpDynamicGridScreen(telaNome: 'dp_ferias'), // 89: Ferias
+        const DpDynamicGridScreen(telaNome: 'dp_admissao'), // 90: Admissao Digital
+        const DpDynamicGridScreen(telaNome: 'dp_rubrica'), // 91: Rubricas
+        const DpDynamicGridScreen(telaNome: 'dp_folha_evento'), // 92: Eventos da Folha
+        const DpDynamicGridScreen(telaNome: 'dp_beneficio'), // 93: Beneficios
+        const DpDynamicGridScreen(telaNome: 'dp_desligamento'), // 94: Desligamentos
+        const DpDynamicGridScreen(telaNome: 'dp_obrigacao_trabalhista'), // 95: Obrigacoes Trabalhistas
       ];
 
   String get userName {

@@ -183,6 +183,37 @@ class NetworkCaller {
     }
   }
 
+  Future<NetworkResponse> patchRequest(String url, dynamic body) async {
+    try {
+      final enrichedUrl = TenantContext.applyToUrl(url);
+      final response = await patch(
+        Uri.parse(enrichedUrl),
+        headers: {
+          'Authorization': 'Bearer ${AuthUtility.userInfo?.token}',
+          'Accept-Encoding': 'gzip',
+          'Content-Type': 'application/json',
+        },
+        body: jsonEncode(body),
+      );
+
+      if (response.statusCode == 200 || response.statusCode == 204) {
+        final responseBody = response.body.isNotEmpty
+            ? jsonDecode(response.body)
+            : null;
+        return NetworkResponse(
+          true,
+          response.statusCode,
+          responseBody,
+        );
+      } else {
+        return NetworkResponse(false, response.statusCode, null);
+      }
+    } catch (e) {
+      debugPrint('Error in PATCH request: $e');
+      return NetworkResponse(false, 500, {'error': 'Network error: $e'});
+    }
+  }
+
   Future<NetworkResponse> postRequest(
     String url,
     Map<String, dynamic>? body,
