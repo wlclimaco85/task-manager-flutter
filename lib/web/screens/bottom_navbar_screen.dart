@@ -93,6 +93,7 @@ import './nfce/pdv_screen.dart';
 import './nfce/config_fiscal_screen.dart';
 import './extrato_importacao_screen.dart';
 import './conciliacao_screen.dart';
+import './integracoes_financeiras_screen.dart';
 import '../../widgets/crm/crm_pipeline_screen.dart';
 import '../../widgets/fiscal/fiscal_automation_screen.dart';
 import './tela_ajuda_grid_screen.dart';
@@ -294,6 +295,7 @@ class _WebBottomNavBarScreenState extends State<WebBottomNavBarScreen> {
       const ExtratoImportacaoScreen(), // 99: ImportarExtrato
       const WebConciliacaoScreen(), // 100: ConciliacaoBancaria
       const WebDashboardFinanceiroScreen(), // 101: DashboardFinanceiro
+      const WebIntegracoesFinanceirasScreen(), // 102: IntegracoesFinanceiras
     ];
   }
 

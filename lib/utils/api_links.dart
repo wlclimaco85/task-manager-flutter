@@ -882,4 +882,15 @@ class ApiLinks {
       '$_baseUrlNew/api/financeiro/conciliacao/$conciliacaoId';
   static const String conciliacaoListar =
       '$_baseUrlNew/api/financeiro/conciliacao';
+
+  // Automação Financeira
+  static const String automacoesFinanceiras = '$_baseUrlNew/api/financeiro/automacoes';
+  static String automacaoFinanceira(String id) =>
+      '$_baseUrlNew/api/financeiro/automacoes/$id';
+  static String executarAutomacaoFinanceira(String id) =>
+      '$_baseUrlNew/api/financeiro/automacoes/$id/executar';
+  static String logsAutomacaoFinanceira(String id) =>
+      '$_baseUrlNew/api/financeiro/automacoes/$id/logs';
+  static const String todosLogsAutomacoes =
+      '$_baseUrlNew/api/financeiro/automacoes/logs';
 }

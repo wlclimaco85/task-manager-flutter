@@ -53,7 +53,7 @@ class MenuGroup {
 /// 86:PortalColaborador  87:DashboardDP  88:EscalasTurnos  89:Ferias
 /// 90:AdmissaoDigital  91:Rubricas  92:EventosFolha  93:Beneficios
 /// 94:Desligamentos  95:ObrigacoesTrabalhistas  96:NfeImportXml 97:Noticias 98:LancamentosFinanceiros
-/// 99:ImportarExtrato  100:ConciliacaoBancaria
+  /// 99:ImportarExtrato  100:ConciliacaoBancaria  102:IntegracoesFinanceiras
 
 class MenuConfig {
   MenuConfig._();
@@ -421,6 +421,11 @@ class MenuConfig {
             label: 'Conciliação Bancária',
             icon: FontAwesomeIcons.arrowsRotate,
             screenIndex: 100),
+        MenuItem(
+            id: 'integracoes_financeiras',
+            label: 'Integrações',
+            icon: FontAwesomeIcons.gears,
+            screenIndex: 102),
       ],
     ),
     MenuGroup(

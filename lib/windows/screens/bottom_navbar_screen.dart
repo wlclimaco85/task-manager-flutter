@@ -97,6 +97,7 @@ import '../../windows/screens/nfce/pdv_screen.dart';
 import '../../windows/screens/nfce/config_fiscal_screen.dart';
 import '../../widgets/crm/crm_pipeline_screen.dart';
 import '../../widgets/fiscal/fiscal_automation_screen.dart';
+import '../../windows/screens/integracoes_financeiras_screen.dart';
 import '../../windows/screens/tela_ajuda_grid_screen.dart';
 import '../../widgets/dp/dp_dashboard_screen.dart';
 import '../../widgets/dp/dp_dynamic_grid_screen.dart';
@@ -257,6 +258,7 @@ class _WindowsBottomNavBarScreenState extends State<WindowsBottomNavBarScreen> {
         const ExtratoImportacaoScreen(), // 99: ImportarExtrato
         const ConciliacaoScreen(), // 100: ConciliacaoBancaria
         const WindowsDashboardFinanceiroScreen(), // 101: DashboardFinanceiro
+        const IntegracoesFinanceirasScreen(), // 102: IntegracoesFinanceiras
       ];
 
   String get userName {
