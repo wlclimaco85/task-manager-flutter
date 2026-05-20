@@ -18,6 +18,10 @@ import 'conta_pagar_grid_screen.dart';
 import 'conta_receber_grid_screen.dart';
 import 'dashboard_screen.dart';
 import '../../features/trading/trading_dashboard_screen.dart';
+import '../../features/trading/screens/backtest_screen.dart';
+import '../../features/trading/services/backtest_repository.dart';
+import '../../utils/api_links.dart';
+import '../../utils/tenant_context.dart';
 import 'documento_screen.dart';
 import 'file_upload_screen.dart';
 import 'parceiro_grid_screen.dart';
@@ -275,6 +279,16 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
           MaterialPageRoute(builder: (_) => const TradingDashboardScreen()),
         );
         break;
+      case "Backtesting":
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => BacktestScreen(
+              repository: BacktestRepository(ApiLinks.baseUrl, headers: TenantContext.jsonHeaders),
+            ),
+          ),
+        );
+        break;
       case "CRM/Funil":
         Navigator.push(
           context,
@@ -401,6 +415,8 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
         _menuItem(Icons.bar_chart, "Dashboard", sec),
       if (sec.canView(AppScreen.trading))
         _menuItem(Icons.show_chart, "Trading", sec),
+      if (sec.canView(AppScreen.trading))
+        _menuItem(Icons.analytics, "Backtesting", sec),
       if (sec.canView(AppScreen.pedidos))
         _menuItem(Icons.trending_up, "CRM/Funil", sec),
       if (sec.canView(AppScreen.obrigacoesFiscais))
