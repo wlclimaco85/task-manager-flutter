@@ -6,7 +6,7 @@ class ApiLinks {
   // Producao Railway: flutter run --dart-define=BACKEND_URL=https://appacademia-production-be7e.up.railway.app
   static const String _backendUrl = String.fromEnvironment(
     'BACKEND_URL',
-    defaultValue: 'http://192.168.100.114:8088',
+    defaultValue: 'http://localhost:9001',
   );
 
   static const String _baseIp = _backendUrl;
@@ -864,6 +864,10 @@ class ApiLinks {
       '$_baseUrlNew/api/financeiro/anexos/$id';
   static String anexoFinanceiroDownload(String id) =>
       '$_baseUrlNew/api/financeiro/anexos/$id/download';
+
+  // Dashboard Financeiro Gerencial
+  static const String dashboardFinanceiro =
+      '$_baseUrlNew/api/dashboard/financeiro';
 
   // Conciliação Bancária
   static const String conciliacaoPendentes =

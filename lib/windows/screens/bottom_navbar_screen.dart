@@ -17,6 +17,7 @@ import '../../../windows/screens/comunicado_componente_screen.dart';
 import '../../../windows/screens/comunicado_screen.dart';
 import '../../../windows/screens/conta_pagar_grid_screen.dart';
 import '../../../windows/screens/conta_receber_grid_screen.dart';
+import '../../../windows/screens/dashboard_financeiro_screen.dart';
 import '../../../windows/screens/lancamento_financeiro_grid_screen.dart';
 import '../../../windows/screens/dieta_grid_screen.dart';
 import '../../../windows/screens/diretorio_grid_screen.dart';
@@ -255,6 +256,7 @@ class _WindowsBottomNavBarScreenState extends State<WindowsBottomNavBarScreen> {
             hasPermission: (perm) => true), // 98: LancamentosFinanceiros
         const ExtratoImportacaoScreen(), // 99: ImportarExtrato
         const ConciliacaoScreen(), // 100: ConciliacaoBancaria
+        const WindowsDashboardFinanceiroScreen(), // 101: DashboardFinanceiro
       ];
 
   String get userName {

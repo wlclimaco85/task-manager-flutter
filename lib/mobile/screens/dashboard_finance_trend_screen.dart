@@ -89,6 +89,12 @@ class _FinanceTrendChartState extends State<FinanceTrendChart> {
           child: Center(
               child: Text(error!, style: const TextStyle(color: Colors.red))));
     }
+    if (data.isEmpty) {
+      return const SizedBox(
+        height: 260,
+        child: Center(child: Text('Sem dados de tendencia financeira.')),
+      );
+    }
 
     return Container(
       height: 260,
@@ -149,10 +155,10 @@ class _FinanceTrendChartState extends State<FinanceTrendChart> {
               ],
               belowBarData: BarAreaData(
                   show: true,
-                  gradient: LinearGradient(
-                      colors: [Colors.red.withValues(alpha: .25), Colors.transparent],
-                      begin: Alignment.topCenter,
-                      end: Alignment.bottomCenter)),
+                  gradient: LinearGradient(colors: [
+                    Colors.red.withValues(alpha: .25),
+                    Colors.transparent
+                  ], begin: Alignment.topCenter, end: Alignment.bottomCenter)),
               dotData: const FlDotData(show: true),
             ),
           ],

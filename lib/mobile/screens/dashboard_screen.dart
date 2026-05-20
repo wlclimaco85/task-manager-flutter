@@ -417,17 +417,25 @@ class _DashboardPageState extends State<DashboardPage> {
       children: [
         Row(
           children: [
-            _infoCard('Funcionarios', '${_dpKpis['funcionariosAtivos'] ?? 0}', GridColors.primary),
-            _infoCard('Ferias proximas', '${_dpKpis['feriasProximas'] ?? 0}', Colors.green),
-            _infoCard('Ajustes ponto', '${_dpKpis['ajustesPontoPendentes'] ?? 0}', Colors.orange),
+            _infoCard('Funcionarios', '${_dpKpis['funcionariosAtivos'] ?? 0}',
+                GridColors.primary),
+            _infoCard('Ferias proximas', '${_dpKpis['feriasProximas'] ?? 0}',
+                Colors.green),
+            _infoCard('Ajustes ponto',
+                '${_dpKpis['ajustesPontoPendentes'] ?? 0}', Colors.orange),
           ],
         ),
         const SizedBox(height: 10),
         Row(
           children: [
-            _infoCard('Admissoes', '${_dpKpis['admissoesEmAndamento'] ?? 0}', Colors.blue),
-            _infoCard('Folha aberta', '${_dpKpis['eventosFolhaAbertos'] ?? 0}', Colors.purple),
-            _infoCard('Obrigacoes', '${_dpKpis['obrigacoesTrabalhistasPendentes'] ?? 0}', Colors.redAccent),
+            _infoCard('Admissoes', '${_dpKpis['admissoesEmAndamento'] ?? 0}',
+                Colors.blue),
+            _infoCard('Folha aberta', '${_dpKpis['eventosFolhaAbertos'] ?? 0}',
+                Colors.purple),
+            _infoCard(
+                'Obrigacoes',
+                '${_dpKpis['obrigacoesTrabalhistasPendentes'] ?? 0}',
+                Colors.redAccent),
           ],
         ),
       ],
@@ -448,7 +456,8 @@ class _DashboardPageState extends State<DashboardPage> {
         children: [
           const Text(
             'Relatorios DP',
-            style: TextStyle(fontWeight: FontWeight.w800, color: GridColors.textSecondary),
+            style: TextStyle(
+                fontWeight: FontWeight.w800, color: GridColors.textSecondary),
           ),
           OutlinedButton.icon(
             onPressed: _exportDominio,
@@ -468,7 +477,8 @@ class _DashboardPageState extends State<DashboardPage> {
   Future<void> _exportDominio() async {
     final competencia = DateFormat('yyyy-MM').format(DateTime.now());
     try {
-      final resp = await TenantContext.get(ApiLinks.dpExportDominio(competencia));
+      final resp =
+          await TenantContext.get(ApiLinks.dpExportDominio(competencia));
       if (resp.statusCode == 200) {
         await FileSaver.instance.saveFile(
           name: 'dominio_dp_$competencia.csv',
@@ -491,25 +501,38 @@ class _DashboardPageState extends State<DashboardPage> {
   }
 
   Widget _dpCharts() {
-    final ferias = Map<String, dynamic>.from((_dpGraficos['feriasPorStatus'] as Map?) ?? {});
-    final folha = Map<String, dynamic>.from((_dpGraficos['folhaPorStatus'] as Map?) ?? {});
-    final obrigacoes = Map<String, dynamic>.from((_dpGraficos['obrigacoesPorStatus'] as Map?) ?? {});
+    final ferias = Map<String, dynamic>.from(
+        (_dpGraficos['feriasPorStatus'] as Map?) ?? {});
+    final folha = Map<String, dynamic>.from(
+        (_dpGraficos['folhaPorStatus'] as Map?) ?? {});
+    final obrigacoes = Map<String, dynamic>.from(
+        (_dpGraficos['obrigacoesPorStatus'] as Map?) ?? {});
     return LayoutBuilder(
       builder: (context, constraints) {
         final wide = constraints.maxWidth >= 900;
         final children = [
-          Expanded(child: _dpPieCard('Ferias por status', ferias, [Colors.green, Colors.blue, Colors.orange, GridColors.primary])),
+          Expanded(
+              child: _dpPieCard('Ferias por status', ferias, [
+            Colors.green,
+            Colors.blue,
+            Colors.orange,
+            GridColors.primary
+          ])),
           const SizedBox(width: 12, height: 12),
           Expanded(child: _dpBarCard('Folha por status', folha, Colors.purple)),
           const SizedBox(width: 12, height: 12),
-          Expanded(child: _dpBarCard('Obrigacoes trabalhistas', obrigacoes, Colors.redAccent)),
+          Expanded(
+              child: _dpBarCard(
+                  'Obrigacoes trabalhistas', obrigacoes, Colors.redAccent)),
         ];
         if (wide) {
-          return Row(crossAxisAlignment: CrossAxisAlignment.start, children: children);
+          return Row(
+              crossAxisAlignment: CrossAxisAlignment.start, children: children);
         }
         return Column(
           children: [
-            _dpPieCard('Ferias por status', ferias, [Colors.green, Colors.blue, Colors.orange, GridColors.primary]),
+            _dpPieCard('Ferias por status', ferias,
+                [Colors.green, Colors.blue, Colors.orange, GridColors.primary]),
             const SizedBox(height: 12),
             _dpBarCard('Folha por status', folha, Colors.purple),
             const SizedBox(height: 12),
@@ -520,7 +543,8 @@ class _DashboardPageState extends State<DashboardPage> {
     );
   }
 
-  Widget _dpPieCard(String title, Map<String, dynamic> data, List<Color> colors) {
+  Widget _dpPieCard(
+      String title, Map<String, dynamic> data, List<Color> colors) {
     final entries = data.entries.toList();
     final total = entries.fold<double>(0, (sum, e) => sum + _asDouble(e.value));
     return _chartCard(
@@ -538,7 +562,10 @@ class _DashboardPageState extends State<DashboardPage> {
                       color: colors[i % colors.length],
                       title: entries[i].key,
                       radius: 58,
-                      titleStyle: const TextStyle(fontSize: 10, color: Colors.white, fontWeight: FontWeight.w700),
+                      titleStyle: const TextStyle(
+                          fontSize: 10,
+                          color: Colors.white,
+                          fontWeight: FontWeight.w700),
                     ),
                 ],
               ),
@@ -548,10 +575,14 @@ class _DashboardPageState extends State<DashboardPage> {
 
   Widget _dpBarCard(String title, Map<String, dynamic> data, Color color) {
     final entries = data.entries.toList();
-    final maxValue = math.max(
-      1,
-      entries.fold<double>(0, (max, e) => math.max(max, _asDouble(e.value))).ceil(),
-    ).toDouble();
+    final maxValue = math
+        .max(
+          1,
+          entries
+              .fold<double>(0, (max, e) => math.max(max, _asDouble(e.value)))
+              .ceil(),
+        )
+        .toDouble();
     return _chartCard(
       title,
       entries.isEmpty
@@ -562,18 +593,24 @@ class _DashboardPageState extends State<DashboardPage> {
                 borderData: FlBorderData(show: false),
                 gridData: const FlGridData(show: false),
                 titlesData: FlTitlesData(
-                  leftTitles: const AxisTitles(sideTitles: SideTitles(showTitles: true, reservedSize: 28)),
-                  topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                  rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                  leftTitles: const AxisTitles(
+                      sideTitles:
+                          SideTitles(showTitles: true, reservedSize: 28)),
+                  topTitles: const AxisTitles(
+                      sideTitles: SideTitles(showTitles: false)),
+                  rightTitles: const AxisTitles(
+                      sideTitles: SideTitles(showTitles: false)),
                   bottomTitles: AxisTitles(
                     sideTitles: SideTitles(
                       showTitles: true,
                       getTitlesWidget: (v, _) {
                         final i = v.toInt();
-                        if (i < 0 || i >= entries.length) return const SizedBox.shrink();
+                        if (i < 0 || i >= entries.length)
+                          return const SizedBox.shrink();
                         return Padding(
                           padding: const EdgeInsets.only(top: 6),
-                          child: Text(entries[i].key.split(' ').first, style: const TextStyle(fontSize: 10)),
+                          child: Text(entries[i].key.split(' ').first,
+                              style: const TextStyle(fontSize: 10)),
                         );
                       },
                     ),
@@ -609,7 +646,10 @@ class _DashboardPageState extends State<DashboardPage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(title, style: const TextStyle(fontWeight: FontWeight.w800, color: GridColors.textSecondary)),
+          Text(title,
+              style: const TextStyle(
+                  fontWeight: FontWeight.w800,
+                  color: GridColors.textSecondary)),
           const SizedBox(height: 10),
           Expanded(child: child),
         ],
@@ -636,7 +676,14 @@ class _DashboardPageState extends State<DashboardPage> {
 
   Widget _ticketsPie() {
     final t = tickets!;
-    final total = math.max((t.open + t.inProgress + t.closed).toDouble(), 1);
+    final totalChamados = t.open + t.inProgress + t.closed;
+    if (totalChamados <= 0) {
+      return const SizedBox(
+        height: 240,
+        child: Center(child: Text('Sem chamados para exibir.')),
+      );
+    }
+    final total = totalChamados.toDouble();
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
@@ -672,6 +719,12 @@ class _DashboardPageState extends State<DashboardPage> {
 
   Widget _chatsLine() {
     final points = chats;
+    if (points.isEmpty) {
+      return const SizedBox(
+        height: 230,
+        child: Center(child: Text('Sem dados de chats no periodo.')),
+      );
+    }
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(

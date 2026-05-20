@@ -29,6 +29,7 @@ import './modulo_servico_grid_screen.dart';
 import './regime_grid_screen.dart';
 import './noticias_grid_screen.dart';
 import './conta_pagar_grid_screen.dart';
+import './dashboard_financeiro_screen.dart';
 import './conta_receber_grid_screen.dart';
 import './lancamento_financeiro_grid_screen.dart';
 import './diretorio_grid_screen.dart';
@@ -292,6 +293,7 @@ class _WebBottomNavBarScreenState extends State<WebBottomNavBarScreen> {
           hasPermission: (p) => true), // 98: LancamentosFinanceiros
       const ExtratoImportacaoScreen(), // 99: ImportarExtrato
       const WebConciliacaoScreen(), // 100: ConciliacaoBancaria
+      const WebDashboardFinanceiroScreen(), // 101: DashboardFinanceiro
     ];
   }
 

@@ -402,6 +402,11 @@ class MenuConfig {
             icon: FontAwesomeIcons.tags,
             screenIndex: 83),
         MenuItem(
+            id: 'dashboard_financeiro',
+            label: 'Dashboard Financeiro',
+            icon: FontAwesomeIcons.chartPie,
+            screenIndex: 101),
+        MenuItem(
             id: 'lancamentos_financeiros',
             label: 'Lançamentos Financeiros',
             icon: FontAwesomeIcons.moneyBillTransfer,
