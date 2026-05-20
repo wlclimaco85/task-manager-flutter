@@ -54,6 +54,7 @@ class MenuGroup {
 /// 90:AdmissaoDigital  91:Rubricas  92:EventosFolha  93:Beneficios
 /// 94:Desligamentos  95:ObrigacoesTrabalhistas  96:NfeImportXml 97:Noticias 98:LancamentosFinanceiros
   /// 99:ImportarExtrato  100:ConciliacaoBancaria  102:IntegracoesFinanceiras
+  /// 103:Fornecedores
 
 class MenuConfig {
   MenuConfig._();
@@ -567,6 +568,11 @@ class MenuConfig {
         label: 'Pedidos',
         icon: FontAwesomeIcons.cartFlatbed,
         screenIndex: 39),
+    MenuItem(
+        id: 'fornecedores',
+        label: 'Fornecedores',
+        icon: FontAwesomeIcons.truck,
+        screenIndex: 103),
     MenuItem(
         id: 'crm_funil',
         label: 'CRM/Funil',

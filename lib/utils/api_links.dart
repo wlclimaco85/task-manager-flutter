@@ -215,6 +215,14 @@ class ApiLinks {
   static String allParceirosPorEmp(String id) =>
       '$_baseUrlNew/api/parceiro/empresa/$id';
 
+  // Fornecedor
+  static String allFornecedores = '$_baseUrlNew/api/cadastros/fornecedores';
+  static String createFornecedor = '$_baseUrlNew/api/cadastros/fornecedores';
+  static String updateFornecedor(String id) =>
+      '$_baseUrlNew/api/cadastros/fornecedores/$id';
+  static String deleteFornecedor(String id) =>
+      '$_baseUrlNew/api/cadastros/fornecedores/$id';
+
   // Personal
   static String allPersonais = '$_baseUrlNew/api/personais';
   static String createPersonal = '$_baseUrlNew/api/personais/insert';

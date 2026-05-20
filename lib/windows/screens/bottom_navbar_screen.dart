@@ -91,6 +91,7 @@ import '../../windows/screens/configuracoes_sistema_screen.dart';
 import '../../windows/screens/system_test_screen.dart';
 import '../../windows/screens/cadastro_empresa_wizard.dart';
 import '../../windows/screens/alvara_grid_screen.dart';
+import '../../windows/screens/fornecedor_grid_screen.dart';
 import '../../windows/screens/nfe_import_screen.dart';
 import '../../windows/screens/nfe_import_xml_screen.dart';
 import '../../windows/screens/nfce/pdv_screen.dart';
@@ -259,6 +260,7 @@ class _WindowsBottomNavBarScreenState extends State<WindowsBottomNavBarScreen> {
         const ConciliacaoScreen(), // 100: ConciliacaoBancaria
         const WindowsDashboardFinanceiroScreen(), // 101: DashboardFinanceiro
         const IntegracoesFinanceirasScreen(), // 102: IntegracoesFinanceiras
+        WindowsFornecedorGridScreen(hasPermission: (perm) => true), // 103: Fornecedores
       ];
 
   String get userName {

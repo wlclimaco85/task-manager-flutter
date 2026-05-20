@@ -89,6 +89,7 @@ import '../../utils/api_links.dart';
 import '../../utils/tenant_context.dart';
 import '../../widgets/app_sidebar.dart';
 import './alvara_grid_screen.dart';
+import './fornecedor_grid_screen.dart';
 import './nfce/pdv_screen.dart';
 import './nfce/config_fiscal_screen.dart';
 import './extrato_importacao_screen.dart';
@@ -296,6 +297,7 @@ class _WebBottomNavBarScreenState extends State<WebBottomNavBarScreen> {
       const WebConciliacaoScreen(), // 100: ConciliacaoBancaria
       const WebDashboardFinanceiroScreen(), // 101: DashboardFinanceiro
       const WebIntegracoesFinanceirasScreen(), // 102: IntegracoesFinanceiras
+      WebFornecedorGridScreen(hasPermission: (p) => true), // 103: Fornecedores
     ];
   }
 
