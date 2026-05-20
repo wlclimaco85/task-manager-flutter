@@ -66,8 +66,29 @@ class DropdownHelpers {
   static Future<List<Map<String, dynamic>>> cidades() =>
       load('${ApiLinks.baseUrl}/api/cidade', displayField: 'nome');
 
-  static Future<List<Map<String, dynamic>>> contasBancarias() =>
-      load('${ApiLinks.baseUrl}/api/contas-bancaria', displayField: 'nome');
+  static Future<List<Map<String, dynamic>>> contasBancarias() async {
+    final lista = await load(
+      '${ApiLinks.baseUrl}/api/contas-bancaria',
+      displayField: 'nome',
+    );
+    return lista.map((item) {
+      final descricao = item['descricao']?.toString().trim() ?? '';
+      final banco = item['banco']?.toString().trim() ?? '';
+      final numero = item['numero']?.toString().trim() ?? '';
+      final bancoNumero = [
+        if (banco.isNotEmpty) banco,
+        if (numero.isNotEmpty) numero,
+      ].join(' - ');
+      final nome = [
+        if (descricao.isNotEmpty) descricao,
+        if (bancoNumero.isNotEmpty) bancoNumero,
+      ].join(' • ');
+      if (nome.isNotEmpty) {
+        item['nome'] = nome;
+      }
+      return item;
+    }).toList();
+  }
 
   static Future<List<Map<String, dynamic>>> gruposMusculares() =>
       load('${ApiLinks.baseUrl}/api/grupos-musculares', displayField: 'nome');
@@ -108,7 +129,7 @@ class DropdownHelpers {
     final cachedParceiroId = TenantContext.parceiroId;
     if (cachedParceiroId == null) {
       // Sem parceiro em cache → suprime o campo do form
-      return FieldConfigWindows(
+      return const FieldConfigWindows(
         label: 'Parceiro', fieldName: 'parceiro',
         isInForm: false, isVisibleByDefault: false, enabled: false,
       );
@@ -121,6 +142,29 @@ class DropdownHelpers {
       // Pré-selecionado e disabled com o parceiro do usuário logado
       enabled: false,
       isInForm: true, isFilterable: true,
+      isRequired: required,
+      dropdownSelectedValue: cachedParceiroId,
+      dropdownFutureBuilder: parceiros,
+    );
+  }
+
+  /// Campo parceiro específico para cadastros financeiros.
+  /// Quando o usuário já está escopado por parceiro, o campo vem travado.
+  /// Quando não está escopado, mantém o dropdown disponível para seleção manual.
+  static FieldConfigWindows parceiroFieldScopedOrSelectable({
+    bool required = false,
+  }) {
+    final cachedParceiroId = TenantContext.parceiroId;
+    return FieldConfigWindows(
+      label: 'Parceiro',
+      fieldName: 'parceiro',
+      displayFieldName: 'parceiro.nome',
+      fieldType: FieldType.dropdown,
+      dropdownValueField: 'id',
+      dropdownDisplayField: 'nome',
+      enabled: cachedParceiroId == null,
+      isInForm: true,
+      isFilterable: true,
       isRequired: required,
       dropdownSelectedValue: cachedParceiroId,
       dropdownFutureBuilder: parceiros,

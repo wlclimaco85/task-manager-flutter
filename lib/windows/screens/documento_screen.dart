@@ -1,4 +1,4 @@
-﻿// ignore_for_file: library_private_types_in_public_api
+// ignore_for_file: library_private_types_in_public_api
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../../../services/network_caller.dart';
@@ -71,7 +71,7 @@ class _WindowsCalendarScreenState extends State<WindowsCalendarScreen> {
   List<Map<String, dynamic>> _contasPagar   = [];
   List<Map<String, dynamic>> _contasReceber = [];
 
-  Map<int, _MonthSummary> _monthSummaries = {};
+  final Map<int, _MonthSummary> _monthSummaries = {};
   Map<String, _DayMarkers> _dayMarkers    = {};
 
   // ── Formatters ───────────────────────────────────────────────────────────
@@ -683,7 +683,7 @@ class _WindowsCalendarScreenState extends State<WindowsCalendarScreen> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.08),
+        color: color.withValues(alpha: 0.08),
         borderRadius: BorderRadius.circular(6),
       ),
       child: Row(
@@ -745,7 +745,7 @@ class _WindowsCalendarScreenState extends State<WindowsCalendarScreen> {
           width: tributo ? 1.5 : 0.5,
         ),
       ),
-      color: tributo ? _purpleLight.withOpacity(0.3) : Colors.white,
+      color: tributo ? _purpleLight.withValues(alpha: 0.3) : Colors.white,
       child: Padding(
         padding: const EdgeInsets.all(8),
         child: Row(
@@ -1033,9 +1033,9 @@ class _WindowsCalendarScreenState extends State<WindowsCalendarScreen> {
         child: Container(
           padding: const EdgeInsets.all(5),
           decoration: BoxDecoration(
-            color: color.withOpacity(0.1),
+            color: color.withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(6),
-            border: Border.all(color: color.withOpacity(0.4)),
+            border: Border.all(color: color.withValues(alpha: 0.4)),
           ),
           child: Icon(icon, color: color, size: 16),
         ),
@@ -1205,10 +1205,10 @@ class _MonthDetailDialogState extends State<_MonthDetailDialog> {
             // Footer
             Container(
               padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
+              decoration: const BoxDecoration(
                 color: _grey,
                 border: Border(top: BorderSide(color: _greyBorder)),
-                borderRadius: const BorderRadius.only(
+                borderRadius: BorderRadius.only(
                   bottomLeft: Radius.circular(12),
                   bottomRight: Radius.circular(12),
                 ),
@@ -1308,7 +1308,7 @@ class _MonthDetailDialogState extends State<_MonthDetailDialog> {
           width: tributo ? 1.5 : 0.5,
         ),
       ),
-      color: tributo ? _purpleLight.withOpacity(0.25) : Colors.white,
+      color: tributo ? _purpleLight.withValues(alpha: 0.25) : Colors.white,
       child: ListTile(
         dense: true,
         leading: tributo

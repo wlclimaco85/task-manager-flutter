@@ -1,4 +1,4 @@
-﻿import 'dart:convert';
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:data_table_2/data_table_2.dart';
@@ -16,6 +16,7 @@ import '../../../models/network_response.dart';
 import '../../../utils/api_links.dart';
 import '../../services/network_caller.dart';
 
+import 'package:task_manager_flutter/utils/app_logger.dart';
 // ==============================================
 // ENUMS E CONFIGURAÇÕES
 // ==============================================
@@ -24,27 +25,30 @@ import '../../services/network_caller.dart';
 class GridColors {
   static const Color primary = Color(0xFF93070A);
   static const Color primaryDark = Color(0xFF6A0507);
-  static const Color primaryLight = Color(0xFFB84042);
+  static const Color primaryLight = Color(0xFFFFEDEE);
   static const Color secondary = Color(0xFF005826);
   static const Color secondaryLight = Color(0xFF2E7D32);
   static const Color secondaryDark = Color(0xFF003D1A);
   static const Color textPrimary = Color(0xFFFFFFFF);
-  static const Color textSecondary = Color(0xFF000000);
-  static const Color link = Color(0xFFFF0000);
+  static const Color textSecondary = Color(0xFF1F2933);
+  static const Color link = Color(0xFF93070A);
   static const Color inputBackground = Color(0xFFFFFFFF);
-  static const Color inputBorder = Color(0xFF93070A);
+  static const Color inputBorder = Color(0xFFC8D0C6);
   static const Color buttonBackground = Color(0xFF93070A);
   static const Color buttonText = Color(0xFFFFFFFF);
-  static const Color background = Color(0xFF005826);
+  static const Color background = Color(0xFFF3F6F1);
   static const Color card = Color(0xFFFFFFFF);
   static const Color error = Color(0xFFD32F2F);
   static const Color warning = Color(0xFFFFA000);
   static const Color success = Color(0xFF2E7D32);
-  static const Color info = Color(0xFF1976D2);
-  static const Color divider = Color(0xFFBDBDBD);
-  static const Color filterBackground = Color(0xFFEFEFEF);
-  static const Color hover = Color(0x1A000000);
-  static const Color selectedRow = Color(0xFFE3F2FD);
+  static const Color info = Color(0xFF005826);
+  static const Color divider = Color(0xFFD7DED4);
+  static const Color filterBackground = Color(0xFFE9EFE6);
+  static const Color gridHeader = Color(0xFFDCE7D9);
+  static const Color rowEven = Color(0xFFFFFFFF);
+  static const Color rowOdd = Color(0xFFF1F1F1);
+  static const Color hover = Color(0xFFE6F1E3);
+  static const Color selectedRow = Color(0xFFCFE6CE);
   static const Color dialogBackground = Color(0xFFFFFFFF);
   static const Color shadow = Color(0x26000000);
 }
@@ -410,7 +414,8 @@ class FieldFactory {
     );
 
     // Boolean fields are always interactive — never absorb pointer
-    final effectiveEnabled = config.enabled || config.fieldType == FieldType.boolean;
+    final effectiveEnabled =
+        config.enabled || config.fieldType == FieldType.boolean;
 
     return AbsorbPointer(
       absorbing: !effectiveEnabled,
@@ -459,7 +464,8 @@ class FieldFactory {
       case FieldType.url:
         return _buildUrlField(config, controller);
       case FieldType.multiselect:
-        return _buildMultiselectField(config, controller, dropdownCache, context);
+        return _buildMultiselectField(
+            config, controller, dropdownCache, context);
       default:
         return _buildTextField(config, controller);
     }
@@ -471,7 +477,7 @@ class FieldFactory {
   ) {
     return TextFormField(
       controller: controller,
-      keyboardType: TextInputType.numberWithOptions(decimal: true),
+      keyboardType: const TextInputType.numberWithOptions(decimal: true),
       decoration: _buildInputDecoration(config),
       inputFormatters: [
         NumberInputFormatter(
@@ -705,7 +711,8 @@ class FieldFactory {
       return;
     }
     try {
-      final resp = await http.get(Uri.parse('https://viacep.com.br/ws/$cep/json/'));
+      final resp =
+          await http.get(Uri.parse('https://viacep.com.br/ws/$cep/json/'));
       if (resp.statusCode == 200) {
         final data = jsonDecode(resp.body) as Map<String, dynamic>;
         if (data['erro'] == true) {
@@ -720,7 +727,9 @@ class FieldFactory {
         _cepResultCallback?.call(data);
         if (context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('CEP encontrado: ${data['logradouro'] ?? ''}, ${data['localidade'] ?? ''}')),
+            SnackBar(
+                content: Text(
+                    'CEP encontrado: ${data['logradouro'] ?? ''}, ${data['localidade'] ?? ''}')),
           );
         }
       }
@@ -749,9 +758,8 @@ class FieldFactory {
       decoration: _buildInputDecoration(config),
       maxLines: config.maxLines,
       keyboardType: isCpfCnpj ? TextInputType.number : null,
-      inputFormatters: isCpfCnpj
-          ? [FilteringTextInputFormatter.digitsOnly]
-          : null,
+      inputFormatters:
+          isCpfCnpj ? [FilteringTextInputFormatter.digitsOnly] : null,
       validator: config.validator,
     );
   }
@@ -903,7 +911,7 @@ class FieldFactory {
     final fileConfig = config.fileConfig ?? const FileConfig();
 
     try {
-      FilePickerResult? result = await FilePicker.platform.pickFiles(
+      FilePickerResult? result = await FilePicker.pickFiles(
         type: FileType.custom,
         allowedExtensions: fileConfig.allowedExtensions,
         allowMultiple: fileConfig.allowMultiple,
@@ -926,16 +934,23 @@ class FieldFactory {
   static InputDecoration _buildInputDecoration(FieldConfigWindows config) {
     return InputDecoration(
       labelText: config.label + (config.isRequired ? ' *' : ''),
-      labelStyle: TextStyle(color: GridColors.textSecondary, fontSize: 14),
+      labelStyle:
+          const TextStyle(color: GridColors.textSecondary, fontSize: 13),
       isDense: true,
-      contentPadding: const EdgeInsets.symmetric(vertical: 12, horizontal: 12),
+      filled: true,
+      fillColor: GridColors.inputBackground,
+      contentPadding: const EdgeInsets.symmetric(vertical: 11, horizontal: 12),
       focusedBorder: OutlineInputBorder(
-        borderSide: BorderSide(color: GridColors.primary, width: 1.5),
-        borderRadius: BorderRadius.circular(8),
+        borderSide: const BorderSide(color: GridColors.primary, width: 1.5),
+        borderRadius: BorderRadius.circular(4),
       ),
       enabledBorder: OutlineInputBorder(
-        borderSide: BorderSide(color: GridColors.divider, width: 1.0),
-        borderRadius: BorderRadius.circular(8),
+        borderSide: const BorderSide(color: GridColors.inputBorder, width: 1.0),
+        borderRadius: BorderRadius.circular(4),
+      ),
+      disabledBorder: OutlineInputBorder(
+        borderSide: const BorderSide(color: GridColors.divider, width: 1.0),
+        borderRadius: BorderRadius.circular(4),
       ),
       prefixIcon: config.icon != null
           ? Icon(config.icon, size: 20, color: GridColors.primary)
@@ -960,7 +975,8 @@ class FieldFactory {
             onSurface: Color(0xFF005826),
           ),
           textButtonTheme: TextButtonThemeData(
-            style: TextButton.styleFrom(foregroundColor: Color(0xFF93070A)),
+            style:
+                TextButton.styleFrom(foregroundColor: const Color(0xFF93070A)),
           ),
         ),
         child: child!,
@@ -1085,7 +1101,8 @@ class FieldFactory {
     final options = dropdownCache[cacheKey];
 
     if (options != null) {
-      return _buildMultiselectContent(config, controller, options, dropdownCache, context);
+      return _buildMultiselectContent(
+          config, controller, options, dropdownCache, context);
     } else if (config.dropdownFutureBuilder != null) {
       return FutureBuilder<List<Map<String, dynamic>>>(
         future: config.dropdownFutureBuilder!(),
@@ -1095,12 +1112,13 @@ class FieldFactory {
           }
           final opts = snap.data ?? [];
           dropdownCache[cacheKey] = opts;
-          return _buildMultiselectContent(config, controller, opts, dropdownCache, context);
+          return _buildMultiselectContent(
+              config, controller, opts, dropdownCache, context);
         },
       );
     } else {
-      return _buildMultiselectContent(
-          config, controller, config.dropdownOptions ?? [], dropdownCache, context);
+      return _buildMultiselectContent(config, controller,
+          config.dropdownOptions ?? [], dropdownCache, context);
     }
   }
 
@@ -1141,10 +1159,12 @@ class _MultiSelectField extends StatefulWidget {
 class _MultiSelectFieldState extends State<_MultiSelectField> {
   late List<String> _selectedValues;
 
-  String get _valueField =>
-      widget.config.dropdownValueField.isNotEmpty ? widget.config.dropdownValueField : 'id';
-  String get _displayField =>
-      widget.config.dropdownDisplayField.isNotEmpty ? widget.config.dropdownDisplayField : 'label';
+  String get _valueField => widget.config.dropdownValueField.isNotEmpty
+      ? widget.config.dropdownValueField
+      : 'id';
+  String get _displayField => widget.config.dropdownDisplayField.isNotEmpty
+      ? widget.config.dropdownDisplayField
+      : 'label';
 
   @override
   void initState() {
@@ -1168,7 +1188,11 @@ class _MultiSelectFieldState extends State<_MultiSelectField> {
 
   List<String> _parseController() {
     return widget.controller.text.isNotEmpty
-        ? widget.controller.text.split(',').map((e) => e.trim()).where((e) => e.isNotEmpty).toList()
+        ? widget.controller.text
+            .split(',')
+            .map((e) => e.trim())
+            .where((e) => e.isNotEmpty)
+            .toList()
         : [];
   }
 
@@ -1205,12 +1229,15 @@ class _MultiSelectFieldState extends State<_MultiSelectField> {
       borderRadius: BorderRadius.circular(8),
       child: InputDecorator(
         decoration: FieldFactory._buildInputDecoration(widget.config).copyWith(
-          suffixIcon: const Icon(Icons.arrow_drop_down, color: GridColors.primary),
+          suffixIcon:
+              const Icon(Icons.arrow_drop_down, color: GridColors.primary),
         ),
         child: Text(
           labels.isEmpty ? 'Selecione...' : labels,
           style: TextStyle(
-            color: labels.isEmpty ? Colors.grey.shade500 : GridColors.textSecondary,
+            color: labels.isEmpty
+                ? Colors.grey.shade500
+                : GridColors.textSecondary,
           ),
           overflow: TextOverflow.ellipsis,
         ),
@@ -1258,27 +1285,41 @@ class _MultiSelectGridDialogState extends State<_MultiSelectGridDialog> {
         _filtered = q.isEmpty
             ? widget.options
             : widget.options
-                .where((o) => o[widget.displayField]?.toString().toLowerCase().contains(q) ?? false)
+                .where((o) =>
+                    o[widget.displayField]
+                        ?.toString()
+                        .toLowerCase()
+                        .contains(q) ??
+                    false)
                 .toList();
       });
     });
   }
 
   @override
-  void dispose() { _ctrl.dispose(); super.dispose(); }
+  void dispose() {
+    _ctrl.dispose();
+    super.dispose();
+  }
 
   bool _isSelected(String val) => _selected.contains(val);
 
   void _toggle(String val) {
     setState(() {
-      if (_isSelected(val)) _selected.remove(val);
-      else _selected.add(val);
+      if (_isSelected(val)) {
+        _selected.remove(val);
+      } else {
+        _selected.add(val);
+      }
     });
   }
 
   void _selectAll() {
     setState(() {
-      final allVals = _filtered.map((o) => o[widget.valueField]?.toString() ?? '').where((v) => v.isNotEmpty).toList();
+      final allVals = _filtered
+          .map((o) => o[widget.valueField]?.toString() ?? '')
+          .where((v) => v.isNotEmpty)
+          .toList();
       for (final v in allVals) {
         if (!_selected.contains(v)) _selected.add(v);
       }
@@ -1287,14 +1328,16 @@ class _MultiSelectGridDialogState extends State<_MultiSelectGridDialog> {
 
   void _deselectAll() {
     setState(() {
-      final filteredVals = _filtered.map((o) => o[widget.valueField]?.toString() ?? '').toSet();
+      final filteredVals =
+          _filtered.map((o) => o[widget.valueField]?.toString() ?? '').toSet();
       _selected.removeWhere((v) => filteredVals.contains(v));
     });
   }
 
   bool get _allFilteredSelected {
     if (_filtered.isEmpty) return false;
-    return _filtered.every((o) => _isSelected(o[widget.valueField]?.toString() ?? ''));
+    return _filtered
+        .every((o) => _isSelected(o[widget.valueField]?.toString() ?? ''));
   }
 
   @override
@@ -1318,7 +1361,9 @@ class _MultiSelectGridDialogState extends State<_MultiSelectGridDialog> {
               Expanded(
                 child: Text(widget.title,
                     style: const TextStyle(
-                        fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white)),
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white)),
               ),
               Text('${_selected.length} selecionado(s)',
                   style: const TextStyle(fontSize: 12, color: Colors.white70)),
@@ -1339,10 +1384,12 @@ class _MultiSelectGridDialogState extends State<_MultiSelectGridDialog> {
                 ),
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(8),
-                  borderSide: const BorderSide(color: GridColors.primary, width: 1.5),
+                  borderSide:
+                      const BorderSide(color: GridColors.primary, width: 1.5),
                 ),
                 isDense: true,
-                contentPadding: const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
+                contentPadding:
+                    const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
               ),
             ),
           ),
@@ -1356,13 +1403,16 @@ class _MultiSelectGridDialogState extends State<_MultiSelectGridDialog> {
                   onPressed: _allFilteredSelected ? null : _selectAll,
                   icon: const Icon(Icons.select_all, size: 16),
                   label: Text(
-                    _ctrl.text.isEmpty ? 'Selecionar todos' : 'Selecionar filtrados',
+                    _ctrl.text.isEmpty
+                        ? 'Selecionar todos'
+                        : 'Selecionar filtrados',
                     style: const TextStyle(fontSize: 12),
                   ),
                   style: OutlinedButton.styleFrom(
                     foregroundColor: GridColors.primary,
                     side: const BorderSide(color: GridColors.primary),
-                    padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 8),
+                    padding:
+                        const EdgeInsets.symmetric(vertical: 6, horizontal: 8),
                     tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                   ),
                 ),
@@ -1373,12 +1423,15 @@ class _MultiSelectGridDialogState extends State<_MultiSelectGridDialog> {
                   onPressed: _selected.isEmpty ? null : _deselectAll,
                   icon: const Icon(Icons.deselect, size: 16),
                   label: Text(
-                    _ctrl.text.isEmpty ? 'Desmarcar todos' : 'Desmarcar filtrados',
+                    _ctrl.text.isEmpty
+                        ? 'Desmarcar todos'
+                        : 'Desmarcar filtrados',
                     style: const TextStyle(fontSize: 12),
                   ),
                   style: OutlinedButton.styleFrom(
                     foregroundColor: GridColors.textSecondary,
-                    padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 8),
+                    padding:
+                        const EdgeInsets.symmetric(vertical: 6, horizontal: 8),
                     tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                   ),
                 ),
@@ -1412,7 +1465,8 @@ class _MultiSelectGridDialogState extends State<_MultiSelectGridDialog> {
             child: Row(mainAxisAlignment: MainAxisAlignment.end, children: [
               TextButton(
                 onPressed: () => Navigator.pop(context),
-                style: TextButton.styleFrom(foregroundColor: GridColors.textSecondary),
+                style: TextButton.styleFrom(
+                    foregroundColor: GridColors.textSecondary),
                 child: const Text('CANCELAR'),
               ),
               const SizedBox(width: 8),
@@ -1421,8 +1475,10 @@ class _MultiSelectGridDialogState extends State<_MultiSelectGridDialog> {
                 style: ElevatedButton.styleFrom(
                   backgroundColor: GridColors.primary,
                   foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8)),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
                 ),
                 child: const Text('CONFIRMAR'),
               ),
@@ -1469,6 +1525,7 @@ class GenericGridScreen<T> extends StatefulWidget {
   final Widget Function(T item)? detailScreenBuilder;
   final Map<String, dynamic>? extraParams;
   final bool showAppBar;
+  final List<Widget>? headerActions;
 
   const GenericGridScreen({
     super.key,
@@ -1502,6 +1559,7 @@ class GenericGridScreen<T> extends StatefulWidget {
     this.detailScreenBuilder,
     this.extraParams,
     this.showAppBar = true,
+    this.headerActions,
   });
 
   @override
@@ -1582,7 +1640,7 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
       }
     } catch (e) {
       if (kDebugMode) {
-        print('Erro ao carregar preferências: $e');
+        L.d('Erro ao carregar preferências: $e');
       }
     }
   }
@@ -1610,7 +1668,7 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
       }
     } catch (e) {
       if (kDebugMode) {
-        print('Erro ao salvar preferências: $e');
+        L.d('Erro ao salvar preferências: $e');
       }
     }
   }
@@ -1654,7 +1712,7 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
         );
 
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
+          const SnackBar(
             content: Text('Download realizado com sucesso'),
             backgroundColor: GridColors.success,
           ),
@@ -1734,7 +1792,8 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
         for (final entry in widget.extraParams!.entries) {
           final val = entry.value;
           if (val != null && val.toString().isNotEmpty) {
-            url += '&${Uri.encodeComponent(entry.key)}=${Uri.encodeComponent(val.toString())}';
+            url +=
+                '&${Uri.encodeComponent(entry.key)}=${Uri.encodeComponent(val.toString())}';
           }
         }
       }
@@ -1848,12 +1907,16 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
       if (item != null) {
         final value = _getNestedValue(itemMap, config.fieldName);
         if (value is Map) {
-          initialValue = (value[config.dropdownValueField] ?? value['id'])?.toString() ?? '';
+          initialValue =
+              (value[config.dropdownValueField] ?? value['id'])?.toString() ??
+                  '';
         } else if (value is List) {
           initialValue = value
               .map((e) {
                 if (e is Map) {
-                  return (e[config.dropdownValueField] ?? e['id'])?.toString() ?? '';
+                  return (e[config.dropdownValueField] ?? e['id'])
+                          ?.toString() ??
+                      '';
                 }
                 return e.toString();
               })
@@ -1870,8 +1933,11 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
             final key = entry.key.toLowerCase();
             // Match direto (ex: fieldName='empresa', param='empresa')
             // ou match sem sufixo Id (ex: fieldName='empresa', param='empId' → 'emp')
-            if (key == fn || key == '${fn}id' || key == 'emp_id' && fn == 'empresa' ||
-                key == 'empid' && fn == 'empresa' || key == 'parcid' && fn == 'parceiro') {
+            if (key == fn ||
+                key == '${fn}id' ||
+                key == 'emp_id' && fn == 'empresa' ||
+                key == 'empid' && fn == 'empresa' ||
+                key == 'parcid' && fn == 'parceiro') {
               initialValue = entry.value.toString();
               preFilledFields.add(config.fieldName);
               break;
@@ -1902,7 +1968,7 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
     Map<String, TextEditingController> controllers,
     Set<String> preFilledFields,
   ) {
-    final _preFilledFields = preFilledFields;
+    final preFilledFields0 = preFilledFields;
 
     // Configura callback do CEP para preencher campos de endereço
     FieldFactory._cepResultCallback = (data) {
@@ -1922,16 +1988,16 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
     };
 
     return Dialog(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16.0)),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6.0)),
       elevation: 0,
       backgroundColor: Colors.transparent,
       child: Container(
-        constraints: const BoxConstraints(maxWidth: 600),
-        padding: const EdgeInsets.all(20),
+        constraints: const BoxConstraints(maxWidth: 760),
         decoration: BoxDecoration(
           color: GridColors.dialogBackground,
           shape: BoxShape.rectangle,
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(6),
+          border: Border.all(color: GridColors.divider),
           boxShadow: const [
             BoxShadow(
               color: GridColors.shadow,
@@ -1946,23 +2012,43 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               Container(
-                padding: const EdgeInsets.only(bottom: 16),
-                decoration: BoxDecoration(
-                  border: Border(
-                    bottom: BorderSide(color: GridColors.divider, width: 0.5),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                decoration: const BoxDecoration(
+                  color: GridColors.primary,
+                  borderRadius: BorderRadius.only(
+                    topLeft: Radius.circular(6),
+                    topRight: Radius.circular(6),
                   ),
                 ),
-                child: Text(
-                  item == null ? "Novo Item" : "Editar Item",
-                  style: TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                    color: GridColors.primary,
-                  ),
-                  textAlign: TextAlign.center,
+                child: Row(
+                  children: [
+                    const Icon(Icons.edit_note,
+                        color: GridColors.textPrimary, size: 20),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        item == null ? "Novo Item" : "Editar Item",
+                        style: const TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w700,
+                          color: GridColors.textPrimary,
+                        ),
+                      ),
+                    ),
+                    IconButton(
+                      onPressed: () => Navigator.pop(context),
+                      icon: const Icon(Icons.close,
+                          color: GridColors.textPrimary, size: 18),
+                      padding: EdgeInsets.zero,
+                      constraints:
+                          const BoxConstraints.tightFor(width: 32, height: 32),
+                      tooltip: 'Fechar',
+                    ),
+                  ],
                 ),
               ),
-              const SizedBox(height: 20),
+              const SizedBox(height: 18),
               ...widget.FieldConfigWindowss.where((config) {
                 if (item == null && config.fieldName == widget.idFieldName) {
                   return false;
@@ -1970,9 +2056,10 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
                 return config.isInForm;
               }).expand((config) {
                 // Campo id no edit → sempre disabled
-                final isIdField = item != null && config.fieldName == widget.idFieldName;
+                final isIdField =
+                    item != null && config.fieldName == widget.idFieldName;
                 // Se o campo foi pré-preenchido via extraParams, desabilita
-                final isPreFilled = _preFilledFields.contains(config.fieldName);
+                final isPreFilled = preFilledFields0.contains(config.fieldName);
                 final effectiveConfig = (isPreFilled || isIdField)
                     ? FieldConfigWindows(
                         label: config.label,
@@ -1999,7 +2086,8 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
                       )
                     : config;
                 final mainField = Padding(
-                  padding: const EdgeInsets.only(bottom: 16),
+                  padding: const EdgeInsets.symmetric(horizontal: 18)
+                      .copyWith(bottom: 12),
                   child: FieldFactory.buildField(
                     config: effectiveConfig,
                     controller: controllers[config.fieldName]!,
@@ -2023,10 +2111,12 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
                   return [
                     mainField,
                     Padding(
-                      padding: const EdgeInsets.only(bottom: 16),
+                      padding: const EdgeInsets.symmetric(horizontal: 18)
+                          .copyWith(bottom: 12),
                       child: FieldFactory.buildField(
                         config: confirmConfig,
-                        controller: controllers['__confirm_${config.fieldName}']!,
+                        controller:
+                            controllers['__confirm_${config.fieldName}']!,
                         context: context,
                         fileCache: _fileCache,
                         dropdownCache: _dropdownCache,
@@ -2038,7 +2128,12 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
 
                 return [mainField];
               }),
-              const SizedBox(height: 24),
+              const SizedBox(height: 10),
+              const Padding(
+                padding: EdgeInsets.symmetric(horizontal: 18),
+                child: Divider(height: 1, color: GridColors.divider),
+              ),
+              const SizedBox(height: 14),
               Row(
                 mainAxisAlignment: MainAxisAlignment.end,
                 children: [
@@ -2059,14 +2154,15 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
                         ? null
                         : () => _saveItem(item, controllers, context),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: GridColors.primary,
+                      backgroundColor: GridColors.secondary,
                       foregroundColor: GridColors.card,
+                      elevation: 0,
                       padding: const EdgeInsets.symmetric(
                         horizontal: 20,
                         vertical: 10,
                       ),
                       shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
+                        borderRadius: BorderRadius.circular(4),
                       ),
                     ),
                     child: _isUpdating
@@ -2131,7 +2227,9 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
         final emailRegex = RegExp(r'^[\w\.\-\+]+@[\w\-]+(\.[\w\-]+)+$');
         if (!emailRegex.hasMatch(value)) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('${config.label}: formato de email inválido'), backgroundColor: GridColors.error),
+            SnackBar(
+                content: Text('${config.label}: formato de email inválido'),
+                backgroundColor: GridColors.error),
           );
           return;
         }
@@ -2143,18 +2241,24 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
         final confirmValue = controllers[confirmKey]?.text ?? '';
         if (value != confirmValue) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('${config.label}: as senhas não coincidem'), backgroundColor: GridColors.error),
+            SnackBar(
+                content: Text('${config.label}: as senhas não coincidem'),
+                backgroundColor: GridColors.error),
           );
           return;
         }
       }
 
       // CPF/CNPJ: só dígitos
-      if ((config.fieldType == FieldType.cpf || config.fieldType == FieldType.cnpj) && value.isNotEmpty) {
+      if ((config.fieldType == FieldType.cpf ||
+              config.fieldType == FieldType.cnpj) &&
+          value.isNotEmpty) {
         final onlyDigits = value.replaceAll(RegExp(r'\D'), '');
         if (onlyDigits.isEmpty) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('${config.label}: apenas números são permitidos'), backgroundColor: GridColors.error),
+            SnackBar(
+                content: Text('${config.label}: apenas números são permitidos'),
+                backgroundColor: GridColors.error),
           );
           return;
         }
@@ -2186,7 +2290,11 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
       // Multiselect fields: send as [{id: X}, {id: Y}] list of objects
       if (config.fieldType == FieldType.multiselect) {
         if (value.isNotEmpty) {
-          final ids = value.split(',').map((e) => e.trim()).where((e) => e.isNotEmpty).toList();
+          final ids = value
+              .split(',')
+              .map((e) => e.trim())
+              .where((e) => e.isNotEmpty)
+              .toList();
           final listVal = ids.map((e) {
             final idVal = int.tryParse(e);
             return idVal != null ? {'id': idVal} : {'id': e};
@@ -2387,7 +2495,7 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
         request.headers['Authorization'] = 'Bearer $authToken';
       }
 
-      print('Enviando ${filesToUpload.length} arquivo(s) para o item $itemId');
+      L.d('Enviando ${filesToUpload.length} arquivo(s) para o item $itemId');
 
       // Enviar a requisição
       final response = await request.send();
@@ -2395,7 +2503,7 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
       // Verificar resposta
       if (response.statusCode == 200) {
         final responseBody = await response.stream.bytesToString();
-        print('Upload realizado com sucesso: $responseBody');
+        L.d('Upload realizado com sucesso: $responseBody');
         // Converter JSON para Map
         final decoded = jsonDecode(responseBody);
 
@@ -2403,10 +2511,10 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
         return decoded['fileId'] ?? 0;
       } else {
         final errorBody = await response.stream.bytesToString();
-        print('Erro no upload (${response.statusCode}): $errorBody');
+        L.d('Erro no upload (${response.statusCode}): $errorBody');
       }
     } catch (e) {
-      print('Exceção durante o upload: $e');
+      L.d('Exceção durante o upload: $e');
     }
     return 0;
   }
@@ -2592,7 +2700,7 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
       }
 
       if (kDebugMode) {
-        print(csvData.toString());
+        L.d(csvData.toString());
       }
 
       ScaffoldMessenger.of(context).showSnackBar(
@@ -2614,9 +2722,10 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
   }
 
   Widget _buildLoadingOverlay() {
-    if (_isUpdating || _isDeleting || _isExporting || isLoading) {
+    final showBlockingOverlay = _isUpdating || _isDeleting || _isExporting;
+    if (showBlockingOverlay) {
       return AnimatedOpacity(
-        opacity: (_isUpdating || _isDeleting || _isExporting || isLoading) ? 1.0 : 0.0,
+        opacity: showBlockingOverlay ? 1.0 : 0.0,
         duration: const Duration(milliseconds: 200),
         child: Container(
           color: Colors.black.withValues(alpha: 0.35),
@@ -2661,74 +2770,232 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
     return const SizedBox.shrink();
   }
 
+  static const int _maxAdvancedFilters = 10;
+
+  String _normalizeFilterKey(String value) {
+    return value.toLowerCase().replaceAll(RegExp(r'[^a-z0-9]'), '');
+  }
+
+  bool _isTechnicalFilter(FieldConfigWindows config) {
+    final keys = [
+      _normalizeFilterKey(config.fieldName),
+      _normalizeFilterKey(config.label),
+    ];
+
+    if (config.fieldType == FieldType.file) return true;
+
+    const hiddenKeys = {
+      'id',
+      'dhcreatedat',
+      'dhupdatedat',
+      'createdat',
+      'updatedat',
+      'created',
+      'updated',
+      'fileattachment',
+      'fileattachmentid',
+      'fileattachm',
+      'anexo',
+      'arquivo',
+      'auditoria',
+      'audit',
+      'empresa',
+      'empresaid',
+      'clienteid',
+      'tenantid',
+      'aplicativo',
+      'aplicativoid',
+      'parceiros',
+    };
+
+    return keys.any((key) =>
+        hiddenKeys.contains(key) ||
+        key.contains('createdat') ||
+        key.contains('updatedat') ||
+        key.contains('fileattachment') ||
+        key.contains('fileattachm'));
+  }
+
+  List<FieldConfigWindows> get _visibleFilterConfigs =>
+      widget.FieldConfigWindowss.where(
+              (config) => config.isFilterable && !_isTechnicalFilter(config))
+          .take(_maxAdvancedFilters)
+          .toList();
+
+  bool get _hasActiveFilterValues {
+    if (_searchController.text.isNotEmpty) return true;
+    return _visibleFilterConfigs.any(
+      (config) => (_filterControllers[config.fieldName]?.text ?? '').isNotEmpty,
+    );
+  }
+
+  void _clearVisibleFilters() {
+    _searchController.clear();
+    for (final config in _visibleFilterConfigs) {
+      _filterControllers[config.fieldName]?.clear();
+    }
+    _applyFilters();
+  }
+
   Widget _buildFilters() {
+    final advancedFilters = _visibleFilterConfigs;
+
     return Container(
       decoration: BoxDecoration(
         color: GridColors.filterBackground,
         border: Border.all(color: GridColors.divider),
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: BorderRadius.circular(6),
       ),
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        children: [
-          Row(
+      margin: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxHeight: 280),
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.fromLTRB(16, 14, 16, 16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text("Filtros", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-              const Spacer(),
-              IconButton(
-                icon: const Icon(Icons.close, size: 20),
-                tooltip: 'Fechar filtros',
-                onPressed: () => setState(() => filtrosAbertos = false),
-              ),
-            ],
-          ),
-          const Divider(),
-          if (widget.enableSearch) ...[
-            TextField(
-              controller: _searchController,
-              decoration: InputDecoration(
-                labelText: "Busca Global",
-                prefixIcon: const Icon(Icons.search),
-                suffixIcon: _searchController.text.isNotEmpty
-                    ? IconButton(
-                        icon: const Icon(Icons.clear),
-                        onPressed: () { _searchController.clear(); _applyFilters(); },
-                      )
-                    : null,
-              ),
-              onChanged: (_) => _applyFilters(),
-            ),
-            const SizedBox(height: 12),
-          ],
-          const Text("Filtros Avançados", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
-          const SizedBox(height: 12),
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: [
-              for (final config in widget.FieldConfigWindowss.where((c) => c.isFilterable))
-                SizedBox(
-                  width: 200,
-                  child: TextField(
-                    controller: _filterControllers[config.fieldName],
-                    decoration: InputDecoration(
-                      labelText: "Filtrar ${config.label}",
-                      prefixIcon: Icon(config.icon ?? Icons.search),
-                      isDense: true,
-                      suffixIcon: (_filterControllers[config.fieldName]?.text.isNotEmpty ?? false)
-                          ? IconButton(
-                              icon: const Icon(Icons.clear, size: 16),
-                              onPressed: () { _filterControllers[config.fieldName]?.clear(); _applyFilters(); },
-                            )
-                          : null,
-                    ),
-                    onChanged: (_) { setState(() {}); _applyFilters(); },
+              Row(
+                children: [
+                  const Text(
+                    'Filtros',
+                    style: TextStyle(fontWeight: FontWeight.w700, fontSize: 15),
                   ),
+                  const Spacer(),
+                  if (_hasActiveFilterValues)
+                    TextButton.icon(
+                      onPressed: _clearVisibleFilters,
+                      icon: const Icon(Icons.clear_all, size: 18),
+                      label: const Text('Limpar'),
+                    ),
+                  IconButton(
+                    icon: const Icon(Icons.close, size: 20),
+                    tooltip: 'Fechar filtros',
+                    onPressed: () => setState(() => filtrosAbertos = false),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 10),
+              if (widget.enableSearch) ...[
+                TextField(
+                  controller: _searchController,
+                  decoration: InputDecoration(
+                    hintText: 'Buscar em todos os campos',
+                    prefixIcon: const Icon(Icons.search, size: 20),
+                    suffixIcon: _searchController.text.isNotEmpty
+                        ? IconButton(
+                            icon: const Icon(Icons.clear, size: 18),
+                            onPressed: () {
+                              _searchController.clear();
+                              _applyFilters();
+                            },
+                          )
+                        : null,
+                    isDense: true,
+                    filled: true,
+                    fillColor: GridColors.card,
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(6),
+                      borderSide: const BorderSide(color: GridColors.divider),
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(6),
+                      borderSide: const BorderSide(color: GridColors.divider),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(6),
+                      borderSide: const BorderSide(color: GridColors.primary),
+                    ),
+                  ),
+                  onChanged: (_) => _applyFilters(),
                 ),
+                const SizedBox(height: 14),
+              ],
+              if (advancedFilters.isNotEmpty) ...[
+                const Text(
+                  'Filtros principais',
+                  style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13),
+                ),
+                const SizedBox(height: 10),
+                LayoutBuilder(
+                  builder: (context, constraints) {
+                    final maxWidth = constraints.maxWidth;
+                    final columns = maxWidth >= 1180
+                        ? 4
+                        : maxWidth >= 840
+                            ? 3
+                            : maxWidth >= 560
+                                ? 2
+                                : 1;
+                    final calculatedWidth =
+                        (maxWidth - ((columns - 1) * 12)) / columns;
+                    final minWidth = maxWidth < 220 ? maxWidth : 220.0;
+                    final fieldWidth =
+                        calculatedWidth.clamp(minWidth, 340.0).toDouble();
+
+                    return Wrap(
+                      spacing: 12,
+                      runSpacing: 12,
+                      children: [
+                        for (final config in advancedFilters)
+                          SizedBox(
+                            width: fieldWidth,
+                            child: TextField(
+                              controller: _filterControllers[config.fieldName],
+                              decoration: InputDecoration(
+                                labelText: config.label,
+                                hintText: 'Filtrar',
+                                prefixIcon:
+                                    Icon(config.icon ?? Icons.search, size: 18),
+                                isDense: true,
+                                filled: true,
+                                fillColor: GridColors.card,
+                                suffixIcon: (_filterControllers[
+                                                config.fieldName]
+                                            ?.text
+                                            .isNotEmpty ??
+                                        false)
+                                    ? IconButton(
+                                        icon: const Icon(Icons.clear, size: 16),
+                                        onPressed: () {
+                                          _filterControllers[config.fieldName]
+                                              ?.clear();
+                                          _applyFilters();
+                                        },
+                                      )
+                                    : null,
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(6),
+                                  borderSide: const BorderSide(
+                                    color: GridColors.divider,
+                                  ),
+                                ),
+                                enabledBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(6),
+                                  borderSide: const BorderSide(
+                                    color: GridColors.divider,
+                                  ),
+                                ),
+                                focusedBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(6),
+                                  borderSide: const BorderSide(
+                                    color: GridColors.primary,
+                                  ),
+                                ),
+                              ),
+                              onChanged: (_) {
+                                setState(() {});
+                                _applyFilters();
+                              },
+                            ),
+                          ),
+                      ],
+                    );
+                  },
+                ),
+              ],
             ],
           ),
-        ],
+        ),
       ),
     );
   }
@@ -2736,12 +3003,18 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
   Widget _buildActiveFilterTags() {
     final tags = <Widget>[];
     if (_searchController.text.isNotEmpty) {
-      tags.add(_filterTag('Busca', _searchController.text, () { _searchController.clear(); _applyFilters(); }));
+      tags.add(_filterTag('Busca', _searchController.text, () {
+        _searchController.clear();
+        _applyFilters();
+      }));
     }
-    for (final config in widget.FieldConfigWindowss.where((c) => c.isFilterable)) {
+    for (final config in _visibleFilterConfigs) {
       final v = _filterControllers[config.fieldName]?.text ?? '';
       if (v.isNotEmpty) {
-        tags.add(_filterTag(config.label, v, () { _filterControllers[config.fieldName]?.clear(); _applyFilters(); }));
+        tags.add(_filterTag(config.label, v, () {
+          _filterControllers[config.fieldName]?.clear();
+          _applyFilters();
+        }));
       }
     }
     if (tags.isEmpty) return const SizedBox.shrink();
@@ -2753,12 +3026,299 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
 
   Widget _filterTag(String label, String value, VoidCallback onRemove) {
     return Chip(
-      label: Text('$label: $value', style: const TextStyle(color: Colors.white, fontSize: 11)),
+      label: Text('$label: $value',
+          style: const TextStyle(color: Colors.white, fontSize: 11)),
       deleteIcon: const Icon(Icons.close, size: 14, color: Colors.white),
       onDeleted: onRemove,
       backgroundColor: GridColors.primary,
       materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
       padding: const EdgeInsets.symmetric(horizontal: 4),
+    );
+  }
+
+  void _showGridHelpDialog() {
+    final visibleFields = widget.FieldConfigWindowss
+        .where((c) =>
+            c.isVisibleByDefault &&
+            c.label.trim().isNotEmpty &&
+            !c.label.startsWith('_'))
+        .map((c) => c.label.trim())
+        .toSet()
+        .take(10)
+        .toList();
+    final actions = <String>[
+      'Consultar e acompanhar registros de ${widget.title}.',
+      if (widget.enableSearch) 'Pesquisar registros pelo campo de busca.',
+      if (widget.FieldConfigWindowss.any((c) => c.isFilterable))
+        'Usar filtros para refinar a lista.',
+      if (widget.hasPermission('create') &&
+          widget.buttonPermissions['create'] == true)
+        'Criar novos registros pelo botao Novo.',
+      if (widget.hasPermission('edit') &&
+          widget.buttonPermissions['edit'] == true)
+        'Editar registros existentes pelas acoes da linha.',
+      if (widget.hasPermission('delete') &&
+          widget.buttonPermissions['delete'] == true)
+        'Excluir registros quando necessario.',
+      if (widget.exportConfig.enableCsvExport &&
+          widget.hasPermission('export') &&
+          widget.buttonPermissions['export'] == true)
+        'Exportar os dados visiveis para CSV.',
+    ];
+
+    showDialog<void>(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: Row(
+          children: [
+            const Icon(Icons.help_outline, color: GridColors.primary),
+            const SizedBox(width: 8),
+            Expanded(child: Text('Ajuda - ${widget.title}')),
+          ],
+        ),
+        content: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 560),
+          child: SingleChildScrollView(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                _helpBlock('Para que serve', [_purposeForTitle()]),
+                const SizedBox(height: 14),
+                _helpBlock('O que voce pode fazer', actions),
+                if (visibleFields.isNotEmpty) ...[
+                  const SizedBox(height: 14),
+                  _helpBlock('Principais informacoes', visibleFields),
+                ],
+                const SizedBox(height: 14),
+                _helpBlock('Dicas rapidas', [
+                  'Use Configurar colunas para mostrar ou ocultar campos.',
+                  'Clique em Recarregar para buscar os dados mais recentes.',
+                  'As informacoes respeitam o tenant, empresa e parceiro do usuario logado quando a tela usa esse contexto.',
+                ]),
+              ],
+            ),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Fechar'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  String _purposeForTitle() {
+    final title = widget.title.trim();
+    final value = title.toLowerCase();
+    if (value.contains('conta') && value.contains('pagar')) {
+      return 'Controlar compromissos financeiros a pagar, vencimentos, baixas e acompanhamento do caixa.';
+    }
+    if (value.contains('conta') && value.contains('receber')) {
+      return 'Controlar valores a receber, cobrancas, vencimentos, baixas e acompanhamento de clientes.';
+    }
+    if (value.contains('obrig')) {
+      return 'Organizar obrigacoes fiscais, responsaveis, prazos, geracao de chamados e acompanhamento de envio.';
+    }
+    if (value.contains('parceiro') || value.contains('cliente')) {
+      return 'Gerenciar clientes, parceiros e seus dados cadastrais usados nos fluxos do sistema.';
+    }
+    if (value.contains('empresa')) {
+      return 'Gerenciar empresas e dados cadastrais usados por financeiro, fiscal, GED e demais modulos.';
+    }
+    if (value.contains('produto')) {
+      return 'Gerenciar produtos, cadastros comerciais e informacoes usadas em vendas e documentos fiscais.';
+    }
+    if (value.contains('chamado') || value.contains('ticket')) {
+      return 'Acompanhar solicitacoes, atendimentos, responsaveis, status e historico operacional.';
+    }
+    if (value.contains('nfe') || value.contains('nota')) {
+      return 'Acompanhar documentos fiscais, emissao, entrada, saida, status e dados relacionados.';
+    }
+    return 'Consultar, cadastrar e manter os registros de $title dentro do fluxo operacional do sistema.';
+  }
+
+  Widget _helpBlock(String title, List<String> lines) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          title,
+          style: const TextStyle(
+            color: GridColors.textSecondary,
+            fontWeight: FontWeight.w800,
+          ),
+        ),
+        const SizedBox(height: 6),
+        ...lines.map(
+          (line) => Padding(
+            padding: const EdgeInsets.only(bottom: 4),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text('- '),
+                Expanded(child: Text(line)),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildGridToolbar() {
+    Widget buildRefreshButton() {
+      return Container(
+        width: 40,
+        height: 40,
+        decoration: BoxDecoration(
+          color: GridColors.card,
+          border: Border.all(color: GridColors.divider),
+          borderRadius: BorderRadius.circular(6),
+        ),
+        child: IconButton(
+          onPressed: () => _loadItems(_currentPage, rowsPerPage),
+          icon: const Icon(Icons.refresh, size: 20),
+          tooltip: 'Recarregar',
+          color: GridColors.textSecondary,
+          padding: EdgeInsets.zero,
+        ),
+      );
+    }
+
+    Widget buildPrimaryActions() {
+      return Wrap(
+        spacing: 10,
+        runSpacing: 8,
+        children: [
+          if (widget.hasPermission('create') &&
+              widget.buttonPermissions['create']!)
+            ElevatedButton.icon(
+              onPressed: () => _openForm(),
+              icon: const Icon(Icons.add, size: 18),
+              label: const Text('Novo'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: GridColors.primary,
+                foregroundColor: GridColors.card,
+                elevation: 0,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 12,
+                ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(6),
+                ),
+              ),
+            ),
+          if (widget.hasPermission('deleteMultiple') &&
+              widget.buttonPermissions['deleteMultiple']!)
+            OutlinedButton.icon(
+              onPressed: selectedRows.isNotEmpty ? _deleteSelected : null,
+              icon: const Icon(Icons.delete_outline, size: 18),
+              label: Text(
+                selectedRows.isEmpty
+                    ? 'Excluir selecionados'
+                    : 'Excluir (${selectedRows.length})',
+              ),
+              style: OutlinedButton.styleFrom(
+                foregroundColor: GridColors.error,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 14,
+                  vertical: 12,
+                ),
+                side: const BorderSide(color: GridColors.divider),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(6),
+                ),
+              ),
+            ),
+          ...?widget.headerActions,
+        ],
+      );
+    }
+
+    Widget buildUtilityActions() {
+      return Wrap(
+        spacing: 8,
+        runSpacing: 8,
+        crossAxisAlignment: WrapCrossAlignment.center,
+        children: [
+          OutlinedButton.icon(
+            onPressed: _showGridHelpDialog,
+            icon: const Icon(Icons.help_outline, size: 18),
+            label: const Text('Ajuda'),
+            style: OutlinedButton.styleFrom(
+              foregroundColor: GridColors.secondary,
+              padding: const EdgeInsets.symmetric(
+                horizontal: 14,
+                vertical: 12,
+              ),
+              side: const BorderSide(color: GridColors.divider),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(6),
+              ),
+            ),
+          ),
+          buildRefreshButton(),
+          OutlinedButton.icon(
+            onPressed: () => setState(
+              () => filtrosAbertos = !filtrosAbertos,
+            ),
+            icon: Icon(
+              filtrosAbertos ? Icons.expand_less : Icons.tune,
+              size: 18,
+            ),
+            label: Text(filtrosAbertos ? 'Ocultar filtros' : 'Filtros'),
+            style: OutlinedButton.styleFrom(
+              foregroundColor: GridColors.primary,
+              padding: const EdgeInsets.symmetric(
+                horizontal: 14,
+                vertical: 12,
+              ),
+              side: const BorderSide(color: GridColors.divider),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(6),
+              ),
+            ),
+          ),
+        ],
+      );
+    }
+
+    return Container(
+      margin: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+      decoration: BoxDecoration(
+        color: GridColors.card,
+        border: Border.all(color: GridColors.divider),
+        borderRadius: BorderRadius.circular(6),
+      ),
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          if (constraints.maxWidth < 720) {
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                buildPrimaryActions(),
+                const SizedBox(height: 10),
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: buildUtilityActions(),
+                ),
+              ],
+            );
+          }
+
+          return Row(
+            children: [
+              Expanded(child: buildPrimaryActions()),
+              buildUtilityActions(),
+            ],
+          );
+        },
+      ),
     );
   }
 
@@ -2928,7 +3488,7 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Icon(
+                        const Icon(
                           Icons.attach_file,
                           size: 16,
                           color: GridColors.primary,
@@ -2937,7 +3497,7 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
                         Flexible(
                           child: Text(
                             fileName,
-                            style: TextStyle(
+                            style: const TextStyle(
                               color: GridColors.primary,
                               decoration: TextDecoration.underline,
                             ),
@@ -2951,7 +3511,7 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
                 : Text(
                     'Nenhum arquivo',
                     style: TextStyle(
-                      color: GridColors.textSecondary.withOpacity(0.5),
+                      color: GridColors.textSecondary.withValues(alpha: 0.5),
                       fontStyle: FontStyle.italic,
                     ),
                   ),
@@ -2968,7 +3528,14 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
           final chips = displayValue.map((e) {
             String label = '';
             if (e is Map) {
-              label = (e['description'] ?? e['nome'] ?? e['name'] ?? e['label'] ?? e['key'] ?? e['id'])?.toString() ?? '';
+              label = (e['description'] ??
+                          e['nome'] ??
+                          e['name'] ??
+                          e['label'] ??
+                          e['key'] ??
+                          e['id'])
+                      ?.toString() ??
+                  '';
             } else {
               label = e.toString();
             }
@@ -2993,7 +3560,10 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
           cells.add(DataCell(
             Tooltip(
               message: displayValue.map((e) {
-                if (e is Map) return (e['description'] ?? e['nome'] ?? e['name'] ?? e['id'])?.toString() ?? '';
+                if (e is Map)
+                  return (e['description'] ?? e['nome'] ?? e['name'] ?? e['id'])
+                          ?.toString() ??
+                      '';
                 return e.toString();
               }).join(', '),
               child: Wrap(
@@ -3002,7 +3572,9 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
                 children: chips,
               ),
             ),
-            onTap: widget.onItemTap != null ? () => widget.onItemTap!(item, context) : null,
+            onTap: widget.onItemTap != null
+                ? () => widget.onItemTap!(item, context)
+                : null,
           ));
         } else {
           cells.add(
@@ -3025,17 +3597,42 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
     final List<PopupMenuEntry<String>> menuItems = [];
 
     if (widget.hasPermission('edit') && widget.buttonPermissions['edit']!) {
-      menuItems.add(const PopupMenuItem(value: '__edit__', child: Row(children: [Icon(Icons.edit, size: 16), SizedBox(width: 8), Text('Editar', style: TextStyle(fontSize: 13))])));
+      menuItems.add(const PopupMenuItem(
+          value: '__edit__',
+          child: Row(children: [
+            Icon(Icons.edit, size: 16),
+            SizedBox(width: 8),
+            Text('Editar', style: TextStyle(fontSize: 13))
+          ])));
     }
     if (widget.detailScreenBuilder != null && widget.hasPermission('view')) {
-      menuItems.add(const PopupMenuItem(value: '__view__', child: Row(children: [Icon(Icons.visibility, size: 16), SizedBox(width: 8), Text('Visualizar', style: TextStyle(fontSize: 13))])));
+      menuItems.add(const PopupMenuItem(
+          value: '__view__',
+          child: Row(children: [
+            Icon(Icons.visibility, size: 16),
+            SizedBox(width: 8),
+            Text('Visualizar', style: TextStyle(fontSize: 13))
+          ])));
     }
     if (widget.hasPermission('delete') && widget.buttonPermissions['delete']!) {
       menuItems.add(const PopupMenuDivider());
-      menuItems.add(const PopupMenuItem(value: '__delete__', child: Row(children: [Icon(Icons.delete, size: 16, color: Colors.red), SizedBox(width: 8), Text('Excluir', style: TextStyle(fontSize: 13, color: Colors.red))])));
+      menuItems.add(const PopupMenuItem(
+          value: '__delete__',
+          child: Row(children: [
+            Icon(Icons.delete, size: 16, color: Colors.red),
+            SizedBox(width: 8),
+            Text('Excluir', style: TextStyle(fontSize: 13, color: Colors.red))
+          ])));
     }
-    for (final action in _customActions.where((a) => a.isVisible?.call(item) ?? true)) {
-      menuItems.add(PopupMenuItem(value: '__custom__${action.label}', child: Row(children: [Icon(action.icon, size: 16), SizedBox(width: 8), Text(action.label, style: const TextStyle(fontSize: 13))])));
+    for (final action
+        in _customActions.where((a) => a.isVisible?.call(item) ?? true)) {
+      menuItems.add(PopupMenuItem(
+          value: '__custom__${action.label}',
+          child: Row(children: [
+            Icon(action.icon, size: 16),
+            const SizedBox(width: 8),
+            Text(action.label, style: const TextStyle(fontSize: 13))
+          ])));
     }
 
     cells.add(
@@ -3052,12 +3649,18 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
                     if (value == '__edit__') {
                       _openForm(item: item);
                     } else if (value == '__view__') {
-                      Navigator.push(context, MaterialPageRoute(builder: (_) => widget.detailScreenBuilder!(item)));
+                      Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                              builder: (_) =>
+                                  widget.detailScreenBuilder!(item)));
                     } else if (value == '__delete__') {
-                      _deleteItem(_getNestedValue(itemMap, widget.idFieldName).toString());
+                      _deleteItem(_getNestedValue(itemMap, widget.idFieldName)
+                          .toString());
                     } else if (value.startsWith('__custom__')) {
                       final label = value.substring('__custom__'.length);
-                      final action = _customActions.firstWhere((a) => a.label == label);
+                      final action =
+                          _customActions.firstWhere((a) => a.label == label);
                       action.onPressed(context, item);
                     }
                   },
@@ -3112,10 +3715,19 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
     final snake = _toSnake(key);
     if (map.containsKey(snake)) return map[snake];
     // Plural/singular
-    if (map.containsKey(key + 's')) return map[key + 's'];
-    if (key.endsWith('s') && map.containsKey(key.substring(0, key.length - 1))) return map[key.substring(0, key.length - 1)];
+    if (map.containsKey('${key}s')) return map['${key}s'];
+    if (key.endsWith('s') && map.containsKey(key.substring(0, key.length - 1)))
+      return map[key.substring(0, key.length - 1)];
     // Remove sufixos comuns de tabelas FK (regime_tributario -> regime, file_attachment -> file)
-    for (final suffix in ['_tributario', '_attachment', '_bancaria', '_pagamento', '_contratado', '_servico', '_parceiro']) {
+    for (final suffix in [
+      '_tributario',
+      '_attachment',
+      '_bancaria',
+      '_pagamento',
+      '_contratado',
+      '_servico',
+      '_parceiro'
+    ]) {
       if (key.contains(suffix)) {
         final short = key.replaceAll(suffix, '');
         if (map.containsKey(short)) return map[short];
@@ -3127,7 +3739,8 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
     final prefix = key.split('_').first;
     if (prefix.length >= 3) {
       for (final k in map.keys) {
-        if (k.toString().toLowerCase() == prefix.toLowerCase() && k != key) return map[k];
+        if (k.toString().toLowerCase() == prefix.toLowerCase() && k != key)
+          return map[k];
       }
     }
     return null;
@@ -3138,12 +3751,26 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
     if (val == null) return null;
     if (val is List) {
       return val.map((e) {
-        if (e is Map) return e['key'] ?? e['nome'] ?? e['descricao'] ?? e['label'] ?? e['name'] ?? e['id']?.toString() ?? '';
+        if (e is Map)
+          return e['key'] ??
+              e['nome'] ??
+              e['descricao'] ??
+              e['label'] ??
+              e['name'] ??
+              e['id']?.toString() ??
+              '';
         return e.toString();
       }).join(', ');
     }
     if (val is Map) {
-      return val['nome'] ?? val['descricao'] ?? val['codigo'] ?? val['key'] ?? val['label'] ?? val['name'] ?? val['id']?.toString() ?? '';
+      return val['nome'] ??
+          val['descricao'] ??
+          val['codigo'] ??
+          val['key'] ??
+          val['label'] ??
+          val['name'] ??
+          val['id']?.toString() ??
+          '';
     }
     return val;
   }
@@ -3152,17 +3779,21 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
   String _toCamel(String s) {
     final parts = s.split('_');
     if (parts.length <= 1) return s;
-    return parts.first + parts.skip(1).map((p) => p.isEmpty ? '' : p[0].toUpperCase() + p.substring(1)).join();
+    return parts.first +
+        parts
+            .skip(1)
+            .map((p) => p.isEmpty ? '' : p[0].toUpperCase() + p.substring(1))
+            .join();
   }
 
   /// camelCase -> snake_case (ex: "tipoLogin" -> "tipo_login")
   String _toSnake(String s) {
-    return s.replaceAllMapped(RegExp(r'[A-Z]'), (m) => '_${m.group(0)!.toLowerCase()}');
+    return s.replaceAllMapped(
+        RegExp(r'[A-Z]'), (m) => '_${m.group(0)!.toLowerCase()}');
   }
 
   /// Resolve path com ponto (ex: "empresa.nome" -> map["empresa"]["nome"])
   dynamic _resolveNestedPath(dynamic map, String fieldName) {
-
     final parts = fieldName.split('.');
     dynamic value = map;
 
@@ -3245,213 +3876,170 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
         (c) => _columnVisibility[c.fieldName] == true && c.isFixed).length;
 
     return Scaffold(
-      appBar: widget.showAppBar ? AppBar(
-        title: Text(widget.title),
-        backgroundColor: GridColors.primary,
-        foregroundColor: GridColors.card,
-        actions: [
-          _buildColumnSettingsMenu(),
-          if (widget.exportConfig.enableCsvExport &&
-              widget.hasPermission('export') &&
-              widget.buttonPermissions['export']!)
-            IconButton(
-              icon: _isExporting
-                  ? const CircularProgressIndicator(
-                      valueColor: AlwaysStoppedAnimation(Colors.white),
-                    )
-                  : const Icon(Icons.download),
-              onPressed: _isExporting ? null : _exportToCsv,
-              tooltip: "Exportar CSV",
-            ),
-        ],
-      ) : null,
+      backgroundColor: GridColors.background,
+      appBar: widget.showAppBar
+          ? AppBar(
+              title: Text(widget.title),
+              backgroundColor: GridColors.primary,
+              foregroundColor: GridColors.card,
+              actions: [
+                IconButton(
+                  icon: const Icon(Icons.help_outline),
+                  onPressed: _showGridHelpDialog,
+                  tooltip: 'Ajuda da tela',
+                ),
+                _buildColumnSettingsMenu(),
+                if (widget.exportConfig.enableCsvExport &&
+                    widget.hasPermission('export') &&
+                    widget.buttonPermissions['export']!)
+                  IconButton(
+                    icon: _isExporting
+                        ? const CircularProgressIndicator(
+                            valueColor: AlwaysStoppedAnimation(Colors.white),
+                          )
+                        : const Icon(Icons.download),
+                    onPressed: _isExporting ? null : _exportToCsv,
+                    tooltip: "Exportar CSV",
+                  ),
+              ],
+            )
+          : null,
       body: Stack(
         children: [
           Column(
+            children: [
+              _buildGridToolbar(),
+              if (filtrosAbertos) _buildFilters(),
+              _buildActiveFilterTags(),
+              Expanded(
+                child: Stack(
                   children: [
-                    Padding(
-                      padding: const EdgeInsets.all(16.0),
-                      child: Row(
-                        children: [
-                          Wrap(
-                            spacing: 12,
-                            runSpacing: 12,
-                            children: [
-                              if (widget.hasPermission('create') &&
-                                  widget.buttonPermissions['create']!)
-                                ElevatedButton.icon(
-                                  onPressed: () => _openForm(),
-                                  icon: const Icon(Icons.add),
-                                  label: const Text("Novo"),
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: GridColors.primary,
-                                    foregroundColor: GridColors.card,
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 16,
-                                      vertical: 12,
-                                    ),
-                                  ),
-                                ),
-                              if (widget.hasPermission('deleteMultiple') &&
-                                  widget.buttonPermissions['deleteMultiple']!)
-                                ElevatedButton.icon(
-                                  onPressed: selectedRows.isNotEmpty
-                                      ? _deleteSelected
-                                      : null,
-                                  icon: const Icon(Icons.delete),
-                                  label: const Text("Deletar Selecionados"),
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: GridColors.error,
-                                    foregroundColor: GridColors.card,
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 16,
-                                      vertical: 12,
-                                    ),
-                                  ),
-                                ),
-                            ],
-                          ),
-                          const Spacer(),
-                          IconButton(
-                            onPressed: () =>
-                                _loadItems(_currentPage, rowsPerPage),
-                            icon: const Icon(Icons.refresh),
-                            tooltip: "Recarregar",
-                          ),
-                          ElevatedButton.icon(
-                            onPressed: () => setState(
-                              () => filtrosAbertos = !filtrosAbertos,
-                            ),
-                            icon: Icon(
-                              filtrosAbertos
-                                  ? Icons.expand_less
-                                  : Icons.expand_more,
-                            ),
-                            label: Text(
-                              filtrosAbertos
-                                  ? "Ocultar Filtros"
-                                  : "Mostrar Filtros",
-                            ),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: GridColors.buttonBackground,
-                              foregroundColor: GridColors.textPrimary,
-                            ),
-                          ),
-                        ],
+                    Container(
+                      margin: const EdgeInsets.all(16.0),
+                      decoration: BoxDecoration(
+                        color: GridColors.card,
+                        border: Border.all(color: GridColors.divider),
                       ),
-                    ),
-                    if (filtrosAbertos) _buildFilters(),
-                    _buildActiveFilterTags(),
-                    Expanded(
-                      child: Stack(
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.all(16.0),
-                            child: PaginatedDataTable2(
-                          columnSpacing: 12,
-                          horizontalMargin: 12,
-                          minWidth: 1200,
-                          controller: _paginatorController,
-                          scrollController: _tableScrollController,
-                          wrapInCard: false,
-                          fit: FlexFit.tight,
-                          sortColumnIndex: sortColumnIndex,
-                          sortAscending: sortAscending,
-                          showFirstLastButtons: true,
-                          renderEmptyRowsInTheEnd: false,
-                          initialFirstRowIndex: _currentPage * rowsPerPage,
-                          header: _totalItems > 0 ? Text(
-                            'Página ${_currentPage + 1} de ${(_totalItems / rowsPerPage).ceil()}',
-                            style: const TextStyle(
-                              fontSize: 13,
-                              fontWeight: FontWeight.w600,
+                      child: PaginatedDataTable2(
+                        columnSpacing: 10,
+                        horizontalMargin: 8,
+                        minWidth: 1200,
+                        controller: _paginatorController,
+                        scrollController: _tableScrollController,
+                        wrapInCard: false,
+                        fit: FlexFit.tight,
+                        headingRowHeight: 32,
+                        dataRowHeight: 32,
+                        sortColumnIndex: sortColumnIndex,
+                        sortAscending: sortAscending,
+                        showFirstLastButtons: true,
+                        renderEmptyRowsInTheEnd: false,
+                        initialFirstRowIndex: _currentPage * rowsPerPage,
+                        headingRowColor:
+                            WidgetStateProperty.all(GridColors.gridHeader),
+                        headingTextStyle: const TextStyle(
+                          color: GridColors.textSecondary,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w700,
+                        ),
+                        dataTextStyle: const TextStyle(
+                          color: GridColors.textSecondary,
+                          fontSize: 12,
+                        ),
+                        checkboxHorizontalMargin: 6,
+                        dividerThickness: 0.8,
+                        columns: _buildColumns(),
+                        source: _GenericDataSource<T>(
+                          items: filtered,
+                          selectedRows: selectedRows,
+                          cellBuilder: _buildCells,
+                          totalItems: _totalItems,
+                          isLoading: isLoading,
+                          currentPage: _currentPage,
+                          rowsPerPage: rowsPerPage,
+                          rowIdBuilder: (item, _) {
+                            final itemMap = widget.toJson(item);
+                            return _getNestedValue(
+                              itemMap,
+                              widget.idFieldName,
+                            ).toString();
+                          },
+                          onSelect: (index, selected) {
+                            setState(() {
+                              final itemMap = widget.toJson(filtered[index]);
+                              final id = _getNestedValue(
+                                itemMap,
+                                widget.idFieldName,
+                              ).toString();
+                              selected
+                                  ? selectedRows.add(id)
+                                  : selectedRows.remove(id);
+                            });
+                          },
+                        ),
+                        rowsPerPage: rowsPerPage,
+                        availableRowsPerPage:
+                            widget.paginationConfig.availableRowsPerPage,
+                        onRowsPerPageChanged:
+                            widget.paginationConfig.showItemsPerPageSelector
+                                ? (value) {
+                                    setState(() {
+                                      rowsPerPage = value ??
+                                          widget.paginationConfig
+                                              .defaultRowsPerPage;
+                                      _currentPage = 0;
+                                    });
+                                    _loadItems(_currentPage, rowsPerPage);
+                                  }
+                                : null,
+                        onPageChanged: (pageIndex) {
+                          // Ignora eventos de página disparados durante carregamento
+                          if (isLoading) return;
+                          final numeroPagina =
+                              rowsPerPage > 0 ? pageIndex ~/ rowsPerPage : 0;
+                          // Ignora se já estamos nessa página
+                          if (numeroPagina == _currentPage) return;
+                          setState(() {
+                            _currentPage = numeroPagina;
+                          });
+                          _loadItems(_currentPage, rowsPerPage);
+                        },
+                        fixedLeftColumns: widget.FieldConfigWindowss.where(
+                          (c) =>
+                              _columnVisibility[c.fieldName] == true &&
+                              c.isFixed,
+                        ).length,
+                        empty: Center(
+                          child: Container(
+                            padding: const EdgeInsets.all(20),
+                            child: const Text(
+                              "Nenhum item encontrado",
+                              style: TextStyle(
+                                fontStyle: FontStyle.italic,
+                                fontSize: 16,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ), // fecha Container
+                    // Overlay de loading durante paginação
+                    if (isLoading)
+                      Positioned.fill(
+                        child: Container(
+                          color: Colors.white.withValues(alpha: 0.7),
+                          child: const Center(
+                            child: CircularProgressIndicator(
                               color: GridColors.primary,
                             ),
-                          ) : null,
-                          columns: _buildColumns(),
-                          source: _GenericDataSource<T>(
-                            items: filtered,
-                            selectedRows: selectedRows,
-                            cellBuilder: _buildCells,
-                            totalItems: _totalItems,
-                            isLoading: isLoading,
-                            currentPage: _currentPage,
-                            rowsPerPage: rowsPerPage,
-                            onSelect: (index, selected) {
-                              setState(() {
-                                final itemMap = widget.toJson(filtered[index]);
-                                final id = _getNestedValue(
-                                  itemMap,
-                                  widget.idFieldName,
-                                ).toString();
-                                selected
-                                    ? selectedRows.add(id)
-                                    : selectedRows.remove(id);
-                              });
-                            },
                           ),
-                          rowsPerPage: rowsPerPage,
-                          availableRowsPerPage:
-                              widget.paginationConfig.availableRowsPerPage,
-                          onRowsPerPageChanged:
-                              widget.paginationConfig.showItemsPerPageSelector
-                                  ? (value) {
-                                      setState(() {
-                                        rowsPerPage = value ??
-                                            widget.paginationConfig
-                                                .defaultRowsPerPage;
-                                        _currentPage = 0;
-                                      });
-                                      _loadItems(_currentPage, rowsPerPage);
-                                    }
-                                  : null,
-                          onPageChanged: (pageIndex) {
-                            // Ignora eventos de página disparados durante carregamento
-                            if (isLoading) return;
-                            final numeroPagina = rowsPerPage > 0 ? pageIndex ~/ rowsPerPage : 0;
-                            // Ignora se já estamos nessa página
-                            if (numeroPagina == _currentPage) return;
-                            setState(() {
-                              _currentPage = numeroPagina;
-                            });
-                            _loadItems(_currentPage, rowsPerPage);
-                          },
-                          fixedLeftColumns: widget.FieldConfigWindowss.where(
-                            (c) =>
-                                _columnVisibility[c.fieldName] == true &&
-                                c.isFixed,
-                          ).length,
-                          empty: Center(
-                            child: Container(
-                              padding: const EdgeInsets.all(20),
-                              child: const Text(
-                                "Nenhum item encontrado",
-                                style: TextStyle(
-                                  fontStyle: FontStyle.italic,
-                                  fontSize: 16,
-                                ),
-                              ),
-                            ),
-                          ),
-                          ),
-                        ),  // fecha Container
-                          // Overlay de loading durante paginação
-                          if (isLoading)
-                            Positioned.fill(
-                              child: Container(
-                                color: Colors.white.withOpacity(0.7),
-                                child: const Center(
-                                  child: CircularProgressIndicator(
-                                    color: GridColors.primary,
-                                  ),
-                                ),
-                              ),
-                            ),
-                        ],
-                      ),    // fecha Stack
-                    ),      // fecha Expanded
+                        ),
+                      ),
                   ],
-                ),
+                ), // fecha Stack
+              ), // fecha Expanded
+            ],
+          ),
           _buildLoadingOverlay(),
         ],
       ),
@@ -3463,6 +4051,7 @@ class _GenericDataSource<T> extends DataTableSource {
   final List<T> items;
   final Set<String> selectedRows;
   final List<DataCell> Function(T item, int index) cellBuilder;
+  final String Function(T item, int index) rowIdBuilder;
   final void Function(int index, bool selected) onSelect;
   final int totalItems;
   final bool isLoading;
@@ -3473,6 +4062,7 @@ class _GenericDataSource<T> extends DataTableSource {
     required this.items,
     required this.selectedRows,
     required this.cellBuilder,
+    required this.rowIdBuilder,
     required this.onSelect,
     required this.totalItems,
     this.isLoading = false,
@@ -3487,11 +4077,17 @@ class _GenericDataSource<T> extends DataTableSource {
     final localIndex = index - pageOffset;
     if (localIndex < 0 || localIndex >= items.length) return null;
     final item = items[localIndex];
-    final itemId = index.toString();
+    final itemId = rowIdBuilder(item, localIndex);
     final isSelected = selectedRows.contains(itemId);
 
     return DataRow(
       selected: isSelected,
+      color: WidgetStateProperty.resolveWith<Color?>((states) {
+        if (states.contains(WidgetState.selected))
+          return GridColors.selectedRow;
+        if (states.contains(WidgetState.hovered)) return GridColors.hover;
+        return localIndex.isEven ? GridColors.rowEven : GridColors.rowOdd;
+      }),
       onSelectChanged: (selected) => onSelect(localIndex, selected ?? false),
       cells: cellBuilder(item, localIndex),
     );
@@ -3571,16 +4167,14 @@ class _SearchableDropdownWindowsState
       setState(() {
         widget.controller.text =
             result[widget.config.dropdownValueField]?.toString() ?? '';
-        _selectedLabel =
-            result[widget.config.dropdownDisplayField]?.toString();
+        _selectedLabel = result[widget.config.dropdownDisplayField]?.toString();
       });
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final label = widget.config.label +
-        (widget.config.isRequired ? ' *' : '');
+    final label = widget.config.label + (widget.config.isRequired ? ' *' : '');
     final displayText = _selectedLabel ?? widget.controller.text;
     final isEmpty = displayText.isEmpty;
     final isDisabled = !widget.config.enabled;
@@ -3600,9 +4194,7 @@ class _SearchableDropdownWindowsState
             labelText: label,
             labelStyle: const TextStyle(fontSize: 13),
             filled: true,
-            fillColor: isDisabled
-                ? const Color(0xFFF5F5F5)
-                : Colors.white,
+            fillColor: isDisabled ? const Color(0xFFF5F5F5) : Colors.white,
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(8),
               borderSide: const BorderSide(color: GridColors.primary, width: 2),
@@ -3621,7 +4213,7 @@ class _SearchableDropdownWindowsState
             errorText: state.errorText,
           ),
           child: Text(
-            isEmpty ? '— Selecione —' : displayText,
+            isEmpty ? 'Selecione' : displayText,
             style: TextStyle(
               fontSize: 13,
               color: isEmpty
@@ -3717,7 +4309,8 @@ class _DropdownSearchDialogState extends State<_DropdownSearchDialog> {
                     ),
                   ),
                   IconButton(
-                    icon: const Icon(Icons.close, color: Colors.white, size: 18),
+                    icon:
+                        const Icon(Icons.close, color: Colors.white, size: 18),
                     padding: EdgeInsets.zero,
                     constraints: const BoxConstraints(),
                     onPressed: () => Navigator.of(context).pop(),
@@ -3754,8 +4347,8 @@ class _DropdownSearchDialogState extends State<_DropdownSearchDialog> {
                     borderSide:
                         const BorderSide(color: GridColors.primary, width: 2),
                   ),
-                  contentPadding: const EdgeInsets.symmetric(
-                      horizontal: 12, vertical: 10),
+                  contentPadding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                 ),
               ),
             ),
@@ -3771,7 +4364,8 @@ class _DropdownSearchDialogState extends State<_DropdownSearchDialog> {
                   const Spacer(),
                   // Clear selection
                   TextButton(
-                    onPressed: () => Navigator.of(context).pop(<String, dynamic>{}),
+                    onPressed: () =>
+                        Navigator.of(context).pop(<String, dynamic>{}),
                     child: const Text('Limpar seleção',
                         style: TextStyle(fontSize: 11)),
                   ),
@@ -3797,7 +4391,7 @@ class _DropdownSearchDialogState extends State<_DropdownSearchDialog> {
                           dense: true,
                           selected: isSelected,
                           selectedTileColor:
-                              GridColors.primary.withOpacity(0.08),
+                              GridColors.primary.withValues(alpha: 0.08),
                           leading: isSelected
                               ? const Icon(Icons.check_circle,
                                   color: GridColors.primary, size: 18)

@@ -13,7 +13,7 @@ import '../../services/network_caller.dart';
 import '../../../utils/api_links.dart';
 import '../../constants/custom_colors.dart';
 import '../../../models/auth_utility.dart';
-import '../../windows/screens/update_profile.dart';
+import '../../web/screens/update_profile.dart';
 import '../../../widgets/user_banners.dart';
 import '../../../utils/showSnackBar.dart';
 
@@ -282,7 +282,7 @@ class _WebProductRegisterScreenState extends State<WebProductRegisterScreen> {
           Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (context) => const WindowsUpdateProfileScreen(),
+              builder: (context) => const WebUpdateProfileScreen(),
             ),
           );
         },

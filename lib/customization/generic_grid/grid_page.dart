@@ -136,9 +136,7 @@ class _GenericMobileGridScreenState extends State<GenericMobileGridScreen> {
   }
 
   Future<void> _resolveAsyncPermissions() async {
-    _permCache
-        .addAll({'create': true, 'edit': true, 'delete': true, 'view': true});
-/*    final f = widget.asyncHasPermission;
+    final f = widget.asyncHasPermission;
     if (f == null) {
       _permCache
           .addAll({'create': true, 'edit': true, 'delete': true, 'view': true});
@@ -150,12 +148,14 @@ class _GenericMobileGridScreenState extends State<GenericMobileGridScreen> {
       setState(() => _permsResolved = true);
       return;
     }
+
     final needs = <String>{'create', 'edit', 'delete', 'view'};
     final also = widget.serverActions
             ?.map((a) => a.requiredPermission)
             .whereType<String>() ??
         const Iterable<String>.empty();
     needs.addAll(also);
+
     for (final p in needs) {
       try {
         final result = await f(p);
@@ -164,7 +164,6 @@ class _GenericMobileGridScreenState extends State<GenericMobileGridScreen> {
         _permCache[p] = true;
       }
     }
-    setState(() => _permsResolved = true); */
     setState(() => _permsResolved = true);
   }
 
@@ -411,8 +410,14 @@ class _GenericMobileGridScreenState extends State<GenericMobileGridScreen> {
       // 🔹 fallback total — retorna TRUE
       return true;
   } */
-    // "TODO QUANDO APLICAR REGRAS DE PERMISSÃO";
-    return true;
+    if (_permCache.containsKey(perm)) {
+      return _permCache[perm]!;
+    }
+    try {
+      return widget.hasPermission(perm);
+    } catch (_) {
+      return true;
+    }
   }
 
   Widget? _buildFab() {
@@ -552,7 +557,7 @@ class _GenericMobileGridScreenState extends State<GenericMobileGridScreen> {
     L.d('[GridPage] open form (editing=${editingItem != null})');
     final saved = await showDialog<bool>(
       context: context,
-      barrierColor: GridColors.primary.withOpacity(0.7),
+      barrierColor: GridColors.primary.withValues(alpha: 0.7),
       builder: (ctx) => GridFormDialog(
         titleNew: 'Adicionar',
         titleEdit: 'Editar',

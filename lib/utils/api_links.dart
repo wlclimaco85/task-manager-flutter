@@ -1,13 +1,12 @@
-﻿class ApiLinks {
+class ApiLinks {
   ApiLinks._();
-  
 
   // URL do backend
-  // Dev local: flutter run (usa default localhost)
+  // Dev local: flutter run (usa default IP local 192.168.100.114)
   // Producao Railway: flutter run --dart-define=BACKEND_URL=https://appacademia-production-be7e.up.railway.app
   static const String _backendUrl = String.fromEnvironment(
     'BACKEND_URL',
-    defaultValue: 'http://localhost:8088',
+    defaultValue: 'http://192.168.100.114:8088',
   );
 
   static const String _baseIp = _backendUrl;
@@ -73,7 +72,15 @@
   static String taskStatusCount = '$_baseUrl/listTaskByStatus/taskStatusCount';
   static String deleteTask(String taskId) => '$_baseUrl/deleteTask/$taskId';
   static String allNoticias = '$_baseUrlNew/api/noticias';
-  static String get noticiasPublicas => '$_baseUrlNew/api/noticias/public/recentes';
+  static String get noticiasPublicas =>
+      '$_baseUrlNew/api/noticias/public/recentes';
+  static const String _windowsDownloadUrl = String.fromEnvironment(
+    'WINDOWS_DOWNLOAD_URL',
+    defaultValue: '',
+  );
+  static String get windowsDownloadUrl => _windowsDownloadUrl.isNotEmpty
+      ? _windowsDownloadUrl
+      : Uri.base.resolve('/downloads/app-academia-windows.zip').toString();
   static String get createNoticia => '$_baseUrlNew/api/noticias';
   static String updateNoticia(String id) => '$_baseUrlNew/api/noticias/$id';
   static String deleteNoticia(String id) => '$_baseUrlNew/api/noticias/$id';
@@ -294,6 +301,18 @@
       '$_baseUrlNew/api/conta_receber/$id/baixa';
   static String desfazerContaReceber(String id) =>
       '$_baseUrlNew/api/conta_receber/desfazer/$id';
+  static String contaReceberCobrancas(String id) =>
+      '$_baseUrlNew/api/conta_receber/$id/cobrancas';
+  static String contaReceberCobranca(String cobrancaId) =>
+      '$_baseUrlNew/api/conta_receber/cobrancas/$cobrancaId';
+  static String reprocessarContaReceberCobranca(String cobrancaId) =>
+      '$_baseUrlNew/api/conta_receber/cobrancas/$cobrancaId/reprocessar';
+  static String cancelarContaReceberCobranca(String cobrancaId) =>
+      '$_baseUrlNew/api/conta_receber/cobrancas/$cobrancaId/cancelar';
+  static String get contaReceberCobrancasReguaPendentes =>
+      '$_baseUrlNew/api/conta_receber/cobrancas/regua/pendentes';
+  static String marcarEnvioReguaContaReceberCobranca(String cobrancaId) =>
+      '$_baseUrlNew/api/conta_receber/cobrancas/$cobrancaId/regua/marcar-envio';
 
   // Contas Bancárias
   static const String contasBancarias = '$_baseUrlNew/api/contas-bancaria';
@@ -310,8 +329,10 @@
 
   // Países / Estados / Cidades
   static const String buscarPaises = '$_baseUrlNew/api/pais';
-  static String buscarEstados(String paisId) => '$_baseUrlNew/api/estado/pais/$paisId';
-  static String buscarCidades(String estadoId) => '$_baseUrlNew/api/cidade/estado/$estadoId';
+  static String buscarEstados(String paisId) =>
+      '$_baseUrlNew/api/estado/pais/$paisId';
+  static String buscarCidades(String estadoId) =>
+      '$_baseUrlNew/api/cidade/estado/$estadoId';
 
   // Chamados
   static String get allChamados => '$_baseUrlNew/api/chamados';
@@ -331,6 +352,19 @@
   static String formasPagamentoByEmpresa(String empresaId) =>
       '$_baseUrlNew/api/forma-pagamento/empresa/$empresaId';
 
+  // Cobranças de contas a receber
+  // Banking / Cobranças legadas
+  static String get bankingImport => '$_baseUrlNew/api/banking/import';
+  static String get bankingImports => '$_baseUrlNew/api/banking/imports';
+  static String bankingReconcile({
+    required String importId,
+    required String ruleName,
+    String textSearch = '',
+    double tolerance = 0.01,
+  }) =>
+      '$_baseUrlNew/api/banking/reconcile?importId=${Uri.encodeComponent(importId)}&ruleName=${Uri.encodeComponent(ruleName)}&textSearch=${Uri.encodeComponent(textSearch)}&tolerance=$tolerance';
+  static String get bankingBilling => '$_baseUrlNew/api/banking/billing';
+
   // Diretórios
   static String get allDiretorios => '$_baseUrlNew/api/diretorios';
   static String get createDiretorio => '$_baseUrlNew/api/diretorios';
@@ -347,12 +381,18 @@
       '$_baseUrlNew/api/arquivos/download/$id';
   static String arquivosPorDiretorio(String diretorioId) =>
       '$_baseUrlNew/api/arquivos/diretorio/$diretorioId';
-  /// Lista arquivos filtrando por empresa (obrigatório) e parceiro (opcional)
-  static String arquivosPorEmpresa(int empresaId, {int? parceiroId}) {
-    final q = parceiroId != null
-        ? '?empresaId=$empresaId&parceiroId=$parceiroId'
-        : '?empresaId=$empresaId';
-    return '$_baseUrlNew/api/arquivos$q';
+
+  /// Lista arquivos filtrando por empresa (obrigatório), parceiro (opcional),
+  /// módulo de origem (ex: 'funcionario', 'produto', 'parceiro', 'alvara') e
+  /// idOrigem (opcional) para o filtro automático do H5 (idShort 21).
+  static String arquivosPorEmpresa(int empresaId,
+      {int? parceiroId, String? modulo, int? idOrigem}) {
+    final params = <String, String>{'empresaId': empresaId.toString()};
+    if (parceiroId != null) params['parceiroId'] = parceiroId.toString();
+    if (modulo != null) params['modulo'] = modulo;
+    if (idOrigem != null) params['idOrigem'] = idOrigem.toString();
+    final query = params.entries.map((e) => '${e.key}=${e.value}').join('&');
+    return '$_baseUrlNew/api/arquivos?$query';
   }
 
   static String get fecthAllDocumentos => '$_baseUrlNew/api/documentos';
@@ -369,6 +409,12 @@
       '$_baseUrlNew/api/obrigacoes-fiscais/$id';
   static String deleteObrigacaoFiscal(String id) =>
       '$_baseUrlNew/api/obrigacoes-fiscais/$id';
+  static String enviarObrigacaoFiscal(String id) =>
+      '$_baseUrlNew/api/obrigacoes-fiscais/$id/envio';
+  static String atualizarStatusEnvioObrigacaoFiscal(String id) =>
+      '$_baseUrlNew/api/obrigacoes-fiscais/$id/status-envio';
+  static String get lembretesPendentesObrigacaoFiscal =>
+      '$_baseUrlNew/api/obrigacoes-fiscais/lembretes-pendentes';
 
   static String chatStart(String id, String setor) =>
       '$_chatId/ws-chat?user=$id&sector=$setor';
@@ -424,6 +470,15 @@
       '$_baseUrlNew/api/dashboard/finance/alerts/dueSoon';
 
   static String get kpis => '$_baseUrlNew/api/dashboard/kpis';
+  static String get marketOverview => '$_baseUrlNew/api/cotacoes/mercado';
+  static String get marketCollectorOverview =>
+      '$_baseUrlNew/api/market/overview';
+  static String get marketCollectorSnapshots => '$_baseUrlNew/api/market-data';
+  static List<String> get marketOverviewCandidates => [
+        marketCollectorOverview,
+        marketCollectorSnapshots,
+        marketOverview,
+      ];
 
   // Jobs Monitor
   static String get allJobs => '$_baseUrlNew/api/admin/jobs';
@@ -431,22 +486,32 @@
   // Tipo Parceiro
   static String get allTipoParceiro => '$_baseUrlNew/api/tipo-parceiro';
   static String get createTipoParceiro => '$_baseUrlNew/api/tipo-parceiro';
-  static String updateTipoParceiro(String id) => '$_baseUrlNew/api/tipo-parceiro/$id';
-  static String deleteTipoParceiro(String id) => '$_baseUrlNew/api/tipo-parceiro/$id';
+  static String updateTipoParceiro(String id) =>
+      '$_baseUrlNew/api/tipo-parceiro/$id';
+  static String deleteTipoParceiro(String id) =>
+      '$_baseUrlNew/api/tipo-parceiro/$id';
 
   // Servico Contratado
-  static String get allServicoContratado => '$_baseUrlNew/api/servico-contratado';
-  static String get createServicoContratado => '$_baseUrlNew/api/servico-contratado';
-  static String updateServicoContratado(String id) => '$_baseUrlNew/api/servico-contratado/$id';
-  static String deleteServicoContratado(String id) => '$_baseUrlNew/api/servico-contratado/$id';
+  static String get allServicoContratado =>
+      '$_baseUrlNew/api/servico-contratado';
+  static String get createServicoContratado =>
+      '$_baseUrlNew/api/servico-contratado';
+  static String updateServicoContratado(String id) =>
+      '$_baseUrlNew/api/servico-contratado/$id';
+  static String deleteServicoContratado(String id) =>
+      '$_baseUrlNew/api/servico-contratado/$id';
 
   // Modulo Servico
   static String get allModuloServico => '$_baseUrlNew/api/modulo-servico';
   static String get createModuloServico => '$_baseUrlNew/api/modulo-servico';
-  static String updateModuloServico(String id) => '$_baseUrlNew/api/modulo-servico/$id';
-  static String deleteModuloServico(String id) => '$_baseUrlNew/api/modulo-servico/$id';
-  static String jobHistorico(String nome) => '$_baseUrlNew/api/admin/jobs/$nome/historico';
-  static String jobExecutar(String nome) => '$_baseUrlNew/api/admin/jobs/$nome/executar';
+  static String updateModuloServico(String id) =>
+      '$_baseUrlNew/api/modulo-servico/$id';
+  static String deleteModuloServico(String id) =>
+      '$_baseUrlNew/api/modulo-servico/$id';
+  static String jobHistorico(String nome) =>
+      '$_baseUrlNew/api/admin/jobs/$nome/historico';
+  static String jobExecutar(String nome) =>
+      '$_baseUrlNew/api/admin/jobs/$nome/executar';
 
   static String get clientDistribution =>
       '$_baseUrlNew/api/dashboard/finance/clientDistribution';
@@ -466,13 +531,19 @@
   static String get financeFluxoDiarioPdf =>
       '$_baseUrlNew/api/contas/extrato/pdf';
 
+  static String get financeExtratoOperacional =>
+      '$_baseUrlNew/api/dashboard/finance/extrato-operacional';
+
   static String get baseUrl => _baseUrlNew;
 
   // Certificado Digital
-  static String certificadosByEmpresa(int empresaId) => '$_baseUrlNew/api/certificados?empresaId=$empresaId';
+  static String certificadosByEmpresa(int empresaId) =>
+      '$_baseUrlNew/api/certificados?empresaId=$empresaId';
   static String get uploadCertificado => '$_baseUrlNew/api/certificados/upload';
-  static String deleteCertificado(int id) => '$_baseUrlNew/api/certificados/$id';
-  static String get alertasCertificados => '$_baseUrlNew/api/certificados/alertas';
+  static String deleteCertificado(int id) =>
+      '$_baseUrlNew/api/certificados/$id';
+  static String get alertasCertificados =>
+      '$_baseUrlNew/api/certificados/alertas';
 
   static String getAllRoles =
       '$_baseUrlNew/api/role?size=1000'; // Aumentamos o size para pegar todas as roles
@@ -525,8 +596,10 @@
   // Cotação Frete
   static String get allCotacoesFrete => '$_baseUrlNew/api/cotacaofrete';
   static String get createCotacaoFrete => '$_baseUrlNew/api/cotacaofrete';
-  static String updateCotacaoFrete(String id) => '$_baseUrlNew/api/cotacaofrete/$id';
-  static String deleteCotacaoFrete(String id) => '$_baseUrlNew/api/cotacaofrete/$id';
+  static String updateCotacaoFrete(String id) =>
+      '$_baseUrlNew/api/cotacaofrete/$id';
+  static String deleteCotacaoFrete(String id) =>
+      '$_baseUrlNew/api/cotacaofrete/$id';
 
   // Pedido
   static String get allPedidos => '$_baseUrlNew/api/pedidos';
@@ -536,9 +609,12 @@
 
   // Calendário Guias
   static String get allCalendariosGuias => '$_baseUrlNew/api/calendarios-guias';
-  static String get createCalendarioGuias => '$_baseUrlNew/api/calendarios-guias';
-  static String updateCalendarioGuias(String id) => '$_baseUrlNew/api/calendarios-guias/$id';
-  static String deleteCalendarioGuias(String id) => '$_baseUrlNew/api/calendarios-guias/$id';
+  static String get createCalendarioGuias =>
+      '$_baseUrlNew/api/calendarios-guias';
+  static String updateCalendarioGuias(String id) =>
+      '$_baseUrlNew/api/calendarios-guias/$id';
+  static String deleteCalendarioGuias(String id) =>
+      '$_baseUrlNew/api/calendarios-guias/$id';
 
   // Cargo
   static String get allCargos => '$_baseUrlNew/api/cargo';
@@ -549,14 +625,28 @@
   // Centro de Custo
   static String get allCentrosCusto => '$_baseUrlNew/api/centro-custo';
   static String get createCentroCusto => '$_baseUrlNew/api/centro-custo';
-  static String updateCentroCusto(String id) => '$_baseUrlNew/api/centro-custo/$id';
-  static String deleteCentroCusto(String id) => '$_baseUrlNew/api/centro-custo/$id';
+  static String updateCentroCusto(String id) =>
+      '$_baseUrlNew/api/centro-custo/$id';
+  static String deleteCentroCusto(String id) =>
+      '$_baseUrlNew/api/centro-custo/$id';
+
+  // Categoria Financeira
+  static String get allCategoriasFinanceiras =>
+      '$_baseUrlNew/api/categoria-financeira';
+  static String get createCategoriaFinanceira =>
+      '$_baseUrlNew/api/categoria-financeira';
+  static String updateCategoriaFinanceira(String id) =>
+      '$_baseUrlNew/api/categoria-financeira/$id';
+  static String deleteCategoriaFinanceira(String id) =>
+      '$_baseUrlNew/api/categoria-financeira/$id';
 
   // Departamento
   static String get allDepartamentos => '$_baseUrlNew/api/departamento';
   static String get createDepartamento => '$_baseUrlNew/api/departamento';
-  static String updateDepartamento(String id) => '$_baseUrlNew/api/departamento/$id';
-  static String deleteDepartamento(String id) => '$_baseUrlNew/api/departamento/$id';
+  static String updateDepartamento(String id) =>
+      '$_baseUrlNew/api/departamento/$id';
+  static String deleteDepartamento(String id) =>
+      '$_baseUrlNew/api/departamento/$id';
 
   // Feriado
   static String get allFeriados => '$_baseUrlNew/api/feriado';
@@ -570,26 +660,41 @@
   // Funcionário
   static String get allFuncionarios => '$_baseUrlNew/api/funcionario';
   static String get createFuncionario => '$_baseUrlNew/api/funcionario';
-  static String updateFuncionario(String id) => '$_baseUrlNew/api/funcionario/$id';
-  static String deleteFuncionario(String id) => '$_baseUrlNew/api/funcionario/$id';
-  static String registrarPontoFuncionario(String id) => '$_baseUrlNew/api/funcionario/$id/ponto';
-  static String pontosFuncionario(String id) => '$_baseUrlNew/api/funcionario/$id/pontos';
-  static String acertoPontoFuncionario(String id) => '$_baseUrlNew/api/funcionario/$id/acerto-ponto';
-  static String pdfPontoFuncionario(String id) => '$_baseUrlNew/api/funcionario/$id/ponto/pdf';  static String get createAlertaAluno => '$_baseUrlNew/api/alertas-aluno';
-  static String updateAlertaAluno(String id) => '$_baseUrlNew/api/alertas-aluno/$id';
-  static String deleteAlertaAluno(String id) => '$_baseUrlNew/api/alertas-aluno/$id';
+  static String updateFuncionario(String id) =>
+      '$_baseUrlNew/api/funcionario/$id';
+  static String deleteFuncionario(String id) =>
+      '$_baseUrlNew/api/funcionario/$id';
+  static String registrarPontoFuncionario(String id) =>
+      '$_baseUrlNew/api/funcionario/$id/ponto';
+  static String pontosFuncionario(String id) =>
+      '$_baseUrlNew/api/funcionario/$id/pontos';
+  static String acertoPontoFuncionario(String id) =>
+      '$_baseUrlNew/api/funcionario/$id/acerto-ponto';
+  static String pdfPontoFuncionario(String id) =>
+      '$_baseUrlNew/api/funcionario/$id/ponto/pdf';
+  static String get createAlertaAluno => '$_baseUrlNew/api/alertas-aluno';
+  static String updateAlertaAluno(String id) =>
+      '$_baseUrlNew/api/alertas-aluno/$id';
+  static String deleteAlertaAluno(String id) =>
+      '$_baseUrlNew/api/alertas-aluno/$id';
 
   // Avaliação Física
-  static String get allAvaliacoesFisicas => '$_baseUrlNew/api/avaliacoes-fisicas';
-  static String get createAvaliacaoFisica => '$_baseUrlNew/api/avaliacoes-fisicas';
-  static String updateAvaliacaoFisica(String id) => '$_baseUrlNew/api/avaliacoes-fisicas/$id';
-  static String deleteAvaliacaoFisica(String id) => '$_baseUrlNew/api/avaliacoes-fisicas/$id';
+  static String get allAvaliacoesFisicas =>
+      '$_baseUrlNew/api/avaliacoes-fisicas';
+  static String get createAvaliacaoFisica =>
+      '$_baseUrlNew/api/avaliacoes-fisicas';
+  static String updateAvaliacaoFisica(String id) =>
+      '$_baseUrlNew/api/avaliacoes-fisicas/$id';
+  static String deleteAvaliacaoFisica(String id) =>
+      '$_baseUrlNew/api/avaliacoes-fisicas/$id';
 
   // Classificação
   static String get allClassificacoes => '$_baseUrlNew/api/classificacoes';
   static String get createClassificacao => '$_baseUrlNew/api/classificacoes';
-  static String updateClassificacao(String id) => '$_baseUrlNew/api/classificacoes/$id';
-  static String deleteClassificacao(String id) => '$_baseUrlNew/api/classificacoes/$id';
+  static String updateClassificacao(String id) =>
+      '$_baseUrlNew/api/classificacoes/$id';
+  static String deleteClassificacao(String id) =>
+      '$_baseUrlNew/api/classificacoes/$id';
 
   // Treino
   static String get allTreinos => '$_baseUrlNew/api/treinos';
@@ -598,27 +703,121 @@
   static String deleteTreino(String id) => '$_baseUrlNew/api/treinos/$id';
 
   // Nota Fiscal Entrada
-  static String get allNotasFiscaisEntrada => '$_baseUrlNew/api/notas-fiscais-entrada';
-  static String get createNotaFiscalEntrada => '$_baseUrlNew/api/notas-fiscais-entrada';
-  static String updateNotaFiscalEntrada(String id) => '$_baseUrlNew/api/notas-fiscais-entrada/$id';
-  static String deleteNotaFiscalEntrada(String id) => '$_baseUrlNew/api/notas-fiscais-entrada/$id';
+  static String get allNotasFiscaisEntrada =>
+      '$_baseUrlNew/api/notas-fiscais-entrada';
+  static String get createNotaFiscalEntrada =>
+      '$_baseUrlNew/api/notas-fiscais-entrada';
+  static String updateNotaFiscalEntrada(String id) =>
+      '$_baseUrlNew/api/notas-fiscais-entrada/$id';
+  static String deleteNotaFiscalEntrada(String id) =>
+      '$_baseUrlNew/api/notas-fiscais-entrada/$id';
 
   // Nota Fiscal Saída
-  static String get allNotasFiscaisSaida => '$_baseUrlNew/api/notas-fiscais-saida';
-  static String get createNotaFiscalSaida => '$_baseUrlNew/api/notas-fiscais-saida';
-  static String updateNotaFiscalSaida(String id) => '$_baseUrlNew/api/notas-fiscais-saida/$id';
-  static String deleteNotaFiscalSaida(String id) => '$_baseUrlNew/api/notas-fiscais-saida/$id';
+  static String get allNotasFiscaisSaida =>
+      '$_baseUrlNew/api/notas-fiscais-saida';
+  static String get createNotaFiscalSaida =>
+      '$_baseUrlNew/api/notas-fiscais-saida';
+  static String updateNotaFiscalSaida(String id) =>
+      '$_baseUrlNew/api/notas-fiscais-saida/$id';
+  static String deleteNotaFiscalSaida(String id) =>
+      '$_baseUrlNew/api/notas-fiscais-saida/$id';
 
   // Horário Funcionário
   static String get allHorariosFunc => '$_baseUrlNew/api/horarioFunc';
   static String get createHorarioFunc => '$_baseUrlNew/api/horarioFunc';
-  static String updateHorarioFunc(String id) => '$_baseUrlNew/api/horarioFunc/$id';
-  static String deleteHorarioFunc(String id) => '$_baseUrlNew/api/horarioFunc/$id';
+  static String updateHorarioFunc(String id) =>
+      '$_baseUrlNew/api/horarioFunc/$id';
+  static String deleteHorarioFunc(String id) =>
+      '$_baseUrlNew/api/horarioFunc/$id';
 
   // Tipo Produto
   static String get allTiposProduto => '$_baseUrlNew/api/tipoProdutos';
   static String get createTipoProduto => '$_baseUrlNew/api/tipoProdutos';
-  static String updateTipoProduto(String id) => '$_baseUrlNew/api/tipoProdutos/$id';
-  static String deleteTipoProduto(String id) => '$_baseUrlNew/api/tipoProdutos/$id';
-}
+  static String updateTipoProduto(String id) =>
+      '$_baseUrlNew/api/tipoProdutos/$id';
+  static String deleteTipoProduto(String id) =>
+      '$_baseUrlNew/api/tipoProdutos/$id';
 
+  // NF-e — NF08: Emissão real com XML (POST /api/nfe/{id}/emitir)
+  static String emitirNfe(String nfeId) => '$_baseUrlNew/api/nfe/$nfeId/emitir';
+  static String cancelarNfe(String nfeId) =>
+      '$_baseUrlNew/api/nfe/$nfeId/cancelar';
+  static String danfeNfe(String nfeId) => '$_baseUrlNew/api/nfe/$nfeId/danfe';
+  static String xmlNfe(String nfeId) => '$_baseUrlNew/api/nfe/$nfeId/xml';
+  static String aceitarNfe(String nfeId) =>
+      '$_baseUrlNew/api/nfe/$nfeId/aceitar';
+  static String recusarNfe(String nfeId) =>
+      '$_baseUrlNew/api/nfe/$nfeId/recusar';
+  static String get importarNfeCsv => '$_baseUrlNew/api/nfe/importar-csv';
+
+  // NFS-e / Nota Fiscal de Serviço
+  static String get nfseIssue => '$_baseUrlNew/api/nfse/issue';
+  static String nfseStatusUrl(String municipalityCode, String nfseNumber) =>
+      '$_baseUrlNew/api/nfse/status?municipalityCode=${Uri.encodeComponent(municipalityCode)}&nfseNumber=${Uri.encodeComponent(nfseNumber)}';
+  static String get nfseCancel => '$_baseUrlNew/api/nfse/cancel';
+  static String get nfseContingency => '$_baseUrlNew/api/nfse/contingency';
+  static String get nfseAudit => '$_baseUrlNew/api/nfse/audit';
+
+  // CRM / Recorrências e Faturas
+  static String get allRecurringContracts => '$_baseUrlNew/api/crm/contracts';
+  static String get createRecurringContract => '$_baseUrlNew/api/crm/contracts';
+  static String get allInvoiceRecords => '$_baseUrlNew/api/crm/invoices';
+  static String get generateInvoice => '$_baseUrlNew/api/crm/invoices';
+  static String get allReminderNotifications =>
+      '$_baseUrlNew/api/crm/reminders';
+  static String get sendReminder => '$_baseUrlNew/api/crm/reminders';
+  static String get allCrmDeals => '$_baseUrlNew/api/crm/deals';
+  static String get createCrmDeal => '$_baseUrlNew/api/crm/deals';
+  static String updateCrmDealStage(String id) =>
+      '$_baseUrlNew/api/crm/deals/$id/stage';
+  static String get importMarketplaceOrder =>
+      '$_baseUrlNew/api/crm/marketplace/orders';
+
+  // IA assistiva para chat/GED
+  static String get aiChatSummarize => '$_baseUrlNew/api/ai/chat/summarize';
+  static String get aiTextCorrect => '$_baseUrlNew/api/ai/text/correct';
+  static String get aiGedClassify => '$_baseUrlNew/api/ai/ged/classify';
+
+  // NFC-e / PDV (Card 8)
+  static String emitirNfce(int vendaId) =>
+      '$_baseUrlNew/api/v1/vendas/$vendaId/emitir-nfce';
+  static String nfceStatus(int nfceId) =>
+      '$_baseUrlNew/api/v1/nfce/$nfceId/status';
+  static String nfceDanfe(int nfceId) =>
+      '$_baseUrlNew/api/v1/nfce/$nfceId/danfe.pdf';
+  static String nfceXml(int nfceId) => '$_baseUrlNew/api/v1/nfce/$nfceId/xml';
+  static String nfceQrCode(int nfceId, {int size = 200}) =>
+      '$_baseUrlNew/api/v1/nfce/$nfceId/qrcode.png?size=$size';
+  static String cancelarNfce(int nfceId) =>
+      '$_baseUrlNew/api/v1/nfce/$nfceId/cancelar';
+  static String inutilizarNfce() => '$_baseUrlNew/api/v1/nfce/inutilizar';
+  static String statusSefaz(String uf, {String ambiente = 'HOMOLOGACAO'}) =>
+      '$_baseUrlNew/api/v1/fiscal/sefaz/status?uf=$uf&ambiente=$ambiente';
+  static String nfceHealth(int empresaId, String uf,
+          {String ambiente = 'HOMOLOGACAO'}) =>
+      '$_baseUrlNew/api/v1/fiscal/nfce/health?empresaId=$empresaId&uf=$uf&ambiente=$ambiente';
+  static String uploadCertificadoNfce() =>
+      '$_baseUrlNew/api/v1/fiscal/nfce/certificado';
+  static String configFiscal(int empresaId) =>
+      '$_baseUrlNew/api/v1/fiscal/nfce/config/$empresaId';
+  static String updateConfigFiscal(int configId) =>
+      '$_baseUrlNew/api/v1/fiscal/nfce/config/$configId';
+  static String produtosBusca(String nome, int empresaId) =>
+      '$_baseUrlNew/api/produto?nome=${Uri.encodeComponent(nome)}&empresa=$empresaId&page=0&size=20';
+
+  // Trading — Watchlist e Alertas
+  static String get tradingWatchlist => '$_baseUrlNew/api/trading/watchlist';
+  static String tradingWatchlistItem(String id) =>
+      '$_baseUrlNew/api/trading/watchlist/$id';
+  static String get tradingAlertas => '$_baseUrlNew/api/trading/alertas';
+  static String tradingAlerta(String id) =>
+      '$_baseUrlNew/api/trading/alertas/$id';
+
+  // Trading — Operações Assistidas
+  static String get tradingOperacoes =>
+      '$_baseUrlNew/api/trading/operacao-assistida';
+  static String tradingOperacaoStatus(String id) =>
+      '$_baseUrlNew/api/trading/operacao-assistida/$id/status';
+  static String tradingOperacao(String id) =>
+      '$_baseUrlNew/api/trading/operacao-assistida/$id';
+}

@@ -1,12 +1,16 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import '../../../customization/dynamic_grid_windows_screen.dart';
 import '../../../models/auth_utility.dart';
 import '../../../utils/api_links.dart';
 import '../../../widgets/generic_grid_windows_screen.dart'
     show FieldConfigWindows, FieldType, CustomAction;
+<<<<<<< HEAD
 import '../../../widgets/produto_detalhes_dialog.dart';
 import '../../../widgets/produto_saidas_chart_dialog.dart';
+=======
+import './ged_arquivos_screen.dart';
+>>>>>>> 9c936e366a7278fea1fdb76d20b7c37879acbe59
 
 class WebProdutoGridScreen extends StatelessWidget {
   final SecurityCheck hasPermission;
@@ -69,6 +73,7 @@ class WebProdutoGridScreen extends StatelessWidget {
       fromJson: (json) => json,
       toJson: (a) => a,
       fieldOverrides: fieldOverrides.isNotEmpty ? fieldOverrides : null,
+<<<<<<< HEAD
       // H4: ações na grid de produto
       customActions: () => [
         CustomAction<Map<String, dynamic>>(
@@ -87,6 +92,25 @@ class WebProdutoGridScreen extends StatelessWidget {
             context: ctx,
             builder: (_) => ProdutoSaidasChartDialog(produto: item),
           ),
+=======
+      // H4: ações de excluir na grid de produto
+      // H5-21: botão para abrir GED filtrado pelo produto
+      customActions: () => [
+        CustomAction<Map<String, dynamic>>(
+          icon: Icons.folder_open,
+          label: 'Ver GED',
+          onPressed: (ctx, item) {
+            final id = item['id'] is int ? item['id'] as int : int.tryParse(item['id']?.toString() ?? '');
+            final nome = item['nome']?.toString() ?? item['xProd']?.toString() ?? '';
+            Navigator.push(ctx, MaterialPageRoute(
+              builder: (_) => GedArquivosScreen(
+                moduloOrigem: 'produto',
+                idOrigem: id,
+                nomeOrigem: nome,
+              ),
+            ));
+          },
+>>>>>>> 9c936e366a7278fea1fdb76d20b7c37879acbe59
           isVisible: (_) => true,
         ),
         CustomAction<Map<String, dynamic>>(

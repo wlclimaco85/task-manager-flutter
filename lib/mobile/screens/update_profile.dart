@@ -10,6 +10,8 @@ import '../../../models/parceiro_model.dart';
 import '../../../widgets/localizacao_screen.dart';
 import '../../constants/custom_colors.dart';
 
+
+import 'package:task_manager_flutter/utils/app_logger.dart';
 int idParceiro = AuthUtility.userInfo?.data!.id ?? 0;
 
 class UpdateProfileScreen extends StatefulWidget {
@@ -23,7 +25,6 @@ class _UpdateProfileScreenState extends State<UpdateProfileScreen> {
   Data userInfo = AuthUtility.userInfo?.data ?? Data();
   final TextEditingController _nomeController = TextEditingController();
   final TextEditingController _cpfController = TextEditingController();
-  final TextEditingController _codProdutorController = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _telefone1Controller = TextEditingController();
   final TextEditingController _telefone2Controller = TextEditingController();
@@ -66,8 +67,6 @@ class _UpdateProfileScreenState extends State<UpdateProfileScreen> {
 
     _cpfController.text =
         AuthUtility.userInfo?.data?.codDadosPessoal?.cpf ?? "";
-    _codProdutorController.text =
-        AuthUtility.userInfo?.data?.codDadosPessoal?.codProdutor ?? "";
     _razaoSocialController.text =
         AuthUtility.userInfo?.data?.codDadosPessoal?.razaoSocial ?? "";
     _incrMunController.text =
@@ -101,7 +100,7 @@ class _UpdateProfileScreenState extends State<UpdateProfileScreen> {
       final XFile? photo = pickImage;
       return files;
     } else {
-      print(response.exception);
+      L.d(response.exception);
     }
     return null;
   }
@@ -122,7 +121,6 @@ class _UpdateProfileScreenState extends State<UpdateProfileScreen> {
       "id": _parceiroIdController.text.trim(),
       "nome": _nomeController.text.trim(),
       "cpf": _cpfController.text.trim(),
-      "codProdutor": _codProdutorController.text.trim(),
       "email": _emailController.text.trim(),
       "telefone1": _telefone1Controller.text.trim(),
       "telefone2": _telefone2Controller.text.trim(),
@@ -205,10 +203,6 @@ class _UpdateProfileScreenState extends State<UpdateProfileScreen> {
                 controller: _telefone2Controller,
               ),
               const SizedBox(height: 16),
-              CustomTextFormField(
-                hintText: "Cod. Produtor",
-                controller: _codProdutorController,
-              ),
               const SizedBox(height: 16),
               CustomTextFormField(
                   hintText: "Razão Social", controller: _razaoSocialController),

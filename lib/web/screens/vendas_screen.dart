@@ -5,9 +5,9 @@ import '../../../utils/fotos_util.dart';
 import '../../../utils/api_links.dart';
 import '../../../models/network_response.dart';
 import '../../services/network_caller.dart';
-import '../../windows/screens/update_profile.dart';
+import '../../web/screens/update_profile.dart';
 import '../../mobile/screens/checkoutScreen.dart';
-import '../../windows/screens/ProdutoDetailsScreen.dart';
+import '../../web/screens/ProdutoDetailsScreen.dart';
 import '../../../widgets/user_banners.dart';
 import '../../../widgets/negotiationDialog.dart';
 import '../../../widgets/negociacao_core.dart';
@@ -132,7 +132,7 @@ class _WebProductCatalogState extends State<WebProductCatalog> {
           Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (context) => const WindowsUpdateProfileScreen(),
+              builder: (context) => const WebUpdateProfileScreen(),
             ),
           );
         },
@@ -235,7 +235,7 @@ class _WebProductCatalogState extends State<WebProductCatalog> {
       context: context,
       builder: (_) => AlertDialog(
         backgroundColor: CustomColors().getLightGreenBackground(),
-        title: Text(product.descricao ?? "SEM DESCRIÇÂO"),
+        title: Text(product.descricao ?? "SEM DESCRIÇÃO"),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -485,7 +485,7 @@ class ProductCard extends StatelessWidget {
                           context,
                           MaterialPageRoute(
                             builder: (context) =>
-                                WindowsProdutoDetailsScreen(produtoId: product.id!),
+                                WebProdutoDetailsScreen(produtoId: product.id!),
                           ),
                         ),
                       ),

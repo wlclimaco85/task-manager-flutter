@@ -19,6 +19,13 @@ class ObrigacaoFiscal {
   double? valorTributo;
   RegimeTributario? regimeTributario;
   Setor? setor;
+  String? statusEnvio;
+  String? protocoloEnvio;
+  DateTime? dataUltimoEnvio;
+  DateTime? proximoLembreteEm;
+  int? quantidadeEnvios;
+  String? canalEnvio;
+  String? mensagemEnvio;
 
   ObrigacaoFiscal({
     this.id,
@@ -32,6 +39,13 @@ class ObrigacaoFiscal {
     this.valorTributo,
     this.regimeTributario,
     this.setor,
+    this.statusEnvio,
+    this.protocoloEnvio,
+    this.dataUltimoEnvio,
+    this.proximoLembreteEm,
+    this.quantidadeEnvios,
+    this.canalEnvio,
+    this.mensagemEnvio,
   });
 
   factory ObrigacaoFiscal.fromJson(Map<String, dynamic> json) {
@@ -50,6 +64,21 @@ class ObrigacaoFiscal {
           ? RegimeTributario.fromJson(json['regimeTributario'])
           : null,
       setor: json['setor'] != null ? Setor.fromJson(json['setor']) : null,
+      statusEnvio: json['statusEnvio']?.toString() ?? json['status_envio']?.toString(),
+      protocoloEnvio:
+          json['protocoloEnvio']?.toString() ?? json['protocolo_envio']?.toString(),
+      dataUltimoEnvio: _parseDateTime(
+        json['dataUltimoEnvio'] ?? json['data_ultimo_envio'],
+      ),
+      proximoLembreteEm: _parseDateTime(
+        json['proximoLembreteEm'] ?? json['proximo_lembrete_em'],
+      ),
+      quantidadeEnvios: (json['quantidadeEnvios'] ??
+              json['quantidade_envios'] as num?)
+          ?.toInt(),
+      canalEnvio: json['canalEnvio']?.toString() ?? json['canal_envio']?.toString(),
+      mensagemEnvio:
+          json['mensagemEnvio']?.toString() ?? json['mensagem_envio']?.toString(),
     );
   }
 
@@ -75,7 +104,19 @@ class ObrigacaoFiscal {
         'descricao': setor!.nome,
         'nome': setor!.nome,
       } : null,
+      'statusEnvio': statusEnvio,
+      'protocoloEnvio': protocoloEnvio,
+      'dataUltimoEnvio': dataUltimoEnvio?.toIso8601String(),
+      'proximoLembreteEm': proximoLembreteEm?.toIso8601String(),
+      'quantidadeEnvios': quantidadeEnvios,
+      'canalEnvio': canalEnvio,
+      'mensagemEnvio': mensagemEnvio,
     };
+  }
+
+  static DateTime? _parseDateTime(dynamic value) {
+    if (value == null) return null;
+    return DateTime.tryParse(value.toString());
   }
 
   // Classes auxiliares para as entidades relacionadas
@@ -226,6 +267,33 @@ class ObrigacaoFiscal {
       dropdownValueField: 'value',
       dropdownDisplayField: 'label',
       isRequired: true,
+      isVisibleByDefault: true,
+      isFixed: false,
+    ),
+    const FieldConfig(
+      label: "Status Envio",
+      fieldName: "statusEnvio",
+      icon: Icons.outgoing_mail,
+      isInForm: false,
+      isFilterable: true,
+      isVisibleByDefault: true,
+      isFixed: false,
+    ),
+    const FieldConfig(
+      label: "Protocolo",
+      fieldName: "protocoloEnvio",
+      icon: Icons.confirmation_number,
+      isInForm: false,
+      isFilterable: true,
+      isVisibleByDefault: true,
+      isFixed: false,
+    ),
+    const FieldConfig(
+      label: "Proximo Lembrete",
+      fieldName: "proximoLembreteEm",
+      icon: Icons.notifications_active,
+      isInForm: false,
+      isFilterable: true,
       isVisibleByDefault: true,
       isFixed: false,
     ),

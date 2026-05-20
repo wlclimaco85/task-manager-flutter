@@ -10,6 +10,6 @@ class CentroCusto {
   Map<String, dynamic> toJson() => {'id': id, 'nome': nome};
 
   static List<FieldConfig> fieldConfigs = [
-    FieldConfig(label: "Nome", fieldName: "nome", icon: Icons.account_balance, isInForm: true, isFilterable: true),
+    const FieldConfig(label: "Nome", fieldName: "nome", icon: Icons.account_balance, isInForm: true, isFilterable: true),
   ];
 }

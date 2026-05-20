@@ -7,6 +7,8 @@ import '../../../models/auth_utility.dart';
 import '../../../widgets/negociacao_core.dart';
 import '../../../widgets/envio_contrato_core.dart';
 
+
+import 'package:task_manager_flutter/utils/app_logger.dart';
 class WebCheckoutScreen extends StatefulWidget {
   final String productName;
   final double productValue;
@@ -89,10 +91,10 @@ class _WebCheckoutScreenState extends State<WebCheckoutScreen> {
   }
 
   void _exibirTermos() {
-    print("Starting _exibirTermos");
+    L.d("Starting _exibirTermos");
 
     if (_termsText.isEmpty) {
-      print("_termsText is empty. Not showing dialog.");
+      L.d("_termsText is empty. Not showing dialog.");
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(const SnackBar(content: Text('Termos não encontrados.')));
@@ -102,9 +104,9 @@ class _WebCheckoutScreenState extends State<WebCheckoutScreen> {
     final unescape = HtmlUnescape();
     String textoDecodificado =
         _termsText.contains('&') ? unescape.convert(_termsText) : _termsText;
-    print("Decoded text: $textoDecodificado");
+    L.d("Decoded text: $textoDecodificado");
 
-    print("About to show dialog");
+    L.d("About to show dialog");
 
     showDialog(
       context: context,
@@ -148,7 +150,7 @@ class _WebCheckoutScreenState extends State<WebCheckoutScreen> {
         actions: [
           TextButton(
             onPressed: () {
-              print("Closing dialog");
+              L.d("Closing dialog");
               Navigator.pop(context);
             },
             child: Text('Fechar', style: TextStyle(color: _bordaVerdeEscuro)),
@@ -156,7 +158,7 @@ class _WebCheckoutScreenState extends State<WebCheckoutScreen> {
         ],
       ),
     );
-    print("showDialog finished");
+    L.d("showDialog finished");
   }
 
   Widget _buildCardInformacao(String titulo, String valor) {
@@ -166,10 +168,10 @@ class _WebCheckoutScreenState extends State<WebCheckoutScreen> {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: _bordaVerdeEscuro.withOpacity(0.3)),
+        border: Border.all(color: _bordaVerdeEscuro.withValues(alpha: 0.3)),
         boxShadow: [
           BoxShadow(
-            color: Colors.grey.withOpacity(0.1),
+            color: Colors.grey.withValues(alpha: 0.1),
             spreadRadius: 2,
             blurRadius: 5,
           ),
@@ -295,7 +297,7 @@ class _WebCheckoutScreenState extends State<WebCheckoutScreen> {
               decoration: BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(15),
-                border: Border.all(color: _bordaVerdeEscuro.withOpacity(0.3)),
+                border: Border.all(color: _bordaVerdeEscuro.withValues(alpha: 0.3)),
               ),
               child: Row(
                 children: [
@@ -335,7 +337,7 @@ class _WebCheckoutScreenState extends State<WebCheckoutScreen> {
               decoration: BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(15),
-                border: Border.all(color: Colors.green[800]!.withOpacity(0.3)),
+                border: Border.all(color: Colors.green[800]!.withValues(alpha: 0.3)),
               ),
               child: Row(
                 children: [

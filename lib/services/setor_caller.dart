@@ -4,6 +4,8 @@ import '../../../utils/api_links.dart';
 
 import '../models/setor_model.dart';
 
+
+import 'package:task_manager_flutter/utils/app_logger.dart';
 class SetorCaller {
   Future<List<Setor>> fetchAllSetores() async {
     List<Setor> list = [];
@@ -17,7 +19,7 @@ class SetorCaller {
         list = (data as List).map((item) => Setor.fromJson(item)).toList();
       }
     } catch (e) {
-      print('Erro ao carregar setores: $e');
+      L.d('Erro ao carregar setores: $e');
       throw Exception('Erro ao carregar setores: $e');
     }
     return list;

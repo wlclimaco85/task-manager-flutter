@@ -21,18 +21,24 @@ class OtpVerificationScreen extends StatefulWidget {
 }
 
 class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
-  final TextEditingController _otpTEController = TextEditingController();
+  final PinInputController _otpController = PinInputController();
   bool _isLoading = false;
   final GlobalKey<FormState> _otpFormKey = GlobalKey<FormState>();
 
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
+
+  @override
+  void dispose() {
+    _otpController.dispose();
+    super.dispose();
+  }
 
   Future<void> otpVerify() async {
     _isLoading = true;
     setState(() {});
 
     NetworkResponse response = await NetworkCaller().getRequest(
-        ApiLinks.recoverVerifyOTP(widget.email, _otpTEController.text.trim()));
+        ApiLinks.recoverVerifyOTP(widget.email, _otpController.text.trim()));
 
     _isLoading = false;
     setState(() {});
@@ -44,7 +50,7 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
           MaterialPageRoute(
             builder: (context) => ResetPasswordScreen(
               email: widget.email,
-              otp: _otpTEController.text.trim(),
+              otp: _otpController.text.trim(),
             ),
           ),
         );
@@ -88,27 +94,25 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
                 const SizedBox(height: 16),
                 Form(
                   key: _otpFormKey,
-                  child: PinCodeTextField(
-                    controller: _otpTEController,
-                    appContext: context,
+                  child: MaterialPinField(
+                    pinController: _otpController,
                     length: 6,
                     keyboardType: TextInputType.number,
-                    animationType: AnimationType.fade,
-                    animationDuration: const Duration(milliseconds: 300),
-                    enableActiveFill: true,
-                    cursorColor: Colors.green,
-                    pinTheme: PinTheme(
-                      shape: PinCodeFieldShape.box,
+                    theme: MaterialPinTheme(
+                      shape: MaterialPinShape.outlined,
+                      cellSize: const Size(50, 50),
                       borderRadius: BorderRadius.circular(5),
-                      fieldHeight: 50,
                       borderWidth: 0.5,
-                      fieldWidth: 50,
-                      inactiveFillColor: Colors.white,
-                      inactiveColor: Colors.white,
-                      activeColor: Colors.white,
-                      selectedColor: Colors.green,
-                      selectedFillColor: Colors.white,
-                      activeFillColor: Colors.white,
+                      fillColor: Colors.white,
+                      focusedFillColor: Colors.white,
+                      completeFillColor: Colors.white,
+                      borderColor: Colors.white,
+                      focusedBorderColor: Colors.green,
+                      completeBorderColor: Colors.white,
+                      followingBorderColor: Colors.white,
+                      cursorColor: Colors.green,
+                      entryAnimation: MaterialPinAnimation.fade,
+                      animationDuration: const Duration(milliseconds: 300),
                     ),
                   ),
                 ),

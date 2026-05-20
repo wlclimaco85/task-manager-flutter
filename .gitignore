@@ -51,3 +51,7 @@ fastlane/AuthKey*.p8
 android/*.jks
 android/app/*.jks
 Gemfile.lock
+
+# Windows build outputs
+_windows/flutter/ephemeral/
+_windows/build/

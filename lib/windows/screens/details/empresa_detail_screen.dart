@@ -1,23 +1,27 @@
 import 'package:flutter/material.dart';
-import '../../../models/empresa_model.dart';
 import '../../../widgets/generic_detail_form_screen.dart';
 import '../../../widgets/generic_grid_windows_screen.dart' show SecurityCheck;
 import '../certificado_empresa_screen.dart';
 
 class WindowsEmpresaDetailScreen extends StatelessWidget {
-  final Empresa item;
+  final Map<String, dynamic> item;
   final SecurityCheck hasPermission;
 
-  const WindowsEmpresaDetailScreen({super.key, required this.item, required this.hasPermission});
+  const WindowsEmpresaDetailScreen({
+    super.key,
+    required this.item,
+    required this.hasPermission,
+  });
 
   @override
   Widget build(BuildContext context) {
-    final id = item.id?.toString() ?? '';
-    final empresaId = item.id ?? 0;
-    final empresaNome = item.nome ?? item.razaoSocial ?? 'Empresa';
+    final id = item['id']?.toString() ?? '';
+    final empresaId = item['id'] as int? ?? 0;
+    final empresaNome =
+        item['nome']?.toString() ?? item['razaoSocial']?.toString() ?? 'Empresa';
 
     return GenericDetailFormScreen(
-      item: item.toJson(),
+      item: item,
       telaNome: 'empresa',
       hasPermission: hasPermission,
       relatedTabs: [
@@ -57,7 +61,6 @@ class WindowsEmpresaDetailScreen extends StatelessWidget {
           telaNome: 'comunicado',
           extraParams: {'empId': id},
         ),
-        // ── Certificado Digital ──────────────────────────────────────────
         RelatedGridTab(
           title: 'Certificado Digital',
           icon: Icons.security,
@@ -66,11 +69,10 @@ class WindowsEmpresaDetailScreen extends StatelessWidget {
                   empresaId: empresaId,
                   empresaNome: empresaNome,
                 )
-              : const Center(child: Text('ID da empresa não disponível')),
+              : const Center(child: Text('ID da empresa nao disponivel')),
         ),
-        // ── Séries NF-e ──────────────────────────────────────────────────
         RelatedGridTab(
-          title: 'Séries NF-e',
+          title: 'Series NF-e',
           icon: Icons.format_list_numbered,
           telaNome: 'nfe_serie',
           extraParams: {'empId': id},

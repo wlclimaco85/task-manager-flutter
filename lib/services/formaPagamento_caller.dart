@@ -3,6 +3,8 @@ import '../../../models/network_response.dart';
 import '../../services/network_caller.dart';
 import '../../../utils/api_links.dart';
 
+
+import 'package:task_manager_flutter/utils/app_logger.dart';
 class FormaPagamentoCaller {
   /// 🔹 Busca e retorna a lista de objetos FormaPagamento
   Future<List<FormaPagamento>> fetchAllFormasPagamento() async {
@@ -19,7 +21,7 @@ class FormaPagamentoCaller {
             .toList();
       }
     } catch (e) {
-      print('Erro ao carregar formas de pagamento: $e');
+      L.d('Erro ao carregar formas de pagamento: $e');
       throw Exception('Erro ao carregar formas de pagamento: $e');
     }
     return list;

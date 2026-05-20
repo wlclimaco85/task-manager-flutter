@@ -4,7 +4,6 @@ import '../../../models/regime_tributario_model.dart';
 import '../../../widgets/tab_config.dart';
 import '../../../widgets/generic_grid_windows_screen.dart'
     show FieldConfigWindows, FieldType;
-import '../../../utils/api_links.dart';
 
 List<TabConfig> tabConfigs = [
   // ----------------------------------------------------
@@ -15,7 +14,7 @@ List<TabConfig> tabConfigs = [
     icon: Icons.person,
     isGrid: false,
     formFields: [
-      FieldConfigWindows(
+      const FieldConfigWindows(
         label: "Nome",
         fieldName: "nome",
         icon: Icons.person,
@@ -23,14 +22,14 @@ List<TabConfig> tabConfigs = [
         isInForm: true,
         isRequired: true,
       ),
-      FieldConfigWindows(
+      const FieldConfigWindows(
         label: "CPF",
         fieldName: "cpf",
         icon: Icons.badge,
         fieldType: FieldType.text,
         isInForm: true,
       ),
-      FieldConfigWindows(
+      const FieldConfigWindows(
         label: "E-mail",
         fieldName: "email",
         icon: Icons.email,
@@ -48,13 +47,13 @@ List<TabConfig> tabConfigs = [
     icon: Icons.business,
     isGrid: true,
     formFields: [
-      FieldConfigWindows(
+      const FieldConfigWindows(
         label: "Nome",
         fieldName: "nome",
         fieldType: FieldType.text,
         icon: Icons.business,
       ),
-      FieldConfigWindows(
+      const FieldConfigWindows(
         label: "CNPJ",
         fieldName: "cnpj",
         fieldType: FieldType.text,
@@ -71,13 +70,13 @@ List<TabConfig> tabConfigs = [
     icon: Icons.location_city,
     isGrid: true,
     formFields: [
-      FieldConfigWindows(
+      const FieldConfigWindows(
         label: "Logradouro",
         fieldName: "logradouro",
         fieldType: FieldType.text,
         icon: Icons.location_on,
       ),
-      FieldConfigWindows(
+      const FieldConfigWindows(
         label: "Cidade",
         fieldName: "cidade",
         fieldType: FieldType.text,

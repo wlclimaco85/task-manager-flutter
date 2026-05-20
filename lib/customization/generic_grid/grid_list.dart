@@ -430,7 +430,7 @@ class _GridListScreenState extends State<GridListScreen> {
             const Spacer(),
             IconButton(
               onPressed: () => setState(() => _filtersOpen = false),
-              icon: Icon(Icons.close, color: cs.onSurface.withOpacity(0.6)),
+              icon: Icon(Icons.close, color: cs.onSurface.withValues(alpha: 0.6)),
             ),
           ]),
           const SizedBox(height: 12),
@@ -559,7 +559,7 @@ class _GridListScreenState extends State<GridListScreen> {
               ])
             : Column(mainAxisSize: MainAxisSize.min, children: [
                 Icon(Icons.check_circle,
-                    color: cs.primary.withOpacity(0.6), size: 40),
+                    color: cs.primary.withValues(alpha: 0.6), size: 40),
                 const SizedBox(height: 8),
                 const Text('Todos os itens foram carregados')
               ]),
@@ -580,10 +580,10 @@ class _GridListScreenState extends State<GridListScreen> {
           side: BorderSide(
               color: isSelected
                   ? GridColors.primary
-                  : GridColors.primary.withOpacity(0.3)),
+                  : GridColors.primary.withValues(alpha: 0.3)),
         ),
         color:
-            isSelected ? GridColors.primary.withOpacity(0.06) : GridColors.card,
+            isSelected ? GridColors.primary.withValues(alpha: 0.06) : GridColors.card,
         child: InkWell(
           borderRadius: BorderRadius.circular(12),
           onTap: _selectionMode
@@ -612,7 +612,7 @@ class _GridListScreenState extends State<GridListScreen> {
                   padding:
                       const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                   decoration: BoxDecoration(
-                    color: GridColors.primary.withOpacity(0.1),
+                    color: GridColors.primary.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(4),
                   ),
                   child: Text('#$id',
@@ -674,9 +674,9 @@ class _GridListScreenState extends State<GridListScreen> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
+        color: color.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(4),
-        border: Border.all(color: color.withOpacity(0.3)),
+        border: Border.all(color: color.withValues(alpha: 0.3)),
       ),
       child: Text(
         text,
@@ -719,7 +719,7 @@ class _GridListScreenState extends State<GridListScreen> {
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           Text(c.label,
               style: TextStyle(
-                  fontSize: 11, color: Colors.black.withOpacity(0.6))),
+                  fontSize: 11, color: Colors.black.withValues(alpha: 0.6))),
           const SizedBox(height: 2),
           Row(mainAxisSize: MainAxisSize.min, children: [
             const Icon(Icons.attach_file, size: 14, color: GridColors.primary),
@@ -748,7 +748,7 @@ class _GridListScreenState extends State<GridListScreen> {
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         Text(c.label,
             style:
-                TextStyle(fontSize: 11, color: Colors.black.withOpacity(0.6))),
+                TextStyle(fontSize: 11, color: Colors.black.withValues(alpha: 0.6))),
         const SizedBox(height: 2),
         Text(value, maxLines: 1, overflow: TextOverflow.ellipsis),
       ]),
@@ -771,14 +771,14 @@ class _GridListScreenState extends State<GridListScreen> {
       if (widget.enableDebugMode)
         IconButton(
           icon: Icon(Icons.bug_report,
-              size: 16, color: Colors.black.withOpacity(0.6)),
+              size: 16, color: Colors.black.withValues(alpha: 0.6)),
           tooltip: 'Ver JSON',
           onPressed: () => _showAllFieldsDebug(context, item),
         ),
       if (widget.detailScreenBuilder != null && _can('view'))
         IconButton(
           icon: Icon(Icons.visibility_outlined,
-              size: 16, color: Colors.black.withOpacity(0.6)),
+              size: 16, color: Colors.black.withValues(alpha: 0.6)),
           onPressed: () {
             L.d('[GridList] abrir detalhes do item ${getNestedValue(item, widget.idFieldName)}');
             Navigator.push(
@@ -791,7 +791,7 @@ class _GridListScreenState extends State<GridListScreen> {
       if (_can('edit'))
         IconButton(
           icon: Icon(Icons.edit_outlined,
-              size: 16, color: Colors.black.withOpacity(0.6)),
+              size: 16, color: Colors.black.withValues(alpha: 0.6)),
           onPressed: () async {
             final ok = await _confirm(
               title: 'Editar',
@@ -813,7 +813,7 @@ class _GridListScreenState extends State<GridListScreen> {
       ...perItemServer.map(
         (a) => IconButton(
           icon: Icon(a.icon ?? Icons.play_arrow,
-              size: 16, color: Colors.black.withOpacity(0.7)),
+              size: 16, color: Colors.black.withValues(alpha: 0.7)),
           tooltip: a.label,
           onPressed: () => _runServerAction(context, a, item),
         ),

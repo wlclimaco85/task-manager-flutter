@@ -11,6 +11,8 @@ import '../../../widgets/user_banners.dart';
 import '../screens/update_profile.dart';
 import '../../constants/custom_colors.dart';
 
+
+import 'package:task_manager_flutter/utils/app_logger.dart';
 class TaskScreens extends StatefulWidget {
   final String screenStatus;
   final String apiLink;
@@ -262,7 +264,7 @@ class _TaskScreenState extends State<TaskScreens> {
   bool outlinedSelected = false;
   int count = 0;
 
-  void log(String message) => print(message);
+  void log(String message) => L.d(message);
 
   @override
   Widget build(BuildContext context) {

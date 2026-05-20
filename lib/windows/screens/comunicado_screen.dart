@@ -6,6 +6,8 @@ import '../../../models/network_response.dart';
 import '../../../utils/api_links.dart';
 import '../../services/network_caller.dart';
 
+
+import 'package:task_manager_flutter/utils/app_logger.dart';
 class Comunicado {
   String id;
   String titulo;
@@ -99,7 +101,7 @@ class _WindowsComunicadoGridScreenState extends State<WindowsComunicadoGridScree
           filtered = List.from(comunicados);
         });
       } catch (e) {
-        print('Erro no parse dos dados: $e');
+        L.d('Erro no parse dos dados: $e');
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Erro ao processar os dados')),
         );
@@ -221,17 +223,17 @@ class _WindowsComunicadoGridScreenState extends State<WindowsComunicadoGridScree
                   // Campo Título
                   TextFormField(
                     controller: tituloController,
-                    decoration: InputDecoration(
+                    decoration: const InputDecoration(
                       labelText: "Título",
-                      labelStyle: const TextStyle(color: Colors.grey),
-                      focusedBorder: const OutlineInputBorder(
+                      labelStyle: TextStyle(color: Colors.grey),
+                      focusedBorder: OutlineInputBorder(
                         borderSide: BorderSide(color: Colors.green, width: 2.0),
                       ),
-                      enabledBorder: const OutlineInputBorder(
+                      enabledBorder: OutlineInputBorder(
                         borderSide: BorderSide(color: Colors.grey, width: 1.0),
                       ),
-                      prefixIcon: const Icon(Icons.title, color: Colors.green),
-                      contentPadding: const EdgeInsets.symmetric(
+                      prefixIcon: Icon(Icons.title, color: Colors.green),
+                      contentPadding: EdgeInsets.symmetric(
                         vertical: 15,
                         horizontal: 15,
                       ),
@@ -245,20 +247,20 @@ class _WindowsComunicadoGridScreenState extends State<WindowsComunicadoGridScree
                   TextFormField(
                     controller: conteudoController,
                     maxLines: 3,
-                    decoration: InputDecoration(
+                    decoration: const InputDecoration(
                       labelText: "Conteúdo",
-                      labelStyle: const TextStyle(color: Colors.grey),
-                      focusedBorder: const OutlineInputBorder(
+                      labelStyle: TextStyle(color: Colors.grey),
+                      focusedBorder: OutlineInputBorder(
                         borderSide: BorderSide(color: Colors.green, width: 2.0),
                       ),
-                      enabledBorder: const OutlineInputBorder(
+                      enabledBorder: OutlineInputBorder(
                         borderSide: BorderSide(color: Colors.grey, width: 1.0),
                       ),
-                      prefixIcon: const Icon(
+                      prefixIcon: Icon(
                         Icons.description,
                         color: Colors.green,
                       ),
-                      contentPadding: const EdgeInsets.symmetric(
+                      contentPadding: EdgeInsets.symmetric(
                         vertical: 15,
                         horizontal: 15,
                       ),
@@ -271,20 +273,20 @@ class _WindowsComunicadoGridScreenState extends State<WindowsComunicadoGridScree
                   // Campo Categoria
                   TextFormField(
                     controller: categoriaController,
-                    decoration: InputDecoration(
+                    decoration: const InputDecoration(
                       labelText: "Categoria",
-                      labelStyle: const TextStyle(color: Colors.grey),
-                      focusedBorder: const OutlineInputBorder(
+                      labelStyle: TextStyle(color: Colors.grey),
+                      focusedBorder: OutlineInputBorder(
                         borderSide: BorderSide(color: Colors.green, width: 2.0),
                       ),
-                      enabledBorder: const OutlineInputBorder(
+                      enabledBorder: OutlineInputBorder(
                         borderSide: BorderSide(color: Colors.grey, width: 1.0),
                       ),
-                      prefixIcon: const Icon(
+                      prefixIcon: Icon(
                         Icons.category,
                         color: Colors.green,
                       ),
-                      contentPadding: const EdgeInsets.symmetric(
+                      contentPadding: EdgeInsets.symmetric(
                         vertical: 15,
                         horizontal: 15,
                       ),
@@ -297,17 +299,17 @@ class _WindowsComunicadoGridScreenState extends State<WindowsComunicadoGridScree
                   // Campo Autor
                   TextFormField(
                     controller: autorController,
-                    decoration: InputDecoration(
+                    decoration: const InputDecoration(
                       labelText: "Autor",
-                      labelStyle: const TextStyle(color: Colors.grey),
-                      focusedBorder: const OutlineInputBorder(
+                      labelStyle: TextStyle(color: Colors.grey),
+                      focusedBorder: OutlineInputBorder(
                         borderSide: BorderSide(color: Colors.green, width: 2.0),
                       ),
-                      enabledBorder: const OutlineInputBorder(
+                      enabledBorder: OutlineInputBorder(
                         borderSide: BorderSide(color: Colors.grey, width: 1.0),
                       ),
-                      prefixIcon: const Icon(Icons.person, color: Colors.green),
-                      contentPadding: const EdgeInsets.symmetric(
+                      prefixIcon: Icon(Icons.person, color: Colors.green),
+                      contentPadding: EdgeInsets.symmetric(
                         vertical: 15,
                         horizontal: 15,
                       ),

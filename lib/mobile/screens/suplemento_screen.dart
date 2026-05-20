@@ -9,6 +9,8 @@ import '../../../widgets/input_field_busca.dart';
 import '../screens/suplemento_list.dart';
 import '../screens/suplemento_add.dart';
 
+
+import 'package:task_manager_flutter/utils/app_logger.dart';
 class SuplementoScreen extends StatefulWidget {
   const SuplementoScreen({
     super.key,
@@ -38,7 +40,7 @@ class _SuplementoScreenState extends State<SuplementoScreen> {
   int count = 0;
   final List<String> modalidadeList = ['Musculação'];
 
-  void log(String message) => print(message);
+  void log(String message) => L.d(message);
 
   bool _addNewTaskLoading = false;
 

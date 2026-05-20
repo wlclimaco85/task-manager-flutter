@@ -5,6 +5,8 @@ import '../../../utils/api_links.dart';
 import '../../../models/network_response.dart';
 import '../../services/network_caller.dart';
 
+
+import 'package:task_manager_flutter/utils/app_logger.dart';
 class CotacaoCaller {
   Future<List<Cotacao>> fetchCotacoes() async {
     List<Cotacao>? model = [];
@@ -27,7 +29,7 @@ class CotacaoCaller {
         // Trate o caso onde o data é nulo
       }
     } catch (e) {
-      print('Erro: $e'); // Log do erro
+      L.d('Erro: $e'); // Log do erro
       throw Exception('Erro ao carregar cotações: $e');
     }
     return model;
@@ -54,7 +56,7 @@ class CotacaoCaller {
         // Trate o caso onde o data é nulo
       }
     } catch (e) {
-      print('Erro: $e'); // Log do erro
+      L.d('Erro: $e'); // Log do erro
       throw Exception('Erro ao carregar cotações: $e');
     }
     return model;

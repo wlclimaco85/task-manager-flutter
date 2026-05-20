@@ -11,6 +11,8 @@ import '../screens/Dieta_list.dart';
 import '../../../models/auth_utility.dart';
 import '../../../models/login_model.dart';
 
+
+import 'package:task_manager_flutter/utils/app_logger.dart';
 class Dietacreen extends StatefulWidget {
   const Dietacreen({
     super.key,
@@ -40,7 +42,7 @@ class _DietacreenState extends State<Dietacreen> {
   int count = 0;
   final List<String> modalidadeList = ['Musculação'];
 
-  void log(String message) => print(message);
+  void log(String message) => L.d(message);
 
   bool _addNewTaskLoading = false;
 

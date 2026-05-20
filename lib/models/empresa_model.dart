@@ -203,7 +203,7 @@ class Empresa {
       isFilterable: true,
     ),
     // ---- DROPDOWN Aplicativo ----
-    FieldConfigWindows(
+    const FieldConfigWindows(
       label: "Aplicativo",
       fieldName: "aplicativo",
       displayFieldName: "aplicativo.nome",
@@ -216,7 +216,7 @@ class Empresa {
       isRequired: true,
     ),
     // ---- DROPDOWN Regime ----
-    FieldConfigWindows(
+    const FieldConfigWindows(
       label: "Regime Tributário",
       fieldName: "regime",
       displayFieldName: "regime.codigo",

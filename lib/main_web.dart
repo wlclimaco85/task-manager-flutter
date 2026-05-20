@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:task_manager_flutter/web/screens/splash_screens.dart';
 
 void main() {

@@ -113,9 +113,7 @@ class RegimeTributario {
   static List<win.FieldConfigWindows> fieldConfigsWindows() {
     return fieldConfigs.map((card.FieldConfig f) {
       // Mapeia o enum antigo para o enum de FieldType do Windows
-      final win.FieldType mappedType = f.fieldType != null
-          ? win.FieldType.values[f.fieldType!.index]
-          : win.FieldType.text;
+      final win.FieldType mappedType = win.FieldType.values[f.fieldType.index];
 
       return win.FieldConfigWindows(
         label: f.label ?? "",

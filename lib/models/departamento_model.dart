@@ -15,7 +15,7 @@ class Departamento {
   Map<String, dynamic> toJson() => {'id': id, 'nome': nome, 'numeroFolha': numeroFolha};
 
   static List<FieldConfig> fieldConfigs = [
-    FieldConfig(label: "Nome", fieldName: "nome", icon: Icons.business, isInForm: true, isFilterable: true),
-    FieldConfig(label: "Número Folha", fieldName: "numeroFolha", icon: Icons.numbers, isInForm: true),
+    const FieldConfig(label: "Nome", fieldName: "nome", icon: Icons.business, isInForm: true, isFilterable: true),
+    const FieldConfig(label: "Número Folha", fieldName: "numeroFolha", icon: Icons.numbers, isInForm: true),
   ];
 }

@@ -26,20 +26,20 @@ class Suplemento {
   }
 
   static List<FieldConfig> fieldConfigs = [
-    FieldConfig(
+    const FieldConfig(
       label: "Nome",
       fieldName: "nome",
       icon: Icons.local_drink,
       isInForm: true,
       isFilterable: true,
     ),
-    FieldConfig(
+    const FieldConfig(
       label: "Descrição",
       fieldName: "descricao",
       icon: Icons.description,
       isInForm: true,
     ),
-    FieldConfig(
+    const FieldConfig(
       label: "Fabricante",
       fieldName: "fabricante",
       icon: Icons.factory,

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../customization/generic_grid_card.dart';
 import '../models/empresa_model.dart';
+import '../models/parceiro_model.dart';
 
 class ContaBancaria {
   int? id;
@@ -8,9 +9,12 @@ class ContaBancaria {
   String? agencia;
   String? numero;
   String? descricao;
+  String? tipo;
+  double? saldoInicial;
+  DateTime? dataAbertura;
   double? saldoAtual;
   Empresa empresa;
-  int? parceiro;
+  Parceiro? parceiro;
   bool ativo;
 
   ContaBancaria({
@@ -19,6 +23,9 @@ class ContaBancaria {
     this.agencia,
     this.numero,
     this.descricao,
+    this.tipo,
+    this.saldoInicial,
+    this.dataAbertura,
     this.saldoAtual,
     required this.empresa,
     this.parceiro,
@@ -32,9 +39,22 @@ class ContaBancaria {
       agencia: json['agencia'],
       numero: json['numero'],
       descricao: json['descricao'],
+      tipo: json['tipo'] ?? 'CONTA_CORRENTE',
+      saldoInicial: (json['saldoInicial'] ?? 0).toDouble(),
+      dataAbertura: json['dataAbertura'] != null
+          ? DateTime.parse(json['dataAbertura'])
+          : null,
       saldoAtual: (json['saldoAtual'] ?? 0).toDouble(),
       empresa: json['empresa'] != null ? Empresa.fromJson(json['empresa']) : Empresa(),
+<<<<<<< HEAD
       parceiro: json['parceiroId'] ?? 1,
+=======
+      parceiro: json['parceiro'] != null
+          ? Parceiro.fromJson(Map<String, dynamic>.from(json['parceiro']))
+          : ((json['parceiroId'] != null)
+              ? Parceiro(id: json['parceiroId'])
+              : null),
+>>>>>>> 9c936e366a7278fea1fdb76d20b7c37879acbe59
       ativo: json['ativo'] ?? true,
     );
   }
@@ -46,9 +66,12 @@ class ContaBancaria {
       'agencia': agencia,
       'numero': numero,
       'descricao': descricao,
+      'tipo': tipo,
+      'saldoInicial': saldoInicial,
+      'dataAbertura': dataAbertura?.toIso8601String(),
       'saldoAtual': saldoAtual,
-      'empresa': empresa,
-      if (parceiro != null) 'parceiro': parceiro!,
+      'empresa': empresa.toJson(),
+      if (parceiro != null) 'parceiro': parceiro!.toJson(),
       'ativo': ativo,
     };
   }
@@ -62,6 +85,7 @@ class ContaBancaria {
       isFilterable: true,
       isVisibleByDefault: true,
       isFixed: true,
+      isRequired: true,
       fieldType: FieldType.text,
     ),
     const FieldConfig(
@@ -80,6 +104,7 @@ class ContaBancaria {
       isInForm: true,
       isVisibleByDefault: true,
       isFixed: false,
+      isRequired: true,
       fieldType: FieldType.text,
     ),
     const FieldConfig(
@@ -90,6 +115,43 @@ class ContaBancaria {
       isVisibleByDefault: true,
       isFixed: false,
       fieldType: FieldType.text,
+    ),
+    const FieldConfig(
+      label: "Tipo",
+      fieldName: "tipo",
+      icon: Icons.category,
+      isInForm: true,
+      isVisibleByDefault: true,
+      isFixed: false,
+      isRequired: true,
+      fieldType: FieldType.dropdown,
+      dropdownOptions: [
+        {'value': 'CONTA_CORRENTE', 'label': 'Conta Corrente'},
+        {'value': 'POUPANCA', 'label': 'Poupança'},
+        {'value': 'INVESTIMENTO', 'label': 'Investimento'},
+      ],
+      dropdownValueField: 'value',
+      dropdownDisplayField: 'label',
+    ),
+    const FieldConfig(
+      label: "Saldo Inicial",
+      fieldName: "saldoInicial",
+      icon: Icons.savings,
+      isInForm: true,
+      isVisibleByDefault: true,
+      isFixed: false,
+      isRequired: true,
+      fieldType: FieldType.currency,
+    ),
+    const FieldConfig(
+      label: "Data Abertura",
+      fieldName: "dataAbertura",
+      icon: Icons.event,
+      isInForm: true,
+      isVisibleByDefault: true,
+      isFixed: false,
+      isRequired: true,
+      fieldType: FieldType.date,
     ),
     const FieldConfig(
       label: "Saldo Atual",

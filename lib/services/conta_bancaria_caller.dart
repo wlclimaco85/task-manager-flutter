@@ -50,15 +50,18 @@ class ContaBancariaCaller {
     String? historico,
   }) async {
     try {
-      final url = '${ApiLinks.contasBancarias}/transferir'
-          '?contaOrigemId=$contaOrigemId'
-          '&contaDestinoId=$contaDestinoId'
-          '&valor=$valor'
-          '&empresaId=$empresaId'
-          '${parceiroId != null ? '&parceiroId=$parceiroId' : ''}'
-          '${historico != null && historico.isNotEmpty ? '&historico=$historico' : ''}';
+      final uri = Uri.parse('${ApiLinks.contasBancarias}/transferir').replace(
+        queryParameters: {
+          'contaOrigemId': contaOrigemId.toString(),
+          'contaDestinoId': contaDestinoId.toString(),
+          'valor': valor.toString(),
+          'empresaId': empresaId.toString(),
+          if (parceiroId != null) 'parceiroId': parceiroId.toString(),
+          if (historico != null && historico.isNotEmpty) 'historico': historico,
+        },
+      );
       final NetworkResponse response =
-          await NetworkCaller().postRequest(url, {});
+          await NetworkCaller().postRequest(uri.toString(), {});
       return response.isSuccess;
     } catch (e) {
       debugPrint('Erro ao transferir saldo: $e');
@@ -75,14 +78,18 @@ class ContaBancariaCaller {
     required String ate,
   }) async {
     try {
-      final url = '${ApiLinks.contasBancarias}/extrato/pdf'
-          '?contaId=$contaId'
-          '&empresaId=$empresaId'
-          '${parceiroId != null ? '&parceiroId=$parceiroId' : ''}'
-          '&de=$de&ate=$ate';
+      final uri = Uri.parse('${ApiLinks.contasBancarias}/extrato/pdf').replace(
+        queryParameters: {
+          'contaId': contaId.toString(),
+          'empresaId': empresaId.toString(),
+          if (parceiroId != null) 'parceiroId': parceiroId.toString(),
+          'de': de,
+          'ate': ate,
+        },
+      );
       final token = AuthUtility.userInfo?.token;
       final response = await http.get(
-        Uri.parse(url),
+        uri,
         headers: {
           'Content-Type': 'application/json',
           if (token != null) 'Authorization': 'Bearer $token',

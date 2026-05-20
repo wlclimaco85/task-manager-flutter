@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'dart:convert';
 import '../../../models/role_model.dart';
 import '../../services/role_caller.dart';
 
@@ -35,7 +34,7 @@ class GridColors {
 class WebRoleDialog extends StatefulWidget {
   final int loginId;
 
-  const WebRoleDialog({Key? key, required this.loginId}) : super(key: key);
+  const WebRoleDialog({super.key, required this.loginId});
 
   @override
   _WebRoleDialogState createState() => _WebRoleDialogState();
@@ -71,7 +70,7 @@ class _WebRoleDialogState extends State<WebRoleDialog> {
   _associateRole() async {
     if (_selectedRole == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
+        const SnackBar(
           content: Text('Selecione uma role'),
           backgroundColor: GridColors.error,
         ),
@@ -106,7 +105,7 @@ class _WebRoleDialogState extends State<WebRoleDialog> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Text(
+            const Text(
               'Associar Role',
               style: TextStyle(
                 fontSize: 18,
@@ -114,14 +113,14 @@ class _WebRoleDialogState extends State<WebRoleDialog> {
                 color: GridColors.textSecondary,
               ),
             ),
-            SizedBox(height: 16),
+            const SizedBox(height: 16),
             if (_isLoading)
-              Center(child: CircularProgressIndicator())
+              const Center(child: CircularProgressIndicator())
             else if (_error != null)
-              Text(_error!, style: TextStyle(color: GridColors.error))
+              Text(_error!, style: const TextStyle(color: GridColors.error))
             else
               DropdownButtonFormField<Role>(
-                decoration: InputDecoration(
+                decoration: const InputDecoration(
                   labelText: 'Role',
                   labelStyle: TextStyle(color: GridColors.inputBorder),
                   enabledBorder: OutlineInputBorder(
@@ -131,11 +130,11 @@ class _WebRoleDialogState extends State<WebRoleDialog> {
                     borderSide: BorderSide(color: GridColors.primary),
                   ),
                 ),
-                value: _selectedRole,
+                initialValue: _selectedRole,
                 items: _roles.map((Role role) {
                   return DropdownMenuItem<Role>(
                     value: role,
-                    child: Text(role?.description ?? ''),
+                    child: Text(role.description ?? ''),
                   );
                 }).toList(),
                 onChanged: (Role? newValue) {
@@ -144,7 +143,7 @@ class _WebRoleDialogState extends State<WebRoleDialog> {
                   });
                 },
               ),
-            SizedBox(height: 16),
+            const SizedBox(height: 16),
             Row(
               mainAxisAlignment: MainAxisAlignment.end,
               children: [
@@ -152,18 +151,18 @@ class _WebRoleDialogState extends State<WebRoleDialog> {
                   onPressed: () {
                     Navigator.of(context).pop(false);
                   },
-                  child: Text(
+                  child: const Text(
                     'Cancelar',
                     style: TextStyle(color: GridColors.textSecondary),
                   ),
                 ),
-                SizedBox(width: 8),
+                const SizedBox(width: 8),
                 ElevatedButton(
                   onPressed: _associateRole,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: GridColors.buttonBackground,
                   ),
-                  child: Text(
+                  child: const Text(
                     'Associar',
                     style: TextStyle(color: GridColors.buttonText),
                   ),

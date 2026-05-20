@@ -5,6 +5,8 @@ import 'package:flutter/material.dart';
 import '../../constants/custom_colors.dart';
 import 'package:image_picker/image_picker.dart';
 
+
+import 'package:task_manager_flutter/utils/app_logger.dart';
 final List<Map<String, dynamic>> _dataArray = []; //add this
 String? _data = ""; //add this
 
@@ -62,8 +64,8 @@ class _ListFotoForm extends State<ListFotoForm> {
         if (entry.key == key && entry.value == chave) {
           _dataArray[key][chave] = value;
         }
-        print(entry.key);
-        print(entry.value);
+        L.d(entry.key);
+        L.d(entry.value);
       });
 
       for (var map in _dataArray) {

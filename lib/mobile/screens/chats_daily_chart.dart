@@ -133,7 +133,7 @@ class _ChatsDailyChartState extends State<ChatsDailyChart> {
           borderRadius: BorderRadius.circular(16),
           boxShadow: [
             BoxShadow(
-              color: GridColors.primary.withOpacity(0.1),
+              color: GridColors.primary.withValues(alpha: 0.1),
               blurRadius: 6,
               offset: const Offset(0, 2),
             ),
@@ -147,7 +147,7 @@ class _ChatsDailyChartState extends State<ChatsDailyChart> {
               handleBuiltInTouches: true,
               touchTooltipData: LineTouchTooltipData(
                 getTooltipColor: (LineBarSpot touchedSpot) {
-                  return GridColors.primary.withOpacity(0.85);
+                  return GridColors.primary.withValues(alpha: 0.85);
                 },
                 getTooltipItems: (List<LineBarSpot> touchedSpots) {
                   return touchedSpots.map((spot) {
@@ -205,7 +205,7 @@ class _ChatsDailyChartState extends State<ChatsDailyChart> {
                   show: true,
                   gradient: LinearGradient(
                     colors: [
-                      GridColors.secondary.withOpacity(0.35),
+                      GridColors.secondary.withValues(alpha: 0.35),
                       Colors.transparent
                     ],
                     begin: Alignment.topCenter,

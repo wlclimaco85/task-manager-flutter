@@ -49,7 +49,7 @@ class WindowsObrigacaoFiscalGridScreen extends StatelessWidget {
       hasPermission: hasPermission,
       fromJson: (json) => ObrigacaoFiscal.fromJson(json),
       toJson: (a) => a.toJson(),
-      fieldOverrides: [
+      fieldOverrides: const [
         // Suprime campos brutos de FK gerados pelo banco
         FieldConfigWindows(fieldName: 'regime_tributario_id', label: '', isInForm: false, isVisibleByDefault: false, enabled: false),
         FieldConfigWindows(fieldName: 'setor_id',             label: '', isInForm: false, isVisibleByDefault: false, enabled: false),

@@ -52,6 +52,8 @@ import './ticket_grid_screen.dart';
 import './alerta_aluno_grid_screen.dart';
 import './avaliacao_fisica_grid_screen.dart';
 import './conta_bancaria_grid_screen.dart';
+import './centro_custo_grid_screen.dart';
+import './categoria_financeira_grid_screen.dart';
 import './classificacao_grid_screen.dart';
 import './dashboard_grid_screen.dart';
 import './feriado_grid_screen.dart';
@@ -68,13 +70,25 @@ import './nfe_finalidade_grid_screen.dart';
 import './nfe_serie_grid_screen.dart';
 import './nfe_tipo_operacao_grid_screen.dart';
 import './nfe_grid_screen.dart';
+import './nfe_import_screen.dart';
 import './ponto_web_screen.dart';
 import './ponto_solicitacao_screen.dart';
 import './ponto_ajuste_screen.dart';
 import './configuracoes_sistema_screen.dart';
 import './chatMessageListScreen.dart';
+import '../../features/trading/trading_dashboard_screen.dart';
+import '../../features/trading/screens/sinais_screen.dart';
+import '../../features/trading/screens/oportunidades_screen.dart';
+import '../../features/trading/screens/backtest_screen.dart';
+import '../../features/trading/services/backtest_repository.dart';
+import '../../utils/api_links.dart';
+import '../../utils/tenant_context.dart';
 import '../../widgets/app_sidebar.dart';
 import './alvara_grid_screen.dart';
+import './nfce/pdv_screen.dart';
+import './nfce/config_fiscal_screen.dart';
+import '../../widgets/crm/crm_pipeline_screen.dart';
+import '../../widgets/fiscal/fiscal_automation_screen.dart';
 
 class WebBottomNavBarScreen extends StatefulWidget {
   const WebBottomNavBarScreen({super.key});
@@ -175,7 +189,7 @@ class _WebBottomNavBarScreenState extends State<WebBottomNavBarScreen> {
           hasPermission: (p) => true), // 28: FormasPagamento
       WebDiretorioGridScreen(hasPermission: (p) => true), // 29: Diretorios
       const GedArquivosScreen(), // 30: GED — Arquivos
-      WebCalendarScreen(), // 31: Calendario
+      const WebCalendarScreen(), // 31: Calendario
       WebObrigacaoFiscalGridScreen(
           hasPermission: (p) => true), // 32: ObrigacoesFiscais
       WebLoginGridScreen(hasPermission: (p) => true), // 33: Logins(dup)
@@ -229,6 +243,26 @@ class _WebBottomNavBarScreenState extends State<WebBottomNavBarScreen> {
       WebModuloServicoGridScreen(
           hasPermission: (p) => true), // 69: ModuloServico
       WebAlvaraGridScreen(hasPermission: (p) => true), // 70: Alvaras
+      // indices 71-79: reservados para expansao futura
+      const NfeImportScreen(), // 71: NfeImportCSV
+      const TradingDashboardScreen(), // 72: Painel Trading
+      const CrmPipelineScreen(), // 73: CRM/Funil
+      const FiscalAutomationScreen(), // 74: Automacao Fiscal
+      const SinaisScreen(), // 75: Sinais de Mercado
+      const OportunidadesScreen(), // 76: Oportunidades
+      const TradingDashboardScreen(initialTabIndex: 1), // 77: Watchlist
+      const TradingDashboardScreen(initialTabIndex: 2), // 78: Alertas de Preço
+      const TradingDashboardScreen(
+          initialTabIndex: 3), // 79: Operações Assistidas
+      const PdvScreen(), // 80: PDV NFC-e
+      const ConfigFiscalScreen(), // 81: Config. Fiscal
+      WebCentroCustoGridScreen(hasPermission: (p) => true), // 82: CentroCusto
+      WebCategoriaFinanceiraGridScreen(
+          hasPermission: (p) => true), // 83: CategoriasFinanceiras
+      const SizedBox.shrink(), // 84
+      BacktestScreen(
+          repository: BacktestRepository(ApiLinks.baseUrl,
+              headers: TenantContext.jsonHeaders)), // 85: Backtest
     ];
   }
 

@@ -1,4 +1,3 @@
-﻿import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -282,7 +281,7 @@ class _EmpresaEditScreenState extends State<EmpresaEditScreen> {
                   _buildRegimeDropdown(),
                   const SizedBox(height: 12),
                   DropdownButtonFormField<String>(
-                    value: _ambientes.contains(_ambiente) ? _ambiente : null,
+                    initialValue: _ambientes.contains(_ambiente) ? _ambiente : null,
                     items: _ambientes.map((a) => DropdownMenuItem(value: a, child: Text(a))).toList(),
                     decoration: InputDecoration(
                       labelText: 'Ambiente',
@@ -314,7 +313,7 @@ class _EmpresaEditScreenState extends State<EmpresaEditScreen> {
 
   Widget _buildPaisDropdown() {
     return DropdownButtonFormField<PaisModel>(
-      value: _paises.contains(_paisSelecionado) ? _paisSelecionado : null,
+      initialValue: _paises.contains(_paisSelecionado) ? _paisSelecionado : null,
       items: _paises.map((p) => DropdownMenuItem(value: p, child: Text(p.nome))).toList(),
       decoration: InputDecoration(labelText: 'País', filled: true, fillColor: GridColors.inputBackground, border: OutlineInputBorder(borderRadius: BorderRadius.circular(12))),
       onChanged: (v) async {
@@ -327,7 +326,7 @@ class _EmpresaEditScreenState extends State<EmpresaEditScreen> {
 
   Widget _buildEstadoDropdown() {
     return DropdownButtonFormField<EstadoModel>(
-      value: _estados.contains(_estadoSelecionado) ? _estadoSelecionado : null,
+      initialValue: _estados.contains(_estadoSelecionado) ? _estadoSelecionado : null,
       items: _estados.map((e) => DropdownMenuItem(value: e, child: Text(e.nome))).toList(),
       decoration: InputDecoration(labelText: _loadingEstados ? 'Estado (carregando...)' : 'Estado', filled: true, fillColor: GridColors.inputBackground, border: OutlineInputBorder(borderRadius: BorderRadius.circular(12))),
       onChanged: (v) async {
@@ -340,7 +339,7 @@ class _EmpresaEditScreenState extends State<EmpresaEditScreen> {
 
   Widget _buildCidadeDropdown() {
     return DropdownButtonFormField<CidadeModel>(
-      value: _cidades.contains(_cidadeSelecionada) ? _cidadeSelecionada : null,
+      initialValue: _cidades.contains(_cidadeSelecionada) ? _cidadeSelecionada : null,
       items: _cidades.map((c) => DropdownMenuItem(value: c, child: Text(c.nome))).toList(),
       decoration: InputDecoration(labelText: _loadingCidades ? 'Cidade (carregando...)' : 'Cidade', filled: true, fillColor: GridColors.inputBackground, border: OutlineInputBorder(borderRadius: BorderRadius.circular(12))),
       onChanged: (v) => setState(() => _cidadeSelecionada = v),
@@ -349,7 +348,7 @@ class _EmpresaEditScreenState extends State<EmpresaEditScreen> {
 
   Widget _buildRegimeDropdown() {
     return DropdownButtonFormField<RegimeTributario>(
-      value: _regimes.contains(_regimeSelecionado) ? _regimeSelecionado : null,
+      initialValue: _regimes.contains(_regimeSelecionado) ? _regimeSelecionado : null,
       items: _regimes.map((r) => DropdownMenuItem(value: r, child: Text(r.descricao ?? ''))).toList(),
       decoration: InputDecoration(labelText: 'Regime Tributário', filled: true, fillColor: GridColors.inputBackground, border: OutlineInputBorder(borderRadius: BorderRadius.circular(12))),
       onChanged: (v) => setState(() => _regimeSelecionado = v),

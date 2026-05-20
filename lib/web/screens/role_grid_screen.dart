@@ -3,7 +3,7 @@ import '../../../utils/dropdown_helpers.dart';
 import '../../../widgets/generic_grid_windows_screen.dart' show CustomAction;
 import '../../../customization/dynamic_grid_windows_screen.dart';
 import '../../../models/role_model.dart';
-import '../../windows/screens/role_dialog.dart';
+import '../../web/screens/role_dialog.dart';
 
 class WebRoleGridScreen extends StatelessWidget {
   final SecurityCheck hasPermission;
@@ -37,7 +37,7 @@ class WebRoleGridScreen extends StatelessWidget {
     showDialog(
       context: context,
       builder: (BuildContext context) {
-        return RoleDialog(loginId: loginId);
+        return WebRoleDialog(loginId: loginId);
       },
     );
   }

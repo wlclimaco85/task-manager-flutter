@@ -15,6 +15,24 @@ class FinancePoint {
   }
 }
 
+class FinanceFluxoPoint {
+  final DateTime day;
+  final double payable;
+  final double receivable;
+
+  FinanceFluxoPoint(this.day, this.payable, this.receivable);
+
+  double get net => receivable - payable;
+
+  factory FinanceFluxoPoint.fromJson(Map<String, dynamic> json) {
+    return FinanceFluxoPoint(
+      _toDate(json['day']),
+      _toDouble(json['payableTotal'] ?? json['payable']),
+      _toDouble(json['receivableTotal'] ?? json['receivable']),
+    );
+  }
+}
+
 class TicketStatusCounts {
   final int open;
   final int inProgress;
@@ -54,7 +72,7 @@ double _toDouble(dynamic v) {
   if (v == null) return 0.0;
   if (v is num) return v.toDouble();
   if (v is String && v.trim().isNotEmpty) {
-    return double.tryParse(v) ?? 0.0;
+    return double.tryParse(v.replaceAll(',', '.')) ?? 0.0;
   }
   return 0.0;
 }

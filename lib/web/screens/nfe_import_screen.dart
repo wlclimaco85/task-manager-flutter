@@ -29,7 +29,11 @@ class _NfeImportScreenState extends State<NfeImportScreen> {
   Map<String, dynamic>? _resultado;
 
   Future<void> _selecionarCabecalho() async {
+<<<<<<< HEAD
     final result = await FilePicker.platform.pickFiles(
+=======
+    final result = await FilePicker.pickFiles(
+>>>>>>> 9c936e366a7278fea1fdb76d20b7c37879acbe59
       type: FileType.custom,
       allowedExtensions: ['csv'],
       withData: true,
@@ -46,7 +50,11 @@ class _NfeImportScreenState extends State<NfeImportScreen> {
   }
 
   Future<void> _selecionarItens() async {
+<<<<<<< HEAD
     final result = await FilePicker.platform.pickFiles(
+=======
+    final result = await FilePicker.pickFiles(
+>>>>>>> 9c936e366a7278fea1fdb76d20b7c37879acbe59
       type: FileType.custom,
       allowedExtensions: ['csv'],
       withData: true,
@@ -81,7 +89,11 @@ class _NfeImportScreenState extends State<NfeImportScreen> {
     });
 
     try {
+<<<<<<< HEAD
       final url = TenantContext.applyToUrl('${ApiLinks.baseUrl}/api/nfe/importar-csv');
+=======
+      final url = TenantContext.applyToUrl(ApiLinks.importarNfeCsv);
+>>>>>>> 9c936e366a7278fea1fdb76d20b7c37879acbe59
       final token = AuthUtility.userInfo?.token;
 
       final request = http.MultipartRequest('POST', Uri.parse(url));
@@ -185,25 +197,43 @@ class _NfeImportScreenState extends State<NfeImportScreen> {
   }
 
   Widget _buildInstrucoes() {
+<<<<<<< HEAD
     return Card(
       elevation: 1,
       child: Padding(
         padding: const EdgeInsets.all(16),
+=======
+    return const Card(
+      elevation: 1,
+      child: Padding(
+        padding: EdgeInsets.all(16),
+>>>>>>> 9c936e366a7278fea1fdb76d20b7c37879acbe59
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
               children: [
+<<<<<<< HEAD
                 const Icon(Icons.info_outline, color: GridColors.secondary),
                 const SizedBox(width: 8),
                 const Text(
+=======
+                Icon(Icons.info_outline, color: GridColors.secondary),
+                SizedBox(width: 8),
+                Text(
+>>>>>>> 9c936e366a7278fea1fdb76d20b7c37879acbe59
                   'Instruções de Importação',
                   style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
                 ),
               ],
             ),
+<<<<<<< HEAD
             const SizedBox(height: 12),
             const Text(
+=======
+            SizedBox(height: 12),
+            Text(
+>>>>>>> 9c936e366a7278fea1fdb76d20b7c37879acbe59
               'Esta tela permite importar NF-e a partir de dois arquivos CSV:\n'
               '  1. Arquivo de Cabeçalho: contém os dados gerais de cada nota (chave, emitente, destinatário, valores)\n'
               '  2. Arquivo de Itens: contém os produtos/serviços de cada nota\n\n'

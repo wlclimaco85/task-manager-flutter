@@ -5,6 +5,8 @@ import '../../../models/network_response.dart';
 import '../../services/network_caller.dart';
 import '../../../utils/api_links.dart';
 
+
+import 'package:task_manager_flutter/utils/app_logger.dart';
 class DocumentoService {
   final String baseUrl = ApiLinks.fecthAllDocumentos;
 
@@ -15,7 +17,7 @@ class DocumentoService {
       '$baseUrl/data/${data.toIso8601String().substring(0, 10)}',
     );
 
-    print(
+    L.d(
       'Response Status: $baseUrl/data/${data.toIso8601String().substring(0, 10)}',
     );
     if (response.statusCode == 200) {
@@ -91,7 +93,7 @@ class DocumentoService {
       if (response.statusCode == 200 && response.body != null) {
         final dados = response.body!['data']?['dados'] ?? response.body!['data'] ?? [];
         if (dados is! List) return [];
-        return (dados as List<dynamic>)
+        return (dados)
             .map<DateTime?>((d) {
               try { return DateTime.parse(d.toString()); } catch (_) { return null; }
             })
@@ -116,7 +118,7 @@ class DocumentoService {
       if (response.statusCode == 200 && response.body != null) {
         final dados = response.body!['data']?['dados'] ?? response.body!['data'] ?? [];
         if (dados is! List) return [];
-        return (dados as List<dynamic>)
+        return (dados)
             .map<DateTime?>((d) {
               try { return DateTime.parse(d.toString()); } catch (_) { return null; }
             })

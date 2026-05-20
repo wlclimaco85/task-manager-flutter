@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../utils/api_links.dart';
 import '../../../widgets/user_banners.dart';
-import '../../../windows/screens/update_profile.dart';
+import '../../../web/screens/update_profile.dart';
 import '../../../widgets/home_list_model.dart';
 import '../../../models/network_response.dart';
 import '../../services/network_caller.dart';
@@ -9,6 +9,8 @@ import '../../../widgets/input_field_busca.dart';
 import '../../../widgets/itens_list_academia.dart';
 import '../../../widgets/academia_dynamic_form.dart';
 
+
+import 'package:task_manager_flutter/utils/app_logger.dart';
 class WebAcademiaScreen extends StatefulWidget {
   const WebAcademiaScreen({super.key});
 
@@ -36,7 +38,7 @@ class _WebAcademiaScreenState extends State<WebAcademiaScreen> {
   int count = 0;
   final List<String> modalidadeList = ['Musculação'];
 
-  void log(String message) => print(message);
+  void log(String message) => L.d(message);
 
   bool _addNewTaskLoading = false;
 
@@ -162,7 +164,7 @@ class _WebAcademiaScreenState extends State<WebAcademiaScreen> {
           Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (context) => const WindowsUpdateProfileScreen(),
+              builder: (context) => const WebUpdateProfileScreen(),
             ),
           );
         },

@@ -5,6 +5,8 @@ import '../../../models/network_response.dart';
 import '../../services/network_caller.dart';
 import '../../../models/auth_utility.dart';
 
+import 'package:task_manager_flutter/utils/app_logger.dart';
+
 class ChatCaller {
   Future<List<ChatMessage>> fetchChats(BuildContext context) async {
     List<ChatMessage>? model = [];
@@ -15,10 +17,10 @@ class ChatCaller {
       final dp = AuthUtility.userInfo?.data?.codDadosPessoal;
       final email = login?.email ?? dp?.email;
       if (email == null || email.isEmpty) {
-        print('ChatCaller: email do usuario nao encontrado');
+        L.d('ChatCaller: email do usuario nao encontrado');
         return model;
       }
-      final url = '${ApiLinks.fecthChats}?user=$email';
+      final url = '${ApiLinks.fecthChats}?user=${Uri.encodeComponent(email)}';
 
       final NetworkResponse response = await NetworkCaller().getRequest(url);
 
@@ -27,7 +29,7 @@ class ChatCaller {
         model.addAll(models.messages ?? []);
       }
     } catch (e) {
-      print('Erro ao carregar chats: $e');
+      L.d('Erro ao carregar chats: $e');
     }
     return model;
   }
@@ -37,19 +39,20 @@ class ChatCaller {
     List<ChatMessage>? model = [];
     ChatMessageModel models;
     try {
-      print('URL de requisição: $chatId');
+      L.d('URL de requisição: $chatId');
 
-      final NetworkResponse response =
-          await NetworkCaller().getRequest(ApiLinks.fecthChatById + chatId);
+      final encodedId = Uri.encodeQueryComponent(chatId);
+      final NetworkResponse response = await NetworkCaller()
+          .getRequest('${ApiLinks.fecthChatById}$encodedId');
 
       if (response.statusCode == 200 && response.body != null) {
         models = ChatMessageModel.fromJson(response.body!);
         model.addAll(models.messages ?? []);
       } else {
-        print('Erro: Nenhum dado retornado');
+        L.d('Erro: Nenhum dado retornado');
       }
     } catch (e) {
-      print('Erro: $e'); // Log do erro
+      L.d('Erro: $e'); // Log do erro
       throw Exception('Erro ao carregar cotações: $e');
     }
     return model;

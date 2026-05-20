@@ -227,7 +227,7 @@ class _ProductCatalogState extends State<ProductCatalog> {
       context: context,
       builder: (_) => AlertDialog(
         backgroundColor: CustomColors().getLightGreenBackground(),
-        title: Text(product.descricao ?? "SEM DESCRIÇÂO"),
+        title: Text(product.descricao ?? "SEM DESCRIÇÃO"),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,

@@ -1,4 +1,4 @@
-﻿// network_caller.dart
+// network_caller.dart
 import 'package:dio/dio.dart';
 import 'package:task_manager_flutter/models/network_response_dio.dart';
 

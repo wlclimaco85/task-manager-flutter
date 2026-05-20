@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../../utils/api_links.dart';
 import '../../../widgets/user_banners.dart';
-import '../../windows/screens/update_profile.dart';
+import '../../web/screens/update_profile.dart';
 import '../../../widgets/custom_input_form.dart';
 import '../../constants/custom_colors.dart';
 import '../../../models/network_response.dart';
@@ -13,6 +13,8 @@ import '../../../utils/personal_validation.dart';
 import '../../models/login_model.dart';
 import '../../../models/auth_utility.dart';
 
+
+import 'package:task_manager_flutter/utils/app_logger.dart';
 class SuplementoModalAdd extends StatefulWidget {
   const SuplementoModalAdd({super.key});
   @override
@@ -64,7 +66,7 @@ class _SuplementoModalAddState extends State<SuplementoModalAdd> {
       const asciiDecoder = AsciiDecoder();
       final asciiValues = [104, 101, 108, 108, 111];
       return asciiValues;
-      print(response.exception);
+      L.d(response.exception);
     }
   }
 
@@ -77,10 +79,10 @@ class _SuplementoModalAddState extends State<SuplementoModalAdd> {
     if (pickImage != null) {
       // var bytes = File(pickImage!.path).readAsBytesSync();
       // String base64Image = base64Encode(bytes);
-      print('upload proccess started');
+      L.d('upload proccess started');
       final bytess = io.File(pickImage!.path).readAsBytesSync();
       //  List<int> imageBytes = pickImage?.readAsBytesSync();
-      // print(imageBytes);
+      // L.d(imageBytes);
       //String base64Images = base64Encode(imageBytes);
       base64Imagess = base64Encode(bytess);
     }
@@ -151,8 +153,8 @@ class _SuplementoModalAddState extends State<SuplementoModalAdd> {
         if (entry.key == key && entry.value == chave) {
           _dataArray[key][chave] = value;
         }
-        print(entry.key);
-        print(entry.value);
+        L.d(entry.key);
+        L.d(entry.value);
       });
 
       for (var map in _dataArray) {
@@ -182,7 +184,7 @@ class _SuplementoModalAddState extends State<SuplementoModalAdd> {
           Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (context) => const WindowsUpdateProfileScreen(),
+              builder: (context) => const WebUpdateProfileScreen(),
             ),
           );
         },

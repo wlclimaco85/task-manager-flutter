@@ -7,6 +7,8 @@ import 'package:dropdown_button2/dropdown_button2.dart';
 import '../../../widgets/custom_selected_tipo_refeicao.dart';
 import '../../../widgets/custom_dieta_box_itens_form.dart';
 
+
+import 'package:task_manager_flutter/utils/app_logger.dart';
 var dias = [
   'Segunda',
   'Terça',
@@ -28,7 +30,7 @@ class NumberToDieta {
   test() {
     NumberToDietaItens myObjectInstanced = NumberToDietaItens();
     List<Map<String, dynamic>> dayNamed = myObjectInstanced.test();
-    print(_dataArray);
+    L.d(_dataArray);
     return _dataArrayMain;
   }
 }
@@ -81,8 +83,8 @@ class _CustomDietaBoxForm extends State<CustomDietaBoxForm> {
         if (entry.key == key && entry.value == chave) {
           _dataArray[key][chave] = value;
         }
-        print(entry.key);
-        print(entry.value);
+        L.d(entry.key);
+        L.d(entry.value);
       });
 
       for (var map in _dataArray) {
@@ -243,7 +245,7 @@ class _CustomDietaBoxForm extends State<CustomDietaBoxForm> {
                     ),
                   ),
                   items: dias.map((item) {
-                    return DropdownMenuItem(
+                    return DropdownItem(
                       value: item,
                       //disable default onTap to avoid closing menu when selecting an item
                       enabled: false,
@@ -261,7 +263,7 @@ class _CustomDietaBoxForm extends State<CustomDietaBoxForm> {
                               setState(() {});
                               //This rebuilds the dropdownMenu Widget to update the check mark
                               menuSetState(() {
-                                print(item);
+                                L.d(item);
                               });
                             },
                             child: Container(
@@ -292,8 +294,7 @@ class _CustomDietaBoxForm extends State<CustomDietaBoxForm> {
                     );
                   }).toList(),
                   //Use last selected item as the current value so if we've limited menu height, it scroll to last item.
-                  value:
-                      diasSelectedItems.isEmpty ? null : diasSelectedItems.last,
+                  valueListenable: ValueNotifier<String?>(diasSelectedItems.isEmpty ? null : diasSelectedItems.last),
                   onChanged: (vales) => _onUpdate(key, vales, chave),
 
                   selectedItemBuilder: (context) {
@@ -349,7 +350,6 @@ class _CustomDietaBoxForm extends State<CustomDietaBoxForm> {
                     ),
                   ),
                   menuItemStyleData: const MenuItemStyleData(
-                    height: 40,
                     padding: EdgeInsets.only(left: 14, right: 14),
                   ),
                 ),
@@ -412,7 +412,7 @@ class _CustomDietaBoxForm extends State<CustomDietaBoxForm> {
                   //      myObjectInstanceds.test();
 
                   //   _dataArraysB.addAll(_dataArrays);
-                  print(_dataArrays);
+                  L.d(_dataArrays);
                 });
               },
               icon: CircleAvatar(
@@ -473,7 +473,7 @@ class _CustomDietaBoxForm extends State<CustomDietaBoxForm> {
                     ),
                   ),
                   items: dias.map((item) {
-                    return DropdownMenuItem(
+                    return DropdownItem(
                       value: item,
                       //disable default onTap to avoid closing menu when selecting an item
                       enabled: false,
@@ -491,7 +491,7 @@ class _CustomDietaBoxForm extends State<CustomDietaBoxForm> {
                               setState(() {});
                               //This rebuilds the dropdownMenu Widget to update the check mark
                               menuSetState(() {
-                                print(item);
+                                L.d(item);
                               });
                             },
                             child: Container(
@@ -522,8 +522,7 @@ class _CustomDietaBoxForm extends State<CustomDietaBoxForm> {
                     );
                   }).toList(),
                   //Use last selected item as the current value so if we've limited menu height, it scroll to last item.
-                  value:
-                      diasSelectedItems.isEmpty ? null : diasSelectedItems.last,
+                  valueListenable: ValueNotifier<String?>(diasSelectedItems.isEmpty ? null : diasSelectedItems.last),
                   onChanged: (vale) => _onUpdate(key, vale, chave),
 
                   selectedItemBuilder: (context) {
@@ -579,7 +578,6 @@ class _CustomDietaBoxForm extends State<CustomDietaBoxForm> {
                     ),
                   ),
                   menuItemStyleData: const MenuItemStyleData(
-                    height: 40,
                     padding: EdgeInsets.only(left: 14, right: 14),
                   ),
                 ),

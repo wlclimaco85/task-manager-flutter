@@ -1,6 +1,5 @@
 import 'dart:convert';
 import 'dart:io';
-import 'dart:typed_data';
 
 import 'package:data_table_2/data_table_2.dart';
 import 'package:file_picker/file_picker.dart';
@@ -16,6 +15,7 @@ import '../../../models/network_response.dart';
 import '../../../utils/api_links.dart';
 import '../../services/network_caller.dart';
 
+import 'package:task_manager_flutter/utils/app_logger.dart';
 // ==============================================
 // ENUMS E CONFIGURAÇÕES
 // ==============================================
@@ -24,27 +24,30 @@ import '../../services/network_caller.dart';
 class GridColors {
   static const Color primary = Color(0xFF93070A);
   static const Color primaryDark = Color(0xFF6A0507);
-  static const Color primaryLight = Color(0xFFB84042);
+  static const Color primaryLight = Color(0xFFFFEDEE);
   static const Color secondary = Color(0xFF005826);
   static const Color secondaryLight = Color(0xFF2E7D32);
   static const Color secondaryDark = Color(0xFF003D1A);
   static const Color textPrimary = Color(0xFFFFFFFF);
-  static const Color textSecondary = Color(0xFF000000);
-  static const Color link = Color(0xFFFF0000);
+  static const Color textSecondary = Color(0xFF1F2933);
+  static const Color link = Color(0xFF93070A);
   static const Color inputBackground = Color(0xFFFFFFFF);
-  static const Color inputBorder = Color(0xFF93070A);
+  static const Color inputBorder = Color(0xFFC8D0C6);
   static const Color buttonBackground = Color(0xFF93070A);
   static const Color buttonText = Color(0xFFFFFFFF);
-  static const Color background = Color(0xFF005826);
+  static const Color background = Color(0xFFF3F6F1);
   static const Color card = Color(0xFFFFFFFF);
   static const Color error = Color(0xFFD32F2F);
   static const Color warning = Color(0xFFFFA000);
   static const Color success = Color(0xFF2E7D32);
-  static const Color info = Color(0xFF1976D2);
-  static const Color divider = Color(0xFFBDBDBD);
-  static const Color filterBackground = Color(0xFFEFEFEF);
-  static const Color hover = Color(0x1A000000);
-  static const Color selectedRow = Color(0xFFE3F2FD);
+  static const Color info = Color(0xFF005826);
+  static const Color divider = Color(0xFFD7DED4);
+  static const Color filterBackground = Color(0xFFE9EFE6);
+  static const Color gridHeader = Color(0xFFDCE7D9);
+  static const Color rowEven = Color(0xFFFFFFFF);
+  static const Color rowOdd = Color(0xFFF1F1F1);
+  static const Color hover = Color(0xFFE6F1E3);
+  static const Color selectedRow = Color(0xFFCFE6CE);
   static const Color dialogBackground = Color(0xFFFFFFFF);
   static const Color shadow = Color(0x26000000);
 }
@@ -449,7 +452,7 @@ class FieldFactory {
   ) {
     return TextFormField(
       controller: controller,
-      keyboardType: TextInputType.numberWithOptions(decimal: true),
+      keyboardType: const TextInputType.numberWithOptions(decimal: true),
       decoration: _buildInputDecoration(config),
       inputFormatters: [
         NumberInputFormatter(
@@ -798,7 +801,7 @@ class FieldFactory {
     final fileConfig = config.fileConfig ?? const FileConfig();
 
     try {
-      FilePickerResult? result = await FilePicker.platform.pickFiles(
+      FilePickerResult? result = await FilePicker.pickFiles(
         type: FileType.custom,
         allowedExtensions: fileConfig.allowedExtensions,
         allowMultiple: fileConfig.allowMultiple,
@@ -821,16 +824,23 @@ class FieldFactory {
   static InputDecoration _buildInputDecoration(FieldConfig config) {
     return InputDecoration(
       labelText: config.label + (config.isRequired ? ' *' : ''),
-      labelStyle: TextStyle(color: GridColors.textSecondary, fontSize: 14),
+      labelStyle:
+          const TextStyle(color: GridColors.textSecondary, fontSize: 13),
       isDense: true,
-      contentPadding: const EdgeInsets.symmetric(vertical: 12, horizontal: 12),
+      filled: true,
+      fillColor: GridColors.inputBackground,
+      contentPadding: const EdgeInsets.symmetric(vertical: 11, horizontal: 12),
       focusedBorder: OutlineInputBorder(
-        borderSide: BorderSide(color: GridColors.primary, width: 1.5),
-        borderRadius: BorderRadius.circular(8),
+        borderSide: const BorderSide(color: GridColors.primary, width: 1.5),
+        borderRadius: BorderRadius.circular(4),
       ),
       enabledBorder: OutlineInputBorder(
-        borderSide: BorderSide(color: GridColors.divider, width: 1.0),
-        borderRadius: BorderRadius.circular(8),
+        borderSide: const BorderSide(color: GridColors.inputBorder, width: 1.0),
+        borderRadius: BorderRadius.circular(4),
+      ),
+      disabledBorder: OutlineInputBorder(
+        borderSide: const BorderSide(color: GridColors.divider, width: 1.0),
+        borderRadius: BorderRadius.circular(4),
       ),
       prefixIcon: config.icon != null
           ? Icon(config.icon, size: 20, color: GridColors.primary)
@@ -1041,7 +1051,7 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
       }
     } catch (e) {
       if (kDebugMode) {
-        print('Erro ao carregar preferências: $e');
+        L.d('Erro ao carregar preferências: $e');
       }
     }
   }
@@ -1059,7 +1069,7 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
       }
     } catch (e) {
       if (kDebugMode) {
-        print('Erro ao salvar preferências: $e');
+        L.d('Erro ao salvar preferências: $e');
       }
     }
   }
@@ -1103,7 +1113,7 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
         );
 
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
+          const SnackBar(
             content: Text('Download realizado com sucesso'),
             backgroundColor: GridColors.success,
           ),
@@ -1140,12 +1150,12 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
   void _validateFieldConfigs() {
     for (final config in widget.fieldConfigs) {
       if (config.fieldType == FieldType.file) {
-        print('Configuração File: ${config.fieldName}');
-        print('Display Field: ${config.displayFieldName}');
+        L.d('Configuração File: ${config.fieldName}');
+        L.d('Display Field: ${config.displayFieldName}');
 
         // Valida se a estrutura está correta
         if (!config.fieldName.contains('.')) {
-          print('AVISO: Campo file deve ser aninhado (ex: "file.id")');
+          L.d('AVISO: Campo file deve ser aninhado (ex: "file.id")');
         }
       }
     }
@@ -1311,16 +1321,16 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
     Map<String, TextEditingController> controllers,
   ) {
     return Dialog(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16.0)),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6.0)),
       elevation: 0,
       backgroundColor: Colors.transparent,
       child: Container(
-        constraints: const BoxConstraints(maxWidth: 600),
-        padding: const EdgeInsets.all(20),
+        constraints: const BoxConstraints(maxWidth: 760),
         decoration: BoxDecoration(
           color: GridColors.dialogBackground,
           shape: BoxShape.rectangle,
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(6),
+          border: Border.all(color: GridColors.divider),
           boxShadow: const [
             BoxShadow(
               color: GridColors.shadow,
@@ -1335,84 +1345,115 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               Container(
-                padding: const EdgeInsets.only(bottom: 16),
-                decoration: BoxDecoration(
-                  border: Border(
-                    bottom: BorderSide(color: GridColors.divider, width: 0.5),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                decoration: const BoxDecoration(
+                  color: GridColors.primary,
+                  borderRadius: BorderRadius.only(
+                    topLeft: Radius.circular(6),
+                    topRight: Radius.circular(6),
                   ),
                 ),
-                child: Text(
-                  item == null ? "Novo Item" : "Editar Item",
-                  style: TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                    color: GridColors.primary,
-                  ),
-                  textAlign: TextAlign.center,
+                child: Row(
+                  children: [
+                    const Icon(Icons.edit_note,
+                        color: GridColors.textPrimary, size: 20),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        item == null ? "Novo Item" : "Editar Item",
+                        style: const TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w700,
+                          color: GridColors.textPrimary,
+                        ),
+                      ),
+                    ),
+                    IconButton(
+                      onPressed: () => Navigator.pop(context),
+                      icon: const Icon(Icons.close,
+                          color: GridColors.textPrimary, size: 18),
+                      padding: EdgeInsets.zero,
+                      constraints:
+                          const BoxConstraints.tightFor(width: 32, height: 32),
+                      tooltip: 'Fechar',
+                    ),
+                  ],
                 ),
               ),
-              const SizedBox(height: 20),
-              ...widget.fieldConfigs.where((config) {
-                if (item == null && config.fieldName == widget.idFieldName) {
-                  return false;
-                }
-                return config.isInForm;
-              }).map((config) {
-                return Padding(
-                  padding: const EdgeInsets.only(bottom: 16),
-                  child: FieldFactory.buildField(
-                    config: config,
-                    controller: controllers[config.fieldName]!,
-                    context: context,
-                    fileCache: _fileCache,
-                    dropdownCache: _dropdownCache,
-                    item: item,
-                  ),
-                );
-              }),
-              const SizedBox(height: 24),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.end,
-                children: [
-                  TextButton(
-                    onPressed: () => Navigator.pop(context),
-                    style: TextButton.styleFrom(
-                      foregroundColor: GridColors.textSecondary,
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 20,
-                        vertical: 10,
-                      ),
-                    ),
-                    child: const Text("CANCELAR"),
-                  ),
-                  const SizedBox(width: 10),
-                  ElevatedButton(
-                    onPressed: _isUpdating
-                        ? null
-                        : () => _saveItem(item, controllers, context),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: GridColors.primary,
-                      foregroundColor: GridColors.card,
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 20,
-                        vertical: 10,
-                      ),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                    ),
-                    child: _isUpdating
-                        ? const SizedBox(
-                            width: 20,
-                            height: 20,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              valueColor: AlwaysStoppedAnimation(Colors.white),
+              Padding(
+                padding: const EdgeInsets.all(18),
+                child: Column(
+                  children: [
+                    ...widget.fieldConfigs.where((config) {
+                      if (item == null &&
+                          config.fieldName == widget.idFieldName) {
+                        return false;
+                      }
+                      return config.isInForm;
+                    }).map((config) {
+                      return Padding(
+                        padding: const EdgeInsets.only(bottom: 12),
+                        child: FieldFactory.buildField(
+                          config: config,
+                          controller: controllers[config.fieldName]!,
+                          context: context,
+                          fileCache: _fileCache,
+                          dropdownCache: _dropdownCache,
+                          item: item,
+                        ),
+                      );
+                    }),
+                    const SizedBox(height: 10),
+                    const Divider(height: 1, color: GridColors.divider),
+                    const SizedBox(height: 14),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      children: [
+                        TextButton(
+                          onPressed: () => Navigator.pop(context),
+                          style: TextButton.styleFrom(
+                            foregroundColor: GridColors.textSecondary,
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 18,
+                              vertical: 10,
                             ),
-                          )
-                        : const Text("SALVAR"),
-                  ),
-                ],
+                          ),
+                          child: const Text("CANCELAR"),
+                        ),
+                        const SizedBox(width: 10),
+                        ElevatedButton(
+                          onPressed: _isUpdating
+                              ? null
+                              : () => _saveItem(item, controllers, context),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: GridColors.secondary,
+                            foregroundColor: GridColors.card,
+                            elevation: 0,
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 20,
+                              vertical: 10,
+                            ),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                          ),
+                          child: _isUpdating
+                              ? const SizedBox(
+                                  width: 20,
+                                  height: 20,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    valueColor:
+                                        AlwaysStoppedAnimation(Colors.white),
+                                  ),
+                                )
+                              : const Text("SALVAR"),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
               ),
             ],
           ),
@@ -1573,7 +1614,7 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
       enrichedFormData["file"] = {"id": fileId};
     }
 
-    print(enrichedFormData);
+    L.d(enrichedFormData);
 
     final response = await NetworkCaller().postRequest(
       widget.createEndpoint,
@@ -1645,7 +1686,7 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
         request.headers['Authorization'] = 'Bearer $authToken';
       }
 
-      print('Enviando ${filesToUpload.length} arquivo(s) para o item $itemId');
+      L.d('Enviando ${filesToUpload.length} arquivo(s) para o item $itemId');
 
       // Enviar a requisição
       final response = await request.send();
@@ -1653,7 +1694,7 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
       // Verificar resposta
       if (response.statusCode == 200) {
         final responseBody = await response.stream.bytesToString();
-        print('Upload realizado com sucesso: $responseBody');
+        L.d('Upload realizado com sucesso: $responseBody');
         // Converter JSON para Map
         final decoded = jsonDecode(responseBody);
 
@@ -1661,10 +1702,10 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
         return decoded['fileId'] ?? 0;
       } else {
         final errorBody = await response.stream.bytesToString();
-        print('Erro no upload (${response.statusCode}): $errorBody');
+        L.d('Erro no upload (${response.statusCode}): $errorBody');
       }
     } catch (e) {
-      print('Exceção durante o upload: $e');
+      L.d('Exceção durante o upload: $e');
     }
     return 0;
   }
@@ -1850,7 +1891,7 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
       }
 
       if (kDebugMode) {
-        print(csvData.toString());
+        L.d(csvData.toString());
       }
 
       ScaffoldMessenger.of(context).showSnackBar(
@@ -1872,10 +1913,11 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
   }
 
   Widget _buildLoadingOverlay() {
-    // Mostra overlay com fade quando carregando (paginação, filtros, etc.)
-    if (_isUpdating || _isDeleting || _isExporting || isLoading) {
+    // Loading da grade cobre filtros/paginacao; este overlay fica so para acoes bloqueantes.
+    final showBlockingOverlay = _isUpdating || _isDeleting || _isExporting;
+    if (showBlockingOverlay) {
       return AnimatedOpacity(
-        opacity: (_isUpdating || _isDeleting || _isExporting || isLoading) ? 1.0 : 0.0,
+        opacity: showBlockingOverlay ? 1.0 : 0.0,
         duration: const Duration(milliseconds: 200),
         child: Container(
           color: Colors.black.withValues(alpha: 0.35),
@@ -1920,90 +1962,231 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
     return const SizedBox.shrink();
   }
 
+  static const int _maxAdvancedFilters = 10;
+
+  String _normalizeFilterKey(String value) {
+    return value.toLowerCase().replaceAll(RegExp(r'[^a-z0-9]'), '');
+  }
+
+  bool _isTechnicalFilter(FieldConfig config) {
+    final keys = [
+      _normalizeFilterKey(config.fieldName),
+      _normalizeFilterKey(config.label),
+    ];
+
+    if (config.fieldType == FieldType.file) return true;
+
+    const hiddenKeys = {
+      'id',
+      'dhcreatedat',
+      'dhupdatedat',
+      'createdat',
+      'updatedat',
+      'created',
+      'updated',
+      'fileattachment',
+      'fileattachmentid',
+      'fileattachm',
+      'anexo',
+      'arquivo',
+      'auditoria',
+      'audit',
+      'empresa',
+      'empresaid',
+      'clienteid',
+      'tenantid',
+      'aplicativo',
+      'aplicativoid',
+      'parceiros',
+    };
+
+    return keys.any((key) =>
+        hiddenKeys.contains(key) ||
+        key.contains('createdat') ||
+        key.contains('updatedat') ||
+        key.contains('fileattachment') ||
+        key.contains('fileattachm'));
+  }
+
+  List<FieldConfig> get _visibleFilterConfigs => widget.fieldConfigs
+      .where((config) => config.isFilterable && !_isTechnicalFilter(config))
+      .take(_maxAdvancedFilters)
+      .toList();
+
+  bool get _hasActiveFilterValues {
+    if (_searchController.text.isNotEmpty) return true;
+    return _visibleFilterConfigs.any(
+      (config) => (_filterControllers[config.fieldName]?.text ?? '').isNotEmpty,
+    );
+  }
+
+  void _clearVisibleFilters() {
+    _searchController.clear();
+    for (final config in _visibleFilterConfigs) {
+      _filterControllers[config.fieldName]?.clear();
+    }
+    _applyFilters();
+  }
+
   Widget _buildFilters() {
+    final advancedFilters = _visibleFilterConfigs;
+
     return Container(
       decoration: BoxDecoration(
         color: GridColors.filterBackground,
         border: Border.all(color: GridColors.divider),
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: BorderRadius.circular(6),
       ),
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        children: [
-          // Header com título e X para fechar
-          Row(
+      margin: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxHeight: 280),
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.fromLTRB(16, 14, 16, 16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text(
-                "Filtros",
-                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+              Row(
+                children: [
+                  const Text(
+                    'Filtros',
+                    style: TextStyle(fontWeight: FontWeight.w700, fontSize: 15),
+                  ),
+                  const Spacer(),
+                  if (_hasActiveFilterValues)
+                    TextButton.icon(
+                      onPressed: _clearVisibleFilters,
+                      icon: const Icon(Icons.clear_all, size: 18),
+                      label: const Text('Limpar'),
+                    ),
+                  IconButton(
+                    icon: const Icon(Icons.close, size: 20),
+                    tooltip: 'Fechar filtros',
+                    onPressed: () => setState(() => filtrosAbertos = false),
+                  ),
+                ],
               ),
-              const Spacer(),
-              IconButton(
-                icon: const Icon(Icons.close, size: 20),
-                tooltip: 'Fechar filtros',
-                onPressed: () => setState(() => filtrosAbertos = false),
-              ),
-            ],
-          ),
-          const Divider(),
-          if (widget.enableSearch) ...[
-            TextField(
-              controller: _searchController,
-              decoration: InputDecoration(
-                labelText: "Busca Global",
-                prefixIcon: const Icon(Icons.search),
-                suffixIcon: _searchController.text.isNotEmpty
-                    ? IconButton(
-                        icon: const Icon(Icons.clear),
-                        onPressed: () {
-                          _searchController.clear();
-                          _applyFilters();
-                        },
-                      )
-                    : null,
-              ),
-              onChanged: (_) => _applyFilters(),
-            ),
-            const SizedBox(height: 12),
-          ],
-          const Text(
-            "Filtros Avançados",
-            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
-          ),
-          const SizedBox(height: 12),
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: [
-              for (final config in widget.fieldConfigs.where((c) => c.isFilterable))
-                SizedBox(
-                  width: 200,
-                  child: TextField(
-                    controller: _filterControllers[config.fieldName],
-                    decoration: InputDecoration(
-                      labelText: "Filtrar ${config.label}",
-                      prefixIcon: Icon(config.icon ?? Icons.search),
-                      isDense: true,
-                      suffixIcon: (_filterControllers[config.fieldName]?.text.isNotEmpty ?? false)
-                          ? IconButton(
-                              icon: const Icon(Icons.clear, size: 16),
-                              onPressed: () {
-                                _filterControllers[config.fieldName]?.clear();
+              const SizedBox(height: 10),
+              if (widget.enableSearch) ...[
+                TextField(
+                  controller: _searchController,
+                  decoration: InputDecoration(
+                    hintText: 'Buscar em todos os campos',
+                    prefixIcon: const Icon(Icons.search, size: 20),
+                    suffixIcon: _searchController.text.isNotEmpty
+                        ? IconButton(
+                            icon: const Icon(Icons.clear, size: 18),
+                            onPressed: () {
+                              _searchController.clear();
+                              _applyFilters();
+                            },
+                          )
+                        : null,
+                    isDense: true,
+                    filled: true,
+                    fillColor: GridColors.card,
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(6),
+                      borderSide: const BorderSide(color: GridColors.divider),
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(6),
+                      borderSide: const BorderSide(color: GridColors.divider),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(6),
+                      borderSide: const BorderSide(color: GridColors.primary),
+                    ),
+                  ),
+                  onChanged: (_) => _applyFilters(),
+                ),
+                const SizedBox(height: 14),
+              ],
+              if (advancedFilters.isNotEmpty) ...[
+                const Text(
+                  'Filtros principais',
+                  style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13),
+                ),
+                const SizedBox(height: 10),
+                LayoutBuilder(
+                  builder: (context, constraints) {
+                    final maxWidth = constraints.maxWidth;
+                    final columns = maxWidth >= 1180
+                        ? 4
+                        : maxWidth >= 840
+                            ? 3
+                            : maxWidth >= 560
+                                ? 2
+                                : 1;
+                    final calculatedWidth =
+                        (maxWidth - ((columns - 1) * 12)) / columns;
+                    final minWidth = maxWidth < 220 ? maxWidth : 220.0;
+                    final fieldWidth =
+                        calculatedWidth.clamp(minWidth, 340.0).toDouble();
+
+                    return Wrap(
+                      spacing: 12,
+                      runSpacing: 12,
+                      children: [
+                        for (final config in advancedFilters)
+                          SizedBox(
+                            width: fieldWidth,
+                            child: TextField(
+                              controller: _filterControllers[config.fieldName],
+                              decoration: InputDecoration(
+                                labelText: config.label,
+                                hintText: 'Filtrar',
+                                prefixIcon:
+                                    Icon(config.icon ?? Icons.search, size: 18),
+                                isDense: true,
+                                filled: true,
+                                fillColor: GridColors.card,
+                                suffixIcon: (_filterControllers[
+                                                config.fieldName]
+                                            ?.text
+                                            .isNotEmpty ??
+                                        false)
+                                    ? IconButton(
+                                        icon: const Icon(Icons.clear, size: 16),
+                                        onPressed: () {
+                                          _filterControllers[config.fieldName]
+                                              ?.clear();
+                                          _applyFilters();
+                                        },
+                                      )
+                                    : null,
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(6),
+                                  borderSide: const BorderSide(
+                                    color: GridColors.divider,
+                                  ),
+                                ),
+                                enabledBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(6),
+                                  borderSide: const BorderSide(
+                                    color: GridColors.divider,
+                                  ),
+                                ),
+                                focusedBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(6),
+                                  borderSide: const BorderSide(
+                                    color: GridColors.primary,
+                                  ),
+                                ),
+                              ),
+                              onChanged: (_) {
+                                setState(() {});
                                 _applyFilters();
                               },
-                            )
-                          : null,
-                    ),
-                    onChanged: (_) {
-                      setState(() {}); // atualiza suffixIcon
-                      _applyFilters();
-                    },
-                  ),
+                            ),
+                          ),
+                      ],
+                    );
+                  },
                 ),
+              ],
             ],
           ),
-        ],
+        ),
       ),
     );
   }
@@ -2019,7 +2202,7 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
       }));
     }
 
-    for (final config in widget.fieldConfigs.where((c) => c.isFilterable)) {
+    for (final config in _visibleFilterConfigs) {
       final v = _filterControllers[config.fieldName]?.text ?? '';
       if (v.isNotEmpty) {
         tags.add(_filterTag(config.label, v, () {
@@ -2052,6 +2235,291 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
       backgroundColor: GridColors.primary,
       materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
       padding: const EdgeInsets.symmetric(horizontal: 4),
+    );
+  }
+
+  void _showGridHelpDialog() {
+    final visibleFields = widget.fieldConfigs
+        .where((c) =>
+            c.isVisibleByDefault &&
+            c.label.trim().isNotEmpty &&
+            !c.label.startsWith('_'))
+        .map((c) => c.label.trim())
+        .toSet()
+        .take(10)
+        .toList();
+    final actions = <String>[
+      'Consultar e acompanhar registros de ${widget.title}.',
+      if (widget.enableSearch) 'Pesquisar registros pelo campo de busca.',
+      if (widget.fieldConfigs.any((c) => c.isFilterable))
+        'Usar filtros para refinar a lista.',
+      if (widget.hasPermission('create') &&
+          widget.buttonPermissions['create'] == true)
+        'Criar novos registros pelo botao Novo.',
+      if (widget.hasPermission('edit') &&
+          widget.buttonPermissions['edit'] == true)
+        'Editar registros existentes pelas acoes da linha.',
+      if (widget.hasPermission('delete') &&
+          widget.buttonPermissions['delete'] == true)
+        'Excluir registros quando necessario.',
+      if (widget.exportConfig.enableCsvExport &&
+          widget.hasPermission('export') &&
+          widget.buttonPermissions['export'] == true)
+        'Exportar os dados visiveis para CSV.',
+    ];
+
+    showDialog<void>(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: Row(
+          children: [
+            const Icon(Icons.help_outline, color: GridColors.primary),
+            const SizedBox(width: 8),
+            Expanded(child: Text('Ajuda - ${widget.title}')),
+          ],
+        ),
+        content: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 560),
+          child: SingleChildScrollView(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                _helpBlock('Para que serve', [_purposeForTitle()]),
+                const SizedBox(height: 14),
+                _helpBlock('O que voce pode fazer', actions),
+                if (visibleFields.isNotEmpty) ...[
+                  const SizedBox(height: 14),
+                  _helpBlock('Principais informacoes', visibleFields),
+                ],
+                const SizedBox(height: 14),
+                _helpBlock('Dicas rapidas', [
+                  'Use Configurar colunas para mostrar ou ocultar campos.',
+                  'Clique em Recarregar para buscar os dados mais recentes.',
+                  'As informacoes respeitam o tenant, empresa e parceiro do usuario logado quando a tela usa esse contexto.',
+                ]),
+              ],
+            ),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Fechar'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  String _purposeForTitle() {
+    final title = widget.title.trim();
+    final value = title.toLowerCase();
+    if (value.contains('conta') && value.contains('pagar')) {
+      return 'Controlar compromissos financeiros a pagar, vencimentos, baixas e acompanhamento do caixa.';
+    }
+    if (value.contains('conta') && value.contains('receber')) {
+      return 'Controlar valores a receber, cobrancas, vencimentos, baixas e acompanhamento de clientes.';
+    }
+    if (value.contains('obrig')) {
+      return 'Organizar obrigacoes fiscais, responsaveis, prazos, geracao de chamados e acompanhamento de envio.';
+    }
+    if (value.contains('parceiro') || value.contains('cliente')) {
+      return 'Gerenciar clientes, parceiros e seus dados cadastrais usados nos fluxos do sistema.';
+    }
+    if (value.contains('empresa')) {
+      return 'Gerenciar empresas e dados cadastrais usados por financeiro, fiscal, GED e demais modulos.';
+    }
+    if (value.contains('produto')) {
+      return 'Gerenciar produtos, cadastros comerciais e informacoes usadas em vendas e documentos fiscais.';
+    }
+    if (value.contains('chamado') || value.contains('ticket')) {
+      return 'Acompanhar solicitacoes, atendimentos, responsaveis, status e historico operacional.';
+    }
+    if (value.contains('nfe') || value.contains('nota')) {
+      return 'Acompanhar documentos fiscais, emissao, entrada, saida, status e dados relacionados.';
+    }
+    return 'Consultar, cadastrar e manter os registros de $title dentro do fluxo operacional do sistema.';
+  }
+
+  Widget _helpBlock(String title, List<String> lines) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          title,
+          style: const TextStyle(
+            color: GridColors.textSecondary,
+            fontWeight: FontWeight.w800,
+          ),
+        ),
+        const SizedBox(height: 6),
+        ...lines.map(
+          (line) => Padding(
+            padding: const EdgeInsets.only(bottom: 4),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text('- '),
+                Expanded(child: Text(line)),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildGridToolbar() {
+    Widget buildRefreshButton() {
+      return Container(
+        width: 40,
+        height: 40,
+        decoration: BoxDecoration(
+          color: GridColors.card,
+          border: Border.all(color: GridColors.divider),
+          borderRadius: BorderRadius.circular(6),
+        ),
+        child: IconButton(
+          onPressed: () => _loadItems(_currentPage, rowsPerPage),
+          icon: const Icon(Icons.refresh, size: 20),
+          tooltip: 'Recarregar',
+          color: GridColors.textSecondary,
+          padding: EdgeInsets.zero,
+        ),
+      );
+    }
+
+    Widget buildPrimaryActions() {
+      return Wrap(
+        spacing: 10,
+        runSpacing: 8,
+        children: [
+          if (widget.hasPermission('create') &&
+              widget.buttonPermissions['create']!)
+            ElevatedButton.icon(
+              onPressed: () => _openForm(),
+              icon: const Icon(Icons.add, size: 18),
+              label: const Text('Novo'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: GridColors.primary,
+                foregroundColor: GridColors.card,
+                elevation: 0,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 12,
+                ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(6),
+                ),
+              ),
+            ),
+          if (widget.hasPermission('deleteMultiple') &&
+              widget.buttonPermissions['deleteMultiple']!)
+            OutlinedButton.icon(
+              onPressed: selectedRows.isNotEmpty ? _deleteSelected : null,
+              icon: const Icon(Icons.delete_outline, size: 18),
+              label: Text(
+                selectedRows.isEmpty
+                    ? 'Excluir selecionados'
+                    : 'Excluir (${selectedRows.length})',
+              ),
+              style: OutlinedButton.styleFrom(
+                foregroundColor: GridColors.error,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 14,
+                  vertical: 12,
+                ),
+                side: const BorderSide(color: GridColors.divider),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(6),
+                ),
+              ),
+            ),
+        ],
+      );
+    }
+
+    Widget buildUtilityActions() {
+      return Wrap(
+        spacing: 8,
+        runSpacing: 8,
+        crossAxisAlignment: WrapCrossAlignment.center,
+        children: [
+          OutlinedButton.icon(
+            onPressed: _showGridHelpDialog,
+            icon: const Icon(Icons.help_outline, size: 18),
+            label: const Text('Ajuda'),
+            style: OutlinedButton.styleFrom(
+              foregroundColor: GridColors.secondary,
+              padding: const EdgeInsets.symmetric(
+                horizontal: 14,
+                vertical: 12,
+              ),
+              side: const BorderSide(color: GridColors.divider),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(6),
+              ),
+            ),
+          ),
+          buildRefreshButton(),
+          OutlinedButton.icon(
+            onPressed: () => setState(
+              () => filtrosAbertos = !filtrosAbertos,
+            ),
+            icon: Icon(
+              filtrosAbertos ? Icons.expand_less : Icons.tune,
+              size: 18,
+            ),
+            label: Text(filtrosAbertos ? 'Ocultar filtros' : 'Filtros'),
+            style: OutlinedButton.styleFrom(
+              foregroundColor: GridColors.primary,
+              padding: const EdgeInsets.symmetric(
+                horizontal: 14,
+                vertical: 12,
+              ),
+              side: const BorderSide(color: GridColors.divider),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(6),
+              ),
+            ),
+          ),
+        ],
+      );
+    }
+
+    return Container(
+      margin: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+      decoration: BoxDecoration(
+        color: GridColors.card,
+        border: Border.all(color: GridColors.divider),
+        borderRadius: BorderRadius.circular(6),
+      ),
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          if (constraints.maxWidth < 720) {
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                buildPrimaryActions(),
+                const SizedBox(height: 10),
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: buildUtilityActions(),
+                ),
+              ],
+            );
+          }
+
+          return Row(
+            children: [
+              Expanded(child: buildPrimaryActions()),
+              buildUtilityActions(),
+            ],
+          );
+        },
+      ),
     );
   }
 
@@ -2221,7 +2689,7 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Icon(
+                        const Icon(
                           Icons.attach_file,
                           size: 16,
                           color: GridColors.primary,
@@ -2230,7 +2698,7 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
                         Flexible(
                           child: Text(
                             fileName,
-                            style: TextStyle(
+                            style: const TextStyle(
                               color: GridColors.primary,
                               decoration: TextDecoration.underline,
                             ),
@@ -2244,7 +2712,7 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
                 : Text(
                     'Nenhum arquivo',
                     style: TextStyle(
-                      color: GridColors.textSecondary.withOpacity(0.5),
+                      color: GridColors.textSecondary.withValues(alpha: 0.5),
                       fontStyle: FontStyle.italic,
                     ),
                   ),
@@ -2403,11 +2871,17 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
         .length;
 
     return Scaffold(
+      backgroundColor: GridColors.background,
       appBar: AppBar(
         title: Text(widget.title),
         backgroundColor: GridColors.primary,
         foregroundColor: GridColors.card,
         actions: [
+          IconButton(
+            icon: const Icon(Icons.help_outline),
+            onPressed: _showGridHelpDialog,
+            tooltip: 'Ajuda da tela',
+          ),
           _buildColumnSettingsMenu(),
           if (widget.exportConfig.enableCsvExport &&
               widget.hasPermission('export') &&
@@ -2426,189 +2900,141 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
       body: Stack(
         children: [
           Column(
+            children: [
+              _buildGridToolbar(),
+              if (filtrosAbertos) _buildFilters(),
+              _buildActiveFilterTags(),
+              Expanded(
+                child: Stack(
                   children: [
-                    Padding(
-                      padding: const EdgeInsets.all(16.0),
-                      child: Row(
-                        children: [
-                          Wrap(
-                            spacing: 12,
-                            runSpacing: 12,
-                            children: [
-                              if (widget.hasPermission('create') &&
-                                  widget.buttonPermissions['create']!)
-                                ElevatedButton.icon(
-                                  onPressed: () => _openForm(),
-                                  icon: const Icon(Icons.add),
-                                  label: const Text("Novo"),
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: GridColors.primary,
-                                    foregroundColor: GridColors.card,
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 16,
-                                      vertical: 12,
-                                    ),
-                                  ),
-                                ),
-                              if (widget.hasPermission('deleteMultiple') &&
-                                  widget.buttonPermissions['deleteMultiple']!)
-                                ElevatedButton.icon(
-                                  onPressed: selectedRows.isNotEmpty
-                                      ? _deleteSelected
-                                      : null,
-                                  icon: const Icon(Icons.delete),
-                                  label: const Text("Deletar Selecionados"),
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: GridColors.error,
-                                    foregroundColor: GridColors.card,
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 16,
-                                      vertical: 12,
-                                    ),
-                                  ),
-                                ),
-                            ],
-                          ),
-                          const Spacer(),
-                          IconButton(
-                            onPressed: () =>
-                                _loadItems(_currentPage, rowsPerPage),
-                            icon: const Icon(Icons.refresh),
-                            tooltip: "Recarregar",
-                          ),
-                          ElevatedButton.icon(
-                            onPressed: () => setState(
-                              () => filtrosAbertos = !filtrosAbertos,
-                            ),
-                            icon: Icon(
-                              filtrosAbertos
-                                  ? Icons.expand_less
-                                  : Icons.expand_more,
-                            ),
-                            label: Text(
-                              filtrosAbertos
-                                  ? "Ocultar Filtros"
-                                  : "Mostrar Filtros",
-                            ),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: GridColors.buttonBackground,
-                              foregroundColor: GridColors.textPrimary,
-                            ),
-                          ),
-                        ],
+                    Container(
+                      margin: const EdgeInsets.all(16.0),
+                      decoration: BoxDecoration(
+                        color: GridColors.card,
+                        border: Border.all(color: GridColors.divider),
                       ),
-                    ),
-                    if (filtrosAbertos) _buildFilters(),
-                    _buildActiveFilterTags(),
-                    Expanded(
-                      child: Stack(
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.all(16.0),
-                            child: PaginatedDataTable2(
-                          columnSpacing: 12,
-                          horizontalMargin: 12,
-                          minWidth: 800,
-                          controller: _paginatorController,
-                          sortColumnIndex: sortColumnIndex,
-                          sortAscending: sortAscending,
-                          initialFirstRowIndex: _currentPage * rowsPerPage,
-                          header: _totalItems > 0 ? Text(
-                            'Página ${_currentPage + 1} de ${(_totalItems / rowsPerPage).ceil()}',
-                            style: const TextStyle(
-                              fontSize: 13,
-                              fontWeight: FontWeight.w600,
+                      child: PaginatedDataTable2(
+                        columnSpacing: 10,
+                        horizontalMargin: 8,
+                        minWidth: 800,
+                        wrapInCard: false,
+                        headingRowHeight: 32,
+                        dataRowHeight: 32,
+                        controller: _paginatorController,
+                        sortColumnIndex: sortColumnIndex,
+                        sortAscending: sortAscending,
+                        showFirstLastButtons: true,
+                        renderEmptyRowsInTheEnd: false,
+                        initialFirstRowIndex: _currentPage * rowsPerPage,
+                        headingRowColor:
+                            WidgetStateProperty.all(GridColors.gridHeader),
+                        headingTextStyle: const TextStyle(
+                          color: GridColors.textSecondary,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w700,
+                        ),
+                        dataTextStyle: const TextStyle(
+                          color: GridColors.textSecondary,
+                          fontSize: 12,
+                        ),
+                        checkboxHorizontalMargin: 6,
+                        dividerThickness: 0.8,
+                        columns: _buildColumns(),
+                        source: _GenericDataSource<T>(
+                          items: filtered,
+                          selectedRows: selectedRows,
+                          cellBuilder: _buildCells,
+                          isLoading: isLoading,
+                          totalItems: _totalItems,
+                          currentPage: _currentPage,
+                          rowsPerPage: rowsPerPage,
+                          rowIdBuilder: (item, _) {
+                            final itemMap = widget.toJson(item);
+                            return _getNestedValue(
+                              itemMap,
+                              widget.idFieldName,
+                            ).toString();
+                          },
+                          onSelect: (index, selected) {
+                            setState(() {
+                              final itemMap = widget.toJson(filtered[index]);
+                              final id = _getNestedValue(
+                                itemMap,
+                                widget.idFieldName,
+                              ).toString();
+                              selected
+                                  ? selectedRows.add(id)
+                                  : selectedRows.remove(id);
+                            });
+                          },
+                        ),
+                        rowsPerPage: rowsPerPage,
+                        availableRowsPerPage:
+                            widget.paginationConfig.availableRowsPerPage,
+                        onRowsPerPageChanged:
+                            widget.paginationConfig.showItemsPerPageSelector
+                                ? (value) {
+                                    setState(() {
+                                      rowsPerPage = value ??
+                                          widget.paginationConfig
+                                              .defaultRowsPerPage;
+                                      _currentPage = 0;
+                                    });
+                                    _loadItems(_currentPage, rowsPerPage);
+                                  }
+                                : null,
+                        onPageChanged: (pageIndex) {
+                          // Ignora eventos de página disparados durante carregamento
+                          if (isLoading) return;
+                          // pageIndex é o offset (primeira linha da página)
+                          // backend espera número da página (base 0)
+                          final numeroPagina =
+                              rowsPerPage > 0 ? pageIndex ~/ rowsPerPage : 0;
+                          // Ignora se já estamos nessa página
+                          if (numeroPagina == _currentPage) return;
+                          setState(() {
+                            _currentPage = numeroPagina;
+                          });
+                          _loadItems(_currentPage, rowsPerPage);
+                        },
+                        fixedLeftColumns: widget.fieldConfigs
+                            .where(
+                              (c) =>
+                                  _columnVisibility[c.fieldName] == true &&
+                                  c.isFixed,
+                            )
+                            .length,
+                        empty: Center(
+                          child: Container(
+                            padding: const EdgeInsets.all(20),
+                            child: const Text(
+                              "Nenhum item encontrado",
+                              style: TextStyle(
+                                fontStyle: FontStyle.italic,
+                                fontSize: 16,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ), // fecha Container
+                    // Overlay de loading durante paginação
+                    if (isLoading)
+                      Positioned.fill(
+                        child: Container(
+                          color: Colors.white.withValues(alpha: 0.7),
+                          child: const Center(
+                            child: CircularProgressIndicator(
                               color: GridColors.primary,
                             ),
-                          ) : null,
-                          columns: _buildColumns(),
-                          source: _GenericDataSource<T>(
-                            items: filtered,
-                            selectedRows: selectedRows,
-                            cellBuilder: _buildCells,
-                            isLoading: isLoading,
-                            totalItems: _totalItems,
-                            currentPage: _currentPage,
-                            rowsPerPage: rowsPerPage,
-                            onSelect: (index, selected) {
-                              setState(() {
-                                final itemMap = widget.toJson(filtered[index]);
-                                final id = _getNestedValue(
-                                  itemMap,
-                                  widget.idFieldName,
-                                ).toString();
-                                selected
-                                    ? selectedRows.add(id)
-                                    : selectedRows.remove(id);
-                              });
-                            },
                           ),
-                          rowsPerPage: rowsPerPage,
-                          availableRowsPerPage:
-                              widget.paginationConfig.availableRowsPerPage,
-                          onRowsPerPageChanged:
-                              widget.paginationConfig.showItemsPerPageSelector
-                                  ? (value) {
-                                      setState(() {
-                                        rowsPerPage = value ??
-                                            widget.paginationConfig
-                                                .defaultRowsPerPage;
-                                        _currentPage = 0;
-                                      });
-                                      _loadItems(_currentPage, rowsPerPage);
-                                    }
-                                  : null,
-                          onPageChanged: (pageIndex) {
-                            // Ignora eventos de página disparados durante carregamento
-                            if (isLoading) return;
-                            // pageIndex é o offset (primeira linha da página)
-                            // backend espera número da página (base 0)
-                            final numeroPagina = rowsPerPage > 0 ? pageIndex ~/ rowsPerPage : 0;
-                            // Ignora se já estamos nessa página
-                            if (numeroPagina == _currentPage) return;
-                            setState(() {
-                              _currentPage = numeroPagina;
-                            });
-                            _loadItems(_currentPage, rowsPerPage);
-                          },
-                          fixedLeftColumns: widget.fieldConfigs
-                              .where(
-                                (c) =>
-                                    _columnVisibility[c.fieldName] == true &&
-                                    c.isFixed,
-                              )
-                              .length,
-                          empty: Center(
-                            child: Container(
-                              padding: const EdgeInsets.all(20),
-                              child: const Text(
-                                "Nenhum item encontrado",
-                                style: TextStyle(
-                                  fontStyle: FontStyle.italic,
-                                  fontSize: 16,
-                                ),
-                              ),
-                            ),
-                          ),
-                          ),
-                        ),  // fecha Container
-                          // Overlay de loading durante paginação
-                          if (isLoading)
-                            Positioned.fill(
-                              child: Container(
-                                color: Colors.white.withOpacity(0.7),
-                                child: const Center(
-                                  child: CircularProgressIndicator(
-                                    color: GridColors.primary,
-                                  ),
-                                ),
-                              ),
-                            ),
-                        ],
-                      ),    // fecha Stack
-                    ),      // fecha Expanded
+                        ),
+                      ),
                   ],
-                ),
+                ), // fecha Stack
+              ), // fecha Expanded
+            ],
+          ),
           _buildLoadingOverlay(),
         ],
       ),
@@ -2620,6 +3046,7 @@ class _GenericDataSource<T> extends DataTableSource {
   final List<T> items;
   final Set<String> selectedRows;
   final List<DataCell> Function(T item, int index) cellBuilder;
+  final String Function(T item, int index) rowIdBuilder;
   final void Function(int index, bool selected) onSelect;
   final int totalItems;
   final bool isLoading;
@@ -2630,6 +3057,7 @@ class _GenericDataSource<T> extends DataTableSource {
     required this.items,
     required this.selectedRows,
     required this.cellBuilder,
+    required this.rowIdBuilder,
     required this.onSelect,
     this.totalItems = 0,
     this.isLoading = false,
@@ -2645,10 +3073,17 @@ class _GenericDataSource<T> extends DataTableSource {
     final localIndex = index - pageOffset;
     if (localIndex < 0 || localIndex >= items.length) return null;
     final item = items[localIndex];
-    final isSelected = selectedRows.contains(index.toString());
+    final itemId = rowIdBuilder(item, localIndex);
+    final isSelected = selectedRows.contains(itemId);
 
     return DataRow(
       selected: isSelected,
+      color: WidgetStateProperty.resolveWith<Color?>((states) {
+        if (states.contains(WidgetState.selected))
+          return GridColors.selectedRow;
+        if (states.contains(WidgetState.hovered)) return GridColors.hover;
+        return localIndex.isEven ? GridColors.rowEven : GridColors.rowOdd;
+      }),
       onSelectChanged: (selected) => onSelect(localIndex, selected ?? false),
       cells: cellBuilder(item, localIndex),
     );

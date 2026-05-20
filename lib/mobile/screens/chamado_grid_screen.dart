@@ -170,7 +170,7 @@ class Chamado {
   // =========================================================
 
   static List<win.FieldConfigWindows> fieldConfigsWindows = [
-    win.FieldConfigWindows(
+    const win.FieldConfigWindows(
       label: "Título",
       fieldName: "titulo",
       icon: Icons.title,
@@ -180,7 +180,7 @@ class Chamado {
       isFixed: true,
       fieldType: win.FieldType.text,
     ),
-    win.FieldConfigWindows(
+    const win.FieldConfigWindows(
       label: "Descrição",
       fieldName: "descricao",
       icon: Icons.description,
@@ -237,7 +237,7 @@ class Chamado {
       dropdownValueField: 'value',
       dropdownDisplayField: 'label',
     ),
-    win.FieldConfigWindows(
+    const win.FieldConfigWindows(
       label: "Motivo Fechamento",
       fieldName: "motivoFechamento",
       icon: Icons.close,

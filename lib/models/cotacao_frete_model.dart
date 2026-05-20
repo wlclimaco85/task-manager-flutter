@@ -42,14 +42,14 @@ class CotacaoFrete {
       };
 
   static List<FieldConfig> fieldConfigs = [
-    FieldConfig(label: "CEP Retirada", fieldName: "cepRetirada", icon: Icons.location_on, isInForm: true, isFilterable: true),
-    FieldConfig(label: "Cidade Retirada", fieldName: "cidadeRetirada", icon: Icons.location_city, isInForm: true),
-    FieldConfig(label: "Estado Retirada", fieldName: "estadoRetirada", icon: Icons.map, isInForm: true),
-    FieldConfig(label: "CEP Entrega", fieldName: "cepEntrega", icon: Icons.location_on, isInForm: true),
-    FieldConfig(label: "Cidade Entrega", fieldName: "cidadeEntrega", icon: Icons.location_city, isInForm: true),
-    FieldConfig(label: "Estado Entrega", fieldName: "estadoEntrega", icon: Icons.map, isInForm: true),
-    FieldConfig(label: "Valor", fieldName: "valor", icon: Icons.attach_money, isInForm: true),
-    FieldConfig(label: "Status", fieldName: "status", icon: Icons.info, isInForm: true, isFilterable: true),
-    FieldConfig(label: "Qtd Sacos", fieldName: "qtdSacos", icon: Icons.inventory, isInForm: true),
+    const FieldConfig(label: "CEP Retirada", fieldName: "cepRetirada", icon: Icons.location_on, isInForm: true, isFilterable: true),
+    const FieldConfig(label: "Cidade Retirada", fieldName: "cidadeRetirada", icon: Icons.location_city, isInForm: true),
+    const FieldConfig(label: "Estado Retirada", fieldName: "estadoRetirada", icon: Icons.map, isInForm: true),
+    const FieldConfig(label: "CEP Entrega", fieldName: "cepEntrega", icon: Icons.location_on, isInForm: true),
+    const FieldConfig(label: "Cidade Entrega", fieldName: "cidadeEntrega", icon: Icons.location_city, isInForm: true),
+    const FieldConfig(label: "Estado Entrega", fieldName: "estadoEntrega", icon: Icons.map, isInForm: true),
+    const FieldConfig(label: "Valor", fieldName: "valor", icon: Icons.attach_money, isInForm: true),
+    const FieldConfig(label: "Status", fieldName: "status", icon: Icons.info, isInForm: true, isFilterable: true),
+    const FieldConfig(label: "Qtd Sacos", fieldName: "qtdSacos", icon: Icons.inventory, isInForm: true),
   ];
 }

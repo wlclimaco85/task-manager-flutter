@@ -2,8 +2,10 @@ import 'package:flutter/material.dart';
 import '../../../customization/dynamic_grid_windows_screen.dart';
 import '../../../models/conta_receber_model.dart';
 import '../../../utils/api_links.dart';
-import '../../../widgets/generic_grid_windows_screen.dart' show CustomAction, FieldConfigWindows;
-import '../../../windows/screens/baixa_dialog_receber.dart';
+import '../../../widgets/finance/billing_charge_dialog.dart';
+import '../../../widgets/generic_grid_windows_screen.dart'
+    show CustomAction, FieldConfigWindows;
+import '../../../web/screens/baixa_dialog_receber.dart';
 
 class WebContaReceberGridScreen extends StatelessWidget {
   final SecurityCheck hasPermission;
@@ -22,14 +24,50 @@ class WebContaReceberGridScreen extends StatelessWidget {
       deleteEndpointOverride: ApiLinks.deleteContaReceber(':id'),
       // H12: ocultar coluna parceiro da grid CR mas manter no form
       fieldOverrides: const [
+<<<<<<< HEAD
         FieldConfigWindows(fieldName: 'parceiro',    label: 'Parceiro',     isInForm: true, isInGrid: false, isVisibleByDefault: false),
         FieldConfigWindows(fieldName: 'parceiroDev', label: 'Parceiro Dev', isInForm: true, isInGrid: false, isVisibleByDefault: false),
         FieldConfigWindows(fieldName: 'parceiroRec', label: 'Parceiro Rec', isInForm: true, isInGrid: false, isVisibleByDefault: false),
+=======
+        FieldConfigWindows(
+            fieldName: 'parceiro',
+            label: '',
+            isInForm: false,
+            isVisibleByDefault: false,
+            enabled: false),
+        FieldConfigWindows(
+            fieldName: 'parceiroDev',
+            label: '',
+            isInForm: false,
+            isVisibleByDefault: false,
+            enabled: false),
+        FieldConfigWindows(
+            fieldName: 'parceiroRec',
+            label: '',
+            isInForm: false,
+            isVisibleByDefault: false,
+            enabled: false),
+>>>>>>> 9c936e366a7278fea1fdb76d20b7c37879acbe59
       ],
       customActions: () => [
         CustomAction<Map<String, dynamic>>(
-          icon: Icons.check_circle, label: 'Baixar',
-          onPressed: (context, object) => showDialog(context: context, builder: (_) => BaixaDialogReceber(conta: ContaReceber.fromJson(object))),
+          icon: Icons.receipt_long,
+          label: 'Cobrar',
+          onPressed: (context, object) => showDialog(
+            context: context,
+            builder: (_) => BillingChargeDialog(
+              conta: ContaReceber.fromJson(object),
+            ),
+          ),
+          isVisible: (_) => true,
+        ),
+        CustomAction<Map<String, dynamic>>(
+          icon: Icons.check_circle,
+          label: 'Baixar',
+          onPressed: (context, object) => showDialog(
+              context: context,
+              builder: (_) =>
+                  WebBaixaDialogReceber(conta: ContaReceber.fromJson(object))),
           isVisible: (_) => true,
         ),
       ],

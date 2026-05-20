@@ -1,4 +1,4 @@
-﻿// lib/widgets/edit_form_helpers.dart
+// lib/widgets/edit_form_helpers.dart
 // Helper compartilhado para telas de edição no merged_final
 
 import 'dart:convert';

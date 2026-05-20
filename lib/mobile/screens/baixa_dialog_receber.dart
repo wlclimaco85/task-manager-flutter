@@ -89,7 +89,7 @@ class _BaixaDialogReceberState extends State<BaixaDialogReceber> {
                     Container(
                       padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
-                        color: colorScheme.surfaceVariant.withValues(alpha: 0.4),
+                        color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.4),
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Column(
@@ -183,7 +183,7 @@ class _BaixaDialogReceberState extends State<BaixaDialogReceber> {
                         prefixIcon: Icon(Icons.payment),
                         border: OutlineInputBorder(),
                       ),
-                      value: _formaPagamentoId,
+                      initialValue: _formaPagamentoId,
                       items: _formasPagamento
                           .map((f) => DropdownMenuItem<int>(
                               value: f.id, child: Text(f.nome ?? '')))
@@ -201,7 +201,7 @@ class _BaixaDialogReceberState extends State<BaixaDialogReceber> {
                         prefixIcon: Icon(Icons.account_balance),
                         border: OutlineInputBorder(),
                       ),
-                      value: _contaId,
+                      initialValue: _contaId,
                       items: _contas
                           .map<DropdownMenuItem<int>>(
                             (c) => DropdownMenuItem<int>(

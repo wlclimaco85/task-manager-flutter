@@ -1,11 +1,9 @@
-﻿// test/integration/full_system_crud_test.dart
+// test/integration/full_system_crud_test.dart
 
 import 'dart:convert';
-import 'dart:io';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:task_manager_flutter/utils/api_links.dart';
-import 'package:task_manager_flutter/utils/security_matrix.dart';
 import 'test/services/test_helper.dart';
 
 /// Classe que representa o cenário de teste de uma tela/entidade

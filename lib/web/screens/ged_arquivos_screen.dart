@@ -1,5 +1,3 @@
-import 'dart:typed_data';
-
 import 'package:data_table_2/data_table_2.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:file_saver/file_saver.dart';
@@ -7,20 +5,44 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../models/auth_utility.dart';
 import '../../../utils/api_links.dart';
 import '../../../utils/tenant_context.dart';
+import '../../services/ai_assistant_service.dart';
 import '../../services/network_caller.dart';
 import '../../../widgets/generic_grid_windows_screen.dart' show GridColors;
 
 // ─────────────────────────────────────────────────────────────────────────────
 /// Tela GED — Gestão Eletrônica de Documentos
 /// Grid com CRUD + upload + download, filtros por empresa e parceiro.
+///
+/// Parâmetros opcionais para filtro automático por módulo de origem (H5-21):
+///   [moduloOrigem]  ex: 'funcionario', 'produto', 'parceiro', 'alvara'
+///   [idOrigem]      ID do registro de origem
+///   [nomeOrigem]    Nome para exibir no título da tela
 // ─────────────────────────────────────────────────────────────────────────────
 class GedArquivosScreen extends StatefulWidget {
-  const GedArquivosScreen({super.key});
+  /// Módulo de origem que originou a navegação para o GED.
+  /// Quando nulo, o GED é aberto sem filtro de módulo (ex: menu lateral).
+  final String? moduloOrigem;
+
+  /// ID do registro de origem (ex: ID do funcionário, produto ou parceiro).
+  final int? idOrigem;
+
+  /// Nome do registro de origem para exibir no AppBar (ex: "João Silva").
+  final String? nomeOrigem;
+
+  /// Empresa do registro de origem. Usado nas abas contextualizadas.
+  final int? empresaId;
+
+  const GedArquivosScreen({
+    super.key,
+    this.moduloOrigem,
+    this.idOrigem,
+    this.nomeOrigem,
+    this.empresaId,
+  });
 
   @override
   State<GedArquivosScreen> createState() => _GedArquivosScreenState();
@@ -41,6 +63,10 @@ class _GedArquivosScreenState extends State<GedArquivosScreen> {
   String? _empresaFiltroNome;
   int? _parceiroFiltroId;
 
+  // ── Filtro por módulo de origem (H5-21) ───────────────────────────────────
+  String? _moduloOrigemFiltro;
+  int? _idOrigemFiltro;
+
   // ── Upload dialog ─────────────────────────────────────────────────────────
   PlatformFile? _arquivoSelecionado;
   int? _diretorioUploadId;
@@ -51,21 +77,46 @@ class _GedArquivosScreenState extends State<GedArquivosScreen> {
   Map<String, dynamic>? _editando;
   final _nomeCtrl = TextEditingController();
 
+  bool get _contextualizado =>
+      widget.moduloOrigem != null && widget.idOrigem != null;
+
+  bool get _contextoParceiro =>
+      widget.moduloOrigem?.toLowerCase() == 'parceiro' &&
+      widget.idOrigem != null;
+
   @override
   void initState() {
     super.initState();
     _carregarEmpresas();
     _carregarDiretorios();
     // H5: pre-filtrar pela empresa/parceiro do TenantContext após os carregamentos
+    // H5-26: pre-filtrar pela empresa/parceiro do TenantContext
+    // H5-21: se vier com módulo de origem, aplicar filtro adicional
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (TenantContext.hasEmpresa) {
-        setState(() { _empresaFiltroId = TenantContext.empresaId; });
-        _carregarParceiros(TenantContext.empresaId!);
+      final empresaInicial = widget.empresaId ?? TenantContext.empresaId;
+      if (empresaInicial != null) {
+        setState(() {
+          _empresaFiltroId = empresaInicial;
+        });
+        _carregarParceiros(empresaInicial);
       }
-      if (TenantContext.hasParceiro) {
-        setState(() { _parceiroFiltroId = TenantContext.parceiroId; });
+      if (_contextoParceiro) {
+        setState(() {
+          _parceiroFiltroId = widget.idOrigem;
+        });
+      } else if (TenantContext.hasParceiro) {
+        setState(() {
+          _parceiroFiltroId = TenantContext.parceiroId;
+        });
       }
-      if (TenantContext.hasEmpresa || TenantContext.hasParceiro) {
+      // H5-21: aplicar filtro de módulo de origem se fornecido
+      if (widget.moduloOrigem != null && widget.idOrigem != null) {
+        setState(() {
+          _moduloOrigemFiltro = widget.moduloOrigem;
+          _idOrigemFiltro = widget.idOrigem;
+        });
+      }
+      if (empresaInicial != null || TenantContext.hasParceiro) {
         _buscarArquivos();
       }
     });
@@ -85,10 +136,15 @@ class _GedArquivosScreenState extends State<GedArquivosScreen> {
     final r = await NetworkCaller().getRequest(ApiLinks.allEmpresas);
     if (!mounted) return;
     if (r.isSuccess && r.body != null) {
-      final raw = r.body!['data']?['dados'] ?? r.body!['data'] ?? r.body!['content'] ?? r.body;
+      final raw = r.body!['data']?['dados'] ??
+          r.body!['data'] ??
+          r.body!['content'] ??
+          r.body;
       if (raw is List) {
         setState(() {
-          _empresas = raw.map<Map<String, dynamic>>((e) => Map<String, dynamic>.from(e)).toList();
+          _empresas = raw
+              .map<Map<String, dynamic>>((e) => Map<String, dynamic>.from(e))
+              .toList();
         });
       }
     }
@@ -96,13 +152,19 @@ class _GedArquivosScreenState extends State<GedArquivosScreen> {
 
   Future<void> _carregarParceiros(int empresaId) async {
     setState(() => _parceiros = []);
-    final r = await NetworkCaller().getRequest(ApiLinks.allParceirosPorEmp(empresaId.toString()));
+    final r = await NetworkCaller()
+        .getRequest(ApiLinks.allParceirosPorEmp(empresaId.toString()));
     if (!mounted) return;
     if (r.isSuccess && r.body != null) {
-      final raw = r.body!['data']?['dados'] ?? r.body!['data'] ?? r.body!['content'] ?? r.body;
+      final raw = r.body!['data']?['dados'] ??
+          r.body!['data'] ??
+          r.body!['content'] ??
+          r.body;
       if (raw is List) {
         setState(() {
-          _parceiros = raw.map<Map<String, dynamic>>((e) => Map<String, dynamic>.from(e)).toList();
+          _parceiros = raw
+              .map<Map<String, dynamic>>((e) => Map<String, dynamic>.from(e))
+              .toList();
         });
       }
     }
@@ -112,10 +174,15 @@ class _GedArquivosScreenState extends State<GedArquivosScreen> {
     final r = await NetworkCaller().getRequest(ApiLinks.allDiretorios);
     if (!mounted) return;
     if (r.isSuccess && r.body != null) {
-      final raw = r.body!['data']?['dados'] ?? r.body!['data'] ?? r.body!['content'] ?? r.body;
+      final raw = r.body!['data']?['dados'] ??
+          r.body!['data'] ??
+          r.body!['content'] ??
+          r.body;
       if (raw is List) {
         setState(() {
-          _diretorios = raw.map<Map<String, dynamic>>((e) => Map<String, dynamic>.from(e)).toList();
+          _diretorios = raw
+              .map<Map<String, dynamic>>((e) => Map<String, dynamic>.from(e))
+              .toList();
         });
       }
     }
@@ -127,15 +194,25 @@ class _GedArquivosScreenState extends State<GedArquivosScreen> {
       return;
     }
     setState(() => _carregando = true);
-    final url = ApiLinks.arquivosPorEmpresa(_empresaFiltroId!, parceiroId: _parceiroFiltroId);
+    // H5-21: inclui filtro de módulo e idOrigem quando disponíveis
+    final url = ApiLinks.arquivosPorEmpresa(
+      _empresaFiltroId!,
+      parceiroId: _parceiroFiltroId,
+      modulo: _moduloOrigemFiltro,
+      idOrigem: _idOrigemFiltro,
+    );
     final r = await NetworkCaller().getRequest(url);
     if (!mounted) return;
     setState(() {
       _carregando = false;
       if (r.isSuccess && r.body != null) {
-        final raw = r.body is List ? r.body : r.body!['data'] ?? r.body!['content'] ?? [];
+        final raw = r.body is List
+            ? r.body
+            : r.body!['data'] ?? r.body!['content'] ?? [];
         if (raw is List) {
-          _arquivos = raw.map<Map<String, dynamic>>((e) => Map<String, dynamic>.from(e)).toList();
+          _arquivos = raw
+              .map<Map<String, dynamic>>((e) => Map<String, dynamic>.from(e))
+              .toList();
         }
       } else {
         _arquivos = [];
@@ -148,8 +225,9 @@ class _GedArquivosScreenState extends State<GedArquivosScreen> {
   // ──────────────────────────────────────────────────────────────────────────
 
   Future<void> _selecionarArquivo() async {
-    final result = await FilePicker.platform.pickFiles(withData: true);
-    if (result != null) setState(() => _arquivoSelecionado = result.files.first);
+    final result = await FilePicker.pickFiles(withData: true);
+    if (result != null)
+      setState(() => _arquivoSelecionado = result.files.first);
   }
 
   Future<void> _fazerUpload(BuildContext ctx) async {
@@ -174,11 +252,16 @@ class _GedArquivosScreenState extends State<GedArquivosScreen> {
         _arquivoSelecionado!.bytes!,
         filename: _arquivoSelecionado!.name,
       ));
-      req.fields['fileName']  = _arquivoSelecionado!.name;
-      req.fields['fileType']  = _arquivoSelecionado!.extension ?? 'bin';
+      req.fields['fileName'] = _arquivoSelecionado!.name;
+      req.fields['fileType'] = _arquivoSelecionado!.extension ?? 'bin';
       req.fields['diretorio'] = '{"id":${_diretorioUploadId ?? 0}}';
-      req.fields['empresa']   = '{"id":$_empresaFiltroId}';
-      req.fields['parceiro']  = '{"id":${_parceiroUploadId ?? 0}}';
+      req.fields['empresa'] = '{"id":$_empresaFiltroId}';
+      req.fields['parceiro'] = '{"id":${_parceiroUploadId ?? 0}}';
+      // H5-21: inclui módulo de origem no upload quando disponível
+      if (_moduloOrigemFiltro != null)
+        req.fields['modulo'] = _moduloOrigemFiltro!;
+      if (_idOrigemFiltro != null)
+        req.fields['idOrigem'] = _idOrigemFiltro.toString();
 
       final resp = await req.send();
       if (!mounted) return;
@@ -259,7 +342,9 @@ class _GedArquivosScreenState extends State<GedArquivosScreen> {
         title: const Text('Confirmar exclusão'),
         content: Text('Remover "${arq['fileName']}"?'),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancelar')),
+          TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: const Text('Cancelar')),
           ElevatedButton(
             style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
             onPressed: () => Navigator.pop(context, true),
@@ -269,7 +354,8 @@ class _GedArquivosScreenState extends State<GedArquivosScreen> {
       ),
     );
     if (ok == true) {
-      final r = await NetworkCaller().deleteRequest(ApiLinks.deleteArquivo(arq['id'].toString()));
+      final r = await NetworkCaller()
+          .deleteRequest(ApiLinks.deleteArquivo(arq['id'].toString()));
       if (r.isSuccess) {
         _snack('Arquivo removido');
         await _buscarArquivos();
@@ -283,6 +369,17 @@ class _GedArquivosScreenState extends State<GedArquivosScreen> {
   // Build
   // ──────────────────────────────────────────────────────────────────────────
 
+  /// Título dinâmico: quando vem de um módulo de origem, exibe contexto.
+  String get _tituloAppBar {
+    if (widget.moduloOrigem != null && widget.nomeOrigem != null) {
+      return 'GED — ${_capitalize(widget.moduloOrigem!)} · ${widget.nomeOrigem}';
+    }
+    return 'GED — Gestão Eletrônica de Documentos';
+  }
+
+  String _capitalize(String s) =>
+      s.isEmpty ? s : s[0].toUpperCase() + s.substring(1);
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -290,9 +387,24 @@ class _GedArquivosScreenState extends State<GedArquivosScreen> {
       appBar: AppBar(
         backgroundColor: GridColors.secondary,
         foregroundColor: Colors.white,
-        title: const Text('GED — Gestão Eletrônica de Documentos'),
+        title: Text(_tituloAppBar),
         elevation: 0,
         actions: [
+          // H5-21: chip indicador quando filtrado por módulo de origem
+          if (widget.moduloOrigem != null)
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 4),
+              child: Chip(
+                label: Text(
+                  _capitalize(widget.moduloOrigem!),
+                  style: const TextStyle(fontSize: 11, color: Colors.white),
+                ),
+                backgroundColor: GridColors.primary,
+                padding: EdgeInsets.zero,
+                materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                visualDensity: VisualDensity.compact,
+              ),
+            ),
           IconButton(
             icon: const Icon(Icons.upload_file),
             tooltip: 'Novo Upload',
@@ -303,7 +415,7 @@ class _GedArquivosScreenState extends State<GedArquivosScreen> {
       ),
       body: Column(
         children: [
-          _buildFiltros(),
+          if (!_contextualizado) _buildFiltros(),
           Expanded(child: _buildGrid()),
         ],
       ),
@@ -323,15 +435,18 @@ class _GedArquivosScreenState extends State<GedArquivosScreen> {
             child: _buildDropdown<int>(
               label: 'Empresa *',
               value: _empresaFiltroId,
-              items: _empresas.map((e) => DropdownMenuItem<int>(
-                value: e['id'] as int?,
-                child: Text(e['nome']?.toString() ?? ''),
-              )).toList(),
+              items: _empresas
+                  .map((e) => DropdownMenuItem<int>(
+                        value: e['id'] as int?,
+                        child: Text(e['nome']?.toString() ?? ''),
+                      ))
+                  .toList(),
               onChanged: (v) {
                 setState(() {
                   _empresaFiltroId = v;
-                  _empresaFiltroNome = _empresas.firstWhere(
-                    (e) => e['id'] == v, orElse: () => {})['nome']?.toString();
+                  _empresaFiltroNome = _empresas
+                      .firstWhere((e) => e['id'] == v, orElse: () => {})['nome']
+                      ?.toString();
                   _parceiroFiltroId = null;
                   _parceiroUploadId = null;
                   _parceiros = [];
@@ -353,9 +468,9 @@ class _GedArquivosScreenState extends State<GedArquivosScreen> {
               items: [
                 const DropdownMenuItem<int>(value: null, child: Text('Todos')),
                 ..._parceiros.map((p) => DropdownMenuItem<int>(
-                  value: p['id'] as int?,
-                  child: Text(p['nome']?.toString() ?? ''),
-                )),
+                      value: p['id'] as int?,
+                      child: Text(p['nome']?.toString() ?? ''),
+                    )),
               ],
               onChanged: (v) => setState(() => _parceiroFiltroId = v),
               icon: Icons.person,
@@ -418,7 +533,7 @@ class _GedArquivosScreenState extends State<GedArquivosScreen> {
             Icon(Icons.folder_open, size: 64, color: Colors.grey[400]),
             const SizedBox(height: 12),
             Text(
-              _empresaFiltroId == null
+              _empresaFiltroId == null && !_contextualizado
                   ? 'Selecione uma empresa e clique em Filtrar'
                   : 'Nenhum arquivo encontrado',
               style: TextStyle(color: Colors.grey[600], fontSize: 16),
@@ -438,7 +553,8 @@ class _GedArquivosScreenState extends State<GedArquivosScreen> {
         horizontalMargin: 16,
         minWidth: 900,
         headingRowColor: WidgetStateProperty.all(GridColors.secondary),
-        headingTextStyle: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+        headingTextStyle:
+            const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
         columns: const [
           DataColumn2(label: Text('Nome do Arquivo'), size: ColumnSize.L),
           DataColumn2(label: Text('Tipo'), size: ColumnSize.S),
@@ -460,7 +576,8 @@ class _GedArquivosScreenState extends State<GedArquivosScreen> {
                           controller: _nomeCtrl,
                           autofocus: true,
                           onSubmitted: (_) => _salvarEdicao(),
-                          decoration: const InputDecoration(isDense: true, border: OutlineInputBorder()),
+                          decoration: const InputDecoration(
+                              isDense: true, border: OutlineInputBorder()),
                         ),
                       )
                     : Text(arq['fileName']?.toString() ?? '—',
@@ -488,6 +605,13 @@ class _GedArquivosScreenState extends State<GedArquivosScreen> {
                     constraints: const BoxConstraints(),
                     padding: const EdgeInsets.all(4),
                   ),
+                  IconButton(
+                    icon: const Icon(Icons.auto_awesome, color: Colors.purple),
+                    tooltip: 'Classificar com IA',
+                    onPressed: () => _classificarArquivo(arq),
+                    constraints: const BoxConstraints(),
+                    padding: const EdgeInsets.all(4),
+                  ),
                   // Editar / Confirmar edição
                   isEditando
                       ? IconButton(
@@ -503,7 +627,8 @@ class _GedArquivosScreenState extends State<GedArquivosScreen> {
                           onPressed: () {
                             setState(() {
                               _editando = arq;
-                              _nomeCtrl.text = arq['fileName']?.toString() ?? '';
+                              _nomeCtrl.text =
+                                  arq['fileName']?.toString() ?? '';
                             });
                           },
                           constraints: const BoxConstraints(),
@@ -542,7 +667,8 @@ class _GedArquivosScreenState extends State<GedArquivosScreen> {
     setState(() {
       _arquivoSelecionado = null;
       _diretorioUploadId = null;
-      _parceiroUploadId = _parceiroFiltroId;
+      _parceiroUploadId =
+          _contextoParceiro ? widget.idOrigem : _parceiroFiltroId;
     });
 
     showDialog(
@@ -554,7 +680,14 @@ class _GedArquivosScreenState extends State<GedArquivosScreen> {
             children: [
               const Icon(Icons.upload_file, color: GridColors.secondary),
               const SizedBox(width: 8),
-              Text('Upload de Arquivo${_empresaFiltroNome != null ? ' — $_empresaFiltroNome' : ''}'),
+              Flexible(
+                child: Text(
+                  widget.moduloOrigem != null && widget.nomeOrigem != null
+                      ? 'Upload — ${_capitalize(widget.moduloOrigem!)} · ${widget.nomeOrigem}'
+                      : 'Upload de Arquivo${_empresaFiltroNome != null ? ' — $_empresaFiltroNome' : ''}',
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
             ],
           ),
           content: SizedBox(
@@ -563,16 +696,46 @@ class _GedArquivosScreenState extends State<GedArquivosScreen> {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
+                // H5-21: chip indicador de módulo de origem no dialog
+                if (_moduloOrigemFiltro != null) ...[
+                  Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: GridColors.secondary.withValues(alpha: 0.08),
+                      borderRadius: BorderRadius.circular(6),
+                      border: Border.all(
+                          color: GridColors.secondary.withValues(alpha: 0.3)),
+                    ),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.link,
+                            size: 16, color: GridColors.secondary),
+                        const SizedBox(width: 8),
+                        Text(
+                          'Módulo: ${_capitalize(_moduloOrigemFiltro!)}${_idOrigemFiltro != null ? '  #$_idOrigemFiltro' : ''}',
+                          style: const TextStyle(
+                            fontSize: 12,
+                            color: GridColors.secondary,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                ],
                 // Diretório
                 _buildDropdown<int>(
                   label: 'Diretório',
                   value: _diretorioUploadId,
                   items: [
-                    const DropdownMenuItem<int>(value: null, child: Text('Sem diretório')),
+                    const DropdownMenuItem<int>(
+                        value: null, child: Text('Sem diretório')),
                     ..._diretorios.map((d) => DropdownMenuItem<int>(
-                      value: d['id'] as int?,
-                      child: Text(d['nome']?.toString() ?? ''),
-                    )),
+                          value: d['id'] as int?,
+                          child: Text(d['nome']?.toString() ?? ''),
+                        )),
                   ],
                   onChanged: (v) {
                     setState(() => _diretorioUploadId = v);
@@ -581,24 +744,30 @@ class _GedArquivosScreenState extends State<GedArquivosScreen> {
                   icon: Icons.folder,
                 ),
                 const SizedBox(height: 12),
-                // Parceiro (opcional)
-                _buildDropdown<int>(
-                  label: 'Parceiro/Cliente (opcional)',
-                  value: _parceiroUploadId,
-                  items: [
-                    const DropdownMenuItem<int>(value: null, child: Text('Sem parceiro')),
-                    ..._parceiros.map((p) => DropdownMenuItem<int>(
-                      value: p['id'] as int?,
-                      child: Text(p['nome']?.toString() ?? ''),
-                    )),
-                  ],
-                  onChanged: (v) {
-                    setState(() => _parceiroUploadId = v);
-                    setStateDialog(() {});
-                  },
-                  icon: Icons.person,
-                ),
-                const SizedBox(height: 16),
+                if (!_contextoParceiro) ...[
+                  // Parceiro (opcional)
+                  _buildDropdown<int>(
+                    label: 'Parceiro/Cliente (opcional)',
+                    value: _parceiroUploadId,
+                    items: [
+                      const DropdownMenuItem<int>(
+                        value: null,
+                        child: Text('Sem parceiro'),
+                      ),
+                      ..._parceiros.map((p) => DropdownMenuItem<int>(
+                            value: p['id'] as int?,
+                            child: Text(p['nome']?.toString() ?? ''),
+                          )),
+                    ],
+                    onChanged: (v) {
+                      setState(() => _parceiroUploadId = v);
+                      setStateDialog(() {});
+                    },
+                    icon: Icons.person,
+                  ),
+                  const SizedBox(height: 16),
+                ] else
+                  const SizedBox(height: 4),
                 // Seletor de arquivo
                 OutlinedButton.icon(
                   icon: const Icon(Icons.attach_file),
@@ -638,7 +807,11 @@ class _GedArquivosScreenState extends State<GedArquivosScreen> {
                 foregroundColor: Colors.white,
               ),
               icon: _enviando
-                  ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                  ? const SizedBox(
+                      width: 16,
+                      height: 16,
+                      child: CircularProgressIndicator(
+                          strokeWidth: 2, color: Colors.white))
                   : const Icon(Icons.cloud_upload),
               label: Text(_enviando ? 'Enviando...' : 'Fazer Upload'),
               onPressed: _enviando ? null : () => _fazerUpload(ctx),
@@ -662,7 +835,7 @@ class _GedArquivosScreenState extends State<GedArquivosScreen> {
     bool enabled = true,
   }) {
     return DropdownButtonFormField<T>(
-      value: value,
+      initialValue: value,
       isExpanded: true,
       decoration: _inputDecoration(label, icon),
       items: items,
@@ -681,12 +854,19 @@ class _GedArquivosScreenState extends State<GedArquivosScreen> {
   }
 
   Widget _chipTipo(String tipo) {
-    final ext = tipo.contains('/') ? tipo.split('/').last.toUpperCase() : tipo.toUpperCase();
+    final ext = tipo.contains('/')
+        ? tipo.split('/').last.toUpperCase()
+        : tipo.toUpperCase();
     Color cor = Colors.grey;
-    if (tipo.startsWith('image/')) cor = Colors.blue;
-    else if (tipo.contains('pdf')) cor = Colors.red;
-    else if (tipo.contains('word') || tipo.contains('doc')) cor = Colors.indigo;
-    else if (tipo.contains('excel') || tipo.contains('sheet') || tipo.contains('csv')) cor = Colors.green;
+    if (tipo.startsWith('image/')) {
+      cor = Colors.blue;
+    } else if (tipo.contains('pdf'))
+      cor = Colors.red;
+    else if (tipo.contains('word') || tipo.contains('doc'))
+      cor = Colors.indigo;
+    else if (tipo.contains('excel') ||
+        tipo.contains('sheet') ||
+        tipo.contains('csv')) cor = Colors.green;
 
     return Chip(
       label: Text(ext.length > 8 ? ext.substring(0, 8) : ext,
@@ -703,6 +883,40 @@ class _GedArquivosScreenState extends State<GedArquivosScreen> {
       return fmt.format(DateTime.parse(raw));
     } catch (_) {
       return raw;
+    }
+  }
+
+  Future<void> _classificarArquivo(Map<String, dynamic> arq) async {
+    try {
+      final result = await AiAssistantService().classifyDocument(
+        fileName: arq['fileName']?.toString(),
+        fileType: arq['fileType']?.toString(),
+        description: [
+          arq['diretorioNome']?.toString(),
+          arq['parceiroNome']?.toString(),
+        ].whereType<String>().join(' '),
+      );
+      if (!mounted) return;
+      showDialog<void>(
+        context: context,
+        builder: (_) => AlertDialog(
+          title: const Text('Classificacao do documento'),
+          content: Text(
+            'Categoria: ${result.category}\n'
+            'Confianca: ${result.confidence}\n'
+            'Status sugerido: ${result.suggestedStatus}\n'
+            'Tags: ${result.tags.join(', ')}',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Fechar'),
+            ),
+          ],
+        ),
+      );
+    } catch (e) {
+      _snack('Erro ao classificar documento: $e', erro: true);
     }
   }
 

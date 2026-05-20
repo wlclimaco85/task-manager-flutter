@@ -9,6 +9,8 @@ import '../../../models/network_response.dart';
 import '../../services/network_caller.dart';
 import 'package:dropdown_button2/dropdown_button2.dart';
 
+
+import 'package:task_manager_flutter/utils/app_logger.dart';
 List<Map<String, dynamic>> _dataArrays = []; //add this
 String? _data = ""; //add this
 int ddd = 0;
@@ -72,14 +74,14 @@ class _CustomComboBoxDietaitensForm
       if (mounted) {
         // final datass = json.decode(response.body);
         final data = decoded['data'];
-        print(data[0]['descricao']); // prints 3.672940
+        L.d(data[0]['descricao']); // prints 3.672940
         dias = [];
         for (final name in data) {
           final value = name['id'];
           final nome = name['descricao'];
           modalidadeList.add(nome);
           dias.add(nome);
-          print('$value,$nome'); // prints entries like "AED,3.672940"
+          L.d('$value,$nome'); // prints entries like "AED,3.672940"
         }
       }
     } else {
@@ -117,8 +119,8 @@ class _CustomComboBoxDietaitensForm
         if (entry.key == key && entry.value == chave) {
           _dataArrays[key][chave] = value;
         }
-        print(entry.key);
-        print(entry.value);
+        L.d(entry.key);
+        L.d(entry.value);
       });
 
       for (var map in _dataArrays) {
@@ -227,7 +229,7 @@ class _CustomComboBoxDietaitensForm
                   //      myObjectInstanceds.test();
 
                   //   _dataArraysB.addAll(_dataArrays);
-                  print(_dataArrays);
+                  L.d(_dataArrays);
                 });
               },
               icon: CircleAvatar(
@@ -288,7 +290,7 @@ class _CustomComboBoxDietaitensForm
                     ),
                   ),
                   items: dias.map((item) {
-                    return DropdownMenuItem(
+                    return DropdownItem(
                       value: item,
                       //disable default onTap to avoid closing menu when selecting an item
                       enabled: false,
@@ -306,7 +308,7 @@ class _CustomComboBoxDietaitensForm
                               setState(() {});
                               //This rebuilds the dropdownMenu Widget to update the check mark
                               menuSetState(() {
-                                print(item);
+                                L.d(item);
                               });
                             },
                             child: Container(
@@ -337,8 +339,7 @@ class _CustomComboBoxDietaitensForm
                     );
                   }).toList(),
                   //Use last selected item as the current value so if we've limited menu height, it scroll to last item.
-                  value:
-                      diasSelectedItems.isEmpty ? null : diasSelectedItems.last,
+                  valueListenable: ValueNotifier<String?>(diasSelectedItems.isEmpty ? null : diasSelectedItems.last),
                   onChanged: (vale) => _onUpdate(key, vale, chave),
 
                   selectedItemBuilder: (context) {
@@ -394,7 +395,6 @@ class _CustomComboBoxDietaitensForm
                     ),
                   ),
                   menuItemStyleData: const MenuItemStyleData(
-                    height: 40,
                     padding: EdgeInsets.only(left: 14, right: 14),
                   ),
                 ),

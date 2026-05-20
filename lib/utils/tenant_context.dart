@@ -33,16 +33,20 @@ class TenantContext {
   // ── Headers ──────────────────────────────────────────────────────────────
   static Map<String, String> get headers {
     final token = AuthUtility.userInfo?.token;
+    final tenantId = empresaId?.toString();
     return {
       if (token != null) 'Authorization': 'Bearer $token',
+      if (tenantId != null) 'X-Tenant-ID': tenantId,
       'Accept-Encoding': 'gzip',
     };
   }
 
   static Map<String, String> get jsonHeaders {
     final token = AuthUtility.userInfo?.token;
+    final tenantId = empresaId?.toString();
     return {
       if (token != null) 'Authorization': 'Bearer $token',
+      if (tenantId != null) 'X-Tenant-ID': tenantId,
       'Content-Type': 'application/json',
     };
   }
@@ -54,24 +58,36 @@ class TenantContext {
     final uri = Uri.parse(url);
     final params = Map<String, String>.from(uri.queryParameters);
 
-    // Empresa — usa apenas empId
-    if (hasEmpresa) {
+    final hasExplicitEmpresaScope = params.containsKey('empId') ||
+        params.containsKey('empresaId') ||
+        params.containsKey('empresa') ||
+        params.containsKey('empresa_id');
+
+    // Empresa: injeta o tenant logado apenas quando a chamada não trouxe um
+    // escopo explícito, como acontece nas abas de detalhe de uma empresa.
+    if (hasEmpresa && !hasExplicitEmpresaScope) {
       params['empId'] = empresaId.toString();
     }
     // Sem empresa → não injeta filtro (admin sem empresa vê tudo)
 
-    // Parceiro/Cliente — todos os nomes que os controllers aceitam
-    if (hasParceiro) {
-      params['parceiro']   = parceiroId.toString();
+    final hasExplicitParceiroScope = params.containsKey('parceiro') ||
+        params.containsKey('parceiroId') ||
+        params.containsKey('parcId') ||
+        params.containsKey('clienteId');
+
+    // Parceiro/Cliente: mesmo princípio, evita misturar filtro de aba com
+    // parceiro do login atual.
+    if (hasParceiro && !hasExplicitParceiroScope) {
+      params['parceiro'] = parceiroId.toString();
       params['parceiroId'] = parceiroId.toString();
-      params['parcId']     = parceiroId.toString();
-      params['clienteId']  = parceiroId.toString();
+      params['parcId'] = parceiroId.toString();
+      params['clienteId'] = parceiroId.toString();
     }
 
     // UserId — para controllers que filtram por usuário logado
     if (hasUser) {
-      params['userId']         = userId.toString();
-      params['userLogadoId']   = userId.toString();
+      params['userId'] = userId.toString();
+      params['userLogadoId'] = userId.toString();
     }
 
     return uri.replace(queryParameters: params).toString();

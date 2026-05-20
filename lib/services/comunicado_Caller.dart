@@ -4,6 +4,8 @@ import '../../../utils/api_links.dart';
 
 import '../models/comunicados_model.dart';
 
+
+import 'package:task_manager_flutter/utils/app_logger.dart';
 class ComunicadoCaller {
   Future<List<Comunicado>> fetchAllComunicados() async {
     List<Comunicado> list = [];
@@ -17,7 +19,7 @@ class ComunicadoCaller {
         list = (data as List).map((item) => Comunicado.fromJson(item)).toList();
       }
     } catch (e) {
-      print('Erro ao carregar comunicados: $e');
+      L.d('Erro ao carregar comunicados: $e');
       throw Exception('Erro ao carregar comunicados: $e');
     }
     return list;

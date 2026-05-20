@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../../utils/api_links.dart';
 import '../../customization/generic_grid_card.dart';
 import '../../../models/conta_receber_model.dart';
+import '../../widgets/finance/billing_charge_dialog.dart';
 import '../screens/baixa_dialog_receber.dart';
 import '../screens/desfazer_baixa_dialog.dart';
 
@@ -25,6 +26,12 @@ class ContaReceberGridScreen extends StatelessWidget {
       idFieldName: 'id',
       dateFieldName: 'audit.createdAt',
       customActions: () => [
+        CustomAction<ContaReceber>(
+          icon: Icons.receipt_long,
+          label: 'Cobrar',
+          onPressed: (context, object) => _showBillingDialog(context, object),
+          isVisible: (object) => object.status == StatusConta.ABERTA,
+        ),
         CustomAction<ContaReceber>(
           icon: Icons.payment,
           label: 'Baixar',
@@ -63,6 +70,15 @@ class ContaReceberGridScreen extends StatelessWidget {
       context: context,
       builder: (BuildContext context) {
         return BaixaDialogReceber(conta: conta);
+      },
+    );
+  }
+
+  void _showBillingDialog(BuildContext context, ContaReceber conta) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return BillingChargeDialog(conta: conta);
       },
     );
   }

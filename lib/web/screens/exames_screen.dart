@@ -1,16 +1,18 @@
 import 'package:flutter/material.dart';
 import '../../../utils/api_links.dart';
 import '../../../widgets/user_banners.dart';
-import '../../../windows/screens/update_profile.dart';
+import '../../../web/screens/update_profile.dart';
 import '../../../widgets/home_list_model.dart';
 import '../../../models/network_response.dart';
 import '../../services/network_caller.dart';
 import '../../../widgets/input_field_busca.dart';
-import '../../../windows/screens/exames_add.dart';
-import '../../../windows/screens/exames_list.dart';
+import '../../../web/screens/exames_add.dart';
+import '../../../web/screens/exames_list.dart';
 import '../../../models/auth_utility.dart';
 import '../../models/login_model.dart';
 
+
+import 'package:task_manager_flutter/utils/app_logger.dart';
 class WebExameScreen extends StatefulWidget {
   const WebExameScreen({super.key});
 
@@ -38,7 +40,7 @@ class _WebExameScreenState extends State<WebExameScreen> {
   int count = 0;
   final List<String> modalidadeList = ['Musculação'];
 
-  void log(String message) => print(message);
+  void log(String message) => L.d(message);
 
   bool _addNewTaskLoading = false;
 
@@ -161,7 +163,7 @@ class _WebExameScreenState extends State<WebExameScreen> {
           Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (context) => const WindowsUpdateProfileScreen(),
+              builder: (context) => const WebUpdateProfileScreen(),
             ),
           );
         },

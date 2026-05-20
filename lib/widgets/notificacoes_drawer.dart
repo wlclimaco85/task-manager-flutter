@@ -115,7 +115,7 @@ class _NotificacoesDrawerState extends State<NotificacoesDrawer> {
           ),
 
         // Rodapé com resumo
-        if (!_loading && !_notifs.isEmpty)
+        if (!_loading && _notifs.isNotEmpty)
           Container(
             padding: const EdgeInsets.all(12),
             decoration: const BoxDecoration(border: Border(top: BorderSide(color: Color(0xFFEEEEEE)))),
@@ -154,7 +154,7 @@ class _NotificacoesDrawerState extends State<NotificacoesDrawer> {
     if (label == null) return null;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-      decoration: BoxDecoration(color: _corTipo(tipo).withOpacity(0.15), borderRadius: BorderRadius.circular(10), border: Border.all(color: _corTipo(tipo).withOpacity(0.5))),
+      decoration: BoxDecoration(color: _corTipo(tipo).withValues(alpha: 0.15), borderRadius: BorderRadius.circular(10), border: Border.all(color: _corTipo(tipo).withValues(alpha: 0.5))),
       child: Text(label, style: TextStyle(fontSize: 10, color: _corTipo(tipo), fontWeight: FontWeight.bold)),
     );
   }

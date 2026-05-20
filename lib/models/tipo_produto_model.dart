@@ -10,6 +10,6 @@ class TipoProduto {
   Map<String, dynamic> toJson() => {'id': id, 'tipoProduto': tipoProduto};
 
   static List<FieldConfig> fieldConfigs = [
-    FieldConfig(label: "Tipo Produto", fieldName: "tipoProduto", icon: Icons.category, isInForm: true, isFilterable: true),
+    const FieldConfig(label: "Tipo Produto", fieldName: "tipoProduto", icon: Icons.category, isInForm: true, isFilterable: true),
   ];
 }

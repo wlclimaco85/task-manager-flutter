@@ -1,9 +1,10 @@
-﻿import 'dart:convert';
 import 'package:task_manager_flutter/models/role_model.dart'; // Ajuste o caminho conforme necessário
 import 'package:task_manager_flutter/utils/api_links.dart'; // Onde definiremos as URLs
 import 'package:task_manager_flutter/models/network_response.dart';
 import 'package:task_manager_flutter/services/network_caller.dart';
 
+
+import 'package:task_manager_flutter/utils/app_logger.dart';
 class RoleCaller {
   Future<List<Role>> getRoles() async {
     List<Role>? roles = [];
@@ -20,7 +21,7 @@ class RoleCaller {
         throw Exception('Falha ao carregar roles: ${response.statusCode}');
       }
     } catch (e) {
-      print('Erro: $e');
+      L.d('Erro: $e');
       throw Exception('Erro ao carregar roles: $e');
     }
     return roles;
@@ -41,7 +42,7 @@ class RoleCaller {
         return false;
       }
     } catch (e) {
-      print('Erro: $e');
+      L.d('Erro: $e');
       return false;
     }
   }
@@ -58,7 +59,7 @@ class RoleCaller {
         return false;
       }
     } catch (e) {
-      print('Erro: $e');
+      L.d('Erro: $e');
       return false;
     }
   }

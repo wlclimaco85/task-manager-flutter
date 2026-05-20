@@ -243,7 +243,7 @@ class Chamado {
   // =========================================================
 
   static List<FieldConfigWindows> fieldConfigs = [
-    FieldConfigWindows(
+    const FieldConfigWindows(
       label: "Título",
       fieldName: "titulo",
       icon: Icons.title,
@@ -253,7 +253,7 @@ class Chamado {
       isFixed: true,
       fieldType: FieldType.text,
     ),
-    FieldConfigWindows(
+    const FieldConfigWindows(
       label: "Descrição",
       fieldName: "descricao",
       icon: Icons.description,

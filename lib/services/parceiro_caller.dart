@@ -8,6 +8,8 @@ import '../../../models/auth_utility.dart';
 import '../../mobile/screens/LoginPopup_screens.dart';
 import '../../../utils/utils.dart';
 
+
+import 'package:task_manager_flutter/utils/app_logger.dart';
 class ParceiroCaller {
   Future<List<Parceiro>> fetchParceiros(
     BuildContext context,
@@ -38,7 +40,7 @@ class ParceiroCaller {
         }
       }
     } catch (e) {
-      print('Erro: $e'); // Log do erro
+      L.d('Erro: $e'); // Log do erro
       throw Exception('Erro ao carregar cotações: $e');
     }
     return model;
@@ -75,10 +77,10 @@ class ParceiroCaller {
           return false;
         }
 
-        print("Parceiro inserido com sucesso.");
+        L.d("Parceiro inserido com sucesso.");
         return true;
       } else {
-        print("Erro ao inserir parceiro: ${response.body}");
+        L.d("Erro ao inserir parceiro: ${response.body}");
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text("Erro ao inserir parceiro: ${response.body}"),
@@ -88,7 +90,7 @@ class ParceiroCaller {
         return false;
       }
     } catch (e) {
-      print('Erro ao inserir parceiro: $e');
+      L.d('Erro ao inserir parceiro: $e');
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text("Erro ao inserir parceiro: $e"),
@@ -138,7 +140,7 @@ class ParceiroCaller {
         );
         return true;
       } else {
-        print("Erro ao inserir parceiro: ${response.body}");
+        L.d("Erro ao inserir parceiro: ${response.body}");
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text("Erro ao inserir parceiro: ${response.body}"),
@@ -148,7 +150,7 @@ class ParceiroCaller {
         return false;
       }
     } catch (e) {
-      print('Erro ao inserir parceiro: $e');
+      L.d('Erro ao inserir parceiro: $e');
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text("Erro ao inserir parceiro: $e"),
@@ -172,7 +174,7 @@ class ParceiroCaller {
         list = data.map<Parceiro>((item) => Parceiro.fromJson(item)).toList();
       }
     } catch (e) {
-      print('Erro ao carregar parceiros: $e');
+      L.d('Erro ao carregar parceiros: $e');
       throw Exception('Erro ao carregar parceiros: $e');
     }
     return list;
@@ -195,7 +197,7 @@ class ParceiroCaller {
             .toList();
       }
     } catch (e) {
-      print('Erro ao carregar parceiros: $e');
+      L.d('Erro ao carregar parceiros: $e');
       throw Exception('Erro ao carregar parceiros: $e');
     }
     return list;

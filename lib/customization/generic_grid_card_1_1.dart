@@ -992,7 +992,7 @@ class _GenericMobileGridScreenState extends State<GenericMobileGridScreen> {
             const Spacer(),
             IconButton(
               onPressed: () => setState(() => filtrosAbertos = false),
-              icon: Icon(Icons.close, color: cs.onSurface.withOpacity(0.6)),
+              icon: Icon(Icons.close, color: cs.onSurface.withValues(alpha: 0.6)),
             ),
           ]),
           const SizedBox(height: 12),
@@ -1109,7 +1109,7 @@ class _GenericMobileGridScreenState extends State<GenericMobileGridScreen> {
               ])
             : Column(mainAxisSize: MainAxisSize.min, children: [
                 Icon(Icons.check_circle,
-                    color: cs.primary.withOpacity(0.6), size: 40),
+                    color: cs.primary.withValues(alpha: 0.6), size: 40),
                 const SizedBox(height: 8),
                 const Text('Todos os itens foram carregados')
               ]),
@@ -1131,10 +1131,10 @@ class _GenericMobileGridScreenState extends State<GenericMobileGridScreen> {
           side: BorderSide(
               color: isSelected
                   ? GridColors.primary
-                  : GridColors.primary.withOpacity(0.3)),
+                  : GridColors.primary.withValues(alpha: 0.3)),
         ),
         color:
-            isSelected ? GridColors.primary.withOpacity(0.06) : GridColors.card,
+            isSelected ? GridColors.primary.withValues(alpha: 0.06) : GridColors.card,
         child: InkWell(
           borderRadius: BorderRadius.circular(12),
           onTap: _isSelectionMode
@@ -1163,7 +1163,7 @@ class _GenericMobileGridScreenState extends State<GenericMobileGridScreen> {
                   padding:
                       const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                   decoration: BoxDecoration(
-                    color: GridColors.primary.withOpacity(0.1),
+                    color: GridColors.primary.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(4),
                   ),
                   child: Text('#$id',
@@ -1218,7 +1218,7 @@ class _GenericMobileGridScreenState extends State<GenericMobileGridScreen> {
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           Text(c.label,
               style: TextStyle(
-                  fontSize: 11, color: Colors.black.withOpacity(0.6))),
+                  fontSize: 11, color: Colors.black.withValues(alpha: 0.6))),
           const SizedBox(height: 2),
           Row(mainAxisSize: MainAxisSize.min, children: [
             const Icon(Icons.attach_file, size: 14, color: GridColors.primary),
@@ -1247,7 +1247,7 @@ class _GenericMobileGridScreenState extends State<GenericMobileGridScreen> {
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         Text(c.label,
             style:
-                TextStyle(fontSize: 11, color: Colors.black.withOpacity(0.6))),
+                TextStyle(fontSize: 11, color: Colors.black.withValues(alpha: 0.6))),
         const SizedBox(height: 2),
         Text(value, maxLines: 1, overflow: TextOverflow.ellipsis),
       ]),
@@ -1288,9 +1288,9 @@ class _GenericMobileGridScreenState extends State<GenericMobileGridScreen> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
+        color: color.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(4),
-        border: Border.all(color: color.withOpacity(0.3)),
+        border: Border.all(color: color.withValues(alpha: 0.3)),
       ),
       child: Text(
         text,
@@ -1314,14 +1314,14 @@ class _GenericMobileGridScreenState extends State<GenericMobileGridScreen> {
       if (widget.enableDebugMode)
         IconButton(
           icon: Icon(Icons.bug_report,
-              size: 16, color: Colors.black.withOpacity(0.6)),
+              size: 16, color: Colors.black.withValues(alpha: 0.6)),
           tooltip: 'Ver JSON',
           onPressed: () => _showAllFieldsDebug(context, item),
         ),
       if (widget.detailScreenBuilder != null && _can('view'))
         IconButton(
           icon: Icon(Icons.visibility_outlined,
-              size: 16, color: Colors.black.withOpacity(0.6)),
+              size: 16, color: Colors.black.withValues(alpha: 0.6)),
           onPressed: () {
             Navigator.push(
               context,
@@ -1333,7 +1333,7 @@ class _GenericMobileGridScreenState extends State<GenericMobileGridScreen> {
       if (_can('edit'))
         IconButton(
           icon: Icon(Icons.edit_outlined,
-              size: 16, color: Colors.black.withOpacity(0.6)),
+              size: 16, color: Colors.black.withValues(alpha: 0.6)),
           onPressed: () async {
             final ok = await _confirm(
               title: 'Editar',
@@ -1355,7 +1355,7 @@ class _GenericMobileGridScreenState extends State<GenericMobileGridScreen> {
       ...perItemServer.map(
         (a) => IconButton(
           icon: Icon(a.icon ?? Icons.play_arrow,
-              size: 16, color: Colors.black.withOpacity(0.7)),
+              size: 16, color: Colors.black.withValues(alpha: 0.7)),
           tooltip: a.label,
           onPressed: () => _runServerAction(context, a, item),
         ),
@@ -1364,7 +1364,7 @@ class _GenericMobileGridScreenState extends State<GenericMobileGridScreen> {
       ..._customActions.where((a) => a.isVisible?.call(item) ?? true).map(
             (a) => IconButton(
               icon:
-                  Icon(a.icon, size: 16, color: Colors.black.withOpacity(0.6)),
+                  Icon(a.icon, size: 16, color: Colors.black.withValues(alpha: 0.6)),
               onPressed: () => a.onPressed(context, item),
               tooltip: a.label,
             ),
@@ -1429,7 +1429,7 @@ class _GenericMobileGridScreenState extends State<GenericMobileGridScreen> {
     _itemParaEditar = editingItem;
     showDialog(
       context: context,
-      barrierColor: GridColors.primary.withOpacity(0.7),
+      barrierColor: GridColors.primary.withValues(alpha: 0.7),
       builder: (ctx) => _buildFormDialog(editingItem),
     );
   }
@@ -1604,7 +1604,7 @@ class _GenericMobileGridScreenState extends State<GenericMobileGridScreen> {
         labelText: c.label + (c.isRequired ? ' *' : ''),
         suffixIcon: Icon(
           Icons.calendar_today,
-          color: c.enabled ? cs.primary : cs.onSurface.withOpacity(0.38),
+          color: c.enabled ? cs.primary : cs.onSurface.withValues(alpha: 0.38),
         ),
         filled: true,
         fillColor: Colors.white,
@@ -1672,7 +1672,7 @@ class _GenericMobileGridScreenState extends State<GenericMobileGridScreen> {
         onPressed: c.enabled
             ? () async {
                 try {
-                  final res = await FilePicker.platform.pickFiles(
+                  final res = await FilePicker.pickFiles(
                     type: FileType.custom,
                     allowedExtensions: cfg.allowedExtensions,
                     allowMultiple: cfg.allowMultiple,
@@ -1706,7 +1706,7 @@ class _GenericMobileGridScreenState extends State<GenericMobileGridScreen> {
           child: Text(
             'Extensões permitidas: ${cfg.allowedExtensions.join(', ')}',
             style:
-                TextStyle(fontSize: 12, color: Colors.white.withOpacity(0.8)),
+                TextStyle(fontSize: 12, color: Colors.white.withValues(alpha: 0.8)),
           ),
         ),
     ]);

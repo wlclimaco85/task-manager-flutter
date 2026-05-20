@@ -1,7 +1,12 @@
-﻿import 'package:flutter/material.dart';
+import 'dart:async';
 
-import 'package:task_manager_flutter/constants/custom_colors.dart';
+import 'package:flutter/material.dart';
+
+import 'package:task_manager_flutter/constants/custom_colors.dart' hide GridColors;
+import 'package:task_manager_flutter/models/alert_model.dart';
 import 'package:task_manager_flutter/models/auth_utility.dart';
+import 'package:task_manager_flutter/services/alert_caller.dart';
+import 'package:task_manager_flutter/utils/grid_colors.dart';
 import 'package:task_manager_flutter/utils/security_matrix.dart';
 
 import 'sem_acesso_screen.dart';
@@ -12,12 +17,15 @@ import 'conta_bancaria_grid_screen.dart';
 import 'conta_pagar_grid_screen.dart';
 import 'conta_receber_grid_screen.dart';
 import 'dashboard_screen.dart';
+import '../../features/trading/trading_dashboard_screen.dart';
 import 'documento_screen.dart';
 import 'file_upload_screen.dart';
 import 'parceiro_grid_screen.dart';
 import 'ponto_screen.dart';
 import 'funcionario_grid_screen.dart';
 import 'produto_grid_screen.dart';
+import '../../widgets/crm/crm_pipeline_screen.dart';
+import '../../widgets/fiscal/fiscal_automation_screen.dart';
 
 class BottomNavBarScreen extends StatefulWidget {
   const BottomNavBarScreen({super.key});
@@ -28,6 +36,133 @@ class BottomNavBarScreen extends StatefulWidget {
 
 class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
   int selectedIndex = 0;
+
+  List<Alert> _notifications = [];
+  int _unreadCount = 0;
+  Timer? _alertTimer;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchAlerts();
+    _alertTimer = Timer.periodic(const Duration(minutes: 1), (_) {
+      if (mounted) _fetchAlerts();
+    });
+  }
+
+  @override
+  void dispose() {
+    _alertTimer?.cancel();
+    super.dispose();
+  }
+
+  Future<void> _fetchAlerts() async {
+    try {
+      final data = await AlertCaller().fetchItensAVenda(context);
+      if (mounted) {
+        setState(() {
+          _notifications = data;
+          _unreadCount = data.length;
+        });
+      }
+    } catch (_) {}
+  }
+
+  void _showNotificationsSheet(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(12)),
+      ),
+      builder: (_) => StatefulBuilder(
+        builder: (ctx, setLocal) => Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(18, 16, 8, 8),
+              child: Row(
+                children: [
+                  const Expanded(
+                    child: Text(
+                      'Notificações',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w800,
+                        color: GridColors.textSecondary,
+                      ),
+                    ),
+                  ),
+                  if (_notifications.isNotEmpty)
+                    TextButton.icon(
+                      onPressed: () {
+                        setState(() {
+                          _notifications.clear();
+                          _unreadCount = 0;
+                        });
+                        setLocal(() {});
+                        Navigator.pop(ctx);
+                      },
+                      icon: const Icon(Icons.delete_sweep, size: 18),
+                      label: const Text('Limpar tudo'),
+                      style: TextButton.styleFrom(
+                          foregroundColor: GridColors.error),
+                    ),
+                  IconButton(
+                    onPressed: () => Navigator.pop(ctx),
+                    icon: const Icon(Icons.close),
+                  ),
+                ],
+              ),
+            ),
+            const Divider(height: 1),
+            _notifications.isEmpty
+                ? const Padding(
+                    padding: EdgeInsets.all(24),
+                    child: Text('Sem notificações',
+                        style: TextStyle(color: Colors.grey)),
+                  )
+                : ConstrainedBox(
+                    constraints: const BoxConstraints(maxHeight: 320),
+                    child: ListView.separated(
+                      shrinkWrap: true,
+                      itemCount: _notifications.length,
+                      separatorBuilder: (_, __) =>
+                          const Divider(height: 1, indent: 16),
+                      itemBuilder: (_, i) {
+                        final n = _notifications[i];
+                        final dt = DateTime.tryParse(n.data ?? '');
+                        final fmt = dt != null
+                            ? '${dt.day.toString().padLeft(2, '0')}/${dt.month.toString().padLeft(2, '0')}/${dt.year} ${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}'
+                            : '';
+                        return ListTile(
+                          leading: const Icon(Icons.notifications_outlined,
+                              color: GridColors.primary),
+                          title: Text(n.texto,
+                              style: const TextStyle(fontSize: 13)),
+                          subtitle: fmt.isNotEmpty ? Text(fmt) : null,
+                          trailing: IconButton(
+                            icon: const Icon(Icons.close,
+                                size: 18, color: Colors.grey),
+                            onPressed: () {
+                              setState(() {
+                                _notifications.removeWhere(
+                                    (x) => x.id == n.id);
+                                _unreadCount = _notifications.length;
+                              });
+                              setLocal(() {});
+                            },
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+            const SizedBox(height: 8),
+          ],
+        ),
+      ),
+    );
+  }
 
   List<Widget> _buildScreens(SecurityMatrix sec) {
     return [
@@ -134,6 +269,24 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
           MaterialPageRoute(builder: (_) => const DashboardPage()),
         );
         break;
+      case "Trading":
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => const TradingDashboardScreen()),
+        );
+        break;
+      case "CRM/Funil":
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => const CrmPipelineScreen()),
+        );
+        break;
+      case "Obrigacoes":
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => const FiscalAutomationScreen()),
+        );
+        break;
       case "Contas Bancarias":
         Navigator.push(
           context,
@@ -192,6 +345,19 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
 
     return Scaffold(
       body: screens[safeIndex],
+      floatingActionButton: _unreadCount > 0
+          ? FloatingActionButton.small(
+              backgroundColor: GridColors.primary,
+              onPressed: () => _showNotificationsSheet(context),
+              child: Badge(
+                label: Text('$_unreadCount',
+                    style: const TextStyle(fontSize: 10)),
+                child: const Icon(Icons.notifications,
+                    color: Colors.white, size: 20),
+              ),
+            )
+          : null,
+      floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
       bottomNavigationBar: Container(
         decoration: BoxDecoration(
           color: CustomColors().getLightGreenBackground(),
@@ -233,6 +399,12 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
         _menuItem(Icons.inventory_2, "Produtos", sec),
       if (sec.canView(AppScreen.dashboard))
         _menuItem(Icons.bar_chart, "Dashboard", sec),
+      if (sec.canView(AppScreen.trading))
+        _menuItem(Icons.show_chart, "Trading", sec),
+      if (sec.canView(AppScreen.pedidos))
+        _menuItem(Icons.trending_up, "CRM/Funil", sec),
+      if (sec.canView(AppScreen.obrigacoesFiscais))
+        _menuItem(Icons.assignment_turned_in, "Obrigacoes", sec),
       if (sec.canView(AppScreen.contasBancarias))
         _menuItem(Icons.account_balance, "Contas Bancarias", sec),
       if (sec.canView(AppScreen.ponto))

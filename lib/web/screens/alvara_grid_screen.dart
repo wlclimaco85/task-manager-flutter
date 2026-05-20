@@ -11,6 +11,7 @@ import '../../utils/api_links.dart';
 import '../../utils/tenant_context.dart';
 import '../../widgets/generic_grid_windows_screen.dart'
     show FieldConfigWindows, FieldType, CustomAction;
+import './ged_arquivos_screen.dart';
 
 // Alias de tipo para checar permissões (mesmo padrão dos outros screens)
 typedef SecurityCheck = bool Function(String permission);
@@ -80,19 +81,19 @@ class WebAlvaraGridScreen extends StatelessWidget {
 
       fieldOverrides: [
         // ── Suprimir IDs de FK brutos ──────────────────────────────────────
-        FieldConfigWindows(
+        const FieldConfigWindows(
             fieldName: 'empresa_id',
             label: '',
             isInForm: false,
             isVisibleByDefault: false,
             enabled: false),
-        FieldConfigWindows(
+        const FieldConfigWindows(
             fieldName: 'parceiro_id',
             label: '',
             isInForm: false,
             isVisibleByDefault: false,
             enabled: false),
-        FieldConfigWindows(
+        const FieldConfigWindows(
             fieldName: 'file_id',
             label: '',
             isInForm: false,
@@ -100,7 +101,7 @@ class WebAlvaraGridScreen extends StatelessWidget {
             enabled: false),
 
         // ── Campos principais ─────────────────────────────────────────────
-        FieldConfigWindows(
+        const FieldConfigWindows(
           fieldName: 'descricao',
           label: 'Descrição',
           isInForm: true,
@@ -108,14 +109,14 @@ class WebAlvaraGridScreen extends StatelessWidget {
           enabled: true,
           isRequired: true,
         ),
-        FieldConfigWindows(
+        const FieldConfigWindows(
           fieldName: 'numero',
           label: 'Número',
           isInForm: true,
           isVisibleByDefault: true,
           enabled: true,
         ),
-        FieldConfigWindows(
+        const FieldConfigWindows(
           fieldName: 'dataEmissao',
           label: 'Data Emissão',
           fieldType: FieldType.date,
@@ -123,7 +124,7 @@ class WebAlvaraGridScreen extends StatelessWidget {
           isVisibleByDefault: true,
           enabled: true,
         ),
-        FieldConfigWindows(
+        const FieldConfigWindows(
           fieldName: 'dataVencimento',
           label: 'Data Vencimento',
           fieldType: FieldType.date,
@@ -132,7 +133,7 @@ class WebAlvaraGridScreen extends StatelessWidget {
           enabled: true,
           isFilterable: true,
         ),
-        FieldConfigWindows(
+        const FieldConfigWindows(
           fieldName: 'orgaoEmissor',
           label: 'Órgão Emissor',
           isInForm: true,
@@ -175,7 +176,7 @@ class WebAlvaraGridScreen extends StatelessWidget {
         ),
 
         // ── Empresa → dropdown ────────────────────────────────────────────
-        FieldConfigWindows(
+        const FieldConfigWindows(
           fieldName: 'empresa',
           label: 'Empresa',
           displayFieldName: 'empresa.nomeFantasia',
@@ -190,7 +191,7 @@ class WebAlvaraGridScreen extends StatelessWidget {
         ),
 
         // ── Parceiro/Cliente → dropdown ───────────────────────────────────
-        FieldConfigWindows(
+        const FieldConfigWindows(
           fieldName: 'parceiro',
           label: 'Parceiro/Cliente',
           displayFieldName: 'parceiro.nome',
@@ -205,7 +206,7 @@ class WebAlvaraGridScreen extends StatelessWidget {
         ),
 
         // ── Observação ────────────────────────────────────────────────────
-        FieldConfigWindows(
+        const FieldConfigWindows(
           fieldName: 'observacao',
           label: 'Observação',
           fieldType: FieldType.multiline,
@@ -215,7 +216,7 @@ class WebAlvaraGridScreen extends StatelessWidget {
         ),
       ],
 
-      // ── Ações customizadas: Upload PDF e Visualizar PDF ──────────────────
+      // ── Ações customizadas: Upload PDF, Visualizar PDF e GED ────────────
       customActions: () => [
         CustomAction<AlvaraModel>(
           icon: Icons.upload_file,
@@ -228,6 +229,21 @@ class WebAlvaraGridScreen extends StatelessWidget {
           isVisible: (item) => item.temPdf,
           onPressed: (ctx, item) => _visualizarPdf(ctx, item),
         ),
+        // H5-21: navegar para o GED filtrado por este alvará
+        CustomAction<AlvaraModel>(
+          icon: Icons.folder_open,
+          label: 'Ver GED',
+          isVisible: (item) => item.id != null,
+          onPressed: (ctx, item) {
+            Navigator.push(ctx, MaterialPageRoute(
+              builder: (_) => GedArquivosScreen(
+                moduloOrigem: 'alvara',
+                idOrigem: item.id,
+                nomeOrigem: item.descricao,
+              ),
+            ));
+          },
+        ),
       ],
     );
   }
@@ -239,7 +255,7 @@ class WebAlvaraGridScreen extends StatelessWidget {
       return;
     }
 
-    final result = await FilePicker.platform.pickFiles(
+    final result = await FilePicker.pickFiles(
       type: FileType.custom,
       allowedExtensions: ['pdf'],
       withData: true,

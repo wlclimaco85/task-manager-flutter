@@ -24,8 +24,8 @@ class CalendarioGuias {
       };
 
   static List<FieldConfig> fieldConfigs = [
-    FieldConfig(label: "Nome", fieldName: "nome", icon: Icons.calendar_today, isInForm: true, isFilterable: true),
-    FieldConfig(label: "Descrição", fieldName: "descricao", icon: Icons.description, isInForm: true),
-    FieldConfig(label: "Data Guia", fieldName: "dtGuia", icon: Icons.date_range, isInForm: true),
+    const FieldConfig(label: "Nome", fieldName: "nome", icon: Icons.calendar_today, isInForm: true, isFilterable: true),
+    const FieldConfig(label: "Descrição", fieldName: "descricao", icon: Icons.description, isInForm: true),
+    const FieldConfig(label: "Data Guia", fieldName: "dtGuia", icon: Icons.date_range, isInForm: true),
   ];
 }

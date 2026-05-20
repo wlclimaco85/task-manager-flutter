@@ -56,7 +56,6 @@ class WebEmpresaDetailScreen extends StatelessWidget {
           telaNome: 'comunicado',
           extraParams: {'empId': id},
         ),
-        // ── Certificado Digital ──────────────────────────────────────────
         RelatedGridTab(
           title: 'Certificado Digital',
           icon: Icons.security,
@@ -67,7 +66,6 @@ class WebEmpresaDetailScreen extends StatelessWidget {
                 )
               : const Center(child: Text('ID da empresa não disponível')),
         ),
-        // ── Séries NF-e ──────────────────────────────────────────────────
         RelatedGridTab(
           title: 'Séries NF-e',
           icon: Icons.format_list_numbered,

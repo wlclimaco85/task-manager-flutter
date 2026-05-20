@@ -1,7 +1,9 @@
 import 'package:flutter/foundation.dart' show kIsWeb, defaultTargetPlatform, TargetPlatform;
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:hive_flutter/hive_flutter.dart';
 import 'package:intl/date_symbol_data_local.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import 'models/auth_utility.dart';
 import 'auth_screens/login_screen.dart';
@@ -13,6 +15,11 @@ import 'windows/screens/bottom_navbar_screen.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await initializeDateFormatting('pt_BR', null);
+  // Inicializa Hive para vendas em contingência NFC-e
+  await Hive.initFlutter();
+  await Hive.openBox('vendas_contingencia');
+  // Inicializa SharedPreferences
+  await SharedPreferences.getInstance();
   final bool loggedIn = await AuthUtility.isUserLoggedIn();
   if (loggedIn) {
     await ModuloAccess.load();

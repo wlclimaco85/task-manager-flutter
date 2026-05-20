@@ -10,6 +10,8 @@ import 'package:share_plus/share_plus.dart';
 import '../../../models/auth_utility.dart';
 import '../../../utils/api_links.dart';
 
+
+import 'package:task_manager_flutter/utils/app_logger.dart';
 class UploadFileCaller {
   Future<int> uploadFiles(
     String itemId,
@@ -68,10 +70,10 @@ class UploadFileCaller {
         return decoded['fileId'] ?? 0;
       } else {
         final errorBody = await response.stream.bytesToString();
-        print('Erro no upload (${response.statusCode}): $errorBody');
+        L.d('Erro no upload (${response.statusCode}): $errorBody');
       }
     } catch (e) {
-      print('Exceção durante o upload: $e');
+      L.d('Exceção durante o upload: $e');
     }
     return 0;
   }
@@ -97,13 +99,13 @@ class UploadFileCaller {
           sharePositionOrigin: ui.Rect.largest,
         );
 
-        print('Download realizado com sucesso');
+        L.d('Download realizado com sucesso');
       } else {
-        print('Falha no download: ${response.statusCode}');
+        L.d('Falha no download: ${response.statusCode}');
       }
       return response.statusCode;
     } catch (e) {
-      print('Erro no download: $e');
+      L.d('Erro no download: $e');
     }
     return 0;
   }

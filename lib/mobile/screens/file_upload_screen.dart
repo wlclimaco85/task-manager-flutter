@@ -14,6 +14,8 @@ import '../../../utils/api_links.dart';
 import '../../../models/auth_utility.dart';
 import '../../../widgets/user_banners.dart';
 
+
+import 'package:task_manager_flutter/utils/app_logger.dart';
 class FileManagerScreen extends StatefulWidget {
   const FileManagerScreen({super.key});
 
@@ -101,7 +103,7 @@ class _FileManagerScreenState extends State<FileManagerScreen> {
                     style: OutlinedButton.styleFrom(
                         side: const BorderSide(color: GridColors.primary)),
                     onPressed: () async {
-                      final result = await FilePicker.platform.pickFiles();
+                      final result = await FilePicker.pickFiles();
                       if (result != null) {
                         final f = result.files.first;
                         fileBytes =
@@ -288,7 +290,7 @@ class _FileManagerScreenState extends State<FileManagerScreen> {
       return null;
     } catch (e) {
       // ignore: avoid_print
-      print('Erro ao baixar bytes: $e');
+      L.d('Erro ao baixar bytes: $e');
       return null;
     }
   }

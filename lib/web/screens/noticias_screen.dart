@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import '../../../widgets/user_banners.dart';
-import '../../windows/screens/update_profile.dart';
+import '../../web/screens/update_profile.dart';
 import '../../constants/custom_colors.dart';
 
 class WebProductCatalogPage extends StatefulWidget {
@@ -66,7 +66,7 @@ class _WebProductCatalogPageState extends State<WebProductCatalogPage> {
         Navigator.push(
             context,
             MaterialPageRoute(
-                builder: (context) => const WindowsUpdateProfileScreen()));
+                builder: (context) => const WebUpdateProfileScreen()));
       }),
       body: Container(
         color: CustomColors().getLightGreenBackground(),

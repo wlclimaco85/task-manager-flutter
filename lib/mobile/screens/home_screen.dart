@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:task_manager_flutter/utils/app_logger.dart';
 
 class HomeScreen extends StatefulWidget {
