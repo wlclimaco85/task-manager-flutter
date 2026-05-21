@@ -723,6 +723,17 @@ class ApiLinks {
   static String receberTotalPedidoCompra(String id) => '$_baseUrlNew/api/compras/pedidos/$id/receber-total';
   static String cancelarPedidoCompra(String id) => '$_baseUrlNew/api/compras/pedidos/$id/cancelar';
 
+  // Aprovação de Compras
+  static const String aprovacaoCompraFila = '$_baseUrlNew/api/compras/aprovacao/fila';
+  static String aprovacaoCompraSolicitar(dynamic pedidoCompraId) =>
+      '$_baseUrlNew/api/compras/aprovacao/$pedidoCompraId/solicitar';
+  static String aprovacaoCompraAprovar(dynamic aprovacaoId) =>
+      '$_baseUrlNew/api/compras/aprovacao/$aprovacaoId/aprovar';
+  static String aprovacaoCompraReprovar(dynamic aprovacaoId) =>
+      '$_baseUrlNew/api/compras/aprovacao/$aprovacaoId/reprovar';
+  static String aprovacaoCompraPedido(dynamic pedidoCompraId) =>
+      '$_baseUrlNew/api/compras/aprovacao/pedido/$pedidoCompraId';
+
   // Tabela de Preços e Descontos
   static const String tabelasPreco = '$_baseUrlNew/api/comercial/tabelas-preco';
   static String tabelaPrecoById(String id) => '$_baseUrlNew/api/comercial/tabelas-preco/$id';
