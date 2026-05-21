@@ -841,6 +841,11 @@ class ApiLinks {
   static String get importMarketplaceOrder =>
       '$_baseUrlNew/api/crm/marketplace/orders';
 
+  // Consulta e Download DF-e
+  static const String consultaDfeConsultar = '$_baseUrlNew/api/fiscal/consulta-dfe/consultar';
+  static String baixarDfe(String nsu) => '$_baseUrlNew/api/fiscal/consulta-dfe/baixar/$nsu';
+  static const String importacoesDfe = '$_baseUrlNew/api/fiscal/consulta-dfe/importacoes';
+
   // Lançamentos Financeiros (unificado)
   static String get lancamentosFinanceiros =>
       '$_baseUrlNew/api/financeiro/lancamentos';

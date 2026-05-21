@@ -58,6 +58,7 @@ class MenuGroup {
   /// 104:Orcamentos
   /// 105:PedidosVenda
   /// 106:PedidosCompra
+  /// 107:ConsultaDfe
 
 class MenuConfig {
   MenuConfig._();
@@ -217,6 +218,11 @@ class MenuConfig {
             label: 'Config. Fiscal',
             icon: FontAwesomeIcons.gear,
             screenIndex: 81),
+        MenuItem(
+            id: 'consulta_dfe',
+            label: 'Consulta DF-e',
+            icon: FontAwesomeIcons.fileSearch,
+            screenIndex: 107),
       ],
     ),
     MenuGroup(
