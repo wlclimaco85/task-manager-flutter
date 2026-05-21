@@ -976,6 +976,14 @@ class ApiLinks {
   static String aprovacaoPagamentoConta(dynamic contaPagarId) =>
       '$_baseUrlNew/api/financeiro/aprovacao-pagamento/conta/$contaPagarId';
 
+  // Baixa Automática de Recebíveis
+  static const String baixaAutomaticaImportar = '$_baseUrlNew/api/financeiro/baixa-automatica/importar';
+  static String baixaAutomaticaConferir(dynamic id, String acao) =>
+      '$_baseUrlNew/api/financeiro/baixa-automatica/$id/conferir?acao=$acao';
+  static const String baixaAutomaticaPendentes = '$_baseUrlNew/api/financeiro/baixa-automatica/pendentes';
+  static String baixaAutomaticaConta(dynamic contaReceberId) =>
+      '$_baseUrlNew/api/financeiro/baixa-automatica/conta/$contaReceberId';
+
   // Automação Financeira
   static const String automacoesFinanceiras = '$_baseUrlNew/api/financeiro/automacoes';
   static String automacaoFinanceira(String id) =>

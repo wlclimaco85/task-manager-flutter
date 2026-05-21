@@ -65,6 +65,7 @@ class MenuGroup {
   /// 111:Multi-deposito
   /// 112:RateioFinanceiro
   /// 113:AprovacaoPagamentos
+  /// 114:BaixaAutomaticaRecebiveis
 
 class MenuConfig {
   MenuConfig._();
@@ -477,6 +478,11 @@ class MenuConfig {
              label: 'Aprovação de Pagamentos',
              icon: FontAwesomeIcons.checkDouble,
              screenIndex: 113),
+        MenuItem(
+             id: 'baixa_automatica',
+             label: 'Baixa Automática de Recebíveis',
+             icon: FontAwesomeIcons.moneyBillWave,
+             screenIndex: 114),
        ],
     ),
     MenuGroup(

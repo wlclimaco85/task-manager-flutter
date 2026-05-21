@@ -96,6 +96,7 @@ import '../../windows/screens/reserva_estoque_screen.dart';
 import '../../windows/screens/deposito_screen.dart';
 import '../../windows/screens/rateio_financeiro_screen.dart';
 import '../../windows/screens/aprovacao_pagamento_screen.dart';
+import '../../windows/screens/baixa_automatica_screen.dart';
 import '../../windows/screens/nfe_import_screen.dart';
 import '../../windows/screens/nfe_import_xml_screen.dart';
 import '../../windows/screens/consulta_dfe_screen.dart';
@@ -281,6 +282,7 @@ class _WindowsBottomNavBarScreenState extends State<WindowsBottomNavBarScreen> {
         const DepositoScreen(), // 111: Multi-depósito
         const RateioFinanceiroScreen(), // 112: Rateio Financeiro
       const AprovacaoPagamentoScreen(), // 113: Aprovação de Pagamentos
+      const BaixaAutomaticaScreen(), // 114: Baixa Automática de Recebíveis
       ];
 
   String get userName {
