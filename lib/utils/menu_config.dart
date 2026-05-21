@@ -57,6 +57,7 @@ class MenuGroup {
   /// 103:Fornecedores
   /// 104:Orcamentos
   /// 105:PedidosVenda
+  /// 106:PedidosCompra
 
 class MenuConfig {
   MenuConfig._();
@@ -193,7 +194,12 @@ class MenuConfig {
             id: 'pedidos_venda',
             label: 'Pedidos de Venda',
             icon: FontAwesomeIcons.cartShopping,
-            screenIndex: 105),
+            screenIndex: 95),
+        MenuItem(
+            id: 'pedidos_compra',
+            label: 'Pedidos de Compra',
+            icon: FontAwesomeIcons.cartPlus,
+            screenIndex: 106),
       ],
     ),
     MenuGroup(
