@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import '../../../services/renegociacao_conta_service.dart';
+import '../../../models/conta_pagar_model.dart';
+import '../../services/network_caller.dart';
 import '../../../utils/api_links.dart';
 
 class WebRenegociacaoContaDialog extends StatefulWidget {

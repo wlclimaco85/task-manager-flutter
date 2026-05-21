@@ -1,6 +1,4 @@
 import 'package:flutter/material.dart';
-import '../../../models/produto_model.dart';
-import '../../../services/pedido_compra_service.dart';
 import '../../../services/network_caller.dart';
 import '../../../utils/api_links.dart';
 import '../../../constants/custom_colors.dart';
