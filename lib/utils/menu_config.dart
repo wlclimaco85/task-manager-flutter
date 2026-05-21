@@ -465,6 +465,11 @@ class MenuConfig {
             label: 'Integrações',
             icon: FontAwesomeIcons.gears,
             screenIndex: 102),
+        MenuItem(
+            id: 'rateio_financeiro',
+            label: 'Rateio Financeiro',
+            icon: FontAwesomeIcons.scaleBalanced,
+            screenIndex: 112),
       ],
     ),
     MenuGroup(

@@ -958,6 +958,12 @@ class ApiLinks {
   static const String manifestacaoHistorico = '$_baseUrlNew/api/fiscal/manifestacao/historico';
   static const String manifestacaoRegistrar = '$_baseUrlNew/api/fiscal/manifestacao';
 
+  // Rateio Financeiro
+  static String rateioListar(String tipo, dynamic id) => '$_baseUrlNew/api/financeiro/rateio/$tipo/$id';
+  static String get rateioSalvar => '$_baseUrlNew/api/financeiro/rateio';
+  static String rateioDeletar(String tipo, dynamic id) => '$_baseUrlNew/api/financeiro/rateio/$tipo/$id';
+  static String rateioHistorico(String tipo, dynamic id) => '$_baseUrlNew/api/financeiro/rateio/$tipo/$id/historico';
+
   // Automação Financeira
   static const String automacoesFinanceiras = '$_baseUrlNew/api/financeiro/automacoes';
   static String automacaoFinanceira(String id) =>
