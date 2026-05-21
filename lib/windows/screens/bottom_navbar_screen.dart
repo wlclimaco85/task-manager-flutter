@@ -98,6 +98,7 @@ import '../../windows/screens/rateio_financeiro_screen.dart';
 import '../../windows/screens/aprovacao_pagamento_screen.dart';
 import '../../windows/screens/baixa_automatica_screen.dart';
 import '../../windows/screens/cobranca_screen.dart';
+import '../../windows/screens/renegociacao_screen.dart';
 import '../../windows/screens/nfe_import_screen.dart';
 import '../../windows/screens/nfe_import_xml_screen.dart';
 import '../../windows/screens/consulta_dfe_screen.dart';
@@ -285,6 +286,7 @@ class _WindowsBottomNavBarScreenState extends State<WindowsBottomNavBarScreen> {
       const AprovacaoPagamentoScreen(), // 113: Aprovação de Pagamentos
       const BaixaAutomaticaScreen(), // 114: Baixa Automática de Recebíveis
       const CobrancaScreen(), // 115: Inadimplência e Cobrança
+      const RenegociacaoScreen(), // 116: Renegociação de Títulos
       ];
 
   String get userName {

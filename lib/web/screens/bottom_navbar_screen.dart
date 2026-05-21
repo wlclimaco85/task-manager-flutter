@@ -109,6 +109,7 @@ import '../../widgets/dp/dp_dynamic_grid_screen.dart';
 import '../../widgets/dp/dp_portal_colaborador_screen.dart';
 import '../../windows/screens/reserva_estoque_screen.dart';
 import '../../windows/screens/deposito_screen.dart';
+import '../../windows/screens/renegociacao_screen.dart';
 
 class WebBottomNavBarScreen extends StatefulWidget {
   const WebBottomNavBarScreen({super.key});
@@ -314,6 +315,11 @@ class _WebBottomNavBarScreenState extends State<WebBottomNavBarScreen> {
       const NfseScreen(), // 109: NFSe
       const ReservaEstoqueScreen(), // 110: ReservaEstoque
       const DepositoScreen(), // 111: Multi-depósito
+      const SizedBox.shrink(), // 112: Rateio Financeiro (web)
+      const SizedBox.shrink(), // 113: Aprovação de Pagamentos (web)
+      const SizedBox.shrink(), // 114: Baixa Automática (web)
+      const SizedBox.shrink(), // 115: Cobrança (web)
+      const RenegociacaoScreen(), // 116: Renegociação de Títulos
     ];
   }
 

@@ -1003,4 +1003,9 @@ class ApiLinks {
       '$_baseUrlNew/api/financeiro/automacoes/$id/logs';
   static const String todosLogsAutomacoes =
       '$_baseUrlNew/api/financeiro/automacoes/logs';
+
+  // Renegociação de Títulos
+  static const String renegociacao = '$_baseUrlNew/api/financeiro/renegociacao';
+  static String renegociacaoById(String id) =>
+      '$_baseUrlNew/api/financeiro/renegociacao/$id';
 }

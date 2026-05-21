@@ -67,6 +67,7 @@ class MenuGroup {
   /// 113:AprovacaoPagamentos
   /// 114:BaixaAutomaticaRecebiveis
   /// 115:Cobranca
+  /// 116:Renegociacao
 
 class MenuConfig {
   MenuConfig._();
@@ -489,7 +490,12 @@ class MenuConfig {
              label: 'Inadimplência e Cobrança',
              icon: FontAwesomeIcons.exclamationTriangle,
              screenIndex: 115),
-       ],
+        MenuItem(
+             id: 'renegociacao',
+             label: 'Renegociação de Títulos',
+             icon: FontAwesomeIcons.handshake,
+             screenIndex: 116),
+        ],
     ),
     MenuGroup(
       id: 'produtos',
