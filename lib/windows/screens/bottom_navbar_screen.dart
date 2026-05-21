@@ -122,6 +122,7 @@ import '../../widgets/dp/dp_portal_colaborador_screen.dart';
 import '../../windows/screens/aprovacao_compra_screen.dart';
 import '../../windows/screens/devolucao_grid_screen.dart';
 import '../../windows/screens/cancelamento_cce_screen.dart';
+import '../../windows/screens/regra_fiscal_screen.dart';
 
 class WindowsBottomNavBarScreen extends StatefulWidget {
   const WindowsBottomNavBarScreen({super.key});
@@ -298,6 +299,7 @@ class _WindowsBottomNavBarScreenState extends State<WindowsBottomNavBarScreen> {
       const AprovacaoCompraScreen(), // 119: Aprovação de Compras
       const WindowsDevolucaoGridScreen(), // 120: Devoluções
       const CancelamentoCceScreen(), // 121: Cancelamento e CC-e
+      RegraFiscalScreen(hasPermission: (perm) => true), // 122: Regras Fiscais
       ];
 
   String get userName {

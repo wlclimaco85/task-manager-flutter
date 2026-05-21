@@ -1038,6 +1038,22 @@ class ApiLinks {
   static String get dre => '$_baseUrlNew/api/financeiro/dre';
   static String get drePeriodos => '$_baseUrlNew/api/financeiro/dre/periodos';
 
+  // Escrituração Fiscal
+  static const String escrituracaoFiscalBase =
+      '$_baseUrlNew/api/escrituracao-fiscal';
+  static String escrituracaoFiscalListar(int empresaId) =>
+      '$escrituracaoFiscalBase?empresaId=$empresaId';
+  static String escrituracaoFiscalDetalhe(int id) =>
+      '$escrituracaoFiscalBase/$id';
+  static String escrituracaoFiscalItens(int id) =>
+      '$escrituracaoFiscalBase/$id/itens';
+  static String get escrituracaoFiscalGerar =>
+      '$escrituracaoFiscalBase/gerar';
+  static String escrituracaoFiscalConferir(int id) =>
+      '$escrituracaoFiscalBase/$id/conferir';
+  static String escrituracaoFiscalFechar(int id) =>
+      '$escrituracaoFiscalBase/$id/fechar';
+
   // Cancelamento e CC-e
   static String cancelamentoNfeCancelar(String nfeId) =>
       '$_baseUrlNew/api/fiscal/cancelamento-cce/nfe/$nfeId/cancelar';
