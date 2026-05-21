@@ -76,6 +76,7 @@ import './nfe_grid_screen.dart';
 import './nfe_import_screen.dart';
 import './nfe_import_xml_screen.dart';
 import './consulta_dfe_screen.dart';
+import './manifestacao_destinatario_screen.dart';
 import './ponto_web_screen.dart';
 import './ponto_solicitacao_screen.dart';
 import './ponto_ajuste_screen.dart';
@@ -306,6 +307,7 @@ class _WebBottomNavBarScreenState extends State<WebBottomNavBarScreen> {
       const WebPedidoVendaGridScreen(), // 105: Pedidos de Venda
       const WebPedidoCompraGridScreen(), // 106: Pedidos de Compra
       const ConsultaDfeScreen(), // 107: Consulta DF-e
+      const ManifestacaoDestinatarioScreen(), // 108: Manifestação Destinatário
     ];
   }
 

@@ -932,6 +932,11 @@ class ApiLinks {
   static const String conciliacaoListar =
       '$_baseUrlNew/api/financeiro/conciliacao';
 
+  // Manifestação do Destinatário
+  static const String manifestacaoPendentes = '$_baseUrlNew/api/fiscal/manifestacao/pendentes';
+  static const String manifestacaoHistorico = '$_baseUrlNew/api/fiscal/manifestacao/historico';
+  static const String manifestacaoRegistrar = '$_baseUrlNew/api/fiscal/manifestacao';
+
   // Automação Financeira
   static const String automacoesFinanceiras = '$_baseUrlNew/api/financeiro/automacoes';
   static String automacaoFinanceira(String id) =>

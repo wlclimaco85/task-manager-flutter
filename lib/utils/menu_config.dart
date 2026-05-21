@@ -59,6 +59,7 @@ class MenuGroup {
   /// 105:PedidosVenda
   /// 106:PedidosCompra
   /// 107:ConsultaDfe
+  /// 108:ManifestacaoDestinatario
 
 class MenuConfig {
   MenuConfig._();
@@ -223,6 +224,11 @@ class MenuConfig {
             label: 'Consulta DF-e',
             icon: FontAwesomeIcons.fileSearch,
             screenIndex: 107),
+        MenuItem(
+            id: 'manifestacao_destinatario',
+            label: 'Manifestação Destinatário',
+            icon: FontAwesomeIcons.fileCircleCheck,
+            screenIndex: 108),
       ],
     ),
     MenuGroup(

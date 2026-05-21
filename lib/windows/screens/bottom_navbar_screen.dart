@@ -95,6 +95,7 @@ import '../../windows/screens/fornecedor_grid_screen.dart';
 import '../../windows/screens/nfe_import_screen.dart';
 import '../../windows/screens/nfe_import_xml_screen.dart';
 import '../../windows/screens/consulta_dfe_screen.dart';
+import '../../windows/screens/manifestacao_destinatario_screen.dart';
 import '../../windows/screens/nfce/pdv_screen.dart';
 import '../../windows/screens/nfce/config_fiscal_screen.dart';
 import '../../widgets/crm/crm_pipeline_screen.dart';
@@ -269,6 +270,7 @@ class _WindowsBottomNavBarScreenState extends State<WindowsBottomNavBarScreen> {
         const WindowsPedidoVendaGridScreen(), // 105: Pedidos de Venda
         const WindowsPedidoCompraGridScreen(), // 106: Pedidos de Compra
         const ConsultaDfeScreen(), // 107: Consulta DF-e
+        const ManifestacaoDestinatarioScreen(), // 108: Manifestação Destinatário
       ];
 
   String get userName {
