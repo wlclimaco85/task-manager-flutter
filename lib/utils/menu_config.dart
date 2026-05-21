@@ -69,6 +69,7 @@ class MenuGroup {
   /// 115:Cobranca
   /// 116:Renegociacao
   /// 117:Dre
+  /// 118:TabelaPreco
 
 class MenuConfig {
   MenuConfig._();
@@ -211,6 +212,11 @@ class MenuConfig {
             label: 'Pedidos de Compra',
             icon: FontAwesomeIcons.cartPlus,
             screenIndex: 106),
+        MenuItem(
+            id: 'tabela_preco',
+            label: 'Tabela de Preços',
+            icon: FontAwesomeIcons.tags,
+            screenIndex: 118),
       ],
     ),
     MenuGroup(

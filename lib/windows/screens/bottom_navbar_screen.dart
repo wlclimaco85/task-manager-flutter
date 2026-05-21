@@ -100,7 +100,9 @@ import '../../windows/screens/baixa_automatica_screen.dart';
 import '../../windows/screens/cobranca_screen.dart';
 import '../../windows/screens/renegociacao_screen.dart';
 import '../../windows/screens/dre_screen.dart';
+import '../../windows/screens/tabela_preco_screen.dart';
 import '../../windows/screens/nfe_import_screen.dart';
+
 import '../../windows/screens/nfe_import_xml_screen.dart';
 import '../../windows/screens/consulta_dfe_screen.dart';
 import '../../windows/screens/manifestacao_destinatario_screen.dart';
@@ -289,6 +291,7 @@ class _WindowsBottomNavBarScreenState extends State<WindowsBottomNavBarScreen> {
       const CobrancaScreen(), // 115: Inadimplência e Cobrança
       const RenegociacaoScreen(), // 116: Renegociação de Títulos
       const DreScreen(), // 117: DRE Gerencial
+      TabelaPrecoScreen(hasPermission: (perm) => true), // 118: Tabela de Preços e Descontos
       ];
 
   String get userName {

@@ -42,6 +42,20 @@ class TradingRepository {
 
   // ── Watchlist ─────────────────────────────────────────────────────────────
 
+  Future<List<TradingSignal>> analyzeWatchlist() async {
+    final response = await http.post(
+      Uri.parse('${ApiLinks.baseUrl}/api/trading/analyze'),
+      headers: headers,
+    );
+    if (response.statusCode != 200) {
+      throw Exception('Erro ao analisar watchlist: ${response.statusCode}');
+    }
+    final List<dynamic> data = jsonDecode(response.body) as List<dynamic>;
+    return data
+        .map((e) => TradingSignal.fromJson(e as Map<String, dynamic>))
+        .toList();
+  }
+
   Future<List<WatchlistItem>> fetchWatchlist() async {
     final response = await http.get(
       Uri.parse(ApiLinks.tradingWatchlist),

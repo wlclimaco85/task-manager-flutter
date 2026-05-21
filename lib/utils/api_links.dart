@@ -723,6 +723,15 @@ class ApiLinks {
   static String receberTotalPedidoCompra(String id) => '$_baseUrlNew/api/compras/pedidos/$id/receber-total';
   static String cancelarPedidoCompra(String id) => '$_baseUrlNew/api/compras/pedidos/$id/cancelar';
 
+  // Tabela de Preços e Descontos
+  static const String tabelasPreco = '$_baseUrlNew/api/comercial/tabelas-preco';
+  static String tabelaPrecoById(String id) => '$_baseUrlNew/api/comercial/tabelas-preco/$id';
+  static String itensTabelaPreco(String tabelaId) => '$_baseUrlNew/api/comercial/tabelas-preco/$tabelaId/itens';
+  static String salvarItemTabelaPreco(String tabelaId) => '$_baseUrlNew/api/comercial/tabelas-preco/$tabelaId/itens';
+  static String deletarItemTabelaPreco(String tabelaId, String itemId) => '$_baseUrlNew/api/comercial/tabelas-preco/$tabelaId/itens/$itemId';
+  static const String descontos = '$_baseUrlNew/api/comercial/descontos';
+  static String descontoById(String id) => '$_baseUrlNew/api/comercial/descontos/$id';
+
   // Reserva de Estoque
   static String reservasPorPedido(int pedidoId) => '$_baseUrlNew/api/estoque/reservas/pedido/$pedidoId';
   static String disponivelProduto(int produtoId) => '$_baseUrlNew/api/estoque/reservas/produto/$produtoId/disponivel';

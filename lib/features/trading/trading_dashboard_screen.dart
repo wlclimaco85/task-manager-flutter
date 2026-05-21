@@ -81,6 +81,7 @@ class _WatchlistTabState extends State<_WatchlistTab>
   final _repo = TradingRepository();
   List<WatchlistItem> _items = [];
   bool _loading = true;
+  bool _analyzing = false;
   String? _error;
 
   @override
@@ -213,6 +214,27 @@ class _WatchlistTabState extends State<_WatchlistTab>
     }
   }
 
+  Future<void> _analyzeWatchlist() async {
+    if (_items.isEmpty || _analyzing) return;
+    setState(() => _analyzing = true);
+    try {
+      final sinais = await _repo.analyzeWatchlist();
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Analise concluida: ${sinais.length} sinal(is) gerado(s)')),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Erro ao analisar watchlist: $e')),
+      );
+    } finally {
+      if (mounted) {
+        setState(() => _analyzing = false);
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     super.build(context);
@@ -273,12 +295,36 @@ class _WatchlistTabState extends State<_WatchlistTab>
                 },
               ),
             ),
-      floatingActionButton: FloatingActionButton(
-        backgroundColor: GridColors.primary,
-        foregroundColor: Colors.white,
-        tooltip: 'Adicionar ativo',
-        onPressed: _showAddDialog,
-        child: const Icon(Icons.add),
+      floatingActionButton: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          FloatingActionButton.small(
+            heroTag: 'trading-analyze-watchlist',
+            backgroundColor: GridColors.primary,
+            foregroundColor: Colors.white,
+            tooltip: 'Analisar watchlist',
+            onPressed: _items.isEmpty || _analyzing ? null : _analyzeWatchlist,
+            child: _analyzing
+                ? const SizedBox(
+                    height: 18,
+                    width: 18,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: Colors.white,
+                    ),
+                  )
+                : const Icon(Icons.auto_graph),
+          ),
+          const SizedBox(height: 12),
+          FloatingActionButton(
+            heroTag: 'trading-add-watchlist',
+            backgroundColor: GridColors.primary,
+            foregroundColor: Colors.white,
+            tooltip: 'Adicionar ativo',
+            onPressed: _showAddDialog,
+            child: const Icon(Icons.add),
+          ),
+        ],
       ),
     );
   }
