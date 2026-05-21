@@ -1,7 +1,7 @@
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 
-import '../../../services/nfe_import_caller.dart';
+import '../../../services/nfe_xml_import_caller.dart';
 import '../../../widgets/generic_grid_windows_screen.dart' show GridColors;
 import '../../../widgets/nfe_xml_preview_widget.dart';
 
@@ -14,6 +14,7 @@ class WebNfeImportXmlScreen extends StatefulWidget {
 
 class _WebNfeImportXmlScreenState extends State<WebNfeImportXmlScreen> {
   PlatformFile? _arquivoXml;
+  String? _xmlPath;
   bool _carregando = false;
   bool _confirmando = false;
 
@@ -36,8 +37,10 @@ class _WebNfeImportXmlScreenState extends State<WebNfeImportXmlScreen> {
       withData: true,
     );
     if (result != null) {
+      final file = result.files.first;
       setState(() {
-        _arquivoXml = result.files.first;
+        _arquivoXml = file;
+        _xmlPath = file.path;
         _reset();
       });
     }
@@ -54,7 +57,7 @@ class _WebNfeImportXmlScreenState extends State<WebNfeImportXmlScreen> {
       _reset();
     });
 
-    final result = await NfeImportCaller.enviarXml(_arquivoXml!, isPreview: true);
+    final result = await NfeXmlImportCaller.preview(_xmlPath!);
 
     if (!mounted) return;
 
@@ -75,7 +78,7 @@ class _WebNfeImportXmlScreenState extends State<WebNfeImportXmlScreen> {
   Future<void> _confirmarImportacao() async {
     setState(() => _confirmando = true);
 
-    final result = await NfeImportCaller.enviarXml(_arquivoXml!);
+    final result = await NfeXmlImportCaller.confirmar(_xmlPath!);
 
     if (!mounted) return;
 

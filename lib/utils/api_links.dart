@@ -810,6 +810,14 @@ class ApiLinks {
       '$_baseUrlNew/api/nfe/$nfeId/recusar';
   static String get importarNfeCsv => '$_baseUrlNew/api/nfe/importar-csv';
 
+  // NFe XML Import
+  static String get nfeImportacaoPreview =>
+      '$_baseUrlNew/api/fiscal/nfe-importacao/preview';
+  static String get nfeImportacaoConfirmar =>
+      '$_baseUrlNew/api/fiscal/nfe-importacao/confirmar';
+  static String get nfeImportacaoListar =>
+      '$_baseUrlNew/api/fiscal/nfe-importacao';
+
   // NFS-e / Nota Fiscal de Serviço
   static String get nfseIssue => '$_baseUrlNew/api/nfse/issue';
   static String nfseStatusUrl(String municipalityCode, String nfseNumber) =>
