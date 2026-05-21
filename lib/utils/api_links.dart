@@ -1008,4 +1008,8 @@ class ApiLinks {
   static const String renegociacao = '$_baseUrlNew/api/financeiro/renegociacao';
   static String renegociacaoById(String id) =>
       '$_baseUrlNew/api/financeiro/renegociacao/$id';
+
+  // DRE Gerencial
+  static String get dre => '$_baseUrlNew/api/financeiro/dre';
+  static String get drePeriodos => '$_baseUrlNew/api/financeiro/dre/periodos';
 }

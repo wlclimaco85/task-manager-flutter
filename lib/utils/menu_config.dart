@@ -68,6 +68,7 @@ class MenuGroup {
   /// 114:BaixaAutomaticaRecebiveis
   /// 115:Cobranca
   /// 116:Renegociacao
+  /// 117:Dre
 
 class MenuConfig {
   MenuConfig._();
@@ -495,6 +496,11 @@ class MenuConfig {
              label: 'Renegociação de Títulos',
              icon: FontAwesomeIcons.handshake,
              screenIndex: 116),
+        MenuItem(
+             id: 'dre_gerencial',
+             label: 'DRE Gerencial',
+             icon: FontAwesomeIcons.fileInvoiceDollar,
+             screenIndex: 117),
         ],
     ),
     MenuGroup(
