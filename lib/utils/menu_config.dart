@@ -223,6 +223,11 @@ class MenuConfig {
             label: 'Tabela de Preços',
             icon: FontAwesomeIcons.tags,
             screenIndex: 118),
+        MenuItem(
+            id: 'devolucoes',
+            label: 'Devoluções',
+            icon: FontAwesomeIcons.arrowRotateLeft,
+            screenIndex: 120),
       ],
     ),
     MenuGroup(

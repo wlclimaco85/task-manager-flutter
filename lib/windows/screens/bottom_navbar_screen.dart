@@ -120,6 +120,7 @@ import '../../widgets/dp/dp_dashboard_screen.dart';
 import '../../widgets/dp/dp_dynamic_grid_screen.dart';
 import '../../widgets/dp/dp_portal_colaborador_screen.dart';
 import '../../windows/screens/aprovacao_compra_screen.dart';
+import '../../windows/screens/devolucao_grid_screen.dart';
 
 class WindowsBottomNavBarScreen extends StatefulWidget {
   const WindowsBottomNavBarScreen({super.key});
@@ -294,6 +295,7 @@ class _WindowsBottomNavBarScreenState extends State<WindowsBottomNavBarScreen> {
       const DreScreen(), // 117: DRE Gerencial
       TabelaPrecoScreen(hasPermission: (perm) => true), // 118: Tabela de Preços e Descontos
       const AprovacaoCompraScreen(), // 119: Aprovação de Compras
+      const WindowsDevolucaoGridScreen(), // 120: Devoluções
       ];
 
   String get userName {

@@ -110,6 +110,7 @@ import '../../widgets/dp/dp_portal_colaborador_screen.dart';
 import '../../windows/screens/reserva_estoque_screen.dart';
 import '../../windows/screens/deposito_screen.dart';
 import '../../windows/screens/renegociacao_screen.dart';
+import '../../windows/screens/devolucao_grid_screen.dart';
 
 class WebBottomNavBarScreen extends StatefulWidget {
   const WebBottomNavBarScreen({super.key});
@@ -320,6 +321,7 @@ class _WebBottomNavBarScreenState extends State<WebBottomNavBarScreen> {
       const SizedBox.shrink(), // 114: Baixa Automática (web)
       const SizedBox.shrink(), // 115: Cobrança (web)
       const RenegociacaoScreen(), // 116: Renegociação de Títulos
+      const WindowsDevolucaoGridScreen(), // 117: Devoluções
     ];
   }
 

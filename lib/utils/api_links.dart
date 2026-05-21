@@ -743,6 +743,11 @@ class ApiLinks {
   static const String descontos = '$_baseUrlNew/api/comercial/descontos';
   static String descontoById(String id) => '$_baseUrlNew/api/comercial/descontos/$id';
 
+  // Devolução Comercial
+  static const String devolucoes = '$_baseUrlNew/api/comercial/devolucoes';
+  static String devolucaoById(String id) => '$_baseUrlNew/api/comercial/devolucoes/$id';
+  static String devolucaoConcluir(String id) => '$_baseUrlNew/api/comercial/devolucoes/$id/concluir';
+
   // Reserva de Estoque
   static String reservasPorPedido(int pedidoId) => '$_baseUrlNew/api/estoque/reservas/pedido/$pedidoId';
   static String disponivelProduto(int produtoId) => '$_baseUrlNew/api/estoque/reservas/produto/$produtoId/disponivel';
