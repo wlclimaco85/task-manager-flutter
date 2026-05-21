@@ -111,6 +111,7 @@ import '../../windows/screens/reserva_estoque_screen.dart';
 import '../../windows/screens/deposito_screen.dart';
 import '../../windows/screens/renegociacao_screen.dart';
 import '../../windows/screens/devolucao_grid_screen.dart';
+import './cancelamento_cce_screen.dart';
 
 class WebBottomNavBarScreen extends StatefulWidget {
   const WebBottomNavBarScreen({super.key});
@@ -322,6 +323,10 @@ class _WebBottomNavBarScreenState extends State<WebBottomNavBarScreen> {
       const SizedBox.shrink(), // 115: Cobrança (web)
       const RenegociacaoScreen(), // 116: Renegociação de Títulos
       const WindowsDevolucaoGridScreen(), // 117: Devoluções
+      const SizedBox.shrink(), // 118
+      const SizedBox.shrink(), // 119
+      const SizedBox.shrink(), // 120
+      const CancelamentoCceScreen(), // 121: Cancelamento e CC-e
     ];
   }
 

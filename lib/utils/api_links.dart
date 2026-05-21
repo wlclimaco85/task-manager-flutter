@@ -1037,4 +1037,12 @@ class ApiLinks {
   // DRE Gerencial
   static String get dre => '$_baseUrlNew/api/financeiro/dre';
   static String get drePeriodos => '$_baseUrlNew/api/financeiro/dre/periodos';
+
+  // Cancelamento e CC-e
+  static String cancelamentoNfeCancelar(String nfeId) =>
+      '$_baseUrlNew/api/fiscal/cancelamento-cce/nfe/$nfeId/cancelar';
+  static String cancelamentoNfeCce(String nfeId) =>
+      '$_baseUrlNew/api/fiscal/cancelamento-cce/nfe/$nfeId/cce';
+  static String cancelamentoNfeHistorico(String nfeId) =>
+      '$_baseUrlNew/api/fiscal/cancelamento-cce/nfe/$nfeId/historico';
 }

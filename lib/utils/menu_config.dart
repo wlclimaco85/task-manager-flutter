@@ -71,6 +71,8 @@ class MenuGroup {
   /// 117:Dre
   /// 118:TabelaPreco
   /// 119:AprovacaoCompra
+  /// 120:Devolucoes
+  /// 121:CancelamentoCCe
 
 class MenuConfig {
   MenuConfig._();
@@ -260,6 +262,11 @@ class MenuConfig {
             label: 'NFSe',
             icon: FontAwesomeIcons.fileInvoice,
             screenIndex: 109),
+        MenuItem(
+            id: 'cancelamento_cce',
+            label: 'Cancelamento e CC-e',
+            icon: FontAwesomeIcons.filePen,
+            screenIndex: 121),
       ],
     ),
     MenuGroup(
