@@ -60,6 +60,7 @@ class MenuGroup {
   /// 106:PedidosCompra
   /// 107:ConsultaDfe
   /// 108:ManifestacaoDestinatario
+  /// 109:Nfse
 
 class MenuConfig {
   MenuConfig._();
@@ -229,6 +230,11 @@ class MenuConfig {
             label: 'Manifestação Destinatário',
             icon: FontAwesomeIcons.fileCircleCheck,
             screenIndex: 108),
+        MenuItem(
+            id: 'nfse',
+            label: 'NFSe',
+            icon: FontAwesomeIcons.fileInvoice,
+            screenIndex: 109),
       ],
     ),
     MenuGroup(

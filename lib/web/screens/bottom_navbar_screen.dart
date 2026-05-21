@@ -100,6 +100,7 @@ import './integracoes_financeiras_screen.dart';
 import './orcamento_grid_screen.dart';
 import './pedido_venda_grid_screen.dart';
 import './pedido_compra_grid_screen.dart';
+import '../../windows/screens/nfse_screen.dart';
 import '../../widgets/crm/crm_pipeline_screen.dart';
 import '../../widgets/fiscal/fiscal_automation_screen.dart';
 import './tela_ajuda_grid_screen.dart';
@@ -308,6 +309,7 @@ class _WebBottomNavBarScreenState extends State<WebBottomNavBarScreen> {
       const WebPedidoCompraGridScreen(), // 106: Pedidos de Compra
       const ConsultaDfeScreen(), // 107: Consulta DF-e
       const ManifestacaoDestinatarioScreen(), // 108: Manifestação Destinatário
+      const NfseScreen(), // 109: NFSe
     ];
   }
 

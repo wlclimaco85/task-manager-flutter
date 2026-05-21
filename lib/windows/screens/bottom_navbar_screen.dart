@@ -105,6 +105,7 @@ import '../../windows/screens/tela_ajuda_grid_screen.dart';
 import '../../windows/screens/orcamento_grid_screen.dart';
 import '../../windows/screens/pedido_venda_grid_screen.dart';
 import '../../windows/screens/pedido_compra_grid_screen.dart';
+import '../../windows/screens/nfse_screen.dart';
 import '../../widgets/dp/dp_dashboard_screen.dart';
 import '../../widgets/dp/dp_dynamic_grid_screen.dart';
 import '../../widgets/dp/dp_portal_colaborador_screen.dart';
@@ -271,6 +272,7 @@ class _WindowsBottomNavBarScreenState extends State<WindowsBottomNavBarScreen> {
         const WindowsPedidoCompraGridScreen(), // 106: Pedidos de Compra
         const ConsultaDfeScreen(), // 107: Consulta DF-e
         const ManifestacaoDestinatarioScreen(), // 108: Manifestação Destinatário
+        const NfseScreen(), // 109: NFSe
       ];
 
   String get userName {

@@ -825,6 +825,12 @@ class ApiLinks {
   static String get nfseCancel => '$_baseUrlNew/api/nfse/cancel';
   static String get nfseContingency => '$_baseUrlNew/api/nfse/contingency';
   static String get nfseAudit => '$_baseUrlNew/api/nfse/audit';
+  // NFSe (fiscal/nfse)
+  static String get nfseEmitir => '$_baseUrlNew/api/fiscal/nfse/emitir';
+  static String nfseStatusNumero(String numero) =>
+      '$_baseUrlNew/api/fiscal/nfse/status/$numero';
+  static String get nfseCancelar => '$_baseUrlNew/api/fiscal/nfse/cancelar';
+  static String get nfseAuditoria => '$_baseUrlNew/api/fiscal/nfse/auditoria';
 
   // CRM / Recorrências e Faturas
   static String get allRecurringContracts => '$_baseUrlNew/api/crm/contracts';
