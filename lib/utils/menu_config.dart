@@ -66,6 +66,7 @@ class MenuGroup {
   /// 112:RateioFinanceiro
   /// 113:AprovacaoPagamentos
   /// 114:BaixaAutomaticaRecebiveis
+  /// 115:Cobranca
 
 class MenuConfig {
   MenuConfig._();
@@ -483,6 +484,11 @@ class MenuConfig {
              label: 'Baixa Automática de Recebíveis',
              icon: FontAwesomeIcons.moneyBillWave,
              screenIndex: 114),
+        MenuItem(
+             id: 'cobranca',
+             label: 'Inadimplência e Cobrança',
+             icon: FontAwesomeIcons.exclamationTriangle,
+             screenIndex: 115),
        ],
     ),
     MenuGroup(

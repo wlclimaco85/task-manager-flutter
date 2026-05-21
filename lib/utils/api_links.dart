@@ -381,6 +381,15 @@ class ApiLinks {
       '$_baseUrlNew/api/forma-pagamento/empresa/$empresaId';
 
   // Cobranças de contas a receber
+  // Cobrança (inadimplência e régua)
+  static String get cobrancaVencidos => '$_baseUrlNew/api/cobranca/vencidos';
+  static String get cobrancaExecutarRegua => '$_baseUrlNew/api/cobranca/executar-regua';
+  static String get cobrancaAcoes => '$_baseUrlNew/api/cobranca/acoes';
+  static String cobrancaAcoesCliente(int clienteId) =>
+      '$_baseUrlNew/api/cobranca/clientes/$clienteId/acoes';
+  static String get cobrancaRegras => '$_baseUrlNew/api/cobranca/regras';
+  static String cobrancaRegra(String id) => '$_baseUrlNew/api/cobranca/regras/$id';
+
   // Banking / Cobranças legadas
   static String get bankingImport => '$_baseUrlNew/api/banking/import';
   static String get bankingImports => '$_baseUrlNew/api/banking/imports';
