@@ -107,6 +107,7 @@ import './tela_ajuda_grid_screen.dart';
 import '../../widgets/dp/dp_dashboard_screen.dart';
 import '../../widgets/dp/dp_dynamic_grid_screen.dart';
 import '../../widgets/dp/dp_portal_colaborador_screen.dart';
+import '../../windows/screens/reserva_estoque_screen.dart';
 
 class WebBottomNavBarScreen extends StatefulWidget {
   const WebBottomNavBarScreen({super.key});
@@ -310,6 +311,7 @@ class _WebBottomNavBarScreenState extends State<WebBottomNavBarScreen> {
       const ConsultaDfeScreen(), // 107: Consulta DF-e
       const ManifestacaoDestinatarioScreen(), // 108: Manifestação Destinatário
       const NfseScreen(), // 109: NFSe
+      const ReservaEstoqueScreen(), // 110: ReservaEstoque
     ];
   }
 

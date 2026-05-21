@@ -61,6 +61,7 @@ class MenuGroup {
   /// 107:ConsultaDfe
   /// 108:ManifestacaoDestinatario
   /// 109:Nfse
+  /// 110:ReservaEstoque
 
 class MenuConfig {
   MenuConfig._();
@@ -485,6 +486,11 @@ class MenuConfig {
             label: 'Unidade de Medida',
             icon: FontAwesomeIcons.rulerHorizontal,
             screenIndex: 57),
+        MenuItem(
+            id: 'reserva_estoque',
+            label: 'Reserva de Estoque',
+            icon: FontAwesomeIcons.boxesStacked,
+            screenIndex: 110),
       ],
     ),
     MenuGroup(

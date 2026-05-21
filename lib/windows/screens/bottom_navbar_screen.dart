@@ -92,6 +92,7 @@ import '../../windows/screens/system_test_screen.dart';
 import '../../windows/screens/cadastro_empresa_wizard.dart';
 import '../../windows/screens/alvara_grid_screen.dart';
 import '../../windows/screens/fornecedor_grid_screen.dart';
+import '../../windows/screens/reserva_estoque_screen.dart';
 import '../../windows/screens/nfe_import_screen.dart';
 import '../../windows/screens/nfe_import_xml_screen.dart';
 import '../../windows/screens/consulta_dfe_screen.dart';
@@ -273,6 +274,7 @@ class _WindowsBottomNavBarScreenState extends State<WindowsBottomNavBarScreen> {
         const ConsultaDfeScreen(), // 107: Consulta DF-e
         const ManifestacaoDestinatarioScreen(), // 108: Manifestação Destinatário
         const NfseScreen(), // 109: NFSe
+        const ReservaEstoqueScreen(), // 110: ReservaEstoque
       ];
 
   String get userName {

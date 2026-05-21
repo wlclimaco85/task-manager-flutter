@@ -714,6 +714,12 @@ class ApiLinks {
   static String receberTotalPedidoCompra(String id) => '$_baseUrlNew/api/compras/pedidos/$id/receber-total';
   static String cancelarPedidoCompra(String id) => '$_baseUrlNew/api/compras/pedidos/$id/cancelar';
 
+  // Reserva de Estoque
+  static String reservasPorPedido(int pedidoId) => '$_baseUrlNew/api/estoque/reservas/pedido/$pedidoId';
+  static String disponivelProduto(int produtoId) => '$_baseUrlNew/api/estoque/reservas/produto/$produtoId/disponivel';
+  static String reservarEstoque(int pedidoId) => '$_baseUrlNew/api/estoque/reservas/pedido/$pedidoId/reservar';
+  static String liberarEstoque(int pedidoId) => '$_baseUrlNew/api/estoque/reservas/pedido/$pedidoId/liberar';
+
   // Alerta Aluno
   static String get allAlertasAluno => '$_baseUrlNew/api/alertas-aluno';
 
