@@ -62,6 +62,7 @@ class MenuGroup {
   /// 108:ManifestacaoDestinatario
   /// 109:Nfse
   /// 110:ReservaEstoque
+  /// 111:Multi-deposito
 
 class MenuConfig {
   MenuConfig._();
@@ -491,6 +492,11 @@ class MenuConfig {
             label: 'Reserva de Estoque',
             icon: FontAwesomeIcons.boxesStacked,
             screenIndex: 110),
+        MenuItem(
+            id: 'multi_deposito',
+            label: 'Multi-depósito',
+            icon: FontAwesomeIcons.warehouse,
+            screenIndex: 111),
       ],
     ),
     MenuGroup(

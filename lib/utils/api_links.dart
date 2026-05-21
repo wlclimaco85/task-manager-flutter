@@ -720,6 +720,15 @@ class ApiLinks {
   static String reservarEstoque(int pedidoId) => '$_baseUrlNew/api/estoque/reservas/pedido/$pedidoId/reservar';
   static String liberarEstoque(int pedidoId) => '$_baseUrlNew/api/estoque/reservas/pedido/$pedidoId/liberar';
 
+  // Multi-depósito e localização
+  static const String depositos = '$_baseUrlNew/api/estoque/depositos';
+  static String depositoPorId(int id) => '$_baseUrlNew/api/estoque/depositos/$id';
+  static String localizacoesPorDeposito(int depositoId) => '$_baseUrlNew/api/estoque/depositos/$depositoId/localizacoes';
+  static String criarLocalizacao(int depositoId) => '$_baseUrlNew/api/estoque/depositos/$depositoId/localizacoes';
+  static String saldoPorProduto(int produtoId) => '$_baseUrlNew/api/estoque/depositos/saldo?produtoId=$produtoId';
+  static const String transferirDeposito = '$_baseUrlNew/api/estoque/depositos/transferir';
+  static const String ajustarEstoque = '$_baseUrlNew/api/estoque/depositos/ajustar';
+
   // Alerta Aluno
   static String get allAlertasAluno => '$_baseUrlNew/api/alertas-aluno';
 
