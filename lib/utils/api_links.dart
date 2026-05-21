@@ -964,6 +964,18 @@ class ApiLinks {
   static String rateioDeletar(String tipo, dynamic id) => '$_baseUrlNew/api/financeiro/rateio/$tipo/$id';
   static String rateioHistorico(String tipo, dynamic id) => '$_baseUrlNew/api/financeiro/rateio/$tipo/$id/historico';
 
+  // Aprovação de Pagamentos
+  static String get aprovacaoPagamentoFila =>
+      '$_baseUrlNew/api/financeiro/aprovacao-pagamento/fila';
+  static String aprovacaoPagamentoSolicitar(dynamic contaPagarId) =>
+      '$_baseUrlNew/api/financeiro/aprovacao-pagamento/$contaPagarId/solicitar';
+  static String aprovacaoPagamentoAprovar(dynamic aprovacaoId) =>
+      '$_baseUrlNew/api/financeiro/aprovacao-pagamento/$aprovacaoId/aprovar';
+  static String aprovacaoPagamentoReprovar(dynamic aprovacaoId) =>
+      '$_baseUrlNew/api/financeiro/aprovacao-pagamento/$aprovacaoId/reprovar';
+  static String aprovacaoPagamentoConta(dynamic contaPagarId) =>
+      '$_baseUrlNew/api/financeiro/aprovacao-pagamento/conta/$contaPagarId';
+
   // Automação Financeira
   static const String automacoesFinanceiras = '$_baseUrlNew/api/financeiro/automacoes';
   static String automacaoFinanceira(String id) =>

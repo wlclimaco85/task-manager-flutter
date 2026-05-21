@@ -63,6 +63,8 @@ class MenuGroup {
   /// 109:Nfse
   /// 110:ReservaEstoque
   /// 111:Multi-deposito
+  /// 112:RateioFinanceiro
+  /// 113:AprovacaoPagamentos
 
 class MenuConfig {
   MenuConfig._();
@@ -466,11 +468,16 @@ class MenuConfig {
             icon: FontAwesomeIcons.gears,
             screenIndex: 102),
         MenuItem(
-            id: 'rateio_financeiro',
-            label: 'Rateio Financeiro',
-            icon: FontAwesomeIcons.scaleBalanced,
-            screenIndex: 112),
-      ],
+             id: 'rateio_financeiro',
+             label: 'Rateio Financeiro',
+             icon: FontAwesomeIcons.scaleBalanced,
+             screenIndex: 112),
+        MenuItem(
+             id: 'aprovacao_pagamento',
+             label: 'Aprovação de Pagamentos',
+             icon: FontAwesomeIcons.checkDouble,
+             screenIndex: 113),
+       ],
     ),
     MenuGroup(
       id: 'produtos',
