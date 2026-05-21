@@ -15,7 +15,7 @@ class CustoMedioService {
   static Future<NetworkResponse> recalcular(int produtoId) async {
     try {
       return await NetworkCaller()
-          .postRequest(ApiLinks.custoMedioRecalcular(produtoId), {});
+           .postRequest(ApiLinks.custoMedioRecalcular, {});
     } catch (e) {
       return NetworkResponse(false, -1, null);
     }
@@ -33,7 +33,7 @@ class CustoMedioService {
   static Future<NetworkResponse> baixarPorVenda(int vendaId) async {
     try {
       return await NetworkCaller()
-          .postRequest(ApiLinks.baixarPorVenda(vendaId), {});
+           .postRequest(ApiLinks.baixarPorVenda, {});
     } catch (e) {
       return NetworkResponse(false, -1, null);
     }

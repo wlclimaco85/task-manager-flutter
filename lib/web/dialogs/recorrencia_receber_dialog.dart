@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../../models/conta_receber_model.dart';
-import '../../services/network_caller.dart';
-import '../../../models/network_response.dart';
+import '../../../services/recorrencia_receber_service.dart';
 import '../../../utils/api_links.dart';
 
 enum WebTipoRecorrenciaReceber { semanal, mensal, anual }

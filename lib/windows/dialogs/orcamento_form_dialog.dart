@@ -1,9 +1,6 @@
 import 'package:flutter/material.dart';
-import '../../../models/auth_utility.dart';
-import '../../../models/orcamento_model.dart';
 import '../../../services/orcamento_service.dart';
 import '../../../services/network_caller.dart';
-import '../../../models/network_response.dart';
 import '../../../utils/api_links.dart';
 import '../../../constants/custom_colors.dart';
 
@@ -157,7 +154,7 @@ class _OrcamentoFormDialogState extends State<OrcamentoFormDialog> {
     }).toList();
 
     return {
-      if (widget.item?.caseid != null) 'id': widget.item!['id'],
+      if (widget.item?['caseid'] != null) 'id': widget.item!['id'],
       'clienteId': _clienteId,
       'clienteNome': _clienteNome,
       'dataEmissao': _dataEmissao?.toIso8601String().substring(0, 10),

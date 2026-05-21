@@ -1,5 +1,4 @@
 import 'dart:convert';
-import 'package:http/http.dart' as http;
 import '../utils/api_links.dart';
 import '../utils/tenant_context.dart';
 import 'package:flutter/foundation.dart';
@@ -25,7 +24,7 @@ class RenegociacaoCaller {
       final response = await TenantContext.get(ApiLinks.renegociacaoById(id));
       if (response.statusCode == 200) {
         final body = jsonDecode(response.body);
-        if (body is Map) return body;
+        if (body is Map) return body.cast<String, dynamic>();
         return {'data': body};
       }
       return {};

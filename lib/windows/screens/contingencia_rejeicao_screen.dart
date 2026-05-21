@@ -155,10 +155,14 @@ class _ContingenciaRejeicaoScreenState extends State<ContingenciaRejeicaoScreen>
                   width: 180,
                   child: Text(item['documento']?.toString() ?? '',
                       overflow: TextOverflow.ellipsis))),
-              DataCell(Text(item['data']?.toString()?.substring(0, 10) ?? '')),
+              DataCell(Text(item['data']?.toString().substring(0, 10) ?? '')),
               DataCell(SizedBox(
-                  width: 200,
-                  child: Text(item['motivo']?.toString() ?? '',
+                  width: 180,
+                  child: Text(item['documento']?.toString() ?? '',
+                      overflow: TextOverflow.ellipsis))),
+              DataCell(SizedBox(
+                  width: 250,
+                  child: Text(item['erro']?.toString() ?? '',
                       overflow: TextOverflow.ellipsis))),
               DataCell(_buildStatusBadge(item['status']?.toString() ?? '')),
               DataCell(
@@ -237,10 +241,14 @@ class _ContingenciaRejeicaoScreenState extends State<ContingenciaRejeicaoScreen>
           ],
           rows: _logs.map((item) {
             return DataRow(cells: [
-              DataCell(Text(item['data']?.toString()?.substring(0, 10) ?? '')),
+              DataCell(Text(item['data']?.toString().substring(0, 10) ?? '')),
               DataCell(SizedBox(
                   width: 180,
                   child: Text(item['documento']?.toString() ?? '',
+                      overflow: TextOverflow.ellipsis))),
+              DataCell(SizedBox(
+                  width: 200,
+                  child: Text(item['motivo']?.toString() ?? '',
                       overflow: TextOverflow.ellipsis))),
               DataCell(SizedBox(
                   width: 250,

@@ -1,4 +1,3 @@
-import '../models/network_response.dart';
 import '../utils/api_links.dart';
 import './network_caller.dart';
 

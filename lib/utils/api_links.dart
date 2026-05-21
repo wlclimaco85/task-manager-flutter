@@ -905,6 +905,14 @@ class ApiLinks {
   static String get lancamentosFinanceiros =>
       '$_baseUrlNew/api/financeiro/lancamentos';
 
+  // Importação de Extrato Bancário
+  static String get extratoPreview =>
+      '$_baseUrlNew/api/financeiro/extrato-importacao/preview';
+  static String get extratoConfirmar =>
+      '$_baseUrlNew/api/financeiro/extrato-importacao/confirmar';
+  static String get extratoImportacoes =>
+      '$_baseUrlNew/api/financeiro/extrato-importacao';
+
   // IA assistiva para chat/GED
   static String get aiChatSummarize => '$_baseUrlNew/api/ai/chat/summarize';
   static String get aiTextCorrect => '$_baseUrlNew/api/ai/text/correct';
@@ -961,6 +969,17 @@ class ApiLinks {
       '$_baseUrlNew/api/dp/export/dominio?competencia=${Uri.encodeComponent(competencia)}';
   static String dpPortal(String funcionarioId) =>
       '$_baseUrlNew/api/dp/portal/$funcionarioId';
+
+  // Contingência e Rejeições
+  static String get listarContingencia => '$_baseUrlNew/api/contingencia';
+  static String get listarRejeicoes => '$_baseUrlNew/api/rejeicoes';
+  static String reenviarContingencia(dynamic id) => '$_baseUrlNew/api/contingencia/$id/reenviar';
+
+  // Custo Médio
+  static String custoMedioConsultar(dynamic id) => '$_baseUrlNew/api/custo-medio/produto/$id';
+  static String get custoMedioRecalcular => '$_baseUrlNew/api/custo-medio/recalcular';
+  static String custoMedioHistorico(dynamic id) => '$_baseUrlNew/api/custo-medio/historico/$id';
+  static String get baixarPorVenda => '$_baseUrlNew/api/custo-medio/baixar';
 
   // Anexos financeiros
   static String get anexosFinanceiros => '$_baseUrlNew/api/financeiro/anexos';

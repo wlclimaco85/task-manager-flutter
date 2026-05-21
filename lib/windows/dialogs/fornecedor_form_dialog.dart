@@ -1,9 +1,6 @@
 import 'package:flutter/material.dart';
-import '../../../models/auth_utility.dart';
-import '../../../models/network_response.dart';
 import '../../../services/fornecedor_service.dart';
 import '../../services/network_caller.dart';
-import '../../../constants/custom_colors.dart';
 
 class FornecedorFormDialog extends StatefulWidget {
   final Map<String, dynamic>? item;
@@ -82,7 +79,7 @@ class _FornecedorFormDialogState extends State<FornecedorFormDialog> {
 
   Map<String, dynamic> _buildPayload() {
     return {
-      if (widget.item?.caseid != null) 'id': widget.item!['id'],
+      if (widget.item?['caseid'] != null) 'id': widget.item!['id'],
       'nome': _nomeCtrl.text,
       'razaoSocial': _razaoSocialCtrl.text,
       'cpf': _cpfCnpjCtrl.text,

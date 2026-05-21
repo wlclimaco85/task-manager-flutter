@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../services/baixa_automatica_caller.dart';
-import '../../utils/api_links.dart';
 import '../../utils/utils.dart';
-import '../../constants/custom_colors.dart';
 
 class BaixaAutomaticaScreen extends StatefulWidget {
   const BaixaAutomaticaScreen({super.key});

@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import '../../models/network_response.dart';
 import '../../services/rateio_caller.dart';
 import '../../services/network_caller.dart';
 import '../../utils/api_links.dart';
@@ -154,7 +153,7 @@ class _RateioFinanceiroScreenState extends State<RateioFinanceiroScreen>
     final total = _itens.fold<double>(
         0, (sum, i) => sum + (i.tipo == 'PERCENTUAL' ? (i.percentual ?? 0) : 0));
     if ((total - 100).abs() > 0.01) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
         backgroundColor: Colors.red,
         content: Text('A soma dos percentuais deve ser 100% (atual: ${total.toStringAsFixed(2)}%)'),
       ));
@@ -293,8 +292,8 @@ class _RateioFinanceiroScreenState extends State<RateioFinanceiroScreen>
         isDense: true,
         decoration: const InputDecoration(border: OutlineInputBorder(), isDense: true),
         items: _categorias
-            .map((c) => DropdownMenuItem(
-                  value: c['id'],
+            .map((c) => DropdownMenuItem<int>(
+                  value: c['id'] as int,
                   child: Text(
                       '${c['descricao'] ?? c['nome'] ?? ''}'),
                 ))
@@ -312,8 +311,8 @@ class _RateioFinanceiroScreenState extends State<RateioFinanceiroScreen>
         isDense: true,
         decoration: const InputDecoration(border: OutlineInputBorder(), isDense: true),
         items: _centrosCusto
-            .map((c) => DropdownMenuItem(
-                  value: c['id'],
+            .map((c) => DropdownMenuItem<int>(
+                  value: c['id'] as int,
                   child: Text('${c['nome'] ?? ''}'),
                 ))
             .toList(),

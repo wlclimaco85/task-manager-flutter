@@ -1,6 +1,5 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
-import '../models/auth_utility.dart';
 import '../utils/api_links.dart';
 import '../utils/tenant_context.dart';
 

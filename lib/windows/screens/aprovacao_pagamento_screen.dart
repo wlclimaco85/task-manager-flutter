@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../services/aprovacao_pagamento_caller.dart';
-import '../../utils/api_links.dart';
 import '../../utils/utils.dart';
-import '../../constants/custom_colors.dart';
 
 class AprovacaoPagamentoScreen extends StatefulWidget {
   const AprovacaoPagamentoScreen({super.key});

@@ -278,7 +278,7 @@ class _DreScreenState extends State<DreScreen> {
         ),
         child: Text(
           selected != null
-              ? DateFormat('dd/MM/yyyy').format(selected!)
+              ? DateFormat('dd/MM/yyyy').format(selected)
               : 'Selecionar',
         ),
       ),
@@ -326,7 +326,7 @@ class _DreScreenState extends State<DreScreen> {
 
   List<Map<String, dynamic>> _listFromJson(dynamic raw) {
     if (raw is List) {
-      return raw.map((e) => e is Map ? Map<String, dynamic>.from(e) : {}).toList();
+      return raw.map<Map<String, dynamic>>((e) => e is Map ? Map<String, dynamic>.from(e) : <String, dynamic>{}).toList();
     }
     return [];
   }
@@ -360,6 +360,8 @@ class _DreScreenState extends State<DreScreen> {
   Widget _secaoLinhas(String titulo, List<Map<String, dynamic>> itens,
       double total,
       {bool isFirst = false}) {
+    final totalAnterior = itens.fold<double>(
+        0, (sum, item) => sum + _toDouble(item['valorAnterior']));
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -388,8 +390,7 @@ class _DreScreenState extends State<DreScreen> {
                 Expanded(
                     flex: 3,
                     child: Text(
-                        _currency.format(
-                            _toDouble(itemValor(item, 'valorAnterior'))),
+                        _currency.format(totalAnterior),
                         textAlign: TextAlign.right,
                         style: const TextStyle(fontWeight: FontWeight.bold))),
               if (_compararAnterior) const Expanded(flex: 2, child: SizedBox()),

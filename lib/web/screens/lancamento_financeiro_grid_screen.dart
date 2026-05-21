@@ -8,7 +8,7 @@ import '../../../utils/api_links.dart';
 import '../../../utils/grid_colors.dart';
 import '../../../utils/tenant_context.dart';
 import '../../../widgets/generic_grid_windows_screen.dart'
-    show CustomAction, FieldConfigWindows;
+    show FieldConfigWindows;
 import 'package:http/http.dart' as http;
 
 class WebLancamentoFinanceiroGridScreen extends StatefulWidget {

@@ -5,7 +5,7 @@ import 'dart:typed_data';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import '../../../widgets/generic_grid_windows_screen.dart'
-    show CustomAction, FieldConfigWindows;
+    show FieldConfigWindows;
 import '../../../customization/dynamic_grid_windows_screen.dart';
 import '../../../utils/api_links.dart';
 import '../../../utils/grid_colors.dart';

@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import '../../../models/pedido_venda_model.dart';
 import '../../../services/pedido_venda_service.dart';
 import '../../../services/network_caller.dart';
-import '../../../models/network_response.dart';
 import '../../../utils/api_links.dart';
 import '../../../constants/custom_colors.dart';
 import '../../../windows/dialogs/pedido_venda_form_dialog.dart';
@@ -329,7 +328,7 @@ class _WebPedidoVendaGridScreenState extends State<WebPedidoVendaGridScreen> {
         _actionIcon(Icons.cancel, 'Rejeitar', Colors.red, () => _confirmAction('Rejeitar Pedido', 'Deseja rejeitar este pedido?', () => PedidoVendaService.rejeitar(id))),
       ],
       if (status == 'APROVADO') ...[
-        _actionIcon(Icons.partial, 'Faturar Parcial', Colors.orange, () => _showFaturarParcial(pedido)),
+        _actionIcon(Icons.payment, 'Faturar Parcial', Colors.orange, () => _showFaturarParcial(pedido)),
         _actionIcon(Icons.done_all, 'Faturar Total', Colors.blue, () => _confirmAction('Faturar Total', 'Deseja faturar totalmente este pedido?', () => PedidoVendaService.faturarTotal(id))),
       ],
       if (status == 'FATURADO_PARCIAL')

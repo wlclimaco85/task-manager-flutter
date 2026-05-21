@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
 import '../../services/aprovacao_compra_caller.dart';
-import '../../utils/utils.dart';
-import '../../constants/custom_colors.dart';
 
 class AprovacaoCompraScreen extends StatefulWidget {
   const AprovacaoCompraScreen({super.key});

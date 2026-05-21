@@ -488,7 +488,7 @@ class _LogsAutomacaoDialogState extends State<LogsAutomacaoDialog> {
                                 ),
                                 DataCell(
                                   SizedBox(
-                                    maxWidth: 150,
+                                    width: 150,
                                     child: Text(
                                       log['erro']?.toString() ?? log['error']?.toString() ?? '-',
                                       style: TextStyle(

@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../../models/conta_pagar_model.dart';
-import '../../services/network_caller.dart';
-import '../../../models/network_response.dart';
+import '../../../services/parcelar_conta_service.dart';
 import '../../../utils/api_links.dart';
 
 class ParcelarContaDialog extends StatefulWidget {

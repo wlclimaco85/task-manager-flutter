@@ -171,7 +171,7 @@ class _ConsultaDfeScreenState extends State<ConsultaDfeScreen>
                   children: [
                     const Icon(Icons.error, color: Colors.red),
                     const SizedBox(width: 8),
-                    Expanded(child: Text(_mensagem!, style: const TextStyle(color: Colors.red.shade900))),
+                    Expanded(child: Text(_mensagem!, style: TextStyle(color: Colors.red.shade900))),
                   ],
                 ),
               ),

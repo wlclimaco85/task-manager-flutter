@@ -250,7 +250,7 @@ class MenuConfig {
         MenuItem(
             id: 'consulta_dfe',
             label: 'Consulta DF-e',
-            icon: FontAwesomeIcons.fileSearch,
+            icon: FontAwesomeIcons.magnifyingGlass,
             screenIndex: 107),
         MenuItem(
             id: 'manifestacao_destinatario',

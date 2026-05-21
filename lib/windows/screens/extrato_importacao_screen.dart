@@ -168,7 +168,7 @@ class _ExtratoImportacaoScreenState extends State<ExtratoImportacaoScreen> {
               children: [
                 ElevatedButton.icon(
                   onPressed: _selecionarArquivo,
-                  icon: const Icon(Icons.filePresent, size: 18),
+                  icon: const Icon(Icons.file_present, size: 18),
                   label: Text(
                     _arquivo != null
                         ? '${_arquivo!.name} (${(_arquivo!.size / 1024).toStringAsFixed(1)} KB)'

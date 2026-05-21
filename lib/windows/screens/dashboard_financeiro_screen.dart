@@ -317,9 +317,9 @@ class _WindowsDashboardFinanceiroScreenState
 
   Widget _buildKpiCards() {
     final kpis = [
-      _KpiData('A Pagar', _aPagar, Colors.red.shade700, Icons.arrowUpward),
-      _KpiData('A Receber', _aReceber, Colors.green.shade700, Icons.arrowDownward),
-      _KpiData('Saldo Projetado', _saldoProjetado, Colors.blue.shade700, Icons.accountBalance),
+      _KpiData('A Pagar', _aPagar, Colors.red.shade700, Icons.arrow_upward),
+      _KpiData('A Receber', _aReceber, Colors.green.shade700, Icons.arrow_downward),
+      _KpiData('Saldo Projetado', _saldoProjetado, Colors.blue.shade700, Icons.account_balance),
       _KpiData('Vencido', _totalVencido, Colors.orange.shade700, Icons.warning),
     ];
 
