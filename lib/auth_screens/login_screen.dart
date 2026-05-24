@@ -626,8 +626,8 @@ class _NoticiaCard extends StatelessWidget {
     final id = noticia['id'];
     final data = _formatDate(noticia['dtNoticia'] ?? noticia['dtImport']);
 
-    // Tenta carregar imagem: por id (proxy backend) ou por URL direta
-    final String? imageUrl = _resolveImageUrl(foto, id);
+    // Monta lista de URLs para tentar em cascata
+    final List<String> imageUrls = _buildImageUrls(foto, id);
     return InkWell(
       onTap: _abrirLink,
       borderRadius: BorderRadius.circular(8),
@@ -648,18 +648,13 @@ class _NoticiaCard extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisSize: MainAxisSize.min,
             children: [
-              // Imagem
+              // Imagem com fallback automático entre URLs
               SizedBox(
                 height: 150,
                 width: double.infinity,
-                child: imageUrl != null
-                    ? Image.network(imageUrl,
-                        width: double.infinity,
-                        fit: BoxFit.cover,
-                        loadingBuilder: (_, child, p) =>
-                            p == null ? child : _placeholder(),
-                        errorBuilder: (_, __, ___) => _placeholder())
-                    : _placeholder(),
+                child: imageUrls.isEmpty
+                    ? _placeholder()
+                    : _MultiUrlImage(urls: imageUrls, placeholder: _placeholder()),
               ),
               // Texto colado na imagem
               Padding(
@@ -706,26 +701,30 @@ class _NoticiaCard extends StatelessWidget {
     );
   }
 
-  /// Retorna a URL de imagem mais provável, ou null se não houver nenhuma opção.
-  /// Prioridade: proxy por id (web) → URL direta (desktop) → proxy por URL (web)
-  String? _resolveImageUrl(String foto, dynamic id) {
+  /// Retorna lista de URLs para tentar em cascata (URL direta → proxy backend).
+  /// O _MultiUrlImage tenta cada URL em sequência até uma funcionar.
+  List<String> _buildImageUrls(String foto, dynamic id) {
+    final urls = <String>[];
     final temFotoValida = foto.isNotEmpty &&
         foto.startsWith('http') &&
         !foto.startsWith('data:image/gif');
 
-    if (kIsWeb) {
-      // No web, usa sempre o proxy do backend para evitar CORS
-      if (id != null) {
-        return '${ApiLinks.baseUrl}/api/public/noticias/foto/$id';
-      }
-      if (temFotoValida) {
-        return '${ApiLinks.baseUrl}/api/public/imagens/noticia?url=${Uri.encodeComponent(foto)}';
-      }
-      return null;
+    // 1ª tentativa: URL direta da foto (funciona no desktop e em sites com CORS aberto)
+    if (temFotoValida) urls.add(foto);
+
+    // 2ª tentativa: proxy do backend por ID (evita CORS no web)
+    if (id != null) {
+      urls.add('${ApiLinks.baseUrl}/api/public/noticias/foto/$id');
     }
-    // No desktop: tenta URL direta (sem dependência de proxy)
-    if (temFotoValida) return foto;
-    return null;
+
+    // 3ª tentativa: proxy do backend por URL (fallback final)
+    if (kIsWeb && temFotoValida) {
+      final proxyUrl =
+          '${ApiLinks.baseUrl}/api/public/imagens/noticia?url=${Uri.encodeComponent(foto)}';
+      if (!urls.contains(proxyUrl)) urls.add(proxyUrl);
+    }
+
+    return urls;
   }
 
   String _formatDate(dynamic dt) {
@@ -736,6 +735,40 @@ class _NoticiaCard extends StatelessWidget {
       if (p.length == 3) return '${p[2]}/${p[1]}/${p[0]}';
     }
     return '';
+  }
+}
+
+// -- Widget que tenta carregar imagens de uma lista de URLs em cascata --
+class _MultiUrlImage extends StatefulWidget {
+  final List<String> urls;
+  final Widget placeholder;
+  const _MultiUrlImage({required this.urls, required this.placeholder});
+
+  @override
+  State<_MultiUrlImage> createState() => _MultiUrlImageState();
+}
+
+class _MultiUrlImageState extends State<_MultiUrlImage> {
+  int _idx = 0;
+
+  @override
+  Widget build(BuildContext context) {
+    if (_idx >= widget.urls.length) return widget.placeholder;
+    return Image.network(
+      widget.urls[_idx],
+      width: double.infinity,
+      height: double.infinity,
+      fit: BoxFit.cover,
+      loadingBuilder: (_, child, progress) =>
+          progress == null ? child : widget.placeholder,
+      errorBuilder: (_, __, ___) {
+        // Tenta próxima URL após o frame atual
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) setState(() => _idx++);
+        });
+        return widget.placeholder;
+      },
+    );
   }
 }
 
