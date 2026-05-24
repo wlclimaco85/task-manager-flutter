@@ -1,7 +1,9 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:typed_data';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:http/http.dart' as http;
 import 'package:url_launcher/url_launcher.dart';
@@ -219,20 +221,7 @@ class _LoginBanner extends StatelessWidget {
                     offset: const Offset(0, 2))
               ]),
           padding: const EdgeInsets.all(8),
-          child: SvgPicture.asset(
-            AssetsUtils.logoSVG,
-            height: 80,
-            fit: BoxFit.contain,
-            placeholderBuilder: (context) => const SizedBox(
-              height: 80,
-              child: Center(
-                child: CircularProgressIndicator(
-                  color: GridColors.secondary,
-                  strokeWidth: 2,
-                ),
-              ),
-            ),
-          ),
+          child: _SafeLogoWidget(size: 80),
         ),
         const SizedBox(width: 16),
         const Text(GridTexts.appShortTitle,
@@ -365,22 +354,7 @@ class _LoginBanner extends StatelessWidget {
                                   offset: const Offset(0, 4))
                             ]),
                         padding: const EdgeInsets.all(8),
-                        child: SvgPicture.asset(
-                          AssetsUtils.logoSVG,
-                          height: 86,
-                          width: 86,
-                          fit: BoxFit.contain,
-                          placeholderBuilder: (context) => const SizedBox(
-                            height: 86,
-                            width: 86,
-                            child: Center(
-                              child: CircularProgressIndicator(
-                                color: GridColors.secondary,
-                                strokeWidth: 2,
-                              ),
-                            ),
-                          ),
-                        ),
+                        child: _SafeLogoWidget(size: 86),
                       ),
                       const SizedBox(width: 18),
                       const Expanded(
@@ -517,6 +491,62 @@ class _LoginBanner extends StatelessWidget {
       ),
     );
   }
+}
+
+// -- Logo segura com fallback em caso de falha de renderização SVG --
+class _SafeLogoWidget extends StatefulWidget {
+  final double size;
+  const _SafeLogoWidget({required this.size});
+
+  @override
+  State<_SafeLogoWidget> createState() => _SafeLogoWidgetState();
+}
+
+class _SafeLogoWidgetState extends State<_SafeLogoWidget> {
+  late Future<Uint8List> _svgFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    _svgFuture = rootBundle
+        .load(AssetsUtils.logoSVG)
+        .then((data) => data.buffer.asUint8List());
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return FutureBuilder<Uint8List>(
+      future: _svgFuture,
+      builder: (ctx, snapshot) {
+        if (snapshot.hasError) return _fallback();
+        if (!snapshot.hasData) {
+          return SizedBox(
+            height: widget.size,
+            width: widget.size,
+            child: const Center(
+              child: CircularProgressIndicator(
+                  color: GridColors.secondary, strokeWidth: 2),
+            ),
+          );
+        }
+        return SvgPicture.memory(
+          snapshot.data!,
+          height: widget.size,
+          width: widget.size,
+          fit: BoxFit.contain,
+          placeholderBuilder: (_) => _fallback(),
+        );
+      },
+    );
+  }
+
+  Widget _fallback() => SizedBox(
+        height: widget.size,
+        width: widget.size,
+        child: const Center(
+          child: Icon(Icons.business, color: GridColors.secondary, size: 40),
+        ),
+      );
 }
 
 // -- Grid de noticias (fundo verde clarinho) --
