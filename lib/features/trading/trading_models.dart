@@ -1,68 +1,133 @@
-// Trading models — sinais, oportunidades, watchlist, alertas e operações assistidas.
+// Trading models — sinais, oportunidades, watchlist, alertas, operações assistidas
+// e configuração de corretora.
+// Campos alinhados com o JSON retornado pelo backend Spring Boot.
 
 class TradingSignal {
   final String id;
-  final String asset;
-  final String direction; // "BUY" | "SELL"
-  final double price;
-  final String createdAt;
+  final String assetSymbol; // backend: assetSymbol
+  final String signalType;  // backend: signalType (ex: "BUY" | "SELL" | "HOLD")
+  final String status;      // backend: status
+  final double score;       // backend: score (BigDecimal → double)
+  final double priceAtSignal; // backend: priceAtSignal
+  final String triggeredAt;   // backend: triggeredAt (Instant → String ISO-8601)
+  final String? source;
+  final double? confidence;
+  final String? timeframe;
 
   const TradingSignal({
     required this.id,
-    required this.asset,
-    required this.direction,
-    required this.price,
-    required this.createdAt,
+    required this.assetSymbol,
+    required this.signalType,
+    required this.status,
+    required this.score,
+    required this.priceAtSignal,
+    required this.triggeredAt,
+    this.source,
+    this.confidence,
+    this.timeframe,
   });
 
   factory TradingSignal.fromJson(Map<String, dynamic> json) {
     return TradingSignal(
       id: json['id']?.toString() ?? '',
-      asset: json['asset']?.toString() ?? '',
-      direction: json['direction']?.toString() ?? '',
-      price: (json['price'] as num?)?.toDouble() ?? 0.0,
-      createdAt: json['createdAt']?.toString() ?? '',
+      // aceita 'assetSymbol' (backend) ou 'asset' (legado)
+      assetSymbol: json['assetSymbol']?.toString() ?? json['asset']?.toString() ?? '',
+      // aceita 'signalType' (backend) ou 'direction' (legado)
+      signalType: json['signalType']?.toString() ?? json['direction']?.toString() ?? '',
+      status: json['status']?.toString() ?? '',
+      // aceita 'score' ou 'confidence' como fallback
+      score: _toDouble(json['score'] ?? json['confidence']),
+      // aceita 'priceAtSignal' (backend) ou 'price' (legado)
+      priceAtSignal: _toDouble(json['priceAtSignal'] ?? json['price']),
+      // aceita 'triggeredAt' (backend) ou 'createdAt' (legado)
+      triggeredAt: json['triggeredAt']?.toString() ?? json['createdAt']?.toString() ?? '',
+      source: json['source']?.toString(),
+      confidence: json['confidence'] != null ? _toDouble(json['confidence']) : null,
+      timeframe: json['timeframe']?.toString(),
     );
+  }
+
+  /// Direção de exibição: tenta signalType, fallback para 'HOLD'
+  String get displayDirection {
+    final t = signalType.toUpperCase();
+    if (t.contains('BUY') || t == 'COMPRA') return 'BUY';
+    if (t.contains('SELL') || t == 'VENDA') return 'SELL';
+    return signalType.isEmpty ? 'HOLD' : signalType;
+  }
+
+  static double _toDouble(dynamic v) {
+    if (v == null) return 0.0;
+    if (v is num) return v.toDouble();
+    return double.tryParse(v.toString()) ?? 0.0;
   }
 
   Map<String, dynamic> toJson() => {
         'id': id,
-        'asset': asset,
-        'direction': direction,
-        'price': price,
-        'createdAt': createdAt,
+        'assetSymbol': assetSymbol,
+        'signalType': signalType,
+        'status': status,
+        'score': score,
+        'priceAtSignal': priceAtSignal,
+        'triggeredAt': triggeredAt,
+        if (source != null) 'source': source,
+        if (confidence != null) 'confidence': confidence,
+        if (timeframe != null) 'timeframe': timeframe,
       };
 }
 
 class Opportunity {
   final String id;
-  final String asset;
-  final String description;
-  final String detectedAt;
+  final String assetSymbol;   // backend: assetSymbol
+  final double scoreValue;    // backend: scoreValue
+  final String recommendation; // backend: recommendation
+  final String? riskLevel;    // backend: riskLevel
+  final String? horizon;      // backend: horizon
+  final String? calculatedAt; // backend: calculatedAt
 
   const Opportunity({
     required this.id,
-    required this.asset,
-    required this.description,
-    required this.detectedAt,
+    required this.assetSymbol,
+    required this.scoreValue,
+    required this.recommendation,
+    this.riskLevel,
+    this.horizon,
+    this.calculatedAt,
   });
 
   factory Opportunity.fromJson(Map<String, dynamic> json) {
     return Opportunity(
       id: json['id']?.toString() ?? '',
-      asset: json['asset']?.toString() ?? '',
-      description: json['description']?.toString() ?? '',
-      detectedAt: json['detectedAt']?.toString() ?? '',
+      // aceita 'assetSymbol' (backend) ou 'asset' (legado)
+      assetSymbol: json['assetSymbol']?.toString() ?? json['asset']?.toString() ?? '',
+      // aceita 'scoreValue' (backend) numérico
+      scoreValue: _toDouble(json['scoreValue'] ?? json['score']),
+      // aceita 'recommendation' (backend) ou 'description' (legado)
+      recommendation: json['recommendation']?.toString() ??
+          json['description']?.toString() ?? '',
+      riskLevel: json['riskLevel']?.toString(),
+      horizon: json['horizon']?.toString(),
+      calculatedAt: json['calculatedAt']?.toString() ?? json['detectedAt']?.toString(),
     );
+  }
+
+  static double _toDouble(dynamic v) {
+    if (v == null) return 0.0;
+    if (v is num) return v.toDouble();
+    return double.tryParse(v.toString()) ?? 0.0;
   }
 
   Map<String, dynamic> toJson() => {
         'id': id,
-        'asset': asset,
-        'description': description,
-        'detectedAt': detectedAt,
+        'assetSymbol': assetSymbol,
+        'scoreValue': scoreValue,
+        'recommendation': recommendation,
+        if (riskLevel != null) 'riskLevel': riskLevel,
+        if (horizon != null) 'horizon': horizon,
+        if (calculatedAt != null) 'calculatedAt': calculatedAt,
       };
 }
+
+// ── Watchlist ─────────────────────────────────────────────────────────────────
 
 class WatchlistItem {
   final String id;
@@ -94,12 +159,14 @@ class WatchlistItem {
       };
 }
 
+// ── Alertas ───────────────────────────────────────────────────────────────────
+
 class TradingAlerta {
   final String id;
   final String assetSymbol;
   final double priceTarget;
   final String direction; // "ABOVE" | "BELOW"
-  final String status; // "ATIVO" | "DISPARADO" | "CANCELADO"
+  final String status;    // "ATIVO" | "DISPARADO" | "CANCELADO"
   final String? triggeredAt;
   final String? message;
 
@@ -121,12 +188,18 @@ class TradingAlerta {
     return TradingAlerta(
       id: json['id']?.toString() ?? '',
       assetSymbol: json['assetSymbol']?.toString() ?? '',
-      priceTarget: (json['priceTarget'] as num?)?.toDouble() ?? 0.0,
+      priceTarget: _toDouble(json['priceTarget']),
       direction: json['direction']?.toString() ?? '',
       status: json['status']?.toString() ?? 'ATIVO',
       triggeredAt: json['triggeredAt']?.toString(),
       message: json['message']?.toString(),
     );
+  }
+
+  static double _toDouble(dynamic v) {
+    if (v == null) return 0.0;
+    if (v is num) return v.toDouble();
+    return double.tryParse(v.toString()) ?? 0.0;
   }
 
   Map<String, dynamic> toJson() => {
@@ -140,14 +213,16 @@ class TradingAlerta {
       };
 }
 
+// ── Operações Assistidas ──────────────────────────────────────────────────────
+
 class OperacaoAssistida {
   final String id;
   final String assetSymbol;
-  final String direcao; // "BUY" | "SELL"
+  final String direcao;   // "BUY" | "SELL"
   final double quantidade;
   final double? stopLoss;
   final double? takeProfit;
-  final String status; // "PENDENTE" | "ENVIADA" | "EXECUTADA" | "CANCELADA" | "ERRO"
+  final String status;    // "PENDENTE" | "ENVIADA" | "EXECUTADA" | "CANCELADA" | "ERRO"
   final String? externalOrderId;
   final String? errorMessage;
   final String createdAt;
@@ -174,14 +249,20 @@ class OperacaoAssistida {
   bool get isErro => status == 'ERRO';
   bool get cancelavel => isPendente || isEnviada;
 
+  static double _toDouble(dynamic v) {
+    if (v == null) return 0.0;
+    if (v is num) return v.toDouble();
+    return double.tryParse(v.toString()) ?? 0.0;
+  }
+
   factory OperacaoAssistida.fromJson(Map<String, dynamic> json) {
     return OperacaoAssistida(
       id: json['id']?.toString() ?? '',
       assetSymbol: json['assetSymbol']?.toString() ?? '',
       direcao: json['direcao']?.toString() ?? '',
-      quantidade: (json['quantidade'] as num?)?.toDouble() ?? 0.0,
-      stopLoss: (json['stopLoss'] as num?)?.toDouble(),
-      takeProfit: (json['takeProfit'] as num?)?.toDouble(),
+      quantidade: _toDouble(json['quantidade']),
+      stopLoss: json['stopLoss'] != null ? _toDouble(json['stopLoss']) : null,
+      takeProfit: json['takeProfit'] != null ? _toDouble(json['takeProfit']) : null,
       status: json['status']?.toString() ?? 'PENDENTE',
       externalOrderId: json['externalOrderId']?.toString(),
       errorMessage: json['errorMessage']?.toString(),
@@ -202,5 +283,45 @@ class OperacaoAssistida {
         if (errorMessage != null) 'errorMessage': errorMessage,
         'createdAt': createdAt,
         if (signalId != null) 'signalId': signalId,
+      };
+}
+
+// ── Configuração de Corretora ─────────────────────────────────────────────────
+
+class TradingBrokerConfig {
+  final String id;
+  final String brokerLogin;
+  final String accountId;
+  final String ambientePadrao; // "TESTE" | "PRODUCAO"
+  final bool ativo;
+  final String? updatedAt;
+
+  const TradingBrokerConfig({
+    required this.id,
+    required this.brokerLogin,
+    required this.accountId,
+    required this.ambientePadrao,
+    required this.ativo,
+    this.updatedAt,
+  });
+
+  factory TradingBrokerConfig.fromJson(Map<String, dynamic> json) {
+    return TradingBrokerConfig(
+      id: json['id']?.toString() ?? '',
+      brokerLogin: json['brokerLogin']?.toString() ?? '',
+      accountId: json['accountId']?.toString() ?? '',
+      ambientePadrao: json['ambientePadrao']?.toString() ?? 'TESTE',
+      ativo: json['ativo'] == true || json['ativo'] == 'true',
+      updatedAt: json['updatedAt']?.toString(),
+    );
+  }
+
+  Map<String, dynamic> toJson() => {
+        'id': id,
+        'brokerLogin': brokerLogin,
+        'accountId': accountId,
+        'ambientePadrao': ambientePadrao,
+        'ativo': ativo,
+        if (updatedAt != null) 'updatedAt': updatedAt,
       };
 }
