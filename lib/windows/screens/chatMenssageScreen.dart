@@ -43,6 +43,10 @@ class _WindowsChatMessageScreenState extends State<WindowsChatMessageScreen> {
 
   WebSocketChannel? _channel;
   bool _isLoading = false;
+  bool _wsConnected = false;
+  int _retryCount = 0;
+  static const int _maxRetries = 10;
+  bool _initDone = false;
 
   String get _loggedUserName =>
       AuthUtility.userInfo?.login?.nome ?? widget.userName;
@@ -52,36 +56,62 @@ class _WindowsChatMessageScreenState extends State<WindowsChatMessageScreen> {
   @override
   void initState() {
     super.initState();
-    _connectWebSocket();
-    _loadInitialMessages();
+    _loadInitialMessages().then((_) {
+      _initDone = true;
+      _connectWebSocket();
+    });
+  }
+
+  bool _isDuplicate(ChatMessage msg) {
+    return msg.chatId != null && _messages.any((m) =>
+      m.content == msg.content && m.sender == msg.sender && m.timestamp == msg.timestamp);
   }
 
   void _connectWebSocket() {
+    if (!mounted || _retryCount >= _maxRetries) return;
     try {
       _channel?.sink.close();
       _channel = IOWebSocketChannel.connect(
         TenantContext.applyToUrl(
             ApiLinks.chatStart(_loggedUserEmail, widget.sector)),
       );
+      _retryCount = 0;
+      setState(() => _wsConnected = true);
 
       _channel!.stream.listen(
         (message) {
-          final decoded = json.decode(message) as Map<String, dynamic>;
-          setState(() => _messages.add(ChatMessage.fromJson(decoded)));
-          _scrollToBottom();
+          try {
+            final decoded = json.decode(message) as Map<String, dynamic>;
+            final msg = ChatMessage.fromJson(decoded);
+            if (!_isDuplicate(msg)) {
+              setState(() => _messages.add(msg));
+            }
+            _scrollToBottom();
+          } catch (_) {}
         },
         onError: (error) {
           L.d('WebSocket error: $error');
-          Future.delayed(const Duration(seconds: 3), _connectWebSocket);
+          setState(() => _wsConnected = false);
+          _scheduleReconnect();
         },
         onDone: () {
           L.d('WebSocket closed');
-          Future.delayed(const Duration(seconds: 3), _connectWebSocket);
+          setState(() => _wsConnected = false);
+          _scheduleReconnect();
         },
       );
     } catch (e) {
       L.d('Connection error: $e');
+      setState(() => _wsConnected = false);
+      _scheduleReconnect();
     }
+  }
+
+  void _scheduleReconnect() {
+    _retryCount++;
+    if (!mounted || _retryCount >= _maxRetries) return;
+    final delay = Duration(seconds: (_retryCount > 5 ? 30 : 3 * (1 << (_retryCount - 1))).clamp(3, 30));
+    Future.delayed(delay, () { if (mounted) _connectWebSocket(); });
   }
 
   Future<void> _loadInitialMessages() async {

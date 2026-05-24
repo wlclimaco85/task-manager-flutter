@@ -86,33 +86,33 @@ class _ManifestacaoDestinatarioScreenState
         return StatefulBuilder(
           builder: (context, setDialogState) {
             return AlertDialog(
-              title: const Text('Registrar Manifestação'),
+              title: const Text(GridTexts.registerManifestation),
               content: SingleChildScrollView(
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('Chave: $chave', style: const TextStyle(fontSize: 13)),
+                    Text(GridTexts.accessKeyLabel(chave), style: const TextStyle(fontSize: 13)),
                     const SizedBox(height: 16),
                     DropdownButtonFormField<String>(
                       value: tipoSelecionado,
                       decoration: const InputDecoration(
-                        labelText: 'Tipo de Manifestação',
+                        labelText: GridTexts.manifestationType,
                         border: OutlineInputBorder(),
                         isDense: true,
                       ),
                       items: const [
                         DropdownMenuItem(
-                            value: 'CIENCIA', child: Text('Ciência')),
+                            value: 'CIENCIA', child: Text(GridTexts.science)),
                         DropdownMenuItem(
                             value: 'CONFIRMACAO',
-                            child: Text('Confirmar')),
+                            child: Text(GridTexts.confirm)),
                         DropdownMenuItem(
                             value: 'DESCONHECIMENTO',
-                            child: Text('Desconhecer')),
+                            child: Text(GridTexts.unknown)),
                         DropdownMenuItem(
                             value: 'NAO_REALIZADA',
-                            child: Text('Não Realizada')),
+                            child: Text(GridTexts.notPerformed)),
                       ],
                       onChanged: (v) {
                         setDialogState(() {
@@ -126,8 +126,8 @@ class _ManifestacaoDestinatarioScreenState
                       controller: justificativaController,
                       decoration: InputDecoration(
                         labelText: requerJustificativa
-                            ? 'Justificativa *'
-                            : 'Justificativa (opcional)',
+                            ? GridTexts.justificationRequired
+                            : GridTexts.justificationOptional,
                         border: const OutlineInputBorder(),
                         isDense: true,
                       ),
@@ -137,8 +137,8 @@ class _ManifestacaoDestinatarioScreenState
                       const Padding(
                         padding: EdgeInsets.only(top: 8),
                         child: Text(
-                          'Justificativa obrigatória para "Não Realizada"',
-                          style: TextStyle(color: Colors.red, fontSize: 12),
+                          GridTexts.notPerformedJustificationHint,
+                          style: TextStyle(color: GridColors.error, fontSize: 12),
                         ),
                       ),
                   ],
@@ -156,8 +156,8 @@ class _ManifestacaoDestinatarioScreenState
                       ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(
                           content:
-                              Text('Justificativa é obrigatória para Não Realizada'),
-                          backgroundColor: Colors.red,
+                              Text(GridTexts.notPerformedJustificationRequired),
+                          backgroundColor: GridColors.error,
                         ),
                       );
                       return;
@@ -169,9 +169,9 @@ class _ManifestacaoDestinatarioScreenState
                   },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: GridColors.secondary,
-                    foregroundColor: Colors.white,
+                    foregroundColor: GridColors.textPrimary,
                   ),
-                  child: const Text('Confirmar'),
+                  child: const Text(GridTexts.confirm),
                 ),
               ],
             );
@@ -191,9 +191,11 @@ class _ManifestacaoDestinatarioScreenState
     if (!mounted) return;
 
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-      content: Text(
-          response.success ? 'Manifestação registrada com sucesso' : response.message ?? 'Erro'),
-      backgroundColor: response.success ? Colors.green : Colors.red,
+      content: Text(response.success
+          ? GridTexts.manifestationRegisteredSuccess
+          : response.message ?? GridTexts.error),
+      backgroundColor:
+          response.success ? GridColors.success : GridColors.error,
     ));
 
     if (response.success) _carregarPendentes();
@@ -202,13 +204,13 @@ class _ManifestacaoDestinatarioScreenState
   String _traduzirTipo(String tipo) {
     switch (tipo.toUpperCase()) {
       case 'CIENCIA':
-        return 'Ciência';
+        return GridTexts.science;
       case 'CONFIRMACAO':
-        return 'Confirmar';
+        return GridTexts.confirm;
       case 'DESCONHECIMENTO':
-        return 'Desconhecer';
+        return GridTexts.unknown;
       case 'NAO_REALIZADA':
-        return 'Não Realizada';
+        return GridTexts.notPerformed;
       default:
         return tipo;
     }
@@ -217,35 +219,35 @@ class _ManifestacaoDestinatarioScreenState
   Color _corTipo(String tipo) {
     switch (tipo.toUpperCase()) {
       case 'CIENCIA':
-        return Colors.blue;
+        return GridColors.info;
       case 'CONFIRMACAO':
-        return Colors.green;
+        return GridColors.success;
       case 'DESCONHECIMENTO':
-        return Colors.orange;
+        return GridColors.statusUnknown;
       case 'NAO_REALIZADA':
-        return Colors.red;
+        return GridColors.error;
       default:
-        return Colors.grey;
+        return GridColors.neutral;
     }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.grey[100],
+      backgroundColor: GridColors.pageBackground,
       appBar: AppBar(
         backgroundColor: GridColors.secondary,
-        foregroundColor: Colors.white,
-        title: const Text('Manifestação do Destinatário'),
+        foregroundColor: GridColors.textPrimary,
+        title: const Text(GridTexts.manifestRecipientTitle),
         elevation: 0,
         bottom: TabBar(
           controller: _tabController,
-          indicatorColor: Colors.white,
-          labelColor: Colors.white,
-          unselectedLabelColor: Colors.white70,
+          indicatorColor: GridColors.textPrimary,
+          labelColor: GridColors.textPrimary,
+          unselectedLabelColor: GridColors.textPrimaryMuted,
           tabs: const [
-            Tab(text: 'Pendências'),
-            Tab(text: 'Histórico'),
+            Tab(text: GridTexts.pendingTab),
+            Tab(text: GridTexts.history),
           ],
         ),
       ),
@@ -273,19 +275,19 @@ class _ManifestacaoDestinatarioScreenState
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const Icon(Icons.error_outline, size: 64, color: Colors.red),
+                const Icon(Icons.error_outline, size: 64, color: GridColors.error),
                 const SizedBox(height: 16),
                 Text(_mensagemErro!,
-                    style: const TextStyle(color: Colors.red, fontSize: 16)),
+                    style: const TextStyle(color: GridColors.error, fontSize: 16)),
                 const SizedBox(height: 24),
                 ElevatedButton.icon(
                   style: ElevatedButton.styleFrom(
                     backgroundColor: GridColors.secondary,
-                    foregroundColor: Colors.white,
+                    foregroundColor: GridColors.textPrimary,
                   ),
                   onPressed: _carregarPendentes,
                   icon: const Icon(Icons.refresh),
-                  label: const Text('Tentar novamente'),
+                  label: const Text(GridTexts.retryAgain),
                 ),
               ],
             ),
@@ -304,19 +306,19 @@ class _ManifestacaoDestinatarioScreenState
               mainAxisSize: MainAxisSize.min,
               children: [
                 const Icon(Icons.check_circle_outline,
-                    size: 64, color: Colors.grey),
+                    size: 64, color: GridColors.neutral),
                 const SizedBox(height: 16),
-                const Text('Nenhuma pendência encontrada.',
-                    style: TextStyle(fontSize: 16, color: Colors.grey)),
+                const Text(GridTexts.noPendingFound,
+                    style: TextStyle(fontSize: 16, color: GridColors.neutral)),
                 const SizedBox(height: 24),
                 ElevatedButton.icon(
                   style: ElevatedButton.styleFrom(
                     backgroundColor: GridColors.secondary,
-                    foregroundColor: Colors.white,
+                    foregroundColor: GridColors.textPrimary,
                   ),
                   onPressed: _carregarPendentes,
                   icon: const Icon(Icons.refresh),
-                  label: const Text('Recarregar'),
+                  label: const Text(GridTexts.reload),
                 ),
               ],
             ),
@@ -333,17 +335,17 @@ class _ManifestacaoDestinatarioScreenState
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text('${_pendentes.length} pendência(s)',
+              Text(GridTexts.pendingCount(_pendentes.length),
                   style:
                       const TextStyle(fontWeight: FontWeight.w600, fontSize: 14)),
               ElevatedButton.icon(
                 style: ElevatedButton.styleFrom(
                   backgroundColor: GridColors.secondary,
-                  foregroundColor: Colors.white,
+                  foregroundColor: GridColors.textPrimary,
                 ),
                 onPressed: _carregarPendentes,
                 icon: const Icon(Icons.refresh, size: 16),
-                label: const Text('Recarregar'),
+                label: const Text(GridTexts.reload),
               ),
             ],
           ),
@@ -354,11 +356,11 @@ class _ManifestacaoDestinatarioScreenState
               scrollDirection: Axis.horizontal,
               child: DataTable(
                 columns: const [
-                  DataColumn(label: Text('Chave de Acesso')),
-                  DataColumn(label: Text('Emitente')),
-                  DataColumn(label: Text('Valor')),
-                  DataColumn(label: Text('Data Emissão')),
-                  DataColumn(label: Text('Ações')),
+                  DataColumn(label: Text(GridTexts.accessKey)),
+                  DataColumn(label: Text(GridTexts.issuer)),
+                  DataColumn(label: Text(GridTexts.value)),
+                  DataColumn(label: Text(GridTexts.issueDateShort)),
+                  DataColumn(label: Text(GridTexts.actions)),
                 ],
                 rows: _pendentes.asMap().entries.map((entry) {
                   final item = entry.value is Map<String, dynamic>
@@ -385,13 +387,13 @@ class _ManifestacaoDestinatarioScreenState
                       Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          _botaoAcao('Ciência', 'CIENCIA', item),
+                          _botaoAcao(GridTexts.science, 'CIENCIA', item),
                           const SizedBox(width: 4),
-                          _botaoAcao('Confirmar', 'CONFIRMACAO', item),
+                          _botaoAcao(GridTexts.confirm, 'CONFIRMACAO', item),
                           const SizedBox(width: 4),
-                          _botaoAcao('Desconhecer', 'DESCONHECIMENTO', item),
+                          _botaoAcao(GridTexts.unknown, 'DESCONHECIMENTO', item),
                           const SizedBox(width: 4),
-                          _botaoAcao('Não Realizada', 'NAO_REALIZADA', item),
+                          _botaoAcao(GridTexts.notPerformed, 'NAO_REALIZADA', item),
                         ],
                       ),
                     ),
@@ -406,29 +408,13 @@ class _ManifestacaoDestinatarioScreenState
   }
 
   Widget _botaoAcao(String label, String tipo, Map<String, dynamic> item) {
-    Color cor;
-    switch (tipo) {
-      case 'CIENCIA':
-        cor = Colors.blue;
-        break;
-      case 'CONFIRMACAO':
-        cor = Colors.green;
-        break;
-      case 'DESCONHECIMENTO':
-        cor = Colors.orange;
-        break;
-      case 'NAO_REALIZADA':
-        cor = Colors.red;
-        break;
-      default:
-        cor = Colors.grey;
-    }
+    final cor = _corTipo(tipo);
     return SizedBox(
       height: 28,
       child: ElevatedButton(
         style: ElevatedButton.styleFrom(
           backgroundColor: cor,
-          foregroundColor: Colors.white,
+          foregroundColor: GridColors.textPrimary,
           padding: const EdgeInsets.symmetric(horizontal: 8),
           textStyle: const TextStyle(fontSize: 10),
         ),
@@ -454,19 +440,19 @@ class _ManifestacaoDestinatarioScreenState
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const Icon(Icons.error_outline, size: 64, color: Colors.red),
+                const Icon(Icons.error_outline, size: 64, color: GridColors.error),
                 const SizedBox(height: 16),
                 Text(_mensagemErro!,
-                    style: const TextStyle(color: Colors.red, fontSize: 16)),
+                    style: const TextStyle(color: GridColors.error, fontSize: 16)),
                 const SizedBox(height: 24),
                 ElevatedButton.icon(
                   style: ElevatedButton.styleFrom(
                     backgroundColor: GridColors.secondary,
-                    foregroundColor: Colors.white,
+                    foregroundColor: GridColors.textPrimary,
                   ),
                   onPressed: _carregarHistorico,
                   icon: const Icon(Icons.refresh),
-                  label: const Text('Tentar novamente'),
+                  label: const Text(GridTexts.retryAgain),
                 ),
               ],
             ),
@@ -484,19 +470,19 @@ class _ManifestacaoDestinatarioScreenState
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const Icon(Icons.history, size: 64, color: Colors.grey),
+                const Icon(Icons.history, size: 64, color: GridColors.neutral),
                 const SizedBox(height: 16),
-                const Text('Nenhuma manifestação realizada.',
-                    style: TextStyle(fontSize: 16, color: Colors.grey)),
+                const Text(GridTexts.noManifestationDone,
+                    style: TextStyle(fontSize: 16, color: GridColors.neutral)),
                 const SizedBox(height: 24),
                 ElevatedButton.icon(
                   style: ElevatedButton.styleFrom(
                     backgroundColor: GridColors.secondary,
-                    foregroundColor: Colors.white,
+                    foregroundColor: GridColors.textPrimary,
                   ),
                   onPressed: _carregarHistorico,
                   icon: const Icon(Icons.refresh),
-                  label: const Text('Recarregar'),
+                  label: const Text(GridTexts.reload),
                 ),
               ],
             ),
@@ -513,17 +499,17 @@ class _ManifestacaoDestinatarioScreenState
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text('${_historico.length} manifestação(ões)',
+              Text(GridTexts.manifestationCount(_historico.length),
                   style:
                       const TextStyle(fontWeight: FontWeight.w600, fontSize: 14)),
               ElevatedButton.icon(
                 style: ElevatedButton.styleFrom(
                   backgroundColor: GridColors.secondary,
-                  foregroundColor: Colors.white,
+                  foregroundColor: GridColors.textPrimary,
                 ),
                 onPressed: _carregarHistorico,
                 icon: const Icon(Icons.refresh, size: 16),
-                label: const Text('Recarregar'),
+                label: const Text(GridTexts.reload),
               ),
             ],
           ),
@@ -534,12 +520,12 @@ class _ManifestacaoDestinatarioScreenState
               scrollDirection: Axis.horizontal,
               child: DataTable(
                 columns: const [
-                  DataColumn(label: Text('Chave de Acesso')),
-                  DataColumn(label: Text('Emitente')),
-                  DataColumn(label: Text('Tipo')),
-                  DataColumn(label: Text('Protocolo')),
-                  DataColumn(label: Text('Data')),
-                  DataColumn(label: Text('Status')),
+                  DataColumn(label: Text(GridTexts.accessKey)),
+                  DataColumn(label: Text(GridTexts.issuer)),
+                  DataColumn(label: Text(GridTexts.type)),
+                  DataColumn(label: Text(GridTexts.protocol)),
+                  DataColumn(label: Text(GridTexts.date)),
+                  DataColumn(label: Text(GridTexts.status)),
                 ],
                 rows: _historico.asMap().entries.map((entry) {
                   final item = entry.value is Map<String, dynamic>
@@ -598,20 +584,20 @@ class _ManifestacaoDestinatarioScreenState
   Widget _buildStatusBadge(String status) {
     final realizado = status.toUpperCase() == 'REALIZADO' ||
         status.toUpperCase() == 'CONCLUIDO';
+    final cor = realizado ? GridColors.success : GridColors.info;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
-        color: realizado ? Colors.green.shade50 : Colors.blue.shade50,
+        color: cor.withOpacity(0.1),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-            color: realizado ? Colors.green : Colors.blue, width: 1),
+        border: Border.all(color: cor, width: 1),
       ),
       child: Text(
-        realizado ? 'Realizado' : status,
+        realizado ? GridTexts.realized : status,
         style: TextStyle(
           fontSize: 11,
           fontWeight: FontWeight.w600,
-          color: realizado ? Colors.green.shade800 : Colors.blue.shade800,
+          color: cor,
         ),
       ),
     );

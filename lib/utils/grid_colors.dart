@@ -28,6 +28,7 @@ class GridColors {
   static const Color background = Color(0xFF005826);
   static const Color info = Color(0xFF1976D2);
   static const Color hover = Color(0x1A000000);
+  static const Color textMuted = Color(0xFF5F7483);
   static const Color selectedRow = Color(0xFFE3F2FD);
   static const Color errorLight = Color(0xFFFFEBEE);
   static const Color errorDark = Color(0xFFB71C1C);
@@ -38,6 +39,7 @@ class GridColors {
   static const Color statusHoliday = Color(0xFF1565C0);
   static const Color statusClosed = Color(0xFF6A1B9A);
   static const Color statusNew = Color(0xFFFF9800);
+  static const Color statusUnknown = Color(0xFFFFA000);
   static const Color pageBackground = Color(0xFFF5F5F5);
   static const Color surfaceMuted = Color(0xFFF5F5F5);
   static const Color disabledBackground = Color(0xFFE0E0E0);

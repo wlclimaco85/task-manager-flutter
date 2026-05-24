@@ -86,16 +86,17 @@ class _AprovacaoCompraScreenState extends State<AprovacaoCompraScreen>
     final result = await showDialog<String>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: Text(isAprovar ? 'Aprovar Compra' : 'Reprovar Compra'),
+        title: Text(isAprovar ? GridTexts.approvePurchase : GridTexts.rejectPurchase),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text('Pedido: ${item['pedido'] ?? item['numero'] ?? ''}'),
+            Text(GridTexts.purchaseOrderLabel(
+                '${item['pedido'] ?? item['numero'] ?? ''}')),
             const SizedBox(height: 12),
             TextField(
               controller: justifCtrl,
               decoration: const InputDecoration(
-                labelText: 'Justificativa *',
+                labelText: GridTexts.justificationRequired,
                 border: OutlineInputBorder(),
               ),
               maxLines: 3,
@@ -116,7 +117,7 @@ class _AprovacaoCompraScreenState extends State<AprovacaoCompraScreen>
               backgroundColor: isAprovar ? GridColors.success : GridColors.error,
               foregroundColor: GridColors.buttonText,
             ),
-            child: Text(isAprovar ? 'Aprovar' : 'Reprovar'),
+            child: Text(isAprovar ? GridTexts.approve : GridTexts.reject),
           ),
         ],
       ),
@@ -136,8 +137,8 @@ class _AprovacaoCompraScreenState extends State<AprovacaoCompraScreen>
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
           backgroundColor: res.isSuccess ? GridColors.success : GridColors.error,
           content: Text(res.isSuccess
-              ? 'Compra ${isAprovar ? "aprovada" : "reprovada"} com sucesso!'
-              : 'Erro (${res.statusCode})'),
+              ? GridTexts.purchaseApprovalDone(isAprovar)
+              : GridTexts.errorWithStatus(res.statusCode)),
         ));
         if (res.isSuccess) await _carregarFila();
       }
@@ -145,7 +146,8 @@ class _AprovacaoCompraScreenState extends State<AprovacaoCompraScreen>
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
           backgroundColor: GridColors.error,
-          content: Text('Erro: $e'),
+          content: Text(GridTexts.genericError(e)),
+
         ));
       }
     }
@@ -157,11 +159,11 @@ class _AprovacaoCompraScreenState extends State<AprovacaoCompraScreen>
     final result = await showDialog<String>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Solicitar Aprovação'),
+        title: const Text(GridTexts.requestApproval),
         content: TextField(
           controller: pedidoIdCtrl,
           decoration: const InputDecoration(
-            labelText: 'ID do Pedido de Compra',
+            labelText: GridTexts.purchaseOrderRequestId,
             border: OutlineInputBorder(),
           ),
           keyboardType: TextInputType.number,
@@ -173,7 +175,7 @@ class _AprovacaoCompraScreenState extends State<AprovacaoCompraScreen>
           ),
           ElevatedButton(
             onPressed: () => Navigator.pop(ctx, pedidoIdCtrl.text.trim()),
-            child: const Text('Solicitar'),
+            child: const Text(GridTexts.requestApproval),
           ),
         ],
       ),
@@ -187,8 +189,8 @@ class _AprovacaoCompraScreenState extends State<AprovacaoCompraScreen>
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
           backgroundColor: res.isSuccess ? GridColors.success : GridColors.error,
           content: Text(res.isSuccess
-              ? 'Aprovação solicitada com sucesso!'
-              : 'Erro (${res.statusCode})'),
+              ? GridTexts.purchaseApprovalRequested
+              : GridTexts.errorWithStatus(res.statusCode)),
         ));
         if (res.isSuccess) await _carregarFila();
       }
@@ -196,7 +198,8 @@ class _AprovacaoCompraScreenState extends State<AprovacaoCompraScreen>
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
           backgroundColor: GridColors.error,
-          content: Text('Erro: $e'),
+          content: Text(GridTexts.genericError(e)),
+
         ));
       }
     }
@@ -207,15 +210,15 @@ class _AprovacaoCompraScreenState extends State<AprovacaoCompraScreen>
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Aprovação de Compras'),
+        title: const Text(GridTexts.purchaseApprovalTitle),
         bottom: TabBar(
           controller: _tabCtrl,
           onTap: (i) {
             if (i == 0) _carregarFila();
           },
           tabs: const [
-            Tab(text: 'Fila de Aprovação'),
-            Tab(text: 'Detalhes do Pedido'),
+            Tab(text: GridTexts.approvalQueueTab),
+            Tab(text: GridTexts.orderDetailsTab),
           ],
         ),
       ),
@@ -239,7 +242,7 @@ class _AprovacaoCompraScreenState extends State<AprovacaoCompraScreen>
               ElevatedButton.icon(
                 onPressed: _solicitarAprovacao,
                 icon: const Icon(Icons.send, size: 18),
-                label: const Text('Solicitar Aprovação'),
+                label: const Text(GridTexts.requestApproval),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: GridColors.buttonBackground,
                   foregroundColor: GridColors.buttonText,
@@ -249,7 +252,7 @@ class _AprovacaoCompraScreenState extends State<AprovacaoCompraScreen>
               OutlinedButton.icon(
                 onPressed: _loadingFila ? null : _carregarFila,
                 icon: const Icon(Icons.refresh, size: 18),
-                label: const Text('Atualizar'),
+                label: const Text(GridTexts.refresh),
               ),
             ],
           ),
@@ -265,19 +268,19 @@ class _AprovacaoCompraScreenState extends State<AprovacaoCompraScreen>
       return const Center(child: CircularProgressIndicator());
     }
     if (_fila.isEmpty) {
-      return const Center(child: Text('Nenhuma aprovação pendente.'));
+      return const Center(child: Text(GridTexts.noPendingApproval));
     }
     return SingleChildScrollView(
       scrollDirection: Axis.vertical,
       child: DataTable(
         columnSpacing: 16,
         columns: const [
-          DataColumn(label: Text('Pedido')),
-          DataColumn(label: Text('Fornecedor')),
-          DataColumn(label: Text('Valor')),
-          DataColumn(label: Text('Solicitante')),
-          DataColumn(label: Text('Data')),
-          DataColumn(label: Text('Ações')),
+          DataColumn(label: Text(GridTexts.order)),
+          DataColumn(label: Text(GridTexts.supplier)),
+          DataColumn(label: Text(GridTexts.value)),
+          DataColumn(label: Text(GridTexts.requester)),
+          DataColumn(label: Text(GridTexts.date)),
+          DataColumn(label: Text(GridTexts.actions)),
         ],
         rows: _fila.map((item) {
           return DataRow(cells: [
@@ -294,13 +297,13 @@ class _AprovacaoCompraScreenState extends State<AprovacaoCompraScreen>
                 IconButton(
                   icon: const Icon(Icons.check_circle,
                       color: GridColors.success, size: 20),
-                  tooltip: 'Aprovar',
+                  tooltip: GridTexts.approve,
                   onPressed: () => _confirmarAcao(item, true),
                 ),
                 IconButton(
                   icon: const Icon(Icons.cancel,
                       color: GridColors.error, size: 20),
-                  tooltip: 'Reprovar',
+                  tooltip: GridTexts.reject,
                   onPressed: () => _confirmarAcao(item, false),
                 ),
               ],
@@ -323,7 +326,7 @@ class _AprovacaoCompraScreenState extends State<AprovacaoCompraScreen>
                 child: TextField(
                   controller: _pedidoIdCtrl,
                   decoration: const InputDecoration(
-                    labelText: 'Pedido de Compra ID',
+                    labelText: GridTexts.purchaseOrderId,
                     border: OutlineInputBorder(),
                     isDense: true,
                   ),
@@ -350,7 +353,7 @@ class _AprovacaoCompraScreenState extends State<AprovacaoCompraScreen>
       return const Center(child: CircularProgressIndicator());
     }
     if (_pedidoDetalhe == null) {
-      return const Center(child: Text('Informe um ID de pedido para buscar.'));
+      return const Center(child: Text(GridTexts.noOrderIdProvided));
     }
     final p = _pedidoDetalhe!;
     return SingleChildScrollView(
@@ -364,31 +367,31 @@ class _AprovacaoCompraScreenState extends State<AprovacaoCompraScreen>
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('Pedido #${p['id'] ?? p['numero'] ?? ''}',
+                  Text(GridTexts.purchaseOrderTitle('${p['id'] ?? p['numero'] ?? ''}'),
                       style: const TextStyle(
                           fontSize: 18, fontWeight: FontWeight.bold)),
                   const SizedBox(height: 8),
-                  _infoRow('Fornecedor', p['fornecedor']?.toString() ?? '-'),
-                  _infoRow('Valor Total',
+                  _infoRow(GridTexts.supplier, p['fornecedor']?.toString() ?? '-'),
+                  _infoRow(GridTexts.totalValue,
                       _formatValor(p['valor'] ?? p['totalGeral'])),
-                  _infoRow('Status', p['status']?.toString() ?? '-'),
-                  _infoRow('Data', _formatData(p['data'] ?? p['dataEmissao'])),
-                  _infoRow('Observação', p['observacao']?.toString() ?? '-'),
+                  _infoRow(GridTexts.status, p['status']?.toString() ?? '-'),
+                  _infoRow(GridTexts.date, _formatData(p['data'] ?? p['dataEmissao'])),
+                  _infoRow(GridTexts.notes, p['observacao']?.toString() ?? '-'),
                 ],
               ),
             ),
           ),
           const SizedBox(height: 16),
           if (p['itens'] is List && (p['itens'] as List).isNotEmpty) ...[
-            const Text('Itens do Pedido',
+            const Text(GridTexts.orderItems,
                 style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
             const SizedBox(height: 8),
             DataTable(
               columns: const [
-                DataColumn(label: Text('Produto')),
-                DataColumn(label: Text('Qtd')),
-                DataColumn(label: Text('Valor Unit.')),
-                DataColumn(label: Text('Total')),
+                DataColumn(label: Text(GridTexts.product)),
+                DataColumn(label: Text(GridTexts.quantityShort)),
+                DataColumn(label: Text(GridTexts.unitValue)),
+                DataColumn(label: Text(GridTexts.totalLabel)),
               ],
               rows: (p['itens'] as List).map((i) {
                 final item = Map<String, dynamic>.from(i);
@@ -426,7 +429,7 @@ class _AprovacaoCompraScreenState extends State<AprovacaoCompraScreen>
   String _formatValor(dynamic val) {
     if (val == null) return '';
     final num v = (val is num) ? val : double.tryParse(val.toString()) ?? 0;
-    return 'R\$ ${v.toStringAsFixed(2)}';
+    return '${GridTexts.currencySymbol} ${v.toStringAsFixed(2)}';
   }
 
   String _formatData(dynamic val) {
