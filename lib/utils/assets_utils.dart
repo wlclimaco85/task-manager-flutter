@@ -4,8 +4,9 @@ class AssetsUtils {
   AssetsUtils._();
   static const String _images = 'assets/images';
   static const String backgroundSVG = '$_images/background.svg';
-  static const String logoSVG = '$_images/logo.svg';
-  static const String logoJPG = logoSVG;
+  // Logo institucional Abraco Contabilidade
+  static const String logoJPG = 'assets/images/logo_contabilidade.jpg';
+  static const String logoSVG = 'assets/images/logo.svg';
 }
 
 showBase64Image(base64String) {

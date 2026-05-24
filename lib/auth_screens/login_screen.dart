@@ -1,10 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
-import 'dart:typed_data';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 import 'package:http/http.dart' as http;
 import 'package:url_launcher/url_launcher.dart';
 
@@ -494,59 +491,28 @@ class _LoginBanner extends StatelessWidget {
 }
 
 // -- Logo segura com fallback em caso de falha de renderização SVG --
-class _SafeLogoWidget extends StatefulWidget {
+/// Logo institucional da Abraço Contabilidade com fallback gracioso
+class _SafeLogoWidget extends StatelessWidget {
   final double size;
   const _SafeLogoWidget({required this.size});
 
   @override
-  State<_SafeLogoWidget> createState() => _SafeLogoWidgetState();
-}
-
-class _SafeLogoWidgetState extends State<_SafeLogoWidget> {
-  late Future<Uint8List> _svgFuture;
-
-  @override
-  void initState() {
-    super.initState();
-    _svgFuture = rootBundle
-        .load(AssetsUtils.logoSVG)
-        .then((data) => data.buffer.asUint8List());
-  }
-
-  @override
   Widget build(BuildContext context) {
-    return FutureBuilder<Uint8List>(
-      future: _svgFuture,
-      builder: (ctx, snapshot) {
-        if (snapshot.hasError) return _fallback();
-        if (!snapshot.hasData) {
-          return SizedBox(
-            height: widget.size,
-            width: widget.size,
-            child: const Center(
-              child: CircularProgressIndicator(
-                  color: GridColors.secondary, strokeWidth: 2),
-            ),
-          );
-        }
-        return SvgPicture.memory(
-          snapshot.data!,
-          height: widget.size,
-          width: widget.size,
-          fit: BoxFit.contain,
-          placeholderBuilder: (_) => _fallback(),
-        );
-      },
+    return Image.asset(
+      AssetsUtils.logoJPG,
+      height: size,
+      width: size,
+      fit: BoxFit.contain,
+      errorBuilder: (_, __, ___) => SizedBox(
+        height: size,
+        width: size,
+        child: const Center(
+          child: Icon(Icons.business_center,
+              color: GridColors.secondary, size: 40),
+        ),
+      ),
     );
   }
-
-  Widget _fallback() => SizedBox(
-        height: widget.size,
-        width: widget.size,
-        child: const Center(
-          child: Icon(Icons.business, color: GridColors.secondary, size: 40),
-        ),
-      );
 }
 
 // -- Grid de noticias (fundo verde clarinho) --
@@ -660,10 +626,8 @@ class _NoticiaCard extends StatelessWidget {
     final id = noticia['id'];
     final data = _formatDate(noticia['dtNoticia'] ?? noticia['dtImport']);
 
-    final bool temFoto = foto.isNotEmpty &&
-        foto.startsWith('http') &&
-        !foto.startsWith('data:image/gif');
-
+    // Tenta carregar imagem: por id (proxy backend) ou por URL direta
+    final String? imageUrl = _resolveImageUrl(foto, id);
     return InkWell(
       onTap: _abrirLink,
       borderRadius: BorderRadius.circular(8),
@@ -688,8 +652,8 @@ class _NoticiaCard extends StatelessWidget {
               SizedBox(
                 height: 150,
                 width: double.infinity,
-                child: temFoto
-                    ? Image.network(_imageUrl(foto, id),
+                child: imageUrl != null
+                    ? Image.network(imageUrl,
                         width: double.infinity,
                         fit: BoxFit.cover,
                         loadingBuilder: (_, child, p) =>
@@ -742,19 +706,26 @@ class _NoticiaCard extends StatelessWidget {
     );
   }
 
-  String _imageUrl(String url, dynamic id) {
-    if (kIsWeb && id != null) {
-      return '${ApiLinks.baseUrl}/api/public/noticias/foto/$id';
-    }
-    return _proxyUrl(url);
-  }
+  /// Retorna a URL de imagem mais provável, ou null se não houver nenhuma opção.
+  /// Prioridade: proxy por id (web) → URL direta (desktop) → proxy por URL (web)
+  String? _resolveImageUrl(String foto, dynamic id) {
+    final temFotoValida = foto.isNotEmpty &&
+        foto.startsWith('http') &&
+        !foto.startsWith('data:image/gif');
 
-  String _proxyUrl(String url) {
-    if (!kIsWeb) return url;
-    if (url.isEmpty || url.startsWith('data:')) return url;
-    if (url.contains(ApiLinks.baseUrl)) return url;
-    if (!url.startsWith('http')) return url;
-    return '${ApiLinks.baseUrl}/api/public/imagens/noticia?url=${Uri.encodeComponent(url)}';
+    if (kIsWeb) {
+      // No web, usa sempre o proxy do backend para evitar CORS
+      if (id != null) {
+        return '${ApiLinks.baseUrl}/api/public/noticias/foto/$id';
+      }
+      if (temFotoValida) {
+        return '${ApiLinks.baseUrl}/api/public/imagens/noticia?url=${Uri.encodeComponent(foto)}';
+      }
+      return null;
+    }
+    // No desktop: tenta URL direta (sem dependência de proxy)
+    if (temFotoValida) return foto;
+    return null;
   }
 
   String _formatDate(dynamic dt) {
