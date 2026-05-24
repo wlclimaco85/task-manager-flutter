@@ -121,7 +121,7 @@ class _AprovacaoPagamentoScreenState extends State<AprovacaoPagamentoScreen>
               backgroundColor: isAprovar ? GridColors.success : GridColors.error,
               foregroundColor: GridColors.buttonText,
             ),
-            child: Text(isAprovar ? 'Aprovar' : 'Reprovar'),
+            child: Text(isAprovar ? GridTexts.approve : GridTexts.reject),
           ),
         ],
       ),
@@ -141,8 +141,8 @@ class _AprovacaoPagamentoScreenState extends State<AprovacaoPagamentoScreen>
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
           backgroundColor: res.isSuccess ? GridColors.success : GridColors.error,
           content: Text(res.isSuccess
-              ? 'Pagamento ${isAprovar ? "aprovado" : "reprovado"} com sucesso!'
-              : 'Erro (${res.statusCode})'),
+              ? GridTexts.paymentApprovalDone(isAprovar)
+              : GridTexts.errorWithStatus(res.statusCode)),
         ));
         if (res.isSuccess) await _carregarFila();
       }
@@ -150,7 +150,7 @@ class _AprovacaoPagamentoScreenState extends State<AprovacaoPagamentoScreen>
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
           backgroundColor: GridColors.error,
-          content: Text('Erro: $e'),
+          content: Text(GridTexts.genericError(e.toString())),
         ));
       }
     }
@@ -161,15 +161,15 @@ class _AprovacaoPagamentoScreenState extends State<AprovacaoPagamentoScreen>
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Aprovação de Pagamentos'),
+        title: const Text(GridTexts.paymentApprovalTitle),
         bottom: TabBar(
           controller: _tabCtrl,
           onTap: (i) {
             if (i == 0) _carregarFila();
           },
           tabs: const [
-            Tab(text: 'Fila'),
-            Tab(text: 'Histórico'),
+            Tab(text: GridTexts.queue),
+            Tab(text: GridTexts.history),
           ],
         ),
       ),
@@ -189,7 +189,7 @@ class _AprovacaoPagamentoScreenState extends State<AprovacaoPagamentoScreen>
     }
     if (_fila.isEmpty) {
       return const Center(
-        child: Text('Nenhuma aprovação pendente.'),
+        child: Text(GridTexts.noPendingApproval),
       );
     }
     return SingleChildScrollView(
@@ -197,11 +197,11 @@ class _AprovacaoPagamentoScreenState extends State<AprovacaoPagamentoScreen>
       child: DataTable(
         columnSpacing: 16,
         columns: const [
-          DataColumn(label: Text('Conta')),
-          DataColumn(label: Text('Valor')),
-          DataColumn(label: Text('Solicitante')),
-          DataColumn(label: Text('Data')),
-          DataColumn(label: Text('Ações')),
+          DataColumn(label: Text(GridTexts.account)),
+          DataColumn(label: Text(GridTexts.value)),
+          DataColumn(label: Text(GridTexts.requester)),
+          DataColumn(label: Text(GridTexts.date)),
+          DataColumn(label: Text(GridTexts.actions)),
         ],
         rows: _fila.map((item) {
           return DataRow(cells: [
@@ -217,13 +217,13 @@ class _AprovacaoPagamentoScreenState extends State<AprovacaoPagamentoScreen>
                 IconButton(
                   icon: const Icon(Icons.check_circle,
                       color: GridColors.success, size: 20),
-                  tooltip: 'Aprovar',
+                  tooltip: GridTexts.approve,
                   onPressed: () => _confirmarAcao(item, true),
                 ),
                 IconButton(
                   icon: const Icon(Icons.cancel,
                       color: GridColors.error, size: 20),
-                  tooltip: 'Reprovar',
+                  tooltip: GridTexts.reject,
                   onPressed: () => _confirmarAcao(item, false),
                 ),
               ],
@@ -246,7 +246,7 @@ class _AprovacaoPagamentoScreenState extends State<AprovacaoPagamentoScreen>
                 child: TextField(
                   controller: _contaPagarIdCtrl,
                   decoration: const InputDecoration(
-                    labelText: 'Conta a Pagar ID',
+                    labelText: GridTexts.accountPayableId,
                     border: OutlineInputBorder(),
                     isDense: true,
                   ),
@@ -273,18 +273,18 @@ class _AprovacaoPagamentoScreenState extends State<AprovacaoPagamentoScreen>
       return const Center(child: CircularProgressIndicator());
     }
     if (_historico.isEmpty) {
-      return const Center(child: Text('Nenhum histórico encontrado.'));
+      return const Center(child: Text(GridTexts.noHistoryFoundShort));
     }
     return SingleChildScrollView(
       scrollDirection: Axis.vertical,
       child: DataTable(
         columnSpacing: 16,
         columns: const [
-          DataColumn(label: Text('Status')),
-          DataColumn(label: Text('Valor')),
-          DataColumn(label: Text('Solicitante')),
-          DataColumn(label: Text('Data')),
-          DataColumn(label: Text('Justificativa')),
+          DataColumn(label: Text(GridTexts.status)),
+          DataColumn(label: Text(GridTexts.value)),
+          DataColumn(label: Text(GridTexts.requester)),
+          DataColumn(label: Text(GridTexts.date)),
+          DataColumn(label: Text(GridTexts.justification)),
         ],
         rows: _historico.map((h) {
           return DataRow(cells: [
