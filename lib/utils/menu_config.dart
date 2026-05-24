@@ -62,17 +62,11 @@ class MenuGroup {
   /// 108:ManifestacaoDestinatario
   /// 109:Nfse
   /// 110:ReservaEstoque
-  /// 111:Multi-deposito
-  /// 112:RateioFinanceiro
-  /// 113:AprovacaoPagamentos
-  /// 114:BaixaAutomaticaRecebiveis
-  /// 115:Cobranca
-  /// 116:Renegociacao
-  /// 117:Dre
-  /// 118:TabelaPreco
-  /// 119:AprovacaoCompra
-  /// 120:Devolucoes
-  /// 121:CancelamentoCCe
+  /// 111:CancelamentoCCe
+  /// 112:RegraFiscal (Windows only)
+  /// 113:ContaContabil 114:LancamentoContabil 115:Balancete
+  /// 116:FechamentoPeriodo 117:AiDashboard 118:AiAssistente
+  /// 129:TradingCorretora
 
 class MenuConfig {
   MenuConfig._();
@@ -528,6 +522,43 @@ class MenuConfig {
         ],
     ),
     MenuGroup(
+      id: 'contabil',
+      label: 'Contábil',
+      icon: FontAwesomeIcons.fileInvoiceDollar,
+      items: [
+        MenuItem(
+            id: 'conta_contabil',
+            label: 'Plano de Contas',
+            icon: FontAwesomeIcons.tableList,
+            screenIndex: 113),
+        MenuItem(
+            id: 'lancamento_contabil',
+            label: 'Lançamentos',
+            icon: FontAwesomeIcons.penToSquare,
+            screenIndex: 114),
+        MenuItem(
+            id: 'balancete',
+            label: 'Balancete / Balanço',
+            icon: FontAwesomeIcons.scaleBalanced,
+            screenIndex: 115),
+        MenuItem(
+            id: 'fechamento_periodo',
+            label: 'Fechamento de Período',
+            icon: FontAwesomeIcons.lock,
+            screenIndex: 116),
+        MenuItem(
+            id: 'ai_dashboard',
+            label: 'Dashboard IA',
+            icon: FontAwesomeIcons.chartPie,
+            screenIndex: 117),
+        MenuItem(
+            id: 'ai_assistente',
+            label: 'Assistente IA',
+            icon: FontAwesomeIcons.robot,
+            screenIndex: 118),
+      ],
+    ),
+    MenuGroup(
       id: 'produtos',
       label: 'Produtos',
       icon: FontAwesomeIcons.box,
@@ -594,6 +625,11 @@ class MenuConfig {
             label: 'Operações Assistidas',
             icon: FontAwesomeIcons.arrowsLeftRight,
             screenIndex: 79),
+        MenuItem(
+            id: 'trading_corretora',
+            label: 'Configuração da Corretora',
+            icon: FontAwesomeIcons.gear,
+            screenIndex: 129),
         MenuItem(
             id: 'trading_backtest',
             label: 'Backtest',

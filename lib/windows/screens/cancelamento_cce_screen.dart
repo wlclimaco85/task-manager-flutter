@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../services/cancelamento_cce_caller.dart';
 import '../../utils/grid_colors.dart';
+import '../../utils/grid_texts.dart';
 
 class CancelamentoCceScreen extends StatefulWidget {
   const CancelamentoCceScreen({super.key});
@@ -30,7 +31,7 @@ class _CancelamentoCceScreenState extends State<CancelamentoCceScreen> {
   Future<void> _cancelar() async {
     final nfeId = _nfeIdController.text.trim();
     if (nfeId.isEmpty) {
-      _snack('Informe o ID da NF-e', error: true);
+      _snack(GridTexts.nfseIdRequired, error: true);
       return;
     }
 
@@ -50,7 +51,7 @@ class _CancelamentoCceScreenState extends State<CancelamentoCceScreen> {
     if (!mounted) return;
 
     setState(() => _processando = false);
-    _snack(result.success ? 'Cancelamento realizado com sucesso' : result.message ?? 'Erro ao cancelar',
+    _snack(result.success ? GridTexts.cancellationSuccess : result.message ?? GridTexts.cancellationError,
         error: !result.success);
     if (result.success) _carregarHistorico(nfeId);
   }
@@ -58,7 +59,7 @@ class _CancelamentoCceScreenState extends State<CancelamentoCceScreen> {
   Future<void> _enviarCce() async {
     final nfeId = _nfeIdController.text.trim();
     if (nfeId.isEmpty) {
-      _snack('Informe o ID da NF-e', error: true);
+      _snack(GridTexts.nfseIdRequired, error: true);
       return;
     }
 
@@ -79,7 +80,7 @@ class _CancelamentoCceScreenState extends State<CancelamentoCceScreen> {
     if (!mounted) return;
 
     setState(() => _processando = false);
-    _snack(result.success ? 'CC-e enviada com sucesso' : result.message ?? 'Erro ao enviar CC-e',
+    _snack(result.success ? GridTexts.cceSuccess : result.message ?? GridTexts.cceError,
         error: !result.success);
     if (result.success) _carregarHistorico(nfeId);
   }
@@ -137,14 +138,14 @@ class _CancelamentoCceScreenState extends State<CancelamentoCceScreen> {
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(ctx),
-              child: const Text('Cancelar'),
+              child: const Text(GridTexts.cancel),
             ),
             ElevatedButton(
               onPressed: () {
                 final text = controller.text.trim();
                 if (text.isEmpty) {
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Este campo é obrigatório'), backgroundColor: Colors.red),
+                    const SnackBar(content: Text(GridTexts.requiredField), backgroundColor: GridColors.error),
                   );
                   return;
                 }
@@ -152,9 +153,9 @@ class _CancelamentoCceScreenState extends State<CancelamentoCceScreen> {
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: GridColors.secondary,
-                foregroundColor: Colors.white,
+                foregroundColor: GridColors.textPrimary,
               ),
-              child: const Text('Confirmar'),
+              child: const Text(GridTexts.confirm),
             ),
           ],
         );
@@ -166,17 +167,17 @@ class _CancelamentoCceScreenState extends State<CancelamentoCceScreen> {
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(
       content: Text(msg),
-      backgroundColor: error ? Colors.red : Colors.green,
+      backgroundColor: error ? GridColors.error : GridColors.success,
     ));
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.grey[100],
+      backgroundColor: GridColors.pageBackground,
       appBar: AppBar(
         backgroundColor: GridColors.secondary,
-        foregroundColor: Colors.white,
+        foregroundColor: GridColors.textPrimary,
         title: const Text('Cancelamento e CC-e'),
         elevation: 0,
       ),
@@ -196,14 +197,14 @@ class _CancelamentoCceScreenState extends State<CancelamentoCceScreen> {
               ),
             if (_mensagem != null && _historico.isEmpty)
               Card(
-                color: Colors.red.shade50,
+                color: GridColors.errorLight,
                 child: Padding(
                   padding: const EdgeInsets.all(16),
                   child: Row(
                     children: [
-                      const Icon(Icons.error, color: Colors.red),
+                      const Icon(Icons.error, color: GridColors.error),
                       const SizedBox(width: 8),
-                      Expanded(child: Text(_mensagem!, style: TextStyle(color: Colors.red.shade900))),
+                      Expanded(child: Text(_mensagem!, style: TextStyle(color: GridColors.errorDark))),
                     ],
                   ),
                 ),
@@ -245,8 +246,8 @@ class _CancelamentoCceScreenState extends State<CancelamentoCceScreen> {
               children: [
                 ElevatedButton.icon(
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.red.shade700,
-                    foregroundColor: Colors.white,
+                    backgroundColor: GridColors.errorDark,
+                    foregroundColor: GridColors.textPrimary,
                     padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
                   ),
                   onPressed: _processando ? null : _cancelar,
@@ -255,8 +256,8 @@ class _CancelamentoCceScreenState extends State<CancelamentoCceScreen> {
                 ),
                 ElevatedButton.icon(
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.blue.shade700,
-                    foregroundColor: Colors.white,
+                    backgroundColor: GridColors.info,
+                    foregroundColor: GridColors.textPrimary,
                     padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
                   ),
                   onPressed: _processando ? null : _enviarCce,
@@ -266,7 +267,7 @@ class _CancelamentoCceScreenState extends State<CancelamentoCceScreen> {
                 ElevatedButton.icon(
                   style: ElevatedButton.styleFrom(
                     backgroundColor: GridColors.secondary,
-                    foregroundColor: Colors.white,
+                    foregroundColor: GridColors.textPrimary,
                     padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
                   ),
                   onPressed: _carregandoHistorico
@@ -276,10 +277,10 @@ class _CancelamentoCceScreenState extends State<CancelamentoCceScreen> {
                       ? const SizedBox(
                           width: 18,
                           height: 18,
-                          child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                          child: CircularProgressIndicator(strokeWidth: 2, color: GridColors.textPrimary),
                         )
                       : const Icon(Icons.history),
-                  label: Text(_carregandoHistorico ? 'Carregando...' : 'Carregar Histórico'),
+                  label: Text(_carregandoHistorico ? GridTexts.loading : GridTexts.loadHistory),
                 ),
               ],
             ),
@@ -301,14 +302,14 @@ class _CancelamentoCceScreenState extends State<CancelamentoCceScreen> {
 
     if (_historico.isEmpty) {
       return Card(
-        color: Colors.blue.shade50,
+        color: GridColors.secondaryLight,
         child: const Padding(
           padding: EdgeInsets.all(16),
           child: Row(
             children: [
-              Icon(Icons.info_outline, color: Colors.blue),
+              Icon(Icons.info_outline, color: GridColors.info),
               SizedBox(width: 8),
-              Text('Nenhum histórico encontrado. Informe o ID da NF-e e clique em "Carregar Histórico".'),
+              Text(GridTexts.noHistoryFound),
             ],
           ),
         ),
@@ -366,7 +367,7 @@ class _CancelamentoCceScreenState extends State<CancelamentoCceScreen> {
   Widget _buildTipoBadge(String tipo) {
     final isCancelamento = tipo.toUpperCase().contains('CANCEL') || tipo == 'Cancelamento';
     final isCce = tipo.toUpperCase().contains('CCE') || tipo.toUpperCase().contains('CARTA') || tipo == 'CC-e';
-    final cor = isCancelamento ? Colors.red : (isCce ? Colors.blue : Colors.grey);
+    final cor = isCancelamento ? GridColors.error : (isCce ? GridColors.info : GridColors.neutral);
     final label = isCancelamento ? 'Cancelamento' : (isCce ? 'CC-e' : tipo);
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
@@ -384,7 +385,7 @@ class _CancelamentoCceScreenState extends State<CancelamentoCceScreen> {
 
   Widget _buildStatusBadge(String status) {
     final sucesso = status.toUpperCase() == 'SUCESSO' || status.toUpperCase() == 'CONCLUIDO' || status.toUpperCase() == 'APROVADO';
-    final cor = sucesso ? Colors.green : Colors.orange;
+    final cor = sucesso ? GridColors.success : GridColors.warning;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
@@ -393,7 +394,7 @@ class _CancelamentoCceScreenState extends State<CancelamentoCceScreen> {
         border: Border.all(color: cor, width: 1),
       ),
       child: Text(
-        sucesso ? 'Sucesso' : status,
+        sucesso ? GridTexts.success : status,
         style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: cor),
       ),
     );

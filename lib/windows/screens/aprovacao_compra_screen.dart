@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import '../../constants/custom_colors.dart';
 import '../../services/aprovacao_compra_caller.dart';
+import '../../utils/grid_texts.dart';
 
 class AprovacaoCompraScreen extends StatefulWidget {
   const AprovacaoCompraScreen({super.key});
@@ -103,7 +105,7 @@ class _AprovacaoCompraScreenState extends State<AprovacaoCompraScreen>
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('Cancelar'),
+            child: const Text(GridTexts.cancel),
           ),
           ElevatedButton(
             onPressed: () {
@@ -111,8 +113,8 @@ class _AprovacaoCompraScreenState extends State<AprovacaoCompraScreen>
               Navigator.pop(ctx, justifCtrl.text.trim());
             },
             style: ElevatedButton.styleFrom(
-              backgroundColor: isAprovar ? Colors.green : Colors.red,
-              foregroundColor: Colors.white,
+              backgroundColor: isAprovar ? GridColors.success : GridColors.error,
+              foregroundColor: GridColors.buttonText,
             ),
             child: Text(isAprovar ? 'Aprovar' : 'Reprovar'),
           ),
@@ -132,7 +134,7 @@ class _AprovacaoCompraScreenState extends State<AprovacaoCompraScreen>
               aprovacaoId: id, justificativa: result);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          backgroundColor: res.isSuccess ? Colors.green : Colors.red,
+          backgroundColor: res.isSuccess ? GridColors.success : GridColors.error,
           content: Text(res.isSuccess
               ? 'Compra ${isAprovar ? "aprovada" : "reprovada"} com sucesso!'
               : 'Erro (${res.statusCode})'),
@@ -142,7 +144,7 @@ class _AprovacaoCompraScreenState extends State<AprovacaoCompraScreen>
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          backgroundColor: Colors.red,
+          backgroundColor: GridColors.error,
           content: Text('Erro: $e'),
         ));
       }
@@ -167,7 +169,7 @@ class _AprovacaoCompraScreenState extends State<AprovacaoCompraScreen>
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('Cancelar'),
+            child: const Text(GridTexts.cancel),
           ),
           ElevatedButton(
             onPressed: () => Navigator.pop(ctx, pedidoIdCtrl.text.trim()),
@@ -183,7 +185,7 @@ class _AprovacaoCompraScreenState extends State<AprovacaoCompraScreen>
       final res = await AprovacaoCompraCaller.solicitar(result);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          backgroundColor: res.isSuccess ? Colors.green : Colors.red,
+          backgroundColor: res.isSuccess ? GridColors.success : GridColors.error,
           content: Text(res.isSuccess
               ? 'Aprovação solicitada com sucesso!'
               : 'Erro (${res.statusCode})'),
@@ -193,7 +195,7 @@ class _AprovacaoCompraScreenState extends State<AprovacaoCompraScreen>
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          backgroundColor: Colors.red,
+          backgroundColor: GridColors.error,
           content: Text('Erro: $e'),
         ));
       }
@@ -239,8 +241,8 @@ class _AprovacaoCompraScreenState extends State<AprovacaoCompraScreen>
                 icon: const Icon(Icons.send, size: 18),
                 label: const Text('Solicitar Aprovação'),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.blue,
-                  foregroundColor: Colors.white,
+                  backgroundColor: GridColors.buttonBackground,
+                  foregroundColor: GridColors.buttonText,
                 ),
               ),
               const SizedBox(width: 12),
@@ -291,13 +293,13 @@ class _AprovacaoCompraScreenState extends State<AprovacaoCompraScreen>
               children: [
                 IconButton(
                   icon: const Icon(Icons.check_circle,
-                      color: Colors.green, size: 20),
+                      color: GridColors.success, size: 20),
                   tooltip: 'Aprovar',
                   onPressed: () => _confirmarAcao(item, true),
                 ),
                 IconButton(
                   icon: const Icon(Icons.cancel,
-                      color: Colors.red, size: 20),
+                      color: GridColors.error, size: 20),
                   tooltip: 'Reprovar',
                   onPressed: () => _confirmarAcao(item, false),
                 ),
@@ -332,7 +334,7 @@ class _AprovacaoCompraScreenState extends State<AprovacaoCompraScreen>
               ElevatedButton.icon(
                 onPressed: _loadingPedido ? null : _carregarPedido,
                 icon: const Icon(Icons.search, size: 18),
-                label: const Text('Buscar'),
+                label: const Text(GridTexts.search),
               ),
             ],
           ),

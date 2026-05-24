@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../utils/grid_colors.dart';
 
 // ─── NfeItem ──────────────────────────────────────────────────────────────────
 /// Modelo de item da NF-e.
@@ -227,8 +228,8 @@ class Nfe {
 
   Color get statusColor {
     switch (status?.toUpperCase()) {
-      case 'AUTORIZADA': return const Color(0xFF2E7D32);
-      case 'CANCELADA':  return const Color(0xFFD32F2F);
+      case 'AUTORIZADA': return GridColors.success;
+      case 'CANCELADA':  return GridColors.error;
       case 'REJEITADA':  return const Color(0xFFE65100);
       case 'PENDENTE':   return const Color(0xFFF9A825);
       default:           return const Color(0xFF757575);

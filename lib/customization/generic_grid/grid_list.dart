@@ -15,6 +15,7 @@ import '../../../widgets/user_banners.dart';
 import 'grid_helpers.dart';
 import 'grid_models.dart';
 import 'grid_theme.dart';
+import '../../utils/grid_texts.dart';
 
 class GridListScreen extends StatefulWidget {
   final String title;
@@ -956,7 +957,7 @@ class _GridListScreenState extends State<GridListScreen> {
         actions: [
           TextButton(
               onPressed: () => Navigator.pop(ctx),
-              child: const Text('Cancelar')),
+              child: const Text(GridTexts.cancel)),
           ElevatedButton(
             onPressed: () async {
               Navigator.pop(ctx);
@@ -1034,7 +1035,7 @@ class _GridListScreenState extends State<GridListScreen> {
           actions: [
             TextButton(
                 onPressed: () => Navigator.pop(ctx),
-                child: const Text('Cancelar')),
+                child: const Text(GridTexts.cancel)),
             ElevatedButton(
               onPressed: () {
                 if (mounted) setState(() {});
@@ -1061,7 +1062,7 @@ class _GridListScreenState extends State<GridListScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Cancelar'),
+            child: const Text(GridTexts.cancel),
           ),
           ElevatedButton(
             onPressed: () => Navigator.pop(ctx, true),
@@ -1151,10 +1152,10 @@ class GridFormManager {
         actions: [
           TextButton(
               onPressed: () => Navigator.pop(ctx),
-              child: const Text('Cancelar')),
+              child: const Text(GridTexts.cancel)),
           ElevatedButton(
             onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('Salvar'),
+            child: const Text(GridTexts.save),
           ),
         ],
       ),

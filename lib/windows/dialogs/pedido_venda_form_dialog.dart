@@ -3,6 +3,7 @@ import '../../../services/network_caller.dart';
 import '../../../utils/api_links.dart';
 import '../../../constants/custom_colors.dart';
 import '../../../services/pedido_venda_service.dart';
+import '../../../utils/grid_texts.dart';
 
 class PedidoVendaFormDialog extends StatefulWidget {
   final Map<String, dynamic>? item;
@@ -325,14 +326,14 @@ class _PedidoVendaFormDialogState extends State<PedidoVendaFormDialog> {
                   children: [
                     TextButton(
                       onPressed: () => Navigator.pop(context),
-                      child: const Text('Cancelar'),
+                      child: const Text(GridTexts.cancel),
                     ),
                     const SizedBox(width: 12),
                     ElevatedButton(
                       onPressed: _save,
                       child: _isLoading
                           ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))
-                          : const Text('Salvar'),
+                          : const Text(GridTexts.save),
                     ),
                   ],
                 ),

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../services/fornecedor_service.dart';
 import '../../services/network_caller.dart';
+import '../../../utils/grid_texts.dart';
 
 class FornecedorFormDialog extends StatefulWidget {
   final Map<String, dynamic>? item;
@@ -213,14 +214,14 @@ class _FornecedorFormDialogState extends State<FornecedorFormDialog> {
                   children: [
                     TextButton(
                       onPressed: () => Navigator.pop(context),
-                      child: const Text('Cancelar'),
+                      child: const Text(GridTexts.cancel),
                     ),
                     const SizedBox(width: 12),
                     ElevatedButton(
                       onPressed: _save,
                       child: _isLoading
                           ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))
-                          : const Text('Salvar'),
+                          : const Text(GridTexts.save),
                     ),
                   ],
                 ),

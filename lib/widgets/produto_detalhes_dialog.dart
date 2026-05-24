@@ -5,8 +5,8 @@ import 'package:http/http.dart' as http;
 
 import '../models/auth_utility.dart';
 import '../utils/api_links.dart';
+import '../utils/grid_colors.dart';
 import '../utils/tenant_context.dart';
-import 'generic_grid_windows_screen.dart' show GridColors;
 
 /// H4: Dialog que exibe detalhes de um produto via GET /api/produto/{id}/detalhes
 class ProdutoDetalhesDialog extends StatefulWidget {
@@ -40,7 +40,8 @@ class _ProdutoDetalhesDialogState extends State<ProdutoDetalhesDialog> {
     }
 
     try {
-      final url = TenantContext.applyToUrl('${ApiLinks.baseUrl}/api/produto/$id/detalhes');
+      final url = TenantContext.applyToUrl(
+          '${ApiLinks.baseUrl}/api/produto/$id/detalhes');
       final token = AuthUtility.userInfo?.token;
       final resp = await http.get(
         Uri.parse(url),
@@ -55,7 +56,8 @@ class _ProdutoDetalhesDialogState extends State<ProdutoDetalhesDialog> {
       if (resp.statusCode == 200) {
         final body = jsonDecode(resp.body);
         setState(() {
-          _detalhes = body is Map<String, dynamic> ? body : (body['data'] ?? {});
+          _detalhes =
+              body is Map<String, dynamic> ? body : (body['data'] ?? {});
           _loading = false;
         });
       } else {
@@ -166,17 +168,26 @@ class _ProdutoDetalhesDialogState extends State<ProdutoDetalhesDialog> {
   Widget _buildInfoGrid() {
     final d = _detalhes ?? {};
     final campos = <_CampoDetalhe>[
-      _CampoDetalhe('Código', d['codigo']?.toString() ?? d['codProd']?.toString()),
+      _CampoDetalhe(
+          'Código', d['codigo']?.toString() ?? d['codProd']?.toString()),
       _CampoDetalhe('Nome', d['nome']?.toString() ?? d['xProd']?.toString()),
       _CampoDetalhe('Descrição', d['descricao']?.toString()),
-      _CampoDetalhe('Preço Venda', _formatarMoeda(d['preco'] ?? d['precoVenda'])),
+      _CampoDetalhe(
+          'Preço Venda', _formatarMoeda(d['preco'] ?? d['precoVenda'])),
       _CampoDetalhe('Custo', _formatarMoeda(d['custo'] ?? d['precoCusto'])),
       _CampoDetalhe('Estoque', d['estoque']?.toString()),
       _CampoDetalhe('Estoque Mínimo', d['estoqueMinimo']?.toString()),
       _CampoDetalhe('Vendas no Mês', d['vendasMes']?.toString()),
-      _CampoDetalhe('Unidade', d['unidade']?.toString() ?? d['uCom']?.toString()),
+      _CampoDetalhe(
+          'Unidade', d['unidade']?.toString() ?? d['uCom']?.toString()),
       _CampoDetalhe('Categoria', _extrairNome(d['categoria'])),
-      _CampoDetalhe('Ativo', d['ativo'] == true ? 'Sim' : d['ativo'] == false ? 'Não' : null),
+      _CampoDetalhe(
+          'Ativo',
+          d['ativo'] == true
+              ? 'Sim'
+              : d['ativo'] == false
+                  ? 'Não'
+                  : null),
     ].where((c) => c.valor != null && c.valor!.isNotEmpty).toList();
 
     return Column(

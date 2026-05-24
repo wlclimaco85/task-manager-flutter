@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import '../../../utils/grid_colors.dart';
 import 'package:http/http.dart' as http;
 import '../../../../models/auth_utility.dart';
 import '../../../../utils/api_links.dart';
@@ -46,7 +47,7 @@ class _WebFuncionarioDetailScreenState extends State<WindowsFuncionarioDetailScr
         iconTheme: const IconThemeData(color: Colors.white),
         bottom: TabBar(
           controller: _tabController,
-          indicatorColor: const Color(0xFF4CAF50),
+          indicatorColor: GridColors.success,
           labelColor: Colors.white,
           unselectedLabelColor: Colors.white38,
           tabs: const [
@@ -139,7 +140,7 @@ class _PontoTabState extends State<_PontoTab> {
       );
       if (resp.statusCode == 200) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Ponto $tipo registrado!'), backgroundColor: const Color(0xFF4CAF50)),
+          SnackBar(content: Text('Ponto $tipo registrado!'), backgroundColor: GridColors.success),
         );
         _carregar();
       } else {
@@ -174,14 +175,14 @@ class _PontoTabState extends State<_PontoTab> {
                 onPressed: () => _registrarPonto('ENTRADA'),
                 icon: const Icon(Icons.login, size: 16),
                 label: const Text('Entrada'),
-                style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF2E7D32)),
+                style: ElevatedButton.styleFrom(backgroundColor: GridColors.success),
               ),
               const SizedBox(width: 12),
               ElevatedButton.icon(
                 onPressed: () => _registrarPonto('SAIDA'),
                 icon: const Icon(Icons.logout, size: 16),
                 label: const Text('Saída'),
-                style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFC62828)),
+                style: ElevatedButton.styleFrom(backgroundColor: GridColors.error),
               ),
               const Spacer(),
               // Filtro de período
@@ -201,7 +202,7 @@ class _PontoTabState extends State<_PontoTab> {
             ],
           ),
           const SizedBox(height: 12),
-          if (_loading) const Center(child: CircularProgressIndicator(color: Color(0xFF4CAF50))),
+          if (_loading) const Center(child: CircularProgressIndicator(color: GridColors.success)),
           if (_erro != null) Text(_erro!, style: const TextStyle(color: Colors.red)),
           if (!_loading && _erro == null)
             Expanded(
@@ -220,17 +221,17 @@ class _PontoTabState extends State<_PontoTab> {
                             color: const Color(0xFF1A1D27),
                             borderRadius: BorderRadius.circular(8),
                             border: Border(left: BorderSide(
-                              color: isEntrada ? const Color(0xFF4CAF50) : const Color(0xFFEF5350),
+                              color: isEntrada ? GridColors.success : const Color(0xFFEF5350),
                               width: 3,
                             )),
                           ),
                           child: Row(
                             children: [
                               Icon(isEntrada ? Icons.login : Icons.logout,
-                                  color: isEntrada ? const Color(0xFF4CAF50) : const Color(0xFFEF5350), size: 18),
+                                  color: isEntrada ? GridColors.success : const Color(0xFFEF5350), size: 18),
                               const SizedBox(width: 10),
                               Text(tipo, style: TextStyle(
-                                color: isEntrada ? const Color(0xFF4CAF50) : const Color(0xFFEF5350),
+                                color: isEntrada ? GridColors.success : const Color(0xFFEF5350),
                                 fontWeight: FontWeight.bold, fontSize: 13)),
                               const SizedBox(width: 16),
                               Text(p['dataHoraRegistro']?.toString().replaceFirst('T', ' ').substring(0, 16) ?? '',
@@ -308,7 +309,7 @@ class _AcertoTabState extends State<_AcertoTab> {
       });
       if (resp.statusCode == 200) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('PDF gerado! (download via browser)'), backgroundColor: Color(0xFF4CAF50)),
+          const SnackBar(content: Text('PDF gerado! (download via browser)'), backgroundColor: GridColors.success),
         );
       }
     } catch (e) {
@@ -354,7 +355,7 @@ class _AcertoTabState extends State<_AcertoTab> {
             ],
           ),
           const SizedBox(height: 16),
-          if (_loading) const Center(child: CircularProgressIndicator(color: Color(0xFF4CAF50))),
+          if (_loading) const Center(child: CircularProgressIndicator(color: GridColors.success)),
           if (_erro != null) Text(_erro!, style: const TextStyle(color: Colors.red)),
           if (_acerto != null) ...[
             // Cards de resumo
@@ -383,11 +384,11 @@ class _ResumoCards extends StatelessWidget {
       spacing: 12, runSpacing: 12,
       children: [
         _Card('Dias Trabalhados', acerto['totalDiasTrabalhados']?.toString() ?? '0', Icons.calendar_today, const Color(0xFF1565C0)),
-        _Card('Horas Trabalhadas', '${acerto['totalHorasTrabalhadas']}h', Icons.access_time, const Color(0xFF2E7D32)),
+        _Card('Horas Trabalhadas', '${acerto['totalHorasTrabalhadas']}h', Icons.access_time, GridColors.success),
         _Card('Horas Extras', '${acerto['totalHorasExtras']}h', Icons.add_alarm, const Color(0xFF6A1B9A)),
-        _Card('Horas Falta', '${acerto['totalHorasFalta']}h', Icons.alarm_off, const Color(0xFFC62828)),
+        _Card('Horas Falta', '${acerto['totalHorasFalta']}h', Icons.alarm_off, GridColors.error),
         _Card('Banco de Horas', '${acerto['saldoBancoHoras']}h', Icons.account_balance,
-            saldo >= 0 ? const Color(0xFF2E7D32) : const Color(0xFFC62828)),
+            saldo >= 0 ? GridColors.success : GridColors.error),
       ],
     );
   }
@@ -480,7 +481,7 @@ class _TabelaDetalhes extends StatelessWidget {
         _cell(d['diaSemana']?.toString().substring(0, 3) ?? '', fimSemana ? Colors.white38 : Colors.white54),
         _cell(batidas, Colors.white70),
         _cell('${d['horasTrabalhadas']}h', Colors.white),
-        _cell('${d['horasExtras']}h', extra > 0 ? const Color(0xFF4CAF50) : Colors.white38),
+        _cell('${d['horasExtras']}h', extra > 0 ? GridColors.success : Colors.white38),
         _cell('${d['horasFalta']}h', falta > 0 ? const Color(0xFFEF5350) : Colors.white38),
       ],
     );

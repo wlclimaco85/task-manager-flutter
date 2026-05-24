@@ -4,9 +4,81 @@ import '../../utils/api_links.dart';
 import '../../utils/tenant_context.dart';
 import 'trading_models.dart';
 
+String _extractErrorMessage(http.Response response, String fallback) {
+  if (response.body.isNotEmpty) {
+    try {
+      final decoded = jsonDecode(response.body);
+      if (decoded is Map<String, dynamic>) {
+        final message = decoded['message'] ?? decoded['error'] ?? decoded['mensagem'];
+        if (message != null && message.toString().trim().isNotEmpty) {
+          return message.toString();
+        }
+      }
+    } catch (_) {}
+  }
+  return '$fallback: ${response.statusCode}';
+}
+
+List<dynamic> _decodeListBody(String body, {List<String> keys = const []}) {
+  final decoded = jsonDecode(body);
+  if (decoded is List<dynamic>) return decoded;
+  if (decoded is Map<String, dynamic>) {
+    for (final key in keys) {
+      final value = decoded[key];
+      if (value is List<dynamic>) return value;
+    }
+  }
+  throw const FormatException('Resposta da API não está no formato esperado.');
+}
+
 /// Repositório de trading — sinais, oportunidades, watchlist e alertas.
 class TradingRepository {
   Map<String, String> get headers => TenantContext.jsonHeaders;
+
+  // ── Configuração da Corretora ─────────────────────────────────────────────
+
+  Future<TradingBrokerConfig?> fetchBrokerConfig() async {
+    final response = await http.get(
+      Uri.parse(ApiLinks.tradingBrokerConfig),
+      headers: headers,
+    );
+    if (response.statusCode == 404) return null;
+    if (response.statusCode != 200) {
+      throw Exception(_extractErrorMessage(
+          response, 'Erro ao buscar configuração da corretora'));
+    }
+    return TradingBrokerConfig.fromJson(
+        jsonDecode(response.body) as Map<String, dynamic>);
+  }
+
+  Future<TradingBrokerConfig> saveBrokerConfig({
+    required String brokerLogin,
+    required String accountId,
+    required String ambientePadrao,
+    required bool ativo,
+    String? brokerPassword,
+  }) async {
+    final body = <String, dynamic>{
+      'brokerLogin': brokerLogin,
+      'accountId': int.parse(accountId),
+      'ambientePadrao': ambientePadrao,
+      'ativo': ativo,
+      if (brokerPassword != null && brokerPassword.isNotEmpty)
+        'brokerPassword': brokerPassword,
+    };
+
+    final response = await http.put(
+      Uri.parse(ApiLinks.tradingBrokerConfig),
+      headers: headers,
+      body: jsonEncode(body),
+    );
+    if (response.statusCode != 200) {
+      throw Exception(_extractErrorMessage(
+          response, 'Erro ao salvar configuração da corretora'));
+    }
+    return TradingBrokerConfig.fromJson(
+        jsonDecode(response.body) as Map<String, dynamic>);
+  }
 
   // ── Sinais ────────────────────────────────────────────────────────────────
 
@@ -18,7 +90,7 @@ class TradingRepository {
     if (response.statusCode != 200) {
       throw Exception('Erro ao buscar sinais: ${response.statusCode}');
     }
-    final List<dynamic> data = jsonDecode(response.body) as List<dynamic>;
+    final data = _decodeListBody(response.body, keys: const ['signals', 'data']);
     return data
         .map((e) => TradingSignal.fromJson(e as Map<String, dynamic>))
         .toList();
@@ -34,7 +106,8 @@ class TradingRepository {
     if (response.statusCode != 200) {
       throw Exception('Erro ao buscar oportunidades: ${response.statusCode}');
     }
-    final List<dynamic> data = jsonDecode(response.body) as List<dynamic>;
+    final data =
+        _decodeListBody(response.body, keys: const ['opportunities', 'data']);
     return data
         .map((e) => Opportunity.fromJson(e as Map<String, dynamic>))
         .toList();
@@ -50,7 +123,7 @@ class TradingRepository {
     if (response.statusCode != 200) {
       throw Exception('Erro ao analisar watchlist: ${response.statusCode}');
     }
-    final List<dynamic> data = jsonDecode(response.body) as List<dynamic>;
+    final data = _decodeListBody(response.body, keys: const ['signals', 'data']);
     return data
         .map((e) => TradingSignal.fromJson(e as Map<String, dynamic>))
         .toList();
@@ -169,19 +242,25 @@ class TradingRepository {
     required String assetSymbol,
     required String direcao,
     required double quantidade,
+    required int accountId,
     double? stopLoss,
     double? takeProfit,
     String ambiente = 'TESTE',
     String? signalId,
+    String? brokerLogin,
+    String? brokerPassword,
   }) async {
     final body = <String, dynamic>{
       'assetSymbol': assetSymbol,
       'direcao': direcao,
       'quantidade': quantidade,
+      'accountId': accountId,
       'ambiente': ambiente,
       if (stopLoss != null) 'stopLoss': stopLoss,
       if (takeProfit != null) 'takeProfit': takeProfit,
       if (signalId != null) 'signalId': signalId,
+      if (brokerLogin != null && brokerLogin.isNotEmpty) 'brokerLogin': brokerLogin,
+      if (brokerPassword != null && brokerPassword.isNotEmpty) 'brokerPassword': brokerPassword,
     };
 
     final response = await http.post(
@@ -190,7 +269,7 @@ class TradingRepository {
       body: jsonEncode(body),
     );
     if (response.statusCode != 200 && response.statusCode != 201) {
-      throw Exception('Erro ao enviar operação: ${response.statusCode}');
+      throw Exception(_extractErrorMessage(response, 'Erro ao enviar operação'));
     }
     return OperacaoAssistida.fromJson(
         jsonDecode(response.body) as Map<String, dynamic>);

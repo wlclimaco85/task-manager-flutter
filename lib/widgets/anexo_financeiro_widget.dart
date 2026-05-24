@@ -5,6 +5,7 @@ import 'dart:io';
 
 import '../models/anexo_financeiro_model.dart';
 import '../services/anexo_financeiro_service.dart';
+import '../utils/grid_texts.dart';
 
 class AnexoFinanceiroWidget extends StatefulWidget {
   final int lancamentoId;
@@ -90,11 +91,11 @@ class _AnexoFinanceiroWidgetState extends State<AnexoFinanceiroWidget> {
     final confirm = await showDialog<bool>(
       context: context,
       builder: (_) => AlertDialog(
-        title: const Text('Remover anexo'),
+        title: const Text(GridTexts.removeAttachment),
         content: Text('Remover "${anexo.fileName}"?'),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancelar')),
-          TextButton(onPressed: () => Navigator.pop(context, true), child: const Text('Remover', style: TextStyle(color: Colors.red))),
+          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text(GridTexts.cancel)),
+          TextButton(onPressed: () => Navigator.pop(context, true), child: const Text(GridTexts.remove, style: TextStyle(color: Colors.red))),
         ],
       ),
     );
@@ -120,12 +121,12 @@ class _AnexoFinanceiroWidgetState extends State<AnexoFinanceiroWidget> {
       children: [
         Row(
           children: [
-            const Text('Comprovantes', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+            const Text(GridTexts.attachments, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
             const Spacer(),
             TextButton.icon(
               onPressed: _loading ? null : _upload,
               icon: const Icon(Icons.attach_file, size: 18),
-              label: const Text('Anexar'),
+              label: const Text(GridTexts.attach),
             ),
           ],
         ),

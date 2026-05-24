@@ -1,12 +1,14 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import '../../utils/grid_colors.dart';
 import 'package:intl/intl.dart';
 import '../../../models/auth_utility.dart';
 import '../../../utils/api_links.dart';
 import '../../../utils/tenant_context.dart';
+import '../../utils/grid_texts.dart';
 
-const _primary = Color(0xFF93070A);
-const _green   = Color(0xFF005826);
+const _primary = GridColors.primary;
+const _green   = GridColors.secondary;
 const _bg      = Color(0xFFF5F5F5);
 const _white   = Colors.white;
 
@@ -66,7 +68,7 @@ class _WebPontoSolicitacaoScreenState extends State<WebPontoSolicitacaoScreen> {
           ),
         ])),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancelar')),
+          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text(GridTexts.cancel)),
           ElevatedButton(
             onPressed: () async {
               if (dataSelecionada == null || motivoCtrl.text.isEmpty) return;

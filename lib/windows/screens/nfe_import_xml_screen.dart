@@ -2,14 +2,15 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 
 import '../../../services/nfe_xml_import_caller.dart';
-import '../../../widgets/generic_grid_windows_screen.dart' show GridColors;
+import '../../../utils/grid_colors.dart';
 import '../../../widgets/nfe_xml_preview_widget.dart';
 
 class WindowsNfeImportXmlScreen extends StatefulWidget {
   const WindowsNfeImportXmlScreen({super.key});
 
   @override
-  State<WindowsNfeImportXmlScreen> createState() => _WindowsNfeImportXmlScreenState();
+  State<WindowsNfeImportXmlScreen> createState() =>
+      _WindowsNfeImportXmlScreenState();
 }
 
 class _WindowsNfeImportXmlScreenState extends State<WindowsNfeImportXmlScreen> {
@@ -85,7 +86,8 @@ class _WindowsNfeImportXmlScreenState extends State<WindowsNfeImportXmlScreen> {
     setState(() {
       _confirmando = false;
       _sucesso = result.success;
-      _mensagem = result.success ? 'XML NF-e importado com sucesso!' : result.message;
+      _mensagem =
+          result.success ? 'XML NF-e importado com sucesso!' : result.message;
     });
   }
 
@@ -189,17 +191,22 @@ class _WindowsNfeImportXmlScreenState extends State<WindowsNfeImportXmlScreen> {
                   style: ElevatedButton.styleFrom(
                     backgroundColor: GridColors.secondary,
                     foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 14),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 28, vertical: 14),
                   ),
-                  onPressed: (_arquivoXml != null && !_carregando) ? _carregarPreview : null,
+                  onPressed: (_arquivoXml != null && !_carregando)
+                      ? _carregarPreview
+                      : null,
                   icon: _carregando
                       ? const SizedBox(
                           width: 18,
                           height: 18,
-                          child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                          child: CircularProgressIndicator(
+                              strokeWidth: 2, color: Colors.white),
                         )
                       : const Icon(Icons.visibility),
-                  label: Text(_carregando ? 'Carregando...' : 'Carregar e Visualizar'),
+                  label: Text(
+                      _carregando ? 'Carregando...' : 'Carregar e Visualizar'),
                 ),
                 const SizedBox(width: 12),
                 OutlinedButton.icon(
@@ -223,7 +230,9 @@ class _WindowsNfeImportXmlScreenState extends State<WindowsNfeImportXmlScreen> {
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         decoration: BoxDecoration(
           border: Border.all(
-            color: _arquivoXml != null ? GridColors.secondary : Colors.grey.shade300,
+            color: _arquivoXml != null
+                ? GridColors.secondary
+                : Colors.grey.shade300,
             width: 1.5,
           ),
           borderRadius: BorderRadius.circular(8),
@@ -246,7 +255,9 @@ class _WindowsNfeImportXmlScreenState extends State<WindowsNfeImportXmlScreen> {
                     : 'Clique para selecionar arquivo XML',
                 style: TextStyle(
                   fontSize: 13,
-                  color: _arquivoXml != null ? Colors.black87 : Colors.grey.shade600,
+                  color: _arquivoXml != null
+                      ? Colors.black87
+                      : Colors.grey.shade600,
                 ),
                 overflow: TextOverflow.ellipsis,
               ),
@@ -281,11 +292,15 @@ class _WindowsNfeImportXmlScreenState extends State<WindowsNfeImportXmlScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    _sucesso == true ? 'Importação Concluída' : 'Erro na Importação',
+                    _sucesso == true
+                        ? 'Importação Concluída'
+                        : 'Erro na Importação',
                     style: TextStyle(
                       fontWeight: FontWeight.bold,
                       fontSize: 15,
-                      color: _sucesso == true ? Colors.green.shade800 : Colors.red.shade800,
+                      color: _sucesso == true
+                          ? Colors.green.shade800
+                          : Colors.red.shade800,
                     ),
                   ),
                   if (_mensagem != null) ...[
@@ -294,7 +309,9 @@ class _WindowsNfeImportXmlScreenState extends State<WindowsNfeImportXmlScreen> {
                       _mensagem!,
                       style: TextStyle(
                         fontSize: 13,
-                        color: _sucesso == true ? Colors.green.shade900 : Colors.red.shade900,
+                        color: _sucesso == true
+                            ? Colors.green.shade900
+                            : Colors.red.shade900,
                       ),
                     ),
                   ],

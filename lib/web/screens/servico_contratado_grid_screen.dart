@@ -25,7 +25,9 @@ class WebServicoContratadoGridScreen extends StatelessWidget {
           dropdownDisplayField: 'nome',
           enabled: true,
           isInForm: true,
-          dropdownFutureBuilder: () => DropdownHelpers.parceiros(),
+          // Cascade: filtra parceiros pela empresa selecionada no form
+          dependsOnField: 'empresa',
+          dropdownFutureBuilderWithParam: DropdownHelpers.parceirosPorEmpresa,
         ),
         const FieldConfigWindows(
           label: 'Valor',

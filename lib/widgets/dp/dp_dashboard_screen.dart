@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
+import '../../utils/grid_colors.dart';
 
 import '../../utils/api_links.dart';
 import '../../utils/tenant_context.dart';
@@ -113,7 +114,7 @@ class _KpiTile extends StatelessWidget {
           padding: const EdgeInsets.all(16),
           child: Row(
             children: [
-              Icon(icon, color: const Color(0xFF93070A)),
+              Icon(icon, color: GridColors.primary),
               const SizedBox(width: 12),
               Expanded(
                 child: Column(

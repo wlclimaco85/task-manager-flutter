@@ -10,6 +10,7 @@ import 'grid_models.dart';
 import 'grid_network.dart';
 import 'grid_theme.dart';
 import 'grid_utils.dart';
+import '../../utils/grid_texts.dart';
 
 class GenericMobileGridScreen extends StatefulWidget {
   final String title;
@@ -537,7 +538,7 @@ class _GenericMobileGridScreenState extends State<GenericMobileGridScreen> {
           actions: [
             TextButton(
                 onPressed: () => Navigator.pop(ctx),
-                child: const Text('Cancelar')),
+                child: const Text(GridTexts.cancel)),
             ElevatedButton(
               onPressed: () async {
                 await _saveFieldPreferences();
@@ -591,7 +592,7 @@ class _GenericMobileGridScreenState extends State<GenericMobileGridScreen> {
         actions: [
           TextButton(
               onPressed: () => Navigator.pop(ctx, false),
-              child: const Text('Cancelar')),
+              child: const Text(GridTexts.cancel)),
           ElevatedButton(
               onPressed: () => Navigator.pop(ctx, true),
               child: Text(confirmText)),

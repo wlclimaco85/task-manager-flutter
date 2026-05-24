@@ -91,9 +91,10 @@ class _WindowsContaReceberGridScreenState extends State<WindowsContaReceberGridS
       );
       request.headers.addAll(TenantContext.headers);
       request.files.add(
-        http.MultipartFile.fromBytes('file', bytes, filename: file.name),
+        http.MultipartFile.fromBytes('arquivo', bytes, filename: file.name),
       );
       if (TenantContext.empresaId != null) {
+        request.fields['empId'] = TenantContext.empresaId.toString();
         request.fields['empresaId'] = TenantContext.empresaId.toString();
       }
 

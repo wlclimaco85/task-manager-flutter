@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../services/cancelamento_cce_caller.dart';
 import '../../utils/grid_colors.dart';
+import '../../utils/grid_texts.dart';
 
 class CancelamentoCceScreen extends StatefulWidget {
   const CancelamentoCceScreen({super.key});
@@ -137,7 +138,7 @@ class _CancelamentoCceScreenState extends State<CancelamentoCceScreen> {
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(ctx),
-              child: const Text('Cancelar'),
+              child: const Text(GridTexts.cancel),
             ),
             ElevatedButton(
               onPressed: () {

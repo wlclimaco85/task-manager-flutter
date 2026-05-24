@@ -1,10 +1,12 @@
 import 'dart:typed_data';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
+import '../../utils/grid_colors.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import '../../../models/auth_utility.dart';
 import '../../../utils/api_links.dart';
+import '../../../utils/grid_texts.dart';
 
 /// Tela de gerenciamento do certificado digital A1 da empresa.
 /// Permite upload do .pfx, visualização do status e remoção.
@@ -23,14 +25,15 @@ class CertificadoEmpresaScreen extends StatefulWidget {
             'Informe empresaId ou parceiroId');
 
   @override
-  State<CertificadoEmpresaScreen> createState() => _CertificadoEmpresaScreenState();
+  State<CertificadoEmpresaScreen> createState() =>
+      _CertificadoEmpresaScreenState();
 }
 
 class _CertificadoEmpresaScreenState extends State<CertificadoEmpresaScreen> {
-  static const _primary = Color(0xFF93070A);
-  static const _success = Color(0xFF2E7D32);
+  static const _primary = GridColors.primary;
+  static const _success = GridColors.success;
   static const _warning = Color(0xFFF57F17);
-  static const _error   = Color(0xFFD32F2F);
+  static const _error = GridColors.error;
 
   bool _loading = true;
   bool _uploading = false;
@@ -57,7 +60,9 @@ class _CertificadoEmpresaScreenState extends State<CertificadoEmpresaScreen> {
 
   // ── Carregar certificados da empresa ─────────────────────────────────────
   Future<void> _carregarCertificados() async {
-    setState(() { _loading = true; });
+    setState(() {
+      _loading = true;
+    });
     try {
       final token = AuthUtility.userInfo?.token;
       final param = widget.empresaId != null
@@ -65,17 +70,21 @@ class _CertificadoEmpresaScreenState extends State<CertificadoEmpresaScreen> {
           : 'parceiroId=${widget.parceiroId}';
       final resp = await http.get(
         Uri.parse('${ApiLinks.baseUrl}/api/certificados?$param'),
-        headers: { if (token != null) 'Authorization': 'Bearer $token' },
+        headers: {if (token != null) 'Authorization': 'Bearer $token'},
       );
       if (resp.statusCode == 200) {
         final body = jsonDecode(resp.body);
         final dados = body['data']?['dados'] as List? ?? [];
         setState(() {
-          _certificados = dados.map((e) => Map<String, dynamic>.from(e)).toList();
+          _certificados =
+              dados.map((e) => Map<String, dynamic>.from(e)).toList();
         });
       }
-    } catch (_) {} finally {
-      setState(() { _loading = false; });
+    } catch (_) {
+    } finally {
+      setState(() {
+        _loading = false;
+      });
     }
   }
 
@@ -98,15 +107,23 @@ class _CertificadoEmpresaScreenState extends State<CertificadoEmpresaScreen> {
   // ── Fazer upload do certificado ───────────────────────────────────────────
   Future<void> _fazerUpload() async {
     if (_arquivoSelecionado == null) {
-      setState(() { _erroUpload = 'Selecione o arquivo .pfx do certificado.'; });
+      setState(() {
+        _erroUpload = 'Selecione o arquivo .pfx do certificado.';
+      });
       return;
     }
     if (_senhaCtrl.text.trim().isEmpty) {
-      setState(() { _erroUpload = 'Informe a senha do certificado.'; });
+      setState(() {
+        _erroUpload = GridTexts.certificatePasswordRequired;
+      });
       return;
     }
 
-    setState(() { _uploading = true; _erroUpload = null; _sucessoUpload = null; });
+    setState(() {
+      _uploading = true;
+      _erroUpload = null;
+      _sucessoUpload = null;
+    });
 
     try {
       final token = AuthUtility.userInfo?.token;
@@ -152,9 +169,13 @@ class _CertificadoEmpresaScreenState extends State<CertificadoEmpresaScreen> {
         });
       }
     } catch (e) {
-      setState(() { _erroUpload = 'Erro de conexão: $e'; });
+      setState(() {
+        _erroUpload = 'Erro de conexão: $e';
+      });
     } finally {
-      setState(() { _uploading = false; });
+      setState(() {
+        _uploading = false;
+      });
     }
   }
 
@@ -164,9 +185,12 @@ class _CertificadoEmpresaScreenState extends State<CertificadoEmpresaScreen> {
       context: context,
       builder: (_) => AlertDialog(
         title: const Text('Remover certificado'),
-        content: const Text('Tem certeza? A empresa não poderá emitir NF-e sem um certificado ativo.'),
+        content: const Text(
+            'Tem certeza? A empresa não poderá emitir NF-e sem um certificado ativo.'),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancelar')),
+          TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: const Text(GridTexts.cancel)),
           ElevatedButton(
             style: ElevatedButton.styleFrom(backgroundColor: _error),
             onPressed: () => Navigator.pop(context, true),
@@ -180,7 +204,7 @@ class _CertificadoEmpresaScreenState extends State<CertificadoEmpresaScreen> {
     final token = AuthUtility.userInfo?.token;
     await http.delete(
       Uri.parse('${ApiLinks.baseUrl}/api/certificados/$id'),
-      headers: { if (token != null) 'Authorization': 'Bearer $token' },
+      headers: {if (token != null) 'Authorization': 'Bearer $token'},
     );
     await _carregarCertificados();
   }
@@ -196,8 +220,11 @@ class _CertificadoEmpresaScreenState extends State<CertificadoEmpresaScreen> {
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text('Certificado Digital', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-            Text(widget.empresaNome, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.normal)),
+            const Text('Certificado Digital',
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+            Text(widget.empresaNome,
+                style: const TextStyle(
+                    fontSize: 12, fontWeight: FontWeight.normal)),
           ],
         ),
         actions: [
@@ -243,12 +270,17 @@ class _CertificadoEmpresaScreenState extends State<CertificadoEmpresaScreen> {
                     obscureText: !_senhaVisivel,
                     decoration: InputDecoration(
                       labelText: 'Senha do certificado *',
-                      prefixIcon: const Icon(Icons.lock_outline, color: _primary),
+                      prefixIcon:
+                          const Icon(Icons.lock_outline, color: _primary),
                       suffixIcon: IconButton(
-                        icon: Icon(_senhaVisivel ? Icons.visibility_off : Icons.visibility),
-                        onPressed: () => setState(() => _senhaVisivel = !_senhaVisivel),
+                        icon: Icon(_senhaVisivel
+                            ? Icons.visibility_off
+                            : Icons.visibility),
+                        onPressed: () =>
+                            setState(() => _senhaVisivel = !_senhaVisivel),
                       ),
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                      border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8)),
                       focusedBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(8),
                         borderSide: const BorderSide(color: _primary, width: 2),
@@ -261,7 +293,8 @@ class _CertificadoEmpresaScreenState extends State<CertificadoEmpresaScreen> {
                   if (_erroUpload != null)
                     _buildAlert(_erroUpload!, _error, Icons.error_outline),
                   if (_sucessoUpload != null)
-                    _buildAlert(_sucessoUpload!, _success, Icons.check_circle_outline),
+                    _buildAlert(
+                        _sucessoUpload!, _success, Icons.check_circle_outline),
 
                   const SizedBox(height: 8),
 
@@ -273,13 +306,19 @@ class _CertificadoEmpresaScreenState extends State<CertificadoEmpresaScreen> {
                       style: ElevatedButton.styleFrom(
                         backgroundColor: _primary,
                         foregroundColor: Colors.white,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8)),
                       ),
                       onPressed: _uploading ? null : _fazerUpload,
                       icon: _uploading
-                          ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                          ? const SizedBox(
+                              width: 18,
+                              height: 18,
+                              child: CircularProgressIndicator(
+                                  color: Colors.white, strokeWidth: 2))
                           : const Icon(Icons.upload_file),
-                      label: Text(_uploading ? 'Enviando...' : 'Enviar Certificado'),
+                      label: Text(
+                          _uploading ? 'Enviando...' : 'Enviar Certificado'),
                     ),
                   ),
 
@@ -292,9 +331,12 @@ class _CertificadoEmpresaScreenState extends State<CertificadoEmpresaScreen> {
   }
 
   Widget _sectionTitle(String title) => Text(
-    title,
-    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF1a1a1a)),
-  );
+        title,
+        style: const TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.bold,
+            color: Color(0xFF1a1a1a)),
+      );
 
   Widget _buildFileSelector() {
     return InkWell(
@@ -310,12 +352,16 @@ class _CertificadoEmpresaScreenState extends State<CertificadoEmpresaScreen> {
             style: BorderStyle.solid,
           ),
           borderRadius: BorderRadius.circular(8),
-          color: _arquivoSelecionado != null ? const Color(0xFFFFF3E0) : Colors.grey[50],
+          color: _arquivoSelecionado != null
+              ? const Color(0xFFFFF3E0)
+              : Colors.grey[50],
         ),
         child: Row(
           children: [
             Icon(
-              _arquivoSelecionado != null ? Icons.description : Icons.upload_file,
+              _arquivoSelecionado != null
+                  ? Icons.description
+                  : Icons.upload_file,
               color: _arquivoSelecionado != null ? _primary : Colors.grey[500],
               size: 32,
             ),
@@ -330,7 +376,9 @@ class _CertificadoEmpresaScreenState extends State<CertificadoEmpresaScreen> {
                         : 'Clique para selecionar o arquivo .pfx ou .p12',
                     style: TextStyle(
                       fontWeight: FontWeight.w600,
-                      color: _arquivoSelecionado != null ? _primary : Colors.grey[600],
+                      color: _arquivoSelecionado != null
+                          ? _primary
+                          : Colors.grey[600],
                     ),
                   ),
                   if (_arquivoSelecionado != null)
@@ -371,19 +419,26 @@ class _CertificadoEmpresaScreenState extends State<CertificadoEmpresaScreen> {
     String statusLabel;
     switch (status) {
       case 'VENCIDO':
-        statusColor = _error; statusIcon = Icons.cancel; statusLabel = 'VENCIDO';
+        statusColor = _error;
+        statusIcon = Icons.cancel;
+        statusLabel = 'VENCIDO';
         break;
       case 'VENCE_EM_BREVE':
-        statusColor = _warning; statusIcon = Icons.warning_amber; statusLabel = 'Vence em $dias dias';
+        statusColor = _warning;
+        statusIcon = Icons.warning_amber;
+        statusLabel = 'Vence em $dias dias';
         break;
       default:
-        statusColor = _success; statusIcon = Icons.verified; statusLabel = 'Válido — $dias dias restantes';
+        statusColor = _success;
+        statusIcon = Icons.verified;
+        statusLabel = 'Válido — $dias dias restantes';
     }
 
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
-        border: Border.all(color: statusColor.withValues(alpha: 0.4), width: 1.5),
+        border:
+            Border.all(color: statusColor.withValues(alpha: 0.4), width: 1.5),
         borderRadius: BorderRadius.circular(10),
         color: statusColor.withValues(alpha: 0.04),
       ),
@@ -395,12 +450,20 @@ class _CertificadoEmpresaScreenState extends State<CertificadoEmpresaScreen> {
         ),
         title: Row(
           children: [
-            Expanded(child: Text(nome, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14))),
+            Expanded(
+                child: Text(nome,
+                    style: const TextStyle(
+                        fontWeight: FontWeight.w600, fontSize: 14))),
             if (ativo)
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                decoration: BoxDecoration(color: _success, borderRadius: BorderRadius.circular(12)),
-                child: const Text('ATIVO', style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold)),
+                decoration: BoxDecoration(
+                    color: _success, borderRadius: BorderRadius.circular(12)),
+                child: const Text('ATIVO',
+                    style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 10,
+                        fontWeight: FontWeight.bold)),
               ),
           ],
         ),
@@ -411,10 +474,15 @@ class _CertificadoEmpresaScreenState extends State<CertificadoEmpresaScreen> {
             Row(children: [
               Icon(statusIcon, size: 14, color: statusColor),
               const SizedBox(width: 4),
-              Text(statusLabel, style: TextStyle(color: statusColor, fontSize: 12, fontWeight: FontWeight.w600)),
+              Text(statusLabel,
+                  style: TextStyle(
+                      color: statusColor,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600)),
             ]),
             const SizedBox(height: 2),
-            Text('Validade: $validade${cnpj.isNotEmpty ? '  |  CNPJ: $cnpj' : ''}',
+            Text(
+                'Validade: $validade${cnpj.isNotEmpty ? '  |  CNPJ: $cnpj' : ''}',
                 style: TextStyle(fontSize: 12, color: Colors.grey[600])),
           ],
         ),
@@ -428,50 +496,56 @@ class _CertificadoEmpresaScreenState extends State<CertificadoEmpresaScreen> {
   }
 
   Widget _buildAlert(String msg, Color color, IconData icon) => Container(
-    margin: const EdgeInsets.only(bottom: 12),
-    padding: const EdgeInsets.all(12),
-    decoration: BoxDecoration(
-      color: color.withValues(alpha: 0.08),
-      border: Border.all(color: color.withValues(alpha: 0.4)),
-      borderRadius: BorderRadius.circular(8),
-    ),
-    child: Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Icon(icon, color: color, size: 20),
-        const SizedBox(width: 10),
-        Expanded(child: Text(msg, style: TextStyle(color: color, fontSize: 13))),
-      ],
-    ),
-  );
+        margin: const EdgeInsets.only(bottom: 12),
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: color.withValues(alpha: 0.08),
+          border: Border.all(color: color.withValues(alpha: 0.4)),
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Icon(icon, color: color, size: 20),
+            const SizedBox(width: 10),
+            Expanded(
+                child: Text(msg, style: TextStyle(color: color, fontSize: 13))),
+          ],
+        ),
+      );
 
   Widget _buildInfoBox() => Container(
-    padding: const EdgeInsets.all(16),
-    decoration: BoxDecoration(
-      color: Colors.blue[50],
-      borderRadius: BorderRadius.circular(8),
-      border: Border.all(color: Colors.blue[200]!),
-    ),
-    child: Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(children: [
-          Icon(Icons.info_outline, color: Colors.blue[700], size: 18),
-          const SizedBox(width: 8),
-          Text('Sobre o Certificado Digital', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.blue[700])),
-        ]),
-        const SizedBox(height: 8),
-        ...[
-          '• O certificado A1 é um arquivo .pfx ou .p12 protegido por senha.',
-          '• Ele é necessário para assinar e enviar NF-e à SEFAZ.',
-          '• A data de validade é extraída automaticamente do arquivo.',
-          '• Você receberá alertas quando o certificado estiver próximo do vencimento.',
-          '• Ao enviar um novo certificado, o anterior é desativado automaticamente.',
-        ].map((t) => Padding(
-          padding: const EdgeInsets.only(bottom: 4),
-          child: Text(t, style: TextStyle(fontSize: 12, color: Colors.blue[800])),
-        )),
-      ],
-    ),
-  );
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Colors.blue[50],
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: Colors.blue[200]!),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(children: [
+              Icon(Icons.info_outline, color: Colors.blue[700], size: 18),
+              const SizedBox(width: 8),
+              Text('Sobre o Certificado Digital',
+                  style: TextStyle(
+                      fontWeight: FontWeight.bold, color: Colors.blue[700])),
+            ]),
+            const SizedBox(height: 8),
+            ...[
+              '• O certificado A1 é um arquivo .pfx ou .p12 protegido por senha.',
+              '• Ele é necessário para assinar e enviar NF-e à SEFAZ.',
+              '• A data de validade é extraída automaticamente do arquivo.',
+              '• Você receberá alertas quando o certificado estiver próximo do vencimento.',
+              '• Ao enviar um novo certificado, o anterior é desativado automaticamente.',
+            ].map((t) => Padding(
+                  padding: const EdgeInsets.only(bottom: 4),
+                  child: Text(
+                    t,
+                    style: TextStyle(fontSize: 12, color: Colors.blue[900]),
+                  ),
+                )),
+          ],
+        ),
+      );
 }

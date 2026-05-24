@@ -1,35 +1,9 @@
 import 'package:flutter/material.dart';
+import '../../utils/grid_colors.dart';
+import '../../utils/grid_texts.dart';
 import '../../../models/role_model.dart';
 import '../../services/role_caller.dart';
 
-// Cores centralizadas para todo o componente
-class GridColors {
-  static const Color primary = Color(0xFF93070A);
-  static const Color primaryDark = Color(0xFF6A0507);
-  static const Color primaryLight = Color(0xFFB84042);
-  static const Color secondary = Color(0xFF005826);
-  static const Color secondaryLight = Color(0xFF2E7D32);
-  static const Color secondaryDark = Color(0xFF003D1A);
-  static const Color textPrimary = Color(0xFFFFFFFF);
-  static const Color textSecondary = Color(0xFF000000);
-  static const Color link = Color(0xFFFF0000);
-  static const Color inputBackground = Color(0xFFFFFFFF);
-  static const Color inputBorder = Color(0xFF93070A);
-  static const Color buttonBackground = Color(0xFF93070A);
-  static const Color buttonText = Color(0xFFFFFFFF);
-  static const Color background = Color(0xFF005826);
-  static const Color card = Color(0xFFFFFFFF);
-  static const Color error = Color(0xFFD32F2F);
-  static const Color warning = Color(0xFFFFA000);
-  static const Color success = Color(0xFF2E7D32);
-  static const Color info = Color(0xFF1976D2);
-  static const Color divider = Color(0xFFBDBDBD);
-  static const Color filterBackground = Color(0xFFEFEFEF);
-  static const Color hover = Color(0x1A000000);
-  static const Color selectedRow = Color(0xFFE3F2FD);
-  static const Color dialogBackground = Color(0xFFFFFFFF);
-  static const Color shadow = Color(0x26000000);
-}
 
 class RoleDialog extends StatefulWidget {
   final int loginId;
@@ -71,7 +45,7 @@ class _RoleDialogState extends State<RoleDialog> {
     if (_selectedRole == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Selecione uma role'),
+          content: Text(GridTexts.roleSelectRequired),
           backgroundColor: GridColors.error,
         ),
       );
@@ -87,7 +61,7 @@ class _RoleDialogState extends State<RoleDialog> {
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Erro ao associar role: $e'),
+          content: Text('${GridTexts.roleAssociateErrorPrefix} $e'),
           backgroundColor: GridColors.error,
         ),
       );
@@ -106,7 +80,7 @@ class _RoleDialogState extends State<RoleDialog> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             const Text(
-              'Associar Role',
+              GridTexts.roleDialogTitle,
               style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
@@ -121,7 +95,7 @@ class _RoleDialogState extends State<RoleDialog> {
             else
               DropdownButtonFormField<Role>(
                 decoration: const InputDecoration(
-                  labelText: 'Role',
+                  labelText: GridTexts.roleFieldLabel,
                   labelStyle: TextStyle(color: GridColors.inputBorder),
                   enabledBorder: OutlineInputBorder(
                     borderSide: BorderSide(color: GridColors.inputBorder),
@@ -152,7 +126,7 @@ class _RoleDialogState extends State<RoleDialog> {
                     Navigator.of(context).pop(false);
                   },
                   child: const Text(
-                    'Cancelar',
+                    GridTexts.cancel,
                     style: TextStyle(color: GridColors.textSecondary),
                   ),
                 ),
@@ -163,7 +137,7 @@ class _RoleDialogState extends State<RoleDialog> {
                     backgroundColor: GridColors.buttonBackground,
                   ),
                   child: const Text(
-                    'Associar',
+                    GridTexts.roleAssociateAction,
                     style: TextStyle(color: GridColors.buttonText),
                   ),
                 ),

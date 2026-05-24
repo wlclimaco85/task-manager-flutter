@@ -5,6 +5,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../services/nfce_provider.dart';
 import '../../../services/nfce_service.dart';
+import '../../../utils/grid_colors.dart';
 
 /// Tela de modo offline / contingência.
 /// Salva vendas localmente quando a SEFAZ está indisponível e permite
@@ -84,9 +85,8 @@ class _NfceContingenciaScreenState extends State<NfceContingenciaScreen> {
     try {
       final prefs = await SharedPreferences.getInstance();
       final raw = prefs.getStringList(_storageKey) ?? [];
-      final pendentes = raw
-          .map((s) => jsonDecode(s) as Map<String, dynamic>)
-          .toList();
+      final pendentes =
+          raw.map((s) => jsonDecode(s) as Map<String, dynamic>).toList();
 
       final naoEnviadas = <String>[];
       var enviadas = 0;
@@ -113,11 +113,14 @@ class _NfceContingenciaScreenState extends State<NfceContingenciaScreen> {
           naoEnviadas.add(
             jsonEncode({
               ...registro,
-              'timestamp': registro['timestamp'] ?? DateTime.now().toIso8601String(),
+              'timestamp':
+                  registro['timestamp'] ?? DateTime.now().toIso8601String(),
               'motivo': resultado.motivoRejeicao ?? registro['motivo'],
               'epecStatus': resultado.isContingencia
                   ? 'PENDENTE_BACKEND'
-                  : (resultado.statusSefaz.isEmpty ? 'PENDENTE_BACKEND' : resultado.statusSefaz),
+                  : (resultado.statusSefaz.isEmpty
+                      ? 'PENDENTE_BACKEND'
+                      : resultado.statusSefaz),
               'venda': payloadVenda,
             }),
           );
@@ -182,7 +185,8 @@ class _NfceContingenciaScreenState extends State<NfceContingenciaScreen> {
         final preco = (item['precoUnitario'] ?? 0) as num;
         final quantidade = (item['quantidade'] ?? 0) as num;
         final desconto = (item['desconto'] ?? 0) as num;
-        total += (preco.toDouble() * quantidade.toDouble()) - desconto.toDouble();
+        total +=
+            (preco.toDouble() * quantidade.toDouble()) - desconto.toDouble();
       }
     }
     final descontoGeral = (payload?['desconto'] as num?)?.toDouble() ?? 0;
@@ -299,7 +303,7 @@ class _NfceContingenciaScreenState extends State<NfceContingenciaScreen> {
                       : const Icon(Icons.sync),
                   label: const Text('Regularizar'),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF005826),
+                    backgroundColor: GridColors.secondary,
                     foregroundColor: Colors.white,
                   ),
                   onPressed: _regularizando ? null : _regularizar,
@@ -317,32 +321,40 @@ class _NfceContingenciaScreenState extends State<NfceContingenciaScreen> {
                     )
                   : ListView.separated(
                       itemCount: _vendasPendentes.length,
-                      separatorBuilder: (context, index) => const SizedBox(height: 8),
+                      separatorBuilder: (context, index) =>
+                          const SizedBox(height: 8),
                       itemBuilder: (_, i) {
                         final v = _vendasPendentes[i];
                         final ts = v['timestamp'] as String? ?? '';
                         final itens = _contarItens(v);
                         final total = _calcularTotal(v);
-                        final status = v['epecStatus']?.toString() ?? 'PENDENTE_BACKEND';
+                        final status =
+                            v['epecStatus']?.toString() ?? 'PENDENTE_BACKEND';
                         final motivo = v['motivo']?.toString();
 
                         return Card(
                           child: ListTile(
                             leading: CircleAvatar(
-                              backgroundColor: _statusColor(status).withValues(alpha: 0.12),
-                              child: Icon(Icons.receipt_long, color: _statusColor(status)),
+                              backgroundColor:
+                                  _statusColor(status).withValues(alpha: 0.12),
+                              child: Icon(Icons.receipt_long,
+                                  color: _statusColor(status)),
                             ),
-                            title: Text('Venda com $itens item(ns) • R\$ ${total.toStringAsFixed(2)}'),
+                            title: Text(
+                                'Venda com $itens item(ns) • R\$ ${total.toStringAsFixed(2)}'),
                             subtitle: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 if (ts.isNotEmpty)
-                                  Text(ts.substring(0, 16).replaceAll('T', ' ')),
+                                  Text(
+                                      ts.substring(0, 16).replaceAll('T', ' ')),
                                 const SizedBox(height: 4),
                                 Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 8, vertical: 4),
                                   decoration: BoxDecoration(
-                                    color: _statusColor(status).withValues(alpha: 0.12),
+                                    color: _statusColor(status)
+                                        .withValues(alpha: 0.12),
                                     borderRadius: BorderRadius.circular(999),
                                   ),
                                   child: Text(
@@ -358,7 +370,8 @@ class _NfceContingenciaScreenState extends State<NfceContingenciaScreen> {
                                   const SizedBox(height: 6),
                                   Text(
                                     motivo,
-                                    style: const TextStyle(color: Colors.black54),
+                                    style:
+                                        const TextStyle(color: Colors.black54),
                                   ),
                                 ],
                               ],
@@ -375,7 +388,7 @@ class _NfceContingenciaScreenState extends State<NfceContingenciaScreen> {
                 icon: const Icon(Icons.add_shopping_cart),
                 label: const Text('Nova venda'),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF005826),
+                  backgroundColor: GridColors.secondary,
                   foregroundColor: Colors.white,
                   padding: const EdgeInsets.symmetric(vertical: 14),
                 ),

@@ -8,6 +8,7 @@ import '../../../models/login_model.dart';
 import '../../../utils/utils.dart';
 // ★ adicionando paleta de cores
 import '../../../utils/grid_colors.dart';
+import '../../utils/grid_texts.dart';
 
 class TicketFormBottomSheet extends StatefulWidget {
   final String sectorDescricao; // nome do setor vindo do chat
@@ -239,7 +240,7 @@ class _TicketFormBottomSheetState extends State<TicketFormBottomSheet> {
                       side: const BorderSide(color: GridColors.secondary), // ★
                       foregroundColor: GridColors.secondary, // ★
                     ),
-                    child: const Text('Cancelar'),
+                    child: const Text(GridTexts.cancel),
                   ),
                 ),
                 const SizedBox(width: 12),

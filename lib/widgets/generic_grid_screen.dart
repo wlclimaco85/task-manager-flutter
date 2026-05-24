@@ -10,6 +10,8 @@ import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../utils/grid_colors.dart';
+import '../utils/grid_texts.dart';
 import '../../../models/auth_utility.dart';
 import '../../../models/network_response.dart';
 import '../../../utils/api_links.dart';
@@ -21,38 +23,6 @@ import 'package:task_manager_flutter/services/tela_ajuda_service.dart';
 // ==============================================
 // ENUMS E CONFIGURAÇÕES
 // ==============================================
-
-// Cores centralizadas para todo o componente
-class GridColors {
-  static const Color primary = Color(0xFF93070A);
-  static const Color primaryDark = Color(0xFF6A0507);
-  static const Color primaryLight = Color(0xFFFFEDEE);
-  static const Color secondary = Color(0xFF005826);
-  static const Color secondaryLight = Color(0xFF2E7D32);
-  static const Color secondaryDark = Color(0xFF003D1A);
-  static const Color textPrimary = Color(0xFFFFFFFF);
-  static const Color textSecondary = Color(0xFF1F2933);
-  static const Color link = Color(0xFF93070A);
-  static const Color inputBackground = Color(0xFFFFFFFF);
-  static const Color inputBorder = Color(0xFFC8D0C6);
-  static const Color buttonBackground = Color(0xFF93070A);
-  static const Color buttonText = Color(0xFFFFFFFF);
-  static const Color background = Color(0xFFF3F6F1);
-  static const Color card = Color(0xFFFFFFFF);
-  static const Color error = Color(0xFFD32F2F);
-  static const Color warning = Color(0xFFFFA000);
-  static const Color success = Color(0xFF2E7D32);
-  static const Color info = Color(0xFF005826);
-  static const Color divider = Color(0xFFD7DED4);
-  static const Color filterBackground = Color(0xFFE9EFE6);
-  static const Color gridHeader = Color(0xFFDCE7D9);
-  static const Color rowEven = Color(0xFFFFFFFF);
-  static const Color rowOdd = Color(0xFFF1F1F1);
-  static const Color hover = Color(0xFFE6F1E3);
-  static const Color selectedRow = Color(0xFFCFE6CE);
-  static const Color dialogBackground = Color(0xFFFFFFFF);
-  static const Color shadow = Color(0x26000000);
-}
 
 // Enum para tipos de campo
 enum FieldType {
@@ -771,8 +741,8 @@ class FieldFactory {
           icon: const Icon(Icons.attach_file),
           label: Text(
             currentFiles.isEmpty
-                ? 'Selecionar Arquivo'
-                : 'Adicionar Mais Arquivos',
+                ? GridTexts.selectFile
+                : GridTexts.addMoreFiles,
           ),
           style: ElevatedButton.styleFrom(
             backgroundColor: GridColors.primary,
@@ -1365,7 +1335,7 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
-                        item == null ? "Novo Item" : "Editar Item",
+                        item == null ? GridTexts.newItem : GridTexts.editItem,
                         style: const TextStyle(
                           fontSize: 15,
                           fontWeight: FontWeight.w700,
@@ -1823,14 +1793,14 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Confirmar Exclusão'),
+        title: const Text(GridTexts.confirmDelete),
         content: Text(
           'Deseja excluir ${selectedRows.length} item(s) selecionado(s)?',
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('Cancelar'),
+            child: const Text(GridTexts.cancel),
           ),
           ElevatedButton(
             onPressed: () async {
@@ -2653,7 +2623,7 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(ctx),
-                child: const Text('Cancelar'),
+                child: const Text(GridTexts.cancel),
               ),
               ElevatedButton(
                 onPressed: () {

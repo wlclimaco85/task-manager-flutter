@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../services/deposito_caller.dart';
+import '../../utils/grid_texts.dart';
 
 class DepositoScreen extends StatefulWidget {
   const DepositoScreen({super.key});
@@ -176,7 +177,7 @@ class _DepositosTabState extends State<_DepositosTab> {
               if (_editandoId != null)
                 TextButton(
                   onPressed: () { _limparForm(); setState(() {}); },
-                  child: const Text('Cancelar'),
+                  child: const Text(GridTexts.cancel),
                 ),
             ],
           ),

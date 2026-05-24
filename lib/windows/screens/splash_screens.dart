@@ -49,7 +49,7 @@ class _WindowsSplashScreenState extends State<WindowsSplashScreen> {
       body: ScreenBackground(
         child: Center(
           child: SvgPicture.asset(
-            AssetsUtils.logoJPG,
+            AssetsUtils.logoSVG,
             width: 90,
             fit: BoxFit.scaleDown,
           ),

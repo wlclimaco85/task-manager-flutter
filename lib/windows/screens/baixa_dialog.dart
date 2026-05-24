@@ -5,6 +5,7 @@ import '../../../models/forma_pagamento_model.dart';
 import '../../services/network_caller.dart';
 import '../../../models/network_response.dart';
 import '../../../utils/api_links.dart';
+import '../../utils/grid_texts.dart';
 
 class BaixaDialog extends StatefulWidget {
   final ContaPagar conta;
@@ -136,7 +137,7 @@ class _BaixaDialogState extends State<BaixaDialog> {
       actions: [
         TextButton(
           onPressed: () => Navigator.of(context).pop(),
-          child: const Text('Cancelar'),
+          child: const Text(GridTexts.cancel),
         ),
         ElevatedButton(
           onPressed: _submitBaixa,

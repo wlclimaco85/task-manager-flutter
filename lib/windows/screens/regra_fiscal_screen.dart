@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../services/regra_fiscal_caller.dart';
+import '../../../utils/grid_colors.dart';
 import '../../../widgets/generic_grid_windows_screen.dart'
     show FieldConfigWindows, FieldType;
 import '../../../customization/dynamic_grid_windows_screen.dart';
@@ -34,7 +35,7 @@ class _RegraFiscalScreenState extends State<RegraFiscalScreen>
       children: [
         Container(
           height: 56,
-          color: const Color(0xFF93070A),
+          color: GridColors.primary,
           padding: const EdgeInsets.symmetric(horizontal: 16),
           child: Row(
             children: [
@@ -291,7 +292,7 @@ class _ValidacaoManualFormState extends State<_ValidacaoManualForm> {
                 child: ElevatedButton(
                   onPressed: _loading ? null : _validar,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF93070A),
+                    backgroundColor: GridColors.primary,
                     foregroundColor: Colors.white,
                   ),
                   child: _loading
@@ -313,13 +314,13 @@ class _ValidacaoManualFormState extends State<_ValidacaoManualForm> {
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
                     color: _resultado!['valido'] == true
-                        ? const Color(0xFFE8F5E9)
-                        : const Color(0xFFFFEBEE),
+                        ? GridColors.secondaryLight
+                        : GridColors.primaryLight,
                     borderRadius: BorderRadius.circular(8),
                     border: Border.all(
                       color: _resultado!['valido'] == true
-                          ? const Color(0xFF2E7D32)
-                          : const Color(0xFFD32F2F),
+                          ? GridColors.success
+                          : GridColors.error,
                     ),
                   ),
                   child: Column(
@@ -332,8 +333,8 @@ class _ValidacaoManualFormState extends State<_ValidacaoManualForm> {
                                 ? Icons.check_circle
                                 : Icons.error,
                             color: _resultado!['valido'] == true
-                                ? const Color(0xFF2E7D32)
-                                : const Color(0xFFD32F2F),
+                                ? GridColors.success
+                                : GridColors.error,
                           ),
                           const SizedBox(width: 8),
                           Text(
@@ -344,8 +345,8 @@ class _ValidacaoManualFormState extends State<_ValidacaoManualForm> {
                               fontSize: 18,
                               fontWeight: FontWeight.bold,
                               color: _resultado!['valido'] == true
-                                  ? const Color(0xFF2E7D32)
-                                  : const Color(0xFFD32F2F),
+                                  ? GridColors.success
+                                  : GridColors.error,
                             ),
                           ),
                         ],

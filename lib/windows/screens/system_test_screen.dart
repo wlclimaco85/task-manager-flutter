@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import '../../utils/grid_colors.dart';
 import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
 import '../../models/auth_utility.dart';
@@ -77,7 +78,7 @@ class _SystemTestScreenState extends State<SystemTestScreen>
         iconTheme: const IconThemeData(color: Colors.white),
         bottom: TabBar(
           controller: _tabController,
-          indicatorColor: const Color(0xFF4CAF50),
+          indicatorColor: GridColors.success,
           labelColor: Colors.white,
           unselectedLabelColor: Colors.white38,
           tabs: const [
@@ -595,12 +596,12 @@ class _CrudTestTabState extends State<_CrudTestTab> {
                 icon: Icon(
                   copied ? Icons.check : Icons.copy,
                   size: 16,
-                  color: copied ? const Color(0xFF4CAF50) : Colors.white70,
+                  color: copied ? GridColors.success : Colors.white70,
                 ),
                 label: Text(
                   copied ? 'Copiado!' : 'Copiar tudo',
                   style: TextStyle(
-                    color: copied ? const Color(0xFF4CAF50) : Colors.white70,
+                    color: copied ? GridColors.success : Colors.white70,
                   ),
                 ),
                 onPressed: () async {
@@ -659,7 +660,7 @@ class _CrudTestTabState extends State<_CrudTestTab> {
                 : const Icon(Icons.play_arrow, size: 18),
             label: Text(_isRunning ? 'Executando...' : 'Iniciar Testes'),
             style: ElevatedButton.styleFrom(
-              backgroundColor: _isRunning ? Colors.grey[700] : const Color(0xFF4CAF50),
+              backgroundColor: _isRunning ? Colors.grey[700] : GridColors.success,
               foregroundColor: Colors.white,
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
             ),
@@ -683,7 +684,7 @@ class _CrudTestTabState extends State<_CrudTestTab> {
               minHeight: 6,
               backgroundColor: Colors.white12,
               valueColor: AlwaysStoppedAnimation<Color>(
-                _progress >= 1.0 ? const Color(0xFF4CAF50) : const Color(0xFF2196F3),
+                _progress >= 1.0 ? GridColors.success : const Color(0xFF2196F3),
               ),
             ),
           ),
@@ -719,7 +720,7 @@ class _CrudTestTabState extends State<_CrudTestTab> {
         children: [
           Row(
             children: [
-              _chip('✅ $_successCount', const Color(0xFF4CAF50)),
+              _chip('✅ $_successCount', GridColors.success),
               const SizedBox(width: 8),
               _chip('❌ $_failCount', const Color(0xFFF44336)),
               const SizedBox(width: 8),
@@ -863,9 +864,9 @@ class _TelasTestTabState extends State<_TelasTestTab> {
             actions: [
               TextButton.icon(
                 icon: Icon(copied ? Icons.check : Icons.copy, size: 16,
-                    color: copied ? const Color(0xFF4CAF50) : Colors.white70),
+                    color: copied ? GridColors.success : Colors.white70),
                 label: Text(copied ? 'Copiado!' : 'Copiar tudo',
-                    style: TextStyle(color: copied ? const Color(0xFF4CAF50) : Colors.white70)),
+                    style: TextStyle(color: copied ? GridColors.success : Colors.white70)),
                 onPressed: () async {
                   await Clipboard.setData(ClipboardData(text: _errorReport.toString()));
                   setDialogState(() => copied = true);
@@ -1308,7 +1309,7 @@ class _TelasTestTabState extends State<_TelasTestTab> {
                     backgroundColor: Colors.white12,
                     valueColor: AlwaysStoppedAnimation<Color>(
                       _progress >= 1.0
-                          ? const Color(0xFF4CAF50)
+                          ? GridColors.success
                           : const Color(0xFF2196F3),
                     ),
                   ),
@@ -1318,7 +1319,7 @@ class _TelasTestTabState extends State<_TelasTestTab> {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Row(children: [
-                      _statChip('✅ $_successCount', const Color(0xFF4CAF50)),
+                      _statChip('✅ $_successCount', GridColors.success),
                       const SizedBox(width: 6),
                       _statChip('❌ $_failCount', const Color(0xFFF44336)),
                       const SizedBox(width: 6),

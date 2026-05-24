@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import '../../constants/custom_colors.dart';
 import '../../services/baixa_automatica_caller.dart';
 import '../../utils/utils.dart';
+import '../../utils/grid_texts.dart';
 
 class BaixaAutomaticaScreen extends StatefulWidget {
   const BaixaAutomaticaScreen({super.key});
@@ -55,7 +57,7 @@ class _BaixaAutomaticaScreenState extends State<BaixaAutomaticaScreen>
       );
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          backgroundColor: res.isSuccess ? Colors.green : Colors.red,
+          backgroundColor: res.isSuccess ? GridColors.success : GridColors.error,
           content: Text(res.isSuccess
               ? 'Importação realizada com sucesso!'
               : 'Erro (${res.statusCode})'),
@@ -69,7 +71,7 @@ class _BaixaAutomaticaScreenState extends State<BaixaAutomaticaScreen>
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          backgroundColor: Colors.red,
+          backgroundColor: GridColors.error,
           content: Text('Erro: $e'),
         ));
       }
@@ -136,13 +138,13 @@ class _BaixaAutomaticaScreenState extends State<BaixaAutomaticaScreen>
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('Cancelar'),
+            child: const Text(GridTexts.cancel),
           ),
           ElevatedButton(
             onPressed: () => Navigator.pop(ctx, true),
             style: ElevatedButton.styleFrom(
-              backgroundColor: acao == 'CONFIRMAR' ? Colors.green : Colors.red,
-              foregroundColor: Colors.white,
+              backgroundColor: acao == 'CONFIRMAR' ? GridColors.success : GridColors.error,
+              foregroundColor: GridColors.buttonText,
             ),
             child: Text(acaoLabel),
           ),
@@ -158,7 +160,7 @@ class _BaixaAutomaticaScreenState extends State<BaixaAutomaticaScreen>
       final res = await BaixaAutomaticaCaller.conferir(id: id, acao: acao);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          backgroundColor: res.isSuccess ? Colors.green : Colors.red,
+          backgroundColor: res.isSuccess ? GridColors.success : GridColors.error,
           content: Text(res.isSuccess
               ? 'Baixa $acaoLabel com sucesso!'
               : 'Erro (${res.statusCode})'),
@@ -168,7 +170,7 @@ class _BaixaAutomaticaScreenState extends State<BaixaAutomaticaScreen>
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          backgroundColor: Colors.red,
+          backgroundColor: GridColors.error,
           content: Text('Erro: $e'),
         ));
       }
@@ -252,13 +254,13 @@ class _BaixaAutomaticaScreenState extends State<BaixaAutomaticaScreen>
                     width: 18,
                     height: 18,
                     child: CircularProgressIndicator(
-                        strokeWidth: 2, color: Colors.white),
+                        strokeWidth: 2, color: GridColors.buttonText),
                   )
                 : const Icon(Icons.upload, size: 18),
             label: Text(_loadingImport ? 'Importando...' : 'Importar'),
             style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.green,
-              foregroundColor: Colors.white,
+              backgroundColor: GridColors.success,
+              foregroundColor: GridColors.buttonText,
               padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 14),
               disabledBackgroundColor: Colors.grey.shade300,
             ),
@@ -306,7 +308,7 @@ class _BaixaAutomaticaScreenState extends State<BaixaAutomaticaScreen>
                 children: [
                   IconButton(
                     icon: const Icon(Icons.check_circle,
-                        color: Colors.green, size: 20),
+                        color: GridColors.success, size: 20),
                     tooltip: 'Confirmar',
                     onPressed: () =>
                         _confirmarAcao(item, 'CONFIRMAR'),
@@ -314,7 +316,7 @@ class _BaixaAutomaticaScreenState extends State<BaixaAutomaticaScreen>
                   const SizedBox(width: 4),
                   IconButton(
                     icon: const Icon(Icons.cancel,
-                        color: Colors.red, size: 20),
+                        color: GridColors.error, size: 20),
                     tooltip: 'Rejeitar',
                     onPressed: () =>
                         _confirmarAcao(item, 'REJEITAR'),
@@ -351,7 +353,7 @@ class _BaixaAutomaticaScreenState extends State<BaixaAutomaticaScreen>
               ElevatedButton.icon(
                 onPressed: _loadingHistorico ? null : _carregarHistorico,
                 icon: const Icon(Icons.search, size: 18),
-                label: const Text('Buscar'),
+                label: const Text(GridTexts.search),
               ),
             ],
           ),

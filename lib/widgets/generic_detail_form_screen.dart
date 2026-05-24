@@ -2,13 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../../../utils/api_links.dart';
+import '../../../utils/grid_colors.dart';
 import '../../../utils/tenant_context.dart';
 import '../../../services/network_caller.dart';
 import '../models/telas_model.dart';
 import '../services/tela_caller.dart';
 import '../customization/dynamic_grid_windows_screen.dart' as dyn;
 import 'generic_grid_windows_screen.dart'
-    show FieldConfigWindows, FieldType, SecurityCheck, GridColors;
+    show FieldConfigWindows, FieldType, SecurityCheck;
 
 // ---------------------------------------------------------------
 // GenericDetailFormScreen

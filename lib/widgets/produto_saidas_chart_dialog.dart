@@ -6,8 +6,8 @@ import 'package:http/http.dart' as http;
 
 import '../models/auth_utility.dart';
 import '../utils/api_links.dart';
+import '../utils/grid_colors.dart';
 import '../utils/tenant_context.dart';
-import 'generic_grid_windows_screen.dart' show GridColors;
 
 /// H4: Dialog que exibe gráfico de saídas mensais de um produto
 /// via GET /api/produto/{id}/saidas-mensais?meses=12
@@ -174,7 +174,8 @@ class _ProdutoSaidasChartDialogState extends State<ProdutoSaidasChartDialog> {
                                 Expanded(
                                   flex: 2,
                                   child: Padding(
-                                    padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+                                    padding: const EdgeInsets.fromLTRB(
+                                        16, 16, 16, 8),
                                     child: _buildBarChart(),
                                   ),
                                 ),
@@ -220,7 +221,8 @@ class _ProdutoSaidasChartDialogState extends State<ProdutoSaidasChartDialog> {
                 toY: qtd,
                 color: GridColors.primary,
                 width: 14,
-                borderRadius: const BorderRadius.vertical(top: Radius.circular(4)),
+                borderRadius:
+                    const BorderRadius.vertical(top: Radius.circular(4)),
               ),
             ],
           );
@@ -242,7 +244,8 @@ class _ProdutoSaidasChartDialogState extends State<ProdutoSaidasChartDialog> {
               reservedSize: 28,
               getTitlesWidget: (value, meta) {
                 final i = value.toInt();
-                if (i < 0 || i >= _saidas.length) return const SizedBox.shrink();
+                if (i < 0 || i >= _saidas.length)
+                  return const SizedBox.shrink();
                 final mes = _saidas[i]['mes']?.toString() ??
                     _saidas[i]['mesAno']?.toString() ??
                     (i + 1).toString();
@@ -253,8 +256,10 @@ class _ProdutoSaidasChartDialogState extends State<ProdutoSaidasChartDialog> {
               },
             ),
           ),
-          topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-          rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+          topTitles:
+              const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+          rightTitles:
+              const AxisTitles(sideTitles: SideTitles(showTitles: false)),
         ),
         borderData: FlBorderData(show: false),
         gridData: const FlGridData(show: true),
@@ -266,11 +271,18 @@ class _ProdutoSaidasChartDialogState extends State<ProdutoSaidasChartDialog> {
     return SingleChildScrollView(
       child: DataTable(
         columnSpacing: 16,
-        headingRowColor: WidgetStateProperty.all(GridColors.secondary.withValues(alpha: 0.1)),
+        headingRowColor: WidgetStateProperty.all(
+            GridColors.secondary.withValues(alpha: 0.1)),
         columns: const [
-          DataColumn(label: Text('Mês', style: TextStyle(fontWeight: FontWeight.bold))),
-          DataColumn(label: Text('Qtd', style: TextStyle(fontWeight: FontWeight.bold))),
-          DataColumn(label: Text('Valor Total', style: TextStyle(fontWeight: FontWeight.bold))),
+          DataColumn(
+              label:
+                  Text('Mês', style: TextStyle(fontWeight: FontWeight.bold))),
+          DataColumn(
+              label:
+                  Text('Qtd', style: TextStyle(fontWeight: FontWeight.bold))),
+          DataColumn(
+              label: Text('Valor Total',
+                  style: TextStyle(fontWeight: FontWeight.bold))),
         ],
         rows: _saidas.map((s) {
           final mes = s['mes']?.toString() ?? s['mesAno']?.toString() ?? '-';
@@ -280,7 +292,8 @@ class _ProdutoSaidasChartDialogState extends State<ProdutoSaidasChartDialog> {
               0.0;
           return DataRow(cells: [
             DataCell(Text(mes, style: const TextStyle(fontSize: 13))),
-            DataCell(Text(qtd.toString(), style: const TextStyle(fontSize: 13))),
+            DataCell(
+                Text(qtd.toString(), style: const TextStyle(fontSize: 13))),
             DataCell(Text('R\$ ${valor.toStringAsFixed(2)}',
                 style: const TextStyle(fontSize: 13))),
           ]);

@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import '../../constants/custom_colors.dart';
 import '../../services/aprovacao_pagamento_caller.dart';
 import '../../utils/utils.dart';
+import '../../utils/grid_texts.dart';
 
 class AprovacaoPagamentoScreen extends StatefulWidget {
   const AprovacaoPagamentoScreen({super.key});
@@ -108,7 +110,7 @@ class _AprovacaoPagamentoScreenState extends State<AprovacaoPagamentoScreen>
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('Cancelar'),
+            child: const Text(GridTexts.cancel),
           ),
           ElevatedButton(
             onPressed: () {
@@ -116,8 +118,8 @@ class _AprovacaoPagamentoScreenState extends State<AprovacaoPagamentoScreen>
               Navigator.pop(ctx, justifCtrl.text.trim());
             },
             style: ElevatedButton.styleFrom(
-              backgroundColor: isAprovar ? Colors.green : Colors.red,
-              foregroundColor: Colors.white,
+              backgroundColor: isAprovar ? GridColors.success : GridColors.error,
+              foregroundColor: GridColors.buttonText,
             ),
             child: Text(isAprovar ? 'Aprovar' : 'Reprovar'),
           ),
@@ -137,7 +139,7 @@ class _AprovacaoPagamentoScreenState extends State<AprovacaoPagamentoScreen>
               aprovacaoId: id, justificativa: result);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          backgroundColor: res.isSuccess ? Colors.green : Colors.red,
+          backgroundColor: res.isSuccess ? GridColors.success : GridColors.error,
           content: Text(res.isSuccess
               ? 'Pagamento ${isAprovar ? "aprovado" : "reprovado"} com sucesso!'
               : 'Erro (${res.statusCode})'),
@@ -147,7 +149,7 @@ class _AprovacaoPagamentoScreenState extends State<AprovacaoPagamentoScreen>
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          backgroundColor: Colors.red,
+          backgroundColor: GridColors.error,
           content: Text('Erro: $e'),
         ));
       }
@@ -214,13 +216,13 @@ class _AprovacaoPagamentoScreenState extends State<AprovacaoPagamentoScreen>
               children: [
                 IconButton(
                   icon: const Icon(Icons.check_circle,
-                      color: Colors.green, size: 20),
+                      color: GridColors.success, size: 20),
                   tooltip: 'Aprovar',
                   onPressed: () => _confirmarAcao(item, true),
                 ),
                 IconButton(
                   icon: const Icon(Icons.cancel,
-                      color: Colors.red, size: 20),
+                      color: GridColors.error, size: 20),
                   tooltip: 'Reprovar',
                   onPressed: () => _confirmarAcao(item, false),
                 ),
@@ -255,7 +257,7 @@ class _AprovacaoPagamentoScreenState extends State<AprovacaoPagamentoScreen>
               ElevatedButton.icon(
                 onPressed: _loadingHistorico ? null : _carregarHistorico,
                 icon: const Icon(Icons.search, size: 18),
-                label: const Text('Buscar'),
+                label: const Text(GridTexts.search),
               ),
             ],
           ),

@@ -4,6 +4,7 @@ import '../../services/network_caller.dart';
 import '../../windows/screens/ForgotPasswordScreen_screens.dart';
 import '../../windows/screens/SignUpScreen_screens.dart';
 import '../../../utils/api_links.dart';
+import '../../../utils/grid_texts.dart';
 import '../../../models/auth_utility.dart';
 import '../../../models/login_model.dart';
 
@@ -51,7 +52,7 @@ class _WindowsLoginPopupState extends State<WindowsLoginPopup> {
         }
       } else if (response.statusCode == 400) {
         setState(() {
-          errorMessage = 'Senha ou usuário inválido';
+          errorMessage = GridTexts.loginPopupInvalidCredentials;
         });
       } else {
         setState(() {
@@ -74,7 +75,7 @@ class _WindowsLoginPopupState extends State<WindowsLoginPopup> {
       await loginss(username, password);
     } else {
       setState(() {
-        errorMessage = 'Preencha os campos corretamente!';
+        errorMessage = GridTexts.loginPopupFillFields;
       });
     }
   }
@@ -97,7 +98,7 @@ class _WindowsLoginPopupState extends State<WindowsLoginPopup> {
   Widget build(BuildContext context) {
     return AlertDialog(
       backgroundColor: const Color.fromARGB(255, 231, 247, 233),
-      title: const Text('Login', style: TextStyle(fontWeight: FontWeight.bold)),
+      title: const Text(GridTexts.loginPopupTitle, style: TextStyle(fontWeight: FontWeight.bold)),
       content: SingleChildScrollView(
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -105,7 +106,7 @@ class _WindowsLoginPopupState extends State<WindowsLoginPopup> {
             TextField(
               controller: _usernameController,
               decoration: InputDecoration(
-                labelText: 'Usuário',
+                labelText: GridTexts.loginUserHint,
                 labelStyle: const TextStyle(
                   color: Colors.black,
                   fontWeight: FontWeight.bold,
@@ -122,7 +123,7 @@ class _WindowsLoginPopupState extends State<WindowsLoginPopup> {
               controller: _passwordController,
               obscureText: true,
               decoration: InputDecoration(
-                labelText: 'Senha',
+                labelText: GridTexts.loginPasswordHint,
                 labelStyle: const TextStyle(
                   color: Colors.black,
                   fontWeight: FontWeight.bold,
@@ -145,7 +146,7 @@ class _WindowsLoginPopupState extends State<WindowsLoginPopup> {
                 TextButton(
                   onPressed: _navigateToForgotPassword,
                   child: const Text(
-                    'Esqueci a senha',
+                    GridTexts.forgotPassword,
                     style: TextStyle(
                       color: Colors.blue,
                       fontWeight: FontWeight.bold,
@@ -155,7 +156,7 @@ class _WindowsLoginPopupState extends State<WindowsLoginPopup> {
                 TextButton(
                   onPressed: _navigateToSignUp,
                   child: const Text(
-                    'Criar Novo Usuário',
+                    GridTexts.loginPopupCreateUser,
                     style: TextStyle(
                       color: Colors.blue,
                       fontWeight: FontWeight.bold,
@@ -173,7 +174,7 @@ class _WindowsLoginPopupState extends State<WindowsLoginPopup> {
           style: ElevatedButton.styleFrom(
             backgroundColor: const Color.fromARGB(255, 128, 202, 132),
           ),
-          child: const Text('Cancelar', style: TextStyle(color: Colors.white)),
+          child: const Text(GridTexts.cancel, style: TextStyle(color: Colors.white)),
         ),
         if (isLoading)
           const CircularProgressIndicator()
@@ -183,7 +184,7 @@ class _WindowsLoginPopupState extends State<WindowsLoginPopup> {
             style: ElevatedButton.styleFrom(
               backgroundColor: const Color.fromARGB(255, 128, 202, 132),
             ),
-            child: const Text('Entrar', style: TextStyle(color: Colors.white)),
+            child: const Text(GridTexts.loginPopupEnter, style: TextStyle(color: Colors.white)),
           ),
       ],
     );

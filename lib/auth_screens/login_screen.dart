@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:http/http.dart' as http;
 import 'package:url_launcher/url_launcher.dart';
 
@@ -11,6 +12,9 @@ import '../../web/screens/bottom_navbar_screen.dart';
 import '../../models/auth_utility.dart';
 import '../../models/login_model.dart';
 import '../../utils/api_links.dart';
+import '../../utils/assets_utils.dart';
+import '../../utils/grid_colors.dart';
+import '../../utils/grid_texts.dart';
 import '../../utils/security_matrix.dart';
 import '../../widgets/home_screen.dart';
 import '../services/network_caller.dart';
@@ -51,6 +55,13 @@ class _LoginScreenState extends State<LoginScreen>
             }
           });
     _carregarNoticias();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted && MediaQuery.of(context).disableAnimations) {
+        _animCtrl
+          ..duration = Duration.zero
+          ..forward();
+      }
+    });
   }
 
   Future<void> _carregarNoticias() async {
@@ -110,7 +121,7 @@ class _LoginScreenState extends State<LoginScreen>
       if (model.token == null || model.token!.isEmpty) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Token nao recebido')));
+              const SnackBar(content: Text(GridTexts.loginTokenMissing)));
         }
         return;
       }
@@ -120,9 +131,9 @@ class _LoginScreenState extends State<LoginScreen>
     } else if (mounted) {
       _passwordController.clear();
       final msg = resp.statusCode == 400 || resp.statusCode == 401
-          ? 'Email ou senha invalidos'
+          ? GridTexts.loginInvalidCredentials
           : resp.statusCode == -1
-              ? 'Sem conexao com o servidor'
+              ? GridTexts.loginNoConnection
               : 'Erro ${resp.statusCode}';
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
     }
@@ -155,7 +166,7 @@ class _LoginScreenState extends State<LoginScreen>
     );
 
     return Scaffold(
-      backgroundColor: const Color(0xFF005826),
+      backgroundColor: GridColors.secondary,
       body: _showNoticias
           ? Column(children: [
               loginBanner,
@@ -187,8 +198,6 @@ class _LoginBanner extends StatelessWidget {
       required this.onForgot,
       required this.onRequestAccess,
       this.fullHeightCompact = false});
-  static const Color _green = Color(0xFF005826);
-  static const Color _red = Color(0xFF93070A);
 
   @override
   Widget build(BuildContext context) {
@@ -196,7 +205,7 @@ class _LoginBanner extends StatelessWidget {
     if (isCompact) return _buildCompact(context);
 
     return Container(
-      color: _green,
+      color: GridColors.secondary,
       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
       child: Row(crossAxisAlignment: CrossAxisAlignment.center, children: [
         Container(
@@ -210,19 +219,23 @@ class _LoginBanner extends StatelessWidget {
                     offset: const Offset(0, 2))
               ]),
           padding: const EdgeInsets.all(8),
-          child: Image.asset(
-            'assets/images/Logo contabilidade_page-0001.jpg',
+          child: SvgPicture.asset(
+            AssetsUtils.logoSVG,
             height: 80,
             fit: BoxFit.contain,
-            errorBuilder: (context, error, stackTrace) => const Icon(
-              Icons.business,
-              color: Color(0xFF005826),
-              size: 60,
+            placeholderBuilder: (context) => const SizedBox(
+              height: 80,
+              child: Center(
+                child: CircularProgressIndicator(
+                  color: GridColors.secondary,
+                  strokeWidth: 2,
+                ),
+              ),
             ),
           ),
         ),
         const SizedBox(width: 16),
-        const Text('ABRACO\nCONTABILIDADE',
+        const Text(GridTexts.appShortTitle,
             textAlign: TextAlign.left,
             style: TextStyle(
                 color: Colors.white,
@@ -242,18 +255,18 @@ class _LoginBanner extends StatelessWidget {
                               Column(mainAxisSize: MainAxisSize.min, children: [
                         _field(
                             ctrl: emailCtrl,
-                            hint: 'Usuario',
+                            hint: GridTexts.loginUserHint,
                             icon: Icons.person_outline,
                             keyboardType: TextInputType.emailAddress,
                             autofillHints: const [AutofillHints.username],
                             textInputAction: TextInputAction.next,
                             validator: (v) => (v == null || v.isEmpty)
-                                ? 'Informe o usuario'
+                                ? GridTexts.loginUserRequired
                                 : null),
                         const SizedBox(height: 8),
                         _field(
                             ctrl: passCtrl,
-                            hint: 'Senha',
+                            hint: GridTexts.loginPasswordHint,
                             icon: Icons.lock_outline,
                             obscure: obscure,
                             autofillHints: const [AutofillHints.password],
@@ -270,7 +283,7 @@ class _LoginBanner extends StatelessWidget {
                                     color: Colors.white60,
                                     size: 18)),
                             validator: (v) => (v == null || v.isEmpty)
-                                ? 'Informe a senha'
+                                ? GridTexts.loginPasswordRequired
                                 : null),
                       ])),
                       const SizedBox(width: 16),
@@ -279,7 +292,7 @@ class _LoginBanner extends StatelessWidget {
                             height: 44,
                             child: ElevatedButton(
                               style: ElevatedButton.styleFrom(
-                                  backgroundColor: _red,
+                                  backgroundColor: GridColors.primary,
                                   foregroundColor: Colors.white,
                                   padding: const EdgeInsets.symmetric(
                                       horizontal: 24),
@@ -292,7 +305,7 @@ class _LoginBanner extends StatelessWidget {
                                       height: 18,
                                       child: CircularProgressIndicator(
                                           color: Colors.white, strokeWidth: 2))
-                                  : const Text('Acessar',
+                                  : const Text(GridTexts.loginAction,
                                       style: TextStyle(
                                           fontWeight: FontWeight.bold)),
                             )),
@@ -302,7 +315,7 @@ class _LoginBanner extends StatelessWidget {
                                 padding: const EdgeInsets.symmetric(
                                     horizontal: 4, vertical: 2),
                                 minimumSize: Size.zero),
-                            child: const Text('Esqueceu a senha?',
+                            child: const Text(GridTexts.forgotPassword,
                                 style: TextStyle(
                                     color: Colors.white54, fontSize: 10))),
                         TextButton(
@@ -311,7 +324,7 @@ class _LoginBanner extends StatelessWidget {
                                 padding: const EdgeInsets.symmetric(
                                     horizontal: 4, vertical: 2),
                                 minimumSize: Size.zero),
-                            child: const Text('Solicitar acesso',
+                            child: const Text(GridTexts.requestAccess,
                                 style: TextStyle(
                                     color: Colors.white70, fontSize: 10))),
                       ]),
@@ -327,7 +340,7 @@ class _LoginBanner extends StatelessWidget {
     return Container(
       width: double.infinity,
       constraints: BoxConstraints(minHeight: fullHeightCompact ? minHeight : 0),
-      color: _green,
+      color: GridColors.secondary,
       child: Center(
         child: SingleChildScrollView(
           padding: const EdgeInsets.fromLTRB(24, 20, 24, 28),
@@ -352,23 +365,27 @@ class _LoginBanner extends StatelessWidget {
                                   offset: const Offset(0, 4))
                             ]),
                         padding: const EdgeInsets.all(8),
-                        child: Image.asset(
-                          'assets/images/Logo contabilidade_page-0001.jpg',
+                        child: SvgPicture.asset(
+                          AssetsUtils.logoSVG,
                           height: 86,
                           width: 86,
                           fit: BoxFit.contain,
-                          errorBuilder: (context, error, stackTrace) =>
-                              const Icon(
-                            Icons.business,
-                            color: _green,
-                            size: 56,
+                          placeholderBuilder: (context) => const SizedBox(
+                            height: 86,
+                            width: 86,
+                            child: Center(
+                              child: CircularProgressIndicator(
+                                color: GridColors.secondary,
+                                strokeWidth: 2,
+                              ),
+                            ),
                           ),
                         ),
                       ),
                       const SizedBox(width: 18),
                       const Expanded(
                         child: Text(
-                          'ABRACO\nCONTABILIDADE',
+                          GridTexts.appShortTitle,
                           style: TextStyle(
                               color: Colors.white,
                               fontSize: 20,
@@ -382,16 +399,16 @@ class _LoginBanner extends StatelessWidget {
                   const SizedBox(height: 34),
                   _field(
                       ctrl: emailCtrl,
-                      hint: 'Usuário',
+                      hint: GridTexts.loginUserHint,
                       icon: Icons.person_outline,
                       textInputAction: TextInputAction.next,
                       validator: (v) => (v == null || v.isEmpty)
-                          ? 'Informe o usuário'
+                          ? GridTexts.loginUserRequired
                           : null),
                   const SizedBox(height: 14),
                   _field(
                       ctrl: passCtrl,
-                      hint: 'Senha',
+                      hint: GridTexts.loginPasswordHint,
                       icon: Icons.lock_outline,
                       obscure: obscure,
                       textInputAction: TextInputAction.done,
@@ -405,13 +422,13 @@ class _LoginBanner extends StatelessWidget {
                               color: Colors.white60,
                               size: 20)),
                       validator: (v) =>
-                          (v == null || v.isEmpty) ? 'Informe a senha' : null),
+                          (v == null || v.isEmpty) ? GridTexts.loginPasswordRequired : null),
                   const SizedBox(height: 18),
                   SizedBox(
                     height: 48,
                     child: ElevatedButton(
                       style: ElevatedButton.styleFrom(
-                          backgroundColor: _red,
+                          backgroundColor: GridColors.primary,
                           foregroundColor: Colors.white,
                           shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(10))),
@@ -422,7 +439,7 @@ class _LoginBanner extends StatelessWidget {
                               height: 20,
                               child: CircularProgressIndicator(
                                   color: Colors.white, strokeWidth: 2))
-                          : const Text('Acessar',
+                          : const Text(GridTexts.loginAction,
                               style: TextStyle(
                                   fontSize: 15, fontWeight: FontWeight.w700)),
                     ),
@@ -435,12 +452,12 @@ class _LoginBanner extends StatelessWidget {
                     children: [
                       TextButton(
                         onPressed: onForgot,
-                        child: const Text('Esqueci a senha',
+                        child: const Text(GridTexts.forgotPassword,
                             style: TextStyle(color: Colors.white70)),
                       ),
                       TextButton(
                         onPressed: onRequestAccess,
-                        child: const Text('Solicitar acesso',
+                        child: const Text(GridTexts.requestAccess,
                             style: TextStyle(color: Colors.white)),
                       ),
                     ],
@@ -485,10 +502,10 @@ class _LoginBanner extends StatelessWidget {
         filled: true,
         fillColor: Colors.white.withValues(alpha: 0.1),
         enabledBorder: OutlineInputBorder(
-            borderSide: const BorderSide(color: _red, width: 1.5),
+            borderSide: const BorderSide(color: GridColors.primary, width: 1.5),
             borderRadius: BorderRadius.circular(8)),
         focusedBorder: OutlineInputBorder(
-            borderSide: const BorderSide(color: _red, width: 2),
+            borderSide: const BorderSide(color: GridColors.primary, width: 2),
             borderRadius: BorderRadius.circular(8)),
         errorBorder: OutlineInputBorder(
             borderSide: const BorderSide(color: Colors.orange, width: 1.5),
@@ -508,41 +525,37 @@ class _NoticiasGrid extends StatelessWidget {
   final bool loading;
   const _NoticiasGrid({required this.noticias, required this.loading});
 
-  static const Color _red = Color(0xFF93070A);
-  static const Color _green = Color(0xFF005826);
-  static const Color _bgLight = Color(0xFFE8F5E9);
-
   @override
   Widget build(BuildContext context) {
     return Container(
-      color: _bgLight,
+      color: GridColors.secondaryLight,
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         Container(
-            color: _green,
+            color: GridColors.secondary,
             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
             child: Row(children: [
               Container(
                   padding:
                       const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                   decoration: BoxDecoration(
-                      color: _red, borderRadius: BorderRadius.circular(4)),
-                  child: const Text('NOTICIAS CONTABEIS',
+                      color: GridColors.primary, borderRadius: BorderRadius.circular(4)),
+                  child: const Text(GridTexts.newsTitle,
                       style: TextStyle(
                           color: Colors.white,
                           fontSize: 11,
                           fontWeight: FontWeight.bold,
                           letterSpacing: 1))),
               const SizedBox(width: 10),
-              const Text('contabeis.com.br',
+              const Text(GridTexts.newsSource,
                   style: TextStyle(color: Colors.white54, fontSize: 11)),
             ])),
-        Container(height: 2, color: _red),
+        Container(height: 2, color: GridColors.primary),
         Expanded(
             child: loading
-                ? const Center(child: CircularProgressIndicator(color: _green))
+                ? const Center(child: CircularProgressIndicator(color: GridColors.secondary))
                 : noticias.isEmpty
                     ? const Center(
-                        child: Text('Nenhuma noticia disponivel.',
+                        child: Text(GridTexts.noNewsAvailable,
                             style: TextStyle(color: Colors.grey)))
                     : _buildGrid(context)),
       ]),
@@ -580,9 +593,6 @@ class _NoticiaCard extends StatelessWidget {
   final Map<String, dynamic> noticia;
   const _NoticiaCard({required this.noticia});
 
-  static const Color _red = Color(0xFF93070A);
-  static const Color _green = Color(0xFF005826);
-
   Future<void> _abrirLink() async {
     final link = noticia['link'] as String? ?? '';
     if (link.isEmpty) return;
@@ -596,7 +606,7 @@ class _NoticiaCard extends StatelessWidget {
     return Container(
       decoration: const BoxDecoration(
           gradient: LinearGradient(
-              colors: [Color(0xFF005826), Color(0xFF2E7D32)],
+              colors: [GridColors.secondary, GridColors.success],
               begin: Alignment.topLeft,
               end: Alignment.bottomRight)),
       child: const Center(
@@ -617,6 +627,7 @@ class _NoticiaCard extends StatelessWidget {
     final titulo = noticia['titulo'] ?? noticia['tituloResu'] ?? '';
     final resumo = noticia['resumo'] ?? '';
     final foto = noticia['foto'] as String? ?? '';
+    final id = noticia['id'];
     final data = _formatDate(noticia['dtNoticia'] ?? noticia['dtImport']);
 
     final bool temFoto = foto.isNotEmpty &&
@@ -630,7 +641,7 @@ class _NoticiaCard extends StatelessWidget {
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(8),
-          border: Border.all(color: _green.withValues(alpha: 0.25), width: 1),
+          border: Border.all(color: GridColors.secondary.withValues(alpha: 0.25), width: 1),
           boxShadow: [
             BoxShadow(
                 color: Colors.black.withValues(alpha: 0.08),
@@ -648,7 +659,7 @@ class _NoticiaCard extends StatelessWidget {
                 height: 150,
                 width: double.infinity,
                 child: temFoto
-                    ? Image.network(_proxyUrl(foto),
+                    ? Image.network(_imageUrl(foto, id),
                         width: double.infinity,
                         fit: BoxFit.cover,
                         loadingBuilder: (_, child, p) =>
@@ -669,7 +680,7 @@ class _NoticiaCard extends StatelessWidget {
                           style: const TextStyle(
                               fontSize: 14,
                               fontWeight: FontWeight.w700,
-                              color: Color(0xFF1B1B1B),
+                              color: GridColors.textSecondary,
                               height: 1.3)),
                       const SizedBox(height: 4),
                       Text(resumo.isNotEmpty ? resumo : titulo,
@@ -677,7 +688,7 @@ class _NoticiaCard extends StatelessWidget {
                           overflow: TextOverflow.ellipsis,
                           style: const TextStyle(
                               fontSize: 12,
-                              color: Color(0xFF555555),
+                              color: GridColors.divider,
                               height: 1.35)),
                       const SizedBox(height: 6),
                       Row(children: [
@@ -686,12 +697,12 @@ class _NoticiaCard extends StatelessWidget {
                               style: const TextStyle(
                                   fontSize: 10, color: Colors.grey)),
                         const Spacer(),
-                        const Icon(Icons.open_in_new, size: 11, color: _red),
+                        const Icon(Icons.open_in_new, size: 11, color: GridColors.primary),
                         const SizedBox(width: 3),
-                        const Text('Ler mais',
+                        const Text(GridTexts.readMore,
                             style: TextStyle(
                                 fontSize: 10,
-                                color: _red,
+                                color: GridColors.primary,
                                 fontWeight: FontWeight.w700)),
                       ]),
                     ]),
@@ -701,16 +712,19 @@ class _NoticiaCard extends StatelessWidget {
     );
   }
 
+  String _imageUrl(String url, dynamic id) {
+    if (kIsWeb && id != null) {
+      return '${ApiLinks.baseUrl}/api/public/noticias/foto/$id';
+    }
+    return _proxyUrl(url);
+  }
+
   String _proxyUrl(String url) {
     if (!kIsWeb) return url;
     if (url.isEmpty || url.startsWith('data:')) return url;
-    final host = Uri.tryParse(url)?.host.toLowerCase() ?? '';
-    if (host.endsWith('contabeis.com.br') || host.endsWith('unsplash.com')) {
-      return url;
-    }
     if (url.contains(ApiLinks.baseUrl)) return url;
     if (!url.startsWith('http')) return url;
-    return '${ApiLinks.baseUrl}/api/image-proxy?url=${Uri.encodeComponent(url)}';
+    return '${ApiLinks.baseUrl}/api/public/imagens/noticia?url=${Uri.encodeComponent(url)}';
   }
 
   String _formatDate(dynamic dt) {
@@ -727,7 +741,6 @@ class _NoticiaCard extends StatelessWidget {
 // -- Rodape empresa --
 class _EmpresaFooter extends StatelessWidget {
   const _EmpresaFooter();
-  static const Color _red = Color(0xFF93070A);
 
   Future<void> _abrirLink(BuildContext context, String url) async {
     final uri = Uri.tryParse(url);
@@ -735,7 +748,7 @@ class _EmpresaFooter extends StatelessWidget {
     final opened = await launchUrl(uri, mode: LaunchMode.externalApplication);
     if (!opened && context.mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Nao foi possivel abrir o download.')),
+        const SnackBar(content: Text(GridTexts.downloadOpenError)),
       );
     }
   }
@@ -743,7 +756,7 @@ class _EmpresaFooter extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      color: _red,
+      color: GridColors.primary,
       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
       child: Row(crossAxisAlignment: CrossAxisAlignment.center, children: [
         Expanded(
@@ -752,22 +765,22 @@ class _EmpresaFooter extends StatelessWidget {
                 runSpacing: 4,
                 crossAxisAlignment: WrapCrossAlignment.center,
                 children: [
-              const Text('ABRACO CONTABILIDADE',
+              const Text(GridTexts.footerCompany,
                   style: TextStyle(
                       color: Colors.white,
                       fontSize: 12,
                       fontWeight: FontWeight.bold,
                       letterSpacing: 0.8)),
               _infoItem(Icons.location_on,
-                  'Rua Marques do Parana, 250 - Estados Unidos, Uberaba - MG'),
-              _infoItem(Icons.phone, '(34) 3321-6689'),
-              _infoItem(Icons.access_time, 'Seg-Sex: 09:00 - 18:00'),
+                  GridTexts.footerAddress),
+              _infoItem(Icons.phone, GridTexts.footerPhone),
+              _infoItem(Icons.access_time, GridTexts.footerHours),
             ])),
         const SizedBox(width: 16),
         OutlinedButton.icon(
           onPressed: () => _abrirLink(context, ApiLinks.windowsDownloadUrl),
           icon: const Icon(Icons.download, size: 16, color: Colors.white70),
-          label: const Text('Download Windows',
+          label: const Text(GridTexts.downloadWindows,
               style: TextStyle(fontSize: 11, color: Colors.white70)),
           style: OutlinedButton.styleFrom(
               side: const BorderSide(color: Colors.white38),

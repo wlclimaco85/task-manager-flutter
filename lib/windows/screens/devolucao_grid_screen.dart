@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../../services/devolucao_service.dart';
 import '../../../utils/grid_colors.dart';
 import '../../../windows/dialogs/devolucao_form_dialog.dart';
+import '../../utils/grid_texts.dart';
 
 class WindowsDevolucaoGridScreen extends StatefulWidget {
   const WindowsDevolucaoGridScreen({super.key});
@@ -65,7 +66,7 @@ class _WindowsDevolucaoGridScreenState
         title: Text(title, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
         content: Text(msg, style: const TextStyle(fontSize: 13)),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancelar')),
+          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text(GridTexts.cancel)),
           ElevatedButton(
             style: ElevatedButton.styleFrom(backgroundColor: GridColors.primary, foregroundColor: Colors.white),
             onPressed: () => Navigator.pop(context, true),

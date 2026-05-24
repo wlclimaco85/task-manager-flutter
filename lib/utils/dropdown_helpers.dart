@@ -45,6 +45,14 @@ class DropdownHelpers {
   static Future<List<Map<String, dynamic>>> parceiros() =>
       load(ApiLinks.allParceiros, displayField: 'nome');
 
+  /// Carrega parceiros filtrados pela empresa fornecida.
+  /// Se [empresaId] for nulo ou vazio, retorna todos os parceiros.
+  static Future<List<Map<String, dynamic>>> parceirosPorEmpresa(
+      String? empresaId) {
+    if (empresaId == null || empresaId.isEmpty) return parceiros();
+    return load(ApiLinks.allParceirosPorEmp(empresaId), displayField: 'nome');
+  }
+
   static Future<List<Map<String, dynamic>>> aplicativos() =>
       load('${ApiLinks.baseUrl}/api/aplicativo', displayField: 'nome');
 
@@ -150,7 +158,8 @@ class DropdownHelpers {
 
   /// Campo parceiro específico para cadastros financeiros.
   /// Quando o usuário já está escopado por parceiro, o campo vem travado.
-  /// Quando não está escopado, mantém o dropdown disponível para seleção manual.
+  /// Quando não está escopado, filtra parceiros pela empresa selecionada
+  /// (cascade automático via dependsOnField: 'empresa').
   static FieldConfigWindows parceiroFieldScopedOrSelectable({
     bool required = false,
   }) {
@@ -167,7 +176,10 @@ class DropdownHelpers {
       isFilterable: true,
       isRequired: required,
       dropdownSelectedValue: cachedParceiroId,
-      dropdownFutureBuilder: parceiros,
+      // Cascade: quando livre (sem parceiro fixo), filtra pelo campo 'empresa'
+      dependsOnField: cachedParceiroId == null ? 'empresa' : null,
+      dropdownFutureBuilderWithParam:
+          cachedParceiroId == null ? parceirosPorEmpresa : null,
     );
   }
 

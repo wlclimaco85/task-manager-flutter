@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../constants/custom_colors.dart';
 import '../../../services/pedido_venda_service.dart';
+import '../../../utils/grid_texts.dart';
 
 class FaturarDialog extends StatefulWidget {
   final int pedidoId;
@@ -147,7 +148,7 @@ class _FaturarDialogState extends State<FaturarDialog> {
                     children: [
                       TextButton(
                         onPressed: () => Navigator.pop(context),
-                        child: const Text('Cancelar'),
+                        child: const Text(GridTexts.cancel),
                       ),
                       const SizedBox(width: 12),
                       ElevatedButton(

@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../../services/automacao_financeira_caller.dart';
+import '../../utils/grid_texts.dart';
 
 class WebIntegracoesFinanceirasScreen extends StatefulWidget {
   const WebIntegracoesFinanceirasScreen({super.key});
@@ -120,7 +121,7 @@ class _WebIntegracoesFinanceirasScreenState
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(ctx),
-              child: const Text('Cancelar'),
+              child: const Text(GridTexts.cancel),
             ),
             ElevatedButton(
               onPressed: () async {

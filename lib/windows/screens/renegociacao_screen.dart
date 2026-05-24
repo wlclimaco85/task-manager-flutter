@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../services/renegociacao_caller.dart';
+import '../../../utils/grid_colors.dart';
+import '../../../utils/grid_texts.dart';
 
 class RenegociacaoScreen extends StatefulWidget {
   const RenegociacaoScreen({super.key});
@@ -100,7 +102,7 @@ class _RenegociacaoScreenState extends State<RenegociacaoScreen>
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(
       content: Text(msg),
-      backgroundColor: error ? Colors.red : null,
+      backgroundColor: error ? GridColors.error : null,
     ));
   }
 
@@ -243,7 +245,7 @@ class _RenegociacaoScreenState extends State<RenegociacaoScreen>
               const SizedBox(width: 8),
               ElevatedButton(
                 onPressed: _loadingDetalhe ? null : _buscarDetalhe,
-                child: const Text('Buscar'),
+                child: const Text(GridTexts.search),
               ),
             ],
           ),

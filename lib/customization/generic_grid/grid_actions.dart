@@ -8,6 +8,7 @@ import '../../services/network_caller.dart';
 import 'grid_models.dart';
 import 'grid_helpers.dart';
 import 'grid_theme.dart';
+import '../../utils/grid_texts.dart';
 
 // -----------------------------------------------------------------------------
 // 🔐 Controle de Permissões
@@ -146,7 +147,7 @@ Future<bool?> _confirm(
       actions: [
         TextButton(
           onPressed: () => Navigator.pop(ctx, false),
-          child: const Text('Cancelar'),
+          child: const Text(GridTexts.cancel),
         ),
         ElevatedButton(
           onPressed: () => Navigator.pop(ctx, true),

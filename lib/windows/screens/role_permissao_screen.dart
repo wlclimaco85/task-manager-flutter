@@ -1,12 +1,13 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import '../../utils/grid_colors.dart';
 import 'package:http/http.dart' as http;
 import '../../utils/api_links.dart';
 import '../../utils/tenant_context.dart';
 
 // ─── Cores ────────────────────────────────────────────────────────────────────
-const _red   = Color(0xFF93070A);
-const _green = Color(0xFF005826);
+const _red   = GridColors.primary;
+const _green = GridColors.secondary;
 const _bord  = Color(0xFFDDDDDD);
 const _grey  = Color(0xFF757575);
 const _bg    = Color(0xFFF5F5F5);

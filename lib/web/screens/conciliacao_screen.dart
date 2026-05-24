@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../services/conta_bancaria_caller.dart';
 import '../../../services/conciliacao_caller.dart';
 import '../../../utils/grid_colors.dart';
+import '../../utils/grid_texts.dart';
 
 class WebConciliacaoScreen extends StatefulWidget {
   const WebConciliacaoScreen({super.key});
@@ -459,7 +460,7 @@ class _WebConciliacaoScreenState extends State<WebConciliacaoScreen> {
         actions: [
           TextButton(
               onPressed: () => Navigator.pop(ctx, false),
-              child: const Text('Cancelar')),
+              child: const Text(GridTexts.cancel)),
           TextButton(
               onPressed: () => Navigator.pop(ctx, true),
               child: const Text('Confirmar')),
@@ -628,7 +629,7 @@ class _ConciliarDialogState extends State<_ConciliarDialog> {
       actions: [
         TextButton(
           onPressed: () => Navigator.pop(context),
-          child: const Text('Cancelar'),
+          child: const Text(GridTexts.cancel),
         ),
         ElevatedButton.icon(
           onPressed: (_lancamentoSelecionado == null || _confirmando)

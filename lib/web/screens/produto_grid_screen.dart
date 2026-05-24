@@ -8,6 +8,7 @@ import '../../../widgets/generic_grid_windows_screen.dart'
 import '../../../widgets/produto_detalhes_dialog.dart';
 import '../../../widgets/produto_saidas_chart_dialog.dart';
 import './ged_arquivos_screen.dart';
+import '../../utils/grid_texts.dart';
 
 class WebProdutoGridScreen extends StatelessWidget {
   final SecurityCheck hasPermission;
@@ -128,7 +129,7 @@ class WebProdutoGridScreen extends StatelessWidget {
         content: Text('Deseja excluir o produto "$nome"?\nEsta ação não pode ser desfeita.',
             style: const TextStyle(fontSize: 13)),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancelar')),
+          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text(GridTexts.cancel)),
           ElevatedButton(
             style: ElevatedButton.styleFrom(backgroundColor: Colors.red, foregroundColor: Colors.white),
             onPressed: () => Navigator.pop(context, true),

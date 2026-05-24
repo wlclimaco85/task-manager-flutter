@@ -2,6 +2,8 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../utils/grid_colors.dart';
+import '../utils/grid_texts.dart';
 import '../../../models/network_response.dart';
 import '../../services/network_caller.dart';
 import '../../services/upload_file_caller.dart';
@@ -11,34 +13,6 @@ import 'package:task_manager_flutter/utils/app_logger.dart';
 // ==============================================
 // MOBILE GRID SCREEN - MATERIAL DESIGN 3 COMPLETO
 // ==============================================
-
-class GridColors {
-  static const Color primary = Color(0xFF93070A);
-  static const Color primaryDark = Color(0xFF6A0507);
-  static const Color primaryLight = Color(0xFFB84042);
-  static const Color secondary = Color(0xFF005826);
-  static const Color secondaryLight = Color(0xFF2E7D32);
-  static const Color secondaryDark = Color(0xFF003D1A);
-  static const Color textPrimary = Color(0xFFFFFFFF);
-  static const Color textSecondary = Color(0xFF000000);
-  static const Color link = Color(0xFFFF0000);
-  static const Color inputBackground = Color(0xFFFFFFFF);
-  static const Color inputBorder = Color(0xFF93070A);
-  static const Color buttonBackground = Color(0xFF93070A);
-  static const Color buttonText = Color(0xFFFFFFFF);
-  static const Color background = Color(0xFF005826);
-  static const Color card = Color(0xFFFFFFFF);
-  static const Color error = Color(0xFFD32F2F);
-  static const Color warning = Color(0xFFFFA000);
-  static const Color success = Color(0xFF2E7D32);
-  static const Color info = Color(0xFF1976D2);
-  static const Color divider = Color(0xFFBDBDBD);
-  static const Color filterBackground = Color(0xFFEFEFEF);
-  static const Color hover = Color(0x1A000000);
-  static const Color selectedRow = Color(0xFFE3F2FD);
-  static const Color dialogBackground = Color(0xFFFFFFFF);
-  static const Color shadow = Color(0x26000000);
-}
 
 // Enum para tipos de campo
 enum FieldType {
@@ -567,7 +541,7 @@ class _GenericMobileGridScreenState<T>
                 const Icon(Icons.edit, color: GridColors.textPrimary, size: 24),
                 const SizedBox(width: 8),
                 Text(
-                  item == null ? 'Adicionar Novo' : 'Editar Item',
+                  item == null ? GridTexts.addNew : GridTexts.editItem,
                   style: const TextStyle(
                     fontSize: 20,
                     fontWeight: FontWeight.bold,
@@ -603,7 +577,7 @@ class _GenericMobileGridScreenState<T>
                       side: const BorderSide(color: GridColors.textPrimary),
                       foregroundColor: GridColors.textPrimary,
                     ),
-                    child: const Text('Cancelar'),
+                    child: const Text(GridTexts.cancel),
                   ),
                 ),
                 const SizedBox(width: 12),
@@ -614,7 +588,7 @@ class _GenericMobileGridScreenState<T>
                       backgroundColor: GridColors.textPrimary,
                       foregroundColor: GridColors.primary,
                     ),
-                    child: Text(item == null ? 'Adicionar' : 'Salvar'),
+                    child: Text(item == null ? GridTexts.add : GridTexts.save),
                   ),
                 ),
               ],
@@ -702,8 +676,8 @@ class _GenericMobileGridScreenState<T>
           icon: const Icon(Icons.attach_file),
           label: Text(
             currentFiles.isEmpty
-                ? 'Selecionar Arquivo'
-                : 'Adicionar Mais Arquivos',
+                ? GridTexts.selectFile
+                : GridTexts.addMoreFiles,
           ),
           style: ElevatedButton.styleFrom(
             backgroundColor: GridColors.primary,
@@ -1473,13 +1447,13 @@ class _GenericMobileGridScreenState<T>
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Confirmar Exclusão'),
+        title: const Text(GridTexts.confirmDelete),
         content: Text(
             'Deseja excluir ${selectedRows.length} item(s) selecionado(s)?'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('Cancelar'),
+            child: const Text(GridTexts.cancel),
           ),
           ElevatedButton(
             onPressed: () async {
@@ -1606,7 +1580,7 @@ class _GenericMobileGridScreenState<T>
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(ctx),
-                child: const Text('Cancelar'),
+                child: const Text(GridTexts.cancel),
               ),
               ElevatedButton(
                 onPressed: () {
@@ -1788,7 +1762,7 @@ class _GenericMobileGridScreenState<T>
                       children: [
                         Icon(Icons.clear_all, size: 18),
                         SizedBox(width: 8),
-                        Text('Limpar Todos'),
+                        Text(GridTexts.clearAll),
                       ],
                     ),
                   ),
@@ -1800,7 +1774,7 @@ class _GenericMobileGridScreenState<T>
                       children: [
                         Icon(Icons.check, size: 18),
                         SizedBox(width: 8),
-                        Text('Aplicar Filtros'),
+                        Text(GridTexts.applyFilters),
                       ],
                     ),
                   ),
@@ -2029,7 +2003,7 @@ class _GenericMobileGridScreenState<T>
               ),
               const SizedBox(height: 16),
               Text(
-                'Carregando mais itens...',
+                GridTexts.loadingMoreItems,
                 style: textTheme.bodyMedium?.copyWith(
                   color: colorScheme.onSurface.withValues(alpha: 0.6),
                 ),
@@ -2042,7 +2016,7 @@ class _GenericMobileGridScreenState<T>
               ),
               const SizedBox(height: 16),
               Text(
-                'Todos os itens foram carregados',
+                GridTexts.allItemsLoaded,
                 style: textTheme.bodyMedium?.copyWith(
                   color: colorScheme.onSurface.withValues(alpha: 0.5),
                   fontStyle: FontStyle.italic,

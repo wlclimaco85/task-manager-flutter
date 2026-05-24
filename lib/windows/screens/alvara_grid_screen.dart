@@ -1,6 +1,8 @@
 import 'dart:typed_data';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
+import '../../utils/grid_colors.dart';
+import '../../utils/grid_texts.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 
@@ -220,19 +222,19 @@ class WindowsAlvaraGridScreen extends StatelessWidget {
       customActions: () => [
         CustomAction<AlvaraModel>(
           icon: Icons.upload_file,
-          label: 'Upload PDF',
+          label: GridTexts.uploadPdf,
           onPressed: (ctx, item) => _uploadPdf(ctx, item),
         ),
         CustomAction<AlvaraModel>(
           icon: Icons.picture_as_pdf,
-          label: 'Ver PDF',
+          label: GridTexts.viewPdf,
           isVisible: (item) => item.temPdf,
           onPressed: (ctx, item) => _visualizarPdf(ctx, item),
         ),
         // H5-21: navegar para o GED filtrado por este alvará
         CustomAction<AlvaraModel>(
           icon: Icons.folder_open,
-          label: 'Ver GED',
+          label: GridTexts.viewGed,
           isVisible: (item) => item.id != null,
           onPressed: (ctx, item) {
             Navigator.push(ctx, MaterialPageRoute(
@@ -251,7 +253,7 @@ class WindowsAlvaraGridScreen extends StatelessWidget {
   // ── Upload PDF do alvará ──────────────────────────────────────────────────
   static Future<void> _uploadPdf(BuildContext context, AlvaraModel item) async {
     if (item.id == null) {
-      _snack(context, 'Salve o alvará antes de anexar o PDF.', Colors.orange);
+      _snack(context, GridTexts.saveLicenseBeforePdf, GridColors.warning);
       return;
     }
 
@@ -266,7 +268,7 @@ class WindowsAlvaraGridScreen extends StatelessWidget {
     final bytes = arquivo.bytes ?? Uint8List(0);
     if (bytes.isEmpty) {
       if (!context.mounted) return;                     // guard após await
-      _snack(context, 'Arquivo vazio.', Colors.red);
+      _snack(context, GridTexts.emptyFile, GridColors.error);
       return;
     }
 
@@ -287,20 +289,20 @@ class WindowsAlvaraGridScreen extends StatelessWidget {
       final resp = await http.Response.fromStream(streamed);
       if (!context.mounted) return;                     // guard após await
       if (resp.statusCode == 200) {
-        _snack(context, 'PDF enviado com sucesso!', Colors.green);
+        _snack(context, GridTexts.pdfUploadSuccess, GridColors.success);
       } else {
-        _snack(context, 'Erro ao enviar PDF (${resp.statusCode}).', Colors.red);
+        _snack(context, GridTexts.pdfUploadError(resp.statusCode), GridColors.error);
       }
     } catch (e) {
       if (!context.mounted) return;                     // guard no catch
-      _snack(context, 'Erro: $e', Colors.red);
+      _snack(context, GridTexts.genericError(e.toString()), GridColors.error);
     }
   }
 
   // ── Visualizar PDF do alvará ──────────────────────────────────────────────
   static void _visualizarPdf(BuildContext context, AlvaraModel item) {
     if (item.id == null || !item.temPdf) {
-      _snack(context, 'Nenhum PDF anexado a este alvará.', Colors.orange);
+      _snack(context, GridTexts.noLicensePdfAttached, GridColors.warning);
       return;
     }
     final url = '${ApiLinks.baseUrl}/api/alvara/${item.id}/pdf';
@@ -312,7 +314,7 @@ class WindowsAlvaraGridScreen extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             AppBar(
-              title: Text('PDF — ${item.descricao}'),
+              title: Text(GridTexts.licensePdfTitle(item.descricao)),
               automaticallyImplyLeading: false,
               actions: [
                 IconButton(
@@ -326,16 +328,16 @@ class WindowsAlvaraGridScreen extends StatelessWidget {
               child: Column(
                 children: [
                   const Icon(Icons.picture_as_pdf,
-                      size: 64, color: Colors.red),
+                      size: 64, color: GridColors.error),
                   const SizedBox(height: 12),
                   SelectableText(url,
                       style: const TextStyle(fontSize: 13)),
                   const SizedBox(height: 16),
                   ElevatedButton.icon(
                     icon: const Icon(Icons.open_in_new),
-                    label: const Text('Abrir PDF'),
+                    label: const Text(GridTexts.openPdf),
                     style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF93070A)),
+                        backgroundColor: GridColors.primary),
                     onPressed: () {
                       // Para web: abre URL no browser
                       // Para desktop: usa url_launcher

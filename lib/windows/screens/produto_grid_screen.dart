@@ -3,6 +3,7 @@ import 'package:http/http.dart' as http;
 import '../../../customization/dynamic_grid_windows_screen.dart';
 import '../../../models/auth_utility.dart';
 import '../../../utils/api_links.dart';
+import '../../utils/grid_texts.dart';
 import '../../../widgets/generic_grid_windows_screen.dart'
     show FieldConfigWindows, FieldType, CustomAction;
 
@@ -13,16 +14,16 @@ class WindowsProdutoGridScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final login = AuthUtility.userInfo?.login;
-    final empresa  = login?.empresa;
+    final empresa = login?.empresa;
     final parceiro = login?.parceiro;
 
-    final hasEmpresa  = empresa?.id != null;
+    final hasEmpresa = empresa?.id != null;
     final hasParceiro = parceiro?.id != null;
 
-    final empresaIdStr  = empresa?.id?.toString() ?? '';
-    final empresaNome   = empresa?.nome ?? '';
+    final empresaIdStr = empresa?.id?.toString() ?? '';
+    final empresaNome = empresa?.nome ?? '';
     final parceiroIdStr = parceiro?.id?.toString() ?? '';
-    final parceiroNome  = parceiro?.nome ?? 'Parceiro';
+    final parceiroNome = parceiro?.nome ?? 'Parceiro';
 
     final fieldOverrides = <FieldConfigWindows>[
       if (hasEmpresa)
@@ -79,21 +80,28 @@ class WindowsProdutoGridScreen extends StatelessWidget {
     );
   }
 
-  static Future<void> _confirmarExclusao(BuildContext context, Map<String, dynamic> item) async {
+  static Future<void> _confirmarExclusao(
+      BuildContext context, Map<String, dynamic> item) async {
     final id = item['id']?.toString() ?? '';
-    final nome = item['nome']?.toString() ?? item['xProd']?.toString() ?? '#$id';
+    final nome =
+        item['nome']?.toString() ?? item['xProd']?.toString() ?? '#$id';
     if (id.isEmpty) return;
 
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (_) => AlertDialog(
-        title: const Text('Excluir Produto', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
-        content: Text('Deseja excluir o produto "$nome"?\nEsta ação não pode ser desfeita.',
+        title: const Text('Excluir Produto',
+            style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
+        content: Text(
+            'Deseja excluir o produto "$nome"?\nEsta ação não pode ser desfeita.',
             style: const TextStyle(fontSize: 13)),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancelar')),
+          TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: const Text(GridTexts.cancel)),
           ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.red, foregroundColor: Colors.white),
+            style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.red, foregroundColor: Colors.white),
             onPressed: () => Navigator.pop(context, true),
             child: const Text('Excluir'),
           ),
@@ -123,9 +131,8 @@ class WindowsProdutoGridScreen extends StatelessWidget {
     } catch (e) {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Erro: $e'), backgroundColor: Colors.red));
+            SnackBar(content: Text('Erro: $e'), backgroundColor: Colors.red));
       }
     }
   }
 }
-

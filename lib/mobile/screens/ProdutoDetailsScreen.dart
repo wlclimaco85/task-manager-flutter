@@ -10,6 +10,7 @@ import '../../constants/custom_colors.dart';
 
 
 import 'package:task_manager_flutter/utils/app_logger.dart';
+import '../../utils/grid_texts.dart';
 // Tela de Detalhes
 class ProdutoDetailsScreen extends StatefulWidget {
   final int produtoId;
@@ -375,7 +376,7 @@ class _ProdutoDetailsScreenState extends State<ProdutoDetailsScreen> {
                                           "Vamos enviar suas informações para nossa transportadora parceira e o mais breve possível será enviado o valor do frete."),
                                       actions: [
                                         TextButton(
-                                          child: const Text("Cancelar"),
+                                          child: const Text(GridTexts.cancel),
                                           onPressed: () {
                                             Navigator.of(context).pop();
                                           },

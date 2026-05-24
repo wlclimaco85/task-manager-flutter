@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../services/manifestacao_caller.dart';
 import '../../utils/grid_colors.dart';
+import '../../utils/grid_texts.dart';
 
 class ManifestacaoDestinatarioScreen extends StatefulWidget {
   const ManifestacaoDestinatarioScreen({super.key});
@@ -146,7 +147,7 @@ class _ManifestacaoDestinatarioScreenState
               actions: [
                 TextButton(
                   onPressed: () => Navigator.pop(ctx),
-                  child: const Text('Cancelar'),
+                  child: const Text(GridTexts.cancel),
                 ),
                 ElevatedButton(
                   onPressed: () {

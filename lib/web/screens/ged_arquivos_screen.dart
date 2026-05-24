@@ -6,9 +6,10 @@ import '../../../customization/dynamic_grid_windows_screen.dart';
 import '../../../models/auth_utility.dart';
 import '../../../utils/api_links.dart';
 import '../../../utils/dropdown_helpers.dart';
+import '../../../utils/grid_colors.dart';
 import '../../../utils/tenant_context.dart';
 import '../../../widgets/generic_grid_windows_screen.dart'
-    show CustomAction, FieldConfigWindows, FieldType, GridColors;
+    show CustomAction, FieldConfigWindows, FieldType;
 
 class GedArquivosScreen extends StatelessWidget {
   final String? moduloOrigem;
@@ -64,8 +65,11 @@ class GedArquivosScreen extends StatelessWidget {
         dropdownValueField: 'id',
         dropdownDisplayField: 'nome',
         dropdownSelectedValue: parceiro,
-        dropdownFutureBuilder: DropdownHelpers.parceiros,
         enabled: parceiro == null,
+        // Cascade: filtra parceiros pela empresa selecionada no form
+        dependsOnField: parceiro == null ? 'empresa' : null,
+        dropdownFutureBuilderWithParam:
+            parceiro == null ? DropdownHelpers.parceirosPorEmpresa : null,
       ),
       FieldConfigWindows(
         label: 'Diretorio',

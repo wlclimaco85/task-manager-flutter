@@ -4,6 +4,7 @@ import '../../../services/orcamento_service.dart';
 import '../../../constants/custom_colors.dart';
 import '../../../windows/dialogs/orcamento_form_dialog.dart';
 import '../../../windows/dialogs/orcamento_historico_dialog.dart';
+import '../../utils/grid_texts.dart';
 
 class WindowsOrcamentoGridScreen extends StatefulWidget {
   const WindowsOrcamentoGridScreen({super.key});
@@ -96,7 +97,7 @@ class _WindowsOrcamentoGridScreenState
         title: Text(title, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
         content: Text(msg, style: const TextStyle(fontSize: 13)),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancelar')),
+          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text(GridTexts.cancel)),
           ElevatedButton(
             style: ElevatedButton.styleFrom(backgroundColor: GridColors.primary, foregroundColor: Colors.white),
             onPressed: () => Navigator.pop(context, true),

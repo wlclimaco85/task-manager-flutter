@@ -1,19 +1,21 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import '../../utils/grid_colors.dart';
 import 'package:intl/intl.dart';
 import '../../../utils/api_links.dart';
 import '../../../utils/tenant_context.dart';
+import '../../utils/grid_texts.dart';
 
-const _primary = Color(0xFF93070A);
-const _green   = Color(0xFF005826);
+const _primary = GridColors.primary;
+const _green   = GridColors.secondary;
 const _bg      = Color(0xFFF5F5F5);
 const _white   = Colors.white;
 const _border  = Color(0xFFDDDDDD);
 
 // ── Status colors ─────────────────────────────────────────────────────────────
 Color _statusColor(String s) => switch (s) {
-  'OK'         => const Color(0xFF2E7D32),
-  'FALTA'      => const Color(0xFFD32F2F),
+  'OK'         => GridColors.success,
+  'FALTA'      => GridColors.error,
   'INCOMPLETO' => const Color(0xFFE65100),
   'FERIADO'    => const Color(0xFF1565C0),
   'FOLGA'      => const Color(0xFF757575),
@@ -111,7 +113,7 @@ class _WebPontoAjusteScreenState extends State<WebPontoAjusteScreen> {
         title: const Text('Fechar Folha'),
         content: Text('Fechar a folha de ${_mesSelecionado!['label']}? Esta ação não pode ser desfeita.'),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancelar')),
+          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text(GridTexts.cancel)),
           ElevatedButton(
             onPressed: () => Navigator.pop(context, true),
             style: ElevatedButton.styleFrom(backgroundColor: _primary, foregroundColor: _white),
@@ -525,7 +527,7 @@ class _AjusteDialogState extends State<_AjusteDialog> {
         ]),
       ),
       actions: [
-        TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancelar')),
+        TextButton(onPressed: () => Navigator.pop(context), child: const Text(GridTexts.cancel)),
         ElevatedButton.icon(
           onPressed: _saving ? null : _salvar,
           icon: _saving

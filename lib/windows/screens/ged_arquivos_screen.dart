@@ -8,10 +8,11 @@ import 'package:intl/intl.dart';
 
 import '../../../models/auth_utility.dart';
 import '../../../utils/api_links.dart';
+import '../../../utils/grid_colors.dart';
 import '../../../utils/tenant_context.dart';
 import '../../services/ai_assistant_service.dart';
 import '../../services/network_caller.dart';
-import '../../../widgets/generic_grid_windows_screen.dart' show GridColors;
+import '../../utils/grid_texts.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
 /// Tela GED — Gestão Eletrônica de Documentos
@@ -343,7 +344,7 @@ class _GedArquivosScreenState extends State<GedArquivosScreen> {
         actions: [
           TextButton(
               onPressed: () => Navigator.pop(context, false),
-              child: const Text('Cancelar')),
+              child: const Text(GridTexts.cancel)),
           ElevatedButton(
             style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
             onPressed: () => Navigator.pop(context, true),
@@ -798,7 +799,7 @@ class _GedArquivosScreenState extends State<GedArquivosScreen> {
           actions: [
             TextButton(
               onPressed: _enviando ? null : () => Navigator.of(ctx).pop(),
-              child: const Text('Cancelar'),
+              child: const Text(GridTexts.cancel),
             ),
             ElevatedButton.icon(
               style: ElevatedButton.styleFrom(

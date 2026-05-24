@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../services/cobranca_caller.dart';
 import '../../../utils/grid_colors.dart';
+import '../../utils/grid_texts.dart';
 
 class CobrancaScreen extends StatefulWidget {
   const CobrancaScreen({super.key});
@@ -49,7 +50,7 @@ class _CobrancaScreenState extends State<CobrancaScreen> {
     final result = await CobrancaCaller.executarRegua();
     if (mounted) {
       setState(() => _executandoRegua = false);
-      _snack(result['success'] ? 'Régua executada com sucesso' : result['message'],
+      _snack(result['success'] ? GridTexts.collectionRuleExecutedSuccess : result['message'],
           error: !result['success']);
       if (result['success']) _carregarVencidos();
     }
@@ -57,7 +58,7 @@ class _CobrancaScreenState extends State<CobrancaScreen> {
 
   Future<void> _buscarAcoes() async {
     final id = int.tryParse(_clienteIdCtrl.text);
-    if (id == null) { _snack('Informe um ID de cliente válido', error: true); return; }
+    if (id == null) { _snack(GridTexts.invalidClientId, error: true); return; }
     setState(() => _loadingAcoes = true);
     final data = await CobrancaCaller.listarAcoesCliente(id);
     if (mounted) setState(() { _acoes = data; _loadingAcoes = false; });
@@ -72,7 +73,7 @@ class _CobrancaScreenState extends State<CobrancaScreen> {
     if (id == null) return;
     final ok = await CobrancaCaller.deletarRegra(id);
     if (mounted) {
-      _snack(ok ? 'Regra removida' : 'Erro ao remover', error: !ok);
+      _snack(ok ? GridTexts.collectionRuleRemoved : GridTexts.removeError, error: !ok);
       if (ok) _carregarRegras();
     }
   }
@@ -115,7 +116,7 @@ class _CobrancaScreenState extends State<CobrancaScreen> {
           ),
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancelar')),
+          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text(GridTexts.cancel)),
           ElevatedButton(
             onPressed: () async {
               final data = {
@@ -127,11 +128,11 @@ class _CobrancaScreenState extends State<CobrancaScreen> {
               final result = await CobrancaCaller.salvarRegra(data, id: isEdit ? regra['id']?.toString() : null);
               if (ctx.mounted) Navigator.pop(ctx);
               if (mounted) {
-                _snack(result['success'] ? 'Regra salva' : result['message'], error: !result['success']);
+                _snack(result['success'] ? GridTexts.collectionRuleSaved : result['message'], error: !result['success']);
                 if (result['success']) _carregarRegras();
               }
             },
-            child: Text(isEdit ? 'Atualizar' : 'Criar'),
+            child: Text(isEdit ? GridTexts.update : GridTexts.create),
           ),
         ],
       ),
@@ -142,7 +143,7 @@ class _CobrancaScreenState extends State<CobrancaScreen> {
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(
       content: Text(msg),
-      backgroundColor: error ? Colors.red : Colors.green,
+      backgroundColor: error ? GridColors.error : GridColors.success,
     ));
   }
 
@@ -154,22 +155,22 @@ class _CobrancaScreenState extends State<CobrancaScreen> {
         backgroundColor: Colors.grey[100],
         appBar: AppBar(
           backgroundColor: GridColors.secondary,
-          foregroundColor: Colors.white,
+          foregroundColor: GridColors.buttonText,
           title: const Text('Inadimplência e Cobrança'),
           elevation: 0,
           actions: [
             IconButton(
               icon: _executandoRegua
-                  ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                  ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: GridColors.buttonText))
                   : const Icon(Icons.play_arrow),
-              tooltip: 'Executar Régua',
+              tooltip: GridTexts.executeRule,
               onPressed: _executandoRegua ? null : _executarRegua,
             ),
           ],
           bottom: const TabBar(
-            labelColor: Colors.white,
-            unselectedLabelColor: Colors.white70,
-            indicatorColor: Colors.white,
+            labelColor: GridColors.textPrimary,
+            unselectedLabelColor: GridColors.textPrimaryMuted,
+            indicatorColor: GridColors.textPrimary,
             tabs: [
               Tab(text: 'Vencidos'),
               Tab(text: 'Ações'),
@@ -190,7 +191,7 @@ class _CobrancaScreenState extends State<CobrancaScreen> {
 
   Widget _buildVencidosTab() {
     if (_loadingVencidos) return const Center(child: CircularProgressIndicator());
-    if (_vencidos.isEmpty) return const Center(child: Text('Nenhum vencido encontrado'));
+    if (_vencidos.isEmpty) return const Center(child: Text(GridTexts.noOverdueFound));
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
       child: DataTable(
@@ -229,7 +230,7 @@ class _CobrancaScreenState extends State<CobrancaScreen> {
                     labelText: 'ID do Cliente',
                     border: OutlineInputBorder(),
                     contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 14),
-                    fillColor: Colors.white,
+                    fillColor: GridColors.textPrimary,
                     filled: true,
                   ),
                   keyboardType: TextInputType.number,
@@ -238,7 +239,7 @@ class _CobrancaScreenState extends State<CobrancaScreen> {
               const SizedBox(width: 8),
               ElevatedButton(
                 onPressed: _buscarAcoes,
-                child: const Text('Buscar'),
+                child: const Text(GridTexts.search),
               ),
             ],
           ),
@@ -247,7 +248,7 @@ class _CobrancaScreenState extends State<CobrancaScreen> {
             child: _loadingAcoes
                 ? const Center(child: CircularProgressIndicator())
                 : _acoes.isEmpty
-                    ? const Center(child: Text('Nenhuma ação encontrada'))
+                    ? const Center(child: Text(GridTexts.noActionFound))
                     : ListView.builder(
                         itemCount: _acoes.length,
                         itemBuilder: (_, i) {
@@ -279,7 +280,7 @@ class _CobrancaScreenState extends State<CobrancaScreen> {
               ElevatedButton.icon(
                 onPressed: _novaRegra,
                 icon: const Icon(Icons.add, size: 18),
-                label: const Text('Nova'),
+                label: const Text(GridTexts.newLabel),
               ),
             ],
           ),
@@ -288,7 +289,7 @@ class _CobrancaScreenState extends State<CobrancaScreen> {
           child: _loadingRegras
               ? const Center(child: CircularProgressIndicator())
               : _regras.isEmpty
-                  ? const Center(child: Text('Nenhuma regra cadastrada'))
+                  ? const Center(child: Text(GridTexts.noRuleRegistered))
                   : ListView.builder(
                       padding: const EdgeInsets.all(16),
                       itemCount: _regras.length,
@@ -302,7 +303,7 @@ class _CobrancaScreenState extends State<CobrancaScreen> {
                               mainAxisSize: MainAxisSize.min,
                               children: [
                                 IconButton(icon: const Icon(Icons.edit, size: 20), onPressed: () => _editarRegra(r)),
-                                IconButton(icon: const Icon(Icons.delete, size: 20, color: Colors.red), onPressed: () => _deletarRegra(r)),
+                                IconButton(icon: const Icon(Icons.delete, size: 20, color: GridColors.error), onPressed: () => _deletarRegra(r)),
                               ],
                             ),
                           ),

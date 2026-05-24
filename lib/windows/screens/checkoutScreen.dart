@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../utils/grid_colors.dart';
 import 'package:flutter_html/flutter_html.dart';
 import '../../services/checkout_caller.dart';
 import 'package:html_unescape/html_unescape.dart';
@@ -33,7 +34,7 @@ class _WebCheckoutScreenState extends State<WindowsCheckoutScreen> {
   bool _termsAccepted = false;
   String _termsText = "Carregando termos...";
   final Color _fundoVerdeClaro = const Color.fromARGB(255, 240, 255, 241);
-  final Color _bordaVerdeEscuro = const Color(0xFF2E7D32);
+  final Color _bordaVerdeEscuro = GridColors.success;
   bool contratarFrete = false;
   double valorFrete = 50.0; // Valor estimado do frete
   Future<double> _freteFuture = Future.value(0.0);

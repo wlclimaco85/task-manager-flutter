@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../constants/custom_colors.dart';
 import '../../../services/pedido_compra_service.dart';
+import '../../../utils/grid_texts.dart';
 
 class ReceberDialog extends StatefulWidget {
   final int pedidoId;
@@ -147,7 +148,7 @@ class _ReceberDialogState extends State<ReceberDialog> {
                     children: [
                       TextButton(
                         onPressed: () => Navigator.pop(context),
-                        child: const Text('Cancelar'),
+                        child: const Text(GridTexts.cancel),
                       ),
                       const SizedBox(width: 12),
                       ElevatedButton(

@@ -3,6 +3,7 @@ import '../../../services/escrituracao_fiscal_service.dart';
 import '../../../models/escrituracao_fiscal_model.dart';
 import '../../../utils/tenant_context.dart';
 import 'escrituracao_detalhe_screen.dart';
+import '../../../utils/grid_texts.dart';
 
 class EscrituracaoListScreen extends StatefulWidget {
   const EscrituracaoListScreen({super.key});
@@ -92,7 +93,7 @@ class _EscrituracaoListScreenState extends State<EscrituracaoListScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Cancelar'),
+            child: const Text(GridTexts.cancel),
           ),
           ElevatedButton(
             onPressed: () {

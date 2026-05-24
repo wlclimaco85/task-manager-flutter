@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../../models/conta_pagar_model.dart';
 import '../../services/network_caller.dart';
 import '../../../utils/api_links.dart';
+import '../../utils/grid_texts.dart';
 
 class WebRenegociacaoContaDialog extends StatefulWidget {
   final ContaPagar conta;
@@ -209,7 +210,7 @@ class _WebRenegociacaoContaDialogState extends State<WebRenegociacaoContaDialog>
       actions: [
         TextButton(
           onPressed: _isLoading ? null : () => Navigator.of(context).pop(),
-          child: const Text('Cancelar'),
+          child: const Text(GridTexts.cancel),
         ),
         ElevatedButton(
           onPressed: _isLoading ? null : _submit,

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../utils/grid_colors.dart';
 
 import '../../../models/nfce/nfce_resultado_model.dart';
 import '../../../widgets/nfce/nfce_danfe_panel.dart';
@@ -21,7 +22,7 @@ class NfceAutorizadaScreen extends StatelessWidget {
       backgroundColor: Colors.white,
       appBar: AppBar(
         title: const Text('NFC-e Autorizada'),
-        backgroundColor: const Color(0xFF005826),
+        backgroundColor: GridColors.secondary,
         foregroundColor: Colors.white,
         automaticallyImplyLeading: false,
       ),
@@ -116,7 +117,7 @@ class NfceAutorizadaScreen extends StatelessWidget {
                         icon: const Icon(Icons.add_shopping_cart),
                         label: const Text('Nova venda'),
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF005826),
+                          backgroundColor: GridColors.secondary,
                           foregroundColor: Colors.white,
                           padding: const EdgeInsets.symmetric(vertical: 16),
                         ),

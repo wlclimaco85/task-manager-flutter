@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import '../widgets/generic_grid_windows_screen.dart' show GridColors;
+import '../utils/grid_colors.dart';
+import '../utils/grid_texts.dart';
 
 class NfeXmlPreviewWidget extends StatelessWidget {
   final Map<String, dynamic> data;
@@ -59,7 +60,8 @@ class NfeXmlPreviewWidget extends StatelessWidget {
           children: [
             Row(
               children: [
-                const Icon(Icons.preview, color: GridColors.secondary, size: 22),
+                const Icon(Icons.preview,
+                    color: GridColors.secondary, size: 22),
                 const SizedBox(width: 8),
                 const Text(
                   'Preview da NF-e',
@@ -67,9 +69,11 @@ class NfeXmlPreviewWidget extends StatelessWidget {
                 ),
                 const Spacer(),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                   decoration: BoxDecoration(
-                    color: chaveExiste ? Colors.red.shade50 : Colors.green.shade50,
+                    color:
+                        chaveExiste ? Colors.red.shade50 : Colors.green.shade50,
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(
                       color: chaveExiste ? Colors.red : Colors.green,
@@ -89,7 +93,9 @@ class NfeXmlPreviewWidget extends StatelessWidget {
                         style: TextStyle(
                           fontSize: 12,
                           fontWeight: FontWeight.w600,
-                          color: chaveExiste ? Colors.red.shade800 : Colors.green.shade800,
+                          color: chaveExiste
+                              ? Colors.red.shade800
+                              : Colors.green.shade800,
                         ),
                       ),
                     ],
@@ -119,23 +125,26 @@ class NfeXmlPreviewWidget extends StatelessWidget {
                   style: ElevatedButton.styleFrom(
                     backgroundColor: GridColors.secondary,
                     foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 14),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 28, vertical: 14),
                   ),
                   onPressed: confirming ? null : onConfirm,
                   icon: confirming
                       ? const SizedBox(
                           width: 18,
                           height: 18,
-                          child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                          child: CircularProgressIndicator(
+                              strokeWidth: 2, color: Colors.white),
                         )
                       : const Icon(Icons.check_circle),
-                  label: Text(confirming ? 'Importando...' : 'Confirmar Importação'),
+                  label: Text(
+                      confirming ? 'Importando...' : 'Confirmar Importação'),
                 ),
                 const SizedBox(width: 12),
                 OutlinedButton.icon(
                   onPressed: confirming ? null : onCancel,
                   icon: const Icon(Icons.cancel_outlined),
-                  label: const Text('Cancelar'),
+                  label: const Text(GridTexts.cancel),
                 ),
               ],
             ),
@@ -149,17 +158,34 @@ class NfeXmlPreviewWidget extends StatelessWidget {
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
       child: DataTable(
-        headingRowColor: WidgetStateProperty.all(GridColors.secondary.withValues(alpha: 0.1)),
+        headingRowColor: WidgetStateProperty.all(
+            GridColors.secondary.withValues(alpha: 0.1)),
         columnSpacing: 16,
         columns: const [
-          DataColumn(label: Text('#', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 12))),
-          DataColumn(label: Text('Produto', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 12))),
-          DataColumn(label: Text('NCM', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 12))),
-          DataColumn(label: Text('CFOP', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 12))),
-          DataColumn(label: Text('CST', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 12))),
-          DataColumn(label: Text('Qtde', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 12))),
-          DataColumn(label: Text('V. Unit.', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 12))),
-          DataColumn(label: Text('Total', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 12))),
+          DataColumn(
+              label: Text('#',
+                  style: TextStyle(fontWeight: FontWeight.w600, fontSize: 12))),
+          DataColumn(
+              label: Text('Produto',
+                  style: TextStyle(fontWeight: FontWeight.w600, fontSize: 12))),
+          DataColumn(
+              label: Text('NCM',
+                  style: TextStyle(fontWeight: FontWeight.w600, fontSize: 12))),
+          DataColumn(
+              label: Text('CFOP',
+                  style: TextStyle(fontWeight: FontWeight.w600, fontSize: 12))),
+          DataColumn(
+              label: Text('CST',
+                  style: TextStyle(fontWeight: FontWeight.w600, fontSize: 12))),
+          DataColumn(
+              label: Text('Qtde',
+                  style: TextStyle(fontWeight: FontWeight.w600, fontSize: 12))),
+          DataColumn(
+              label: Text('V. Unit.',
+                  style: TextStyle(fontWeight: FontWeight.w600, fontSize: 12))),
+          DataColumn(
+              label: Text('Total',
+                  style: TextStyle(fontWeight: FontWeight.w600, fontSize: 12))),
         ],
         rows: itens.asMap().entries.map((entry) {
           final i = entry.value;
@@ -174,9 +200,17 @@ class NfeXmlPreviewWidget extends StatelessWidget {
                 style: const TextStyle(fontSize: 12))),
             DataCell(Text(_itemGet(i, 'CST') ?? _itemGet(i, 'cst') ?? '-',
                 style: const TextStyle(fontSize: 12))),
-            DataCell(Text(_itemGet(i, 'qTrib') ?? _itemGet(i, 'qCom') ?? _itemGet(i, 'quantidade') ?? '-',
+            DataCell(Text(
+                _itemGet(i, 'qTrib') ??
+                    _itemGet(i, 'qCom') ??
+                    _itemGet(i, 'quantidade') ??
+                    '-',
                 style: const TextStyle(fontSize: 12))),
-            DataCell(Text(_itemGet(i, 'vUnTrib') ?? _itemGet(i, 'vUnCom') ?? _itemGet(i, 'valorUnitario') ?? '-',
+            DataCell(Text(
+                _itemGet(i, 'vUnTrib') ??
+                    _itemGet(i, 'vUnCom') ??
+                    _itemGet(i, 'valorUnitario') ??
+                    '-',
                 style: const TextStyle(fontSize: 12))),
             DataCell(Text(_itemGet(i, 'vProd') ?? _itemGet(i, 'total') ?? '-',
                 style: const TextStyle(fontSize: 12))),
@@ -215,7 +249,10 @@ class NfeXmlPreviewWidget extends StatelessWidget {
             width: 160,
             child: Text(
               label,
-              style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: Colors.grey),
+              style: const TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w500,
+                  color: Colors.grey),
             ),
           ),
           Expanded(

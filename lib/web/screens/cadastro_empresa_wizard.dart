@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import '../../utils/grid_colors.dart';
 import 'package:http/http.dart' as http;
 import '../../../models/auth_utility.dart';
 import '../../../services/network_caller.dart';
@@ -460,7 +461,7 @@ class _CadastroEmpresaWizardState extends State<CadastroEmpresaWizard> {
               children: [
                 if (i > 0)
                   Container(width: 24, height: 2,
-                    color: done ? const Color(0xFF4CAF50) : Colors.white12),
+                    color: done ? GridColors.success : Colors.white12),
                 GestureDetector(
                   onTap: () {
                     if (i < _step) {
@@ -472,7 +473,7 @@ class _CadastroEmpresaWizardState extends State<CadastroEmpresaWizard> {
                     duration: const Duration(milliseconds: 200),
                     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                     decoration: BoxDecoration(
-                      color: active ? const Color(0xFF4CAF50) : done ? const Color(0xFF2E7D32) : Colors.white10,
+                      color: active ? GridColors.success : done ? GridColors.success : Colors.white10,
                       borderRadius: BorderRadius.circular(20),
                     ),
                     child: Text(_steps[i],
@@ -513,7 +514,7 @@ class _CadastroEmpresaWizardState extends State<CadastroEmpresaWizard> {
               onPressed: _next,
               icon: const Icon(Icons.arrow_forward, size: 16),
               label: const Text('Próximo'),
-              style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF4CAF50)),
+              style: ElevatedButton.styleFrom(backgroundColor: GridColors.success),
             ),
         ],
       ),
@@ -703,7 +704,7 @@ class _StepContas extends StatelessWidget {
             final isPagar = c.tipo == 'PAGAR';
             return _WizCard(
               title: '${isPagar ? "Pagar" : "Receber"} ${isPagar ? i + 1 : i - 4}',
-              color: isPagar ? const Color(0xFFC62828) : const Color(0xFF2E7D32),
+              color: isPagar ? GridColors.error : GridColors.success,
               child: Row(
                 children: [
                   Expanded(child: _field('Descrição', Icons.description, (v) => c.descricao = v ?? '', initial: c.descricao)),
@@ -891,7 +892,7 @@ class _StepExecutar extends StatelessWidget {
                   icon: const Icon(Icons.rocket_launch),
                   label: const Text('Executar Cadastro Completo'),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF4CAF50),
+                    backgroundColor: GridColors.success,
                     padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
                     textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                   ),
@@ -901,7 +902,7 @@ class _StepExecutar extends StatelessWidget {
               const Center(child: Padding(
                 padding: EdgeInsets.all(16),
                 child: Column(children: [
-                  CircularProgressIndicator(color: Color(0xFF4CAF50)),
+                  CircularProgressIndicator(color: GridColors.success),
                   SizedBox(height: 8),
                   Text('Executando...', style: TextStyle(color: Colors.white70)),
                 ]),
@@ -910,9 +911,9 @@ class _StepExecutar extends StatelessWidget {
               const Center(child: Padding(
                 padding: EdgeInsets.all(8),
                 child: Row(mainAxisSize: MainAxisSize.min, children: [
-                  Icon(Icons.check_circle, color: Color(0xFF4CAF50), size: 28),
+                  Icon(Icons.check_circle, color: GridColors.success, size: 28),
                   SizedBox(width: 8),
-                  Text('Concluído!', style: TextStyle(color: Color(0xFF4CAF50), fontSize: 18, fontWeight: FontWeight.bold)),
+                  Text('Concluído!', style: TextStyle(color: GridColors.success, fontSize: 18, fontWeight: FontWeight.bold)),
                 ]),
               )),
             const SizedBox(height: 12),
@@ -953,7 +954,7 @@ class _StepExecutar extends StatelessWidget {
 
   Color _logColor(_LogType t) {
     switch (t) {
-      case _LogType.success: return const Color(0xFF4CAF50);
+      case _LogType.success: return GridColors.success;
       case _LogType.error: return const Color(0xFFEF5350);
       case _LogType.warning: return const Color(0xFFFFB300);
       case _LogType.section: return const Color(0xFF42A5F5);
@@ -995,7 +996,7 @@ class _StepScaffold extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(children: [
-            Icon(icon, color: const Color(0xFF4CAF50), size: 22),
+            Icon(icon, color: GridColors.success, size: 22),
             const SizedBox(width: 8),
             Text(title, style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
           ]),
@@ -1065,7 +1066,7 @@ Widget _field(
         fillColor: const Color(0xFF0F1117),
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: Colors.white12)),
         enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: Colors.white12)),
-        focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: Color(0xFF4CAF50))),
+        focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: GridColors.success)),
         contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       ),
       validator: required ? (v) => (v == null || v.isEmpty) ? '$label é obrigatório' : null : null,
@@ -1245,7 +1246,7 @@ class _MultiSelectDialogState extends State<_MultiSelectDialog> {
             return CheckboxListTile(
               value: _selected.contains(id),
               title: Text(item[widget.displayField]?.toString() ?? '', style: const TextStyle(color: Colors.white, fontSize: 13)),
-              activeColor: const Color(0xFF4CAF50),
+              activeColor: GridColors.success,
               onChanged: (v) => setState(() => v == true ? _selected.add(id) : _selected.remove(id)),
             );
           }).toList(),
@@ -1255,7 +1256,7 @@ class _MultiSelectDialogState extends State<_MultiSelectDialog> {
         TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancelar', style: TextStyle(color: Colors.white54))),
         ElevatedButton(
           onPressed: () => Navigator.pop(context, _selected.toList()),
-          style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF4CAF50)),
+          style: ElevatedButton.styleFrom(backgroundColor: GridColors.success),
           child: const Text('Confirmar'),
         ),
       ],

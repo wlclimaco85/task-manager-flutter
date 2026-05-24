@@ -84,7 +84,7 @@ class _TabelaPrecoScreenState extends State<TabelaPrecoScreen>
       children: [
         Container(
           height: 56,
-          color: const Color(0xFF93070A),
+          color: GridColors.primary,
           padding: const EdgeInsets.symmetric(horizontal: 16),
           child: Row(
             children: [

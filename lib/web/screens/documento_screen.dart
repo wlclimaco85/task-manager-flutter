@@ -1,5 +1,6 @@
 // ignore_for_file: library_private_types_in_public_api
 import 'package:flutter/material.dart';
+import '../../utils/grid_colors.dart';
 import 'package:intl/intl.dart';
 import '../../../services/network_caller.dart';
 import '../../../utils/api_links.dart';
@@ -50,16 +51,16 @@ class WindowsCalendarScreen extends StatefulWidget {
 
 class _WindowsCalendarScreenState extends State<WindowsCalendarScreen> {
   // ── Colors ──────────────────────────────────────────────────────────────
-  static const Color _red         = Color(0xFF93070A);
-  static const Color _redLight    = Color(0xFFFFEBEE);
-  static const Color _green       = Color(0xFF005826);
-  static const Color _greenLight  = Color(0xFFE8F5E9);
-  static const Color _orange      = Color(0xFFE65100);
-  static const Color _purple      = Color(0xFF6A1B9A);
+  static const Color _red = GridColors.primary;
+  static const Color _redLight = Color(0xFFFFEBEE);
+  static const Color _green = GridColors.secondary;
+  static const Color _greenLight = Color(0xFFE8F5E9);
+  static const Color _orange = Color(0xFFE65100);
+  static const Color _purple = Color(0xFF6A1B9A);
   static const Color _purpleLight = Color(0xFFF3E5F5);
-  static const Color _grey        = Color(0xFFF5F5F5);
-  static const Color _greyBorder  = Color(0xFFE0E0E0);
-  static const Color _dark        = Color(0xFF212121);
+  static const Color _grey = Color(0xFFF5F5F5);
+  static const Color _greyBorder = Color(0xFFE0E0E0);
+  static const Color _dark = Color(0xFF212121);
 
   // ── State ────────────────────────────────────────────────────────────────
   DateTime _currentMonth = DateTime.now();
@@ -68,11 +69,11 @@ class _WindowsCalendarScreenState extends State<WindowsCalendarScreen> {
   bool _loadingDay = false;
   bool _loadingMonth = false;
 
-  List<Map<String, dynamic>> _contasPagar   = [];
+  List<Map<String, dynamic>> _contasPagar = [];
   List<Map<String, dynamic>> _contasReceber = [];
 
   final Map<int, _MonthSummary> _monthSummaries = {};
-  Map<String, _DayMarkers> _dayMarkers    = {};
+  Map<String, _DayMarkers> _dayMarkers = {};
 
   // ── Formatters ───────────────────────────────────────────────────────────
   final _currencyFmt = NumberFormat.currency(locale: 'pt_BR', symbol: 'R\$');
@@ -90,123 +91,163 @@ class _WindowsCalendarScreenState extends State<WindowsCalendarScreen> {
   String _monthParam(DateTime d) => DateFormat('yyyy-MM').format(d);
 
   String _buildUrl(String base, Map<String, String> params) {
-    final empId     = TenantContext.empresaId;
-    final parcId    = TenantContext.parceiroId;
+    final empId = TenantContext.empresaId;
+    final parcId = TenantContext.parceiroId;
     final buf = StringBuffer(base);
     buf.write('?');
     params.forEach((k, v) => buf.write('$k=$v&'));
-    if (empId  != null) buf.write('empId=$empId&');
+    if (empId != null) buf.write('empId=$empId&');
     if (parcId != null) buf.write('parceiroId=$parcId&');
     return buf.toString();
   }
 
+  /// Parseia a resposta da API financeira com suporte a múltiplos formatos.
+  /// O backend pode retornar:
+  ///   { "data": { "dados": [...] } }        (Spring Page wrapper)
+  ///   { "data": [...] }                      (lista direta dentro de "data")
+  ///   [ ... ]                                 (lista raiz)
+  ///   { "content": [...] }                    (Spring Page alternativo)
+  ///   { "items": [...] }  ou { "results": [...] }
   List<Map<String, dynamic>> _parseItems(dynamic body) {
     try {
-      final data = body['data'];
-      if (data == null) return [];
-      final dados = data['dados'];
-      if (dados == null) return [];
-      return List<Map<String, dynamic>>.from(dados as List);
-    } catch (_) {
-      return [];
-    }
+      dynamic cursor = body;
+      // Tenta extrair 'data' se existir
+      if (cursor is Map && cursor.containsKey('data')) {
+        cursor = cursor['data'];
+      }
+      // Se 'data' é um Map, procura listas internas
+      if (cursor is Map) {
+        for (final key in const ['dados', 'content', 'items', 'results']) {
+          final value = cursor[key];
+          if (value is List) {
+            return value
+                .whereType<Map>()
+                .map((item) => Map<String, dynamic>.from(item))
+                .toList();
+          }
+        }
+      }
+      // Se cursor já é uma lista direta
+      if (cursor is List) {
+        return cursor
+            .whereType<Map>()
+            .map((item) => Map<String, dynamic>.from(item))
+            .toList();
+      }
+    } catch (_) {}
+    return [];
   }
 
   Future<void> _loadMonthMarkers(DateTime month) async {
     setState(() => _loadingMonth = true);
     final monthStr = _monthParam(month);
-    final urlP = _buildUrl(ApiLinks.allContasPagar,   {'mesAno': monthStr, 'tamanho': '1000'});
-    final urlR = _buildUrl(ApiLinks.allContasReceber, {'mesAno': monthStr, 'tamanho': '1000'});
+    final urlP = _buildUrl(
+        ApiLinks.allContasPagar, {'mesAno': monthStr, 'tamanho': '1000'});
+    final urlR = _buildUrl(
+        ApiLinks.allContasReceber, {'mesAno': monthStr, 'tamanho': '1000'});
 
     final resP = await NetworkCaller().getRequest(urlP);
     final resR = await NetworkCaller().getRequest(urlR);
 
-    final pagarList   = resP.isSuccess ? _parseItems(resP.body) : <Map<String, dynamic>>[];
-    final receberList = resR.isSuccess ? _parseItems(resR.body) : <Map<String, dynamic>>[];
+    final pagarList =
+        resP.isSuccess ? _parseItems(resP.body) : <Map<String, dynamic>>[];
+    final receberList =
+        resR.isSuccess ? _parseItems(resR.body) : <Map<String, dynamic>>[];
 
     final newMarkers = <String, _DayMarkers>{};
 
-    void addMarker(String key, {bool pagar = false, bool receber = false,
-        bool pago = false, bool recebido = false, bool tributo = false}) {
+    void addMarker(String key,
+        {bool pagar = false,
+        bool receber = false,
+        bool pago = false,
+        bool recebido = false,
+        bool tributo = false}) {
       final old = newMarkers[key] ?? const _DayMarkers();
       newMarkers[key] = _DayMarkers(
-        hasPagar:    old.hasPagar    || pagar,
-        hasReceber:  old.hasReceber  || receber,
-        hasPago:     old.hasPago     || pago,
+        hasPagar: old.hasPagar || pagar,
+        hasReceber: old.hasReceber || receber,
+        hasPago: old.hasPago || pago,
         hasRecebido: old.hasRecebido || recebido,
-        hasTributo:  old.hasTributo  || tributo,
+        hasTributo: old.hasTributo || tributo,
       );
     }
-
-    final today = DateTime.now();
 
     for (final item in pagarList) {
-      final dateStr = (item['dataVencimento'] as String?)?.substring(0, 10) ?? '';
-      if (dateStr.isEmpty) continue;
-      final date = DateTime.tryParse(dateStr);
-      if (date == null) continue;
-      final isPast   = date.isBefore(DateTime(today.year, today.month, today.day));
-      final isBaixa  = item['status'] == 'BAIXADA';
-      final tributo  = item['documentoFiscal'] == true;
-      addMarker(dateStr,
-        pagar:   !isPast && !isBaixa,
-        pago:    isBaixa,
-        tributo: tributo,
-      );
-    }
-
-    for (final item in receberList) {
-      final dateStr = (item['dataVencimento'] as String?)?.substring(0, 10) ?? '';
+      final dateStr =
+          (item['dataVencimento'] as String?)?.substring(0, 10) ?? '';
       if (dateStr.isEmpty) continue;
       final date = DateTime.tryParse(dateStr);
       if (date == null) continue;
       final isBaixa = item['status'] == 'BAIXADA';
       final tributo = item['documentoFiscal'] == true;
-      addMarker(dateStr,
-        receber:   !isBaixa,
-        recebido:  isBaixa,
-        tributo:   tributo,
+      addMarker(
+        dateStr,
+        pagar: !isBaixa,
+        pago: isBaixa,
+        tributo: tributo,
+      );
+    }
+
+    for (final item in receberList) {
+      final dateStr =
+          (item['dataVencimento'] as String?)?.substring(0, 10) ?? '';
+      if (dateStr.isEmpty) continue;
+      final date = DateTime.tryParse(dateStr);
+      if (date == null) continue;
+      final isBaixa = item['status'] == 'BAIXADA';
+      final tributo = item['documentoFiscal'] == true;
+      addMarker(
+        dateStr,
+        receber: !isBaixa,
+        recebido: isBaixa,
+        tributo: tributo,
       );
     }
 
     if (!mounted) return;
     setState(() {
-      _dayMarkers  = newMarkers;
+      _dayMarkers = newMarkers;
       _loadingMonth = false;
     });
   }
 
   Future<void> _loadDayData(DateTime day) async {
     setState(() {
-      _loadingDay    = true;
-      _contasPagar   = [];
+      _loadingDay = true;
+      _contasPagar = [];
       _contasReceber = [];
     });
     final dayStr = _dayParam(day);
-    final urlP = _buildUrl(ApiLinks.allContasPagar,   {'dataVencimento': dayStr, 'tamanho': '100'});
-    final urlR = _buildUrl(ApiLinks.allContasReceber, {'dataVencimento': dayStr, 'tamanho': '100'});
+    final urlP = _buildUrl(
+        ApiLinks.allContasPagar, {'dataVencimento': dayStr, 'tamanho': '100'});
+    final urlR = _buildUrl(ApiLinks.allContasReceber,
+        {'dataVencimento': dayStr, 'tamanho': '100'});
 
     final resP = await NetworkCaller().getRequest(urlP);
     final resR = await NetworkCaller().getRequest(urlR);
 
     if (!mounted) return;
     setState(() {
-      _contasPagar   = resP.isSuccess ? _parseItems(resP.body) : [];
+      _contasPagar = resP.isSuccess ? _parseItems(resP.body) : [];
       _contasReceber = resR.isSuccess ? _parseItems(resR.body) : [];
-      _loadingDay    = false;
+      _loadingDay = false;
     });
   }
 
   Future<_MonthSummary> _loadMonthSummary(int year, int month) async {
     final monthStr = '$year-${month.toString().padLeft(2, '0')}';
-    final urlP = _buildUrl(ApiLinks.allContasPagar,   {'mesAno': monthStr, 'tamanho': '1000'});
-    final urlR = _buildUrl(ApiLinks.allContasReceber, {'mesAno': monthStr, 'tamanho': '1000'});
+    final urlP = _buildUrl(
+        ApiLinks.allContasPagar, {'mesAno': monthStr, 'tamanho': '1000'});
+    final urlR = _buildUrl(
+        ApiLinks.allContasReceber, {'mesAno': monthStr, 'tamanho': '1000'});
 
     final resP = await NetworkCaller().getRequest(urlP);
     final resR = await NetworkCaller().getRequest(urlR);
 
-    final pagarList   = resP.isSuccess ? _parseItems(resP.body) : <Map<String, dynamic>>[];
-    final receberList = resR.isSuccess ? _parseItems(resR.body) : <Map<String, dynamic>>[];
+    final pagarList =
+        resP.isSuccess ? _parseItems(resP.body) : <Map<String, dynamic>>[];
+    final receberList =
+        resR.isSuccess ? _parseItems(resR.body) : <Map<String, dynamic>>[];
 
     double totalPagar = 0, totalPago = 0, totalReceber = 0, totalRecebido = 0;
 
@@ -228,12 +269,12 @@ class _WindowsCalendarScreenState extends State<WindowsCalendarScreen> {
     }
 
     return _MonthSummary(
-      totalPagar:    totalPagar,
-      totalPago:     totalPago,
-      totalReceber:  totalReceber,
+      totalPagar: totalPagar,
+      totalPago: totalPago,
+      totalReceber: totalReceber,
       totalRecebido: totalRecebido,
-      saldoPagar:    totalPago - totalPagar,
-      saldoReceber:  totalRecebido - totalReceber,
+      saldoPagar: totalPago - totalPagar,
+      saldoReceber: totalRecebido - totalReceber,
     );
   }
 
@@ -293,18 +334,20 @@ class _WindowsCalendarScreenState extends State<WindowsCalendarScreen> {
               backgroundColor: Colors.white24,
               foregroundColor: Colors.white,
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(6)),
             ),
             onPressed: () {
               final today = DateTime.now();
               setState(() {
-                _selectedDay   = today;
-                _currentMonth  = DateTime(today.year, today.month);
+                _selectedDay = today;
+                _currentMonth = DateTime(today.year, today.month);
               });
               _loadMonthMarkers(_currentMonth);
               _loadDayData(today);
             },
-            child: const Text('Hoje', style: TextStyle(fontWeight: FontWeight.bold)),
+            child: const Text('Hoje',
+                style: TextStyle(fontWeight: FontWeight.bold)),
           ),
         ],
       ),
@@ -356,7 +399,8 @@ class _WindowsCalendarScreenState extends State<WindowsCalendarScreen> {
           child: Card(
             margin: const EdgeInsets.all(12),
             elevation: 2,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+            shape:
+                RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
             child: Padding(
               padding: const EdgeInsets.all(12),
               child: Column(
@@ -436,7 +480,8 @@ class _WindowsCalendarScreenState extends State<WindowsCalendarScreen> {
 
   Widget _buildCalendarGrid() {
     final firstDay = DateTime(_currentMonth.year, _currentMonth.month, 1);
-    final daysInMonth = DateUtils.getDaysInMonth(_currentMonth.year, _currentMonth.month);
+    final daysInMonth =
+        DateUtils.getDaysInMonth(_currentMonth.year, _currentMonth.month);
     final startWeekday = firstDay.weekday % 7; // 0=Sun
     final today = DateTime.now();
     final todayNorm = DateTime(today.year, today.month, today.day);
@@ -449,13 +494,13 @@ class _WindowsCalendarScreenState extends State<WindowsCalendarScreen> {
     }
 
     for (int day = 1; day <= daysInMonth; day++) {
-      final date     = DateTime(_currentMonth.year, _currentMonth.month, day);
-      final dateStr  = _dayParam(date);
-      final markers  = _dayMarkers[dateStr] ?? const _DayMarkers();
-      final isToday  = date == todayNorm;
-      final isSelected = _selectedDay != null &&
-          _dayParam(_selectedDay!) == dateStr;
-      final isPast   = date.isBefore(todayNorm);
+      final date = DateTime(_currentMonth.year, _currentMonth.month, day);
+      final dateStr = _dayParam(date);
+      final markers = _dayMarkers[dateStr] ?? const _DayMarkers();
+      final isToday = date == todayNorm;
+      final isSelected =
+          _selectedDay != null && _dayParam(_selectedDay!) == dateStr;
+      final isPast = date.isBefore(todayNorm);
 
       cells.add(_buildDayCell(
         day: day,
@@ -488,9 +533,10 @@ class _WindowsCalendarScreenState extends State<WindowsCalendarScreen> {
     Color textColor = _dark;
 
     if (isSelected) {
-      bgColor   = _red;
+      bgColor = _red;
       textColor = Colors.white;
-    } else if (isPast && (markers.hasPago || markers.hasRecebido || markers.hasTributo)) {
+    } else if (isPast &&
+        (markers.hasPago || markers.hasRecebido || markers.hasTributo)) {
       bgColor = _grey;
     } else if (!isPast && markers.hasPagar) {
       bgColor = _redLight;
@@ -529,12 +575,10 @@ class _WindowsCalendarScreenState extends State<WindowsCalendarScreen> {
               spacing: 1,
               runSpacing: 1,
               children: [
-                if (markers.hasPagar)
-                  _miniIcon(Icons.arrow_upward, _red, 11),
+                if (markers.hasPagar) _miniIcon(Icons.arrow_upward, _red, 11),
                 if (markers.hasReceber)
                   _miniIcon(Icons.arrow_downward, _green, 11),
-                if (markers.hasPago)
-                  _miniIcon(Icons.check, Colors.grey, 11),
+                if (markers.hasPago) _miniIcon(Icons.check, Colors.grey, 11),
                 if (markers.hasRecebido)
                   _miniIcon(Icons.check_circle, _green, 11),
                 if (markers.hasTributo)
@@ -545,7 +589,8 @@ class _WindowsCalendarScreenState extends State<WindowsCalendarScreen> {
                       border: Border.all(color: _purple, width: 1),
                     ),
                     padding: const EdgeInsets.all(1),
-                    child: const Icon(Icons.receipt_long, color: _purple, size: 13),
+                    child: const Icon(Icons.receipt_long,
+                        color: _purple, size: 13),
                   ),
               ],
             ),
@@ -565,11 +610,11 @@ class _WindowsCalendarScreenState extends State<WindowsCalendarScreen> {
       spacing: 12,
       runSpacing: 4,
       children: [
-        _legendItem(Icons.arrow_upward,   _red,    'A Pagar'),
-        _legendItem(Icons.arrow_downward, _green,  'A Receber'),
-        _legendItem(Icons.check,          Colors.grey, 'Pago'),
-        _legendItem(Icons.check_circle,   _green,  'Recebido'),
-        _legendItem(Icons.receipt_long,   _purple, 'Doc. Fiscal'),
+        _legendItem(Icons.arrow_upward, _red, 'A Pagar'),
+        _legendItem(Icons.arrow_downward, _green, 'A Receber'),
+        _legendItem(Icons.check, Colors.grey, 'Pago'),
+        _legendItem(Icons.check_circle, _green, 'Recebido'),
+        _legendItem(Icons.receipt_long, _purple, 'Doc. Fiscal'),
       ],
     );
   }
@@ -589,12 +634,15 @@ class _WindowsCalendarScreenState extends State<WindowsCalendarScreen> {
   Widget _buildDaySidePanel() {
     final day = _selectedDay!;
     final weekdays = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
-    final wdLabel  = weekdays[day.weekday % 7];
-    final dateLabel = '${day.day.toString().padLeft(2,'0')}/${day.month.toString().padLeft(2,'0')}/${day.year} ($wdLabel)';
+    final wdLabel = weekdays[day.weekday % 7];
+    final dateLabel =
+        '${day.day.toString().padLeft(2, '0')}/${day.month.toString().padLeft(2, '0')}/${day.year} ($wdLabel)';
 
-    final totalPagar   = _contasPagar.fold<double>(0, (s, i) => s + ((i['valor'] as num?)?.toDouble() ?? 0));
-    final totalReceber = _contasReceber.fold<double>(0, (s, i) => s + ((i['valor'] as num?)?.toDouble() ?? 0));
-    final saldo        = totalReceber - totalPagar;
+    final totalPagar = _contasPagar.fold<double>(
+        0, (s, i) => s + ((i['valor'] as num?)?.toDouble() ?? 0));
+    final totalReceber = _contasReceber.fold<double>(
+        0, (s, i) => s + ((i['valor'] as num?)?.toDouble() ?? 0));
+    final saldo = totalReceber - totalPagar;
 
     return Card(
       margin: const EdgeInsets.fromLTRB(0, 12, 12, 12),
@@ -649,7 +697,8 @@ class _WindowsCalendarScreenState extends State<WindowsCalendarScreen> {
                         total: totalPagar,
                         totalColor: _red,
                       ),
-                      ..._contasPagar.map((item) => _buildContaItem(item, isPagar: true)),
+                      ..._contasPagar
+                          .map((item) => _buildContaItem(item, isPagar: true)),
                       if (_contasPagar.isEmpty)
                         _emptySection('Nenhuma conta a pagar'),
                       const SizedBox(height: 12),
@@ -660,7 +709,8 @@ class _WindowsCalendarScreenState extends State<WindowsCalendarScreen> {
                         total: totalReceber,
                         totalColor: _green,
                       ),
-                      ..._contasReceber.map((item) => _buildContaItem(item, isPagar: false)),
+                      ..._contasReceber
+                          .map((item) => _buildContaItem(item, isPagar: false)),
                       if (_contasReceber.isEmpty)
                         _emptySection('Nenhuma conta a receber'),
                       const SizedBox(height: 12),
@@ -705,11 +755,11 @@ class _WindowsCalendarScreenState extends State<WindowsCalendarScreen> {
   }
 
   Widget _buildContaItem(Map<String, dynamic> item, {required bool isPagar}) {
-    final valor       = (item['valor'] as num?)?.toDouble() ?? 0;
-    final status      = item['status'] as String? ?? 'ABERTA';
-    final descricao   = item['descricao'] as String? ?? '';
-    final tributo     = item['documentoFiscal'] == true;
-    final parceiro    = (item['parceiro'] as Map?)?.cast<String, dynamic>();
+    final valor = (item['valor'] as num?)?.toDouble() ?? 0;
+    final status = item['status'] as String? ?? 'ABERTA';
+    final descricao = item['descricao'] as String? ?? '';
+    final tributo = item['documentoFiscal'] == true;
+    final parceiro = (item['parceiro'] as Map?)?.cast<String, dynamic>();
     final parceiroNome = parceiro?['nome'] as String? ?? '';
 
     final today = DateTime.now();
@@ -723,16 +773,16 @@ class _WindowsCalendarScreenState extends State<WindowsCalendarScreen> {
     String statusLabel;
     switch (status) {
       case 'BAIXADA':
-        statusColor  = _green;
-        statusLabel  = isPagar ? 'PAGO' : 'RECEBIDO';
+        statusColor = _green;
+        statusLabel = isPagar ? 'PAGO' : 'RECEBIDO';
         break;
       case 'CANCELADA':
-        statusColor  = Colors.grey;
-        statusLabel  = 'CANCELADA';
+        statusColor = Colors.grey;
+        statusLabel = 'CANCELADA';
         break;
       default:
-        statusColor  = _orange;
-        statusLabel  = 'ABERTA';
+        statusColor = _orange;
+        statusLabel = 'ABERTA';
     }
 
     return Card(
@@ -766,7 +816,9 @@ class _WindowsCalendarScreenState extends State<WindowsCalendarScreen> {
             ] else ...[
               Icon(
                 status == 'BAIXADA' ? Icons.check : Icons.arrow_upward,
-                color: status == 'BAIXADA' ? Colors.grey : (isPagar ? _red : _green),
+                color: status == 'BAIXADA'
+                    ? Colors.grey
+                    : (isPagar ? _red : _green),
                 size: 16,
               ),
               const SizedBox(width: 6),
@@ -780,13 +832,15 @@ class _WindowsCalendarScreenState extends State<WindowsCalendarScreen> {
                     descricao,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+                    style: const TextStyle(
+                        fontSize: 12, fontWeight: FontWeight.w600),
                   ),
                   if (parceiroNome.isNotEmpty)
                     Text(parceiroNome,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(fontSize: 10, color: Colors.grey)),
+                        style:
+                            const TextStyle(fontSize: 10, color: Colors.grey)),
                 ],
               ),
             ),
@@ -807,8 +861,7 @@ class _WindowsCalendarScreenState extends State<WindowsCalendarScreen> {
                 Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    if (isVencida)
-                      _chip('VENCIDA', _red, Colors.white),
+                    if (isVencida) _chip('VENCIDA', _red, Colors.white),
                     const SizedBox(width: 3),
                     _chip(statusLabel, statusColor, Colors.white),
                   ],
@@ -829,7 +882,8 @@ class _WindowsCalendarScreenState extends State<WindowsCalendarScreen> {
         borderRadius: BorderRadius.circular(4),
       ),
       child: Text(label,
-          style: TextStyle(color: fg, fontSize: 9, fontWeight: FontWeight.bold)),
+          style:
+              TextStyle(color: fg, fontSize: 9, fontWeight: FontWeight.bold)),
     );
   }
 
@@ -871,8 +925,7 @@ class _WindowsCalendarScreenState extends State<WindowsCalendarScreen> {
         Text(value,
             style: TextStyle(
                 fontWeight: FontWeight.bold, color: color, fontSize: 12)),
-        Text(label,
-            style: const TextStyle(fontSize: 10, color: Colors.grey)),
+        Text(label, style: const TextStyle(fontSize: 10, color: Colors.grey)),
       ],
     );
   }
@@ -927,13 +980,23 @@ class _WindowsCalendarScreenState extends State<WindowsCalendarScreen> {
 
   Widget _buildMonthCard(int year, int month) {
     final monthNames = [
-      'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
-      'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro',
+      'Janeiro',
+      'Fevereiro',
+      'Março',
+      'Abril',
+      'Maio',
+      'Junho',
+      'Julho',
+      'Agosto',
+      'Setembro',
+      'Outubro',
+      'Novembro',
+      'Dezembro',
     ];
     final summary = _monthSummaries[month];
-    final saldo   = summary != null
+    final saldo = summary != null
         ? (summary.totalRecebido + summary.saldoReceber) -
-          (summary.totalPago + summary.saldoPagar.abs())
+            (summary.totalPago + summary.saldoPagar.abs())
         : 0.0;
 
     return Card(
@@ -1058,13 +1121,16 @@ class _WindowsCalendarScreenState extends State<WindowsCalendarScreen> {
   }) async {
     final monthStr = '$year-${month.toString().padLeft(2, '0')}';
     final url = isPagar
-        ? _buildUrl(ApiLinks.allContasPagar,   {'mesAno': monthStr, 'tamanho': '1000'})
-        : _buildUrl(ApiLinks.allContasReceber, {'mesAno': monthStr, 'tamanho': '1000'});
+        ? _buildUrl(
+            ApiLinks.allContasPagar, {'mesAno': monthStr, 'tamanho': '1000'})
+        : _buildUrl(
+            ApiLinks.allContasReceber, {'mesAno': monthStr, 'tamanho': '1000'});
 
     showDialog(
       context: context,
       builder: (_) => _MonthDetailDialog(
-        title: '${isPagar ? 'Contas a Pagar' : 'Contas a Receber'} — $monthName $year',
+        title:
+            '${isPagar ? 'Contas a Pagar' : 'Contas a Receber'} — $monthName $year',
         url: url,
         isPagar: isPagar,
         currencyFmt: _currencyFmt,
@@ -1093,16 +1159,16 @@ class _MonthDetailDialog extends StatefulWidget {
 }
 
 class _MonthDetailDialogState extends State<_MonthDetailDialog> {
-  static const Color _red    = Color(0xFF93070A);
-  static const Color _green  = Color(0xFF005826);
+  static const Color _red = GridColors.primary;
+  static const Color _green = GridColors.secondary;
   static const Color _orange = Color(0xFFE65100);
-  static const Color _grey   = Color(0xFFF5F5F5);
+  static const Color _grey = Color(0xFFF5F5F5);
   static const Color _greyBorder = Color(0xFFE0E0E0);
   static const Color _purple = Color(0xFF6A1B9A);
   static const Color _purpleLight = Color(0xFFF3E5F5);
 
   bool _loading = true;
-  List<Map<String, dynamic>> _abertas  = [];
+  List<Map<String, dynamic>> _abertas = [];
   List<Map<String, dynamic>> _baixadas = [];
 
   @override
@@ -1123,17 +1189,21 @@ class _MonthDetailDialogState extends State<_MonthDetailDialog> {
       } catch (_) {}
     }
     setState(() {
-      _abertas  = items.where((i) => i['status'] != 'BAIXADA' && i['status'] != 'CANCELADA').toList();
+      _abertas = items
+          .where((i) => i['status'] != 'BAIXADA' && i['status'] != 'CANCELADA')
+          .toList();
       _baixadas = items.where((i) => i['status'] == 'BAIXADA').toList();
-      _loading  = false;
+      _loading = false;
     });
   }
 
   @override
   Widget build(BuildContext context) {
-    final totalAberto  = _abertas.fold<double>(0, (s, i) => s + ((i['valor'] as num?)?.toDouble() ?? 0));
-    final totalBaixado = _baixadas.fold<double>(0, (s, i) => s + ((i['valor'] as num?)?.toDouble() ?? 0));
-    final saldo        = widget.isPagar
+    final totalAberto = _abertas.fold<double>(
+        0, (s, i) => s + ((i['valor'] as num?)?.toDouble() ?? 0));
+    final totalBaixado = _baixadas.fold<double>(
+        0, (s, i) => s + ((i['valor'] as num?)?.toDouble() ?? 0));
+    final saldo = widget.isPagar
         ? totalBaixado - totalAberto
         : totalBaixado - totalAberto;
 
@@ -1172,7 +1242,8 @@ class _MonthDetailDialogState extends State<_MonthDetailDialog> {
                     ),
                   ),
                   IconButton(
-                    icon: const Icon(Icons.close, color: Colors.white, size: 18),
+                    icon:
+                        const Icon(Icons.close, color: Colors.white, size: 18),
                     padding: EdgeInsets.zero,
                     constraints: const BoxConstraints(),
                     onPressed: () => Navigator.of(context).pop(),
@@ -1197,8 +1268,7 @@ class _MonthDetailDialogState extends State<_MonthDetailDialog> {
                           _green,
                         ),
                         ..._baixadas.map((i) => _dialogItem(i)),
-                        if (_baixadas.isEmpty)
-                          _emptyMsg('Nenhum item'),
+                        if (_baixadas.isEmpty) _emptyMsg('Nenhum item'),
                       ],
                     ),
             ),
@@ -1285,18 +1355,27 @@ class _MonthDetailDialogState extends State<_MonthDetailDialog> {
       padding: const EdgeInsets.symmetric(vertical: 6),
       child: Text(
         label,
-        style: TextStyle(
-            fontWeight: FontWeight.bold, fontSize: 13, color: color),
+        style:
+            TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: color),
       ),
     );
   }
 
   Widget _dialogItem(Map<String, dynamic> item) {
-    final valor      = (item['valor'] as num?)?.toDouble() ?? 0;
-    final descricao  = item['descricao'] as String? ?? '';
-    final tributo    = item['documentoFiscal'] == true;
-    final parceiro   = (item['parceiro'] as Map?)?.cast<String, dynamic>();
+    final valor = (item['valor'] as num?)?.toDouble() ?? 0;
+    final descricao = item['descricao'] as String? ?? '';
+    final tributo = item['documentoFiscal'] == true;
+    final parceiro = (item['parceiro'] as Map?)?.cast<String, dynamic>();
     final parceiroNome = parceiro?['nome'] as String? ?? '';
+    final vencStr = (item['dataVencimento'] as String?)?.substring(0, 10) ?? '';
+    final dia = vencStr.length >= 10 ? vencStr.substring(8, 10) : '';
+    final mes = vencStr.length >= 7 ? vencStr.substring(5, 7) : '';
+    final dataLabel = dia.isNotEmpty && mes.isNotEmpty ? '$dia/$mes' : '';
+
+    final subtitleParts = <String>[];
+    if (dataLabel.isNotEmpty) subtitleParts.add(dataLabel);
+    if (parceiroNome.isNotEmpty) subtitleParts.add(parceiroNome);
+    final subtitleText = subtitleParts.join(' · ');
 
     return Card(
       margin: const EdgeInsets.symmetric(vertical: 2),
@@ -1326,8 +1405,8 @@ class _MonthDetailDialogState extends State<_MonthDetailDialog> {
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
             style: const TextStyle(fontSize: 12)),
-        subtitle: parceiroNome.isNotEmpty
-            ? Text(parceiroNome,
+        subtitle: subtitleText.isNotEmpty
+            ? Text(subtitleText,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: const TextStyle(fontSize: 10))
@@ -1346,13 +1425,11 @@ class _MonthDetailDialogState extends State<_MonthDetailDialog> {
 
   Widget _emptyMsg(String msg) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 6),
-      child: Text(msg,
-          style: const TextStyle(color: Colors.grey, fontSize: 11),
-          textAlign: TextAlign.center),
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      child: Text(
+        msg,
+        style: const TextStyle(color: Colors.grey, fontSize: 12),
+      ),
     );
   }
 }
-
-// ─── Web alias ───────────────────────────────────────────────────────────────
-typedef WebCalendarScreen = WindowsCalendarScreen;

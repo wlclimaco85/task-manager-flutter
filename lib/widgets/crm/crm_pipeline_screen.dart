@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../models/crm_deal_model.dart';
 import '../../services/crm_deal_service.dart';
 import '../../utils/grid_colors.dart';
+import '../../utils/grid_texts.dart';
 
 class CrmPipelineScreen extends StatefulWidget {
   const CrmPipelineScreen({super.key});
@@ -275,7 +276,7 @@ class _CrmPipelineScreenState extends State<CrmPipelineScreen> {
           ),
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancelar')),
+          TextButton(onPressed: () => Navigator.pop(context), child: const Text(GridTexts.cancel)),
           FilledButton(
             onPressed: () async {
               if (title.text.trim().isEmpty) return;
@@ -288,7 +289,7 @@ class _CrmPipelineScreenState extends State<CrmPipelineScreen> {
               if (mounted) Navigator.pop(context);
               await _load();
             },
-            child: const Text('Salvar'),
+            child: const Text(GridTexts.save),
           ),
         ],
       ),
@@ -319,7 +320,7 @@ class _CrmPipelineScreenState extends State<CrmPipelineScreen> {
           ),
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancelar')),
+          TextButton(onPressed: () => Navigator.pop(context), child: const Text(GridTexts.cancel)),
           FilledButton(
             onPressed: () async {
               if (source.text.trim().isEmpty || orderId.text.trim().isEmpty) return;

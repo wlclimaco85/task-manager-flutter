@@ -1,7 +1,9 @@
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
+import '../../../utils/grid_colors.dart';
 
 import '../../../services/nfce_service.dart';
+import '../../../utils/grid_texts.dart';
 import '../../../utils/security_matrix.dart';
 import '../../../utils/tenant_context.dart';
 import '../../../widgets/nfce/nfce_notice_banner.dart';
@@ -156,7 +158,7 @@ class _ConfigFiscalScreenState extends State<ConfigFiscalScreen> {
     try {
       if (_bytesCertificado != null && _nomeCertificado != null) {
         if (_senhaCertificado.isEmpty) {
-          _mostrarErro('Informe a senha do certificado antes de salvar.');
+          _mostrarErro(GridTexts.certificatePasswordRequiredBeforeSave);
           return;
         }
         await _service.uploadCertificado(
@@ -249,7 +251,7 @@ class _ConfigFiscalScreenState extends State<ConfigFiscalScreen> {
     if (_verificandoSefaz) {
       return NfceNoticeBanner(
         icon: Icons.sync,
-        backgroundColor: const Color(0xFFE3F2FD),
+        backgroundColor: GridColors.selectedRow,
         borderColor: const Color(0xFF90CAF9),
         textColor: const Color(0xFF0D47A1),
         title: 'Verificando SEFAZ',
@@ -284,13 +286,13 @@ class _ConfigFiscalScreenState extends State<ConfigFiscalScreen> {
       icon: online ? Icons.check_circle_outline : Icons.error_outline,
       backgroundColor: online ? const Color(0xFFE8F5E9) : const Color(0xFFFFEBEE),
       borderColor: online ? const Color(0xFFA5D6A7) : const Color(0xFFEF9A9A),
-      textColor: online ? const Color(0xFF1B5E20) : const Color(0xFFC62828),
+      textColor: online ? const Color(0xFF1B5E20) : GridColors.error,
       title: online ? 'SEFAZ disponível' : 'SEFAZ indisponível',
       message: _sefazHealth!.mensagem,
       trailing: TextButton.icon(
         onPressed: _verificandoSefaz ? null : _verificarSefaz,
         style: TextButton.styleFrom(
-          foregroundColor: online ? const Color(0xFF1B5E20) : const Color(0xFFC62828),
+          foregroundColor: online ? const Color(0xFF1B5E20) : GridColors.error,
         ),
         icon: const Icon(Icons.refresh),
         label: const Text('Reverificar'),
@@ -311,7 +313,7 @@ class _ConfigFiscalScreenState extends State<ConfigFiscalScreen> {
               style: TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.bold,
-                color: Color(0xFF005826),
+                color: GridColors.secondary,
               ),
             ),
             const SizedBox(height: 8),
@@ -353,7 +355,7 @@ class _ConfigFiscalScreenState extends State<ConfigFiscalScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Configuração Fiscal NFC-e'),
-        backgroundColor: const Color(0xFF005826),
+        backgroundColor: GridColors.secondary,
         foregroundColor: Colors.white,
       ),
       body: SingleChildScrollView(
@@ -448,7 +450,7 @@ class _ConfigFiscalScreenState extends State<ConfigFiscalScreen> {
                     const SizedBox(height: 8),
                     Text(
                       'Arquivo selecionado: $_nomeCertificado',
-                      style: const TextStyle(color: Color(0xFF005826), fontSize: 12),
+                      style: const TextStyle(color: GridColors.secondary, fontSize: 12),
                     ),
                   ],
                   const SizedBox(height: 16),
@@ -517,7 +519,7 @@ class _ConfigFiscalScreenState extends State<ConfigFiscalScreen> {
                           : const Icon(Icons.save),
                       label: const Text('Salvar configuração'),
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF005826),
+                        backgroundColor: GridColors.secondary,
                         foregroundColor: Colors.white,
                         padding: const EdgeInsets.symmetric(vertical: 14),
                       ),
@@ -548,7 +550,7 @@ class _SectionTitle extends StatelessWidget {
           style: const TextStyle(
             fontWeight: FontWeight.bold,
             fontSize: 15,
-            color: Color(0xFF005826),
+            color: GridColors.secondary,
           ),
         ),
         const Divider(),

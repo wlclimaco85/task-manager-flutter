@@ -112,6 +112,12 @@ import '../../windows/screens/deposito_screen.dart';
 import '../../windows/screens/renegociacao_screen.dart';
 import '../../windows/screens/devolucao_grid_screen.dart';
 import './cancelamento_cce_screen.dart';
+import 'contabil/conta_contabil_grid_screen.dart';
+import 'contabil/lancamento_contabil_grid_screen.dart';
+import 'contabil/balancete_screen.dart';
+import 'contabil/fechamento_periodo_screen.dart';
+import 'contabil/ai_dashboard_screen.dart';
+import 'contabil/ai_assistente_screen.dart';
 
 class WebBottomNavBarScreen extends StatefulWidget {
   const WebBottomNavBarScreen({super.key});
@@ -211,7 +217,7 @@ class _WebBottomNavBarScreenState extends State<WebBottomNavBarScreen> {
           hasPermission: (p) => true), // 28: FormasPagamento
       WebDiretorioGridScreen(hasPermission: (p) => true), // 29: Diretorios
       const GedArquivosScreen(), // 30: GED — Arquivos
-      const WebCalendarScreen(), // 31: Calendario
+      const WindowsCalendarScreen(), // 31: Calendario
       WebObrigacaoFiscalGridScreen(
           hasPermission: (p) => true), // 32: ObrigacoesFiscais
       WebLoginGridScreen(hasPermission: (p) => true), // 33: Logins(dup)
@@ -326,7 +332,18 @@ class _WebBottomNavBarScreenState extends State<WebBottomNavBarScreen> {
       const SizedBox.shrink(), // 118
       const SizedBox.shrink(), // 119
       const SizedBox.shrink(), // 120
-      const CancelamentoCceScreen(), // 121: Cancelamento e CC-e
+      const CancelamentoCceScreen(), // 111: Cancelamento e CC-e
+      const SizedBox.shrink(), // 112: RegraFiscal (web vago)
+      WebContaContabilGridScreen(
+          hasPermission: (p) => true), // 113: Plano de Contas
+      WebLancamentoContabilGridScreen(
+          hasPermission: (p) => true), // 114: Lançamentos
+      const WebBalanceteScreen(), // 115: Balancete / Balanço
+      const WebFechamentoPeriodoScreen(), // 116: Fechamento de Período
+      const WebAiDashboardScreen(), // 117: Dashboard IA
+      const WebAiAssistenteScreen(), // 118: Assistente IA
+      const TradingDashboardScreen(
+          initialTabIndex: 4), // 129: Configuração da Corretora
     ];
   }
 

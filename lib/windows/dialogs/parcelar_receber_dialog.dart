@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../../models/conta_receber_model.dart';
 import '../../services/network_caller.dart';
 import '../../../utils/api_links.dart';
+import '../../../utils/grid_texts.dart';
 
 class ParcelarReceberDialog extends StatefulWidget {
   final ContaReceber conta;
@@ -146,7 +147,7 @@ class _ParcelarReceberDialogState extends State<ParcelarReceberDialog> {
       actions: [
         TextButton(
           onPressed: _isLoading ? null : () => Navigator.of(context).pop(),
-          child: const Text('Cancelar'),
+          child: const Text(GridTexts.cancel),
         ),
         ElevatedButton(
           onPressed: _isLoading ? null : _submit,

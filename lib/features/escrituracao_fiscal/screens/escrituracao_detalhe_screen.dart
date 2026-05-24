@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../../models/escrituracao_fiscal_model.dart';
 import '../../../models/item_escrituracao_model.dart';
 import '../../../services/escrituracao_fiscal_service.dart';
+import '../../../utils/grid_texts.dart';
 
 class EscrituracaoDetalheScreen extends StatefulWidget {
   final EscrituracaoFiscal escrituracao;
@@ -79,7 +80,7 @@ class _EscrituracaoDetalheScreenState extends State<EscrituracaoDetalheScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Cancelar'),
+            child: const Text(GridTexts.cancel),
           ),
           ElevatedButton(
             onPressed: () => Navigator.pop(ctx, true),

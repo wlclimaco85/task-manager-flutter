@@ -54,8 +54,23 @@ class _BacktestScreenState extends State<BacktestScreen> {
         assetSymbol: asset,
         strategyName: _strategyController.text.trim(),
         ruleParams: _paramsController.text.trim().isEmpty ? null : _paramsController.text.trim(),
-        periodStart: _periodStartController.text.trim().isEmpty ? null : _periodStartController.text.trim(),
-        periodEnd: _periodEndController.text.trim().isEmpty ? null : _periodEndController.text.trim(),
+        periodStart: _periodStart == null
+            ? null
+            : DateTime.utc(
+                _periodStart!.year,
+                _periodStart!.month,
+                _periodStart!.day,
+              ).toIso8601String(),
+        periodEnd: _periodEnd == null
+            ? null
+            : DateTime.utc(
+                _periodEnd!.year,
+                _periodEnd!.month,
+                _periodEnd!.day,
+                23,
+                59,
+                59,
+              ).toIso8601String(),
       );
       setState(() { _runs.insert(0, resp); });
     } catch (e) {

@@ -123,6 +123,12 @@ import '../../windows/screens/aprovacao_compra_screen.dart';
 import '../../windows/screens/devolucao_grid_screen.dart';
 import '../../windows/screens/cancelamento_cce_screen.dart';
 import '../../windows/screens/regra_fiscal_screen.dart';
+import '../../web/screens/contabil/conta_contabil_grid_screen.dart';
+import '../../web/screens/contabil/lancamento_contabil_grid_screen.dart';
+import '../../web/screens/contabil/balancete_screen.dart';
+import '../../web/screens/contabil/fechamento_periodo_screen.dart';
+import '../../web/screens/contabil/ai_dashboard_screen.dart';
+import '../../web/screens/contabil/ai_assistente_screen.dart';
 
 class WindowsBottomNavBarScreen extends StatefulWidget {
   const WindowsBottomNavBarScreen({super.key});
@@ -298,8 +304,15 @@ class _WindowsBottomNavBarScreenState extends State<WindowsBottomNavBarScreen> {
       TabelaPrecoScreen(hasPermission: (perm) => true), // 118: Tabela de Preços e Descontos
       const AprovacaoCompraScreen(), // 119: Aprovação de Compras
       const WindowsDevolucaoGridScreen(), // 120: Devoluções
-      const CancelamentoCceScreen(), // 121: Cancelamento e CC-e
-      RegraFiscalScreen(hasPermission: (perm) => true), // 122: Regras Fiscais
+      const CancelamentoCceScreen(), // 111: Cancelamento e CC-e
+      RegraFiscalScreen(hasPermission: (perm) => true), // 112: Regras Fiscais
+      WebContaContabilGridScreen(hasPermission: (perm) => true), // 113: Plano de Contas
+      WebLancamentoContabilGridScreen(hasPermission: (perm) => true), // 114: Lançamentos
+      const WebBalanceteScreen(), // 115: Balancete / Balanço
+      const WebFechamentoPeriodoScreen(), // 116: Fechamento de Período
+      const WebAiDashboardScreen(), // 117: Dashboard IA
+      const WebAiAssistenteScreen(), // 118: Assistente IA
+      const TradingDashboardScreen(initialTabIndex: 4), // 129: Configuração da Corretora
       ];
 
   String get userName {

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../services/contingencia_rejeicao_service.dart';
 import '../../../utils/grid_colors.dart';
+import '../../../utils/grid_texts.dart';
 
 class ContingenciaRejeicaoScreen extends StatefulWidget {
   const ContingenciaRejeicaoScreen({super.key});
@@ -52,7 +53,7 @@ class _ContingenciaRejeicaoScreenState extends State<ContingenciaRejeicaoScreen>
   Future<void> _reenviar(int id) async {
     final ok = await _service.reenviarContingencia(id);
     if (mounted) {
-      _snack(ok ? 'Reenviado com sucesso' : 'Falha ao reenviar', error: !ok);
+      _snack(ok ? GridTexts.resendSuccess : GridTexts.resendFailure, error: !ok);
       if (ok) _carregarFila();
     }
   }
@@ -72,13 +73,13 @@ class _ContingenciaRejeicaoScreenState extends State<ContingenciaRejeicaoScreen>
         backgroundColor: Colors.grey[100],
         appBar: AppBar(
           backgroundColor: GridColors.primary,
-          foregroundColor: Colors.white,
+          foregroundColor: GridColors.textPrimary,
           title: const Text('Contingência e Rejeições'),
           elevation: 0,
           bottom: const TabBar(
-            labelColor: Colors.white,
-            unselectedLabelColor: Colors.white70,
-            indicatorColor: Colors.white,
+            labelColor: GridColors.textPrimary,
+            unselectedLabelColor: GridColors.textPrimaryMuted,
+            indicatorColor: GridColors.textPrimary,
             tabs: [
               Tab(text: 'Fila de Contingência'),
               Tab(text: 'Logs de Rejeição'),
@@ -107,13 +108,13 @@ class _ContingenciaRejeicaoScreenState extends State<ContingenciaRejeicaoScreen>
                 icon: _loadingFila
                     ? const SizedBox(
                         width: 16, height: 16,
-                        child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                        child: CircularProgressIndicator(strokeWidth: 2, color: GridColors.textPrimary),
                       )
                     : const Icon(Icons.refresh, size: 18),
-                label: const Text('Atualizar'),
+                label: const Text(GridTexts.refresh),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: GridColors.info,
-                  foregroundColor: Colors.white,
+                  foregroundColor: GridColors.textPrimary,
                   padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                 ),
               ),
@@ -123,7 +124,7 @@ class _ContingenciaRejeicaoScreenState extends State<ContingenciaRejeicaoScreen>
         Expanded(
           child: _fila.isEmpty && !_loadingFila
               ? const Center(
-                  child: Text('Nenhum item na fila de contingência',
+                  child: Text(GridTexts.noContingencyQueueItem,
                       style: TextStyle(color: Colors.grey, fontSize: 14)))
               : _buildFilaTable(),
         ),
@@ -139,7 +140,7 @@ class _ContingenciaRejeicaoScreenState extends State<ContingenciaRejeicaoScreen>
         child: DataTable(
           columnSpacing: 20,
           headingRowColor: WidgetStateProperty.all(GridColors.secondaryLight),
-          headingTextStyle: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+          headingTextStyle: const TextStyle(color: GridColors.textPrimary, fontWeight: FontWeight.bold),
           columns: const [
             DataColumn(label: Text('ID')),
             DataColumn(label: Text('Documento')),
@@ -171,10 +172,10 @@ class _ContingenciaRejeicaoScreenState extends State<ContingenciaRejeicaoScreen>
                   child: ElevatedButton.icon(
                     onPressed: () => _reenviar(item['id'] as int),
                     icon: const Icon(Icons.send, size: 14),
-                    label: const Text('Reenviar', style: TextStyle(fontSize: 12)),
+                    label: const Text(GridTexts.resend, style: TextStyle(fontSize: 12)),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: GridColors.success,
-                      foregroundColor: Colors.white,
+                      foregroundColor: GridColors.textPrimary,
                       padding: const EdgeInsets.symmetric(horizontal: 10),
                     ),
                   ),
@@ -199,13 +200,13 @@ class _ContingenciaRejeicaoScreenState extends State<ContingenciaRejeicaoScreen>
                 icon: _loadingLogs
                     ? const SizedBox(
                         width: 16, height: 16,
-                        child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                        child: CircularProgressIndicator(strokeWidth: 2, color: GridColors.textPrimary),
                       )
                     : const Icon(Icons.refresh, size: 18),
-                label: const Text('Atualizar'),
+                label: const Text(GridTexts.refresh),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: GridColors.info,
-                  foregroundColor: Colors.white,
+                  foregroundColor: GridColors.textPrimary,
                   padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                 ),
               ),
@@ -215,7 +216,7 @@ class _ContingenciaRejeicaoScreenState extends State<ContingenciaRejeicaoScreen>
         Expanded(
           child: _logs.isEmpty && !_loadingLogs
               ? const Center(
-                  child: Text('Nenhum log de rejeição encontrado',
+                  child: Text(GridTexts.noRejectionLogFound,
                       style: TextStyle(color: Colors.grey, fontSize: 14)))
               : _buildLogsTable(),
         ),
@@ -231,7 +232,7 @@ class _ContingenciaRejeicaoScreenState extends State<ContingenciaRejeicaoScreen>
         child: DataTable(
           columnSpacing: 20,
           headingRowColor: WidgetStateProperty.all(GridColors.secondaryLight),
-          headingTextStyle: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+          headingTextStyle: const TextStyle(color: GridColors.textPrimary, fontWeight: FontWeight.bold),
           columns: const [
             DataColumn(label: Text('Data')),
             DataColumn(label: Text('Documento')),

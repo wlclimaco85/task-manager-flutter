@@ -4,6 +4,7 @@ import '../../services/network_caller.dart';
 import '../screens/ForgotPasswordScreen_screens.dart';
 import '../screens/SignUpScreen_screens.dart';
 import '../../../utils/api_links.dart';
+import '../../../utils/grid_texts.dart';
 import '../../../models/auth_utility.dart';
 import '../../../models/login_model.dart';
 
@@ -49,7 +50,7 @@ class _LoginPopupState extends State<LoginPopup> {
         }
       } else if (response.statusCode == 400) {
         setState(() {
-          errorMessage = 'Senha ou usuário inválido';
+          errorMessage = GridTexts.loginPopupInvalidCredentials;
         });
       } else {
         setState(() {
@@ -72,7 +73,7 @@ class _LoginPopupState extends State<LoginPopup> {
       await loginss(username, password);
     } else {
       setState(() {
-        errorMessage = 'Preencha os campos corretamente!';
+        errorMessage = GridTexts.loginPopupFillFields;
       });
     }
   }
@@ -96,7 +97,7 @@ class _LoginPopupState extends State<LoginPopup> {
     return AlertDialog(
       backgroundColor: const Color.fromARGB(255, 231, 247, 233),
       title: const Text(
-        'Login',
+        GridTexts.loginPopupTitle,
         style: TextStyle(fontWeight: FontWeight.bold),
       ),
       content: SingleChildScrollView(
@@ -106,7 +107,7 @@ class _LoginPopupState extends State<LoginPopup> {
             TextField(
               controller: _usernameController,
               decoration: InputDecoration(
-                labelText: 'Usuário',
+                labelText: GridTexts.loginUserHint,
                 labelStyle: const TextStyle(
                   color: Colors.black,
                   fontWeight: FontWeight.bold,
@@ -123,7 +124,7 @@ class _LoginPopupState extends State<LoginPopup> {
               controller: _passwordController,
               obscureText: true,
               decoration: InputDecoration(
-                labelText: 'Senha',
+                labelText: GridTexts.loginPasswordHint,
                 labelStyle: const TextStyle(
                   color: Colors.black,
                   fontWeight: FontWeight.bold,
@@ -149,7 +150,7 @@ class _LoginPopupState extends State<LoginPopup> {
                 TextButton(
                   onPressed: _navigateToForgotPassword,
                   child: const Text(
-                    'Esqueci a senha',
+                    GridTexts.forgotPassword,
                     style: TextStyle(
                         color: Colors.blue, fontWeight: FontWeight.bold),
                   ),
@@ -157,7 +158,7 @@ class _LoginPopupState extends State<LoginPopup> {
                 TextButton(
                   onPressed: _navigateToSignUp,
                   child: const Text(
-                    'Criar Novo Usuário',
+                    GridTexts.loginPopupCreateUser,
                     style: TextStyle(
                         color: Colors.blue, fontWeight: FontWeight.bold),
                   ),
@@ -174,7 +175,7 @@ class _LoginPopupState extends State<LoginPopup> {
             backgroundColor: const Color.fromARGB(255, 128, 202, 132),
           ),
           child: const Text(
-            'Cancelar',
+            GridTexts.cancel,
             style: TextStyle(color: Colors.white),
           ),
         ),
@@ -187,7 +188,7 @@ class _LoginPopupState extends State<LoginPopup> {
               backgroundColor: const Color.fromARGB(255, 128, 202, 132),
             ),
             child: const Text(
-              'Entrar',
+              GridTexts.loginPopupEnter,
               style: TextStyle(color: Colors.white),
             ),
           ),

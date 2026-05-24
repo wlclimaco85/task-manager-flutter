@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../services/conta_bancaria_caller.dart';
 import '../../../services/conciliacao_caller.dart';
 import '../../../utils/grid_colors.dart';
+import '../../utils/grid_texts.dart';
 
 class ConciliacaoScreen extends StatefulWidget {
   const ConciliacaoScreen({super.key});
@@ -71,7 +72,7 @@ class _ConciliacaoScreenState extends State<ConciliacaoScreen> {
     if (!mounted) return;
     setState(() => _autoConciliando = false);
     _snack(
-        result['success'] ? 'Auto-conciliação concluída' : result['message'],
+        result['success'] ? GridTexts.autoReconcileSuccess : result['message'],
         error: !result['success']);
     if (result['success']) _carregarPendentes();
   }
@@ -80,10 +81,10 @@ class _ConciliacaoScreenState extends State<ConciliacaoScreen> {
     final ok = await ConciliacaoCaller.desfazerConciliacao(id);
     if (!mounted) return;
     if (ok) {
-      _snack('Conciliação desfeita');
+      _snack(GridTexts.reconciliationUndone);
       _carregarConciliacoes();
     } else {
-      _snack('Erro ao desfazer', error: true);
+      _snack(GridTexts.undoError, error: true);
     }
   }
 
@@ -112,7 +113,7 @@ class _ConciliacaoScreenState extends State<ConciliacaoScreen> {
           );
           if (!mounted) return;
           _snack(
-              result['success'] ? 'Conciliação realizada' : result['message'],
+              result['success'] ? GridTexts.reconciliationDone : result['message'],
               error: !result['success']);
           if (result['success']) _carregarPendentes();
         },
@@ -132,16 +133,16 @@ class _ConciliacaoScreenState extends State<ConciliacaoScreen> {
     return DefaultTabController(
       length: 2,
       child: Scaffold(
-        backgroundColor: Colors.grey[100],
+        backgroundColor: GridColors.pageBackground,
         appBar: AppBar(
           backgroundColor: GridColors.secondary,
-          foregroundColor: Colors.white,
+          foregroundColor: GridColors.textPrimary,
           title: const Text('Conciliação Bancária'),
           elevation: 0,
           bottom: const TabBar(
-            labelColor: Colors.white,
-            unselectedLabelColor: Colors.white70,
-            indicatorColor: Colors.white,
+            labelColor: GridColors.textPrimary,
+            unselectedLabelColor: GridColors.textPrimaryMuted,
+            indicatorColor: GridColors.textPrimary,
             tabs: [
               Tab(text: 'Pendentes + Sugestões'),
               Tab(text: 'Conciliações Realizadas'),
@@ -169,7 +170,7 @@ class _ConciliacaoScreenState extends State<ConciliacaoScreen> {
           border: OutlineInputBorder(),
           contentPadding:
               EdgeInsets.symmetric(horizontal: 12, vertical: 14),
-          fillColor: Colors.white,
+          fillColor: GridColors.textPrimary,
           filled: true,
         ),
         items: _contas.map((c) {
@@ -207,15 +208,15 @@ class _ConciliacaoScreenState extends State<ConciliacaoScreen> {
                           width: 16,
                           height: 16,
                           child: CircularProgressIndicator(
-                              strokeWidth: 2, color: Colors.white),
+                              strokeWidth: 2, color: GridColors.textPrimary),
                         )
                       : const Icon(Icons.auto_fix_high, size: 18),
                   label: Text(_autoConciliando
-                      ? 'Auto-conciliando...'
-                      : 'Auto-conciliar'),
+                      ? GridTexts.autoReconciling
+                      : GridTexts.autoReconcile),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: GridColors.secondary,
-                    foregroundColor: Colors.white,
+                    foregroundColor: GridColors.textPrimary,
                     padding: const EdgeInsets.symmetric(
                         horizontal: 16, vertical: 12),
                   ),
@@ -228,13 +229,13 @@ class _ConciliacaoScreenState extends State<ConciliacaoScreen> {
                           width: 16,
                           height: 16,
                           child: CircularProgressIndicator(
-                              strokeWidth: 2, color: Colors.white),
+                              strokeWidth: 2, color: GridColors.textPrimary),
                         )
                       : const Icon(Icons.refresh, size: 18),
-                  label: const Text('Atualizar'),
+                  label: const Text(GridTexts.refresh),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: GridColors.info,
-                    foregroundColor: Colors.white,
+                    foregroundColor: GridColors.textPrimary,
                     padding: const EdgeInsets.symmetric(
                         horizontal: 16, vertical: 12),
                   ),
@@ -247,7 +248,7 @@ class _ConciliacaoScreenState extends State<ConciliacaoScreen> {
         Expanded(
           child: _pendentes.isEmpty && !_loadingPendentes
               ? const Center(
-                  child: Text('Nenhuma transação pendente',
+                  child: Text(GridTexts.noPendingTransaction,
                       style: TextStyle(color: Colors.grey, fontSize: 14)))
               : _buildPendentesTable(),
         ),
@@ -265,7 +266,7 @@ class _ConciliacaoScreenState extends State<ConciliacaoScreen> {
           headingRowColor:
               WidgetStateProperty.all(GridColors.secondaryLight),
           headingTextStyle: const TextStyle(
-              color: Colors.white, fontWeight: FontWeight.bold),
+              color: GridColors.textPrimary, fontWeight: FontWeight.bold),
           columns: const [
             DataColumn(label: Text('Data')),
             DataColumn(label: Text('Descrição')),
@@ -291,10 +292,10 @@ class _ConciliacaoScreenState extends State<ConciliacaoScreen> {
                   child: ElevatedButton.icon(
                     onPressed: () => _abrirDialogConciliar(t),
                     icon: const Icon(Icons.check_circle, size: 14),
-                    label: const Text('Conciliar', style: TextStyle(fontSize: 12)),
+                    label: const Text(GridTexts.reconcile, style: TextStyle(fontSize: 12)),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: GridColors.success,
-                      foregroundColor: Colors.white,
+                      foregroundColor: GridColors.textPrimary,
                       padding: const EdgeInsets.symmetric(horizontal: 10),
                       textStyle: const TextStyle(fontSize: 12),
                     ),
@@ -325,7 +326,7 @@ class _ConciliacaoScreenState extends State<ConciliacaoScreen> {
                     border: OutlineInputBorder(),
                     contentPadding:
                         EdgeInsets.symmetric(horizontal: 10, vertical: 12),
-                    fillColor: Colors.white,
+                    fillColor: GridColors.textPrimary,
                     filled: true,
                   ),
                   style: const TextStyle(fontSize: 13),
@@ -345,7 +346,7 @@ class _ConciliacaoScreenState extends State<ConciliacaoScreen> {
                     border: OutlineInputBorder(),
                     contentPadding:
                         EdgeInsets.symmetric(horizontal: 10, vertical: 12),
-                    fillColor: Colors.white,
+                    fillColor: GridColors.textPrimary,
                     filled: true,
                   ),
                   style: const TextStyle(fontSize: 13),
@@ -363,13 +364,13 @@ class _ConciliacaoScreenState extends State<ConciliacaoScreen> {
                         width: 16,
                         height: 16,
                         child: CircularProgressIndicator(
-                            strokeWidth: 2, color: Colors.white),
+                            strokeWidth: 2, color: GridColors.textPrimary),
                       )
                     : const Icon(Icons.refresh, size: 18),
-                label: const Text('Atualizar'),
+                label: const Text(GridTexts.refresh),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: GridColors.info,
-                  foregroundColor: Colors.white,
+                  foregroundColor: GridColors.textPrimary,
                   padding:
                       const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                 ),
@@ -380,7 +381,7 @@ class _ConciliacaoScreenState extends State<ConciliacaoScreen> {
         Expanded(
           child: _conciliacoes.isEmpty && !_loadingConciliacoes
               ? const Center(
-                  child: Text('Nenhuma conciliação encontrada',
+                  child: Text(GridTexts.noReconciliationFound,
                       style: TextStyle(color: Colors.grey, fontSize: 14)))
               : _buildRealizadasTable(),
         ),
@@ -398,7 +399,7 @@ class _ConciliacaoScreenState extends State<ConciliacaoScreen> {
           headingRowColor:
               WidgetStateProperty.all(GridColors.secondaryLight),
           headingTextStyle: const TextStyle(
-              color: Colors.white, fontWeight: FontWeight.bold),
+              color: GridColors.textPrimary, fontWeight: FontWeight.bold),
           columns: const [
             DataColumn(label: Text('Data')),
             DataColumn(label: Text('Transação')),
@@ -429,11 +430,11 @@ class _ConciliacaoScreenState extends State<ConciliacaoScreen> {
                   child: ElevatedButton.icon(
                     onPressed: () => _confirmarDesfazer(c['id'] as int),
                     icon: const Icon(Icons.undo, size: 14),
-                    label: const Text('Desfazer',
+                    label: const Text(GridTexts.undo,
                         style: TextStyle(fontSize: 12)),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: GridColors.warning,
-                      foregroundColor: Colors.white,
+                      foregroundColor: GridColors.textPrimary,
                       padding: const EdgeInsets.symmetric(horizontal: 10),
                       textStyle: const TextStyle(fontSize: 12),
                     ),
@@ -456,10 +457,10 @@ class _ConciliacaoScreenState extends State<ConciliacaoScreen> {
         actions: [
           TextButton(
               onPressed: () => Navigator.pop(ctx, false),
-              child: const Text('Cancelar')),
+              child: const Text(GridTexts.cancel)),
           TextButton(
               onPressed: () => Navigator.pop(ctx, true),
-              child: const Text('Confirmar')),
+              child: const Text(GridTexts.confirm)),
         ],
       ),
     );
@@ -528,7 +529,7 @@ class _ConciliarDialogState extends State<_ConciliarDialog> {
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: Colors.grey.shade100,
+                  color: GridColors.surfaceMuted,
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Column(
@@ -552,10 +553,10 @@ class _ConciliarDialogState extends State<_ConciliarDialog> {
                 ..._sugestoesList.map((s) {
                   final score = (s['score'] ?? 0).toDouble();
                   final cor = score >= 0.8
-                      ? Colors.green.shade50
+                      ? GridColors.suggestionHigh
                       : score >= 0.5
-                          ? Colors.amber.shade50
-                          : Colors.white;
+                          ? GridColors.suggestionMedium
+                          : GridColors.textPrimary;
                   return Card(
                     color: cor,
                     margin: const EdgeInsets.only(bottom: 6),
@@ -622,7 +623,7 @@ class _ConciliarDialogState extends State<_ConciliarDialog> {
       actions: [
         TextButton(
           onPressed: () => Navigator.pop(context),
-          child: const Text('Cancelar'),
+          child: const Text(GridTexts.cancel),
         ),
         ElevatedButton.icon(
           onPressed: (_lancamentoSelecionado == null || _confirmando)
@@ -633,14 +634,14 @@ class _ConciliarDialogState extends State<_ConciliarDialog> {
                   width: 16,
                   height: 16,
                   child: CircularProgressIndicator(
-                      strokeWidth: 2, color: Colors.white),
+                      strokeWidth: 2, color: GridColors.textPrimary),
                 )
               : const Icon(Icons.check_circle, size: 18),
-          label: Text(_confirmando ? 'Confirmando...' : 'Confirmar'),
+          label: Text(_confirmando ? GridTexts.confirming : GridTexts.confirm),
           style: ElevatedButton.styleFrom(
             backgroundColor: GridColors.success,
-            foregroundColor: Colors.white,
-            disabledBackgroundColor: Colors.grey.shade300,
+            foregroundColor: GridColors.textPrimary,
+            disabledBackgroundColor: GridColors.disabledBackground,
           ),
         ),
       ],
