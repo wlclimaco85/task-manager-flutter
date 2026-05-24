@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import '../utils/grid_colors.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import '../models/auth_utility.dart';
 import '../services/favorites_service.dart';
@@ -36,8 +37,8 @@ class AppSidebar extends StatefulWidget {
 }
 
 class _AppSidebarState extends State<AppSidebar> {
-  static const _primary    = Color(0xFF93070A);   // vermelho — bordas e destaques
-  static const _bg         = Color(0xFF005826);   // verde escuro — fundo sidebar
+  static const _primary    = GridColors.primary;   // vermelho — bordas e destaques
+  static const _bg         = GridColors.secondary;   // verde escuro — fundo sidebar
   static const _bgItem     = Color(0xFF004a20);   // verde mais escuro — hover
   static const _bgSelected = Color(0xFF003d1a);   // verde escuríssimo — selecionado
   static const _textColor  = Colors.white;        // branco — texto principal

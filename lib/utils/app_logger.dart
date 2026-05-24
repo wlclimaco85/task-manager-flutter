@@ -6,6 +6,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import '../utils/grid_colors.dart';
 import 'package:flutter/services.dart';
 
 // ====== Dependências opcionais p/ exportar & abrir/compartilhar ======
@@ -56,7 +57,7 @@ extension on LogLevel {
       case LogLevel.warning:
         return dark ? const Color(0xFFFFE082) : const Color(0xFFF57F17);
       case LogLevel.error:
-        return dark ? const Color(0xFFFFAB91) : const Color(0xFFC62828);
+        return dark ? const Color(0xFFFFAB91) : GridColors.error;
     }
   }
 }

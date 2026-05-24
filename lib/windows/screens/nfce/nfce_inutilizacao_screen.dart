@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import '../../../utils/grid_colors.dart';
 
 import '../../../services/nfce_service.dart';
+import '../../../utils/grid_texts.dart';
 
 /// Tela para inutilização de faixa de numeração NFC-e.
 /// Apenas para perfis FISCAL/ADMIN.
@@ -71,7 +73,7 @@ class _NfceInutilizacaoScreenState extends State<NfceInutilizacaoScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Cancelar'),
+            child: const Text(GridTexts.cancel),
           ),
           ElevatedButton(
             onPressed: () => Navigator.pop(ctx, true),

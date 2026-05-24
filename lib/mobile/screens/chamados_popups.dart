@@ -3,6 +3,7 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:task_manager_flutter/constants/custom_colors.dart';
 import 'package:task_manager_flutter/models/chamado_model.dart';
+import '../../utils/grid_texts.dart';
 
 class PegarChamadoDialog {
   static Future<void> show(BuildContext context, Chamado chamado) {
@@ -169,7 +170,7 @@ Future<void> _baseDialog(
                     foregroundColor: colors.getButtonTextColor(),
                   ),
                   onPressed: () => Navigator.pop(context),
-                  child: const Text("Cancelar"),
+                  child: const Text(GridTexts.cancel),
                 ),
                 ElevatedButton(
                   style: ElevatedButton.styleFrom(

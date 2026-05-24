@@ -8,6 +8,7 @@ import '../../services/network_caller.dart';
 
 
 import 'package:task_manager_flutter/utils/app_logger.dart';
+import '../../utils/grid_texts.dart';
 class Comunicado {
   String id;
   String titulo;
@@ -514,7 +515,7 @@ class _WindowsComunicadoGridScreenState extends State<WindowsComunicadoGridScree
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('Cancelar'),
+            child: const Text(GridTexts.cancel),
           ),
           ElevatedButton(
             onPressed: () async {

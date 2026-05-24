@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../utils/grid_colors.dart';
 
 /// Reusable searchable dropdown widget.
 ///
@@ -161,7 +162,7 @@ class _SearchableDropdownFieldState extends State<SearchableDropdownField> {
             ),
             disabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(6),
-              borderSide: const BorderSide(color: Color(0xFFBDBDBD)),
+              borderSide: const BorderSide(color: GridColors.divider),
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(6),

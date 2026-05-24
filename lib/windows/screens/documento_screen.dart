@@ -1,8 +1,11 @@
 // ignore_for_file: library_private_types_in_public_api
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
-import '../../../services/network_caller.dart';
 import '../../../utils/api_links.dart';
+import '../../../utils/grid_colors.dart';
 import '../../../utils/tenant_context.dart';
 
 // ─── Internal data models ────────────────────────────────────────────────────
@@ -41,6 +44,89 @@ class _MonthSummary {
 
 // ─── Main widget ─────────────────────────────────────────────────────────────
 
+List<Map<String, dynamic>> _parseFinancialItems(dynamic body) {
+  try {
+    dynamic cursor = body;
+    if (cursor is Map && cursor.containsKey('data')) {
+      cursor = cursor['data'];
+    }
+    if (cursor is Map) {
+      for (final key in const ['dados', 'content', 'items', 'results']) {
+        final value = cursor[key];
+        if (value is List) {
+          return value
+              .whereType<Map>()
+              .map((item) => Map<String, dynamic>.from(item))
+              .toList();
+        }
+      }
+    }
+    if (cursor is List) {
+      return cursor
+          .whereType<Map>()
+          .map((item) => Map<String, dynamic>.from(item))
+          .toList();
+    }
+  } catch (_) {}
+  return [];
+}
+
+String _stringValue(Map<String, dynamic> item, List<String> keys) {
+  for (final key in keys) {
+    final value = item[key];
+    if (value == null) continue;
+    final text = value.toString().trim();
+    if (text.isNotEmpty && text != 'null') return text;
+  }
+  return '';
+}
+
+String _dateKey(Map<String, dynamic> item) {
+  final value = _stringValue(item, const [
+    'dataVencimento',
+    'data_vencimento',
+    'vencimento',
+    'dtVencimento',
+    'dt_vencimento',
+  ]);
+  if (value.length >= 10) return value.substring(0, 10);
+  return value;
+}
+
+double _moneyValue(Map<String, dynamic> item, String key) {
+  final value = item[key];
+  if (value is num) return value.toDouble();
+  if (value is String) {
+    final normalized = value.contains(',')
+        ? value.replaceAll('.', '').replaceAll(',', '.')
+        : value;
+    return double.tryParse(normalized) ?? 0;
+  }
+  return 0;
+}
+
+String _statusValue(Map<String, dynamic> item) =>
+    _stringValue(item, const ['status', 'situacao']).toUpperCase();
+
+bool _isBaixada(Map<String, dynamic> item) => _statusValue(item) == 'BAIXADA';
+
+bool _isCancelada(Map<String, dynamic> item) =>
+    _statusValue(item) == 'CANCELADA';
+
+bool _hasDocumentoFiscal(Map<String, dynamic> item) {
+  final value = item['documentoFiscal'] ?? item['documento_fiscal'];
+  return value == true || value.toString().toLowerCase() == 'true';
+}
+
+Future<dynamic> _fetchFinancialJson(String url) async {
+  try {
+    final response =
+        await http.get(Uri.parse(url), headers: TenantContext.headers);
+    if (response.statusCode == 200) return jsonDecode(response.body);
+  } catch (_) {}
+  return null;
+}
+
 class WindowsCalendarScreen extends StatefulWidget {
   const WindowsCalendarScreen({super.key});
 
@@ -50,29 +136,21 @@ class WindowsCalendarScreen extends StatefulWidget {
 
 class _WindowsCalendarScreenState extends State<WindowsCalendarScreen> {
   // ── Colors ──────────────────────────────────────────────────────────────
-  static const Color _red         = Color(0xFF93070A);
-  static const Color _redLight    = Color(0xFFFFEBEE);
-  static const Color _green       = Color(0xFF005826);
-  static const Color _greenLight  = Color(0xFFE8F5E9);
-  static const Color _orange      = Color(0xFFE65100);
-  static const Color _purple      = Color(0xFF6A1B9A);
+  // (local constants kept for non‑GridColors equivalents)
   static const Color _purpleLight = Color(0xFFF3E5F5);
-  static const Color _grey        = Color(0xFFF5F5F5);
-  static const Color _greyBorder  = Color(0xFFE0E0E0);
-  static const Color _dark        = Color(0xFF212121);
 
   // ── State ────────────────────────────────────────────────────────────────
   DateTime _currentMonth = DateTime.now();
   DateTime? _selectedDay;
-  String _viewMode = 'day';
+  String _viewMode = 'month';
   bool _loadingDay = false;
   bool _loadingMonth = false;
 
-  List<Map<String, dynamic>> _contasPagar   = [];
+  List<Map<String, dynamic>> _contasPagar = [];
   List<Map<String, dynamic>> _contasReceber = [];
 
   final Map<int, _MonthSummary> _monthSummaries = {};
-  Map<String, _DayMarkers> _dayMarkers    = {};
+  Map<String, _DayMarkers> _dayMarkers = {};
 
   // ── Formatters ───────────────────────────────────────────────────────────
   final _currencyFmt = NumberFormat.currency(locale: 'pt_BR', symbol: 'R\$');
@@ -90,150 +168,153 @@ class _WindowsCalendarScreenState extends State<WindowsCalendarScreen> {
   String _monthParam(DateTime d) => DateFormat('yyyy-MM').format(d);
 
   String _buildUrl(String base, Map<String, String> params) {
-    final empId     = TenantContext.empresaId;
-    final parcId    = TenantContext.parceiroId;
+    final empId = TenantContext.empresaId;
     final buf = StringBuffer(base);
     buf.write('?');
     params.forEach((k, v) => buf.write('$k=$v&'));
-    if (empId  != null) buf.write('empId=$empId&');
-    if (parcId != null) buf.write('parceiroId=$parcId&');
+    if (empId != null) buf.write('empId=$empId&');
     return buf.toString();
   }
 
+  Future<dynamic> _getFinancialJson(String url) async {
+    return _fetchFinancialJson(url);
+  }
+
   List<Map<String, dynamic>> _parseItems(dynamic body) {
-    try {
-      final data = body['data'];
-      if (data == null) return [];
-      final dados = data['dados'];
-      if (dados == null) return [];
-      return List<Map<String, dynamic>>.from(dados as List);
-    } catch (_) {
-      return [];
-    }
+    return _parseFinancialItems(body);
   }
 
   Future<void> _loadMonthMarkers(DateTime month) async {
     setState(() => _loadingMonth = true);
     final monthStr = _monthParam(month);
-    final urlP = _buildUrl(ApiLinks.allContasPagar,   {'mesAno': monthStr, 'tamanho': '1000'});
-    final urlR = _buildUrl(ApiLinks.allContasReceber, {'mesAno': monthStr, 'tamanho': '1000'});
+    final urlP = _buildUrl(
+        ApiLinks.allContasPagar, {'mesAno': monthStr, 'tamanho': '1000'});
+    final urlR = _buildUrl(
+        ApiLinks.allContasReceber, {'mesAno': monthStr, 'tamanho': '1000'});
 
-    final resP = await NetworkCaller().getRequest(urlP);
-    final resR = await NetworkCaller().getRequest(urlR);
+    final bodyP = await _getFinancialJson(urlP);
+    final bodyR = await _getFinancialJson(urlR);
 
-    final pagarList   = resP.isSuccess ? _parseItems(resP.body) : <Map<String, dynamic>>[];
-    final receberList = resR.isSuccess ? _parseItems(resR.body) : <Map<String, dynamic>>[];
+    final pagarList = _parseItems(bodyP);
+    final receberList = _parseItems(bodyR);
 
     final newMarkers = <String, _DayMarkers>{};
 
-    void addMarker(String key, {bool pagar = false, bool receber = false,
-        bool pago = false, bool recebido = false, bool tributo = false}) {
+    void addMarker(String key,
+        {bool pagar = false,
+        bool receber = false,
+        bool pago = false,
+        bool recebido = false,
+        bool tributo = false}) {
       final old = newMarkers[key] ?? const _DayMarkers();
       newMarkers[key] = _DayMarkers(
-        hasPagar:    old.hasPagar    || pagar,
-        hasReceber:  old.hasReceber  || receber,
-        hasPago:     old.hasPago     || pago,
+        hasPagar: old.hasPagar || pagar,
+        hasReceber: old.hasReceber || receber,
+        hasPago: old.hasPago || pago,
         hasRecebido: old.hasRecebido || recebido,
-        hasTributo:  old.hasTributo  || tributo,
+        hasTributo: old.hasTributo || tributo,
       );
     }
 
-    final today = DateTime.now();
-
     for (final item in pagarList) {
-      final dateStr = (item['dataVencimento'] as String?)?.substring(0, 10) ?? '';
+      final dateStr = _dateKey(item);
       if (dateStr.isEmpty) continue;
       final date = DateTime.tryParse(dateStr);
       if (date == null) continue;
-      final isPast   = date.isBefore(DateTime(today.year, today.month, today.day));
-      final isBaixa  = item['status'] == 'BAIXADA';
-      final tributo  = item['documentoFiscal'] == true;
-      addMarker(dateStr,
-        pagar:   !isPast && !isBaixa,
-        pago:    isBaixa,
+      final isBaixa = _isBaixada(item);
+      final tributo = _hasDocumentoFiscal(item);
+      addMarker(
+        dateStr,
+        pagar: !isBaixa,
+        pago: isBaixa,
         tributo: tributo,
       );
     }
 
     for (final item in receberList) {
-      final dateStr = (item['dataVencimento'] as String?)?.substring(0, 10) ?? '';
+      final dateStr = _dateKey(item);
       if (dateStr.isEmpty) continue;
       final date = DateTime.tryParse(dateStr);
       if (date == null) continue;
-      final isBaixa = item['status'] == 'BAIXADA';
-      final tributo = item['documentoFiscal'] == true;
-      addMarker(dateStr,
-        receber:   !isBaixa,
-        recebido:  isBaixa,
-        tributo:   tributo,
+      final isBaixa = _isBaixada(item);
+      final tributo = _hasDocumentoFiscal(item);
+      addMarker(
+        dateStr,
+        receber: !isBaixa,
+        recebido: isBaixa,
+        tributo: tributo,
       );
     }
 
     if (!mounted) return;
     setState(() {
-      _dayMarkers  = newMarkers;
+      _dayMarkers = newMarkers;
       _loadingMonth = false;
     });
   }
 
   Future<void> _loadDayData(DateTime day) async {
     setState(() {
-      _loadingDay    = true;
-      _contasPagar   = [];
+      _loadingDay = true;
+      _contasPagar = [];
       _contasReceber = [];
     });
     final dayStr = _dayParam(day);
-    final urlP = _buildUrl(ApiLinks.allContasPagar,   {'dataVencimento': dayStr, 'tamanho': '100'});
-    final urlR = _buildUrl(ApiLinks.allContasReceber, {'dataVencimento': dayStr, 'tamanho': '100'});
+    final urlP = _buildUrl(
+        ApiLinks.allContasPagar, {'dataVencimento': dayStr, 'tamanho': '100'});
+    final urlR = _buildUrl(ApiLinks.allContasReceber,
+        {'dataVencimento': dayStr, 'tamanho': '100'});
 
-    final resP = await NetworkCaller().getRequest(urlP);
-    final resR = await NetworkCaller().getRequest(urlR);
+    final bodyP = await _getFinancialJson(urlP);
+    final bodyR = await _getFinancialJson(urlR);
 
     if (!mounted) return;
     setState(() {
-      _contasPagar   = resP.isSuccess ? _parseItems(resP.body) : [];
-      _contasReceber = resR.isSuccess ? _parseItems(resR.body) : [];
-      _loadingDay    = false;
+      _contasPagar = _parseItems(bodyP);
+      _contasReceber = _parseItems(bodyR);
+      _loadingDay = false;
     });
   }
 
   Future<_MonthSummary> _loadMonthSummary(int year, int month) async {
     final monthStr = '$year-${month.toString().padLeft(2, '0')}';
-    final urlP = _buildUrl(ApiLinks.allContasPagar,   {'mesAno': monthStr, 'tamanho': '1000'});
-    final urlR = _buildUrl(ApiLinks.allContasReceber, {'mesAno': monthStr, 'tamanho': '1000'});
+    final urlP = _buildUrl(
+        ApiLinks.allContasPagar, {'mesAno': monthStr, 'tamanho': '1000'});
+    final urlR = _buildUrl(
+        ApiLinks.allContasReceber, {'mesAno': monthStr, 'tamanho': '1000'});
 
-    final resP = await NetworkCaller().getRequest(urlP);
-    final resR = await NetworkCaller().getRequest(urlR);
+    final bodyP = await _getFinancialJson(urlP);
+    final bodyR = await _getFinancialJson(urlR);
 
-    final pagarList   = resP.isSuccess ? _parseItems(resP.body) : <Map<String, dynamic>>[];
-    final receberList = resR.isSuccess ? _parseItems(resR.body) : <Map<String, dynamic>>[];
+    final pagarList = _parseItems(bodyP);
+    final receberList = _parseItems(bodyR);
 
     double totalPagar = 0, totalPago = 0, totalReceber = 0, totalRecebido = 0;
 
     for (final item in pagarList) {
-      final v = (item['valor'] as num?)?.toDouble() ?? 0;
-      if (item['status'] == 'BAIXADA') {
+      final v = _moneyValue(item, 'valor');
+      if (_isBaixada(item)) {
         totalPago += v;
-      } else if (item['status'] != 'CANCELADA') {
+      } else if (!_isCancelada(item)) {
         totalPagar += v;
       }
     }
     for (final item in receberList) {
-      final v = (item['valor'] as num?)?.toDouble() ?? 0;
-      if (item['status'] == 'BAIXADA') {
+      final v = _moneyValue(item, 'valor');
+      if (_isBaixada(item)) {
         totalRecebido += v;
-      } else if (item['status'] != 'CANCELADA') {
+      } else if (!_isCancelada(item)) {
         totalReceber += v;
       }
     }
 
     return _MonthSummary(
-      totalPagar:    totalPagar,
-      totalPago:     totalPago,
-      totalReceber:  totalReceber,
+      totalPagar: totalPagar,
+      totalPago: totalPago,
+      totalReceber: totalReceber,
       totalRecebido: totalRecebido,
-      saldoPagar:    totalPago - totalPagar,
-      saldoReceber:  totalRecebido - totalReceber,
+      saldoPagar: totalPago - totalPagar,
+      saldoReceber: totalRecebido - totalReceber,
     );
   }
 
@@ -241,12 +322,16 @@ class _WindowsCalendarScreenState extends State<WindowsCalendarScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: _grey,
+      backgroundColor: GridColors.divider,
       body: Column(
         children: [
           _buildHeader(),
           Expanded(
-            child: _viewMode == 'day' ? _buildDayView() : _buildMonthView(),
+            child: _viewMode == 'day'
+                ? _buildSingleDayView()
+                : _viewMode == 'year'
+                    ? _buildMonthView()
+                    : _buildDayView(),
           ),
         ],
       ),
@@ -256,7 +341,7 @@ class _WindowsCalendarScreenState extends State<WindowsCalendarScreen> {
   // ── Header ───────────────────────────────────────────────────────────────
   Widget _buildHeader() {
     return Container(
-      color: _red,
+      color: GridColors.error,
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
       child: Row(
         children: [
@@ -277,7 +362,16 @@ class _WindowsCalendarScreenState extends State<WindowsCalendarScreen> {
             icon: Icons.calendar_view_day,
             label: 'Dia',
             active: _viewMode == 'day',
-            onTap: () => setState(() => _viewMode = 'day'),
+            onTap: () {
+              final day = _selectedDay ?? DateTime.now();
+              setState(() {
+                _viewMode = 'day';
+                _selectedDay = day;
+                _currentMonth = DateTime(day.year, day.month);
+              });
+              _loadMonthMarkers(_currentMonth);
+              _loadDayData(day);
+            },
           ),
           const SizedBox(width: 6),
           _buildToggleBtn(
@@ -286,6 +380,13 @@ class _WindowsCalendarScreenState extends State<WindowsCalendarScreen> {
             active: _viewMode == 'month',
             onTap: () => setState(() => _viewMode = 'month'),
           ),
+          const SizedBox(width: 6),
+          _buildToggleBtn(
+            icon: Icons.calendar_month,
+            label: 'Ano',
+            active: _viewMode == 'year',
+            onTap: () => setState(() => _viewMode = 'year'),
+          ),
           const Spacer(),
           // Right: Hoje button
           TextButton(
@@ -293,18 +394,20 @@ class _WindowsCalendarScreenState extends State<WindowsCalendarScreen> {
               backgroundColor: Colors.white24,
               foregroundColor: Colors.white,
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(6)),
             ),
             onPressed: () {
               final today = DateTime.now();
               setState(() {
-                _selectedDay   = today;
-                _currentMonth  = DateTime(today.year, today.month);
+                _selectedDay = today;
+                _currentMonth = DateTime(today.year, today.month);
               });
               _loadMonthMarkers(_currentMonth);
               _loadDayData(today);
             },
-            child: const Text('Hoje', style: TextStyle(fontWeight: FontWeight.bold)),
+            child: const Text('Hoje',
+                style: TextStyle(fontWeight: FontWeight.bold)),
           ),
         ],
       ),
@@ -330,12 +433,12 @@ class _WindowsCalendarScreenState extends State<WindowsCalendarScreen> {
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(icon, size: 16, color: active ? _red : Colors.white),
+            Icon(icon, size: 16, color: active ? GridColors.error : Colors.white),
             const SizedBox(width: 4),
             Text(
               label,
               style: TextStyle(
-                color: active ? _red : Colors.white,
+                color: active ? GridColors.error : Colors.white,
                 fontSize: 12,
                 fontWeight: FontWeight.w600,
               ),
@@ -356,7 +459,8 @@ class _WindowsCalendarScreenState extends State<WindowsCalendarScreen> {
           child: Card(
             margin: const EdgeInsets.all(12),
             elevation: 2,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+            shape:
+                RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
             child: Padding(
               padding: const EdgeInsets.all(12),
               child: Column(
@@ -382,12 +486,25 @@ class _WindowsCalendarScreenState extends State<WindowsCalendarScreen> {
     );
   }
 
+  Widget _buildSingleDayView() {
+    if (_selectedDay == null) {
+      return const SizedBox.shrink();
+    }
+    return Center(
+      child: SizedBox(
+        width: 460,
+        child: _buildDaySidePanel(),
+      ),
+    );
+  }
+
   Widget _buildMonthNav() {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
         IconButton(
-          icon: const Icon(Icons.chevron_left, color: _green),
+          icon: const Icon(Icons.chevron_left, color: GridColors.success),
+          tooltip: 'Mês anterior',
           onPressed: () {
             final prev = DateTime(_currentMonth.year, _currentMonth.month - 1);
             setState(() => _currentMonth = prev);
@@ -399,11 +516,12 @@ class _WindowsCalendarScreenState extends State<WindowsCalendarScreen> {
           style: const TextStyle(
             fontWeight: FontWeight.bold,
             fontSize: 15,
-            color: _dark,
+            color: GridColors.textSecondary,
           ),
         ),
         IconButton(
-          icon: const Icon(Icons.chevron_right, color: _green),
+          icon: const Icon(Icons.chevron_right, color: GridColors.success),
+          tooltip: 'Próximo mês',
           onPressed: () {
             final next = DateTime(_currentMonth.year, _currentMonth.month + 1);
             setState(() => _currentMonth = next);
@@ -423,7 +541,7 @@ class _WindowsCalendarScreenState extends State<WindowsCalendarScreen> {
                   child: Text(
                     d,
                     style: const TextStyle(
-                      color: _green,
+                      color: GridColors.success,
                       fontWeight: FontWeight.bold,
                       fontSize: 11,
                     ),
@@ -436,11 +554,15 @@ class _WindowsCalendarScreenState extends State<WindowsCalendarScreen> {
 
   Widget _buildCalendarGrid() {
     final firstDay = DateTime(_currentMonth.year, _currentMonth.month, 1);
-    final daysInMonth = DateUtils.getDaysInMonth(_currentMonth.year, _currentMonth.month);
+    final daysInMonth =
+        DateUtils.getDaysInMonth(_currentMonth.year, _currentMonth.month);
     final startWeekday = firstDay.weekday % 7; // 0=Sun
     final today = DateTime.now();
     final todayNorm = DateTime(today.year, today.month, today.day);
 
+    final filledCells = startWeekday + daysInMonth;
+    final rowCount = (filledCells / 7).ceil();
+    final totalCells = rowCount * 7;
     final cells = <Widget>[];
 
     // Empty leading cells
@@ -449,13 +571,13 @@ class _WindowsCalendarScreenState extends State<WindowsCalendarScreen> {
     }
 
     for (int day = 1; day <= daysInMonth; day++) {
-      final date     = DateTime(_currentMonth.year, _currentMonth.month, day);
-      final dateStr  = _dayParam(date);
-      final markers  = _dayMarkers[dateStr] ?? const _DayMarkers();
-      final isToday  = date == todayNorm;
-      final isSelected = _selectedDay != null &&
-          _dayParam(_selectedDay!) == dateStr;
-      final isPast   = date.isBefore(todayNorm);
+      final date = DateTime(_currentMonth.year, _currentMonth.month, day);
+      final dateStr = _dayParam(date);
+      final markers = _dayMarkers[dateStr] ?? const _DayMarkers();
+      final isToday = date == todayNorm;
+      final isSelected =
+          _selectedDay != null && _dayParam(_selectedDay!) == dateStr;
+      final isPast = date.isBefore(todayNorm);
 
       cells.add(_buildDayCell(
         day: day,
@@ -467,12 +589,29 @@ class _WindowsCalendarScreenState extends State<WindowsCalendarScreen> {
       ));
     }
 
-    return GridView.count(
-      crossAxisCount: 7,
-      childAspectRatio: 0.85,
-      mainAxisSpacing: 2,
-      crossAxisSpacing: 2,
-      children: cells,
+    while (cells.length < totalCells) {
+      cells.add(const SizedBox());
+    }
+
+    return Column(
+      children: List.generate(rowCount, (row) {
+        return Expanded(
+          child: Padding(
+            padding: EdgeInsets.only(bottom: row == rowCount - 1 ? 0 : 2),
+            child: Row(
+              children: List.generate(7, (col) {
+                final index = row * 7 + col;
+                return Expanded(
+                  child: Padding(
+                    padding: EdgeInsets.only(right: col == 6 ? 0 : 2),
+                    child: cells[index],
+                  ),
+                );
+              }),
+            ),
+          ),
+        );
+      }),
     );
   }
 
@@ -485,17 +624,18 @@ class _WindowsCalendarScreenState extends State<WindowsCalendarScreen> {
     required bool isPast,
   }) {
     Color? bgColor;
-    Color textColor = _dark;
+    Color textColor = GridColors.textSecondary;
 
     if (isSelected) {
-      bgColor   = _red;
+      bgColor = GridColors.error;
       textColor = Colors.white;
-    } else if (isPast && (markers.hasPago || markers.hasRecebido || markers.hasTributo)) {
-      bgColor = _grey;
-    } else if (!isPast && markers.hasPagar) {
-      bgColor = _redLight;
-    } else if (!isPast && markers.hasReceber) {
-      bgColor = _greenLight;
+    } else if (markers.hasPagar) {
+      bgColor = GridColors.primaryLight;
+    } else if (markers.hasReceber) {
+      bgColor = GridColors.secondaryLight;
+    } else if (isPast &&
+        (markers.hasPago || markers.hasRecebido || markers.hasTributo)) {
+      bgColor = GridColors.divider;
     }
 
     return GestureDetector(
@@ -508,7 +648,7 @@ class _WindowsCalendarScreenState extends State<WindowsCalendarScreen> {
           color: bgColor,
           borderRadius: BorderRadius.circular(6),
           border: Border.all(
-            color: isToday ? _green : _greyBorder,
+            color: isToday ? GridColors.success : GridColors.divider,
             width: isToday ? 2 : 0.5,
           ),
         ),
@@ -529,23 +669,22 @@ class _WindowsCalendarScreenState extends State<WindowsCalendarScreen> {
               spacing: 1,
               runSpacing: 1,
               children: [
-                if (markers.hasPagar)
-                  _miniIcon(Icons.arrow_upward, _red, 11),
+                if (markers.hasPagar) _miniIcon(Icons.arrow_upward, GridColors.error, 11),
                 if (markers.hasReceber)
-                  _miniIcon(Icons.arrow_downward, _green, 11),
-                if (markers.hasPago)
-                  _miniIcon(Icons.check, Colors.grey, 11),
+                  _miniIcon(Icons.arrow_downward, GridColors.success, 11),
+                if (markers.hasPago) _miniIcon(Icons.check, Colors.grey, 11),
                 if (markers.hasRecebido)
-                  _miniIcon(Icons.check_circle, _green, 11),
+                  _miniIcon(Icons.check_circle, GridColors.success, 11),
                 if (markers.hasTributo)
                   Container(
                     decoration: BoxDecoration(
                       color: _purpleLight,
                       borderRadius: BorderRadius.circular(3),
-                      border: Border.all(color: _purple, width: 1),
+                      border: Border.all(color: GridColors.info, width: 1),
                     ),
                     padding: const EdgeInsets.all(1),
-                    child: const Icon(Icons.receipt_long, color: _purple, size: 13),
+                    child: const Icon(Icons.receipt_long,
+                        color: GridColors.info, size: 13),
                   ),
               ],
             ),
@@ -565,11 +704,11 @@ class _WindowsCalendarScreenState extends State<WindowsCalendarScreen> {
       spacing: 12,
       runSpacing: 4,
       children: [
-        _legendItem(Icons.arrow_upward,   _red,    'A Pagar'),
-        _legendItem(Icons.arrow_downward, _green,  'A Receber'),
-        _legendItem(Icons.check,          Colors.grey, 'Pago'),
-        _legendItem(Icons.check_circle,   _green,  'Recebido'),
-        _legendItem(Icons.receipt_long,   _purple, 'Doc. Fiscal'),
+        _legendItem(Icons.arrow_upward, GridColors.error, 'A Pagar'),
+        _legendItem(Icons.arrow_downward, GridColors.success, 'A Receber'),
+        _legendItem(Icons.check, Colors.grey, 'Pago'),
+        _legendItem(Icons.check_circle, GridColors.success, 'Recebido'),
+        _legendItem(Icons.receipt_long, GridColors.info, 'Doc. Fiscal'),
       ],
     );
   }
@@ -580,7 +719,7 @@ class _WindowsCalendarScreenState extends State<WindowsCalendarScreen> {
       children: [
         Icon(icon, color: color, size: 13),
         const SizedBox(width: 3),
-        Text(label, style: const TextStyle(fontSize: 11, color: _dark)),
+        Text(label, style: const TextStyle(fontSize: 11, color: GridColors.textSecondary)),
       ],
     );
   }
@@ -589,12 +728,15 @@ class _WindowsCalendarScreenState extends State<WindowsCalendarScreen> {
   Widget _buildDaySidePanel() {
     final day = _selectedDay!;
     final weekdays = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
-    final wdLabel  = weekdays[day.weekday % 7];
-    final dateLabel = '${day.day.toString().padLeft(2,'0')}/${day.month.toString().padLeft(2,'0')}/${day.year} ($wdLabel)';
+    final wdLabel = weekdays[day.weekday % 7];
+    final dateLabel =
+        '${day.day.toString().padLeft(2, '0')}/${day.month.toString().padLeft(2, '0')}/${day.year} ($wdLabel)';
 
-    final totalPagar   = _contasPagar.fold<double>(0, (s, i) => s + ((i['valor'] as num?)?.toDouble() ?? 0));
-    final totalReceber = _contasReceber.fold<double>(0, (s, i) => s + ((i['valor'] as num?)?.toDouble() ?? 0));
-    final saldo        = totalReceber - totalPagar;
+    final totalPagar =
+        _contasPagar.fold<double>(0, (s, i) => s + _moneyValue(i, 'valor'));
+    final totalReceber =
+        _contasReceber.fold<double>(0, (s, i) => s + _moneyValue(i, 'valor'));
+    final saldo = totalReceber - totalPagar;
 
     return Card(
       margin: const EdgeInsets.fromLTRB(0, 12, 12, 12),
@@ -605,7 +747,7 @@ class _WindowsCalendarScreenState extends State<WindowsCalendarScreen> {
           // Panel header
           Container(
             decoration: const BoxDecoration(
-              color: _red,
+              color: GridColors.error,
               borderRadius: BorderRadius.only(
                 topLeft: Radius.circular(10),
                 topRight: Radius.circular(10),
@@ -628,6 +770,7 @@ class _WindowsCalendarScreenState extends State<WindowsCalendarScreen> {
                 ),
                 IconButton(
                   icon: const Icon(Icons.close, color: Colors.white, size: 18),
+                  tooltip: 'Limpar seleção',
                   padding: EdgeInsets.zero,
                   constraints: const BoxConstraints(),
                   onPressed: () => setState(() => _selectedDay = null),
@@ -638,29 +781,31 @@ class _WindowsCalendarScreenState extends State<WindowsCalendarScreen> {
           // Content
           Expanded(
             child: _loadingDay
-                ? const Center(child: CircularProgressIndicator(color: _red))
+                ? const Center(child: CircularProgressIndicator(color: GridColors.error))
                 : ListView(
                     padding: const EdgeInsets.all(10),
                     children: [
                       _buildSectionHeader(
                         icon: Icons.arrow_upward,
-                        color: _red,
+                        color: GridColors.error,
                         label: 'A Pagar',
                         total: totalPagar,
-                        totalColor: _red,
+                        totalColor: GridColors.error,
                       ),
-                      ..._contasPagar.map((item) => _buildContaItem(item, isPagar: true)),
+                      ..._contasPagar
+                          .map((item) => _buildContaItem(item, isPagar: true)),
                       if (_contasPagar.isEmpty)
                         _emptySection('Nenhuma conta a pagar'),
                       const SizedBox(height: 12),
                       _buildSectionHeader(
                         icon: Icons.arrow_downward,
-                        color: _green,
+                        color: GridColors.success,
                         label: 'A Receber',
                         total: totalReceber,
-                        totalColor: _green,
+                        totalColor: GridColors.success,
                       ),
-                      ..._contasReceber.map((item) => _buildContaItem(item, isPagar: false)),
+                      ..._contasReceber
+                          .map((item) => _buildContaItem(item, isPagar: false)),
                       if (_contasReceber.isEmpty)
                         _emptySection('Nenhuma conta a receber'),
                       const SizedBox(height: 12),
@@ -705,15 +850,15 @@ class _WindowsCalendarScreenState extends State<WindowsCalendarScreen> {
   }
 
   Widget _buildContaItem(Map<String, dynamic> item, {required bool isPagar}) {
-    final valor       = (item['valor'] as num?)?.toDouble() ?? 0;
-    final status      = item['status'] as String? ?? 'ABERTA';
-    final descricao   = item['descricao'] as String? ?? '';
-    final tributo     = item['documentoFiscal'] == true;
-    final parceiro    = (item['parceiro'] as Map?)?.cast<String, dynamic>();
+    final valor = _moneyValue(item, 'valor');
+    final status = _statusValue(item).isEmpty ? 'ABERTA' : _statusValue(item);
+    final descricao = item['descricao'] as String? ?? '';
+    final tributo = _hasDocumentoFiscal(item);
+    final parceiro = (item['parceiro'] as Map?)?.cast<String, dynamic>();
     final parceiroNome = parceiro?['nome'] as String? ?? '';
 
     final today = DateTime.now();
-    final vencStr = (item['dataVencimento'] as String?)?.substring(0, 10) ?? '';
+    final vencStr = _dateKey(item);
     final vencDate = DateTime.tryParse(vencStr);
     final isVencida = status == 'ABERTA' &&
         vencDate != null &&
@@ -723,16 +868,16 @@ class _WindowsCalendarScreenState extends State<WindowsCalendarScreen> {
     String statusLabel;
     switch (status) {
       case 'BAIXADA':
-        statusColor  = _green;
-        statusLabel  = isPagar ? 'PAGO' : 'RECEBIDO';
+        statusColor = GridColors.success;
+        statusLabel = isPagar ? 'PAGO' : 'RECEBIDO';
         break;
       case 'CANCELADA':
-        statusColor  = Colors.grey;
-        statusLabel  = 'CANCELADA';
+        statusColor = Colors.grey;
+        statusLabel = 'CANCELADA';
         break;
       default:
-        statusColor  = _orange;
-        statusLabel  = 'ABERTA';
+        statusColor = GridColors.warning;
+        statusLabel = 'ABERTA';
     }
 
     return Card(
@@ -741,7 +886,7 @@ class _WindowsCalendarScreenState extends State<WindowsCalendarScreen> {
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(6),
         side: BorderSide(
-          color: tributo ? _purple : _greyBorder,
+          color: tributo ? GridColors.info : GridColors.divider,
           width: tributo ? 1.5 : 0.5,
         ),
       ),
@@ -758,15 +903,17 @@ class _WindowsCalendarScreenState extends State<WindowsCalendarScreen> {
                 decoration: BoxDecoration(
                   color: _purpleLight,
                   borderRadius: BorderRadius.circular(4),
-                  border: Border.all(color: _purple),
+                  border: Border.all(color: GridColors.info),
                 ),
-                child: const Icon(Icons.receipt_long, color: _purple, size: 14),
+                child: const Icon(Icons.receipt_long, color: GridColors.info, size: 14),
               ),
               const SizedBox(width: 6),
             ] else ...[
               Icon(
                 status == 'BAIXADA' ? Icons.check : Icons.arrow_upward,
-                color: status == 'BAIXADA' ? Colors.grey : (isPagar ? _red : _green),
+                color: status == 'BAIXADA'
+                    ? Colors.grey
+                    : (isPagar ? GridColors.error : GridColors.success),
                 size: 16,
               ),
               const SizedBox(width: 6),
@@ -780,13 +927,15 @@ class _WindowsCalendarScreenState extends State<WindowsCalendarScreen> {
                     descricao,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+                    style: const TextStyle(
+                        fontSize: 12, fontWeight: FontWeight.w600),
                   ),
                   if (parceiroNome.isNotEmpty)
                     Text(parceiroNome,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(fontSize: 10, color: Colors.grey)),
+                        style:
+                            const TextStyle(fontSize: 10, color: Colors.grey)),
                 ],
               ),
             ),
@@ -800,15 +949,14 @@ class _WindowsCalendarScreenState extends State<WindowsCalendarScreen> {
                   style: TextStyle(
                     fontWeight: FontWeight.bold,
                     fontSize: 12,
-                    color: isPagar ? _red : _green,
+                    color: isPagar ? GridColors.error : GridColors.success,
                   ),
                 ),
                 const SizedBox(height: 3),
                 Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    if (isVencida)
-                      _chip('VENCIDA', _red, Colors.white),
+                    if (isVencida) _chip('VENCIDA', GridColors.error, Colors.white),
                     const SizedBox(width: 3),
                     _chip(statusLabel, statusColor, Colors.white),
                   ],
@@ -829,7 +977,8 @@ class _WindowsCalendarScreenState extends State<WindowsCalendarScreen> {
         borderRadius: BorderRadius.circular(4),
       ),
       child: Text(label,
-          style: TextStyle(color: fg, fontSize: 9, fontWeight: FontWeight.bold)),
+          style:
+              TextStyle(color: fg, fontSize: 9, fontWeight: FontWeight.bold)),
     );
   }
 
@@ -846,19 +995,19 @@ class _WindowsCalendarScreenState extends State<WindowsCalendarScreen> {
     return Container(
       padding: const EdgeInsets.all(10),
       decoration: BoxDecoration(
-        color: _grey,
+        color: GridColors.divider,
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: _greyBorder),
+        border: Border.all(color: GridColors.divider),
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceAround,
         children: [
-          _summaryCell('-${_currencyFmt.format(pagar)}', 'A Pagar', _red),
-          _summaryCell('+${_currencyFmt.format(receber)}', 'A Receber', _green),
+          _summaryCell('-${_currencyFmt.format(pagar)}', 'A Pagar', GridColors.error),
+          _summaryCell('+${_currencyFmt.format(receber)}', 'A Receber', GridColors.success),
           _summaryCell(
             '${saldo >= 0 ? '+' : ''}${_currencyFmt.format(saldo)}',
             'Saldo',
-            saldo >= 0 ? _green : _red,
+            saldo >= 0 ? GridColors.success : GridColors.error,
           ),
         ],
       ),
@@ -871,8 +1020,7 @@ class _WindowsCalendarScreenState extends State<WindowsCalendarScreen> {
         Text(value,
             style: TextStyle(
                 fontWeight: FontWeight.bold, color: color, fontSize: 12)),
-        Text(label,
-            style: const TextStyle(fontSize: 10, color: Colors.grey)),
+        Text(label, style: const TextStyle(fontSize: 10, color: Colors.grey)),
       ],
     );
   }
@@ -889,17 +1037,19 @@ class _WindowsCalendarScreenState extends State<WindowsCalendarScreen> {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               IconButton(
-                icon: const Icon(Icons.chevron_left, color: _green),
+                icon: const Icon(Icons.chevron_left, color: GridColors.success),
+                tooltip: 'Ano anterior',
                 onPressed: () => setState(
                     () => _currentMonth = DateTime(_currentMonth.year - 1, 1)),
               ),
               Text(
                 '$year',
                 style: const TextStyle(
-                    fontWeight: FontWeight.bold, fontSize: 18, color: _dark),
+                    fontWeight: FontWeight.bold, fontSize: 18, color: GridColors.textSecondary),
               ),
               IconButton(
-                icon: const Icon(Icons.chevron_right, color: _green),
+                icon: const Icon(Icons.chevron_right, color: GridColors.success),
+                tooltip: 'Próximo ano',
                 onPressed: () => setState(
                     () => _currentMonth = DateTime(_currentMonth.year + 1, 1)),
               ),
@@ -908,7 +1058,7 @@ class _WindowsCalendarScreenState extends State<WindowsCalendarScreen> {
         ),
         Expanded(
           child: _loadingMonth
-              ? const Center(child: CircularProgressIndicator(color: _red))
+              ? const Center(child: CircularProgressIndicator(color: GridColors.error))
               : GridView.builder(
                   padding: const EdgeInsets.all(12),
                   gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
@@ -927,13 +1077,23 @@ class _WindowsCalendarScreenState extends State<WindowsCalendarScreen> {
 
   Widget _buildMonthCard(int year, int month) {
     final monthNames = [
-      'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
-      'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro',
+      'Janeiro',
+      'Fevereiro',
+      'Março',
+      'Abril',
+      'Maio',
+      'Junho',
+      'Julho',
+      'Agosto',
+      'Setembro',
+      'Outubro',
+      'Novembro',
+      'Dezembro',
     ];
     final summary = _monthSummaries[month];
-    final saldo   = summary != null
+    final saldo = summary != null
         ? (summary.totalRecebido + summary.saldoReceber) -
-          (summary.totalPago + summary.saldoPagar.abs())
+            (summary.totalPago + summary.saldoPagar.abs())
         : 0.0;
 
     return Card(
@@ -948,7 +1108,7 @@ class _WindowsCalendarScreenState extends State<WindowsCalendarScreen> {
             Text(
               '${monthNames[month - 1]} $year',
               style: const TextStyle(
-                  fontWeight: FontWeight.bold, fontSize: 13, color: _dark),
+                  fontWeight: FontWeight.bold, fontSize: 13, color: GridColors.textSecondary),
             ),
             const SizedBox(height: 6),
             // Action buttons
@@ -956,7 +1116,7 @@ class _WindowsCalendarScreenState extends State<WindowsCalendarScreen> {
               children: [
                 _monthActionBtn(
                   icon: Icons.arrow_upward,
-                  color: _red,
+                  color: GridColors.error,
                   tooltip: 'Contas a Pagar',
                   onTap: () => _showMonthPopup(
                     context,
@@ -969,7 +1129,7 @@ class _WindowsCalendarScreenState extends State<WindowsCalendarScreen> {
                 const SizedBox(width: 6),
                 _monthActionBtn(
                   icon: Icons.arrow_downward,
-                  color: _green,
+                  color: GridColors.success,
                   tooltip: 'Contas a Receber',
                   onTap: () => _showMonthPopup(
                     context,
@@ -986,12 +1146,12 @@ class _WindowsCalendarScreenState extends State<WindowsCalendarScreen> {
             if (summary != null) ...[
               Text(
                 'Pagar: ${_currencyFmt.format(summary.totalPagar)}',
-                style: const TextStyle(fontSize: 10, color: _red),
+                style: const TextStyle(fontSize: 10, color: GridColors.error),
                 overflow: TextOverflow.ellipsis,
               ),
               Text(
                 'Receber: ${_currencyFmt.format(summary.totalReceber)}',
-                style: const TextStyle(fontSize: 10, color: _green),
+                style: const TextStyle(fontSize: 10, color: GridColors.success),
                 overflow: TextOverflow.ellipsis,
               ),
               Text(
@@ -999,7 +1159,7 @@ class _WindowsCalendarScreenState extends State<WindowsCalendarScreen> {
                 style: TextStyle(
                   fontSize: 10,
                   fontWeight: FontWeight.bold,
-                  color: saldo >= 0 ? _green : _red,
+                  color: saldo >= 0 ? GridColors.success : GridColors.error,
                 ),
                 overflow: TextOverflow.ellipsis,
               ),
@@ -1058,13 +1218,16 @@ class _WindowsCalendarScreenState extends State<WindowsCalendarScreen> {
   }) async {
     final monthStr = '$year-${month.toString().padLeft(2, '0')}';
     final url = isPagar
-        ? _buildUrl(ApiLinks.allContasPagar,   {'mesAno': monthStr, 'tamanho': '1000'})
-        : _buildUrl(ApiLinks.allContasReceber, {'mesAno': monthStr, 'tamanho': '1000'});
+        ? _buildUrl(
+            ApiLinks.allContasPagar, {'mesAno': monthStr, 'tamanho': '1000'})
+        : _buildUrl(
+            ApiLinks.allContasReceber, {'mesAno': monthStr, 'tamanho': '1000'});
 
     showDialog(
       context: context,
       builder: (_) => _MonthDetailDialog(
-        title: '${isPagar ? 'Contas a Pagar' : 'Contas a Receber'} — $monthName $year',
+        title:
+            '${isPagar ? 'Contas a Pagar' : 'Contas a Receber'} — $monthName $year',
         url: url,
         isPagar: isPagar,
         currencyFmt: _currencyFmt,
@@ -1093,16 +1256,11 @@ class _MonthDetailDialog extends StatefulWidget {
 }
 
 class _MonthDetailDialogState extends State<_MonthDetailDialog> {
-  static const Color _red    = Color(0xFF93070A);
-  static const Color _green  = Color(0xFF005826);
-  static const Color _orange = Color(0xFFE65100);
-  static const Color _grey   = Color(0xFFF5F5F5);
-  static const Color _greyBorder = Color(0xFFE0E0E0);
-  static const Color _purple = Color(0xFF6A1B9A);
+  // (local constants kept for non‑GridColors equivalents)
   static const Color _purpleLight = Color(0xFFF3E5F5);
 
   bool _loading = true;
-  List<Map<String, dynamic>> _abertas  = [];
+  List<Map<String, dynamic>> _abertas = [];
   List<Map<String, dynamic>> _baixadas = [];
 
   @override
@@ -1112,28 +1270,24 @@ class _MonthDetailDialogState extends State<_MonthDetailDialog> {
   }
 
   Future<void> _load() async {
-    final res = await NetworkCaller().getRequest(widget.url);
+    final body = await _fetchFinancialJson(widget.url);
     if (!mounted) return;
-    List<Map<String, dynamic>> items = [];
-    if (res.isSuccess) {
-      try {
-        final data = res.body!['data'];
-        final dados = data['dados'] as List? ?? [];
-        items = List<Map<String, dynamic>>.from(dados);
-      } catch (_) {}
-    }
+    final items = _parseFinancialItems(body);
     setState(() {
-      _abertas  = items.where((i) => i['status'] != 'BAIXADA' && i['status'] != 'CANCELADA').toList();
-      _baixadas = items.where((i) => i['status'] == 'BAIXADA').toList();
-      _loading  = false;
+      _abertas =
+          items.where((i) => !_isBaixada(i) && !_isCancelada(i)).toList();
+      _baixadas = items.where(_isBaixada).toList();
+      _loading = false;
     });
   }
 
   @override
   Widget build(BuildContext context) {
-    final totalAberto  = _abertas.fold<double>(0, (s, i) => s + ((i['valor'] as num?)?.toDouble() ?? 0));
-    final totalBaixado = _baixadas.fold<double>(0, (s, i) => s + ((i['valor'] as num?)?.toDouble() ?? 0));
-    final saldo        = widget.isPagar
+    final totalAberto =
+        _abertas.fold<double>(0, (s, i) => s + _moneyValue(i, 'valor'));
+    final totalBaixado =
+        _baixadas.fold<double>(0, (s, i) => s + _moneyValue(i, 'valor'));
+    final saldo = widget.isPagar
         ? totalBaixado - totalAberto
         : totalBaixado - totalAberto;
 
@@ -1146,7 +1300,7 @@ class _MonthDetailDialogState extends State<_MonthDetailDialog> {
             // Dialog header
             Container(
               decoration: BoxDecoration(
-                color: widget.isPagar ? _red : _green,
+                color: widget.isPagar ? GridColors.error : GridColors.success,
                 borderRadius: const BorderRadius.only(
                   topLeft: Radius.circular(12),
                   topRight: Radius.circular(12),
@@ -1172,7 +1326,9 @@ class _MonthDetailDialogState extends State<_MonthDetailDialog> {
                     ),
                   ),
                   IconButton(
-                    icon: const Icon(Icons.close, color: Colors.white, size: 18),
+                    icon:
+                        const Icon(Icons.close, color: Colors.white, size: 18),
+                    tooltip: 'Fechar',
                     padding: EdgeInsets.zero,
                     constraints: const BoxConstraints(),
                     onPressed: () => Navigator.of(context).pop(),
@@ -1183,22 +1339,21 @@ class _MonthDetailDialogState extends State<_MonthDetailDialog> {
             // Body
             Expanded(
               child: _loading
-                  ? const Center(child: CircularProgressIndicator(color: _red))
+                  ? const Center(child: CircularProgressIndicator(color: GridColors.error))
                   : ListView(
                       padding: const EdgeInsets.all(12),
                       children: [
-                        _sectionTitle('Em Aberto', _orange),
+                        _sectionTitle('Em Aberto', GridColors.warning),
                         ..._abertas.map((i) => _dialogItem(i)),
                         if (_abertas.isEmpty)
                           _emptyMsg('Nenhum item em aberto'),
                         const SizedBox(height: 12),
                         _sectionTitle(
                           widget.isPagar ? 'Pagas' : 'Recebidas',
-                          _green,
+                          GridColors.success,
                         ),
                         ..._baixadas.map((i) => _dialogItem(i)),
-                        if (_baixadas.isEmpty)
-                          _emptyMsg('Nenhum item'),
+                        if (_baixadas.isEmpty) _emptyMsg('Nenhum item'),
                       ],
                     ),
             ),
@@ -1206,8 +1361,8 @@ class _MonthDetailDialogState extends State<_MonthDetailDialog> {
             Container(
               padding: const EdgeInsets.all(12),
               decoration: const BoxDecoration(
-                color: _grey,
-                border: Border(top: BorderSide(color: _greyBorder)),
+                color: GridColors.divider,
+                border: Border(top: BorderSide(color: GridColors.divider)),
                 borderRadius: BorderRadius.only(
                   bottomLeft: Radius.circular(12),
                   bottomRight: Radius.circular(12),
@@ -1222,14 +1377,14 @@ class _MonthDetailDialogState extends State<_MonthDetailDialog> {
                         'Total em aberto:',
                         style: TextStyle(
                             fontSize: 12,
-                            color: widget.isPagar ? _red : _orange),
+                            color: widget.isPagar ? GridColors.error : GridColors.warning),
                       ),
                       Text(
                         widget.currencyFmt.format(totalAberto),
                         style: TextStyle(
                           fontWeight: FontWeight.bold,
                           fontSize: 12,
-                          color: widget.isPagar ? _red : _orange,
+                          color: widget.isPagar ? GridColors.error : GridColors.warning,
                         ),
                       ),
                     ],
@@ -1240,14 +1395,14 @@ class _MonthDetailDialogState extends State<_MonthDetailDialog> {
                     children: [
                       Text(
                         widget.isPagar ? 'Total pago:' : 'Total recebido:',
-                        style: const TextStyle(fontSize: 12, color: _green),
+                        style: const TextStyle(fontSize: 12, color: GridColors.success),
                       ),
                       Text(
                         widget.currencyFmt.format(totalBaixado),
                         style: const TextStyle(
                           fontWeight: FontWeight.bold,
                           fontSize: 12,
-                          color: _green,
+                          color: GridColors.success,
                         ),
                       ),
                     ],
@@ -1266,7 +1421,7 @@ class _MonthDetailDialogState extends State<_MonthDetailDialog> {
                         style: TextStyle(
                           fontWeight: FontWeight.bold,
                           fontSize: 16,
-                          color: saldo >= 0 ? _green : _red,
+                          color: saldo >= 0 ? GridColors.success : GridColors.error,
                         ),
                       ),
                     ],
@@ -1285,18 +1440,27 @@ class _MonthDetailDialogState extends State<_MonthDetailDialog> {
       padding: const EdgeInsets.symmetric(vertical: 6),
       child: Text(
         label,
-        style: TextStyle(
-            fontWeight: FontWeight.bold, fontSize: 13, color: color),
+        style:
+            TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: color),
       ),
     );
   }
 
   Widget _dialogItem(Map<String, dynamic> item) {
-    final valor      = (item['valor'] as num?)?.toDouble() ?? 0;
-    final descricao  = item['descricao'] as String? ?? '';
-    final tributo    = item['documentoFiscal'] == true;
-    final parceiro   = (item['parceiro'] as Map?)?.cast<String, dynamic>();
+    final valor = _moneyValue(item, 'valor');
+    final descricao = item['descricao'] as String? ?? '';
+    final tributo = _hasDocumentoFiscal(item);
+    final parceiro = (item['parceiro'] as Map?)?.cast<String, dynamic>();
     final parceiroNome = parceiro?['nome'] as String? ?? '';
+    final vencStr = _dateKey(item);
+    final dia = vencStr.length >= 10 ? vencStr.substring(8, 10) : '';
+    final mes = vencStr.length >= 7 ? vencStr.substring(5, 7) : '';
+    final dataLabel = dia.isNotEmpty && mes.isNotEmpty ? '$dia/$mes' : '';
+
+    final subtitleParts = <String>[];
+    if (dataLabel.isNotEmpty) subtitleParts.add(dataLabel);
+    if (parceiroNome.isNotEmpty) subtitleParts.add(parceiroNome);
+    final subtitleText = subtitleParts.join(' · ');
 
     return Card(
       margin: const EdgeInsets.symmetric(vertical: 2),
@@ -1304,7 +1468,7 @@ class _MonthDetailDialogState extends State<_MonthDetailDialog> {
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(6),
         side: BorderSide(
-          color: tributo ? _purple : _greyBorder,
+          color: tributo ? GridColors.info : GridColors.divider,
           width: tributo ? 1.5 : 0.5,
         ),
       ),
@@ -1317,17 +1481,17 @@ class _MonthDetailDialogState extends State<_MonthDetailDialog> {
                 decoration: BoxDecoration(
                   color: _purpleLight,
                   borderRadius: BorderRadius.circular(4),
-                  border: Border.all(color: _purple),
+                  border: Border.all(color: GridColors.info),
                 ),
-                child: const Icon(Icons.receipt_long, color: _purple, size: 14),
+                child: const Icon(Icons.receipt_long, color: GridColors.info, size: 14),
               )
             : null,
         title: Text(descricao,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
             style: const TextStyle(fontSize: 12)),
-        subtitle: parceiroNome.isNotEmpty
-            ? Text(parceiroNome,
+        subtitle: subtitleText.isNotEmpty
+            ? Text(subtitleText,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: const TextStyle(fontSize: 10))
@@ -1337,7 +1501,7 @@ class _MonthDetailDialogState extends State<_MonthDetailDialog> {
           style: TextStyle(
             fontWeight: FontWeight.bold,
             fontSize: 12,
-            color: widget.isPagar ? _red : _green,
+            color: widget.isPagar ? GridColors.error : GridColors.success,
           ),
         ),
       ),

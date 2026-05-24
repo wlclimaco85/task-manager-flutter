@@ -7,6 +7,7 @@ import '../../../widgets/user_banners.dart';
 import '../../../mobile/screens/checkoutScreen.dart';
 import '../../web/screens/update_profile.dart';
 import '../../constants/custom_colors.dart';
+import '../../utils/grid_texts.dart';
 
 class WebProductCatalogPageCompras extends StatefulWidget {
   final String title;
@@ -632,7 +633,7 @@ class ProductCard extends StatelessWidget {
                                               ),
                                               onPressed: () =>
                                                   Navigator.pop(context),
-                                              child: const Text('Cancelar'),
+                                              child: const Text(GridTexts.cancel),
                                             ),
                                             ElevatedButton(
                                               style: ElevatedButton.styleFrom(
@@ -787,7 +788,7 @@ class ProductCard extends StatelessWidget {
                                               ),
                                               onPressed: () =>
                                                   Navigator.pop(context),
-                                              child: const Text('Cancelar'),
+                                              child: const Text(GridTexts.cancel),
                                             ),
                                             ElevatedButton(
                                               style: ElevatedButton.styleFrom(

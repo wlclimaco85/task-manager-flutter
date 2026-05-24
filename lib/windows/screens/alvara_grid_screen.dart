@@ -1,6 +1,8 @@
 import 'dart:typed_data';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
+import '../../utils/grid_colors.dart';
+import '../../utils/grid_texts.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 
@@ -65,10 +67,10 @@ class WindowsAlvaraGridScreen extends StatelessWidget {
   }
 
   static List<Map<String, dynamic>> _statusOptions() => [
-        {'id': 'ATIVO', 'nome': 'Ativo'},
-        {'id': 'VENCIDO', 'nome': 'Vencido'},
-        {'id': 'EM_RENOVACAO', 'nome': 'Em Renovação'},
-        {'id': 'CANCELADO', 'nome': 'Cancelado'},
+        {'id': 'ATIVO', 'nome': GridTexts.active},
+        {'id': 'VENCIDO', 'nome': GridTexts.expired},
+        {'id': 'EM_RENOVACAO', 'nome': GridTexts.renewing},
+        {'id': 'CANCELADO', 'nome': GridTexts.cancelled},
       ];
 
   @override
@@ -103,7 +105,7 @@ class WindowsAlvaraGridScreen extends StatelessWidget {
         // ── Campos principais ─────────────────────────────────────────────
         const FieldConfigWindows(
           fieldName: 'descricao',
-          label: 'Descrição',
+          label: GridTexts.description,
           isInForm: true,
           isVisibleByDefault: true,
           enabled: true,
@@ -111,14 +113,14 @@ class WindowsAlvaraGridScreen extends StatelessWidget {
         ),
         const FieldConfigWindows(
           fieldName: 'numero',
-          label: 'Número',
+          label: GridTexts.number,
           isInForm: true,
           isVisibleByDefault: true,
           enabled: true,
         ),
         const FieldConfigWindows(
           fieldName: 'dataEmissao',
-          label: 'Data Emissão',
+          label: GridTexts.issueDate,
           fieldType: FieldType.date,
           isInForm: true,
           isVisibleByDefault: true,
@@ -126,7 +128,7 @@ class WindowsAlvaraGridScreen extends StatelessWidget {
         ),
         const FieldConfigWindows(
           fieldName: 'dataVencimento',
-          label: 'Data Vencimento',
+          label: GridTexts.dueDate,
           fieldType: FieldType.date,
           isInForm: true,
           isVisibleByDefault: true,
@@ -135,7 +137,7 @@ class WindowsAlvaraGridScreen extends StatelessWidget {
         ),
         const FieldConfigWindows(
           fieldName: 'orgaoEmissor',
-          label: 'Órgão Emissor',
+          label: GridTexts.issuingAgency,
           isInForm: true,
           isVisibleByDefault: true,
           enabled: true,
@@ -143,15 +145,15 @@ class WindowsAlvaraGridScreen extends StatelessWidget {
         // H6: tipoAlvara como dropdown com lista fixa
         FieldConfigWindows(
           fieldName: 'tipoAlvara',
-          label: 'Tipo de Alvará',
+          label: GridTexts.licenseType,
           fieldType: FieldType.dropdown,
           dropdownFutureBuilder: () async => const [
-            {'id': 'Funcionamento', 'nome': 'Funcionamento'},
-            {'id': 'Sanitário',     'nome': 'Sanitário'},
-            {'id': 'Bombeiros',     'nome': 'Bombeiros'},
-            {'id': 'Ambiental',     'nome': 'Ambiental'},
-            {'id': 'Publicidade',   'nome': 'Publicidade'},
-            {'id': 'Outros',        'nome': 'Outros'},
+            {'id': 'Funcionamento', 'nome': GridTexts.businessLicense},
+            {'id': 'Sanitário',     'nome': GridTexts.healthLicense},
+            {'id': 'Bombeiros',     'nome': GridTexts.fireDepartment},
+            {'id': 'Ambiental',     'nome': GridTexts.environmental},
+            {'id': 'Publicidade',   'nome': GridTexts.advertising},
+            {'id': 'Outros',        'nome': GridTexts.others},
           ],
           dropdownValueField: 'id',
           dropdownDisplayField: 'nome',
@@ -164,7 +166,7 @@ class WindowsAlvaraGridScreen extends StatelessWidget {
         // ── Status → dropdown ─────────────────────────────────────────────
         FieldConfigWindows(
           fieldName: 'status',
-          label: 'Status',
+          label: GridTexts.status,
           fieldType: FieldType.dropdown,
           dropdownValueField: 'id',
           dropdownDisplayField: 'nome',
@@ -178,7 +180,7 @@ class WindowsAlvaraGridScreen extends StatelessWidget {
         // ── Empresa → dropdown ────────────────────────────────────────────
         const FieldConfigWindows(
           fieldName: 'empresa',
-          label: 'Empresa',
+          label: GridTexts.company,
           displayFieldName: 'empresa.nomeFantasia',
           fieldType: FieldType.dropdown,
           dropdownValueField: 'id',
@@ -193,7 +195,7 @@ class WindowsAlvaraGridScreen extends StatelessWidget {
         // ── Parceiro/Cliente → dropdown ───────────────────────────────────
         const FieldConfigWindows(
           fieldName: 'parceiro',
-          label: 'Parceiro/Cliente',
+          label: GridTexts.partnerCustomer,
           displayFieldName: 'parceiro.nome',
           fieldType: FieldType.dropdown,
           dropdownValueField: 'id',
@@ -208,7 +210,7 @@ class WindowsAlvaraGridScreen extends StatelessWidget {
         // ── Observação ────────────────────────────────────────────────────
         const FieldConfigWindows(
           fieldName: 'observacao',
-          label: 'Observação',
+          label: GridTexts.notes,
           fieldType: FieldType.multiline,
           isInForm: true,
           isVisibleByDefault: false,
@@ -220,19 +222,19 @@ class WindowsAlvaraGridScreen extends StatelessWidget {
       customActions: () => [
         CustomAction<AlvaraModel>(
           icon: Icons.upload_file,
-          label: 'Upload PDF',
+          label: GridTexts.uploadPdf,
           onPressed: (ctx, item) => _uploadPdf(ctx, item),
         ),
         CustomAction<AlvaraModel>(
           icon: Icons.picture_as_pdf,
-          label: 'Ver PDF',
+          label: GridTexts.viewPdf,
           isVisible: (item) => item.temPdf,
           onPressed: (ctx, item) => _visualizarPdf(ctx, item),
         ),
         // H5-21: navegar para o GED filtrado por este alvará
         CustomAction<AlvaraModel>(
           icon: Icons.folder_open,
-          label: 'Ver GED',
+          label: GridTexts.viewGed,
           isVisible: (item) => item.id != null,
           onPressed: (ctx, item) {
             Navigator.push(ctx, MaterialPageRoute(
@@ -251,7 +253,7 @@ class WindowsAlvaraGridScreen extends StatelessWidget {
   // ── Upload PDF do alvará ──────────────────────────────────────────────────
   static Future<void> _uploadPdf(BuildContext context, AlvaraModel item) async {
     if (item.id == null) {
-      _snack(context, 'Salve o alvará antes de anexar o PDF.', Colors.orange);
+      _snack(context, GridTexts.saveLicenseBeforePdf, GridColors.warning);
       return;
     }
 
@@ -266,7 +268,7 @@ class WindowsAlvaraGridScreen extends StatelessWidget {
     final bytes = arquivo.bytes ?? Uint8List(0);
     if (bytes.isEmpty) {
       if (!context.mounted) return;                     // guard após await
-      _snack(context, 'Arquivo vazio.', Colors.red);
+      _snack(context, GridTexts.emptyFile, GridColors.error);
       return;
     }
 
@@ -287,20 +289,20 @@ class WindowsAlvaraGridScreen extends StatelessWidget {
       final resp = await http.Response.fromStream(streamed);
       if (!context.mounted) return;                     // guard após await
       if (resp.statusCode == 200) {
-        _snack(context, 'PDF enviado com sucesso!', Colors.green);
+        _snack(context, GridTexts.pdfUploadSuccess, GridColors.success);
       } else {
-        _snack(context, 'Erro ao enviar PDF (${resp.statusCode}).', Colors.red);
+        _snack(context, GridTexts.pdfUploadError(resp.statusCode), GridColors.error);
       }
     } catch (e) {
       if (!context.mounted) return;                     // guard no catch
-      _snack(context, 'Erro: $e', Colors.red);
+      _snack(context, GridTexts.genericError(e.toString()), GridColors.error);
     }
   }
 
   // ── Visualizar PDF do alvará ──────────────────────────────────────────────
   static void _visualizarPdf(BuildContext context, AlvaraModel item) {
     if (item.id == null || !item.temPdf) {
-      _snack(context, 'Nenhum PDF anexado a este alvará.', Colors.orange);
+      _snack(context, GridTexts.noLicensePdfAttached, GridColors.warning);
       return;
     }
     final url = '${ApiLinks.baseUrl}/api/alvara/${item.id}/pdf';
@@ -312,7 +314,7 @@ class WindowsAlvaraGridScreen extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             AppBar(
-              title: Text('PDF — ${item.descricao}'),
+              title: Text(GridTexts.licensePdfTitle(item.descricao)),
               automaticallyImplyLeading: false,
               actions: [
                 IconButton(
@@ -326,16 +328,16 @@ class WindowsAlvaraGridScreen extends StatelessWidget {
               child: Column(
                 children: [
                   const Icon(Icons.picture_as_pdf,
-                      size: 64, color: Colors.red),
+                      size: 64, color: GridColors.error),
                   const SizedBox(height: 12),
                   SelectableText(url,
                       style: const TextStyle(fontSize: 13)),
                   const SizedBox(height: 16),
                   ElevatedButton.icon(
                     icon: const Icon(Icons.open_in_new),
-                    label: const Text('Abrir PDF'),
+                    label: const Text(GridTexts.openPdf),
                     style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF93070A)),
+                        backgroundColor: GridColors.primary),
                     onPressed: () {
                       // Para web: abre URL no browser
                       // Para desktop: usa url_launcher

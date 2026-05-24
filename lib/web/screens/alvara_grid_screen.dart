@@ -1,6 +1,7 @@
 import 'dart:typed_data';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
+import '../../utils/grid_colors.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 
@@ -335,7 +336,7 @@ class WebAlvaraGridScreen extends StatelessWidget {
                     icon: const Icon(Icons.open_in_new),
                     label: const Text('Abrir PDF'),
                     style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF93070A)),
+                        backgroundColor: GridColors.primary),
                     onPressed: () {
                       // Para web: abre URL no browser
                       // Para desktop: usa url_launcher

@@ -1,857 +1,178 @@
-import 'package:data_table_2/data_table_2.dart';
-import 'package:file_picker/file_picker.dart';
 import 'package:file_saver/file_saver.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
-import 'package:intl/intl.dart';
 
+import '../../../customization/dynamic_grid_windows_screen.dart';
 import '../../../models/auth_utility.dart';
 import '../../../utils/api_links.dart';
+import '../../../utils/dropdown_helpers.dart';
+import '../../../utils/grid_colors.dart';
 import '../../../utils/tenant_context.dart';
-import '../../services/ai_assistant_service.dart';
-import '../../services/network_caller.dart';
-import '../../../widgets/generic_grid_windows_screen.dart' show GridColors;
+import '../../../widgets/generic_grid_windows_screen.dart'
+    show CustomAction, FieldConfigWindows, FieldType;
 
-// ─────────────────────────────────────────────────────────────────────────────
-/// Tela GED — Gestão Eletrônica de Documentos
-/// Grid com CRUD + upload + download, filtros por empresa e parceiro.
-///
-/// Parâmetros opcionais para filtro automático por módulo de origem (H5-21):
-///   [moduloOrigem]  ex: 'funcionario', 'produto', 'parceiro', 'alvara'
-///   [idOrigem]      ID do registro de origem
-///   [nomeOrigem]    Nome para exibir no título da tela
-// ─────────────────────────────────────────────────────────────────────────────
-class GedArquivosScreen extends StatefulWidget {
-  /// Módulo de origem que originou a navegação para o GED.
-  /// Quando nulo, o GED é aberto sem filtro de módulo (ex: menu lateral).
+class GedArquivosScreen extends StatelessWidget {
   final String? moduloOrigem;
-
-  /// ID do registro de origem (ex: ID do funcionário, produto ou parceiro).
   final int? idOrigem;
-
-  /// Nome do registro de origem para exibir no AppBar (ex: "João Silva").
   final String? nomeOrigem;
+  final int? empresaId;
 
   const GedArquivosScreen({
     super.key,
     this.moduloOrigem,
     this.idOrigem,
     this.nomeOrigem,
+    this.empresaId,
   });
 
-  @override
-  State<GedArquivosScreen> createState() => _GedArquivosScreenState();
-}
+  Map<String, dynamic> get _extraParams {
+    final params = <String, dynamic>{};
+    final empresa = empresaId ?? TenantContext.empresaId;
+    final parceiro = TenantContext.parceiroId;
 
-class _GedArquivosScreenState extends State<GedArquivosScreen> {
-  // ── Dados da grid ─────────────────────────────────────────────────────────
-  List<Map<String, dynamic>> _arquivos = [];
-  bool _carregando = false;
-  String _busca = '';
-
-  // ── Filtros ───────────────────────────────────────────────────────────────
-  List<Map<String, dynamic>> _empresas = [];
-  List<Map<String, dynamic>> _parceiros = [];
-  List<Map<String, dynamic>> _diretorios = [];
-
-  int? _empresaFiltroId;
-  String? _empresaFiltroNome;
-  int? _parceiroFiltroId;
-
-  // ── Filtro por módulo de origem (H5-21) ───────────────────────────────────
-  String? _moduloOrigemFiltro;
-  int? _idOrigemFiltro;
-
-  // ── Upload dialog ─────────────────────────────────────────────────────────
-  PlatformFile? _arquivoSelecionado;
-  int? _diretorioUploadId;
-  int? _parceiroUploadId;
-  bool _enviando = false;
-
-  // ── Edição inline ─────────────────────────────────────────────────────────
-  Map<String, dynamic>? _editando;
-  final _nomeCtrl = TextEditingController();
-
-  @override
-  void initState() {
-    super.initState();
-    _carregarEmpresas();
-    _carregarDiretorios();
-    // H5-26: pre-filtrar pela empresa/parceiro do TenantContext
-    // H5-21: se vier com módulo de origem, aplicar filtro adicional
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (TenantContext.hasEmpresa) {
-        setState(() { _empresaFiltroId = TenantContext.empresaId; });
-        _carregarParceiros(TenantContext.empresaId!);
-      }
-      if (TenantContext.hasParceiro) {
-        setState(() { _parceiroFiltroId = TenantContext.parceiroId; });
-      }
-      // H5-21: aplicar filtro de módulo de origem se fornecido
-      if (widget.moduloOrigem != null && widget.idOrigem != null) {
-        setState(() {
-          _moduloOrigemFiltro = widget.moduloOrigem;
-          _idOrigemFiltro = widget.idOrigem;
-        });
-      }
-      if (TenantContext.hasEmpresa || TenantContext.hasParceiro) {
-        _buscarArquivos();
-      }
-    });
-  }
-
-  @override
-  void dispose() {
-    _nomeCtrl.dispose();
-    super.dispose();
-  }
-
-  // ──────────────────────────────────────────────────────────────────────────
-  // Carregamentos
-  // ──────────────────────────────────────────────────────────────────────────
-
-  Future<void> _carregarEmpresas() async {
-    final r = await NetworkCaller().getRequest(ApiLinks.allEmpresas);
-    if (!mounted) return;
-    if (r.isSuccess && r.body != null) {
-      final raw = r.body!['data']?['dados'] ?? r.body!['data'] ?? r.body!['content'] ?? r.body;
-      if (raw is List) {
-        setState(() {
-          _empresas = raw.map<Map<String, dynamic>>((e) => Map<String, dynamic>.from(e)).toList();
-        });
-      }
+    if (empresa != null) params['empresaId'] = empresa;
+    if (parceiro != null) params['parceiroId'] = parceiro;
+    if (moduloOrigem != null && moduloOrigem!.isNotEmpty) {
+      params['modulo'] = moduloOrigem;
     }
+    if (idOrigem != null) params['idOrigem'] = idOrigem;
+
+    return params;
   }
 
-  Future<void> _carregarParceiros(int empresaId) async {
-    setState(() => _parceiros = []);
-    final r = await NetworkCaller().getRequest(ApiLinks.allParceirosPorEmp(empresaId.toString()));
-    if (!mounted) return;
-    if (r.isSuccess && r.body != null) {
-      final raw = r.body!['data']?['dados'] ?? r.body!['data'] ?? r.body!['content'] ?? r.body;
-      if (raw is List) {
-        setState(() {
-          _parceiros = raw.map<Map<String, dynamic>>((e) => Map<String, dynamic>.from(e)).toList();
-        });
-      }
-    }
-  }
+  List<FieldConfigWindows> get _fieldOverrides {
+    final empresa = empresaId ?? TenantContext.empresaId;
+    final parceiro = TenantContext.parceiroId;
 
-  Future<void> _carregarDiretorios() async {
-    final r = await NetworkCaller().getRequest(ApiLinks.allDiretorios);
-    if (!mounted) return;
-    if (r.isSuccess && r.body != null) {
-      final raw = r.body!['data']?['dados'] ?? r.body!['data'] ?? r.body!['content'] ?? r.body;
-      if (raw is List) {
-        setState(() {
-          _diretorios = raw.map<Map<String, dynamic>>((e) => Map<String, dynamic>.from(e)).toList();
-        });
-      }
-    }
-  }
-
-  Future<void> _buscarArquivos() async {
-    if (_empresaFiltroId == null) {
-      _snack('Selecione uma empresa primeiro', erro: true);
-      return;
-    }
-    setState(() => _carregando = true);
-    // H5-21: inclui filtro de módulo e idOrigem quando disponíveis
-    final url = ApiLinks.arquivosPorEmpresa(
-      _empresaFiltroId!,
-      parceiroId: _parceiroFiltroId,
-      modulo: _moduloOrigemFiltro,
-      idOrigem: _idOrigemFiltro,
-    );
-    final r = await NetworkCaller().getRequest(url);
-    if (!mounted) return;
-    setState(() {
-      _carregando = false;
-      if (r.isSuccess && r.body != null) {
-        final raw = r.body is List ? r.body : r.body!['data'] ?? r.body!['content'] ?? [];
-        if (raw is List) {
-          _arquivos = raw.map<Map<String, dynamic>>((e) => Map<String, dynamic>.from(e)).toList();
-        }
-      } else {
-        _arquivos = [];
-      }
-    });
-  }
-
-  // ──────────────────────────────────────────────────────────────────────────
-  // Upload
-  // ──────────────────────────────────────────────────────────────────────────
-
-  Future<void> _selecionarArquivo() async {
-    final result = await FilePicker.pickFiles(withData: true);
-    if (result != null) setState(() => _arquivoSelecionado = result.files.first);
-  }
-
-  Future<void> _fazerUpload(BuildContext ctx) async {
-    if (_arquivoSelecionado == null) {
-      _snack('Selecione um arquivo', erro: true);
-      return;
-    }
-    if (_empresaFiltroId == null) {
-      _snack('Empresa é obrigatória', erro: true);
-      return;
-    }
-    setState(() => _enviando = true);
-
-    try {
-      final token = AuthUtility.userInfo?.token ?? '';
-      final uri = Uri.parse(ApiLinks.uploadArquivo);
-      final req = http.MultipartRequest('POST', uri);
-      if (token.isNotEmpty) req.headers['Authorization'] = 'Bearer $token';
-
-      req.files.add(http.MultipartFile.fromBytes(
-        'file',
-        _arquivoSelecionado!.bytes!,
-        filename: _arquivoSelecionado!.name,
-      ));
-      req.fields['fileName']  = _arquivoSelecionado!.name;
-      req.fields['fileType']  = _arquivoSelecionado!.extension ?? 'bin';
-      req.fields['diretorio'] = '{"id":${_diretorioUploadId ?? 0}}';
-      req.fields['empresa']   = '{"id":$_empresaFiltroId}';
-      req.fields['parceiro']  = '{"id":${_parceiroUploadId ?? 0}}';
-      // H5-21: inclui módulo de origem no upload quando disponível
-      if (_moduloOrigemFiltro != null) req.fields['modulo'] = _moduloOrigemFiltro!;
-      if (_idOrigemFiltro != null) req.fields['idOrigem'] = _idOrigemFiltro.toString();
-
-      final resp = await req.send();
-      if (!mounted) return;
-      if (resp.statusCode == 200) {
-        Navigator.of(ctx).pop();
-        setState(() => _arquivoSelecionado = null);
-        _snack('Arquivo enviado com sucesso!');
-        await _buscarArquivos();
-      } else {
-        _snack('Erro no upload: ${resp.statusCode}', erro: true);
-      }
-    } catch (e) {
-      _snack('Erro: $e', erro: true);
-    } finally {
-      if (mounted) setState(() => _enviando = false);
-    }
-  }
-
-  // ──────────────────────────────────────────────────────────────────────────
-  // Download
-  // ──────────────────────────────────────────────────────────────────────────
-
-  Future<void> _baixarArquivo(Map<String, dynamic> arq) async {
-    final id = arq['id'];
-    final nome = arq['fileName'] ?? 'arquivo';
-    final url = ApiLinks.downloadArquivo(id.toString());
-
-    try {
-      final token = AuthUtility.userInfo?.token ?? '';
-      final uri = Uri.parse(url);
-      final resp = await http.get(uri,
-          headers: token.isNotEmpty ? {'Authorization': 'Bearer $token'} : {});
-
-      if (resp.statusCode == 200) {
-        final bytes = resp.bodyBytes;
-        if (kIsWeb) {
-          await FileSaver.instance.saveFile(name: nome, bytes: bytes);
-        } else {
-          await FileSaver.instance.saveFile(name: nome, bytes: bytes);
-        }
-        _snack('Download concluído: $nome');
-      } else {
-        _snack('Erro ao baixar: ${resp.statusCode}', erro: true);
-      }
-    } catch (e) {
-      _snack('Erro: $e', erro: true);
-    }
-  }
-
-  // ──────────────────────────────────────────────────────────────────────────
-  // Edição (rename)
-  // ──────────────────────────────────────────────────────────────────────────
-
-  Future<void> _salvarEdicao() async {
-    if (_editando == null) return;
-    final id = _editando!['id'];
-    final r = await NetworkCaller().putRequest(
-      ApiLinks.updateArquivo(id.toString()),
-      {'fileName': _nomeCtrl.text.trim()},
-    );
-    if (r.isSuccess) {
-      _snack('Nome atualizado');
-      setState(() => _editando = null);
-      await _buscarArquivos();
-    } else {
-      _snack('Erro ao atualizar', erro: true);
-    }
-  }
-
-  // ──────────────────────────────────────────────────────────────────────────
-  // Delete
-  // ──────────────────────────────────────────────────────────────────────────
-
-  Future<void> _confirmarDelete(Map<String, dynamic> arq) async {
-    final ok = await showDialog<bool>(
-      context: context,
-      builder: (_) => AlertDialog(
-        title: const Text('Confirmar exclusão'),
-        content: Text('Remover "${arq['fileName']}"?'),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancelar')),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-            onPressed: () => Navigator.pop(context, true),
-            child: const Text('Excluir'),
-          ),
-        ],
+    return [
+      FieldConfigWindows(
+        label: 'Empresa',
+        fieldName: 'empresa',
+        displayFieldName: 'empresa.nome',
+        fieldType: FieldType.dropdown,
+        dropdownValueField: 'id',
+        dropdownDisplayField: 'nome',
+        dropdownSelectedValue: empresa,
+        dropdownFutureBuilder: DropdownHelpers.empresas,
+        enabled: empresa == null,
+        isRequired: true,
       ),
-    );
-    if (ok == true) {
-      final r = await NetworkCaller().deleteRequest(ApiLinks.deleteArquivo(arq['id'].toString()));
-      if (r.isSuccess) {
-        _snack('Arquivo removido');
-        await _buscarArquivos();
-      } else {
-        _snack('Erro ao remover', erro: true);
-      }
-    }
+      FieldConfigWindows(
+        label: 'Parceiro',
+        fieldName: 'parceiro',
+        displayFieldName: 'parceiro.nome',
+        fieldType: FieldType.dropdown,
+        dropdownValueField: 'id',
+        dropdownDisplayField: 'nome',
+        dropdownSelectedValue: parceiro,
+        enabled: parceiro == null,
+        // Cascade: filtra parceiros pela empresa selecionada no form
+        dependsOnField: parceiro == null ? 'empresa' : null,
+        dropdownFutureBuilderWithParam:
+            parceiro == null ? DropdownHelpers.parceirosPorEmpresa : null,
+      ),
+      FieldConfigWindows(
+        label: 'Diretorio',
+        fieldName: 'diretorio',
+        displayFieldName: 'diretorio.nome',
+        fieldType: FieldType.dropdown,
+        dropdownValueField: 'id',
+        dropdownDisplayField: 'nome',
+        dropdownFutureBuilder: () => DropdownHelpers.load(
+          ApiLinks.allDiretorios,
+          displayField: 'nome',
+        ),
+      ),
+      const FieldConfigWindows(
+        label: 'Modulo',
+        fieldName: 'modulo',
+        isInForm: false,
+        isVisibleByDefault: false,
+        enabled: false,
+      ),
+      const FieldConfigWindows(
+        label: 'ID Origem',
+        fieldName: 'idOrigem',
+        isInForm: false,
+        isVisibleByDefault: false,
+        enabled: false,
+      ),
+    ];
   }
-
-  // ──────────────────────────────────────────────────────────────────────────
-  // Build
-  // ──────────────────────────────────────────────────────────────────────────
-
-  /// Título dinâmico: quando vem de um módulo de origem, exibe contexto.
-  String get _tituloAppBar {
-    if (widget.moduloOrigem != null && widget.nomeOrigem != null) {
-      return 'GED — ${_capitalize(widget.moduloOrigem!)} · ${widget.nomeOrigem}';
-    }
-    return 'GED — Gestão Eletrônica de Documentos';
-  }
-
-  String _capitalize(String s) =>
-      s.isEmpty ? s : s[0].toUpperCase() + s.substring(1);
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.grey[100],
-      appBar: AppBar(
-        backgroundColor: GridColors.secondary,
-        foregroundColor: Colors.white,
-        title: Text(_tituloAppBar),
-        elevation: 0,
-        actions: [
-          // H5-21: chip indicador quando filtrado por módulo de origem
-          if (widget.moduloOrigem != null)
-            Padding(
-              padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 4),
-              child: Chip(
-                label: Text(
-                  _capitalize(widget.moduloOrigem!),
-                  style: const TextStyle(fontSize: 11, color: Colors.white),
-                ),
-                backgroundColor: GridColors.primary,
-                padding: EdgeInsets.zero,
-                materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                visualDensity: VisualDensity.compact,
-              ),
-            ),
-          IconButton(
-            icon: const Icon(Icons.upload_file),
-            tooltip: 'Novo Upload',
-            onPressed: _empresaFiltroId != null ? _abrirDialogUpload : null,
-          ),
-          const SizedBox(width: 8),
-        ],
-      ),
-      body: Column(
-        children: [
-          _buildFiltros(),
-          Expanded(child: _buildGrid()),
-        ],
-      ),
-    );
-  }
+    final extraParams = _extraParams;
 
-  // ── Barra de filtros ──────────────────────────────────────────────────────
-  Widget _buildFiltros() {
-    return Container(
-      color: Colors.white,
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-      child: Row(
-        children: [
-          // Empresa (obrigatório)
-          Expanded(
-            flex: 3,
-            child: _buildDropdown<int>(
-              label: 'Empresa *',
-              value: _empresaFiltroId,
-              items: _empresas.map((e) => DropdownMenuItem<int>(
-                value: e['id'] as int?,
-                child: Text(e['nome']?.toString() ?? ''),
-              )).toList(),
-              onChanged: (v) {
-                setState(() {
-                  _empresaFiltroId = v;
-                  _empresaFiltroNome = _empresas.firstWhere(
-                    (e) => e['id'] == v, orElse: () => {})['nome']?.toString();
-                  _parceiroFiltroId = null;
-                  _parceiroUploadId = null;
-                  _parceiros = [];
-                  _arquivos = [];
-                });
-                if (v != null) _carregarParceiros(v);
-              },
-              icon: Icons.business,
-            ),
-          ),
-          const SizedBox(width: 12),
-          // Parceiro (opcional)
-          Expanded(
-            flex: 3,
-            child: _buildDropdown<int>(
-              label: 'Parceiro/Cliente',
-              value: _parceiroFiltroId,
-              enabled: _empresaFiltroId != null,
-              items: [
-                const DropdownMenuItem<int>(value: null, child: Text('Todos')),
-                ..._parceiros.map((p) => DropdownMenuItem<int>(
-                  value: p['id'] as int?,
-                  child: Text(p['nome']?.toString() ?? ''),
-                )),
-              ],
-              onChanged: (v) => setState(() => _parceiroFiltroId = v),
-              icon: Icons.person,
-            ),
-          ),
-          const SizedBox(width: 12),
-          // Busca textual
-          Expanded(
-            flex: 3,
-            child: TextField(
-              decoration: _inputDecoration('Buscar por nome...', Icons.search),
-              onChanged: (v) => setState(() => _busca = v),
-            ),
-          ),
-          const SizedBox(width: 12),
-          // Botão filtrar
-          ElevatedButton.icon(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: GridColors.secondary,
-              foregroundColor: Colors.white,
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
-            ),
-            icon: const Icon(Icons.filter_alt),
-            label: const Text('Filtrar'),
-            onPressed: _carregando ? null : _buscarArquivos,
-          ),
-          const SizedBox(width: 8),
-          // Botão novo upload
-          ElevatedButton.icon(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: GridColors.primary,
-              foregroundColor: Colors.white,
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
-            ),
-            icon: const Icon(Icons.upload),
-            label: const Text('Novo Upload'),
-            onPressed: _empresaFiltroId != null ? _abrirDialogUpload : null,
-          ),
-        ],
-      ),
-    );
-  }
-
-  // ── Grid ──────────────────────────────────────────────────────────────────
-  Widget _buildGrid() {
-    if (_carregando) {
-      return const Center(child: CircularProgressIndicator());
-    }
-
-    final filtrados = _arquivos.where((a) {
-      final nome = (a['fileName'] ?? '').toString().toLowerCase();
-      return _busca.isEmpty || nome.contains(_busca.toLowerCase());
-    }).toList();
-
-    if (filtrados.isEmpty) {
-      return Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(Icons.folder_open, size: 64, color: Colors.grey[400]),
-            const SizedBox(height: 12),
-            Text(
-              _empresaFiltroId == null
-                  ? 'Selecione uma empresa e clique em Filtrar'
-                  : 'Nenhum arquivo encontrado',
-              style: TextStyle(color: Colors.grey[600], fontSize: 16),
-            ),
-          ],
+    return DynamicGridWindowsScreen<Map<String, dynamic>>(
+      telaNome: 'arquivo',
+      hasPermission: (_) => true,
+      fromJson: (json) => json,
+      toJson: (arquivo) => arquivo,
+      fetchEndpointOverride: ApiLinks.allArquivos,
+      createEndpointOverride: ApiLinks.createArquivo,
+      updateEndpointOverride: ApiLinks.updateArquivo(':id'),
+      deleteEndpointOverride: ApiLinks.deleteArquivo(':id'),
+      extraParams: extraParams.isEmpty ? null : extraParams,
+      fieldOverrides: _fieldOverrides,
+      customActions: () => [
+        CustomAction<Map<String, dynamic>>(
+          icon: Icons.download,
+          label: 'Baixar',
+          onPressed: _baixarArquivo,
+          isVisible: (arquivo) => arquivo['id'] != null,
         ),
-      );
-    }
-
-    final fmt = DateFormat('dd/MM/yyyy HH:mm');
-
-    return Card(
-      margin: const EdgeInsets.all(12),
-      elevation: 2,
-      child: DataTable2(
-        columnSpacing: 16,
-        horizontalMargin: 16,
-        minWidth: 900,
-        headingRowColor: WidgetStateProperty.all(GridColors.secondary),
-        headingTextStyle: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-        columns: const [
-          DataColumn2(label: Text('Nome do Arquivo'), size: ColumnSize.L),
-          DataColumn2(label: Text('Tipo'), size: ColumnSize.S),
-          DataColumn2(label: Text('Diretório'), size: ColumnSize.M),
-          DataColumn2(label: Text('Parceiro'), size: ColumnSize.M),
-          DataColumn2(label: Text('Data Upload'), size: ColumnSize.M),
-          DataColumn2(label: Text('Ações'), size: ColumnSize.M, numeric: false),
-        ],
-        rows: filtrados.map((arq) {
-          final isEditando = _editando?['id'] == arq['id'];
-          return DataRow2(
-            cells: [
-              // Nome — editável inline
-              DataCell(
-                isEditando
-                    ? SizedBox(
-                        width: 200,
-                        child: TextField(
-                          controller: _nomeCtrl,
-                          autofocus: true,
-                          onSubmitted: (_) => _salvarEdicao(),
-                          decoration: const InputDecoration(isDense: true, border: OutlineInputBorder()),
-                        ),
-                      )
-                    : Text(arq['fileName']?.toString() ?? '—',
-                        overflow: TextOverflow.ellipsis),
-              ),
-              // Tipo
-              DataCell(_chipTipo(arq['fileType']?.toString() ?? '')),
-              // Diretório
-              DataCell(Text(arq['diretorioNome']?.toString() ?? '—')),
-              // Parceiro
-              DataCell(Text(arq['parceiroNome']?.toString() ?? '—')),
-              // Data
-              DataCell(Text(arq['uploadDate'] != null
-                  ? _formatarData(arq['uploadDate'].toString(), fmt)
-                  : '—')),
-              // Ações
-              DataCell(Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  // Download
-                  IconButton(
-                    icon: const Icon(Icons.download, color: Colors.blue),
-                    tooltip: 'Download',
-                    onPressed: () => _baixarArquivo(arq),
-                    constraints: const BoxConstraints(),
-                    padding: const EdgeInsets.all(4),
-                  ),
-                  IconButton(
-                    icon: const Icon(Icons.auto_awesome, color: Colors.purple),
-                    tooltip: 'Classificar com IA',
-                    onPressed: () => _classificarArquivo(arq),
-                    constraints: const BoxConstraints(),
-                    padding: const EdgeInsets.all(4),
-                  ),
-                  // Editar / Confirmar edição
-                  isEditando
-                      ? IconButton(
-                          icon: const Icon(Icons.check, color: Colors.green),
-                          tooltip: 'Salvar',
-                          onPressed: _salvarEdicao,
-                          constraints: const BoxConstraints(),
-                          padding: const EdgeInsets.all(4),
-                        )
-                      : IconButton(
-                          icon: const Icon(Icons.edit, color: Colors.orange),
-                          tooltip: 'Renomear',
-                          onPressed: () {
-                            setState(() {
-                              _editando = arq;
-                              _nomeCtrl.text = arq['fileName']?.toString() ?? '';
-                            });
-                          },
-                          constraints: const BoxConstraints(),
-                          padding: const EdgeInsets.all(4),
-                        ),
-                  // Cancelar edição
-                  if (isEditando)
-                    IconButton(
-                      icon: const Icon(Icons.close, color: Colors.grey),
-                      tooltip: 'Cancelar',
-                      onPressed: () => setState(() => _editando = null),
-                      constraints: const BoxConstraints(),
-                      padding: const EdgeInsets.all(4),
-                    ),
-                  // Deletar
-                  if (!isEditando)
-                    IconButton(
-                      icon: const Icon(Icons.delete, color: Colors.red),
-                      tooltip: 'Excluir',
-                      onPressed: () => _confirmarDelete(arq),
-                      constraints: const BoxConstraints(),
-                      padding: const EdgeInsets.all(4),
-                    ),
-                ],
-              )),
-            ],
-          );
-        }).toList(),
-      ),
+      ],
     );
   }
 
-  // ── Dialog Upload ─────────────────────────────────────────────────────────
-  void _abrirDialogUpload() {
-    // Reseta estado do upload
-    setState(() {
-      _arquivoSelecionado = null;
-      _diretorioUploadId = null;
-      _parceiroUploadId = _parceiroFiltroId;
-    });
+  Future<void> _baixarArquivo(
+    BuildContext context,
+    Map<String, dynamic> arquivo,
+  ) async {
+    final id = arquivo['id']?.toString();
+    if (id == null || id.isEmpty) return;
 
-    showDialog(
-      context: context,
-      barrierDismissible: !_enviando,
-      builder: (ctx) => StatefulBuilder(
-        builder: (ctx, setStateDialog) => AlertDialog(
-          title: Row(
-            children: [
-              const Icon(Icons.upload_file, color: GridColors.secondary),
-              const SizedBox(width: 8),
-              Flexible(
-                child: Text(
-                  widget.moduloOrigem != null && widget.nomeOrigem != null
-                      ? 'Upload — ${_capitalize(widget.moduloOrigem!)} · ${widget.nomeOrigem}'
-                      : 'Upload de Arquivo${_empresaFiltroNome != null ? ' — $_empresaFiltroNome' : ''}',
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-            ],
-          ),
-          content: SizedBox(
-            width: 480,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                // H5-21: chip indicador de módulo de origem no dialog
-                if (_moduloOrigemFiltro != null) ...[
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                    decoration: BoxDecoration(
-                      color: GridColors.secondary.withValues(alpha: 0.08),
-                      borderRadius: BorderRadius.circular(6),
-                      border: Border.all(color: GridColors.secondary.withValues(alpha: 0.3)),
-                    ),
-                    child: Row(
-                      children: [
-                        const Icon(Icons.link, size: 16, color: GridColors.secondary),
-                        const SizedBox(width: 8),
-                        Text(
-                          'Módulo: ${_capitalize(_moduloOrigemFiltro!)}${_idOrigemFiltro != null ? '  #$_idOrigemFiltro' : ''}',
-                          style: const TextStyle(
-                            fontSize: 12,
-                            color: GridColors.secondary,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                ],
-                // Diretório
-                _buildDropdown<int>(
-                  label: 'Diretório',
-                  value: _diretorioUploadId,
-                  items: [
-                    const DropdownMenuItem<int>(value: null, child: Text('Sem diretório')),
-                    ..._diretorios.map((d) => DropdownMenuItem<int>(
-                      value: d['id'] as int?,
-                      child: Text(d['nome']?.toString() ?? ''),
-                    )),
-                  ],
-                  onChanged: (v) {
-                    setState(() => _diretorioUploadId = v);
-                    setStateDialog(() {});
-                  },
-                  icon: Icons.folder,
-                ),
-                const SizedBox(height: 12),
-                // Parceiro (opcional)
-                _buildDropdown<int>(
-                  label: 'Parceiro/Cliente (opcional)',
-                  value: _parceiroUploadId,
-                  items: [
-                    const DropdownMenuItem<int>(value: null, child: Text('Sem parceiro')),
-                    ..._parceiros.map((p) => DropdownMenuItem<int>(
-                      value: p['id'] as int?,
-                      child: Text(p['nome']?.toString() ?? ''),
-                    )),
-                  ],
-                  onChanged: (v) {
-                    setState(() => _parceiroUploadId = v);
-                    setStateDialog(() {});
-                  },
-                  icon: Icons.person,
-                ),
-                const SizedBox(height: 16),
-                // Seletor de arquivo
-                OutlinedButton.icon(
-                  icon: const Icon(Icons.attach_file),
-                  label: Text(
-                    _arquivoSelecionado != null
-                        ? _arquivoSelecionado!.name
-                        : 'Selecionar Arquivo',
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  style: OutlinedButton.styleFrom(
-                    side: const BorderSide(color: GridColors.secondary),
-                    padding: const EdgeInsets.symmetric(vertical: 14),
-                  ),
-                  onPressed: () async {
-                    await _selecionarArquivo();
-                    setStateDialog(() {});
-                  },
-                ),
-                if (_arquivoSelecionado != null) ...[
-                  const SizedBox(height: 8),
-                  Text(
-                    'Tamanho: ${(_arquivoSelecionado!.size / 1024).toStringAsFixed(1)} KB',
-                    style: const TextStyle(color: Colors.grey, fontSize: 12),
-                  ),
-                ],
-              ],
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: _enviando ? null : () => Navigator.of(ctx).pop(),
-              child: const Text('Cancelar'),
-            ),
-            ElevatedButton.icon(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: GridColors.secondary,
-                foregroundColor: Colors.white,
-              ),
-              icon: _enviando
-                  ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                  : const Icon(Icons.cloud_upload),
-              label: Text(_enviando ? 'Enviando...' : 'Fazer Upload'),
-              onPressed: _enviando ? null : () => _fazerUpload(ctx),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
+    final nome = (arquivo['fileName'] ??
+            arquivo['nome'] ??
+            arquivo['filename'] ??
+            'arquivo_$id')
+        .toString();
 
-  // ──────────────────────────────────────────────────────────────────────────
-  // Widgets auxiliares
-  // ──────────────────────────────────────────────────────────────────────────
-
-  Widget _buildDropdown<T>({
-    required String label,
-    required T? value,
-    required List<DropdownMenuItem<T>> items,
-    required ValueChanged<T?> onChanged,
-    required IconData icon,
-    bool enabled = true,
-  }) {
-    return DropdownButtonFormField<T>(
-      initialValue: value,
-      isExpanded: true,
-      decoration: _inputDecoration(label, icon),
-      items: items,
-      onChanged: enabled ? onChanged : null,
-    );
-  }
-
-  InputDecoration _inputDecoration(String label, IconData icon) {
-    return InputDecoration(
-      labelText: label,
-      prefixIcon: Icon(icon, size: 18, color: GridColors.secondary),
-      border: const OutlineInputBorder(),
-      contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-      isDense: true,
-    );
-  }
-
-  Widget _chipTipo(String tipo) {
-    final ext = tipo.contains('/') ? tipo.split('/').last.toUpperCase() : tipo.toUpperCase();
-    Color cor = Colors.grey;
-    if (tipo.startsWith('image/')) {
-      cor = Colors.blue;
-    } else if (tipo.contains('pdf')) cor = Colors.red;
-    else if (tipo.contains('word') || tipo.contains('doc')) cor = Colors.indigo;
-    else if (tipo.contains('excel') || tipo.contains('sheet') || tipo.contains('csv')) cor = Colors.green;
-
-    return Chip(
-      label: Text(ext.length > 8 ? ext.substring(0, 8) : ext,
-          style: const TextStyle(fontSize: 11, color: Colors.white)),
-      backgroundColor: cor,
-      padding: EdgeInsets.zero,
-      materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-      visualDensity: VisualDensity.compact,
-    );
-  }
-
-  String _formatarData(String raw, DateFormat fmt) {
     try {
-      return fmt.format(DateTime.parse(raw));
-    } catch (_) {
-      return raw;
-    }
-  }
+      final token = AuthUtility.userInfo?.token ?? '';
+      final response = await http.get(
+        Uri.parse(ApiLinks.downloadArquivo(id)),
+        headers: token.isEmpty ? null : {'Authorization': 'Bearer $token'},
+      );
 
-  Future<void> _classificarArquivo(Map<String, dynamic> arq) async {
-    try {
-      final result = await AiAssistantService().classifyDocument(
-        fileName: arq['fileName']?.toString(),
-        fileType: arq['fileType']?.toString(),
-        description: [
-          arq['diretorioNome']?.toString(),
-          arq['parceiroNome']?.toString(),
-        ].whereType<String>().join(' '),
-      );
-      if (!mounted) return;
-      showDialog<void>(
-        context: context,
-        builder: (_) => AlertDialog(
-          title: const Text('Classificacao do documento'),
-          content: Text(
-            'Categoria: ${result.category}\n'
-            'Confianca: ${result.confidence}\n'
-            'Status sugerido: ${result.suggestedStatus}\n'
-            'Tags: ${result.tags.join(', ')}',
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('Fechar'),
-            ),
-          ],
-        ),
-      );
+      if (!context.mounted) return;
+      if (response.statusCode == 200) {
+        await FileSaver.instance.saveFile(
+          name: nome,
+          bytes: response.bodyBytes,
+        );
+        _snack(context, 'Download concluido: $nome');
+      } else {
+        _snack(
+          context,
+          'Erro ao baixar arquivo: ${response.statusCode}',
+          error: true,
+        );
+      }
     } catch (e) {
-      _snack('Erro ao classificar documento: $e', erro: true);
+      if (context.mounted) {
+        _snack(context, 'Erro ao baixar arquivo: $e', error: true);
+      }
     }
   }
 
-  void _snack(String msg, {bool erro = false}) {
-    if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-      content: Text(msg),
-      backgroundColor: erro ? Colors.red : GridColors.secondary,
-      duration: const Duration(seconds: 3),
-    ));
+  void _snack(BuildContext context, String message, {bool error = false}) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        backgroundColor: error ? GridColors.error : GridColors.success,
+        content: Text(message),
+      ),
+    );
   }
 }

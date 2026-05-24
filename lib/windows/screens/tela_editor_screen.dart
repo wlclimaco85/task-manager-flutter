@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import '../../utils/grid_colors.dart';
 import 'package:http/http.dart' as http;
 import '../../../models/auth_utility.dart';
 import '../../../utils/api_links.dart';
@@ -97,7 +98,7 @@ class _TelaEditorScreenState extends State<TelaEditorScreen> {
               ),
             ),
           ),
-          if (_loading) const LinearProgressIndicator(color: Color(0xFF4CAF50)),
+          if (_loading) const LinearProgressIndicator(color: GridColors.success),
           if (_erro != null) Padding(padding: const EdgeInsets.all(8), child: Text(_erro!, style: const TextStyle(color: Colors.red))),
           // Grid de telas
           Expanded(
@@ -149,7 +150,7 @@ class _TelaCard extends StatelessWidget {
       ),
       child: Row(
         children: [
-          const Icon(Icons.table_chart, color: Color(0xFF4CAF50), size: 20),
+          const Icon(Icons.table_chart, color: GridColors.success, size: 20),
           const SizedBox(width: 12),
           Expanded(
             child: Column(
@@ -240,7 +241,7 @@ class _FieldEditorScreenState extends State<_FieldEditorScreen> {
         body: jsonEncode(field),
       );
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Campo salvo!'), backgroundColor: Color(0xFF4CAF50)),
+        const SnackBar(content: Text('Campo salvo!'), backgroundColor: GridColors.success),
       );
       _carregar();
     } catch (e) {
@@ -262,7 +263,7 @@ class _FieldEditorScreenState extends State<_FieldEditorScreen> {
         iconTheme: const IconThemeData(color: Colors.white),
       ),
       body: _loading
-          ? const Center(child: CircularProgressIndicator(color: Color(0xFF4CAF50)))
+          ? const Center(child: CircularProgressIndicator(color: GridColors.success))
           : Row(
               children: [
                 // Lista de campos (esquerda)
@@ -481,7 +482,7 @@ class _FieldPropertiesPanelState extends State<_FieldPropertiesPanel> {
           // Header
           Row(
             children: [
-              const Icon(Icons.settings, color: Color(0xFF4CAF50), size: 20),
+              const Icon(Icons.settings, color: GridColors.success, size: 20),
               const SizedBox(width: 8),
               Text('Propriedades: ${_f['fieldName'] ?? ''}',
                   style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
@@ -492,7 +493,7 @@ class _FieldPropertiesPanelState extends State<_FieldPropertiesPanel> {
                     ? const SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
                     : const Icon(Icons.save, size: 14),
                 label: Text(widget.saving ? 'Salvando...' : 'Salvar'),
-                style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF4CAF50)),
+                style: ElevatedButton.styleFrom(backgroundColor: GridColors.success),
               ),
             ],
           ),
@@ -540,7 +541,7 @@ class _FieldPropertiesPanelState extends State<_FieldPropertiesPanel> {
 
   Widget _section(String title) => Padding(
     padding: const EdgeInsets.only(top: 16, bottom: 8),
-    child: Text(title, style: const TextStyle(color: Color(0xFF4CAF50), fontSize: 12, fontWeight: FontWeight.bold, letterSpacing: 1)),
+    child: Text(title, style: const TextStyle(color: GridColors.success, fontSize: 12, fontWeight: FontWeight.bold, letterSpacing: 1)),
   );
 
   Widget _textField(String label, TextEditingController ctrl, void Function(String) onChanged) =>
@@ -556,7 +557,7 @@ class _FieldPropertiesPanelState extends State<_FieldPropertiesPanel> {
           filled: true, fillColor: const Color(0xFF1A1D27),
           border: OutlineInputBorder(borderRadius: BorderRadius.circular(6), borderSide: const BorderSide(color: Colors.white12)),
           enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(6), borderSide: const BorderSide(color: Colors.white12)),
-          focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(6), borderSide: const BorderSide(color: Color(0xFF4CAF50))),
+          focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(6), borderSide: const BorderSide(color: GridColors.success)),
           contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
           isDense: true,
         ),
@@ -596,7 +597,7 @@ class _FieldPropertiesPanelState extends State<_FieldPropertiesPanel> {
           Switch(
             value: value,
             onChanged: onChanged,
-            activeThumbColor: const Color(0xFF4CAF50),
+            activeThumbColor: GridColors.success,
             materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
           ),
         ],

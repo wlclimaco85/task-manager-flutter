@@ -19,26 +19,13 @@ import 'package:http/http.dart' as http;
 import 'package:http_parser/http_parser.dart' as http_parser;
 import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../utils/grid_colors.dart';
+import '../utils/grid_texts.dart';
 
 import '../../../models/network_response.dart';
 // Serviços existentes no seu projeto
 import '../../services/network_caller.dart';
 import '../../../widgets/user_banners.dart';
-
-// ---------------------- TEMA ----------------------
-class GridColors {
-  static const Color primary = Color(0xFF93070A);
-  static const Color primaryDark = Color(0xFF6A0507);
-  static const Color secondary = Color(0xFF005826);
-  static const Color textPrimary = Color(0xFFFFFFFF);
-  static const Color textSecondary = Color(0xFF000000);
-  static const Color background = Color(0xFF005826);
-  static const Color card = Color(0xFFFFFFFF);
-  static const Color error = Color(0xFFD32F2F);
-  static const Color warning = Color(0xFFFFA000);
-  static const Color success = Color(0xFF2E7D32);
-  static const Color divider = Color(0xFFBDBDBD);
-}
 
 // ---------------------- CONFIGS ----------------------
 enum FieldType {
@@ -970,7 +957,7 @@ class _GenericMobileGridScreenState extends State<GenericMobileGridScreen> {
       },
       backgroundColor: GridColors.primary,
       foregroundColor: GridColors.textPrimary,
-      tooltip: 'Adicionar',
+      tooltip: GridTexts.add,
       child: const Icon(Icons.add),
     );
   }
@@ -1105,13 +1092,13 @@ class _GenericMobileGridScreenState extends State<GenericMobileGridScreen> {
                 CircularProgressIndicator.adaptive(
                     valueColor: AlwaysStoppedAnimation(cs.primary)),
                 const SizedBox(height: 12),
-                const Text('Carregando mais...')
+                const Text(GridTexts.loadingMore)
               ])
             : Column(mainAxisSize: MainAxisSize.min, children: [
                 Icon(Icons.check_circle,
                     color: cs.primary.withValues(alpha: 0.6), size: 40),
                 const SizedBox(height: 8),
-                const Text('Todos os itens foram carregados')
+                const Text(GridTexts.allItemsLoaded)
               ]),
       ),
     );
@@ -1464,7 +1451,7 @@ class _GenericMobileGridScreenState extends State<GenericMobileGridScreen> {
             const Icon(Icons.edit, color: GridColors.textPrimary),
             const SizedBox(width: 8),
             Text(
-              editingItem == null ? 'Adicionar' : 'Editar',
+              editingItem == null ? GridTexts.add : 'Editar',
               style: const TextStyle(
                 color: GridColors.textPrimary,
                 fontWeight: FontWeight.bold,
@@ -1500,7 +1487,7 @@ class _GenericMobileGridScreenState extends State<GenericMobileGridScreen> {
                   side: const BorderSide(color: GridColors.textPrimary),
                   foregroundColor: GridColors.textPrimary,
                 ),
-                child: const Text('Cancelar'),
+                child: const Text(GridTexts.cancel),
               ),
             ),
             const SizedBox(width: 12),
@@ -1514,7 +1501,7 @@ class _GenericMobileGridScreenState extends State<GenericMobileGridScreen> {
                     message: editingItem == null
                         ? 'Deseja salvar este novo registro?'
                         : 'Deseja salvar as alterações deste registro?',
-                    confirmText: 'Salvar',
+                    confirmText: GridTexts.save,
                   );
                   if (ok == true) {
                     _saveForm(formCtrls, context, editingItem: editingItem);
@@ -1524,7 +1511,7 @@ class _GenericMobileGridScreenState extends State<GenericMobileGridScreen> {
                   backgroundColor: GridColors.textPrimary,
                   foregroundColor: GridColors.primary,
                 ),
-                child: Text(editingItem == null ? 'Adicionar' : 'Salvar'),
+                child: Text(editingItem == null ? GridTexts.add : GridTexts.save),
               ),
             ),
           ]),
@@ -1698,7 +1685,7 @@ class _GenericMobileGridScreenState extends State<GenericMobileGridScreen> {
             : null,
         icon: const Icon(Icons.attach_file),
         label:
-            Text(picked.isEmpty ? 'Selecionar Arquivo' : 'Adicionar Arquivo'),
+            Text(picked.isEmpty ? GridTexts.selectFile : GridTexts.addFile),
       ),
       if (cfg.allowedExtensions.isNotEmpty)
         Padding(
@@ -1849,7 +1836,7 @@ class _GenericMobileGridScreenState extends State<GenericMobileGridScreen> {
         actions: [
           TextButton(
               onPressed: () => Navigator.pop(ctx),
-              child: const Text('Cancelar')),
+              child: const Text(GridTexts.cancel)),
           ElevatedButton(
             onPressed: () async {
               Navigator.pop(ctx);
@@ -1927,7 +1914,7 @@ class _GenericMobileGridScreenState extends State<GenericMobileGridScreen> {
           actions: [
             TextButton(
                 onPressed: () => Navigator.pop(ctx),
-                child: const Text('Cancelar')),
+                child: const Text(GridTexts.cancel)),
             ElevatedButton(
               onPressed: () async {
                 await _saveFieldPreferences();
@@ -1974,7 +1961,7 @@ class _GenericMobileGridScreenState extends State<GenericMobileGridScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Cancelar'),
+            child: const Text(GridTexts.cancel),
           ),
           ElevatedButton(
             onPressed: () => Navigator.pop(ctx, true),

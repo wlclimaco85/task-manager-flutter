@@ -3,6 +3,7 @@ import 'dart:typed_data';
 import 'package:file_picker/file_picker.dart';
 import 'package:file_saver/file_saver.dart';
 import 'package:flutter/material.dart';
+import '../../../utils/grid_colors.dart';
 import '../../../customization/dynamic_grid_windows_screen.dart';
 import '../../../models/auth_utility.dart';
 import '../../../models/nfe_pagamento_model.dart';
@@ -11,9 +12,10 @@ import '../../../models/nfe_duplicata_model.dart';
 import '../../../utils/api_links.dart';
 import '../../../utils/tenant_context.dart';
 import '../../../widgets/searchable_dropdown.dart';
+import '../../../utils/grid_texts.dart';
 
-const _red = Color(0xFF93070A);
-const _green = Color(0xFF005826);
+const _red = GridColors.primary;
+const _green = GridColors.secondary;
 const _bord = Color(0xFFDDDDDD);
 const _grey = Color(0xFF757575);
 const _dark = Color(0xFF212121);
@@ -352,7 +354,7 @@ class _State extends State<NfeSankhyaDetailScreen> {
             'Serão criadas ${_duplicatas.length} conta(s) baseadas nas duplicatas.',
             style: const TextStyle(fontSize: 13)),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancelar')),
+          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text(GridTexts.cancel)),
           ElevatedButton(
             style: ElevatedButton.styleFrom(backgroundColor: _green, foregroundColor: Colors.white),
             onPressed: () => Navigator.pop(context, true),
@@ -449,7 +451,7 @@ class _State extends State<NfeSankhyaDetailScreen> {
           const Text('O XML será gerado e assinado digitalmente.', style: TextStyle(fontSize: 11, color: _grey)),
         ]),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancelar')),
+          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text(GridTexts.cancel)),
           ElevatedButton(
             style: ElevatedButton.styleFrom(backgroundColor: _green, foregroundColor: Colors.white),
             onPressed: () => Navigator.pop(context, true),
@@ -600,7 +602,7 @@ class _State extends State<NfeSankhyaDetailScreen> {
         title: const Text('Aceitar NF-e', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
         content: Text('Confirma o aceite da NF-e #$_nfeId?', style: const TextStyle(fontSize: 13)),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancelar')),
+          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text(GridTexts.cancel)),
           ElevatedButton(
             style: ElevatedButton.styleFrom(backgroundColor: _green, foregroundColor: Colors.white),
             onPressed: () => Navigator.pop(context, true),
@@ -629,7 +631,7 @@ class _State extends State<NfeSankhyaDetailScreen> {
         title: const Text('Recusar NF-e', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
         content: Text('Confirma a recusa da NF-e #$_nfeId?', style: const TextStyle(fontSize: 13)),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancelar')),
+          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text(GridTexts.cancel)),
           ElevatedButton(
             style: ElevatedButton.styleFrom(backgroundColor: _red, foregroundColor: Colors.white),
             onPressed: () => Navigator.pop(context, true),

@@ -19,12 +19,14 @@ class WindowsParceiroDetailScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final id = item['id']?.toString() ?? '';
     final parceiroId = item['id'] as int? ?? 0;
-    final parceiroNome =
-        item['nome']?.toString() ?? item['razaoSocial']?.toString() ?? 'Parceiro';
+    final parceiroNome = item['nome']?.toString() ??
+        item['razaoSocial']?.toString() ??
+        'Parceiro';
     final empresaId =
         (item['empresa'] is Map ? item['empresa']['id'] : item['empresa'])
                 ?.toString() ??
             '';
+    final empresaIdInt = int.tryParse(empresaId);
 
     return GenericDetailFormScreen(
       item: item,
@@ -64,7 +66,8 @@ class WindowsParceiroDetailScreen extends StatelessWidget {
                   : [],
               dropdownValueField: 'value',
               dropdownDisplayField: 'label',
-              dropdownSelectedValue: parceiroId > 0 ? parceiroId.toString() : null,
+              dropdownSelectedValue:
+                  parceiroId > 0 ? parceiroId.toString() : null,
               isInForm: true,
               isFilterable: false,
               enabled: false,
@@ -119,6 +122,7 @@ class WindowsParceiroDetailScreen extends StatelessWidget {
                   moduloOrigem: 'parceiro',
                   idOrigem: parceiroId,
                   nomeOrigem: parceiroNome,
+                  empresaId: empresaIdInt,
                 )
               : const Center(child: Text('ID do parceiro nao disponivel')),
         ),

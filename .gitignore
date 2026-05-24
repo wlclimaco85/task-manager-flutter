@@ -52,6 +52,10 @@ android/*.jks
 android/app/*.jks
 Gemfile.lock
 
+# Credenciais locais de trading/corretora
+.trading.local.json
+run_trading_local.ps1
+
 # Windows build outputs
 _windows/flutter/ephemeral/
 _windows/build/

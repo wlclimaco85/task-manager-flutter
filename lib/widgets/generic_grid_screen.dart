@@ -10,47 +10,19 @@ import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../utils/grid_colors.dart';
+import '../utils/grid_texts.dart';
 import '../../../models/auth_utility.dart';
 import '../../../models/network_response.dart';
 import '../../../utils/api_links.dart';
 import '../../services/network_caller.dart';
 
 import 'package:task_manager_flutter/utils/app_logger.dart';
+import 'package:task_manager_flutter/models/tela_ajuda_model.dart';
+import 'package:task_manager_flutter/services/tela_ajuda_service.dart';
 // ==============================================
 // ENUMS E CONFIGURAÇÕES
 // ==============================================
-
-// Cores centralizadas para todo o componente
-class GridColors {
-  static const Color primary = Color(0xFF93070A);
-  static const Color primaryDark = Color(0xFF6A0507);
-  static const Color primaryLight = Color(0xFFFFEDEE);
-  static const Color secondary = Color(0xFF005826);
-  static const Color secondaryLight = Color(0xFF2E7D32);
-  static const Color secondaryDark = Color(0xFF003D1A);
-  static const Color textPrimary = Color(0xFFFFFFFF);
-  static const Color textSecondary = Color(0xFF1F2933);
-  static const Color link = Color(0xFF93070A);
-  static const Color inputBackground = Color(0xFFFFFFFF);
-  static const Color inputBorder = Color(0xFFC8D0C6);
-  static const Color buttonBackground = Color(0xFF93070A);
-  static const Color buttonText = Color(0xFFFFFFFF);
-  static const Color background = Color(0xFFF3F6F1);
-  static const Color card = Color(0xFFFFFFFF);
-  static const Color error = Color(0xFFD32F2F);
-  static const Color warning = Color(0xFFFFA000);
-  static const Color success = Color(0xFF2E7D32);
-  static const Color info = Color(0xFF005826);
-  static const Color divider = Color(0xFFD7DED4);
-  static const Color filterBackground = Color(0xFFE9EFE6);
-  static const Color gridHeader = Color(0xFFDCE7D9);
-  static const Color rowEven = Color(0xFFFFFFFF);
-  static const Color rowOdd = Color(0xFFF1F1F1);
-  static const Color hover = Color(0xFFE6F1E3);
-  static const Color selectedRow = Color(0xFFCFE6CE);
-  static const Color dialogBackground = Color(0xFFFFFFFF);
-  static const Color shadow = Color(0x26000000);
-}
 
 // Enum para tipos de campo
 enum FieldType {
@@ -769,8 +741,8 @@ class FieldFactory {
           icon: const Icon(Icons.attach_file),
           label: Text(
             currentFiles.isEmpty
-                ? 'Selecionar Arquivo'
-                : 'Adicionar Mais Arquivos',
+                ? GridTexts.selectFile
+                : GridTexts.addMoreFiles,
           ),
           style: ElevatedButton.styleFrom(
             backgroundColor: GridColors.primary,
@@ -943,6 +915,7 @@ class GenericGridScreen<T> extends StatefulWidget {
   final String storageKey;
   final Widget Function(T item)? detailScreenBuilder;
   final Map<String, dynamic>? extraParams;
+  final String? helpTelaNome;
 
   const GenericGridScreen({
     super.key,
@@ -975,6 +948,7 @@ class GenericGridScreen<T> extends StatefulWidget {
     this.storageKey = 'generic_grid_settings',
     this.detailScreenBuilder,
     this.extraParams,
+    this.helpTelaNome,
   });
 
   @override
@@ -1361,7 +1335,7 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
-                        item == null ? "Novo Item" : "Editar Item",
+                        item == null ? GridTexts.newItem : GridTexts.editItem,
                         style: const TextStyle(
                           fontSize: 15,
                           fontWeight: FontWeight.w700,
@@ -1819,14 +1793,14 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Confirmar Exclusão'),
+        title: const Text(GridTexts.confirmDelete),
         content: Text(
           'Deseja excluir ${selectedRows.length} item(s) selecionado(s)?',
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('Cancelar'),
+            child: const Text(GridTexts.cancel),
           ),
           ElevatedButton(
             onPressed: () async {
@@ -1913,12 +1887,11 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
   }
 
   Widget _buildLoadingOverlay() {
-    // Mostra overlay com fade quando carregando (paginação, filtros, etc.)
-    if (_isUpdating || _isDeleting || _isExporting || isLoading) {
+    // Loading da grade cobre filtros/paginacao; este overlay fica so para acoes bloqueantes.
+    final showBlockingOverlay = _isUpdating || _isDeleting || _isExporting;
+    if (showBlockingOverlay) {
       return AnimatedOpacity(
-        opacity: (_isUpdating || _isDeleting || _isExporting || isLoading)
-            ? 1.0
-            : 0.0,
+        opacity: showBlockingOverlay ? 1.0 : 0.0,
         duration: const Duration(milliseconds: 200),
         child: Container(
           color: Colors.black.withValues(alpha: 0.35),
@@ -2239,7 +2212,21 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
     );
   }
 
-  void _showGridHelpDialog() {
+  Future<void> _showGridHelpDialog() async {
+    final telaNome = widget.helpTelaNome ?? widget.title;
+    TelaAjudaModel? ajuda;
+    try {
+      ajuda = await TelaAjudaService().buscarPorTela(telaNome);
+    } catch (e) {
+      L.e('Erro ao buscar ajuda da tela "$telaNome": $e');
+    }
+
+    if (!mounted) return;
+    if (ajuda != null) {
+      _showConfiguredHelpDialog(ajuda);
+      return;
+    }
+
     final visibleFields = widget.fieldConfigs
         .where((c) =>
             c.isVisibleByDefault &&
@@ -2311,6 +2298,69 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
         ],
       ),
     );
+  }
+
+  void _showConfiguredHelpDialog(TelaAjudaModel ajuda) {
+    final sections = <MapEntry<String, String?>>[
+      MapEntry('Para que serve', ajuda.resumo),
+      MapEntry('Como usar', ajuda.comoUsar),
+      MapEntry('Campos importantes', ajuda.camposImportantes),
+      MapEntry('Observacoes', ajuda.observacoes),
+    ].where((entry) => entry.value?.trim().isNotEmpty == true).toList();
+
+    showDialog<void>(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: Row(
+          children: [
+            const Icon(Icons.help_outline, color: GridColors.primary),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                ajuda.titulo.trim().isEmpty
+                    ? 'Ajuda - ${widget.title}'
+                    : ajuda.titulo,
+              ),
+            ),
+          ],
+        ),
+        content: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 560),
+          child: SingleChildScrollView(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: sections.isEmpty
+                  ? [_helpBlock('Para que serve', [_purposeForTitle()])]
+                  : sections
+                      .expand(
+                        (section) => [
+                          _helpBlock(section.key, _splitHelpText(section.value!)),
+                          const SizedBox(height: 14),
+                        ],
+                      )
+                      .toList()
+                ..removeLast(),
+            ),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Fechar'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  List<String> _splitHelpText(String value) {
+    final lines = value
+        .split(RegExp(r'\r?\n'))
+        .map((line) => line.trim())
+        .where((line) => line.isNotEmpty)
+        .toList();
+    return lines.isEmpty ? [value.trim()] : lines;
   }
 
   String _purposeForTitle() {
@@ -2573,7 +2623,7 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(ctx),
-                child: const Text('Cancelar'),
+                child: const Text(GridTexts.cancel),
               ),
               ElevatedButton(
                 onPressed: () {

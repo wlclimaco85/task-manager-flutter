@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../utils/grid_texts.dart';
 
 // Certifique-se de que esta classe inclui o parâmetro `onLoginSuccess`.
 class LoginPopup extends StatelessWidget {
@@ -16,7 +17,7 @@ class LoginPopup extends StatelessWidget {
           onPressed: () {
             Navigator.of(context).pop();
           },
-          child: const Text('Cancelar'),
+          child: const Text(GridTexts.cancel),
         ),
         ElevatedButton(
           onPressed: () {

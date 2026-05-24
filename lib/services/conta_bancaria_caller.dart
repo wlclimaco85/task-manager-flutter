@@ -32,7 +32,7 @@ class ContaBancariaCaller {
     try {
       final url = '${ApiLinks.contasBancarias}/$id/ativar?ativo=$ativo';
       final NetworkResponse response =
-          await NetworkCaller().putRequest(url, {});
+          await NetworkCaller().patchRequest(url, {});
       return response.isSuccess;
     } catch (e) {
       debugPrint('Erro ao ativar/desativar conta: $e');

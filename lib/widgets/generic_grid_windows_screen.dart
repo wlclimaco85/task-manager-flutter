@@ -10,6 +10,8 @@ import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../utils/grid_colors.dart';
+import '../utils/grid_texts.dart';
 
 import '../../../models/auth_utility.dart';
 import '../../../models/network_response.dart';
@@ -17,41 +19,11 @@ import '../../../utils/api_links.dart';
 import '../../services/network_caller.dart';
 
 import 'package:task_manager_flutter/utils/app_logger.dart';
+import 'package:task_manager_flutter/models/tela_ajuda_model.dart';
+import 'package:task_manager_flutter/services/tela_ajuda_service.dart';
 // ==============================================
 // ENUMS E CONFIGURAÇÕES
 // ==============================================
-
-// Cores centralizadas para todo o componente
-class GridColors {
-  static const Color primary = Color(0xFF93070A);
-  static const Color primaryDark = Color(0xFF6A0507);
-  static const Color primaryLight = Color(0xFFFFEDEE);
-  static const Color secondary = Color(0xFF005826);
-  static const Color secondaryLight = Color(0xFF2E7D32);
-  static const Color secondaryDark = Color(0xFF003D1A);
-  static const Color textPrimary = Color(0xFFFFFFFF);
-  static const Color textSecondary = Color(0xFF1F2933);
-  static const Color link = Color(0xFF93070A);
-  static const Color inputBackground = Color(0xFFFFFFFF);
-  static const Color inputBorder = Color(0xFFC8D0C6);
-  static const Color buttonBackground = Color(0xFF93070A);
-  static const Color buttonText = Color(0xFFFFFFFF);
-  static const Color background = Color(0xFFF3F6F1);
-  static const Color card = Color(0xFFFFFFFF);
-  static const Color error = Color(0xFFD32F2F);
-  static const Color warning = Color(0xFFFFA000);
-  static const Color success = Color(0xFF2E7D32);
-  static const Color info = Color(0xFF005826);
-  static const Color divider = Color(0xFFD7DED4);
-  static const Color filterBackground = Color(0xFFE9EFE6);
-  static const Color gridHeader = Color(0xFFDCE7D9);
-  static const Color rowEven = Color(0xFFFFFFFF);
-  static const Color rowOdd = Color(0xFFF1F1F1);
-  static const Color hover = Color(0xFFE6F1E3);
-  static const Color selectedRow = Color(0xFFCFE6CE);
-  static const Color dialogBackground = Color(0xFFFFFFFF);
-  static const Color shadow = Color(0x26000000);
-}
 
 // Enum para tipos de campo
 enum FieldType {
@@ -96,6 +68,10 @@ class FieldConfigWindows {
   final String fieldName;
   final bool isFilterable;
   final bool isInForm;
+  /// H12: quando false, o campo não aparece como coluna na grid,
+  /// mas continua disponível no formulário (diferente de isVisibleByDefault
+  /// que só oculta por padrão e pode ser reativado pelo usuário).
+  final bool isInGrid;
   final int flex;
   final int maxLines;
   final IconData? icon;
@@ -103,6 +79,12 @@ class FieldConfigWindows {
   final FieldType fieldType;
   final List<Map<String, dynamic>>? dropdownOptions;
   final Future<List<Map<String, dynamic>>> Function()? dropdownFutureBuilder;
+  /// Para dropdown cascadeado: função que recebe o valor do campo pai e
+  /// retorna a lista filtrada. Quando definido, ignora dropdownFutureBuilder.
+  final Future<List<Map<String, dynamic>>> Function(String? param)?
+      dropdownFutureBuilderWithParam;
+  /// Nome do campo (fieldName) do qual este dropdown depende para cascade.
+  final String? dependsOnField;
   final String dropdownValueField;
   final String dropdownDisplayField;
   final bool isRequired;
@@ -121,6 +103,7 @@ class FieldConfigWindows {
     required this.fieldName,
     this.isFilterable = true,
     this.isInForm = true,
+    this.isInGrid = true,
     this.flex = 1,
     this.maxLines = 1,
     this.icon,
@@ -128,6 +111,8 @@ class FieldConfigWindows {
     this.fieldType = FieldType.text,
     this.dropdownOptions,
     this.dropdownFutureBuilder,
+    this.dropdownFutureBuilderWithParam,
+    this.dependsOnField,
     this.dropdownValueField = 'value',
     this.dropdownDisplayField = 'label',
     this.isRequired = false,
@@ -392,6 +377,8 @@ class FieldFactory {
     required Map<String, List<PlatformFile>> fileCache,
     required Map<String, List<Map<String, dynamic>>> dropdownCache,
     dynamic item,
+    /// Mapa de todos os controllers do formulário — necessário para cascading.
+    Map<String, TextEditingController>? allControllers,
   }) {
     if (item == null &&
         config.fieldType == FieldType.dropdown &&
@@ -406,6 +393,7 @@ class FieldFactory {
       context,
       fileCache,
       dropdownCache,
+      allControllers: allControllers,
     );
 
     // Boolean fields are always interactive — never absorb pointer
@@ -423,8 +411,9 @@ class FieldFactory {
     TextEditingController controller,
     BuildContext context,
     Map<String, List<PlatformFile>> fileCache,
-    Map<String, List<Map<String, dynamic>>> dropdownCache,
-  ) {
+    Map<String, List<Map<String, dynamic>>> dropdownCache, {
+    Map<String, TextEditingController>? allControllers,
+  }) {
     switch (config.fieldType) {
       case FieldType.number:
         return _buildNumberField(config, controller);
@@ -447,7 +436,11 @@ class FieldFactory {
       case FieldType.multiline:
         return _buildMultilineField(config, controller);
       case FieldType.dropdown:
-        return _buildDropdownField(config, controller, dropdownCache);
+        final dependsOnCtrl = config.dependsOnField != null && allControllers != null
+            ? allControllers[config.dependsOnField]
+            : null;
+        return _buildDropdownField(config, controller, dropdownCache,
+            dependsOnController: dependsOnCtrl);
       case FieldType.file:
         return _buildFileField(config, controller, fileCache, context);
       case FieldType.boolean:
@@ -684,7 +677,7 @@ class FieldFactory {
             icon: const Icon(Icons.search, size: 18),
             label: const Text('Buscar'),
             style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF93070A),
+              backgroundColor: GridColors.primary,
               foregroundColor: Colors.white,
               padding: const EdgeInsets.symmetric(horizontal: 12),
             ),
@@ -793,8 +786,19 @@ class FieldFactory {
   static Widget _buildDropdownField(
     FieldConfigWindows config,
     TextEditingController controller,
-    Map<String, List<Map<String, dynamic>>> dropdownCache,
-  ) {
+    Map<String, List<Map<String, dynamic>>> dropdownCache, {
+    TextEditingController? dependsOnController,
+  }) {
+    // Cascade: o widget gerencia o próprio fetch via dependsOnController
+    if (config.dropdownFutureBuilderWithParam != null) {
+      return _buildDropdownContent(
+        config: config,
+        controller: controller,
+        options: const [],
+        dependsOnController: dependsOnController,
+      );
+    }
+
     final cacheKey = '${config.fieldName}_dropdown';
 
     if (dropdownCache.containsKey(cacheKey)) {
@@ -835,11 +839,13 @@ class FieldFactory {
     required FieldConfigWindows config,
     required TextEditingController controller,
     required List<Map<String, dynamic>> options,
+    TextEditingController? dependsOnController,
   }) {
     return _SearchableDropdownWindows(
       config: config,
       controller: controller,
       options: options,
+      dependsOnController: dependsOnController,
     );
   }
 
@@ -874,8 +880,8 @@ class FieldFactory {
           icon: const Icon(Icons.attach_file),
           label: Text(
             currentFiles.isEmpty
-                ? 'Selecionar Arquivo'
-                : 'Adicionar Mais Arquivos',
+                ? GridTexts.selectFile
+                : GridTexts.addMoreFiles,
           ),
           style: ElevatedButton.styleFrom(
             backgroundColor: GridColors.primary,
@@ -965,13 +971,13 @@ class FieldFactory {
       builder: (context, child) => Theme(
         data: Theme.of(context).copyWith(
           colorScheme: const ColorScheme.light(
-            primary: Color(0xFF93070A),
+            primary: GridColors.primary,
             onPrimary: Colors.white,
-            onSurface: Color(0xFF005826),
+            onSurface: GridColors.secondary,
           ),
           textButtonTheme: TextButtonThemeData(
             style:
-                TextButton.styleFrom(foregroundColor: const Color(0xFF93070A)),
+                TextButton.styleFrom(foregroundColor: GridColors.primary),
           ),
         ),
         child: child!,
@@ -1521,6 +1527,7 @@ class GenericGridScreen<T> extends StatefulWidget {
   final Map<String, dynamic>? extraParams;
   final bool showAppBar;
   final List<Widget>? headerActions;
+  final String? helpTelaNome;
 
   const GenericGridScreen({
     super.key,
@@ -1555,6 +1562,7 @@ class GenericGridScreen<T> extends StatefulWidget {
     this.extraParams,
     this.showAppBar = true,
     this.headerActions,
+    this.helpTelaNome,
   });
 
   @override
@@ -1595,7 +1603,9 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
     _paginatorController = PaginatorController();
 
     for (final config in widget.FieldConfigWindowss) {
-      _columnVisibility[config.fieldName] = config.isVisibleByDefault;
+      // H12: campos com isInGrid=false nunca ficam visíveis na grid
+      _columnVisibility[config.fieldName] =
+          config.isInGrid && config.isVisibleByDefault;
     }
 
     for (final config
@@ -2021,7 +2031,7 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
-                        item == null ? "Novo Item" : "Editar Item",
+                        item == null ? GridTexts.newItem : GridTexts.editItem,
                         style: const TextStyle(
                           fontSize: 15,
                           fontWeight: FontWeight.w700,
@@ -2066,6 +2076,9 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
                         isFixed: config.isFixed,
                         enabled: false, // desabilitado
                         dropdownFutureBuilder: config.dropdownFutureBuilder,
+                        dropdownFutureBuilderWithParam:
+                            config.dropdownFutureBuilderWithParam,
+                        dependsOnField: config.dependsOnField,
                         dropdownOptions: config.dropdownOptions,
                         dropdownValueField: config.dropdownValueField,
                         dropdownDisplayField: config.dropdownDisplayField,
@@ -2088,6 +2101,7 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
                     fileCache: _fileCache,
                     dropdownCache: _dropdownCache,
                     item: item,
+                    allControllers: controllers,
                   ),
                 );
 
@@ -2621,14 +2635,14 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Confirmar Exclusão'),
+        title: const Text(GridTexts.confirmDelete),
         content: Text(
           'Deseja excluir ${selectedRows.length} item(s) selecionado(s)?',
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('Cancelar'),
+            child: const Text(GridTexts.cancel),
           ),
           ElevatedButton(
             onPressed: () async {
@@ -2715,11 +2729,10 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
   }
 
   Widget _buildLoadingOverlay() {
-    if (_isUpdating || _isDeleting || _isExporting || isLoading) {
+    final showBlockingOverlay = _isUpdating || _isDeleting || _isExporting;
+    if (showBlockingOverlay) {
       return AnimatedOpacity(
-        opacity: (_isUpdating || _isDeleting || _isExporting || isLoading)
-            ? 1.0
-            : 0.0,
+        opacity: showBlockingOverlay ? 1.0 : 0.0,
         duration: const Duration(milliseconds: 200),
         child: Container(
           color: Colors.black.withValues(alpha: 0.35),
@@ -3030,7 +3043,21 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
     );
   }
 
-  void _showGridHelpDialog() {
+  Future<void> _showGridHelpDialog() async {
+    final telaNome = widget.helpTelaNome ?? widget.title;
+    TelaAjudaModel? ajuda;
+    try {
+      ajuda = await TelaAjudaService().buscarPorTela(telaNome);
+    } catch (e) {
+      L.e('Erro ao buscar ajuda da tela "$telaNome": $e');
+    }
+
+    if (!mounted) return;
+    if (ajuda != null) {
+      _showConfiguredHelpDialog(ajuda);
+      return;
+    }
+
     final visibleFields = widget.FieldConfigWindowss
         .where((c) =>
             c.isVisibleByDefault &&
@@ -3102,6 +3129,69 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
         ],
       ),
     );
+  }
+
+  void _showConfiguredHelpDialog(TelaAjudaModel ajuda) {
+    final sections = <MapEntry<String, String?>>[
+      MapEntry('Para que serve', ajuda.resumo),
+      MapEntry('Como usar', ajuda.comoUsar),
+      MapEntry('Campos importantes', ajuda.camposImportantes),
+      MapEntry('Observacoes', ajuda.observacoes),
+    ].where((entry) => entry.value?.trim().isNotEmpty == true).toList();
+
+    showDialog<void>(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: Row(
+          children: [
+            const Icon(Icons.help_outline, color: GridColors.primary),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                ajuda.titulo.trim().isEmpty
+                    ? 'Ajuda - ${widget.title}'
+                    : ajuda.titulo,
+              ),
+            ),
+          ],
+        ),
+        content: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 560),
+          child: SingleChildScrollView(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: sections.isEmpty
+                  ? [_helpBlock('Para que serve', [_purposeForTitle()])]
+                  : sections
+                      .expand(
+                        (section) => [
+                          _helpBlock(section.key, _splitHelpText(section.value!)),
+                          const SizedBox(height: 14),
+                        ],
+                      )
+                      .toList()
+                ..removeLast(),
+            ),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Fechar'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  List<String> _splitHelpText(String value) {
+    final lines = value
+        .split(RegExp(r'\r?\n'))
+        .map((line) => line.trim())
+        .where((line) => line.isNotEmpty)
+        .toList();
+    return lines.isEmpty ? [value.trim()] : lines;
   }
 
   String _purposeForTitle() {
@@ -3365,7 +3455,7 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(ctx),
-                child: const Text('Cancelar'),
+                child: const Text(GridTexts.cancel),
               ),
               ElevatedButton(
                 onPressed: () {
@@ -3387,7 +3477,7 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
     final columns = <DataColumn>[];
 
     for (final config in widget.FieldConfigWindowss.where(
-      (c) => _columnVisibility[c.fieldName] == true,
+      (c) => c.isInGrid && _columnVisibility[c.fieldName] == true,
     )) {
       columns.add(
         DataColumn(
@@ -3453,7 +3543,7 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
     final cells = <DataCell>[];
 
     for (final config in widget.FieldConfigWindowss.where(
-      (c) => _columnVisibility[c.fieldName] == true,
+      (c) => c.isInGrid && _columnVisibility[c.fieldName] == true,
     )) {
       if (config.fieldType == FieldType.file) {
         final fileData = _extractFileData(itemMap, config);
@@ -3537,7 +3627,7 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
               margin: const EdgeInsets.only(right: 3, bottom: 2),
               padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
               decoration: BoxDecoration(
-                color: const Color(0xFF2E7D32),
+                color: GridColors.success,
                 borderRadius: BorderRadius.circular(10),
               ),
               child: Text(
@@ -4105,11 +4195,16 @@ class _SearchableDropdownWindows extends StatefulWidget {
   final FieldConfigWindows config;
   final TextEditingController controller;
   final List<Map<String, dynamic>> options;
+  /// Quando definido (cascade), o widget observa este controller e re-busca
+  /// as opções usando [config.dropdownFutureBuilderWithParam] toda vez que o
+  /// valor do campo pai mudar.
+  final TextEditingController? dependsOnController;
 
   const _SearchableDropdownWindows({
     required this.config,
     required this.controller,
     required this.options,
+    this.dependsOnController,
   });
 
   @override
@@ -4120,11 +4215,64 @@ class _SearchableDropdownWindows extends StatefulWidget {
 class _SearchableDropdownWindowsState
     extends State<_SearchableDropdownWindows> {
   String? _selectedLabel;
+  List<Map<String, dynamic>> _resolvedOptions = [];
+  bool _loadingCascade = false;
+  String? _lastDependsOnValue;
 
   @override
   void initState() {
     super.initState();
-    _resolveLabel();
+    _resolvedOptions = widget.options;
+
+    if (widget.dependsOnController != null &&
+        widget.config.dropdownFutureBuilderWithParam != null) {
+      // Modo cascade: busca inicial + listener
+      _lastDependsOnValue = widget.dependsOnController!.text;
+      _fetchCascade(_lastDependsOnValue);
+      widget.dependsOnController!.addListener(_onDependencyChanged);
+    } else {
+      _resolvedOptions = widget.options;
+      _resolveLabel();
+    }
+  }
+
+  @override
+  void dispose() {
+    widget.dependsOnController?.removeListener(_onDependencyChanged);
+    super.dispose();
+  }
+
+  void _onDependencyChanged() {
+    final newVal = widget.dependsOnController!.text;
+    if (newVal == _lastDependsOnValue) return;
+    _lastDependsOnValue = newVal;
+    // Limpa seleção atual quando o pai muda
+    if (mounted) {
+      setState(() {
+        widget.controller.text = '';
+        _selectedLabel = null;
+        _resolvedOptions = [];
+      });
+    }
+    _fetchCascade(newVal);
+  }
+
+  Future<void> _fetchCascade(String? param) async {
+    if (!mounted) return;
+    setState(() => _loadingCascade = true);
+    try {
+      final opts = await widget.config.dropdownFutureBuilderWithParam!(
+          param == null || param.isEmpty ? null : param);
+      if (mounted) {
+        setState(() {
+          _resolvedOptions = opts;
+          _loadingCascade = false;
+        });
+        _resolveLabel();
+      }
+    } catch (_) {
+      if (mounted) setState(() => _loadingCascade = false);
+    }
   }
 
   void _resolveLabel() {
@@ -4132,7 +4280,7 @@ class _SearchableDropdownWindowsState
         ? widget.controller.text
         : widget.config.dropdownSelectedValue?.toString();
     if (val == null || val.isEmpty) return;
-    for (final o in widget.options) {
+    for (final o in _resolvedOptions) {
       final ov = o[widget.config.dropdownValueField]?.toString();
       if (ov == val) {
         _selectedLabel = o[widget.config.dropdownDisplayField]?.toString();
@@ -4151,7 +4299,7 @@ class _SearchableDropdownWindowsState
       context: context,
       builder: (_) => _DropdownSearchDialog(
         title: widget.config.label,
-        options: widget.options,
+        options: _resolvedOptions,
         valueField: widget.config.dropdownValueField,
         displayField: widget.config.dropdownDisplayField,
         currentValue: widget.controller.text,
@@ -4168,6 +4316,14 @@ class _SearchableDropdownWindowsState
 
   @override
   Widget build(BuildContext context) {
+    // Cascade loading indicator
+    if (_loadingCascade) {
+      return const Padding(
+        padding: EdgeInsets.symmetric(vertical: 8),
+        child: LinearProgressIndicator(color: GridColors.primary),
+      );
+    }
+
     final label = widget.config.label + (widget.config.isRequired ? ' *' : '');
     final displayText = _selectedLabel ?? widget.controller.text;
     final isEmpty = displayText.isEmpty;
@@ -4199,7 +4355,7 @@ class _SearchableDropdownWindowsState
             ),
             disabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(8),
-              borderSide: const BorderSide(color: Color(0xFFBDBDBD)),
+              borderSide: const BorderSide(color: GridColors.divider),
             ),
             suffixIcon: isDisabled
                 ? const Icon(Icons.lock_outline, size: 16, color: Colors.grey)
@@ -4360,7 +4516,7 @@ class _DropdownSearchDialogState extends State<_DropdownSearchDialog> {
                   TextButton(
                     onPressed: () =>
                         Navigator.of(context).pop(<String, dynamic>{}),
-                    child: const Text('Limpar seleção',
+                    child: const Text(GridTexts.clearSelection,
                         style: TextStyle(fontSize: 11)),
                   ),
                 ],

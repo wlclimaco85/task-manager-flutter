@@ -5,6 +5,7 @@ import '../../../utils/api_links.dart';
 import '../../../models/network_response.dart';
 import '../../services/network_caller.dart';
 import '../../../utils/showSnackBar.dart';
+import '../utils/grid_texts.dart';
 
 class NegotiationDialog extends StatefulWidget {
   final Produto product;
@@ -97,7 +98,7 @@ class _NegotiationDialogState extends State<NegotiationDialog> {
       actions: [
         TextButton(
           onPressed: () => Navigator.of(context).pop(),
-          child: const Text('Cancelar'),
+          child: const Text(GridTexts.cancel),
         ),
         ElevatedButton(
           style: ElevatedButton.styleFrom(

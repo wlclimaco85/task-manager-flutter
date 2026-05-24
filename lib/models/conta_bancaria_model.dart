@@ -124,6 +124,8 @@ class ContaBancaria {
       dropdownOptions: [
         {'value': 'CONTA_CORRENTE', 'label': 'Conta Corrente'},
         {'value': 'POUPANCA', 'label': 'Poupança'},
+        {'value': 'CAIXA', 'label': 'Caixa'},
+        {'value': 'CARTEIRA', 'label': 'Carteira'},
         {'value': 'INVESTIMENTO', 'label': 'Investimento'},
       ],
       dropdownValueField: 'value',

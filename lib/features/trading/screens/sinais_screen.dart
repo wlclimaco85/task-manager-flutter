@@ -22,14 +22,17 @@ class _SinaisScreenState extends State<SinaisScreen> {
   }
 
   Future<void> _load() async {
-    setState(() { _loading = true; _error = null; });
+    setState(() {
+      _loading = true;
+      _error = null;
+    });
     try {
       final sinais = await _repo.fetchSignals();
-      if (mounted) setState(() { _sinais = sinais; });
+      if (mounted) setState(() => _sinais = sinais);
     } catch (e) {
-      if (mounted) setState(() { _error = 'Erro ao carregar sinais: $e'; });
+      if (mounted) setState(() => _error = 'Erro ao carregar sinais: $e');
     } finally {
-      if (mounted) setState(() { _loading = false; });
+      if (mounted) setState(() => _loading = false);
     }
   }
 
@@ -45,24 +48,45 @@ class _SinaisScreenState extends State<SinaisScreen> {
         ],
       ),
       body: _loading
-          ? const Center(child: CircularProgressIndicator(color: GridColors.primary))
+          ? const Center(
+              child: CircularProgressIndicator(color: GridColors.primary))
           : _error != null
-              ? Center(child: Column(mainAxisSize: MainAxisSize.min, children: [
-                  Text(_error!, style: const TextStyle(color: GridColors.error)),
-                  const SizedBox(height: 12),
-                  ElevatedButton(onPressed: _load, child: const Text('Tentar novamente')),
-                ]))
+              ? Center(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(Icons.error_outline,
+                          size: 48, color: GridColors.error),
+                      const SizedBox(height: 12),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 24),
+                        child: Text(_error!,
+                            textAlign: TextAlign.center,
+                            style:
+                                const TextStyle(color: GridColors.error)),
+                      ),
+                      const SizedBox(height: 12),
+                      ElevatedButton(
+                          onPressed: _load,
+                          child: const Text('Tentar novamente')),
+                    ],
+                  ),
+                )
               : _sinais.isEmpty
-                  ? const Center(child: Text('Nenhum sinal disponível',
-                        style: TextStyle(color: GridColors.divider, fontSize: 16)))
+                  ? const Center(
+                      child: Text('Nenhum sinal disponível',
+                          style: TextStyle(
+                              color: GridColors.divider, fontSize: 16)))
                   : RefreshIndicator(
                       color: GridColors.primary,
                       onRefresh: _load,
                       child: ListView.separated(
                         padding: const EdgeInsets.all(12),
                         itemCount: _sinais.length,
-                        separatorBuilder: (_, __) => const SizedBox(height: 8),
-                        itemBuilder: (_, i) => _SinalCard(sinal: _sinais[i]),
+                        separatorBuilder: (_, __) =>
+                            const SizedBox(height: 8),
+                        itemBuilder: (_, i) =>
+                            _SinalCard(sinal: _sinais[i]),
                       ),
                     ),
     );
@@ -73,13 +97,31 @@ class _SinalCard extends StatelessWidget {
   final TradingSignal sinal;
   const _SinalCard({required this.sinal});
 
-  Color get _corDirecao => sinal.direction.toUpperCase() == 'BUY'
-      ? GridColors.secondary
-      : GridColors.error;
+  Color get _corDirecao {
+    final dir = sinal.displayDirection.toUpperCase();
+    if (dir == 'BUY') return GridColors.secondary;
+    if (dir == 'SELL') return GridColors.error;
+    return Colors.grey;
+  }
+
+  String get _direcaoLabel => sinal.displayDirection.toUpperCase();
+
+  String get _icone {
+    final dir = sinal.displayDirection.toUpperCase();
+    if (dir == 'BUY') return '▲';
+    if (dir == 'SELL') return '▼';
+    return '●';
+  }
 
   @override
   Widget build(BuildContext context) {
-    final score = sinal.price > 0 ? sinal.price.toStringAsFixed(2) : '—';
+    final preco = sinal.priceAtSignal > 0
+        ? 'R\$ ${sinal.priceAtSignal.toStringAsFixed(2)}'
+        : '—';
+    final score = sinal.score > 0
+        ? 'Score: ${(sinal.score * 100).toStringAsFixed(0)}%'
+        : '';
+
     return Card(
       elevation: 2,
       shape: RoundedRectangleBorder(
@@ -90,6 +132,7 @@ class _SinalCard extends StatelessWidget {
         padding: const EdgeInsets.all(14),
         child: Row(
           children: [
+            // Ícone de direção
             Container(
               width: 52,
               height: 52,
@@ -99,7 +142,7 @@ class _SinalCard extends StatelessWidget {
               ),
               child: Center(
                 child: Text(
-                  sinal.direction.toUpperCase() == 'BUY' ? '▲' : '▼',
+                  _icone,
                   style: TextStyle(fontSize: 24, color: _corDirecao),
                 ),
               ),
@@ -109,38 +152,90 @@ class _SinalCard extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Row(children: [
-                    Text(sinal.asset,
+                  // Símbolo + direção chip
+                  Row(
+                    children: [
+                      Text(
+                        sinal.assetSymbol,
                         style: const TextStyle(
-                            fontWeight: FontWeight.w800,
-                            fontSize: 16,
-                            color: GridColors.textSecondary)),
-                    const SizedBox(width: 8),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                      decoration: BoxDecoration(
-                        color: _corDirecao.withAlpha(20),
-                        borderRadius: BorderRadius.circular(999),
-                        border: Border.all(color: _corDirecao.withAlpha(100)),
+                          fontWeight: FontWeight.w800,
+                          fontSize: 16,
+                          color: GridColors.textSecondary,
+                        ),
                       ),
-                      child: Text(sinal.direction.toUpperCase(),
-                          style: TextStyle(
-                              color: _corDirecao,
-                              fontSize: 11,
-                              fontWeight: FontWeight.w700)),
-                    ),
-                  ]),
+                      const SizedBox(width: 8),
+                      _Chip(label: _direcaoLabel, color: _corDirecao),
+                      if (sinal.status.isNotEmpty) ...[
+                        const SizedBox(width: 6),
+                        _Chip(
+                          label: sinal.status,
+                          color: Colors.grey,
+                        ),
+                      ],
+                    ],
+                  ),
                   const SizedBox(height: 4),
-                  Text('Entrada: R\$ $score',
-                      style: const TextStyle(color: Colors.black87, fontSize: 13)),
-                  if (sinal.createdAt.isNotEmpty)
-                    Text(sinal.createdAt,
-                        style: const TextStyle(color: Colors.grey, fontSize: 11)),
+                  // Preço de entrada
+                  Text(
+                    'Entrada: $preco',
+                    style: const TextStyle(
+                        color: Colors.black87, fontSize: 13),
+                  ),
+                  // Score e timeframe
+                  if (score.isNotEmpty || sinal.timeframe != null)
+                    Text(
+                      [score, if (sinal.timeframe != null) sinal.timeframe!]
+                          .join('  '),
+                      style: const TextStyle(
+                          color: Colors.black54, fontSize: 12),
+                    ),
+                  // Data/hora
+                  if (sinal.triggeredAt.isNotEmpty)
+                    Text(
+                      _formatDate(sinal.triggeredAt),
+                      style: const TextStyle(
+                          color: Colors.grey, fontSize: 11),
+                    ),
                 ],
               ),
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  String _formatDate(String raw) {
+    try {
+      final dt = DateTime.parse(raw).toLocal();
+      return '${dt.day.toString().padLeft(2, '0')}/'
+          '${dt.month.toString().padLeft(2, '0')} '
+          '${dt.hour.toString().padLeft(2, '0')}:'
+          '${dt.minute.toString().padLeft(2, '0')}';
+    } catch (_) {
+      return raw;
+    }
+  }
+}
+
+class _Chip extends StatelessWidget {
+  final String label;
+  final Color color;
+  const _Chip({required this.label, required this.color});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+      decoration: BoxDecoration(
+        color: color.withAlpha(20),
+        borderRadius: BorderRadius.circular(999),
+        border: Border.all(color: color.withAlpha(100)),
+      ),
+      child: Text(
+        label,
+        style: TextStyle(
+            color: color, fontSize: 11, fontWeight: FontWeight.w700),
       ),
     );
   }

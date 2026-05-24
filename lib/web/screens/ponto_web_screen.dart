@@ -1,13 +1,14 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import '../../utils/grid_colors.dart';
 import 'package:intl/intl.dart';
 import '../../../models/auth_utility.dart';
 import '../../../models/ponto_model.dart';
 import '../../../services/ponto_service.dart';
 
 // ── Cores ─────────────────────────────────────────────────────────────────────
-const _primary = Color(0xFF93070A);
-const _green   = Color(0xFF005826);
+const _primary = GridColors.primary;
+const _green   = GridColors.secondary;
 const _bg      = Color(0xFFF5F5F5);
 const _white   = Colors.white;
 

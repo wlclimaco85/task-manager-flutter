@@ -1,6 +1,8 @@
 import 'dart:convert';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
+import '../../utils/grid_colors.dart';
+import '../../utils/grid_texts.dart';
 import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
 import '../../../models/auth_utility.dart';
@@ -9,11 +11,11 @@ import '../../../utils/api_links.dart';
 import '../../../utils/tenant_context.dart';
 import '../../../widgets/searchable_dropdown.dart';
 
-const _primary = Color(0xFF93070A);
-const _green   = Color(0xFF005826);
-const _bg      = Color(0xFFF5F5F5);
-const _white   = Colors.white;
-const _border  = Color(0xFFDDDDDD);
+const _primary = GridColors.primary;
+const _green   = GridColors.secondary;
+const _bg      = GridColors.pageBackground;
+const _white   = GridColors.textPrimary;
+const _border  = GridColors.borderSubtle;
 
 class ConfiguracoesSistemaScreen extends StatefulWidget {
   const ConfiguracoesSistemaScreen({super.key});
@@ -36,47 +38,50 @@ class _ConfiguracoesSistemaScreenState extends State<ConfiguracoesSistemaScreen>
         backgroundColor: _primary, foregroundColor: _white, elevation: 2,
         title: const Row(children: [
           Icon(Icons.settings_applications, size: 20), SizedBox(width: 8),
-          Text('Configuracoes do Sistema', style: TextStyle(fontWeight: FontWeight.bold)),
+          Text(GridTexts.systemSettingsTitle, style: TextStyle(fontWeight: FontWeight.bold)),
         ]),
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(20),
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          _section('Geracao de Telas', Icons.table_chart_outlined, [
-            _actionCard(id: 'gerar_telas_full', title: 'Gerar Telas (Full Reset)',
-              subtitle: 'Limpa e recria todas as telas. POST /api/telas/generate?forceUpdate=true&fullReset=true',
+          _section(GridTexts.screenGeneration, Icons.table_chart_outlined, [
+            _actionCard(id: 'gerar_telas_full', title: GridTexts.generateScreensFullReset,
+              subtitle: GridTexts.generateScreensFullResetDesc,
               icon: Icons.refresh, color: _primary, onTap: _gerarTelasFullReset),
-            _actionCard(id: 'gerar_telas_update', title: 'Atualizar Telas (Force Update)',
-              subtitle: 'Atualiza telas existentes. POST /api/telas/generate?forceUpdate=true',
-              icon: Icons.update, color: Colors.orange.shade700, onTap: _gerarTelasUpdate),
-            _actionCard(id: 'regenerar_telas', title: 'Regenerar Telas (Admin)',
-              subtitle: 'Limpa controle de versao e regenera. POST /api/admin/regenerar-telas',
-              icon: Icons.auto_fix_high, color: Colors.blue.shade700, onTap: _regenerarTelas),
-            _actionCard(id: 'limpar_cache_telas', title: 'Limpar Cache de Telas (Local)',
-              subtitle: 'Remove o cache local do Flutter. As telas serao recarregadas da API no proximo acesso.',
-              icon: Icons.cleaning_services, color: Colors.teal.shade700, onTap: _limparCacheTelas),
+            _actionCard(id: 'gerar_telas_update', title: GridTexts.updateScreensForce,
+              subtitle: GridTexts.updateScreensForceDesc,
+              icon: Icons.update, color: GridColors.warningDark, onTap: _gerarTelasUpdate),
+            _actionCard(id: 'regenerar_telas', title: GridTexts.regenerateScreensAdmin,
+              subtitle: GridTexts.regenerateScreensAdminDesc,
+              icon: Icons.auto_fix_high, color: GridColors.info, onTap: _regenerarTelas),
+            _actionCard(id: 'limpar_cache_telas', title: GridTexts.clearScreensCache,
+              subtitle: GridTexts.clearScreensCacheDesc,
+              icon: Icons.cleaning_services, color: GridColors.secondaryDark, onTap: _limparCacheTelas),
           ]),
           const SizedBox(height: 20),
-          _section('Dados de Teste (Mock)', Icons.data_array, [_seedCard()]),
+          _section(GridTexts.mockTestData, Icons.data_array, [_seedCard()]),
           const SizedBox(height: 20),
-          _section('Noticias', Icons.newspaper, [
-            _actionCard(id: 'limpar_baixar_noticias', title: 'Limpar e Baixar Noticias',
-              subtitle: 'Apaga todas as noticias e baixa novamente de todas as fontes',
-              icon: Icons.refresh, color: Colors.blue.shade700, onTap: _limparEBaixarNoticias),
-            _actionCard(id: 'apagar_noticias', title: 'Apagar Todas as Noticias',
-              subtitle: 'Remove todas as noticias e imagens do banco (sem baixar novamente)',
-              icon: Icons.delete_forever, color: Colors.red.shade700, onTap: _apagarNoticias),
+          _section(GridTexts.news, Icons.newspaper, [
+            _actionCard(id: 'limpar_baixar_noticias', title: GridTexts.clearAndDownloadNews,
+              subtitle: GridTexts.clearAndDownloadNewsDesc,
+              icon: Icons.refresh, color: GridColors.info, onTap: _limparEBaixarNoticias),
+            _actionCard(id: 'apagar_noticias', title: GridTexts.deleteAllNews,
+              subtitle: GridTexts.deleteAllNewsDesc,
+              icon: Icons.delete_forever, color: GridColors.error, onTap: _apagarNoticias),
           ]),
           const SizedBox(height: 20),
           _JobsSection(baseUrl: ApiLinks.baseUrl),
           const SizedBox(height: 20),
-          _section('Banco de Dados', Icons.storage_outlined, [
-            _actionCard(id: 'db_status', title: 'Status do Banco',
-              subtitle: 'Verifica estado das colunas e sequencias. GET /api/admin/db-status',
+          _section(GridTexts.database, Icons.storage_outlined, [
+            _actionCard(id: 'db_status', title: GridTexts.databaseStatus,
+              subtitle: GridTexts.databaseStatusDesc,
               icon: Icons.health_and_safety_outlined, color: _green, onTap: _dbStatus),
-            _actionCard(id: 'fix_db', title: 'Corrigir Banco (Fix DB)',
-              subtitle: 'Aplica correcoes de colunas, FKs e sequencias. POST /api/admin/fix-db',
-              icon: Icons.build_outlined, color: Colors.purple.shade700, onTap: _fixDb),
+            _actionCard(id: 'fix_db', title: GridTexts.fixDatabase,
+              subtitle: GridTexts.fixDatabaseDesc,
+              icon: Icons.build_outlined, color: GridColors.statusClosed, onTap: _fixDb),
+            _actionCard(id: 'reset_database', title: GridTexts.resetDatabase,
+              subtitle: GridTexts.resetDatabaseDesc,
+              icon: Icons.delete_sweep, color: GridColors.errorDark, onTap: _confirmResetDatabase),
             _deleteEmpresaCard(),
           ]),
           const SizedBox(height: 20),
@@ -112,7 +117,7 @@ class _ConfiguracoesSistemaScreenState extends State<ConfiguracoesSistemaScreen>
           child: Icon(icon, color: color, size: 20)),
         title: Text(title, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14)),
         subtitle: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Text(subtitle, style: const TextStyle(fontSize: 11, color: Colors.grey)),
+          Text(subtitle, style: const TextStyle(fontSize: 11, color: GridColors.textMuted)),
           if (resultado != null) ...[const SizedBox(height: 4), _resultadoCard(id, resultado)],
         ]),
         trailing: isLoading
@@ -121,7 +126,7 @@ class _ConfiguracoesSistemaScreenState extends State<ConfiguracoesSistemaScreen>
                 style: ElevatedButton.styleFrom(backgroundColor: color, foregroundColor: _white,
                   padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                   textStyle: const TextStyle(fontSize: 12)),
-                child: const Text('Executar')),
+                child: const Text(GridTexts.execute)),
       ),
     );
   }
@@ -135,26 +140,26 @@ class _ConfiguracoesSistemaScreenState extends State<ConfiguracoesSistemaScreen>
       child: Padding(padding: const EdgeInsets.all(12), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         Row(children: [
           Container(width: 40, height: 40,
-            decoration: BoxDecoration(color: Colors.teal.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(8)),
-            child: const Icon(Icons.science_outlined, color: Colors.teal, size: 20)),
+            decoration: BoxDecoration(color: GridColors.secondaryDark.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(8)),
+            child: const Icon(Icons.science_outlined, color: GridColors.secondaryDark, size: 20)),
           const SizedBox(width: 12),
           const Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text('Gerar Dados Mock', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14)),
-            Text('Popula: Parceiros, Funcionarios, Pontos, NF-e, Chamados, Contas, Comunicados',
-                style: TextStyle(fontSize: 11, color: Colors.grey)),
+            Text(GridTexts.generateMockData, style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14)),
+            Text(GridTexts.generateMockDataDesc,
+                style: TextStyle(fontSize: 11, color: GridColors.textMuted)),
           ])),
         ]),
         const SizedBox(height: 12),
         Row(children: [
           Expanded(child: TextFormField(initialValue: '',
-            decoration: const InputDecoration(labelText: 'Empresa ID (vazio = criar nova)',
+            decoration: const InputDecoration(labelText: GridTexts.companyIdOptionalCreate,
               border: OutlineInputBorder(), isDense: true,
               contentPadding: EdgeInsets.symmetric(horizontal: 10, vertical: 8)),
             keyboardType: TextInputType.number,
             onChanged: (v) => _seedEmpresaId = v.trim().isEmpty ? null : int.tryParse(v))),
           const SizedBox(width: 12),
           Expanded(child: TextFormField(initialValue: '$_seedQuantidade',
-            decoration: const InputDecoration(labelText: 'Quantidade base',
+            decoration: const InputDecoration(labelText: GridTexts.baseQuantity,
               border: OutlineInputBorder(), isDense: true,
               contentPadding: EdgeInsets.symmetric(horizontal: 10, vertical: 8)),
             keyboardType: TextInputType.number,
@@ -163,7 +168,7 @@ class _ConfiguracoesSistemaScreenState extends State<ConfiguracoesSistemaScreen>
         const SizedBox(height: 10),
         Row(children: [
           Expanded(child: TextFormField(initialValue: '$_seedMeses',
-            decoration: const InputDecoration(labelText: 'Meses de historico',
+            decoration: const InputDecoration(labelText: GridTexts.historyMonths,
               border: OutlineInputBorder(), isDense: true,
               contentPadding: EdgeInsets.symmetric(horizontal: 10, vertical: 8)),
             keyboardType: TextInputType.number,
@@ -174,8 +179,8 @@ class _ConfiguracoesSistemaScreenState extends State<ConfiguracoesSistemaScreen>
             icon: isLoading
                 ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: _white))
                 : const Icon(Icons.play_arrow),
-            label: Text(isLoading ? 'Gerando...' : 'Gerar'),
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.teal, foregroundColor: _white,
+            label: Text(isLoading ? GridTexts.generating : GridTexts.generate),
+            style: ElevatedButton.styleFrom(backgroundColor: GridColors.secondaryDark, foregroundColor: _white,
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14))),
         ]),
         if (resultado != null) ...[const SizedBox(height: 8), _resultadoCard('seed', resultado)],
@@ -186,7 +191,7 @@ class _ConfiguracoesSistemaScreenState extends State<ConfiguracoesSistemaScreen>
   Widget _buildResultados() {
     return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
       const Divider(),
-      const Text('Ultimos Resultados', style: TextStyle(fontWeight: FontWeight.bold, color: _primary)),
+      const Text(GridTexts.latestResults, style: TextStyle(fontWeight: FontWeight.bold, color: _primary)),
       const SizedBox(height: 8),
       ..._resultados.entries.map((e) => _resultadoCard(e.key, e.value)),
     ]);
@@ -208,12 +213,12 @@ class _ConfiguracoesSistemaScreenState extends State<ConfiguracoesSistemaScreen>
                 color: cor, size: 16),
             const SizedBox(width: 8),
             Expanded(child: Text(id, style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13, color: cor))),
-            IconButton(icon: const Icon(Icons.copy, size: 16), tooltip: 'Copiar', color: cor,
+            IconButton(icon: const Icon(Icons.copy, size: 16), tooltip: GridTexts.copy, color: cor,
               padding: EdgeInsets.zero, constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
               onPressed: () {
                 Clipboard.setData(ClipboardData(text: texto));
                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Copiado'), duration: Duration(seconds: 2)));
+                  const SnackBar(content: Text(GridTexts.copied), duration: Duration(seconds: 2)));
               }),
           ]),
         ),
@@ -229,7 +234,7 @@ class _ConfiguracoesSistemaScreenState extends State<ConfiguracoesSistemaScreen>
     if (r is Map && (r['status'] == 'ok' || r['status'] == 'success')) return _green;
     if (r is Map && r['error'] != null) return _primary;
     if (r is String && r.toLowerCase().contains('erro')) return _primary;
-    return Colors.blue.shade700;
+    return GridColors.info;
   }
 
   String _resultadoTexto(dynamic r) {
@@ -310,16 +315,16 @@ class _ConfiguracoesSistemaScreenState extends State<ConfiguracoesSistemaScreen>
             child: const Icon(Icons.delete_forever, color: _primary, size: 20)),
           const SizedBox(width: 12),
           const Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text('Apagar Empresa Mock', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14)),
-            Text('Remove TODOS os dados de uma empresa (parceiros, logins, NF-e, chamados, contas, etc)',
-                style: TextStyle(fontSize: 11, color: Colors.grey)),
+            Text(GridTexts.deleteMockCompany, style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14)),
+            Text(GridTexts.deleteMockCompanyDesc,
+                style: TextStyle(fontSize: 11, color: GridColors.textMuted)),
           ])),
         ]),
         const SizedBox(height: 12),
         Row(children: [
           Expanded(child: TextFormField(
             decoration: const InputDecoration(
-              labelText: 'ID da Empresa para apagar',
+              labelText: GridTexts.companyIdToDelete,
               border: OutlineInputBorder(), isDense: true,
               contentPadding: EdgeInsets.symmetric(horizontal: 10, vertical: 8)),
             keyboardType: TextInputType.number,
@@ -330,7 +335,7 @@ class _ConfiguracoesSistemaScreenState extends State<ConfiguracoesSistemaScreen>
             icon: isLoading
                 ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: _white))
                 : const Icon(Icons.delete),
-            label: Text(isLoading ? 'Apagando...' : 'Apagar'),
+            label: Text(isLoading ? GridTexts.deleting : GridTexts.delete),
             style: ElevatedButton.styleFrom(backgroundColor: _primary, foregroundColor: _white,
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14))),
         ]),
@@ -356,6 +361,48 @@ class _ConfiguracoesSistemaScreenState extends State<ConfiguracoesSistemaScreen>
           ? jsonDecode(resp.body) : {'error': 'HTTP ${resp.statusCode}', 'body': resp.body});
     } catch (e) { setState(() => _resultados['delete_empresa'] = {'error': e.toString()}); }
     finally { setState(() => _loading['delete_empresa'] = false); }
+  }
+
+  Future<void> _confirmResetDatabase() async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Row(children: [
+          Icon(Icons.warning_amber_rounded, color: GridColors.error, size: 24),
+          SizedBox(width: 8),
+          Text(GridTexts.resetDatabase, style: TextStyle(fontWeight: FontWeight.bold)),
+        ]),
+        content: const Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Text(GridTexts.irreversibleWarning, style: TextStyle(color: GridColors.error, fontWeight: FontWeight.bold, fontSize: 14)),
+          SizedBox(height: 12),
+          Text(GridTexts.permanentDeleteWarning),
+          SizedBox(height: 8),
+          Text(GridTexts.permanentDeleteItemCompanies),
+          Text(GridTexts.permanentDeleteItemFinance),
+          Text(GridTexts.permanentDeleteItemDocs),
+          Text(GridTexts.permanentDeleteItemAccounting),
+          Text(GridTexts.permanentDeleteItemOthers),
+          SizedBox(height: 12),
+          Text(GridTexts.controlTablesPreserved),
+          SizedBox(height: 12),
+          Text(GridTexts.typeResetToConfirm),
+        ]),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text(GridTexts.cancel),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: GridColors.error, foregroundColor: GridColors.textPrimary),
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text(GridTexts.confirmReset),
+          ),
+        ],
+      ),
+    );
+    if (confirm != true) return;
+    await _executar('reset_database', () =>
+        TenantContext.post('${ApiLinks.baseUrl}/api/admin/reset-database', {}));
   }
 
   Future<void> _gerarSeed() async {
@@ -436,7 +483,7 @@ class _JobsSectionState extends State<_JobsSection> {
       if (resp.statusCode < 300) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text('Job $nome iniciado'), backgroundColor: _green));
+          content: Text(GridTexts.jobStarted(nome)), backgroundColor: _green));
         }
         await Future.delayed(const Duration(seconds: 3));
         await _carregar();
@@ -470,7 +517,7 @@ class _JobsSectionState extends State<_JobsSection> {
               child: TextButton.icon(
                 onPressed: () => _copiar(context, erro),
                 icon: const Icon(Icons.copy, size: 14),
-                label: const Text('Copiar tudo', style: TextStyle(fontSize: 12)),
+                label: const Text(GridTexts.copyAll, style: TextStyle(fontSize: 12)),
                 style: TextButton.styleFrom(foregroundColor: _primary)),
             ),
             // Textarea scrollavel
@@ -489,7 +536,7 @@ class _JobsSectionState extends State<_JobsSection> {
           ]),
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Fechar')),
+          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text(GridTexts.close)),
         ],
       ),
     );
@@ -521,7 +568,7 @@ class _JobsSectionState extends State<_JobsSection> {
   void _copiar(BuildContext ctx, String texto) {
     Clipboard.setData(ClipboardData(text: texto));
     ScaffoldMessenger.of(ctx).showSnackBar(
-        const SnackBar(content: Text('Copiado'), duration: Duration(seconds: 2)));
+        const SnackBar(content: Text(GridTexts.copied), duration: Duration(seconds: 2)));
   }
 
   @override
@@ -529,12 +576,12 @@ class _JobsSectionState extends State<_JobsSection> {
     return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
       Row(children: [
         const Icon(Icons.schedule, color: _primary, size: 18), const SizedBox(width: 8),
-        const Text('Controle de Jobs', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: _primary)),
+        const Text(GridTexts.jobsControlTitle, style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: _primary)),
         const Spacer(),
         if (_carregando)
           const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: _primary))
         else
-          IconButton(icon: const Icon(Icons.refresh, size: 18), tooltip: 'Atualizar', onPressed: _carregar, color: _primary),
+          IconButton(icon: const Icon(Icons.refresh, size: 18), tooltip: GridTexts.refresh, onPressed: _carregar, color: _primary),
       ]),
       const SizedBox(height: 8),
       ..._jobsMeta.map((meta) => _jobCard(context, meta)),
@@ -555,11 +602,11 @@ class _JobsSectionState extends State<_JobsSection> {
     final histAberto = _historicoAberto.contains(nome);
     final erroAberto = _erroAberto.contains(nome);
 
-    Color cor = Colors.grey.shade400;
+    Color cor = GridColors.disabledBackground;
     IconData icone = Icons.radio_button_unchecked;
     if (status == 'SUCESSO')         { cor = _green;          icone = Icons.check_circle; }
     else if (status == 'ERRO')       { cor = _primary;        icone = Icons.error; }
-    else if (status == 'EXECUTANDO') { cor = Colors.orange;   icone = Icons.sync; }
+    else if (status == 'EXECUTANDO') { cor = GridColors.warning;   icone = Icons.sync; }
 
     return Card(
       margin: const EdgeInsets.only(bottom: 8),
@@ -577,32 +624,32 @@ class _JobsSectionState extends State<_JobsSection> {
             Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
               Text(label, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
               Row(children: [
-                const Icon(Icons.timer_outlined, size: 11, color: Colors.grey), const SizedBox(width: 3),
-                Text(cron, style: const TextStyle(fontSize: 11, color: Colors.grey)),
+                const Icon(Icons.timer_outlined, size: 11, color: GridColors.textMuted), const SizedBox(width: 3),
+                Text(cron, style: const TextStyle(fontSize: 11, color: GridColors.textMuted)),
                 const SizedBox(width: 8),
                 if (status != null)
                   Container(padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
                     decoration: BoxDecoration(color: cor.withValues(alpha: 0.12), borderRadius: BorderRadius.circular(4)),
                     child: Text(status, style: TextStyle(fontSize: 10, color: cor, fontWeight: FontWeight.bold)))
                 else
-                  const Text('Nunca executado', style: TextStyle(fontSize: 10, color: Colors.grey)),
+                  const Text(GridTexts.neverExecuted, style: TextStyle(fontSize: 10, color: GridColors.textMuted)),
               ]),
               if (inicio != null)
-                Text('Ultima: ${_fmt(inicio)}${duracaoMs != null ? '  -  ${duracaoMs}ms' : ''}',
-                    style: const TextStyle(fontSize: 11, color: Colors.grey)),
+                Text(GridTexts.lastExecution(_fmt(inicio), duracaoMs),
+                    style: const TextStyle(fontSize: 11, color: GridColors.textMuted)),
               if (status == 'SUCESSO' && mensagem != null && mensagem.isNotEmpty)
                 Text(mensagem, style: const TextStyle(fontSize: 11, color: _green),
                     maxLines: 1, overflow: TextOverflow.ellipsis),
             ])),
             Row(mainAxisSize: MainAxisSize.min, children: [
               IconButton(icon: Icon(histAberto ? Icons.expand_less : Icons.history, size: 18),
-                tooltip: 'Historico', color: Colors.blue.shade600, onPressed: () => _toggleHistorico(nome)),
+                tooltip: GridTexts.jobHistoryTooltip, color: GridColors.info, onPressed: () => _toggleHistorico(nome)),
               executando
                   ? const SizedBox(width: 36, height: 36,
                       child: Padding(padding: EdgeInsets.all(8),
                         child: CircularProgressIndicator(strokeWidth: 2, color: _primary)))
                   : IconButton(icon: const Icon(Icons.play_circle_outline, size: 22),
-                      tooltip: 'Executar agora', color: _green, onPressed: () => _executar(nome)),
+                      tooltip: GridTexts.executeNow, color: _green, onPressed: () => _executar(nome)),
             ]),
           ]),
         ),
@@ -635,12 +682,12 @@ class _JobsSectionState extends State<_JobsSection> {
                   Padding(
                     padding: const EdgeInsets.fromLTRB(10, 6, 6, 0),
                     child: Row(children: [
-                      const Text('Erro', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: _primary)),
+                      const Text(GridTexts.errorTitle, style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: _primary)),
                       const Spacer(),
                       TextButton.icon(
                         onPressed: () => _copiar(context, erro),
                         icon: const Icon(Icons.copy, size: 13),
-                        label: const Text('Copiar', style: TextStyle(fontSize: 11)),
+                        label: const Text(GridTexts.copy, style: TextStyle(fontSize: 11)),
                         style: TextButton.styleFrom(foregroundColor: _primary,
                           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                           minimumSize: Size.zero)),
@@ -664,11 +711,11 @@ class _JobsSectionState extends State<_JobsSection> {
         if (histAberto) ...[
           const Divider(height: 1, indent: 12, endIndent: 12),
           Padding(padding: const EdgeInsets.fromLTRB(12, 6, 12, 4),
-            child: Text('Ultimas execucoes',
-                style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.grey.shade600))),
+            child: const Text(GridTexts.latestExecutions,
+                style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: GridColors.textMuted))),
           if (_historicos[nome] == null || _historicos[nome]!.isEmpty)
             const Padding(padding: EdgeInsets.fromLTRB(12, 0, 12, 10),
-              child: Text('Nenhum historico disponivel.', style: TextStyle(fontSize: 11, color: Colors.grey)))
+              child: Text(GridTexts.noHistoryAvailable, style: TextStyle(fontSize: 11, color: GridColors.textMuted)))
           else
             ..._historicos[nome]!.map((h) => _historicoRow(context, h)),
           const SizedBox(height: 6),
@@ -679,7 +726,7 @@ class _JobsSectionState extends State<_JobsSection> {
 
   Widget _historicoRow(BuildContext context, Map<String, dynamic> h) {
     final status = h['status'] as String? ?? '';
-    final cor = status == 'SUCESSO' ? _green : status == 'ERRO' ? _primary : Colors.orange;
+    final cor = status == 'SUCESSO' ? _green : status == 'ERRO' ? _primary : GridColors.warning;
     final inicio = h['inicio'] as String?;
     final duracao = h['duracaoMs'];
     final msg = (h['mensagem'] ?? h['erro'] ?? '').toString();
@@ -692,14 +739,14 @@ class _JobsSectionState extends State<_JobsSection> {
           Icon(status == 'SUCESSO' ? Icons.check_circle : status == 'ERRO' ? Icons.cancel : Icons.sync,
               size: 12, color: cor),
           const SizedBox(width: 6),
-          Text(inicio != null ? _fmt(inicio) : '-', style: const TextStyle(fontSize: 11, color: Colors.grey)),
+          Text(inicio != null ? _fmt(inicio) : '-', style: const TextStyle(fontSize: 11, color: GridColors.textMuted)),
           const SizedBox(width: 8),
           Container(padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
             decoration: BoxDecoration(color: cor.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(3)),
             child: Text(status, style: TextStyle(fontSize: 10, color: cor, fontWeight: FontWeight.bold))),
           if (duracao != null) ...[
             const SizedBox(width: 6),
-            Text('${duracao}ms', style: const TextStyle(fontSize: 10, color: Colors.grey)),
+            Text('${duracao}ms', style: const TextStyle(fontSize: 10, color: GridColors.textMuted)),
           ],
           if (msg.isNotEmpty) ...[
             const SizedBox(width: 6),
@@ -707,7 +754,7 @@ class _JobsSectionState extends State<_JobsSection> {
                 maxLines: 1, overflow: TextOverflow.ellipsis)),
           ],
           if (status == 'ERRO' && erroCompleto != null)
-            IconButton(icon: const Icon(Icons.copy, size: 12), tooltip: 'Copiar erro',
+            IconButton(icon: const Icon(Icons.copy, size: 12), tooltip: GridTexts.copyError,
               color: _primary, padding: EdgeInsets.zero,
               constraints: const BoxConstraints(minWidth: 24, minHeight: 24),
               onPressed: () => _copiar(context, erroCompleto)),
@@ -1128,7 +1175,7 @@ class _ImportacaoSectionState extends State<_ImportacaoSection> {
     return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
       const Row(children: [
         Icon(Icons.upload_file, color: _primary, size: 18), SizedBox(width: 8),
-        Text('Importacao CSV', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: _primary)),
+        Text(GridTexts.csvImportTitle, style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: _primary)),
       ]),
       const SizedBox(height: 10),
 
@@ -1141,13 +1188,12 @@ class _ImportacaoSectionState extends State<_ImportacaoSection> {
         child: Padding(
           padding: const EdgeInsets.all(14),
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            const Text('Destino da Importacao',
+            const Text(GridTexts.importDestination,
               style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
             const SizedBox(height: 4),
             const Text(
-              'Selecione a empresa e/ou parceiro para os lancamentos importados. '
-              'Se ja estiver definido pelo login, o campo fica bloqueado.',
-              style: TextStyle(fontSize: 11, color: Colors.grey)),
+              GridTexts.importDestinationDesc,
+              style: TextStyle(fontSize: 11, color: GridColors.textMuted)),
             const SizedBox(height: 12),
             Row(children: [
               // ── Empresa ──────────────────────────────────────────────
@@ -1163,8 +1209,8 @@ class _ImportacaoSectionState extends State<_ImportacaoSection> {
 
       _importCard(
         isCP: true,
-        titulo: 'Importar Contas a Pagar',
-        subtitulo: 'Importa lancamentos de CP a partir de CSV. Cria Parceiros e Formas de Pagamento automaticamente.',
+        titulo: GridTexts.importAccountsPayable,
+        subtitulo: GridTexts.importAccountsPayableDesc,
         arquivo: _arquivoCP,
         importando: _importandoCP,
         upsert: _upsertCP,
@@ -1177,8 +1223,8 @@ class _ImportacaoSectionState extends State<_ImportacaoSection> {
       const SizedBox(height: 12),
       _importCard(
         isCP: false,
-        titulo: 'Importar Contas a Receber',
-        subtitulo: 'Importa lancamentos de CR a partir de CSV. Cria Parceiros e Formas de Pagamento automaticamente.',
+        titulo: GridTexts.importAccountsReceivable,
+        subtitulo: GridTexts.importAccountsReceivableDesc,
         arquivo: _arquivoCR,
         importando: _importandoCR,
         upsert: _upsertCR,
@@ -1201,14 +1247,14 @@ class _ImportacaoSectionState extends State<_ImportacaoSection> {
     if (fixo && empresaIdCtx != null) {
       // Tenta achar o nome na lista carregada; se não tiver, mostra o ID
       final found = _empresas.where((e) => e['id'] == empresaIdCtx).firstOrNull;
-      labelFixo = found?['nome'] as String? ?? 'Empresa #$empresaIdCtx';
+      labelFixo = found?['nome'] as String? ?? GridTexts.companyById(empresaIdCtx);
     }
 
     return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
       Row(children: [
-        const Icon(Icons.business, size: 14, color: Colors.grey),
+        const Icon(Icons.business, size: 14, color: GridColors.textMuted),
         const SizedBox(width: 4),
-        const Text('Empresa', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w500)),
+        const Text(GridTexts.companyLabel, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w500)),
         if (fixo) ...[
           const SizedBox(width: 6),
           Container(
@@ -1216,7 +1262,7 @@ class _ImportacaoSectionState extends State<_ImportacaoSection> {
             decoration: BoxDecoration(
               color: _green.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(4)),
-            child: const Text('do login', style: TextStyle(fontSize: 9, color: _green, fontWeight: FontWeight.bold))),
+            child: const Text(GridTexts.fromLogin, style: TextStyle(fontSize: 9, color: _green, fontWeight: FontWeight.bold))),
         ],
       ]),
       const SizedBox(height: 4),
@@ -1226,14 +1272,14 @@ class _ImportacaoSectionState extends State<_ImportacaoSection> {
           width: double.infinity,
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 11),
           decoration: BoxDecoration(
-            color: Colors.grey.shade100,
+            color: GridColors.textMuted.withValues(alpha: 0.10),
             border: Border.all(color: _border),
             borderRadius: BorderRadius.circular(6)),
           child: Row(children: [
-            const Icon(Icons.lock_outline, size: 14, color: Colors.grey),
+            const Icon(Icons.lock_outline, size: 14, color: GridColors.textMuted),
             const SizedBox(width: 8),
-            Expanded(child: Text(labelFixo ?? 'Empresa do login',
-              style: const TextStyle(fontSize: 13, color: Colors.grey))),
+            Expanded(child: Text(labelFixo ?? GridTexts.companyFromLogin,
+              style: const TextStyle(fontSize: 13, color: GridColors.textMuted))),
           ]),
         )
       else
@@ -1243,12 +1289,12 @@ class _ImportacaoSectionState extends State<_ImportacaoSection> {
                 child: Center(child: SizedBox(width: 18, height: 18,
                   child: CircularProgressIndicator(strokeWidth: 2, color: _primary))))
             : SearchableDropdownField(
-                label: 'Empresa',
+                label: GridTexts.companyLabel,
                 value: _empresaIdSelecionada,
                 items: _empresas,
                 valueField: 'id',
                 displayField: 'nome',
-                hintText: 'Selecione a empresa',
+                hintText: GridTexts.selectCompany,
                 onChanged: (v) {
                   setState(() => _empresaIdSelecionada = v);
                   // Recarrega parceiros filtrados pela empresa selecionada
@@ -1268,14 +1314,14 @@ class _ImportacaoSectionState extends State<_ImportacaoSection> {
     String? labelFixo;
     if (fixo && parceiroIdCtx != null) {
       final found = _parceiros.where((e) => e['id'] == parceiroIdCtx).firstOrNull;
-      labelFixo = found?['nome'] as String? ?? 'Parceiro #$parceiroIdCtx';
+      labelFixo = found?['nome'] as String? ?? GridTexts.partnerById(parceiroIdCtx);
     }
 
     return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
       Row(children: [
-        const Icon(Icons.person_outline, size: 14, color: Colors.grey),
+        const Icon(Icons.person_outline, size: 14, color: GridColors.textMuted),
         const SizedBox(width: 4),
-        const Text('Parceiro (opcional)', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w500)),
+        const Text(GridTexts.partnerOptional, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w500)),
         if (fixo) ...[
           const SizedBox(width: 6),
           Container(
@@ -1283,7 +1329,7 @@ class _ImportacaoSectionState extends State<_ImportacaoSection> {
             decoration: BoxDecoration(
               color: _green.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(4)),
-            child: const Text('do login', style: TextStyle(fontSize: 9, color: _green, fontWeight: FontWeight.bold))),
+            child: const Text(GridTexts.fromLogin, style: TextStyle(fontSize: 9, color: _green, fontWeight: FontWeight.bold))),
         ],
       ]),
       const SizedBox(height: 4),
@@ -1292,14 +1338,14 @@ class _ImportacaoSectionState extends State<_ImportacaoSection> {
           width: double.infinity,
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 11),
           decoration: BoxDecoration(
-            color: Colors.grey.shade100,
+            color: GridColors.textMuted.withValues(alpha: 0.10),
             border: Border.all(color: _border),
             borderRadius: BorderRadius.circular(6)),
           child: Row(children: [
-            const Icon(Icons.lock_outline, size: 14, color: Colors.grey),
+            const Icon(Icons.lock_outline, size: 14, color: GridColors.textMuted),
             const SizedBox(width: 8),
-            Expanded(child: Text(labelFixo ?? 'Parceiro do login',
-              style: const TextStyle(fontSize: 13, color: Colors.grey))),
+            Expanded(child: Text(labelFixo ?? GridTexts.partnerFromLogin,
+              style: const TextStyle(fontSize: 13, color: GridColors.textMuted))),
           ]),
         )
       else
@@ -1308,14 +1354,14 @@ class _ImportacaoSectionState extends State<_ImportacaoSection> {
                 child: Center(child: SizedBox(width: 18, height: 18,
                   child: CircularProgressIndicator(strokeWidth: 2, color: _primary))))
             : SearchableDropdownField(
-                label: 'Parceiro',
+                label: GridTexts.partnerLabel,
                 value: _parceiroIdSelecionado,
                 items: _parceiros,
                 valueField: 'id',
                 displayField: 'nome',
-                hintText: 'Nenhum (opcional)',
+                hintText: GridTexts.noneOptional,
                 nullable: true,
-                nullLabel: 'Limpar seleção',
+                nullLabel: GridTexts.noneOptional,
                 onChanged: (v) => setState(() => _parceiroIdSelecionado = v),
               ),
     ]);
@@ -1353,7 +1399,7 @@ class _ImportacaoSectionState extends State<_ImportacaoSection> {
             const SizedBox(width: 12),
             Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
               Text(titulo, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14)),
-              Text(subtitulo, style: const TextStyle(fontSize: 11, color: Colors.grey)),
+              Text(subtitulo, style: const TextStyle(fontSize: 11, color: GridColors.textMuted)),
             ])),
           ]),
           const SizedBox(height: 14),
@@ -1366,19 +1412,19 @@ class _ImportacaoSectionState extends State<_ImportacaoSection> {
                 decoration: BoxDecoration(
                   border: Border.all(color: _border),
                   borderRadius: BorderRadius.circular(6),
-                  color: Colors.grey.shade50),
+                  color: GridColors.textMuted.withValues(alpha: 0.06)),
                 child: Row(children: [
-                  Icon(Icons.attach_file, size: 16, color: Colors.grey.shade500),
+                  const Icon(Icons.attach_file, size: 16, color: GridColors.textMuted),
                   const SizedBox(width: 8),
                   Expanded(child: Text(
-                    arquivo != null ? arquivo.name : 'Nenhum arquivo selecionado',
+                    arquivo != null ? arquivo.name : GridTexts.noFileSelected,
                     style: TextStyle(fontSize: 13,
-                      color: arquivo != null ? Colors.black87 : Colors.grey.shade500),
+                      color: arquivo != null ? Colors.black87 : GridColors.textMuted),
                     overflow: TextOverflow.ellipsis)),
                   if (arquivo != null) ...[
                     const SizedBox(width: 8),
                     Text('${(arquivo.size / 1024).toStringAsFixed(1)} KB',
-                      style: const TextStyle(fontSize: 11, color: Colors.grey)),
+                      style: const TextStyle(fontSize: 11, color: GridColors.textMuted)),
                   ],
                 ]),
               ),
@@ -1387,7 +1433,7 @@ class _ImportacaoSectionState extends State<_ImportacaoSection> {
             OutlinedButton.icon(
               onPressed: importando ? null : () => _selecionarArquivo(isCP),
               icon: const Icon(Icons.folder_open, size: 16),
-              label: const Text('Selecionar CSV'),
+              label: const Text(GridTexts.selectCsv),
               style: OutlinedButton.styleFrom(
                 foregroundColor: cor,
                 side: BorderSide(color: cor),
@@ -1408,14 +1454,14 @@ class _ImportacaoSectionState extends State<_ImportacaoSection> {
                   Icon(Icons.table_chart_outlined, size: 13, color: cor),
                   const SizedBox(width: 5),
                   Expanded(child: Text(
-                    'Colunas detectadas — clique para usar como Descricao:',
+                    GridTexts.detectedColumnsUseAsDescription,
                     style: TextStyle(fontSize: 11, color: cor, fontWeight: FontWeight.w500))),
                 ]),
                 const SizedBox(height: 6),
                 Wrap(
                   spacing: 6, runSpacing: 4,
                   children: (isCP ? _colunasCP : _colunasCR).map((col) => Tooltip(
-                    message: 'Usar "$col" como coluna de Descricao',
+                    message: GridTexts.useColumnAsDescription(col),
                     child: InkWell(
                       onTap: () {
                         // Preenche o campo de descrição com o nome desta coluna
@@ -1423,7 +1469,7 @@ class _ImportacaoSectionState extends State<_ImportacaoSection> {
                         // Abre o mapeamento para o usuário ver o que foi preenchido
                         if (!mapeamentoExpandido) onToggleMapeamento();
                         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                          content: Text('"$col" definido como coluna de Descricao'),
+                          content: Text(GridTexts.columnSetAsDescription(col)),
                           duration: const Duration(seconds: 2),
                           backgroundColor: cor));
                       },
@@ -1459,7 +1505,7 @@ class _ImportacaoSectionState extends State<_ImportacaoSection> {
               child: Row(children: [
                 Icon(Icons.tune, size: 15, color: cor),
                 const SizedBox(width: 6),
-                Text('Mapeamento de colunas do CSV',
+                Text(GridTexts.csvColumnMapping,
                   style: TextStyle(fontSize: 12, color: cor, fontWeight: FontWeight.w500)),
                 const Spacer(),
                 Icon(mapeamentoExpandido ? Icons.expand_less : Icons.expand_more, size: 18, color: cor),
@@ -1472,16 +1518,15 @@ class _ImportacaoSectionState extends State<_ImportacaoSection> {
             Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: Colors.blue.shade50,
+                color: GridColors.info.withValues(alpha: 0.08),
                 borderRadius: BorderRadius.circular(6),
-                border: Border.all(color: Colors.blue.shade200)),
+                border: Border.all(color: GridColors.info.withValues(alpha: 0.25))),
               child: Row(children: [
-                Icon(Icons.info_outline, size: 14, color: Colors.blue.shade700),
+                const Icon(Icons.info_outline, size: 14, color: GridColors.info),
                 const SizedBox(width: 6),
                 Expanded(child: Text(
-                  'Informe o nome exato da coluna no seu CSV para cada campo. '
-                  'Use os chips acima para preencher rapidamente.',
-                  style: TextStyle(fontSize: 11, color: Colors.blue.shade700))),
+                  GridTexts.mappingInstruction,
+                  style: const TextStyle(fontSize: 11, color: GridColors.info))),
               ]),
             ),
             const SizedBox(height: 10),
@@ -1503,9 +1548,9 @@ class _ImportacaoSectionState extends State<_ImportacaoSection> {
                             .toList(),
                         valueField: 'id',
                         displayField: 'nome',
-                        hintText: '— não importar —',
+                        hintText: GridTexts.doNotImport,
                         nullable: true,
-                        nullLabel: '— não importar —',
+                        nullLabel: GridTexts.doNotImport,
                         onChanged: (v) =>
                             setState(() => ctrl[campo['key']]?.text = v ?? ''),
                       )
@@ -1531,27 +1576,30 @@ class _ImportacaoSectionState extends State<_ImportacaoSection> {
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
               decoration: BoxDecoration(
-                color: upsert ? Colors.orange.shade50 : Colors.grey.shade50,
+                color: upsert
+                    ? GridColors.warning.withValues(alpha: 0.08)
+                    : GridColors.textMuted.withValues(alpha: 0.06),
                 borderRadius: BorderRadius.circular(6),
-                border: Border.all(color: upsert ? Colors.orange.shade300 : _border)),
+                border: Border.all(
+                    color: upsert
+                        ? GridColors.warning.withValues(alpha: 0.35)
+                        : _border)),
               child: Row(children: [
                 Icon(upsert ? Icons.sync_alt : Icons.add_circle_outline,
-                  size: 16, color: upsert ? Colors.orange.shade700 : Colors.grey),
+                  size: 16, color: upsert ? GridColors.warning : GridColors.textMuted),
                 const SizedBox(width: 8),
                 Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  Text(upsert ? 'Modo: Inserir + Atualizar (Upsert)' : 'Modo: Apenas Inserir',
+                  Text(upsert ? GridTexts.upsertMode : GridTexts.insertOnlyMode,
                     style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600,
-                      color: upsert ? Colors.orange.shade700 : Colors.grey.shade700)),
+                      color: upsert ? GridColors.warning : GridColors.textMuted)),
                   Text(
-                    upsert
-                      ? 'Se o Numero de Nota ja existe na empresa, atualiza o registro. Novos sao inseridos.'
-                      : 'Sempre insere novos registros. Reimportar pode duplicar.',
-                    style: TextStyle(fontSize: 10, color: Colors.grey.shade600)),
+                    upsert ? GridTexts.upsertModeDesc : GridTexts.insertOnlyModeDesc,
+                    style: const TextStyle(fontSize: 10, color: GridColors.textMuted)),
                 ])),
                 Switch(
                   value: upsert,
                   onChanged: (_) => onToggleUpsert(),
-                  activeThumbColor: Colors.orange.shade700,
+                  activeThumbColor: GridColors.warning,
                   materialTapTargetSize: MaterialTapTargetSize.shrinkWrap),
               ]),
             ),
@@ -1567,7 +1615,7 @@ class _ImportacaoSectionState extends State<_ImportacaoSection> {
                   ? const SizedBox(width: 16, height: 16,
                       child: CircularProgressIndicator(strokeWidth: 2, color: _white))
                   : const Icon(Icons.upload),
-              label: Text(importando ? 'Importando...' : 'Importar'),
+              label: Text(importando ? GridTexts.importing : GridTexts.importAction),
               style: ElevatedButton.styleFrom(
                 backgroundColor: cor, foregroundColor: _white,
                 padding: const EdgeInsets.symmetric(vertical: 14),
@@ -1615,7 +1663,7 @@ class _ImportacaoSectionState extends State<_ImportacaoSection> {
     // 100% ignorado = mapeamento errado
     final tudo100Ignorado = total > 0 && sucesso == 0 && erros == 0 && ignorados == total;
     final temErros = erros > 0 || tudo100Ignorado;
-    final corStatus = tudo100Ignorado ? _primary : (temErros ? Colors.orange.shade700 : _green);
+    final corStatus = tudo100Ignorado ? _primary : (temErros ? GridColors.warning : _green);
 
     return Container(
       decoration: BoxDecoration(
@@ -1635,21 +1683,28 @@ class _ImportacaoSectionState extends State<_ImportacaoSection> {
               color: corStatus, size: 18),
             const SizedBox(width: 8),
             Text(
-              tudo100Ignorado ? 'Nenhum registro importado — verifique o mapeamento'
-                  : 'Importacao concluida',
+              tudo100Ignorado ? GridTexts.noRecordImported
+                  : GridTexts.importCompleted,
               style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13, color: corStatus)),
             const Spacer(),
             IconButton(
               icon: const Icon(Icons.copy, size: 15),
-              tooltip: 'Copiar resultado',
+              tooltip: GridTexts.copyResult,
               color: corStatus,
               padding: EdgeInsets.zero,
               constraints: const BoxConstraints(minWidth: 28, minHeight: 28),
               onPressed: () {
-                final txt = 'Total: $total | Sucesso: $sucesso | Erros: $erros | Ignorados: $ignorados${novosParceiros > 0 ? ' | Parceiros novos: $novosParceiros' : ''}${novasFormas > 0 ? ' | Formas novas: $novasFormas' : ''}';
+                final txt = GridTexts.resultSummary(
+                  total,
+                  sucesso,
+                  erros,
+                  ignorados,
+                  novosParceiros,
+                  novasFormas,
+                );
                 Clipboard.setData(ClipboardData(text: txt));
                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Copiado'), duration: Duration(seconds: 2)));
+                  const SnackBar(content: Text(GridTexts.copied), duration: Duration(seconds: 2)));
               }),
           ]),
         ),
@@ -1676,12 +1731,12 @@ class _ImportacaoSectionState extends State<_ImportacaoSection> {
         Padding(
           padding: const EdgeInsets.fromLTRB(14, 10, 14, 10),
           child: Wrap(spacing: 10, runSpacing: 8, children: [
-            _chip('Total', total, Colors.grey.shade600),
-            _chip('Importados', sucesso, _green),
-            if (erros > 0) _chip('Erros', erros, _primary),
-            if (ignorados > 0) _chip('Ignorados', ignorados, Colors.orange.shade700),
-            if (novosParceiros > 0) _chip('Parceiros novos', novosParceiros, Colors.blue.shade700),
-            if (novasFormas > 0) _chip('Formas novas', novasFormas, Colors.purple.shade700),
+            _chip(GridTexts.totalLabel, total, GridColors.textMuted),
+            _chip(GridTexts.importedLabel, sucesso, _green),
+            if (erros > 0) _chip(GridTexts.errorsLabel, erros, _primary),
+            if (ignorados > 0) _chip(GridTexts.ignoredLabel, ignorados, GridColors.warning),
+            if (novosParceiros > 0) _chip(GridTexts.newPartnersLabel, novosParceiros, GridColors.info),
+            if (novasFormas > 0) _chip(GridTexts.newPaymentFormsLabel, novasFormas, GridColors.statusClosed),
           ]),
         ),
 
@@ -1691,15 +1746,15 @@ class _ImportacaoSectionState extends State<_ImportacaoSection> {
             margin: const EdgeInsets.fromLTRB(14, 0, 14, 8),
             padding: const EdgeInsets.all(10),
             decoration: BoxDecoration(
-              color: Colors.amber.shade50,
+              color: GridColors.warning.withValues(alpha: 0.08),
               borderRadius: BorderRadius.circular(6),
-              border: Border.all(color: Colors.amber.shade300)),
+              border: Border.all(color: GridColors.warning.withValues(alpha: 0.35))),
             child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Icon(Icons.warning_amber_rounded, color: Colors.amber.shade800, size: 16),
+              const Icon(Icons.warning_amber_rounded, color: GridColors.warningDark, size: 16),
               const SizedBox(width: 8),
               Expanded(child: Text(
-                '$novosParceiros parceiro(s) criado(s) automaticamente — verifique e complete o cadastro',
-                style: TextStyle(fontSize: 11, color: Colors.amber.shade900, height: 1.5))),
+                GridTexts.autoPartnersCreated(novosParceiros),
+                style: const TextStyle(fontSize: 11, color: GridColors.warningDark, height: 1.5))),
             ]),
           ),
         ],
@@ -1708,15 +1763,15 @@ class _ImportacaoSectionState extends State<_ImportacaoSection> {
             margin: const EdgeInsets.fromLTRB(14, 0, 14, 8),
             padding: const EdgeInsets.all(10),
             decoration: BoxDecoration(
-              color: Colors.orange.shade50,
+              color: GridColors.info.withValues(alpha: 0.08),
               borderRadius: BorderRadius.circular(6),
-              border: Border.all(color: Colors.orange.shade300)),
+              border: Border.all(color: GridColors.info.withValues(alpha: 0.25))),
             child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Icon(Icons.info_outline, color: Colors.orange.shade800, size: 16),
+              const Icon(Icons.info_outline, color: GridColors.info, size: 16),
               const SizedBox(width: 8),
               Expanded(child: Text(
-                '$novasFormas forma(s) de pagamento criada(s) automaticamente — verifique e complete o cadastro',
-                style: TextStyle(fontSize: 11, color: Colors.orange.shade900, height: 1.5))),
+                GridTexts.autoPaymentFormsCreated(novasFormas),
+                style: const TextStyle(fontSize: 11, color: GridColors.info, height: 1.5))),
             ]),
           ),
         ],
@@ -1727,10 +1782,10 @@ class _ImportacaoSectionState extends State<_ImportacaoSection> {
           Padding(
             padding: const EdgeInsets.fromLTRB(14, 8, 14, 4),
             child: Row(children: [
-              Icon(Icons.table_chart_outlined, size: 13, color: Colors.grey.shade600),
+              Icon(Icons.table_chart_outlined, size: 13, color: GridColors.textMuted),
               const SizedBox(width: 5),
-              Text('Colunas lidas do CSV: ${colunasCSV.join(', ')}',
-                style: TextStyle(fontSize: 11, color: Colors.grey.shade600, fontStyle: FontStyle.italic)),
+              Text(GridTexts.csvColumnsRead(colunasCSV.join(', ')),
+                style: const TextStyle(fontSize: 11, color: GridColors.textMuted, fontStyle: FontStyle.italic)),
             ]),
           ),
         ],
@@ -1741,32 +1796,32 @@ class _ImportacaoSectionState extends State<_ImportacaoSection> {
           Padding(
             padding: const EdgeInsets.fromLTRB(14, 8, 14, 4),
             child: Row(children: [
-              Text('Detalhes de erros e ignorados',
-                style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.grey.shade700)),
+              const Text(GridTexts.errorIgnoredDetails,
+                style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: GridColors.textMuted)),
               const SizedBox(width: 8),
               // Mostra só as primeiras 20 linhas para não travar
               if (detalhes.where((d) => d['status'] != 'sucesso').length > 20)
-                Text('(mostrando primeiras 20 de ${detalhes.where((d) => d['status'] != 'sucesso').length})',
-                  style: TextStyle(fontSize: 10, color: Colors.grey.shade500)),
+                Text(GridTexts.showingFirst20(detalhes.where((d) => d['status'] != 'sucesso').length),
+                  style: const TextStyle(fontSize: 10, color: GridColors.textMuted)),
               const Spacer(),
               // ── Botão copiar todos os erros ──────────────────────────
               TextButton.icon(
                 onPressed: () {
                   final todos = detalhes.where((d) => d['status'] != 'sucesso').toList();
                   final texto = todos.map((d) =>
-                    'Linha ${d['linha']} [${d['status']}]: ${d['mensagem']}').join('\n');
+                    GridTexts.lineStatusMessage(d['linha'], d['status'], d['mensagem'])).join('\n');
                   Clipboard.setData(ClipboardData(text: texto));
                   ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                    content: Text('${todos.length} erros copiados'),
+                    content: Text(GridTexts.errorsCopied(todos.length)),
                     duration: const Duration(seconds: 2),
-                    backgroundColor: Colors.grey.shade700));
+                    backgroundColor: GridColors.textMuted));
                 },
                 icon: const Icon(Icons.copy_all, size: 14),
                 label: Text(
-                  'Copiar todos (${detalhes.where((d) => d['status'] != 'sucesso').length})',
+                  GridTexts.copyAllCount(detalhes.where((d) => d['status'] != 'sucesso').length),
                   style: const TextStyle(fontSize: 11)),
                 style: TextButton.styleFrom(
-                  foregroundColor: Colors.grey.shade700,
+                  foregroundColor: GridColors.textMuted,
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                   tapTargetSize: MaterialTapTargetSize.shrinkWrap)),
             ])),
@@ -1780,14 +1835,14 @@ class _ImportacaoSectionState extends State<_ImportacaoSection> {
                 itemBuilder: (_, i) {
                   final d = detalhes.where((d) => d['status'] != 'sucesso').take(20).toList()[i];
                   final st = d['status'] as String? ?? '';
-                  final corD = st == 'erro' ? _primary : Colors.orange.shade700;
+                  final corD = st == 'erro' ? _primary : GridColors.warning;
                   return Padding(
                     padding: const EdgeInsets.symmetric(vertical: 2),
                     child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
                       Icon(st == 'erro' ? Icons.cancel : Icons.info_outline,
                         size: 13, color: corD),
                       const SizedBox(width: 6),
-                      Text('Linha ${d['linha']}: ',
+                      Text(GridTexts.linePrefix(d['linha']),
                         style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: corD)),
                       Expanded(child: SelectableText(d['mensagem']?.toString() ?? '',
                         style: TextStyle(fontSize: 11, color: corD))),

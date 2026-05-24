@@ -2,6 +2,7 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import '../../../models/network_response.dart';
 import '../../../services/baixa_caller.dart';
+import '../../utils/grid_texts.dart';
 
 class DesfazerBaixaDialog extends StatefulWidget {
   final int contaId;
@@ -108,7 +109,7 @@ class _DesfazerBaixaDialogState extends State<DesfazerBaixaDialog> {
       actions: [
         TextButton(
           onPressed: () => Navigator.pop(context),
-          child: const Text('Cancelar'),
+          child: const Text(GridTexts.cancel),
         ),
         ElevatedButton.icon(
           icon: const Icon(Icons.undo),

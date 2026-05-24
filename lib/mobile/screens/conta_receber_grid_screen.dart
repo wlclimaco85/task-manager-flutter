@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../../utils/api_links.dart';
 import '../../customization/generic_grid_card.dart';
 import '../../../models/conta_receber_model.dart';
+import '../../../widgets/anexo_financeiro_widget.dart';
 import '../../widgets/finance/billing_charge_dialog.dart';
 import '../screens/baixa_dialog_receber.dart';
 import '../screens/desfazer_baixa_dialog.dart';
@@ -55,6 +56,12 @@ class ContaReceberGridScreen extends StatelessWidget {
             );
           },
         ),
+        CustomAction<ContaReceber>(
+          icon: Icons.attach_file,
+          label: 'Anexos',
+          isVisible: (obj) => obj.id != null,
+          onPressed: (context, object) => _showAnexos(context, object),
+        ),
       ],
       useUserBannerAppBar: true,
       paginationConfig: const PaginationConfig(
@@ -62,6 +69,23 @@ class ContaReceberGridScreen extends StatelessWidget {
         availableRowsPerPage: [10, 25, 50],
       ),
       enableSearch: true,
+    );
+  }
+
+  void _showAnexos(BuildContext context, ContaReceber conta) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (_) => Padding(
+        padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
+        child: AnexoFinanceiroWidget(
+          lancamentoId: conta.id!,
+          lancamentoTipo: 'RECEBER',
+        ),
+      ),
     );
   }
 

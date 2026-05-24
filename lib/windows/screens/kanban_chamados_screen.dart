@@ -1,14 +1,16 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import '../../utils/grid_colors.dart';
 import '../../../models/chamado_model.dart';
 import '../../../utils/api_links.dart';
 import '../../../utils/tenant_context.dart';
+import '../../utils/grid_texts.dart';
 
 // ── Cores do sistema ──────────────────────────────────────────────────────────
 class _K {
   static const bg       = Color(0xFFF5F5F5);
-  static const primary  = Color(0xFF93070A);
-  static const green    = Color(0xFF005826);
+  static const primary  = GridColors.primary;
+  static const green    = GridColors.secondary;
   static const white    = Colors.white;
   static const border   = Color(0xFFDDDDDD);
   static const textDark = Color(0xFF212121);
@@ -25,7 +27,7 @@ class _Col {
 const _cols = [
   _Col('ABERTO',       'Aberto',       Color(0xFF1565C0)),
   _Col('EM_ANDAMENTO', 'Em Andamento', Color(0xFFE65100)),
-  _Col('FECHADO',      'Fechado',      Color(0xFF2E7D32)),
+  _Col('FECHADO',      'Fechado',      GridColors.success),
   _Col('CANCELADO',    'Cancelado',    Color(0xFF6A1B9A)),
 ];
 
@@ -470,7 +472,7 @@ class _KanbanCard extends StatelessWidget {
 
   Color get _priorCor {
     switch (raw.chamado.prioridade) {
-      case PrioridadeChamadoEnum.URGENTE: return const Color(0xFFD32F2F);
+      case PrioridadeChamadoEnum.URGENTE: return GridColors.error;
       case PrioridadeChamadoEnum.ALTA:    return const Color(0xFFE64A19);
       case PrioridadeChamadoEnum.MEDIA:   return const Color(0xFFF9A825);
       default:                            return const Color(0xFF388E3C);
@@ -691,7 +693,7 @@ class _EditDialogState extends State<_EditDialog> {
         ),
       ])),
       actions: [
-        TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancelar')),
+        TextButton(onPressed: () => Navigator.pop(context), child: const Text(GridTexts.cancel)),
         ElevatedButton.icon(
           onPressed: _saving ? null : _salvar,
           icon: _saving ? const SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white)) : const Icon(Icons.save, size: 14),

@@ -10,6 +10,7 @@ import 'grid_theme.dart';
 import 'grid_models.dart';
 import 'grid_network.dart';
 import 'grid_utils.dart';
+import '../../utils/grid_texts.dart';
 
 class GridFormDialog extends StatefulWidget {
   final String titleNew;
@@ -74,7 +75,7 @@ class _GridFormDialogState extends State<GridFormDialog> {
     final isEditing = widget.editingItem != null;
 
     return Dialog(
-      backgroundColor: GridColors.primary, // fundo banco
+      backgroundColor: Colors.white,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       insetPadding: const EdgeInsets.all(24),
       child: Container(
@@ -84,30 +85,33 @@ class _GridFormDialogState extends State<GridFormDialog> {
         ),
         padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
-          color: GridColors.primary, // fundo banco
+          color: Colors.white,
           borderRadius: BorderRadius.circular(16),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
+            // ── Cabeçalho ──────────────────────────────────────────────────
             Row(children: [
-              const Icon(Icons.edit, color: GridColors.textPrimary),
+              const Icon(Icons.edit_outlined, color: GridColors.primary, size: 22),
               const SizedBox(width: 8),
-              Text(
-                isEditing ? widget.titleEdit : widget.titleNew,
-                style: const TextStyle(
-                  color: GridColors.textPrimary,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 18,
+              Expanded(
+                child: Text(
+                  isEditing ? widget.titleEdit : widget.titleNew,
+                  style: const TextStyle(
+                    color: GridColors.primary,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 18,
+                  ),
                 ),
               ),
-              const Spacer(),
               IconButton(
                 onPressed: () => Navigator.pop(context),
-                icon: const Icon(Icons.close, color: GridColors.textPrimary),
+                icon: const Icon(Icons.close, color: Color(0xFF616161)),
               ),
             ]),
-            const SizedBox(height: 12),
+            const Divider(height: 20, thickness: 1, color: Color(0xFFEEEEEE)),
+            // ── Campos ─────────────────────────────────────────────────────
             Expanded(
               child: SingleChildScrollView(
                 child: Column(
@@ -121,16 +125,20 @@ class _GridFormDialogState extends State<GridFormDialog> {
                 ),
               ),
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 8),
+            // ── Rodapé — botões ────────────────────────────────────────────
             Row(children: [
               Expanded(
                 child: OutlinedButton(
                   onPressed: _saving ? null : () => Navigator.pop(context),
                   style: OutlinedButton.styleFrom(
-                    side: const BorderSide(color: GridColors.textPrimary),
-                    foregroundColor: GridColors.textPrimary,
+                    side: const BorderSide(color: Color(0xFFBDBDBD)),
+                    foregroundColor: const Color(0xFF616161),
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8)),
                   ),
-                  child: const Text('Cancelar'),
+                  child: const Text(GridTexts.cancel),
                 ),
               ),
               const SizedBox(width: 12),
@@ -138,10 +146,21 @@ class _GridFormDialogState extends State<GridFormDialog> {
                 child: ElevatedButton(
                   onPressed: _saving ? null : _save,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: GridColors.success, // verde padrão
-                    foregroundColor: GridColors.textPrimary,
+                    backgroundColor: GridColors.primary,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8)),
+                    elevation: 0,
                   ),
-                  child: Text(isEditing ? 'Salvar' : 'Adicionar'),
+                  child: _saving
+                      ? const SizedBox(
+                          width: 18,
+                          height: 18,
+                          child: CircularProgressIndicator(
+                              color: Colors.white, strokeWidth: 2),
+                        )
+                      : Text(isEditing ? 'Salvar' : 'Adicionar'),
                 ),
               ),
             ]),
@@ -162,6 +181,7 @@ class _GridFormDialogState extends State<GridFormDialog> {
         return Row(children: [
           Checkbox(
             value: v,
+            activeColor: GridColors.primary,
             onChanged: c.enabled
                 ? (nv) {
                     ctrl.text = (nv ?? false).toString();
@@ -169,7 +189,8 @@ class _GridFormDialogState extends State<GridFormDialog> {
                   }
                 : null,
           ),
-          Text(c.label, style: const TextStyle(color: GridColors.textPrimary)),
+          Text(c.label,
+              style: const TextStyle(color: Color(0xFF212121), fontSize: 14)),
         ]);
       case FieldType.multiline:
         return _textField(c, ctrl, maxLines: 4);
@@ -184,10 +205,21 @@ class _GridFormDialogState extends State<GridFormDialog> {
     }
   }
 
-  InputBorder _redBorder() => OutlineInputBorder(
+  // ── Bordas dos campos de texto ─────────────────────────────────────────────
+
+  InputBorder _defaultBorder() => OutlineInputBorder(
         borderRadius: BorderRadius.circular(8),
-        borderSide:
-            const BorderSide(color: GridColors.error, width: 2), // vermelho
+        borderSide: const BorderSide(color: Color(0xFFBDBDBD)),
+      );
+
+  InputBorder _focusedBorder() => OutlineInputBorder(
+        borderRadius: BorderRadius.circular(8),
+        borderSide: const BorderSide(color: GridColors.primary, width: 2),
+      );
+
+  InputBorder _disabledBorder() => OutlineInputBorder(
+        borderRadius: BorderRadius.circular(8),
+        borderSide: const BorderSide(color: Color(0xFFE0E0E0)),
       );
 
   Widget _textField(FieldConfig c, TextEditingController ctrl,
@@ -196,13 +228,16 @@ class _GridFormDialogState extends State<GridFormDialog> {
       controller: ctrl,
       enabled: c.enabled,
       maxLines: maxLines ?? c.maxLines,
+      style: const TextStyle(color: Color(0xFF212121)),
       decoration: InputDecoration(
         labelText: c.label + (c.isRequired ? ' *' : ''),
+        labelStyle: const TextStyle(color: Color(0xFF757575)),
         filled: true,
-        fillColor: Colors.white,
-        border: _redBorder(), // borda vermelha padrão
-        enabledBorder: _redBorder(), // borda vermelha
-        focusedBorder: _redBorder(), // borda vermelha focada
+        fillColor: c.enabled ? Colors.white : const Color(0xFFF5F5F5),
+        border: _defaultBorder(),
+        enabledBorder: _defaultBorder(),
+        focusedBorder: _focusedBorder(),
+        disabledBorder: _disabledBorder(),
       ),
       keyboardType: keyboardForFieldType(c.fieldType),
     );
@@ -213,14 +248,18 @@ class _GridFormDialogState extends State<GridFormDialog> {
       controller: ctrl,
       readOnly: true,
       enabled: c.enabled,
+      style: const TextStyle(color: Color(0xFF212121)),
       decoration: InputDecoration(
         labelText: c.label + (c.isRequired ? ' *' : ''),
-        suffixIcon: const Icon(Icons.calendar_today, color: GridColors.error),
+        labelStyle: const TextStyle(color: Color(0xFF757575)),
+        suffixIcon: const Icon(Icons.calendar_today,
+            color: GridColors.primary, size: 18),
         filled: true,
-        fillColor: Colors.white,
-        border: _redBorder(),
-        enabledBorder: _redBorder(),
-        focusedBorder: _redBorder(),
+        fillColor: c.enabled ? Colors.white : const Color(0xFFF5F5F5),
+        border: _defaultBorder(),
+        enabledBorder: _defaultBorder(),
+        focusedBorder: _focusedBorder(),
+        disabledBorder: _disabledBorder(),
       ),
       onTap: c.enabled
           ? () async {
@@ -264,12 +303,20 @@ class _GridFormDialogState extends State<GridFormDialog> {
       if (picked.isNotEmpty)
         ...picked.map((f) => Card(
               margin: const EdgeInsets.only(bottom: 6),
+              elevation: 0,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+                side: const BorderSide(color: Color(0xFFE0E0E0)),
+              ),
               child: ListTile(
-                leading: const Icon(Icons.attach_file),
-                title: Text(f.name, overflow: TextOverflow.ellipsis),
-                subtitle: Text('${(f.size / 1024).toStringAsFixed(1)} KB'),
+                dense: true,
+                leading: const Icon(Icons.attach_file, color: GridColors.primary),
+                title:
+                    Text(f.name, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 13)),
+                subtitle:
+                    Text('${(f.size / 1024).toStringAsFixed(1)} KB', style: const TextStyle(fontSize: 11)),
                 trailing: IconButton(
-                  icon: const Icon(Icons.delete, color: GridColors.error),
+                  icon: const Icon(Icons.delete_outline, color: GridColors.error),
                   onPressed: () {
                     setState(() {
                       _fileCache[c.fieldName]?.remove(f);
@@ -282,7 +329,7 @@ class _GridFormDialogState extends State<GridFormDialog> {
                 ),
               ),
             )),
-      ElevatedButton.icon(
+      OutlinedButton.icon(
         onPressed: c.enabled
             ? () async {
                 try {
@@ -309,22 +356,29 @@ class _GridFormDialogState extends State<GridFormDialog> {
                 }
               }
             : null,
-        icon: const Icon(Icons.attach_file),
+        icon: const Icon(Icons.attach_file, size: 16),
         label:
             Text(picked.isEmpty ? 'Selecionar Arquivo' : 'Adicionar Arquivo'),
+        style: OutlinedButton.styleFrom(
+          foregroundColor: GridColors.primary,
+          side: const BorderSide(color: GridColors.primary),
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+        ),
       ),
-      if (cfg.allowedExtensions.isNotEmpty) const SizedBox(height: 6),
+      if (cfg.allowedExtensions.isNotEmpty) const SizedBox(height: 4),
       if (cfg.allowedExtensions.isNotEmpty)
-        const Text(
-          'Extensões permitidas: pdf, doc, docx, jpg, jpeg, png',
-          style: TextStyle(fontSize: 12, color: Colors.white),
+        Text(
+          'Extensões permitidas: ${cfg.allowedExtensions.join(', ')}',
+          style: TextStyle(fontSize: 11, color: Colors.grey[600]),
         ),
     ]);
   }
 
   Widget _buildDropdown(FieldConfig c, TextEditingController ctrl) {
     Future<List<Map<String, dynamic>>> fetchOptions() async {
-      if (c.dropdownFutureBuilder != null) return await c.dropdownFutureBuilder!();
+      if (c.dropdownFutureBuilder != null)
+        return await c.dropdownFutureBuilder!();
       return c.dropdownOptions ?? [];
     }
 
@@ -332,11 +386,13 @@ class _GridFormDialogState extends State<GridFormDialog> {
       future: fetchOptions(),
       builder: (context, s) {
         if (s.connectionState == ConnectionState.waiting) {
-          return const LinearProgressIndicator();
+          return const LinearProgressIndicator(color: GridColors.primary);
         }
         final opts = s.data ?? [];
-        final valueField = c.dropdownValueField.isNotEmpty ? c.dropdownValueField : 'id';
-        final displayField = c.dropdownDisplayField.isNotEmpty ? c.dropdownDisplayField : 'nome';
+        final valueField =
+            c.dropdownValueField.isNotEmpty ? c.dropdownValueField : 'id';
+        final displayField =
+            c.dropdownDisplayField.isNotEmpty ? c.dropdownDisplayField : 'nome';
 
         // Resolve initial label
         String? initVal = ctrl.text.isNotEmpty
@@ -358,7 +414,8 @@ class _GridFormDialogState extends State<GridFormDialog> {
           valueField: valueField,
           displayField: displayField,
           initialLabel: initLabel,
-          redBorder: _redBorder(),
+          defaultBorder: _defaultBorder(),
+          focusedBorder: _focusedBorder(),
           onChanged: (v) {
             ctrl.text = v ?? '';
             setState(() {});
@@ -370,18 +427,27 @@ class _GridFormDialogState extends State<GridFormDialog> {
 
   Widget _buildMultiselect(FieldConfig c, TextEditingController ctrl) {
     Future<List<Map<String, dynamic>>> fetchOptions() async {
-      if (c.dropdownFutureBuilder != null) return await c.dropdownFutureBuilder!();
+      if (c.dropdownFutureBuilder != null)
+        return await c.dropdownFutureBuilder!();
       return c.dropdownOptions ?? [];
     }
+
     return FutureBuilder<List<Map<String, dynamic>>>(
       future: fetchOptions(),
       builder: (context, s) {
-        if (s.connectionState == ConnectionState.waiting) return const LinearProgressIndicator();
+        if (s.connectionState == ConnectionState.waiting)
+          return const LinearProgressIndicator(color: GridColors.primary);
         final opts = s.data ?? [];
-        final valueField = c.dropdownValueField.isNotEmpty ? c.dropdownValueField : 'id';
-        final displayField = c.dropdownDisplayField.isNotEmpty ? c.dropdownDisplayField : 'nome';
+        final valueField =
+            c.dropdownValueField.isNotEmpty ? c.dropdownValueField : 'id';
+        final displayField =
+            c.dropdownDisplayField.isNotEmpty ? c.dropdownDisplayField : 'nome';
         final selectedValues = ctrl.text.isNotEmpty
-            ? ctrl.text.split(',').map((e) => e.trim()).where((e) => e.isNotEmpty).toList()
+            ? ctrl.text
+                .split(',')
+                .map((e) => e.trim())
+                .where((e) => e.isNotEmpty)
+                .toList()
             : <String>[];
         final labels = opts
             .where((o) => selectedValues.contains(o[valueField]?.toString()))
@@ -407,16 +473,21 @@ class _GridFormDialogState extends State<GridFormDialog> {
           child: InputDecorator(
             decoration: InputDecoration(
               labelText: c.label + (c.isRequired ? ' *' : ''),
+              labelStyle: const TextStyle(color: Color(0xFF757575)),
               filled: true,
               fillColor: Colors.white,
-              border: _redBorder(),
-              enabledBorder: _redBorder(),
-              focusedBorder: _redBorder(),
-              suffixIcon: const Icon(Icons.arrow_drop_down),
+              border: _defaultBorder(),
+              enabledBorder: _defaultBorder(),
+              focusedBorder: _focusedBorder(),
+              suffixIcon:
+                  const Icon(Icons.arrow_drop_down, color: Color(0xFF757575)),
             ),
             child: Text(
               labels.isEmpty ? 'Selecione...' : labels,
-              style: TextStyle(color: labels.isEmpty ? Colors.grey : null),
+              style: TextStyle(
+                  color: labels.isEmpty
+                      ? const Color(0xFF9E9E9E)
+                      : const Color(0xFF212121)),
               overflow: TextOverflow.ellipsis,
             ),
           ),
@@ -529,8 +600,9 @@ class _GridFormDialogState extends State<GridFormDialog> {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(msg),
-        backgroundColor: GridColors.primary,
+        backgroundColor: const Color(0xFF323232),
         behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
       ),
     );
   }
@@ -571,14 +643,22 @@ class _GridMultiSelectDialogState extends State<_GridMultiSelectDialog> {
         _filtered = q.isEmpty
             ? widget.options
             : widget.options
-                .where((o) => o[widget.displayField]?.toString().toLowerCase().contains(q) ?? false)
+                .where((o) =>
+                    o[widget.displayField]
+                        ?.toString()
+                        .toLowerCase()
+                        .contains(q) ??
+                    false)
                 .toList();
       });
     });
   }
 
   @override
-  void dispose() { _ctrl.dispose(); super.dispose(); }
+  void dispose() {
+    _ctrl.dispose();
+    super.dispose();
+  }
 
   bool _isSelected(String val) => _selected.contains(val);
 
@@ -595,23 +675,58 @@ class _GridMultiSelectDialogState extends State<_GridMultiSelectDialog> {
   @override
   Widget build(BuildContext context) {
     return Dialog(
+      backgroundColor: Colors.white,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: ConstrainedBox(
         constraints: const BoxConstraints(maxHeight: 520, maxWidth: 400),
         child: Column(children: [
+          // Cabeçalho
+          Container(
+            decoration: const BoxDecoration(
+              color: GridColors.primary,
+              borderRadius:
+                  BorderRadius.vertical(top: Radius.circular(12)),
+            ),
+            padding:
+                const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            child: Row(children: [
+              const Icon(Icons.checklist, color: Colors.white, size: 18),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(widget.title,
+                    style: const TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white)),
+              ),
+              IconButton(
+                icon: const Icon(Icons.close, color: Colors.white, size: 18),
+                padding: EdgeInsets.zero,
+                constraints: const BoxConstraints(),
+                onPressed: () => Navigator.pop(context),
+              ),
+            ]),
+          ),
+          // Busca
           Padding(
-            padding: const EdgeInsets.all(12),
-            child: Text(widget.title,
-                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold))),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 12),
+            padding: const EdgeInsets.fromLTRB(12, 12, 12, 4),
             child: TextField(
               controller: _ctrl,
               autofocus: true,
-              decoration: const InputDecoration(
+              decoration: InputDecoration(
                 hintText: 'Buscar...',
-                prefixIcon: Icon(Icons.search),
-                border: OutlineInputBorder(),
+                prefixIcon:
+                    const Icon(Icons.search, size: 18, color: Color(0xFF757575)),
+                border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    borderSide: const BorderSide(color: Color(0xFFBDBDBD))),
+                focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    borderSide:
+                        const BorderSide(color: GridColors.primary, width: 2)),
                 isDense: true,
+                contentPadding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
               ),
             ),
           ),
@@ -624,8 +739,9 @@ class _GridMultiSelectDialogState extends State<_GridMultiSelectDialog> {
                 final val = opt[widget.valueField]?.toString() ?? '';
                 final label = opt[widget.displayField]?.toString() ?? val;
                 return CheckboxListTile(
-                  title: Text(label),
+                  title: Text(label, style: const TextStyle(fontSize: 13)),
                   value: _isSelected(val),
+                  activeColor: GridColors.primary,
                   onChanged: (_) => _toggle(val),
                   dense: true,
                 );
@@ -636,11 +752,13 @@ class _GridMultiSelectDialogState extends State<_GridMultiSelectDialog> {
           Row(mainAxisAlignment: MainAxisAlignment.end, children: [
             TextButton(
               onPressed: () => Navigator.pop(context),
-              child: const Text('Cancelar'),
+              child: const Text(GridTexts.cancel,
+                  style: TextStyle(color: Color(0xFF616161))),
             ),
             TextButton(
               onPressed: () => Navigator.pop(context, _selected),
-              child: const Text('Confirmar'),
+              child: const Text('Confirmar',
+                  style: TextStyle(color: GridColors.primary)),
             ),
           ]),
         ]),
@@ -658,7 +776,8 @@ class _SearchableDropdownForm extends StatefulWidget {
   final String valueField;
   final String displayField;
   final String? initialLabel;
-  final InputBorder redBorder;
+  final InputBorder defaultBorder;
+  final InputBorder focusedBorder;
   final void Function(String?) onChanged;
 
   const _SearchableDropdownForm({
@@ -667,7 +786,8 @@ class _SearchableDropdownForm extends StatefulWidget {
     required this.options,
     required this.valueField,
     required this.displayField,
-    required this.redBorder,
+    required this.defaultBorder,
+    required this.focusedBorder,
     required this.onChanged,
     this.initialLabel,
   });
@@ -716,8 +836,7 @@ class _SearchableDropdownFormState extends State<_SearchableDropdownForm> {
     return FormField<String>(
       initialValue: widget.controller.text,
       validator: (v) {
-        if (widget.config.isRequired &&
-            (widget.controller.text.isEmpty)) {
+        if (widget.config.isRequired && (widget.controller.text.isEmpty)) {
           return '${widget.config.label} é obrigatório';
         }
         return widget.config.validator?.call(widget.controller.text);
@@ -727,25 +846,28 @@ class _SearchableDropdownFormState extends State<_SearchableDropdownForm> {
         child: InputDecorator(
           decoration: InputDecoration(
             labelText: label,
+            labelStyle: const TextStyle(color: Color(0xFF757575)),
             filled: true,
             fillColor: isDisabled ? const Color(0xFFF5F5F5) : Colors.white,
-            border: widget.redBorder,
-            enabledBorder: widget.redBorder,
+            border: widget.defaultBorder,
+            enabledBorder: widget.defaultBorder,
             disabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(8),
-              borderSide: const BorderSide(color: Color(0xFFBDBDBD)),
+              borderSide: const BorderSide(color: Color(0xFFE0E0E0)),
             ),
+            focusedBorder: widget.focusedBorder,
             suffixIcon: isDisabled
                 ? const Icon(Icons.lock_outline, size: 16, color: Colors.grey)
-                : const Icon(Icons.search, size: 18,
-                    color: GridColors.error),
+                : const Icon(Icons.search, size: 18, color: Color(0xFF757575)),
             errorText: state.errorText,
           ),
           child: Text(
             isEmpty ? 'Selecione...' : display,
             style: TextStyle(
               fontSize: 13,
-              color: isEmpty || isDisabled ? Colors.grey : const Color(0xFF212121),
+              color: isEmpty || isDisabled
+                  ? const Color(0xFF9E9E9E)
+                  : const Color(0xFF212121),
             ),
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
@@ -778,8 +900,7 @@ class _GridDropdownSearchDialog extends StatefulWidget {
       _GridDropdownSearchDialogState();
 }
 
-class _GridDropdownSearchDialogState
-    extends State<_GridDropdownSearchDialog> {
+class _GridDropdownSearchDialogState extends State<_GridDropdownSearchDialog> {
   final _ctrl = TextEditingController();
   List<Map<String, dynamic>> _filtered = [];
 
@@ -805,15 +926,16 @@ class _GridDropdownSearchDialogState
   @override
   Widget build(BuildContext context) {
     return Dialog(
+      backgroundColor: Colors.white,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: ConstrainedBox(
         constraints: const BoxConstraints(maxWidth: 480, maxHeight: 520),
         child: Column(
           children: [
-            // Header
+            // ── Cabeçalho ─────────────────────────────────────────────────
             Container(
               decoration: const BoxDecoration(
-                color: GridColors.error,
+                color: GridColors.primary,
                 borderRadius: BorderRadius.only(
                   topLeft: Radius.circular(12),
                   topRight: Radius.circular(12),
@@ -845,7 +967,7 @@ class _GridDropdownSearchDialogState
                 ],
               ),
             ),
-            // Search
+            // ── Campo de busca ─────────────────────────────────────────────
             Padding(
               padding: const EdgeInsets.all(12),
               child: TextField(
@@ -854,7 +976,8 @@ class _GridDropdownSearchDialogState
                 onChanged: _search,
                 decoration: InputDecoration(
                   hintText: 'Buscar...',
-                  prefixIcon: const Icon(Icons.search, size: 18),
+                  prefixIcon: const Icon(Icons.search,
+                      size: 18, color: Color(0xFF757575)),
                   suffixIcon: _ctrl.text.isNotEmpty
                       ? IconButton(
                           icon: const Icon(Icons.clear, size: 16),
@@ -867,16 +990,15 @@ class _GridDropdownSearchDialogState
                   isDense: true,
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(8),
-                    borderSide:
-                        const BorderSide(color: GridColors.error),
+                    borderSide: const BorderSide(color: Color(0xFFBDBDBD)),
                   ),
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(8),
-                    borderSide: const BorderSide(
-                        color: GridColors.error, width: 2),
+                    borderSide:
+                        const BorderSide(color: GridColors.primary, width: 2),
                   ),
-                  contentPadding: const EdgeInsets.symmetric(
-                      horizontal: 12, vertical: 10),
+                  contentPadding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                 ),
               ),
             ),
@@ -886,23 +1008,25 @@ class _GridDropdownSearchDialogState
                 children: [
                   Text('${_filtered.length} resultado(s)',
                       style: const TextStyle(
-                          fontSize: 11, color: Colors.grey)),
+                          fontSize: 11, color: Color(0xFF9E9E9E))),
                   const Spacer(),
                   TextButton(
                     onPressed: () =>
                         Navigator.of(context).pop(<String, dynamic>{}),
                     child: const Text('Limpar',
-                        style: TextStyle(fontSize: 11)),
+                        style: TextStyle(
+                            fontSize: 11, color: Color(0xFF616161))),
                   ),
                 ],
               ),
             ),
             const Divider(height: 1),
+            // ── Lista de opções ────────────────────────────────────────────
             Expanded(
               child: _filtered.isEmpty
                   ? const Center(
                       child: Text('Nenhum resultado',
-                          style: TextStyle(color: Colors.grey)))
+                          style: TextStyle(color: Color(0xFF9E9E9E))))
                   : ListView.builder(
                       itemCount: _filtered.length,
                       itemBuilder: (_, i) {
@@ -915,12 +1039,12 @@ class _GridDropdownSearchDialogState
                           dense: true,
                           selected: isSel,
                           selectedTileColor:
-                              GridColors.error.withValues(alpha: 0.08),
+                              GridColors.primary.withValues(alpha: 0.08),
                           leading: isSel
                               ? const Icon(Icons.check_circle,
-                                  color: GridColors.error, size: 18)
+                                  color: GridColors.primary, size: 18)
                               : const Icon(Icons.radio_button_unchecked,
-                                  color: Colors.grey, size: 18),
+                                  color: Color(0xFF9E9E9E), size: 18),
                           title: Text(lbl,
                               style: TextStyle(
                                 fontSize: 13,
@@ -928,7 +1052,7 @@ class _GridDropdownSearchDialogState
                                     ? FontWeight.bold
                                     : FontWeight.normal,
                                 color: isSel
-                                    ? GridColors.error
+                                    ? GridColors.primary
                                     : const Color(0xFF212121),
                               )),
                           onTap: () => Navigator.of(context).pop(o),

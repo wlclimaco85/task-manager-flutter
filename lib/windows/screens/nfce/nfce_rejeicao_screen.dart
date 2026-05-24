@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../utils/grid_colors.dart';
 
 /// Tela exibida quando a NFC-e é rejeitada pela SEFAZ.
 class NfceRejeicaoScreen extends StatelessWidget {
@@ -170,7 +171,7 @@ class NfceRejeicaoScreen extends StatelessWidget {
                         icon: const Icon(Icons.refresh),
                         label: const Text('Tentar Novamente'),
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF005826),
+                          backgroundColor: GridColors.secondary,
                           foregroundColor: Colors.white,
                         ),
                         onPressed: onTentarNovamente,

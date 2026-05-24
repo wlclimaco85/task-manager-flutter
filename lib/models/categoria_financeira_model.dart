@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../customization/generic_grid_card.dart';
+import '../widgets/generic_grid_screen.dart';
 
 class CategoriaFinanceira {
   int? id;

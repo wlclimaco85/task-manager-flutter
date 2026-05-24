@@ -49,7 +49,24 @@ class MenuGroup {
 /// 67:TipoParceiro  68:ServicoContratado  69:ModuloServico  70:Alvaras  71:NfeImportCSV
 /// 72:TradingPainel  73:CRM/Funil  74:AutomacaoFiscal
 /// 75:Sinais  76:Oportunidades  77:Watchlist  78:AlertasPreco  79:OperacoesAssistidas
-/// 80:PdvNfce  81:ConfigFiscal  85:Backtest
+/// 80:PdvNfce  81:ConfigFiscal  82:CentroCusto  83:CategoriaFinanceira  84:AjudaTelas  85:Backtest
+/// 86:PortalColaborador  87:DashboardDP  88:EscalasTurnos  89:Ferias
+/// 90:AdmissaoDigital  91:Rubricas  92:EventosFolha  93:Beneficios
+/// 94:Desligamentos  95:ObrigacoesTrabalhistas  96:NfeImportXml 97:Noticias 98:LancamentosFinanceiros
+  /// 99:ImportarExtrato  100:ConciliacaoBancaria  102:IntegracoesFinanceiras
+  /// 103:Fornecedores
+  /// 104:Orcamentos
+  /// 105:PedidosVenda
+  /// 106:PedidosCompra
+  /// 107:ConsultaDfe
+  /// 108:ManifestacaoDestinatario
+  /// 109:Nfse
+  /// 110:ReservaEstoque
+  /// 111:CancelamentoCCe
+  /// 112:RegraFiscal (Windows only)
+  /// 113:ContaContabil 114:LancamentoContabil 115:Balancete
+  /// 116:FechamentoPeriodo 117:AiDashboard 118:AiAssistente
+  /// 129:TradingCorretora
 
 class MenuConfig {
   MenuConfig._();
@@ -138,6 +155,11 @@ class MenuConfig {
             icon: FontAwesomeIcons.fileCsv,
             screenIndex: 71),
         MenuItem(
+            id: 'nfe_import_xml',
+            label: 'Importar XML NF-e',
+            icon: FontAwesomeIcons.fileCode,
+            screenIndex: 96),
+        MenuItem(
             id: 'nfe_saida',
             label: 'NF-e Saída',
             icon: FontAwesomeIcons.fileExport,
@@ -172,6 +194,36 @@ class MenuConfig {
             label: 'Módulos/Serviços',
             icon: FontAwesomeIcons.cubes,
             screenIndex: 69),
+        MenuItem(
+            id: 'orcamentos',
+            label: 'Orçamentos',
+            icon: FontAwesomeIcons.fileInvoice,
+            screenIndex: 104),
+        MenuItem(
+            id: 'pedidos_venda',
+            label: 'Pedidos de Venda',
+            icon: FontAwesomeIcons.cartShopping,
+            screenIndex: 95),
+        MenuItem(
+            id: 'pedidos_compra',
+            label: 'Pedidos de Compra',
+            icon: FontAwesomeIcons.cartPlus,
+            screenIndex: 106),
+        MenuItem(
+            id: 'aprovacao_compra',
+            label: 'Aprovação de Compras',
+            icon: FontAwesomeIcons.checkDouble,
+            screenIndex: 119),
+        MenuItem(
+            id: 'tabela_preco',
+            label: 'Tabela de Preços',
+            icon: FontAwesomeIcons.tags,
+            screenIndex: 118),
+        MenuItem(
+            id: 'devolucoes',
+            label: 'Devoluções',
+            icon: FontAwesomeIcons.arrowRotateLeft,
+            screenIndex: 120),
       ],
     ),
     MenuGroup(
@@ -189,6 +241,26 @@ class MenuConfig {
             label: 'Config. Fiscal',
             icon: FontAwesomeIcons.gear,
             screenIndex: 81),
+        MenuItem(
+            id: 'consulta_dfe',
+            label: 'Consulta DF-e',
+            icon: FontAwesomeIcons.magnifyingGlass,
+            screenIndex: 107),
+        MenuItem(
+            id: 'manifestacao_destinatario',
+            label: 'Manifestação Destinatário',
+            icon: FontAwesomeIcons.fileCircleCheck,
+            screenIndex: 108),
+        MenuItem(
+            id: 'nfse',
+            label: 'NFSe',
+            icon: FontAwesomeIcons.fileInvoice,
+            screenIndex: 109),
+        MenuItem(
+            id: 'cancelamento_cce',
+            label: 'Cancelamento e CC-e',
+            icon: FontAwesomeIcons.filePen,
+            screenIndex: 121),
       ],
     ),
     MenuGroup(
@@ -220,7 +292,7 @@ class MenuConfig {
             id: 'noticias',
             label: 'Notícias',
             icon: FontAwesomeIcons.newspaper,
-            screenIndex: 0),
+            screenIndex: 97),
         MenuItem(
             id: 'kanban',
             label: 'Kanban',
@@ -266,10 +338,55 @@ class MenuConfig {
       icon: FontAwesomeIcons.idCard,
       items: [
         MenuItem(
+            id: 'dp_dashboard',
+            label: 'Dashboard DP',
+            icon: FontAwesomeIcons.chartPie,
+            screenIndex: 87),
+        MenuItem(
+            id: 'portal_colaborador',
+            label: 'Portal Colaborador',
+            icon: FontAwesomeIcons.idBadge,
+            screenIndex: 86),
+        MenuItem(
             id: 'ajuste_ponto',
             label: 'Ajuste de Ponto',
             icon: FontAwesomeIcons.clockRotateLeft,
             screenIndex: 62),
+        MenuItem(
+            id: 'dp_admissao',
+            label: 'Admissao Digital',
+            icon: FontAwesomeIcons.userPlus,
+            screenIndex: 90),
+        MenuItem(
+            id: 'dp_beneficios',
+            label: 'Beneficios',
+            icon: FontAwesomeIcons.handHoldingHeart,
+            screenIndex: 93),
+        MenuItem(
+            id: 'dp_desligamentos',
+            label: 'Desligamentos',
+            icon: FontAwesomeIcons.userMinus,
+            screenIndex: 94),
+        MenuItem(
+            id: 'dp_escalas',
+            label: 'Escalas e Turnos',
+            icon: FontAwesomeIcons.calendarWeek,
+            screenIndex: 88),
+        MenuItem(
+            id: 'dp_eventos_folha',
+            label: 'Eventos da Folha',
+            icon: FontAwesomeIcons.receipt,
+            screenIndex: 92),
+        MenuItem(
+            id: 'dp_ferias',
+            label: 'Ferias',
+            icon: FontAwesomeIcons.umbrellaBeach,
+            screenIndex: 89),
+        MenuItem(
+            id: 'dp_obrigacoes_trabalhistas',
+            label: 'Obrigacoes Trabalhistas',
+            icon: FontAwesomeIcons.fileCircleCheck,
+            screenIndex: 95),
         MenuItem(
             id: 'feriados',
             label: 'Feriados',
@@ -285,6 +402,11 @@ class MenuConfig {
             label: 'Ponto',
             icon: FontAwesomeIcons.clock,
             screenIndex: 60),
+        MenuItem(
+            id: 'dp_rubricas',
+            label: 'Rubricas da Folha',
+            icon: FontAwesomeIcons.fileInvoiceDollar,
+            screenIndex: 91),
         MenuItem(
             id: 'setores',
             label: 'Setores',
@@ -336,12 +458,104 @@ class MenuConfig {
             id: 'centros_custo',
             label: 'Centros de Custo',
             icon: FontAwesomeIcons.sitemap,
-            screenIndex: 73),
+            screenIndex: 82),
         MenuItem(
             id: 'categorias_financeiras',
             label: 'Categorias Financeiras',
             icon: FontAwesomeIcons.tags,
-            screenIndex: 74),
+            screenIndex: 83),
+        MenuItem(
+            id: 'dashboard_financeiro',
+            label: 'Dashboard Financeiro',
+            icon: FontAwesomeIcons.chartPie,
+            screenIndex: 101),
+        MenuItem(
+            id: 'lancamentos_financeiros',
+            label: 'Lançamentos Financeiros',
+            icon: FontAwesomeIcons.moneyBillTransfer,
+            screenIndex: 98),
+        MenuItem(
+            id: 'importar_extrato',
+            label: 'Importar Extrato',
+            icon: FontAwesomeIcons.fileImport,
+            screenIndex: 99),
+        MenuItem(
+            id: 'conciliacao_bancaria',
+            label: 'Conciliação Bancária',
+            icon: FontAwesomeIcons.arrowsRotate,
+            screenIndex: 100),
+        MenuItem(
+            id: 'integracoes_financeiras',
+            label: 'Integrações',
+            icon: FontAwesomeIcons.gears,
+            screenIndex: 102),
+        MenuItem(
+             id: 'rateio_financeiro',
+             label: 'Rateio Financeiro',
+             icon: FontAwesomeIcons.scaleBalanced,
+             screenIndex: 112),
+        MenuItem(
+             id: 'aprovacao_pagamento',
+             label: 'Aprovação de Pagamentos',
+             icon: FontAwesomeIcons.checkDouble,
+             screenIndex: 113),
+        MenuItem(
+             id: 'baixa_automatica',
+             label: 'Baixa Automática de Recebíveis',
+             icon: FontAwesomeIcons.moneyBillWave,
+             screenIndex: 114),
+        MenuItem(
+             id: 'cobranca',
+             label: 'Inadimplência e Cobrança',
+             icon: FontAwesomeIcons.exclamationTriangle,
+             screenIndex: 115),
+        MenuItem(
+             id: 'renegociacao',
+             label: 'Renegociação de Títulos',
+             icon: FontAwesomeIcons.handshake,
+             screenIndex: 116),
+        MenuItem(
+             id: 'dre_gerencial',
+             label: 'DRE Gerencial',
+             icon: FontAwesomeIcons.fileInvoiceDollar,
+             screenIndex: 117),
+        ],
+    ),
+    MenuGroup(
+      id: 'contabil',
+      label: 'Contábil',
+      icon: FontAwesomeIcons.fileInvoiceDollar,
+      items: [
+        MenuItem(
+            id: 'conta_contabil',
+            label: 'Plano de Contas',
+            icon: FontAwesomeIcons.tableList,
+            screenIndex: 113),
+        MenuItem(
+            id: 'lancamento_contabil',
+            label: 'Lançamentos',
+            icon: FontAwesomeIcons.penToSquare,
+            screenIndex: 114),
+        MenuItem(
+            id: 'balancete',
+            label: 'Balancete / Balanço',
+            icon: FontAwesomeIcons.scaleBalanced,
+            screenIndex: 115),
+        MenuItem(
+            id: 'fechamento_periodo',
+            label: 'Fechamento de Período',
+            icon: FontAwesomeIcons.lock,
+            screenIndex: 116),
+        MenuItem(
+            id: 'ai_dashboard',
+            label: 'Dashboard IA',
+            icon: FontAwesomeIcons.chartPie,
+            screenIndex: 117),
+        MenuItem(
+            id: 'ai_assistente',
+            label: 'Assistente IA',
+            icon: FontAwesomeIcons.robot,
+            screenIndex: 118),
       ],
     ),
     MenuGroup(
@@ -364,6 +578,16 @@ class MenuConfig {
             label: 'Unidade de Medida',
             icon: FontAwesomeIcons.rulerHorizontal,
             screenIndex: 57),
+        MenuItem(
+            id: 'reserva_estoque',
+            label: 'Reserva de Estoque',
+            icon: FontAwesomeIcons.boxesStacked,
+            screenIndex: 110),
+        MenuItem(
+            id: 'multi_deposito',
+            label: 'Multi-depósito',
+            icon: FontAwesomeIcons.warehouse,
+            screenIndex: 111),
       ],
     ),
     MenuGroup(
@@ -402,6 +626,11 @@ class MenuConfig {
             icon: FontAwesomeIcons.arrowsLeftRight,
             screenIndex: 79),
         MenuItem(
+            id: 'trading_corretora',
+            label: 'Configuração da Corretora',
+            icon: FontAwesomeIcons.gear,
+            screenIndex: 129),
+        MenuItem(
             id: 'trading_backtest',
             label: 'Backtest',
             icon: FontAwesomeIcons.clockRotateLeft,
@@ -438,6 +667,11 @@ class MenuConfig {
             label: 'Editor de Telas',
             icon: FontAwesomeIcons.tableColumns,
             screenIndex: 52),
+        MenuItem(
+            id: 'ajuda_telas',
+            label: 'Ajuda das Telas',
+            icon: FontAwesomeIcons.circleQuestion,
+            screenIndex: 84),
         MenuItem(
             id: 'empresas',
             label: 'Empresas',
@@ -478,6 +712,11 @@ class MenuConfig {
         label: 'Pedidos',
         icon: FontAwesomeIcons.cartFlatbed,
         screenIndex: 39),
+    MenuItem(
+        id: 'fornecedores',
+        label: 'Fornecedores',
+        icon: FontAwesomeIcons.truck,
+        screenIndex: 103),
     MenuItem(
         id: 'crm_funil',
         label: 'CRM/Funil',

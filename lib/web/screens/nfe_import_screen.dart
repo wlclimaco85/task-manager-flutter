@@ -6,8 +6,8 @@ import 'package:http/http.dart' as http;
 
 import '../../../models/auth_utility.dart';
 import '../../../utils/api_links.dart';
+import '../../../utils/grid_colors.dart';
 import '../../../utils/tenant_context.dart';
-import '../../../widgets/generic_grid_windows_screen.dart' show GridColors;
 
 /// H11: Tela de importação de NF-e via 2 arquivos CSV (cabeçalho + itens)
 class NfeImportScreen extends StatefulWidget {
@@ -185,25 +185,25 @@ class _NfeImportScreenState extends State<NfeImportScreen> {
   }
 
   Widget _buildInstrucoes() {
-    return const Card(
+    return Card(
       elevation: 1,
       child: Padding(
-        padding: EdgeInsets.all(16),
+        padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
               children: [
-                Icon(Icons.info_outline, color: GridColors.secondary),
-                SizedBox(width: 8),
-                Text(
+                const Icon(Icons.info_outline, color: GridColors.secondary),
+                const SizedBox(width: 8),
+                const Text(
                   'Instruções de Importação',
                   style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
                 ),
               ],
             ),
-            SizedBox(height: 12),
-            Text(
+            const SizedBox(height: 12),
+            const Text(
               'Esta tela permite importar NF-e a partir de dois arquivos CSV:\n'
               '  1. Arquivo de Cabeçalho: contém os dados gerais de cada nota (chave, emitente, destinatário, valores)\n'
               '  2. Arquivo de Itens: contém os produtos/serviços de cada nota\n\n'
@@ -326,8 +326,9 @@ class _NfeImportScreenState extends State<NfeImportScreen> {
                         : 'Clique para selecionar arquivo CSV',
                     style: TextStyle(
                       fontSize: 13,
-                      color:
-                          arquivo != null ? Colors.black87 : Colors.grey.shade600,
+                      color: arquivo != null
+                          ? Colors.black87
+                          : Colors.grey.shade600,
                     ),
                     overflow: TextOverflow.ellipsis,
                   ),
@@ -363,11 +364,15 @@ class _NfeImportScreenState extends State<NfeImportScreen> {
                 ),
                 const SizedBox(width: 8),
                 Text(
-                  _sucesso == true ? 'Importação Concluída' : 'Erro na Importação',
+                  _sucesso == true
+                      ? 'Importação Concluída'
+                      : 'Erro na Importação',
                   style: TextStyle(
                     fontWeight: FontWeight.bold,
                     fontSize: 15,
-                    color: _sucesso == true ? Colors.green.shade800 : Colors.red.shade800,
+                    color: _sucesso == true
+                        ? Colors.green.shade800
+                        : Colors.red.shade800,
                   ),
                 ),
               ],
@@ -429,8 +434,13 @@ class _NfeImportScreenState extends State<NfeImportScreen> {
   Widget _buildResumoResultado() {
     final campos = <String, dynamic>{};
     final keys = [
-      'importadas', 'totalImportadas', 'notas', 'total',
-      'ignoradas', 'erros', 'duplicadas',
+      'importadas',
+      'totalImportadas',
+      'notas',
+      'total',
+      'ignoradas',
+      'erros',
+      'duplicadas',
     ];
     for (final key in keys) {
       if (_resultado!.containsKey(key)) campos[key] = _resultado![key];

@@ -1,14 +1,17 @@
 import 'package:flutter/material.dart';
 import '../../mobile/screens/market_overview_screen.dart';
 import '../../utils/grid_colors.dart';
+import '../../utils/grid_texts.dart';
+import '../../utils/tenant_context.dart';
 import 'trading_models.dart';
 import 'trading_repository.dart';
 
-/// Tela principal de Trading com 4 abas:
+/// Tela principal de Trading com 5 abas:
 /// - Dashboard: visão consolidada do mercado (MarketOverviewScreen existente)
 /// - Watchlist: lista de ativos monitorados pelo usuário
 /// - Alertas: alertas de preço criados pelo usuário
 /// - Operações: operações assistidas enviadas ao simulador/broker
+/// - Corretora: configuração centralizada de login, conta e ambiente MT5
 class TradingDashboardScreen extends StatelessWidget {
   final int initialTabIndex;
   const TradingDashboardScreen({super.key, this.initialTabIndex = 0});
@@ -16,7 +19,7 @@ class TradingDashboardScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return DefaultTabController(
-      length: 4,
+      length: 5,
       initialIndex: initialTabIndex,
       child: Scaffold(
         appBar: AppBar(
@@ -32,6 +35,7 @@ class TradingDashboardScreen extends StatelessWidget {
               Tab(icon: Icon(Icons.bookmark_border), text: 'Watchlist'),
               Tab(icon: Icon(Icons.notifications_none), text: 'Alertas'),
               Tab(icon: Icon(Icons.swap_horiz), text: 'Operações'),
+              Tab(icon: Icon(Icons.settings_input_antenna), text: 'Corretora'),
             ],
           ),
         ),
@@ -41,6 +45,7 @@ class TradingDashboardScreen extends StatelessWidget {
             _WatchlistTab(),
             _AlertasTab(),
             _OperacoesTab(),
+            BrokerConfigTab(),
           ],
         ),
       ),
@@ -81,6 +86,7 @@ class _WatchlistTabState extends State<_WatchlistTab>
   final _repo = TradingRepository();
   List<WatchlistItem> _items = [];
   bool _loading = true;
+  bool _analyzing = false;
   String? _error;
 
   @override
@@ -97,6 +103,13 @@ class _WatchlistTabState extends State<_WatchlistTab>
       _loading = true;
       _error = null;
     });
+    if (!TenantContext.hasEmpresa) {
+      setState(() {
+        _error = 'Usuário sem empresa configurada. O módulo de trading requer uma empresa associada ao login.';
+        _loading = false;
+      });
+      return;
+    }
     try {
       final items = await _repo.fetchWatchlist();
       if (!mounted) return;
@@ -122,10 +135,10 @@ class _WatchlistTabState extends State<_WatchlistTab>
         actions: [
           TextButton(
               onPressed: () => Navigator.pop(context, false),
-              child: const Text('Cancelar')),
+              child: const Text(GridTexts.cancel)),
           TextButton(
               onPressed: () => Navigator.pop(context, true),
-              child: Text('Remover',
+              child: Text(GridTexts.remove,
                   style: TextStyle(color: GridColors.error))),
         ],
       ),
@@ -181,7 +194,7 @@ class _WatchlistTabState extends State<_WatchlistTab>
         actions: [
           TextButton(
               onPressed: () => Navigator.pop(context, false),
-              child: const Text('Cancelar')),
+              child: const Text(GridTexts.cancel)),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
                 backgroundColor: GridColors.primary),
@@ -210,6 +223,27 @@ class _WatchlistTabState extends State<_WatchlistTab>
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Erro ao adicionar: $e')),
       );
+    }
+  }
+
+  Future<void> _analyzeWatchlist() async {
+    if (_items.isEmpty || _analyzing) return;
+    setState(() => _analyzing = true);
+    try {
+      final sinais = await _repo.analyzeWatchlist();
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Analise concluida: ${sinais.length} sinal(is) gerado(s)')),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Erro ao analisar watchlist: $e')),
+      );
+    } finally {
+      if (mounted) {
+        setState(() => _analyzing = false);
+      }
     }
   }
 
@@ -273,12 +307,36 @@ class _WatchlistTabState extends State<_WatchlistTab>
                 },
               ),
             ),
-      floatingActionButton: FloatingActionButton(
-        backgroundColor: GridColors.primary,
-        foregroundColor: Colors.white,
-        tooltip: 'Adicionar ativo',
-        onPressed: _showAddDialog,
-        child: const Icon(Icons.add),
+      floatingActionButton: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          FloatingActionButton.small(
+            heroTag: 'trading-analyze-watchlist',
+            backgroundColor: GridColors.primary,
+            foregroundColor: Colors.white,
+            tooltip: 'Analisar watchlist',
+            onPressed: _items.isEmpty || _analyzing ? null : _analyzeWatchlist,
+            child: _analyzing
+                ? const SizedBox(
+                    height: 18,
+                    width: 18,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: Colors.white,
+                    ),
+                  )
+                : const Icon(Icons.auto_graph),
+          ),
+          const SizedBox(height: 12),
+          FloatingActionButton(
+            heroTag: 'trading-add-watchlist',
+            backgroundColor: GridColors.primary,
+            foregroundColor: Colors.white,
+            tooltip: 'Adicionar ativo',
+            onPressed: _showAddDialog,
+            child: const Icon(Icons.add),
+          ),
+        ],
       ),
     );
   }
@@ -345,6 +403,13 @@ class _AlertasTabState extends State<_AlertasTab>
       _loading = true;
       _error = null;
     });
+    if (!TenantContext.hasEmpresa) {
+      setState(() {
+        _error = 'Usuário sem empresa configurada. O módulo de trading requer uma empresa associada ao login.';
+        _loading = false;
+      });
+      return;
+    }
     try {
       final alertas = await _repo.fetchAlertas();
       if (!mounted) return;
@@ -500,7 +565,7 @@ class _AlertasTabState extends State<_AlertasTab>
           actions: [
             TextButton(
                 onPressed: () => Navigator.pop(ctx, false),
-                child: const Text('Cancelar')),
+                child: const Text(GridTexts.cancel)),
             ElevatedButton(
               style: ElevatedButton.styleFrom(
                   backgroundColor: GridColors.primary),
@@ -772,6 +837,13 @@ class _OperacoesTabState extends State<_OperacoesTab>
       _loading = true;
       _error = null;
     });
+    if (!TenantContext.hasEmpresa) {
+      setState(() {
+        _error = 'Usuário sem empresa configurada. O módulo de trading requer uma empresa associada ao login.';
+        _loading = false;
+      });
+      return;
+    }
     try {
       final operacoes = await _repo.fetchOperacoes();
       if (!mounted) return;
@@ -1104,9 +1176,35 @@ class _NovaOperacaoDialogState extends State<_NovaOperacaoDialog> {
   final _qtdCtrl = TextEditingController();
   final _slCtrl = TextEditingController();
   final _tpCtrl = TextEditingController();
+  final _accountIdCtrl = TextEditingController(text: '1');
   String _direcao = 'BUY';
   String _ambiente = 'TESTE';
   bool _loading = false;
+  TradingBrokerConfig? _brokerConfig;
+
+  @override
+  void initState() {
+    super.initState();
+    _carregarConfigCorretora();
+  }
+
+  Future<void> _carregarConfigCorretora() async {
+    try {
+      final config = await widget.repo.fetchBrokerConfig();
+      if (!mounted || config == null) return;
+      setState(() {
+        _brokerConfig = config;
+        if (config.accountId.isNotEmpty) {
+          _accountIdCtrl.text = config.accountId;
+        }
+        if (config.ambientePadrao.isNotEmpty) {
+          _ambiente = config.ambientePadrao;
+        }
+      });
+    } catch (_) {
+      // A operação ainda pode ser preenchida manualmente se não houver configuração.
+    }
+  }
 
   @override
   void dispose() {
@@ -1114,6 +1212,7 @@ class _NovaOperacaoDialogState extends State<_NovaOperacaoDialog> {
     _qtdCtrl.dispose();
     _slCtrl.dispose();
     _tpCtrl.dispose();
+    _accountIdCtrl.dispose();
     super.dispose();
   }
 
@@ -1126,6 +1225,7 @@ class _NovaOperacaoDialogState extends State<_NovaOperacaoDialog> {
         direcao: _direcao,
         quantidade:
             double.parse(_qtdCtrl.text.trim().replaceAll(',', '.')),
+        accountId: int.parse(_accountIdCtrl.text.trim()),
         stopLoss: _slCtrl.text.trim().isEmpty
             ? null
             : double.tryParse(_slCtrl.text.trim().replaceAll(',', '.')),
@@ -1201,6 +1301,25 @@ class _NovaOperacaoDialogState extends State<_NovaOperacaoDialog> {
                 ],
                 onChanged: (v) =>
                     setState(() => _direcao = v ?? 'BUY'),
+              ),
+              const SizedBox(height: 12),
+              TextFormField(
+                controller: _accountIdCtrl,
+                decoration: InputDecoration(
+                  labelText: 'Conta / Account ID *',
+                  hintText: 'Ex: 1',
+                  helperText: _brokerConfig != null
+                      ? 'Preenchido pela configuração salva da corretora. Você pode ajustar se necessário.'
+                      : 'Obrigatório para enviar ao simulador ou MetaTrader.',
+                ),
+                keyboardType: TextInputType.number,
+                validator: (v) {
+                  final parsed = int.tryParse((v ?? '').trim());
+                  if (parsed == null || parsed <= 0) {
+                    return 'Informe um accountId válido';
+                  }
+                  return null;
+                },
               ),
               const SizedBox(height: 12),
               TextFormField(
@@ -1280,7 +1399,7 @@ class _NovaOperacaoDialogState extends State<_NovaOperacaoDialog> {
       actions: [
         TextButton(
           onPressed: _loading ? null : () => Navigator.pop(context),
-          child: const Text('Cancelar'),
+          child: const Text(GridTexts.cancel),
         ),
         ElevatedButton(
           style: ElevatedButton.styleFrom(
@@ -1302,6 +1421,276 @@ class _NovaOperacaoDialogState extends State<_NovaOperacaoDialog> {
 }
 
 // ── Estado vazio de operações ─────────────────────────────────────────────────
+
+class BrokerConfigTab extends StatefulWidget {
+  final TradingRepository? repository;
+
+  const BrokerConfigTab({super.key, this.repository});
+
+  @override
+  State<BrokerConfigTab> createState() => _BrokerConfigTabState();
+}
+
+class _BrokerConfigTabState extends State<BrokerConfigTab>
+    with AutomaticKeepAliveClientMixin {
+  late final TradingRepository _repo;
+  final _formKey = GlobalKey<FormState>();
+  final _brokerLoginCtrl = TextEditingController();
+  final _brokerPasswordCtrl = TextEditingController();
+  final _accountIdCtrl = TextEditingController();
+  String _ambientePadrao = 'TESTE';
+  bool _ativo = true;
+  bool _mostrarSenha = false;
+  bool _loading = true;
+  bool _saving = false;
+  String? _error;
+  TradingBrokerConfig? _config;
+
+  @override
+  bool get wantKeepAlive => true;
+
+  @override
+  void initState() {
+    super.initState();
+    _repo = widget.repository ?? TradingRepository();
+    _load();
+  }
+
+  @override
+  void dispose() {
+    _brokerLoginCtrl.dispose();
+    _brokerPasswordCtrl.dispose();
+    _accountIdCtrl.dispose();
+    super.dispose();
+  }
+
+  Future<void> _load() async {
+    setState(() {
+      _loading = true;
+      _error = null;
+    });
+    if (!TenantContext.hasEmpresa) {
+      setState(() {
+        _error = 'Usuário sem empresa configurada. O módulo de trading requer uma empresa associada ao login.';
+        _loading = false;
+      });
+      return;
+    }
+    try {
+      final config = await _repo.fetchBrokerConfig();
+      if (!mounted) return;
+      setState(() {
+        _config = config;
+        _brokerLoginCtrl.text = config?.brokerLogin ?? '';
+        _accountIdCtrl.text = config?.accountId ?? '';
+        _ambientePadrao = config?.ambientePadrao ?? 'TESTE';
+        _ativo = config?.ativo ?? true;
+        _brokerPasswordCtrl.clear();
+        _loading = false;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _error = e.toString();
+        _loading = false;
+      });
+    }
+  }
+
+  Future<void> _salvar() async {
+    if (!_formKey.currentState!.validate()) return;
+    setState(() => _saving = true);
+    try {
+      final salvo = await _repo.saveBrokerConfig(
+        brokerLogin: _brokerLoginCtrl.text.trim(),
+        accountId: _accountIdCtrl.text.trim(),
+        ambientePadrao: _ambientePadrao,
+        ativo: _ativo,
+        brokerPassword: _brokerPasswordCtrl.text.trim().isEmpty
+            ? null
+            : _brokerPasswordCtrl.text.trim(),
+      );
+      if (!mounted) return;
+      setState(() {
+        _config = salvo;
+        _brokerPasswordCtrl.clear();
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Configuração da corretora salva com sucesso.'),
+          backgroundColor: Colors.green,
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Erro ao salvar configuração: $e')),
+      );
+    } finally {
+      if (mounted) setState(() => _saving = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    super.build(context);
+
+    if (_loading) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
+    if (_error != null) {
+      return _ErrorView(error: _error!, onRetry: _load);
+    }
+
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(16),
+      child: Form(
+        key: _formKey,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Card(
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Configuração da Corretora / MT5',
+                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'Essa configuração fica salva no backend principal da aplicação para a sua empresa. A senha não volta em claro para o app e só é usada no envio das ordens.',
+                      style: TextStyle(color: Colors.grey[700]),
+                    ),
+                    const SizedBox(height: 16),
+                    TextFormField(
+                      controller: _brokerLoginCtrl,
+                      decoration: const InputDecoration(
+                        labelText: 'Login da corretora *',
+                        hintText: 'Ex: 54901332',
+                      ),
+                      validator: (v) => (v == null || v.trim().isEmpty)
+                          ? 'Informe o login da corretora'
+                          : null,
+                    ),
+                    const SizedBox(height: 12),
+                    TextFormField(
+                      controller: _brokerPasswordCtrl,
+                      obscureText: !_mostrarSenha,
+                      decoration: InputDecoration(
+                        labelText: _config?.hasBrokerPassword == true
+                            ? 'Nova senha da corretora (opcional)'
+                            : 'Senha da corretora *',
+                        hintText: _config?.hasBrokerPassword == true
+                            ? 'Preencha apenas se quiser trocar a senha salva'
+                            : GridTexts.tradingBrokerPasswordRequired,
+                        suffixIcon: IconButton(
+                          onPressed: () => setState(() => _mostrarSenha = !_mostrarSenha),
+                          icon: Icon(
+                            _mostrarSenha ? Icons.visibility_off : Icons.visibility,
+                          ),
+                        ),
+                      ),
+                      validator: (v) {
+                        if ((_config?.hasBrokerPassword != true) &&
+                            (v == null || v.trim().isEmpty)) {
+                          return GridTexts.tradingBrokerPasswordRequired;
+                        }
+                        return null;
+                      },
+                    ),
+                    const SizedBox(height: 12),
+                    TextFormField(
+                      controller: _accountIdCtrl,
+                      keyboardType: TextInputType.number,
+                      decoration: const InputDecoration(
+                        labelText: 'Conta / Account ID *',
+                        hintText: 'Ex: 54901332',
+                      ),
+                      validator: (v) {
+                        final parsed = int.tryParse((v ?? '').trim());
+                        if (parsed == null || parsed <= 0) {
+                          return 'Informe um accountId válido';
+                        }
+                        return null;
+                      },
+                    ),
+                    const SizedBox(height: 12),
+                    DropdownButtonFormField<String>(
+                      value: _ambientePadrao,
+                      decoration: const InputDecoration(
+                        labelText: 'Ambiente padrão *',
+                      ),
+                      items: const [
+                        DropdownMenuItem(value: 'TESTE', child: Text('TESTE')),
+                        DropdownMenuItem(value: 'PRODUCAO', child: Text('PRODUCAO')),
+                      ],
+                      onChanged: (v) => setState(() => _ambientePadrao = v ?? 'TESTE'),
+                    ),
+                    const SizedBox(height: 8),
+                    SwitchListTile(
+                      value: _ativo,
+                      contentPadding: EdgeInsets.zero,
+                      title: const Text('Configuração ativa'),
+                      subtitle: const Text(
+                        'Quando ativo, novas operações usam essas credenciais automaticamente.',
+                      ),
+                      onChanged: (v) => setState(() => _ativo = v),
+                    ),
+                    if (_config != null) ...[
+                      const SizedBox(height: 8),
+                      Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: GridColors.primary.withValues(alpha: 0.06),
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(
+                            color: GridColors.primary.withValues(alpha: 0.18),
+                          ),
+                        ),
+                        child: Text(
+                          _config!.hasBrokerPassword
+                              ? 'Senha já cadastrada com segurança no servidor. Atualizado em: ${_config!.updatedAt ?? 'data indisponível'}'
+                              : 'Ainda não há senha cadastrada no servidor para esta configuração.',
+                          style: const TextStyle(fontSize: 12),
+                        ),
+                      ),
+                    ],
+                    const SizedBox(height: 16),
+                    Align(
+                      alignment: Alignment.centerRight,
+                      child: ElevatedButton.icon(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: GridColors.primary,
+                          foregroundColor: Colors.white,
+                        ),
+                        onPressed: _saving ? null : _salvar,
+                        icon: _saving
+                            ? const SizedBox(
+                                width: 18,
+                                height: 18,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  color: Colors.white,
+                                ),
+                              )
+                            : const Icon(Icons.save),
+                        label: Text(_saving ? 'Salvando...' : 'Salvar configuração'),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
 
 class _OperacoesEmpty extends StatelessWidget {
   const _OperacoesEmpty();

@@ -5,6 +5,7 @@ import '../../services/conta_bancaria_caller.dart';
 import '../../services/network_caller.dart';
 import '../../../models/network_response.dart';
 import '../../../utils/api_links.dart';
+import '../../utils/grid_texts.dart';
 
 class BaixaDialogReceber extends StatefulWidget {
   final ContaReceber conta;
@@ -241,7 +242,7 @@ class _BaixaDialogReceberState extends State<BaixaDialogReceber> {
       actions: [
         TextButton(
           onPressed: () => Navigator.pop(context),
-          child: const Text('Cancelar'),
+          child: const Text(GridTexts.cancel),
         ),
         ElevatedButton(
           style: ElevatedButton.styleFrom(

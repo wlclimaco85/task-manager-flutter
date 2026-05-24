@@ -15,6 +15,10 @@ class _BacktestScreenState extends State<BacktestScreen> {
   final _assetController = TextEditingController();
   final _strategyController = TextEditingController(text: 'SCORE_THRESHOLD');
   final _paramsController = TextEditingController(text: '{"threshold":0.6}');
+  final _periodStartController = TextEditingController();
+  final _periodEndController = TextEditingController();
+  DateTime? _periodStart;
+  DateTime? _periodEnd;
 
   List<BacktestRunResponse> _runs = [];
   bool _loading = false;
@@ -50,6 +54,23 @@ class _BacktestScreenState extends State<BacktestScreen> {
         assetSymbol: asset,
         strategyName: _strategyController.text.trim(),
         ruleParams: _paramsController.text.trim().isEmpty ? null : _paramsController.text.trim(),
+        periodStart: _periodStart == null
+            ? null
+            : DateTime.utc(
+                _periodStart!.year,
+                _periodStart!.month,
+                _periodStart!.day,
+              ).toIso8601String(),
+        periodEnd: _periodEnd == null
+            ? null
+            : DateTime.utc(
+                _periodEnd!.year,
+                _periodEnd!.month,
+                _periodEnd!.day,
+                23,
+                59,
+                59,
+              ).toIso8601String(),
       );
       setState(() { _runs.insert(0, resp); });
     } catch (e) {
@@ -59,11 +80,34 @@ class _BacktestScreenState extends State<BacktestScreen> {
     }
   }
 
+  Future<void> _pickDate({required bool isStart}) async {
+    final initial = isStart ? (_periodStart ?? DateTime.now()) : (_periodEnd ?? DateTime.now());
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: initial,
+      firstDate: DateTime(2000),
+      lastDate: DateTime(2100),
+    );
+    if (picked == null) return;
+    final formatted = '${picked.year.toString().padLeft(4, '0')}-${picked.month.toString().padLeft(2, '0')}-${picked.day.toString().padLeft(2, '0')}';
+    setState(() {
+      if (isStart) {
+        _periodStart = picked;
+        _periodStartController.text = formatted;
+      } else {
+        _periodEnd = picked;
+        _periodEndController.text = formatted;
+      }
+    });
+  }
+
   @override
   void dispose() {
     _assetController.dispose();
     _strategyController.dispose();
     _paramsController.dispose();
+    _periodStartController.dispose();
+    _periodEndController.dispose();
     super.dispose();
   }
 
@@ -120,6 +164,28 @@ class _BacktestScreenState extends State<BacktestScreen> {
               controller: _paramsController,
               decoration: const InputDecoration(labelText: 'Parâmetros (JSON)', border: OutlineInputBorder()),
             ),
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                Expanded(
+                  child: TextFormField(
+                    controller: _periodStartController,
+                    readOnly: true,
+                    onTap: () => _pickDate(isStart: true),
+                    decoration: const InputDecoration(labelText: 'Período início', border: OutlineInputBorder(), suffixIcon: Icon(Icons.calendar_today, size: 18)),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: TextFormField(
+                    controller: _periodEndController,
+                    readOnly: true,
+                    onTap: () => _pickDate(isStart: false),
+                    decoration: const InputDecoration(labelText: 'Período fim', border: OutlineInputBorder(), suffixIcon: Icon(Icons.calendar_today, size: 18)),
+                  ),
+                ),
+              ],
+            ),
             const SizedBox(height: 12),
             ElevatedButton(
               onPressed: _running ? null : _runBacktest,
@@ -146,7 +212,7 @@ class _BacktestScreenState extends State<BacktestScreen> {
             subtitle: item.numTrades == 0
                 ? Text('Status: ${item.status}')
                 : Text(
-                    'Trades: ${item.numTrades} | Win rate: ${item.winRate.toStringAsFixed(1)}% | Net: ${item.netResult.toStringAsFixed(2)} | Drawdown: ${item.maxDrawdown.toStringAsFixed(2)}'),
+                    'Trades: ${item.numTrades} | Win: ${item.winRate.toStringAsFixed(1)}% | Lucro: ${item.totalProfit.toStringAsFixed(2)} | Perda: ${item.totalLoss.toStringAsFixed(2)} | Net: ${item.netResult.toStringAsFixed(2)} | Drawdown: ${item.maxDrawdown.toStringAsFixed(2)}'),
             trailing: _statusChip(item.status),
           ),
         );

@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import '../../../utils/grid_colors.dart';
 
 import '../../../models/nfce/nfce_resultado_model.dart';
 import '../../../models/nfce/nfce_status_model.dart';
@@ -219,13 +220,13 @@ class _NfceFinalizacaoScreenState extends State<NfceFinalizacaoScreen> {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               const CircularProgressIndicator(
-                color: Color(0xFF005826),
+                color: GridColors.secondary,
                 strokeWidth: 4,
               ),
               const SizedBox(height: 32),
               Text(
                 _mensagem,
-                style: const TextStyle(fontSize: 18, color: Color(0xFF005826)),
+                style: const TextStyle(fontSize: 18, color: GridColors.secondary),
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 16),

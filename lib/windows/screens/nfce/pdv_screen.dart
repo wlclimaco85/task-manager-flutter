@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import '../../../utils/grid_colors.dart';
 import 'package:flutter/services.dart';
 
 import '../../../models/nfce/item_venda_model.dart';
@@ -163,7 +164,7 @@ class _PdvScreenState extends State<PdvScreen> {
                 'Pronto para os eventos fiscais',
                 style: TextStyle(
                   fontWeight: FontWeight.bold,
-                  color: Color(0xFF005826),
+                  color: GridColors.secondary,
                 ),
               ),
               const SizedBox(height: 8),
@@ -206,7 +207,7 @@ class _PdvScreenState extends State<PdvScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('PDV / NFC-e'),
-        backgroundColor: const Color(0xFF005826),
+        backgroundColor: GridColors.secondary,
         foregroundColor: Colors.white,
         actions: [
           if (TenantContext.empresaId != null)
@@ -250,7 +251,7 @@ class _PdvScreenState extends State<PdvScreen> {
         children: [
           const TabBar(
             tabs: [Tab(text: 'Buscar Produto'), Tab(text: 'Carrinho')],
-            labelColor: Color(0xFF005826),
+            labelColor: GridColors.secondary,
           ),
           Expanded(
             child: TabBarView(
@@ -299,7 +300,7 @@ class _PdvScreenState extends State<PdvScreen> {
                         title: Text(p['nome']?.toString() ?? '—'),
                         subtitle: Text('${p['codigo'] ?? ''} — R\$ ${preco.toStringAsFixed(2)}'),
                         trailing: IconButton(
-                          icon: const Icon(Icons.add_circle, color: Color(0xFF005826)),
+                          icon: const Icon(Icons.add_circle, color: GridColors.secondary),
                           onPressed: () {
                             _provider.adicionarItem(p);
                             ScaffoldMessenger.of(context).showSnackBar(
@@ -349,7 +350,7 @@ class _PdvScreenState extends State<PdvScreen> {
               _ResumoCampo(
                 label: 'TOTAL',
                 valor: _provider.total,
-                cor: const Color(0xFF005826),
+                cor: GridColors.secondary,
                 bold: true,
               ),
               if (_provider.pagamentos.isNotEmpty)
@@ -421,7 +422,7 @@ class _PdvScreenState extends State<PdvScreen> {
                         )
                       : const Text('EMITIR NFC-e'),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF005826),
+                    backgroundColor: GridColors.secondary,
                     foregroundColor: Colors.white,
                     padding: const EdgeInsets.symmetric(vertical: 14),
                   ),
@@ -469,7 +470,7 @@ class _ItemCarrinhoTile extends StatelessWidget {
           ),
           Text(
             'R\$ ${item.subtotal.toStringAsFixed(2)}',
-            style: const TextStyle(fontWeight: FontWeight.w600, color: Color(0xFF005826)),
+            style: const TextStyle(fontWeight: FontWeight.w600, color: GridColors.secondary),
           ),
           IconButton(
             icon: const Icon(Icons.delete_outline, size: 20, color: Colors.red),
@@ -565,7 +566,7 @@ class _PainelPagamento extends StatelessWidget {
                     label: Text(f.$2, style: const TextStyle(fontSize: 12)),
                     selected: formaSelecionada == f.$1,
                     onSelected: (_) => onFormaChanged(f.$1),
-                    selectedColor: const Color(0xFF005826),
+                    selectedColor: GridColors.secondary,
                     labelStyle: TextStyle(
                       color: formaSelecionada == f.$1 ? Colors.white : Colors.black87,
                     ),
@@ -592,7 +593,7 @@ class _PainelPagamento extends StatelessWidget {
               ElevatedButton(
                 onPressed: onAdicionarPagamento,
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF005826),
+                  backgroundColor: GridColors.secondary,
                   foregroundColor: Colors.white,
                 ),
                 child: const Text('+ Adicionar'),

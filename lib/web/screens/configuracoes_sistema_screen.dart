@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
+import '../../utils/grid_colors.dart';
 import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
 import '../../../models/auth_utility.dart';
@@ -9,8 +10,8 @@ import '../../../utils/api_links.dart';
 import '../../../utils/tenant_context.dart';
 import '../../../widgets/searchable_dropdown.dart';
 
-const _primary = Color(0xFF93070A);
-const _green   = Color(0xFF005826);
+const _primary = GridColors.primary;
+const _green   = GridColors.secondary;
 const _bg      = Color(0xFFF5F5F5);
 const _white   = Colors.white;
 const _border  = Color(0xFFDDDDDD);
@@ -77,6 +78,9 @@ class _ConfiguracoesSistemaScreenState extends State<ConfiguracoesSistemaScreen>
             _actionCard(id: 'fix_db', title: 'Corrigir Banco (Fix DB)',
               subtitle: 'Aplica correcoes de colunas, FKs e sequencias. POST /api/admin/fix-db',
               icon: Icons.build_outlined, color: Colors.purple.shade700, onTap: _fixDb),
+            _actionCard(id: 'reset_database', title: 'Resetar Banco de Dados (Zerar Tudo)',
+              subtitle: 'TRUNCA TODAS as tabelas da aplicacao. Todos os dados serao PERMANENTEMENTE EXCLUIDOS. POST /api/admin/reset-database',
+              icon: Icons.delete_sweep, color: Colors.red.shade900, onTap: _confirmResetDatabase),
             _deleteEmpresaCard(),
           ]),
           const SizedBox(height: 20),
@@ -356,6 +360,48 @@ class _ConfiguracoesSistemaScreenState extends State<ConfiguracoesSistemaScreen>
           ? jsonDecode(resp.body) : {'error': 'HTTP ${resp.statusCode}', 'body': resp.body});
     } catch (e) { setState(() => _resultados['delete_empresa'] = {'error': e.toString()}); }
     finally { setState(() => _loading['delete_empresa'] = false); }
+  }
+
+  Future<void> _confirmResetDatabase() async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Row(children: [
+          Icon(Icons.warning_amber_rounded, color: Colors.red, size: 24),
+          SizedBox(width: 8),
+          Text('Resetar Banco de Dados', style: TextStyle(fontWeight: FontWeight.bold)),
+        ]),
+        content: const Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Text('ATENCAO: Esta operacao e IRREVERSIVEL!', style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold, fontSize: 14)),
+          SizedBox(height: 12),
+          Text('Todos os dados serao PERMANENTEMENTE EXCLUIDOS:'),
+          SizedBox(height: 8),
+          Text('- Empresas, Parceiros, Logins'),
+          Text('- Contas a Pagar e a Receber'),
+          Text('- NF-e, Chamados, Comunicados'),
+          Text('- Lancamentos Contabeis, Ponto, Chat'),
+          Text('- E todos os demais registros'),
+          SizedBox(height: 12),
+          Text('As tabelas de controle (Flyway, Telas) serao preservadas.'),
+          SizedBox(height: 12),
+          Text('Digite "RESET" no campo abaixo para confirmar:'),
+        ]),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Cancelar'),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.red, foregroundColor: Colors.white),
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Confirmar Reset'),
+          ),
+        ],
+      ),
+    );
+    if (confirm != true) return;
+    await _executar('reset_database', () =>
+        TenantContext.post('${ApiLinks.baseUrl}/api/admin/reset-database', {}));
   }
 
   Future<void> _gerarSeed() async {

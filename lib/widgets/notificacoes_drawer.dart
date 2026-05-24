@@ -3,6 +3,7 @@
 
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import '../utils/grid_colors.dart';
 import 'package:http/http.dart' as http;
 
 import '../utils/api_links.dart';
@@ -58,7 +59,7 @@ class _NotificacoesDrawerState extends State<NotificacoesDrawer> {
     return Drawer(
       child: Column(children: [
         DrawerHeader(
-          decoration: const BoxDecoration(color: Color(0xFF93070A)),
+          decoration: const BoxDecoration(color: GridColors.primary),
           child: Row(crossAxisAlignment: CrossAxisAlignment.center, children: [
             const Icon(Icons.notifications, color: Colors.white, size: 28),
             const SizedBox(width: 12),

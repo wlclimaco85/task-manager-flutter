@@ -9,6 +9,7 @@ import 'package:task_manager_flutter/utils/api_links.dart';
 import 'package:task_manager_flutter/utils/utils.dart';
 import 'package:task_manager_flutter/widgets/searchable_dropdown.dart';
 import 'package:task_manager_flutter/widgets/finance/extrato_operacional_dialog.dart';
+import '../../utils/grid_texts.dart';
 
 class ContaBancariaGridScreen extends StatelessWidget {
   final SecurityCheck hasPermission;
@@ -151,7 +152,7 @@ class ContaBancariaGridScreen extends StatelessWidget {
         actions: [
           TextButton(
               onPressed: () => Navigator.pop(context),
-              child: const Text("Cancelar")),
+              child: const Text(GridTexts.cancel)),
           ElevatedButton(
             onPressed: () async {
               if (contaDestinoId == null || valorController.text.isEmpty) {
@@ -206,7 +207,7 @@ class ContaBancariaGridScreen extends StatelessWidget {
         actions: [
           TextButton(
               onPressed: () => Navigator.pop(context),
-              child: const Text("Cancelar")),
+              child: const Text(GridTexts.cancel)),
           ElevatedButton(
             onPressed: () async {
               final de = deController.text;
@@ -267,7 +268,7 @@ class ContaBancariaGridScreen extends StatelessWidget {
         actions: [
           TextButton(
               onPressed: () => Navigator.pop(context),
-              child: const Text("Cancelar")),
+              child: const Text(GridTexts.cancel)),
           ElevatedButton(
             onPressed: () async {
               final de = deController.text;

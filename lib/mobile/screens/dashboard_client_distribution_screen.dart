@@ -83,6 +83,12 @@ class _ClientDistributionPieState extends State<ClientDistributionPie> {
           child: Center(
               child: Text(error!, style: const TextStyle(color: Colors.red))));
     }
+    if (data.isEmpty) {
+      return const SizedBox(
+        height: 260,
+        child: Center(child: Text('Sem distribuicao por clientes.')),
+      );
+    }
 
     final total =
         data.fold<double>(0, (p, e) => p + e.valor).clamp(1, double.infinity);
