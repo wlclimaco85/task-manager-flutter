@@ -385,7 +385,10 @@ class _WindowsCalendarScreenState extends State<WindowsCalendarScreen> {
             icon: Icons.calendar_month,
             label: 'Ano',
             active: _viewMode == 'year',
-            onTap: () => setState(() => _viewMode = 'year'),
+            onTap: () {
+              setState(() => _viewMode = 'year');
+              _autoCarregarResumoAno(_currentMonth.year);
+            },
           ),
           const Spacer(),
           // Right: Hoje button
@@ -1039,8 +1042,14 @@ class _WindowsCalendarScreenState extends State<WindowsCalendarScreen> {
               IconButton(
                 icon: const Icon(Icons.chevron_left, color: GridColors.success),
                 tooltip: 'Ano anterior',
-                onPressed: () => setState(
-                    () => _currentMonth = DateTime(_currentMonth.year - 1, 1)),
+                onPressed: () {
+                  final novoAno = _currentMonth.year - 1;
+                  setState(() {
+                    _currentMonth = DateTime(novoAno, 1);
+                    _monthSummaries.clear();
+                  });
+                  _autoCarregarResumoAno(novoAno);
+                },
               ),
               Text(
                 '$year',
@@ -1050,8 +1059,14 @@ class _WindowsCalendarScreenState extends State<WindowsCalendarScreen> {
               IconButton(
                 icon: const Icon(Icons.chevron_right, color: GridColors.success),
                 tooltip: 'Próximo ano',
-                onPressed: () => setState(
-                    () => _currentMonth = DateTime(_currentMonth.year + 1, 1)),
+                onPressed: () {
+                  final novoAno = _currentMonth.year + 1;
+                  setState(() {
+                    _currentMonth = DateTime(novoAno, 1);
+                    _monthSummaries.clear();
+                  });
+                  _autoCarregarResumoAno(novoAno);
+                },
               ),
             ],
           ),
@@ -1207,6 +1222,16 @@ class _WindowsCalendarScreenState extends State<WindowsCalendarScreen> {
     final summary = await _loadMonthSummary(year, month);
     if (!mounted) return;
     setState(() => _monthSummaries[month] = summary);
+  }
+
+  /// Carrega automaticamente todos os 12 meses do ano ao entrar na view de Ano.
+  /// Dispara em paralelo sem bloquear a UI (sem await).
+  void _autoCarregarResumoAno(int year) {
+    for (int m = 1; m <= 12; m++) {
+      if (!_monthSummaries.containsKey(m)) {
+        _loadAndCacheMonthSummary(year, m);
+      }
+    }
   }
 
   Future<void> _showMonthPopup(

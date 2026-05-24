@@ -701,27 +701,27 @@ class _NoticiaCard extends StatelessWidget {
     );
   }
 
-  /// Retorna lista de URLs para tentar em cascata (URL direta → proxy backend).
-  /// O _MultiUrlImage tenta cada URL em sequência até uma funcionar.
+  /// Retorna lista de URLs para tentar em cascata.
+  /// Ordem: proxy backend primeiro (CORS-free + cache em DB) → URL direta (fallback desktop).
   List<String> _buildImageUrls(String foto, dynamic id) {
+    // Normaliza protocol-relative (//cdn.contabeis.com.br/... → https://cdn...)
+    final urlFoto = foto.startsWith('//') ? 'https:$foto' : foto;
+
+    final temFotoValida = urlFoto.isNotEmpty &&
+        urlFoto.startsWith('http') &&
+        !urlFoto.startsWith('data:image/gif');
+
     final urls = <String>[];
-    final temFotoValida = foto.isNotEmpty &&
-        foto.startsWith('http') &&
-        !foto.startsWith('data:image/gif');
 
-    // 1ª tentativa: URL direta da foto (funciona no desktop e em sites com CORS aberto)
-    if (temFotoValida) urls.add(foto);
-
-    // 2ª tentativa: proxy do backend por ID (evita CORS no web)
+    // 1ª tentativa: proxy do backend por ID (CORS-free, cache em memoria+DB no backend)
     if (id != null) {
       urls.add('${ApiLinks.baseUrl}/api/public/noticias/foto/$id');
     }
 
-    // 3ª tentativa: proxy do backend por URL (fallback final)
-    if (kIsWeb && temFotoValida) {
-      final proxyUrl =
-          '${ApiLinks.baseUrl}/api/public/imagens/noticia?url=${Uri.encodeComponent(foto)}';
-      if (!urls.contains(proxyUrl)) urls.add(proxyUrl);
+    // 2ª tentativa: URL direta (funciona no desktop sem CORS; na web pode ser bloqueada)
+    if (temFotoValida) {
+      final direct = urlFoto;
+      if (!urls.contains(direct)) urls.add(direct);
     }
 
     return urls;
