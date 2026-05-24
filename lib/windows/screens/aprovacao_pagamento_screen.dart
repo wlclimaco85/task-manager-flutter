@@ -91,16 +91,16 @@ class _AprovacaoPagamentoScreenState extends State<AprovacaoPagamentoScreen>
     final result = await showDialog<String>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: Text(isAprovar ? 'Aprovar Pagamento' : 'Reprovar Pagamento'),
+        title: Text(isAprovar ? GridTexts.approvePayment : GridTexts.rejectPayment),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text('Conta: ${item['conta'] ?? item['descricao'] ?? ''}'),
+            Text(GridTexts.accountLabel((item['conta'] ?? item['descricao'] ?? '').toString())),
             const SizedBox(height: 12),
             TextField(
               controller: justifCtrl,
               decoration: const InputDecoration(
-                labelText: 'Justificativa *',
+                labelText: GridTexts.justificationRequired,
                 border: OutlineInputBorder(),
               ),
               maxLines: 3,

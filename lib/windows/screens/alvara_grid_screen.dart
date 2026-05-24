@@ -67,10 +67,10 @@ class WindowsAlvaraGridScreen extends StatelessWidget {
   }
 
   static List<Map<String, dynamic>> _statusOptions() => [
-        {'id': 'ATIVO', 'nome': 'Ativo'},
-        {'id': 'VENCIDO', 'nome': 'Vencido'},
-        {'id': 'EM_RENOVACAO', 'nome': 'Em Renovação'},
-        {'id': 'CANCELADO', 'nome': 'Cancelado'},
+        {'id': 'ATIVO', 'nome': GridTexts.active},
+        {'id': 'VENCIDO', 'nome': GridTexts.expired},
+        {'id': 'EM_RENOVACAO', 'nome': GridTexts.renewing},
+        {'id': 'CANCELADO', 'nome': GridTexts.cancelled},
       ];
 
   @override
@@ -105,7 +105,7 @@ class WindowsAlvaraGridScreen extends StatelessWidget {
         // ── Campos principais ─────────────────────────────────────────────
         const FieldConfigWindows(
           fieldName: 'descricao',
-          label: 'Descrição',
+          label: GridTexts.description,
           isInForm: true,
           isVisibleByDefault: true,
           enabled: true,
@@ -113,14 +113,14 @@ class WindowsAlvaraGridScreen extends StatelessWidget {
         ),
         const FieldConfigWindows(
           fieldName: 'numero',
-          label: 'Número',
+          label: GridTexts.number,
           isInForm: true,
           isVisibleByDefault: true,
           enabled: true,
         ),
         const FieldConfigWindows(
           fieldName: 'dataEmissao',
-          label: 'Data Emissão',
+          label: GridTexts.issueDate,
           fieldType: FieldType.date,
           isInForm: true,
           isVisibleByDefault: true,
@@ -128,7 +128,7 @@ class WindowsAlvaraGridScreen extends StatelessWidget {
         ),
         const FieldConfigWindows(
           fieldName: 'dataVencimento',
-          label: 'Data Vencimento',
+          label: GridTexts.dueDate,
           fieldType: FieldType.date,
           isInForm: true,
           isVisibleByDefault: true,
@@ -137,7 +137,7 @@ class WindowsAlvaraGridScreen extends StatelessWidget {
         ),
         const FieldConfigWindows(
           fieldName: 'orgaoEmissor',
-          label: 'Órgão Emissor',
+          label: GridTexts.issuingAgency,
           isInForm: true,
           isVisibleByDefault: true,
           enabled: true,
@@ -145,15 +145,15 @@ class WindowsAlvaraGridScreen extends StatelessWidget {
         // H6: tipoAlvara como dropdown com lista fixa
         FieldConfigWindows(
           fieldName: 'tipoAlvara',
-          label: 'Tipo de Alvará',
+          label: GridTexts.licenseType,
           fieldType: FieldType.dropdown,
           dropdownFutureBuilder: () async => const [
-            {'id': 'Funcionamento', 'nome': 'Funcionamento'},
-            {'id': 'Sanitário',     'nome': 'Sanitário'},
-            {'id': 'Bombeiros',     'nome': 'Bombeiros'},
-            {'id': 'Ambiental',     'nome': 'Ambiental'},
-            {'id': 'Publicidade',   'nome': 'Publicidade'},
-            {'id': 'Outros',        'nome': 'Outros'},
+            {'id': 'Funcionamento', 'nome': GridTexts.businessLicense},
+            {'id': 'Sanitário',     'nome': GridTexts.healthLicense},
+            {'id': 'Bombeiros',     'nome': GridTexts.fireDepartment},
+            {'id': 'Ambiental',     'nome': GridTexts.environmental},
+            {'id': 'Publicidade',   'nome': GridTexts.advertising},
+            {'id': 'Outros',        'nome': GridTexts.others},
           ],
           dropdownValueField: 'id',
           dropdownDisplayField: 'nome',
@@ -166,7 +166,7 @@ class WindowsAlvaraGridScreen extends StatelessWidget {
         // ── Status → dropdown ─────────────────────────────────────────────
         FieldConfigWindows(
           fieldName: 'status',
-          label: 'Status',
+          label: GridTexts.status,
           fieldType: FieldType.dropdown,
           dropdownValueField: 'id',
           dropdownDisplayField: 'nome',
@@ -180,7 +180,7 @@ class WindowsAlvaraGridScreen extends StatelessWidget {
         // ── Empresa → dropdown ────────────────────────────────────────────
         const FieldConfigWindows(
           fieldName: 'empresa',
-          label: 'Empresa',
+          label: GridTexts.company,
           displayFieldName: 'empresa.nomeFantasia',
           fieldType: FieldType.dropdown,
           dropdownValueField: 'id',
@@ -195,7 +195,7 @@ class WindowsAlvaraGridScreen extends StatelessWidget {
         // ── Parceiro/Cliente → dropdown ───────────────────────────────────
         const FieldConfigWindows(
           fieldName: 'parceiro',
-          label: 'Parceiro/Cliente',
+          label: GridTexts.partnerCustomer,
           displayFieldName: 'parceiro.nome',
           fieldType: FieldType.dropdown,
           dropdownValueField: 'id',
@@ -210,7 +210,7 @@ class WindowsAlvaraGridScreen extends StatelessWidget {
         // ── Observação ────────────────────────────────────────────────────
         const FieldConfigWindows(
           fieldName: 'observacao',
-          label: 'Observação',
+          label: GridTexts.notes,
           fieldType: FieldType.multiline,
           isInForm: true,
           isVisibleByDefault: false,

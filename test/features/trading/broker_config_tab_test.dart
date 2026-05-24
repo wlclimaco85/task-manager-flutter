@@ -55,6 +55,7 @@ class FakeTradingRepository extends TradingRepository {
     if (saveError != null) throw saveError!;
     return saveResult ??
         TradingBrokerConfig(
+          id: 'fake-id',
           brokerLogin: brokerLogin,
           accountId: accountId,
           ambientePadrao: ambientePadrao,
@@ -94,6 +95,7 @@ void main() {
     testWidgets('carrega configuração existente com dados fake', (tester) async {
       final repo = FakeTradingRepository(
         fetchResult: const TradingBrokerConfig(
+          id: '1',
           brokerLogin: 'demo-login',
           accountId: '12345',
           ambientePadrao: 'PRODUCAO',
@@ -135,6 +137,7 @@ void main() {
         (tester) async {
       final repo = FakeTradingRepository(
         fetchResult: const TradingBrokerConfig(
+          id: '1',
           brokerLogin: 'login-antigo',
           accountId: '555',
           ambientePadrao: 'TESTE',
@@ -143,6 +146,7 @@ void main() {
           updatedAt: '2026-05-22T10:00:00Z',
         ),
         saveResult: const TradingBrokerConfig(
+          id: '2',
           brokerLogin: 'novo-login',
           accountId: '98765',
           ambientePadrao: 'PRODUCAO',

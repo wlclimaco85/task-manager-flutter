@@ -294,6 +294,7 @@ class TradingBrokerConfig {
   final String accountId;
   final String ambientePadrao; // "TESTE" | "PRODUCAO"
   final bool ativo;
+  final bool hasBrokerPassword;
   final String? updatedAt;
 
   const TradingBrokerConfig({
@@ -302,6 +303,7 @@ class TradingBrokerConfig {
     required this.accountId,
     required this.ambientePadrao,
     required this.ativo,
+    this.hasBrokerPassword = false,
     this.updatedAt,
   });
 
@@ -312,6 +314,7 @@ class TradingBrokerConfig {
       accountId: json['accountId']?.toString() ?? '',
       ambientePadrao: json['ambientePadrao']?.toString() ?? 'TESTE',
       ativo: json['ativo'] == true || json['ativo'] == 'true',
+      hasBrokerPassword: json['hasBrokerPassword'] == true,
       updatedAt: json['updatedAt']?.toString(),
     );
   }
@@ -322,6 +325,7 @@ class TradingBrokerConfig {
         'accountId': accountId,
         'ambientePadrao': ambientePadrao,
         'ativo': ativo,
+        'hasBrokerPassword': hasBrokerPassword,
         if (updatedAt != null) 'updatedAt': updatedAt,
       };
 }
