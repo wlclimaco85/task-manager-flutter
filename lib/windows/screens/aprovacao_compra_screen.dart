@@ -73,7 +73,7 @@ class _AprovacaoCompraScreenState extends State<AprovacaoCompraScreen>
     if (body.containsKey('content') && body['content'] is List) {
       return List<Map<String, dynamic>>.from(body['content']);
     }
-    final values = body.values.where((v) => v is List);
+    final values = body.values.whereType<List>();
     if (values.isNotEmpty) {
       return List<Map<String, dynamic>>.from(values.first);
     }
@@ -146,7 +146,7 @@ class _AprovacaoCompraScreenState extends State<AprovacaoCompraScreen>
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
           backgroundColor: GridColors.error,
-          content: Text(GridTexts.genericError(e)),
+          content: Text(GridTexts.genericError(e.toString())),
 
         ));
       }
@@ -198,7 +198,7 @@ class _AprovacaoCompraScreenState extends State<AprovacaoCompraScreen>
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
           backgroundColor: GridColors.error,
-          content: Text(GridTexts.genericError(e)),
+          content: Text(GridTexts.genericError(e.toString())),
 
         ));
       }
