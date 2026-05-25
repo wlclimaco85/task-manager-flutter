@@ -217,7 +217,7 @@ class _WindowsDevolucaoGridScreenState
             child: ElevatedButton.icon(
               onPressed: _load,
               icon: const Icon(Icons.search, size: 18),
-              label: const Text('Filtrar', style: TextStyle(fontSize: 13)),
+              label: const Text(GridTexts.filter, style: TextStyle(fontSize: 13)),
               style: ElevatedButton.styleFrom(
                 backgroundColor: GridColors.primary,
                 foregroundColor: Colors.white,
@@ -240,7 +240,7 @@ class _WindowsDevolucaoGridScreenState
                 _load();
               },
               icon: const Icon(Icons.clear, size: 18),
-              label: const Text('Limpar', style: TextStyle(fontSize: 13)),
+              label: const Text(GridTexts.clear, style: TextStyle(fontSize: 13)),
               style: OutlinedButton.styleFrom(padding: const EdgeInsets.symmetric(horizontal: 12)),
             ),
           ),
@@ -254,7 +254,7 @@ class _WindowsDevolucaoGridScreenState
       return const Center(child: CircularProgressIndicator());
     }
     if (_devolucoes.isEmpty) {
-      return const Center(child: Text('Nenhuma devolução encontrada'));
+      return const Center(child: Text(GridTexts.noReturnFound));
     }
     return SingleChildScrollView(
       child: DataTable(
@@ -263,13 +263,13 @@ class _WindowsDevolucaoGridScreenState
         dataRowMinHeight: 40,
         dataRowMaxHeight: 60,
         columns: const [
-          DataColumn(label: Text('Número', style: TextStyle(fontWeight: FontWeight.bold))),
-          DataColumn(label: Text('Data', style: TextStyle(fontWeight: FontWeight.bold))),
-          DataColumn(label: Text('Tipo', style: TextStyle(fontWeight: FontWeight.bold))),
-          DataColumn(label: Text('Cliente', style: TextStyle(fontWeight: FontWeight.bold))),
-          DataColumn(label: Text('Documento Origem', style: TextStyle(fontWeight: FontWeight.bold))),
-          DataColumn(label: Text('Status', style: TextStyle(fontWeight: FontWeight.bold))),
-          DataColumn(label: Text('Ações', style: TextStyle(fontWeight: FontWeight.bold))),
+          DataColumn(label: Text(GridTexts.number, style: TextStyle(fontWeight: FontWeight.bold))),
+          DataColumn(label: Text(GridTexts.date, style: TextStyle(fontWeight: FontWeight.bold))),
+          DataColumn(label: Text(GridTexts.type, style: TextStyle(fontWeight: FontWeight.bold))),
+          DataColumn(label: Text(GridTexts.customerColumn, style: TextStyle(fontWeight: FontWeight.bold))),
+          DataColumn(label: Text(GridTexts.sourceDocumentColumn, style: TextStyle(fontWeight: FontWeight.bold))),
+          DataColumn(label: Text(GridTexts.status, style: TextStyle(fontWeight: FontWeight.bold))),
+          DataColumn(label: Text(GridTexts.actions, style: TextStyle(fontWeight: FontWeight.bold))),
         ],
         rows: _devolucoes.map((o) {
           final id = o['id'] as int?;
@@ -296,8 +296,8 @@ class _WindowsDevolucaoGridScreenState
 
   String _tipoLabel(String tipo) {
     switch (tipo) {
-      case 'DEVOLUCAO_VENDA': return 'Devolução de Venda';
-      case 'DEVOLUCAO_COMPRA': return 'Devolução de Compra';
+      case 'DEVOLUCAO_VENDA': return GridTexts.saleReturnType;
+      case 'DEVOLUCAO_COMPRA': return GridTexts.purchaseReturnType;
       default: return tipo;
     }
   }
@@ -307,13 +307,13 @@ class _WindowsDevolucaoGridScreenState
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        _actionIcon(Icons.visibility, 'Visualizar', GridColors.info, () => _openForm(_devolucoes.firstWhere((o) => o['id'] == id))),
+        _actionIcon(Icons.visibility, GridTexts.view, GridColors.info, () => _openForm(_devolucoes.firstWhere((o) => o['id'] == id))),
         if (status == 'RASCUNHO') ...[
-          _actionIcon(Icons.edit, 'Editar', GridColors.secondary, () => _openForm(_devolucoes.firstWhere((o) => o['id'] == id))),
-          _actionIcon(Icons.check_circle, 'Concluir', Colors.green, () => _confirmAction(
-            'Concluir Devolução', 'Deseja concluir esta devolução?', () => DevolucaoService.concluir(id))),
-          _actionIcon(Icons.block, 'Cancelar', Colors.orange, () => _confirmAction(
-            'Cancelar Devolução', 'Deseja cancelar esta devolução?', () => DevolucaoService.delete(id))),
+          _actionIcon(Icons.edit, GridTexts.edit, GridColors.secondary, () => _openForm(_devolucoes.firstWhere((o) => o['id'] == id))),
+          _actionIcon(Icons.check_circle, GridTexts.conclude, Colors.green, () => _confirmAction(
+            GridTexts.concludeReturnTitle, GridTexts.concludeReturnQuestion, () => DevolucaoService.concluir(id))),
+          _actionIcon(Icons.block, GridTexts.cancel, Colors.orange, () => _confirmAction(
+            GridTexts.cancelReturnTitle, GridTexts.cancelReturnQuestion, () => DevolucaoService.delete(id))),
         ],
       ],
     );

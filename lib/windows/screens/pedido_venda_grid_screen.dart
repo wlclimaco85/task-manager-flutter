@@ -109,7 +109,7 @@ class _WindowsPedidoVendaGridScreenState
     if (!mounted) return;
     if (orcamentos.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Nenhum orçamento aprovado disponível'), backgroundColor: Colors.orange),
+        const SnackBar(content: Text(GridTexts.noApprovedBudgetAvailable), backgroundColor: Colors.orange),
       );
       return;
     }
@@ -123,7 +123,9 @@ class _WindowsPedidoVendaGridScreenState
     final success = await PedidoVendaService.criarDeOrcamento(orcamentoId);
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-      content: Text(success ? 'Pedido criado a partir do orçamento!' : 'Erro ao criar pedido'),
+      content: Text(success
+          ? GridTexts.orderCreatedFromBudgetSuccess
+          : GridTexts.orderCreateError),
       backgroundColor: success ? Colors.green : Colors.red,
     ));
     if (success) _load();
@@ -153,7 +155,7 @@ class _WindowsPedidoVendaGridScreenState
           ElevatedButton(
             style: ElevatedButton.styleFrom(backgroundColor: GridColors.primary, foregroundColor: Colors.white),
             onPressed: () => Navigator.pop(context, true),
-            child: const Text('Confirmar'),
+            child: const Text(GridTexts.confirm),
           ),
         ],
       ),
@@ -162,7 +164,9 @@ class _WindowsPedidoVendaGridScreenState
     final success = await action();
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-      content: Text(success ? '$title concluído!' : 'Erro ao $title'),
+      content: Text(success
+          ? GridTexts.completedAction(title)
+          : GridTexts.actionFailure(title)),
       backgroundColor: success ? Colors.green : Colors.red,
     ));
     if (success) _load();
@@ -202,7 +206,7 @@ class _WindowsPedidoVendaGridScreenState
               child: ElevatedButton.icon(
                 onPressed: _criarDeOrcamento,
                 icon: const Icon(Icons.transform, size: 18),
-                label: const Text('Criar de Orçamento'),
+                label: const Text(GridTexts.createFromBudget),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.teal,
                   foregroundColor: Colors.white,
@@ -215,7 +219,7 @@ class _WindowsPedidoVendaGridScreenState
               child: ElevatedButton.icon(
                 onPressed: () => _openForm(null),
                 icon: const Icon(Icons.add, size: 18),
-                label: const Text('Novo Pedido'),
+                label: const Text(GridTexts.newOrder),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: GridColors.primary,
                   foregroundColor: Colors.white,
@@ -239,7 +243,7 @@ class _WindowsPedidoVendaGridScreenState
         spacing: 8,
         crossAxisAlignment: WrapCrossAlignment.center,
         children: [
-          const Text('Status:', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500)),
+          const Text(GridTexts.statusLabel, style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500)),
           SizedBox(
             width: 180,
             height: 36,
@@ -261,7 +265,7 @@ class _WindowsPedidoVendaGridScreenState
             child: TextField(
               controller: _clienteCtrl,
               decoration: const InputDecoration(
-                hintText: 'Buscar cliente...',
+                hintText: GridTexts.searchCustomerHint,
                 contentPadding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 border: OutlineInputBorder(),
                 isDense: true,
@@ -283,7 +287,7 @@ class _WindowsPedidoVendaGridScreenState
               ]),
             ),
           ),
-          const Text('até', style: TextStyle(fontSize: 13)),
+          const Text(GridTexts.until, style: TextStyle(fontSize: 13)),
           InkWell(
             onTap: () => _pickDate(isInicio: false),
             child: Container(
@@ -303,7 +307,7 @@ class _WindowsPedidoVendaGridScreenState
             child: ElevatedButton.icon(
               onPressed: _load,
               icon: const Icon(Icons.search, size: 18),
-              label: const Text('Filtrar', style: TextStyle(fontSize: 13)),
+              label: const Text(GridTexts.filter, style: TextStyle(fontSize: 13)),
               style: ElevatedButton.styleFrom(
                 backgroundColor: GridColors.primary,
                 foregroundColor: Colors.white,
@@ -326,7 +330,7 @@ class _WindowsPedidoVendaGridScreenState
                 _load();
               },
               icon: const Icon(Icons.clear, size: 18),
-              label: const Text('Limpar', style: TextStyle(fontSize: 13)),
+              label: const Text(GridTexts.clear, style: TextStyle(fontSize: 13)),
               style: OutlinedButton.styleFrom(padding: const EdgeInsets.symmetric(horizontal: 12)),
             ),
           ),
@@ -340,7 +344,7 @@ class _WindowsPedidoVendaGridScreenState
       return const Center(child: CircularProgressIndicator());
     }
     if (_pedidos.isEmpty) {
-      return const Center(child: Text('Nenhum pedido de venda encontrado'));
+      return const Center(child: Text(GridTexts.noSalesOrderFound));
     }
     return SingleChildScrollView(
       child: DataTable(
@@ -349,19 +353,21 @@ class _WindowsPedidoVendaGridScreenState
         dataRowMinHeight: 40,
         dataRowMaxHeight: 60,
         columns: const [
-          DataColumn(label: Text('Número', style: TextStyle(fontWeight: FontWeight.bold))),
-          DataColumn(label: Text('Cliente', style: TextStyle(fontWeight: FontWeight.bold))),
-          DataColumn(label: Text('Data Emissão', style: TextStyle(fontWeight: FontWeight.bold))),
-          DataColumn(label: Text('Total', style: TextStyle(fontWeight: FontWeight.bold))),
-          DataColumn(label: Text('Status', style: TextStyle(fontWeight: FontWeight.bold))),
-          DataColumn(label: Text('Origem', style: TextStyle(fontWeight: FontWeight.bold))),
-          DataColumn(label: Text('Ações', style: TextStyle(fontWeight: FontWeight.bold))),
+          DataColumn(label: Text(GridTexts.number, style: TextStyle(fontWeight: FontWeight.bold))),
+          DataColumn(label: Text(GridTexts.customerColumn, style: TextStyle(fontWeight: FontWeight.bold))),
+          DataColumn(label: Text(GridTexts.issueDateLabel, style: TextStyle(fontWeight: FontWeight.bold))),
+          DataColumn(label: Text(GridTexts.totalLabel, style: TextStyle(fontWeight: FontWeight.bold))),
+          DataColumn(label: Text(GridTexts.status, style: TextStyle(fontWeight: FontWeight.bold))),
+          DataColumn(label: Text(GridTexts.source, style: TextStyle(fontWeight: FontWeight.bold))),
+          DataColumn(label: Text(GridTexts.actions, style: TextStyle(fontWeight: FontWeight.bold))),
         ],
         rows: _pedidos.map((o) {
           final id = o['id'] as int?;
           final status = o['status']?.toString() ?? 'RASCUNHO';
           final total = (o['totalGeral'] as num?)?.toDouble() ?? 0;
-          final origem = o['origem']?.toString() ?? (o['orcamentoId'] != null ? 'Orçamento' : 'Direto');
+          final origem = o['origem']?.toString() ?? (o['orcamentoId'] != null
+              ? GridTexts.budgetOrigin
+              : GridTexts.directOrigin);
           final historicoRaw = o['historico'];
           List<PedidoVendaHistorico> historico = [];
           if (historicoRaw is List) {
@@ -371,7 +377,7 @@ class _WindowsPedidoVendaGridScreenState
             DataCell(Text(o['numero']?.toString() ?? '#${id ?? 0}')),
             DataCell(Text(o['clienteNome']?.toString() ?? '-')),
             DataCell(Text(_formatDate(o['dataEmissao']?.toString()))),
-            DataCell(Text('R\$ ${total.toStringAsFixed(2)}')),
+            DataCell(Text(GridTexts.currencyValueRaw(total))),
             DataCell(Chip(
               label: Text(status, style: const TextStyle(color: Colors.white, fontSize: 11)),
               backgroundColor: _statusColor(status),
@@ -392,25 +398,25 @@ class _WindowsPedidoVendaGridScreenState
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        _actionIcon(Icons.visibility, 'Visualizar', GridColors.info, () => _openForm(_pedidos.firstWhere((o) => o['id'] == id))),
+        _actionIcon(Icons.visibility, GridTexts.view, GridColors.info, () => _openForm(_pedidos.firstWhere((o) => o['id'] == id))),
         if (status == 'RASCUNHO') ...[
-          _actionIcon(Icons.edit, 'Editar', GridColors.secondary, () => _openForm(_pedidos.firstWhere((o) => o['id'] == id))),
-          _actionIcon(Icons.check_circle, 'Aprovar', Colors.green, () => _confirmAction(
-            'Aprovar Pedido', 'Deseja aprovar este pedido?', () => PedidoVendaService.aprovar(id))),
-          _actionIcon(Icons.cancel, 'Rejeitar', Colors.red, () => _confirmAction(
-            'Rejeitar Pedido', 'Deseja rejeitar este pedido?', () => PedidoVendaService.rejeitar(id))),
+          _actionIcon(Icons.edit, GridTexts.edit, GridColors.secondary, () => _openForm(_pedidos.firstWhere((o) => o['id'] == id))),
+          _actionIcon(Icons.check_circle, GridTexts.approve, Colors.green, () => _confirmAction(
+            GridTexts.approveOrderTitle, GridTexts.approveOrderQuestion, () => PedidoVendaService.aprovar(id))),
+          _actionIcon(Icons.cancel, GridTexts.reject, Colors.red, () => _confirmAction(
+            GridTexts.rejectOrderTitle, GridTexts.rejectOrderQuestion, () => PedidoVendaService.rejeitar(id))),
         ],
         if (status == 'APROVADO') ...[
-          _actionIcon(Icons.payment, 'Faturar Parcial', Colors.orange, () => _showFaturarParcial(pedido)),
-          _actionIcon(Icons.done_all, 'Faturar Total', Colors.blue, () => _confirmAction(
-            'Faturar Total', 'Deseja faturar totalmente este pedido?', () => PedidoVendaService.faturarTotal(id))),
+          _actionIcon(Icons.payment, GridTexts.partialBilling, Colors.orange, () => _showFaturarParcial(pedido)),
+          _actionIcon(Icons.done_all, GridTexts.totalBilling, Colors.blue, () => _confirmAction(
+            GridTexts.totalBilling, GridTexts.totalBillingQuestion, () => PedidoVendaService.faturarTotal(id))),
         ],
         if (status == 'FATURADO_PARCIAL')
-          _actionIcon(Icons.done_all, 'Faturar Total', Colors.blue, () => _confirmAction(
-            'Faturar Total', 'Deseja faturar totalmente este pedido?', () => PedidoVendaService.faturarTotal(id))),
-        _actionIcon(Icons.block, 'Cancelar', Colors.brown, () => _confirmAction(
-          'Cancelar Pedido', 'Deseja cancelar este pedido?', () => PedidoVendaService.cancelar(id))),
-        _actionIcon(Icons.history, 'Histórico', Colors.brown, () => _showHistorico(historico)),
+          _actionIcon(Icons.done_all, GridTexts.totalBilling, Colors.blue, () => _confirmAction(
+            GridTexts.totalBilling, GridTexts.totalBillingQuestion, () => PedidoVendaService.faturarTotal(id))),
+        _actionIcon(Icons.block, GridTexts.cancel, Colors.brown, () => _confirmAction(
+          GridTexts.cancelOrderTitle, GridTexts.cancelOrderQuestion, () => PedidoVendaService.cancelar(id))),
+        _actionIcon(Icons.history, GridTexts.viewHistory, Colors.brown, () => _showHistorico(historico)),
       ],
     );
   }
@@ -442,7 +448,7 @@ class _OrcamentoPickerDialog extends StatelessWidget {
         child: Column(
           children: [
             AppBar(
-              title: const Text('Selecionar Orçamento'),
+              title: const Text(GridTexts.selectBudget),
               automaticallyImplyLeading: false,
               actions: [
                 IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(context)),
@@ -455,7 +461,11 @@ class _OrcamentoPickerDialog extends StatelessWidget {
                 itemBuilder: (_, i) {
                   final o = orcamentos[i];
                   final id = o['id'] as int?;
-                  final label = '${o['numero'] ?? '#'} - ${o['clienteNome'] ?? ''} - R\$ ${(o['totalGeral'] as num?)?.toDouble() ?? 0}';
+                  final label = GridTexts.budgetPickerLabel(
+                    o['numero'],
+                    o['clienteNome'],
+                    (o['totalGeral'] as num?)?.toDouble() ?? 0,
+                  );
                   return ListTile(
                     title: Text(label),
                     onTap: () => Navigator.pop(context, o),
