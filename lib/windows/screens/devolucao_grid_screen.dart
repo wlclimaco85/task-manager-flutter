@@ -66,7 +66,7 @@ class _WindowsDevolucaoGridScreenState
           ElevatedButton(
             style: ElevatedButton.styleFrom(backgroundColor: GridColors.primary, foregroundColor: Colors.white),
             onPressed: () => Navigator.pop(context, true),
-            child: const Text('Confirmar'),
+            child: const Text(GridTexts.confirm),
           ),
         ],
       ),
@@ -75,7 +75,9 @@ class _WindowsDevolucaoGridScreenState
     final success = await action();
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-      content: Text(success ? '$title concluído!' : 'Erro ao $title'),
+      content: Text(success
+          ? GridTexts.completedAction(title)
+          : GridTexts.actionFailure(title)),
       backgroundColor: success ? Colors.green : Colors.red,
     ));
     if (success) _load();
@@ -127,7 +129,7 @@ class _WindowsDevolucaoGridScreenState
               child: ElevatedButton.icon(
                 onPressed: () => _openForm(null),
                 icon: const Icon(Icons.add, size: 18),
-                label: const Text('Nova Devolução'),
+                label: const Text(GridTexts.newReturn),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: GridColors.primary,
                   foregroundColor: Colors.white,
@@ -151,7 +153,7 @@ class _WindowsDevolucaoGridScreenState
         spacing: 8,
         crossAxisAlignment: WrapCrossAlignment.center,
         children: [
-          const Text('Status:', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500)),
+          const Text(GridTexts.statusLabel, style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500)),
           SizedBox(
             width: 140,
             height: 36,
@@ -173,7 +175,7 @@ class _WindowsDevolucaoGridScreenState
             child: TextField(
               controller: _clienteCtrl,
               decoration: const InputDecoration(
-                hintText: 'Buscar cliente...',
+                hintText: GridTexts.searchCustomerHint,
                 contentPadding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 border: OutlineInputBorder(),
                 isDense: true,
@@ -195,7 +197,7 @@ class _WindowsDevolucaoGridScreenState
               ]),
             ),
           ),
-          const Text('até', style: TextStyle(fontSize: 13)),
+          const Text(GridTexts.until, style: TextStyle(fontSize: 13)),
           InkWell(
             onTap: () => _pickDate(isInicio: false),
             child: Container(

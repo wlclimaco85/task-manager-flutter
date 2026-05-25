@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import '../../../utils/grid_colors.dart';
+import '../../../utils/grid_texts.dart';
 import 'package:flutter/services.dart';
 
 import '../../../models/nfce/item_venda_model.dart';
