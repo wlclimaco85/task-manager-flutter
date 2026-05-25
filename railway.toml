@@ -1,0 +1,12 @@
+[build]
+builder = "DOCKERFILE"
+dockerfile = "Dockerfile"
+
+[deploy]
+startCommand = ""
+restartPolicyType = "ON_FAILURE"
+restartPolicyMaxRetries = 10
+
+[[build.args]]
+name = "BACKEND_URL"
+value = "https://api.cliente.exemplo.com"
