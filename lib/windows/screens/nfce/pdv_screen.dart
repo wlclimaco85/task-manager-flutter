@@ -93,7 +93,7 @@ class _PdvScreenState extends State<PdvScreen> {
   Future<void> _emitirNfce() async {
     final cpfCnpj = _clienteCtrl.text.trim();
     if (cpfCnpj.isNotEmpty && !_validarCpfCnpj(cpfCnpj)) {
-      setState(() => _erroCliente = 'CPF/CNPJ inválido');
+      setState(() => _erroCliente = GridTexts.invalidCpfCnpj);
       return;
     }
     setState(() => _erroCliente = null);
@@ -101,7 +101,7 @@ class _PdvScreenState extends State<PdvScreen> {
 
     if (_provider.carrinho.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Adicione pelo menos um produto ao carrinho.')),
+        const SnackBar(content: Text(GridTexts.addProductToCart)),
       );
       return;
     }
@@ -120,10 +120,12 @@ class _PdvScreenState extends State<PdvScreen> {
     final backgroundColor = isConfigured ? const Color(0xFFEAF4FF) : const Color(0xFFFFF3CD);
     final borderColor = isConfigured ? const Color(0xFFB6D4FE) : const Color(0xFFFFD54F);
     final textColor = isConfigured ? const Color(0xFF0B5CAD) : const Color(0xFF7A4B00);
-    final title = isConfigured ? 'Configuração NFC-e' : 'Configuração fiscal pendente';
+    final title = isConfigured
+        ? GridTexts.nfceConfigTitle
+        : GridTexts.fiscalConfigPending;
     final message = isConfigured
-        ? 'Confirme UF, ambiente, CSC, certificado e saúde da SEFAZ na configuração fiscal antes de emitir. Cancelamento e inutilização já fazem parte do fluxo fiscal atual.'
-        : 'Nenhuma empresa foi identificada para este usuário. Verifique o vínculo da conta e configure a NFC-e antes de emitir.';
+        ? GridTexts.pdvConfiguredNotice
+        : GridTexts.pdvMissingCompanyNotice;
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
@@ -141,7 +143,7 @@ class _PdvScreenState extends State<PdvScreen> {
             );
           },
           style: TextButton.styleFrom(foregroundColor: textColor),
-          child: const Text('Abrir configuração'),
+          child: const Text(GridTexts.openConfiguration),
         ),
       ),
     );
@@ -161,7 +163,7 @@ class _PdvScreenState extends State<PdvScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const Text(
-                'Pronto para os eventos fiscais',
+                GridTexts.readyForFiscalEvents,
                 style: TextStyle(
                   fontWeight: FontWeight.bold,
                   color: GridColors.secondary,
@@ -173,15 +175,21 @@ class _PdvScreenState extends State<PdvScreen> {
                 runSpacing: 12,
                 children: [
                   _StatusChip(
-                    label: _provider.carrinho.isEmpty ? 'Sem itens' : '${_provider.carrinho.length} item(ns)',
+                    label: _provider.carrinho.isEmpty
+                        ? GridTexts.noItems
+                        : GridTexts.itemCount(_provider.carrinho.length),
                     color: _provider.carrinho.isEmpty ? Colors.orange : Colors.green,
                   ),
                   _StatusChip(
-                    label: pagamentosValidos ? 'Pagamento coberto' : 'Pagamento pendente',
+                    label: pagamentosValidos
+                        ? GridTexts.paymentCovered
+                        : GridTexts.paymentPending,
                     color: pagamentosValidos ? Colors.green : Colors.orange,
                   ),
                   _StatusChip(
-                    label: _clienteCtrl.text.trim().isEmpty ? 'Consumidor não identificado' : 'CPF/CNPJ informado',
+                    label: _clienteCtrl.text.trim().isEmpty
+                        ? GridTexts.unidentifiedConsumer
+                        : GridTexts.cpfCnpjInformed,
                     color: Colors.blueGrey,
                   ),
                 ],
@@ -189,8 +197,8 @@ class _PdvScreenState extends State<PdvScreen> {
               const SizedBox(height: 10),
               Text(
                 pagamentosValidos
-                    ? 'A venda já pode seguir para emissão. Se a SEFAZ ficar indisponível, o fluxo de contingência local será acionado e a regularização ficará na fila.'
-                    : 'Revise itens e pagamento antes da emissão para evitar rejeições e retrabalho no cancelamento.',
+                    ? GridTexts.saleReadyForIssueNotice
+                    : GridTexts.reviewItemsPaymentBeforeIssue,
                 style: const TextStyle(height: 1.35),
               ),
             ],
@@ -206,7 +214,7 @@ class _PdvScreenState extends State<PdvScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('PDV / NFC-e'),
+        title: const Text(GridTexts.pdvNfceTitle),
         backgroundColor: GridColors.secondary,
         foregroundColor: Colors.white,
         actions: [
@@ -215,7 +223,7 @@ class _PdvScreenState extends State<PdvScreen> {
               padding: const EdgeInsets.symmetric(horizontal: 12),
               child: Center(
                 child: Text(
-                  'Empresa: ${TenantContext.empresaId}',
+                  GridTexts.companyIdPrefix(TenantContext.empresaId),
                   style: const TextStyle(fontSize: 13, color: Colors.white70),
                 ),
               ),
@@ -250,7 +258,10 @@ class _PdvScreenState extends State<PdvScreen> {
       child: Column(
         children: [
           const TabBar(
-            tabs: [Tab(text: 'Buscar Produto'), Tab(text: 'Carrinho')],
+            tabs: [
+              Tab(text: GridTexts.searchProductTab),
+              Tab(text: GridTexts.cart),
+            ],
             labelColor: GridColors.secondary,
           ),
           Expanded(
@@ -272,7 +283,7 @@ class _PdvScreenState extends State<PdvScreen> {
           TextField(
             controller: _buscaCtrl,
             decoration: InputDecoration(
-              labelText: 'Buscar produto por nome ou código',
+              labelText: GridTexts.searchProductByNameOrCode,
               prefixIcon: _buscando
                   ? const Padding(
                       padding: EdgeInsets.all(12),
@@ -289,7 +300,7 @@ class _PdvScreenState extends State<PdvScreen> {
           const SizedBox(height: 12),
           Expanded(
             child: _resultadosBusca.isEmpty && _buscaCtrl.text.trim().length >= 2
-                ? const Center(child: Text('Nenhum produto encontrado.'))
+                ? const Center(child: Text(GridTexts.noProductFound))
                 : ListView.builder(
                     itemCount: _resultadosBusca.length,
                     itemBuilder: (_, i) {
@@ -298,14 +309,19 @@ class _PdvScreenState extends State<PdvScreen> {
                       return ListTile(
                         leading: const Icon(Icons.inventory_2_outlined),
                         title: Text(p['nome']?.toString() ?? '—'),
-                        subtitle: Text('${p['codigo'] ?? ''} — R\$ ${preco.toStringAsFixed(2)}'),
+                        subtitle: Text(
+                          GridTexts.productCodeAndPrice(
+                            p['codigo'] ?? '',
+                            preco.toStringAsFixed(2),
+                          ),
+                        ),
                         trailing: IconButton(
                           icon: const Icon(Icons.add_circle, color: GridColors.secondary),
                           onPressed: () {
                             _provider.adicionarItem(p);
                             ScaffoldMessenger.of(context).showSnackBar(
                               SnackBar(
-                                content: Text('${p['nome']} adicionado ao carrinho.'),
+                                content: Text(GridTexts.productAddedToCart(p['nome'])),
                                 duration: const Duration(seconds: 1),
                               ),
                             );
@@ -327,7 +343,7 @@ class _PdvScreenState extends State<PdvScreen> {
         Expanded(
           child: _provider.carrinho.isEmpty
               ? const Center(
-                  child: Text('Carrinho vazio', style: TextStyle(color: Colors.grey)),
+                  child: Text(GridTexts.emptyCart, style: TextStyle(color: Colors.grey)),
                 )
               : ListView.builder(
                   itemCount: _provider.carrinho.length,
@@ -345,16 +361,16 @@ class _PdvScreenState extends State<PdvScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              _ResumoCampo(label: 'Subtotal', valor: _provider.subtotal, cor: Colors.black87),
-              _ResumoCampo(label: 'Desconto', valor: _provider.descontoTotal, cor: Colors.orange),
+              _ResumoCampo(label: GridTexts.subtotal, valor: _provider.subtotal, cor: Colors.black87),
+              _ResumoCampo(label: GridTexts.discount, valor: _provider.descontoTotal, cor: Colors.orange),
               _ResumoCampo(
-                label: 'TOTAL',
+                label: GridTexts.totalUpper,
                 valor: _provider.total,
                 cor: GridColors.secondary,
                 bold: true,
               ),
               if (_provider.pagamentos.isNotEmpty)
-                _ResumoCampo(label: 'Troco', valor: _provider.troco, cor: Colors.blue),
+                _ResumoCampo(label: GridTexts.change, valor: _provider.troco, cor: Colors.blue),
             ],
           ),
         ),
@@ -365,7 +381,7 @@ class _PdvScreenState extends State<PdvScreen> {
             keyboardType: TextInputType.number,
             inputFormatters: [FilteringTextInputFormatter.digitsOnly],
             decoration: InputDecoration(
-              labelText: 'CPF/CNPJ do cliente (opcional)',
+              labelText: GridTexts.customerCpfCnpjOptional,
               border: const OutlineInputBorder(),
               errorText: _erroCliente,
               suffixIcon: const Icon(Icons.person_outline),
@@ -389,24 +405,24 @@ class _PdvScreenState extends State<PdvScreen> {
                   onPressed: () => showDialog(
                     context: context,
                     builder: (_) => AlertDialog(
-                      title: const Text('Cancelar venda?'),
-                      content: const Text('O carrinho será limpo. Confirma?'),
+                      title: const Text(GridTexts.cancelSaleQuestion),
+                      content: const Text(GridTexts.clearCartConfirmation),
                       actions: [
                         TextButton(
                           onPressed: () => Navigator.pop(context),
-                          child: const Text('Não'),
+                          child: const Text(GridTexts.noUpper),
                         ),
                         TextButton(
                           onPressed: () {
                             _provider.limparCarrinho();
                             Navigator.pop(context);
                           },
-                          child: const Text('Sim'),
+                          child: const Text(GridTexts.yes),
                         ),
                       ],
                     ),
                   ),
-                  child: const Text('CANCELAR'),
+                  child: const Text(GridTexts.cancelUpper),
                 ),
               ),
               const SizedBox(width: 12),
@@ -420,7 +436,7 @@ class _PdvScreenState extends State<PdvScreen> {
                           height: 20,
                           child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
                         )
-                      : const Text('EMITIR NFC-e'),
+                      : const Text(GridTexts.issueNfce),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: GridColors.secondary,
                     foregroundColor: Colors.white,
@@ -455,7 +471,7 @@ class _ItemCarrinhoTile extends StatelessWidget {
     return ListTile(
       dense: true,
       title: Text(item.nomeProduto, style: const TextStyle(fontSize: 13)),
-      subtitle: Text('R\$ ${item.precoUnitario.toStringAsFixed(2)} un.'),
+      subtitle: Text(GridTexts.unitPrice(item.precoUnitario.toStringAsFixed(2))),
       trailing: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -469,7 +485,7 @@ class _ItemCarrinhoTile extends StatelessWidget {
             onPressed: onIncrementar,
           ),
           Text(
-            'R\$ ${item.subtotal.toStringAsFixed(2)}',
+            GridTexts.currencyValue(item.subtotal.toStringAsFixed(2)),
             style: const TextStyle(fontWeight: FontWeight.w600, color: GridColors.secondary),
           ),
           IconButton(
@@ -511,7 +527,7 @@ class _ResumoCampo extends StatelessWidget {
             ),
           ),
           Text(
-            'R\$ ${valor.toStringAsFixed(2)}',
+            GridTexts.currencyValue(valor.toStringAsFixed(2)),
             style: TextStyle(
               color: cor,
               fontWeight: bold ? FontWeight.bold : FontWeight.normal,
@@ -533,11 +549,11 @@ class _PainelPagamento extends StatelessWidget {
   final ValueChanged<int> onRemoverPagamento;
 
   static const _formas = [
-    ('DINHEIRO', 'Dinheiro'),
-    ('CARTAO_CREDITO', 'Cartão Crédito'),
-    ('CARTAO_DEBITO', 'Cartão Débito'),
-    ('PIX', 'PIX'),
-    ('OUTRO', 'Outro'),
+    ('DINHEIRO', GridTexts.cash),
+    ('CARTAO_CREDITO', GridTexts.creditCard),
+    ('CARTAO_DEBITO', GridTexts.debitCard),
+    ('PIX', GridTexts.pix),
+    ('OUTRO', GridTexts.other),
   ];
 
   const _PainelPagamento({
@@ -556,7 +572,7 @@ class _PainelPagamento extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text('Pagamento:', style: TextStyle(fontWeight: FontWeight.w600)),
+          const Text(GridTexts.payment, style: TextStyle(fontWeight: FontWeight.w600)),
           const SizedBox(height: 6),
           Wrap(
             spacing: 6,
@@ -582,7 +598,7 @@ class _PainelPagamento extends StatelessWidget {
                   controller: valorCtrl,
                   keyboardType: const TextInputType.numberWithOptions(decimal: true),
                   decoration: const InputDecoration(
-                    labelText: 'Valor',
+                    labelText: GridTexts.valueLabel,
                     prefixText: 'R\$ ',
                     isDense: true,
                     border: OutlineInputBorder(),
@@ -596,7 +612,7 @@ class _PainelPagamento extends StatelessWidget {
                   backgroundColor: GridColors.secondary,
                   foregroundColor: Colors.white,
                 ),
-                child: const Text('+ Adicionar'),
+                child: const Text(GridTexts.addPayment),
               ),
             ],
           ),
@@ -609,7 +625,10 @@ class _PainelPagamento extends StatelessWidget {
                       children: [
                         Expanded(
                           child: Text(
-                            '${e.value.formaPagamento}: R\$ ${e.value.valor.toStringAsFixed(2)}',
+                            GridTexts.paymentLine(
+                              e.value.formaPagamento,
+                              e.value.valor.toStringAsFixed(2),
+                            ),
                             style: const TextStyle(fontSize: 12),
                           ),
                         ),

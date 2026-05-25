@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../constants/custom_colors.dart';
 import '../../services/baixa_automatica_caller.dart';
-import '../../utils/utils.dart';
 import '../../utils/grid_texts.dart';
 
 class BaixaAutomaticaScreen extends StatefulWidget {

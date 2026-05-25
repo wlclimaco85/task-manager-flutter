@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../utils/grid_colors.dart';
+import '../../../utils/grid_texts.dart';
 
 /// Tela exibida quando a NFC-e é rejeitada pela SEFAZ.
 class NfceRejeicaoScreen extends StatelessWidget {
@@ -23,7 +24,7 @@ class NfceRejeicaoScreen extends StatelessWidget {
   String get _motivoNormalizado {
     final partes = <String>[];
     if (codigoRetorno != null && codigoRetorno!.trim().isNotEmpty) {
-      partes.add('Código ${codigoRetorno!.trim()}');
+      partes.add(GridTexts.rejectionCode(codigoRetorno!.trim()));
     }
     final motivoBase = motivo.trim();
     if (motivoBase.isNotEmpty) {
@@ -31,7 +32,7 @@ class NfceRejeicaoScreen extends StatelessWidget {
     } else if (xMotivo != null && xMotivo!.trim().isNotEmpty) {
       partes.add(xMotivo!.trim());
     }
-    return partes.isEmpty ? 'Rejeição sem mensagem.' : partes.join(' — ');
+    return partes.isEmpty ? GridTexts.rejectionWithoutMessage : partes.join(' — ');
   }
 
   /// Mapeia códigos de rejeição conhecidos para mensagens amigáveis.
@@ -40,27 +41,27 @@ class NfceRejeicaoScreen extends StatelessWidget {
     final texto = '${motivo.toLowerCase()} ${xMotivo?.toLowerCase() ?? ''}';
 
     if (codigo == '225' || texto.contains('assinatura')) {
-      return 'Erro de assinatura digital. Verifique certificado A1, cadeia ICP-Brasil e tente novamente.';
+      return GridTexts.signatureDigitalError;
     }
     if (codigo == '228') {
-      return 'Data/hora incompatível com o certificado. Revise relógio do servidor e validade do certificado.';
+      return GridTexts.certificateDateTimeMismatch;
     }
     if (codigo == '227') {
-      return 'Há duplicidade da chave de acesso. Consulte o protocolo antes de reenviar a venda.';
+      return GridTexts.duplicateAccessKeyNotice;
     }
     if (codigo == '539' || texto.contains('csc')) {
-      return 'CSC inválido ou não configurado. Revise ID CSC e CSC na configuração fiscal da empresa.';
+      return GridTexts.invalidCscNotice;
     }
     if (codigo == '999' || texto.contains('schema')) {
-      return 'Erro de schema XML. Revise dados fiscais obrigatórios e acione o suporte se persistir.';
+      return GridTexts.xmlSchemaErrorNotice;
     }
     if (codigo.startsWith('2')) {
-      return 'Rejeição de validação fiscal. Corrija os dados obrigatórios da venda e reenvie.';
+      return GridTexts.fiscalValidationRejectionNotice;
     }
     if (codigo.startsWith('5')) {
-      return 'Rejeição cadastral ou estrutural. Revise emitente, destinatário, produtos e configurações fiscais.';
+      return GridTexts.registryOrStructuralRejectionNotice;
     }
-    return 'Verifique os dados da venda, a configuração fiscal e tente novamente. Se persistir, contate o suporte técnico.';
+    return GridTexts.checkSaleDataAndRetryNotice;
   }
 
   @override
@@ -68,7 +69,7 @@ class NfceRejeicaoScreen extends StatelessWidget {
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
-        title: const Text('NFC-e Rejeitada'),
+        title: const Text(GridTexts.nfceRejectedTitle),
         backgroundColor: Colors.red.shade700,
         foregroundColor: Colors.white,
         automaticallyImplyLeading: false,
@@ -96,7 +97,7 @@ class NfceRejeicaoScreen extends StatelessWidget {
                       const SizedBox(width: 12),
                       Expanded(
                         child: Text(
-                          'NFC-e Rejeitada',
+                          GridTexts.nfceRejectedTitle,
                           style: TextStyle(
                             fontSize: 20,
                             fontWeight: FontWeight.bold,
@@ -118,7 +119,7 @@ class NfceRejeicaoScreen extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         const Text(
-                          'Motivo da rejeição:',
+                          GridTexts.rejectionReasonLabel,
                           style: TextStyle(fontWeight: FontWeight.bold),
                         ),
                         const SizedBox(height: 8),
@@ -134,7 +135,7 @@ class NfceRejeicaoScreen extends StatelessWidget {
                         if (chaveAcesso != null && chaveAcesso!.trim().isNotEmpty) ...[
                           const SizedBox(height: 12),
                           const Text(
-                            'Chave de acesso:',
+                            GridTexts.accessKeyCaption,
                             style: TextStyle(fontWeight: FontWeight.bold),
                           ),
                           const SizedBox(height: 4),
@@ -142,7 +143,7 @@ class NfceRejeicaoScreen extends StatelessWidget {
                         ],
                         const Divider(height: 24),
                         const Text(
-                          'O que fazer:',
+                          GridTexts.whatToDoLabel,
                           style: TextStyle(fontWeight: FontWeight.bold),
                         ),
                         const SizedBox(height: 8),
@@ -159,7 +160,7 @@ class NfceRejeicaoScreen extends StatelessWidget {
                     Expanded(
                       child: OutlinedButton.icon(
                         icon: const Icon(Icons.close),
-                        label: const Text('Cancelar Venda'),
+                        label: const Text(GridTexts.cancelSale),
                         style: OutlinedButton.styleFrom(
                             foregroundColor: Colors.red),
                         onPressed: onCancelar,
@@ -169,7 +170,7 @@ class NfceRejeicaoScreen extends StatelessWidget {
                     Expanded(
                       child: ElevatedButton.icon(
                         icon: const Icon(Icons.refresh),
-                        label: const Text('Tentar Novamente'),
+                        label: const Text(GridTexts.retryAgain),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: GridColors.secondary,
                           foregroundColor: Colors.white,

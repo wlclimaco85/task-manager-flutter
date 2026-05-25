@@ -112,7 +112,7 @@ class _ConfigFiscalScreenState extends State<ConfigFiscalScreen> {
   Future<void> _verificarSefaz() async {
     final empresaId = TenantContext.empresaId;
     if (empresaId == null) {
-      _mostrarErro('Empresa não identificada.');
+      _mostrarErro(GridTexts.companyNotIdentified);
       return;
     }
 
@@ -133,7 +133,7 @@ class _ConfigFiscalScreenState extends State<ConfigFiscalScreen> {
           _sefazHealth = NfceSefazHealthResult(
             disponivel: false,
             status: 'DOWN',
-            mensagem: 'Falha ao consultar a saúde da SEFAZ: $e',
+            mensagem: GridTexts.sefazHealthCheckFailure(e),
             uf: _uf,
             ambiente: _ambiente,
           );
@@ -150,7 +150,7 @@ class _ConfigFiscalScreenState extends State<ConfigFiscalScreen> {
 
     final empresaId = TenantContext.empresaId;
     if (empresaId == null) {
-      _mostrarErro('Empresa não identificada.');
+      _mostrarErro(GridTexts.companyNotIdentified);
       return;
     }
 
@@ -172,7 +172,7 @@ class _ConfigFiscalScreenState extends State<ConfigFiscalScreen> {
       }
 
       if (_configId == null) {
-        _mostrarErro('Nenhuma configuração fiscal ativa foi encontrada para a empresa/UF selecionada.');
+        _mostrarErro(GridTexts.noActiveFiscalConfigFound);
         return;
       }
 
@@ -189,14 +189,14 @@ class _ConfigFiscalScreenState extends State<ConfigFiscalScreen> {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Configuração fiscal salva com sucesso.'),
+          content: Text(GridTexts.nfceFiscalConfigSavedSuccess),
           backgroundColor: Colors.green,
         ),
       );
     } on NfceException catch (e) {
       _mostrarErro(e.message);
     } catch (e) {
-      _mostrarErro('Erro ao salvar: $e');
+      _mostrarErro(GridTexts.saveFiscalConfigError(e));
     } finally {
       if (mounted) setState(() => _salvando = false);
     }
@@ -205,13 +205,13 @@ class _ConfigFiscalScreenState extends State<ConfigFiscalScreen> {
   void _abrirInutilizacao() {
     final sec = SecurityMatrix.current();
     if (!sec.canManageFiscalEvents) {
-      _mostrarErro('A inutilização está disponível apenas para perfis FISCAL/ADMIN.');
+      _mostrarErro(GridTexts.nfceInutilizationAdminOnly);
       return;
     }
 
     final empresaId = TenantContext.empresaId;
     if (empresaId == null) {
-      _mostrarErro('Empresa não identificada.');
+      _mostrarErro(GridTexts.companyNotIdentified);
       return;
     }
 
@@ -240,10 +240,12 @@ class _ConfigFiscalScreenState extends State<ConfigFiscalScreen> {
       backgroundColor: isProducao ? const Color(0xFFE8F5E9) : const Color(0xFFFFF3CD),
       borderColor: isProducao ? const Color(0xFFA5D6A7) : const Color(0xFFFFD54F),
       textColor: isProducao ? const Color(0xFF1B5E20) : const Color(0xFF7A4B00),
-      title: isProducao ? 'Produção NFC-e' : 'Homologação NFC-e',
+      title: isProducao
+          ? GridTexts.sefazProductionTitle
+          : GridTexts.sefazHomologationTitle,
       message: isProducao
-          ? 'Ambiente de produção ativo. Revise UF, CSC, certificado e prazo de cancelamento antes de operar o PDV.'
-          : 'Ambiente de homologação ativo. Use este fluxo para testes, validações de inutilização e contingência.',
+          ? GridTexts.sefazProductionNotice
+          : GridTexts.sefazHomologationNotice,
     );
   }
 
@@ -254,8 +256,8 @@ class _ConfigFiscalScreenState extends State<ConfigFiscalScreen> {
         backgroundColor: GridColors.selectedRow,
         borderColor: const Color(0xFF90CAF9),
         textColor: const Color(0xFF0D47A1),
-        title: 'Verificando SEFAZ',
-        message: 'Consultando a saúde da SEFAZ para UF $_uf no ambiente $_ambiente.',
+        title: GridTexts.checkingSefaz,
+        message: GridTexts.checkingSefazMessage(_uf, _ambiente),
         trailing: const SizedBox(
           width: 18,
           height: 18,
@@ -270,13 +272,13 @@ class _ConfigFiscalScreenState extends State<ConfigFiscalScreen> {
         backgroundColor: const Color(0xFFEAF4FF),
         borderColor: const Color(0xFFB6D4FE),
         textColor: const Color(0xFF0B5CAD),
-        title: 'Saúde da SEFAZ',
-        message: 'Valide certificado e conectividade do ambiente antes de emitir, cancelar ou regularizar vendas em contingência.',
+        title: GridTexts.sefazHealthTitle,
+        message: GridTexts.sefazHealthNotice,
         trailing: TextButton.icon(
           onPressed: _verificandoSefaz ? null : _verificarSefaz,
           style: TextButton.styleFrom(foregroundColor: const Color(0xFF0B5CAD)),
           icon: const Icon(Icons.refresh),
-          label: const Text('Verificar'),
+          label: const Text(GridTexts.verify),
         ),
       );
     }
@@ -287,7 +289,7 @@ class _ConfigFiscalScreenState extends State<ConfigFiscalScreen> {
       backgroundColor: online ? const Color(0xFFE8F5E9) : const Color(0xFFFFEBEE),
       borderColor: online ? const Color(0xFFA5D6A7) : const Color(0xFFEF9A9A),
       textColor: online ? const Color(0xFF1B5E20) : GridColors.error,
-      title: online ? 'SEFAZ disponível' : 'SEFAZ indisponível',
+      title: online ? GridTexts.sefazAvailable : GridTexts.sefazUnavailable,
       message: _sefazHealth!.mensagem,
       trailing: TextButton.icon(
         onPressed: _verificandoSefaz ? null : _verificarSefaz,
@@ -295,7 +297,7 @@ class _ConfigFiscalScreenState extends State<ConfigFiscalScreen> {
           foregroundColor: online ? const Color(0xFF1B5E20) : GridColors.error,
         ),
         icon: const Icon(Icons.refresh),
-        label: const Text('Reverificar'),
+        label: const Text(GridTexts.recheck),
       ),
     );
   }
@@ -309,7 +311,7 @@ class _ConfigFiscalScreenState extends State<ConfigFiscalScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const Text(
-              'Eventos fiscais do épico',
+              GridTexts.epicFiscalEvents,
               style: TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.bold,
@@ -318,7 +320,7 @@ class _ConfigFiscalScreenState extends State<ConfigFiscalScreen> {
             ),
             const SizedBox(height: 8),
             const Text(
-              'A inutilização já pode ser iniciada pelo app. Cancelamento fica disponível na NFC-e autorizada. Contingência local está pronta; o registro real em EPEC continua dependente do backend.',
+              GridTexts.epicFiscalEventsNotice,
               style: TextStyle(height: 1.35),
             ),
             const SizedBox(height: 16),
@@ -329,12 +331,12 @@ class _ConfigFiscalScreenState extends State<ConfigFiscalScreen> {
                 OutlinedButton.icon(
                   onPressed: _abrirInutilizacao,
                   icon: const Icon(Icons.block),
-                  label: const Text('Abrir inutilização'),
+                  label: const Text(GridTexts.openInutilization),
                 ),
                 OutlinedButton.icon(
                   onPressed: _verificandoSefaz ? null : _verificarSefaz,
                   icon: const Icon(Icons.health_and_safety_outlined),
-                  label: const Text('Validar saúde da SEFAZ'),
+                  label: const Text(GridTexts.validateSefazHealth),
                 ),
               ],
             ),
@@ -354,7 +356,7 @@ class _ConfigFiscalScreenState extends State<ConfigFiscalScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Configuração Fiscal NFC-e'),
+        title: const Text(GridTexts.nfceFiscalConfigTitle),
         backgroundColor: GridColors.secondary,
         foregroundColor: Colors.white,
       ),
@@ -374,13 +376,13 @@ class _ConfigFiscalScreenState extends State<ConfigFiscalScreen> {
                   const SizedBox(height: 12),
                   _buildEventosCard(),
                   const SizedBox(height: 16),
-                  const _SectionTitle(title: 'Identificação'),
+                  const _SectionTitle(title: GridTexts.identification),
                   const SizedBox(height: 12),
                   TextFormField(
                     initialValue: TenantContext.empresaId?.toString() ?? '—',
                     readOnly: true,
                     decoration: const InputDecoration(
-                      labelText: 'Empresa (ID)',
+                      labelText: GridTexts.companyIdLabel,
                       border: OutlineInputBorder(),
                       suffixIcon: Icon(Icons.lock_outline, size: 16),
                     ),
@@ -389,7 +391,7 @@ class _ConfigFiscalScreenState extends State<ConfigFiscalScreen> {
                   DropdownButtonFormField<String>(
                     initialValue: _uf,
                     decoration: const InputDecoration(
-                      labelText: 'UF',
+                      labelText: GridTexts.uf,
                       border: OutlineInputBorder(),
                     ),
                     items: _ufs
@@ -401,22 +403,28 @@ class _ConfigFiscalScreenState extends State<ConfigFiscalScreen> {
                   DropdownButtonFormField<String>(
                     initialValue: _ambiente,
                     decoration: const InputDecoration(
-                      labelText: 'Ambiente',
+                      labelText: GridTexts.environment,
                       border: OutlineInputBorder(),
                     ),
                     items: const [
-                      DropdownMenuItem(value: 'HOMOLOGACAO', child: Text('Homologação')),
-                      DropdownMenuItem(value: 'PRODUCAO', child: Text('Produção')),
+                      DropdownMenuItem(
+                        value: 'HOMOLOGACAO',
+                        child: Text(GridTexts.environmentHomologation),
+                      ),
+                      DropdownMenuItem(
+                        value: 'PRODUCAO',
+                        child: Text(GridTexts.environmentProduction),
+                      ),
                     ],
                     onChanged: (v) => setState(() => _ambiente = v ?? 'HOMOLOGACAO'),
                   ),
                   const SizedBox(height: 24),
-                  const _SectionTitle(title: 'CSC (Código de Segurança do Contribuinte)'),
+                  const _SectionTitle(title: GridTexts.cscSecurityCodeSection),
                   const SizedBox(height: 12),
                   TextFormField(
                     initialValue: _idCsc,
                     decoration: InputDecoration(
-                      labelText: 'ID CSC',
+                      labelText: GridTexts.cscIdLabel,
                       border: const OutlineInputBorder(),
                       suffixIcon: IconButton(
                         icon: Icon(_mostrarCsc ? Icons.visibility_off : Icons.visibility),
@@ -424,32 +432,36 @@ class _ConfigFiscalScreenState extends State<ConfigFiscalScreen> {
                       ),
                     ),
                     obscureText: !_mostrarCsc,
-                    validator: (v) => (v == null || v.isEmpty) ? 'Informe o ID CSC.' : null,
+                    validator: (v) =>
+                        (v == null || v.isEmpty) ? GridTexts.informIdCsc : null,
                     onSaved: (v) => _idCsc = v?.trim() ?? '',
                   ),
                   const SizedBox(height: 16),
                   TextFormField(
                     initialValue: _csc,
                     decoration: const InputDecoration(
-                      labelText: 'CSC',
+                      labelText: GridTexts.cscLabel,
                       border: OutlineInputBorder(),
                     ),
                     obscureText: !_mostrarCsc,
-                    validator: (v) => (v == null || v.isEmpty) ? 'Informe o CSC.' : null,
+                    validator: (v) =>
+                        (v == null || v.isEmpty) ? GridTexts.informCsc : null,
                     onSaved: (v) => _csc = v?.trim() ?? '',
                   ),
                   const SizedBox(height: 24),
-                  const _SectionTitle(title: 'Certificado Digital A1'),
+                  const _SectionTitle(title: GridTexts.digitalCertificateA1),
                   const SizedBox(height: 12),
                   OutlinedButton.icon(
                     icon: const Icon(Icons.upload_file),
-                    label: Text(_nomeCertificado ?? 'Selecionar arquivo .pfx / .p12'),
+                    label: Text(
+                      _nomeCertificado ?? GridTexts.selectCertificateFile,
+                    ),
                     onPressed: _selecionarCertificado,
                   ),
                   if (_nomeCertificado != null) ...[
                     const SizedBox(height: 8),
                     Text(
-                      'Arquivo selecionado: $_nomeCertificado',
+                      GridTexts.selectedFile(_nomeCertificado!),
                       style: const TextStyle(color: GridColors.secondary, fontSize: 12),
                     ),
                   ],
@@ -457,8 +469,8 @@ class _ConfigFiscalScreenState extends State<ConfigFiscalScreen> {
                   TextFormField(
                     obscureText: !_mostrarSenha,
                     decoration: InputDecoration(
-                      labelText: 'Senha do certificado',
-                      hintText: 'Nunca é armazenada em texto puro',
+                      labelText: GridTexts.certificatePasswordLabel,
+                      hintText: GridTexts.certificatePasswordNotStoredPlain,
                       border: const OutlineInputBorder(),
                       suffixIcon: IconButton(
                         icon: Icon(_mostrarSenha ? Icons.visibility_off : Icons.visibility),
@@ -468,15 +480,15 @@ class _ConfigFiscalScreenState extends State<ConfigFiscalScreen> {
                     onChanged: (v) => _senhaCertificado = v,
                   ),
                   const SizedBox(height: 24),
-                  const _SectionTitle(title: 'NFC-e'),
+                  const _SectionTitle(title: GridTexts.nfceSectionTitle),
                   const SizedBox(height: 12),
                   TextFormField(
                     initialValue: _serie,
                     decoration: const InputDecoration(
-                      labelText: 'Série NFC-e',
+                      labelText: GridTexts.nfceSeriesLabel,
                       border: OutlineInputBorder(),
                     ),
-                    validator: (v) => (v == null || v.isEmpty) ? 'Informe a série.' : null,
+                    validator: (v) => (v == null || v.isEmpty) ? GridTexts.informSeries : null,
                     onSaved: (v) => _serie = v?.trim() ?? '001',
                   ),
                   const SizedBox(height: 32),
@@ -492,7 +504,7 @@ class _ConfigFiscalScreenState extends State<ConfigFiscalScreen> {
                                 child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
                               )
                             : const Icon(Icons.network_check),
-                        label: const Text('Verificar SEFAZ'),
+                        label: const Text(GridTexts.verifySefaz),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Colors.blueGrey,
                           foregroundColor: Colors.white,
@@ -502,7 +514,7 @@ class _ConfigFiscalScreenState extends State<ConfigFiscalScreen> {
                       OutlinedButton.icon(
                         onPressed: _abrirInutilizacao,
                         icon: const Icon(Icons.block),
-                        label: const Text('Inutilização'),
+                        label: const Text(GridTexts.inutilization),
                       ),
                     ],
                   ),
@@ -517,7 +529,7 @@ class _ConfigFiscalScreenState extends State<ConfigFiscalScreen> {
                               child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
                             )
                           : const Icon(Icons.save),
-                      label: const Text('Salvar configuração'),
+                      label: const Text(GridTexts.saveConfiguration),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: GridColors.secondary,
                         foregroundColor: Colors.white,

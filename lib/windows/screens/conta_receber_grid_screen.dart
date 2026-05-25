@@ -9,6 +9,7 @@ import '../../../models/conta_receber_model.dart';
 import '../../../utils/api_links.dart';
 import '../../../utils/grid_colors.dart';
 import '../../../utils/tenant_context.dart';
+import '../../../utils/grid_texts.dart';
 import '../../../widgets/finance/billing_charge_dialog.dart';
 import '../../../widgets/generic_grid_windows_screen.dart' show CustomAction, FieldConfigWindows;
 import '../../../windows/screens/baixa_dialog_receber.dart';
@@ -30,33 +31,45 @@ class WindowsContaReceberGridScreen extends StatefulWidget {
 class _WindowsContaReceberGridScreenState extends State<WindowsContaReceberGridScreen> {
   bool _importing = false;
 
-  String _statusFilter = 'Todos';
+  String _statusFilter = GridTexts.all;
   DateTime? _dataInicio;
   DateTime? _dataFim;
   int? _parceiroId;
-  String _tipoFilter = 'Todos';
-  final _statusOptions = ['Todos', 'ABERTA', 'BAIXADA', 'VENCIDO', 'PARCIAL', 'CANCELADA'];
-  final _tipoOptions = ['Todos', 'AVULSO', 'RECORRENTE', 'PARCELADO'];
+  String _tipoFilter = GridTexts.all;
+  final _statusOptions = [
+    GridTexts.all,
+    GridTexts.accountStatusOpen,
+    GridTexts.accountStatusPaid,
+    GridTexts.accountStatusOverdue,
+    GridTexts.accountStatusPartial,
+    GridTexts.accountStatusCancelled,
+  ];
+  final _tipoOptions = [
+    GridTexts.all,
+    GridTexts.accountTypeSingle,
+    GridTexts.accountTypeRecurring,
+    GridTexts.accountTypeInstallment,
+  ];
 
   Key _gridKey = UniqueKey();
 
   Map<String, dynamic> get _filterParams {
     final params = <String, dynamic>{};
-    if (_statusFilter != 'Todos') params['status'] = _statusFilter;
+    if (_statusFilter != GridTexts.all) params['status'] = _statusFilter;
     if (_dataInicio != null) params['dataInicio'] = _dataInicio!.toIso8601String().substring(0, 10);
     if (_dataFim != null) params['dataFim'] = _dataFim!.toIso8601String().substring(0, 10);
     if (_parceiroId != null) params['parceiroId'] = _parceiroId.toString();
-    if (_tipoFilter != 'Todos') params['tipo'] = _tipoFilter;
+    if (_tipoFilter != GridTexts.all) params['tipo'] = _tipoFilter;
     return params;
   }
 
   void _clearFilters() {
     setState(() {
-      _statusFilter = 'Todos';
+      _statusFilter = GridTexts.all;
       _dataInicio = null;
       _dataFim = null;
       _parceiroId = null;
-      _tipoFilter = 'Todos';
+      _tipoFilter = GridTexts.all;
       _gridKey = UniqueKey();
     });
   }
@@ -79,15 +92,18 @@ class _WindowsContaReceberGridScreenState extends State<WindowsContaReceberGridS
       bytes = await File(file.path!).readAsBytes();
     }
     if (bytes == null) {
-      _snack('Não foi possível ler o arquivo', error: true);
+      _snack(GridTexts.fileReadError, error: true);
       return;
     }
 
     setState(() => _importing = true);
     try {
+      final importUrl = TenantContext.empresaId == null
+          ? ApiLinks.importacaoContaReceber
+          : '${ApiLinks.importacaoContaReceber}?empId=${TenantContext.empresaId}';
       final request = http.MultipartRequest(
         'POST',
-        Uri.parse(ApiLinks.importacaoContaReceber),
+        Uri.parse(importUrl),
       );
       request.headers.addAll(TenantContext.headers);
       request.files.add(
@@ -105,12 +121,12 @@ class _WindowsContaReceberGridScreenState extends State<WindowsContaReceberGridS
       if (response.statusCode == 200) {
         final data = jsonDecode(body);
         final importados = data['importados'] ?? data['count'] ?? '?';
-        _snack('Importação concluída: $importados registro(s)');
+        _snack(GridTexts.importCompletedCount(importados));
       } else {
-        _snack('Erro na importação (${response.statusCode})', error: true);
+        _snack(GridTexts.errorWithStatus(response.statusCode), error: true);
       }
     } catch (e) {
-      if (mounted) _snack('Erro: $e', error: true);
+      if (mounted) _snack(GridTexts.genericError(e.toString()), error: true);
     } finally {
       if (mounted) setState(() => _importing = false);
     }
@@ -150,7 +166,7 @@ class _WindowsContaReceberGridScreenState extends State<WindowsContaReceberGridS
           spacing: 8,
           crossAxisAlignment: WrapCrossAlignment.center,
           children: [
-            const Text('Status:', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500)),
+            const Text(GridTexts.statusLabel, style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500)),
             SizedBox(
               width: 140,
               height: 36,
@@ -166,7 +182,7 @@ class _WindowsContaReceberGridScreenState extends State<WindowsContaReceberGridS
               ),
             ),
             const SizedBox(width: 12),
-            const Text('Período:', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500)),
+            const Text(GridTexts.periodLabel, style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500)),
             InkWell(
               onTap: () => _pickDate(isInicio: true),
               child: Container(
@@ -176,11 +192,11 @@ class _WindowsContaReceberGridScreenState extends State<WindowsContaReceberGridS
                 child: Row(mainAxisSize: MainAxisSize.min, children: [
                   const Icon(Icons.calendar_today, size: 16),
                   const SizedBox(width: 4),
-                  Text(_dataInicio != null ? '${_dataInicio!.day}/${_dataInicio!.month}/${_dataInicio!.year}' : 'Início', style: const TextStyle(fontSize: 13)),
+                  Text(_dataInicio != null ? '${_dataInicio!.day}/${_dataInicio!.month}/${_dataInicio!.year}' : GridTexts.start, style: const TextStyle(fontSize: 13)),
                 ]),
               ),
             ),
-            const Text(' até ', style: TextStyle(fontSize: 13)),
+            const Text(' ${GridTexts.until} ', style: TextStyle(fontSize: 13)),
             InkWell(
               onTap: () => _pickDate(isInicio: false),
               child: Container(
@@ -190,12 +206,12 @@ class _WindowsContaReceberGridScreenState extends State<WindowsContaReceberGridS
                 child: Row(mainAxisSize: MainAxisSize.min, children: [
                   const Icon(Icons.calendar_today, size: 16),
                   const SizedBox(width: 4),
-                  Text(_dataFim != null ? '${_dataFim!.day}/${_dataFim!.month}/${_dataFim!.year}' : 'Fim', style: const TextStyle(fontSize: 13)),
+                  Text(_dataFim != null ? '${_dataFim!.day}/${_dataFim!.month}/${_dataFim!.year}' : GridTexts.end, style: const TextStyle(fontSize: 13)),
                 ]),
               ),
             ),
             const SizedBox(width: 12),
-            const Text('Tipo:', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500)),
+            const Text(GridTexts.typeLabel, style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500)),
             SizedBox(
               width: 130,
               height: 36,
@@ -216,7 +232,7 @@ class _WindowsContaReceberGridScreenState extends State<WindowsContaReceberGridS
               child: ElevatedButton.icon(
                 onPressed: _applyFilters,
                 icon: const Icon(Icons.search, size: 18),
-                label: const Text('Filtrar', style: TextStyle(fontSize: 13)),
+                label: const Text(GridTexts.filter, style: TextStyle(fontSize: 13)),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: GridColors.primary,
                   foregroundColor: Colors.white,
@@ -230,7 +246,7 @@ class _WindowsContaReceberGridScreenState extends State<WindowsContaReceberGridS
               child: OutlinedButton.icon(
                 onPressed: _clearFilters,
                 icon: const Icon(Icons.clear, size: 18),
-                label: const Text('Limpar', style: TextStyle(fontSize: 13)),
+                label: const Text(GridTexts.clear, style: TextStyle(fontSize: 13)),
                 style: OutlinedButton.styleFrom(
                   padding: const EdgeInsets.symmetric(horizontal: 12),
                 ),
@@ -275,7 +291,7 @@ class _WindowsContaReceberGridScreenState extends State<WindowsContaReceberGridS
                         child: CircularProgressIndicator(strokeWidth: 2, color: GridColors.secondary),
                       )
                     : const Icon(Icons.upload_file, size: 18),
-                label: const Text('Importar Boleto'),
+                label: const Text(GridTexts.importBoleto),
                 style: OutlinedButton.styleFrom(
                   foregroundColor: GridColors.secondary,
                   padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
@@ -287,31 +303,31 @@ class _WindowsContaReceberGridScreenState extends State<WindowsContaReceberGridS
             customActions: () => [
               CustomAction<ContaReceber>(
                 icon: Icons.receipt_long,
-                label: 'Cobrar',
+                label: GridTexts.charge,
                 onPressed: (context, object) => _showBillingDialog(context, object),
                 isVisible: (c) => c.status == StatusConta.ABERTA,
               ),
               CustomAction<ContaReceber>(
                 icon: Icons.check_circle,
-                label: 'Baixar',
+                label: GridTexts.lower,
                 onPressed: (context, object) => _showBaixaDialog(context, object),
                 isVisible: (c) => c.status == StatusConta.ABERTA,
               ),
               CustomAction<ContaReceber>(
                 icon: Icons.credit_card,
-                label: 'Parcelar',
+                label: GridTexts.installment,
                 onPressed: (context, object) => _showParcelarDialog(context, object),
                 isVisible: (c) => c.status == StatusConta.ABERTA,
               ),
               CustomAction<ContaReceber>(
                 icon: Icons.repeat,
-                label: 'Recorrência',
+                label: GridTexts.recurrence,
                 onPressed: (context, object) => _showRecorrenciaDialog(context, object),
                 isVisible: (c) => c.status == StatusConta.ABERTA,
               ),
               CustomAction<ContaReceber>(
                 icon: Icons.swap_horiz,
-                label: 'Renegociar',
+                label: GridTexts.renegotiate,
                 onPressed: (context, object) => _showRenegociacaoDialog(context, object),
                 isVisible: (c) => c.status == StatusConta.ABERTA,
               ),

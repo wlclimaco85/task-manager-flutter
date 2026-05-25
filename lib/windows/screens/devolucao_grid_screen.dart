@@ -42,12 +42,8 @@ class _WindowsDevolucaoGridScreenState
     final data = await DevolucaoService.fetchAll(
       status: _statusFilter != 'Todos' ? _statusFilter : null,
       cliente: _clienteFilter.isNotEmpty ? _clienteFilter : null,
-      dataInicio: _dataInicio != null
-          ? _dataInicio!.toIso8601String().substring(0, 10)
-          : null,
-      dataFim: _dataFim != null
-          ? _dataFim!.toIso8601String().substring(0, 10)
-          : null,
+      dataInicio: _dataInicio?.toIso8601String().substring(0, 10),
+      dataFim: _dataFim?.toIso8601String().substring(0, 10),
     );
     if (mounted) setState(() { _devolucoes = data; _isLoading = false; });
   }

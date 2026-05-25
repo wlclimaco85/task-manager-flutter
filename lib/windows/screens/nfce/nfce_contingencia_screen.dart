@@ -6,6 +6,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../../../services/nfce_provider.dart';
 import '../../../services/nfce_service.dart';
 import '../../../utils/grid_colors.dart';
+import '../../../utils/grid_texts.dart';
 
 /// Tela de modo offline / contingência.
 /// Salva vendas localmente quando a SEFAZ está indisponível e permite
@@ -142,8 +143,8 @@ class _NfceContingenciaScreenState extends State<NfceContingenciaScreen> {
         SnackBar(
           content: Text(
             enviadas > 0
-                ? '$enviadas venda(s) regularizada(s) com sucesso.'
-                : 'Nenhuma venda pôde ser regularizada. A SEFAZ ou o backend de contingência ainda estão indisponíveis.',
+                ? GridTexts.saleRegularizedCount(enviadas)
+                : GridTexts.noSaleCouldBeRegularized,
           ),
         ),
       );
@@ -208,14 +209,14 @@ class _NfceContingenciaScreenState extends State<NfceContingenciaScreen> {
   String _statusLabel(String status) {
     switch (status) {
       case 'AUTORIZADA':
-        return 'Autorizada';
+        return GridTexts.contingencyStatusAuthorized;
       case 'REJEITADA':
-        return 'Rejeitada';
+        return GridTexts.contingencyStatusRejected;
       case 'CONTINGENCIA':
-        return 'Contingência';
+        return GridTexts.contingencyStatusMode;
       case 'PENDENTE_BACKEND':
       default:
-        return 'EPEC pendente';
+        return GridTexts.contingencyStatusPendingEpec;
     }
   }
 
@@ -223,7 +224,7 @@ class _NfceContingenciaScreenState extends State<NfceContingenciaScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Modo Contingência'),
+        title: const Text(GridTexts.contingencyModeTitle),
         backgroundColor: Colors.orange.shade700,
         foregroundColor: Colors.white,
         automaticallyImplyLeading: false,
@@ -250,7 +251,7 @@ class _NfceContingenciaScreenState extends State<NfceContingenciaScreen> {
                       SizedBox(width: 8),
                       Expanded(
                         child: Text(
-                          'SEFAZ indisponível — venda salva em contingência',
+                          GridTexts.contingencySaleSavedTitle,
                           style: TextStyle(
                             fontWeight: FontWeight.bold,
                             fontSize: 15,
@@ -267,14 +268,14 @@ class _NfceContingenciaScreenState extends State<NfceContingenciaScreen> {
                   ),
                   const SizedBox(height: 8),
                   const Text(
-                    'O fluxo local já cobre a fila de contingência. O registro automático em EPEC ainda depende da implementação backend e permanece como pendência técnica.',
+                    GridTexts.contingencyFlowNotice,
                     style: TextStyle(color: Colors.black87, height: 1.35),
                   ),
                   if (_salvando) ...[
                     const SizedBox(height: 8),
                     const LinearProgressIndicator(),
                     const SizedBox(height: 4),
-                    const Text('Salvando venda localmente...'),
+                    const Text(GridTexts.savingSaleLocally),
                   ],
                 ],
               ),
@@ -284,7 +285,7 @@ class _NfceContingenciaScreenState extends State<NfceContingenciaScreen> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
-                  'Vendas pendentes: ${_vendasPendentes.length}',
+                  GridTexts.pendingSalesCount(_vendasPendentes.length),
                   style: const TextStyle(
                     fontWeight: FontWeight.bold,
                     fontSize: 16,
@@ -301,7 +302,7 @@ class _NfceContingenciaScreenState extends State<NfceContingenciaScreen> {
                           ),
                         )
                       : const Icon(Icons.sync),
-                  label: const Text('Regularizar'),
+                  label: const Text(GridTexts.regularize),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: GridColors.secondary,
                     foregroundColor: Colors.white,
@@ -315,7 +316,7 @@ class _NfceContingenciaScreenState extends State<NfceContingenciaScreen> {
               child: _vendasPendentes.isEmpty
                   ? const Center(
                       child: Text(
-                        'Nenhuma venda pendente.',
+                        GridTexts.noPendingSales,
                         style: TextStyle(color: Colors.grey),
                       ),
                     )
@@ -341,7 +342,11 @@ class _NfceContingenciaScreenState extends State<NfceContingenciaScreen> {
                                   color: _statusColor(status)),
                             ),
                             title: Text(
-                                'Venda com $itens item(ns) • R\$ ${total.toStringAsFixed(2)}'),
+                              GridTexts.saleWithItemsAndTotal(
+                                itens,
+                                total.toStringAsFixed(2),
+                              ),
+                            ),
                             subtitle: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
@@ -386,7 +391,7 @@ class _NfceContingenciaScreenState extends State<NfceContingenciaScreen> {
               width: double.infinity,
               child: ElevatedButton.icon(
                 icon: const Icon(Icons.add_shopping_cart),
-                label: const Text('Nova venda'),
+                label: const Text(GridTexts.newSale),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: GridColors.secondary,
                   foregroundColor: Colors.white,

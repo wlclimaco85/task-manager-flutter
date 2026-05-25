@@ -1,11 +1,11 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import '../../../utils/grid_colors.dart';
 
 import '../../../models/nfce/nfce_resultado_model.dart';
 import '../../../services/nfce_service.dart';
 import '../../../utils/tenant_context.dart';
+import '../../../utils/grid_texts.dart';
 
 /// Tela para cancelar uma NFC-e já autorizada.
 /// Cancela apenas dentro do prazo de 30 minutos após a autorização.
@@ -89,7 +89,7 @@ class _NfceCancelamentoScreenState extends State<NfceCancelamentoScreen> {
     if (empresaId == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Empresa não identificada para o cancelamento.'),
+          content: Text(GridTexts.companyNotIdentifiedForCancellation),
           backgroundColor: Colors.red,
         ),
       );
@@ -99,20 +99,20 @@ class _NfceCancelamentoScreenState extends State<NfceCancelamentoScreen> {
     final confirma = await showDialog<bool>(
       context: context,
       builder: (_) => AlertDialog(
-        title: const Text('Confirmar cancelamento'),
+        title: const Text(GridTexts.confirmCancellationTitle),
         content: const Text(
-          'Essa ação é irreversível.\nDeseja realmente cancelar esta NFC-e?',
+          GridTexts.confirmCancellationMessage,
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('Não'),
+            child: const Text(GridTexts.no),
           ),
           ElevatedButton(
             onPressed: () => Navigator.pop(context, true),
             style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
             child: const Text(
-              'Sim, cancelar',
+              GridTexts.yesCancel,
               style: TextStyle(color: Colors.white),
             ),
           ),
@@ -132,7 +132,7 @@ class _NfceCancelamentoScreenState extends State<NfceCancelamentoScreen> {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('NFC-e cancelada com sucesso.'),
+          content: Text(GridTexts.nfceCancelledSuccess),
           backgroundColor: Colors.green,
         ),
       );
@@ -141,14 +141,14 @@ class _NfceCancelamentoScreenState extends State<NfceCancelamentoScreen> {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Erro ao cancelar: ${e.message}'),
+          content: Text(GridTexts.cancelNfceError(e.message)),
           backgroundColor: Colors.red,
         ),
       );
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Erro inesperado: $e')),
+        SnackBar(content: Text(GridTexts.unexpectedError(e))),
       );
     } finally {
       if (mounted) setState(() => _cancelando = false);
@@ -159,7 +159,7 @@ class _NfceCancelamentoScreenState extends State<NfceCancelamentoScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Cancelar NFC-e'),
+        title: const Text(GridTexts.cancelNfceTitle),
         backgroundColor: Colors.red.shade700,
         foregroundColor: Colors.white,
       ),
@@ -196,7 +196,7 @@ class _NfceCancelamentoScreenState extends State<NfceCancelamentoScreen> {
                             const SizedBox(width: 8),
                             const Expanded(
                               child: Text(
-                                'Cancelamento permitido por até 30 minutos após a autorização',
+                                GridTexts.cancellationWindowNotice,
                                 style: TextStyle(fontWeight: FontWeight.bold),
                               ),
                             ),
@@ -205,7 +205,7 @@ class _NfceCancelamentoScreenState extends State<NfceCancelamentoScreen> {
                         const SizedBox(height: 8),
                         if (_prazoExpirado)
                           const Text(
-                            'Prazo expirado ou data de autorização indisponível. Não é possível cancelar esta NFC-e pelo app neste momento.',
+                            GridTexts.cancellationDeadlineExpired,
                             style: TextStyle(
                               color: Colors.red,
                               fontWeight: FontWeight.bold,
@@ -213,7 +213,7 @@ class _NfceCancelamentoScreenState extends State<NfceCancelamentoScreen> {
                           )
                         else
                           Text(
-                            'Tempo restante: ${_formatarCountdown()}',
+                            GridTexts.remainingTime(_formatarCountdown()),
                             style: TextStyle(
                               fontSize: 20,
                               fontWeight: FontWeight.bold,
@@ -227,7 +227,7 @@ class _NfceCancelamentoScreenState extends State<NfceCancelamentoScreen> {
                   ),
                   const SizedBox(height: 24),
                   Text(
-                    'Chave de acesso:',
+                    GridTexts.accessKeyCaption,
                     style: Theme.of(context).textTheme.titleSmall,
                   ),
                   SelectableText(
@@ -237,7 +237,7 @@ class _NfceCancelamentoScreenState extends State<NfceCancelamentoScreen> {
                   const SizedBox(height: 12),
                   if ((widget.resultado.protocolo).isNotEmpty) ...[
                     Text(
-                      'Protocolo:',
+                      GridTexts.protocol,
                       style: Theme.of(context).textTheme.titleSmall,
                     ),
                     SelectableText(widget.resultado.protocolo),
@@ -245,7 +245,7 @@ class _NfceCancelamentoScreenState extends State<NfceCancelamentoScreen> {
                   ],
                   if ((widget.resultado.codigoRetorno ?? '').isNotEmpty) ...[
                     Text(
-                      'Código SEFAZ:',
+                      GridTexts.sefazCodeLabel,
                       style: Theme.of(context).textTheme.titleSmall,
                     ),
                     SelectableText(widget.resultado.codigoRetorno!),
@@ -253,7 +253,7 @@ class _NfceCancelamentoScreenState extends State<NfceCancelamentoScreen> {
                   ],
                   if ((widget.resultado.dhRecbto ?? '').isNotEmpty) ...[
                     Text(
-                      'Recebido em:',
+                      GridTexts.receivedAtLabel,
                       style: Theme.of(context).textTheme.titleSmall,
                     ),
                     SelectableText(widget.resultado.dhRecbto!),
@@ -266,14 +266,14 @@ class _NfceCancelamentoScreenState extends State<NfceCancelamentoScreen> {
                     maxLines: 4,
                     maxLength: 255,
                     decoration: const InputDecoration(
-                      labelText: 'Justificativa do cancelamento *',
-                      hintText: 'Mínimo de 15 caracteres',
+                      labelText: GridTexts.cancellationJustificationLabel,
+                      hintText: GridTexts.minimum15Characters,
                       border: OutlineInputBorder(),
                       alignLabelWithHint: true,
                     ),
                     validator: (v) {
                       if (v == null || v.trim().length < _minCaracteres) {
-                        return 'Informe pelo menos $_minCaracteres caracteres.';
+                        return GridTexts.informAtLeastCharacters(_minCaracteres);
                       }
                       return null;
                     },
@@ -292,7 +292,7 @@ class _NfceCancelamentoScreenState extends State<NfceCancelamentoScreen> {
                               ),
                             )
                           : const Icon(Icons.cancel),
-                      label: const Text('Confirmar cancelamento'),
+                      label: const Text(GridTexts.confirmCancellationTitle),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.red.shade700,
                         foregroundColor: Colors.white,

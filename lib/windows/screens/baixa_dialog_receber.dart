@@ -42,43 +42,45 @@ class _BaixaDialogReceberState extends State<BaixaDialogReceber> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'Baixar Conta a Receber',
+                GridTexts.receiveAccountLow,
                 style: Theme.of(
                   context,
                 ).textTheme.titleLarge, // This is the correct replacement
               ),
               const SizedBox(height: 16),
-              Text('Descrição: ${widget.conta.descricao}'),
+              Text(GridTexts.descriptionLabel(widget.conta.descricao)),
               Text(
-                'Valor Original: R\$${widget.conta.valor.toStringAsFixed(2)}',
+                GridTexts.originalValueLabel(
+                  '${GridTexts.currencySymbol}${widget.conta.valor.toStringAsFixed(2)}',
+                ),
               ),
               const SizedBox(height: 16),
               TextFormField(
                 controller: _valorBaixaController,
-                decoration: const InputDecoration(labelText: 'Valor da Baixa'),
+                decoration: const InputDecoration(labelText: GridTexts.lowValue),
                 keyboardType: TextInputType.number,
               ),
               TextFormField(
                 controller: _valorMultaController,
-                decoration: const InputDecoration(labelText: 'Valor da Multa'),
+                decoration: const InputDecoration(labelText: GridTexts.fineValue),
                 keyboardType: TextInputType.number,
               ),
               TextFormField(
                 controller: _valorJurosController,
-                decoration: const InputDecoration(labelText: 'Valor dos Juros'),
+                decoration: const InputDecoration(labelText: GridTexts.interestValue),
                 keyboardType: TextInputType.number,
               ),
               TextFormField(
                 controller: _valorDescontoController,
                 decoration: const InputDecoration(
-                  labelText: 'Valor do Desconto',
+                  labelText: GridTexts.discountValue,
                 ),
                 keyboardType: TextInputType.number,
               ),
               const SizedBox(height: 16),
               Row(
                 children: [
-                  Text('Data da Baixa: ${_formatDate(_dataBaixa)}'),
+                  Text(GridTexts.lowDateLabel(_formatDate(_dataBaixa))),
                   IconButton(
                     icon: const Icon(Icons.calendar_today),
                     onPressed: () => _selectDate(context),
@@ -96,7 +98,7 @@ class _BaixaDialogReceberState extends State<BaixaDialogReceber> {
                   const SizedBox(width: 10),
                   ElevatedButton(
                     onPressed: _baixarConta,
-                    child: const Text('Confirmar Baixa'),
+                    child: const Text(GridTexts.confirmLow),
                   ),
                 ],
               ),
