@@ -17,16 +17,6 @@ class ApiLinks {
       .replaceFirst('http://', 'ws://');
 
   static String get _chatId => '$_wsUrl/boletobancos';
-  //  "wss://appacademia-production-be7e.up.railway.app/boletobancos";
-  //    "http://192.168.100.41:8088";
-  //  "http://192.168.114.1:8088";
-  // "http://192.168.100.113:8088";
-  //  "http://192.168.146.1:8088";
-  // // "http://192.168.100.41:8088";
-  // "http://192.168.100.41:8088"; // "http://192.168.12.19:8088"; //
-  //'https://academia-app-919f42758cd6.herokuapp.com'; // "http://192.168.12.28:8088";
-  // "http://192.168.12.23:8088"; // "http://192.168.56.1:8088"; // ; // //"http://192.168.12.23:8088";
-  //static const String _baseIp = "http://192.168.56.1:8088"; //"http://192.168.12.23:8088";
   static const String _baseUrl = 'https://task.teamrabbil.com/api/v1';
   static const String _baseUrlNew = '$_baseIp/boletobancos';
   //static const String _baseUrlNew =
@@ -53,7 +43,6 @@ class ApiLinks {
   // static String login = '$_baseUrl/login';
   // static String login = '$_baseUrl/rest/auth/login';
 
-  // static String login = 'http://192.168.56.1:8088/boletobancos/rest/auth/login';
   static String login = '$_baseUrlNew/rest/auth/login';
   static String recoverVerifyEmail(String email) =>
       '$_baseUrl/RecoverVerifyEmail/$email';

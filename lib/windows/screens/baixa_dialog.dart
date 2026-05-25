@@ -55,7 +55,7 @@ class _BaixaDialogState extends State<BaixaDialog> {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: const Text('Registrar Baixa'),
+      title: const Text(GridTexts.registerLow),
       content: SingleChildScrollView(
         child: Form(
           key: _formKey,
@@ -66,17 +66,17 @@ class _BaixaDialogState extends State<BaixaDialog> {
               TextFormField(
                 controller: _valorController,
                 decoration: const InputDecoration(
-                  labelText: 'Valor da Baixa',
+                  labelText: GridTexts.lowValue,
                   prefixIcon: Icon(Icons.attach_money),
                 ),
                 keyboardType: TextInputType.number,
                 validator: (value) {
                   if (value == null || value.isEmpty) {
-                    return 'Informe o valor da baixa';
+                    return GridTexts.enterLowValue;
                   }
                   final valor = double.tryParse(value);
                   if (valor == null || valor <= 0) {
-                    return 'Valor deve ser maior que zero';
+                    return GridTexts.valueMustBeGreaterThanZero;
                   }
                   return null;
                 },
@@ -89,7 +89,7 @@ class _BaixaDialogState extends State<BaixaDialog> {
                   : DropdownButtonFormField<int>(
                       initialValue: _formaPagamentoId,
                       decoration: const InputDecoration(
-                        labelText: 'Forma de Pagamento',
+                        labelText: GridTexts.paymentMethod,
                         prefixIcon: Icon(Icons.payment),
                       ),
                       items: _formasPagamento.map((forma) {
@@ -107,7 +107,7 @@ class _BaixaDialogState extends State<BaixaDialog> {
                       },
                       validator: (value) {
                         if (value == null) {
-                          return 'Selecione a forma de pagamento';
+                          return GridTexts.selectPaymentMethod;
                         }
                         return null;
                       },
@@ -119,7 +119,7 @@ class _BaixaDialogState extends State<BaixaDialog> {
                 children: [
                   const Icon(Icons.calendar_today, size: 20),
                   const SizedBox(width: 8),
-                  const Text('Data da Baixa:'),
+                  const Text('${GridTexts.lowDate}:'),
                   const SizedBox(width: 8),
                   TextButton(
                     onPressed: () => _selectDate(context),
@@ -141,7 +141,7 @@ class _BaixaDialogState extends State<BaixaDialog> {
         ),
         ElevatedButton(
           onPressed: _submitBaixa,
-          child: const Text('Confirmar Baixa'),
+          child: const Text(GridTexts.confirmLow),
         ),
       ],
     );
@@ -176,14 +176,14 @@ class _BaixaDialogState extends State<BaixaDialog> {
 
       if (response.isSuccess) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Baixa registrada com sucesso!')),
+          const SnackBar(content: Text(GridTexts.lowRegisteredSuccess)),
         );
         Navigator.of(context).pop(true);
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-              'Erro ao registrar baixa: ${response ?? response.statusCode}',
+              GridTexts.lowRegisterError(response.statusCode),
             ),
           ),
         );

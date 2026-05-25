@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import '../../../utils/grid_colors.dart';
 
 import '../../../services/nfce_service.dart';
 import '../../../utils/grid_texts.dart';
@@ -54,21 +53,21 @@ class _NfceInutilizacaoScreenState extends State<NfceInutilizacaoScreen> {
     final serie = int.tryParse(_serieCtrl.text.trim());
 
     if (numInicio == null || numFim == null || serie == null) {
-      setState(() => _erro = 'Série e números devem ser inteiros válidos.');
+      setState(() => _erro = GridTexts.invalidSeriesAndNumbers);
       return;
     }
     if (numFim < numInicio) {
-      setState(() => _erro = 'Número final deve ser maior ou igual ao inicial.');
+      setState(() => _erro = GridTexts.finalNumberMustBeGreaterOrEqual);
       return;
     }
 
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Confirmar inutilização'),
+        title: const Text(GridTexts.confirmInvalidationTitle),
         content: Text(
-          'Inutilizar números $numInicio a $numFim (série $serie) da UF ${widget.uf} em ${widget.ambiente}?\n\n'
-          'Esta operação é irreversível.',
+          '${GridTexts.confirmInvalidationMessage(numInicio, numFim, serie, widget.uf, widget.ambiente)}\n\n'
+          '${GridTexts.invalidationIrreversibleNotice}',
         ),
         actions: [
           TextButton(
@@ -79,7 +78,7 @@ class _NfceInutilizacaoScreenState extends State<NfceInutilizacaoScreen> {
             onPressed: () => Navigator.pop(ctx, true),
             style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
             child: const Text(
-              'Confirmar',
+              GridTexts.confirm,
               style: TextStyle(color: Colors.white),
             ),
           ),
@@ -108,7 +107,7 @@ class _NfceInutilizacaoScreenState extends State<NfceInutilizacaoScreen> {
       if (mounted) {
         setState(() {
           _sucesso =
-              'Faixa encaminhada para inutilização com sucesso. Consulte o histórico fiscal no backend para o protocolo definitivo.';
+              GridTexts.rangeInvalidationSuccess;
           _numInicioCtrl.clear();
           _numFimCtrl.clear();
           _justificativaCtrl.clear();
@@ -117,7 +116,7 @@ class _NfceInutilizacaoScreenState extends State<NfceInutilizacaoScreen> {
     } on NfceException catch (e) {
       if (mounted) setState(() => _erro = e.message);
     } catch (e) {
-      if (mounted) setState(() => _erro = 'Erro ao inutilizar: $e');
+      if (mounted) setState(() => _erro = GridTexts.invalidationError(e));
     } finally {
       if (mounted) setState(() => _enviando = false);
     }
@@ -127,7 +126,7 @@ class _NfceInutilizacaoScreenState extends State<NfceInutilizacaoScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Inutilização de Numeração NFC-e'),
+        title: const Text(GridTexts.nfceNumberInvalidationTitle),
         backgroundColor: Colors.orange[800],
         foregroundColor: Colors.white,
       ),
@@ -154,7 +153,7 @@ class _NfceInutilizacaoScreenState extends State<NfceInutilizacaoScreen> {
                         SizedBox(width: 8),
                         Expanded(
                           child: Text(
-                            'A inutilização é irreversível. Use apenas para números que não foram emitidos e não serão utilizados.',
+                            GridTexts.invalidationWarningBanner,
                             style: TextStyle(color: Colors.orange),
                           ),
                         ),
@@ -169,7 +168,7 @@ class _NfceInutilizacaoScreenState extends State<NfceInutilizacaoScreen> {
                           initialValue: widget.uf,
                           enabled: false,
                           decoration: const InputDecoration(
-                            labelText: 'UF',
+                            labelText: GridTexts.uf,
                             border: OutlineInputBorder(),
                           ),
                         ),
@@ -180,7 +179,7 @@ class _NfceInutilizacaoScreenState extends State<NfceInutilizacaoScreen> {
                           initialValue: widget.ambiente,
                           enabled: false,
                           decoration: const InputDecoration(
-                            labelText: 'Ambiente',
+                            labelText: GridTexts.environment,
                             border: OutlineInputBorder(),
                           ),
                         ),
@@ -191,13 +190,13 @@ class _NfceInutilizacaoScreenState extends State<NfceInutilizacaoScreen> {
                   TextFormField(
                     controller: _serieCtrl,
                     decoration: const InputDecoration(
-                      labelText: 'Série',
+                      labelText: GridTexts.series,
                       border: OutlineInputBorder(),
                     ),
                     keyboardType: TextInputType.number,
                     validator: (v) {
-                      if (v == null || v.trim().isEmpty) return 'Informe a série';
-                      if (int.tryParse(v.trim()) == null) return 'Série deve ser número';
+                      if (v == null || v.trim().isEmpty) return GridTexts.informSeries;
+                      if (int.tryParse(v.trim()) == null) return GridTexts.seriesMustBeNumber;
                       return null;
                     },
                   ),
@@ -208,13 +207,13 @@ class _NfceInutilizacaoScreenState extends State<NfceInutilizacaoScreen> {
                         child: TextFormField(
                           controller: _numInicioCtrl,
                           decoration: const InputDecoration(
-                            labelText: 'Número inicial',
+                            labelText: GridTexts.initialNumber,
                             border: OutlineInputBorder(),
                           ),
                           keyboardType: TextInputType.number,
                           validator: (v) {
-                            if (v == null || v.trim().isEmpty) return 'Obrigatório';
-                            if (int.tryParse(v.trim()) == null) return 'Inválido';
+                            if (v == null || v.trim().isEmpty) return GridTexts.requiredField;
+                            if (int.tryParse(v.trim()) == null) return GridTexts.invalidValue;
                             return null;
                           },
                         ),
@@ -224,13 +223,13 @@ class _NfceInutilizacaoScreenState extends State<NfceInutilizacaoScreen> {
                         child: TextFormField(
                           controller: _numFimCtrl,
                           decoration: const InputDecoration(
-                            labelText: 'Número final',
+                            labelText: GridTexts.finalNumber,
                             border: OutlineInputBorder(),
                           ),
                           keyboardType: TextInputType.number,
                           validator: (v) {
-                            if (v == null || v.trim().isEmpty) return 'Obrigatório';
-                            if (int.tryParse(v.trim()) == null) return 'Inválido';
+                            if (v == null || v.trim().isEmpty) return GridTexts.requiredField;
+                            if (int.tryParse(v.trim()) == null) return GridTexts.invalidValue;
                             return null;
                           },
                         ),
@@ -241,14 +240,14 @@ class _NfceInutilizacaoScreenState extends State<NfceInutilizacaoScreen> {
                   TextFormField(
                     controller: _justificativaCtrl,
                     decoration: const InputDecoration(
-                      labelText: 'Justificativa',
+                      labelText: GridTexts.justification,
                       border: OutlineInputBorder(),
-                      helperText: 'Descreva o motivo da inutilização com no mínimo 15 caracteres',
+                      helperText: GridTexts.invalidationReasonHelper,
                     ),
                     maxLines: 3,
                     validator: (v) {
                       if (v == null || v.trim().length < _minCaracteres) {
-                        return 'Justificativa deve ter no mínimo $_minCaracteres caracteres';
+                        return GridTexts.justificationMinLength(_minCaracteres);
                       }
                       return null;
                     },
@@ -304,7 +303,7 @@ class _NfceInutilizacaoScreenState extends State<NfceInutilizacaoScreen> {
                             )
                           : const Icon(Icons.block),
                       label: Text(
-                        _enviando ? 'Inutilizando...' : 'Inutilizar numeração',
+                        _enviando ? GridTexts.invalidating : GridTexts.invalidateNumbering,
                       ),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.orange[800],

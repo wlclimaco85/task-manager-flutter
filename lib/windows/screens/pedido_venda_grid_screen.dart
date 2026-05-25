@@ -55,12 +55,8 @@ class _WindowsPedidoVendaGridScreenState
     final data = await PedidoVendaService.fetchAll(
       status: _statusFilter != 'Todos' ? _statusFilter : null,
       cliente: _clienteFilter.isNotEmpty ? _clienteFilter : null,
-      dataInicio: _dataInicio != null
-          ? _dataInicio!.toIso8601String().substring(0, 10)
-          : null,
-      dataFim: _dataFim != null
-          ? _dataFim!.toIso8601String().substring(0, 10)
-          : null,
+      dataInicio: _dataInicio?.toIso8601String().substring(0, 10),
+      dataFim: _dataFim?.toIso8601String().substring(0, 10),
     );
     if (mounted) setState(() { _pedidos = data; _isLoading = false; });
   }

@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../constants/custom_colors.dart';
 import '../../services/baixa_automatica_caller.dart';
-import '../../utils/utils.dart';
 import '../../utils/grid_texts.dart';
 
 class BaixaAutomaticaScreen extends StatefulWidget {
@@ -59,8 +58,8 @@ class _BaixaAutomaticaScreenState extends State<BaixaAutomaticaScreen>
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
           backgroundColor: res.isSuccess ? GridColors.success : GridColors.error,
           content: Text(res.isSuccess
-              ? 'Importação realizada com sucesso!'
-              : 'Erro (${res.statusCode})'),
+              ? GridTexts.importSuccess
+              : GridTexts.errorWithStatus(res.statusCode)),
         ));
         if (res.isSuccess) {
           _linhasCtrl.clear();
@@ -72,7 +71,7 @@ class _BaixaAutomaticaScreenState extends State<BaixaAutomaticaScreen>
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
           backgroundColor: GridColors.error,
-          content: Text('Erro: $e'),
+          content: Text(GridTexts.genericError('$e')),
         ));
       }
     }
@@ -128,13 +127,19 @@ class _BaixaAutomaticaScreenState extends State<BaixaAutomaticaScreen>
 
   Future<void> _confirmarAcao(
       Map<String, dynamic> item, String acao) async {
-    final acaoLabel = acao == 'CONFIRMAR' ? 'Confirmar' : 'Rejeitar';
+    final acaoLabel = acao == 'CONFIRMAR'
+        ? GridTexts.confirm
+        : GridTexts.rejectTooltip;
     final result = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: Text('$acaoLabel Baixa'),
+        title: Text(GridTexts.lowActionTitle(acaoLabel)),
         content: Text(
-            '${acaoLabel} a baixa da conta "${item['conta'] ?? item['descricao'] ?? ''}" Valor: ${_formatValor(item['valor'])}?'),
+            GridTexts.confirmLowActionMessage(
+              acaoLabel,
+              item['conta'] ?? item['descricao'] ?? '',
+              _formatValor(item['valor']),
+            )),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
@@ -162,8 +167,8 @@ class _BaixaAutomaticaScreenState extends State<BaixaAutomaticaScreen>
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
           backgroundColor: res.isSuccess ? GridColors.success : GridColors.error,
           content: Text(res.isSuccess
-              ? 'Baixa $acaoLabel com sucesso!'
-              : 'Erro (${res.statusCode})'),
+              ? GridTexts.lowActionSuccess(acaoLabel)
+              : GridTexts.errorWithStatus(res.statusCode)),
         ));
         if (res.isSuccess) await _carregarPendentes();
       }
@@ -171,7 +176,7 @@ class _BaixaAutomaticaScreenState extends State<BaixaAutomaticaScreen>
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
           backgroundColor: GridColors.error,
-          content: Text('Erro: $e'),
+          content: Text(GridTexts.genericError('$e')),
         ));
       }
     }
@@ -182,16 +187,16 @@ class _BaixaAutomaticaScreenState extends State<BaixaAutomaticaScreen>
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Baixa Automática de Recebíveis'),
+        title: const Text(GridTexts.autoReceiveTitle),
         bottom: TabBar(
           controller: _tabCtrl,
           onTap: (i) {
             if (i == 1) _carregarPendentes();
           },
           tabs: const [
-            Tab(text: 'Importar'),
-            Tab(text: 'Conferência'),
-            Tab(text: 'Histórico'),
+            Tab(text: GridTexts.importTab),
+            Tab(text: GridTexts.conferenceTab),
+            Tab(text: GridTexts.history),
           ],
         ),
       ),
@@ -213,7 +218,7 @@ class _BaixaAutomaticaScreenState extends State<BaixaAutomaticaScreen>
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const Text(
-            'Colar linhas CNAB',
+            GridTexts.pasteCnabLines,
             style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
           ),
           const SizedBox(height: 8),
@@ -221,7 +226,7 @@ class _BaixaAutomaticaScreenState extends State<BaixaAutomaticaScreen>
             controller: _linhasCtrl,
             maxLines: 12,
             decoration: const InputDecoration(
-              hintText: 'Cole as linhas do CNAB aqui...',
+              hintText: GridTexts.pasteCnabHint,
               border: OutlineInputBorder(),
               contentPadding: EdgeInsets.all(12),
             ),
@@ -232,7 +237,7 @@ class _BaixaAutomaticaScreenState extends State<BaixaAutomaticaScreen>
             value: _tipoSelecionado,
             isExpanded: true,
             decoration: const InputDecoration(
-              labelText: 'Tipo',
+              labelText: GridTexts.type,
               border: OutlineInputBorder(),
               contentPadding:
                   EdgeInsets.symmetric(horizontal: 12, vertical: 14),
@@ -257,7 +262,9 @@ class _BaixaAutomaticaScreenState extends State<BaixaAutomaticaScreen>
                         strokeWidth: 2, color: GridColors.buttonText),
                   )
                 : const Icon(Icons.upload, size: 18),
-            label: Text(_loadingImport ? 'Importando...' : 'Importar'),
+            label: Text(
+              _loadingImport ? GridTexts.importing : GridTexts.importAction,
+            ),
             style: ElevatedButton.styleFrom(
               backgroundColor: GridColors.success,
               foregroundColor: GridColors.buttonText,
@@ -275,7 +282,7 @@ class _BaixaAutomaticaScreenState extends State<BaixaAutomaticaScreen>
       return const Center(child: CircularProgressIndicator());
     }
     if (_pendentes.isEmpty) {
-      return const Center(child: Text('Nenhuma pendência.'));
+      return const Center(child: Text(GridTexts.noPendingItem));
     }
     return RefreshIndicator(
       onRefresh: _carregarPendentes,
@@ -284,12 +291,12 @@ class _BaixaAutomaticaScreenState extends State<BaixaAutomaticaScreen>
         child: DataTable(
           columnSpacing: 16,
           columns: const [
-            DataColumn(label: Text('Conta')),
-            DataColumn(label: Text('Valor')),
-            DataColumn(label: Text('Data')),
-            DataColumn(label: Text('Juros/Multa/Desc.')),
-            DataColumn(label: Text('Status')),
-            DataColumn(label: Text('Ações')),
+            DataColumn(label: Text(GridTexts.account)),
+            DataColumn(label: Text(GridTexts.value)),
+            DataColumn(label: Text(GridTexts.date)),
+            DataColumn(label: Text(GridTexts.interestFineDiscountColumn)),
+            DataColumn(label: Text(GridTexts.status)),
+            DataColumn(label: Text(GridTexts.actions)),
           ],
           rows: _pendentes.map((item) {
             return DataRow(cells: [
@@ -302,14 +309,14 @@ class _BaixaAutomaticaScreenState extends State<BaixaAutomaticaScreen>
               DataCell(Text(_formatValor(item['jurosMulta'] ??
                   item['juros'] ??
                   item['desconto']))),
-              DataCell(Text(item['status']?.toString() ?? 'PENDENTE')),
+              DataCell(Text(item['status']?.toString() ?? GridTexts.pendingStatus)),
               DataCell(Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   IconButton(
                     icon: const Icon(Icons.check_circle,
                         color: GridColors.success, size: 20),
-                    tooltip: 'Confirmar',
+                    tooltip: GridTexts.confirmTooltip,
                     onPressed: () =>
                         _confirmarAcao(item, 'CONFIRMAR'),
                   ),
@@ -317,7 +324,7 @@ class _BaixaAutomaticaScreenState extends State<BaixaAutomaticaScreen>
                   IconButton(
                     icon: const Icon(Icons.cancel,
                         color: GridColors.error, size: 20),
-                    tooltip: 'Rejeitar',
+                    tooltip: GridTexts.rejectTooltip,
                     onPressed: () =>
                         _confirmarAcao(item, 'REJEITAR'),
                   ),
@@ -342,7 +349,7 @@ class _BaixaAutomaticaScreenState extends State<BaixaAutomaticaScreen>
                 child: TextField(
                   controller: _contaReceberIdCtrl,
                   decoration: const InputDecoration(
-                    labelText: 'Conta a Receber ID',
+                    labelText: GridTexts.accountReceivableId,
                     border: OutlineInputBorder(),
                     isDense: true,
                   ),
@@ -369,18 +376,18 @@ class _BaixaAutomaticaScreenState extends State<BaixaAutomaticaScreen>
       return const Center(child: CircularProgressIndicator());
     }
     if (_historico.isEmpty) {
-      return const Center(child: Text('Nenhum histórico encontrado.'));
+      return const Center(child: Text(GridTexts.noHistoryFoundShort));
     }
     return SingleChildScrollView(
       scrollDirection: Axis.vertical,
       child: DataTable(
         columnSpacing: 16,
         columns: const [
-          DataColumn(label: Text('Conta')),
-          DataColumn(label: Text('Valor')),
-          DataColumn(label: Text('Data')),
-          DataColumn(label: Text('Status')),
-          DataColumn(label: Text('Juros/Multa')),
+          DataColumn(label: Text(GridTexts.account)),
+          DataColumn(label: Text(GridTexts.value)),
+          DataColumn(label: Text(GridTexts.date)),
+          DataColumn(label: Text(GridTexts.status)),
+          DataColumn(label: Text(GridTexts.interestFineColumn)),
         ],
         rows: _historico.map((h) {
           return DataRow(cells: [
@@ -389,7 +396,7 @@ class _BaixaAutomaticaScreenState extends State<BaixaAutomaticaScreen>
             DataCell(Text(_formatValor(h['valor']))),
             DataCell(
                 Text(_formatData(h['data'] ?? h['createdAt']))),
-            DataCell(Text(h['status']?.toString() ?? '')),
+            DataCell(Text(h['status']?.toString() ?? GridTexts.noRecords)),
             DataCell(Text(_formatValor(
                 h['jurosMulta'] ?? h['juros'] ?? h['desconto']))),
           ]);

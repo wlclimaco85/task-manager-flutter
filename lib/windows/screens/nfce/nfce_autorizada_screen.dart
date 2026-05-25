@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../utils/grid_colors.dart';
+import '../../../utils/grid_texts.dart';
 
 import '../../../models/nfce/nfce_resultado_model.dart';
 import '../../../widgets/nfce/nfce_danfe_panel.dart';
@@ -21,7 +22,7 @@ class NfceAutorizadaScreen extends StatelessWidget {
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
-        title: const Text('NFC-e Autorizada'),
+        title: const Text(GridTexts.nfceAuthorizedTitle),
         backgroundColor: GridColors.secondary,
         foregroundColor: Colors.white,
         automaticallyImplyLeading: false,
@@ -46,7 +47,7 @@ class NfceAutorizadaScreen extends StatelessWidget {
                       Icon(Icons.check_circle, color: Colors.green, size: 32),
                       SizedBox(width: 12),
                       Text(
-                        'NFC-e Autorizada',
+                        GridTexts.nfceAuthorizedTitle,
                         style: TextStyle(
                           fontSize: 22,
                           fontWeight: FontWeight.bold,
@@ -71,7 +72,7 @@ class NfceAutorizadaScreen extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Eventos fiscais disponíveis',
+                        GridTexts.fiscalEventsAvailable,
                         style: TextStyle(
                           fontWeight: FontWeight.bold,
                           color: Color(0xFF7A4B00),
@@ -79,7 +80,7 @@ class NfceAutorizadaScreen extends StatelessWidget {
                       ),
                       SizedBox(height: 8),
                       Text(
-                        'O cancelamento pode ser solicitado pelo app após a autorização, dentro do prazo fiscal permitido. Inutilização e contingência continuam disponíveis nos fluxos próprios.',
+                        GridTexts.authorizedFiscalEventsNotice,
                         style: TextStyle(color: Color(0xFF7A4B00), height: 1.35),
                       ),
                     ],
@@ -94,7 +95,7 @@ class NfceAutorizadaScreen extends StatelessWidget {
                       width: 220,
                       child: OutlinedButton.icon(
                         icon: const Icon(Icons.cancel_outlined),
-                        label: const Text('Cancelar NFC-e'),
+                        label: const Text(GridTexts.cancelNfce),
                         style: OutlinedButton.styleFrom(
                           foregroundColor: Colors.red.shade700,
                           side: BorderSide(color: Colors.red.shade300),
@@ -115,7 +116,7 @@ class NfceAutorizadaScreen extends StatelessWidget {
                       width: 220,
                       child: ElevatedButton.icon(
                         icon: const Icon(Icons.add_shopping_cart),
-                        label: const Text('Nova venda'),
+                        label: const Text(GridTexts.newSale),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: GridColors.secondary,
                           foregroundColor: Colors.white,

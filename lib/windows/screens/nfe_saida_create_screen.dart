@@ -69,12 +69,12 @@ class _NfeSaidaCreateScreenState extends State<NfeSaidaCreateScreen> {
 
     if (!mounted) return;
     setState(() {
-      _topList = results[0] as List<Map<String, dynamic>>;
-      _formasPagamento = results[1] as List<Map<String, dynamic>>;
-      _finalidades = results[2] as List<Map<String, dynamic>>;
-      _series = results[3] as List<Map<String, dynamic>>;
-      _parceiros = results[4] as List<Map<String, dynamic>>;
-      _destinatarios = results[4] as List<Map<String, dynamic>>;
+      _topList = results[0];
+      _formasPagamento = results[1];
+      _finalidades = results[2];
+      _series = results[3];
+      _parceiros = results[4];
+      _destinatarios = results[4];
     });
   }
 
@@ -108,7 +108,7 @@ class _NfeSaidaCreateScreenState extends State<NfeSaidaCreateScreen> {
 
   Future<void> _salvar() async {
     if (_topSelected == null) {
-      _snack('Selecione um Tipo de Operação', GridColors.error);
+      _snack(GridTexts.selectOperationType, GridColors.error);
       return;
     }
 
@@ -141,10 +141,10 @@ class _NfeSaidaCreateScreenState extends State<NfeSaidaCreateScreen> {
       if (!mounted) return;
 
       if (result != null && result['id'] != null) {
-        _snack('NF-e criada com sucesso!', GridColors.success);
+        _snack(GridTexts.nfeCreatedSuccess, GridColors.success);
         Navigator.pop(context, true);
       } else {
-        _snack('Erro ao criar NF-e', GridColors.error);
+        _snack(GridTexts.createNfeError, GridColors.error);
       }
     } catch (e) {
       if (mounted) _snack('Erro: $e', GridColors.error);
@@ -188,7 +188,7 @@ class _NfeSaidaCreateScreenState extends State<NfeSaidaCreateScreen> {
     return Scaffold(
       backgroundColor: GridColors.filterBackground,
       appBar: AppBar(
-        title: const Text('Nova NF-e Saída'),
+        title: const Text(GridTexts.nfeExitCreateTitle),
         backgroundColor: GridColors.primary,
         foregroundColor: GridColors.textPrimary,
         elevation: 0,
@@ -200,7 +200,7 @@ class _NfeSaidaCreateScreenState extends State<NfeSaidaCreateScreen> {
               icon: _saving
                   ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
                   : const Icon(Icons.save, color: Colors.white),
-              label: Text(_saving ? 'Salvando...' : 'Salvar', style: const TextStyle(color: Colors.white)),
+              label: Text(_saving ? GridTexts.saving : GridTexts.save, style: const TextStyle(color: Colors.white)),
               style: TextButton.styleFrom(backgroundColor: GridColors.success, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6))),
             ),
           ),
@@ -213,10 +213,10 @@ class _NfeSaidaCreateScreenState extends State<NfeSaidaCreateScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _section('Tipo de Operação', [
+              _section(GridTexts.operationType, [
                 _twoCol(
                   SearchableDropdownField(
-                    label: 'Tipo de Operação',
+                    label: GridTexts.operationType,
                     value: _topSelected?['id']?.toString(),
                     items: _topList.map((e) => {
                       'id': e['id']?.toString() ?? '',
@@ -229,24 +229,24 @@ class _NfeSaidaCreateScreenState extends State<NfeSaidaCreateScreen> {
                       _onTopSelected(found);
                     },
                     isRequired: true,
-                    hintText: 'Selecione um TOP...',
+                    hintText: GridTexts.selectTopHint,
                   ),
                   const SizedBox.shrink(),
                 ),
                 if (_topSelected != null) ...[
                   const SizedBox(height: 12),
-                  _infoRow('Natureza da Operação', _topSelected!['natOp']?.toString() ?? ''),
+                  _infoRow(GridTexts.operationNature, _topSelected!['natOp']?.toString() ?? ''),
                   const SizedBox(height: 8),
                   _twoCol(
-                    _infoRow('CFOP', _topSelected!['cfop']?.toString() ?? ''),
-                    _infoRow('UF Origem → Destino', '${_topSelected!['ufOrigem'] ?? ''} → ${_topSelected!['ufDestino'] ?? ''}'),
+                    _infoRow(GridTexts.cfop, _topSelected!['cfop']?.toString() ?? ''),
+                    _infoRow(GridTexts.ufOriginDestination, '${_topSelected!['ufOrigem'] ?? ''} → ${_topSelected!['ufDestino'] ?? ''}'),
                   ),
                 ],
               ]),
-              _section('Dados da NF-e', [
+              _section(GridTexts.nfeDataSection, [
                 _twoCol(
                   SearchableDropdownField(
-                    label: 'Empresa',
+                    label: GridTexts.company,
                     value: _empresaId,
                     items: _empresas,
                     valueField: 'id',
@@ -257,10 +257,10 @@ class _NfeSaidaCreateScreenState extends State<NfeSaidaCreateScreen> {
                   Column(children: [
                     DropdownButtonFormField<String>(
                       value: _ambienteVal,
-                      decoration: const InputDecoration(labelText: 'Ambiente', border: OutlineInputBorder()),
+                      decoration: const InputDecoration(labelText: GridTexts.environment, border: OutlineInputBorder()),
                       items: const [
-                        DropdownMenuItem(value: 'HOMOLOGACAO', child: Text('Homologação')),
-                        DropdownMenuItem(value: 'PRODUCAO', child: Text('Produção')),
+                        DropdownMenuItem(value: 'HOMOLOGACAO', child: Text(GridTexts.environmentHomologation)),
+                        DropdownMenuItem(value: 'PRODUCAO', child: Text(GridTexts.environmentProduction)),
                       ],
                       onChanged: (v) => setState(() => _ambienteVal = v),
                     ),
@@ -269,7 +269,7 @@ class _NfeSaidaCreateScreenState extends State<NfeSaidaCreateScreen> {
                 const SizedBox(height: 16),
                 _twoCol(
                   SearchableDropdownField(
-                    label: 'Parceiro',
+                    label: GridTexts.partner,
                     value: _parceiroId,
                     items: _parceiros,
                     valueField: 'id',
@@ -278,59 +278,59 @@ class _NfeSaidaCreateScreenState extends State<NfeSaidaCreateScreen> {
                     onChanged: (v) {},
                   ),
                   SearchableDropdownField(
-                    label: 'Destinatário',
+                    label: GridTexts.recipient,
                     value: _destinatarioId,
                     items: _destinatarios,
                     valueField: 'id',
                     displayField: 'nome',
                     onChanged: (v) => setState(() => _destinatarioId = v),
                     nullable: true,
-                    hintText: 'Selecione o destinatário...',
+                    hintText: GridTexts.selectRecipientHint,
                   ),
                 ),
                 const SizedBox(height: 16),
                 _twoCol(
                   DropdownButtonFormField<String>(
                     value: _serieVal,
-                    decoration: const InputDecoration(labelText: 'Série', border: OutlineInputBorder()),
+                    decoration: const InputDecoration(labelText: GridTexts.series, border: OutlineInputBorder()),
                     items: _series.map((s) => DropdownMenuItem(value: s['serie']?.toString() ?? s['id']?.toString(), child: Text(s['serie']?.toString() ?? ''))).toList(),
                     onChanged: (v) => setState(() => _serieVal = v),
                   ),
                   TextField(
                     controller: _numeroCtrl,
-                    decoration: const InputDecoration(labelText: 'Número', border: OutlineInputBorder()),
+                    decoration: const InputDecoration(labelText: GridTexts.number, border: OutlineInputBorder()),
                     keyboardType: TextInputType.number,
                   ),
                 ),
               ]),
-              _section('Configuração Fiscal', [
+              _section(GridTexts.fiscalConfiguration, [
                 _twoCol(
                   SearchableDropdownField(
-                    label: 'Finalidade',
+                    label: GridTexts.purpose,
                     value: _finalidadeId,
                     items: _finalidades,
                     valueField: 'id',
                     displayField: 'descricao',
                     onChanged: (v) => setState(() => _finalidadeId = v),
                     nullable: true,
-                    hintText: 'Selecione...',
+                    hintText: GridTexts.selectEllipsis,
                   ),
                   SearchableDropdownField(
-                    label: 'Forma de Pagamento',
+                    label: GridTexts.paymentMethod,
                     value: _formaPagId,
                     items: _formasPagamento,
                     valueField: 'id',
                     displayField: 'descricao',
                     onChanged: (v) => setState(() => _formaPagId = v),
                     nullable: true,
-                    hintText: 'Selecione...',
+                    hintText: GridTexts.selectEllipsis,
                   ),
                 ),
                 if (_topSelected != null) ...[
                   const SizedBox(height: 16),
                   _twoCol(
-                    _infoRow('Indicador Consumidor Final', _topSelected!['indFinal'] == '1' ? 'Sim' : 'Não'),
-                    _infoRow('Presença do Comprador', _topSelected!['indPres']?.toString() ?? ''),
+                    _infoRow(GridTexts.finalConsumerIndicator, _topSelected!['indFinal'] == '1' ? GridTexts.yes : GridTexts.no),
+                    _infoRow(GridTexts.buyerPresence, _topSelected!['indPres']?.toString() ?? ''),
                   ),
                   const SizedBox(height: 12),
                   Container(
@@ -341,12 +341,12 @@ class _NfeSaidaCreateScreenState extends State<NfeSaidaCreateScreen> {
                       border: Border.all(color: const Color(0xFFC5CAE9)),
                     ),
                     child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                      const Text('Impostos (do TOP)', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
+                      const Text(GridTexts.topTaxes, style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
                       const SizedBox(height: 8),
-                      _taxRow('ICMS', 'CST: ${_topSelected!['cstIcms'] ?? '-'}', 'Alíq: ${_topSelected!['aliqIcms'] ?? '-'}%'),
-                      _taxRow('IPI', 'CST: ${_topSelected!['cstIpi'] ?? '-'}', 'Alíq: ${_topSelected!['aliqIpi'] ?? '-'}%'),
-                      _taxRow('PIS', 'CST: ${_topSelected!['cstPis'] ?? '-'}', 'Alíq: ${_topSelected!['pPis'] ?? '-'}%'),
-                      _taxRow('COFINS', 'CST: ${_topSelected!['cstCofins'] ?? '-'}', 'Alíq: ${_topSelected!['pCofins'] ?? '-'}%'),
+                      _taxRow('ICMS', GridTexts.taxCstLabel(_topSelected!['cstIcms'] ?? '-'), GridTexts.taxAliqLabel(_topSelected!['aliqIcms'] ?? '-')),
+                      _taxRow('IPI', GridTexts.taxCstLabel(_topSelected!['cstIpi'] ?? '-'), GridTexts.taxAliqLabel(_topSelected!['aliqIpi'] ?? '-')),
+                      _taxRow('PIS', GridTexts.taxCstLabel(_topSelected!['cstPis'] ?? '-'), GridTexts.taxAliqLabel(_topSelected!['pPis'] ?? '-')),
+                      _taxRow('COFINS', GridTexts.taxCstLabel(_topSelected!['cstCofins'] ?? '-'), GridTexts.taxAliqLabel(_topSelected!['pCofins'] ?? '-')),
                     ]),
                   ),
                 ],
@@ -369,7 +369,7 @@ class _NfeSaidaCreateScreenState extends State<NfeSaidaCreateScreen> {
                     icon: _saving
                         ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
                         : const Icon(Icons.check),
-                    label: Text(_saving ? 'Salvando...' : 'Salvar NF-e'),
+                    label: Text(_saving ? GridTexts.saving : GridTexts.saveNfe),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: GridColors.success,
                       foregroundColor: GridColors.textPrimary,

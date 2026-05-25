@@ -4,6 +4,7 @@ import '../../../models/auth_utility.dart';
 import '../../../models/chamado_model.dart';
 import '../../constants/custom_colors.dart';
 import '../../services/chamado_caller.dart';
+import '../../utils/grid_texts.dart';
 
 class FecharChamadoDialog extends StatefulWidget {
   final int chamadoId;
@@ -46,7 +47,7 @@ class _FecharChamadoDialogState extends State<FecharChamadoDialog> {
                   const SizedBox(width: 12),
                   Expanded(
                     child: Text(
-                      'Fechar Chamado',
+                      GridTexts.closeTicket,
                       style: textTheme.titleLarge?.copyWith(
                         color: colorScheme.onSurface,
                         fontWeight: FontWeight.w600,
@@ -70,7 +71,7 @@ class _FecharChamadoDialogState extends State<FecharChamadoDialog> {
 
               // Description
               Text(
-                'Informe a solução aplicada para finalizar este chamado:',
+                GridTexts.solutionPrompt,
                 style: textTheme.bodyMedium?.copyWith(
                   color: colorScheme.onSurface.withValues(alpha: 0.8),
                 ),
@@ -87,9 +88,8 @@ class _FecharChamadoDialogState extends State<FecharChamadoDialog> {
                     TextFormField(
                       controller: _solucaoController,
                       decoration: InputDecoration(
-                        labelText: 'Solução',
-                        hintText:
-                            'Descreva detalhadamente a solução aplicada...',
+                        labelText: GridTexts.solution,
+                        hintText: GridTexts.solutionHint,
                         border: const OutlineInputBorder(),
                         enabledBorder: OutlineInputBorder(
                           borderSide: BorderSide(color: colorScheme.outline),
@@ -117,10 +117,10 @@ class _FecharChamadoDialogState extends State<FecharChamadoDialog> {
                       textInputAction: TextInputAction.done,
                       validator: (value) {
                         if (value == null || value.isEmpty) {
-                          return 'Por favor, informe a solução';
+                          return GridTexts.solutionRequired;
                         }
                         if (value.length < 15) {
-                          return 'A solução deve ter pelo menos 15 caracteres';
+                          return GridTexts.solutionMinLength;
                         }
                         return null;
                       },
@@ -137,7 +137,7 @@ class _FecharChamadoDialogState extends State<FecharChamadoDialog> {
                             ),
                             const SizedBox(height: 12),
                             Text(
-                              'Fechando chamado...',
+                              GridTexts.closingTicket,
                               style: textTheme.bodyMedium?.copyWith(
                                 color: colorScheme.onSurface.withValues(alpha: 0.7),
                               ),
@@ -165,7 +165,7 @@ class _FecharChamadoDialogState extends State<FecharChamadoDialog> {
                           vertical: 10,
                         ),
                       ),
-                      child: const Text('CANCELAR'),
+                      child: const Text(GridTexts.cancel),
                     ),
                     const SizedBox(width: 12),
                     ElevatedButton(
@@ -183,7 +183,7 @@ class _FecharChamadoDialogState extends State<FecharChamadoDialog> {
                       ),
                       onPressed: _fecharChamado,
                       child: const Text(
-                        'CONFIRMAR',
+                        GridTexts.confirm,
                         style: TextStyle(fontWeight: FontWeight.w600),
                       ),
                     ),
@@ -211,26 +211,26 @@ class _FecharChamadoDialogState extends State<FecharChamadoDialog> {
           Navigator.of(context).pop(true);
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: const Text('Chamado fechado com sucesso!'),
+              content: const Text(GridTexts.ticketClosedSuccess),
               backgroundColor: CustomColors().getLightGreenBackground(),
               behavior: SnackBarBehavior.floating,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(8),
               ),
               action: SnackBarAction(
-                label: 'OK',
+                label: GridTexts.ok,
                 textColor: CustomColors().getConfirmButtonColor(),
                 onPressed: () {},
               ),
             ),
           );
         } else {
-          throw Exception('Erro ao fechar chamado');
+          throw Exception(GridTexts.closeTicketError);
         }
       } catch (e) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Erro: $e'),
+            content: Text(GridTexts.genericError(e.toString())),
             backgroundColor: CustomColors().getShowSnackBarError(),
             behavior: SnackBarBehavior.floating,
             shape: RoundedRectangleBorder(

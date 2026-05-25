@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import '../../../utils/grid_colors.dart';
 
 import '../../../services/nfce_service.dart';
 import '../../../utils/grid_texts.dart';
