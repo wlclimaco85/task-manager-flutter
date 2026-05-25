@@ -9,4 +9,4 @@ restartPolicyMaxRetries = 10
 
 [[build.args]]
 name = "BACKEND_URL"
-value = "https://api.cliente.exemplo.com"
+value = "https://appacademia-production-be7e.up.railway.app"
