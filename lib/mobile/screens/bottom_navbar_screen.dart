@@ -421,28 +421,12 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
         _menuItem(Icons.payments, "Contas Pagar", sec),
       if (sec.canView(AppScreen.contasReceber))
         _menuItem(Icons.account_balance_wallet, "Contas Receber", sec),
-      if (sec.canView(AppScreen.parceiros))
-        _menuItem(Icons.people, "Parceiros", sec),
-      if (sec.canView(AppScreen.produto))
-        _menuItem(Icons.inventory_2, "Produtos", sec),
       if (sec.canView(AppScreen.dashboard))
         _menuItem(Icons.bar_chart, "Dashboard", sec),
-      if (sec.canView(AppScreen.trading))
-        _menuItem(Icons.show_chart, "Trading", sec),
-      if (sec.canView(AppScreen.trading))
-        _menuItem(Icons.analytics, "Backtesting", sec),
-      _menuItem(Icons.point_of_sale, "PDV", sec),
-      _menuItem(Icons.settings_applications, "Config Fiscal", sec),
-      if (sec.canView(AppScreen.pedidos))
-        _menuItem(Icons.trending_up, "CRM/Funil", sec),
-      if (sec.canView(AppScreen.obrigacoesFiscais))
-        _menuItem(Icons.assignment_turned_in, "Obrigacoes", sec),
       if (sec.canView(AppScreen.contasBancarias))
         _menuItem(Icons.account_balance, "Contas Bancarias", sec),
-      if (sec.canView(AppScreen.ponto))
-        _menuItem(Icons.access_alarm_rounded, "Bater Ponto", sec),
-      if (sec.canView(AppScreen.funcionarios))
-        _menuItem(Icons.badge, "Funcionários", sec),
+      if (sec.canView(AppScreen.parceiros))
+        _menuItem(Icons.people, "Parceiros", sec),
       _menuItem(Icons.exit_to_app, "Sair", sec),
       _menuItem(Icons.arrow_back, "Voltar", sec),
     ];
