@@ -103,11 +103,17 @@ class _FileManagerScreenState extends State<FileManagerScreen> {
                     style: OutlinedButton.styleFrom(
                         side: const BorderSide(color: GridColors.primary)),
                     onPressed: () async {
-                      final result = await FilePicker.pickFiles();
+                      final result = await FilePicker.pickFiles(withData: true);
                       if (result != null) {
                         final f = result.files.first;
-                        fileBytes =
-                            f.bytes ?? await File(f.path!).readAsBytes();
+                        try {
+                          fileBytes = f.bytes ??
+                              (f.path != null
+                                  ? await File(f.path!).readAsBytes()
+                                  : null);
+                        } catch (_) {
+                          fileBytes = null;
+                        }
                         fileName = f.name;
                         fileType = ".${f.name.split('.').last}".toLowerCase();
                         setStateDialog(() => nomeController.text = fileName!);
@@ -151,21 +157,21 @@ class _FileManagerScreenState extends State<FileManagerScreen> {
                   const SizedBox(height: 12),
                   DropdownButtonFormField<int>(
                     decoration: const InputDecoration(
-                      labelText: "Parceiro",
+                      labelText: "Parceiro (opcional)",
                       border: OutlineInputBorder(
                           borderSide: BorderSide(color: GridColors.primary)),
                       focusedBorder: OutlineInputBorder(
                           borderSide:
                               BorderSide(color: GridColors.primary, width: 2)),
                     ),
-                    items: parceiros
-                        .map((p) => DropdownMenuItem<int>(
-                            value: p.id, child: Text(p.nome ?? 'Sem nome')))
-                        .toList(),
+                    items: [
+                      const DropdownMenuItem<int>(
+                          value: null, child: Text('Sem parceiro')),
+                      ...parceiros.map((p) => DropdownMenuItem<int>(
+                          value: p.id, child: Text(p.nome ?? 'Sem nome'))),
+                    ],
                     onChanged: (v) =>
                         setStateDialog(() => parceiroSelecionado = v),
-                    validator: (v) =>
-                        v == null ? "Selecione um parceiro" : null,
                   ),
                   const SizedBox(height: 12),
                   if (fileType != null)
@@ -258,7 +264,7 @@ class _FileManagerScreenState extends State<FileManagerScreen> {
                     fileName: nomeController.text,
                     fileType: fileType ?? "unknown",
                     diretorioId: diretorioSelecionado!,
-                    parceiroId: parceiroSelecionado!,
+                    parceiroId: parceiroSelecionado,
                   );
                   if (ok) {
                     if (mounted) Navigator.pop(context);
@@ -588,9 +594,10 @@ class _FileManagerScreenState extends State<FileManagerScreen> {
   Widget _buildDiretorioBox(Map<String, dynamic> dir) {
     final id = dir['id'];
     final nome = dir['nome'] ?? 'Sem nome';
-    final total = dir['files'].length ?? 0;
+    final rawArquivos = (dir['arquivos'] ?? dir['files']) as List?;
+    final total = rawArquivos?.length ?? 0;
     final naoLidos = dir['naoLidos'] ?? 0;
-    final arquivos = List<Map<String, dynamic>>.from(dir['files'] ?? []);
+    final arquivos = List<Map<String, dynamic>>.from(rawArquivos ?? []);
 
     return AnimatedContainer(
       duration: const Duration(milliseconds: 200),
