@@ -1,4 +1,6 @@
-// test/integration/full_system_crud_test.dart
+// full_system_crud_test.dart
+// Teste de integração sistêmica — cobre todas as telas/entidades do App Academia.
+// Execução: flutter test full_system_crud_test.dart --dart-define=BACKEND_URL=http://127.0.0.1:9001
 
 import 'dart:convert';
 import 'package:flutter_test/flutter_test.dart';
@@ -6,334 +8,1389 @@ import 'package:http/http.dart' as http;
 import 'package:task_manager_flutter/utils/api_links.dart';
 import 'test/services/test_helper.dart';
 
-/// Classe que representa o cenário de teste de uma tela/entidade
+// ═══════════════════════════════════════════════════════════════════════════
+// Utilitários de payload
+// ═══════════════════════════════════════════════════════════════════════════
+
+String _ts() => DateTime.now().millisecondsSinceEpoch.toString();
+String _uid(String base) => '$base ${_ts()}';
+String _isoNow() => DateTime.now().toIso8601String();
+String _isoFuture([int hours = 1]) =>
+    DateTime.now().add(Duration(hours: hours)).toIso8601String();
+String _isoDate([int days = 0]) =>
+    DateTime.now().add(Duration(days: days)).toIso8601String().substring(0, 10);
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Relatório de execução
+// ═══════════════════════════════════════════════════════════════════════════
+
+final _report = <String, Map<String, String>>{};
+
+void _log(String tela, String op, bool ok, [String? err]) {
+  _report.putIfAbsent(tela, () => {});
+  _report[tela]![op] = ok ? '✅' : '❌';
+  if (!ok && err != null) print('  🚨 $tela [$op]: $err');
+}
+
+int? _extractId(Map<String, dynamic> body, String idField) =>
+    body[idField] ??
+    body['data']?[idField] ??
+    body['dados']?[idField] ??
+    body['id'];
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Modelo de cenário CRUD
+// ═══════════════════════════════════════════════════════════════════════════
+
 class CrudScenario {
   final String name;
-  final String endpoint;
-  final Map<String, dynamic> Function() createPayloadFactory;
-  final Map<String, dynamic> Function(int id) updatePayloadFactory;
+  final String listUrl;
+  final String createUrl;
+  final String Function(String id) updateUrl;
+  final String Function(String id) deleteUrl;
+  final Map<String, dynamic> Function() createPayload;
+  final Map<String, dynamic> Function(int id) updatePayload;
   final String idField;
+  // 'PUT' para REST padrão; 'POST' para endpoints legados /update/{id}
+  final String updateMethod;
 
   CrudScenario({
     required this.name,
-    required this.endpoint,
-    required this.createPayloadFactory,
-    required this.updatePayloadFactory,
+    required this.listUrl,
+    required this.createUrl,
+    required this.updateUrl,
+    required this.deleteUrl,
+    required this.createPayload,
+    required this.updatePayload,
     this.idField = 'id',
+    this.updateMethod = 'PUT',
   });
 }
 
-// Armazena o resultado de cada operação para o relatório final
-final Map<String, Map<String, String>> _executionReport = {};
+// ═══════════════════════════════════════════════════════════════════════════
+// Executor do ciclo GET → POST → PUT/POST → DELETE
+// ═══════════════════════════════════════════════════════════════════════════
 
-void _logResult(String screen, String operation, bool success,
-    [String? error]) {
-  if (!_executionReport.containsKey(screen)) {
-    _executionReport[screen] = {};
-  }
-  _executionReport[screen]![operation] = success ? '✅ PASS' : '❌ FAIL';
-  if (!success && error != null) {
-    print('   🚨 FALHA EM $screen ($operation): $error');
-  }
+void _runCrud(CrudScenario s, Map<String, String> headers) {
+  group('🖥  ${s.name}', () {
+    int? createdId;
+
+    test('GET (listar)', () async {
+      try {
+        final r = await http.get(Uri.parse(s.listUrl), headers: headers);
+        if (r.statusCode == 200) {
+          _log(s.name, 'GET', true);
+        } else {
+          _log(s.name, 'GET', false, '${r.statusCode} ${r.body}');
+          fail('GET ${s.listUrl} → ${r.statusCode}');
+        }
+      } catch (e) {
+        _log(s.name, 'GET', false, e.toString());
+        rethrow;
+      }
+    });
+
+    test('POST (criar)', () async {
+      try {
+        final body = withAudit(s.createPayload());
+        final r = await http.post(
+          Uri.parse(s.createUrl),
+          headers: headers,
+          body: jsonEncode(body),
+        );
+        if (r.statusCode == 200 || r.statusCode == 201) {
+          final decoded = jsonDecode(r.body) as Map<String, dynamic>;
+          createdId = _extractId(decoded, s.idField);
+          if (createdId != null) {
+            _log(s.name, 'POST', true);
+          } else {
+            _log(s.name, 'POST', false, 'ID não retornado: ${r.body}');
+            fail('Objeto criado mas ID não encontrado');
+          }
+        } else {
+          _log(s.name, 'POST', false, '${r.statusCode} ${r.body}');
+          fail('POST → ${r.statusCode}');
+        }
+      } catch (e) {
+        _log(s.name, 'POST', false, e.toString());
+        rethrow;
+      }
+    });
+
+    test('${s.updateMethod} (atualizar)', () async {
+      if (createdId == null) {
+        _log(s.name, s.updateMethod, false, 'Skipped — sem ID');
+        markTestSkipped('Sem ID para atualizar');
+        return;
+      }
+      try {
+        final body =
+            withAudit({...s.updatePayload(createdId!), s.idField: createdId});
+        final uri = Uri.parse(s.updateUrl(createdId.toString()));
+        final r = s.updateMethod == 'PUT'
+            ? await http.put(uri, headers: headers, body: jsonEncode(body))
+            : await http.post(uri, headers: headers, body: jsonEncode(body));
+        if (r.statusCode == 200 || r.statusCode == 204) {
+          _log(s.name, s.updateMethod, true);
+        } else {
+          _log(s.name, s.updateMethod, false, '${r.statusCode} ${r.body}');
+          fail('${s.updateMethod} → ${r.statusCode}');
+        }
+      } catch (e) {
+        _log(s.name, s.updateMethod, false, e.toString());
+        rethrow;
+      }
+    });
+
+    test('DELETE (excluir)', () async {
+      if (createdId == null) {
+        _log(s.name, 'DELETE', false, 'Skipped — sem ID');
+        markTestSkipped('Sem ID para deletar');
+        return;
+      }
+      try {
+        final r = await http.delete(
+            Uri.parse(s.deleteUrl(createdId.toString())),
+            headers: headers);
+        if (r.statusCode == 200 || r.statusCode == 204) {
+          _log(s.name, 'DELETE', true);
+        } else {
+          _log(s.name, 'DELETE', false, '${r.statusCode}');
+          fail('DELETE → ${r.statusCode}');
+        }
+      } catch (e) {
+        _log(s.name, 'DELETE', false, e.toString());
+        rethrow;
+      }
+    });
+  });
 }
 
+// ═══════════════════════════════════════════════════════════════════════════
+// main
+// ═══════════════════════════════════════════════════════════════════════════
+
 void main() {
-  group('🧪 Integração Sistêmica (End-to-End)', () {
+  group('🧪 INTEGRAÇÃO SISTÊMICA — Todas as Telas', () {
     late String token;
     late Map<String, String> headers;
 
-    // ─────────────────────────────────────────────────────────────────────────
-    // 1. SETUP: Login e Preparação
-    // ─────────────────────────────────────────────────────────────────────────
     setUpAll(() async {
-      print('\n🔵 INICIANDO TESTES DE INTEGRAÇÃO...');
-      print('   🔑 Autenticando usuário: $kTestEmail ...');
+      print('\n🔵 INICIANDO TESTES DE INTEGRAÇÃO SISTÊMICA...');
       token = await loginAndGetToken();
       headers = authHeaders(token);
-      print('   ✅ Token obtido. Iniciando bateria de testes nas telas.\n');
+      print('✅ Autenticado. Executando bateria completa.\n');
     });
 
-    // ─────────────────────────────────────────────────────────────────────────
-    // 2. CONFIGURAÇÃO DOS CENÁRIOS (Use seus Models.toJson() aqui)
-    // ─────────────────────────────────────────────────────────────────────────
+    // ─────────────────────────────────────────────────────────────────────
+    // DOMÍNIO: ACADEMIA
+    // ─────────────────────────────────────────────────────────────────────
 
-    // Gerador de data única para evitar conflitos de Unique Key no banco
-    String uniqueIso() => DateTime.now().toIso8601String();
-    String uniqueName(String base) =>
-        '$base ${DateTime.now().millisecondsSinceEpoch}';
+    group('📦 ACADEMIA', () {
+      final scenarios = [
+        CrudScenario(
+          name: 'Modalidade',
+          listUrl: ApiLinks.allModalidades,
+          createUrl: ApiLinks.createModalidade,
+          updateUrl: ApiLinks.updateModalidade,
+          deleteUrl: ApiLinks.deleteModalidade,
+          updateMethod: 'PUT',
+          createPayload: () => {
+            'nome': _uid('Modalidade'),
+            'descricao': 'Desc teste',
+          },
+          updatePayload: (id) => {'nome': _uid('Modalidade EDIT')},
+        ),
+        CrudScenario(
+          name: 'Objetivo',
+          listUrl: ApiLinks.allObjetivos,
+          createUrl: ApiLinks.createObjetivo,
+          updateUrl: ApiLinks.updateObjetivo,
+          deleteUrl: ApiLinks.deleteObjetivo,
+          updateMethod: 'PUT',
+          createPayload: () => {
+            'nome': _uid('Objetivo'),
+            'descricao': 'Desc teste objetivo',
+          },
+          updatePayload: (id) => {'nome': _uid('Objetivo EDIT')},
+        ),
+        CrudScenario(
+          name: 'Plano',
+          listUrl: ApiLinks.allPlanos,
+          createUrl: ApiLinks.createPlano,
+          updateUrl: ApiLinks.updatePlano,
+          deleteUrl: ApiLinks.deletePlano,
+          updateMethod: 'PUT',
+          createPayload: () => {
+            'nome': _uid('Plano'),
+            'descricao': 'Desc plano',
+            'valor': 99.90,
+            'duracao': 30,
+          },
+          updatePayload: (id) => {'nome': _uid('Plano EDIT'), 'valor': 109.90},
+        ),
+        CrudScenario(
+          name: 'Treino',
+          listUrl: ApiLinks.allTreinos,
+          createUrl: ApiLinks.createTreino,
+          updateUrl: ApiLinks.updateTreino,
+          deleteUrl: ApiLinks.deleteTreino,
+          updateMethod: 'PUT',
+          createPayload: () => {
+            'nome': _uid('Treino'),
+            'descricao': 'Desc treino',
+          },
+          updatePayload: (id) => {'nome': _uid('Treino EDIT')},
+        ),
+        CrudScenario(
+          name: 'Grupo Muscular',
+          listUrl: ApiLinks.allGruposMusculares,
+          createUrl: ApiLinks.createGrupoMuscular,
+          updateUrl: ApiLinks.updateGrupoMuscular,
+          deleteUrl: ApiLinks.deleteGrupoMuscular,
+          updateMethod: 'PUT',
+          createPayload: () => {
+            'nome': _uid('Grupo Musc'),
+            'descricao': 'Desc grupo muscular',
+          },
+          updatePayload: (id) => {'nome': _uid('Grupo Musc EDIT')},
+        ),
+        CrudScenario(
+          name: 'Exercício',
+          listUrl: ApiLinks.allExercicios,
+          createUrl: ApiLinks.createExercicio,
+          updateUrl: ApiLinks.updateExercicio,
+          deleteUrl: ApiLinks.deleteExercicio,
+          updateMethod: 'PUT',
+          createPayload: () => {
+            'nome': _uid('Exercicio'),
+            'descricao': 'Desc exercicio',
+          },
+          updatePayload: (id) => {'nome': _uid('Exercicio EDIT')},
+        ),
+        CrudScenario(
+          name: 'Alimento',
+          listUrl: ApiLinks.allAlimentos,
+          createUrl: ApiLinks.createAlimento,
+          updateUrl: ApiLinks.updateAlimento,
+          deleteUrl: ApiLinks.deleteAlimento,
+          updateMethod: 'PUT',
+          createPayload: () => {
+            'nome': _uid('Alimento'),
+            'calorias': 100.0,
+            'proteina': 20.0,
+            'carboidrato': 10.0,
+            'gordura': 5.0,
+            'unidade': 'g',
+          },
+          updatePayload: (id) => {'nome': _uid('Alimento EDIT'), 'calorias': 120.0},
+        ),
+        CrudScenario(
+          name: 'Suplemento',
+          listUrl: ApiLinks.allSuplementos,
+          createUrl: ApiLinks.createSuplemento,
+          updateUrl: ApiLinks.updateSuplemento,
+          deleteUrl: ApiLinks.deleteSuplemento,
+          updateMethod: 'PUT',
+          createPayload: () => {
+            'nome': _uid('Suplemento'),
+            'descricao': 'Desc suplemento',
+            'fabricante': 'Fabricante Teste',
+            'preco': 89.90,
+          },
+          updatePayload: (id) => {'nome': _uid('Suplemento EDIT'), 'preco': 95.00},
+        ),
+        CrudScenario(
+          name: 'Medicamento',
+          listUrl: ApiLinks.allMedicamentos,
+          createUrl: ApiLinks.createMedicamento,
+          updateUrl: ApiLinks.updateMedicamento,
+          deleteUrl: ApiLinks.deleteMedicamento,
+          updateMethod: 'PUT',
+          createPayload: () => {
+            'nome': _uid('Medicamento'),
+            'descricao': 'Desc medicamento',
+            'dosagem': '500mg',
+          },
+          updatePayload: (id) => {'nome': _uid('Medicamento EDIT')},
+        ),
+        CrudScenario(
+          name: 'Mensalidade',
+          listUrl: ApiLinks.allMensalidades,
+          createUrl: ApiLinks.createMensalidade,
+          updateUrl: ApiLinks.updateMensalidade,
+          deleteUrl: ApiLinks.deleteMensalidade,
+          updateMethod: 'PUT',
+          createPayload: () => {
+            'descricao': _uid('Mensalidade'),
+            'valor': 150.00,
+            'dataVencimento': _isoDate(30),
+            'status': 'PENDENTE',
+          },
+          updatePayload: (id) => {'valor': 160.00},
+        ),
+        CrudScenario(
+          name: 'Dieta',
+          listUrl: ApiLinks.allDietas,
+          createUrl: ApiLinks.createDieta,
+          updateUrl: ApiLinks.updateDieta,
+          deleteUrl: ApiLinks.deleteDieta,
+          updateMethod: 'PUT',
+          createPayload: () => {
+            'nome': _uid('Dieta'),
+            'descricao': 'Dieta de teste',
+            'objetivo': 'EMAGRECIMENTO',
+          },
+          updatePayload: (id) => {'nome': _uid('Dieta EDIT')},
+        ),
+        CrudScenario(
+          name: 'Avaliação Física',
+          listUrl: ApiLinks.allAvaliacoesFisicas,
+          createUrl: ApiLinks.createAvaliacaoFisica,
+          updateUrl: ApiLinks.updateAvaliacaoFisica,
+          deleteUrl: ApiLinks.deleteAvaliacaoFisica,
+          updateMethod: 'PUT',
+          createPayload: () => {
+            'data': _isoDate(),
+            'peso': 80.0,
+            'altura': 1.75,
+            'imc': 26.1,
+            'percentualGordura': 18.5,
+          },
+          updatePayload: (id) => {'peso': 79.0, 'imc': 25.8},
+        ),
+        CrudScenario(
+          name: 'Exame',
+          listUrl: ApiLinks.allExames,
+          createUrl: ApiLinks.createExame,
+          updateUrl: ApiLinks.updateExame,
+          deleteUrl: ApiLinks.deleteExame,
+          updateMethod: 'PUT',
+          createPayload: () => {
+            'nome': _uid('Exame'),
+            'descricao': 'Exame de sangue',
+            'tipoExame': 'SANGUE',
+            'dataExame': _isoDate(),
+          },
+          updatePayload: (id) => {'nome': _uid('Exame EDIT')},
+        ),
+        CrudScenario(
+          name: 'Alerta Aluno',
+          listUrl: ApiLinks.allAlertasAluno,
+          createUrl: ApiLinks.createAlertaAluno,
+          updateUrl: ApiLinks.updateAlertaAluno,
+          deleteUrl: ApiLinks.deleteAlertaAluno,
+          updateMethod: 'PUT',
+          createPayload: () => {
+            'titulo': _uid('Alerta'),
+            'mensagem': 'Mensagem de alerta de teste',
+            'tipo': 'INFO',
+            'dataEnvio': _isoNow(),
+          },
+          updatePayload: (id) => {'titulo': _uid('Alerta EDIT')},
+        ),
+      ];
 
-    final scenarios = [
-      // --- CALENDÁRIO ---
-      CrudScenario(
-        name: 'Calendário',
-        endpoint:
-            '${ApiLinks.baseUrl}/calendario', // Confirme se ApiLinks tem essa const ou use string
-        createPayloadFactory: () => {
-          // Exemplo: CalendarEventModel(...).toJson()
-          "titulo": uniqueName("Evento Teste"),
-          "descricao": "Teste Automatizado",
-          "dataInicio": uniqueIso(),
-          "dataFim":
-              DateTime.now().add(const Duration(hours: 1)).toIso8601String(),
-          "diaTodo": false
-        },
-        updatePayloadFactory: (id) => {"titulo": "Evento Teste ATUALIZADO"},
-      ),
+      for (final s in scenarios) {
+        _runCrud(s, headers);
+      }
+    });
 
-      // --- CHAT ---
-      CrudScenario(
-        name: 'Chat (Salas)',
-        endpoint: '${ApiLinks.baseUrl}/chats',
-        createPayloadFactory: () => {
-          "nome": uniqueName("Sala Teste"),
-          "tipo": "GRUPO",
-          "descricao": "Sala criada via teste automatizado"
-        },
-        updatePayloadFactory: (id) => {"nome": "Sala Teste UPDATE"},
-      ),
+    // ─────────────────────────────────────────────────────────────────────
+    // DOMÍNIO: PARCEIRO / EMPRESA
+    // ─────────────────────────────────────────────────────────────────────
 
-      // --- COMUNICADOS ---
-      CrudScenario(
-        name: 'Comunicados',
-        endpoint: '${ApiLinks.baseUrl}/comunicados',
-        createPayloadFactory: () => {
-          "titulo": "Comunicado Teste",
-          "conteudo": "Teste de integração",
-          "dataPublicacao": uniqueIso(),
-          "prioridade": "ALTA"
-        },
-        updatePayloadFactory: (id) => {"titulo": "Comunicado UPDATE"},
-      ),
+    group('🏢 PARCEIRO / EMPRESA', () {
+      final scenarios = [
+        CrudScenario(
+          name: 'Parceiro',
+          listUrl: ApiLinks.allParceiros,
+          createUrl: ApiLinks.createParceiro,
+          updateUrl: ApiLinks.updateParceiro,
+          deleteUrl: ApiLinks.deleteParceiro,
+          updateMethod: 'PUT',
+          createPayload: () => {
+            'nome': _uid('Parceiro'),
+            'email': 'parceiro${_ts()}@teste.com',
+            'telefone': '11999999999',
+            'tipo': 'CLIENTE',
+            'ativo': true,
+          },
+          updatePayload: (id) => {'nome': _uid('Parceiro EDIT')},
+        ),
+        CrudScenario(
+          name: 'Empresa',
+          listUrl: ApiLinks.allEmpresas,
+          createUrl: ApiLinks.createEmpresa,
+          updateUrl: ApiLinks.updateEmpresa,
+          deleteUrl: ApiLinks.deleteEmpresa,
+          updateMethod: 'PUT',
+          createPayload: () => {
+            'nome': _uid('Empresa'),
+            'razaoSocial': _uid('Razao Social'),
+            'cnpj': _ts().substring(3, 17),
+            'email': 'empresa${_ts()}@teste.com',
+            'telefone': '1133334444',
+            'cidade': 'São Paulo',
+            'estado': 'SP',
+          },
+          updatePayload: (id) => {'nome': _uid('Empresa EDIT')},
+        ),
+        CrudScenario(
+          name: 'Tipo Parceiro',
+          listUrl: ApiLinks.allTipoParceiro,
+          createUrl: ApiLinks.createTipoParceiro,
+          updateUrl: ApiLinks.updateTipoParceiro,
+          deleteUrl: ApiLinks.deleteTipoParceiro,
+          updateMethod: 'PUT',
+          createPayload: () => {
+            'nome': _uid('Tipo Parceiro'),
+            'descricao': 'Desc tipo parceiro',
+          },
+          updatePayload: (id) => {'nome': _uid('Tipo Parceiro EDIT')},
+        ),
+        CrudScenario(
+          name: 'Fornecedor',
+          listUrl: ApiLinks.allFornecedores,
+          createUrl: ApiLinks.createFornecedor,
+          updateUrl: ApiLinks.updateFornecedor,
+          deleteUrl: ApiLinks.deleteFornecedor,
+          updateMethod: 'PUT',
+          createPayload: () => {
+            'nome': _uid('Fornecedor'),
+            'email': 'forn${_ts()}@teste.com',
+            'telefone': '11988887777',
+            'ativo': true,
+          },
+          updatePayload: (id) => {'nome': _uid('Fornecedor EDIT')},
+        ),
+      ];
 
-      // --- CHAMADOS ---
-      CrudScenario(
-        name: 'Chamados',
-        endpoint: '${ApiLinks.baseUrl}/chamados',
-        createPayloadFactory: () => {
-          "assunto": uniqueName("Chamado Teste"),
-          "descricao": "Teste automatizado",
-          "tipo": "INCIDENTE",
-          "prioridade": "NORMAL"
-        },
-        updatePayloadFactory: (id) => {"descricao": "Descrição UPDATE"},
-      ),
+      for (final s in scenarios) {
+        _runCrud(s, headers);
+      }
+    });
 
-      // --- PARCEIROS ---
-      CrudScenario(
-        name: 'Parceiros',
-        endpoint:
-            '${ApiLinks.baseUrl}/parceiros', // Ajuste para sua rota real de parceiros
-        createPayloadFactory: () => {
-          // Aqui usaria ParceiroModel(...).toJson()
-          "nome": uniqueName("Parceiro"),
-          "razaoSocial": "Razão Social Teste",
-          "cnpj": "00.000.000/0001-00",
-          "email": "teste@exemplo.com",
-          "ativo": true
-        },
-        updatePayloadFactory: (id) => {"nome": "Parceiro UPDATE"},
-      ),
+    // ─────────────────────────────────────────────────────────────────────
+    // DOMÍNIO: FINANCEIRO
+    // ─────────────────────────────────────────────────────────────────────
 
-      // --- FINANCEIRO (PAGAR) ---
-      CrudScenario(
-        name: 'Contas a Pagar',
-        endpoint: '${ApiLinks.baseUrl}/financeiro/pagar',
-        createPayloadFactory: () => {
-          "descricao": uniqueName("Conta Pagar"),
-          "valor": 100.50,
-          "dataVencimento": uniqueIso(),
-          "status": "ABERTO"
-        },
-        updatePayloadFactory: (id) => {"valor": 105.00},
-      ),
+    group('💰 FINANCEIRO', () {
+      final scenarios = [
+        CrudScenario(
+          name: 'Categoria Financeira',
+          listUrl: ApiLinks.allCategoriasFinanceiras,
+          createUrl: ApiLinks.createCategoriaFinanceira,
+          updateUrl: ApiLinks.updateCategoriaFinanceira,
+          deleteUrl: ApiLinks.deleteCategoriaFinanceira,
+          updateMethod: 'PUT',
+          createPayload: () => {
+            'nome': _uid('Categoria'),
+            'tipo': 'DESPESA',
+            'descricao': 'Categoria de teste',
+          },
+          updatePayload: (id) => {'nome': _uid('Categoria EDIT')},
+        ),
+        CrudScenario(
+          name: 'Centro de Custo',
+          listUrl: ApiLinks.allCentrosCusto,
+          createUrl: ApiLinks.createCentroCusto,
+          updateUrl: ApiLinks.updateCentroCusto,
+          deleteUrl: ApiLinks.deleteCentroCusto,
+          updateMethod: 'PUT',
+          createPayload: () => {
+            'nome': _uid('Centro Custo'),
+            'descricao': 'Centro custo teste',
+            'ativo': true,
+          },
+          updatePayload: (id) => {'nome': _uid('Centro Custo EDIT')},
+        ),
+        CrudScenario(
+          name: 'Forma de Pagamento',
+          listUrl: ApiLinks.allFormasPagamento,
+          createUrl: ApiLinks.createFormaPagamento,
+          updateUrl: ApiLinks.updateFormaPagamento,
+          deleteUrl: ApiLinks.deleteFormaPagamento,
+          updateMethod: 'PUT',
+          createPayload: () => {
+            'nome': _uid('Forma Pgto'),
+            'tipo': 'BOLETO',
+            'ativo': true,
+          },
+          updatePayload: (id) => {'nome': _uid('Forma Pgto EDIT')},
+        ),
+        CrudScenario(
+          name: 'Conta Bancária',
+          listUrl: ApiLinks.contasBancarias,
+          createUrl: ApiLinks.createContaBancaria,
+          updateUrl: ApiLinks.updateContaBancaria,
+          deleteUrl: ApiLinks.deleteContaBancaria,
+          updateMethod: 'PUT',
+          createPayload: () => {
+            'nomeConta': _uid('Banco'),
+            'numeroConta': _ts().substring(8),
+            'agencia': '0001',
+            'banco': 'Banco Teste',
+            'tipo': 'CORRENTE',
+            'saldo': 1000.00,
+          },
+          updatePayload: (id) => {'nomeConta': _uid('Banco EDIT')},
+        ),
+        CrudScenario(
+          name: 'Conta a Pagar',
+          listUrl: ApiLinks.allContasPagar,
+          createUrl: ApiLinks.createContaPagar,
+          updateUrl: ApiLinks.updateContaPagar,
+          deleteUrl: ApiLinks.deleteContaPagar,
+          updateMethod: 'PUT',
+          createPayload: () => {
+            'descricao': _uid('Conta Pagar'),
+            'valor': 500.00,
+            'dataVencimento': _isoDate(30),
+            'status': 'ABERTO',
+          },
+          updatePayload: (id) => {'valor': 550.00},
+        ),
+        CrudScenario(
+          name: 'Conta a Receber',
+          listUrl: ApiLinks.allContasReceber,
+          createUrl: ApiLinks.createContaReceber,
+          updateUrl: ApiLinks.updateContaReceber,
+          deleteUrl: ApiLinks.deleteContaReceber,
+          updateMethod: 'PUT',
+          createPayload: () => {
+            'descricao': _uid('Conta Receber'),
+            'valor': 750.00,
+            'dataVencimento': _isoDate(30),
+            'status': 'PENDENTE',
+          },
+          updatePayload: (id) => {'valor': 800.00},
+        ),
+      ];
 
-      // --- FINANCEIRO (RECEBER) ---
-      CrudScenario(
-        name: 'Contas a Receber',
-        endpoint: '${ApiLinks.baseUrl}/financeiro/receber',
-        createPayloadFactory: () => {
-          "descricao": uniqueName("Conta Receber"),
-          "valor": 200.00,
-          "dataVencimento": uniqueIso(),
-          "status": "PENDENTE"
-        },
-        updatePayloadFactory: (id) => {"valor": 210.00},
-      ),
+      for (final s in scenarios) {
+        _runCrud(s, headers);
+      }
+    });
 
-      // --- CONTAS BANCÁRIAS ---
-      CrudScenario(
-        name: 'Contas Bancárias',
-        endpoint: '${ApiLinks.baseUrl}/financeiro/contas-bancarias',
-        createPayloadFactory: () => {
-          "nome": uniqueName("Banco"),
-          "agencia": "0001",
-          "conta": "9999-9",
-          "saldoInicial": 100.00
-        },
-        updatePayloadFactory: (id) => {"nome": "Banco UPDATE"},
-      ),
+    // ─────────────────────────────────────────────────────────────────────
+    // DOMÍNIO: COMUNICAÇÃO / SUPORTE
+    // ─────────────────────────────────────────────────────────────────────
 
-      // --- PONTO ---
-      CrudScenario(
-        name: 'Registro de Ponto',
-        endpoint: '${ApiLinks.baseUrl}/ponto',
-        createPayloadFactory: () =>
-            {"dataHora": uniqueIso(), "tipo": "ENTRADA", "origem": "APP_TESTE"},
-        updatePayloadFactory: (id) => {"observacao": "Ponto ajustado UPDATE"},
-      ),
-    ];
+    group('💬 COMUNICAÇÃO / SUPORTE', () {
+      final scenarios = [
+        CrudScenario(
+          name: 'Setor',
+          listUrl: ApiLinks.allSetores,
+          createUrl: ApiLinks.createSetor,
+          updateUrl: ApiLinks.updateSetor,
+          deleteUrl: ApiLinks.deleteSetor,
+          updateMethod: 'PUT',
+          createPayload: () => {
+            'nome': _uid('Setor'),
+            'descricao': 'Setor de teste',
+          },
+          updatePayload: (id) => {'nome': _uid('Setor EDIT')},
+        ),
+        CrudScenario(
+          name: 'Comunicado',
+          listUrl: ApiLinks.allComunicados,
+          createUrl: ApiLinks.createComunicado,
+          updateUrl: (id) => ApiLinks.updateComunicado(id),
+          deleteUrl: (id) => ApiLinks.deleteComunicado(id),
+          updateMethod: 'PUT',
+          createPayload: () => {
+            'titulo': _uid('Comunicado'),
+            'conteudo': 'Conteúdo de comunicado de teste',
+            'dataPublicacao': _isoNow(),
+            'prioridade': 'NORMAL',
+          },
+          updatePayload: (id) => {'titulo': _uid('Comunicado EDIT')},
+        ),
+        CrudScenario(
+          name: 'Chamado',
+          listUrl: ApiLinks.allChamados,
+          createUrl: ApiLinks.createChamado,
+          updateUrl: (id) => ApiLinks.updateChamado(id),
+          deleteUrl: (id) => ApiLinks.deleteChamado(id),
+          updateMethod: 'PUT',
+          createPayload: () => {
+            'titulo': _uid('Chamado'),
+            'descricao': 'Descrição do chamado de teste',
+            'prioridade': 'NORMAL',
+            'status': 'ABERTO',
+          },
+          updatePayload: (id) => {'titulo': _uid('Chamado EDIT'), 'prioridade': 'ALTA'},
+        ),
+        CrudScenario(
+          name: 'Calendário Guias',
+          listUrl: ApiLinks.allCalendariosGuias,
+          createUrl: ApiLinks.createCalendarioGuias,
+          updateUrl: (id) => ApiLinks.updateCalendarioGuias(id),
+          deleteUrl: (id) => ApiLinks.deleteCalendarioGuias(id),
+          updateMethod: 'PUT',
+          createPayload: () => {
+            'titulo': _uid('Calendário'),
+            'descricao': 'Evento de teste',
+            'dataInicio': _isoNow(),
+            'dataFim': _isoFuture(2),
+            'tipo': 'OBRIGACAO',
+          },
+          updatePayload: (id) => {'titulo': _uid('Calendário EDIT')},
+        ),
+        CrudScenario(
+          name: 'Obrigação Fiscal',
+          listUrl: ApiLinks.allObrigacaoFiscal,
+          createUrl: ApiLinks.createObrigacaoFiscal,
+          updateUrl: (id) => ApiLinks.updateObrigacaoFiscal(id),
+          deleteUrl: (id) => ApiLinks.deleteObrigacaoFiscal(id),
+          updateMethod: 'PUT',
+          createPayload: () => {
+            'nome': _uid('Obrigacao Fiscal'),
+            'descricao': 'Obrigação de teste',
+            'dataVencimento': _isoDate(30),
+            'tipo': 'FEDERAL',
+            'status': 'PENDENTE',
+          },
+          updatePayload: (id) => {'nome': _uid('Obrigacao Fiscal EDIT')},
+        ),
+      ];
 
-    // ─────────────────────────────────────────────────────────────────────────
-    // 3. EXECUÇÃO DINÂMICA (Loop de Testes)
-    // ─────────────────────────────────────────────────────────────────────────
+      for (final s in scenarios) {
+        _runCrud(s, headers);
+      }
+    });
 
-    for (final scenario in scenarios) {
-      group('📱 Tela: ${scenario.name}', () {
-        int? createdId;
+    // ─────────────────────────────────────────────────────────────────────
+    // DOMÍNIO: RH / DEPARTAMENTO PESSOAL
+    // ─────────────────────────────────────────────────────────────────────
 
-        // --- 3.1 READ (GET) ---
-        test('Step 1: Fetch (GET)', () async {
+    group('👥 RH / DEPARTAMENTO PESSOAL', () {
+      final scenarios = [
+        CrudScenario(
+          name: 'Cargo',
+          listUrl: ApiLinks.allCargos,
+          createUrl: ApiLinks.createCargo,
+          updateUrl: (id) => ApiLinks.updateCargo(id),
+          deleteUrl: (id) => ApiLinks.deleteCargo(id),
+          updateMethod: 'PUT',
+          createPayload: () => {
+            'nome': _uid('Cargo'),
+            'descricao': 'Cargo de teste',
+            'nivel': 'JUNIOR',
+          },
+          updatePayload: (id) => {'nome': _uid('Cargo EDIT')},
+        ),
+        CrudScenario(
+          name: 'Departamento',
+          listUrl: ApiLinks.allDepartamentos,
+          createUrl: ApiLinks.createDepartamento,
+          updateUrl: (id) => ApiLinks.updateDepartamento(id),
+          deleteUrl: (id) => ApiLinks.deleteDepartamento(id),
+          updateMethod: 'PUT',
+          createPayload: () => {
+            'nome': _uid('Departamento'),
+            'descricao': 'Departamento de teste',
+          },
+          updatePayload: (id) => {'nome': _uid('Departamento EDIT')},
+        ),
+        CrudScenario(
+          name: 'Feriado',
+          listUrl: ApiLinks.allFeriados,
+          createUrl: ApiLinks.createFeriado,
+          updateUrl: (id) => ApiLinks.updateFeriado(id),
+          deleteUrl: (id) => ApiLinks.deleteFeriado(id),
+          updateMethod: 'PUT',
+          createPayload: () => {
+            'nome': _uid('Feriado'),
+            'data': _isoDate(60),
+            'tipo': 'NACIONAL',
+          },
+          updatePayload: (id) => {'nome': _uid('Feriado EDIT')},
+        ),
+        CrudScenario(
+          name: 'Funcionário',
+          listUrl: ApiLinks.allFuncionarios,
+          createUrl: ApiLinks.createFuncionario,
+          updateUrl: (id) => ApiLinks.updateFuncionario(id),
+          deleteUrl: (id) => ApiLinks.deleteFuncionario(id),
+          updateMethod: 'PUT',
+          createPayload: () => {
+            'nome': _uid('Funcionario'),
+            'cpf': '000.000.000-${_ts().substring(11, 13)}',
+            'email': 'func${_ts()}@teste.com',
+            'telefone': '11977776666',
+            'dataAdmissao': _isoDate(),
+          },
+          updatePayload: (id) => {'nome': _uid('Funcionario EDIT')},
+        ),
+        CrudScenario(
+          name: 'Horário Funcionário',
+          listUrl: ApiLinks.allHorariosFunc,
+          createUrl: ApiLinks.createHorarioFunc,
+          updateUrl: (id) => ApiLinks.updateHorarioFunc(id),
+          deleteUrl: (id) => ApiLinks.deleteHorarioFunc(id),
+          updateMethod: 'PUT',
+          createPayload: () => {
+            'nome': _uid('Horario'),
+            'entrada': '08:00',
+            'saida': '17:00',
+            'intervalo': '12:00',
+            'diasSemana': ['SEGUNDA', 'TERCA', 'QUARTA', 'QUINTA', 'SEXTA'],
+          },
+          updatePayload: (id) => {'nome': _uid('Horario EDIT'), 'entrada': '09:00'},
+        ),
+      ];
+
+      for (final s in scenarios) {
+        _runCrud(s, headers);
+      }
+    });
+
+    // ─────────────────────────────────────────────────────────────────────
+    // DOMÍNIO: CONTÁBIL
+    // ─────────────────────────────────────────────────────────────────────
+
+    group('📊 CONTÁBIL', () {
+      final scenarios = [
+        CrudScenario(
+          name: 'Conta Contábil',
+          listUrl: ApiLinks.allContasContabeis,
+          createUrl: ApiLinks.createContaContabil,
+          updateUrl: (id) => ApiLinks.updateContaContabil(id),
+          deleteUrl: (id) => ApiLinks.deleteContaContabil(id),
+          updateMethod: 'PUT',
+          createPayload: () => {
+            'codigoContabil': '1.${_ts().substring(10)}',
+            'nome': _uid('Conta Contábil'),
+            'tipo': 'ATIVO',
+            'ativa': true,
+          },
+          updatePayload: (id) => {'nome': _uid('Conta Contábil EDIT')},
+        ),
+        CrudScenario(
+          name: 'Lançamento Contábil',
+          listUrl: '${ApiLinks.createLancamentoContabil}?empresaId=1&periodo=${_isoDate().substring(0, 7)}',
+          createUrl: ApiLinks.createLancamentoContabil,
+          updateUrl: (id) => ApiLinks.updateLancamentoContabil(id),
+          deleteUrl: (id) => ApiLinks.deleteLancamentoContabil(id),
+          updateMethod: 'PUT',
+          createPayload: () => {
+            'dataLancamento': _isoDate(),
+            'descricao': _uid('Lançamento'),
+            'valor': 1500.00,
+            'periodo': _isoDate().substring(0, 7),
+          },
+          updatePayload: (id) => {'descricao': _uid('Lançamento EDIT'), 'valor': 1600.00},
+        ),
+      ];
+
+      for (final s in scenarios) {
+        _runCrud(s, headers);
+      }
+    });
+
+    // ─────────────────────────────────────────────────────────────────────
+    // DOMÍNIO: GED / DOCUMENTOS
+    // ─────────────────────────────────────────────────────────────────────
+
+    group('📁 GED / DOCUMENTOS', () {
+      final scenarios = [
+        CrudScenario(
+          name: 'Diretório',
+          listUrl: ApiLinks.allDiretorios,
+          createUrl: ApiLinks.createDiretorio,
+          updateUrl: (id) => ApiLinks.updateDiretorio(id),
+          deleteUrl: (id) => ApiLinks.deleteDiretorio(id),
+          updateMethod: 'PUT',
+          createPayload: () => {
+            'nome': _uid('Diretório'),
+            'descricao': 'Diretório de teste',
+          },
+          updatePayload: (id) => {'nome': _uid('Diretório EDIT')},
+        ),
+      ];
+
+      for (final s in scenarios) {
+        _runCrud(s, headers);
+      }
+    });
+
+    // ─────────────────────────────────────────────────────────────────────
+    // DOMÍNIO: ADMIN / CONFIGURAÇÕES
+    // ─────────────────────────────────────────────────────────────────────
+
+    group('⚙️  ADMIN / CONFIGURAÇÕES', () {
+      final scenarios = [
+        CrudScenario(
+          name: 'Role',
+          listUrl: ApiLinks.allRoles,
+          createUrl: ApiLinks.createRole,
+          updateUrl: (id) => ApiLinks.updateRole(id),
+          deleteUrl: (id) => ApiLinks.deleteRole(id),
+          updateMethod: 'PUT',
+          createPayload: () => {
+            'nome': _uid('ROLE_TESTE'),
+            'descricao': 'Role de teste',
+          },
+          updatePayload: (id) => {'descricao': _uid('Role EDIT')},
+        ),
+        CrudScenario(
+          name: 'Aplicativo',
+          listUrl: ApiLinks.allAplicativos,
+          createUrl: ApiLinks.createAplicativo,
+          updateUrl: (id) => ApiLinks.updateAplicativo(id),
+          deleteUrl: (id) => ApiLinks.deleteAplicativo(id),
+          updateMethod: 'PUT',
+          createPayload: () => {
+            'nome': _uid('App Teste'),
+            'descricao': 'Aplicativo de teste',
+            'ativo': true,
+          },
+          updatePayload: (id) => {'nome': _uid('App EDIT')},
+        ),
+        CrudScenario(
+          name: 'Regime Tributário',
+          listUrl: ApiLinks.allRegimetributario,
+          createUrl: ApiLinks.createRegimetributario,
+          updateUrl: (id) => ApiLinks.updateRegimetributario(id),
+          deleteUrl: (id) => ApiLinks.deleteRegimetributario(id),
+          updateMethod: 'PUT',
+          createPayload: () => {
+            'nome': _uid('Regime'),
+            'descricao': 'Regime tributário de teste',
+            'codigo': 'SN',
+          },
+          updatePayload: (id) => {'nome': _uid('Regime EDIT')},
+        ),
+        CrudScenario(
+          name: 'Módulo Serviço',
+          listUrl: ApiLinks.allModuloServico,
+          createUrl: ApiLinks.createModuloServico,
+          updateUrl: (id) => ApiLinks.updateModuloServico(id),
+          deleteUrl: (id) => ApiLinks.deleteModuloServico(id),
+          updateMethod: 'PUT',
+          createPayload: () => {
+            'nome': _uid('Modulo'),
+            'descricao': 'Módulo de teste',
+            'ativo': true,
+          },
+          updatePayload: (id) => {'nome': _uid('Modulo EDIT')},
+        ),
+        CrudScenario(
+          name: 'Serviço Contratado',
+          listUrl: ApiLinks.allServicoContratado,
+          createUrl: ApiLinks.createServicoContratado,
+          updateUrl: (id) => ApiLinks.updateServicoContratado(id),
+          deleteUrl: (id) => ApiLinks.deleteServicoContratado(id),
+          updateMethod: 'PUT',
+          createPayload: () => {
+            'nome': _uid('Servico'),
+            'descricao': 'Serviço contratado de teste',
+            'valor': 500.00,
+            'ativo': true,
+          },
+          updatePayload: (id) => {'nome': _uid('Servico EDIT'), 'valor': 550.00},
+        ),
+      ];
+
+      for (final s in scenarios) {
+        _runCrud(s, headers);
+      }
+    });
+
+    // ─────────────────────────────────────────────────────────────────────
+    // DOMÍNIO: COMERCIAL / ESTOQUE
+    // ─────────────────────────────────────────────────────────────────────
+
+    group('🛒 COMERCIAL / ESTOQUE', () {
+      final scenarios = [
+        CrudScenario(
+          name: 'Tipo Produto',
+          listUrl: ApiLinks.allTiposProduto,
+          createUrl: ApiLinks.createTipoProduto,
+          updateUrl: (id) => ApiLinks.updateTipoProduto(id),
+          deleteUrl: (id) => ApiLinks.deleteTipoProduto(id),
+          updateMethod: 'PUT',
+          createPayload: () => {
+            'nome': _uid('Tipo Produto'),
+            'descricao': 'Tipo de produto de teste',
+          },
+          updatePayload: (id) => {'nome': _uid('Tipo Produto EDIT')},
+        ),
+        CrudScenario(
+          name: 'Orçamento Comercial',
+          listUrl: ApiLinks.orcamentos,
+          createUrl: ApiLinks.orcamentos,
+          updateUrl: (id) => ApiLinks.orcamentoById(id),
+          deleteUrl: (id) => ApiLinks.orcamentoById(id),
+          updateMethod: 'PUT',
+          createPayload: () => {
+            'descricao': _uid('Orcamento'),
+            'dataValidade': _isoDate(30),
+            'status': 'RASCUNHO',
+            'itens': [],
+          },
+          updatePayload: (id) => {'descricao': _uid('Orcamento EDIT')},
+        ),
+        CrudScenario(
+          name: 'Depósito Estoque',
+          listUrl: ApiLinks.depositos,
+          createUrl: ApiLinks.depositos,
+          updateUrl: (id) => '${ApiLinks.depositos}/$id',
+          deleteUrl: (id) => '${ApiLinks.depositos}/$id',
+          updateMethod: 'PUT',
+          createPayload: () => {
+            'nome': _uid('Deposito'),
+            'descricao': 'Depósito de teste',
+            'ativo': true,
+          },
+          updatePayload: (id) => {'nome': _uid('Deposito EDIT')},
+        ),
+        CrudScenario(
+          name: 'Cotação Frete',
+          listUrl: ApiLinks.allCotacoesFrete,
+          createUrl: ApiLinks.createCotacaoFrete,
+          updateUrl: (id) => ApiLinks.updateCotacaoFrete(id),
+          deleteUrl: (id) => ApiLinks.deleteCotacaoFrete(id),
+          updateMethod: 'PUT',
+          createPayload: () => {
+            'origem': _uid('Origem'),
+            'destino': _uid('Destino'),
+            'peso': 10.0,
+            'prazoEntrega': 5,
+            'valor': 45.90,
+          },
+          updatePayload: (id) => {'valor': 50.00},
+        ),
+      ];
+
+      for (final s in scenarios) {
+        _runCrud(s, headers);
+      }
+    });
+
+    // ─────────────────────────────────────────────────────────────────────
+    // DOMÍNIO: TRADING / INVESTIMENTOS
+    // ─────────────────────────────────────────────────────────────────────
+
+    group('📈 TRADING / INVESTIMENTOS', () {
+      final scenarios = [
+        CrudScenario(
+          name: 'Dividendo',
+          listUrl: ApiLinks.allDividendos,
+          createUrl: ApiLinks.createDividendo,
+          updateUrl: (id) => ApiLinks.updateDividendo(id),
+          deleteUrl: (id) => ApiLinks.deleteDividendo(id),
+          updateMethod: 'PUT',
+          createPayload: () => {
+            'ticker': 'PETR4',
+            'valor': 1.50,
+            'dataEx': _isoDate(),
+            'dataPagamento': _isoDate(15),
+            'tipo': 'DIVIDENDO',
+          },
+          updatePayload: (id) => {'valor': 1.75},
+        ),
+        CrudScenario(
+          name: 'Trading Watchlist',
+          listUrl: ApiLinks.tradingWatchlist,
+          createUrl: ApiLinks.tradingWatchlist,
+          updateUrl: (id) => ApiLinks.tradingWatchlistItem(id),
+          deleteUrl: (id) => ApiLinks.tradingWatchlistItem(id),
+          updateMethod: 'PUT',
+          createPayload: () => {
+            'ticker': 'BBAS3',
+            'descricao': 'Banco do Brasil',
+            'precoAlvo': 55.00,
+          },
+          updatePayload: (id) => {'precoAlvo': 60.00},
+        ),
+        CrudScenario(
+          name: 'Trading Alerta',
+          listUrl: ApiLinks.tradingAlertas,
+          createUrl: ApiLinks.tradingAlertas,
+          updateUrl: (id) => ApiLinks.tradingAlerta(id),
+          deleteUrl: (id) => ApiLinks.tradingAlerta(id),
+          updateMethod: 'PUT',
+          createPayload: () => {
+            'ticker': 'VALE3',
+            'condicao': 'PRECO_ABAIXO',
+            'valorReferencia': 70.00,
+            'ativo': true,
+          },
+          updatePayload: (id) => {'valorReferencia': 65.00},
+        ),
+      ];
+
+      for (final s in scenarios) {
+        _runCrud(s, headers);
+      }
+    });
+
+    // ─────────────────────────────────────────────────────────────────────
+    // DOMÍNIO: CRM
+    // ─────────────────────────────────────────────────────────────────────
+
+    group('🤝 CRM', () {
+      final scenarios = [
+        CrudScenario(
+          name: 'CRM Deal',
+          listUrl: ApiLinks.allCrmDeals,
+          createUrl: ApiLinks.createCrmDeal,
+          updateUrl: (id) => '${ApiLinks.allCrmDeals}/$id',
+          deleteUrl: (id) => '${ApiLinks.allCrmDeals}/$id',
+          updateMethod: 'PUT',
+          createPayload: () => {
+            'titulo': _uid('Deal'),
+            'valor': 10000.00,
+            'estagio': 'PROSPECCAO',
+            'probabilidade': 30,
+          },
+          updatePayload: (id) => {'titulo': _uid('Deal EDIT'), 'estagio': 'NEGOCIACAO'},
+        ),
+        CrudScenario(
+          name: 'Contrato Recorrente',
+          listUrl: ApiLinks.allRecurringContracts,
+          createUrl: ApiLinks.createRecurringContract,
+          updateUrl: (id) => '${ApiLinks.allRecurringContracts}/$id',
+          deleteUrl: (id) => '${ApiLinks.allRecurringContracts}/$id',
+          updateMethod: 'PUT',
+          createPayload: () => {
+            'descricao': _uid('Contrato'),
+            'valor': 500.00,
+            'periodicidade': 'MENSAL',
+            'dataInicio': _isoDate(),
+            'status': 'ATIVO',
+          },
+          updatePayload: (id) => {'descricao': _uid('Contrato EDIT'), 'valor': 550.00},
+        ),
+      ];
+
+      for (final s in scenarios) {
+        _runCrud(s, headers);
+      }
+    });
+
+    // ─────────────────────────────────────────────────────────────────────
+    // DOMÍNIO: GRIDS — ENTIDADES RESTANTES COM CRUD
+    // ─────────────────────────────────────────────────────────────────────
+
+    group('🔄 GRIDS — ENTIDADES RESTANTES', () {
+      final scenarios = [
+        // personal_grid_screen
+        CrudScenario(
+          name: 'Personal',
+          listUrl: ApiLinks.allPersonais,
+          createUrl: ApiLinks.createPersonal,
+          updateUrl: (id) => ApiLinks.updatePersonal(id),
+          deleteUrl: (id) => ApiLinks.deletePersonal(id),
+          updateMethod: 'PUT',
+          createPayload: () => {
+            'nome': _uid('Personal'),
+            'cpf': '000.000.000-${_ts().substring(11, 13)}',
+            'email': 'personal${_ts()}@teste.com',
+            'telefone': '11988880000',
+            'especialidades': 'Musculação',
+          },
+          updatePayload: (id) => {'nome': _uid('Personal EDIT')},
+        ),
+        // login_grid_screen
+        CrudScenario(
+          name: 'Login (usuário)',
+          listUrl: ApiLinks.allLogins,
+          createUrl: ApiLinks.createLogin,
+          updateUrl: (id) => ApiLinks.updateLogin(id),
+          deleteUrl: (id) => ApiLinks.deleteLogin(id),
+          updateMethod: 'PUT',
+          createPayload: () => {
+            'email': 'login${_ts()}@teste.com',
+            'senha': 'Teste@123',
+            'ativo': true,
+          },
+          updatePayload: (id) => {'ativo': false},
+        ),
+        // classificacao_grid_screen
+        CrudScenario(
+          name: 'Classificação',
+          listUrl: ApiLinks.allClassificacoes,
+          createUrl: ApiLinks.createClassificacao,
+          updateUrl: (id) => ApiLinks.updateClassificacao(id),
+          deleteUrl: (id) => ApiLinks.deleteClassificacao(id),
+          updateMethod: 'PUT',
+          createPayload: () => {
+            'nome': _uid('Classificacao'),
+            'descricao': 'Desc classificação',
+          },
+          updatePayload: (id) => {'nome': _uid('Classificacao EDIT')},
+        ),
+        // noticias_grid_screen
+        CrudScenario(
+          name: 'Notícia',
+          listUrl: ApiLinks.allNoticias,
+          createUrl: ApiLinks.createNoticia,
+          updateUrl: (id) => ApiLinks.updateNoticia(id),
+          deleteUrl: (id) => ApiLinks.deleteNoticia(id),
+          updateMethod: 'PUT',
+          createPayload: () => {
+            'titulo': _uid('Noticia'),
+            'conteudo': 'Conteúdo da notícia de teste',
+            'publicada': false,
+          },
+          updatePayload: (id) => {'titulo': _uid('Noticia EDIT'), 'publicada': true},
+        ),
+        // nfe_grid_screen
+        CrudScenario(
+          name: 'NF-e',
+          listUrl: ApiLinks.allNfe,
+          createUrl: ApiLinks.createNfe,
+          updateUrl: (id) => ApiLinks.updateNfe(id),
+          deleteUrl: (id) => '${ApiLinks.allNfe}/$id',
+          updateMethod: 'PUT',
+          createPayload: () => {
+            'numero': int.parse(_ts().substring(8)),
+            'serie': '1',
+            'naturezaOperacao': 'VENDA',
+            'dataEmissao': _isoDate(),
+            'status': 'RASCUNHO',
+            'itens': [],
+          },
+          updatePayload: (id) => {'naturezaOperacao': 'VENDA EDITADA'},
+        ),
+        // nota_fiscal_entrada_grid_screen
+        CrudScenario(
+          name: 'Nota Fiscal Entrada',
+          listUrl: ApiLinks.allNotasFiscaisEntrada,
+          createUrl: ApiLinks.createNotaFiscalEntrada,
+          updateUrl: (id) => ApiLinks.updateNotaFiscalEntrada(id),
+          deleteUrl: (id) => ApiLinks.deleteNotaFiscalEntrada(id),
+          updateMethod: 'PUT',
+          createPayload: () => {
+            'numero': _ts().substring(7),
+            'serie': '1',
+            'dataEmissao': _isoDate(),
+            'dataEntrada': _isoDate(),
+            'status': 'PENDENTE',
+            'itens': [],
+          },
+          updatePayload: (id) => {'status': 'CONFERIDA'},
+        ),
+        // nota_fiscal_saida_grid_screen
+        CrudScenario(
+          name: 'Nota Fiscal Saída',
+          listUrl: ApiLinks.allNotasFiscaisSaida,
+          createUrl: ApiLinks.createNotaFiscalSaida,
+          updateUrl: (id) => ApiLinks.updateNotaFiscalSaida(id),
+          deleteUrl: (id) => ApiLinks.deleteNotaFiscalSaida(id),
+          updateMethod: 'PUT',
+          createPayload: () => {
+            'numero': _ts().substring(7),
+            'serie': '1',
+            'dataEmissao': _isoDate(),
+            'status': 'RASCUNHO',
+            'itens': [],
+          },
+          updatePayload: (id) => {'status': 'CONFERIDA'},
+        ),
+        // order_grid_screen
+        CrudScenario(
+          name: 'Order',
+          listUrl: ApiLinks.allOrders,
+          createUrl: ApiLinks.createOrder,
+          updateUrl: (id) => ApiLinks.updateOrder(id),
+          deleteUrl: (id) => ApiLinks.deleteOrder(id),
+          updateMethod: 'PUT',
+          createPayload: () => {
+            'descricao': _uid('Order'),
+            'status': 'PENDENTE',
+            'valor': 250.00,
+          },
+          updatePayload: (id) => {'descricao': _uid('Order EDIT'), 'status': 'EM_ANDAMENTO'},
+        ),
+        // pedido_grid_screen
+        CrudScenario(
+          name: 'Pedido',
+          listUrl: ApiLinks.allPedidos,
+          createUrl: ApiLinks.createPedido,
+          updateUrl: (id) => ApiLinks.updatePedido(id),
+          deleteUrl: (id) => ApiLinks.deletePedido(id),
+          updateMethod: 'PUT',
+          createPayload: () => {
+            'descricao': _uid('Pedido'),
+            'status': 'RASCUNHO',
+            'itens': [],
+          },
+          updatePayload: (id) => {'descricao': _uid('Pedido EDIT')},
+        ),
+        // ticket_grid_screen
+        CrudScenario(
+          name: 'Ticket',
+          listUrl: ApiLinks.allTickets,
+          createUrl: ApiLinks.createTicket,
+          updateUrl: (id) => ApiLinks.updateTicket(id),
+          deleteUrl: (id) => ApiLinks.deleteTicket(id),
+          updateMethod: 'PUT',
+          createPayload: () => {
+            'titulo': _uid('Ticket'),
+            'descricao': 'Ticket de suporte de teste',
+            'prioridade': 'MEDIA',
+            'status': 'ABERTO',
+          },
+          updatePayload: (id) => {'titulo': _uid('Ticket EDIT'), 'prioridade': 'ALTA'},
+        ),
+        // produto / catalago_produto_grid_screen
+        CrudScenario(
+          name: 'Produto (Catálogo)',
+          listUrl: ApiLinks.allVendas,
+          createUrl: ApiLinks.insertProduto,
+          updateUrl: (id) => '${ApiLinks.allVendas}/$id',
+          deleteUrl: (id) => '${ApiLinks.allVendas}/$id',
+          updateMethod: 'PUT',
+          createPayload: () => {
+            'nome': _uid('Produto'),
+            'descricao': 'Produto de teste',
+            'preco': 99.90,
+            'estoque': 10,
+            'ativo': true,
+          },
+          updatePayload: (id) => {'nome': _uid('Produto EDIT'), 'preco': 109.90},
+        ),
+        // pedido_venda_grid_screen (cancel em vez de delete)
+        CrudScenario(
+          name: 'Pedido de Venda',
+          listUrl: ApiLinks.pedidosVenda,
+          createUrl: ApiLinks.pedidosVenda,
+          updateUrl: (id) => ApiLinks.pedidoVendaById(id),
+          deleteUrl: (id) => ApiLinks.cancelarPedidoVenda(id),
+          updateMethod: 'PUT',
+          createPayload: () => {
+            'descricao': _uid('PedidoVenda'),
+            'status': 'RASCUNHO',
+            'itens': [],
+          },
+          updatePayload: (id) => {'descricao': _uid('PedidoVenda EDIT')},
+        ),
+        // pedido_compra_grid_screen (cancel em vez de delete)
+        CrudScenario(
+          name: 'Pedido de Compra',
+          listUrl: ApiLinks.pedidosCompra,
+          createUrl: ApiLinks.pedidosCompra,
+          updateUrl: (id) => ApiLinks.pedidoCompraById(id),
+          deleteUrl: (id) => ApiLinks.cancelarPedidoCompra(id),
+          updateMethod: 'PUT',
+          createPayload: () => {
+            'descricao': _uid('PedidoCompra'),
+            'status': 'RASCUNHO',
+            'itens': [],
+          },
+          updatePayload: (id) => {'descricao': _uid('PedidoCompra EDIT')},
+        ),
+      ];
+
+      for (final s in scenarios) {
+        _runCrud(s, headers);
+      }
+    });
+
+    // ─────────────────────────────────────────────────────────────────────
+    // TELAS READ-ONLY (somente GET)
+    // ─────────────────────────────────────────────────────────────────────
+
+    group('📋 TELAS READ-ONLY (GET)', () {
+      final getOnlyUrls = <String, String>{
+        'Dashboard KPIs': ApiLinks.kpis,
+        'Dashboard Finance Series': ApiLinks.getFinance,
+        'Dashboard Status Counts': ApiLinks.statusCounts,
+        'Dashboard Quarterly': ApiLinks.quarterlyComparison,
+        'Dashboard Cliente Dist.': ApiLinks.clientDistribution,
+        'Dashboard Trend': ApiLinks.trend,
+        'Dashboard Tickets Trend': ApiLinks.ticketsTrend,
+        'Dashboard Financeiro': ApiLinks.dashboardFinanceiro,
+        'Fluxo de Caixa': ApiLinks.financeFluxoDiario,
+        'Saldo Contas': ApiLinks.financeFluxoDiarioPdf,
+        'Extrato Operacional': ApiLinks.financeExtratoOperacional,
+        'DRE': ApiLinks.dre,
+        'DRE Períodos': ApiLinks.drePeriodos,
+        'Conciliação — Pendentes': ApiLinks.conciliacaoPendentes,
+        'Conciliação — Listar': ApiLinks.conciliacaoListar,
+        'Extrato — Importações': ApiLinks.extratoImportacoes,
+        'Ponto — Listar': ApiLinks.pontoListar,
+        'DP Dashboard': ApiLinks.dpDashboard,
+        'DP Relatório Resumo': ApiLinks.dpRelatorioResumo,
+        'Documentos': ApiLinks.fecthAllDocumentos,
+        'Arquivos GED': ApiLinks.allArquivos,
+        'Alertas': ApiLinks.fecthAllAlerts,
+        'Cotações': ApiLinks.allCotacoes,
+        'Market Overview': ApiLinks.marketOverview,
+        'Países': ApiLinks.buscarPaises,
+        'NF-e Tipo Operação': ApiLinks.allNfeTipoOperacao,
+        'Contingência': ApiLinks.listarContingencia,
+        'Rejeições': ApiLinks.listarRejeicoes,
+        'Importações DFe': ApiLinks.importacoesDfe,
+        'Manifestação Pendentes': ApiLinks.manifestacaoPendentes,
+        'Manifestação Histórico': ApiLinks.manifestacaoHistorico,
+        'Alertas Certificados': ApiLinks.alertasCertificados,
+        'Automações Financeiras': ApiLinks.automacoesFinanceiras,
+        'Aprovação Pagamento Fila': ApiLinks.aprovacaoPagamentoFila,
+        'Aprovação Compra Fila': ApiLinks.aprovacaoCompraFila,
+        'Tabelas de Preço': ApiLinks.tabelasPreco,
+        'Descontos': ApiLinks.descontos,
+        'Devoluções': ApiLinks.devolucoes,
+        'Jobs Monitor': ApiLinks.allJobs,
+        'Noticias': ApiLinks.allNoticias,
+        'Cobrança Vencidos': ApiLinks.cobrancaVencidos,
+        'Cobrança Regras': ApiLinks.cobrancaRegras,
+        'Lançamentos Financeiros': ApiLinks.lancamentosFinanceiros,
+        'Renegociação': ApiLinks.renegociacao,
+        'Baixa Automática Pendentes': ApiLinks.baixaAutomaticaPendentes,
+        'Banking Imports': ApiLinks.bankingImports,
+        'Workflow Chamados': ApiLinks.workflowChamados,
+        'Chats Usuário': ApiLinks.fecthChats,
+        'Academia — Listar': ApiLinks.allAcademia,
+        'Modalidade — Listar': ApiLinks.allModalidade,
+      };
+
+      getOnlyUrls.forEach((name, url) {
+        test('GET $name', () async {
           try {
-            print('\n   👉 [GET] ${scenario.endpoint}');
-            final response =
-                await http.get(Uri.parse(scenario.endpoint), headers: headers);
-
-            if (response.statusCode == 200) {
-              _logResult(scenario.name, 'GET', true);
-            } else {
-              _logResult(scenario.name, 'GET', false,
-                  '${response.statusCode} - ${response.body}');
-              fail('Status ${response.statusCode}');
-            }
+            final r = await http.get(Uri.parse(url), headers: headers);
+            final ok = r.statusCode == 200 || r.statusCode == 204;
+            _log(name, 'GET', ok, ok ? null : '${r.statusCode}');
+            if (!ok) fail('$name → ${r.statusCode}');
           } catch (e) {
-            _logResult(scenario.name, 'GET', false, e.toString());
-            rethrow;
-          }
-        });
-
-        // --- 3.2 CREATE (POST) ---
-        test('Step 2: Insert (POST)', () async {
-          try {
-            final payload = withAudit(scenario.createPayloadFactory());
-            print('   👉 [POST] Enviando payload...');
-
-            final response = await http.post(
-              Uri.parse(scenario.endpoint),
-              headers: headers,
-              body: jsonEncode(payload),
-            );
-
-            if (response.statusCode == 200 || response.statusCode == 201) {
-              final body = jsonDecode(response.body);
-              // Tenta localizar o ID em diferentes padrões de API
-              createdId = body[scenario.idField] ??
-                  body['data']?[scenario.idField] ??
-                  body['dados']?[scenario.idField] ??
-                  body['id']; // fallback
-
-              if (createdId != null) {
-                print('      ✅ Criado com ID: $createdId');
-                _logResult(scenario.name, 'POST', true);
-              } else {
-                _logResult(
-                    scenario.name, 'POST', false, 'ID não retornado: $body');
-                fail('Objeto criado mas ID não encontrado na resposta.');
-              }
-            } else {
-              _logResult(scenario.name, 'POST', false,
-                  '${response.statusCode} - ${response.body}');
-              fail('Falha no POST: ${response.statusCode}');
-            }
-          } catch (e) {
-            _logResult(scenario.name, 'POST', false, e.toString());
-            rethrow;
-          }
-        });
-
-        // --- 3.3 UPDATE (PUT) ---
-        test('Step 3: Update (PUT)', () async {
-          if (createdId == null) {
-            _logResult(scenario.name, 'PUT', false, 'Skipped (No ID)');
-            markTestSkipped('Sem ID para atualizar');
-            return;
-          }
-
-          try {
-            final payload = withAudit({
-              ...scenario.updatePayloadFactory(createdId!),
-              scenario.idField: createdId
-            });
-
-            final url = Uri.parse('${scenario.endpoint}/$createdId');
-            print('   👉 [PUT] Atualizando ID $createdId...');
-
-            final response = await http.put(url,
-                headers: headers, body: jsonEncode(payload));
-
-            if (response.statusCode == 200 || response.statusCode == 204) {
-              _logResult(scenario.name, 'PUT', true);
-            } else {
-              _logResult(scenario.name, 'PUT', false,
-                  '${response.statusCode} - ${response.body}');
-              fail('Falha no PUT');
-            }
-          } catch (e) {
-            _logResult(scenario.name, 'PUT', false, e.toString());
-            rethrow;
-          }
-        });
-
-        // --- 3.4 DELETE (DELETE) ---
-        test('Step 4: Delete (DEL)', () async {
-          if (createdId == null) {
-            _logResult(scenario.name, 'DEL', false, 'Skipped (No ID)');
-            markTestSkipped('Sem ID para deletar');
-            return;
-          }
-
-          try {
-            final url = Uri.parse('${scenario.endpoint}/$createdId');
-            print('   👉 [DEL] Removendo ID $createdId...');
-
-            final response = await http.delete(url, headers: headers);
-
-            if (response.statusCode == 200 || response.statusCode == 204) {
-              _logResult(scenario.name, 'DEL', true);
-            } else {
-              _logResult(scenario.name, 'DEL', false, '${response.statusCode}');
-              fail('Falha no DELETE');
-            }
-          } catch (e) {
-            _logResult(scenario.name, 'DEL', false, e.toString());
+            _log(name, 'GET', false, e.toString());
             rethrow;
           }
         });
       });
-    }
+    });
 
-    // ─────────────────────────────────────────────────────────────────────────
-    // 4. RELATÓRIO FINAL (TearDown)
-    // ─────────────────────────────────────────────────────────────────────────
+    // ─────────────────────────────────────────────────────────────────────
+    // RELATÓRIO FINAL
+    // ─────────────────────────────────────────────────────────────────────
+
     tearDownAll(() {
-      print(
-          '\n\n=============================================================');
-      print('📊 RELATÓRIO DE EXECUÇÃO - INTEGRAÇÃO (End-to-End)');
-      print('=============================================================');
-      print('| Tela                   | GET  | POST | PUT  | DEL  |');
-      print('|------------------------|------|------|------|------|');
+      const sep = '══════════════════════════════════════════════════════════';
+      print('\n\n$sep');
+      print('📊  RELATÓRIO — INTEGRAÇÃO SISTÊMICA COMPLETA');
+      print(sep);
 
-      _executionReport.forEach((screen, ops) {
-        final get = ops['GET'] ?? ' -- ';
-        final post = ops['POST'] ?? ' -- ';
-        final put = ops['PUT'] ?? ' -- ';
-        final del = ops['DEL'] ?? ' -- ';
+      var totalPass = 0;
+      var totalFail = 0;
 
-        // Formatação básica de colunas
-        final screenCol = screen.padRight(22).substring(0, 22);
+      for (final entry in _report.entries) {
+        final ops = entry.value;
+        final linha = ops.entries.map((e) => '${e.key}:${e.value}').join('  ');
+        print('  ${entry.key.padRight(40)} $linha');
+        for (final v in ops.values) {
+          if (v.contains('✅')) totalPass++;
+          if (v.contains('❌')) totalFail++;
+        }
+      }
 
-        print('| $screenCol | $get | $post | $put | $del |');
-      });
-      print('=============================================================\n');
+      print(sep);
+      print('  ✅ Passed: $totalPass   ❌ Failed: $totalFail');
+      print('$sep\n');
     });
   });
 }
