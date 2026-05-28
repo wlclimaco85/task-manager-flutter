@@ -16,8 +16,8 @@ if (-not (Test-Path $VenvDir)) {
 }
 
 $Python = Join-Path $VenvDir "Scripts\python.exe"
-& $Python -m pip install --upgrade pip
-& $Python -m pip install -r (Join-Path $ScriptDir "requirements.txt")
+& $Python -m pip install --upgrade pip -q
+& $Python -m pip install -r (Join-Path $ScriptDir "requirements.txt") -q
 
 $env:SELENIUM_BROWSER = $Browser
 $env:SELENIUM_PORT = $Port
@@ -29,7 +29,7 @@ if ($BaseUrl) {
 
 Push-Location $RepoRoot
 try {
-  & $Python -m pytest $ScriptDir
+  & $Python -m pytest $ScriptDir -v --tb=short --no-header -p no:warnings
 }
 finally {
   Pop-Location
