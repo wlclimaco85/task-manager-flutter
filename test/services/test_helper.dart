@@ -14,6 +14,11 @@ int? _cachedParceiroId;
 int? _cachedAplicativoId;
 int? _cachedUserId;
 
+// Getters públicos usados pelos testes para montar payloads com FKs corretos
+int? get cachedEmpresaId => _cachedEmpresaId;
+int? get cachedParceiroId => _cachedParceiroId;
+int? get cachedUserId => _cachedUserId;
+
 /// Realiza login replicando exatamente o que o NetworkCaller faz no app.
 Future<String> loginAndGetToken() async {
   if (_cachedToken != null) return _cachedToken!;
@@ -52,6 +57,7 @@ Future<String> loginAndGetToken() async {
 
   // Extrai token — pode estar em diferentes níveis dependendo do backend
   _cachedToken = decoded['token'] ??
+      decoded['access_token'] ??
       decoded['data']?['token'] ??
       decoded['login']?['token'];
 
@@ -68,6 +74,43 @@ Future<String> loginAndGetToken() async {
   _cachedUserId =
       decoded['data']?['id'] ?? decoded['login']?['id'] ?? decoded['id'];
 
+  // Se o usuário MASTER não tem empresa no login, busca a primeira disponível
+  if (_cachedEmpresaId == null) {
+    try {
+      final empResp = await http.get(
+        Uri.parse(ApiLinks.allEmpresas),
+        headers: {
+          'Content-Type': 'application/json;charset=UTF-8',
+          'Authorization': 'Bearer $_cachedToken',
+          'Access-Control-Allow-Origin': '*',
+        },
+      );
+      if (empResp.statusCode == 200) {
+        final empBody = jsonDecode(empResp.body);
+        List list = [];
+        if (empBody is List) {
+          list = empBody;
+        } else if (empBody is Map) {
+          final data = empBody['data'];
+          if (data is Map) {
+            final dados = data['dados'] ?? data['content'] ?? data['items'];
+            if (dados is List) list = dados;
+          } else if (data is List) {
+            list = data;
+          } else {
+            for (final key in ['content', 'dados', 'items']) {
+              final v = empBody[key];
+              if (v is List) { list = v; break; }
+            }
+          }
+        }
+        if (list.isNotEmpty) {
+          _cachedEmpresaId = list.first['id'];
+        }
+      }
+    } catch (_) {}
+  }
+
   return _cachedToken!;
 }
 
@@ -80,11 +123,15 @@ Map<String, String> authHeaders(String token) => {
     };
 
 /// Monta o body de POST/PUT replicando o que NetworkCaller injeta automaticamente.
+/// Injeta tanto o objeto aninhado (empresa.id) quanto o campo flat (empresaId)
+/// porque diferentes controllers do backend aceitam formas diferentes.
 Map<String, dynamic> withAudit(Map<String, dynamic> body) {
   return {
     ...body,
+    if (_cachedEmpresaId != null) 'empresaId': _cachedEmpresaId,
     'empresa': {'id': _cachedEmpresaId},
     'aplicativo': {'id': _cachedAplicativoId},
+    if (_cachedParceiroId != null) 'parceiroId': _cachedParceiroId,
     if (_cachedParceiroId != null) 'parceiro': {'id': _cachedParceiroId},
     'audit': {
       'empresaId': _cachedEmpresaId,

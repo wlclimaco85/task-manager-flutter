@@ -21,6 +21,47 @@ String _isoDate([int days = 0]) =>
     DateTime.now().add(Duration(days: days)).toIso8601String().substring(0, 10);
 
 // ═══════════════════════════════════════════════════════════════════════════
+// Estado global dos testes — populado no setUpAll, lido nos test()
+// ═══════════════════════════════════════════════════════════════════════════
+
+Map<String, String> _h = {};     // headers autenticados
+int? _empId;                     // ID da primeira empresa disponível
+int? _alunoId;                   // ID do primeiro aluno disponível
+int? _academiaId;                // ID da primeira academia disponível
+int? _parceiroId;                // ID do primeiro parceiro disponível
+
+/// Extrai a lista de dados de qualquer envelope de resposta do backend.
+/// Padrões suportados: lista direta, data.dados, data (lista), content, dados, items.
+List _extractList(dynamic body) {
+  if (body is List) return body;
+  if (body is Map) {
+    final data = body['data'];
+    if (data is Map) {
+      final dados = data['dados'] ?? data['content'] ?? data['items'];
+      if (dados is List) return dados;
+    }
+    if (data is List) return data;
+    for (final key in ['content', 'dados', 'items']) {
+      final v = body[key];
+      if (v is List) return v;
+    }
+  }
+  return [];
+}
+
+/// Busca o primeiro ID de uma lista REST. Retorna null se vazio ou erro.
+Future<int?> _firstId(String url) async {
+  try {
+    final r = await http.get(Uri.parse(url), headers: _h);
+    if (r.statusCode != 200) return null;
+    final body = jsonDecode(r.body);
+    final list = _extractList(body);
+    if (list.isNotEmpty) return list.first['id'];
+  } catch (_) {}
+  return null;
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
 // Relatório de execução
 // ═══════════════════════════════════════════════════════════════════════════
 
@@ -32,11 +73,25 @@ void _log(String tela, String op, bool ok, [String? err]) {
   if (!ok && err != null) print('  🚨 $tela [$op]: $err');
 }
 
-int? _extractId(Map<String, dynamic> body, String idField) =>
-    body[idField] ??
-    body['data']?[idField] ??
-    body['dados']?[idField] ??
-    body['id'];
+int? _extractId(Map<String, dynamic> body, String idField) {
+  // Resposta direta
+  if (body[idField] != null) return body[idField];
+  // Envelope data.dados (lista de 1)
+  final data = body['data'];
+  if (data is Map) {
+    if (data[idField] != null) return data[idField];
+    final dados = data['dados'];
+    if (dados is List && dados.isNotEmpty) return dados.first[idField];
+  }
+  if (data is List && data.isNotEmpty) return data.first[idField];
+  // Outros envelopes
+  for (final key in ['dados', 'items', 'content']) {
+    final v = body[key];
+    if (v is List && v.isNotEmpty) return v.first[idField];
+    if (v is Map && v[idField] != null) return v[idField];
+  }
+  return body['id'];
+}
 
 // ═══════════════════════════════════════════════════════════════════════════
 // Modelo de cenário CRUD
@@ -71,13 +126,13 @@ class CrudScenario {
 // Executor do ciclo GET → POST → PUT/POST → DELETE
 // ═══════════════════════════════════════════════════════════════════════════
 
-void _runCrud(CrudScenario s, Map<String, String> headers) {
+void _runCrud(CrudScenario s) {
   group('🖥  ${s.name}', () {
     int? createdId;
 
     test('GET (listar)', () async {
       try {
-        final r = await http.get(Uri.parse(s.listUrl), headers: headers);
+        final r = await http.get(Uri.parse(s.listUrl), headers: _h);
         if (r.statusCode == 200) {
           _log(s.name, 'GET', true);
         } else {
@@ -95,7 +150,7 @@ void _runCrud(CrudScenario s, Map<String, String> headers) {
         final body = withAudit(s.createPayload());
         final r = await http.post(
           Uri.parse(s.createUrl),
-          headers: headers,
+          headers: _h,
           body: jsonEncode(body),
         );
         if (r.statusCode == 200 || r.statusCode == 201) {
@@ -128,8 +183,8 @@ void _runCrud(CrudScenario s, Map<String, String> headers) {
             withAudit({...s.updatePayload(createdId!), s.idField: createdId});
         final uri = Uri.parse(s.updateUrl(createdId.toString()));
         final r = s.updateMethod == 'PUT'
-            ? await http.put(uri, headers: headers, body: jsonEncode(body))
-            : await http.post(uri, headers: headers, body: jsonEncode(body));
+            ? await http.put(uri, headers: _h, body: jsonEncode(body))
+            : await http.post(uri, headers: _h, body: jsonEncode(body));
         if (r.statusCode == 200 || r.statusCode == 204) {
           _log(s.name, s.updateMethod, true);
         } else {
@@ -151,7 +206,7 @@ void _runCrud(CrudScenario s, Map<String, String> headers) {
       try {
         final r = await http.delete(
             Uri.parse(s.deleteUrl(createdId.toString())),
-            headers: headers);
+            headers: _h);
         if (r.statusCode == 200 || r.statusCode == 204) {
           _log(s.name, 'DELETE', true);
         } else {
@@ -172,14 +227,62 @@ void _runCrud(CrudScenario s, Map<String, String> headers) {
 
 void main() {
   group('🧪 INTEGRAÇÃO SISTÊMICA — Todas as Telas', () {
-    late String token;
-    late Map<String, String> headers;
-
     setUpAll(() async {
       print('\n🔵 INICIANDO TESTES DE INTEGRAÇÃO SISTÊMICA...');
-      token = await loginAndGetToken();
-      headers = authHeaders(token);
-      print('✅ Autenticado. Executando bateria completa.\n');
+      final token = await loginAndGetToken();
+      _h = authHeaders(token);
+      _empId = cachedEmpresaId;
+
+      // ── Bootstrap: garante que empresa exista ────────────────────────────
+      _empId ??= await _firstId(ApiLinks.allEmpresas);
+      if (_empId == null) {
+        try {
+          final ts = _ts();
+          final cr = await http.post(
+            Uri.parse(ApiLinks.allEmpresas), // POST /api/empresa
+            headers: _h,
+            body: jsonEncode({
+              'nome': 'Empresa Teste $ts',
+              'email': 'empresa$ts@teste.com',
+              'centroCustoObrigatorio': false,
+              'aplicativo': {},
+              'audit': {},
+            }),
+          );
+          if (cr.statusCode == 200 || cr.statusCode == 201) {
+            final dec = jsonDecode(cr.body);
+            _empId = _extractId(dec as Map<String, dynamic>, 'id');
+          }
+        } catch (_) {}
+        _empId ??= await _firstId(ApiLinks.allEmpresas);
+      }
+
+      // ── Bootstrap: garante que academia exista ───────────────────────────
+      _academiaId = await _firstId(ApiLinks.allAcademia);
+      if (_academiaId == null) {
+        try {
+          final cr = await http.post(
+            Uri.parse('${ApiLinks.baseUrl}/academia'),
+            headers: _h,
+            body: jsonEncode({
+              'nome': 'Academia Teste ${_ts()}',
+              if (_empId != null) 'codEmpresa': _empId,
+              'audit': {},
+            }),
+          );
+          if (cr.statusCode == 200 || cr.statusCode == 201) {
+            final dec = jsonDecode(cr.body);
+            _academiaId = _extractId(dec as Map<String, dynamic>, 'id');
+          }
+        } catch (_) {}
+        _academiaId ??= await _firstId(ApiLinks.allAcademia);
+      }
+
+      // ── Busca IDs reais para FKs obrigatórias ───────────────────────────
+      _alunoId    = await _firstId('${ApiLinks.baseUrl}/aluno/findAll');
+      _parceiroId = await _firstId(ApiLinks.allParceiros);
+
+      print('✅ Autenticado | empresaId=$_empId | academiaId=$_academiaId | alunoId=$_alunoId | parceiroId=$_parceiroId\n');
     });
 
     // ─────────────────────────────────────────────────────────────────────
@@ -198,6 +301,7 @@ void main() {
           createPayload: () => {
             'nome': _uid('Modalidade'),
             'descricao': 'Desc teste',
+            if (_academiaId != null) 'codAcademia': _academiaId,
           },
           updatePayload: (id) => {'nome': _uid('Modalidade EDIT')},
         ),
@@ -211,6 +315,7 @@ void main() {
           createPayload: () => {
             'nome': _uid('Objetivo'),
             'descricao': 'Desc teste objetivo',
+            if (_alunoId != null) 'codAluno': _alunoId,
           },
           updatePayload: (id) => {'nome': _uid('Objetivo EDIT')},
         ),
@@ -220,12 +325,14 @@ void main() {
           createUrl: ApiLinks.createPlano,
           updateUrl: ApiLinks.updatePlano,
           deleteUrl: ApiLinks.deletePlano,
+          // GenericController legado usa PUT no endpoint /insert
           updateMethod: 'PUT',
           createPayload: () => {
             'nome': _uid('Plano'),
             'descricao': 'Desc plano',
             'valor': 99.90,
             'duracao': 30,
+            if (_academiaId != null) 'codAcademia': _academiaId,
           },
           updatePayload: (id) => {'nome': _uid('Plano EDIT'), 'valor': 109.90},
         ),
@@ -239,6 +346,7 @@ void main() {
           createPayload: () => {
             'nome': _uid('Treino'),
             'descricao': 'Desc treino',
+            if (_alunoId != null) 'codAluno': _alunoId,
           },
           updatePayload: (id) => {'nome': _uid('Treino EDIT')},
         ),
@@ -392,7 +500,7 @@ void main() {
       ];
 
       for (final s in scenarios) {
-        _runCrud(s, headers);
+        _runCrud(s);
       }
     });
 
@@ -467,7 +575,7 @@ void main() {
       ];
 
       for (final s in scenarios) {
-        _runCrud(s, headers);
+        _runCrud(s);
       }
     });
 
@@ -569,7 +677,7 @@ void main() {
       ];
 
       for (final s in scenarios) {
-        _runCrud(s, headers);
+        _runCrud(s);
       }
     });
 
@@ -657,7 +765,7 @@ void main() {
       ];
 
       for (final s in scenarios) {
-        _runCrud(s, headers);
+        _runCrud(s);
       }
     });
 
@@ -743,7 +851,7 @@ void main() {
       ];
 
       for (final s in scenarios) {
-        _runCrud(s, headers);
+        _runCrud(s);
       }
     });
 
@@ -786,7 +894,7 @@ void main() {
       ];
 
       for (final s in scenarios) {
-        _runCrud(s, headers);
+        _runCrud(s);
       }
     });
 
@@ -812,7 +920,7 @@ void main() {
       ];
 
       for (final s in scenarios) {
-        _runCrud(s, headers);
+        _runCrud(s);
       }
     });
 
@@ -895,7 +1003,7 @@ void main() {
       ];
 
       for (final s in scenarios) {
-        _runCrud(s, headers);
+        _runCrud(s);
       }
     });
 
@@ -966,7 +1074,7 @@ void main() {
       ];
 
       for (final s in scenarios) {
-        _runCrud(s, headers);
+        _runCrud(s);
       }
     });
 
@@ -1024,7 +1132,7 @@ void main() {
       ];
 
       for (final s in scenarios) {
-        _runCrud(s, headers);
+        _runCrud(s);
       }
     });
 
@@ -1068,7 +1176,7 @@ void main() {
       ];
 
       for (final s in scenarios) {
-        _runCrud(s, headers);
+        _runCrud(s);
       }
     });
 
@@ -1288,7 +1396,7 @@ void main() {
       ];
 
       for (final s in scenarios) {
-        _runCrud(s, headers);
+        _runCrud(s);
       }
     });
 
@@ -1353,7 +1461,7 @@ void main() {
       getOnlyUrls.forEach((name, url) {
         test('GET $name', () async {
           try {
-            final r = await http.get(Uri.parse(url), headers: headers);
+            final r = await http.get(Uri.parse(url), headers: _h);
             final ok = r.statusCode == 200 || r.statusCode == 204;
             _log(name, 'GET', ok, ok ? null : '${r.statusCode}');
             if (!ok) fail('$name → ${r.statusCode}');
