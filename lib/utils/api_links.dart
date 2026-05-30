@@ -971,6 +971,10 @@ class ApiLinks {
       '$_baseUrlNew/api/trading/operacao-assistida/$id/status';
   static String tradingOperacao(String id) =>
       '$_baseUrlNew/api/trading/operacao-assistida/$id';
+  static String get tradingCarteira => '$_baseUrlNew/api/trading/carteira';
+  static String get tradingCarteiraOperacoes => '$_baseUrlNew/api/trading/carteira/operacoes';
+  static String tradingCarteiraOperacao(String id) =>
+      '$_baseUrlNew/api/trading/carteira/operacao/$id';
   // Departamento Pessoal profissional
   static String get dpDashboard => '$_baseUrlNew/api/dp/dashboard';
   static String get dpRelatorioResumo =>

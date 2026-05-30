@@ -87,6 +87,7 @@ import '../../features/trading/screens/sinais_screen.dart';
 import '../../features/trading/screens/oportunidades_screen.dart';
 import '../../features/trading/screens/backtest_screen.dart';
 import '../../features/trading/services/backtest_repository.dart';
+import '../../features/trading/screens/carteira_screen.dart';
 import '../../utils/api_links.dart';
 import '../../utils/tenant_context.dart';
 import '../../widgets/app_sidebar.dart';
@@ -351,6 +352,7 @@ class _WebBottomNavBarScreenState extends State<WebBottomNavBarScreen> {
       const WebAiAssistenteScreen(), // 118: Assistente IA
       const TradingDashboardScreen(
           initialTabIndex: 4), // 129: Configuração da Corretora
+      const CarteiraScreen(), // 131: Minha Carteira
     ];
   }
 
