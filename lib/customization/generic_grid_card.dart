@@ -1,5 +1,6 @@
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../utils/grid_colors.dart';
@@ -493,8 +494,7 @@ class _GenericMobileGridScreenState<T>
     _itemParaEditar = item;
     showDialog(
       context: context,
-      barrierColor:
-          GridColors.primary.withValues(alpha: 1.8), // 🔴 fundo vermelho translúcido
+      barrierColor: Colors.black54,
       builder: (context) => _buildFormDialog(item),
     );
   }
@@ -512,52 +512,50 @@ class _GenericMobileGridScreenState<T>
     }
 
     return Dialog(
-      backgroundColor: GridColors.primary, // 🔴 fundo vermelho principal
+      backgroundColor: Colors.white,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      insetPadding: const EdgeInsets.all(24),
-      child: Container(
+      insetPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 32),
+      clipBehavior: Clip.antiAlias,
+      child: ConstrainedBox(
         constraints: BoxConstraints(
           maxWidth: 500,
-          maxHeight: MediaQuery.of(context).size.height * 0.8,
-        ),
-        padding: const EdgeInsets.all(20),
-        decoration: BoxDecoration(
-          color: GridColors.primary, // 🔴 Fundo do card (vermelho)
-          borderRadius: BorderRadius.circular(16),
-          boxShadow: [
-            BoxShadow(
-              color: GridColors.primaryDark.withValues(alpha: 0.4),
-              blurRadius: 10,
-              offset: const Offset(0, 4),
-            ),
-          ],
+          maxHeight: MediaQuery.of(context).size.height * 0.85,
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Row(
-              children: [
-                const Icon(Icons.edit, color: GridColors.textPrimary, size: 24),
-                const SizedBox(width: 8),
-                Text(
-                  item == null ? GridTexts.addNew : GridTexts.editItem,
-                  style: const TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                    color: GridColors.textPrimary, // branco no título
+            // ── Cabeçalho colorido ────────────────────────────────────────
+            Container(
+              color: GridColors.primary,
+              padding: const EdgeInsets.fromLTRB(20, 16, 8, 16),
+              child: Row(
+                children: [
+                  const Icon(Icons.edit_outlined,
+                      color: Colors.white, size: 22),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Text(
+                      item == null ? GridTexts.addNew : GridTexts.editItem,
+                      style: const TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
+                    ),
                   ),
-                ),
-                const Spacer(),
-                IconButton(
-                  icon: const Icon(Icons.close, color: GridColors.textPrimary),
-                  onPressed: () => Navigator.pop(context),
-                ),
-              ],
+                  IconButton(
+                    icon: const Icon(Icons.close, color: Colors.white70),
+                    onPressed: () => Navigator.pop(context),
+                    tooltip: GridTexts.cancel,
+                  ),
+                ],
+              ),
             ),
-            const SizedBox(height: 20),
-            Expanded(
+            // ── Corpo do formulário ───────────────────────────────────────
+            Flexible(
               child: SingleChildScrollView(
+                padding: const EdgeInsets.fromLTRB(20, 20, 20, 8),
                 child: Column(
                   children: widget.fieldConfigs
                       .where((config) => config.isInForm)
@@ -567,31 +565,47 @@ class _GenericMobileGridScreenState<T>
                 ),
               ),
             ),
-            const SizedBox(height: 20),
-            Row(
-              children: [
-                Expanded(
-                  child: OutlinedButton(
-                    onPressed: () => Navigator.pop(context),
-                    style: OutlinedButton.styleFrom(
-                      side: const BorderSide(color: GridColors.textPrimary),
-                      foregroundColor: GridColors.textPrimary,
+            // ── Rodapé com botões ─────────────────────────────────────────
+            const Divider(height: 1),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 12, 20, 16),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton(
+                      onPressed: () => Navigator.pop(context),
+                      style: OutlinedButton.styleFrom(
+                        side: const BorderSide(color: GridColors.primary),
+                        foregroundColor: GridColors.primary,
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10)),
+                      ),
+                      child: const Text(GridTexts.cancel,
+                          style: TextStyle(fontWeight: FontWeight.w600)),
                     ),
-                    child: const Text(GridTexts.cancel),
                   ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: ElevatedButton(
-                    onPressed: () => _saveForm(item, formControllers, context),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: GridColors.textPrimary,
-                      foregroundColor: GridColors.primary,
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: ElevatedButton(
+                      onPressed: () =>
+                          _saveForm(item, formControllers, context),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: GridColors.primary,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        elevation: 2,
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10)),
+                      ),
+                      child: Text(
+                        item == null ? GridTexts.add : GridTexts.save,
+                        style: const TextStyle(fontWeight: FontWeight.bold),
+                      ),
                     ),
-                    child: Text(item == null ? GridTexts.add : GridTexts.save),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ],
         ),
@@ -1000,8 +1014,7 @@ class _GenericMobileGridScreenState<T>
           L.d('Opções disponíveis:');
           for (var opt in uniqueOptionsList) {
             final optValue = opt[config.dropdownValueField];
-            L.d(
-                '  - $optValue (${optValue.runtimeType}) -> ${opt[config.dropdownDisplayField]}');
+            L.d('  - $optValue (${optValue.runtimeType}) -> ${opt[config.dropdownDisplayField]}');
           }
         }
 
@@ -1104,7 +1117,10 @@ class _GenericMobileGridScreenState<T>
                 ),
                 filled: !config.enabled,
                 fillColor: !config.enabled
-                    ? Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.04)
+                    ? Theme.of(context)
+                        .colorScheme
+                        .onSurface
+                        .withValues(alpha: 0.04)
                     : Colors.transparent,
               ),
               isExpanded: true,
@@ -1289,9 +1305,19 @@ class _GenericMobileGridScreenState<T>
                     ? (int.tryParse(value) ?? value)
                     : value;
             _addToFormData(formData, config.fieldName, finalValue);
+          } else if (config.fieldType == FieldType.boolean) {
+            _addToFormData(
+                formData, config.fieldName, fieldValue.toLowerCase() == 'true');
           } else {
             _addToFormData(formData, config.fieldName, fieldValue);
           }
+        }
+      }
+
+      for (final config in widget.fieldConfigs
+          .where((c) => c.isInForm && c.fieldType == FieldType.boolean)) {
+        if (!formData.containsKey(config.fieldName)) {
+          _addToFormData(formData, config.fieldName, false);
         }
       }
 
@@ -1347,11 +1373,11 @@ class _GenericMobileGridScreenState<T>
             : 'Item atualizado com sucesso!');
         _loadItems(reset: true);
       } else {
-        _showSnackBar('Erro ao salvar: ${response.body ?? response.statusCode}',
-            isError: true);
+        _showSaveErrorDialog(
+            'Erro ao salvar: ${response.body ?? response.statusCode}');
       }
     } catch (e) {
-      _showSnackBar('Erro: $e', isError: true);
+      _showSaveErrorDialog('Erro: $e');
     }
   }
 
@@ -1666,8 +1692,8 @@ class _GenericMobileGridScreenState<T>
                             )
                           : null,
                       filled: true,
-                      fillColor:
-                          colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
+                      fillColor: colorScheme.surfaceContainerHighest
+                          .withValues(alpha: 0.3),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(8),
                         borderSide: BorderSide.none,
@@ -1928,7 +1954,7 @@ class _GenericMobileGridScreenState<T>
     final textTheme = Theme.of(context).textTheme;
 
     return Scaffold(
-      backgroundColor: GridColors.background, // Fundo verde
+      backgroundColor: GridColors.pageBackground,
       appBar: widget.useUserBannerAppBar
           ? PreferredSize(
               preferredSize: Size.fromHeight(
@@ -2052,12 +2078,14 @@ class _GenericMobileGridScreenState<T>
           side: BorderSide(
             color: isSelected
                 ? GridColors.primary
-                : GridColors.primary.withValues(alpha: 0.3), // Borda na cor primária
+                : GridColors.primary
+                    .withValues(alpha: 0.3), // Borda na cor primária
             width: isSelected ? 2 : 1,
           ),
         ),
-        color:
-            isSelected ? GridColors.primary.withValues(alpha: 0.08) : GridColors.card,
+        color: isSelected
+            ? GridColors.primary.withValues(alpha: 0.08)
+            : GridColors.card,
         child: InkWell(
           borderRadius: BorderRadius.circular(12),
           onTap: _isSelectionMode
@@ -2401,14 +2429,16 @@ class _GenericMobileGridScreenState<T>
         if (widget.enableDebugMode)
           IconButton(
             icon: Icon(Icons.bug_report,
-                size: 16, color: GridColors.textSecondary.withValues(alpha: 0.6)),
+                size: 16,
+                color: GridColors.textSecondary.withValues(alpha: 0.6)),
             onPressed: () => _showAllFieldsDebug(context, item),
             tooltip: 'Ver todos os campos',
           ),
         if (widget.detailScreenBuilder != null && widget.hasPermission('view'))
           IconButton(
             icon: Icon(Icons.visibility_outlined,
-                size: 16, color: GridColors.textSecondary.withValues(alpha: 0.6)),
+                size: 16,
+                color: GridColors.textSecondary.withValues(alpha: 0.6)),
             onPressed: () {
               Navigator.push(
                 context,
@@ -2422,7 +2452,8 @@ class _GenericMobileGridScreenState<T>
         if (widget.hasPermission('edit'))
           IconButton(
             icon: Icon(Icons.edit_outlined,
-                size: 16, color: GridColors.textSecondary.withValues(alpha: 0.6)),
+                size: 16,
+                color: GridColors.textSecondary.withValues(alpha: 0.6)),
             onPressed: () => _openForm(item: item),
             tooltip: 'Editar',
           ),
@@ -2440,7 +2471,8 @@ class _GenericMobileGridScreenState<T>
             .map(
               (action) => IconButton(
                 icon: Icon(action.icon,
-                    size: 16, color: GridColors.textSecondary.withValues(alpha: 0.6)),
+                    size: 16,
+                    color: GridColors.textSecondary.withValues(alpha: 0.6)),
                 onPressed: () => action.onPressed(context, item),
                 tooltip: action.label,
               ),
@@ -2455,9 +2487,52 @@ class _GenericMobileGridScreenState<T>
         content: Text(message),
         backgroundColor: isError ? GridColors.error : GridColors.primary,
         behavior: SnackBarBehavior.floating,
+        action: isError
+            ? SnackBarAction(
+                label: 'Copiar',
+                textColor: Colors.white,
+                onPressed: () {
+                  Clipboard.setData(ClipboardData(text: message));
+                },
+              )
+            : null,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(8),
         ),
+      ),
+    );
+  }
+
+  Future<void> _showSaveErrorDialog(String message) async {
+    _showSnackBar(message, isError: true);
+    if (!mounted) return;
+    await showDialog<void>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Erro ao salvar'),
+        content: TextField(
+          controller: TextEditingController(text: message),
+          readOnly: true,
+          maxLines: 7,
+          decoration: const InputDecoration(
+            border: OutlineInputBorder(),
+          ),
+        ),
+        actions: [
+          TextButton.icon(
+            icon: const Icon(Icons.copy),
+            label: const Text('Copiar erro'),
+            onPressed: () async {
+              await Clipboard.setData(ClipboardData(text: message));
+              if (dialogContext.mounted) Navigator.pop(dialogContext);
+              if (mounted) _showSnackBar('Erro copiado.');
+            },
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext),
+            child: const Text('Fechar'),
+          ),
+        ],
       ),
     );
   }

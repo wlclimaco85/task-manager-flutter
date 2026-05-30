@@ -1,13 +1,14 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:task_manager_flutter/models/auth_utility.dart';
-import 'package:task_manager_flutter/models/empresa_model.dart';
-import 'package:task_manager_flutter/models/regime_tributario_model.dart';
-import 'package:task_manager_flutter/services/network_caller.dart';
-import 'package:task_manager_flutter/utils/api_links.dart';
-import 'package:task_manager_flutter/utils/grid_colors.dart';
-import 'package:task_manager_flutter/widgets/edit_form_helpers.dart';
+import 'package:task_manager_flutter_merged_final/models/auth_utility.dart';
+import 'package:task_manager_flutter_merged_final/models/empresa_model.dart';
+import 'package:task_manager_flutter_merged_final/models/regime_tributario_model.dart';
+import 'package:task_manager_flutter_merged_final/services/network_caller.dart';
+import 'package:task_manager_flutter_merged_final/utils/api_links.dart';
+import 'package:task_manager_flutter_merged_final/utils/grid_colors.dart';
+import 'package:task_manager_flutter_merged_final/widgets/edit_form_helpers.dart';
+import 'package:task_manager_flutter_merged_final/widgets/searchable_dropdown.dart';
 
 class EmpresaEditScreen extends StatefulWidget {
   final Map<String, dynamic> initialData;
@@ -280,15 +281,16 @@ class _EmpresaEditScreenState extends State<EmpresaEditScreen> {
                   const SizedBox(height: 16),
                   _buildRegimeDropdown(),
                   const SizedBox(height: 12),
-                  DropdownButtonFormField<String>(
-                    initialValue: _ambientes.contains(_ambiente) ? _ambiente : null,
-                    items: _ambientes.map((a) => DropdownMenuItem(value: a, child: Text(a))).toList(),
-                    decoration: InputDecoration(
-                      labelText: 'Ambiente',
-                      filled: true,
-                      fillColor: GridColors.inputBackground,
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                    ),
+                  SearchableDropdownField(
+                    label: 'Ambiente',
+                    value: _ambientes.contains(_ambiente) ? _ambiente : null,
+                    items: _ambientes
+                        .map((a) => <String, dynamic>{'id': a, 'nome': a})
+                        .toList(),
+                    valueField: 'id',
+                    displayField: 'nome',
+                    nullable: true,
+                    nullLabel: 'Limpar seleção',
                     onChanged: (v) => setState(() => _ambiente = v),
                   ),
                   const SizedBox(height: 24),
@@ -312,46 +314,105 @@ class _EmpresaEditScreenState extends State<EmpresaEditScreen> {
   }
 
   Widget _buildPaisDropdown() {
-    return DropdownButtonFormField<PaisModel>(
-      initialValue: _paises.contains(_paisSelecionado) ? _paisSelecionado : null,
-      items: _paises.map((p) => DropdownMenuItem(value: p, child: Text(p.nome))).toList(),
-      decoration: InputDecoration(labelText: 'País', filled: true, fillColor: GridColors.inputBackground, border: OutlineInputBorder(borderRadius: BorderRadius.circular(12))),
+    return SearchableDropdownField(
+      label: 'País',
+      value: _paisSelecionado?.id.toString(),
+      items: _paises
+          .map((p) => <String, dynamic>{'id': p.id.toString() ?? '', 'nome': p.nome ?? ''})
+          .toList(),
+      valueField: 'id',
+      displayField: 'nome',
+      nullable: true,
+      nullLabel: 'Limpar seleção',
       onChanged: (v) async {
-        setState(() { _paisSelecionado = v; _estadoSelecionado = null; _cidadeSelecionada = null; _estados = []; _cidades = []; _loadingEstados = v != null; });
-        if (v != null) { _estados = await fetchEstados(v.id); }
-        if (mounted) setState(() => _loadingEstados = false);
+        final pais = v != null
+            ? _paises.firstWhere((p) => p.id.toString() == v,
+                orElse: () => PaisModel(id: 0, nome: ''))
+            : null;
+        setState(() {
+          _paisSelecionado = (pais?.id ?? 0) != 0 ? pais : null;
+          _estadoSelecionado = null; _cidadeSelecionada = null;
+          _estados = []; _cidades = [];
+          _loadingEstados = pais != null && (pais.id ?? 0) != 0;
+        });
+        if (pais != null && (pais.id ?? 0) != 0) {
+          _estados = await fetchEstados(pais.id);
+          if (mounted) setState(() => _loadingEstados = false);
+        }
       },
     );
   }
 
   Widget _buildEstadoDropdown() {
-    return DropdownButtonFormField<EstadoModel>(
-      initialValue: _estados.contains(_estadoSelecionado) ? _estadoSelecionado : null,
-      items: _estados.map((e) => DropdownMenuItem(value: e, child: Text(e.nome))).toList(),
-      decoration: InputDecoration(labelText: _loadingEstados ? 'Estado (carregando...)' : 'Estado', filled: true, fillColor: GridColors.inputBackground, border: OutlineInputBorder(borderRadius: BorderRadius.circular(12))),
+    return SearchableDropdownField(
+      label: _loadingEstados ? 'Estado (carregando...)' : 'Estado',
+      value: _estadoSelecionado?.id.toString(),
+      items: _estados
+          .map((e) => <String, dynamic>{'id': e.id.toString() ?? '', 'nome': e.nome ?? ''})
+          .toList(),
+      valueField: 'id',
+      displayField: 'nome',
+      enabled: !_loadingEstados && _estados.isNotEmpty,
+      nullable: true,
+      nullLabel: 'Limpar seleção',
       onChanged: (v) async {
-        setState(() { _estadoSelecionado = v; _cidadeSelecionada = null; _cidades = []; _loadingCidades = v != null; });
-        if (v != null) { _cidades = await fetchCidades(v.id); }
-        if (mounted) setState(() => _loadingCidades = false);
+        final estado = v != null
+            ? _estados.firstWhere((e) => e.id.toString() == v,
+                orElse: () => EstadoModel(id: 0, nome: '', paisId: 0))
+            : null;
+        setState(() {
+          _estadoSelecionado = (estado?.id ?? 0) != 0 ? estado : null;
+          _cidadeSelecionada = null; _cidades = [];
+          _loadingCidades = estado != null && (estado.id ?? 0) != 0;
+        });
+        if (estado != null && (estado.id ?? 0) != 0) {
+          _cidades = await fetchCidades(estado.id);
+          if (mounted) setState(() => _loadingCidades = false);
+        }
       },
     );
   }
 
   Widget _buildCidadeDropdown() {
-    return DropdownButtonFormField<CidadeModel>(
-      initialValue: _cidades.contains(_cidadeSelecionada) ? _cidadeSelecionada : null,
-      items: _cidades.map((c) => DropdownMenuItem(value: c, child: Text(c.nome))).toList(),
-      decoration: InputDecoration(labelText: _loadingCidades ? 'Cidade (carregando...)' : 'Cidade', filled: true, fillColor: GridColors.inputBackground, border: OutlineInputBorder(borderRadius: BorderRadius.circular(12))),
-      onChanged: (v) => setState(() => _cidadeSelecionada = v),
+    return SearchableDropdownField(
+      label: _loadingCidades ? 'Cidade (carregando...)' : 'Cidade',
+      value: _cidadeSelecionada?.id.toString(),
+      items: _cidades
+          .map((c) => <String, dynamic>{'id': c.id.toString() ?? '', 'nome': c.nome ?? ''})
+          .toList(),
+      valueField: 'id',
+      displayField: 'nome',
+      enabled: !_loadingCidades && _cidades.isNotEmpty,
+      nullable: true,
+      nullLabel: 'Limpar seleção',
+      onChanged: (v) {
+        final cidade = v != null
+            ? _cidades.firstWhere((c) => c.id.toString() == v,
+                orElse: () => CidadeModel(id: 0, nome: '', estadoId: 0))
+            : null;
+        setState(() => _cidadeSelecionada = (cidade?.id ?? 0) != 0 ? cidade : null);
+      },
     );
   }
 
   Widget _buildRegimeDropdown() {
-    return DropdownButtonFormField<RegimeTributario>(
-      initialValue: _regimes.contains(_regimeSelecionado) ? _regimeSelecionado : null,
-      items: _regimes.map((r) => DropdownMenuItem(value: r, child: Text(r.descricao ?? ''))).toList(),
-      decoration: InputDecoration(labelText: 'Regime Tributário', filled: true, fillColor: GridColors.inputBackground, border: OutlineInputBorder(borderRadius: BorderRadius.circular(12))),
-      onChanged: (v) => setState(() => _regimeSelecionado = v),
+    return SearchableDropdownField(
+      label: 'Regime Tributário',
+      value: _regimeSelecionado?.id?.toString(),
+      items: _regimes
+          .map((r) => <String, dynamic>{'id': r.id?.toString() ?? '', 'nome': r.descricao ?? ''})
+          .toList(),
+      valueField: 'id',
+      displayField: 'nome',
+      nullable: true,
+      nullLabel: 'Limpar seleção',
+      onChanged: (v) {
+        final regime = v != null
+            ? _regimes.firstWhere((r) => r.id?.toString() == v,
+                orElse: () => RegimeTributario())
+            : null;
+        setState(() => _regimeSelecionado = regime);
+      },
     );
   }
 }

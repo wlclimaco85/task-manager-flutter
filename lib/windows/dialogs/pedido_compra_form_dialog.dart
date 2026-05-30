@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import '../../../services/network_caller.dart';
 import '../../../utils/api_links.dart';
 import '../../../constants/custom_colors.dart';
-import '../../../services/pedido_compra_service.dart';
 import '../../../utils/grid_texts.dart';
+import '../../../services/pedido_compra_service.dart';
 
 class PedidoCompraFormDialog extends StatefulWidget {
   final Map<String, dynamic>? item;
@@ -65,9 +65,12 @@ class _PedidoCompraFormDialogState extends State<PedidoCompraFormDialog> {
             produtoId: i['produtoId'],
             produtoNome: i['produtoNome'],
             descricaoCtrl: TextEditingController(text: i['descricao'] ?? ''),
-            quantidadeCtrl: TextEditingController(text: (i['quantidade'] ?? 1.0).toString()),
-            valorUnitarioCtrl: TextEditingController(text: (i['valorUnitario'] ?? 0.0).toString()),
-            descontoCtrl: TextEditingController(text: (i['desconto'] ?? 0.0).toString()),
+            quantidadeCtrl: TextEditingController(
+                text: (i['quantidade'] ?? 1.0).toString()),
+            valorUnitarioCtrl: TextEditingController(
+                text: (i['valorUnitario'] ?? 0.0).toString()),
+            descontoCtrl:
+                TextEditingController(text: (i['desconto'] ?? 0.0).toString()),
             total: (i['total'] ?? 0.0).toDouble(),
           ));
         }
@@ -79,11 +82,13 @@ class _PedidoCompraFormDialogState extends State<PedidoCompraFormDialog> {
     try {
       final response = await NetworkCaller().getRequest(ApiLinks.allParceiros);
       if (response.isSuccess && response.body != null) {
-        final data = response.body!['data']?['dados'] ?? response.body!['data'] ?? [];
+        final data =
+            response.body!['data']?['dados'] ?? response.body!['data'] ?? [];
         if (data is List) {
           _fornecedores = data
               .map((e) => Map<String, dynamic>.from(e))
-              .where((e) => e['tipoCliente'] == 'FORNECEDOR' || e['tipoCliente'] == null)
+              .where((e) =>
+                  e['tipoCliente'] == 'FORNECEDOR' || e['tipoCliente'] == null)
               .toList();
         }
       }
@@ -93,11 +98,14 @@ class _PedidoCompraFormDialogState extends State<PedidoCompraFormDialog> {
 
   Future<void> _loadCentrosCusto() async {
     try {
-      final response = await NetworkCaller().getRequest(ApiLinks.allCentrosCusto);
+      final response =
+          await NetworkCaller().getRequest(ApiLinks.allCentrosCusto);
       if (response.isSuccess && response.body != null) {
-        final data = response.body!['data']?['dados'] ?? response.body!['data'] ?? [];
+        final data =
+            response.body!['data']?['dados'] ?? response.body!['data'] ?? [];
         if (data is List) {
-          _centrosCusto = data.map((e) => Map<String, dynamic>.from(e)).toList();
+          _centrosCusto =
+              data.map((e) => Map<String, dynamic>.from(e)).toList();
         }
       }
     } catch (_) {}
@@ -108,7 +116,8 @@ class _PedidoCompraFormDialogState extends State<PedidoCompraFormDialog> {
     try {
       final response = await NetworkCaller().getRequest(ApiLinks.allVendas);
       if (response.isSuccess && response.body != null) {
-        final data = response.body!['data']?['dados'] ?? response.body!['data'] ?? [];
+        final data =
+            response.body!['data']?['dados'] ?? response.body!['data'] ?? [];
         if (data is List) {
           _produtos = data.map((e) => Map<String, dynamic>.from(e)).toList();
         }
@@ -151,28 +160,34 @@ class _PedidoCompraFormDialogState extends State<PedidoCompraFormDialog> {
   Future<void> _pickDate({required bool isEmissao}) async {
     final picked = await showDatePicker(
       context: context,
-      initialDate: isEmissao ? (_dataEmissao ?? DateTime.now()) : (_dataEntrega ?? DateTime.now()),
+      initialDate: isEmissao
+          ? (_dataEmissao ?? DateTime.now())
+          : (_dataEntrega ?? DateTime.now()),
       firstDate: DateTime(2000),
       lastDate: DateTime(2100),
     );
     if (picked != null) {
       setState(() {
-        if (isEmissao) _dataEmissao = picked;
-        else _dataEntrega = picked;
+        if (isEmissao)
+          _dataEmissao = picked;
+        else
+          _dataEntrega = picked;
       });
     }
   }
 
   Map<String, dynamic> _buildPayload() {
-    final itensJson = _itens.map((i) => {
-      if (i.produtoId != null) 'produtoId': i.produtoId,
-      'produtoNome': i.produtoNome ?? i.descricaoCtrl.text,
-      'descricao': i.descricaoCtrl.text,
-      'quantidade': double.tryParse(i.quantidadeCtrl.text) ?? 0,
-      'valorUnitario': double.tryParse(i.valorUnitarioCtrl.text) ?? 0,
-      'desconto': double.tryParse(i.descontoCtrl.text) ?? 0,
-      'total': _calcularTotalItem(i),
-    }).toList();
+    final itensJson = _itens
+        .map((i) => {
+              if (i.produtoId != null) 'produtoId': i.produtoId,
+              'produtoNome': i.produtoNome ?? i.descricaoCtrl.text,
+              'descricao': i.descricaoCtrl.text,
+              'quantidade': double.tryParse(i.quantidadeCtrl.text) ?? 0,
+              'valorUnitario': double.tryParse(i.valorUnitarioCtrl.text) ?? 0,
+              'desconto': double.tryParse(i.descontoCtrl.text) ?? 0,
+              'total': _calcularTotalItem(i),
+            })
+        .toList();
 
     return {
       if (widget.item?['id'] != null) 'id': widget.item!['id'],
@@ -193,13 +208,17 @@ class _PedidoCompraFormDialogState extends State<PedidoCompraFormDialog> {
     if (!_formKey.currentState!.validate()) return;
     if (_fornecedorId == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Selecione um fornecedor'), backgroundColor: Colors.red),
+        const SnackBar(
+            content: Text('Selecione um fornecedor'),
+            backgroundColor: Colors.red),
       );
       return;
     }
     if (_itens.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Adicione pelo menos um item'), backgroundColor: Colors.red),
+        const SnackBar(
+            content: Text('Adicione pelo menos um item'),
+            backgroundColor: Colors.red),
       );
       return;
     }
@@ -214,7 +233,8 @@ class _PedidoCompraFormDialogState extends State<PedidoCompraFormDialog> {
       widget.onSaved();
     } else if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Erro ao salvar'), backgroundColor: Colors.red),
+        const SnackBar(
+            content: Text('Erro ao salvar'), backgroundColor: Colors.red),
       );
     }
   }
@@ -230,10 +250,14 @@ class _PedidoCompraFormDialogState extends State<PedidoCompraFormDialog> {
           child: Column(
             children: [
               AppBar(
-                title: Text(widget.item != null ? 'Editar Pedido de Compra' : 'Novo Pedido de Compra'),
+                title: Text(widget.item != null
+                    ? 'Editar Pedido de Compra'
+                    : 'Novo Pedido de Compra'),
                 automaticallyImplyLeading: false,
                 actions: [
-                  IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(context)),
+                  IconButton(
+                      icon: const Icon(Icons.close),
+                      onPressed: () => Navigator.pop(context)),
                 ],
               ),
               Expanded(
@@ -247,8 +271,10 @@ class _PedidoCompraFormDialogState extends State<PedidoCompraFormDialog> {
                       _row([
                         _fornecedorDropdown(),
                         _centroCustoDropdown(),
-                        _dateField('Data Emissão', _dataEmissao, () => _pickDate(isEmissao: true)),
-                        _dateField('Data Entrega', _dataEntrega, () => _pickDate(isEmissao: false)),
+                        _dateField('Data Emissão', _dataEmissao,
+                            () => _pickDate(isEmissao: true)),
+                        _dateField('Data Entrega', _dataEntrega,
+                            () => _pickDate(isEmissao: false)),
                       ]),
                       const SizedBox(height: 24),
                       _sectionTitle('Itens'),
@@ -278,14 +304,16 @@ class _PedidoCompraFormDialogState extends State<PedidoCompraFormDialog> {
                           ),
                         ),
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 16, vertical: 12),
                           decoration: BoxDecoration(
                             color: GridColors.secondary.withOpacity(0.1),
                             borderRadius: BorderRadius.circular(8),
                           ),
                           child: Text(
                             'Total Geral: R\$ ${_calcularTotalGeral().toStringAsFixed(2)}',
-                            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                            style: const TextStyle(
+                                fontSize: 18, fontWeight: FontWeight.bold),
                           ),
                         ),
                       ]),
@@ -311,14 +339,17 @@ class _PedidoCompraFormDialogState extends State<PedidoCompraFormDialog> {
                   children: [
                     TextButton(
                       onPressed: () => Navigator.pop(context),
-                      child: const Text(GridTexts.cancel),
+                      child: Text(GridTexts.cancel),
                     ),
                     const SizedBox(width: 12),
                     ElevatedButton(
                       onPressed: _save,
                       child: _isLoading
-                          ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))
-                          : const Text(GridTexts.save),
+                          ? const SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(strokeWidth: 2))
+                          : Text(GridTexts.save),
                     ),
                   ],
                 ),
@@ -362,7 +393,10 @@ class _PedidoCompraFormDialogState extends State<PedidoCompraFormDialog> {
                 width: 80,
                 child: TextFormField(
                   controller: item.quantidadeCtrl,
-                  decoration: const InputDecoration(labelText: 'Qtd', border: OutlineInputBorder(), isDense: true),
+                  decoration: const InputDecoration(
+                      labelText: 'Qtd',
+                      border: OutlineInputBorder(),
+                      isDense: true),
                   keyboardType: TextInputType.number,
                   onChanged: (_) => setState(() {}),
                 ),
@@ -372,7 +406,10 @@ class _PedidoCompraFormDialogState extends State<PedidoCompraFormDialog> {
                 width: 100,
                 child: TextFormField(
                   controller: item.valorUnitarioCtrl,
-                  decoration: const InputDecoration(labelText: 'Valor Unit.', border: OutlineInputBorder(), isDense: true),
+                  decoration: const InputDecoration(
+                      labelText: 'Valor Unit.',
+                      border: OutlineInputBorder(),
+                      isDense: true),
                   keyboardType: TextInputType.number,
                   onChanged: (_) => setState(() {}),
                 ),
@@ -382,15 +419,20 @@ class _PedidoCompraFormDialogState extends State<PedidoCompraFormDialog> {
                 width: 80,
                 child: TextFormField(
                   controller: item.descontoCtrl,
-                  decoration: const InputDecoration(labelText: 'Desc.', border: OutlineInputBorder(), isDense: true),
+                  decoration: const InputDecoration(
+                      labelText: 'Desc.',
+                      border: OutlineInputBorder(),
+                      isDense: true),
                   keyboardType: TextInputType.number,
                   onChanged: (_) => setState(() {}),
                 ),
               ),
               const SizedBox(width: 8),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 12),
-                child: Text('R\$ ${total.toStringAsFixed(2)}', style: const TextStyle(fontWeight: FontWeight.bold)),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 8, vertical: 12),
+                child: Text('R\$ ${total.toStringAsFixed(2)}',
+                    style: const TextStyle(fontWeight: FontWeight.bold)),
               ),
               IconButton(
                 icon: const Icon(Icons.delete, color: Colors.red, size: 20),
@@ -422,7 +464,8 @@ class _PedidoCompraFormDialogState extends State<PedidoCompraFormDialog> {
         onChanged: (v) {
           setState(() {
             _fornecedorId = v;
-            _fornecedorNome = _fornecedores.firstWhere((c) => c['id'] == v)['nome'];
+            _fornecedorNome =
+                _fornecedores.firstWhere((c) => c['id'] == v)['nome'];
           });
         },
       ),
@@ -447,7 +490,8 @@ class _PedidoCompraFormDialogState extends State<PedidoCompraFormDialog> {
         onChanged: (v) {
           setState(() {
             _centroCustoId = v;
-            _centroCustoNome = _centrosCusto.firstWhere((c) => c['id'] == v)['nome'];
+            _centroCustoNome =
+                _centrosCusto.firstWhere((c) => c['id'] == v)['nome'];
           });
         },
       ),
@@ -471,16 +515,21 @@ class _PedidoCompraFormDialogState extends State<PedidoCompraFormDialog> {
         setState(() {
           item.produtoId = v;
           final prod = _produtos.firstWhere((p) => p['id'] == v);
-          item.produtoNome = prod['nome']?.toString() ?? prod['descricao']?.toString() ?? '';
-          if (item.descricaoCtrl.text.isEmpty) item.descricaoCtrl.text = item.produtoNome!;
-          item.valorUnitarioCtrl.text = (prod['precoVenda']?.toString() ?? prod['valor']?.toString() ?? '0');
+          item.produtoNome =
+              prod['nome']?.toString() ?? prod['descricao']?.toString() ?? '';
+          if (item.descricaoCtrl.text.isEmpty)
+            item.descricaoCtrl.text = item.produtoNome!;
+          item.valorUnitarioCtrl.text = (prod['precoVenda']?.toString() ??
+              prod['valor']?.toString() ??
+              '0');
         });
       },
     );
   }
 
   Widget _sectionTitle(String title) {
-    return Text(title, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold));
+    return Text(title,
+        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold));
   }
 
   Widget _dateField(String label, DateTime? date, VoidCallback onTap) {

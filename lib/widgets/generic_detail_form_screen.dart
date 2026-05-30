@@ -7,6 +7,7 @@ import '../../../utils/tenant_context.dart';
 import '../../../services/network_caller.dart';
 import '../models/telas_model.dart';
 import '../services/tela_caller.dart';
+import '../customization/dynamic_grid_dynamic_screen.dart' as mobile_dyn;
 import '../customization/dynamic_grid_windows_screen.dart' as dyn;
 import 'generic_grid_windows_screen.dart'
     show FieldConfigWindows, FieldType, SecurityCheck;
@@ -621,6 +622,15 @@ class _GenericDetailFormScreenState extends State<GenericDetailFormScreen>
       return tab.customWidget!;
     }
     if (tab.gridTelaNome != null) {
+      final isMobileWidth = MediaQuery.of(context).size.width < 720;
+      if (isMobileWidth && tab.fieldOverrides == null) {
+        return mobile_dyn.DynamicGridDynamicScreen(
+          telaNome: tab.gridTelaNome!,
+          hasPermission: widget.hasPermission,
+          extraParams: tab.extraParams,
+          showAppBar: false,
+        );
+      }
       return dyn.DynamicGridWindowsScreen<Map<String, dynamic>>(
         telaNome: tab.gridTelaNome!,
         hasPermission: widget.hasPermission,

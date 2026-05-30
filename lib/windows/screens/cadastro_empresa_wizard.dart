@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import '../../utils/grid_colors.dart';
 import 'package:http/http.dart' as http;
 import '../../../models/auth_utility.dart';
@@ -68,6 +69,20 @@ class _LogEntry {
   _LogEntry(this.message, this.type);
 }
 
+class _CreatedEntity {
+  final String url;
+  final int id;
+  final String label;
+  _CreatedEntity(this.url, this.id, this.label);
+}
+
+class _CadastroException implements Exception {
+  final String message;
+  _CadastroException(this.message);
+  @override
+  String toString() => message;
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // WIZARD SCREEN
 // ─────────────────────────────────────────────────────────────────────────────
@@ -83,6 +98,7 @@ class _CadastroEmpresaWizardState extends State<CadastroEmpresaWizard> {
   int _step = 0;
   bool _running = false;
   bool _done = false;
+  bool _failed = false;
 
   final _pageController = PageController();
 
@@ -105,6 +121,7 @@ class _CadastroEmpresaWizardState extends State<CadastroEmpresaWizard> {
   final List<int> _usuarioIds = [];
   final List<int> _clienteIds = [];
   final List<_LogEntry> _logs = [];
+  final List<_CreatedEntity> _createdEntities = [];
   List<Map<String, dynamic>> _aplicativos = [];
   List<Map<String, dynamic>> _roles = [];
 
@@ -231,69 +248,109 @@ class _CadastroEmpresaWizardState extends State<CadastroEmpresaWizard> {
   }
   int? _extractId(dynamic body) {
     if (body is Map) {
-      return body['id'] ?? body['data']?['id'];
+      return body['id']
+          ?? body['data']?['id']
+          ?? body['data']?['parceiro']?['id']
+          ?? body['data']?['login']?['id'];
     }
     return null;
   }
 
+  Future<void> _delete(String url, int id, String label) async {
+    try {
+      final token = AuthUtility.userInfo?.token;
+      final response = await http.delete(
+        Uri.parse('$url/$id'),
+        headers: {
+          'Content-Type': 'application/json;charset=UTF-8',
+          if (token != null) 'Authorization': 'Bearer $token',
+        },
+      );
+      if (response.statusCode >= 200 && response.statusCode < 300) {
+        _log('↩ Rollback: $label → removido (id=$id)', _LogType.warning);
+      } else {
+        _log('↩ Rollback: $label → falha HTTP ${response.statusCode}', _LogType.error);
+      }
+    } catch (e) {
+      _log('↩ Rollback: $label → $e', _LogType.error);
+    }
+  }
+
+  Future<void> _rollback() async {
+    if (_createdEntities.isEmpty) return;
+    _log('═══ ROLLBACK: removendo dados criados ═══', _LogType.section);
+    for (final entity in _createdEntities.reversed) {
+      await _delete(entity.url, entity.id, entity.label);
+    }
+    _createdEntities.clear();
+    _usuarioIds.clear();
+    _clienteIds.clear();
+    _empresaId = null;
+  }
+
   Future<void> _execute() async {
-    setState(() { _running = true; _logs.clear(); });
+    setState(() { _running = true; _done = false; _failed = false; _logs.clear(); _createdEntities.clear(); });
+    _usuarioIds.clear();
+    _clienteIds.clear();
+    _empresaId = null;
 
-    final now = DateTime.now().toIso8601String();
-    final aplicativoPayload = _empresa.aplicativoId != null ? {'id': _empresa.aplicativoId} : null;
+    try {
+      final now = DateTime.now().toIso8601String();
+      final aplicativoPayload = _empresa.aplicativoId != null ? {'id': _empresa.aplicativoId} : null;
 
-    // ── 1. EMPRESA ──────────────────────────────────────────────────────────
-    _log('═══ CADASTRANDO EMPRESA ═══', _LogType.section);
-    _empresaId = await _post('${ApiLinks.baseUrl}/api/empresa', {
-      'nome': _empresa.nome,
-      'razaoSocial': _empresa.razaoSocial.isNotEmpty ? _empresa.razaoSocial : _empresa.nome,
-      'email': _empresa.email,
-      'telefone': _empresa.telefone,
-      'cnpj': _empresa.cnpj,
-      if (aplicativoPayload != null) 'aplicativo': aplicativoPayload,
-    }, 'Empresa: ${_empresa.nome}');
-
-    if (_empresaId == null) {
-      _log('â›" Falha ao criar empresa. Abortando.', _LogType.error);
-      setState(() => _running = false);
-      return;
-    }
-
-    final empresaRef = {'id': _empresaId};
-
-    // ── 2. USUÁRIOS ─────────────────────────────────────────────────────────
-    _log('═══ CADASTRANDO USUÁRIOS ═══', _LogType.section);
-    for (final u in _usuarios) {
-      final roles = u.roleIds.map((id) => {'id': id}).toList();
-      final id = await _post('${ApiLinks.baseUrl}/api/login', {
-        'nome': u.nome,
-        'email': u.email,
-        'senha': u.senha,
-        'cpfCnpj': u.cpfCnpj.isNotEmpty ? u.cpfCnpj : null,
-        'empresa': empresaRef,
+      // ── 1. EMPRESA ──────────────────────────────────────────────────────────
+      _log('═══ CADASTRANDO EMPRESA ═══', _LogType.section);
+      _empresaId = await _post('${ApiLinks.baseUrl}/api/empresa', {
+        'nome': _empresa.nome,
+        'razaoSocial': _empresa.razaoSocial.isNotEmpty ? _empresa.razaoSocial : _empresa.nome,
+        'email': _empresa.email,
+        'telefone': _empresa.telefone,
+        'cnpj': _empresa.cnpj,
         if (aplicativoPayload != null) 'aplicativo': aplicativoPayload,
-        if (roles.isNotEmpty) 'roles': roles,
-        'tipoLogin': 1,
-      }, 'Usuário: ${u.nome} (${u.tipo})');
-      if (id != null) _usuarioIds.add(id);
-    }
+      }, 'Empresa: ${_empresa.nome}');
 
-    // ── 3. CLIENTES (PARCEIROS) ─────────────────────────────────────────────
-    _log('═══ CADASTRANDO CLIENTES ═══', _LogType.section);
-    for (final c in _clientes) {
-      final id = await _post('${ApiLinks.baseUrl}/api/parceiro', {
-        'nome': c.nome,
-        'email': c.email,
-        'cpf': c.cpf.isNotEmpty ? c.cpf : null,
-        'telefone': c.telefone.isNotEmpty ? c.telefone : null,
-        'empresa': empresaRef,
-        if (aplicativoPayload != null) 'aplicativo': aplicativoPayload,
-      }, 'Cliente: ${c.nome}');
-      if (id != null) {
+      if (_empresaId == null) throw _CadastroException('Falha ao criar empresa');
+      _createdEntities.add(_CreatedEntity('${ApiLinks.baseUrl}/api/empresa', _empresaId!, 'Empresa'));
+
+      final empresaRef = {'id': _empresaId};
+
+      // ── 2. USUÁRIOS ─────────────────────────────────────────────────────────
+      _log('═══ CADASTRANDO USUÁRIOS ═══', _LogType.section);
+      for (final u in _usuarios) {
+        final roles = u.roleIds.map((id) => {'id': id}).toList();
+        final id = await _post('${ApiLinks.baseUrl}/api/login', {
+          'nome': u.nome,
+          'email': u.email,
+          'senha': u.senha,
+          'cpfCnpj': u.cpfCnpj.isNotEmpty ? u.cpfCnpj : null,
+          'empresa': empresaRef,
+          if (aplicativoPayload != null) 'aplicativo': aplicativoPayload,
+          if (roles.isNotEmpty) 'roles': roles,
+          'tipoLogin': 1,
+        }, 'Usuário: ${u.nome} (${u.tipo})');
+        if (id == null) throw _CadastroException('Falha ao criar usuário ${u.nome}');
+        _usuarioIds.add(id);
+        _createdEntities.add(_CreatedEntity('${ApiLinks.baseUrl}/api/login', id, 'Usuário ${u.nome}'));
+      }
+
+      // ── 3. CLIENTES (PARCEIROS) ─────────────────────────────────────────────
+      _log('═══ CADASTRANDO CLIENTES ═══', _LogType.section);
+      for (final c in _clientes) {
+        final id = await _post('${ApiLinks.baseUrl}/api/parceiro', {
+          'nome': c.nome,
+          'email': c.email,
+          'cpf': c.cpf.isNotEmpty ? c.cpf : null,
+          'telefone': c.telefone.isNotEmpty ? c.telefone : null,
+          'empresa': empresaRef,
+          if (aplicativoPayload != null) 'aplicativo': aplicativoPayload,
+        }, 'Cliente: ${c.nome}');
+        if (id == null) throw _CadastroException('Falha ao criar cliente ${c.nome}');
         _clienteIds.add(id);
+        _createdEntities.add(_CreatedEntity('${ApiLinks.baseUrl}/api/parceiro', id, 'Cliente ${c.nome}'));
+
         // login do cliente com role admin
         final rolePayload = c.roleAdminId != null ? [{'id': c.roleAdminId}] : <Map>[];
-        await _post('${ApiLinks.baseUrl}/api/login', {
+        final loginId = await _post('${ApiLinks.baseUrl}/api/login', {
           'nome': c.nome,
           'email': c.email,
           'senha': 'Senha@123',
@@ -303,86 +360,104 @@ class _CadastroEmpresaWizardState extends State<CadastroEmpresaWizard> {
           if (rolePayload.isNotEmpty) 'roles': rolePayload,
           'tipoLogin': 2,
         }, 'Login cliente: ${c.nome}');
+        if (loginId == null) throw _CadastroException('Falha ao criar login do cliente ${c.nome}');
+        _createdEntities.add(_CreatedEntity('${ApiLinks.baseUrl}/api/login', loginId, 'Login cliente ${c.nome}'));
       }
-    }
 
-    // ── 4. CONTAS A PAGAR ───────────────────────────────────────────────────
-    _log('═══ CADASTRANDO CONTAS A PAGAR ═══', _LogType.section);
-    final parceiroRef = _clienteIds.isNotEmpty ? {'id': _clienteIds.first} : null;
-    for (int i = 0; i < 5; i++) {
-      final c = _contas[i];
-      await _post('${ApiLinks.baseUrl}/api/conta_pagar', {
-        'descricao': c.descricao,
-        'valor': c.valor,
-        'dataVencimento': DateTime.now().add(Duration(days: 30 + i * 7)).toIso8601String(),
-        'status': 'ABERTA',
+      // ── 4. CONTAS A PAGAR ───────────────────────────────────────────────────
+      _log('═══ CADASTRANDO CONTAS A PAGAR ═══', _LogType.section);
+      final parceiroRef = _clienteIds.isNotEmpty ? {'id': _clienteIds.first} : null;
+      for (int i = 0; i < 5; i++) {
+        final c = _contas[i];
+        final id = await _post('${ApiLinks.baseUrl}/api/conta_pagar', {
+          'descricao': c.descricao,
+          'valor': c.valor,
+          'dataVencimento': DateTime.now().add(Duration(days: 30 + i * 7)).toIso8601String(),
+          'status': 'ABERTA',
+          'empresa': empresaRef,
+          if (parceiroRef != null) 'parceiro': parceiroRef,
+        }, 'Conta Pagar: ${c.descricao}');
+        if (id == null) throw _CadastroException('Falha ao criar conta a pagar ${c.descricao}');
+        _createdEntities.add(_CreatedEntity('${ApiLinks.baseUrl}/api/conta_pagar', id, 'Conta Pagar ${c.descricao}'));
+      }
+
+      // ── 5. CONTAS A RECEBER ─────────────────────────────────────────────────
+      _log('═══ CADASTRANDO CONTAS A RECEBER ═══', _LogType.section);
+      for (int i = 5; i < 10; i++) {
+        final c = _contas[i];
+        final id = await _post('${ApiLinks.baseUrl}/api/conta_receber', {
+          'descricao': c.descricao,
+          'valor': c.valor,
+          'dataVencimento': DateTime.now().add(Duration(days: 30 + (i - 5) * 7)).toIso8601String(),
+          'status': 'ABERTA',
+          'empresa': empresaRef,
+          if (parceiroRef != null) 'cliente': parceiroRef,
+        }, 'Conta Receber: ${c.descricao}');
+        if (id == null) throw _CadastroException('Falha ao criar conta a receber ${c.descricao}');
+        _createdEntities.add(_CreatedEntity('${ApiLinks.baseUrl}/api/conta_receber', id, 'Conta Receber ${c.descricao}'));
+      }
+
+      // ── 6. NOTA FISCAL ──────────────────────────────────────────────────────
+      _log('═══ CADASTRANDO NOTA FISCAL ═══', _LogType.section);
+      final nfId = await _post('${ApiLinks.baseUrl}/api/nfe', {
+        'numero': 'NF-$_empresaId-001',
+        'dhEmi': now,
+        'valorTotal': 1000.0,
+        'status': 'CRIADA',
         'empresa': empresaRef,
-        if (parceiroRef != null) 'parceiro': parceiroRef,
-      }, 'Conta Pagar: ${c.descricao}');
-    }
+      }, 'Nota Fiscal Entrada');
+      if (nfId == null) throw _CadastroException('Falha ao criar nota fiscal');
+      _createdEntities.add(_CreatedEntity('${ApiLinks.baseUrl}/api/nfe', nfId, 'Nota Fiscal'));
 
-    // ── 5. CONTAS A RECEBER ─────────────────────────────────────────────────
-    _log('═══ CADASTRANDO CONTAS A RECEBER ═══', _LogType.section);
-    for (int i = 5; i < 10; i++) {
-      final c = _contas[i];
-      await _post('${ApiLinks.baseUrl}/api/conta_receber', {
-        'descricao': c.descricao,
-        'valor': c.valor,
-        'dataVencimento': DateTime.now().add(Duration(days: 30 + (i - 5) * 7)).toIso8601String(),
-        'status': 'ABERTA',
-        'empresa': empresaRef,
-        if (parceiroRef != null) 'cliente': parceiroRef,
-      }, 'Conta Receber: ${c.descricao}');
-    }
+      // ── 7. CHAMADOS ─────────────────────────────────────────────────────────
+      _log('═══ CADASTRANDO CHAMADOS ═══', _LogType.section);
+      for (final ch in _chamados) {
+        final id = await _post('${ApiLinks.baseUrl}/api/chamados', {
+          'titulo': ch.titulo,
+          'descricao': ch.descricao,
+          'status': 'ABERTO',
+          'prioridade': ch.prioridade,
+          'empresa': empresaRef,
+          if (parceiroRef != null) 'parceiro': parceiroRef,
+          'dataAbertura': now,
+        }, 'Chamado: ${ch.titulo}');
+        if (id == null) throw _CadastroException('Falha ao criar chamado ${ch.titulo}');
+        _createdEntities.add(_CreatedEntity('${ApiLinks.baseUrl}/api/chamados', id, 'Chamado ${ch.titulo}'));
+      }
 
-    // ── 6. NOTA FISCAL ──────────────────────────────────────────────────────
-    _log('═══ CADASTRANDO NOTA FISCAL ═══', _LogType.section);
-    await _post('${ApiLinks.baseUrl}/api/nota_fiscal_entrada', {
-      'numero': 'NF-$_empresaId-001',
-      'fornecedor': _empresa.nome,
-      'dtEmissao': now,
-      'valor': 1000.0,
-      'status': 'EMITIDA',
-      'empresa': empresaRef,
-    }, 'Nota Fiscal Entrada');
+      // ── 8. CHAT ─────────────────────────────────────────────────────────────
+      _log('═══ INICIANDO CHAT ═══', _LogType.section);
+      if (_clienteIds.isNotEmpty) {
+        final clienteId = _clienteIds.first;
+        final chatId = await _post('${ApiLinks.baseUrl}/api/chat', {
+          'empId': _empresaId,
+          'empresaId': _empresaId,
+          'parceiroId': clienteId,
+          'chatId': 'empresa-$_empresaId-parceiro-$clienteId',
+          'sector': 'Abertura Firma',
+          'status': 'ABERTO',
+          'text': 'Chat inicial criado automaticamente para ${_empresa.nome}.',
+          'titulo': 'Chat inicial - ${_empresa.nome}',
+        }, 'Chat inicial');
+        if (chatId == null) throw _CadastroException('Falha ao criar chat inicial');
+        _createdEntities.add(_CreatedEntity('${ApiLinks.baseUrl}/api/chat', chatId, 'Chat inicial'));
+      }
 
-    // ── 7. CHAMADOS ─────────────────────────────────────────────────────────
-    _log('═══ CADASTRANDO CHAMADOS ═══', _LogType.section);
-    for (final ch in _chamados) {
-      await _post('${ApiLinks.baseUrl}/api/chamados', {
-        'titulo': ch.titulo,
-        'descricao': ch.descricao,
-        'status': 'ABERTO',
-        'prioridade': ch.prioridade,
-        'empresa': empresaRef,
-        if (parceiroRef != null) 'parceiro': parceiroRef,
-        'dataAbertura': now,
-      }, 'Chamado: ${ch.titulo}');
-    }
+      // ── 9. FUNCIONÁRIOS ─────────────────────────────────────────────────────
+      _log('═══ CADASTRANDO FUNCIONÁRIOS ═══', _LogType.section);
+      for (final f in _funcionarios) {
+        final id = await _post('${ApiLinks.baseUrl}/api/parceiro', {
+          'nome': f.nome,
+          'email': f.email,
+          'cpf': f.cpf.isNotEmpty ? f.cpf : null,
+          'empresa': empresaRef,
+          if (aplicativoPayload != null) 'aplicativo': aplicativoPayload,
+          'tipoAluno': 'FUNCIONARIO',
+        }, 'Funcionário: ${f.nome}');
+        if (id == null) throw _CadastroException('Falha ao criar funcionário ${f.nome}');
+        _createdEntities.add(_CreatedEntity('${ApiLinks.baseUrl}/api/parceiro', id, 'Funcionário ${f.nome}'));
 
-    // ── 8. CHAT ─────────────────────────────────────────────────────────────
-    _log('═══ INICIANDO CHAT ═══', _LogType.section);
-    if (_clienteIds.isNotEmpty) {
-      await _post('${ApiLinks.baseUrl}/api/chat', {
-        'empresaId': _empresaId,
-        'parceiroId': _clienteIds.first,
-        'titulo': 'Chat inicial - ${_empresa.nome}',
-      }, 'Chat inicial');
-    }
-
-    // ── 9. FUNCIONÁRIOS ─────────────────────────────────────────────────────
-    _log('═══ CADASTRANDO FUNCIONÁRIOS ═══', _LogType.section);
-    for (final f in _funcionarios) {
-      final id = await _post('${ApiLinks.baseUrl}/api/parceiro', {
-        'nome': f.nome,
-        'email': f.email,
-        'cpf': f.cpf.isNotEmpty ? f.cpf : null,
-        'empresa': empresaRef,
-        if (aplicativoPayload != null) 'aplicativo': aplicativoPayload,
-        'tipoAluno': 'FUNCIONARIO',
-      }, 'Funcionário: ${f.nome}');
-      if (id != null) {
-        await _post('${ApiLinks.baseUrl}/api/login', {
+        final loginId = await _post('${ApiLinks.baseUrl}/api/login', {
           'nome': f.nome,
           'email': f.email,
           'senha': 'Senha@123',
@@ -391,12 +466,24 @@ class _CadastroEmpresaWizardState extends State<CadastroEmpresaWizard> {
           if (aplicativoPayload != null) 'aplicativo': aplicativoPayload,
           'tipoLogin': 3,
         }, 'Login funcionário: ${f.nome}');
+        if (loginId == null) throw _CadastroException('Falha ao criar login do funcionário ${f.nome}');
+        _createdEntities.add(_CreatedEntity('${ApiLinks.baseUrl}/api/login', loginId, 'Login funcionário ${f.nome}'));
       }
-    }
 
-    _log('═══ CONCLUÍDO ═══', _LogType.section);
-    _log('Empresa ID: $_empresaId | Usuários: ${_usuarioIds.length} | Clientes: ${_clienteIds.length}', _LogType.info);
-    setState(() { _running = false; _done = true; });
+      _log('═══ CONCLUÍDO ═══', _LogType.section);
+      _log('Empresa ID: $_empresaId | Usuários: ${_usuarioIds.length} | Clientes: ${_clienteIds.length}', _LogType.info);
+      setState(() { _running = false; _done = true; });
+    } on _CadastroException catch (e) {
+      _log('❌ Cadastro interrompido: $e', _LogType.error);
+      _log('▶ Iniciando rollback...', _LogType.warning);
+      await _rollback();
+      setState(() { _running = false; _failed = true; });
+    } catch (e) {
+      _log('❌ Erro inesperado: $e', _LogType.error);
+      _log('▶ Iniciando rollback...', _LogType.warning);
+      await _rollback();
+      setState(() { _running = false; _failed = true; });
+    }
   }
 
   // ─────────────────────────────────────────────────────────────────────────
@@ -435,6 +522,7 @@ class _CadastroEmpresaWizardState extends State<CadastroEmpresaWizard> {
                   formKey: _formKeys[6],
                   running: _running,
                   done: _done,
+                  failed: _failed,
                   logs: _logs,
                   onExecute: _execute,
                 ),
@@ -847,13 +935,15 @@ class _StepExecutar extends StatelessWidget {
   final GlobalKey<FormState> formKey;
   final bool running;
   final bool done;
+  final bool failed;
   final List<_LogEntry> logs;
   final VoidCallback onExecute;
 
   const _StepExecutar({
     required this.empresa, required this.usuarios, required this.clientes,
     required this.chamados, required this.funcionarios, required this.formKey,
-    required this.running, required this.done, required this.logs, required this.onExecute,
+    required this.running, required this.done, required this.failed,
+    required this.logs, required this.onExecute,
   });
 
   @override
@@ -916,10 +1006,49 @@ class _StepExecutar extends StatelessWidget {
                   Text('Concluído!', style: TextStyle(color: GridColors.success, fontSize: 18, fontWeight: FontWeight.bold)),
                 ]),
               )),
+            if (failed)
+              const Center(child: Padding(
+                padding: EdgeInsets.all(8),
+                child: Row(mainAxisSize: MainAxisSize.min, children: [
+                  Icon(Icons.error, color: Color(0xFFEF5350), size: 28),
+                  SizedBox(width: 8),
+                  Text('Falha na execução!', style: TextStyle(color: Color(0xFFEF5350), fontSize: 18, fontWeight: FontWeight.bold)),
+                ]),
+              )),
             const SizedBox(height: 12),
             // Log
             if (logs.isNotEmpty) ...[
-              const Text('Log de Execução', style: TextStyle(color: Colors.white70, fontSize: 13, fontWeight: FontWeight.bold)),
+              Row(
+                children: [
+                  const Text('Log de Execução', style: TextStyle(color: Colors.white70, fontSize: 13, fontWeight: FontWeight.bold)),
+                  const Spacer(),
+                  if (logs.any((l) => l.type == _LogType.error))
+                    SizedBox(
+                      height: 32,
+                      child: TextButton.icon(
+                        onPressed: () {
+                          final errorText = logs
+                              .where((l) => l.type == _LogType.error)
+                              .map((l) => l.message)
+                              .join('\n');
+                          Clipboard.setData(ClipboardData(text: errorText));
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('Erros copiados para a área de transferência'),
+                              duration: Duration(seconds: 2),
+                            ),
+                          );
+                        },
+                        icon: const Icon(Icons.copy, size: 14),
+                        label: const Text('Copiar Erros', style: TextStyle(fontSize: 12)),
+                        style: TextButton.styleFrom(
+                          foregroundColor: const Color(0xFFEF5350),
+                          padding: const EdgeInsets.symmetric(horizontal: 8),
+                        ),
+                      ),
+                    ),
+                ],
+              ),
               const SizedBox(height: 6),
               Container(
                 height: 300,

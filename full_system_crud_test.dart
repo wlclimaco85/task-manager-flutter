@@ -24,11 +24,15 @@ String _isoDate([int days = 0]) =>
 // Estado global dos testes — populado no setUpAll, lido nos test()
 // ═══════════════════════════════════════════════════════════════════════════
 
-Map<String, String> _h = {};     // headers autenticados
-int? _empId;                     // ID da primeira empresa disponível
-int? _alunoId;                   // ID do primeiro aluno disponível
-int? _academiaId;                // ID da primeira academia disponível
-int? _parceiroId;                // ID do primeiro parceiro disponível
+Map<String, String> _h = {}; // headers autenticados
+int? _empId; // ID da primeira empresa disponível
+int? _alunoId; // ID do primeiro aluno disponível
+int? _academiaId; // ID da primeira academia disponível
+int? _parceiroId; // ID do primeiro parceiro disponível
+int? _personalId; // ID do primeiro personal disponível
+int? _nutricionistaId; // ID do primeiro nutricionista disponível
+
+Map<String, dynamic> _ref(int id) => {'id': id};
 
 /// Extrai a lista de dados de qualquer envelope de resposta do backend.
 /// Padrões suportados: lista direta, data.dados, data (lista), content, dados, items.
@@ -61,6 +65,22 @@ Future<int?> _firstId(String url) async {
   return null;
 }
 
+Future<int?> _postFirstId(String url, [Map<String, dynamic>? payload]) async {
+  try {
+    final r = await http.post(
+      Uri.parse(url),
+      headers: _h,
+      body: jsonEncode(payload ?? {}),
+    );
+    if (r.statusCode != 200 && r.statusCode != 201) return null;
+    final body = jsonDecode(r.body);
+    final list = _extractList(body);
+    if (list.isNotEmpty) return list.first['id'];
+    if (body is Map<String, dynamic>) return _extractId(body, 'id');
+  } catch (_) {}
+  return null;
+}
+
 // ═══════════════════════════════════════════════════════════════════════════
 // Relatório de execução
 // ═══════════════════════════════════════════════════════════════════════════
@@ -71,6 +91,12 @@ void _log(String tela, String op, bool ok, [String? err]) {
   _report.putIfAbsent(tela, () => {});
   _report[tela]![op] = ok ? '✅' : '❌';
   if (!ok && err != null) print('  🚨 $tela [$op]: $err');
+}
+
+void _logSkip(String tela, String op, [String? reason]) {
+  _report.putIfAbsent(tela, () => {});
+  _report[tela]![op] = '⏭';
+  if (reason != null) print('  ⏭ $tela [$op]: $reason');
 }
 
 int? _extractId(Map<String, dynamic> body, String idField) {
@@ -174,7 +200,7 @@ void _runCrud(CrudScenario s) {
 
     test('${s.updateMethod} (atualizar)', () async {
       if (createdId == null) {
-        _log(s.name, s.updateMethod, false, 'Skipped — sem ID');
+        _logSkip(s.name, s.updateMethod, 'sem ID criado no POST');
         markTestSkipped('Sem ID para atualizar');
         return;
       }
@@ -199,14 +225,13 @@ void _runCrud(CrudScenario s) {
 
     test('DELETE (excluir)', () async {
       if (createdId == null) {
-        _log(s.name, 'DELETE', false, 'Skipped — sem ID');
+        _logSkip(s.name, 'DELETE', 'sem ID criado no POST');
         markTestSkipped('Sem ID para deletar');
         return;
       }
       try {
-        final r = await http.delete(
-            Uri.parse(s.deleteUrl(createdId.toString())),
-            headers: _h);
+        final r = await http
+            .delete(Uri.parse(s.deleteUrl(createdId.toString())), headers: _h);
         if (r.statusCode == 200 || r.statusCode == 204) {
           _log(s.name, 'DELETE', true);
         } else {
@@ -279,10 +304,31 @@ void main() {
       }
 
       // ── Busca IDs reais para FKs obrigatórias ───────────────────────────
-      _alunoId    = await _firstId('${ApiLinks.baseUrl}/aluno/findAll');
+      _alunoId = await _firstId('${ApiLinks.baseUrl}/aluno');
+      if (_alunoId == null) {
+        _alunoId = await _postFirstId('${ApiLinks.baseUrl}/aluno', {
+          'nome': _uid('Aluno'),
+          'cpf': _ts().padLeft(11, '0').substring(0, 11),
+          'email': 'aluno${_ts()}@teste.com',
+        });
+      }
       _parceiroId = await _firstId(ApiLinks.allParceiros);
+      _personalId = await _firstId('${ApiLinks.baseUrl}/api/personal');
+      _nutricionistaId =
+          await _firstId('${ApiLinks.baseUrl}/api/nutricionistas');
+      if (_nutricionistaId == null) {
+        _nutricionistaId = await _postFirstId(
+          '${ApiLinks.baseUrl}/api/nutricionistas',
+          {
+            'nome': _uid('Nutricionista'),
+            'email': 'nutri${_ts()}@teste.com',
+            'telefone': '11977770000',
+          },
+        );
+      }
 
-      print('✅ Autenticado | empresaId=$_empId | academiaId=$_academiaId | alunoId=$_alunoId | parceiroId=$_parceiroId\n');
+      print(
+          '✅ Autenticado | empresaId=$_empId | academiaId=$_academiaId | alunoId=$_alunoId | parceiroId=$_parceiroId\n');
     });
 
     // ─────────────────────────────────────────────────────────────────────
@@ -301,9 +347,12 @@ void main() {
           createPayload: () => {
             'nome': _uid('Modalidade'),
             'descricao': 'Desc teste',
-            if (_academiaId != null) 'codAcademia': _academiaId,
+            if (_academiaId != null) 'codAcademia': _ref(_academiaId!),
           },
-          updatePayload: (id) => {'nome': _uid('Modalidade EDIT')},
+          updatePayload: (id) => {
+            'nome': _uid('Modalidade EDIT'),
+            if (_academiaId != null) 'codAcademia': _ref(_academiaId!),
+          },
         ),
         CrudScenario(
           name: 'Objetivo',
@@ -315,9 +364,13 @@ void main() {
           createPayload: () => {
             'nome': _uid('Objetivo'),
             'descricao': 'Desc teste objetivo',
-            if (_alunoId != null) 'codAluno': _alunoId,
+            'status': 'A',
+            if (_alunoId != null) 'cod_aluno': _alunoId,
           },
-          updatePayload: (id) => {'nome': _uid('Objetivo EDIT')},
+          updatePayload: (id) => {
+            'nome': _uid('Objetivo EDIT'),
+            if (_alunoId != null) 'cod_aluno': _alunoId,
+          },
         ),
         CrudScenario(
           name: 'Plano',
@@ -332,7 +385,6 @@ void main() {
             'descricao': 'Desc plano',
             'valor': 99.90,
             'duracao': 30,
-            if (_academiaId != null) 'codAcademia': _academiaId,
           },
           updatePayload: (id) => {'nome': _uid('Plano EDIT'), 'valor': 109.90},
         ),
@@ -346,9 +398,12 @@ void main() {
           createPayload: () => {
             'nome': _uid('Treino'),
             'descricao': 'Desc treino',
-            if (_alunoId != null) 'codAluno': _alunoId,
+            if (_alunoId != null) 'idaluno': _alunoId,
           },
-          updatePayload: (id) => {'nome': _uid('Treino EDIT')},
+          updatePayload: (id) => {
+            'nome': _uid('Treino EDIT'),
+            if (_alunoId != null) 'idaluno': _alunoId,
+          },
         ),
         CrudScenario(
           name: 'Grupo Muscular',
@@ -391,7 +446,8 @@ void main() {
             'gordura': 5.0,
             'unidade': 'g',
           },
-          updatePayload: (id) => {'nome': _uid('Alimento EDIT'), 'calorias': 120.0},
+          updatePayload: (id) =>
+              {'nome': _uid('Alimento EDIT'), 'calorias': 120.0},
         ),
         CrudScenario(
           name: 'Suplemento',
@@ -406,7 +462,8 @@ void main() {
             'fabricante': 'Fabricante Teste',
             'preco': 89.90,
           },
-          updatePayload: (id) => {'nome': _uid('Suplemento EDIT'), 'preco': 95.00},
+          updatePayload: (id) =>
+              {'nome': _uid('Suplemento EDIT'), 'preco': 95.00},
         ),
         CrudScenario(
           name: 'Medicamento',
@@ -416,11 +473,11 @@ void main() {
           deleteUrl: ApiLinks.deleteMedicamento,
           updateMethod: 'PUT',
           createPayload: () => {
-            'nome': _uid('Medicamento'),
+            'medicamento': _uid('Medicamento'),
             'descricao': 'Desc medicamento',
             'dosagem': '500mg',
           },
-          updatePayload: (id) => {'nome': _uid('Medicamento EDIT')},
+          updatePayload: (id) => {'medicamento': _uid('Medicamento EDIT')},
         ),
         CrudScenario(
           name: 'Mensalidade',
@@ -448,8 +505,12 @@ void main() {
             'nome': _uid('Dieta'),
             'descricao': 'Dieta de teste',
             'objetivo': 'EMAGRECIMENTO',
+            if (_alunoId != null) 'cod_aluno': _alunoId,
           },
-          updatePayload: (id) => {'nome': _uid('Dieta EDIT')},
+          updatePayload: (id) => {
+            'nome': _uid('Dieta EDIT'),
+            if (_alunoId != null) 'cod_aluno': _alunoId,
+          },
         ),
         CrudScenario(
           name: 'Avaliação Física',
@@ -459,11 +520,12 @@ void main() {
           deleteUrl: ApiLinks.deleteAvaliacaoFisica,
           updateMethod: 'PUT',
           createPayload: () => {
-            'data': _isoDate(),
-            'peso': 80.0,
-            'altura': 1.75,
-            'imc': 26.1,
-            'percentualGordura': 18.5,
+            'descricao': _uid('Avaliacao fisica'),
+            'valor': '80.0',
+            if (_alunoId != null) 'codAluno': _ref(_alunoId!),
+            if (_nutricionistaId != null)
+              'codNutricionistas': _ref(_nutricionistaId!),
+            if (_personalId != null) 'codPersonal': _ref(_personalId!),
           },
           updatePayload: (id) => {'peso': 79.0, 'imc': 25.8},
         ),
@@ -478,9 +540,14 @@ void main() {
             'nome': _uid('Exame'),
             'descricao': 'Exame de sangue',
             'tipoExame': 'SANGUE',
-            'dataExame': _isoDate(),
+            'laboratorio': 'Lab Teste',
+            'status': 1,
+            if (_alunoId != null) 'cod_aluno': _alunoId,
           },
-          updatePayload: (id) => {'nome': _uid('Exame EDIT')},
+          updatePayload: (id) => {
+            'nome': _uid('Exame EDIT'),
+            if (_alunoId != null) 'cod_aluno': _alunoId,
+          },
         ),
         CrudScenario(
           name: 'Alerta Aluno',
@@ -536,11 +603,9 @@ void main() {
           createPayload: () => {
             'nome': _uid('Empresa'),
             'razaoSocial': _uid('Razao Social'),
-            'cnpj': _ts().substring(3, 17),
+            'cnpj': _ts().padLeft(14, '0').substring(0, 14),
             'email': 'empresa${_ts()}@teste.com',
             'telefone': '1133334444',
-            'cidade': 'São Paulo',
-            'estado': 'SP',
           },
           updatePayload: (id) => {'nome': _uid('Empresa EDIT')},
         ),
@@ -622,10 +687,14 @@ void main() {
           updateMethod: 'PUT',
           createPayload: () => {
             'nome': _uid('Forma Pgto'),
+            'descricao': 'Forma de pagamento teste',
             'tipo': 'BOLETO',
             'ativo': true,
           },
-          updatePayload: (id) => {'nome': _uid('Forma Pgto EDIT')},
+          updatePayload: (id) => {
+            'nome': _uid('Forma Pgto EDIT'),
+            'descricao': 'Forma de pagamento editada',
+          },
         ),
         CrudScenario(
           name: 'Conta Bancária',
@@ -728,7 +797,8 @@ void main() {
             'prioridade': 'NORMAL',
             'status': 'ABERTO',
           },
-          updatePayload: (id) => {'titulo': _uid('Chamado EDIT'), 'prioridade': 'ALTA'},
+          updatePayload: (id) =>
+              {'titulo': _uid('Chamado EDIT'), 'prioridade': 'ALTA'},
         ),
         CrudScenario(
           name: 'Calendário Guias',
@@ -846,7 +916,8 @@ void main() {
             'intervalo': '12:00',
             'diasSemana': ['SEGUNDA', 'TERCA', 'QUARTA', 'QUINTA', 'SEXTA'],
           },
-          updatePayload: (id) => {'nome': _uid('Horario EDIT'), 'entrada': '09:00'},
+          updatePayload: (id) =>
+              {'nome': _uid('Horario EDIT'), 'entrada': '09:00'},
         ),
       ];
 
@@ -878,7 +949,8 @@ void main() {
         ),
         CrudScenario(
           name: 'Lançamento Contábil',
-          listUrl: '${ApiLinks.createLancamentoContabil}?empresaId=1&periodo=${_isoDate().substring(0, 7)}',
+          listUrl:
+              '${ApiLinks.createLancamentoContabil}?empresaId=1&periodo=${_isoDate().substring(0, 7)}',
           createUrl: ApiLinks.createLancamentoContabil,
           updateUrl: (id) => ApiLinks.updateLancamentoContabil(id),
           deleteUrl: (id) => ApiLinks.deleteLancamentoContabil(id),
@@ -889,7 +961,8 @@ void main() {
             'valor': 1500.00,
             'periodo': _isoDate().substring(0, 7),
           },
-          updatePayload: (id) => {'descricao': _uid('Lançamento EDIT'), 'valor': 1600.00},
+          updatePayload: (id) =>
+              {'descricao': _uid('Lançamento EDIT'), 'valor': 1600.00},
         ),
       ];
 
@@ -998,7 +1071,8 @@ void main() {
             'valor': 500.00,
             'ativo': true,
           },
-          updatePayload: (id) => {'nome': _uid('Servico EDIT'), 'valor': 550.00},
+          updatePayload: (id) =>
+              {'nome': _uid('Servico EDIT'), 'valor': 550.00},
         ),
       ];
 
@@ -1155,7 +1229,8 @@ void main() {
             'estagio': 'PROSPECCAO',
             'probabilidade': 30,
           },
-          updatePayload: (id) => {'titulo': _uid('Deal EDIT'), 'estagio': 'NEGOCIACAO'},
+          updatePayload: (id) =>
+              {'titulo': _uid('Deal EDIT'), 'estagio': 'NEGOCIACAO'},
         ),
         CrudScenario(
           name: 'Contrato Recorrente',
@@ -1171,7 +1246,8 @@ void main() {
             'dataInicio': _isoDate(),
             'status': 'ATIVO',
           },
-          updatePayload: (id) => {'descricao': _uid('Contrato EDIT'), 'valor': 550.00},
+          updatePayload: (id) =>
+              {'descricao': _uid('Contrato EDIT'), 'valor': 550.00},
         ),
       ];
 
@@ -1245,7 +1321,8 @@ void main() {
             'conteudo': 'Conteúdo da notícia de teste',
             'publicada': false,
           },
-          updatePayload: (id) => {'titulo': _uid('Noticia EDIT'), 'publicada': true},
+          updatePayload: (id) =>
+              {'titulo': _uid('Noticia EDIT'), 'publicada': true},
         ),
         // nfe_grid_screen
         CrudScenario(
@@ -1313,7 +1390,8 @@ void main() {
             'status': 'PENDENTE',
             'valor': 250.00,
           },
-          updatePayload: (id) => {'descricao': _uid('Order EDIT'), 'status': 'EM_ANDAMENTO'},
+          updatePayload: (id) =>
+              {'descricao': _uid('Order EDIT'), 'status': 'EM_ANDAMENTO'},
         ),
         // pedido_grid_screen
         CrudScenario(
@@ -1344,7 +1422,8 @@ void main() {
             'prioridade': 'MEDIA',
             'status': 'ABERTO',
           },
-          updatePayload: (id) => {'titulo': _uid('Ticket EDIT'), 'prioridade': 'ALTA'},
+          updatePayload: (id) =>
+              {'titulo': _uid('Ticket EDIT'), 'prioridade': 'ALTA'},
         ),
         // produto / catalago_produto_grid_screen
         CrudScenario(
@@ -1361,7 +1440,8 @@ void main() {
             'estoque': 10,
             'ativo': true,
           },
-          updatePayload: (id) => {'nome': _uid('Produto EDIT'), 'preco': 109.90},
+          updatePayload: (id) =>
+              {'nome': _uid('Produto EDIT'), 'preco': 109.90},
         ),
         // pedido_venda_grid_screen (cancel em vez de delete)
         CrudScenario(

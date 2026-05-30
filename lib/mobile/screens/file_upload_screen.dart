@@ -14,8 +14,8 @@ import '../../../utils/api_links.dart';
 import '../../../models/auth_utility.dart';
 import '../../../widgets/user_banners.dart';
 
-
 import 'package:task_manager_flutter/utils/app_logger.dart';
+
 class FileManagerScreen extends StatefulWidget {
   const FileManagerScreen({super.key});
 
@@ -199,14 +199,16 @@ class _FileManagerScreenState extends State<FileManagerScreen> {
                                       );
                                     }
                                     return Column(
-                                      mainAxisAlignment: MainAxisAlignment.center,
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.center,
                                       children: [
                                         const Icon(Icons.picture_as_pdf,
                                             size: 48, color: GridColors.error),
                                         const SizedBox(height: 8),
                                         const Text('PDF selecionado',
                                             style: TextStyle(
-                                                color: GridColors.textSecondary)),
+                                                color:
+                                                    GridColors.textSecondary)),
                                         TextButton.icon(
                                           icon: const Icon(Icons.open_in_new,
                                               color: GridColors.secondary),
@@ -214,10 +216,12 @@ class _FileManagerScreenState extends State<FileManagerScreen> {
                                               style: TextStyle(
                                                   color: GridColors.secondary)),
                                           onPressed: () async {
-                                            final uri = Uri.file(snapshot.data!.path);
+                                            final uri =
+                                                Uri.file(snapshot.data!.path);
                                             if (await canLaunchUrl(uri)) {
                                               await launchUrl(uri,
-                                                  mode: LaunchMode.externalApplication);
+                                                  mode: LaunchMode
+                                                      .externalApplication);
                                             }
                                           },
                                         ),
@@ -811,8 +815,14 @@ class _FileManagerScreenState extends State<FileManagerScreen> {
                         CircularProgressIndicator(color: GridColors.secondary))
                 : filtrados.isEmpty
                     ? const Center(
-                        child: Text("Nenhum diretório/arquivo encontrado",
-                            style: TextStyle(color: GridColors.textPrimary)))
+                        child: Text(
+                          "Nenhum diretorio/arquivo encontrado",
+                          style: TextStyle(
+                            color: GridColors.textSecondary,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      )
                     : ListView.builder(
                         itemCount: filtrados.length,
                         itemBuilder: (context, i) =>
@@ -825,21 +835,22 @@ class _FileManagerScreenState extends State<FileManagerScreen> {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.end,
         children: [
-          _buildFAB(
-              Icons.refresh, GridColors.secondary, _loadDiretorios, "refresh"),
+          _buildFAB(Icons.refresh, GridColors.primary, GridColors.textPrimary,
+              _loadDiretorios, "refresh"),
           const SizedBox(height: 10),
-          _buildFAB(Icons.add, GridColors.secondary, _showUploadDialog, "add"),
+          _buildFAB(Icons.add, GridColors.secondary, GridColors.textPrimary,
+              _showUploadDialog, "add"),
         ],
       ),
     );
   }
 
-  Widget _buildFAB(
-      IconData icon, Color color, VoidCallback onPressed, String tag) {
+  Widget _buildFAB(IconData icon, Color backgroundColor, Color foregroundColor,
+      VoidCallback onPressed, String tag) {
     return Container(
       decoration: BoxDecoration(
-        color: GridColors.card,
-        border: Border.all(color: GridColors.primary, width: 2),
+        color: backgroundColor,
+        border: Border.all(color: GridColors.card, width: 2),
         shape: BoxShape.circle,
         boxShadow: const [
           BoxShadow(color: GridColors.shadow, blurRadius: 8, spreadRadius: 2)
@@ -847,8 +858,8 @@ class _FileManagerScreenState extends State<FileManagerScreen> {
       ),
       child: FloatingActionButton(
         heroTag: tag,
-        backgroundColor: GridColors.card,
-        foregroundColor: color,
+        backgroundColor: backgroundColor,
+        foregroundColor: foregroundColor,
         elevation: 0,
         onPressed: onPressed,
         child: Icon(icon),

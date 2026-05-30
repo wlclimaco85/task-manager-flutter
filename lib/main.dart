@@ -1,4 +1,5 @@
-import 'package:flutter/foundation.dart' show kIsWeb, defaultTargetPlatform, TargetPlatform;
+import 'package:flutter/foundation.dart'
+    show kIsWeb, defaultTargetPlatform, TargetPlatform;
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:hive_flutter/hive_flutter.dart';
@@ -8,6 +9,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'models/auth_utility.dart';
 import 'auth_screens/login_screen.dart';
 import 'utils/security_matrix.dart';
+import 'utils/grid_theme.dart';
 import 'web/screens/bottom_navbar_screen.dart';
 import 'mobile/screens/bottom_navbar_screen.dart';
 import 'windows/screens/bottom_navbar_screen.dart';
@@ -57,6 +59,7 @@ class TaskManagerApp extends StatelessWidget {
         GlobalWidgetsLocalizations.delegate,
         GlobalCupertinoLocalizations.delegate,
       ],
+      theme: appTheme(),
       home: home,
     );
   }

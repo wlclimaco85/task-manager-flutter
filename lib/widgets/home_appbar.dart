@@ -1,15 +1,17 @@
 import 'package:flutter/material.dart';
+import '../utils/grid_colors.dart';
 
 AppBar getHomeAppBar() {
   return AppBar(
     title: const Text("Minhas Academias"),
     centerTitle: true,
-    backgroundColor: const Color(0xff0A6D92), //0xff => #
+    backgroundColor: GridColors.primary,
+    foregroundColor: GridColors.textPrimary,
     actions: [
       IconButton(
         icon: const Icon(
           Icons.more_vert_rounded,
-          color: Colors.white,
+          color: GridColors.textPrimary,
         ),
         onPressed: () {},
       ),

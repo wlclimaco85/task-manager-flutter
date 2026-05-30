@@ -3,13 +3,15 @@ param(
   [string]$Port = "5200",
   [switch]$Headed,
   [switch]$AllScreens,
-  [string]$BaseUrl = ""
+  [string]$BaseUrl = "",
+  [string]$Projects = "client"
 )
 
 $ErrorActionPreference = "Stop"
 $ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
-$RepoRoot = Resolve-Path (Join-Path $ScriptDir "..\..")
-$VenvDir = Join-Path $ScriptDir ".venv"
+$WorkspaceRoot = Resolve-Path (Join-Path $ScriptDir "..\..\..")
+$HarnessDir = Join-Path $WorkspaceRoot ".selenium-app-academia-e2e"
+$VenvDir = Join-Path $HarnessDir ".venv"
 
 if (-not (Test-Path $VenvDir)) {
   python -m venv $VenvDir
@@ -17,19 +19,24 @@ if (-not (Test-Path $VenvDir)) {
 
 $Python = Join-Path $VenvDir "Scripts\python.exe"
 & $Python -m pip install --upgrade pip -q
-& $Python -m pip install -r (Join-Path $ScriptDir "requirements.txt") -q
+& $Python -m pip install -r (Join-Path $HarnessDir "requirements.txt") -q
 
-$env:SELENIUM_BROWSER = $Browser
-$env:SELENIUM_PORT = $Port
-$env:SELENIUM_HEADLESS = if ($Headed) { "0" } else { "1" }
-$env:SELENIUM_ALL_SCREENS = if ($AllScreens) { "1" } else { "0" }
+$env:APP_ACADEMIA_BROWSER = $Browser
+$env:APP_ACADEMIA_PORT = $Port
+$env:APP_ACADEMIA_HEADLESS = if ($Headed) { "0" } else { "1" }
+$env:APP_ACADEMIA_ALL_SCREENS = if ($AllScreens) { "1" } else { "0" }
+$env:APP_ACADEMIA_PROJECTS = $Projects
 if ($BaseUrl) {
-  $env:SELENIUM_BASE_URL = $BaseUrl
+  $env:APP_ACADEMIA_BASE_URL = $BaseUrl
+  $env:APP_ACADEMIA_USE_EXTERNAL_URL = "1"
 }
 
-Push-Location $RepoRoot
+Push-Location $WorkspaceRoot
 try {
-  & $Python -m pytest $ScriptDir -v --tb=short --no-header -p no:warnings
+  & $Python -m pytest (Join-Path $HarnessDir "tests") -v --no-header -p no:warnings
+  if ($LASTEXITCODE -ne 0) {
+    exit $LASTEXITCODE
+  }
 }
 finally {
   Pop-Location
