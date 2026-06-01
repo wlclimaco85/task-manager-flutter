@@ -1,10 +1,10 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
-import 'package:task_manager_flutter_merged_final/services/network_caller.dart';
-import 'package:task_manager_flutter_merged_final/utils/api_links.dart';
-import 'package:task_manager_flutter_merged_final/utils/grid_colors.dart';
-import 'package:task_manager_flutter_merged_final/widgets/edit_form_helpers.dart';
-import 'package:task_manager_flutter_merged_final/widgets/searchable_dropdown.dart';
+import 'package:task_manager_flutter/services/network_caller.dart';
+import 'package:task_manager_flutter/utils/api_links.dart';
+import 'package:task_manager_flutter/utils/grid_colors.dart';
+import 'package:task_manager_flutter/widgets/edit_form_helpers.dart';
+import 'package:task_manager_flutter/widgets/searchable_dropdown.dart';
 
 class ParceiroEditScreen extends StatefulWidget {
   final Map<String, dynamic> initialData;

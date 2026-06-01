@@ -8,8 +8,10 @@ class GridColors {
   static const Color primary = Color(0xFF0F4C81); // azul PortalCont
   static const Color primaryDark = Color(0xFF0A345A);
   static const Color primaryLight = Color(0xFF2F7DB8);
+  static const Color primarySoft = Color(0xFFD6E8F4); // azul muito claro
   static const Color secondary = Color(0xFF16A3C7); // azul/ciano da logo
   static const Color secondaryLight = Color(0xFFEAF8FC);
+  static const Color secondarySoft = Color(0xFFD0F0F8); // ciano muito claro
   static const Color secondaryDark = Color(0xFF0B6F8A);
   static const Color accent = Color(0xFF18B86A); // verde conectado
   static const Color accentDark = Color(0xFF0F7F49);

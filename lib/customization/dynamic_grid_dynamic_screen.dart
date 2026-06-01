@@ -784,7 +784,6 @@ class _DynamicGridDynamicScreenState extends State<DynamicGridDynamicScreen> {
               dynamicAdditionalFormData: widget.dynamicAdditionalFormData,
               customActions: widget.customActions,
               serverActions: serverActions,
-              showAppBar: widget.showAppBar,
             );
           },
         ),
