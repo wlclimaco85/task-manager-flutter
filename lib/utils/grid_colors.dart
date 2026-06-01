@@ -1,43 +1,42 @@
 import 'package:flutter/material.dart';
 
-/// Identidade visual PortalCont.
+/// Identidade visual Abraço Contabilidade.
 ///
-/// A regra deste projeto (`task_manager_flutter_merged_final`) é manter a
-/// funcionalidade alinhada ao outro Flutter, mas permitir UX/branding próprio.
+/// Vermelho (#93070A) e verde (#005826) — cores da marca Abraço.
 class GridColors {
-  static const Color primary = Color(0xFF0F4C81); // azul PortalCont
-  static const Color primaryDark = Color(0xFF0A345A);
-  static const Color primaryLight = Color(0xFF2F7DB8);
-  static const Color primarySoft = Color(0xFFD6E8F4); // azul muito claro
-  static const Color secondary = Color(0xFF16A3C7); // azul/ciano da logo
-  static const Color secondaryLight = Color(0xFFEAF8FC);
-  static const Color secondarySoft = Color(0xFFD0F0F8); // ciano muito claro
-  static const Color secondaryDark = Color(0xFF0B6F8A);
-  static const Color accent = Color(0xFF18B86A); // verde conectado
-  static const Color accentDark = Color(0xFF0F7F49);
+  static const Color primary = Color(0xFF93070A); // vermelho Abraço
+  static const Color primaryDark = Color(0xFF6A0507);
+  static const Color primaryLight = Color(0xFFB84042);
+  static const Color primarySoft = Color(0xFFFCEDEE); // vermelho muito claro
+  static const Color secondary = Color(0xFF005826); // verde Abraço
+  static const Color secondaryLight = Color(0xFF2E7D32);
+  static const Color secondarySoft = Color(0xFFEAF5EE); // verde muito claro
+  static const Color secondaryDark = Color(0xFF003D1A);
+  static const Color accent = Color(0xFF2E7D32); // verde
+  static const Color accentDark = Color(0xFF1B5E20);
   static const Color textPrimary = Color(0xFFFFFFFF);
   static const Color textPrimaryMuted = Color(0xB3FFFFFF);
-  static const Color textSecondary = Color(0xFF1C2B36);
-  static const Color textMuted = Color(0xFF5F7483);
-  static const Color link = Color(0xFF0F4C81);
+  static const Color textSecondary = Color(0xFF17211B);
+  static const Color textMuted = Color(0xFF64756A);
+  static const Color link = Color(0xFF93070A);
   static const Color inputBackground = Color(0xFFFFFFFF);
-  static const Color inputBorder = Color(0xFF16A3C7);
-  static const Color buttonBackground = Color(0xFF0F4C81);
+  static const Color inputBorder = Color(0xFF93070A);
+  static const Color buttonBackground = Color(0xFF93070A);
   static const Color buttonText = Color(0xFFFFFFFF);
-  static const Color background = Color(0xFFF3F8FB);
-  static const Color shellBackground = Color(0xFF0A345A);
+  static const Color background = Color(0xFFF6FAF7);
+  static const Color shellBackground = Color(0xFF6A0507);
   static const Color card = Color(0xFFFFFFFF);
   static const Color error = Color(0xFFD32F2F);
   static const Color warning = Color(0xFFFFA000);
-  static const Color success = Color(0xFF18B86A);
-  static const Color info = Color(0xFF16A3C7);
-  static const Color divider = Color(0xFFD7E5EC);
-  static const Color filterBackground = Color(0xFFEAF8FC);
-  static const Color gridHeader = Color(0xFFEAF8FC);
+  static const Color success = Color(0xFF2E7D32);
+  static const Color info = Color(0xFF1976D2);
+  static const Color divider = Color(0xFFD8E0DA);
+  static const Color filterBackground = Color(0xFFF3F7F4);
+  static const Color gridHeader = Color(0xFFF3F7F4);
   static const Color rowEven = Color(0xFFFFFFFF);
-  static const Color rowOdd = Color(0xFFF3F8FB);
-  static const Color hover = Color(0x1416A3C7);
-  static const Color selectedRow = Color(0xFFE3F6FA);
+  static const Color rowOdd = Color(0xFFF6FAF7);
+  static const Color hover = Color(0x1A93070A);
+  static const Color selectedRow = Color(0xFFEAF5EE);
   static const Color errorLight = Color(0xFFFFEBEE);
   static const Color errorDark = Color(0xFFB71C1C);
   static const Color successDark = Color(0xFF1B5E20);
@@ -48,13 +47,13 @@ class GridColors {
   static const Color statusClosed = Color(0xFF6A1B9A);
   static const Color statusNew = Color(0xFFFF9800);
   static const Color statusUnknown = Color(0xFFFFA000);
-  static const Color pageBackground = Color(0xFFF3F8FB);
-  static const Color surfaceMuted = Color(0xFFF5F5F5);
+  static const Color pageBackground = Color(0xFFF6FAF7);
+  static const Color surfaceMuted = Color(0xFFF3F7F4);
   static const Color disabledBackground = Color(0xFFE0E0E0);
   static const Color suggestionHigh = Color(0xFFE8F5E9);
   static const Color suggestionMedium = Color(0xFFFFF8E1);
   static const Color dialogBackground = Color(0xFFFFFFFF);
-  static const Color shadow = Color(0x260F4C81);
+  static const Color shadow = Color(0x2693070A);
 }
 
 class CustomColors {
