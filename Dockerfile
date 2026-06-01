@@ -24,7 +24,7 @@ RUN flutter precache --web
 COPY . .
 
 # Build with configurable backend URL
-ARG BACKEND_URL=https://api.cliente.exemplo.com
+ARG BACKEND_URL=https://appacademia-production-be7e.up.railway.app
 RUN echo "Building with BACKEND_URL=${BACKEND_URL}" && \
     flutter build web --release --base-href "/" \
         --dart-define=BACKEND_URL=${BACKEND_URL} && \
