@@ -15,7 +15,7 @@ class TaskManagerWebApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return const MaterialApp(
       debugShowCheckedModeBanner: false,
-      title: 'Task Manager Web',
+      title: 'Abraço Contabilidade',
       home: WebSplashScreen(),
     );
   }

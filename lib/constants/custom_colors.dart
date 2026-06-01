@@ -10,6 +10,7 @@ class GridColors {
   static const Color secondaryDark = Color(0xFF003D1A);
   static const Color textPrimary = Color(0xFFFFFFFF);
   static const Color textSecondary = Color(0xFF17211B);
+  static const Color textMuted = Color(0xFF64756A);
   static const Color link = Color(0xFFFF0000);
   static const Color inputBackground = Color(0xFFFFFFFF);
   static const Color inputBorder = Color(0xFF93070A);
