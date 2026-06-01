@@ -1,4 +1,6 @@
 import 'dart:convert';
+import 'dart:typed_data';
+
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import '../../../customization/dynamic_grid_windows_screen.dart';
@@ -31,7 +33,14 @@ class _WebContaPagarGridScreenState extends State<WebContaPagarGridScreen> {
   DateTime? _dataFim;
   int? _parceiroId;
   String _tipoFilter = 'Todos';
-  final _statusOptions = ['Todos', 'ABERTA', 'BAIXADA', 'VENCIDO', 'PARCIAL', 'CANCELADA'];
+  final _statusOptions = [
+    'Todos',
+    'ABERTA',
+    'BAIXADA',
+    'VENCIDO',
+    'PARCIAL',
+    'CANCELADA'
+  ];
   final _tipoOptions = ['Todos', 'AVULSO', 'RECORRENTE', 'PARCELADO'];
 
   Key _gridKey = UniqueKey();
@@ -39,8 +48,10 @@ class _WebContaPagarGridScreenState extends State<WebContaPagarGridScreen> {
   Map<String, dynamic> get _filterParams {
     final params = <String, dynamic>{};
     if (_statusFilter != 'Todos') params['status'] = _statusFilter;
-    if (_dataInicio != null) params['dataInicio'] = _dataInicio!.toIso8601String().substring(0, 10);
-    if (_dataFim != null) params['dataFim'] = _dataFim!.toIso8601String().substring(0, 10);
+    if (_dataInicio != null)
+      params['dataInicio'] = _dataInicio!.toIso8601String().substring(0, 10);
+    if (_dataFim != null)
+      params['dataFim'] = _dataFim!.toIso8601String().substring(0, 10);
     if (_parceiroId != null) params['parceiroId'] = _parceiroId.toString();
     if (_tipoFilter != 'Todos') params['tipo'] = _tipoFilter;
     return params;
@@ -70,17 +81,20 @@ class _WebContaPagarGridScreenState extends State<WebContaPagarGridScreen> {
     if (result == null || !mounted) return;
 
     final file = result.files.first;
-    final bytes = file.bytes;
+    final Uint8List? bytes = file.bytes;
     if (bytes == null) {
-      _snack('Nao foi possivel ler o arquivo', error: true);
+      _snack('Não foi possível ler o arquivo', error: true);
       return;
     }
 
     setState(() => _importing = true);
     try {
+      final importUrl = TenantContext.empresaId == null
+          ? ApiLinks.importacaoContaPagar
+          : '${ApiLinks.importacaoContaPagar}?empId=${TenantContext.empresaId}';
       final request = http.MultipartRequest(
         'POST',
-        Uri.parse(ApiLinks.importacaoContaPagar),
+        Uri.parse(importUrl),
       );
       request.headers.addAll(TenantContext.headers);
       request.files.add(
@@ -125,8 +139,10 @@ class _WebContaPagarGridScreenState extends State<WebContaPagarGridScreen> {
     );
     if (picked != null) {
       setState(() {
-        if (isInicio) _dataInicio = picked;
-        else _dataFim = picked;
+        if (isInicio)
+          _dataInicio = picked;
+        else
+          _dataFim = picked;
       });
     }
   }
@@ -143,7 +159,8 @@ class _WebContaPagarGridScreenState extends State<WebContaPagarGridScreen> {
           spacing: 8,
           crossAxisAlignment: WrapCrossAlignment.center,
           children: [
-            const Text('Status:', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500)),
+            const Text('Status:',
+                style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500)),
             SizedBox(
               width: 140,
               height: 36,
@@ -151,25 +168,37 @@ class _WebContaPagarGridScreenState extends State<WebContaPagarGridScreen> {
                 value: _statusFilter,
                 isDense: true,
                 decoration: const InputDecoration(
-                  contentPadding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  contentPadding:
+                      EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                   border: OutlineInputBorder(),
                 ),
-                items: _statusOptions.map((s) => DropdownMenuItem(value: s, child: Text(s, style: const TextStyle(fontSize: 13)))).toList(),
+                items: _statusOptions
+                    .map((s) => DropdownMenuItem(
+                        value: s,
+                        child: Text(s, style: const TextStyle(fontSize: 13))))
+                    .toList(),
                 onChanged: (v) => setState(() => _statusFilter = v!),
               ),
             ),
             const SizedBox(width: 12),
-            const Text('Período:', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500)),
+            const Text('Período:',
+                style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500)),
             InkWell(
               onTap: () => _pickDate(isInicio: true),
               child: Container(
                 height: 36,
                 padding: const EdgeInsets.symmetric(horizontal: 8),
-                decoration: BoxDecoration(border: Border.all(color: GridColors.divider), borderRadius: BorderRadius.circular(4)),
+                decoration: BoxDecoration(
+                    border: Border.all(color: GridColors.divider),
+                    borderRadius: BorderRadius.circular(4)),
                 child: Row(mainAxisSize: MainAxisSize.min, children: [
                   const Icon(Icons.calendar_today, size: 16),
                   const SizedBox(width: 4),
-                  Text(_dataInicio != null ? '${_dataInicio!.day}/${_dataInicio!.month}/${_dataInicio!.year}' : 'Início', style: const TextStyle(fontSize: 13)),
+                  Text(
+                      _dataInicio != null
+                          ? '${_dataInicio!.day}/${_dataInicio!.month}/${_dataInicio!.year}'
+                          : 'Início',
+                      style: const TextStyle(fontSize: 13)),
                 ]),
               ),
             ),
@@ -179,16 +208,23 @@ class _WebContaPagarGridScreenState extends State<WebContaPagarGridScreen> {
               child: Container(
                 height: 36,
                 padding: const EdgeInsets.symmetric(horizontal: 8),
-                decoration: BoxDecoration(border: Border.all(color: GridColors.divider), borderRadius: BorderRadius.circular(4)),
+                decoration: BoxDecoration(
+                    border: Border.all(color: GridColors.divider),
+                    borderRadius: BorderRadius.circular(4)),
                 child: Row(mainAxisSize: MainAxisSize.min, children: [
                   const Icon(Icons.calendar_today, size: 16),
                   const SizedBox(width: 4),
-                  Text(_dataFim != null ? '${_dataFim!.day}/${_dataFim!.month}/${_dataFim!.year}' : 'Fim', style: const TextStyle(fontSize: 13)),
+                  Text(
+                      _dataFim != null
+                          ? '${_dataFim!.day}/${_dataFim!.month}/${_dataFim!.year}'
+                          : 'Fim',
+                      style: const TextStyle(fontSize: 13)),
                 ]),
               ),
             ),
             const SizedBox(width: 12),
-            const Text('Tipo:', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500)),
+            const Text('Tipo:',
+                style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500)),
             SizedBox(
               width: 130,
               height: 36,
@@ -196,10 +232,15 @@ class _WebContaPagarGridScreenState extends State<WebContaPagarGridScreen> {
                 value: _tipoFilter,
                 isDense: true,
                 decoration: const InputDecoration(
-                  contentPadding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  contentPadding:
+                      EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                   border: OutlineInputBorder(),
                 ),
-                items: _tipoOptions.map((t) => DropdownMenuItem(value: t, child: Text(t, style: const TextStyle(fontSize: 13)))).toList(),
+                items: _tipoOptions
+                    .map((t) => DropdownMenuItem(
+                        value: t,
+                        child: Text(t, style: const TextStyle(fontSize: 13))))
+                    .toList(),
                 onChanged: (v) => setState(() => _tipoFilter = v!),
               ),
             ),
@@ -255,26 +296,23 @@ class _WebContaPagarGridScreenState extends State<WebContaPagarGridScreen> {
             extraParams: _filterParams,
             fieldOverrides: const [
               FieldConfigWindows(
-                fieldName: 'parceiro',
-                label: 'Parceiro',
-                isInForm: true,
-                isInGrid: false,
-                isVisibleByDefault: false,
-              ),
+                  fieldName: 'parceiro',
+                  label: 'Parceiro',
+                  isInForm: true,
+                  isInGrid: false,
+                  isVisibleByDefault: false),
               FieldConfigWindows(
-                fieldName: 'parceiroDev',
-                label: 'Parceiro Dev',
-                isInForm: true,
-                isInGrid: false,
-                isVisibleByDefault: false,
-              ),
+                  fieldName: 'parceiroDev',
+                  label: 'Parceiro Dev',
+                  isInForm: true,
+                  isInGrid: false,
+                  isVisibleByDefault: false),
               FieldConfigWindows(
-                fieldName: 'parceiroRec',
-                label: 'Parceiro Rec',
-                isInForm: true,
-                isInGrid: false,
-                isVisibleByDefault: false,
-              ),
+                  fieldName: 'parceiroRec',
+                  label: 'Parceiro Rec',
+                  isInForm: true,
+                  isInGrid: false,
+                  isVisibleByDefault: false),
             ],
             headerActions: [
               OutlinedButton.icon(
@@ -290,10 +328,11 @@ class _WebContaPagarGridScreenState extends State<WebContaPagarGridScreen> {
                 label: const Text('Importar Boleto'),
                 style: OutlinedButton.styleFrom(
                   foregroundColor: GridColors.secondary,
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                   side: const BorderSide(color: GridColors.divider),
-                  shape:
-                      RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(6)),
                 ),
               ),
             ],
@@ -303,7 +342,8 @@ class _WebContaPagarGridScreenState extends State<WebContaPagarGridScreen> {
                 label: 'Baixar',
                 onPressed: (context, object) => showDialog(
                   context: context,
-                  builder: (_) => WebBaixaDialog(conta: ContaPagar.fromJson(object)),
+                  builder: (_) =>
+                      WebBaixaDialog(conta: ContaPagar.fromJson(object)),
                 ),
                 isVisible: (_) => true,
               ),
@@ -312,27 +352,33 @@ class _WebContaPagarGridScreenState extends State<WebContaPagarGridScreen> {
                 label: 'Parcelar',
                 onPressed: (context, object) => showDialog(
                   context: context,
-                  builder: (_) => WebParcelarContaDialog(conta: ContaPagar.fromJson(object)),
+                  builder: (_) => WebParcelarContaDialog(
+                      conta: ContaPagar.fromJson(object)),
                 ),
-                isVisible: (m) => ContaPagar.fromJson(m).status == StatusConta.ABERTA,
+                isVisible: (m) =>
+                    ContaPagar.fromJson(m).status == StatusConta.ABERTA,
               ),
               CustomAction<Map<String, dynamic>>(
                 icon: Icons.repeat,
                 label: 'Recorrência',
                 onPressed: (context, object) => showDialog(
                   context: context,
-                  builder: (_) => WebRecorrenciaContaDialog(conta: ContaPagar.fromJson(object)),
+                  builder: (_) => WebRecorrenciaContaDialog(
+                      conta: ContaPagar.fromJson(object)),
                 ),
-                isVisible: (m) => ContaPagar.fromJson(m).status == StatusConta.ABERTA,
+                isVisible: (m) =>
+                    ContaPagar.fromJson(m).status == StatusConta.ABERTA,
               ),
               CustomAction<Map<String, dynamic>>(
                 icon: Icons.swap_horiz,
                 label: 'Renegociar',
                 onPressed: (context, object) => showDialog(
                   context: context,
-                  builder: (_) => WebRenegociacaoContaDialog(conta: ContaPagar.fromJson(object)),
+                  builder: (_) => WebRenegociacaoContaDialog(
+                      conta: ContaPagar.fromJson(object)),
                 ),
-                isVisible: (m) => ContaPagar.fromJson(m).status == StatusConta.ABERTA,
+                isVisible: (m) =>
+                    ContaPagar.fromJson(m).status == StatusConta.ABERTA,
               ),
             ],
           ),

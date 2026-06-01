@@ -13,6 +13,7 @@ import '../../../utils/app_logger.dart'; // L.d/L.i/L.w/L.e
 import '../../../widgets/user_banners.dart';
 
 import 'grid_helpers.dart';
+import 'grid_form.dart';
 import 'grid_models.dart';
 import 'grid_theme.dart';
 import '../../utils/grid_texts.dart';
@@ -52,6 +53,8 @@ class GridListScreen extends StatefulWidget {
   final Future<Map<String, String>> Function()? authHeadersProvider;
 
   final List<ServerAction>? serverActions;
+  final bool showAppBar;
+  final bool showFab;
 
   const GridListScreen({
     super.key,
@@ -81,6 +84,8 @@ class GridListScreen extends StatefulWidget {
     this.baseUrlForMultipart,
     this.authHeadersProvider,
     this.serverActions = const [],
+    this.showAppBar = true,
+    this.showFab = true,
   });
 
   @override
@@ -103,6 +108,8 @@ class _GridListScreenState extends State<GridListScreen> {
   late List<CustomAction> _customActions;
   bool _selectionMode = false;
   final Map<String, bool> _sel = {};
+  int? _lastStatusCode;
+  String? _loadError;
 
   // permissões (assíncronas)
   final Map<String, bool> _permCache = {};
@@ -234,18 +241,43 @@ class _GridListScreenState extends State<GridListScreen> {
           _hasMore = _items.length < _total;
           _page++;
           _loading = false;
+          _lastStatusCode = null;
+          _loadError = null;
         });
-        L.i('[GridList] loaded: ${list.length} (total=$_total page=$_page)');
+        L.s('[GridList] loaded: ${list.length} (total=$_total page=$_page)');
       } else {
         L.w('[GridList] load failed: status ${resp.statusCode}');
         _snack('Erro ao carregar: ${resp.statusCode}', true);
-        setState(() => _loading = false);
+        setState(() {
+          _loading = false;
+          _lastStatusCode = resp.statusCode;
+          _loadError = _messageForStatus(resp.statusCode);
+        });
       }
     } catch (e, st) {
       L.e('[GridList] load exception: $e\n$st');
       _snack('Erro ao carregar: $e', true);
-      if (mounted) setState(() => _loading = false);
+      if (mounted) {
+        setState(() {
+          _loading = false;
+          _lastStatusCode = -1;
+          _loadError = 'Nao foi possivel carregar os dados.';
+        });
+      }
     }
+  }
+
+  String _messageForStatus(int statusCode) {
+    if (statusCode == 403) {
+      return 'Seu usuario nao tem permissao para consultar esta tela.';
+    }
+    if (statusCode == 401) {
+      return 'Sessao expirada ou usuario nao autenticado.';
+    }
+    if (statusCode == 404) {
+      return 'Endpoint nao encontrado no backend.';
+    }
+    return 'Nao foi possivel carregar os dados desta tela.';
   }
 
   String _buildUrl(int page) {
@@ -276,40 +308,37 @@ class _GridListScreenState extends State<GridListScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: GridColors.background,
-      appBar: widget.useUserBannerAppBar
-          ? PreferredSize(
-              preferredSize: Size.fromHeight(
-                  widget.useUserBannerAppBar ? 94 : kToolbarHeight),
-              child: UserBannerAppBar(
-                screenTitle: widget.title,
-                onTapped: widget.onUserBannerTapped,
-                onRefresh: widget.onBannerRefresh ?? () => _load(reset: true),
-                isLoading: _loading,
-                onFilterToggle: () =>
-                    setState(() => _filtersOpen = !_filtersOpen),
-                showFilterButton: widget.useUserBannerAppBar,
-              ),
-            )
-          : (_selectionMode ? _selectionAppBar() : _normalAppBar()),
-      floatingActionButton: _buildFab(),
+      appBar: widget.showAppBar
+          ? (widget.useUserBannerAppBar
+              ? PreferredSize(
+                  preferredSize: Size.fromHeight(
+                      widget.useUserBannerAppBar ? 94 : kToolbarHeight),
+                  child: UserBannerAppBar(
+                    screenTitle: widget.title,
+                    onTapped: widget.onUserBannerTapped,
+                    onRefresh:
+                        widget.onBannerRefresh ?? () => _load(reset: true),
+                    isLoading: _loading,
+                    onFilterToggle: () =>
+                        setState(() => _filtersOpen = !_filtersOpen),
+                    showFilterButton: widget.useUserBannerAppBar,
+                  ),
+                )
+              : (_selectionMode ? _selectionAppBar() : _normalAppBar()))
+          : null,
+      floatingActionButton: widget.showFab ? _buildFab() : null,
       body: Column(
         children: [
           if (_filtersOpen) _buildFilters(context),
-          if ((widget.serverActions?.isNotEmpty ?? false))
+          if ((widget.serverActions?.any((a) => !a.endpoint.contains(':id')) ??
+              false))
             _buildServerActionsBar(context),
           Expanded(
             child: Stack(
               children: [
                 RefreshIndicator.adaptive(
                   onRefresh: () => _load(reset: true),
-                  child: ListView.builder(
-                    controller: _scroll,
-                    itemCount: _filtered.length + (_loading ? 1 : 0),
-                    itemBuilder: (ctx, i) {
-                      if (i == _filtered.length) return _loadingIndicator(ctx);
-                      return _card(ctx, _filtered[i], i);
-                    },
-                  ),
+                  child: _buildListContent(context),
                 ),
                 if (_loading && _filtered.isEmpty)
                   Container(
@@ -413,6 +442,141 @@ class _GridListScreenState extends State<GridListScreen> {
     );
   }
 
+  Widget _buildListContent(BuildContext context) {
+    if (!_loading && _filtered.isEmpty && _loadError != null) {
+      return ListView(
+        controller: _scroll,
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: const EdgeInsets.fromLTRB(16, 28, 16, 120),
+        children: [_buildErrorState(context)],
+      );
+    }
+
+    if (!_loading && _filtered.isEmpty) {
+      return ListView(
+        controller: _scroll,
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: const EdgeInsets.fromLTRB(16, 28, 16, 120),
+        children: [_buildEmptyState(context)],
+      );
+    }
+
+    return ListView.builder(
+      controller: _scroll,
+      padding: const EdgeInsets.only(bottom: 96),
+      itemCount: _filtered.length + (_loading ? 1 : 0),
+      itemBuilder: (ctx, i) {
+        if (i == _filtered.length) return _loadingIndicator(ctx);
+        return _card(ctx, _filtered[i], i);
+      },
+    );
+  }
+
+  Widget _buildErrorState(BuildContext context) {
+    final status = _lastStatusCode;
+    return Card(
+      elevation: 0,
+      color: GridColors.card,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+        side: BorderSide(color: GridColors.primary.withValues(alpha: 0.25)),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(18, 22, 18, 20),
+        child: Column(
+          children: [
+            Container(
+              width: 56,
+              height: 56,
+              decoration: const BoxDecoration(
+                color: GridColors.primarySoft,
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(
+                Icons.lock_outline,
+                color: GridColors.primary,
+                size: 30,
+              ),
+            ),
+            const SizedBox(height: 14),
+            Text(
+              status == 403 ? 'Acesso negado' : 'Erro ao carregar',
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                color: GridColors.textSecondary,
+                fontSize: 18,
+                fontWeight: FontWeight.w800,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              _loadError ?? 'Nao foi possivel carregar os dados.',
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                color: GridColors.textMuted,
+                fontSize: 13,
+                height: 1.35,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Status: ${status ?? '-'}',
+              style: const TextStyle(
+                color: GridColors.textMuted,
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            const SizedBox(height: 18),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton.icon(
+                onPressed: _loading ? null : () => _load(reset: true),
+                icon: const Icon(Icons.refresh),
+                label: const Text('Tentar novamente'),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildEmptyState(BuildContext context) {
+    return Card(
+      elevation: 0,
+      color: GridColors.card,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+        side: BorderSide(color: GridColors.divider.withValues(alpha: 0.8)),
+      ),
+      child: const Padding(
+        padding: EdgeInsets.fromLTRB(18, 26, 18, 24),
+        child: Column(
+          children: [
+            Icon(Icons.inbox_outlined, color: GridColors.textMuted, size: 42),
+            SizedBox(height: 12),
+            Text(
+              'Nenhum registro encontrado',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                color: GridColors.textSecondary,
+                fontSize: 16,
+                fontWeight: FontWeight.w800,
+              ),
+            ),
+            SizedBox(height: 6),
+            Text(
+              'Puxe para atualizar ou ajuste os filtros da tela.',
+              textAlign: TextAlign.center,
+              style: TextStyle(color: GridColors.textMuted, fontSize: 13),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   // ---------------------------------------------------------------------------
   // Filtros
   // ---------------------------------------------------------------------------
@@ -431,7 +595,8 @@ class _GridListScreenState extends State<GridListScreen> {
             const Spacer(),
             IconButton(
               onPressed: () => setState(() => _filtersOpen = false),
-              icon: Icon(Icons.close, color: cs.onSurface.withValues(alpha: 0.6)),
+              icon:
+                  Icon(Icons.close, color: cs.onSurface.withValues(alpha: 0.6)),
             ),
           ]),
           const SizedBox(height: 12),
@@ -583,8 +748,9 @@ class _GridListScreenState extends State<GridListScreen> {
                   ? GridColors.primary
                   : GridColors.primary.withValues(alpha: 0.3)),
         ),
-        color:
-            isSelected ? GridColors.primary.withValues(alpha: 0.06) : GridColors.card,
+        color: isSelected
+            ? GridColors.primary.withValues(alpha: 0.06)
+            : GridColors.card,
         child: InkWell(
           borderRadius: BorderRadius.circular(12),
           onTap: _selectionMode
@@ -748,8 +914,8 @@ class _GridListScreenState extends State<GridListScreen> {
     return Expanded(
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         Text(c.label,
-            style:
-                TextStyle(fontSize: 11, color: Colors.black.withValues(alpha: 0.6))),
+            style: TextStyle(
+                fontSize: 11, color: Colors.black.withValues(alpha: 0.6))),
         const SizedBox(height: 2),
         Text(value, maxLines: 1, overflow: TextOverflow.ellipsis),
       ]),
@@ -825,17 +991,26 @@ class _GridListScreenState extends State<GridListScreen> {
   // ---------------------------------------------------------------------------
   // CRUD / Server Actions
   // ---------------------------------------------------------------------------
-  void _openForm({Map<String, dynamic>? editingItem}) {
+  Future<void> _openForm({Map<String, dynamic>? editingItem}) async {
     L.i('[GridList] open form (editing=${editingItem != null})');
-    GridFormManager(
+    final saved = await showDialog<bool>(
       context: context,
-      fieldConfigs: widget.fieldConfigs,
-      createEndpoint: widget.createEndpoint,
-      updateEndpoint: widget.updateEndpoint,
-      additionalFormData: widget.additionalFormData,
-      dynamicAdditionalFormData: widget.dynamicAdditionalFormData,
-      idFieldName: widget.idFieldName,
-    ).open(editingItem: editingItem);
+      barrierColor: GridColors.primary.withValues(alpha: 0.7),
+      builder: (ctx) => GridFormDialog(
+        titleNew: 'Adicionar',
+        titleEdit: 'Editar',
+        fieldConfigs: widget.fieldConfigs,
+        createEndpoint: widget.createEndpoint,
+        updateEndpoint: widget.updateEndpoint,
+        authHeadersProvider: widget.authHeadersProvider,
+        baseUrlForMultipart: widget.baseUrlForMultipart,
+        additionalFormData: widget.additionalFormData,
+        dynamicAdditionalFormData: widget.dynamicAdditionalFormData,
+        editingItem: editingItem,
+        idFieldName: widget.idFieldName,
+      ),
+    );
+    if (saved == true) await _load(reset: true);
   }
 
   Future<void> _deleteItem(String id) async {
@@ -853,6 +1028,7 @@ class _GridListScreenState extends State<GridListScreen> {
       );
       if (resp.isSuccess) {
         _snack('Item excluído!');
+        L.s('[GridList] item excluido: $id');
         await _load(reset: true);
       } else {
         _snack('Erro ao excluir: ${resp.statusCode}', true);
@@ -903,6 +1079,7 @@ class _GridListScreenState extends State<GridListScreen> {
 
       if (resp.isSuccess) {
         _snack('Ação "${action.label}" executada com sucesso!');
+        L.s('[GridList] acao "${action.label}" executada');
         await _load(reset: true);
       } else {
         _snack('Falha em "${action.label}": ${resp.statusCode}', true);
@@ -1088,7 +1265,9 @@ class _GridListScreenState extends State<GridListScreen> {
   // Barra de ações de servidor (acima da lista) — ADICIONADA
   // ---------------------------------------------------------------------------
   Widget _buildServerActionsBar(BuildContext context) {
-    final actions = widget.serverActions ?? const <ServerAction>[];
+    final actions = (widget.serverActions ?? const <ServerAction>[])
+        .where((a) => !a.endpoint.contains(':id'))
+        .toList();
     if (actions.isEmpty) return const SizedBox.shrink();
 
     final visible = actions.where((a) {

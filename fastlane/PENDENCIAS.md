@@ -86,5 +86,5 @@ Adicionar em: `Settings → Secrets and variables → Actions`
 cd task_manager_flutter
 bundle install
 bundle exec fastlane android beta
-bundle exec fastlane ios beta
+bundle exec fastlane ios beta 
 ```

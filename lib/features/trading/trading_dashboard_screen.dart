@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import '../../mobile/screens/market_overview_screen.dart';
 import '../../utils/grid_colors.dart';
 import '../../utils/grid_texts.dart';
-import '../../utils/tenant_context.dart';
 import 'trading_models.dart';
 import 'trading_repository.dart';
 
@@ -103,13 +102,7 @@ class _WatchlistTabState extends State<_WatchlistTab>
       _loading = true;
       _error = null;
     });
-    if (!TenantContext.hasEmpresa) {
-      setState(() {
-        _error = 'Usuário sem empresa configurada. O módulo de trading requer uma empresa associada ao login.';
-        _loading = false;
-      });
-      return;
-    }
+    // empresa não é obrigatória — backend usa tenantId do JWT ou retorna lista vazia
     try {
       final items = await _repo.fetchWatchlist();
       if (!mounted) return;
@@ -403,13 +396,7 @@ class _AlertasTabState extends State<_AlertasTab>
       _loading = true;
       _error = null;
     });
-    if (!TenantContext.hasEmpresa) {
-      setState(() {
-        _error = 'Usuário sem empresa configurada. O módulo de trading requer uma empresa associada ao login.';
-        _loading = false;
-      });
-      return;
-    }
+    // empresa não é obrigatória — backend usa tenantId do JWT ou retorna lista vazia
     try {
       final alertas = await _repo.fetchAlertas();
       if (!mounted) return;
@@ -837,13 +824,7 @@ class _OperacoesTabState extends State<_OperacoesTab>
       _loading = true;
       _error = null;
     });
-    if (!TenantContext.hasEmpresa) {
-      setState(() {
-        _error = 'Usuário sem empresa configurada. O módulo de trading requer uma empresa associada ao login.';
-        _loading = false;
-      });
-      return;
-    }
+    // empresa não é obrigatória — backend usa tenantId do JWT ou retorna lista vazia
     try {
       final operacoes = await _repo.fetchOperacoes();
       if (!mounted) return;
@@ -1469,13 +1450,7 @@ class _BrokerConfigTabState extends State<BrokerConfigTab>
       _loading = true;
       _error = null;
     });
-    if (!TenantContext.hasEmpresa) {
-      setState(() {
-        _error = 'Usuário sem empresa configurada. O módulo de trading requer uma empresa associada ao login.';
-        _loading = false;
-      });
-      return;
-    }
+    // empresa não é obrigatória — backend usa tenantId do JWT ou retorna lista vazia
     try {
       final config = await _repo.fetchBrokerConfig();
       if (!mounted) return;

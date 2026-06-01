@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:http/http.dart' as http;
@@ -35,7 +36,7 @@ class FileCaller {
     required String fileName,
     required String fileType,
     required int diretorioId,
-    required int parceiroId,
+    int? parceiroId,
   }) async {
     // Pega empresa logada
     final empresaId = await pegarEmpresaLogada();
@@ -58,9 +59,11 @@ class FileCaller {
 
       request.fields['fileName'] = fileName;
       request.fields['fileType'] = fileType;
-      request.fields['diretorio'] = {"id": diretorioId}.toString();
-      request.fields['empresa'] = {"id": empresaId}.toString();
-      request.fields['parceiro'] = {"id": parceiroId}.toString();
+      request.fields['diretorio'] = jsonEncode({'id': diretorioId});
+      request.fields['empresa'] = jsonEncode({'id': empresaId});
+      if (parceiroId != null) {
+        request.fields['parceiro'] = jsonEncode({'id': parceiroId});
+      }
 
       request.headers['Content-Type'] = 'multipart/form-data';
       request.headers['Accept'] = 'application/json';

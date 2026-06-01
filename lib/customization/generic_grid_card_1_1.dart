@@ -15,6 +15,7 @@ import 'dart:convert';
 
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
 import 'package:http_parser/http_parser.dart' as http_parser;
 import 'package:intl/intl.dart';
@@ -524,8 +525,18 @@ class _GenericMobileGridScreenState extends State<GenericMobileGridScreen> {
         } else if (c.fieldType == FieldType.number) {
           final numVal = num.tryParse(valueText);
           _addToFormData(formData, c.fieldName, numVal ?? valueText);
+        } else if (c.fieldType == FieldType.boolean) {
+          _addToFormData(
+              formData, c.fieldName, valueText.toLowerCase() == 'true');
         } else {
           _addToFormData(formData, c.fieldName, valueText);
+        }
+      }
+
+      for (final c in widget.fieldConfigs
+          .where((x) => x.isInForm && x.fieldType == FieldType.boolean)) {
+        if (!formData.containsKey(c.fieldName)) {
+          _addToFormData(formData, c.fieldName, false);
         }
       }
 
@@ -979,7 +990,8 @@ class _GenericMobileGridScreenState extends State<GenericMobileGridScreen> {
             const Spacer(),
             IconButton(
               onPressed: () => setState(() => filtrosAbertos = false),
-              icon: Icon(Icons.close, color: cs.onSurface.withValues(alpha: 0.6)),
+              icon:
+                  Icon(Icons.close, color: cs.onSurface.withValues(alpha: 0.6)),
             ),
           ]),
           const SizedBox(height: 12),
@@ -1120,8 +1132,9 @@ class _GenericMobileGridScreenState extends State<GenericMobileGridScreen> {
                   ? GridColors.primary
                   : GridColors.primary.withValues(alpha: 0.3)),
         ),
-        color:
-            isSelected ? GridColors.primary.withValues(alpha: 0.06) : GridColors.card,
+        color: isSelected
+            ? GridColors.primary.withValues(alpha: 0.06)
+            : GridColors.card,
         child: InkWell(
           borderRadius: BorderRadius.circular(12),
           onTap: _isSelectionMode
@@ -1233,8 +1246,8 @@ class _GenericMobileGridScreenState extends State<GenericMobileGridScreen> {
     return Expanded(
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         Text(c.label,
-            style:
-                TextStyle(fontSize: 11, color: Colors.black.withValues(alpha: 0.6))),
+            style: TextStyle(
+                fontSize: 11, color: Colors.black.withValues(alpha: 0.6))),
         const SizedBox(height: 2),
         Text(value, maxLines: 1, overflow: TextOverflow.ellipsis),
       ]),
@@ -1350,8 +1363,8 @@ class _GenericMobileGridScreenState extends State<GenericMobileGridScreen> {
       // custom actions locais (se houver)
       ..._customActions.where((a) => a.isVisible?.call(item) ?? true).map(
             (a) => IconButton(
-              icon:
-                  Icon(a.icon, size: 16, color: Colors.black.withValues(alpha: 0.6)),
+              icon: Icon(a.icon,
+                  size: 16, color: Colors.black.withValues(alpha: 0.6)),
               onPressed: () => a.onPressed(context, item),
               tooltip: a.label,
             ),
@@ -1511,7 +1524,8 @@ class _GenericMobileGridScreenState extends State<GenericMobileGridScreen> {
                   backgroundColor: GridColors.textPrimary,
                   foregroundColor: GridColors.primary,
                 ),
-                child: Text(editingItem == null ? GridTexts.add : GridTexts.save),
+                child:
+                    Text(editingItem == null ? GridTexts.add : GridTexts.save),
               ),
             ),
           ]),
@@ -1684,16 +1698,15 @@ class _GenericMobileGridScreenState extends State<GenericMobileGridScreen> {
               }
             : null,
         icon: const Icon(Icons.attach_file),
-        label:
-            Text(picked.isEmpty ? GridTexts.selectFile : GridTexts.addFile),
+        label: Text(picked.isEmpty ? GridTexts.selectFile : GridTexts.addFile),
       ),
       if (cfg.allowedExtensions.isNotEmpty)
         Padding(
           padding: const EdgeInsets.only(top: 6),
           child: Text(
             'Extensões permitidas: ${cfg.allowedExtensions.join(', ')}',
-            style:
-                TextStyle(fontSize: 12, color: Colors.white.withValues(alpha: 0.8)),
+            style: TextStyle(
+                fontSize: 12, color: Colors.white.withValues(alpha: 0.8)),
           ),
         ),
     ]);
@@ -1936,6 +1949,13 @@ class _GenericMobileGridScreenState extends State<GenericMobileGridScreen> {
         content: Text(msg),
         backgroundColor: error ? GridColors.error : GridColors.primary,
         behavior: SnackBarBehavior.floating,
+        action: error
+            ? SnackBarAction(
+                label: 'Copiar',
+                textColor: Colors.white,
+                onPressed: () => Clipboard.setData(ClipboardData(text: msg)),
+              )
+            : null,
       ),
     );
   }

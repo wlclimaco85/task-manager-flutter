@@ -87,6 +87,7 @@ import '../../features/trading/screens/sinais_screen.dart';
 import '../../features/trading/screens/oportunidades_screen.dart';
 import '../../features/trading/screens/backtest_screen.dart';
 import '../../features/trading/services/backtest_repository.dart';
+import '../../features/trading/screens/carteira_screen.dart';
 import '../../utils/api_links.dart';
 import '../../utils/tenant_context.dart';
 import '../../widgets/app_sidebar.dart';
@@ -110,7 +111,11 @@ import '../../widgets/dp/dp_portal_colaborador_screen.dart';
 import '../../windows/screens/reserva_estoque_screen.dart';
 import '../../windows/screens/deposito_screen.dart';
 import '../../windows/screens/renegociacao_screen.dart';
-import '../../windows/screens/devolucao_grid_screen.dart';
+
+import './aprovacao_compra_screen.dart';
+import './devolucao_grid_screen.dart';
+import './dre_screen.dart';
+import './tabela_preco_screen.dart';
 import './cancelamento_cce_screen.dart';
 import 'contabil/conta_contabil_grid_screen.dart';
 import 'contabil/lancamento_contabil_grid_screen.dart';
@@ -120,7 +125,9 @@ import 'contabil/ai_dashboard_screen.dart';
 import 'contabil/ai_assistente_screen.dart';
 
 class WebBottomNavBarScreen extends StatefulWidget {
-  const WebBottomNavBarScreen({super.key});
+  final int initialIndex;
+
+  const WebBottomNavBarScreen({super.key, this.initialIndex = 31});
 
   @override
   State<WebBottomNavBarScreen> createState() => _WebBottomNavBarScreenState();
@@ -138,6 +145,7 @@ class _WebBottomNavBarScreenState extends State<WebBottomNavBarScreen> {
   @override
   void initState() {
     super.initState();
+    _selectedIndex = widget.initialIndex;
     _loadUserAndInit();
   }
 
@@ -328,10 +336,10 @@ class _WebBottomNavBarScreenState extends State<WebBottomNavBarScreen> {
       const SizedBox.shrink(), // 114: Baixa Automática (web)
       const SizedBox.shrink(), // 115: Cobrança (web)
       const RenegociacaoScreen(), // 116: Renegociação de Títulos
-      const WindowsDevolucaoGridScreen(), // 117: Devoluções
-      const SizedBox.shrink(), // 118
-      const SizedBox.shrink(), // 119
-      const SizedBox.shrink(), // 120
+      const WebDreScreen(), // 117: DRE Gerencial
+      WebTabelaPrecoScreen(hasPermission: (p) => true), // 118: Tabela de Preços
+      const WebAprovacaoCompraScreen(), // 119: Aprovação de Compras
+      const WebDevolucaoGridScreen(), // 120: Devoluções (Web)
       const CancelamentoCceScreen(), // 111: Cancelamento e CC-e
       const SizedBox.shrink(), // 112: RegraFiscal (web vago)
       WebContaContabilGridScreen(
@@ -344,6 +352,7 @@ class _WebBottomNavBarScreenState extends State<WebBottomNavBarScreen> {
       const WebAiAssistenteScreen(), // 118: Assistente IA
       const TradingDashboardScreen(
           initialTabIndex: 4), // 129: Configuração da Corretora
+      const CarteiraScreen(), // 131: Minha Carteira
     ];
   }
 

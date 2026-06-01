@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
-import '../../customization/dynamic_grid_dynamic_screen.dart';
+import 'package:task_manager_flutter/customization/generic_grid_card.dart';
+import 'package:task_manager_flutter/utils/api_links.dart';
 import '../../../utils/security_matrix.dart';
+import 'chamado_grid_screen.dart';
 
 class ChamadosScreenDinamic extends StatelessWidget {
   const ChamadosScreenDinamic({super.key});
@@ -17,19 +19,31 @@ class ChamadosScreenDinamic extends StatelessWidget {
     if (lower.contains('delete') || lower.contains('remove')) {
       return sec.canDelete(AppScreen.chamados);
     }
-    if (lower.contains('view') ||
-        lower.contains('read') ||
-        lower.contains('list')) {
-      return sec.canView(AppScreen.chamados);
-    }
-    return sec.hasAnyAccess(AppScreen.chamados);
+    return sec.canView(AppScreen.chamados);
   }
 
   @override
   Widget build(BuildContext context) {
-    return DynamicGridDynamicScreen(
-      telaNome: 'chamados',
-      hasPermission: _hasPermission,
+    return Scaffold(
+      body: GenericMobileGridScreen<Chamado>(
+        title: 'Solicitações / Chamados',
+        fetchEndpoint: ApiLinks.allChamados,
+        createEndpoint: ApiLinks.createChamado,
+        updateEndpoint: ApiLinks.updateChamado(':id'),
+        deleteEndpoint: ApiLinks.deleteChamado(':id'),
+        fieldConfigs: Chamado.fieldConfigsMobile(),
+        idFieldName: 'id',
+        useUserBannerAppBar: true,
+        enableSearch: true,
+        storageKey: 'chamados_mobile_grid',
+        hasPermission: _hasPermission,
+        fromJson: (json) => Chamado.fromJson(Map<String, dynamic>.from(json)),
+        toJson: (obj) => obj.toJson(),
+        paginationConfig: const PaginationConfig(
+          defaultRowsPerPage: 20,
+          availableRowsPerPage: [10, 20, 50],
+        ),
+      ),
     );
   }
 }

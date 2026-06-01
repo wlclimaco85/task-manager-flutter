@@ -137,7 +137,9 @@ class _GenericMobileGridScreenState extends State<GenericMobileGridScreen> {
   }
 
   Future<void> _resolveAsyncPermissions() async {
-    final f = widget.asyncHasPermission;
+    _permCache
+        .addAll({'create': true, 'edit': true, 'delete': true, 'view': true});
+/*    final f = widget.asyncHasPermission;
     if (f == null) {
       _permCache
           .addAll({'create': true, 'edit': true, 'delete': true, 'view': true});
@@ -149,14 +151,12 @@ class _GenericMobileGridScreenState extends State<GenericMobileGridScreen> {
       setState(() => _permsResolved = true);
       return;
     }
-
     final needs = <String>{'create', 'edit', 'delete', 'view'};
     final also = widget.serverActions
             ?.map((a) => a.requiredPermission)
             .whereType<String>() ??
         const Iterable<String>.empty();
     needs.addAll(also);
-
     for (final p in needs) {
       try {
         final result = await f(p);
@@ -165,6 +165,7 @@ class _GenericMobileGridScreenState extends State<GenericMobileGridScreen> {
         _permCache[p] = true;
       }
     }
+    setState(() => _permsResolved = true); */
     setState(() => _permsResolved = true);
   }
 
@@ -411,14 +412,8 @@ class _GenericMobileGridScreenState extends State<GenericMobileGridScreen> {
       // 🔹 fallback total — retorna TRUE
       return true;
   } */
-    if (_permCache.containsKey(perm)) {
-      return _permCache[perm]!;
-    }
-    try {
-      return widget.hasPermission(perm);
-    } catch (_) {
-      return true;
-    }
+    // "TODO QUANDO APLICAR REGRAS DE PERMISSÃO";
+    return true;
   }
 
   Widget? _buildFab() {

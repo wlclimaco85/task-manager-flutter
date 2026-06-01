@@ -635,6 +635,11 @@ class MenuConfig {
             label: 'Backtest',
             icon: FontAwesomeIcons.clockRotateLeft,
             screenIndex: 85),
+        MenuItem(
+            id: 'trading_carteira',
+            label: 'Minha Carteira',
+            icon: FontAwesomeIcons.briefcase,
+            screenIndex: 131),
       ],
     ),
     MenuGroup(

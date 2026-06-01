@@ -70,7 +70,7 @@ class _LoginScreenState extends State<LoginScreen>
     }
     try {
       final resp = await http
-          .get(Uri.parse('${ApiLinks.noticiasPublicas}?limite=12&codApp=1'))
+          .get(Uri.parse('${ApiLinks.noticiasPublicas}?limite=48'))
           .timeout(const Duration(seconds: 8));
       if (resp.statusCode == 200) {
         final list =
@@ -84,7 +84,9 @@ class _LoginScreenState extends State<LoginScreen>
         });
         if (mounted) setState(() => _noticias = list);
       }
-    } catch (_) {}
+    } catch (error) {
+      debugPrint('[LoginScreen] Falha ao carregar noticias publicas: $error');
+    }
     if (mounted) setState(() => _loadingNoticias = false);
   }
 
@@ -490,8 +492,7 @@ class _LoginBanner extends StatelessWidget {
   }
 }
 
-// -- Logo segura com fallback em caso de falha de renderização SVG --
-/// Logo institucional da Abraço Contabilidade com fallback gracioso
+/// Logo institucional com fallback gracioso para ícone
 class _SafeLogoWidget extends StatelessWidget {
   final double size;
   const _SafeLogoWidget({required this.size});
@@ -503,14 +504,17 @@ class _SafeLogoWidget extends StatelessWidget {
       height: size,
       width: size,
       fit: BoxFit.contain,
-      errorBuilder: (_, __, ___) => SizedBox(
-        height: size,
-        width: size,
-        child: const Center(
-          child: Icon(Icons.business_center,
-              color: GridColors.secondary, size: 40),
-        ),
-      ),
+      errorBuilder: (_, error, __) {
+        debugPrint('[_SafeLogoWidget] Falha ao carregar logo asset: $error');
+        return SizedBox(
+          height: size,
+          width: size,
+          child: const Center(
+            child: Icon(Icons.business_center,
+                color: GridColors.secondary, size: 40),
+          ),
+        );
+      },
     );
   }
 }
@@ -524,7 +528,7 @@ class _NoticiasGrid extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      color: GridColors.secondaryLight,
+      color: GridColors.background,
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         Container(
             color: GridColors.secondary,
@@ -534,7 +538,7 @@ class _NoticiasGrid extends StatelessWidget {
                   padding:
                       const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                   decoration: BoxDecoration(
-                      color: GridColors.primary, borderRadius: BorderRadius.circular(4)),
+                      color: GridColors.accent, borderRadius: BorderRadius.circular(4)),
                   child: const Text(GridTexts.newsTitle,
                       style: TextStyle(
                           color: Colors.white,
@@ -545,7 +549,7 @@ class _NoticiasGrid extends StatelessWidget {
               const Text(GridTexts.newsSource,
                   style: TextStyle(color: Colors.white54, fontSize: 11)),
             ])),
-        Container(height: 2, color: GridColors.primary),
+        Container(height: 2, color: GridColors.accent),
         Expanded(
             child: loading
                 ? const Center(child: CircularProgressIndicator(color: GridColors.secondary))
@@ -752,16 +756,38 @@ class _MultiUrlImageState extends State<_MultiUrlImage> {
   int _idx = 0;
 
   @override
+  void didUpdateWidget(_MultiUrlImage oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // Reseta o índice quando a lista de URLs muda (novo card / rebuild)
+    if (oldWidget.urls != widget.urls) {
+      _idx = 0;
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     if (_idx >= widget.urls.length) return widget.placeholder;
     return Image.network(
       widget.urls[_idx],
+      key: ValueKey('${widget.urls[_idx]}_$_idx'),
       width: double.infinity,
       height: double.infinity,
       fit: BoxFit.cover,
-      loadingBuilder: (_, child, progress) =>
-          progress == null ? child : widget.placeholder,
-      errorBuilder: (_, __, ___) {
+      loadingBuilder: (_, child, progress) {
+        if (progress == null) return child;
+        return Stack(
+          alignment: Alignment.center,
+          children: [
+            widget.placeholder,
+            const CircularProgressIndicator(
+              color: Colors.white54,
+              strokeWidth: 2,
+            ),
+          ],
+        );
+      },
+      errorBuilder: (context, error, stackTrace) {
+        debugPrint('[_MultiUrlImage] Falha ao carregar ${widget.urls[_idx]}: $error');
         // Tenta próxima URL após o frame atual
         WidgetsBinding.instance.addPostFrameCallback((_) {
           if (mounted) setState(() => _idx++);

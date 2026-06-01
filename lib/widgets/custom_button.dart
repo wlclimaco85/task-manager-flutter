@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../utils/grid_colors.dart';
 
 class CustomButton extends StatelessWidget {
   final VoidCallback onPresse;
@@ -21,15 +22,17 @@ class CustomButton extends StatelessWidget {
     );*/
     return ElevatedButton(
       style: ElevatedButton.styleFrom(
-        backgroundColor: const Color(0xFFFA903A),
-        minimumSize: const Size.fromHeight(50), // NEW
+        backgroundColor: GridColors.primary,
+        foregroundColor: GridColors.textPrimary,
+        minimumSize: const Size.fromHeight(48),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
       ),
       onPressed: () {
         onPresse();
       },
-      child: const Text(
-        'Label',
-        style: TextStyle(fontSize: 24, color: Colors.white),
+      child: Text(
+        labels,
+        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
       ),
     );
 

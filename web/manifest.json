@@ -1,11 +1,11 @@
 {
-    "name": "Abraço Contabilidade Uberaba",
-    "short_name": "Abraço Contabilidade Uberaba",
+    "name": "Abraço Contabilidade",
+    "short_name": "Abraço",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#005826",
     "theme_color": "#93070A",
-    "description": "A new Flutter project.",
+    "description": "Portal da Abraço Contabilidade.",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [

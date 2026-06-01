@@ -7,6 +7,14 @@ class AssetsUtils {
   // Logo institucional Abraco Contabilidade
   static const String logoJPG = 'assets/images/logo_contabilidade.jpg';
   static const String logoSVG = 'assets/images/logo.svg';
+  static const List<String> newsFallbackImages = [
+    'assets/images/Logo contabilidade_page-0001.jpg',
+    'assets/images/logo_contabilidade.jpg',
+    'assets/images/Screenshot_1.png',
+    'assets/images/Screenshot_2.png',
+    'assets/images/Screenshot_3.png',
+    'assets/images/Screenshot_4.png',
+  ];
 }
 
 showBase64Image(base64String) {

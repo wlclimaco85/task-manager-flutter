@@ -18,7 +18,7 @@ import 'package:share_plus/share_plus.dart' as share;
 
 // ------------------------------- MODELOS -------------------------------
 
-enum LogLevel { info, debug, warning, error }
+enum LogLevel { info, debug, success, warning, error }
 
 extension on LogLevel {
   String get label {
@@ -27,6 +27,8 @@ extension on LogLevel {
         return 'INFO';
       case LogLevel.debug:
         return 'DEBUG';
+      case LogLevel.success:
+        return 'SUCCESS';
       case LogLevel.warning:
         return 'WARN';
       case LogLevel.error:
@@ -40,6 +42,8 @@ extension on LogLevel {
         return Icons.info_outline;
       case LogLevel.debug:
         return Icons.bug_report_outlined;
+      case LogLevel.success:
+        return Icons.check_circle_outline;
       case LogLevel.warning:
         return Icons.warning_amber_outlined;
       case LogLevel.error:
@@ -54,6 +58,8 @@ extension on LogLevel {
         return dark ? const Color(0xFFB3E5FC) : const Color(0xFF1565C0);
       case LogLevel.debug:
         return dark ? const Color(0xFFC5CAE9) : const Color(0xFF5E35B1);
+      case LogLevel.success:
+        return dark ? const Color(0xFFA5D6A7) : GridColors.success;
       case LogLevel.warning:
         return dark ? const Color(0xFFFFE082) : const Color(0xFFF57F17);
       case LogLevel.error:
@@ -165,6 +171,8 @@ class AppLogger {
       add(AppLogEntry(ts: DateTime.now(), message: msg, level: LogLevel.info));
   void debug(String msg) =>
       add(AppLogEntry(ts: DateTime.now(), message: msg, level: LogLevel.debug));
+  void success(String msg) => add(
+      AppLogEntry(ts: DateTime.now(), message: msg, level: LogLevel.success));
   void warn(String msg) => add(
       AppLogEntry(ts: DateTime.now(), message: msg, level: LogLevel.warning));
   void error(String msg, [StackTrace? st]) => add(AppLogEntry(
@@ -415,8 +423,8 @@ class _ConsolePanelState extends State<_ConsolePanel> {
                         offset: const Offset(0, 8),
                       ),
                     ],
-                    border:
-                        Border.all(color: theme.dividerColor.withValues(alpha: 0.2)),
+                    border: Border.all(
+                        color: theme.dividerColor.withValues(alpha: 0.2)),
                   ),
                   child: DraggableScrollableSheet(
                     expand: false,
@@ -466,8 +474,8 @@ class _ConsolePanelState extends State<_ConsolePanel> {
   Widget _buildHeader(ThemeData theme) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-      decoration:
-          BoxDecoration(color: theme.colorScheme.primary.withValues(alpha: 0.08)),
+      decoration: BoxDecoration(
+          color: theme.colorScheme.primary.withValues(alpha: 0.08)),
       child: Row(
         children: [
           const Icon(Icons.terminal, size: 18),
@@ -656,6 +664,8 @@ class L {
   static String _text(Object? msg) => msg?.toString() ?? 'null';
   static void i(Object? msg) => AppLogger.i.info(_text(msg));
   static void d(Object? msg) => AppLogger.i.debug(_text(msg));
+  static void s(Object? msg) => AppLogger.i.success(_text(msg));
   static void w(Object? msg) => AppLogger.i.warn(_text(msg));
-  static void e(Object? msg, [StackTrace? st]) => AppLogger.i.error(_text(msg), st);
+  static void e(Object? msg, [StackTrace? st]) =>
+      AppLogger.i.error(_text(msg), st);
 }

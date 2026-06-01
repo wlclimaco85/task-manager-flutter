@@ -10,7 +10,6 @@ import '../../../utils/tenant_context.dart';
 import '../../../models/login_model.dart';
 import '../../../utils/app_logger.dart';
 
-
 class NetworkCaller {
   Future<NetworkResponse> getRequest(String url) async {
     try {
@@ -18,7 +17,7 @@ class NetworkCaller {
       final uri = Uri.parse(enrichedUrl);
 
       AppLogger.i.info(
-          '⚙️ [GET] tenant=${TenantContext.debugInfo} | url=${uri.toString()}');
+          '[GET] tenant=${TenantContext.debugInfo} | url=${uri.toString()}');
 
       Response response = await get(
         uri,
@@ -29,17 +28,26 @@ class NetworkCaller {
         },
       );
 
-      AppLogger.i.info(
-          '⚙️ [GET] url : ${uri.toString()} | statusCode: ${response.statusCode}');      if (response.statusCode == 200) {
+      final statusMsg =
+          '[GET] url : ${uri.toString()} | statusCode: ${response.statusCode}';
+      if (response.statusCode >= 200 && response.statusCode < 300) {
+        AppLogger.i.success(statusMsg);
+      } else if (response.statusCode >= 400) {
+        AppLogger.i.warn(statusMsg);
+      } else {
+        AppLogger.i.info(statusMsg);
+      }
+
+      if (response.statusCode == 200) {
         return NetworkResponse(
           true,
           response.statusCode,
           jsonDecode(response.body),
         );
-      } else {
-        return NetworkResponse(false, response.statusCode, null);
       }
-    } catch (e) {
+      return NetworkResponse(false, response.statusCode, null);
+    } catch (e, st) {
+      AppLogger.i.error('[GET] erro: $e', st);
       log(e.toString());
     }
     return NetworkResponse(false, -1, null);
@@ -197,9 +205,8 @@ class NetworkCaller {
       );
 
       if (response.statusCode == 200 || response.statusCode == 204) {
-        final responseBody = response.body.isNotEmpty
-            ? jsonDecode(response.body)
-            : null;
+        final responseBody =
+            response.body.isNotEmpty ? jsonDecode(response.body) : null;
         return NetworkResponse(
           true,
           response.statusCode,
@@ -284,7 +291,9 @@ class NetworkCaller {
       // Adiciona queryParams extras se fornecidos
       if (queryParams != null && queryParams.isNotEmpty) {
         final merged = Map<String, String>.from(uri.queryParameters);
-        queryParams.forEach((k, v) { if (v != null) merged[k] = v.toString(); });
+        queryParams.forEach((k, v) {
+          if (v != null) merged[k] = v.toString();
+        });
         uri = uri.replace(queryParameters: merged);
       }
 

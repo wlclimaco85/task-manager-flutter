@@ -2,36 +2,31 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 
-import 'package:task_manager_flutter/constants/custom_colors.dart' hide GridColors;
 import 'package:task_manager_flutter/models/alert_model.dart';
 import 'package:task_manager_flutter/models/auth_utility.dart';
 import 'package:task_manager_flutter/services/alert_caller.dart';
 import 'package:task_manager_flutter/utils/grid_colors.dart';
 import 'package:task_manager_flutter/utils/security_matrix.dart';
 
+import '../../customization/dynamic_grid_dynamic_screen.dart';
 import 'sem_acesso_screen.dart';
-import 'chamado_grid_screen_dynamic.dart';
+import '../../auth_screens/login_screen.dart';
 import 'chatMessageListScreen.dart';
-import 'comunicado_screen.dart';
-import 'conta_bancaria_grid_screen.dart';
-import 'conta_pagar_grid_screen.dart';
-import 'conta_receber_grid_screen.dart';
 import 'dashboard_screen.dart';
 import '../../features/trading/trading_dashboard_screen.dart';
 import '../../features/trading/screens/backtest_screen.dart';
 import '../../features/trading/services/backtest_repository.dart';
 import '../../utils/api_links.dart';
+import '../../utils/app_logger.dart';
 import '../../utils/tenant_context.dart';
 import '../../web/screens/nfce/pdv_screen.dart';
 import '../../web/screens/nfce/config_fiscal_screen.dart';
 import 'documento_screen.dart';
 import 'file_upload_screen.dart';
-import 'parceiro_grid_screen.dart';
 import 'ponto_screen.dart';
-import 'funcionario_grid_screen.dart';
-import 'produto_grid_screen.dart';
 import '../../widgets/crm/crm_pipeline_screen.dart';
 import '../../widgets/fiscal/fiscal_automation_screen.dart';
+import 'mensalidade_screen.dart';
 
 class BottomNavBarScreen extends StatefulWidget {
   const BottomNavBarScreen({super.key});
@@ -91,7 +86,7 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
                 children: [
                   const Expanded(
                     child: Text(
-                      'Notificações',
+                      'Notificacoes',
                       style: TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.w800,
@@ -125,7 +120,7 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
             _notifications.isEmpty
                 ? const Padding(
                     padding: EdgeInsets.all(24),
-                    child: Text('Sem notificações',
+                    child: Text('Sem notificacoes',
                         style: TextStyle(color: Colors.grey)),
                   )
                 : ConstrainedBox(
@@ -152,8 +147,7 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
                                 size: 18, color: Colors.grey),
                             onPressed: () {
                               setState(() {
-                                _notifications.removeWhere(
-                                    (x) => x.id == n.id);
+                                _notifications.removeWhere((x) => x.id == n.id);
                                 _unreadCount = _notifications.length;
                               });
                               setLocal(() {});
@@ -176,97 +170,192 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
       if (sec.canView(AppScreen.chat))
         AuthUtility.userInfo?.login?.email != null
             ? ChatListScreen(userName: AuthUtility.userInfo?.login?.email ?? '')
-            : const ChatListScreen(userName: 'Usuário'),
-      if (sec.canView(AppScreen.comunicados)) const ComunicadoScreen(),
+            : const ChatListScreen(userName: 'Usuario'),
+      if (sec.canView(AppScreen.comunicados))
+        _dynamicGridInline(
+          telaNome: 'comunicado',
+          sec: sec,
+          screen: AppScreen.comunicados,
+        ),
       if (sec.canView(AppScreen.chamados))
-        const ChamadosScreenDinamic(),
+        _dynamicGridInline(
+          telaNome: 'chamado',
+          sec: sec,
+          screen: AppScreen.chamados,
+        ),
       if (sec.canView(AppScreen.ged)) const FileManagerScreen(),
-      Container(), // slot do botão "Mais"
+      Container(), // slot do botao "Mais"
     ];
   }
 
-  List<BottomNavigationBarItem> _buildNavItems(SecurityMatrix sec) {
-    return [
-      if (sec.canView(AppScreen.calendario))
-        const BottomNavigationBarItem(
-            icon: Icon(Icons.calendar_today), label: "Calendario"),
-      if (sec.canView(AppScreen.chat))
-        const BottomNavigationBarItem(icon: Icon(Icons.chat), label: "Chat"),
-      if (sec.canView(AppScreen.comunicados))
-        const BottomNavigationBarItem(
-            icon: Icon(Icons.campaign), label: "Comunicados"),
-      if (sec.canView(AppScreen.chamados))
-        const BottomNavigationBarItem(
-            icon: Icon(Icons.support_agent), label: "Solicitações"),
-      if (sec.canView(AppScreen.ged))
-        const BottomNavigationBarItem(
-            icon: Icon(Icons.folder_open), label: "GED"),
-      const BottomNavigationBarItem(
-          icon: Icon(Icons.more_horiz), label: "Mais"),
-    ];
+  Widget _dynamicGridInline({
+    required String telaNome,
+    required SecurityMatrix sec,
+    required AppScreen screen,
+  }) {
+    return DynamicGridDynamicScreen(
+      key: ValueKey('mobile_dynamic_inline_$telaNome'),
+      telaNome: telaNome,
+      hasPermission: (action) => _hasPermissionFor(sec, screen, action),
+      storageKey: 'mobile_dynamic_$telaNome',
+    );
+  }
+
+  List<BottomNavigationBarItem> _buildNavItems(
+    SecurityMatrix sec,
+    int selected,
+  ) {
+    final items = <BottomNavigationBarItem>[];
+
+    void addItem({
+      required bool visible,
+      required IconData icon,
+      required String label,
+    }) {
+      if (!visible) return;
+      final index = items.length;
+      final active = index == selected;
+      items.add(BottomNavigationBarItem(
+        icon: _bottomNavIcon(icon, active: active),
+        label: label,
+      ));
+    }
+
+    addItem(
+      visible: sec.canView(AppScreen.calendario),
+      icon: Icons.calendar_today,
+      label: "Calendario",
+    );
+    addItem(
+      visible: sec.canView(AppScreen.chat),
+      icon: Icons.chat,
+      label: "Chat",
+    );
+    addItem(
+      visible: sec.canView(AppScreen.comunicados),
+      icon: Icons.campaign,
+      label: "Comunicados",
+    );
+    addItem(
+      visible: sec.canView(AppScreen.chamados),
+      icon: Icons.support_agent,
+      label: "Solicitacoes",
+    );
+    addItem(
+      visible: sec.canView(AppScreen.ged),
+      icon: Icons.folder_open,
+      label: "GED",
+    );
+
+    final moreIndex = items.length;
+    items.add(BottomNavigationBarItem(
+      icon: _bottomNavIcon(Icons.more_horiz, active: moreIndex == selected),
+      label: "Mais",
+    ));
+
+    return items;
+  }
+
+  Widget _bottomNavIcon(IconData icon, {required bool active}) {
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 180),
+      curve: Curves.easeOut,
+      width: active ? 46 : 40,
+      height: 30,
+      alignment: Alignment.center,
+      decoration: BoxDecoration(
+        color: active ? Colors.white : Colors.transparent,
+        borderRadius: BorderRadius.circular(8),
+        border:
+            active ? Border.all(color: GridColors.secondary, width: 1.2) : null,
+      ),
+      child: Icon(
+        icon,
+        size: active ? 21 : 20,
+        color: active
+            ? GridColors.secondary
+            : Colors.white.withValues(alpha: 0.82),
+      ),
+    );
+  }
+
+  bool _hasPermissionFor(
+    SecurityMatrix sec,
+    AppScreen screen,
+    String action,
+  ) {
+    return switch (action) {
+      'insert' || 'create' => sec.canInsert(screen),
+      'update' || 'edit' => sec.canUpdate(screen),
+      'delete' || 'remove' => sec.canDelete(screen),
+      _ => sec.canView(screen),
+    };
+  }
+
+  void _pushDynamicGrid({
+    required String telaNome,
+    required SecurityMatrix sec,
+    AppScreen? screen,
+    String? fetchEndpointOverride,
+    String? createEndpointOverride,
+    String? updateEndpointOverride,
+    String? deleteEndpointOverride,
+  }) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => DynamicGridDynamicScreen(
+          key: ValueKey('mobile_dynamic_push_$telaNome'),
+          telaNome: telaNome,
+          hasPermission: (action) =>
+              screen == null ? true : _hasPermissionFor(sec, screen, action),
+          storageKey: 'mobile_dynamic_$telaNome',
+          fetchEndpointOverride: fetchEndpointOverride,
+          createEndpointOverride: createEndpointOverride,
+          updateEndpointOverride: updateEndpointOverride,
+          deleteEndpointOverride: deleteEndpointOverride,
+        ),
+      ),
+    );
   }
 
   void onMenuOptionSelected(String option, SecurityMatrix sec) {
     Navigator.pop(context);
     switch (option) {
       case "Contas Pagar":
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (_) => ContaPagarGridScreen(
-              hasPermission: (action) => switch (action) {
-                'insert' => sec.canInsert(AppScreen.contasPagar),
-                'update' => sec.canUpdate(AppScreen.contasPagar),
-                'delete' => sec.canDelete(AppScreen.contasPagar),
-                _ => sec.canView(AppScreen.contasPagar),
-              },
-            ),
-          ),
+        _pushDynamicGrid(
+          telaNome: 'conta_pagar',
+          sec: sec,
+          screen: AppScreen.contasPagar,
+          fetchEndpointOverride: ApiLinks.allContasPagar,
+          createEndpointOverride: ApiLinks.createContaPagar,
+          updateEndpointOverride: ApiLinks.updateContaPagar(':id'),
+          deleteEndpointOverride: ApiLinks.deleteContaPagar(':id'),
         );
         break;
       case "Contas Receber":
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (_) => ContaReceberGridScreen(
-              hasPermission: (action) => switch (action) {
-                'insert' => sec.canInsert(AppScreen.contasReceber),
-                'update' => sec.canUpdate(AppScreen.contasReceber),
-                'delete' => sec.canDelete(AppScreen.contasReceber),
-                _ => sec.canView(AppScreen.contasReceber),
-              },
-            ),
-          ),
+        _pushDynamicGrid(
+          telaNome: 'conta_receber',
+          sec: sec,
+          screen: AppScreen.contasReceber,
+          fetchEndpointOverride: ApiLinks.allContasReceber,
+          createEndpointOverride: ApiLinks.createContaReceber,
+          updateEndpointOverride: ApiLinks.updateContaReceber(':id'),
+          deleteEndpointOverride: ApiLinks.deleteContaReceber(':id'),
         );
         break;
       case "Parceiros":
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (_) => ParceiroGridScreen(
-              hasPermission: (action) => switch (action) {
-                'insert' => sec.canInsert(AppScreen.parceiros),
-                'update' => sec.canUpdate(AppScreen.parceiros),
-                'delete' => sec.canDelete(AppScreen.parceiros),
-                _ => sec.canView(AppScreen.parceiros),
-              },
-            ),
-          ),
+        _pushDynamicGrid(
+          telaNome: 'parceiro',
+          sec: sec,
+          screen: AppScreen.parceiros,
         );
         break;
       case "Produtos":
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (_) => MobileProdutoGridScreen(
-              hasPermission: (action) => switch (action) {
-                'insert' => sec.canInsert(AppScreen.produto),
-                'update' => sec.canUpdate(AppScreen.produto),
-                'delete' => sec.canDelete(AppScreen.produto),
-                _ => sec.canView(AppScreen.produto),
-              },
-            ),
-          ),
+        _pushDynamicGrid(
+          telaNome: 'produto',
+          sec: sec,
+          screen: AppScreen.produto,
         );
         break;
       case "Dashboard":
@@ -286,7 +375,8 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
           context,
           MaterialPageRoute(
             builder: (_) => BacktestScreen(
-              repository: BacktestRepository(ApiLinks.baseUrl, headers: TenantContext.jsonHeaders),
+              repository: BacktestRepository(ApiLinks.baseUrl,
+                  headers: TenantContext.jsonHeaders),
             ),
           ),
         );
@@ -316,18 +406,10 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
         );
         break;
       case "Contas Bancarias":
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (_) => ContaBancariaGridScreen(
-              hasPermission: (action) => switch (action) {
-                'insert' => sec.canInsert(AppScreen.contasBancarias),
-                'update' => sec.canUpdate(AppScreen.contasBancarias),
-                'delete' => sec.canDelete(AppScreen.contasBancarias),
-                _ => sec.canView(AppScreen.contasBancarias),
-              },
-            ),
-          ),
+        _pushDynamicGrid(
+          telaNome: 'conta_bancaria',
+          sec: sec,
+          screen: AppScreen.contasBancarias,
         );
         break;
       case "Bater Ponto":
@@ -337,23 +419,57 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
         );
         break;
       case "Funcionários":
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (_) => FuncionarioGridScreen(
-              hasPermission: (action) => switch (action) {
-                'insert' => sec.canInsert(AppScreen.funcionarios),
-                'update' => sec.canUpdate(AppScreen.funcionarios),
-                'delete' => sec.canDelete(AppScreen.funcionarios),
-                _ => sec.canView(AppScreen.funcionarios),
-              },
-            ),
-          ),
+        _pushDynamicGrid(
+          telaNome: 'funcionario',
+          sec: sec,
+          screen: AppScreen.funcionarios,
         );
         break;
-      case "Sair":
+      case "Mensalidades":
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => const MobileMensalidadeScreen()),
+        );
+        break;
+      case "Alvarás":
+        _pushDynamicGrid(
+          telaNome: 'alvara',
+          sec: sec,
+        );
+        break;
       case "Voltar":
-        Navigator.pop(context);
+        break;
+      case "Sair":
+        showDialog(
+          context: context,
+          builder: (_) => AlertDialog(
+            title: const Text('Sair do aplicativo'),
+            content: const Text('Deseja encerrar a sessão?'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('Cancelar'),
+              ),
+              ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                    backgroundColor: GridColors.primary,
+                    foregroundColor: Colors.white),
+                onPressed: () async {
+                  Navigator.pop(context);
+                  await AuthUtility.clearUserInfo();
+                  if (context.mounted) {
+                    Navigator.pushAndRemoveUntil(
+                      context,
+                      MaterialPageRoute(builder: (_) => const LoginScreen()),
+                      (_) => false,
+                    );
+                  }
+                },
+                child: const Text('Sair'),
+              ),
+            ],
+          ),
+        );
         break;
     }
   }
@@ -362,9 +478,9 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
   Widget build(BuildContext context) {
     final sec = SecurityMatrix.current();
     final screens = _buildScreens(sec);
-    final navItems = _buildNavItems(sec);
 
     final safeIndex = selectedIndex.clamp(0, screens.length - 1);
+    final navItems = _buildNavItems(sec, safeIndex);
 
     // BottomNavigationBar exige no mínimo 2 itens
     if (navItems.length < 2) {
@@ -372,14 +488,23 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
     }
 
     return Scaffold(
-      body: screens[safeIndex],
+      backgroundColor: GridColors.pageBackground,
+      body: Stack(
+        children: [
+          IndexedStack(
+            index: safeIndex,
+            children: screens,
+          ),
+          const AppLoggerOverlay(),
+        ],
+      ),
       floatingActionButton: _unreadCount > 0
           ? FloatingActionButton.small(
               backgroundColor: GridColors.primary,
               onPressed: () => _showNotificationsSheet(context),
               child: Badge(
-                label: Text('$_unreadCount',
-                    style: const TextStyle(fontSize: 10)),
+                label:
+                    Text('$_unreadCount', style: const TextStyle(fontSize: 10)),
                 child: const Icon(Icons.notifications,
                     color: Colors.white, size: 20),
               ),
@@ -388,19 +513,34 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
       floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
       bottomNavigationBar: Container(
         decoration: BoxDecoration(
-          color: CustomColors().getLightGreenBackground(),
+          color: GridColors.primary,
           border: Border(
-            top: BorderSide(
-                color: CustomColors().getDarkGreenBorder(), width: 2),
+            top: BorderSide(color: GridColors.primaryDark, width: 1),
           ),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.10),
+              blurRadius: 18,
+              offset: const Offset(0, -6),
+            ),
+          ],
         ),
         child: BottomNavigationBar(
-          backgroundColor: CustomColors().getLightGreenBackground(),
+          backgroundColor: GridColors.primary,
           currentIndex: safeIndex,
-          unselectedItemColor: Colors.grey,
-          unselectedLabelStyle: const TextStyle(color: Colors.grey),
-          selectedItemColor: Colors.green,
+          unselectedItemColor: Colors.white.withValues(alpha: 0.82),
+          selectedItemColor: Colors.white,
+          unselectedLabelStyle: TextStyle(
+            fontSize: 11,
+            fontWeight: FontWeight.w500,
+            color: Colors.white.withValues(alpha: 0.82),
+          ),
+          selectedLabelStyle: const TextStyle(
+            fontSize: 11,
+            fontWeight: FontWeight.w800,
+          ),
           showSelectedLabels: true,
+          showUnselectedLabels: true,
           type: BottomNavigationBarType.fixed,
           onTap: (int index) {
             if (index == navItems.length - 1) {
@@ -416,129 +556,196 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
   }
 
   void _showMenuOptions(BuildContext context, SecurityMatrix sec) {
-    final menuItems = <Widget>[
+    final menuItems = <_MoreMenuAction>[
       if (sec.canView(AppScreen.contasPagar))
-        _menuItem(Icons.payments, "Contas Pagar", sec),
+        const _MoreMenuAction(Icons.payments, "Contas Pagar"),
       if (sec.canView(AppScreen.contasReceber))
-        _menuItem(Icons.account_balance_wallet, "Contas Receber", sec),
-      if (sec.canView(AppScreen.parceiros))
-        _menuItem(Icons.people, "Parceiros", sec),
-      if (sec.canView(AppScreen.produto))
-        _menuItem(Icons.inventory_2, "Produtos", sec),
+        const _MoreMenuAction(Icons.account_balance_wallet, "Contas Receber"),
       if (sec.canView(AppScreen.dashboard))
-        _menuItem(Icons.bar_chart, "Dashboard", sec),
-      if (sec.canView(AppScreen.trading))
-        _menuItem(Icons.show_chart, "Trading", sec),
-      if (sec.canView(AppScreen.trading))
-        _menuItem(Icons.analytics, "Backtesting", sec),
-      _menuItem(Icons.point_of_sale, "PDV", sec),
-      _menuItem(Icons.settings_applications, "Config Fiscal", sec),
-      if (sec.canView(AppScreen.pedidos))
-        _menuItem(Icons.trending_up, "CRM/Funil", sec),
-      if (sec.canView(AppScreen.obrigacoesFiscais))
-        _menuItem(Icons.assignment_turned_in, "Obrigacoes", sec),
+        const _MoreMenuAction(Icons.bar_chart, "Dashboard"),
       if (sec.canView(AppScreen.contasBancarias))
-        _menuItem(Icons.account_balance, "Contas Bancarias", sec),
-      if (sec.canView(AppScreen.ponto))
-        _menuItem(Icons.access_alarm_rounded, "Bater Ponto", sec),
-      if (sec.canView(AppScreen.funcionarios))
-        _menuItem(Icons.badge, "Funcionários", sec),
-      _menuItem(Icons.exit_to_app, "Sair", sec),
-      _menuItem(Icons.arrow_back, "Voltar", sec),
+        const _MoreMenuAction(Icons.account_balance, "Contas Bancarias"),
+      if (sec.canView(AppScreen.parceiros))
+        const _MoreMenuAction(Icons.people, "Parceiros"),
+      if (sec.canView(AppScreen.mensalidades))
+        const _MoreMenuAction(Icons.receipt_long, "Mensalidades"),
+      const _MoreMenuAction(Icons.verified_user, "Alvarás"),
+      const _MoreMenuAction(Icons.exit_to_app, "Sair", isDestructive: true),
     ];
 
-    showGeneralDialog(
-      barrierLabel: "Menu",
-      barrierDismissible: true,
-      barrierColor: Colors.black54,
-      transitionDuration: const Duration(milliseconds: 250),
+    showModalBottomSheet(
       context: context,
-      pageBuilder: (_, __, ___) {
-        return Align(
-          alignment: Alignment.bottomCenter,
-          child: Material(
-            color: CustomColors().getLightGreenBackground(),
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
-            child: SafeArea(
-              top: false,
-              child: Container(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      "Mais Opções",
-                      style: TextStyle(
-                        fontSize: 22,
-                        fontWeight: FontWeight.bold,
-                        color: CustomColors().getDarkGreenBorder(),
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    Divider(
-                      color: CustomColors().getDarkGreenBorder(),
-                      thickness: 1.2,
-                    ),
-                    const SizedBox(height: 20),
-                    GridView.count(
-                      shrinkWrap: true,
-                      crossAxisCount: 3,
-                      crossAxisSpacing: 14,
-                      mainAxisSpacing: 14,
-                      physics: const NeverScrollableScrollPhysics(),
-                      childAspectRatio: 0.85,
-                      children: menuItems,
-                    ),
-                  ],
+      isScrollControlled: true,
+      useSafeArea: true,
+      backgroundColor: GridColors.card,
+      barrierColor: Colors.black.withValues(alpha: 0.45),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(8)),
+      ),
+      builder: (sheetContext) {
+        return Padding(
+          padding: const EdgeInsets.fromLTRB(16, 10, 16, 18),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Center(
+                child: Container(
+                  width: 44,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: GridColors.divider,
+                    borderRadius: BorderRadius.circular(99),
+                  ),
                 ),
               ),
-            ),
+              const SizedBox(height: 16),
+              Row(
+                children: [
+                  Container(
+                    width: 40,
+                    height: 40,
+                    decoration: const BoxDecoration(
+                      color: GridColors.secondarySoft,
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(
+                      Icons.apps_rounded,
+                      color: GridColors.secondary,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  const Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          "Mais opcoes",
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w800,
+                            color: GridColors.textSecondary,
+                          ),
+                        ),
+                        SizedBox(height: 2),
+                        Text(
+                          "Acesse os modulos do sistema",
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: GridColors.textMuted,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  IconButton(
+                    onPressed: () => Navigator.pop(sheetContext),
+                    icon: const Icon(Icons.close),
+                    color: GridColors.textMuted,
+                    tooltip: 'Fechar',
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              GridView.builder(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                itemCount: menuItems.length,
+                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: 3,
+                  crossAxisSpacing: 10,
+                  mainAxisSpacing: 10,
+                  childAspectRatio: 0.92,
+                ),
+                itemBuilder: (_, index) {
+                  final item = menuItems[index];
+                  return _menuItem(
+                    item.icon,
+                    item.title,
+                    sec,
+                    isDestructive: item.isDestructive,
+                  );
+                },
+              ),
+              const SizedBox(height: 12),
+              SizedBox(
+                width: double.infinity,
+                child: OutlinedButton.icon(
+                  onPressed: () => Navigator.pop(sheetContext),
+                  icon: const Icon(Icons.arrow_downward_rounded),
+                  label: const Text('Fechar menu'),
+                ),
+              ),
+            ],
           ),
-        );
-      },
-      transitionBuilder: (_, anim, __, child) {
-        return SlideTransition(
-          position: Tween(begin: const Offset(0, 1), end: Offset.zero)
-              .animate(CurvedAnimation(
-            parent: anim,
-            curve: Curves.fastOutSlowIn,
-          )),
-          child: FadeTransition(opacity: anim, child: child),
         );
       },
     );
   }
 
-  Widget _menuItem(IconData icon, String title, SecurityMatrix sec) {
-    return GestureDetector(
+  Widget _menuItem(
+    IconData icon,
+    String title,
+    SecurityMatrix sec, {
+    bool isDestructive = false,
+  }) {
+    final Color accent =
+        isDestructive ? GridColors.primary : GridColors.secondary;
+    final Color background =
+        isDestructive ? GridColors.primarySoft : GridColors.secondarySoft;
+
+    return InkWell(
       onTap: () => onMenuOptionSelected(title, sec),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: CustomColors().getDarkGreenBorder().withValues(alpha: 0.08),
-              shape: BoxShape.circle,
-            ),
-            child: Icon(
-              icon,
-              size: 32,
-              color: CustomColors().getDarkGreenBorder(),
-            ),
+      borderRadius: BorderRadius.circular(8),
+      child: Ink(
+        decoration: BoxDecoration(
+          color: GridColors.card,
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: GridColors.divider),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 10),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Container(
+                width: 44,
+                height: 44,
+                decoration: BoxDecoration(
+                  color: background,
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(icon, size: 24, color: accent),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                title,
+                textAlign: TextAlign.center,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  fontSize: 12,
+                  height: 1.15,
+                  color: accent,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ],
           ),
-          const SizedBox(height: 6),
-          Text(
-            title,
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              fontSize: 14,
-              color: CustomColors().getDarkGreenBorder(),
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-        ],
+        ),
       ),
     );
   }
+}
+
+class _MoreMenuAction {
+  final IconData icon;
+  final String title;
+  final bool isDestructive;
+
+  const _MoreMenuAction(
+    this.icon,
+    this.title, {
+    this.isDestructive = false,
+  });
 }

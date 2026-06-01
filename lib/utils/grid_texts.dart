@@ -5,11 +5,13 @@ class GridTexts {
       'Fechar a folha de $label? Esta ação não pode ser desfeita.';
   static String genericError(String error) => 'Erro: $error';
 
-  static const String appTitle = 'Task Manager';
-  static const String companyName = 'AppAcademia';
-  static const String appShortTitle = 'ABRACO\nCONTABILIDADE';
-  static const String footerCompany = 'ABRACO CONTABILIDADE';
-  static const String footerAddress = 'Rua Marques do Parana, 250 - Estados Unidos, Uberaba - MG';
+  static const String appTitle = 'Abraço Contabilidade';
+  static const String appShortTitle = 'ABRAÇO\nCONT';
+  static const String companyName = 'Abraço Contabilidade';
+  static const String companyTagline = 'Seu escritório contábil conectado.';
+  static const String footerCompany = 'ABRAÇO CONTABILIDADE';
+  static const String footerAddress =
+      'Rua Marques do Paraná, 250 - Estados Unidos, Uberaba - MG';
   static const String footerPhone = '(34) 3321-6689';
   static const String footerHours = 'Seg-Sex: 09:00 - 18:00';
   static const String downloadWindows = 'Download Windows';
@@ -26,7 +28,8 @@ class GridTexts {
   static const String forgotPassword = 'Esqueceu a senha?';
   static const String requestAccess = 'Solicitar acesso';
   static const String loginPopupTitle = 'Login';
-  static const String loginPopupInvalidCredentials = 'Senha ou usuário inválido';
+  static const String loginPopupInvalidCredentials =
+      'Senha ou usuário inválido';
   static const String loginPopupFillFields = 'Preencha os campos corretamente!';
   static const String loginPopupCreateUser = 'Criar novo usuário';
   static const String loginPopupEnter = 'Entrar';
@@ -68,7 +71,8 @@ class GridTexts {
   static const String update = 'Atualizar';
   static const String newLabel = 'Nova';
   static const String executeRule = 'Executar Régua';
-  static const String collectionRuleExecutedSuccess = 'Régua executada com sucesso';
+  static const String collectionRuleExecutedSuccess =
+      'Régua executada com sucesso';
   static const String invalidClientId = 'Informe um ID de cliente válido';
   static const String collectionRuleRemoved = 'Regra removida';
   static const String removeError = 'Erro ao remover';
@@ -80,7 +84,8 @@ class GridTexts {
   static const String resend = 'Reenviar';
   static const String resendSuccess = 'Reenviado com sucesso';
   static const String resendFailure = 'Falha ao reenviar';
-  static const String noContingencyQueueItem = 'Nenhum item na fila de contingência';
+  static const String noContingencyQueueItem =
+      'Nenhum item na fila de contingência';
   static const String noRejectionLogFound = 'Nenhum log de rejeição encontrado';
   static const String autoReconcile = 'Auto-conciliar';
   static const String autoReconciling = 'Auto-conciliando...';
@@ -98,11 +103,13 @@ class GridTexts {
   static const String nfseIdRequired = 'Informe o ID da NF-e';
   static const String loading = 'Carregando...';
   static const String loadHistory = 'Carregar Histórico';
-  static const String cancellationSuccess = 'Cancelamento realizado com sucesso';
+  static const String cancellationSuccess =
+      'Cancelamento realizado com sucesso';
   static const String cancellationError = 'Erro ao cancelar';
   static const String cceSuccess = 'CC-e enviada com sucesso';
   static const String cceError = 'Erro ao enviar CC-e';
-  static const String noHistoryFound = 'Nenhum histórico encontrado. Informe o ID da NF-e e clique em "Carregar Histórico".';
+  static const String noHistoryFound =
+      'Nenhum histórico encontrado. Informe o ID da NF-e e clique em "Carregar Histórico".';
   static const String error = 'Erro';
   static const String success = 'Sucesso';
   static const String timeAdjustmentTitle = 'Ajuste de Ponto';
@@ -134,11 +141,14 @@ class GridTexts {
   static const String addPunch = 'Adicionar batida';
   static const String saving = 'Salvando...';
   static const String manualAdjustmentReason = 'Ajuste manual via sistema';
-  static const String saveLicenseBeforePdf = 'Salve o alvará antes de anexar o PDF.';
+  static const String saveLicenseBeforePdf =
+      'Salve o alvará antes de anexar o PDF.';
   static const String emptyFile = 'Arquivo vazio.';
   static const String pdfUploadSuccess = 'PDF enviado com sucesso!';
-  static String pdfUploadError(int statusCode) => 'Erro ao enviar PDF ($statusCode).';
-  static const String noLicensePdfAttached = 'Nenhum PDF anexado a este alvará.';
+  static String pdfUploadError(int statusCode) =>
+      'Erro ao enviar PDF ($statusCode).';
+  static const String noLicensePdfAttached =
+      'Nenhum PDF anexado a este alvará.';
   static String licensePdfTitle(String description) => 'PDF — $description';
   static const String openPdf = 'Abrir PDF';
   static const String uploadPdf = 'Upload PDF';
@@ -175,7 +185,8 @@ class GridTexts {
   static const String orderDetailsTab = 'Detalhes do Pedido';
   static const String purchaseOrderId = 'Pedido de Compra ID';
   static const String purchaseOrderRequestId = 'ID do Pedido de Compra';
-  static const String noOrderIdProvided = 'Informe um ID de pedido para buscar.';
+  static const String noOrderIdProvided =
+      'Informe um ID de pedido para buscar.';
   static const String orderItems = 'Itens do Pedido';
   static const String supplier = 'Fornecedor';
   static const String product = 'Produto';
@@ -188,11 +199,13 @@ class GridTexts {
   static const String lowValue = 'Valor da Baixa';
   static const String lowDate = 'Data da Baixa';
   static const String enterLowValue = 'Informe o valor da baixa';
-  static const String valueMustBeGreaterThanZero = 'Valor deve ser maior que zero';
+  static const String valueMustBeGreaterThanZero =
+      'Valor deve ser maior que zero';
   static const String paymentMethod = 'Forma de Pagamento';
   static const String selectPaymentMethod = 'Selecione a forma de pagamento';
   static const String lowRegisteredSuccess = 'Baixa registrada com sucesso!';
-  static String lowRegisterError(Object? error) => 'Erro ao registrar baixa: $error';
+  static String lowRegisterError(Object? error) =>
+      'Erro ao registrar baixa: $error';
   static const String receiveAccountLow = 'Baixar Conta a Receber';
   static const String originalValue = 'Valor Original';
   static const String fineValue = 'Valor da Multa';
@@ -205,7 +218,8 @@ class GridTexts {
   static String purchaseOrderTitle(String value) => 'Pedido #$value';
   static String purchaseApprovalDone(bool approved) =>
       'Compra ${approved ? "aprovada" : "reprovada"} com sucesso!';
-  static const String purchaseApprovalRequested = 'Aprovação solicitada com sucesso!';
+  static const String purchaseApprovalRequested =
+      'Aprovação solicitada com sucesso!';
   static String accountLabel(String account) => 'Conta: $account';
   static const String justificationRequired = 'Justificativa *';
   static const String approve = 'Aprovar';
@@ -230,9 +244,12 @@ class GridTexts {
   static String accessKeyLabel(String chave) => 'Chave: $chave';
   static const String manifestationType = 'Tipo de Manifestação';
   static const String justificationOptional = 'Justificativa (opcional)';
-  static const String notPerformedJustificationHint = 'Justificativa obrigatória para "Não Realizada"';
-  static const String notPerformedJustificationRequired = 'Justificativa é obrigatória para Não Realizada';
-  static const String manifestationRegisteredSuccess = 'Manifestação registrada com sucesso';
+  static const String notPerformedJustificationHint =
+      'Justificativa obrigatória para "Não Realizada"';
+  static const String notPerformedJustificationRequired =
+      'Justificativa é obrigatória para Não Realizada';
+  static const String manifestationRegisteredSuccess =
+      'Manifestação registrada com sucesso';
   static const String pendingTab = 'Pendências';
   static const String pendingStatus = 'PENDENTE';
   static const String noPendingFound = 'Nenhuma pendência encontrada.';
@@ -258,7 +275,8 @@ class GridTexts {
   static const String installment = 'Parcelar';
   static const String recurrence = 'Recorrência';
   static const String renegotiate = 'Renegociar';
-  static String importCompletedCount(Object? count) => 'Importação concluída: $count registro(s)';
+  static String importCompletedCount(Object? count) =>
+      'Importação concluída: $count registro(s)';
   static const String protocol = 'Protocolo';
   static const String realized = 'Realizado';
   static const String confirmDelete = 'Confirmar exclusão';
@@ -284,10 +302,13 @@ class GridTexts {
   static const String allItemsLoaded = 'Todos os itens foram carregados';
   static const String closeTicket = 'Fechar Chamado';
   static const String solution = 'Solução';
-  static const String solutionPrompt = 'Informe a solução aplicada para finalizar este chamado:';
-  static const String solutionHint = 'Descreva detalhadamente a solução aplicada...';
+  static const String solutionPrompt =
+      'Informe a solução aplicada para finalizar este chamado:';
+  static const String solutionHint =
+      'Descreva detalhadamente a solução aplicada...';
   static const String solutionRequired = 'Por favor, informe a solução';
-  static const String solutionMinLength = 'A solução deve ter pelo menos 15 caracteres';
+  static const String solutionMinLength =
+      'A solução deve ter pelo menos 15 caracteres';
   static const String closingTicket = 'Fechando chamado...';
   static const String ticketClosedSuccess = 'Chamado fechado com sucesso!';
   static const String closeTicketError = 'Erro ao fechar chamado';
@@ -295,30 +316,41 @@ class GridTexts {
   static const String systemSettingsTitle = 'Configurações do Sistema';
   static const String screenGeneration = 'Geração de Telas';
   static const String generateScreensFullReset = 'Gerar Telas (Full Reset)';
-  static const String generateScreensFullResetDesc = 'Limpa e recria todas as telas. POST /api/telas/generate?forceUpdate=true&fullReset=true';
+  static const String generateScreensFullResetDesc =
+      'Limpa e recria todas as telas. POST /api/telas/generate?forceUpdate=true&fullReset=true';
   static const String updateScreensForce = 'Atualizar Telas (Force Update)';
-  static const String updateScreensForceDesc = 'Atualiza telas existentes. POST /api/telas/generate?forceUpdate=true';
+  static const String updateScreensForceDesc =
+      'Atualiza telas existentes. POST /api/telas/generate?forceUpdate=true';
   static const String regenerateScreensAdmin = 'Regenerar Telas (Admin)';
-  static const String regenerateScreensAdminDesc = 'Limpa controle de versão e regenera. POST /api/admin/regenerar-telas';
+  static const String regenerateScreensAdminDesc =
+      'Limpa controle de versão e regenera. POST /api/admin/regenerar-telas';
   static const String clearScreensCache = 'Limpar Cache de Telas (Local)';
-  static const String clearScreensCacheDesc = 'Remove o cache local do Flutter. As telas serão recarregadas da API no próximo acesso.';
+  static const String clearScreensCacheDesc =
+      'Remove o cache local do Flutter. As telas serão recarregadas da API no próximo acesso.';
   static const String mockTestData = 'Dados de Teste (Mock)';
   static const String news = 'Notícias';
   static const String clearAndDownloadNews = 'Limpar e Baixar Notícias';
-  static const String clearAndDownloadNewsDesc = 'Apaga todas as notícias e baixa novamente de todas as fontes';
+  static const String clearAndDownloadNewsDesc =
+      'Apaga todas as notícias e baixa novamente de todas as fontes';
   static const String deleteAllNews = 'Apagar Todas as Notícias';
-  static const String deleteAllNewsDesc = 'Remove todas as notícias e imagens do banco (sem baixar novamente)';
+  static const String deleteAllNewsDesc =
+      'Remove todas as notícias e imagens do banco (sem baixar novamente)';
   static const String database = 'Banco de Dados';
   static const String databaseStatus = 'Status do Banco';
-  static const String databaseStatusDesc = 'Verifica estado das colunas e sequências. GET /api/admin/db-status';
+  static const String databaseStatusDesc =
+      'Verifica estado das colunas e sequências. GET /api/admin/db-status';
   static const String fixDatabase = 'Corrigir Banco (Fix DB)';
-  static const String fixDatabaseDesc = 'Aplica correções de colunas, FKs e sequências. POST /api/admin/fix-db';
+  static const String fixDatabaseDesc =
+      'Aplica correções de colunas, FKs e sequências. POST /api/admin/fix-db';
   static const String resetDatabase = 'Resetar Banco de Dados (Zerar Tudo)';
-  static const String resetDatabaseDesc = 'TRUNCA TODAS as tabelas da aplicação. Todos os dados serão PERMANENTEMENTE EXCLUÍDOS. POST /api/admin/reset-database';
+  static const String resetDatabaseDesc =
+      'TRUNCA TODAS as tabelas da aplicação. Todos os dados serão PERMANENTEMENTE EXCLUÍDOS. POST /api/admin/reset-database';
   static const String execute = 'Executar';
   static const String generateMockData = 'Gerar Dados Mock';
-  static const String generateMockDataDesc = 'Popula: Parceiros, Funcionários, Pontos, NF-e, Chamados, Contas, Comunicados';
-  static const String companyIdOptionalCreate = 'Empresa ID (vazio = criar nova)';
+  static const String generateMockDataDesc =
+      'Popula: Parceiros, Funcionários, Pontos, NF-e, Chamados, Contas, Comunicados';
+  static const String companyIdOptionalCreate =
+      'Empresa ID (vazio = criar nova)';
   static const String baseQuantity = 'Quantidade base';
   static const String historyMonths = 'Meses de histórico';
   static const String generating = 'Gerando...';
@@ -327,25 +359,35 @@ class GridTexts {
   static const String copy = 'Copiar';
   static const String copied = 'Copiado';
   static const String deleteMockCompany = 'Apagar Empresa Mock';
-  static const String deleteMockCompanyDesc = 'Remove TODOS os dados de uma empresa (parceiros, logins, NF-e, chamados, contas, etc)';
+  static const String deleteMockCompanyDesc =
+      'Remove TODOS os dados de uma empresa (parceiros, logins, NF-e, chamados, contas, etc)';
   static const String companyIdToDelete = 'ID da Empresa para apagar';
   static const String deleting = 'Apagando...';
   static const String delete = 'Apagar';
-  static const String irreversibleWarning = 'ATENÇÃO: Esta operação é IRREVERSÍVEL!';
-  static const String permanentDeleteWarning = 'Todos os dados serão PERMANENTEMENTE EXCLUÍDOS:';
-  static const String permanentDeleteItemCompanies = '- Empresas, Parceiros, Logins';
-  static const String permanentDeleteItemFinance = '- Contas a Pagar e a Receber';
+  static const String irreversibleWarning =
+      'ATENÇÃO: Esta operação é IRREVERSÍVEL!';
+  static const String permanentDeleteWarning =
+      'Todos os dados serão PERMANENTEMENTE EXCLUÍDOS:';
+  static const String permanentDeleteItemCompanies =
+      '- Empresas, Parceiros, Logins';
+  static const String permanentDeleteItemFinance =
+      '- Contas a Pagar e a Receber';
   static const String permanentDeleteItemDocs = '- NF-e, Chamados, Comunicados';
-  static const String permanentDeleteItemAccounting = '- Lançamentos Contábeis, Ponto, Chat';
-  static const String permanentDeleteItemOthers = '- E todos os demais registros';
-  static const String controlTablesPreserved = 'As tabelas de controle (Flyway, Telas) serão preservadas.';
-  static const String typeResetToConfirm = 'Digite "RESET" no campo abaixo para confirmar:';
+  static const String permanentDeleteItemAccounting =
+      '- Lançamentos Contábeis, Ponto, Chat';
+  static const String permanentDeleteItemOthers =
+      '- E todos os demais registros';
+  static const String controlTablesPreserved =
+      'As tabelas de controle (Flyway, Telas) serão preservadas.';
+  static const String typeResetToConfirm =
+      'Digite "RESET" no campo abaixo para confirmar:';
   static const String confirmReset = 'Confirmar Reset';
   static const String neverExecuted = 'Nunca executado';
   static const String jobsControlTitle = 'Controle de Jobs';
   static const String copyAll = 'Copiar tudo';
   static String jobStarted(String name) => 'Job $name iniciado';
-  static String lastExecution(String value, Object? durationMs) => 'Última: $value${durationMs != null ? "  -  ${durationMs}ms" : ""}';
+  static String lastExecution(String value, Object? durationMs) =>
+      'Última: $value${durationMs != null ? "  -  ${durationMs}ms" : ""}';
   static const String jobHistoryTooltip = 'Histórico';
   static const String executeNow = 'Executar agora';
   static const String hideError = 'Ocultar erro';
@@ -354,7 +396,8 @@ class GridTexts {
   static const String noHistoryAvailable = 'Nenhum histórico disponível.';
   static const String copyError = 'Copiar erro';
   static const String copyResult = 'Copiar resultado';
-  static const String noRecordImported = 'Nenhum registro importado — verifique o mapeamento';
+  static const String noRecordImported =
+      'Nenhum registro importado — verifique o mapeamento';
   static const String importCompleted = 'Importação concluída';
   static const String totalLabel = 'Total';
   static const String importedLabel = 'Importados';
@@ -362,11 +405,15 @@ class GridTexts {
   static const String ignoredLabel = 'Ignorados';
   static const String newPartnersLabel = 'Parceiros novos';
   static const String newPaymentFormsLabel = 'Formas novas';
-  static String autoPartnersCreated(int count) => '$count parceiro(s) criado(s) automaticamente — verifique e complete o cadastro';
-  static String autoPaymentFormsCreated(int count) => '$count forma(s) de pagamento criada(s) automaticamente — verifique e complete o cadastro';
-  static String csvColumnsRead(String columns) => 'Colunas lidas do CSV: $columns';
+  static String autoPartnersCreated(int count) =>
+      '$count parceiro(s) criado(s) automaticamente — verifique e complete o cadastro';
+  static String autoPaymentFormsCreated(int count) =>
+      '$count forma(s) de pagamento criada(s) automaticamente — verifique e complete o cadastro';
+  static String csvColumnsRead(String columns) =>
+      'Colunas lidas do CSV: $columns';
   static const String errorIgnoredDetails = 'Detalhes de erros e ignorados';
-  static String showingFirst20(int count) => '(mostrando primeiras 20 de $count)';
+  static String showingFirst20(int count) =>
+      '(mostrando primeiras 20 de $count)';
   static String copyAllCount(int count) => 'Copiar todos ($count)';
   static const String nfeExitCreateTitle = 'Nova NF-e Saída';
   static const String saveNfe = 'Salvar NF-e';
@@ -396,61 +443,84 @@ class GridTexts {
   static const String nfeCreatedSuccess = 'NF-e criada com sucesso!';
   static const String createNfeError = 'Erro ao criar NF-e';
   static const String selectOperationType = 'Selecione um Tipo de Operação';
-  static const String nfceNumberInvalidationTitle = 'Inutilização de Numeração NFC-e';
+  static const String nfceNumberInvalidationTitle =
+      'Inutilização de Numeração NFC-e';
   static const String confirmInvalidationTitle = 'Confirmar inutilização';
-  static const String invalidationIrreversibleNotice = 'Esta operação é irreversível.';
-  static const String invalidationWarningBanner = 'A inutilização é irreversível. Use apenas para números que não foram emitidos e não serão utilizados.';
-  static String confirmInvalidationMessage(Object? start, Object? end, Object? series, Object? uf, Object? environment) => 'Inutilizar números $start a $end (série $series) da UF $uf em $environment?';
-  static const String invalidSeriesAndNumbers = 'Série e números devem ser inteiros válidos.';
-  static const String finalNumberMustBeGreaterOrEqual = 'Número final deve ser maior ou igual ao inicial.';
+  static const String invalidationIrreversibleNotice =
+      'Esta operação é irreversível.';
+  static const String invalidationWarningBanner =
+      'A inutilização é irreversível. Use apenas para números que não foram emitidos e não serão utilizados.';
+  static String confirmInvalidationMessage(Object? start, Object? end,
+          Object? series, Object? uf, Object? environment) =>
+      'Inutilizar números $start a $end (série $series) da UF $uf em $environment?';
+  static const String invalidSeriesAndNumbers =
+      'Série e números devem ser inteiros válidos.';
+  static const String finalNumberMustBeGreaterOrEqual =
+      'Número final deve ser maior ou igual ao inicial.';
   static const String uf = 'UF';
   static const String informSeries = 'Informe a série';
   static const String seriesMustBeNumber = 'Série deve ser número';
   static const String initialNumber = 'Número inicial';
   static const String finalNumber = 'Número final';
   static const String invalidValue = 'Inválido';
-  static const String invalidationReasonHelper = 'Descreva o motivo da inutilização com no mínimo 15 caracteres';
-  static String justificationMinLength(int min) => 'Justificativa deve ter no mínimo $min caracteres';
+  static const String invalidationReasonHelper =
+      'Descreva o motivo da inutilização com no mínimo 15 caracteres';
+  static String justificationMinLength(int min) =>
+      'Justificativa deve ter no mínimo $min caracteres';
   static const String invalidating = 'Inutilizando...';
   static const String invalidateNumbering = 'Inutilizar numeração';
-  static const String rangeInvalidationSuccess = 'Faixa encaminhada para inutilização com sucesso. Consulte o histórico fiscal no backend para o protocolo definitivo.';
-  static String invalidationError(Object? error) => 'Erro ao inutilizar: $error';
+  static const String rangeInvalidationSuccess =
+      'Faixa encaminhada para inutilização com sucesso. Consulte o histórico fiscal no backend para o protocolo definitivo.';
+  static String invalidationError(Object? error) =>
+      'Erro ao inutilizar: $error';
   static const String cancelNfceTitle = 'Cancelar NFC-e';
-  static const String companyNotIdentifiedForCancellation = 'Empresa não identificada para o cancelamento.';
+  static const String companyNotIdentifiedForCancellation =
+      'Empresa não identificada para o cancelamento.';
   static const String confirmCancellationTitle = 'Confirmar cancelamento';
-  static const String confirmCancellationMessage = 'Essa ação é irreversível.\nDeseja realmente cancelar esta NFC-e?';
+  static const String confirmCancellationMessage =
+      'Essa ação é irreversível.\nDeseja realmente cancelar esta NFC-e?';
   static const String yesCancel = 'Sim, cancelar';
   static const String nfceCancelledSuccess = 'NFC-e cancelada com sucesso.';
   static String cancelNfceError(Object? error) => 'Erro ao cancelar: $error';
   static String unexpectedError(Object? error) => 'Erro inesperado: $error';
-  static const String cancellationWindowNotice = 'Cancelamento permitido por até 30 minutos após a autorização';
-  static const String cancellationDeadlineExpired = 'Prazo expirado ou data de autorização indisponível. Não é possível cancelar esta NFC-e pelo app neste momento.';
+  static const String cancellationWindowNotice =
+      'Cancelamento permitido por até 30 minutos após a autorização';
+  static const String cancellationDeadlineExpired =
+      'Prazo expirado ou data de autorização indisponível. Não é possível cancelar esta NFC-e pelo app neste momento.';
   static String remainingTime(String value) => 'Tempo restante: $value';
   static const String accessKeyCaption = 'Chave de acesso:';
   static const String sefazCodeLabel = 'Código SEFAZ:';
   static const String receivedAtLabel = 'Recebido em:';
-  static const String cancellationJustificationLabel = 'Justificativa do cancelamento *';
+  static const String cancellationJustificationLabel =
+      'Justificativa do cancelamento *';
   static const String minimum15Characters = 'Mínimo de 15 caracteres';
-  static String informAtLeastCharacters(int min) => 'Informe pelo menos $min caracteres.';
+  static String informAtLeastCharacters(int min) =>
+      'Informe pelo menos $min caracteres.';
   static const String confirmCancellationButton = 'Confirmar cancelamento';
   static const String contingencyModeTitle = 'Modo Contingência';
-  static const String contingencySaleSavedTitle = 'SEFAZ indisponível — venda salva em contingência';
-  static const String contingencyFlowNotice = 'O fluxo local já cobre a fila de contingência. O registro automático em EPEC ainda depende da implementação backend e permanece como pendência técnica.';
+  static const String contingencySaleSavedTitle =
+      'SEFAZ indisponível — venda salva em contingência';
+  static const String contingencyFlowNotice =
+      'O fluxo local já cobre a fila de contingência. O registro automático em EPEC ainda depende da implementação backend e permanece como pendência técnica.';
   static const String savingSaleLocally = 'Salvando venda localmente...';
   static String pendingSalesCount(int count) => 'Vendas pendentes: $count';
   static const String regularize = 'Regularizar';
   static const String noPendingSales = 'Nenhuma venda pendente.';
-  static String saleRegularizedCount(int count) => '$count venda(s) regularizada(s) com sucesso.';
-  static const String noSaleCouldBeRegularized = 'Nenhuma venda pôde ser regularizada. A SEFAZ ou o backend de contingência ainda estão indisponíveis.';
+  static String saleRegularizedCount(int count) =>
+      '$count venda(s) regularizada(s) com sucesso.';
+  static const String noSaleCouldBeRegularized =
+      'Nenhuma venda pôde ser regularizada. A SEFAZ ou o backend de contingência ainda estão indisponíveis.';
   static const String contingencyStatusAuthorized = 'Autorizada';
   static const String contingencyStatusRejected = 'Rejeitada';
   static const String contingencyStatusMode = 'Contingência';
   static const String contingencyStatusPendingEpec = 'EPEC pendente';
-  static String saleWithItemsAndTotal(int items, String total) => 'Venda com $items item(ns) • $currencySymbol $total';
+  static String saleWithItemsAndTotal(int items, String total) =>
+      'Venda com $items item(ns) • $currencySymbol $total';
   static const String newSale = 'Nova venda';
   static const String nfceAuthorizedTitle = 'NFC-e Autorizada';
   static const String fiscalEventsAvailable = 'Eventos fiscais disponíveis';
-  static const String authorizedFiscalEventsNotice = 'O cancelamento pode ser solicitado pelo app após a autorização, dentro do prazo fiscal permitido. Inutilização e contingência continuam disponíveis nos fluxos próprios.';
+  static const String authorizedFiscalEventsNotice =
+      'O cancelamento pode ser solicitado pelo app após a autorização, dentro do prazo fiscal permitido. Inutilização e contingência continuam disponíveis nos fluxos próprios.';
   static const String cancelNfce = 'Cancelar NFC-e';
   static const String nfceRejectedTitle = 'NFC-e Rejeitada';
   static const String rejectionReasonLabel = 'Motivo da rejeição:';
@@ -579,19 +649,46 @@ class GridTexts {
   static const String concludeReturnQuestion = 'Deseja concluir esta devolução?';
   static const String cancelReturnTitle = 'Cancelar Devolução';
   static const String cancelReturnQuestion = 'Deseja cancelar esta devolução?';
+  static const String noApprovedBudgetAvailable = 'Nenhum orçamento aprovado disponível';
+  static const String orderCreatedFromBudgetSuccess = 'Pedido criado a partir do orçamento!';
+  static const String orderCreateError = 'Erro ao criar pedido';
+  static const String createFromBudget = 'Criar de Orçamento';
+  static const String newOrder = 'Novo Pedido';
+  static const String noSalesOrderFound = 'Nenhum pedido de venda encontrado';
+  static const String issueDateLabel = 'Data Emissão';
+  static const String source = 'Origem';
+  static const String viewHistory = 'Histórico';
+  static const String approveOrderTitle = 'Aprovar Pedido';
+  static const String approveOrderQuestion = 'Deseja aprovar este pedido?';
+  static const String rejectOrderTitle = 'Rejeitar Pedido';
+  static const String rejectOrderQuestion = 'Deseja rejeitar este pedido?';
+  static const String partialBilling = 'Faturar Parcial';
+  static const String totalBilling = 'Faturar Total';
+  static const String totalBillingQuestion = 'Deseja faturar totalmente este pedido?';
+  static const String cancelOrderTitle = 'Cancelar Pedido';
+  static const String cancelOrderQuestion = 'Deseja cancelar este pedido?';
+  static const String selectBudget = 'Selecionar Orçamento';
+  static const String budgetOrigin = 'Orçamento';
+  static const String directOrigin = 'Direto';
+  static String currencyValueRaw(num value) => '$currencySymbol ${value.toStringAsFixed(2)}';
+  static String budgetPickerLabel(Object? number, Object? customerName, num total) => '${number ?? '#'} - ${customerName ?? ''} - ${currencyValueRaw(total)}';
   static const String saleReturnType = 'Devolução de Venda';
   static const String purchaseReturnType = 'Devolução de Compra';
   static String completedAction(String title) => '$title concluído!';
   static String actionFailure(String title) => 'Erro ao $title';
   static String errorsCopied(int count) => '$count erros copiados';
-  static String resultSummary(int total, int success, int errors, int ignored, int newPartners, int newPaymentForms) =>
+  static String resultSummary(int total, int success, int errors, int ignored,
+          int newPartners, int newPaymentForms) =>
       'Total: $total | Sucesso: $success | Erros: $errors | Ignorados: $ignored${newPartners > 0 ? " | Parceiros novos: $newPartners" : ""}${newPaymentForms > 0 ? " | Formas novas: $newPaymentForms" : ""}';
   static String linePrefix(Object? line) => 'Linha $line: ';
-  static String lineStatusMessage(Object? line, Object? status, Object? message) => 'Linha $line [$status]: $message';
+  static String lineStatusMessage(
+          Object? line, Object? status, Object? message) =>
+      'Linha $line [$status]: $message';
   static const String errorTitle = 'Erro';
   static const String csvImportTitle = 'Importação CSV';
   static const String importDestination = 'Destino da Importação';
-  static const String importDestinationDesc = 'Selecione a empresa e/ou parceiro para os lançamentos importados. Se já estiver definido pelo login, o campo fica bloqueado.';
+  static const String importDestinationDesc =
+      'Selecione a empresa e/ou parceiro para os lançamentos importados. Se já estiver definido pelo login, o campo fica bloqueado.';
   static String companyById(String id) => 'Empresa #$id';
   static const String companyLabel = 'Empresa';
   static const String fromLogin = 'do login';
@@ -604,20 +701,28 @@ class GridTexts {
   static const String noneOptional = 'Nenhum (opcional)';
   static const String selectCsv = 'Selecionar CSV';
   static const String noFileSelected = 'Nenhum arquivo selecionado';
-  static const String detectedColumnsUseAsDescription = 'Colunas detectadas — clique para usar como Descrição:';
-  static String useColumnAsDescription(String col) => 'Usar "$col" como coluna de Descrição';
-  static String columnSetAsDescription(String col) => '"$col" definido como coluna de Descrição';
+  static const String detectedColumnsUseAsDescription =
+      'Colunas detectadas — clique para usar como Descrição:';
+  static String useColumnAsDescription(String col) =>
+      'Usar "$col" como coluna de Descrição';
+  static String columnSetAsDescription(String col) =>
+      '"$col" definido como coluna de Descrição';
   static const String csvColumnMapping = 'Mapeamento de colunas do CSV';
-  static const String mappingInstruction = 'Informe o nome exato da coluna no seu CSV para cada campo. Use os chips acima para preencher rapidamente.';
+  static const String mappingInstruction =
+      'Informe o nome exato da coluna no seu CSV para cada campo. Use os chips acima para preencher rapidamente.';
   static const String doNotImport = '— não importar —';
   static const String importing = 'Importando...';
   static const String importAction = 'Importar';
   static const String importAccountsPayable = 'Importar Contas a Pagar';
-  static const String importAccountsPayableDesc = 'Importa lançamentos de CP a partir de CSV. Cria Parceiros e Formas de Pagamento automaticamente.';
+  static const String importAccountsPayableDesc =
+      'Importa lançamentos de CP a partir de CSV. Cria Parceiros e Formas de Pagamento automaticamente.';
   static const String importAccountsReceivable = 'Importar Contas a Receber';
-  static const String importAccountsReceivableDesc = 'Importa lançamentos de CR a partir de CSV. Cria Parceiros e Formas de Pagamento automaticamente.';
+  static const String importAccountsReceivableDesc =
+      'Importa lançamentos de CR a partir de CSV. Cria Parceiros e Formas de Pagamento automaticamente.';
   static const String upsertMode = 'Modo: Inserir + Atualizar (Upsert)';
   static const String insertOnlyMode = 'Modo: Apenas Inserir';
-  static const String upsertModeDesc = 'Se o Número de Nota já existe na empresa, atualiza o registro. Novos são inseridos.';
-  static const String insertOnlyModeDesc = 'Sempre insere novos registros. Reimportar pode duplicar.';
+  static const String upsertModeDesc =
+      'Se o Número de Nota já existe na empresa, atualiza o registro. Novos são inseridos.';
+  static const String insertOnlyModeDesc =
+      'Sempre insere novos registros. Reimportar pode duplicar.';
 }

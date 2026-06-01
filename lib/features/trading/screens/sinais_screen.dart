@@ -13,12 +13,29 @@ class _SinaisScreenState extends State<SinaisScreen> {
   final _repo = TradingRepository();
   List<TradingSignal> _sinais = [];
   bool _loading = true;
+  bool _analisando = false;
   String? _error;
 
   @override
   void initState() {
     super.initState();
     _load();
+  }
+
+  Future<void> _analisar() async {
+    setState(() => _analisando = true);
+    try {
+      await _repo.analyzeWatchlist();
+      await _load();
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Erro ao analisar: $e'), backgroundColor: Colors.red),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _analisando = false);
+    }
   }
 
   Future<void> _load() async {
@@ -44,6 +61,18 @@ class _SinaisScreenState extends State<SinaisScreen> {
         backgroundColor: GridColors.primary,
         foregroundColor: Colors.white,
         actions: [
+          if (_analisando)
+            const Padding(
+              padding: EdgeInsets.all(14),
+              child: SizedBox(width: 20, height: 20,
+                  child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2)),
+            )
+          else
+            IconButton(
+              icon: const Icon(Icons.auto_graph),
+              tooltip: 'Analisar watchlist agora',
+              onPressed: _analisar,
+            ),
           IconButton(icon: const Icon(Icons.refresh), onPressed: _load),
         ],
       ),
@@ -73,10 +102,24 @@ class _SinaisScreenState extends State<SinaisScreen> {
                   ),
                 )
               : _sinais.isEmpty
-                  ? const Center(
-                      child: Text('Nenhum sinal disponível',
-                          style: TextStyle(
-                              color: GridColors.divider, fontSize: 16)))
+                  ? Center(
+                      child: Column(mainAxisSize: MainAxisSize.min, children: [
+                        const Icon(Icons.bar_chart, size: 64, color: GridColors.divider),
+                        const SizedBox(height: 12),
+                        const Text('Nenhum sinal gerado ainda',
+                            style: TextStyle(color: GridColors.divider, fontSize: 16)),
+                        const SizedBox(height: 8),
+                        const Text('Adicione ativos à watchlist e clique em Analisar.',
+                            style: TextStyle(color: Colors.grey, fontSize: 13)),
+                        const SizedBox(height: 20),
+                        ElevatedButton.icon(
+                          onPressed: _analisando ? null : _analisar,
+                          style: ElevatedButton.styleFrom(backgroundColor: GridColors.primary),
+                          icon: const Icon(Icons.auto_graph, color: Colors.white),
+                          label: const Text('Analisar Agora', style: TextStyle(color: Colors.white)),
+                        ),
+                      ]),
+                    )
                   : RefreshIndicator(
                       color: GridColors.primary,
                       onRefresh: _load,

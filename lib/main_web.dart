@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:intl/date_symbol_data_local.dart';
 import 'package:task_manager_flutter/web/screens/splash_screens.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await initializeDateFormatting('pt_BR', null);
   runApp(const TaskManagerWebApp());
 }
 
@@ -12,7 +15,7 @@ class TaskManagerWebApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return const MaterialApp(
       debugShowCheckedModeBanner: false,
-      title: 'Task Manager Web',
+      title: 'Abraço Contabilidade',
       home: WebSplashScreen(),
     );
   }

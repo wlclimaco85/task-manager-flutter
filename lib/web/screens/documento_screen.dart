@@ -40,6 +40,312 @@ class _MonthSummary {
   });
 }
 
+class _FinancialItems {
+  final List<Map<String, dynamic>> pagar;
+  final List<Map<String, dynamic>> receber;
+  final List<Map<String, dynamic>> unknown;
+
+  const _FinancialItems({
+    this.pagar = const [],
+    this.receber = const [],
+    this.unknown = const [],
+  });
+
+  List<Map<String, dynamic>> get all => [...pagar, ...receber, ...unknown];
+
+  List<Map<String, dynamic>> byTipo(String tipo) {
+    final upper = tipo.toUpperCase();
+    if (upper == 'PAGAR') return pagar.isNotEmpty ? pagar : unknown;
+    if (upper == 'RECEBER') return receber.isNotEmpty ? receber : unknown;
+    return all;
+  }
+}
+
+class _MiniWeekday extends StatelessWidget {
+  final String label;
+
+  const _MiniWeekday(this.label);
+
+  @override
+  Widget build(BuildContext context) {
+    return Expanded(
+      child: Center(
+        child: Text(
+          label,
+          style: const TextStyle(
+            color: GridColors.textMuted,
+            fontSize: 8,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// ─── Parsing functions (top-level) ────────────────────────────────────────────
+
+_FinancialItems _parseFinancialGroups(dynamic body) {
+  try {
+    dynamic cursor = body;
+    while (cursor is Map && cursor.containsKey('data')) {
+      cursor = cursor['data'];
+    }
+
+    final pagar = <Map<String, dynamic>>[];
+    final receber = <Map<String, dynamic>>[];
+    final unknown = <Map<String, dynamic>>[];
+
+    if (cursor is Map) {
+      for (final key in const [
+        'contasPagar',
+        'contasAPagar',
+        'contas_a_pagar',
+        'pagar',
+        'aPagar',
+        'payables',
+      ]) {
+        pagar.addAll(_collectFinancialMaps(cursor[key], tipo: 'PAGAR'));
+      }
+      for (final key in const [
+        'contasReceber',
+        'contasAReceber',
+        'contas_a_receber',
+        'receber',
+        'aReceber',
+        'receivables',
+      ]) {
+        receber.addAll(_collectFinancialMaps(cursor[key], tipo: 'RECEBER'));
+      }
+      if (pagar.isNotEmpty || receber.isNotEmpty) {
+        return _FinancialItems(pagar: pagar, receber: receber);
+      }
+
+      for (final key in const [
+        'dados',
+        'content',
+        'items',
+        'results',
+        'lista'
+      ]) {
+        final value = cursor[key];
+        if (value is List) {
+          unknown.addAll(_collectFinancialMaps(value));
+          break;
+        } else if (value is Map) {
+          final nested = _parseFinancialGroups(value);
+          if (nested.all.isNotEmpty) return nested;
+        }
+      }
+    }
+    if (cursor is List) {
+      unknown.addAll(_collectFinancialMaps(cursor));
+    }
+
+    if (unknown.isNotEmpty) {
+      return _splitFinancialItems(unknown);
+    }
+  } catch (_) {}
+  return const _FinancialItems();
+}
+
+List<Map<String, dynamic>> _collectFinancialMaps(dynamic value,
+    {String? tipo}) {
+  final result = <Map<String, dynamic>>[];
+  if (value is List) {
+    for (final item in value.whereType<Map>()) {
+      final map = Map<String, dynamic>.from(item);
+      if (tipo != null && !_hasTipo(map)) {
+        map['_calendarioTipo'] = tipo;
+      }
+      result.add(map);
+    }
+  } else if (value is Map) {
+    for (final key in const ['dados', 'content', 'items', 'results', 'lista']) {
+      result.addAll(_collectFinancialMaps(value[key], tipo: tipo));
+    }
+    for (final key in const ['abertas', 'baixadas', 'pagas', 'recebidas']) {
+      result.addAll(_collectFinancialMaps(value[key], tipo: tipo));
+    }
+  }
+  return result;
+}
+
+_FinancialItems _splitFinancialItems(List<Map<String, dynamic>> items) {
+  final pagar = <Map<String, dynamic>>[];
+  final receber = <Map<String, dynamic>>[];
+  final unknown = <Map<String, dynamic>>[];
+
+  for (final item in items) {
+    if (_isTipo(item, 'PAGAR')) {
+      pagar.add(item);
+    } else if (_isTipo(item, 'RECEBER')) {
+      receber.add(item);
+    } else {
+      unknown.add(item);
+    }
+  }
+
+  return _FinancialItems(pagar: pagar, receber: receber, unknown: unknown);
+}
+
+String _stringValue(Map<String, dynamic> item, List<String> keys) {
+  for (final key in keys) {
+    final value = item[key];
+    if (value == null) continue;
+    final text = value.toString().trim();
+    if (text.isNotEmpty && text != 'null') return text;
+  }
+  return '';
+}
+
+Map<String, dynamic>? _mapValue(Map<String, dynamic> item, List<String> keys) {
+  for (final key in keys) {
+    final value = item[key];
+    if (value is Map) return Map<String, dynamic>.from(value);
+  }
+  return null;
+}
+
+DateTime? _parseFinancialDate(String value) {
+  if (value.isEmpty) return null;
+  final iso = value.length >= 10 ? value.substring(0, 10) : value;
+  final parsedIso = DateTime.tryParse(iso);
+  if (parsedIso != null) return parsedIso;
+
+  final brMatch = RegExp(r'^(\d{2})/(\d{2})/(\d{4})').firstMatch(value);
+  if (brMatch != null) {
+    return DateTime.tryParse(
+      '${brMatch.group(3)}-${brMatch.group(2)}-${brMatch.group(1)}',
+    );
+  }
+  return null;
+}
+
+double _moneyValue(Map<String, dynamic> item, String key) {
+  final value = item[key] ??
+      item['valorOriginal'] ??
+      item['valorTotal'] ??
+      item['valorBaixa'] ??
+      item['amount'];
+  if (value is num) return value.toDouble();
+  if (value is String) {
+    final normalized = value.contains(',')
+        ? value
+            .replaceAll('R\$', '')
+            .replaceAll(' ', '')
+            .replaceAll('.', '')
+            .replaceAll(',', '.')
+        : value.replaceAll('R\$', '').replaceAll(' ', '');
+    return double.tryParse(normalized) ?? 0;
+  }
+  return 0;
+}
+
+String _statusValue(Map<String, dynamic> item) {
+  final value = item['status'] ?? item['situacao'];
+  if (value is num) {
+    switch (value.toInt()) {
+      case 1:
+        return 'BAIXADA';
+      case 2:
+        return 'CANCELADA';
+      default:
+        return 'ABERTA';
+    }
+  }
+  final text = value?.toString().trim().toUpperCase() ?? '';
+  switch (text) {
+    case '1':
+    case 'PAGO':
+    case 'PAGA':
+    case 'RECEBIDO':
+    case 'RECEBIDA':
+    case 'LIQUIDADO':
+    case 'LIQUIDADA':
+      return 'BAIXADA';
+    case '2':
+    case 'CANCELADO':
+    case 'CANCELADA':
+      return 'CANCELADA';
+    case '0':
+    case 'PENDENTE':
+    case 'VENCIDA':
+    case 'ABERTO':
+    case 'ABERTA':
+      return 'ABERTA';
+    default:
+      return text;
+  }
+}
+
+bool _isBaixada(Map<String, dynamic> item) => _statusValue(item) == 'BAIXADA';
+
+bool _isCancelada(Map<String, dynamic> item) =>
+    _statusValue(item) == 'CANCELADA';
+
+bool _hasDocumentoFiscal(Map<String, dynamic> item) {
+  final value = item['documentoFiscal'] ?? item['documento_fiscal'];
+  return value == true || value.toString().toLowerCase() == 'true';
+}
+
+bool _hasTipo(Map<String, dynamic> item) {
+  return _stringValue(item, const [
+    '_calendarioTipo',
+    'tipo',
+    'tipoConta',
+    'tipo_conta',
+    'natureza',
+    'origem',
+    'categoria',
+  ]).isNotEmpty;
+}
+
+bool _isTipo(Map<String, dynamic> item, String tipo) {
+  final raw = _stringValue(item, const [
+    '_calendarioTipo',
+    'tipo',
+    'tipoConta',
+    'tipo_conta',
+    'tipoLancamento',
+    'tipo_lancamento',
+    'natureza',
+    'origem',
+    'categoria',
+  ]).toUpperCase();
+  if (raw == tipo) return true;
+  if (tipo == 'PAGAR') {
+    return raw.contains('PAGAR') ||
+        raw.contains('DESPESA') ||
+        raw.contains('SAIDA');
+  }
+  if (tipo == 'RECEBER') {
+    return raw.contains('RECEBER') ||
+        raw.contains('RECEITA') ||
+        raw.contains('ENTRADA');
+  }
+  return false;
+}
+
+String _dateKey(Map<String, dynamic> item) {
+  final value = _stringValue(item, const [
+    'dataVencimento',
+    'data_vencimento',
+    'dataPrevista',
+    'data_prevista',
+    'dataCompetencia',
+    'data_competencia',
+    'data',
+    'vencimento',
+    'dtVencimento',
+    'dt_vencimento',
+    'dueDate',
+  ]);
+  final parsed = _parseFinancialDate(value);
+  if (parsed != null) return DateFormat('yyyy-MM-dd').format(parsed);
+  return value;
+}
+
 // ─── Main widget ─────────────────────────────────────────────────────────────
 
 class WindowsCalendarScreen extends StatefulWidget {
@@ -91,68 +397,37 @@ class _WindowsCalendarScreenState extends State<WindowsCalendarScreen> {
   String _monthParam(DateTime d) => DateFormat('yyyy-MM').format(d);
 
   String _buildUrl(String base, Map<String, String> params) {
+    final uri = Uri.parse(base);
+    final query = Map<String, String>.from(uri.queryParameters)..addAll(params);
     final empId = TenantContext.empresaId;
-    final parcId = TenantContext.parceiroId;
-    final buf = StringBuffer(base);
-    buf.write('?');
-    params.forEach((k, v) => buf.write('$k=$v&'));
-    if (empId != null) buf.write('empId=$empId&');
-    if (parcId != null) buf.write('parceiroId=$parcId&');
-    return buf.toString();
+    if (empId != null) {
+      query.putIfAbsent('empId', () => empId.toString());
+    }
+    return uri.replace(queryParameters: query).toString();
   }
 
-  /// Parseia a resposta da API financeira com suporte a múltiplos formatos.
-  /// O backend pode retornar:
-  ///   { "data": { "dados": [...] } }        (Spring Page wrapper)
-  ///   { "data": [...] }                      (lista direta dentro de "data")
-  ///   [ ... ]                                 (lista raiz)
-  ///   { "content": [...] }                    (Spring Page alternativo)
-  ///   { "items": [...] }  ou { "results": [...] }
   List<Map<String, dynamic>> _parseItems(dynamic body) {
-    try {
-      dynamic cursor = body;
-      // Tenta extrair 'data' se existir
-      if (cursor is Map && cursor.containsKey('data')) {
-        cursor = cursor['data'];
-      }
-      // Se 'data' é um Map, procura listas internas
-      if (cursor is Map) {
-        for (final key in const ['dados', 'content', 'items', 'results']) {
-          final value = cursor[key];
-          if (value is List) {
-            return value
-                .whereType<Map>()
-                .map((item) => Map<String, dynamic>.from(item))
-                .toList();
-          }
-        }
-      }
-      // Se cursor já é uma lista direta
-      if (cursor is List) {
-        return cursor
-            .whereType<Map>()
-            .map((item) => Map<String, dynamic>.from(item))
-            .toList();
-      }
-    } catch (_) {}
-    return [];
+    return _parseFinancialGroups(body).all;
+  }
+
+  _FinancialItems _parseGroups(dynamic body) {
+    return _parseFinancialGroups(body);
   }
 
   Future<void> _loadMonthMarkers(DateTime month) async {
     setState(() => _loadingMonth = true);
-    final monthStr = _monthParam(month);
-    final urlP = _buildUrl(
-        ApiLinks.allContasPagar, {'mesAno': monthStr, 'tamanho': '1000'});
-    final urlR = _buildUrl(
-        ApiLinks.allContasReceber, {'mesAno': monthStr, 'tamanho': '1000'});
+    final first = DateTime(month.year, month.month, 1);
+    final last = DateTime(month.year, month.month,
+        DateUtils.getDaysInMonth(month.year, month.month));
+    final url = _buildUrl(ApiLinks.calendarioFinanceiro, {
+      'dataInicio': _dayParam(first),
+      'dataFim': _dayParam(last),
+    });
 
-    final resP = await NetworkCaller().getRequest(urlP);
-    final resR = await NetworkCaller().getRequest(urlR);
-
-    final pagarList =
-        resP.isSuccess ? _parseItems(resP.body) : <Map<String, dynamic>>[];
-    final receberList =
-        resR.isSuccess ? _parseItems(resR.body) : <Map<String, dynamic>>[];
+    final res = await NetworkCaller().getRequest(url);
+    final items = res.isSuccess ? _parseGroups(res.body) : const _FinancialItems();
+    final pagarList = items.pagar;
+    final receberList = items.receber;
 
     final newMarkers = <String, _DayMarkers>{};
 
@@ -218,36 +493,35 @@ class _WindowsCalendarScreenState extends State<WindowsCalendarScreen> {
       _contasReceber = [];
     });
     final dayStr = _dayParam(day);
-    final urlP = _buildUrl(
-        ApiLinks.allContasPagar, {'dataVencimento': dayStr, 'tamanho': '100'});
-    final urlR = _buildUrl(ApiLinks.allContasReceber,
-        {'dataVencimento': dayStr, 'tamanho': '100'});
+    final url = _buildUrl(ApiLinks.calendarioFinanceiro, {
+      'dataInicio': dayStr,
+      'dataFim': dayStr,
+      'dataVencimento': dayStr,
+    });
 
-    final resP = await NetworkCaller().getRequest(urlP);
-    final resR = await NetworkCaller().getRequest(urlR);
+    final res = await NetworkCaller().getRequest(url);
+    final items = res.isSuccess ? _parseGroups(res.body) : const _FinancialItems();
 
     if (!mounted) return;
     setState(() {
-      _contasPagar = resP.isSuccess ? _parseItems(resP.body) : [];
-      _contasReceber = resR.isSuccess ? _parseItems(resR.body) : [];
+      _contasPagar = items.pagar;
+      _contasReceber = items.receber;
       _loadingDay = false;
     });
   }
 
   Future<_MonthSummary> _loadMonthSummary(int year, int month) async {
-    final monthStr = '$year-${month.toString().padLeft(2, '0')}';
-    final urlP = _buildUrl(
-        ApiLinks.allContasPagar, {'mesAno': monthStr, 'tamanho': '1000'});
-    final urlR = _buildUrl(
-        ApiLinks.allContasReceber, {'mesAno': monthStr, 'tamanho': '1000'});
+    final first = DateTime(year, month, 1);
+    final last = DateTime(year, month, DateUtils.getDaysInMonth(year, month));
+    final url = _buildUrl(ApiLinks.calendarioFinanceiro, {
+      'dataInicio': _dayParam(first),
+      'dataFim': _dayParam(last),
+    });
 
-    final resP = await NetworkCaller().getRequest(urlP);
-    final resR = await NetworkCaller().getRequest(urlR);
-
-    final pagarList =
-        resP.isSuccess ? _parseItems(resP.body) : <Map<String, dynamic>>[];
-    final receberList =
-        resR.isSuccess ? _parseItems(resR.body) : <Map<String, dynamic>>[];
+    final res = await NetworkCaller().getRequest(url);
+    final items = res.isSuccess ? _parseGroups(res.body) : const _FinancialItems();
+    final pagarList = items.pagar;
+    final receberList = items.receber;
 
     double totalPagar = 0, totalPago = 0, totalReceber = 0, totalRecebido = 0;
 
@@ -966,7 +1240,7 @@ class _WindowsCalendarScreenState extends State<WindowsCalendarScreen> {
                   padding: const EdgeInsets.all(12),
                   gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                     crossAxisCount: 3,
-                    childAspectRatio: 1.6,
+                    childAspectRatio: 1.35,
                     crossAxisSpacing: 10,
                     mainAxisSpacing: 10,
                   ),
@@ -1044,8 +1318,9 @@ class _WindowsCalendarScreenState extends State<WindowsCalendarScreen> {
                 ),
               ],
             ),
-            const Spacer(),
-            // Summary text
+            const SizedBox(height: 8),
+            Expanded(child: _buildMiniMonthDays(year, month)),
+            const SizedBox(height: 6),
             if (summary != null) ...[
               Text(
                 'Pagar: ${_currencyFmt.format(summary.totalPagar)}',
@@ -1079,6 +1354,73 @@ class _WindowsCalendarScreenState extends State<WindowsCalendarScreen> {
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildMiniMonthDays(int year, int month) {
+    final firstDay = DateTime(year, month, 1);
+    final daysInMonth = DateUtils.getDaysInMonth(year, month);
+    final startOffset = firstDay.weekday % 7;
+    final totalCells = ((startOffset + daysInMonth + 6) ~/ 7) * 7;
+    final today = DateTime.now();
+    final isCurrentMonth = today.year == year && today.month == month;
+
+    return Column(
+      children: [
+        const Row(
+          children: [
+            _MiniWeekday('D'),
+            _MiniWeekday('S'),
+            _MiniWeekday('T'),
+            _MiniWeekday('Q'),
+            _MiniWeekday('Q'),
+            _MiniWeekday('S'),
+            _MiniWeekday('S'),
+          ],
+        ),
+        const SizedBox(height: 3),
+        Expanded(
+          child: GridView.builder(
+            physics: const NeverScrollableScrollPhysics(),
+            padding: EdgeInsets.zero,
+            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 7,
+              childAspectRatio: 1.55,
+              crossAxisSpacing: 2,
+              mainAxisSpacing: 2,
+            ),
+            itemCount: totalCells,
+            itemBuilder: (_, index) {
+              final day = index - startOffset + 1;
+              if (day < 1 || day > daysInMonth) {
+                return const SizedBox.shrink();
+              }
+              final isToday = isCurrentMonth && today.day == day;
+              return Container(
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  color:
+                      isToday ? _red.withValues(alpha: 0.12) : GridColors.card,
+                  borderRadius: BorderRadius.circular(4),
+                  border: Border.all(
+                    color: isToday
+                        ? _red.withValues(alpha: 0.55)
+                        : GridColors.borderSubtle.withValues(alpha: 0.55),
+                  ),
+                ),
+                child: Text(
+                  '$day',
+                  style: TextStyle(
+                    fontSize: 9,
+                    fontWeight: isToday ? FontWeight.bold : FontWeight.w500,
+                    color: isToday ? _red : GridColors.textMuted,
+                  ),
+                ),
+              );
+            },
+          ),
+        ),
+      ],
     );
   }
 
