@@ -66,15 +66,8 @@ class Login {
           ? (json['roles'] as List).map((i) => Role.fromJson(i)).toList()
           : null;
 
-      // Corrigido: use o value para converter
       if (json['tipoLogin'] != null) {
-        final tipoLoginValue = json['tipoLogin'] is String
-            ? int.tryParse(json['tipoLogin'])
-            : json['tipoLogin'] as int?;
-
-        tipoLogin = tipoLoginValue != null
-            ? LoginEnum.fromValue(tipoLoginValue)
-            : LoginEnum.APP_ABRACO;
+        tipoLogin = LoginEnum.fromBackend(json['tipoLogin']);
       } else {
         tipoLogin = LoginEnum.APP_ABRACO;
       }
@@ -233,14 +226,15 @@ class Login {
 
 // Primeiro, defina o LoginEnum com valores explícitos para evitar problemas
 enum LoginEnum {
-  MASTER(0, 'Administrador'),
-  APP_PERSONAL(1, 'Usuário'),
-  APP_ACADEMIA(2, 'Parceiro'),
-  APP_NUTRICIONISTA(3, 'Parceiro'),
-  APP_ALUNO(4, 'Parceiro'),
-  APP_ABRACO(5, 'Parceiro'),
-  APP_CONTABILIDADE(6, 'Parceiro'),
-  APP_AGROPECUARIA(7, 'Parceiro');
+  MASTER(1, 'Administrador'),
+  APP_PERSONAL(2, 'Usuário'),
+  APP_ACADEMIA(3, 'Parceiro'),
+  APP_NUTRICIONISTA(4, 'Parceiro'),
+  APP_ALUNO(5, 'Parceiro'),
+  APP_ABRACO(6, 'Parceiro'),
+  APP_CONTABILIDADE(7, 'Parceiro'),
+  APP_SITE_JOAO(8, 'Site Joao'),
+  APP_AGROPECUARIA(9, 'Parceiro');
 
   final int value;
   final String label;
@@ -248,9 +242,22 @@ enum LoginEnum {
 
   // Método para converter de valor inteiro para enum
   static LoginEnum fromValue(int value) {
+    if (value == 0) return LoginEnum.MASTER;
     return LoginEnum.values.firstWhere(
       (e) => e.value == value,
       orElse: () => LoginEnum.APP_ABRACO, // valor padrão se não encontrado
+    );
+  }
+
+  static LoginEnum fromBackend(dynamic value) {
+    if (value is int) return fromValue(value);
+    final raw = value?.toString().trim();
+    if (raw == null || raw.isEmpty) return LoginEnum.APP_ABRACO;
+    final numeric = int.tryParse(raw);
+    if (numeric != null) return fromValue(numeric);
+    return LoginEnum.values.firstWhere(
+      (e) => e.name.toUpperCase() == raw.toUpperCase(),
+      orElse: () => LoginEnum.APP_ABRACO,
     );
   }
 }
