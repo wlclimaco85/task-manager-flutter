@@ -55,6 +55,7 @@ Gemfile.lock
 # Credenciais locais de trading/corretora
 .trading.local.json
 run_trading_local.ps1
+opencode.json
 
 # Windows build outputs
 _windows/flutter/ephemeral/
