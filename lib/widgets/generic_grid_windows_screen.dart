@@ -1528,6 +1528,7 @@ class GenericGridScreen<T> extends StatefulWidget {
   final bool showAppBar;
   final List<Widget>? headerActions;
   final String? helpTelaNome;
+  final void Function()? onAfterCreate;
 
   const GenericGridScreen({
     super.key,
@@ -1563,6 +1564,7 @@ class GenericGridScreen<T> extends StatefulWidget {
     this.showAppBar = true,
     this.headerActions,
     this.helpTelaNome,
+    this.onAfterCreate,
   });
 
   @override
@@ -2356,6 +2358,9 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
         (c) => c.fieldType == FieldType.file,
       )) {
         _fileCache.remove(config.fieldName);
+      }
+      if (item == null && widget.onAfterCreate != null) {
+        widget.onAfterCreate!();
       }
       Navigator.pop(context);
       _loadItems(_currentPage, rowsPerPage);

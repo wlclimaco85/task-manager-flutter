@@ -297,22 +297,10 @@ class _WebContaPagarGridScreenState extends State<WebContaPagarGridScreen> {
             fieldOverrides: const [
               FieldConfigWindows(
                   fieldName: 'parceiro',
-                  label: 'Parceiro',
+                  label: 'Fornecedor',
                   isInForm: true,
-                  isInGrid: false,
-                  isVisibleByDefault: false),
-              FieldConfigWindows(
-                  fieldName: 'parceiroDev',
-                  label: 'Parceiro Dev',
-                  isInForm: true,
-                  isInGrid: false,
-                  isVisibleByDefault: false),
-              FieldConfigWindows(
-                  fieldName: 'parceiroRec',
-                  label: 'Parceiro Rec',
-                  isInForm: true,
-                  isInGrid: false,
-                  isVisibleByDefault: false),
+                  isInGrid: true,
+                  isVisibleByDefault: true),
             ],
             headerActions: [
               OutlinedButton.icon(

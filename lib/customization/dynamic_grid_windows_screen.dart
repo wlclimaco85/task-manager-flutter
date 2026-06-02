@@ -39,6 +39,7 @@ class DynamicGridWindowsScreen<T> extends StatefulWidget {
   final String? updateEndpointOverride;
   final String? deleteEndpointOverride;
   final List<Widget>? headerActions;
+  final void Function()? onAfterCreate;
 
   const DynamicGridWindowsScreen({
     super.key,
@@ -56,6 +57,7 @@ class DynamicGridWindowsScreen<T> extends StatefulWidget {
     this.updateEndpointOverride,
     this.deleteEndpointOverride,
     this.headerActions,
+    this.onAfterCreate,
   });
 
   @override
@@ -395,6 +397,7 @@ class _DynamicGridWindowsScreenState<T>
           showAppBar: widget.showAppBar,
           headerActions: widget.headerActions,
           helpTelaNome: tela.nome,
+          onAfterCreate: widget.onAfterCreate != null ? () => widget.onAfterCreate!() : null,
         );
       },
     );

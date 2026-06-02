@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../models/forma_pagamento_model.dart';
 import '../../../customization/dynamic_grid_windows_screen.dart';
+import '../../../services/formaPagamento_caller.dart';
 
 class WebFormaPagamentoGridScreen extends StatelessWidget {
   final SecurityCheck hasPermission;
@@ -14,6 +15,10 @@ class WebFormaPagamentoGridScreen extends StatelessWidget {
       hasPermission: hasPermission,
       fromJson: (json) => FormaPagamento.fromJson(json),
       toJson: (a) => a.toJson(),
+      onAfterCreate: () {
+        // Limpa o cache para que o dropdown seja atualizado
+        FormaPagamentoCaller.clearCache();
+      },
     );
   }
 }
