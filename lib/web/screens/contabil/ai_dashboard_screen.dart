@@ -3,7 +3,14 @@ import '../../../models/auth_utility.dart';
 import '../../../services/ai_analise_service.dart';
 import '../../../services/lancamento_contabil_service.dart';
 import '../../../services/periodo_contabil_service.dart';
-import '../../../utils/grid_colors.dart';
+
+const _primary = Color(0xFF1A237E);
+const _bg = Color(0xFFF5F5F5);
+const _green = Color(0xFF005826);
+const _red = Color(0xFF93070A);
+const _orange = Color(0xFFE65100);
+const _blue = Color(0xFF1565C0);
+const _purple = Color(0xFF6A1B9A);
 
 class WebAiDashboardScreen extends StatefulWidget {
   const WebAiDashboardScreen({super.key});
@@ -53,10 +60,10 @@ class _WebAiDashboardScreenState extends State<WebAiDashboardScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: GridColors.filterBackground,
+      backgroundColor: _bg,
       appBar: AppBar(
         title: const Text('Dashboard Contábil IA'),
-        backgroundColor: GridColors.primary,
+        backgroundColor: _primary,
         foregroundColor: Colors.white,
         actions: [
           IconButton(icon: const Icon(Icons.refresh), onPressed: _carregar),
@@ -73,21 +80,21 @@ class _WebAiDashboardScreenState extends State<WebAiDashboardScreen> {
                   Text('Período: $_periodo', style: const TextStyle(fontSize: 14, color: Colors.grey)),
                   const SizedBox(height: 16),
                   Wrap(runSpacing: 12, spacing: 12, children: [
-                    _metricCard('Score Saúde', '${_fechamento?['score'] ?? '?'}/100', GridColors.info, Icons.health_and_safety),
-                    _metricCard('Receita', _fmt(_dre?['receita']), GridColors.success, Icons.trending_up),
-                    _metricCard('Despesa', _fmt(_dre?['despesa']), GridColors.error, Icons.trending_down),
-                    _metricCard('Margem', '${_dre?['margemLiquidaPct'] ?? '?'}%', GridColors.info, Icons.pie_chart),
-                    _metricCard('Anomalias', '${_anomalias?.length ?? 0}', GridColors.warning, Icons.warning_amber),
-                    _metricCard('Obrigações', '${_obrigacoes?['total'] ?? '?'}', GridColors.primary, Icons.assignment),
+                    _metricCard('Score Saúde', '${_fechamento?['score'] ?? '?'}/100', _purple, Icons.health_and_safety),
+                    _metricCard('Receita', _fmt(_dre?['receita']), _green, Icons.trending_up),
+                    _metricCard('Despesa', _fmt(_dre?['despesa']), _red, Icons.trending_down),
+                    _metricCard('Margem', '${_dre?['margemLiquidaPct'] ?? '?'}%', _blue, Icons.pie_chart),
+                    _metricCard('Anomalias', '${_anomalias?.length ?? 0}', _orange, Icons.warning_amber),
+                    _metricCard('Obrigações', '${_obrigacoes?['total'] ?? '?'}', _primary, Icons.assignment),
                   ]),
                   const SizedBox(height: 24),
                   if (_anomalias != null && _anomalias!.isNotEmpty) ...[
                     const Text('Alertas', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
                     const SizedBox(height: 8),
                     ..._anomalias!.map((a) => Card(
-                      color: a['severidade'] == 'ALTA' ? GridColors.error.withOpacity(0.1) : GridColors.warning.withOpacity(0.1),
+                      color: a['severidade'] == 'ALTA' ? _red.withOpacity(0.1) : _orange.withOpacity(0.1),
                       child: ListTile(
-                        leading: Icon(a['severidade'] == 'ALTA' ? Icons.error : Icons.warning, color: GridColors.error),
+                        leading: Icon(a['severidade'] == 'ALTA' ? Icons.error : Icons.warning, color: _red),
                         title: Text(a['descricao']?.toString() ?? '', style: const TextStyle(fontSize: 13)),
                         subtitle: a['sugestao'] != null ? Text(a['sugestao'].toString(), style: const TextStyle(fontSize: 11)) : null,
                       ),
@@ -98,7 +105,7 @@ class _WebAiDashboardScreenState extends State<WebAiDashboardScreen> {
                     const Text('Insights DRE', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
                     const SizedBox(height: 8),
                     ...(_dre!['insights'] as List).map((i) => Card(child: ListTile(
-                      leading: const Icon(Icons.lightbulb, color: GridColors.warning),
+                      leading: const Icon(Icons.lightbulb, color: _orange),
                       title: Text(i.toString(), style: const TextStyle(fontSize: 13)),
                     ))),
                   ],

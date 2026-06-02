@@ -1,7 +1,12 @@
 import 'package:flutter/material.dart';
 import '../../../models/auth_utility.dart';
 import '../../../services/lancamento_contabil_service.dart';
-import '../../../utils/grid_colors.dart';
+
+const _primary = Color(0xFF1A237E);
+const _bg = Color(0xFFF5F5F5);
+const _green = Color(0xFF005826);
+const _red = Color(0xFF93070A);
+const _border = Color(0xFFDDDDDD);
 
 class WebBalanceteScreen extends StatefulWidget {
   const WebBalanceteScreen({super.key});
@@ -46,10 +51,10 @@ class _WebBalanceteScreenState extends State<WebBalanceteScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: GridColors.filterBackground,
+      backgroundColor: _bg,
       appBar: AppBar(
         title: const Text('Balancete / Balanço'),
-        backgroundColor: GridColors.primary,
+        backgroundColor: _primary,
         foregroundColor: Colors.white,
         actions: [
           SizedBox(
@@ -110,7 +115,7 @@ class _WebBalanceteScreenState extends State<WebBalanceteScreen> {
           DataCell(Text(_fmt(l['credito']))),
           DataCell(Text(_fmt(l['saldo']), style: TextStyle(
             fontWeight: FontWeight.bold,
-            color: (l['saldo'] is num && (l['saldo'] as num) >= 0) ? GridColors.success : GridColors.error,
+            color: (l['saldo'] is num && (l['saldo'] as num) >= 0) ? _green : _red,
           ))),
         ])).toList()),
       ]),
@@ -140,7 +145,7 @@ class _WebBalanceteScreenState extends State<WebBalanceteScreen> {
         _card('Receita', _fmt(_variacao!['receita'])),
         _card('Despesa', _fmt(_variacao!['despesa'])),
         _card('Resultado', _fmt(_variacao!['resultado']),
-            color: (_variacao!['resultado'] is num && (_variacao!['resultado'] as num) >= 0) ? GridColors.success : GridColors.error),
+            color: (_variacao!['resultado'] is num && (_variacao!['resultado'] as num) >= 0) ? _green : _red),
         if (_variacao!['variacaoReceitaPct'] != null)
           _card('Variação Receita', '${_variacao!['variacaoReceitaPct']}%'),
         if (_variacao!['variacaoDespesaPct'] != null)
