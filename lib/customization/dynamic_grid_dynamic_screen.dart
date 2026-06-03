@@ -364,7 +364,17 @@ class _DynamicGridDynamicScreenState extends State<DynamicGridDynamicScreen> {
       fields: [
         TelaField(label: 'ID', fieldName: 'id', isInForm: false),
         TelaField(label: 'Descricao', fieldName: 'descricao', fieldOrder: 1),
-        TelaField(label: pessoaLabel, fieldName: 'parceiro.nome', fieldOrder: 2),
+        TelaField(
+          label: pessoaLabel,
+          fieldName: 'parceiro.id',
+          displayFieldName: 'parceiro.nome',
+          fieldType: TelaFieldType.dropdown,
+          dropdownEndpoint: '/api/parceiro',
+          dropdownValueField: 'id',
+          dropdownDisplayField: 'nome',
+          isRequired: false,
+          fieldOrder: 2,
+        ),
         TelaField(
           label: 'Vencimento',
           fieldName: 'dataVencimento',
