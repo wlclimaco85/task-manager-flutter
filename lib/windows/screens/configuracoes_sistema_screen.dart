@@ -767,7 +767,32 @@ class _JobsSectionState extends State<_JobsSection> {
     try {
       final resp = await TenantContext.post(
           '${widget.baseUrl}/api/admin/jobs/$nome/executar', {});
-      if (resp.statusCode < 300) {
+
+      if (resp.statusCode == 401) {
+        // Sessão expirada - limpar e redirecionar para login
+        await AuthUtility.clearUserInfo();
+        if (mounted) {
+          showDialog(
+            context: context,
+            barrierDismissible: false,
+            builder: (ctx) => AlertDialog(
+              title: const Text('Sessão Expirada'),
+              content: const Text(
+                'Sua sessão expirou. Por favor, faça login novamente para continuar.',
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () {
+                    Navigator.of(ctx).pop();
+                    Navigator.pushReplacementNamed(context, '/login');
+                  },
+                  child: const Text('Fazer Login'),
+                ),
+              ],
+            ),
+          );
+        }
+      } else if (resp.statusCode < 300) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(SnackBar(
               content: Text(GridTexts.jobStarted(nome)), backgroundColor: _green));
