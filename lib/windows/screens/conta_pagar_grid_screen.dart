@@ -6,10 +6,9 @@ import 'dart:typed_data';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import '../../../widgets/generic_grid_windows_screen.dart'
-    show CustomAction, FieldConfigWindows, FieldType;
+    show CustomAction, FieldConfigWindows;
 import '../../../customization/dynamic_grid_windows_screen.dart';
 import '../../../models/conta_pagar_model.dart';
-import '../../../services/parceiro_caller.dart';
 import '../../../utils/api_links.dart';
 import '../../../utils/grid_colors.dart';
 import '../../../utils/tenant_context.dart';
@@ -279,27 +278,20 @@ class _WindowsContaPagarGridScreenState
             updateEndpointOverride: ApiLinks.updateContaPagar(':id'),
             deleteEndpointOverride: ApiLinks.deleteContaPagar(':id'),
             extraParams: _filterParams,
-            fieldOverrides: [
-              // 'parceiro' como replace dropdown — cobre campo 'parceiro',
-              // 'parceiro.nome' e 'parceiro.id' do backend (Step 2 ou Step 3)
+            fieldOverrides: const [
+              // parceiro: label correto, o dropdown vem do dicionario (dropdownEndpoint /api/parceiro)
               FieldConfigWindows(
                   fieldName: 'parceiro',
                   label: 'Fornecedor',
                   isInForm: true,
-                  isVisibleByDefault: false,
-                  fieldType: FieldType.dropdown,
-                  dropdownFutureBuilder: () =>
-                      ParceiroCaller().fetchParceiroDropdownObjeto(),
-                  dropdownValueField: 'value',
-                  dropdownDisplayField: 'label',
-                  isRequired: false),
-              const FieldConfigWindows(
+                  isVisibleByDefault: false),
+              FieldConfigWindows(
                   fieldName: 'parceiroDev',
                   label: '',
                   isInForm: false,
                   isVisibleByDefault: false,
                   enabled: false),
-              const FieldConfigWindows(
+              FieldConfigWindows(
                   fieldName: 'parceiroRec',
                   label: '',
                   isInForm: false,
