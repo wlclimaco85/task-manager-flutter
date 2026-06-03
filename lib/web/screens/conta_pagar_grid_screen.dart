@@ -11,10 +11,13 @@ import '../../../utils/tenant_context.dart';
 import '../../../widgets/generic_grid_windows_screen.dart'
     show CustomAction, FieldConfigWindows;
 import '../../../web/screens/baixa_dialog.dart';
+import '../../../web/dialogs/baixa_lote_dialog.dart';
 import '../../../web/dialogs/parcelar_conta_dialog.dart';
 import '../../../web/dialogs/recorrencia_conta_dialog.dart';
 import '../../../web/dialogs/renegociacao_conta_dialog.dart';
 import 'package:http/http.dart' as http;
+
+import '../../../web/dialogs/anexo_upload_dialog.dart';
 
 class WebContaPagarGridScreen extends StatefulWidget {
   final SecurityCheck hasPermission;
@@ -44,6 +47,8 @@ class _WebContaPagarGridScreenState extends State<WebContaPagarGridScreen> {
   final _tipoOptions = ['Todos', 'AVULSO', 'RECORRENTE', 'PARCELADO'];
 
   Key _gridKey = UniqueKey();
+  Set<String> _selectedRows = {};
+  List<Map<String, dynamic>> _selectedRowData = [];
 
   Map<String, dynamic> get _filterParams {
     final params = <String, dynamic>{};
@@ -130,6 +135,34 @@ class _WebContaPagarGridScreenState extends State<WebContaPagarGridScreen> {
     ));
   }
 
+  void _onSelectedRowsChanged(Set<String> rows, List<Map<String, dynamic>> rowData) {
+    setState(() {
+      _selectedRows = rows;
+      _selectedRowData = rowData;
+    });
+  }
+
+  void _abrirBaixaLote() {
+    if (_selectedRows.isEmpty) return;
+    final ids = _selectedRows.map((id) => int.parse(id)).toList();
+    // Use the actual row data from the grid instead of dummy maps
+    final contas = List<Map<String, dynamic>>.from(_selectedRowData);
+    showDialog(
+      context: context,
+      builder: (_) => BaixaLoteDialog(
+        isPagar: true,
+        selectedIds: ids,
+        selectedContas: contas,
+      ),
+    ).then((result) {
+      if (result == true) {
+        setState(() => _gridKey = UniqueKey());
+        _selectedRows.clear();
+        _selectedRowData = [];
+      }
+    });
+  }
+
   Future<void> _pickDate({required bool isInicio}) async {
     final picked = await showDatePicker(
       context: context,
@@ -167,6 +200,7 @@ class _WebContaPagarGridScreenState extends State<WebContaPagarGridScreen> {
               child: DropdownButtonFormField<String>(
                 value: _statusFilter,
                 isDense: true,
+                isExpanded: true,
                 decoration: const InputDecoration(
                   contentPadding:
                       EdgeInsets.symmetric(horizontal: 8, vertical: 4),
@@ -175,7 +209,7 @@ class _WebContaPagarGridScreenState extends State<WebContaPagarGridScreen> {
                 items: _statusOptions
                     .map((s) => DropdownMenuItem(
                         value: s,
-                        child: Text(s, style: const TextStyle(fontSize: 13))))
+                        child: Text(s, style: const TextStyle(fontSize: 13), overflow: TextOverflow.ellipsis)))
                     .toList(),
                 onChanged: (v) => setState(() => _statusFilter = v!),
               ),
@@ -231,6 +265,7 @@ class _WebContaPagarGridScreenState extends State<WebContaPagarGridScreen> {
               child: DropdownButtonFormField<String>(
                 value: _tipoFilter,
                 isDense: true,
+                isExpanded: true,
                 decoration: const InputDecoration(
                   contentPadding:
                       EdgeInsets.symmetric(horizontal: 8, vertical: 4),
@@ -239,7 +274,7 @@ class _WebContaPagarGridScreenState extends State<WebContaPagarGridScreen> {
                 items: _tipoOptions
                     .map((t) => DropdownMenuItem(
                         value: t,
-                        child: Text(t, style: const TextStyle(fontSize: 13))))
+                        child: Text(t, style: const TextStyle(fontSize: 13), overflow: TextOverflow.ellipsis)))
                     .toList(),
                 onChanged: (v) => setState(() => _tipoFilter = v!),
               ),
@@ -323,7 +358,23 @@ class _WebContaPagarGridScreenState extends State<WebContaPagarGridScreen> {
                       borderRadius: BorderRadius.circular(6)),
                 ),
               ),
+              if (_selectedRows.isNotEmpty)
+                OutlinedButton.icon(
+                  onPressed: _abrirBaixaLote,
+                  icon: const Icon(Icons.playlist_add_check, size: 18),
+                  label: Text('Baixa em Lote (${_selectedRows.length})'),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: GridColors.secondary,
+                    backgroundColor: GridColors.secondarySoft,
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                    side: const BorderSide(color: GridColors.secondary),
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(6)),
+                  ),
+                ),
             ],
+            onSelectedRowsChanged: _onSelectedRowsChanged,
             customActions: () => [
               CustomAction<Map<String, dynamic>>(
                 icon: Icons.check_circle,
@@ -367,6 +418,21 @@ class _WebContaPagarGridScreenState extends State<WebContaPagarGridScreen> {
                 ),
                 isVisible: (m) =>
                     ContaPagar.fromJson(m).status == StatusConta.ABERTA,
+              ),
+              CustomAction<Map<String, dynamic>>(
+                icon: Icons.attach_file,
+                label: 'Anexos',
+                onPressed: (context, object) {
+                  final id = object['id'];
+                  showDialog(
+                    context: context,
+                    builder: (_) => AnexoUploadDialog(
+                      lancamentoId: id is int ? id : int.tryParse('$id') ?? 0,
+                      lancamentoTipo: 'PAGAR',
+                    ),
+                  );
+                },
+                isVisible: (_) => true,
               ),
             ],
           ),
