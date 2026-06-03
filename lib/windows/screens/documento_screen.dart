@@ -433,69 +433,58 @@ class _WindowsCalendarScreenState extends State<WindowsCalendarScreen> {
     return _parseFinancialGroups(body);
   }
 
-  /// Busca contas a pagar e receber em paralelo para um intervalo de datas.
-  /// Usa os endpoints /api/conta_pagar e /api/conta_receber com filtros de data.
+  /// Extrai lista de Maps de uma resposta paginada ou lista direta do Spring.
+  List<Map<String, dynamic>> _extractList(dynamic body, String tipo) {
+    if (body == null) return [];
+    // Lista direta
+    if (body is List) return _collectFinancialMaps(body, tipo: tipo);
+    // Spring Page: {content:[...], totalElements:N, ...}
+    if (body is Map) {
+      for (final key in ['content', 'dados', 'items', 'results', 'lista']) {
+        final v = body[key];
+        if (v is List) return _collectFinancialMaps(v, tipo: tipo);
+      }
+      // Pode ser o body inteiro já é o objeto
+      return _collectFinancialMaps(body, tipo: tipo);
+    }
+    return [];
+  }
+
+  /// Busca contas a pagar e receber em paralelo usando mesAno (param correto do backend).
+  /// Para consultas de dia único, filtra por data depois de buscar o mês.
   Future<_FinancialItems> _fetchContasCombined({
     required String dataInicio,
     required String dataFim,
   }) async {
+    // mesAno: "2026-06" — formato aceito pelo backend (mesmo que usa _showMonthPopup)
+    final mesAno = dataInicio.length >= 7 ? dataInicio.substring(0, 7) : dataInicio;
+
     final urlPagar = _buildUrl(ApiLinks.allContasPagar, {
-      'dataVencimentoInicio': dataInicio,
-      'dataVencimentoFim': dataFim,
-      'dataInicio': dataInicio,
-      'dataFim': dataFim,
+      'mesAno': mesAno,
+      'tamanho': '500',
       'size': '500',
     });
     final urlReceber = _buildUrl(ApiLinks.allContasReceber, {
-      'dataVencimentoInicio': dataInicio,
-      'dataVencimentoFim': dataFim,
-      'dataInicio': dataInicio,
-      'dataFim': dataFim,
+      'mesAno': mesAno,
+      'tamanho': '500',
       'size': '500',
     });
 
-    L.d('[CALENDARIO] Buscando conta_pagar: $urlPagar');
-    L.d('[CALENDARIO] Buscando conta_receber: $urlReceber');
+    L.d('[CALENDARIO] Buscando conta_pagar mesAno=$mesAno: $urlPagar');
+    L.d('[CALENDARIO] Buscando conta_receber mesAno=$mesAno: $urlReceber');
 
     final results = await Future.wait([
       _fetchFinancialJson(urlPagar),
       _fetchFinancialJson(urlReceber),
     ]);
 
-    final bodyPagar = results[0];
-    final bodyReceber = results[1];
+    var pagar = _extractList(results[0], 'PAGAR');
+    var receber = _extractList(results[1], 'RECEBER');
 
-    final pagar = <Map<String, dynamic>>[];
-    final receber = <Map<String, dynamic>>[];
-
-    if (bodyPagar != null) {
-      final items = _collectFinancialMaps(bodyPagar, tipo: 'PAGAR');
-      // Se veio paginado (Spring Page: {content:[...], ...})
-      if (items.isEmpty && bodyPagar is Map) {
-        for (final key in ['content', 'dados', 'items', 'results', 'lista']) {
-          final v = bodyPagar[key];
-          if (v is List) {
-            pagar.addAll(_collectFinancialMaps(v, tipo: 'PAGAR'));
-            break;
-          }
-        }
-      } else {
-        pagar.addAll(items);
-      }
-    }
-    if (bodyReceber != null) {
-      final items = _collectFinancialMaps(bodyReceber, tipo: 'RECEBER');
-      if (items.isEmpty && bodyReceber is Map) {
-        for (final key in ['content', 'dados', 'items', 'results', 'lista']) {
-          final v = bodyReceber[key];
-          if (v is List) {
-            receber.addAll(_collectFinancialMaps(v, tipo: 'RECEBER'));
-            break;
-          }
-        }
-      } else {
-        receber.addAll(items);
-      }
+    // Filtra por dia específico quando dataInicio == dataFim (modo dia)
+    if (dataInicio == dataFim && dataInicio.length == 10) {
+      pagar = pagar.where((i) => _dateKey(i) == dataInicio).toList();
+      receber = receber.where((i) => _dateKey(i) == dataInicio).toList();
     }
 
     L.d('[CALENDARIO] Combinado - Pagar: ${pagar.length}, Receber: ${receber.length}');
@@ -573,7 +562,8 @@ class _WindowsCalendarScreenState extends State<WindowsCalendarScreen> {
 
     if (!mounted) return;
     setState(() {
-      _dayMarkers = newMarkers;
+      // Merge: preserva marcadores de outros meses já carregados
+      _dayMarkers = {..._dayMarkers, ...newMarkers};
       _loadingMonth = false;
     });
   }
@@ -1576,6 +1566,14 @@ class _WindowsCalendarScreenState extends State<WindowsCalendarScreen> {
                 return const SizedBox.shrink();
               }
               final isToday = isCurrentMonth && today.day == day;
+              final dateStr =
+                  '$year-${month.toString().padLeft(2, '0')}-${day.toString().padLeft(2, '0')}';
+              final markers = _dayMarkers[dateStr];
+              final hasPagar = markers?.hasPagar == true;
+              final hasPago = markers?.hasPago == true;
+              final hasReceber = markers?.hasReceber == true;
+              final hasRecebido = markers?.hasRecebido == true;
+
               return Container(
                 alignment: Alignment.center,
                 decoration: BoxDecoration(
@@ -1589,14 +1587,36 @@ class _WindowsCalendarScreenState extends State<WindowsCalendarScreen> {
                         : GridColors.borderSubtle.withValues(alpha: 0.55),
                   ),
                 ),
-                child: Text(
-                  '$day',
-                  style: TextStyle(
-                    fontSize: 10,
-                    fontWeight: isToday ? FontWeight.w800 : FontWeight.w700,
-                    color:
-                        isToday ? GridColors.error : GridColors.textSecondary,
-                  ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      '$day',
+                      style: TextStyle(
+                        fontSize: 9,
+                        fontWeight:
+                            isToday ? FontWeight.w800 : FontWeight.w700,
+                        color: isToday
+                            ? GridColors.error
+                            : GridColors.textSecondary,
+                      ),
+                    ),
+                    if (hasPagar || hasPago || hasReceber || hasRecebido)
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          if (hasPagar)
+                            _dot(GridColors.error),
+                          if (hasPago)
+                            _dot(GridColors.error.withValues(alpha: 0.45)),
+                          if (hasReceber)
+                            _dot(GridColors.success),
+                          if (hasRecebido)
+                            _dot(GridColors.success.withValues(alpha: 0.45)),
+                        ],
+                      ),
+                  ],
                 ),
               );
             },
@@ -1605,6 +1625,13 @@ class _WindowsCalendarScreenState extends State<WindowsCalendarScreen> {
       ],
     );
   }
+
+  Widget _dot(Color color) => Container(
+        width: 5,
+        height: 5,
+        margin: const EdgeInsets.symmetric(horizontal: 1),
+        decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+      );
 
   Widget _monthActionBtn({
     required IconData icon,
@@ -1637,12 +1664,15 @@ class _WindowsCalendarScreenState extends State<WindowsCalendarScreen> {
   }
 
   /// Carrega automaticamente todos os 12 meses do ano ao entrar na view de Ano.
-  /// Dispara em paralelo sem bloquear a UI (sem await).
+  /// Dispara em paralelo sem bloquear a UI: carrega resumo + marcadores por dia.
   void _autoCarregarResumoAno(int year) {
     for (int m = 1; m <= 12; m++) {
       if (!_monthSummaries.containsKey(m)) {
         _loadAndCacheMonthSummary(year, m);
       }
+      // Carrega os marcadores de cada mês para exibir dots nas células
+      final monthDate = DateTime(year, m);
+      _loadMonthMarkers(monthDate);
     }
   }
 
