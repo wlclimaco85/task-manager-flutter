@@ -6,7 +6,7 @@ class ApiLinks {
   // Producao Railway: flutter run --dart-define=BACKEND_URL=https://appacademia-production-be7e.up.railway.app
   static const String _backendUrl = String.fromEnvironment(
     'BACKEND_URL',
-    defaultValue: 'https://appacademia-production-be7e.up.railway.app',
+    defaultValue: 'http://127.0.0.1:9001',
   );
 
   static const String _baseIp = _backendUrl;
