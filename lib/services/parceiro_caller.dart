@@ -180,26 +180,51 @@ class ParceiroCaller {
     return list;
   }
 
-  /// Retorna lista formatada para dropdown de parceiros
+  /// Retorna lista formatada para dropdown de parceiros (value = id simples)
   Future<List<Map<String, dynamic>>> fetchParceiroDropdown() async {
-    List<Map<String, dynamic>> list = [];
+    return _fetchParceiroList(
+      toMap: (item) => {'value': item['id'], 'label': item['nome']?.toString() ?? ''},
+    );
+  }
+
+  /// Retorna lista para dropdown onde value = objeto {id, nome} completo.
+  /// Necessário para formulários que submetem parceiro como objeto aninhado.
+  Future<List<Map<String, dynamic>>> fetchParceiroDropdownObjeto() async {
+    return _fetchParceiroList(
+      toMap: (item) => {
+        'value': {'id': item['id'], 'nome': item['nome']?.toString() ?? ''},
+        'label': item['nome']?.toString() ?? '',
+      },
+    );
+  }
+
+  Future<List<Map<String, dynamic>>> _fetchParceiroList({
+    required Map<String, dynamic> Function(dynamic item) toMap,
+  }) async {
     try {
       final NetworkResponse response = await NetworkCaller().getRequest(
         ApiLinks.allParceiros,
       );
-
       if (response.isSuccess && response.body != null) {
-        final data = response.body!['data']['dados'] ?? [];
-        list = data
-            .map<Map<String, dynamic>>(
-              (item) => {'value': item['id'], 'label': item['nome'].toString()},
-            )
-            .toList();
+        final body = response.body!;
+        List<dynamic> data = [];
+        // Suporta {data: {dados: [...]}}, {content: [...]}, {data: [...]}, ou lista direta
+        if (body['data'] is Map && body['data']['dados'] is List) {
+          data = body['data']['dados'];
+        } else if (body['content'] is List) {
+          data = body['content'];
+        } else if (body['data'] is List) {
+          data = body['data'];
+        } else if (body['dados'] is List) {
+          data = body['dados'];
+        } else if (body is List) {
+          data = body as List;
+        }
+        return data.map<Map<String, dynamic>>((item) => toMap(item)).toList();
       }
     } catch (e) {
-      L.d('Erro ao carregar parceiros: $e');
-      throw Exception('Erro ao carregar parceiros: $e');
+      L.d('Erro ao carregar parceiros dropdown: $e');
     }
-    return list;
+    return [];
   }
 }

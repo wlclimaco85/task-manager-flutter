@@ -280,19 +280,19 @@ class _WindowsContaPagarGridScreenState
             deleteEndpointOverride: ApiLinks.deleteContaPagar(':id'),
             extraParams: _filterParams,
             fieldOverrides: [
-              // Suprime campos de texto bruto do parceiro vindos do backend
-              const FieldConfigWindows(
-                  fieldName: 'parceiro.nome',
-                  label: '',
-                  isInForm: false,
-                  isVisibleByDefault: false,
-                  enabled: false),
-              const FieldConfigWindows(
+              // 'parceiro' como replace dropdown — cobre campo 'parceiro',
+              // 'parceiro.nome' e 'parceiro.id' do backend (Step 2 ou Step 3)
+              FieldConfigWindows(
                   fieldName: 'parceiro',
-                  label: '',
-                  isInForm: false,
+                  label: 'Fornecedor',
+                  isInForm: true,
                   isVisibleByDefault: false,
-                  enabled: false),
+                  fieldType: FieldType.dropdown,
+                  dropdownFutureBuilder: () =>
+                      ParceiroCaller().fetchParceiroDropdownObjeto(),
+                  dropdownValueField: 'value',
+                  dropdownDisplayField: 'label',
+                  isRequired: false),
               const FieldConfigWindows(
                   fieldName: 'parceiroDev',
                   label: '',
@@ -305,18 +305,6 @@ class _WindowsContaPagarGridScreenState
                   isInForm: false,
                   isVisibleByDefault: false,
                   enabled: false),
-              // Dropdown de Fornecedor por empresa (parceiro.id)
-              FieldConfigWindows(
-                  fieldName: 'parceiro.id',
-                  label: 'Fornecedor',
-                  isInForm: true,
-                  isVisibleByDefault: false,
-                  fieldType: FieldType.dropdown,
-                  dropdownFutureBuilder: () =>
-                      ParceiroCaller().fetchParceiroDropdown(),
-                  dropdownValueField: 'value',
-                  dropdownDisplayField: 'label',
-                  isRequired: false),
             ],
             headerActions: [
               OutlinedButton.icon(
