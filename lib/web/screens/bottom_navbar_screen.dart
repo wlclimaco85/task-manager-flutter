@@ -3,12 +3,12 @@ import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import '../../constants/custom_colors.dart';
-import '../../../models/alert_model.dart';
-import '../../../models/auth_utility.dart';
-import '../../../models/login_model.dart';
+import '../../models/alert_model.dart';
+import '../../models/auth_utility.dart';
+import '../../models/login_model.dart';
 import '../../services/alert_caller.dart';
 import './aplicativo_screen.dart';
-import '../../../auth_screens/login_screen.dart';
+import '../../auth_screens/login_screen.dart';
 import './chamado_grid_screen.dart';
 import './alimento_grid_screen.dart';
 import './comunicado_screen.dart';
