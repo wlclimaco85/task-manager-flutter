@@ -6,9 +6,10 @@ import 'dart:typed_data';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import '../../../widgets/generic_grid_windows_screen.dart'
-    show CustomAction, FieldConfigWindows;
+    show CustomAction, FieldConfigWindows, FieldType;
 import '../../../customization/dynamic_grid_windows_screen.dart';
 import '../../../models/conta_pagar_model.dart';
+import '../../../services/parceiro_caller.dart';
 import '../../../utils/api_links.dart';
 import '../../../utils/grid_colors.dart';
 import '../../../utils/tenant_context.dart';
@@ -278,25 +279,44 @@ class _WindowsContaPagarGridScreenState
             updateEndpointOverride: ApiLinks.updateContaPagar(':id'),
             deleteEndpointOverride: ApiLinks.deleteContaPagar(':id'),
             extraParams: _filterParams,
-            fieldOverrides: const [
-              FieldConfigWindows(
+            fieldOverrides: [
+              // Suprime campos de texto bruto do parceiro vindos do backend
+              const FieldConfigWindows(
+                  fieldName: 'parceiro.nome',
+                  label: '',
+                  isInForm: false,
+                  isVisibleByDefault: false,
+                  enabled: false),
+              const FieldConfigWindows(
                   fieldName: 'parceiro',
                   label: '',
                   isInForm: false,
                   isVisibleByDefault: false,
                   enabled: false),
-              FieldConfigWindows(
+              const FieldConfigWindows(
                   fieldName: 'parceiroDev',
                   label: '',
                   isInForm: false,
                   isVisibleByDefault: false,
                   enabled: false),
-              FieldConfigWindows(
+              const FieldConfigWindows(
                   fieldName: 'parceiroRec',
                   label: '',
                   isInForm: false,
                   isVisibleByDefault: false,
                   enabled: false),
+              // Dropdown de Fornecedor por empresa (parceiro.id)
+              FieldConfigWindows(
+                  fieldName: 'parceiro.id',
+                  label: 'Fornecedor',
+                  isInForm: true,
+                  isVisibleByDefault: false,
+                  fieldType: FieldType.dropdown,
+                  dropdownFutureBuilder: () =>
+                      ParceiroCaller().fetchParceiroDropdown(),
+                  dropdownValueField: 'value',
+                  dropdownDisplayField: 'label',
+                  isRequired: false),
             ],
             headerActions: [
               OutlinedButton.icon(
