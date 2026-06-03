@@ -433,20 +433,86 @@ class _WindowsCalendarScreenState extends State<WindowsCalendarScreen> {
     return _parseFinancialGroups(body);
   }
 
+  /// Busca contas a pagar e receber em paralelo para um intervalo de datas.
+  /// Usa os endpoints /api/conta_pagar e /api/conta_receber com filtros de data.
+  Future<_FinancialItems> _fetchContasCombined({
+    required String dataInicio,
+    required String dataFim,
+  }) async {
+    final urlPagar = _buildUrl(ApiLinks.allContasPagar, {
+      'dataVencimentoInicio': dataInicio,
+      'dataVencimentoFim': dataFim,
+      'dataInicio': dataInicio,
+      'dataFim': dataFim,
+      'size': '500',
+    });
+    final urlReceber = _buildUrl(ApiLinks.allContasReceber, {
+      'dataVencimentoInicio': dataInicio,
+      'dataVencimentoFim': dataFim,
+      'dataInicio': dataInicio,
+      'dataFim': dataFim,
+      'size': '500',
+    });
+
+    L.d('[CALENDARIO] Buscando conta_pagar: $urlPagar');
+    L.d('[CALENDARIO] Buscando conta_receber: $urlReceber');
+
+    final results = await Future.wait([
+      _fetchFinancialJson(urlPagar),
+      _fetchFinancialJson(urlReceber),
+    ]);
+
+    final bodyPagar = results[0];
+    final bodyReceber = results[1];
+
+    final pagar = <Map<String, dynamic>>[];
+    final receber = <Map<String, dynamic>>[];
+
+    if (bodyPagar != null) {
+      final items = _collectFinancialMaps(bodyPagar, tipo: 'PAGAR');
+      // Se veio paginado (Spring Page: {content:[...], ...})
+      if (items.isEmpty && bodyPagar is Map) {
+        for (final key in ['content', 'dados', 'items', 'results', 'lista']) {
+          final v = bodyPagar[key];
+          if (v is List) {
+            pagar.addAll(_collectFinancialMaps(v, tipo: 'PAGAR'));
+            break;
+          }
+        }
+      } else {
+        pagar.addAll(items);
+      }
+    }
+    if (bodyReceber != null) {
+      final items = _collectFinancialMaps(bodyReceber, tipo: 'RECEBER');
+      if (items.isEmpty && bodyReceber is Map) {
+        for (final key in ['content', 'dados', 'items', 'results', 'lista']) {
+          final v = bodyReceber[key];
+          if (v is List) {
+            receber.addAll(_collectFinancialMaps(v, tipo: 'RECEBER'));
+            break;
+          }
+        }
+      } else {
+        receber.addAll(items);
+      }
+    }
+
+    L.d('[CALENDARIO] Combinado - Pagar: ${pagar.length}, Receber: ${receber.length}');
+    return _FinancialItems(pagar: pagar, receber: receber);
+  }
+
   Future<void> _loadMonthMarkers(DateTime month) async {
     setState(() => _loadingMonth = true);
     final first = DateTime(month.year, month.month, 1);
     final last = DateTime(month.year, month.month,
         DateUtils.getDaysInMonth(month.year, month.month));
-    final url = _buildUrl(ApiLinks.calendarioFinanceiro, {
-      'dataInicio': _dayParam(first),
-      'dataFim': _dayParam(last),
-    });
 
-    L.d('[CALENDARIO] URL: $url');
-    final body = await _getFinancialJson(url);
-    L.d('[CALENDARIO] Body raw: ${body.runtimeType} - ${body is List ? "List length: ${body.length}" : ""}');
-    final items = _parseGroups(body);
+    L.d('[CALENDARIO] Carregando marcadores de ${_dayParam(first)} a ${_dayParam(last)}');
+    final items = await _fetchContasCombined(
+      dataInicio: _dayParam(first),
+      dataFim: _dayParam(last),
+    );
     final pagarList = items.pagar;
     final receberList = items.receber;
     L.d('[CALENDARIO] Parsed - Pagar: ${pagarList.length}, Receber: ${receberList.length}');
@@ -519,16 +585,12 @@ class _WindowsCalendarScreenState extends State<WindowsCalendarScreen> {
       _contasReceber = [];
     });
     final dayStr = _dayParam(day);
-    final url = _buildUrl(ApiLinks.calendarioFinanceiro, {
-      'dataInicio': dayStr,
-      'dataFim': dayStr,
-      'dataVencimento': dayStr,
-    });
 
-    L.d('[CALENDARIO_DAY] URL: $url');
-    final body = await _getFinancialJson(url);
-    L.d('[CALENDARIO_DAY] Body: ${body.runtimeType}');
-    final items = _parseGroups(body);
+    L.d('[CALENDARIO_DAY] Carregando dia $dayStr');
+    final items = await _fetchContasCombined(
+      dataInicio: dayStr,
+      dataFim: dayStr,
+    );
     L.d('[CALENDARIO_DAY] Parsed - Pagar: ${items.pagar.length}, Receber: ${items.receber.length}');
 
     if (!mounted) return;
@@ -542,13 +604,11 @@ class _WindowsCalendarScreenState extends State<WindowsCalendarScreen> {
   Future<_MonthSummary> _loadMonthSummary(int year, int month) async {
     final first = DateTime(year, month, 1);
     final last = DateTime(year, month, DateUtils.getDaysInMonth(year, month));
-    final url = _buildUrl(ApiLinks.calendarioFinanceiro, {
-      'dataInicio': _dayParam(first),
-      'dataFim': _dayParam(last),
-    });
 
-    final body = await _getFinancialJson(url);
-    final items = _parseGroups(body);
+    final items = await _fetchContasCombined(
+      dataInicio: _dayParam(first),
+      dataFim: _dayParam(last),
+    );
     final pagarList = items.pagar;
     final receberList = items.receber;
 

@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:url_launcher/url_launcher.dart';
+import '../utils/web_image_helper.dart';
 
 import '../../mobile/screens/bottom_navbar_screen.dart';
 import '../../windows/screens/bottom_navbar_screen.dart';
@@ -248,6 +249,8 @@ class _LoginBanner extends StatelessWidget {
                             keyboardType: TextInputType.emailAddress,
                             autofillHints: const [AutofillHints.username],
                             textInputAction: TextInputAction.next,
+                            onFieldSubmitted: (_) =>
+                                FocusScope.of(context).nextFocus(),
                             validator: (v) => (v == null || v.isEmpty)
                                 ? GridTexts.loginUserRequired
                                 : null),
@@ -375,6 +378,8 @@ class _LoginBanner extends StatelessWidget {
                       hint: GridTexts.loginUserHint,
                       icon: Icons.person_outline,
                       textInputAction: TextInputAction.next,
+                      onFieldSubmitted: (_) =>
+                          FocusScope.of(context).nextFocus(),
                       validator: (v) => (v == null || v.isEmpty)
                           ? GridTexts.loginUserRequired
                           : null),
@@ -767,28 +772,33 @@ class _MultiUrlImageState extends State<_MultiUrlImage> {
   @override
   Widget build(BuildContext context) {
     if (_idx >= widget.urls.length) return widget.placeholder;
+    final url = widget.urls[_idx];
+
+    // No web, usa <div> com background-image CSS para evitar CORS
+    if (kIsWeb) {
+      return buildPlatformImage(
+        url: url,
+        placeholder: widget.placeholder,
+        width: double.infinity,
+        height: double.infinity,
+      );
+    }
+
     return Image.network(
-      widget.urls[_idx],
-      key: ValueKey('${widget.urls[_idx]}_$_idx'),
+      url,
+      key: ValueKey('${url}_$_idx'),
       width: double.infinity,
       height: double.infinity,
       fit: BoxFit.cover,
       loadingBuilder: (_, child, progress) {
         if (progress == null) return child;
-        return Stack(
-          alignment: Alignment.center,
-          children: [
-            widget.placeholder,
-            const CircularProgressIndicator(
-              color: Colors.white54,
-              strokeWidth: 2,
-            ),
-          ],
-        );
+        return Stack(alignment: Alignment.center, children: [
+          widget.placeholder,
+          const CircularProgressIndicator(color: Colors.white54, strokeWidth: 2),
+        ]);
       },
       errorBuilder: (context, error, stackTrace) {
-        debugPrint('[_MultiUrlImage] Falha ao carregar ${widget.urls[_idx]}: $error');
-        // Tenta próxima URL após o frame atual
+        debugPrint('[_MultiUrlImage] Falha ao carregar $url: $error');
         WidgetsBinding.instance.addPostFrameCallback((_) {
           if (mounted) setState(() => _idx++);
         });

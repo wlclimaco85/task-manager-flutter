@@ -454,7 +454,7 @@ class _ConfiguracoesSistemaScreenState
   Future<void> _limparEBaixarNoticias() async => _executar(
       'limpar_baixar_noticias',
       () => TenantContext.post(
-          '${ApiLinks.baseUrl}/api/admin/jobs/noticias-limpar-e-baixar', {}));
+          ApiLinks.jobExecutar('ContabeisScraperJob'), {}));
 
   Future<void> _apagarNoticias() async {
     setState(() => _loading['apagar_noticias'] = true);
