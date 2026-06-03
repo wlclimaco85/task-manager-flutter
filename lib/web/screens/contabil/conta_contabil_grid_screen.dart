@@ -1,8 +1,12 @@
 import 'package:flutter/material.dart';
 import '../../../models/auth_utility.dart';
 import '../../../services/conta_contabil_service.dart';
-import '../../../utils/grid_colors.dart';
 import '../../../widgets/generic_grid_windows_screen.dart' show SecurityCheck;
+
+const _primary = Color(0xFF1A237E);
+const _bg = Color(0xFFF5F5F5);
+const _green = Color(0xFF005826);
+const _red = Color(0xFF93070A);
 
 class WebContaContabilGridScreen extends StatefulWidget {
   final SecurityCheck hasPermission;
@@ -71,9 +75,9 @@ class _WebContaContabilGridScreenState extends State<WebContaContabilGridScreen>
 
   Color _corTipo(String t) {
     switch (t) {
-      case 'ATIVO': return GridColors.primary;
-      case 'PASSIVO': return GridColors.error;
-      case 'RECEITA': return GridColors.success;
+      case 'ATIVO': return _primary;
+      case 'PASSIVO': return _red;
+      case 'RECEITA': return _green;
       case 'DESPESA': return Colors.orange;
       default: return Colors.grey;
     }
@@ -82,14 +86,14 @@ class _WebContaContabilGridScreenState extends State<WebContaContabilGridScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: GridColors.filterBackground,
+      backgroundColor: _bg,
       appBar: AppBar(
         title: const Text('Plano de Contas'),
-        backgroundColor: GridColors.primary,
+        backgroundColor: _primary,
         foregroundColor: Colors.white,
         actions: [
-          IconButton(icon: const Icon(Icons.add), tooltip: 'Adicionar conta', onPressed: () => setState(() { _editando = null; _codigoCtrl.clear(); _descricaoCtrl.clear(); _showForm = !_showForm; })),
-          IconButton(icon: const Icon(Icons.refresh), tooltip: 'Recarregar', onPressed: _carregar),
+          IconButton(icon: const Icon(Icons.add), onPressed: () => setState(() { _editando = null; _codigoCtrl.clear(); _descricaoCtrl.clear(); _showForm = !_showForm; })),
+          IconButton(icon: const Icon(Icons.refresh), onPressed: _carregar),
         ],
       ),
       body: Column(children: [
@@ -134,7 +138,7 @@ class _WebContaContabilGridScreenState extends State<WebContaContabilGridScreen>
             subtitle: Text('${c['tipo']} / ${c['natureza']}', style: TextStyle(fontSize: 11, color: cor)),
             trailing: PopupMenuButton(itemBuilder: (_) => [
               PopupMenuItem(onTap: () => _editar(c), child: const Text('Editar')),
-              PopupMenuItem(onTap: () async { await _service.deletar(c['id'].toString()); _carregar(); }, child: const Text('Excluir', style: TextStyle(color: GridColors.error))),
+              PopupMenuItem(onTap: () async { await _service.deletar(c['id'].toString()); _carregar(); }, child: const Text('Excluir', style: TextStyle(color: _red))),
             ]),
           ),
         );

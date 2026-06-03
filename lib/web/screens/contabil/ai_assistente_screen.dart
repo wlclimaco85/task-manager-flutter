@@ -1,7 +1,11 @@
 import 'package:flutter/material.dart';
 import '../../../models/auth_utility.dart';
 import '../../../services/ai_analise_service.dart';
-import '../../../utils/grid_colors.dart';
+
+const _primary = Color(0xFF1A237E);
+const _bg = Color(0xFFF5F5F5);
+const _botBg = Color(0xFFE8EAF6);
+const _userBg = Color(0xFF1A237E);
 
 class WebAiAssistenteScreen extends StatefulWidget {
   const WebAiAssistenteScreen({super.key});
@@ -62,10 +66,10 @@ class _WebAiAssistenteScreenState extends State<WebAiAssistenteScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: GridColors.filterBackground,
+      backgroundColor: _bg,
       appBar: AppBar(
         title: const Text('Assistente Contábil IA'),
-        backgroundColor: GridColors.primary,
+        backgroundColor: _primary,
         foregroundColor: Colors.white,
       ),
       body: Column(children: [
@@ -87,7 +91,7 @@ class _WebAiAssistenteScreenState extends State<WebAiAssistenteScreen> {
                   padding: const EdgeInsets.all(12),
                   constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.7),
                   decoration: BoxDecoration(
-                    color: isUser ? GridColors.primary : GridColors.selectedRow,
+                    color: isUser ? _userBg : _botBg,
                     borderRadius: BorderRadius.only(
                       topLeft: const Radius.circular(12),
                       topRight: const Radius.circular(12),
@@ -126,7 +130,7 @@ class _WebAiAssistenteScreenState extends State<WebAiAssistenteScreen> {
               onPressed: _loading ? null : _enviar,
               icon: const Icon(Icons.send, size: 18),
               color: Colors.white,
-              style: IconButton.styleFrom(backgroundColor: GridColors.primary),
+              style: IconButton.styleFrom(backgroundColor: _primary),
             ),
           ]),
         ),

@@ -256,9 +256,12 @@ class _WebContaReceberGridScreenState extends State<WebContaReceberGridScreen> {
             deleteEndpointOverride: ApiLinks.deleteContaReceber(':id'),
             extraParams: _filterParams,
             fieldOverrides: const [
-              FieldConfigWindows(fieldName: 'parceiro',    label: 'Parceiro',     isInForm: true, isInGrid: false, isVisibleByDefault: false),
-              FieldConfigWindows(fieldName: 'parceiroDev', label: 'Parceiro Dev', isInForm: true, isInGrid: false, isVisibleByDefault: false),
-              FieldConfigWindows(fieldName: 'parceiroRec', label: 'Parceiro Rec', isInForm: true, isInGrid: false, isVisibleByDefault: false),
+              FieldConfigWindows(
+                  fieldName: 'cliente',
+                  label: 'Cliente',
+                  isInForm: true,
+                  isInGrid: true,
+                  isVisibleByDefault: true),
             ],
             headerActions: [
               OutlinedButton.icon(

@@ -1,8 +1,13 @@
 import 'package:flutter/material.dart';
 import '../../../models/auth_utility.dart';
 import '../../../services/lancamento_contabil_service.dart';
-import '../../../utils/grid_colors.dart';
 import '../../../widgets/generic_grid_windows_screen.dart' show SecurityCheck;
+
+const _primary = Color(0xFF1A237E);
+const _bg = Color(0xFFF5F5F5);
+const _green = Color(0xFF005826);
+const _red = Color(0xFF93070A);
+const _border = Color(0xFFDDDDDD);
 
 class WebLancamentoContabilGridScreen extends StatefulWidget {
   final SecurityCheck hasPermission;
@@ -42,7 +47,7 @@ class _WebLancamentoContabilGridScreenState extends State<WebLancamentoContabilG
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
         content: Text(result != null ? '${result.length} lançamentos gerados' : 'Nada a gerar'),
-        backgroundColor: result != null ? GridColors.success : Colors.orange,
+        backgroundColor: result != null ? _green : Colors.orange,
       ));
       _carregar();
       setState(() => _autoGerando = false);
@@ -52,10 +57,10 @@ class _WebLancamentoContabilGridScreenState extends State<WebLancamentoContabilG
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: GridColors.filterBackground,
+      backgroundColor: _bg,
       appBar: AppBar(
         title: const Text('Lançamentos Contábeis'),
-        backgroundColor: GridColors.primary,
+        backgroundColor: _primary,
         foregroundColor: Colors.white,
         actions: [
           SizedBox(
@@ -81,7 +86,7 @@ class _WebLancamentoContabilGridScreenState extends State<WebLancamentoContabilG
             onPressed: _autoGerando ? null : _autoGerar,
             tooltip: 'Auto-gerar',
           ),
-          IconButton(icon: const Icon(Icons.refresh), tooltip: 'Recarregar', onPressed: _carregar),
+          IconButton(icon: const Icon(Icons.refresh), onPressed: _carregar),
         ],
       ),
       body: _loading
@@ -99,7 +104,7 @@ class _WebLancamentoContabilGridScreenState extends State<WebLancamentoContabilG
                         return Card(
                           child: ListTile(
                             leading: CircleAvatar(
-                              backgroundColor: isDebito ? GridColors.error : GridColors.success,
+                              backgroundColor: isDebito ? _red : _green,
                               radius: 14,
                               child: Text(isDebito ? 'D' : 'C', style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold)),
                             ),
@@ -107,7 +112,7 @@ class _WebLancamentoContabilGridScreenState extends State<WebLancamentoContabilG
                             subtitle: Text('Conta: ${l['contaContabilId']} | ${l['dataLancamento']} | ${l['origem']}', style: const TextStyle(fontSize: 11)),
                             trailing: Text(
                               'R\$ ${_fmt(l['valor'])}',
-                              style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: isDebito ? GridColors.error : GridColors.success),
+                              style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: isDebito ? _red : _green),
                             ),
                           ),
                         );
