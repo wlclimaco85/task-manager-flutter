@@ -64,3 +64,5 @@ _windows/build/
 # Selenium local test outputs
 tools/selenium/.venv/
 tools/selenium/.artifacts/
+
+android/build/
