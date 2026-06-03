@@ -91,6 +91,7 @@ List<Map<String, dynamic>> _parseFinancialItems(dynamic body) {
 }
 
 _FinancialItems _parseFinancialGroups(dynamic body) {
+  L.d('[PARSE] Body type: ${body.runtimeType}');
   try {
     dynamic cursor = body;
     while (cursor is Map && cursor.containsKey('data')) {
@@ -123,6 +124,7 @@ _FinancialItems _parseFinancialGroups(dynamic body) {
         receber.addAll(_collectFinancialMaps(cursor[key], tipo: 'RECEBER'));
       }
       if (pagar.isNotEmpty || receber.isNotEmpty) {
+        L.d('[PARSE] Found structured data - Pagar: ${pagar.length}, Receber: ${receber.length}');
         return _FinancialItems(pagar: pagar, receber: receber);
       }
 
@@ -144,13 +146,18 @@ _FinancialItems _parseFinancialGroups(dynamic body) {
       }
     }
     if (cursor is List) {
+      L.d('[PARSE] Found array with ${cursor.length} items');
       unknown.addAll(_collectFinancialMaps(cursor));
     }
 
     if (unknown.isNotEmpty) {
+      L.d('[PARSE] Splitting ${unknown.length} unknown items');
       return _splitFinancialItems(unknown);
     }
-  } catch (_) {}
+  } catch (e) {
+    L.d('[PARSE] Error: $e');
+  }
+  L.d('[PARSE] Returning empty');
   return const _FinancialItems();
 }
 
@@ -187,10 +194,12 @@ _FinancialItems _splitFinancialItems(List<Map<String, dynamic>> items) {
     } else if (_isTipo(item, 'RECEBER')) {
       receber.add(item);
     } else {
+      L.d('[SPLIT] Item tipo desconhecido: ${item['tipo']} - $item');
       unknown.add(item);
     }
   }
 
+  L.d('[SPLIT] Result - Pagar: ${pagar.length}, Receber: ${receber.length}, Unknown: ${unknown.length}');
   return _FinancialItems(pagar: pagar, receber: receber, unknown: unknown);
 }
 
@@ -433,10 +442,13 @@ class _WindowsCalendarScreenState extends State<WindowsCalendarScreen> {
       'dataFim': _dayParam(last),
     });
 
+    L.d('[CALENDARIO] URL: $url');
     final body = await _getFinancialJson(url);
+    L.d('[CALENDARIO] Body raw: ${body.runtimeType} - ${body is List ? "List length: ${body.length}" : ""}');
     final items = _parseGroups(body);
     final pagarList = items.pagar;
     final receberList = items.receber;
+    L.d('[CALENDARIO] Parsed - Pagar: ${pagarList.length}, Receber: ${receberList.length}');
 
     final newMarkers = <String, _DayMarkers>{};
 
@@ -458,7 +470,10 @@ class _WindowsCalendarScreenState extends State<WindowsCalendarScreen> {
 
     for (final item in pagarList) {
       final dateStr = _dateKey(item);
-      if (dateStr.isEmpty) continue;
+      if (dateStr.isEmpty) {
+        L.d('[CALENDARIO] PAGAR sem data: $item');
+        continue;
+      }
       final date = DateTime.tryParse(dateStr);
       if (date == null) continue;
       final isBaixa = _isBaixada(item);
@@ -473,7 +488,10 @@ class _WindowsCalendarScreenState extends State<WindowsCalendarScreen> {
 
     for (final item in receberList) {
       final dateStr = _dateKey(item);
-      if (dateStr.isEmpty) continue;
+      if (dateStr.isEmpty) {
+        L.d('[CALENDARIO] RECEBER sem data: $item');
+        continue;
+      }
       final date = DateTime.tryParse(dateStr);
       if (date == null) continue;
       final isBaixa = _isBaixada(item);
@@ -506,8 +524,11 @@ class _WindowsCalendarScreenState extends State<WindowsCalendarScreen> {
       'dataVencimento': dayStr,
     });
 
+    L.d('[CALENDARIO_DAY] URL: $url');
     final body = await _getFinancialJson(url);
+    L.d('[CALENDARIO_DAY] Body: ${body.runtimeType}');
     final items = _parseGroups(body);
+    L.d('[CALENDARIO_DAY] Parsed - Pagar: ${items.pagar.length}, Receber: ${items.receber.length}');
 
     if (!mounted) return;
     setState(() {
