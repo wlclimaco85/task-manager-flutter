@@ -447,11 +447,11 @@ class ApiLinks {
   static String deleteObrigacaoFiscal(String id) =>
       '$_baseUrlNew/api/obrigacoes-fiscais/$id';
   static String enviarObrigacaoFiscal(String id) =>
-      '$_baseUrlNew/api/obrigacoes-fiscais/$id/envio';
+      '$_baseUrlNew/api/obrigacoes-fiscais/$id/enviar';
   static String atualizarStatusEnvioObrigacaoFiscal(String id) =>
       '$_baseUrlNew/api/obrigacoes-fiscais/$id/status-envio';
   static String get lembretesPendentesObrigacaoFiscal =>
-      '$_baseUrlNew/api/obrigacoes-fiscais/lembretes-pendentes';
+      '$_baseUrlNew/api/obrigacoes-fiscais/lembretes/pendentes';
 
   static String chatStart(String id, String setor) =>
       '$_chatId/ws-chat?user=$id&sector=$setor';
@@ -934,7 +934,7 @@ class ApiLinks {
   static String updateCrmDealStage(String id) =>
       '$_baseUrlNew/api/crm/deals/$id/stage';
   static String get importMarketplaceOrder =>
-      '$_baseUrlNew/api/crm/marketplace/orders';
+      '$_baseUrlNew/api/crm/deals/import-marketplace';
 
   // IA assistiva para chat/GED
   static String get aiChatSummarize => '$_baseUrlNew/api/ai/chat/summarize';
