@@ -44,10 +44,18 @@ class FormaPagamento {
   }
 
   static String parseStatus(dynamic status) {
-    return status == 1 ? "Inativo" : "Ativo";
+    if (status == null) return "Ativo";
+    // Vindo do GET: pode ser int (0/1) ou Map {"id":0,"nome":"Ativo"}
+    if (status is Map) {
+      final id = status['id'];
+      return id == 1 ? "Inativo" : "Ativo";
+    }
+    if (status is int) return status == 1 ? "Inativo" : "Ativo";
+    if (status is String) return status == "1" ? "Inativo" : "Ativo";
+    return "Ativo";
   }
 
-  /// Converte label de exibicao para valor numerico do backend
+  /// Converte label para inteiro que o backend espera (0=Ativo, 1=Inativo)
   static int statusToInt(String status) {
     return status == "Inativo" ? 1 : 0;
   }

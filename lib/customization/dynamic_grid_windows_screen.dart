@@ -221,16 +221,14 @@ class _DynamicGridWindowsScreenState<T>
         fieldType: isAutoMs ? FieldType.multiselect
             : isAutoFk ? FieldType.dropdown
             : _telaType(f.fieldType, fn),
+        dropdownValueField: f.dropdownValueField.isNotEmpty ? f.dropdownValueField : 'value',
+        dropdownDisplayField: f.dropdownDisplayField.isNotEmpty ? f.dropdownDisplayField : 'label',
         dropdownOptions: f.dropdownOptions.map((opt) => {
           'value': opt.optionValue,
           'label': opt.optionLabel ?? opt.optionValue.toString(),
         }).toList(),
         dropdownFutureBuilder: (isAutoFk || isAutoMs) && f.dropdownEndpoint != null
             ? _makeFuture(f.dropdownEndpoint!) : null,
-        dropdownValueField: (f.dropdownValueField.isNotEmpty && f.dropdownValueField != 'value')
-            ? f.dropdownValueField : 'id',
-        dropdownDisplayField: (f.dropdownDisplayField.isNotEmpty && f.dropdownDisplayField != 'label')
-            ? f.dropdownDisplayField : 'nome',
         isRequired: f.isRequired,
         validator: (v) => (f.isRequired && (v == null || v.isEmpty)) ? '${f.label} é obrigatório' : null,
         isVisibleByDefault: f.isVisibleByDefault,

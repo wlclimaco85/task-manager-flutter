@@ -1162,7 +1162,7 @@ class _MultiSelectFieldState extends State<_MultiSelectField> {
 
   String get _valueField => widget.config.dropdownValueField.isNotEmpty
       ? widget.config.dropdownValueField
-      : 'id';
+      : 'value';
   String get _displayField => widget.config.dropdownDisplayField.isNotEmpty
       ? widget.config.dropdownDisplayField
       : 'label';
@@ -2317,15 +2317,26 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
         continue;
       }
 
-      // Dropdown fields: send as {id: X} object so backend receives the FK object
+      // Dropdown fields: static enums send raw value; FK relations send {id: X} object
       if (config.fieldType == FieldType.dropdown && value.isNotEmpty) {
-        final idVal = int.tryParse(value);
-        final objVal = idVal != null ? {'id': idVal} : {'id': value};
-        if (config.fieldName.contains('.')) {
-          final parts = config.fieldName.split('.');
-          _setNestedValue(formData, parts, objVal);
+        // Static dropdown (no backend endpoint) → send raw value (e.g. status integer)
+        if (config.dropdownFutureBuilder == null && config.dropdownOptions != null && config.dropdownOptions!.isNotEmpty) {
+          if (config.fieldName.contains('.')) {
+            final parts = config.fieldName.split('.');
+            _setNestedValue(formData, parts, value);
+          } else {
+            formData[config.fieldName] = value;
+          }
         } else {
-          formData[config.fieldName] = objVal;
+          // FK dropdown (with backend endpoint) → send as {id: X} object
+          final idVal = int.tryParse(value);
+          final objVal = idVal != null ? {'id': idVal} : {'id': value};
+          if (config.fieldName.contains('.')) {
+            final parts = config.fieldName.split('.');
+            _setNestedValue(formData, parts, objVal);
+          } else {
+            formData[config.fieldName] = objVal;
+          }
         }
         continue;
       }
@@ -2400,7 +2411,7 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
       return false;
     }
 
-    final Map<String, dynamic> enrichedFormData = Map.from(formData);
+    final Map<String, dynamic> enrichedFormData = Map.from(normalizeFormData(formData));
 
     if (widget.extraParams != null) {
       enrichedFormData.addAll(widget.extraParams!);
