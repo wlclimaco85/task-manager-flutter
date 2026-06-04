@@ -984,21 +984,6 @@ class ApiLinks {
   static String tradingOperacao(String id) =>
       '$_baseUrlNew/api/trading/operacao-assistida/$id';
 
-  // CRM Deals
-  static String get createCrmDeal => '$_baseUrlNew/api/crm/deals';
-  static String get allCrmDeals => '$_baseUrlNew/api/crm/deals';
-  static String get importMarketplaceOrder =>
-      '$_baseUrlNew/api/crm/deals/import-marketplace';
-  static String updateCrmDealStage(String id) =>
-      '$_baseUrlNew/api/crm/deals/$id/stage';
-
-  // Obrigação Fiscal — envio e lembretes
-  static String enviarObrigacaoFiscal(String id) =>
-      '$_baseUrlNew/api/obrigacoes-fiscais/$id/enviar';
-  static String atualizarStatusEnvioObrigacaoFiscal(String id) =>
-      '$_baseUrlNew/api/obrigacoes-fiscais/$id/status-envio';
-  static String get lembretesPendentesObrigacaoFiscal =>
-      '$_baseUrlNew/api/obrigacoes-fiscais/lembretes/pendentes';
   static String get tradingCarteira => '$_baseUrlNew/api/trading/carteira';
   static String get tradingCarteiraOperacoes => '$_baseUrlNew/api/trading/carteira/operacoes';
   static String tradingCarteiraOperacao(String id) =>

@@ -129,28 +129,46 @@ class _NotificacoesDrawerState extends State<NotificacoesDrawer> {
 
   IconData _iconeTipo(String? tipo) {
     switch (tipo?.toUpperCase()) {
-      case 'ALVARA': return Icons.assignment_late;
-      case 'CP':     return Icons.payment;
-      case 'CR':     return Icons.receipt;
-      default:       return Icons.notifications;
+      case 'ALVARA':           return Icons.assignment_late;
+      case 'ALVARA_CADASTRADO': return Icons.assignment_add;
+      case 'ALVARA_VENDIDO':   return Icons.sell;
+      case 'ALVARA_STATUS':    return Icons.sync_alt;
+      case 'CP':               return Icons.payment;
+      case 'CR':               return Icons.receipt;
+      case 'GED':              return Icons.attach_file;
+      case 'COMUNICADO':       return Icons.campaign;
+      case 'CHAMADO':          return Icons.support_agent;
+      default:                 return Icons.notifications;
     }
   }
 
   Color _corTipo(String? tipo) {
     switch (tipo?.toUpperCase()) {
-      case 'ALVARA': return Colors.orange;
-      case 'CP':     return Colors.red;
-      case 'CR':     return Colors.blue;
-      default:       return Colors.grey;
+      case 'ALVARA':           return Colors.orange;
+      case 'ALVARA_CADASTRADO': return Colors.teal;
+      case 'ALVARA_VENDIDO':   return Colors.green;
+      case 'ALVARA_STATUS':    return Colors.amber.shade700;
+      case 'CP':               return Colors.red;
+      case 'CR':               return Colors.blue;
+      case 'GED':              return Colors.indigo;
+      case 'COMUNICADO':       return Colors.purple;
+      case 'CHAMADO':          return Colors.deepOrange;
+      default:                 return Colors.grey;
     }
   }
 
   Widget? _badgeTipo(String? tipo) {
     final label = switch (tipo?.toUpperCase()) {
-      'ALVARA' => 'Alvará',
-      'CP'     => 'C.Pagar',
-      'CR'     => 'C.Receber',
-      _        => null,
+      'ALVARA'            => 'Alvará',
+      'ALVARA_CADASTRADO' => 'Cadastrado',
+      'ALVARA_VENDIDO'    => 'Vendido',
+      'ALVARA_STATUS'     => 'Status',
+      'CP'                => 'C.Pagar',
+      'CR'                => 'C.Receber',
+      'GED'               => 'Arquivo',
+      'COMUNICADO'        => 'Comunicado',
+      'CHAMADO'           => 'Chamado',
+      _                   => null,
     };
     if (label == null) return null;
     return Container(

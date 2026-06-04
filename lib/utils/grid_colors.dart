@@ -29,6 +29,7 @@ class GridColors {
   static const Color error = Color(0xFFD32F2F);
   static const Color warning = Color(0xFFFFA000);
   static const Color success = Color(0xFF2E7D32);
+  static const Color successLight = Color(0xFFE8F5E9);
   static const Color info = Color(0xFF1976D2);
   static const Color divider = Color(0xFFD8E0DA);
   static const Color filterBackground = Color(0xFFF3F7F4);

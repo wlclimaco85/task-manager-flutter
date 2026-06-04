@@ -1775,3 +1775,6 @@ class _MonthDetailDialogState extends State<_MonthDetailDialog> {
     );
   }
 }
+
+// ─── Web alias ───────────────────────────────────────────────────────────────
+typedef WebCalendarScreen = WindowsCalendarScreen;

@@ -38,13 +38,18 @@ class FormaPagamento {
       'id': id,
       'nome': nome,
       'descricao': descricao,
-      'status': status,
+      'status': statusToInt(status),
       'audit': audit?.toJson(),
     };
   }
 
   static String parseStatus(dynamic status) {
     return status == 1 ? "Inativo" : "Ativo";
+  }
+
+  /// Converte label de exibicao para valor numerico do backend
+  static int statusToInt(String status) {
+    return status == "Inativo" ? 1 : 0;
   }
 
   /// 🔹 Atalho para acessar a data de criação formatada

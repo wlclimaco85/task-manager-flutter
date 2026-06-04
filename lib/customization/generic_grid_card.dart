@@ -2257,10 +2257,24 @@ class _GenericMobileGridScreenState<T>
         ),
       );
     } else {
-      final displayValue =
-          _getNestedValue(itemMap, config.displayFieldName ?? config.fieldName)
-                  ?.toString() ??
-              '';
+      dynamic rawValue =
+          _getNestedValue(itemMap, config.displayFieldName ?? config.fieldName);
+
+      // Resolve dropdown values to display labels (e.g. 0 -> "Ativo")
+      if (rawValue != null &&
+          config.fieldType == FieldType.dropdown &&
+          config.dropdownOptions != null &&
+          config.dropdownOptions!.isNotEmpty) {
+        for (final option in config.dropdownOptions!) {
+          final optionValue = option[config.dropdownValueField]?.toString();
+          if (optionValue == rawValue.toString()) {
+            rawValue = option[config.dropdownDisplayField];
+            break;
+          }
+        }
+      }
+
+      final displayValue = rawValue?.toString() ?? '';
 
       if (displayValue.isEmpty) return const SizedBox.shrink();
 
