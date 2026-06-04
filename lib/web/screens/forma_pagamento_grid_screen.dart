@@ -11,14 +11,11 @@ class WebFormaPagamentoGridScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return DynamicGridWindowsScreen<FormaPagamento>(
-      telaNome: 'forma_pagamento', // o nome que está no banco
+      telaNome: 'forma_pagamento',
       hasPermission: hasPermission,
       fromJson: (json) => FormaPagamento.fromJson(json),
       toJson: (a) => a.toJson(),
-      onAfterCreate: () {
-        // Limpa o cache para que o dropdown seja atualizado
-        FormaPagamentoCaller.clearCache();
-      },
+      onAfterCreate: () => FormaPagamentoCaller.clearCache(),
     );
   }
 }

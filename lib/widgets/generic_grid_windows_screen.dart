@@ -2562,7 +2562,11 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
         updated["status"] = 0;
       }
     } else {
-      updated["status"] = 0;
+      // Only inject status=0 if the entity actually has a status field configured
+      final hasStatusField = widget.FieldConfigWindowss.any((f) => f.fieldName == "status");
+      if (hasStatusField) {
+        updated["status"] = 0;
+      }
     }
 
     return updated;
