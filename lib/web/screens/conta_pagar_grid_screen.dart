@@ -8,8 +8,9 @@ import '../../../models/conta_pagar_model.dart';
 import '../../../utils/api_links.dart';
 import '../../../utils/grid_colors.dart';
 import '../../../utils/tenant_context.dart';
+import '../../../utils/dropdown_helpers.dart';
 import '../../../widgets/generic_grid_windows_screen.dart'
-    show CustomAction, FieldConfigWindows;
+    show CustomAction, FieldConfigWindows, FieldType;
 import '../../../web/screens/baixa_dialog.dart';
 import '../../../web/dialogs/baixa_lote_dialog.dart';
 import '../../../web/dialogs/parcelar_conta_dialog.dart';
@@ -334,12 +335,16 @@ class _WebContaPagarGridScreenState extends State<WebContaPagarGridScreen> {
                   isInForm: false,
                   isInGrid: false,
                   isVisibleByDefault: false),
-              const FieldConfigWindows(
+              FieldConfigWindows(
                   fieldName: 'parceiroDev',
-                  label: 'Parceiro Dev',
+                  label: 'Fornecedor',
                   isInForm: true,
                   isInGrid: false,
-                  isVisibleByDefault: false),
+                  isVisibleByDefault: false,
+                  fieldType: FieldType.dropdown,
+                  dropdownFutureBuilder: () => DropdownHelpers.parceirosPorEmpresa(TenantContext.empresaId?.toString()),
+                  dropdownValueField: 'id',
+                  dropdownDisplayField: 'nome'),
               FieldConfigWindows(
                   fieldName: 'parceiroRec',
                   label: 'Parceiro Rec',

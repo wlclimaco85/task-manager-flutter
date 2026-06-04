@@ -5,8 +5,9 @@ import 'dart:typed_data';
 
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
+import '../../../utils/dropdown_helpers.dart';
 import '../../../widgets/generic_grid_windows_screen.dart'
-    show CustomAction, FieldConfigWindows;
+    show CustomAction, FieldConfigWindows, FieldType;
 import '../../../customization/dynamic_grid_windows_screen.dart';
 import '../../../models/conta_pagar_model.dart';
 import '../../../utils/api_links.dart';
@@ -285,11 +286,16 @@ class _WindowsContaPagarGridScreenState
                   isInForm: false,
                   isInGrid: false,
                   isVisibleByDefault: false),
-              const FieldConfigWindows(
+              FieldConfigWindows(
                   fieldName: 'parceiroDev',
-                  label: 'Parceiro Dev',
+                  label: 'Fornecedor',
                   isInForm: true,
-                  isVisibleByDefault: false),
+                  isInGrid: false,
+                  isVisibleByDefault: false,
+                  fieldType: FieldType.dropdown,
+                  dropdownFutureBuilder: () => DropdownHelpers.parceirosPorEmpresa(TenantContext.empresaId?.toString()),
+                  dropdownValueField: 'id',
+                  dropdownDisplayField: 'nome'),
               FieldConfigWindows(
                   fieldName: 'parceiroRec',
                   label: 'Parceiro Rec',
