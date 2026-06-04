@@ -181,9 +181,9 @@ class _WebContaPagarGridScreenState extends State<WebContaPagarGridScreen> {
     }
   }
 
-  List<Widget> _buildFilterBar() {
-    return [
-      Container(
+  Widget _buildFilterBar() {
+    return Container(
+        width: double.infinity,
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
         decoration: BoxDecoration(
           color: GridColors.filterBackground.withOpacity(0.5),
@@ -306,15 +306,14 @@ class _WebContaPagarGridScreenState extends State<WebContaPagarGridScreen> {
             ),
           ],
         ),
-      ),
-    ];
+      );
   }
 
   @override
   Widget build(BuildContext context) {
     return Column(
       children: [
-        ..._buildFilterBar(),
+        _buildFilterBar(),
         const SizedBox(height: 8),
         Expanded(
           child: DynamicGridWindowsScreen<Map<String, dynamic>>(
