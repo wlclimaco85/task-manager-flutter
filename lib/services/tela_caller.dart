@@ -158,43 +158,24 @@ class TelaService {
     AppLogger.i.info('🗑️ [TelaService] Cache de telas limpo (${keys.length} entradas)');
   }
 
-  // 🔍 Buscar tela do cache ou API se necessário
+  // 🔍 Buscar tela sempre da API (cache apenas como fallback de conexão)
   Future<TelaConfig?> getTelaFromCache(String nome, {int? empId, int? clienteId}) async {
+    // Sempre busca da API para garantir config atualizada (endpoints, dropdowns, etc.)
+    final fresh = await _getFromApiWithRetry(nome, empId: empId, clienteId: clienteId);
+    if (fresh != null) return fresh;
+
+    // Fallback: usa cache se API não respondeu
     try {
       final prefs = await _prefs;
       final cached = prefs.getString('tela_$nome');
-
-      if (cached == null || cached.isEmpty) {
-        AppLogger.i.info(
-            '❌ [TelaService] Nenhum cache encontrado para "$nome". Indo para API.');
-        return await _getFromApiWithRetry(nome, empId: empId, clienteId: clienteId);
-      }
-
-      AppLogger.i.info('✅ [TelaService] Cache encontrado para "$nome".');
+      if (cached == null || cached.isEmpty) return null;
       final decoded = json.decode(cached);
-
-      if (decoded is! Map<String, dynamic>) {
-        AppLogger.i
-            .info('⚠️ [TelaService] Cache inválido (não é Map): $decoded');
-        return await _getFromApiWithRetry(nome, empId: empId, clienteId: clienteId);
+      if (decoded is Map<String, dynamic> && _isCacheValid(decoded)) {
+        AppLogger.i.info('⚠️ [TelaService] API indisponível — usando cache para "$nome"');
+        return TelaConfig.fromJson(decoded);
       }
-
-      if (_isCacheValid(decoded)) {
-        AppLogger.i
-            .info('🧩 [TelaService] Cache válido. Reconstruindo TelaConfig...');
-        final tela = TelaConfig.fromJson(decoded);
-        AppLogger.i.info(
-            '✅ [TelaService] Tela reconstruída: ID=${tela.id}, Nome=${tela.nome}');
-        return tela;
-      } else {
-        AppLogger.i.info(
-            '⚠️ [TelaService] Cache inválido (ID ou Nome nulos). Atualizando...');
-        return await _getFromApiWithRetry(nome, empId: empId, clienteId: clienteId);
-      }
-    } catch (e) {
-      AppLogger.i.info('💥 [TelaService] Erro ao acessar cache: $e');
-      return await _getFromApiWithRetry(nome, empId: empId, clienteId: clienteId);
-    }
+    } catch (_) {}
+    return null;
   }
 
   bool _isCacheValid(Map<String, dynamic> decoded) {
