@@ -3,12 +3,12 @@ import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import '../../constants/custom_colors.dart';
-import '../../models/alert_model.dart';
-import '../../models/auth_utility.dart';
-import '../../models/login_model.dart';
+import '../../../models/alert_model.dart';
+import '../../../models/auth_utility.dart';
+import '../../../models/login_model.dart';
 import '../../services/alert_caller.dart';
 import './aplicativo_screen.dart';
-import '../../auth_screens/login_screen.dart';
+import '../../../auth_screens/login_screen.dart';
 import './chamado_grid_screen.dart';
 import './alimento_grid_screen.dart';
 import './comunicado_screen.dart';
@@ -86,6 +86,7 @@ import '../../features/trading/trading_dashboard_screen.dart';
 import '../../features/trading/screens/sinais_screen.dart';
 import '../../features/trading/screens/oportunidades_screen.dart';
 import '../../features/trading/screens/backtest_screen.dart';
+import '../../features/trading/screens/trading_config_screen.dart';
 import '../../features/trading/services/backtest_repository.dart';
 import '../../features/trading/screens/carteira_screen.dart';
 import '../../utils/api_links.dart';
@@ -95,6 +96,10 @@ import './alvara_grid_screen.dart';
 import './fornecedor_grid_screen.dart';
 import './nfce/pdv_screen.dart';
 import './nfce/config_fiscal_screen.dart';
+import '../../windows/screens/reserva_estoque_screen.dart';
+import '../../windows/screens/deposito_screen.dart';
+import '../../windows/screens/renegociacao_screen.dart';
+import '../../windows/screens/devolucao_grid_screen.dart';
 import './extrato_importacao_screen.dart';
 import './conciliacao_screen.dart';
 import './integracoes_financeiras_screen.dart';
@@ -102,20 +107,6 @@ import './orcamento_grid_screen.dart';
 import './pedido_venda_grid_screen.dart';
 import './pedido_compra_grid_screen.dart';
 import '../../windows/screens/nfse_screen.dart';
-import '../../widgets/crm/crm_pipeline_screen.dart';
-import '../../widgets/fiscal/fiscal_automation_screen.dart';
-import './tela_ajuda_grid_screen.dart';
-import '../../widgets/dp/dp_dashboard_screen.dart';
-import '../../widgets/dp/dp_dynamic_grid_screen.dart';
-import '../../widgets/dp/dp_portal_colaborador_screen.dart';
-import '../../windows/screens/reserva_estoque_screen.dart';
-import '../../windows/screens/deposito_screen.dart';
-import '../../windows/screens/renegociacao_screen.dart';
-
-import './aprovacao_compra_screen.dart';
-import './devolucao_grid_screen.dart';
-import './dre_screen.dart';
-import './tabela_preco_screen.dart';
 import './cancelamento_cce_screen.dart';
 import 'contabil/conta_contabil_grid_screen.dart';
 import 'contabil/lancamento_contabil_grid_screen.dart';
@@ -123,10 +114,12 @@ import 'contabil/balancete_screen.dart';
 import 'contabil/fechamento_periodo_screen.dart';
 import 'contabil/ai_dashboard_screen.dart';
 import 'contabil/ai_assistente_screen.dart';
+import './cobranca_automatica_screen.dart';
+import './kanban_pagamentos_screen.dart';
+import './aprovacao_pagamentos_screen.dart';
 
 class WebBottomNavBarScreen extends StatefulWidget {
   final int initialIndex;
-
   const WebBottomNavBarScreen({super.key, this.initialIndex = 31});
 
   @override
@@ -225,7 +218,7 @@ class _WebBottomNavBarScreenState extends State<WebBottomNavBarScreen> {
           hasPermission: (p) => true), // 28: FormasPagamento
       WebDiretorioGridScreen(hasPermission: (p) => true), // 29: Diretorios
       const GedArquivosScreen(), // 30: GED — Arquivos
-      const WindowsCalendarScreen(), // 31: Calendario
+      const WebCalendarScreen(), // 31: Calendario
       WebObrigacaoFiscalGridScreen(
           hasPermission: (p) => true), // 32: ObrigacoesFiscais
       WebLoginGridScreen(hasPermission: (p) => true), // 33: Logins(dup)
@@ -278,12 +271,12 @@ class _WebBottomNavBarScreenState extends State<WebBottomNavBarScreen> {
           hasPermission: (p) => true), // 68: ServicoContratado
       WebModuloServicoGridScreen(
           hasPermission: (p) => true), // 69: ModuloServico
-      WebAlvaraGridScreen(hasPermission: (p) => true), // 70: Alvaras
-      // indices 71-79: reservados para expansao futura
+      WebAlvaraGridScreen(hasPermission: (p) => true), // 70: Alvarás
       const NfeImportScreen(), // 71: NfeImportCSV
       const TradingDashboardScreen(), // 72: Painel Trading
-      const CrmPipelineScreen(), // 73: CRM/Funil
-      const FiscalAutomationScreen(), // 74: Automacao Fiscal
+      WebCentroCustoGridScreen(hasPermission: (p) => true), // 73: CentroCusto
+      WebCategoriaFinanceiraGridScreen(
+          hasPermission: (p) => true), // 74: CategoriasFinanceiras
       const SinaisScreen(), // 75: Sinais de Mercado
       const OportunidadesScreen(), // 76: Oportunidades
       const TradingDashboardScreen(initialTabIndex: 1), // 77: Watchlist
@@ -292,54 +285,38 @@ class _WebBottomNavBarScreenState extends State<WebBottomNavBarScreen> {
           initialTabIndex: 3), // 79: Operações Assistidas
       const PdvScreen(), // 80: PDV NFC-e
       const ConfigFiscalScreen(), // 81: Config. Fiscal
-      WebCentroCustoGridScreen(hasPermission: (p) => true), // 82: CentroCusto
-      WebCategoriaFinanceiraGridScreen(
-          hasPermission: (p) => true), // 83: CategoriasFinanceiras
-      WebTelaAjudaGridScreen(hasPermission: (p) => true), // 84: Ajuda das Telas
+      const SizedBox.shrink(), // 82
+      const SizedBox.shrink(), // 83
+      const SizedBox.shrink(), // 84: Ajuda (não disponível)
       BacktestScreen(
           repository: BacktestRepository(ApiLinks.baseUrl,
               headers: TenantContext.jsonHeaders)), // 85: Backtest
-      const DpPortalColaboradorScreen(), // 86: Portal do Colaborador
-      const DpDashboardScreen(), // 87: Dashboard DP
-      const DpDynamicGridScreen(
-          telaNome: 'dp_escala_turno'), // 88: Escalas e Turnos
-      const DpDynamicGridScreen(telaNome: 'dp_ferias'), // 89: Ferias
-      const DpDynamicGridScreen(
-          telaNome: 'dp_admissao'), // 90: Admissao Digital
-      const DpDynamicGridScreen(telaNome: 'dp_rubrica'), // 91: Rubricas
-      const DpDynamicGridScreen(
-          telaNome: 'dp_folha_evento'), // 92: Eventos da Folha
-      const DpDynamicGridScreen(telaNome: 'dp_beneficio'), // 93: Beneficios
-      const DpDynamicGridScreen(
-          telaNome: 'dp_desligamento'), // 94: Desligamentos
-      const DpDynamicGridScreen(
-          telaNome: 'dp_obrigacao_trabalhista'), // 95: Obrigacoes Trabalhistas
-      const WebNfeImportXmlScreen(), // 96: NfeImportXml
-      WebNoticiasGridScreen(hasPermission: (p) => true), // 97: Noticias
+      const WebNfeImportXmlScreen(), // 86: NfeImportXml
+      WebNoticiasGridScreen(hasPermission: (p) => true), // 87: Noticias
       WebLancamentoFinanceiroGridScreen(
-          hasPermission: (p) => true), // 98: LancamentosFinanceiros
-      const ExtratoImportacaoScreen(), // 99: ImportarExtrato
-      const WebConciliacaoScreen(), // 100: ConciliacaoBancaria
-      const WebDashboardFinanceiroScreen(), // 101: DashboardFinanceiro
-      const WebIntegracoesFinanceirasScreen(), // 102: IntegracoesFinanceiras
-      WebFornecedorGridScreen(hasPermission: (p) => true), // 103: Fornecedores
-      const WebOrcamentoGridScreen(), // 104: Orçamentos
-      const WebPedidoVendaGridScreen(), // 105: Pedidos de Venda
-      const WebPedidoCompraGridScreen(), // 106: Pedidos de Compra
-      const ConsultaDfeScreen(), // 107: Consulta DF-e
-      const ManifestacaoDestinatarioScreen(), // 108: Manifestação Destinatário
-      const NfseScreen(), // 109: NFSe
-      const ReservaEstoqueScreen(), // 110: ReservaEstoque
-      const DepositoScreen(), // 111: Multi-depósito
-      const SizedBox.shrink(), // 112: Rateio Financeiro (web)
-      const SizedBox.shrink(), // 113: Aprovação de Pagamentos (web)
-      const SizedBox.shrink(), // 114: Baixa Automática (web)
-      const SizedBox.shrink(), // 115: Cobrança (web)
-      const RenegociacaoScreen(), // 116: Renegociação de Títulos
-      const WebDreScreen(), // 117: DRE Gerencial
-      WebTabelaPrecoScreen(hasPermission: (p) => true), // 118: Tabela de Preços
-      const WebAprovacaoCompraScreen(), // 119: Aprovação de Compras
-      const WebDevolucaoGridScreen(), // 120: Devoluções (Web)
+          hasPermission: (p) => true), // 88: LancamentosFinanceiros
+      const ExtratoImportacaoScreen(), // 89: ImportarExtrato
+      const WebConciliacaoScreen(), // 90: ConciliacaoBancaria
+      const WebDashboardFinanceiroScreen(), // 91: DashboardFinanceiro
+      const WebIntegracoesFinanceirasScreen(), // 92: IntegracoesFinanceiras
+      WebFornecedorGridScreen(hasPermission: (p) => true), // 93: Fornecedores
+      const WebOrcamentoGridScreen(), // 94: Orçamentos
+      const WebPedidoVendaGridScreen(), // 95: Pedidos de Venda
+      const WebPedidoCompraGridScreen(), // 96: Pedidos de Compra
+      const ConsultaDfeScreen(), // 97: Consulta DF-e
+      const ManifestacaoDestinatarioScreen(), // 98: Manifestação Destinatário
+      const NfseScreen(), // 99: NFSe
+      const ReservaEstoqueScreen(), // 100: ReservaEstoque
+      const DepositoScreen(), // 101: Multi-depósito
+      const SizedBox.shrink(), // 102: Rateio Financeiro (web)
+      const SizedBox.shrink(), // 103: Aprovação de Pagamentos (web)
+      const SizedBox.shrink(), // 104: Baixa Automática (web)
+      const SizedBox.shrink(), // 105: Cobrança (web)
+      const RenegociacaoScreen(), // 106: Renegociação de Títulos
+      const WindowsDevolucaoGridScreen(), // 107: Devoluções
+      const SizedBox.shrink(), // 108
+      const SizedBox.shrink(), // 109
+      const SizedBox.shrink(), // 110
       const CancelamentoCceScreen(), // 111: Cancelamento e CC-e
       const SizedBox.shrink(), // 112: RegraFiscal (web vago)
       WebContaContabilGridScreen(
@@ -350,9 +327,11 @@ class _WebBottomNavBarScreenState extends State<WebBottomNavBarScreen> {
       const WebFechamentoPeriodoScreen(), // 116: Fechamento de Período
       const WebAiDashboardScreen(), // 117: Dashboard IA
       const WebAiAssistenteScreen(), // 118: Assistente IA
-      const TradingDashboardScreen(
-          initialTabIndex: 4), // 129: Configuração da Corretora
-      const CarteiraScreen(), // 131: Minha Carteira
+      const TradingConfigScreen(), // 119: Configuracao da Corretora
+      const CarteiraScreen(), // 132: Minha Carteira
+      const CobrancaAutomaticaScreen(), // 133: Cobrança Automática
+      const KanbanPagamentosScreen(), // 134: Kanban de Pagamentos
+      const WebAprovacaoPagamentosScreen(), // 135: Aprovação de Pagamentos
     ];
   }
 

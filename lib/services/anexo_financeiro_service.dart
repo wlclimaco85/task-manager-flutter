@@ -9,9 +9,9 @@ import '../models/auth_utility.dart';
 import '../utils/api_links.dart';
 import '../utils/tenant_context.dart';
 
-const int _maxBytes = 5 * 1024 * 1024; // 5MB
-const List<String> _allowedExtensions = ['pdf', 'jpg', 'jpeg', 'png'];
-const List<String> _allowedTypes = ['application/pdf', 'image/jpeg', 'image/png'];
+const int _maxBytes = 10 * 1024 * 1024; // 10MB
+const List<String> _allowedExtensions = ['pdf', 'jpg', 'jpeg', 'png', 'xml'];
+const List<String> _allowedTypes = ['application/pdf', 'image/jpeg', 'image/png', 'application/xml', 'text/xml'];
 
 class AnexoFinanceiroService {
   Future<List<AnexoFinanceiro>> listar(int lancamentoId, String tipo) async {

@@ -40,6 +40,7 @@ class DynamicGridWindowsScreen<T> extends StatefulWidget {
   final String? deleteEndpointOverride;
   final List<Widget>? headerActions;
   final void Function()? onAfterCreate;
+  final void Function(Set<String> ids, List<Map<String, dynamic>> selectedData)? onSelectedRowsChanged;
 
   const DynamicGridWindowsScreen({
     super.key,
@@ -58,6 +59,7 @@ class DynamicGridWindowsScreen<T> extends StatefulWidget {
     this.deleteEndpointOverride,
     this.headerActions,
     this.onAfterCreate,
+    this.onSelectedRowsChanged,
   });
 
   @override
@@ -398,6 +400,7 @@ class _DynamicGridWindowsScreenState<T>
           headerActions: widget.headerActions,
           helpTelaNome: tela.nome,
           onAfterCreate: widget.onAfterCreate != null ? () => widget.onAfterCreate!() : null,
+          onSelectedRowsChanged: widget.onSelectedRowsChanged,
         );
       },
     );

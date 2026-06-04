@@ -4,6 +4,7 @@ import '../../../services/conta_bancaria_caller.dart';
 import '../../../services/conciliacao_caller.dart';
 import '../../../utils/grid_colors.dart';
 import '../../utils/grid_texts.dart';
+import 'conciliacao_importacao_screen.dart';
 
 class WebConciliacaoScreen extends StatefulWidget {
   const WebConciliacaoScreen({super.key});
@@ -139,6 +140,21 @@ class _WebConciliacaoScreenState extends State<WebConciliacaoScreen> {
           foregroundColor: Colors.white,
           title: const Text('Conciliacao Bancaria'),
           elevation: 0,
+          actions: [
+            IconButton(
+              icon: const Icon(Icons.file_upload, size: 20),
+              tooltip: 'Importar OFX',
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => const ConciliacaoImportacaoScreen(),
+                  ),
+                );
+              },
+            ),
+            const SizedBox(width: 8),
+          ],
           bottom: const TabBar(
             labelColor: Colors.white,
             unselectedLabelColor: Colors.white70,

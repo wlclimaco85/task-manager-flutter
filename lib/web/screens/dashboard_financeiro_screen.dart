@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 import '../../services/dashboard_financeiro_caller.dart';
 import '../../services/conta_bancaria_caller.dart';
 import '../../services/empresa_caller.dart';
+import '../../utils/grid_colors.dart';
 import '../../utils/utils.dart';
 
 class WebDashboardFinanceiroScreen extends StatefulWidget {
@@ -39,6 +40,18 @@ class _WebDashboardFinanceiroScreenState
   List<_FluxoItem> _fluxo = [];
   List<_CategoriaItem> _categorias = [];
   List<_ParceiroItem> _topParceiros = [];
+
+  // KPIs adicionais
+  double _kpiSaldo = 0;
+  double _kpiEntradas = 0;
+  double _kpiSaidas = 0;
+  double _kpiInadimplencia = 0;
+
+  // Projeção
+  List<_ProjecaoItem> _projecao = [];
+
+  // Filtro período rápido
+  String _periodoFilter = '30d';
 
   @override
   void initState() {
@@ -90,11 +103,19 @@ class _WebDashboardFinanceiroScreenState
         _totalVencido =
             _toDouble(body['totalVencido'] ?? body['vencido'] ?? 0);
 
+        // KPIs adicionais
+        _kpiSaldo = _toDouble(body['kpiSaldo'] ?? body['saldoAtual'] ?? _saldoProjetado);
+        _kpiEntradas = _toDouble(body['kpiEntradas'] ?? body['totalEntradas'] ?? 0);
+        _kpiSaidas = _toDouble(body['kpiSaidas'] ?? body['totalSaidas'] ?? 0);
+        _kpiInadimplencia = _toDouble(body['kpiInadimplencia'] ?? body['inadimplencia'] ?? 0);
+
         _fluxo = _parseFluxo(body['fluxoCaixaProjetado'] ?? body['fluxo'] ?? []);
         _categorias = _parseCategorias(
             body['categorias'] ?? body['categoriasFinanceiras'] ?? []);
         _topParceiros = _parseParceiros(
             body['topParceiros'] ?? body['topClientes'] ?? body['topFornecedores'] ?? []);
+
+        _projecao = _parseProjecao(body['projecao'] ?? body['projecaoMensal'] ?? []);
 
         _loading = false;
       });
@@ -143,6 +164,18 @@ class _WebDashboardFinanceiroScreenState
     }).toList();
   }
 
+  List<_ProjecaoItem> _parseProjecao(dynamic raw) {
+    if (raw is! List) return [];
+    return raw.map((e) {
+      if (e is! Map) return _ProjecaoItem('', 0, 0);
+      return _ProjecaoItem(
+        e['mes']?.toString() ?? e['label']?.toString() ?? '',
+        _toDouble(e['saldo'] ?? e['saldoProjetado'] ?? 0),
+        _toDouble(e['acumulado'] ?? 0),
+      );
+    }).toList();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -176,11 +209,15 @@ class _WebDashboardFinanceiroScreenState
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           _buildFiltros(),
+          const SizedBox(height: 8),
+          _buildPeriodoFilter(),
           const SizedBox(height: 16),
           _buildKpiCards(),
           const SizedBox(height: 24),
           _buildFluxoChart(),
           const SizedBox(height: 24),
+          if (_projecao.isNotEmpty) _buildProjecaoChart(),
+          if (_projecao.isNotEmpty) const SizedBox(height: 24),
           _buildPieCharts(),
         ],
       ),
@@ -378,6 +415,70 @@ class _WebDashboardFinanceiroScreenState
     );
   }
 
+  Widget _buildPeriodoFilter() {
+    final periodos = [
+      {'label': '7 dias', 'value': '7d'},
+      {'label': '30 dias', 'value': '30d'},
+      {'label': '90 dias', 'value': '90d'},
+      {'label': '12 meses', 'value': '12m'},
+    ];
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        child: Row(
+          children: [
+            const Text('Período:',
+                style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
+            const SizedBox(width: 12),
+            ...periodos.map((p) {
+              final selected = _periodoFilter == p['value'];
+              return Padding(
+                padding: const EdgeInsets.only(right: 8),
+                child: ChoiceChip(
+                  label: Text(p['label']!, style: const TextStyle(fontSize: 12)),
+                  selected: selected,
+                  selectedColor: GridColors.primary,
+                  labelStyle: TextStyle(
+                    color: selected ? Colors.white : Colors.grey[700],
+                    fontSize: 12,
+                  ),
+                  onSelected: (v) {
+                    setState(() => _periodoFilter = p['value']!);
+                    _loadDashboard();
+                  },
+                ),
+              );
+            }),
+            const Spacer(),
+            // KPIs extras no card
+            _miniKpi('Saldo', _kpiSaldo, GridColors.info),
+            const SizedBox(width: 16),
+            _miniKpi('Entradas', _kpiEntradas, GridColors.success),
+            const SizedBox(width: 16),
+            _miniKpi('Saídas', _kpiSaidas, GridColors.error),
+            const SizedBox(width: 16),
+            _miniKpi('Inadimplência', _kpiInadimplencia, GridColors.warning),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _miniKpi(String label, double valor, Color color) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.end,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text(label, style: TextStyle(fontSize: 10, color: Colors.grey[600])),
+        Text(
+          _currency.format(valor),
+          style: TextStyle(
+              fontSize: 13, fontWeight: FontWeight.bold, color: color),
+        ),
+      ],
+    );
+  }
+
   Widget _buildFluxoChart() {
     if (_fluxo.isEmpty) {
       return Card(
@@ -522,6 +623,114 @@ class _WebDashboardFinanceiroScreenState
     );
   }
 
+  Widget _buildProjecaoChart() {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Projeção de Saldo (6 meses)',
+                style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.grey[800])),
+            const SizedBox(height: 16),
+            SizedBox(
+              height: 200,
+              child: LineChart(
+                LineChartData(
+                  gridData: FlGridData(
+                    show: true,
+                    drawVerticalLine: false,
+                    getDrawingHorizontalLine: (value) => FlLine(
+                      color: Colors.grey.shade200,
+                      strokeWidth: 1,
+                    ),
+                  ),
+                  titlesData: FlTitlesData(
+                    topTitles:
+                        const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                    rightTitles:
+                        const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                    leftTitles: AxisTitles(
+                      sideTitles: SideTitles(
+                        showTitles: true,
+                        reservedSize: 60,
+                        getTitlesWidget: (value, meta) {
+                          return Text(
+                            _currency.format(value).replaceAll('R\$', ''),
+                            style: const TextStyle(fontSize: 10),
+                          );
+                        },
+                      ),
+                    ),
+                    bottomTitles: AxisTitles(
+                      sideTitles: SideTitles(
+                        showTitles: true,
+                        getTitlesWidget: (value, meta) {
+                          final i = value.toInt();
+                          if (i < 0 || i >= _projecao.length) {
+                            return const SizedBox.shrink();
+                          }
+                          return Padding(
+                            padding: const EdgeInsets.only(top: 4),
+                            child: Text(_projecao[i].mes,
+                                style: const TextStyle(fontSize: 10)),
+                          );
+                        },
+                      ),
+                    ),
+                  ),
+                  borderData: FlBorderData(show: false),
+                  lineBarsData: [
+                    LineChartBarData(
+                      spots: _projecao.asMap().entries.map((e) {
+                        return FlSpot(e.key.toDouble(), e.value.saldo);
+                      }).toList(),
+                      isCurved: true,
+                      color: GridColors.info,
+                      barWidth: 3,
+                      isStrokeCapRound: true,
+                      belowBarData: BarAreaData(
+                        show: true,
+                        color: GridColors.info.withValues(alpha: 0.1),
+                      ),
+                      dotData: FlDotData(
+                        show: true,
+                        getDotPainter: (spot, percent, bar, index) =>
+                            FlDotCirclePainter(
+                          radius: 4,
+                          color: GridColors.info,
+                          strokeColor: Colors.white,
+                          strokeWidth: 2,
+                        ),
+                      ),
+                    ),
+                  ],
+                  lineTouchData: LineTouchData(
+                    touchTooltipData: LineTouchTooltipData(
+                      getTooltipItems: (spots) {
+                        return spots.map((spot) {
+                          final item = _projecao[spot.x.toInt()];
+                          return LineTooltipItem(
+                            '${item.mes}\nSaldo: ${_currency.format(item.saldo)}',
+                            const TextStyle(
+                                color: Colors.white, fontSize: 12),
+                          );
+                        }).toList();
+                      },
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _buildPieCharts() {
     if (_categorias.isEmpty && _topParceiros.isEmpty) {
       return const SizedBox.shrink();
@@ -657,4 +866,11 @@ class _PieData {
   final String nome;
   final double valor;
   _PieData(this.nome, this.valor);
+}
+
+class _ProjecaoItem {
+  final String mes;
+  final double saldo;
+  final double acumulado;
+  _ProjecaoItem(this.mes, this.saldo, this.acumulado);
 }

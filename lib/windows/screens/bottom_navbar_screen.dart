@@ -3,79 +3,81 @@ import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import '../../constants/custom_colors.dart';
-import '../../models/alert_model.dart';
-import '../../models/auth_utility.dart';
-import '../../models/login_model.dart';
+import '../../../models/alert_model.dart';
+import '../../../models/auth_utility.dart';
+import '../../../models/login_model.dart';
 import '../../services/alert_caller.dart';
-import '../../windows/screens/alimento_grid_screen.dart';
-import '../../windows/screens/aplicativo_screen.dart';
-import '../../auth_screens/login_screen.dart';
-import '../../windows/screens/chamado_grid_screen.dart';
-import '../../windows/screens/chatMenssageScreen.dart';
-import '../../windows/screens/chatMessageListScreen.dart';
-import '../../windows/screens/comunicado_componente_screen.dart';
-import '../../windows/screens/comunicado_screen.dart';
-import '../../windows/screens/conta_pagar_grid_screen.dart';
-import '../../windows/screens/conta_receber_grid_screen.dart';
-import '../../windows/screens/dashboard_financeiro_screen.dart';
-import '../../windows/screens/lancamento_financeiro_grid_screen.dart';
-import '../../windows/screens/dieta_grid_screen.dart';
-import '../../windows/screens/diretorio_grid_screen.dart';
-import '../../windows/screens/empresa_grid_screen.dart';
-import '../../windows/screens/exame_grid_screen.dart';
-import '../../windows/screens/exercicio_grid_screen.dart';
+import '../../../windows/screens/alimento_grid_screen.dart';
+import '../../../windows/screens/aplicativo_screen.dart';
+import '../../../auth_screens/login_screen.dart';
+import '../../../windows/screens/chamado_grid_screen.dart';
+import '../../../windows/screens/chatMenssageScreen.dart';
+import '../../../windows/screens/chatMessageListScreen.dart';
+import '../../../windows/screens/comunicado_componente_screen.dart';
+import '../../../windows/screens/comunicado_screen.dart';
+import '../../../windows/screens/integracoes_financeiras_screen.dart';
+import '../../../windows/screens/conta_pagar_grid_screen.dart';
+import '../../../windows/screens/conta_receber_grid_screen.dart';
+import '../../../windows/screens/dashboard_financeiro_screen.dart';
+import '../../../windows/screens/lancamento_financeiro_grid_screen.dart';
+import '../../../windows/screens/dieta_grid_screen.dart';
+import '../../../windows/screens/diretorio_grid_screen.dart';
+import '../../../windows/screens/empresa_grid_screen.dart';
+import '../../../windows/screens/exame_grid_screen.dart';
+import '../../../windows/screens/exercicio_grid_screen.dart';
 import '../../windows/screens/ged_arquivos_screen.dart';
-import '../../windows/screens/forma_pagamento_grid_screen.dart';
-import '../../windows/screens/grupo_muscular_grid_screen.dart';
-import '../../windows/screens/login_grid_screen.dart';
-import '../../windows/screens/medicamento_grid_screen.dart';
-import '../../windows/screens/mensalidade_grid_screen.dart';
-import '../../windows/screens/modalidade_grid_screen.dart';
-import '../../windows/screens/objetivo_grid_screen.dart';
-import '../../windows/screens/obrigacao_fiscal_grid_screen.dart';
-import '../../windows/screens/parceiro_grid_screen.dart';
-import '../../windows/screens/personal_grid_screen.dart';
-import '../../windows/screens/plano_grid_screen.dart';
-import '../../windows/screens/product_register_screen.dart';
-import '../../windows/screens/regime_grid_screen.dart';
-import '../../windows/screens/role_grid_screen.dart';
-import '../../windows/screens/setor_grid_screen.dart';
-import '../../windows/screens/suplemento_grid_screen.dart';
+import '../../../windows/screens/forma_pagamento_grid_screen.dart';
+import '../../../windows/screens/grupo_muscular_grid_screen.dart';
+import '../../../windows/screens/login_grid_screen.dart';
+import '../../../windows/screens/medicamento_grid_screen.dart';
+import '../../../windows/screens/mensalidade_grid_screen.dart';
+import '../../../windows/screens/modalidade_grid_screen.dart';
+import '../../../windows/screens/objetivo_grid_screen.dart';
+import '../../../windows/screens/obrigacao_fiscal_grid_screen.dart';
+import '../../../windows/screens/parceiro_grid_screen.dart';
+import '../../../windows/screens/personal_grid_screen.dart';
+import '../../../windows/screens/plano_grid_screen.dart';
+import '../../../windows/screens/product_register_screen.dart';
+import '../../../windows/screens/regime_grid_screen.dart';
+import '../../../windows/screens/role_grid_screen.dart';
+import '../../../windows/screens/setor_grid_screen.dart';
+import '../../../windows/screens/suplemento_grid_screen.dart';
 import 'documento_screen.dart';
-import '../../windows/screens/calendario_guias_grid_screen.dart';
-import '../../windows/screens/extrato_importacao_screen.dart';
-import '../../windows/screens/conciliacao_screen.dart';
-import '../../windows/screens/configuracoes_admin_screen.dart';
-import '../../windows/screens/cotacao_frete_grid_screen.dart';
-import '../../windows/screens/dividendo_grid_screen.dart';
-import '../../windows/screens/order_grid_screen.dart';
-import '../../windows/screens/pedido_grid_screen.dart';
-import '../../windows/screens/ticket_grid_screen.dart';
-import '../../windows/screens/alerta_aluno_grid_screen.dart';
-import '../../windows/screens/avaliacao_fisica_grid_screen.dart';
-import '../../windows/screens/conta_bancaria_grid_screen.dart';
-import '../../windows/screens/centro_custo_grid_screen.dart';
-import '../../windows/screens/classificacao_grid_screen.dart';
-import '../../windows/screens/categoria_financeira_grid_screen.dart';
-import '../../windows/screens/feriado_grid_screen.dart';
-import '../../windows/screens/nota_fiscal_entrada_grid_screen.dart';
-import '../../windows/screens/nota_fiscal_saida_grid_screen.dart';
-import '../../windows/screens/produto_grid_screen.dart';
-import '../../windows/screens/treino_grid_screen.dart';
-import '../../windows/screens/funcionario_grid_screen.dart';
+import '../../../windows/screens/calendario_guias_grid_screen.dart';
+import '../../../windows/screens/extrato_importacao_screen.dart';
+import '../../../windows/screens/conciliacao_screen.dart';
+import '../../../windows/screens/configuracoes_admin_screen.dart';
+import '../../../windows/screens/cotacao_frete_grid_screen.dart';
+import '../../../windows/screens/dividendo_grid_screen.dart';
+import '../../../windows/screens/order_grid_screen.dart';
+import '../../../windows/screens/pedido_grid_screen.dart';
+import '../../../windows/screens/ticket_grid_screen.dart';
+import '../../../windows/screens/alerta_aluno_grid_screen.dart';
+import '../../../windows/screens/avaliacao_fisica_grid_screen.dart';
+import '../../../windows/screens/conta_bancaria_grid_screen.dart';
+import '../../../windows/screens/centro_custo_grid_screen.dart';
+import '../../../windows/screens/categoria_financeira_grid_screen.dart';
+import '../../../windows/screens/classificacao_grid_screen.dart';
+import '../../../windows/screens/feriado_grid_screen.dart';
+import '../../../windows/screens/nota_fiscal_entrada_grid_screen.dart';
+import '../../../windows/screens/nota_fiscal_saida_grid_screen.dart';
+import '../../../windows/screens/produto_grid_screen.dart';
+import '../../../windows/screens/treino_grid_screen.dart';
+import '../../../windows/screens/funcionario_grid_screen.dart';
 import '../../windows/screens/kanban_chamados_screen.dart';
 import '../../windows/screens/tela_editor_screen.dart';
 import '../../mobile/screens/dashboard_screen.dart';
-import '../../features/trading/trading_dashboard_screen.dart';
-import '../../features/trading/screens/sinais_screen.dart';
-import '../../features/trading/screens/oportunidades_screen.dart';
-import '../../features/trading/screens/backtest_screen.dart';
-import '../../features/trading/services/backtest_repository.dart';
-import '../../features/trading/screens/carteira_screen.dart';
-import '../../utils/api_links.dart';
-import '../../utils/tenant_context.dart';
-import '../../widgets/app_sidebar.dart';
-// Telas adicionais Windows
+import '../../../features/trading/trading_dashboard_screen.dart';
+import '../../../features/trading/screens/sinais_screen.dart';
+import '../../../features/trading/screens/oportunidades_screen.dart';
+import '../../../features/trading/screens/backtest_screen.dart';
+import '../../../features/trading/screens/trading_config_screen.dart';
+import '../../../features/trading/services/backtest_repository.dart';
+import '../../../features/trading/screens/carteira_screen.dart';
+import '../../../utils/api_links.dart';
+import '../../../utils/tenant_context.dart';
+import '../../../widgets/app_sidebar.dart';
+// Telas web reutilizadas no Windows
 import '../../windows/screens/nfe_finalidade_grid_screen.dart';
 import '../../windows/screens/nfe_serie_grid_screen.dart';
 import '../../windows/screens/nfe_tipo_operacao_grid_screen.dart';
@@ -93,6 +95,16 @@ import '../../windows/screens/system_test_screen.dart';
 import '../../windows/screens/cadastro_empresa_wizard.dart';
 import '../../windows/screens/alvara_grid_screen.dart';
 import '../../windows/screens/fornecedor_grid_screen.dart';
+import '../../windows/screens/nfe_import_screen.dart';
+import '../../windows/screens/nfe_import_xml_screen.dart';
+import '../../windows/screens/consulta_dfe_screen.dart';
+import '../../windows/screens/manifestacao_destinatario_screen.dart';
+import '../../windows/screens/nfce/pdv_screen.dart';
+import '../../windows/screens/nfce/config_fiscal_screen.dart';
+import '../../windows/screens/orcamento_grid_screen.dart';
+import '../../windows/screens/pedido_venda_grid_screen.dart';
+import '../../windows/screens/pedido_compra_grid_screen.dart';
+import '../../windows/screens/nfse_screen.dart';
 import '../../windows/screens/reserva_estoque_screen.dart';
 import '../../windows/screens/deposito_screen.dart';
 import '../../windows/screens/rateio_financeiro_screen.dart';
@@ -102,24 +114,6 @@ import '../../windows/screens/cobranca_screen.dart';
 import '../../windows/screens/renegociacao_screen.dart';
 import '../../windows/screens/dre_screen.dart';
 import '../../windows/screens/tabela_preco_screen.dart';
-import '../../windows/screens/nfe_import_screen.dart';
-
-import '../../windows/screens/nfe_import_xml_screen.dart';
-import '../../windows/screens/consulta_dfe_screen.dart';
-import '../../windows/screens/manifestacao_destinatario_screen.dart';
-import '../../windows/screens/nfce/pdv_screen.dart';
-import '../../windows/screens/nfce/config_fiscal_screen.dart';
-import '../../widgets/crm/crm_pipeline_screen.dart';
-import '../../widgets/fiscal/fiscal_automation_screen.dart';
-import '../../windows/screens/integracoes_financeiras_screen.dart';
-import '../../windows/screens/tela_ajuda_grid_screen.dart';
-import '../../windows/screens/orcamento_grid_screen.dart';
-import '../../windows/screens/pedido_venda_grid_screen.dart';
-import '../../windows/screens/pedido_compra_grid_screen.dart';
-import '../../windows/screens/nfse_screen.dart';
-import '../../widgets/dp/dp_dashboard_screen.dart';
-import '../../widgets/dp/dp_dynamic_grid_screen.dart';
-import '../../widgets/dp/dp_portal_colaborador_screen.dart';
 import '../../windows/screens/aprovacao_compra_screen.dart';
 import '../../windows/screens/devolucao_grid_screen.dart';
 import '../../windows/screens/cancelamento_cce_screen.dart';
@@ -130,6 +124,9 @@ import '../../web/screens/contabil/balancete_screen.dart';
 import '../../web/screens/contabil/fechamento_periodo_screen.dart';
 import '../../web/screens/contabil/ai_dashboard_screen.dart';
 import '../../web/screens/contabil/ai_assistente_screen.dart';
+import '../../web/screens/cobranca_automatica_screen.dart';
+import '../../web/screens/kanban_pagamentos_screen.dart';
+import '../../web/screens/aprovacao_pagamentos_screen.dart';
 
 class WindowsBottomNavBarScreen extends StatefulWidget {
   const WindowsBottomNavBarScreen({super.key});
@@ -209,7 +206,7 @@ class _WindowsBottomNavBarScreenState extends State<WindowsBottomNavBarScreen> {
         WindowsChamadoGridScreen(hasPermission: (perm) => true),
         WindowsFormaPagamentoGridScreen(hasPermission: (perm) => true),
         WindowsDiretorioGridScreen(hasPermission: (perm) => true),
-        const GedArquivosScreen(), // 30: GED
+        GedArquivosScreen(), // 30: GED
         const WindowsCalendarScreen(),
         WindowsObrigacaoFiscalGridScreen(hasPermission: (perm) => true),
         WindowsLoginGridScreen(hasPermission: (perm) => true),
@@ -255,66 +252,68 @@ class _WindowsBottomNavBarScreenState extends State<WindowsBottomNavBarScreen> {
         WindowsAlvaraGridScreen(hasPermission: (perm) => true), // 70
         const NfeImportScreen(), // 71: NfeImportCSV
         const TradingDashboardScreen(), // 72: Painel Trading
-        const CrmPipelineScreen(), // 73: CRM/Funil
-        const FiscalAutomationScreen(), // 74: Automacao Fiscal
+        WindowsCentroCustoGridScreen(
+            hasPermission: (perm) => true), // 73: CentroCusto
+        WindowsCategoriaFinanceiraGridScreen(
+            hasPermission: (perm) => true), // 74: CategoriasFinanceiras
         const SinaisScreen(), // 75: Sinais de Mercado
         const OportunidadesScreen(), // 76: Oportunidades
         const TradingDashboardScreen(initialTabIndex: 1), // 77: Watchlist
-        const TradingDashboardScreen(initialTabIndex: 2), // 78: Alertas de Preço
-        const TradingDashboardScreen(initialTabIndex: 3), // 79: Operações Assistidas
+        const TradingDashboardScreen(
+            initialTabIndex: 2), // 78: Alertas de Preço
+        const TradingDashboardScreen(
+            initialTabIndex: 3), // 79: Operações Assistidas
         const PdvScreen(), // 80: PDV NFC-e
         const ConfigFiscalScreen(), // 81: Config. Fiscal
-        WindowsCentroCustoGridScreen(hasPermission: (perm) => true), // 82
-        WindowsCategoriaFinanceiraGridScreen(
-            hasPermission: (perm) => true), // 83
-        WindowsTelaAjudaGridScreen(hasPermission: (perm) => true), // 84: Ajuda das Telas
-        BacktestScreen(repository: BacktestRepository(ApiLinks.baseUrl, headers: TenantContext.jsonHeaders)), // 85: Backtest
-        const DpPortalColaboradorScreen(), // 86: Portal do Colaborador
-        const DpDashboardScreen(), // 87: Dashboard DP
-        const DpDynamicGridScreen(telaNome: 'dp_escala_turno'), // 88: Escalas e Turnos
-        const DpDynamicGridScreen(telaNome: 'dp_ferias'), // 89: Ferias
-        const DpDynamicGridScreen(telaNome: 'dp_admissao'), // 90: Admissao Digital
-        const DpDynamicGridScreen(telaNome: 'dp_rubrica'), // 91: Rubricas
-        const DpDynamicGridScreen(telaNome: 'dp_folha_evento'), // 92: Eventos da Folha
-        const DpDynamicGridScreen(telaNome: 'dp_beneficio'), // 93: Beneficios
-        const DpDynamicGridScreen(telaNome: 'dp_desligamento'), // 94: Desligamentos
-        const DpDynamicGridScreen(telaNome: 'dp_obrigacao_trabalhista'), // 95: Obrigacoes Trabalhistas
-        const WindowsNfeImportXmlScreen(), // 96: NfeImportXml
-        const SizedBox.shrink(), // 97: (vago)
+        const SizedBox.shrink(), // 82
+        const SizedBox.shrink(), // 83
+        const SizedBox.shrink(), // 84: Ajuda (não disponível)
+        BacktestScreen(
+            repository: BacktestRepository(ApiLinks.baseUrl,
+                headers: TenantContext.jsonHeaders)), // 85: Backtest
+        const WindowsNfeImportXmlScreen(), // 86: NfeImportXml
+        const SizedBox.shrink(), // 87: (vago)
         WindowsLancamentoFinanceiroGridScreen(
-            hasPermission: (perm) => true), // 98: LancamentosFinanceiros
-        const ExtratoImportacaoScreen(), // 99: ImportarExtrato
-        const ConciliacaoScreen(), // 100: ConciliacaoBancaria
-        const WindowsDashboardFinanceiroScreen(), // 101: DashboardFinanceiro
-        const IntegracoesFinanceirasScreen(), // 102: IntegracoesFinanceiras
-        WindowsFornecedorGridScreen(hasPermission: (perm) => true), // 103: Fornecedores
-        const WindowsOrcamentoGridScreen(), // 104: Orçamentos
-        const WindowsPedidoVendaGridScreen(), // 105: Pedidos de Venda
-        const WindowsPedidoCompraGridScreen(), // 106: Pedidos de Compra
-        const ConsultaDfeScreen(), // 107: Consulta DF-e
-        const ManifestacaoDestinatarioScreen(), // 108: Manifestação Destinatário
-        const NfseScreen(), // 109: NFSe
-        const ReservaEstoqueScreen(), // 110: ReservaEstoque
-        const DepositoScreen(), // 111: Multi-depósito
-        const RateioFinanceiroScreen(), // 112: Rateio Financeiro
-      const AprovacaoPagamentoScreen(), // 113: Aprovação de Pagamentos
-      const BaixaAutomaticaScreen(), // 114: Baixa Automática de Recebíveis
-      const CobrancaScreen(), // 115: Inadimplência e Cobrança
-      const RenegociacaoScreen(), // 116: Renegociação de Títulos
-      const DreScreen(), // 117: DRE Gerencial
-      TabelaPrecoScreen(hasPermission: (perm) => true), // 118: Tabela de Preços e Descontos
-      const AprovacaoCompraScreen(), // 119: Aprovação de Compras
-      const WindowsDevolucaoGridScreen(), // 120: Devoluções
-      const CancelamentoCceScreen(), // 111: Cancelamento e CC-e
-      RegraFiscalScreen(hasPermission: (perm) => true), // 112: Regras Fiscais
-      WebContaContabilGridScreen(hasPermission: (perm) => true), // 113: Plano de Contas
-      WebLancamentoContabilGridScreen(hasPermission: (perm) => true), // 114: Lançamentos
-      const WebBalanceteScreen(), // 115: Balancete / Balanço
-      const WebFechamentoPeriodoScreen(), // 116: Fechamento de Período
-      const WebAiDashboardScreen(), // 117: Dashboard IA
-      const WebAiAssistenteScreen(), // 118: Assistente IA
-      const TradingDashboardScreen(initialTabIndex: 4), // 129: Configuração da Corretora
-      const CarteiraScreen(), // 131: Minha Carteira
+            hasPermission: (perm) => true), // 88: LancamentosFinanceiros
+        const ExtratoImportacaoScreen(), // 89: ImportarExtrato
+        const ConciliacaoScreen(), // 90: ConciliacaoBancaria
+        const WindowsDashboardFinanceiroScreen(), // 91: DashboardFinanceiro
+        const IntegracoesFinanceirasScreen(), // 92: IntegracoesFinanceiras
+        WindowsFornecedorGridScreen(
+            hasPermission: (perm) => true), // 93: Fornecedores
+        const WindowsOrcamentoGridScreen(), // 94: Orçamentos
+        const WindowsPedidoVendaGridScreen(), // 95: Pedidos de Venda
+        const WindowsPedidoCompraGridScreen(), // 96: Pedidos de Compra
+        const ConsultaDfeScreen(), // 97: Consulta DF-e
+        const ManifestacaoDestinatarioScreen(), // 98: Manifestação Destinatário
+        const NfseScreen(), // 99: NFSe
+        const ReservaEstoqueScreen(), // 100: ReservaEstoque
+        const DepositoScreen(), // 101: Multi-depósito
+        const RateioFinanceiroScreen(), // 102: Rateio Financeiro
+        const AprovacaoPagamentoScreen(), // 103: Aprovação de Pagamentos
+        const BaixaAutomaticaScreen(), // 104: Baixa Automática de Recebíveis
+        const CobrancaScreen(), // 105: Inadimplência e Cobrança
+        const RenegociacaoScreen(), // 106: Renegociação de Títulos
+        const DreScreen(), // 107: DRE Gerencial
+        TabelaPrecoScreen(
+            hasPermission: (perm) => true), // 108: Tabela de Preços e Descontos
+        const AprovacaoCompraScreen(), // 109: Aprovação de Compras
+        const WindowsDevolucaoGridScreen(), // 110: Devoluções
+        const CancelamentoCceScreen(), // 111: Cancelamento e CC-e
+        RegraFiscalScreen(hasPermission: (perm) => true), // 112: Regras Fiscais
+        WebContaContabilGridScreen(
+            hasPermission: (perm) => true), // 113: Plano de Contas
+        WebLancamentoContabilGridScreen(
+            hasPermission: (perm) => true), // 114: Lançamentos
+        const WebBalanceteScreen(), // 115: Balancete / Balanço
+        const WebFechamentoPeriodoScreen(), // 116: Fechamento de Período
+        const WebAiDashboardScreen(), // 117: Dashboard IA
+        const WebAiAssistenteScreen(), // 118: Assistente IA
+        const TradingConfigScreen(), // 119: Configuracao da Corretora
+        const CarteiraScreen(), // 132: Minha Carteira
+        const CobrancaAutomaticaScreen(), // 133: Cobrança Automática
+        const KanbanPagamentosScreen(), // 134: Kanban de Pagamentos
+        const WebAprovacaoPagamentosScreen(), // 135: Aprovação de Pagamentos
       ];
 
   String get userName {

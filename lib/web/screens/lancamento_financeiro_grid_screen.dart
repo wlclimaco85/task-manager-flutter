@@ -7,8 +7,9 @@ import '../../../customization/dynamic_grid_windows_screen.dart';
 import '../../../utils/api_links.dart';
 import '../../../utils/grid_colors.dart';
 import '../../../utils/tenant_context.dart';
+import '../../../web/dialogs/rateio_dialog.dart';
 import '../../../widgets/generic_grid_windows_screen.dart'
-    show FieldConfigWindows;
+    show CustomAction, FieldConfigWindows;
 import 'package:http/http.dart' as http;
 
 class WebLancamentoFinanceiroGridScreen extends StatefulWidget {
@@ -130,6 +131,26 @@ class _WebLancamentoFinanceiroGridScreenState
             shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(6)),
           ),
+        ),
+      ],
+      customActions: () => [
+        CustomAction<Map<String, dynamic>>(
+          icon: Icons.scale,
+          label: 'Configurar Rateio',
+          onPressed: (context, object) {
+            final id = object['id'];
+            final tipo = object['tipo'] ?? object['lancamentoTipo'] ?? 'CONTA_PAGAR';
+            final desc = object['descricao']?.toString();
+            showDialog(
+              context: context,
+              builder: (_) => RateioDialog(
+                lancamentoId: id is int ? id : int.tryParse('$id') ?? 0,
+                lancamentoTipo: tipo.toString(),
+                lancamentoDescricao: desc,
+              ),
+            );
+          },
+          isVisible: (_) => true,
         ),
       ],
     );

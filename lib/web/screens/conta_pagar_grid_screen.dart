@@ -18,6 +18,7 @@ import '../../../web/dialogs/renegociacao_conta_dialog.dart';
 import 'package:http/http.dart' as http;
 
 import '../../../web/dialogs/anexo_upload_dialog.dart';
+import '../../../web/dialogs/export_power_bi_dialog.dart';
 
 class WebContaPagarGridScreen extends StatefulWidget {
   final SecurityCheck hasPermission;
@@ -200,7 +201,6 @@ class _WebContaPagarGridScreenState extends State<WebContaPagarGridScreen> {
               child: DropdownButtonFormField<String>(
                 value: _statusFilter,
                 isDense: true,
-                isExpanded: true,
                 decoration: const InputDecoration(
                   contentPadding:
                       EdgeInsets.symmetric(horizontal: 8, vertical: 4),
@@ -209,7 +209,7 @@ class _WebContaPagarGridScreenState extends State<WebContaPagarGridScreen> {
                 items: _statusOptions
                     .map((s) => DropdownMenuItem(
                         value: s,
-                        child: Text(s, style: const TextStyle(fontSize: 13), overflow: TextOverflow.ellipsis)))
+                        child: Text(s, style: const TextStyle(fontSize: 13))))
                     .toList(),
                 onChanged: (v) => setState(() => _statusFilter = v!),
               ),
@@ -265,7 +265,6 @@ class _WebContaPagarGridScreenState extends State<WebContaPagarGridScreen> {
               child: DropdownButtonFormField<String>(
                 value: _tipoFilter,
                 isDense: true,
-                isExpanded: true,
                 decoration: const InputDecoration(
                   contentPadding:
                       EdgeInsets.symmetric(horizontal: 8, vertical: 4),
@@ -274,7 +273,7 @@ class _WebContaPagarGridScreenState extends State<WebContaPagarGridScreen> {
                 items: _tipoOptions
                     .map((t) => DropdownMenuItem(
                         value: t,
-                        child: Text(t, style: const TextStyle(fontSize: 13), overflow: TextOverflow.ellipsis)))
+                        child: Text(t, style: const TextStyle(fontSize: 13))))
                     .toList(),
                 onChanged: (v) => setState(() => _tipoFilter = v!),
               ),
@@ -332,10 +331,22 @@ class _WebContaPagarGridScreenState extends State<WebContaPagarGridScreen> {
             fieldOverrides: const [
               FieldConfigWindows(
                   fieldName: 'parceiro',
-                  label: 'Fornecedor',
+                  label: 'Parceiro',
                   isInForm: true,
-                  isInGrid: true,
-                  isVisibleByDefault: true),
+                  isInGrid: false,
+                  isVisibleByDefault: false),
+              FieldConfigWindows(
+                  fieldName: 'parceiroDev',
+                  label: 'Parceiro Dev',
+                  isInForm: true,
+                  isInGrid: false,
+                  isVisibleByDefault: false),
+              FieldConfigWindows(
+                  fieldName: 'parceiroRec',
+                  label: 'Parceiro Rec',
+                  isInForm: true,
+                  isInGrid: false,
+                  isVisibleByDefault: false),
             ],
             headerActions: [
               OutlinedButton.icon(
@@ -373,6 +384,22 @@ class _WebContaPagarGridScreenState extends State<WebContaPagarGridScreen> {
                         borderRadius: BorderRadius.circular(6)),
                   ),
                 ),
+              OutlinedButton.icon(
+                onPressed: () => showDialog(
+                  context: context,
+                  builder: (_) => const ExportPowerBiDialog(tipoInicial: 'conta_pagar'),
+                ),
+                icon: const Icon(Icons.download, size: 18),
+                label: const Text('Exportar'),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: GridColors.primary,
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                  side: const BorderSide(color: GridColors.divider),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(6)),
+                ),
+              ),
             ],
             onSelectedRowsChanged: _onSelectedRowsChanged,
             customActions: () => [
@@ -431,6 +458,64 @@ class _WebContaPagarGridScreenState extends State<WebContaPagarGridScreen> {
                       lancamentoTipo: 'PAGAR',
                     ),
                   );
+                },
+                isVisible: (_) => true,
+              ),
+              CustomAction<Map<String, dynamic>>(
+                icon: Icons.copy,
+                label: 'Clonar',
+                onPressed: (context, object) async {
+                  final id = object['id'];
+                  final confirm = await showDialog<bool>(
+                    context: context,
+                    builder: (ctx) => AlertDialog(
+                      title: const Text('Clonar Lançamento'),
+                      content: Text('Deseja clonar o lançamento #$id?'),
+                      actions: [
+                        TextButton(
+                          onPressed: () => Navigator.pop(ctx, false),
+                          child: const Text('Cancelar'),
+                        ),
+                        ElevatedButton(
+                          onPressed: () => Navigator.pop(ctx, true),
+                          child: const Text('Clonar'),
+                        ),
+                      ],
+                    ),
+                  );
+                  if (confirm != true || !context.mounted) return;
+                  try {
+                    final response = await http.post(
+                      Uri.parse(ApiLinks.clonarContaPagar('$id')),
+                      headers: TenantContext.headers,
+                    );
+                    if (!context.mounted) return;
+                    if (response.statusCode == 200 || response.statusCode == 201) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text('Lançamento #$id clonado com sucesso!'),
+                          backgroundColor: GridColors.success,
+                        ),
+                      );
+                      setState(() => _gridKey = UniqueKey());
+                    } else {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text('Erro ao clonar: ${response.statusCode}'),
+                          backgroundColor: GridColors.error,
+                        ),
+                      );
+                    }
+                  } catch (e) {
+                    if (context.mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text('Erro: $e'),
+                          backgroundColor: GridColors.error,
+                        ),
+                      );
+                    }
+                  }
                 },
                 isVisible: (_) => true,
               ),

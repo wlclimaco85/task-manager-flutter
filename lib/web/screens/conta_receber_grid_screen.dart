@@ -11,10 +11,14 @@ import '../../../utils/tenant_context.dart';
 import '../../../widgets/finance/billing_charge_dialog.dart';
 import '../../../widgets/generic_grid_windows_screen.dart' show CustomAction, FieldConfigWindows;
 import '../../../web/screens/baixa_dialog_receber.dart';
+import '../../../web/dialogs/baixa_lote_dialog.dart';
 import '../../../web/dialogs/parcelar_receber_dialog.dart';
 import '../../../web/dialogs/recorrencia_receber_dialog.dart';
 import '../../../web/dialogs/renegociacao_receber_dialog.dart';
 import 'package:http/http.dart' as http;
+
+import '../../../web/dialogs/anexo_upload_dialog.dart';
+import '../../../web/dialogs/export_power_bi_dialog.dart';
 
 class WebContaReceberGridScreen extends StatefulWidget {
   final SecurityCheck hasPermission;
@@ -37,6 +41,8 @@ class _WebContaReceberGridScreenState extends State<WebContaReceberGridScreen> {
   final _tipoOptions = ['Todos', 'AVULSO', 'RECORRENTE', 'PARCELADO'];
 
   Key _gridKey = UniqueKey();
+  Set<String> _selectedRows = {};
+  List<Map<String, dynamic>> _selectedRowData = [];
 
   Map<String, dynamic> get _filterParams {
     final params = <String, dynamic>{};
@@ -116,6 +122,34 @@ class _WebContaReceberGridScreenState extends State<WebContaReceberGridScreen> {
       backgroundColor: error ? GridColors.error : GridColors.success,
       content: Text(msg),
     ));
+  }
+
+  void _onSelectedRowsChanged(Set<String> rows, List<Map<String, dynamic>> rowData) {
+    setState(() {
+      _selectedRows = rows;
+      _selectedRowData = rowData;
+    });
+  }
+
+  void _abrirBaixaLote() {
+    if (_selectedRows.isEmpty) return;
+    final ids = _selectedRows.map((id) => int.parse(id)).toList();
+    // Use the actual row data from the grid instead of dummy maps
+    final contas = List<Map<String, dynamic>>.from(_selectedRowData);
+    showDialog(
+      context: context,
+      builder: (_) => BaixaLoteDialog(
+        isPagar: false,
+        selectedIds: ids,
+        selectedContas: contas,
+      ),
+    ).then((result) {
+      if (result == true) {
+        setState(() => _gridKey = UniqueKey());
+        _selectedRows.clear();
+        _selectedRowData = [];
+      }
+    });
   }
 
   Future<void> _pickDate({required bool isInicio}) async {
@@ -256,12 +290,9 @@ class _WebContaReceberGridScreenState extends State<WebContaReceberGridScreen> {
             deleteEndpointOverride: ApiLinks.deleteContaReceber(':id'),
             extraParams: _filterParams,
             fieldOverrides: const [
-              FieldConfigWindows(
-                  fieldName: 'cliente',
-                  label: 'Cliente',
-                  isInForm: true,
-                  isInGrid: true,
-                  isVisibleByDefault: true),
+              FieldConfigWindows(fieldName: 'parceiro',    label: 'Parceiro',     isInForm: true, isInGrid: false, isVisibleByDefault: false),
+              FieldConfigWindows(fieldName: 'parceiroDev', label: 'Parceiro Dev', isInForm: true, isInGrid: false, isVisibleByDefault: false),
+              FieldConfigWindows(fieldName: 'parceiroRec', label: 'Parceiro Rec', isInForm: true, isInGrid: false, isVisibleByDefault: false),
             ],
             headerActions: [
               OutlinedButton.icon(
@@ -281,7 +312,35 @@ class _WebContaReceberGridScreenState extends State<WebContaReceberGridScreen> {
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
                 ),
               ),
+              if (_selectedRows.isNotEmpty)
+                OutlinedButton.icon(
+                  onPressed: _abrirBaixaLote,
+                  icon: const Icon(Icons.playlist_add_check, size: 18),
+                  label: Text('Baixa em Lote (${_selectedRows.length})'),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: GridColors.secondary,
+                    backgroundColor: GridColors.secondarySoft,
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                    side: const BorderSide(color: GridColors.secondary),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
+                  ),
+                ),
+              OutlinedButton.icon(
+                onPressed: () => showDialog(
+                  context: context,
+                  builder: (_) => const ExportPowerBiDialog(tipoInicial: 'conta_receber'),
+                ),
+                icon: const Icon(Icons.download, size: 18),
+                label: const Text('Exportar'),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: GridColors.primary,
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                  side: const BorderSide(color: GridColors.divider),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
+                ),
+              ),
             ],
+            onSelectedRowsChanged: _onSelectedRowsChanged,
             customActions: () => [
               CustomAction<Map<String, dynamic>>(
                 icon: Icons.receipt_long,
@@ -329,6 +388,79 @@ class _WebContaReceberGridScreenState extends State<WebContaReceberGridScreen> {
                   builder: (_) => WebRenegociacaoReceberDialog(conta: ContaReceber.fromJson(object)),
                 ),
                 isVisible: (m) => ContaReceber.fromJson(m).status == StatusConta.ABERTA,
+              ),
+              CustomAction<Map<String, dynamic>>(
+                icon: Icons.attach_file,
+                label: 'Anexos',
+                onPressed: (context, object) {
+                  final id = object['id'];
+                  showDialog(
+                    context: context,
+                    builder: (_) => AnexoUploadDialog(
+                      lancamentoId: id is int ? id : int.tryParse('$id') ?? 0,
+                      lancamentoTipo: 'RECEBER',
+                    ),
+                  );
+                },
+                isVisible: (_) => true,
+              ),
+              CustomAction<Map<String, dynamic>>(
+                icon: Icons.copy,
+                label: 'Clonar',
+                onPressed: (context, object) async {
+                  final id = object['id'];
+                  final confirm = await showDialog<bool>(
+                    context: context,
+                    builder: (ctx) => AlertDialog(
+                      title: const Text('Clonar Lançamento'),
+                      content: Text('Deseja clonar o lançamento #$id?'),
+                      actions: [
+                        TextButton(
+                          onPressed: () => Navigator.pop(ctx, false),
+                          child: const Text('Cancelar'),
+                        ),
+                        ElevatedButton(
+                          onPressed: () => Navigator.pop(ctx, true),
+                          child: const Text('Clonar'),
+                        ),
+                      ],
+                    ),
+                  );
+                  if (confirm != true || !context.mounted) return;
+                  try {
+                    final response = await http.post(
+                      Uri.parse(ApiLinks.clonarContaReceber('$id')),
+                      headers: TenantContext.headers,
+                    );
+                    if (!context.mounted) return;
+                    if (response.statusCode == 200 || response.statusCode == 201) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text('Lançamento #$id clonado com sucesso!'),
+                          backgroundColor: GridColors.success,
+                        ),
+                      );
+                      setState(() => _gridKey = UniqueKey());
+                    } else {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text('Erro ao clonar: ${response.statusCode}'),
+                          backgroundColor: GridColors.error,
+                        ),
+                      );
+                    }
+                  } catch (e) {
+                    if (context.mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text('Erro: $e'),
+                          backgroundColor: GridColors.error,
+                        ),
+                      );
+                    }
+                  }
+                },
+                isVisible: (_) => true,
               ),
             ],
           ),

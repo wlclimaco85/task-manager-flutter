@@ -1529,6 +1529,7 @@ class GenericGridScreen<T> extends StatefulWidget {
   final List<Widget>? headerActions;
   final String? helpTelaNome;
   final void Function()? onAfterCreate;
+  final void Function(Set<String> ids, List<Map<String, dynamic>> selectedData)? onSelectedRowsChanged;
 
   const GenericGridScreen({
     super.key,
@@ -1565,6 +1566,7 @@ class GenericGridScreen<T> extends StatefulWidget {
     this.headerActions,
     this.helpTelaNome,
     this.onAfterCreate,
+    this.onSelectedRowsChanged,
   });
 
   @override
@@ -4064,6 +4066,22 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
                                   ? selectedRows.add(id)
                                   : selectedRows.remove(id);
                             });
+                            // Build list of selected row data maps
+                            final selectedData = <Map<String, dynamic>>[];
+                            for (final item in filtered) {
+                              final itemMap = widget.toJson(item);
+                              final itemId = _getNestedValue(
+                                itemMap,
+                                widget.idFieldName,
+                              ).toString();
+                              if (selectedRows.contains(itemId)) {
+                                selectedData.add(itemMap);
+                              }
+                            }
+                            widget.onSelectedRowsChanged?.call(
+                              Set.from(selectedRows),
+                              selectedData,
+                            );
                           },
                         ),
                         rowsPerPage: rowsPerPage,
