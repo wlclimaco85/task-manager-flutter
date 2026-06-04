@@ -2327,8 +2327,8 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
           } else {
             formData[config.fieldName] = value;
           }
-        } else {
-          // FK dropdown (with backend endpoint) → send as {id: X} object
+        } else if (config.dropdownValueField == 'id') {
+          // FK dropdown (dropdownValueField='id') → send as {id: X} object
           final idVal = int.tryParse(value);
           final objVal = idVal != null ? {'id': idVal} : {'id': value};
           if (config.fieldName.contains('.')) {
@@ -2336,6 +2336,16 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
             _setNestedValue(formData, parts, objVal);
           } else {
             formData[config.fieldName] = objVal;
+          }
+        } else {
+          // Enum dropdown (dropdownValueField='value') → send raw integer or string
+          final intVal = int.tryParse(value);
+          final rawVal = intVal ?? value;
+          if (config.fieldName.contains('.')) {
+            final parts = config.fieldName.split('.');
+            _setNestedValue(formData, parts, rawVal);
+          } else {
+            formData[config.fieldName] = rawVal;
           }
         }
         continue;
