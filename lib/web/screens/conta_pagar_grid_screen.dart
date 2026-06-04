@@ -328,14 +328,14 @@ class _WebContaPagarGridScreenState extends State<WebContaPagarGridScreen> {
             updateEndpointOverride: ApiLinks.updateContaPagar(':id'),
             deleteEndpointOverride: ApiLinks.deleteContaPagar(':id'),
             extraParams: _filterParams,
-            fieldOverrides: const [
-              FieldConfigWindows(
+            fieldOverrides: [
+              const FieldConfigWindows(
                   fieldName: 'parceiro',
-                  label: 'Parceiro',
-                  isInForm: true,
+                  label: '',
+                  isInForm: false,
                   isInGrid: false,
                   isVisibleByDefault: false),
-              FieldConfigWindows(
+              const FieldConfigWindows(
                   fieldName: 'parceiroDev',
                   label: 'Parceiro Dev',
                   isInForm: true,
@@ -344,9 +344,13 @@ class _WebContaPagarGridScreenState extends State<WebContaPagarGridScreen> {
               FieldConfigWindows(
                   fieldName: 'parceiroRec',
                   label: 'Parceiro Rec',
-                  isInForm: true,
+                  isInForm: TenantContext.hasParceiro,
                   isInGrid: false,
-                  isVisibleByDefault: false),
+                  isVisibleByDefault: false,
+                  enabled: false,
+                  defaultValue: TenantContext.hasParceiro
+                      ? TenantContext.parceiroId?.toString()
+                      : null),
             ],
             headerActions: [
               OutlinedButton.icon(

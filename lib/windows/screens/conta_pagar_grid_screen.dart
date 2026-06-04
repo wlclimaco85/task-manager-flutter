@@ -278,25 +278,27 @@ class _WindowsContaPagarGridScreenState
             updateEndpointOverride: ApiLinks.updateContaPagar(':id'),
             deleteEndpointOverride: ApiLinks.deleteContaPagar(':id'),
             extraParams: _filterParams,
-            fieldOverrides: const [
-              // parceiro: label correto, o dropdown vem do dicionario (dropdownEndpoint /api/parceiro)
-              FieldConfigWindows(
+            fieldOverrides: [
+              const FieldConfigWindows(
                   fieldName: 'parceiro',
-                  label: 'Fornecedor',
+                  label: '',
+                  isInForm: false,
+                  isInGrid: false,
+                  isVisibleByDefault: false),
+              const FieldConfigWindows(
+                  fieldName: 'parceiroDev',
+                  label: 'Parceiro Dev',
                   isInForm: true,
                   isVisibleByDefault: false),
               FieldConfigWindows(
-                  fieldName: 'parceiroDev',
-                  label: '',
-                  isInForm: false,
-                  isVisibleByDefault: false,
-                  enabled: false),
-              FieldConfigWindows(
                   fieldName: 'parceiroRec',
-                  label: '',
-                  isInForm: false,
+                  label: 'Parceiro Rec',
+                  isInForm: TenantContext.hasParceiro,
                   isVisibleByDefault: false,
-                  enabled: false),
+                  enabled: false,
+                  defaultValue: TenantContext.hasParceiro
+                      ? TenantContext.parceiroId?.toString()
+                      : null),
             ],
             headerActions: [
               OutlinedButton.icon(
