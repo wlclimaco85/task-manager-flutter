@@ -19,6 +19,7 @@ import '../../../widgets/generic_grid_windows_screen.dart'
         CustomAction;
 
 import '../models/telas_model.dart';
+import '../config/screen_field_overrides.dart';
 
 typedef SecurityCheck = bool Function(String permission);
 typedef CustomActionsBuilder<T> = List<CustomAction<T>> Function();
@@ -97,7 +98,7 @@ class _DynamicGridWindowsScreenState<T>
 
   // ─────────────────────────────────────────────────────────────────────────
   List<FieldConfigWindows> _convert(List<TelaField> fields) {
-    final overrides = widget.fieldOverrides ?? [];
+    final overrides = widget.fieldOverrides ?? kScreenFieldOverrides[widget.telaNome] ?? [];
 
     // Overrides de SUPRESSÃO: isInForm=false — apenas ocultam o campo bruto
     final suppressMap = <String, FieldConfigWindows>{
