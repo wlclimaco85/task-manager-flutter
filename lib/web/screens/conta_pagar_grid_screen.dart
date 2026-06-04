@@ -261,11 +261,12 @@ class _WebContaPagarGridScreenState extends State<WebContaPagarGridScreen> {
             const Text('Tipo:',
                 style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500)),
             SizedBox(
-              width: 130,
+              width: 160,
               height: 36,
               child: DropdownButtonFormField<String>(
                 value: _tipoFilter,
                 isDense: true,
+                isExpanded: true,
                 decoration: const InputDecoration(
                   contentPadding:
                       EdgeInsets.symmetric(horizontal: 8, vertical: 4),
