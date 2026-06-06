@@ -305,6 +305,17 @@ class _WindowsContaPagarGridScreenState
                   defaultValue: TenantContext.hasParceiro
                       ? TenantContext.parceiroId?.toString()
                       : null),
+              // Campos de baixa: somente leitura — preenchidos via ação "Baixa"
+              const FieldConfigWindows(
+                  fieldName: 'dataBaixa',
+                  label: 'Data da Baixa',
+                  isInForm: true,
+                  enabled: false),
+              const FieldConfigWindows(
+                  fieldName: 'valorBaixa',
+                  label: 'Valor da Baixa',
+                  isInForm: true,
+                  enabled: false),
             ],
             headerActions: [
               OutlinedButton.icon(

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../services/nfse_caller.dart';
+import '../../utils/grid_colors.dart';
 
 class NfseScreen extends StatefulWidget {
   const NfseScreen({super.key});
@@ -7,9 +8,7 @@ class NfseScreen extends StatefulWidget {
   State<NfseScreen> createState() => _NfseScreenState();
 }
 
-class _NfseScreenState extends State<NfseScreen>
-    with SingleTickerProviderStateMixin {
-  late TabController _tabController;
+class _NfseScreenState extends State<NfseScreen> {
   final NfseCaller _caller = NfseCaller();
 
   // Emissão
@@ -41,17 +40,7 @@ class _NfseScreenState extends State<NfseScreen>
   bool _carregandoLogs = false;
 
   @override
-  void initState() {
-    super.initState();
-    _tabController = TabController(length: 4, vsync: this);
-    _tabController.addListener(() {
-      if (_tabController.index == 3) _carregarAuditoria();
-    });
-  }
-
-  @override
   void dispose() {
-    _tabController.dispose();
     _municipioCtrl.dispose();
     _cnpjCtrl.dispose();
     _nomeCtrl.dispose();
@@ -67,10 +56,7 @@ class _NfseScreenState extends State<NfseScreen>
   }
 
   Future<void> _emitir() async {
-    setState(() {
-      _emitindo = true;
-      _resultadoEmissao = null;
-    });
+    setState(() { _emitindo = true; _resultadoEmissao = null; });
     try {
       final result = await _caller.emitir(
         municipio: _municipioCtrl.text,
@@ -84,30 +70,22 @@ class _NfseScreenState extends State<NfseScreen>
       );
       if (mounted) {
         setState(() {
-          _resultadoEmissao = '''
-NFSe emitida com sucesso!
-Número: ${result['numero'] ?? result['nfseNumber'] ?? '-'}
-Protocolo: ${result['protocolo'] ?? result['protocol'] ?? '-'}
-Status: ${result['status'] ?? result['situacao'] ?? '-'}
-Chave: ${result['chave'] ?? '-'}
-''';
+          _resultadoEmissao = 'NFSe emitida!\n'
+              'Número: ${result['numero'] ?? result['nfseNumber'] ?? '-'}\n'
+              'Protocolo: ${result['protocolo'] ?? result['protocol'] ?? '-'}\n'
+              'Status: ${result['status'] ?? result['situacao'] ?? '-'}\n'
+              'Chave: ${result['chave'] ?? '-'}';
         });
       }
     } catch (e) {
-      if (mounted) {
-        setState(() => _resultadoEmissao = 'Erro: $e');
-      }
+      if (mounted) setState(() => _resultadoEmissao = 'Erro: $e');
     } finally {
       if (mounted) setState(() => _emitindo = false);
     }
   }
 
   Future<void> _consultar() async {
-    setState(() {
-      _consultando = true;
-      _resultadoConsulta = null;
-      _erroConsulta = null;
-    });
+    setState(() { _consultando = true; _resultadoConsulta = null; _erroConsulta = null; });
     try {
       final result = await _caller.consultar(_consultaCtrl.text);
       if (mounted) setState(() => _resultadoConsulta = result);
@@ -119,10 +97,7 @@ Chave: ${result['chave'] ?? '-'}
   }
 
   Future<void> _cancelar() async {
-    setState(() {
-      _cancelando = true;
-      _resultadoCancelamento = null;
-    });
+    setState(() { _cancelando = true; _resultadoCancelamento = null; });
     try {
       final result = await _caller.cancelar(
         numero: _cancelNumeroCtrl.text,
@@ -135,9 +110,7 @@ Chave: ${result['chave'] ?? '-'}
         });
       }
     } catch (e) {
-      if (mounted) {
-        setState(() => _resultadoCancelamento = 'Erro: $e');
-      }
+      if (mounted) setState(() => _resultadoCancelamento = 'Erro: $e');
     } finally {
       if (mounted) setState(() => _cancelando = false);
     }
@@ -155,222 +128,264 @@ Chave: ${result['chave'] ?? '-'}
     }
   }
 
+  void _showEmissaoDialog() {
+    showDialog(
+      context: context,
+      builder: (_) => _EmissaoDialog(
+        municipioCtrl: _municipioCtrl,
+        cnpjCtrl: _cnpjCtrl,
+        nomeCtrl: _nomeCtrl,
+        descricaoCtrl: _descricaoCtrl,
+        valorCtrl: _valorCtrl,
+        aliquotaCtrl: _aliquotaCtrl,
+        cnaeCtrl: _cnaeCtrl,
+        codigoTribCtrl: _codigoTribCtrl,
+        emitindo: _emitindo,
+        resultado: _resultadoEmissao,
+        onEmitir: _emitir,
+      ),
+    ).then((_) => setState(() { _resultadoEmissao = null; }));
+  }
+
+  void _showConsultaDialog() {
+    showDialog(
+      context: context,
+      builder: (_) => _ConsultaDialog(
+        ctrl: _consultaCtrl,
+        consultando: _consultando,
+        resultado: _resultadoConsulta,
+        erro: _erroConsulta,
+        onConsultar: _consultar,
+      ),
+    ).then((_) => setState(() { _resultadoConsulta = null; _erroConsulta = null; }));
+  }
+
+  void _showCancelamentoDialog() {
+    showDialog(
+      context: context,
+      builder: (_) => _CancelamentoDialog(
+        numeroCtrl: _cancelNumeroCtrl,
+        motivoCtrl: _cancelMotivoCtrl,
+        cancelando: _cancelando,
+        resultado: _resultadoCancelamento,
+        onCancelar: _cancelar,
+      ),
+    ).then((_) => setState(() { _resultadoCancelamento = null; }));
+  }
+
+  void _showAuditoriaDialog() {
+    _carregarAuditoria();
+    showDialog(
+      context: context,
+      barrierDismissible: true,
+      builder: (_) => _AuditoriaDialog(
+        logs: _logs,
+        carregando: _carregandoLogs,
+        onRefresh: _carregarAuditoria,
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('NFSe - Nota Fiscal de Serviços'),
-        bottom: TabBar(
-          controller: _tabController,
-          tabs: const [
-            Tab(text: 'Emissão'),
-            Tab(text: 'Consulta'),
-            Tab(text: 'Cancelamento'),
-            Tab(text: 'Auditoria'),
-          ],
-        ),
-      ),
-      body: TabBarView(
-        controller: _tabController,
-        children: [
-          _buildEmissaoTab(),
-          _buildConsultaTab(),
-          _buildCancelamentoTab(),
-          _buildAuditoriaTab(),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildEmissaoTab() {
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _campo('Município', _municipioCtrl),
-          _campo('CNPJ Tomador', _cnpjCtrl),
-          _campo('Nome Tomador', _nomeCtrl),
-          _campo('Descrição do Serviço', _descricaoCtrl),
-          _campo('Valor', _valorCtrl, teclado: TextInputType.number),
-          _campo('Alíquota ISS', _aliquotaCtrl, teclado: TextInputType.number),
-          _campo('CNAE', _cnaeCtrl),
-          _campo('Código Tributação', _codigoTribCtrl),
-          const SizedBox(height: 16),
-          SizedBox(
-            width: double.infinity,
-            child: ElevatedButton.icon(
-              onPressed: _emitindo ? null : _emitir,
-              icon: _emitindo
-                  ? const SizedBox(
-                      width: 18,
-                      height: 18,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    )
-                  : const Icon(Icons.send),
-              label: Text(_emitindo ? 'Emitindo...' : 'Emitir NFSe'),
-            ),
-          ),
-          if (_resultadoEmissao != null) ...[
-            const SizedBox(height: 16),
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: _resultadoEmissao!.startsWith('Erro')
-                    ? Colors.red.shade50
-                    : Colors.green.shade50,
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Text(_resultadoEmissao!),
-            ),
-          ],
-        ],
-      ),
-    );
-  }
-
-  Widget _buildConsultaTab() {
-    return Padding(
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        children: [
-          Row(
+    return Column(
+      children: [
+        // ── Header ──────────────────────────────────────────────────────────
+        Container(
+          height: 56,
+          color: GridColors.error,
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          child: const Row(
             children: [
-              Expanded(
-                child: TextField(
-                  controller: _consultaCtrl,
-                  decoration: const InputDecoration(
-                    labelText: 'Número NFSe',
-                    border: OutlineInputBorder(),
-                  ),
-                ),
-              ),
-              const SizedBox(width: 8),
-              ElevatedButton.icon(
-                onPressed: _consultando ? null : _consultar,
-                icon: _consultando
-                    ? const SizedBox(
-                        width: 18,
-                        height: 18,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      )
-                    : const Icon(Icons.search),
-                label: Text(_consultando ? 'Consultando...' : 'Consultar'),
+              Icon(Icons.receipt_long, color: Colors.white, size: 20),
+              SizedBox(width: 10),
+              Text(
+                'NFSe - Nota Fiscal de Serviços',
+                style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold),
               ),
             ],
           ),
-          if (_erroConsulta != null)
-            Padding(
-              padding: const EdgeInsets.only(top: 16),
-              child: Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: Colors.red.shade50,
-                  borderRadius: BorderRadius.circular(8),
+        ),
+        // ── Botões de ação ────────────────────────────────────────────────
+        Container(
+          color: Colors.white,
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+          child: Wrap(
+            spacing: 10,
+            runSpacing: 8,
+            children: [
+              _actionButton(
+                icon: Icons.send,
+                label: 'Emitir NFSe',
+                color: GridColors.primary,
+                onTap: _showEmissaoDialog,
+              ),
+              _actionButton(
+                icon: Icons.search,
+                label: 'Consultar',
+                color: GridColors.secondary,
+                onTap: _showConsultaDialog,
+              ),
+              _actionButton(
+                icon: Icons.cancel_outlined,
+                label: 'Cancelar NFSe',
+                color: GridColors.error,
+                onTap: _showCancelamentoDialog,
+              ),
+              _actionButton(
+                icon: Icons.history,
+                label: 'Auditoria',
+                color: Colors.grey.shade700,
+                onTap: _showAuditoriaDialog,
+              ),
+            ],
+          ),
+        ),
+        const Divider(height: 1),
+        // ── Área principal: informativo / log rápido ─────────────────────
+        Expanded(
+          child: Center(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(Icons.receipt_long, size: 64, color: Colors.grey.shade300),
+                const SizedBox(height: 16),
+                Text(
+                  'Selecione uma ação acima para emitir,\nconsultar ou cancelar NFSe.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(color: Colors.grey.shade500, fontSize: 14),
                 ),
-                child: Text(_erroConsulta!),
-              ),
+              ],
             ),
-          if (_resultadoConsulta != null) ...[
-            const SizedBox(height: 16),
-            Expanded(
-              child: ListView(
-                children: _resultadoConsulta!.entries.map((e) {
-                  return ListTile(
-                    title: Text('${e.key}:'),
-                    trailing: Text('${e.value}'),
-                  );
-                }).toList(),
-              ),
-            ),
-          ],
-        ],
-      ),
+          ),
+        ),
+      ],
     );
   }
 
-  Widget _buildCancelamentoTab() {
-    return Padding(
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        children: [
-          TextField(
-            controller: _cancelNumeroCtrl,
-            decoration: const InputDecoration(
-              labelText: 'Número NFSe',
-              border: OutlineInputBorder(),
-            ),
-          ),
-          const SizedBox(height: 12),
-          TextField(
-            controller: _cancelMotivoCtrl,
-            decoration: const InputDecoration(
-              labelText: 'Motivo do Cancelamento',
-              border: OutlineInputBorder(),
-            ),
-            maxLines: 3,
-          ),
-          const SizedBox(height: 16),
-          SizedBox(
-            width: double.infinity,
-            child: ElevatedButton.icon(
-              onPressed: _cancelando ? null : _cancelar,
-              style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-              icon: _cancelando
-                  ? const SizedBox(
-                      width: 18,
-                      height: 18,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    )
-                  : const Icon(Icons.cancel),
-              label: Text(_cancelando ? 'Cancelando...' : 'Cancelar NFSe'),
-            ),
-          ),
-          if (_resultadoCancelamento != null) ...[
-            const SizedBox(height: 16),
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: _resultadoCancelamento!.startsWith('Erro')
-                    ? Colors.red.shade50
-                    : Colors.orange.shade50,
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Text(_resultadoCancelamento!),
-            ),
-          ],
-        ],
+  Widget _actionButton({
+    required IconData icon,
+    required String label,
+    required Color color,
+    required VoidCallback onTap,
+  }) {
+    return ElevatedButton.icon(
+      onPressed: onTap,
+      icon: Icon(icon, size: 18),
+      label: Text(label, style: const TextStyle(fontSize: 13)),
+      style: ElevatedButton.styleFrom(
+        backgroundColor: color,
+        foregroundColor: Colors.white,
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
       ),
     );
   }
+}
 
-  Widget _buildAuditoriaTab() {
-    if (_carregandoLogs) {
-      return const Center(child: CircularProgressIndicator());
-    }
-    if (_logs.isEmpty) {
-      return const Center(child: Text('Nenhum log de auditoria encontrado.'));
-    }
-    return RefreshIndicator(
-      onRefresh: _carregarAuditoria,
-      child: ListView.builder(
-        itemCount: _logs.length,
-        itemBuilder: (_, i) {
-          final log = _logs[i];
-          final data = log['data'] ?? log['createdAt'] ?? log['timestamp'] ?? '';
-          final acao =
-              log['acao'] ?? log['operacao'] ?? log['tipo'] ?? log['evento'] ?? '';
-          final desc = log['descricao'] ?? log['detalhe'] ?? log['mensagem'] ?? '';
-          return ListTile(
-            leading: const Icon(Icons.history),
-            title: Text('$acao'),
-            subtitle: Text('$data - $desc'),
-            isThreeLine: true,
-          );
-        },
+// ─────────────────────────────────────────────────────────────────────────────
+// Dialogs internos
+// ─────────────────────────────────────────────────────────────────────────────
+
+class _EmissaoDialog extends StatelessWidget {
+  final TextEditingController municipioCtrl, cnpjCtrl, nomeCtrl,
+      descricaoCtrl, valorCtrl, aliquotaCtrl, cnaeCtrl, codigoTribCtrl;
+  final bool emitindo;
+  final String? resultado;
+  final VoidCallback onEmitir;
+
+  const _EmissaoDialog({
+    required this.municipioCtrl,
+    required this.cnpjCtrl,
+    required this.nomeCtrl,
+    required this.descricaoCtrl,
+    required this.valorCtrl,
+    required this.aliquotaCtrl,
+    required this.cnaeCtrl,
+    required this.codigoTribCtrl,
+    required this.emitindo,
+    required this.resultado,
+    required this.onEmitir,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Dialog(
+      child: SizedBox(
+        width: 540,
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text('Emitir NFSe',
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+              const SizedBox(height: 20),
+              _campo('Município', municipioCtrl),
+              _campo('CNPJ Tomador', cnpjCtrl),
+              _campo('Nome Tomador', nomeCtrl),
+              _campo('Descrição do Serviço', descricaoCtrl),
+              Row(children: [
+                Expanded(child: _campo('Valor', valorCtrl, teclado: TextInputType.number)),
+                const SizedBox(width: 12),
+                Expanded(child: _campo('Alíquota ISS', aliquotaCtrl, teclado: TextInputType.number)),
+              ]),
+              Row(children: [
+                Expanded(child: _campo('CNAE', cnaeCtrl)),
+                const SizedBox(width: 12),
+                Expanded(child: _campo('Cód. Tributação', codigoTribCtrl)),
+              ]),
+              if (resultado != null) ...[
+                const SizedBox(height: 12),
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: resultado!.startsWith('Erro')
+                        ? Colors.red.shade50
+                        : Colors.green.shade50,
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(
+                      color: resultado!.startsWith('Erro')
+                          ? Colors.red.shade200
+                          : Colors.green.shade200,
+                    ),
+                  ),
+                  child: Text(resultado!, style: const TextStyle(fontSize: 13)),
+                ),
+              ],
+              const SizedBox(height: 20),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  TextButton(
+                    onPressed: () => Navigator.pop(context),
+                    child: const Text('Fechar'),
+                  ),
+                  const SizedBox(width: 8),
+                  ElevatedButton.icon(
+                    onPressed: emitindo ? null : onEmitir,
+                    icon: emitindo
+                        ? const SizedBox(
+                            width: 16,
+                            height: 16,
+                            child: CircularProgressIndicator(
+                                strokeWidth: 2, color: Colors.white))
+                        : const Icon(Icons.send, size: 18),
+                    label: Text(emitindo ? 'Emitindo...' : 'Emitir'),
+                    style: ElevatedButton.styleFrom(
+                        backgroundColor: GridColors.primary,
+                        foregroundColor: Colors.white),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -385,6 +400,294 @@ Chave: ${result['chave'] ?? '-'}
         decoration: InputDecoration(
           labelText: label,
           border: const OutlineInputBorder(),
+          isDense: true,
+          contentPadding:
+              const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+        ),
+      ),
+    );
+  }
+}
+
+class _ConsultaDialog extends StatelessWidget {
+  final TextEditingController ctrl;
+  final bool consultando;
+  final Map<String, dynamic>? resultado;
+  final String? erro;
+  final VoidCallback onConsultar;
+
+  const _ConsultaDialog({
+    required this.ctrl,
+    required this.consultando,
+    required this.resultado,
+    required this.erro,
+    required this.onConsultar,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Dialog(
+      child: SizedBox(
+        width: 480,
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text('Consultar NFSe',
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+              const SizedBox(height: 20),
+              Row(
+                children: [
+                  Expanded(
+                    child: TextField(
+                      controller: ctrl,
+                      decoration: const InputDecoration(
+                        labelText: 'Número NFSe',
+                        border: OutlineInputBorder(),
+                        isDense: true,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  ElevatedButton.icon(
+                    onPressed: consultando ? null : onConsultar,
+                    icon: consultando
+                        ? const SizedBox(
+                            width: 16,
+                            height: 16,
+                            child: CircularProgressIndicator(
+                                strokeWidth: 2, color: Colors.white))
+                        : const Icon(Icons.search, size: 18),
+                    label: Text(consultando ? 'Consultando...' : 'Consultar'),
+                  ),
+                ],
+              ),
+              if (erro != null) ...[
+                const SizedBox(height: 12),
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Colors.red.shade50,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Text(erro!, style: const TextStyle(color: Colors.red)),
+                ),
+              ],
+              if (resultado != null) ...[
+                const SizedBox(height: 12),
+                ...resultado!.entries.map((e) => Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 4),
+                      child: Row(
+                        children: [
+                          Text('${e.key}: ',
+                              style: const TextStyle(
+                                  fontWeight: FontWeight.w600, fontSize: 13)),
+                          Text('${e.value}',
+                              style: const TextStyle(fontSize: 13)),
+                        ],
+                      ),
+                    )),
+              ],
+              const SizedBox(height: 16),
+              Align(
+                alignment: Alignment.centerRight,
+                child: TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text('Fechar'),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _CancelamentoDialog extends StatelessWidget {
+  final TextEditingController numeroCtrl, motivoCtrl;
+  final bool cancelando;
+  final String? resultado;
+  final VoidCallback onCancelar;
+
+  const _CancelamentoDialog({
+    required this.numeroCtrl,
+    required this.motivoCtrl,
+    required this.cancelando,
+    required this.resultado,
+    required this.onCancelar,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Dialog(
+      child: SizedBox(
+        width: 440,
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text('Cancelar NFSe',
+                  style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.red)),
+              const SizedBox(height: 20),
+              TextField(
+                controller: numeroCtrl,
+                decoration: const InputDecoration(
+                  labelText: 'Número NFSe',
+                  border: OutlineInputBorder(),
+                  isDense: true,
+                ),
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: motivoCtrl,
+                maxLines: 3,
+                decoration: const InputDecoration(
+                  labelText: 'Motivo do Cancelamento',
+                  border: OutlineInputBorder(),
+                  isDense: true,
+                ),
+              ),
+              if (resultado != null) ...[
+                const SizedBox(height: 12),
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: resultado!.startsWith('Erro')
+                        ? Colors.red.shade50
+                        : Colors.orange.shade50,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Text(resultado!, style: const TextStyle(fontSize: 13)),
+                ),
+              ],
+              const SizedBox(height: 20),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  TextButton(
+                    onPressed: () => Navigator.pop(context),
+                    child: const Text('Fechar'),
+                  ),
+                  const SizedBox(width: 8),
+                  ElevatedButton.icon(
+                    onPressed: cancelando ? null : onCancelar,
+                    icon: cancelando
+                        ? const SizedBox(
+                            width: 16,
+                            height: 16,
+                            child: CircularProgressIndicator(
+                                strokeWidth: 2, color: Colors.white))
+                        : const Icon(Icons.cancel, size: 18),
+                    label: Text(cancelando ? 'Cancelando...' : 'Cancelar NFSe'),
+                    style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.red,
+                        foregroundColor: Colors.white),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _AuditoriaDialog extends StatelessWidget {
+  final List<Map<String, dynamic>> logs;
+  final bool carregando;
+  final Future<void> Function() onRefresh;
+
+  const _AuditoriaDialog({
+    required this.logs,
+    required this.carregando,
+    required this.onRefresh,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Dialog(
+      child: SizedBox(
+        width: 600,
+        height: 480,
+        child: Column(
+          children: [
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+              decoration: BoxDecoration(
+                  color: Colors.grey.shade700,
+                  borderRadius:
+                      const BorderRadius.vertical(top: Radius.circular(4))),
+              child: Row(
+                children: [
+                  const Icon(Icons.history, color: Colors.white, size: 20),
+                  const SizedBox(width: 10),
+                  const Expanded(
+                    child: Text('Auditoria NFSe',
+                        style: TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16)),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.refresh, color: Colors.white),
+                    onPressed: onRefresh,
+                    tooltip: 'Atualizar',
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.close, color: Colors.white),
+                    onPressed: () => Navigator.pop(context),
+                  ),
+                ],
+              ),
+            ),
+            Expanded(
+              child: carregando
+                  ? const Center(child: CircularProgressIndicator())
+                  : logs.isEmpty
+                      ? const Center(
+                          child: Text('Nenhum log de auditoria encontrado.'))
+                      : ListView.separated(
+                          itemCount: logs.length,
+                          separatorBuilder: (_, __) =>
+                              const Divider(height: 1),
+                          itemBuilder: (_, i) {
+                            final log = logs[i];
+                            final data = log['data'] ??
+                                log['createdAt'] ??
+                                log['timestamp'] ??
+                                '';
+                            final acao = log['acao'] ??
+                                log['operacao'] ??
+                                log['tipo'] ??
+                                log['evento'] ??
+                                '';
+                            final desc = log['descricao'] ??
+                                log['detalhe'] ??
+                                log['mensagem'] ??
+                                '';
+                            return ListTile(
+                              dense: true,
+                              leading: const Icon(Icons.history, size: 18),
+                              title: Text('$acao',
+                                  style: const TextStyle(fontSize: 13)),
+                              subtitle: Text('$data — $desc',
+                                  style: const TextStyle(fontSize: 12)),
+                            );
+                          },
+                        ),
+            ),
+          ],
         ),
       ),
     );

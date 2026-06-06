@@ -354,14 +354,14 @@ class ApiLinks {
       '$_baseUrlNew/api/chamados/$id/status';
 
   // Formas de Pagamento
-  static String get allFormasPagamento => '$_baseUrlNew/api/forma-pagamento';
-  static String get createFormaPagamento => '$_baseUrlNew/api/forma-pagamento';
+  static String get allFormasPagamento => '$_baseUrlNew/api/forma_pagamento';
+  static String get createFormaPagamento => '$_baseUrlNew/api/forma_pagamento';
   static String updateFormaPagamento(String id) =>
-      '$_baseUrlNew/api/forma-pagamento/$id';
+      '$_baseUrlNew/api/forma_pagamento/$id';
   static String deleteFormaPagamento(String id) =>
-      '$_baseUrlNew/api/forma-pagamento/$id';
+      '$_baseUrlNew/api/forma_pagamento/$id';
   static String formasPagamentoByEmpresa(String empresaId) =>
-      '$_baseUrlNew/api/forma-pagamento/empresa/$empresaId';
+      '$_baseUrlNew/api/forma_pagamento/empresa/$empresaId';
 
   // CobranÃ§as de contas a receber
   static String contaReceberCobrancas(String contaReceberId) =>

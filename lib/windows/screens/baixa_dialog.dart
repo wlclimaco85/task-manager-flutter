@@ -5,6 +5,7 @@ import '../../../models/forma_pagamento_model.dart';
 import '../../services/network_caller.dart';
 import '../../../models/network_response.dart';
 import '../../../utils/api_links.dart';
+import '../../utils/grid_colors.dart';
 import '../../utils/grid_texts.dart';
 
 class BaixaDialog extends StatefulWidget {
@@ -20,8 +21,9 @@ class _BaixaDialogState extends State<BaixaDialog> {
   final _formKey = GlobalKey<FormState>();
   final _valorController = TextEditingController();
   DateTime _dataBaixa = DateTime.now();
-  int? _formaPagamentoId; // Armazena o ID selecionado
+  int? _formaPagamentoId;
   bool _isLoading = true;
+  bool _isSubmitting = false;
   List<FormaPagamento> _formasPagamento = [];
 
   @override
@@ -33,7 +35,7 @@ class _BaixaDialogState extends State<BaixaDialog> {
 
   Future<void> _loadFormasPagamento() async {
     final List<Map<String, dynamic>> formasMap =
-        await FormaPagamento.loadFormasPagamento(); // retorna List<Map>
+        await FormaPagamento.loadFormasPagamento();
 
     final List<FormaPagamento> formas = formasMap
         .map(
@@ -52,98 +54,311 @@ class _BaixaDialogState extends State<BaixaDialog> {
     });
   }
 
+  String get _dataBaixaFormatted =>
+      '${_dataBaixa.day.toString().padLeft(2, '0')}/'
+      '${_dataBaixa.month.toString().padLeft(2, '0')}/'
+      '${_dataBaixa.year}';
+
   @override
   Widget build(BuildContext context) {
-    return AlertDialog(
-      title: const Text(GridTexts.registerLow),
-      content: SingleChildScrollView(
-        child: Form(
-          key: _formKey,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              // Campo Valor da Baixa
-              TextFormField(
-                controller: _valorController,
-                decoration: const InputDecoration(
-                  labelText: GridTexts.lowValue,
-                  prefixIcon: Icon(Icons.attach_money),
-                ),
-                keyboardType: TextInputType.number,
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return GridTexts.enterLowValue;
-                  }
-                  final valor = double.tryParse(value);
-                  if (valor == null || valor <= 0) {
-                    return GridTexts.valueMustBeGreaterThanZero;
-                  }
-                  return null;
-                },
-              ),
-              const SizedBox(height: 16),
-
-              // Dropdown Formas de Pagamento
-              _isLoading
-                  ? const CircularProgressIndicator()
-                  : DropdownButtonFormField<int>(
-                      initialValue: _formaPagamentoId,
-                      decoration: const InputDecoration(
-                        labelText: GridTexts.paymentMethod,
-                        prefixIcon: Icon(Icons.payment),
-                      ),
-                      items: _formasPagamento.map((forma) {
-                        return DropdownMenuItem<int>(
-                          value: forma.id, // Acessa o ID do objeto
-                          child: Text(
-                            forma.nome ?? '',
-                          ), // Acessa o nome do objeto
-                        );
-                      }).toList(),
-                      onChanged: (newValue) {
-                        setState(() {
-                          _formaPagamentoId = newValue;
-                        });
-                      },
-                      validator: (value) {
-                        if (value == null) {
-                          return GridTexts.selectPaymentMethod;
-                        }
-                        return null;
-                      },
-                    ),
-              const SizedBox(height: 16),
-
-              // Seletor de Data
-              Row(
-                children: [
-                  const Icon(Icons.calendar_today, size: 20),
-                  const SizedBox(width: 8),
-                  const Text('${GridTexts.lowDate}:'),
-                  const SizedBox(width: 8),
-                  TextButton(
-                    onPressed: () => _selectDate(context),
-                    child: Text(
-                      '${_dataBaixa.day}/${_dataBaixa.month}/${_dataBaixa.year}',
-                      style: const TextStyle(fontWeight: FontWeight.bold),
-                    ),
-                  ),
-                ],
-              ),
-            ],
+    return Dialog(
+      backgroundColor: Colors.transparent,
+      insetPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
+      child: SizedBox(
+        width: 420,
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(12),
+          child: Material(
+            color: GridColors.dialogBackground,
+            elevation: 8,
+            shadowColor: GridColors.shadow,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                _buildHeader(),
+                _buildBody(),
+                _buildFooter(),
+              ],
+            ),
           ),
         ),
       ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.of(context).pop(),
-          child: const Text(GridTexts.cancel),
+    );
+  }
+
+  Widget _buildHeader() {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+      decoration: const BoxDecoration(
+        color: GridColors.primary,
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 36,
+            height: 36,
+            decoration: BoxDecoration(
+              color: GridColors.primaryDark,
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: const Icon(
+              Icons.payments_outlined,
+              color: GridColors.textPrimary,
+              size: 20,
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  GridTexts.registerLow,
+                  style: TextStyle(
+                    color: GridColors.textPrimary,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                    letterSpacing: 0.2,
+                  ),
+                ),
+                if (widget.conta.descricao != null &&
+                    widget.conta.descricao!.isNotEmpty)
+                  Text(
+                    widget.conta.descricao!,
+                    style: const TextStyle(
+                      color: GridColors.textPrimaryMuted,
+                      fontSize: 12,
+                    ),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+              ],
+            ),
+          ),
+          IconButton(
+            onPressed: () => Navigator.of(context).pop(),
+            icon: const Icon(Icons.close, color: GridColors.textPrimaryMuted, size: 20),
+            padding: EdgeInsets.zero,
+            constraints: const BoxConstraints(minWidth: 28, minHeight: 28),
+            tooltip: GridTexts.cancel,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildBody() {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 20, 20, 4),
+      child: Form(
+        key: _formKey,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            // Campo Valor da Baixa
+            TextFormField(
+              controller: _valorController,
+              decoration: InputDecoration(
+                labelText: GridTexts.lowValue,
+                prefixIcon: const Icon(Icons.attach_money, size: 20),
+                prefixIconColor: GridColors.primary,
+                floatingLabelStyle: const TextStyle(color: GridColors.primary),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                  borderSide: const BorderSide(color: GridColors.borderSubtle),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                  borderSide: const BorderSide(color: GridColors.primary, width: 1.5),
+                ),
+                errorBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                  borderSide: const BorderSide(color: GridColors.error),
+                ),
+                focusedErrorBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                  borderSide: const BorderSide(color: GridColors.error, width: 1.5),
+                ),
+                filled: true,
+                fillColor: GridColors.inputBackground,
+                contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+              ),
+              keyboardType: TextInputType.number,
+              validator: (value) {
+                if (value == null || value.isEmpty) {
+                  return GridTexts.enterLowValue;
+                }
+                final valor = double.tryParse(value);
+                if (valor == null || valor <= 0) {
+                  return GridTexts.valueMustBeGreaterThanZero;
+                }
+                return null;
+              },
+            ),
+            const SizedBox(height: 14),
+
+            // Dropdown Formas de Pagamento
+            _isLoading
+                ? Container(
+                    height: 56,
+                    decoration: BoxDecoration(
+                      color: GridColors.inputBackground,
+                      border: Border.all(color: GridColors.borderSubtle),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: const Center(
+                      child: SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: GridColors.primary,
+                        ),
+                      ),
+                    ),
+                  )
+                : DropdownButtonFormField<int>(
+                    value: _formaPagamentoId,
+                    decoration: InputDecoration(
+                      labelText: GridTexts.paymentMethod,
+                      prefixIcon: const Icon(Icons.payment, size: 20),
+                      prefixIconColor: GridColors.primary,
+                      floatingLabelStyle: const TextStyle(color: GridColors.primary),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8),
+                        borderSide: const BorderSide(color: GridColors.borderSubtle),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8),
+                        borderSide: const BorderSide(color: GridColors.primary, width: 1.5),
+                      ),
+                      errorBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8),
+                        borderSide: const BorderSide(color: GridColors.error),
+                      ),
+                      focusedErrorBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8),
+                        borderSide: const BorderSide(color: GridColors.error, width: 1.5),
+                      ),
+                      filled: true,
+                      fillColor: GridColors.inputBackground,
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+                    ),
+                    isExpanded: true,
+                    items: _formasPagamento.map((forma) {
+                      return DropdownMenuItem<int>(
+                        value: forma.id,
+                        child: Text(
+                          forma.nome ?? '',
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      );
+                    }).toList(),
+                    onChanged: (newValue) {
+                      setState(() {
+                        _formaPagamentoId = newValue;
+                      });
+                    },
+                    validator: (value) {
+                      if (value == null) {
+                        return GridTexts.selectPaymentMethod;
+                      }
+                      return null;
+                    },
+                  ),
+            const SizedBox(height: 14),
+
+            // Campo Data da Baixa (estilo InputDecoration completo)
+            InkWell(
+              onTap: () => _selectDate(context),
+              borderRadius: BorderRadius.circular(8),
+              child: InputDecorator(
+                decoration: InputDecoration(
+                  labelText: GridTexts.lowDate,
+                  prefixIcon: const Icon(Icons.calendar_today, size: 20),
+                  prefixIconColor: GridColors.primary,
+                  suffixIcon: const Icon(Icons.arrow_drop_down, color: GridColors.primary),
+                  floatingLabelStyle: const TextStyle(color: GridColors.primary),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    borderSide: const BorderSide(color: GridColors.borderSubtle),
+                  ),
+                  filled: true,
+                  fillColor: GridColors.inputBackground,
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+                ),
+                child: Text(
+                  _dataBaixaFormatted,
+                  style: const TextStyle(
+                    fontSize: 14,
+                    color: GridColors.textSecondary,
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(height: 8),
+          ],
         ),
-        ElevatedButton(
-          onPressed: _submitBaixa,
-          child: const Text(GridTexts.confirmLow),
-        ),
-      ],
+      ),
+    );
+  }
+
+  Widget _buildFooter() {
+    return Container(
+      padding: const EdgeInsets.fromLTRB(20, 12, 20, 16),
+      decoration: const BoxDecoration(
+        border: Border(top: BorderSide(color: GridColors.divider, width: 1)),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.end,
+        children: [
+          TextButton(
+            onPressed: _isSubmitting ? null : () => Navigator.of(context).pop(),
+            style: TextButton.styleFrom(
+              foregroundColor: GridColors.textMuted,
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+            ),
+            child: const Text(GridTexts.cancel),
+          ),
+          const SizedBox(width: 8),
+          ElevatedButton.icon(
+            onPressed: _isSubmitting ? null : _submitBaixa,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: GridColors.success,
+              foregroundColor: GridColors.textPrimary,
+              disabledBackgroundColor: GridColors.disabledBackground,
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+              elevation: 0,
+            ),
+            icon: _isSubmitting
+                ? const SizedBox(
+                    width: 16,
+                    height: 16,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: GridColors.textPrimary,
+                    ),
+                  )
+                : const Icon(Icons.check_circle_outline, size: 18),
+            label: Text(
+              _isSubmitting ? GridTexts.saving : GridTexts.confirmLow,
+            ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -153,6 +368,18 @@ class _BaixaDialogState extends State<BaixaDialog> {
       initialDate: _dataBaixa,
       firstDate: DateTime(2000),
       lastDate: DateTime(2100),
+      builder: (context, child) {
+        return Theme(
+          data: Theme.of(context).copyWith(
+            colorScheme: const ColorScheme.light(
+              primary: GridColors.primary,
+              onPrimary: GridColors.textPrimary,
+              surface: GridColors.dialogBackground,
+            ),
+          ),
+          child: child!,
+        );
+      },
     );
     if (picked != null && picked != _dataBaixa) {
       setState(() {
@@ -163,6 +390,8 @@ class _BaixaDialogState extends State<BaixaDialog> {
 
   void _submitBaixa() async {
     if (_formKey.currentState!.validate()) {
+      setState(() => _isSubmitting = true);
+
       final valorBaixa = double.parse(_valorController.text);
 
       final NetworkResponse response = await NetworkCaller().postRequest(
@@ -173,6 +402,9 @@ class _BaixaDialogState extends State<BaixaDialog> {
           'formaPagamentoId': _formaPagamentoId,
         },
       );
+
+      if (!mounted) return;
+      setState(() => _isSubmitting = false);
 
       if (response.isSuccess) {
         ScaffoldMessenger.of(context).showSnackBar(
