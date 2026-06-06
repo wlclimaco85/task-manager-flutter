@@ -295,7 +295,8 @@ class _WindowsContaPagarGridScreenState
                   fieldType: FieldType.dropdown,
                   dropdownFutureBuilder: () => DropdownHelpers.parceirosPorEmpresa(TenantContext.empresaId?.toString()),
                   dropdownValueField: 'id',
-                  dropdownDisplayField: 'nome'),
+                  dropdownDisplayField: 'nome',
+                  fieldOrder: 20), // posição 2: logo abaixo de Empresa (fieldOrder 10)
               FieldConfigWindows(
                   fieldName: 'parceiroRec',
                   label: 'Parceiro Rec',

@@ -244,6 +244,7 @@ class _DynamicGridWindowsScreenState<T>
                 maxFileSize: f.maxFileSize, fileFieldName: f.fileFieldName)
             : null,
         dropdownSelectedValue: f.defaultValue,
+        fieldOrder: f.fieldOrder > 0 ? f.fieldOrder : null,
       ));
     }
 
@@ -254,6 +255,21 @@ class _DynamicGridWindowsScreenState<T>
           !insertedReplace.contains(key)) {
         converted.add(o);
       }
+    }
+
+    // Ordena campos que têm fieldOrder explícito (Flutter-only overrides ou
+    // backend fields com fieldOrder definido) mantendo estabilidade dos demais.
+    // Campos sem fieldOrder ficam em sua posição relativa original.
+    final hasExplicit = converted.any((f) => f.fieldOrder != null);
+    if (hasExplicit) {
+      converted.sort((a, b) {
+        final oa = a.fieldOrder;
+        final ob = b.fieldOrder;
+        if (oa == null && ob == null) return 0;
+        if (oa == null) return 1;
+        if (ob == null) return -1;
+        return oa.compareTo(ob);
+      });
     }
 
     return converted;

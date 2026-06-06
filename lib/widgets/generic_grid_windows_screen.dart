@@ -97,6 +97,10 @@ class FieldConfigWindows {
   final FileConfig? fileConfig;
   final dynamic dropdownSelectedValue;
   final Map<String, dynamic>? fieldSpecificConfig;
+  /// Ordem explícita do campo no formulário. Quando definido, sobrepõe a ordem
+  /// do servidor. Útil para campos Flutter-only (ex: dropdowns de substituição)
+  /// que precisam aparecer em posição específica.
+  final int? fieldOrder;
 
   const FieldConfigWindows({
     required this.label,
@@ -125,6 +129,7 @@ class FieldConfigWindows {
     this.fileConfig,
     this.dropdownSelectedValue,
     this.fieldSpecificConfig,
+    this.fieldOrder,
   });
 }
 
