@@ -318,8 +318,15 @@ class _WindowsContaReceberGridScreenState extends State<WindowsContaReceberGridS
                 fieldOrder: 20, // logo abaixo de Empresa (10) e Parceiro tenant (15)
               ),
               // parceiroRec: oculto — backend auto-propaga com o valor de parceiroDev no save()
+              // Ambas variantes (camelCase + snake_case) para cobrir DB com diferentes padrões
               const FieldConfigWindows(
                 fieldName: 'parceiroRec',
+                label: '',
+                isInForm: false,
+                isVisibleByDefault: false,
+              ),
+              const FieldConfigWindows(
+                fieldName: 'parceiro_rec',
                 label: '',
                 isInForm: false,
                 isVisibleByDefault: false,

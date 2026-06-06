@@ -105,6 +105,12 @@ class _DynamicGridWindowsScreenState<T>
       for (final o in overrides.where((o) => !o.isInForm))
         o.fieldName.toLowerCase(): o,
     };
+    // Índice normalizado (sem underscore) para match snake_case ↔ camelCase
+    // Ex: override 'parceiroRec' → chave 'parceirorec' captura campo 'parceiro_rec' do DB
+    final suppressMapNorm = <String, FieldConfigWindows>{
+      for (final o in overrides.where((o) => !o.isInForm))
+        o.fieldName.toLowerCase().replaceAll('_', ''): o,
+    };
 
     // Overrides de SUBSTITUIÇÃO: isInForm=true — substituem por dropdown/etc
     final replaceMap = <String, FieldConfigWindows>{
@@ -138,9 +144,11 @@ class _DynamicGridWindowsScreenState<T>
       final fnNorm = fnLower.replaceAll('_', '');
 
       // ── 1. Campo suprimido explicitamente ─────────────────────────────
-      if (suppressMap.containsKey(fnLower)) {
+      // Match exacto (toLowerCase) OU normalizado sem underscores (camelCase ↔ snake_case)
+      final suppressEntry = suppressMap[fnLower] ?? suppressMapNorm[fnNorm];
+      if (suppressEntry != null) {
         // Adiciona como oculto (para grid mas não form)
-        converted.add(suppressMap[fnLower]!);
+        converted.add(suppressEntry);
         // Verifica se existe um replace override correspondente para adicionar
         // Ex: app_id suprimido → adiciona dropdown "aplicativo"
         final base = _extractBase(fnLower);
