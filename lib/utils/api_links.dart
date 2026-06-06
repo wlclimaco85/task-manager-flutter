@@ -209,12 +209,12 @@ class ApiLinks {
       '$_baseUrlNew/api/cadastros/fornecedores/$id';
 
   // Personal
-  static String allPersonais = '$_baseUrlNew/api/personais';
-  static String createPersonal = '$_baseUrlNew/api/personais/insert';
+  static String allPersonais = '$_baseUrlNew/api/personal'; // controller: /api/personal
+  static String createPersonal = '$_baseUrlNew/api/personal'; // @PostMapping root
   static String updatePersonal(String id) =>
-      '$_baseUrlNew/api/personais/update/$id';
+      '$_baseUrlNew/api/personal/$id'; // @PutMapping("/{id}")
   static String deletePersonal(String id) =>
-      '$_baseUrlNew/api/personais/delete/$id';
+      '$_baseUrlNew/api/personal/$id'; // @DeleteMapping("/{id}")
 
   // Plano
   static String allPlanos = '$_baseUrlNew/api/planos';
@@ -238,9 +238,9 @@ class ApiLinks {
   static String allSuplementos = '$_baseUrlNew/api/suplementos';
   static String createSuplemento = '$_baseUrlNew/api/suplementos/insert';
   static String updateSuplemento(String id) =>
-      '$_baseUrlNew/api/suplementos/update/$id';
+      '$_baseUrlNew/api/suplementos/$id'; // controller: @PutMapping("/{id}")
   static String deleteSuplemento(String id) =>
-      '$_baseUrlNew/api/suplementos/delete/$id';
+      '$_baseUrlNew/api/suplementos/$id'; // controller: @DeleteMapping("/{id}")
 
   // Suplemento
   static String allAplicativos = '$_baseUrlNew/api/aplicativos';
