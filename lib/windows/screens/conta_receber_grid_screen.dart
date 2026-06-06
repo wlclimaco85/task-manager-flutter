@@ -278,8 +278,21 @@ class _WindowsContaReceberGridScreenState extends State<WindowsContaReceberGridS
             deleteEndpointOverride: ApiLinks.deleteContaReceber(':id'),
             extraParams: _filterParams,
             fieldOverrides: [
-              // parceiro: oculto no form padrão; apenas em contexto multi-tenant (hasParceiro)
-              // Quando hasParceiro=true: mostra desabilitado pré-preenchido com o parceiro do tenant
+              // empresa: pré-selecionado do TenantContext; disabled quando logado em empresa
+              FieldConfigWindows(
+                fieldName: 'empresa',
+                label: 'Empresa',
+                displayFieldName: 'empresa.nome',
+                fieldType: FieldType.dropdown,
+                dropdownValueField: 'id',
+                dropdownDisplayField: 'nome',
+                enabled: TenantContext.empresaId == null,
+                isInForm: true,
+                dropdownSelectedValue: TenantContext.empresaId,
+                dropdownFutureBuilder: DropdownHelpers.empresas,
+                fieldOrder: 10,
+              ),
+              // parceiro: oculto quando sem parceiro; disabled+pré-preenchido em contexto multi-tenant
               FieldConfigWindows(
                 fieldName: 'parceiro',
                 label: 'Parceiro',
@@ -289,8 +302,9 @@ class _WindowsContaReceberGridScreenState extends State<WindowsContaReceberGridS
                 defaultValue: TenantContext.hasParceiro
                     ? TenantContext.parceiroId?.toString()
                     : null,
+                fieldOrder: 15,
               ),
-              // parceiroDev: dropdown principal (cliente pagador)
+              // parceiroDev: dropdown principal (cliente devedor — quem vai pagar)
               FieldConfigWindows(
                 fieldName: 'parceiroDev',
                 label: 'Parceiro',
@@ -301,14 +315,28 @@ class _WindowsContaReceberGridScreenState extends State<WindowsContaReceberGridS
                 dropdownFutureBuilder: () => DropdownHelpers.parceirosPorEmpresa(TenantContext.empresaId?.toString()),
                 dropdownValueField: 'id',
                 dropdownDisplayField: 'nome',
-                fieldOrder: 20, // posição 2: logo abaixo de Empresa (fieldOrder 10)
+                fieldOrder: 20, // logo abaixo de Empresa (10) e Parceiro tenant (15)
               ),
-              // parceiroRec: oculto — preenchido automaticamente pelo backend (= parceiroDev)
+              // parceiroRec: oculto — backend auto-propaga com o valor de parceiroDev no save()
               const FieldConfigWindows(
                 fieldName: 'parceiroRec',
                 label: '',
                 isInForm: false,
                 isVisibleByDefault: false,
+              ),
+              // tipoRecorrencia: dropdown enum (igual ao conta_pagar)
+              FieldConfigWindows(
+                fieldName: 'tipoRecorrencia',
+                label: 'Tipo Recorrência',
+                isInForm: true,
+                fieldType: FieldType.dropdown,
+                dropdownValueField: 'value',
+                dropdownDisplayField: 'label',
+                dropdownFutureBuilder: () => DropdownHelpers.load(
+                  '${ApiLinks.baseUrl}/api/enums/TipoRecorrenciaEnum',
+                  displayField: 'label',
+                ),
+                fieldOrder: 70,
               ),
               // Campos de baixa: somente leitura — preenchidos via ação "Baixa"
               const FieldConfigWindows(
