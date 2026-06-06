@@ -690,6 +690,7 @@ void main() {
             'descricao': 'Forma de pagamento teste',
             'tipo': 'BOLETO',
             'ativo': true,
+            'status': 1, // NOT NULL no DB
           },
           updatePayload: (id) => {
             'nome': _uid('Forma Pgto EDIT'),
@@ -1042,7 +1043,10 @@ void main() {
             'descricao': 'Regime tributário de teste',
             'codigo': 'SN',
           },
-          updatePayload: (id) => {'nome': _uid('Regime EDIT')},
+          updatePayload: (id) => {
+            'nome': _uid('Regime EDIT'),
+            'codigo': 'SN', // NOT NULL — backend não faz merge, precisa enviar
+          },
         ),
         CrudScenario(
           name: 'Módulo Serviço',
@@ -1095,10 +1099,12 @@ void main() {
           deleteUrl: (id) => ApiLinks.deleteTipoProduto(id),
           updateMethod: 'PUT',
           createPayload: () => {
-            'nome': _uid('Tipo Produto'),
+            'tipoProduto': _uid('Tipo Produto'), // campo da entidade (não 'nome')
             'descricao': 'Tipo de produto de teste',
           },
-          updatePayload: (id) => {'nome': _uid('Tipo Produto EDIT')},
+          updatePayload: (id) => {
+            'tipoProduto': _uid('Tipo Produto EDIT'),
+          },
         ),
         CrudScenario(
           name: 'Orçamento Comercial',

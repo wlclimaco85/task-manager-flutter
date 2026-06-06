@@ -117,11 +117,9 @@ class ApiLinks {
 
   // Alimento
   static String allAlimentos = '$_baseUrlNew/api/alimentos';
-  static String createAlimento = '$_baseUrlNew/api/alimentos/insert';
-  static String updateAlimento(String id) =>
-      '$_baseUrlNew/api/alimentos/update/$id';
-  static String deleteAlimento(String id) =>
-      '$_baseUrlNew/api/alimentos/delete/$id';
+  static String createAlimento = '$_baseUrlNew/api/alimentos';
+  static String updateAlimento(String id) => '$_baseUrlNew/api/alimentos/$id';
+  static String deleteAlimento(String id) => '$_baseUrlNew/api/alimentos/$id';
 
   // Dieta
   static String allDietas = '$_baseUrlNew/api/dietas';
@@ -131,37 +129,33 @@ class ApiLinks {
 
   // Empresa
   static String allEmpresas = '$_baseUrlNew/api/empresa';
-  static String createEmpresa = '$_baseUrlNew/api/empresa/insert';
+  static String createEmpresa = '$_baseUrlNew/api/empresa';
   static String updateEmpresa(String id) =>
-      '$_baseUrlNew/api/empresa/update/$id';
-  static String deleteEmpresa(String id) =>
-      '$_baseUrlNew/api/empresa/delete/$id';
+      '$_baseUrlNew/api/empresa/update/$id'; // controller tem /update/{id}
+  static String deleteEmpresa(String id) => '$_baseUrlNew/api/empresa/$id';
   static String empresaById(String id) => '$_baseUrlNew/api/empresa/$id';
   static String atualizarDadosPessoais(dynamic id) =>
       '$_baseUrlNew/api/dadospessoais/$id';
 
   // Exame
   static String allExames = '$_baseUrlNew/api/exames';
-  static String createExame = '$_baseUrlNew/api/exames/insert';
-  static String updateExame(String id) => '$_baseUrlNew/api/exames/update/$id';
-  static String deleteExame(String id) => '$_baseUrlNew/api/exames/delete/$id';
+  static String createExame = '$_baseUrlNew/api/exames';
+  static String updateExame(String id) => '$_baseUrlNew/api/exames/$id';
+  static String deleteExame(String id) => '$_baseUrlNew/api/exames/$id';
 
   // Exercicio
   static String allExercicios = '$_baseUrlNew/api/exercicios';
-  static String createExercicio = '$_baseUrlNew/api/exercicios/insert';
-  static String updateExercicio(String id) =>
-      '$_baseUrlNew/api/exercicios/update/$id';
-  static String deleteExercicio(String id) =>
-      '$_baseUrlNew/api/exercicios/delete/$id';
+  static String createExercicio = '$_baseUrlNew/api/exercicios';
+  static String updateExercicio(String id) => '$_baseUrlNew/api/exercicios/$id';
+  static String deleteExercicio(String id) => '$_baseUrlNew/api/exercicios/$id';
 
   // Grupo Muscular
   static String allGruposMusculares = '$_baseUrlNew/api/grupos-musculares';
-  static String createGrupoMuscular =
-      '$_baseUrlNew/api/grupos-musculares/insert';
+  static String createGrupoMuscular = '$_baseUrlNew/api/grupos-musculares';
   static String updateGrupoMuscular(String id) =>
-      '$_baseUrlNew/api/grupos-musculares/update/$id';
+      '$_baseUrlNew/api/grupos-musculares/$id';
   static String deleteGrupoMuscular(String id) =>
-      '$_baseUrlNew/api/grupos-musculares/delete/$id';
+      '$_baseUrlNew/api/grupos-musculares/$id';
 
   // Medicamento
   static String allMedicamentos = '$_baseUrlNew/api/medicamentos';
@@ -224,9 +218,9 @@ class ApiLinks {
 
   // Plano
   static String allPlanos = '$_baseUrlNew/api/planos';
-  static String createPlano = '$_baseUrlNew/api/planos/insert';
-  static String updatePlano(String id) => '$_baseUrlNew/api/planos/update/$id';
-  static String deletePlano(String id) => '$_baseUrlNew/api/planos/delete/$id';
+  static String createPlano = '$_baseUrlNew/api/planos';
+  static String updatePlano(String id) => '$_baseUrlNew/api/planos/$id';
+  static String deletePlano(String id) => '$_baseUrlNew/api/planos/$id';
 
   // Role
   static String allRoles = '$_baseUrlNew/api/role';
