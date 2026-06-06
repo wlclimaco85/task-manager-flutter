@@ -7,11 +7,12 @@ import 'package:flutter/material.dart';
 import '../../../customization/dynamic_grid_windows_screen.dart';
 import '../../../models/conta_receber_model.dart';
 import '../../../utils/api_links.dart';
+import '../../../utils/dropdown_helpers.dart';
 import '../../../utils/grid_colors.dart';
 import '../../../utils/tenant_context.dart';
 import '../../../utils/grid_texts.dart';
 import '../../../widgets/finance/billing_charge_dialog.dart';
-import '../../../widgets/generic_grid_windows_screen.dart' show CustomAction, FieldConfigWindows;
+import '../../../widgets/generic_grid_windows_screen.dart' show CustomAction, FieldConfigWindows, FieldType;
 import '../../../windows/screens/baixa_dialog_receber.dart';
 import '../../../windows/dialogs/parcelar_receber_dialog.dart';
 import '../../../windows/dialogs/recorrencia_receber_dialog.dart';
@@ -276,10 +277,52 @@ class _WindowsContaReceberGridScreenState extends State<WindowsContaReceberGridS
             updateEndpointOverride: ApiLinks.updateContaReceber(':id'),
             deleteEndpointOverride: ApiLinks.deleteContaReceber(':id'),
             extraParams: _filterParams,
-            fieldOverrides: const [
-              FieldConfigWindows(fieldName: 'parceiro',    label: '', isInForm: false, isVisibleByDefault: false, enabled: false),
-              FieldConfigWindows(fieldName: 'parceiroDev', label: '', isInForm: false, isVisibleByDefault: false, enabled: false),
-              FieldConfigWindows(fieldName: 'parceiroRec', label: '', isInForm: false, isVisibleByDefault: false, enabled: false),
+            fieldOverrides: [
+              // parceiro: oculto no form padrão; apenas em contexto multi-tenant (hasParceiro)
+              // Quando hasParceiro=true: mostra desabilitado pré-preenchido com o parceiro do tenant
+              FieldConfigWindows(
+                fieldName: 'parceiro',
+                label: 'Parceiro',
+                isInForm: TenantContext.hasParceiro,
+                isVisibleByDefault: false,
+                enabled: false,
+                defaultValue: TenantContext.hasParceiro
+                    ? TenantContext.parceiroId?.toString()
+                    : null,
+              ),
+              // parceiroDev: dropdown principal (cliente pagador)
+              FieldConfigWindows(
+                fieldName: 'parceiroDev',
+                label: 'Parceiro',
+                isInForm: true,
+                isInGrid: false,
+                isVisibleByDefault: false,
+                fieldType: FieldType.dropdown,
+                dropdownFutureBuilder: () => DropdownHelpers.parceirosPorEmpresa(TenantContext.empresaId?.toString()),
+                dropdownValueField: 'id',
+                dropdownDisplayField: 'nome',
+                fieldOrder: 20, // posição 2: logo abaixo de Empresa (fieldOrder 10)
+              ),
+              // parceiroRec: oculto — preenchido automaticamente pelo backend (= parceiroDev)
+              const FieldConfigWindows(
+                fieldName: 'parceiroRec',
+                label: '',
+                isInForm: false,
+                isVisibleByDefault: false,
+              ),
+              // Campos de baixa: somente leitura — preenchidos via ação "Baixa"
+              const FieldConfigWindows(
+                fieldName: 'dataBaixa',
+                label: 'Data da Baixa',
+                isInForm: true,
+                enabled: false,
+              ),
+              const FieldConfigWindows(
+                fieldName: 'valorBaixa',
+                label: 'Valor da Baixa',
+                isInForm: true,
+                enabled: false,
+              ),
             ],
             headerActions: [
               OutlinedButton.icon(
