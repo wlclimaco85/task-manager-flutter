@@ -8,6 +8,7 @@ import '../../../customization/dynamic_grid_windows_screen.dart';
 import '../../../models/conta_receber_model.dart';
 import '../../../utils/api_links.dart';
 import '../../../utils/dropdown_helpers.dart';
+import '../../../models/auth_utility.dart';
 import '../../../utils/grid_colors.dart';
 import '../../../utils/tenant_context.dart';
 import '../../../utils/grid_texts.dart';

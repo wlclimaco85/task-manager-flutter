@@ -20,6 +20,7 @@ import 'package:http/http.dart' as http;
 import '../../../web/dialogs/anexo_upload_dialog.dart';
 import '../../../web/dialogs/export_power_bi_dialog.dart';
 import '../../../utils/dropdown_helpers.dart';
+import '../../../models/auth_utility.dart';
 
 class WebContaReceberGridScreen extends StatefulWidget {
   final SecurityCheck hasPermission;

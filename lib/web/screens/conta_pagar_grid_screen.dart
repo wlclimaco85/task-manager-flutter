@@ -9,6 +9,7 @@ import '../../../utils/api_links.dart';
 import '../../../utils/grid_colors.dart';
 import '../../../utils/tenant_context.dart';
 import '../../../utils/dropdown_helpers.dart';
+import '../../../models/auth_utility.dart';
 import '../../../widgets/generic_grid_windows_screen.dart'
     show CustomAction, FieldConfigWindows, FieldType;
 import '../../../web/screens/baixa_dialog.dart';
