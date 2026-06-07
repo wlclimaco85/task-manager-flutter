@@ -330,7 +330,7 @@ class _WebContaPagarGridScreenState extends State<WebContaPagarGridScreen> {
             deleteEndpointOverride: ApiLinks.deleteContaPagar(':id'),
             extraParams: _filterParams,
             fieldOverrides: [
-              // Fornecedor (parceiroDev): 2o campo, locked no parceiro do login
+              // Fornecedor (parceiroDev): 2o campo, dropdown com todos os parceiros (quem devemos pagar)
               FieldConfigWindows(
                   fieldName: 'parceiroDev',
                   label: 'Fornecedor',
@@ -338,15 +338,9 @@ class _WebContaPagarGridScreenState extends State<WebContaPagarGridScreen> {
                   isInGrid: false,
                   isVisibleByDefault: false,
                   fieldType: FieldType.dropdown,
-                  enabled: false,
+                  enabled: true,
                   fieldOrder: 11,
-                  dropdownSelectedValue: TenantContext.parceiroId?.toString(),
-                  dropdownFutureBuilder: () async {
-                    final id = TenantContext.parceiroId;
-                    if (id == null) return <Map<String, dynamic>>[];
-                    final all = await DropdownHelpers.parceiros();
-                    return all.where((p) => p['id']?.toString() == id.toString()).toList();
-                  },
+                  dropdownFutureBuilder: () => DropdownHelpers.parceiros(),
                   dropdownValueField: 'id',
                   dropdownDisplayField: 'nome'),
               // Parceiro: locked no parceiro do login
@@ -368,7 +362,7 @@ class _WebContaPagarGridScreenState extends State<WebContaPagarGridScreen> {
                   },
                   dropdownValueField: 'id',
                   dropdownDisplayField: 'nome'),
-              // Parceiro Rec: locked no parceiro do login
+              // Parceiro Rec: dropdown com todos os parceiros, pré-marcado com o parceiro do login (editável)
               FieldConfigWindows(
                   fieldName: 'parceiroRec',
                   label: 'Parceiro Rec',
@@ -376,15 +370,10 @@ class _WebContaPagarGridScreenState extends State<WebContaPagarGridScreen> {
                   isInGrid: false,
                   isVisibleByDefault: false,
                   fieldType: FieldType.dropdown,
-                  enabled: false,
+                  enabled: true,
                   fieldOrder: 13,
                   dropdownSelectedValue: TenantContext.parceiroId?.toString(),
-                  dropdownFutureBuilder: () async {
-                    final id = TenantContext.parceiroId;
-                    if (id == null) return <Map<String, dynamic>>[];
-                    final all = await DropdownHelpers.parceiros();
-                    return all.where((p) => p['id']?.toString() == id.toString()).toList();
-                  },
+                  dropdownFutureBuilder: () => DropdownHelpers.parceiros(),
                   dropdownValueField: 'id',
                   dropdownDisplayField: 'nome'),
             ],
