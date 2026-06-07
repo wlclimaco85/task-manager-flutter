@@ -1,7 +1,12 @@
 import 'package:flutter/material.dart';
+import '../../customization/dynamic_grid_windows_screen.dart';
 import '../../services/nfse_caller.dart';
 import '../../utils/grid_colors.dart';
+import '../../widgets/searchable_dropdown.dart';
+import 'details/nfse_detail_screen.dart';
 
+/// Tela de NFSe — espelha o layout da NF-e Saída:
+/// header vermelho + painel de filtro lateral + botões + grid dinâmica.
 class NfseScreen extends StatefulWidget {
   const NfseScreen({super.key});
   @override
@@ -11,7 +16,15 @@ class NfseScreen extends StatefulWidget {
 class _NfseScreenState extends State<NfseScreen> {
   final NfseCaller _caller = NfseCaller();
 
-  // Emissão
+  // Filtros
+  final _numeroCtrl = TextEditingController();
+  final _tomadorCtrl = TextEditingController();
+  String? _statusFiltro;
+  DateTime? _dtEmiIni, _dtEmiFim;
+  Map<String, dynamic> _filtros = {};
+  int _gridKey = 0;
+
+  // Emissão (dialog)
   final _municipioCtrl = TextEditingController();
   final _cnpjCtrl = TextEditingController();
   final _nomeCtrl = TextEditingController();
@@ -23,24 +36,32 @@ class _NfseScreenState extends State<NfseScreen> {
   bool _emitindo = false;
   String? _resultadoEmissao;
 
-  // Consulta
+  // Consulta (dialog)
   final _consultaCtrl = TextEditingController();
   bool _consultando = false;
   Map<String, dynamic>? _resultadoConsulta;
   String? _erroConsulta;
 
-  // Cancelamento
+  // Cancelamento (dialog)
   final _cancelNumeroCtrl = TextEditingController();
   final _cancelMotivoCtrl = TextEditingController();
   bool _cancelando = false;
   String? _resultadoCancelamento;
 
-  // Auditoria
+  // Auditoria (dialog)
   List<Map<String, dynamic>> _logs = [];
   bool _carregandoLogs = false;
 
   @override
+  void initState() {
+    super.initState();
+    _aplicarFiltros();
+  }
+
+  @override
   void dispose() {
+    _numeroCtrl.dispose();
+    _tomadorCtrl.dispose();
     _municipioCtrl.dispose();
     _cnpjCtrl.dispose();
     _nomeCtrl.dispose();
@@ -55,8 +76,48 @@ class _NfseScreenState extends State<NfseScreen> {
     super.dispose();
   }
 
+  // ── Filtros ───────────────────────────────────────────────────────────────
+
+  void _aplicarFiltros() {
+    final f = <String, dynamic>{};
+    if (_numeroCtrl.text.isNotEmpty) f['numero'] = _numeroCtrl.text;
+    if (_tomadorCtrl.text.isNotEmpty) f['tomador'] = _tomadorCtrl.text;
+    if (_statusFiltro != null) f['status'] = _statusFiltro!;
+    if (_dtEmiIni != null) {
+      f['dataEmissaoInicio'] = _dtEmiIni!.toIso8601String().substring(0, 10);
+    }
+    if (_dtEmiFim != null) {
+      f['dataEmissaoFim'] = _dtEmiFim!.toIso8601String().substring(0, 10);
+    }
+    setState(() {
+      _filtros = f;
+      _gridKey++;
+    });
+  }
+
+  void _limpar() {
+    _numeroCtrl.clear();
+    _tomadorCtrl.clear();
+    _statusFiltro = null;
+    _dtEmiIni = null;
+    _dtEmiFim = null;
+    _aplicarFiltros();
+  }
+
+  void _abrirNovo(BuildContext context) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => const NfseDetailScreen(item: {})),
+    ).then((_) => _aplicarFiltros());
+  }
+
+  // ── Ações (mesmas do painel anterior, mantidas como dialogs) ─────────────
+
   Future<void> _emitir() async {
-    setState(() { _emitindo = true; _resultadoEmissao = null; });
+    setState(() {
+      _emitindo = true;
+      _resultadoEmissao = null;
+    });
     try {
       final result = await _caller.emitir(
         municipio: _municipioCtrl.text,
@@ -85,7 +146,11 @@ class _NfseScreenState extends State<NfseScreen> {
   }
 
   Future<void> _consultar() async {
-    setState(() { _consultando = true; _resultadoConsulta = null; _erroConsulta = null; });
+    setState(() {
+      _consultando = true;
+      _resultadoConsulta = null;
+      _erroConsulta = null;
+    });
     try {
       final result = await _caller.consultar(_consultaCtrl.text);
       if (mounted) setState(() => _resultadoConsulta = result);
@@ -97,7 +162,10 @@ class _NfseScreenState extends State<NfseScreen> {
   }
 
   Future<void> _cancelar() async {
-    setState(() { _cancelando = true; _resultadoCancelamento = null; });
+    setState(() {
+      _cancelando = true;
+      _resultadoCancelamento = null;
+    });
     try {
       final result = await _caller.cancelar(
         numero: _cancelNumeroCtrl.text,
@@ -144,7 +212,7 @@ class _NfseScreenState extends State<NfseScreen> {
         resultado: _resultadoEmissao,
         onEmitir: _emitir,
       ),
-    ).then((_) => setState(() { _resultadoEmissao = null; }));
+    ).then((_) => setState(() => _resultadoEmissao = null));
   }
 
   void _showConsultaDialog() {
@@ -157,7 +225,10 @@ class _NfseScreenState extends State<NfseScreen> {
         erro: _erroConsulta,
         onConsultar: _consultar,
       ),
-    ).then((_) => setState(() { _resultadoConsulta = null; _erroConsulta = null; }));
+    ).then((_) => setState(() {
+          _resultadoConsulta = null;
+          _erroConsulta = null;
+        }));
   }
 
   void _showCancelamentoDialog() {
@@ -170,7 +241,7 @@ class _NfseScreenState extends State<NfseScreen> {
         resultado: _resultadoCancelamento,
         onCancelar: _cancelar,
       ),
-    ).then((_) => setState(() { _resultadoCancelamento = null; }));
+    ).then((_) => setState(() => _resultadoCancelamento = null));
   }
 
   void _showAuditoriaDialog() {
@@ -186,11 +257,13 @@ class _NfseScreenState extends State<NfseScreen> {
     );
   }
 
+  // ── Build ─────────────────────────────────────────────────────────────────
+
   @override
   Widget build(BuildContext context) {
     return Column(
       children: [
-        // ── Header ──────────────────────────────────────────────────────────
+        // ── Header ────────────────────────────────────────────────────────
         Container(
           height: 56,
           color: GridColors.error,
@@ -209,85 +282,236 @@ class _NfseScreenState extends State<NfseScreen> {
             ],
           ),
         ),
-        // ── Botões de ação ────────────────────────────────────────────────
-        Container(
-          color: Colors.white,
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-          child: Wrap(
-            spacing: 10,
-            runSpacing: 8,
+        // ── Conteúdo: filtros laterais + grid ─────────────────────────────
+        Expanded(
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _actionButton(
-                icon: Icons.send,
-                label: 'Emitir NFSe',
-                color: GridColors.primary,
-                onTap: _showEmissaoDialog,
-              ),
-              _actionButton(
-                icon: Icons.search,
-                label: 'Consultar',
-                color: GridColors.secondary,
-                onTap: _showConsultaDialog,
-              ),
-              _actionButton(
-                icon: Icons.cancel_outlined,
-                label: 'Cancelar NFSe',
-                color: GridColors.error,
-                onTap: _showCancelamentoDialog,
-              ),
-              _actionButton(
-                icon: Icons.history,
-                label: 'Auditoria',
-                color: Colors.grey.shade700,
-                onTap: _showAuditoriaDialog,
+              SizedBox(width: 200, child: _buildFiltros()),
+              Expanded(
+                child: DynamicGridWindowsScreen<Map<String, dynamic>>(
+                  key: ValueKey(_gridKey),
+                  telaNome: 'nfse',
+                  hasPermission: (p) => p == 'create' ? false : true,
+                  fromJson: (json) => json,
+                  toJson: (a) => a,
+                  extraParams: _filtros,
+                  detailScreenBuilder: (item) => NfseDetailScreen(item: item),
+                  showAppBar: false,
+                ),
               ),
             ],
-          ),
-        ),
-        const Divider(height: 1),
-        // ── Área principal: informativo / log rápido ─────────────────────
-        Expanded(
-          child: Center(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(Icons.receipt_long, size: 64, color: Colors.grey.shade300),
-                const SizedBox(height: 16),
-                Text(
-                  'Selecione uma ação acima para emitir,\nconsultar ou cancelar NFSe.',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(color: Colors.grey.shade500, fontSize: 14),
-                ),
-              ],
-            ),
           ),
         ),
       ],
     );
   }
 
-  Widget _actionButton({
-    required IconData icon,
-    required String label,
-    required Color color,
-    required VoidCallback onTap,
-  }) {
-    return ElevatedButton.icon(
-      onPressed: onTap,
-      icon: Icon(icon, size: 18),
-      label: Text(label, style: const TextStyle(fontSize: 13)),
-      style: ElevatedButton.styleFrom(
-        backgroundColor: color,
-        foregroundColor: Colors.white,
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
+  Widget _buildFiltros() {
+    return Container(
+      color: GridColors.filterBackground,
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.all(10),
+        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          _lbl('Data de Emissão'),
+          _dateRange(
+              _dtEmiIni,
+              _dtEmiFim,
+              (s, e) => setState(() {
+                    _dtEmiIni = s;
+                    _dtEmiFim = e;
+                  })),
+          const SizedBox(height: 8),
+          _lbl('Número da NFSe'),
+          _inp(_numeroCtrl, 'Nro. NFSe'),
+          const SizedBox(height: 8),
+          _lbl('Tomador / Parceiro'),
+          _inp(_tomadorCtrl, 'Nome do tomador'),
+          const SizedBox(height: 8),
+          _lbl('Status'),
+          _drop(
+              _statusFiltro,
+              ['PENDENTE', 'AUTORIZADA', 'CANCELADA', 'REJEITADA'],
+              (v) => setState(() => _statusFiltro = v)),
+          const SizedBox(height: 12),
+          SizedBox(
+              width: double.infinity,
+              child: ElevatedButton.icon(
+                onPressed: () => _abrirNovo(context),
+                icon: const Icon(Icons.add, size: 14),
+                label:
+                    const Text('+ Nova NFSe', style: TextStyle(fontSize: 12)),
+                style: ElevatedButton.styleFrom(
+                    backgroundColor: GridColors.success,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 8)),
+              )),
+          const SizedBox(height: 6),
+          SizedBox(
+              width: double.infinity,
+              child: ElevatedButton.icon(
+                onPressed: _aplicarFiltros,
+                icon: const Icon(Icons.search, size: 14),
+                label: const Text('Filtrar', style: TextStyle(fontSize: 12)),
+                style: ElevatedButton.styleFrom(
+                    backgroundColor: GridColors.error,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 8)),
+              )),
+          const SizedBox(height: 6),
+          SizedBox(
+              width: double.infinity,
+              child: OutlinedButton.icon(
+                onPressed: _limpar,
+                icon: const Icon(Icons.clear, size: 14),
+                label: const Text('Limpar', style: TextStyle(fontSize: 12)),
+                style: OutlinedButton.styleFrom(
+                    foregroundColor: GridColors.divider,
+                    padding: const EdgeInsets.symmetric(vertical: 8)),
+              )),
+          const Divider(height: 24),
+          _lbl('Ações rápidas'),
+          const SizedBox(height: 4),
+          SizedBox(
+              width: double.infinity,
+              child: ElevatedButton.icon(
+                onPressed: _showEmissaoDialog,
+                icon: const Icon(Icons.send, size: 14),
+                label: const Text('Emitir NFSe', style: TextStyle(fontSize: 12)),
+                style: ElevatedButton.styleFrom(
+                    backgroundColor: GridColors.primary,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 8)),
+              )),
+          const SizedBox(height: 6),
+          SizedBox(
+              width: double.infinity,
+              child: ElevatedButton.icon(
+                onPressed: _showConsultaDialog,
+                icon: const Icon(Icons.search, size: 14),
+                label: const Text('Consultar', style: TextStyle(fontSize: 12)),
+                style: ElevatedButton.styleFrom(
+                    backgroundColor: GridColors.secondary,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 8)),
+              )),
+          const SizedBox(height: 6),
+          SizedBox(
+              width: double.infinity,
+              child: ElevatedButton.icon(
+                onPressed: _showCancelamentoDialog,
+                icon: const Icon(Icons.cancel_outlined, size: 14),
+                label:
+                    const Text('Cancelar NFSe', style: TextStyle(fontSize: 12)),
+                style: ElevatedButton.styleFrom(
+                    backgroundColor: GridColors.error,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 8)),
+              )),
+          const SizedBox(height: 6),
+          SizedBox(
+              width: double.infinity,
+              child: ElevatedButton.icon(
+                onPressed: _showAuditoriaDialog,
+                icon: const Icon(Icons.history, size: 14),
+                label: const Text('Auditoria', style: TextStyle(fontSize: 12)),
+                style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.grey.shade700,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 8)),
+              )),
+        ]),
       ),
     );
   }
+
+  Widget _lbl(String t) => Padding(
+      padding: const EdgeInsets.only(bottom: 4),
+      child: Text(t,
+          style: const TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.w600,
+              color: GridColors.textSecondary)));
+
+  Widget _inp(TextEditingController c, String h) => TextField(
+      controller: c,
+      style: const TextStyle(fontSize: 12),
+      decoration: InputDecoration(
+          hintText: h,
+          hintStyle: const TextStyle(fontSize: 11, color: GridColors.divider),
+          filled: true,
+          fillColor: Colors.white,
+          isDense: true,
+          contentPadding:
+              const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+          border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(4),
+              borderSide: const BorderSide(color: GridColors.divider)),
+          enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(4),
+              borderSide: const BorderSide(color: GridColors.divider))));
+
+  Widget _drop(String? val, List<String> opts, void Function(String?) cb) =>
+      SearchableDropdownField(
+        label: '',
+        value: val,
+        items: opts.map((o) => <String, dynamic>{'id': o, 'nome': o}).toList(),
+        valueField: 'id',
+        displayField: 'nome',
+        nullable: true,
+        nullLabel: 'Todos',
+        hintText: 'Todos',
+        onChanged: cb,
+      );
+
+  Widget _dateRange(DateTime? ini, DateTime? fim,
+          void Function(DateTime?, DateTime?) cb) =>
+      Row(children: [
+        Expanded(child: _dp(ini, 'Início', (d) => cb(d, fim))),
+        const Padding(
+            padding: EdgeInsets.symmetric(horizontal: 4),
+            child: Text('a', style: TextStyle(fontSize: 11))),
+        Expanded(child: _dp(fim, 'Fim', (d) => cb(ini, d))),
+      ]);
+
+  Widget _dp(DateTime? val, String hint, void Function(DateTime?) cb) =>
+      GestureDetector(
+        onTap: () async {
+          final d = await showDatePicker(
+              context: context,
+              initialDate: val ?? DateTime.now(),
+              firstDate: DateTime(2020),
+              lastDate: DateTime(2030));
+          cb(d);
+        },
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 5),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(4),
+            border: Border.all(color: GridColors.divider),
+          ),
+          child: Row(children: [
+            const Icon(Icons.calendar_today,
+                size: 10, color: GridColors.divider),
+            const SizedBox(width: 3),
+            Text(
+              val != null
+                  ? '${val.day.toString().padLeft(2, '0')}/${val.month.toString().padLeft(2, '0')}'
+                  : hint,
+              style: TextStyle(
+                fontSize: 10,
+                color:
+                    val != null ? GridColors.textSecondary : GridColors.divider,
+              ),
+            ),
+          ]),
+        ),
+      );
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Dialogs internos
+// Dialogs internos (mantidos do painel anterior)
 // ─────────────────────────────────────────────────────────────────────────────
 
 class _EmissaoDialog extends StatelessWidget {
