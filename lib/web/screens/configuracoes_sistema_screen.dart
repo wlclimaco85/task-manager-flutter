@@ -86,6 +86,8 @@ class _ConfiguracoesSistemaScreenState extends State<ConfiguracoesSistemaScreen>
           const SizedBox(height: 20),
           _ImportacaoSection(baseUrl: ApiLinks.baseUrl),
           const SizedBox(height: 20),
+          _ImportacaoCadastrosSection(baseUrl: ApiLinks.baseUrl),
+          const SizedBox(height: 20),
           if (_resultados.isNotEmpty) _buildResultados(),
         ]),
       ),
@@ -1859,6 +1861,1064 @@ class _ImportacaoSectionState extends State<_ImportacaoSection> {
         Text('$valor', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: cor)),
         const SizedBox(width: 5),
         Text(label, style: TextStyle(fontSize: 11, color: cor)),
+      ]),
+    );
+  }
+}
+
+enum _ImportacaoCadastroTipo { empresa, parceiros, funcionarios, planos }
+
+class _CadastroImportField {
+  final String key;
+  final String label;
+  final List<String> sinonimos;
+
+  const _CadastroImportField(this.key, this.label, this.sinonimos);
+}
+
+class _CadastroImportConfig {
+  final _ImportacaoCadastroTipo tipo;
+  final String title;
+  final String subtitle;
+  final IconData icon;
+  final Color color;
+  final List<_CadastroImportField> campos;
+
+  const _CadastroImportConfig({
+    required this.tipo,
+    required this.title,
+    required this.subtitle,
+    required this.icon,
+    required this.color,
+    required this.campos,
+  });
+}
+
+class _ImportacaoCadastrosSection extends StatefulWidget {
+  final String baseUrl;
+  const _ImportacaoCadastrosSection({required this.baseUrl});
+
+  @override
+  State<_ImportacaoCadastrosSection> createState() => _ImportacaoCadastrosSectionState();
+}
+
+class _ImportacaoCadastrosSectionState extends State<_ImportacaoCadastrosSection> {
+  final Map<_ImportacaoCadastroTipo, PlatformFile?> _arquivos = {};
+  final Map<_ImportacaoCadastroTipo, Map<String, TextEditingController>> _ctrl = {};
+  final Map<_ImportacaoCadastroTipo, List<String>> _colunas = {};
+  final Map<_ImportacaoCadastroTipo, bool> _loading = {};
+  final Map<_ImportacaoCadastroTipo, bool> _atualizar = {};
+  final Map<_ImportacaoCadastroTipo, Map<String, dynamic>?> _resultados = {};
+
+  List<Map<String, dynamic>> _empresas = [];
+  String? _empresaIdSelecionada;
+  bool _loadingEmpresas = false;
+
+  late final List<_CadastroImportConfig> _configs = [
+    _CadastroImportConfig(
+      tipo: _ImportacaoCadastroTipo.empresa,
+      title: 'Importar Empresas',
+      subtitle: 'Cria ou atualiza empresas a partir do CSV.',
+      icon: Icons.business_outlined,
+      color: _primary,
+      campos: const [
+        _CadastroImportField('external_id', 'External ID', ['external_id', 'codigo', 'cod_empresa']),
+        _CadastroImportField('nome', 'Nome Fantasia *', ['nome', 'nome_fantasia', 'fantasia', 'empresa']),
+        _CadastroImportField('razaoSocial', 'Razao Social', ['razao_social', 'razaosocial', 'razo_social']),
+        _CadastroImportField('cnpj', 'CNPJ', ['cnpj', 'cpf_cnpj', 'documento']),
+        _CadastroImportField('email', 'Email', ['email', 'e_mail']),
+        _CadastroImportField('telefone', 'Telefone', ['telefone', 'fone', 'celular']),
+        _CadastroImportField('rua', 'Rua', ['rua', 'logradouro', 'endereco']),
+        _CadastroImportField('numero', 'Numero', ['numero', 'nro', 'num']),
+        _CadastroImportField('bairro', 'Bairro', ['bairro']),
+        _CadastroImportField('cidade', 'Cidade', ['cidade', 'municipio']),
+        _CadastroImportField('estado', 'Estado', ['estado', 'uf']),
+        _CadastroImportField('cep', 'CEP', ['cep']),
+        _CadastroImportField('regime_codigo', 'Regime', ['regime_codigo', 'regime', 'regime_tributario', 'tributacao']),
+        _CadastroImportField('ambiente', 'Ambiente', ['ambiente', 'sefaz_ambiente']),
+        _CadastroImportField('app_id', 'App ID', ['app_id', 'aplicativo_id', 'aplicativo']),
+      ],
+    ),
+    _CadastroImportConfig(
+      tipo: _ImportacaoCadastroTipo.parceiros,
+      title: 'Importar Parceiros',
+      subtitle: 'Importa clientes, fornecedores ou parceiros vinculados a empresa selecionada.',
+      icon: Icons.groups_2_outlined,
+      color: Colors.teal.shade700,
+      campos: const [
+        _CadastroImportField('external_id', 'External ID', ['external_id', 'codigo', 'cod_parceiro']),
+        _CadastroImportField('empresa_id', 'Empresa ID', ['empresa_id', 'cod_empresa', 'id_empresa']),
+        _CadastroImportField('nome', 'Nome *', ['nome', 'cliente', 'parceiro', 'nome_fantasia']),
+        _CadastroImportField('razaoSocial', 'Razao Social', ['razao_social', 'razaosocial', 'razo_social']),
+        _CadastroImportField('cpf', 'CPF/CNPJ', ['cpf', 'cnpj', 'cpf_cnpj', 'documento']),
+        _CadastroImportField('codProdutor', 'Codigo Produtor', ['cod_produtor', 'codprodutor', 'codigo_produtor']),
+        _CadastroImportField('email', 'Email', ['email', 'e_mail']),
+        _CadastroImportField('telefone1', 'Telefone', ['telefone', 'telefone1', 'fone', 'celular']),
+        _CadastroImportField('rua', 'Rua', ['rua', 'logradouro', 'endereco']),
+        _CadastroImportField('bairro', 'Bairro', ['bairro']),
+        _CadastroImportField('cidade', 'Cidade', ['cidade', 'municipio']),
+        _CadastroImportField('estado', 'Estado', ['estado', 'uf']),
+        _CadastroImportField('cep', 'CEP', ['cep']),
+        _CadastroImportField('numero', 'Numero', ['numero', 'nro', 'num']),
+        _CadastroImportField('ie', 'IE', ['ie', 'inscricao_estadual']),
+        _CadastroImportField('incrMun', 'Insc. Municipal', ['incr_mun', 'inscricao_municipal', 'im']),
+        _CadastroImportField('regime_codigo', 'Regime', ['regime_codigo', 'regime', 'regime_tributario', 'tributacao']),
+        _CadastroImportField('status', 'Status', ['status', 'situacao']),
+        _CadastroImportField('tipoCliente', 'Tipo Cliente', ['tipo_cliente', 'tipo', 'classificacao']),
+        _CadastroImportField('tipo_parceiro_id', 'Tipo Parceiro ID', ['tipo_parceiro_id', 'tipo_parceiro', 'perfil']),
+        _CadastroImportField('valorMensal', 'Valor Mensal', ['valor_mensal', 'mensalidade', 'valor']),
+      ],
+    ),
+    _CadastroImportConfig(
+      tipo: _ImportacaoCadastroTipo.funcionarios,
+      title: 'Importar Funcionarios e Logins',
+      subtitle: 'Cria login, funcionario e vincula o funcionario ao login criado.',
+      icon: Icons.badge_outlined,
+      color: Colors.blue.shade700,
+      campos: const [
+        _CadastroImportField('empresa_id', 'Empresa ID', ['empresa_id', 'cod_empresa', 'id_empresa']),
+        _CadastroImportField('nome', 'Nome *', ['nome', 'funcionario', 'colaborador']),
+        _CadastroImportField('cpf', 'CPF *', ['cpf', 'cpf_cnpj', 'documento']),
+        _CadastroImportField('email', 'Email/Login *', ['email', 'login', 'usuario', 'e_mail']),
+        _CadastroImportField('setor', 'Setor', ['setor', 'departamento', 'area']),
+        _CadastroImportField('tipoLogin', 'Tipo Login', ['tipo_login', 'tipologin', 'perfil']),
+        _CadastroImportField('senha', 'Senha Padrao', ['senha', 'senha_padrao', 'password']),
+        _CadastroImportField('ativo', 'Ativo', ['ativo', 'status', 'situacao']),
+      ],
+    ),
+    _CadastroImportConfig(
+      tipo: _ImportacaoCadastroTipo.planos,
+      title: 'Importar Planos',
+      subtitle: 'Importa planos comuns ou planos da academia conforme a coluna tipo_plano.',
+      icon: Icons.workspace_premium_outlined,
+      color: Colors.deepPurple.shade600,
+      campos: const [
+        _CadastroImportField('nome', 'Nome *', ['nome', 'plano']),
+        _CadastroImportField('descricao', 'Descricao', ['descricao', 'description']),
+        _CadastroImportField('valor', 'Valor', ['valor', 'preco', 'mensalidade']),
+        _CadastroImportField('dt_inicio', 'Data Inicio', ['dt_inicio', 'data_inicio', 'inicio']),
+        _CadastroImportField('dt_final', 'Data Final', ['dt_final', 'data_final', 'fim']),
+        _CadastroImportField('qtd_aula', 'Qtd. Aula', ['qtd_aula', 'qtd_aulas', 'aulas']),
+        _CadastroImportField('cod_personal', 'Cod. Personal', ['cod_personal', 'personal_id']),
+        _CadastroImportField('cod_academia', 'Cod. Academia', ['cod_academia', 'academia_id']),
+        _CadastroImportField('tipo_plano', 'Tipo Plano', ['tipo_plano', 'tipo', 'origem']),
+      ],
+    ),
+  ];
+
+  @override
+  void initState() {
+    super.initState();
+    for (final config in _configs) {
+      _ctrl[config.tipo] = {
+        for (final campo in config.campos) campo.key: TextEditingController()
+      };
+      _atualizar[config.tipo] = false;
+      _loading[config.tipo] = false;
+    }
+    _carregarEmpresas();
+  }
+
+  @override
+  void dispose() {
+    for (final mapa in _ctrl.values) {
+      for (final controller in mapa.values) {
+        controller.dispose();
+      }
+    }
+    super.dispose();
+  }
+
+  Future<void> _carregarEmpresas() async {
+    setState(() => _loadingEmpresas = true);
+    try {
+      final resp = await TenantContext.get('${widget.baseUrl}/api/empresa');
+      if (resp.statusCode == 200) {
+        final lista = _extractList(jsonDecode(resp.body));
+        if (mounted) {
+          setState(() {
+            _empresas = lista.map<Map<String, dynamic>>((e) => {
+              'id': e['id']?.toString() ?? '',
+              'nome': e['nome']?.toString() ?? e['razaoSocial']?.toString() ?? '',
+            }).where((e) => e['id']!.isNotEmpty).toList();
+          });
+        }
+      }
+    } catch (_) {}
+    if (mounted) setState(() => _loadingEmpresas = false);
+  }
+
+  Future<void> _selecionarArquivo(_ImportacaoCadastroTipo tipo) async {
+    final result = await FilePicker.pickFiles(
+      type: FileType.custom,
+      allowedExtensions: ['csv'],
+      withData: true,
+    );
+    if (result == null || result.files.isEmpty) return;
+
+    final arquivo = result.files.first;
+    final colunas = _detectarColunas(arquivo.bytes);
+    setState(() {
+      _arquivos[tipo] = arquivo;
+      _colunas[tipo] = colunas;
+      _resultados[tipo] = null;
+      _autoMapear(tipo, colunas);
+    });
+  }
+
+  List<String> _detectarColunas(List<int>? bytes) {
+    if (bytes == null) return [];
+    try {
+      final texto = utf8.decode(bytes, allowMalformed: true).replaceAll('\uFEFF', '');
+      final primeiraLinha = texto.split(RegExp(r'\r?\n')).firstWhere((l) => l.trim().isNotEmpty, orElse: () => '');
+      if (primeiraLinha.isEmpty) return [];
+      final sep = _separatorFor(primeiraLinha);
+      return _splitCsvLine(primeiraLinha, sep)
+        .map((c) => c.trim())
+        .where((c) => c.isNotEmpty)
+        .toList();
+    } catch (_) {
+      return [];
+    }
+  }
+
+  List<Map<String, String>> _parseCsv(PlatformFile arquivo) {
+    final bytes = arquivo.bytes;
+    if (bytes == null) return [];
+    final texto = utf8.decode(bytes, allowMalformed: true).replaceAll('\uFEFF', '');
+    final linhas = texto
+      .split(RegExp(r'\r?\n'))
+      .where((l) => l.trim().isNotEmpty)
+      .toList();
+    if (linhas.isEmpty) return [];
+
+    final sep = _separatorFor(linhas.first);
+    final headers = _splitCsvLine(linhas.first, sep).map((h) => h.trim()).toList();
+    final rows = <Map<String, String>>[];
+
+    for (var i = 1; i < linhas.length; i++) {
+      final valores = _splitCsvLine(linhas[i], sep);
+      final row = <String, String>{};
+      for (var c = 0; c < headers.length; c++) {
+        row[headers[c]] = c < valores.length ? valores[c].trim() : '';
+      }
+      if (row.values.any((v) => v.trim().isNotEmpty)) rows.add(row);
+    }
+    return rows;
+  }
+
+  String _separatorFor(String line) {
+    final semicolon = ';'.allMatches(line).length;
+    final comma = ','.allMatches(line).length;
+    return semicolon >= comma ? ';' : ',';
+  }
+
+  List<String> _splitCsvLine(String line, String sep) {
+    final out = <String>[];
+    final buffer = StringBuffer();
+    var quoted = false;
+    for (var i = 0; i < line.length; i++) {
+      final char = line[i];
+      if (char == '"') {
+        if (quoted && i + 1 < line.length && line[i + 1] == '"') {
+          buffer.write('"');
+          i++;
+        } else {
+          quoted = !quoted;
+        }
+      } else if (char == sep && !quoted) {
+        out.add(buffer.toString());
+        buffer.clear();
+      } else {
+        buffer.write(char);
+      }
+    }
+    out.add(buffer.toString());
+    return out;
+  }
+
+  String _normalizar(String value) {
+    var r = value.toLowerCase().trim();
+    const mapa = {
+      'á': 'a', 'à': 'a', 'â': 'a', 'ã': 'a', 'ä': 'a',
+      'é': 'e', 'è': 'e', 'ê': 'e', 'ë': 'e',
+      'í': 'i', 'ì': 'i', 'î': 'i', 'ï': 'i',
+      'ó': 'o', 'ò': 'o', 'ô': 'o', 'õ': 'o', 'ö': 'o',
+      'ú': 'u', 'ù': 'u', 'û': 'u', 'ü': 'u',
+      'ç': 'c', 'ñ': 'n',
+    };
+    mapa.forEach((a, b) => r = r.replaceAll(a, b));
+    return r
+      .replaceAll(RegExp(r'\s+'), '_')
+      .replaceAll(RegExp(r'[^a-z0-9_]'), '');
+  }
+
+  void _autoMapear(_ImportacaoCadastroTipo tipo, List<String> colunas) {
+    final config = _config(tipo);
+    final normalizadas = {
+      for (final coluna in colunas) _normalizar(coluna): coluna,
+    };
+    final controllers = _ctrl[tipo]!;
+
+    for (final campo in config.campos) {
+      final candidatos = <String>{_normalizar(campo.key), ...campo.sinonimos.map(_normalizar)};
+      for (final candidato in candidatos) {
+        final coluna = normalizadas[candidato];
+        if (coluna != null) {
+          controllers[campo.key]?.text = coluna;
+          break;
+        }
+      }
+    }
+  }
+
+  Future<void> _importar(_ImportacaoCadastroTipo tipo) async {
+    final arquivo = _arquivos[tipo];
+    if (arquivo == null) return;
+
+    setState(() => _loading[tipo] = true);
+    final detalhes = <Map<String, dynamic>>[];
+    var sucesso = 0;
+    var erros = 0;
+    var ignorados = 0;
+    var total = 0;
+
+    try {
+      final rows = _parseCsv(arquivo);
+      total = rows.length;
+      for (var i = 0; i < rows.length; i++) {
+        final row = rows[i];
+        final linha = i + 2;
+        try {
+          if (_linhaVazia(row)) {
+            ignorados++;
+            detalhes.add({'linha': linha, 'status': 'ignorado', 'mensagem': 'Linha vazia'});
+            continue;
+          }
+
+          final id = await _importarLinha(tipo, row);
+          sucesso++;
+          detalhes.add({
+            'linha': linha,
+            'status': 'sucesso',
+            'mensagem': id != null ? 'Registro salvo com ID $id' : 'Registro salvo',
+          });
+        } catch (e) {
+          erros++;
+          detalhes.add({'linha': linha, 'status': 'erro', 'mensagem': e.toString()});
+        }
+      }
+    } catch (e) {
+      erros++;
+      detalhes.add({'linha': 0, 'status': 'erro', 'mensagem': e.toString()});
+    }
+
+    if (mounted) {
+      setState(() {
+        _loading[tipo] = false;
+        _resultados[tipo] = {
+          'total': total,
+          'sucesso': sucesso,
+          'erros': erros,
+          'ignorados': ignorados,
+          'detalhes': detalhes,
+          'arquivo': arquivo.name,
+        };
+      });
+    }
+  }
+
+  Future<int?> _importarLinha(_ImportacaoCadastroTipo tipo, Map<String, String> row) {
+    switch (tipo) {
+      case _ImportacaoCadastroTipo.empresa:
+        return _importarEmpresa(row);
+      case _ImportacaoCadastroTipo.parceiros:
+        return _importarParceiro(row);
+      case _ImportacaoCadastroTipo.funcionarios:
+        return _importarFuncionarioLogin(row);
+      case _ImportacaoCadastroTipo.planos:
+        return _importarPlano(row);
+    }
+  }
+
+  Future<int?> _importarEmpresa(Map<String, String> row) async {
+    final nome = _valor(row, _ImportacaoCadastroTipo.empresa, 'nome');
+    if (nome.isEmpty) throw Exception('Nome fantasia obrigatorio');
+
+    final cnpj = _digits(_valor(row, _ImportacaoCadastroTipo.empresa, 'cnpj'));
+    final regimeId = _regimeId(_valor(row, _ImportacaoCadastroTipo.empresa, 'regime_codigo'));
+    final appId = _toInt(_valor(row, _ImportacaoCadastroTipo.empresa, 'app_id')) ?? TenantContext.aplicativoId ?? 1;
+
+    final payload = _compact({
+      'nome': nome,
+      'razaoSocial': _valor(row, _ImportacaoCadastroTipo.empresa, 'razaoSocial'),
+      'cnpj': cnpj,
+      'email': _valor(row, _ImportacaoCadastroTipo.empresa, 'email'),
+      'telefone': _valor(row, _ImportacaoCadastroTipo.empresa, 'telefone'),
+      'rua': _valor(row, _ImportacaoCadastroTipo.empresa, 'rua'),
+      'numero': _valor(row, _ImportacaoCadastroTipo.empresa, 'numero'),
+      'bairro': _valor(row, _ImportacaoCadastroTipo.empresa, 'bairro'),
+      'cidade': _valor(row, _ImportacaoCadastroTipo.empresa, 'cidade'),
+      'estado': _valor(row, _ImportacaoCadastroTipo.empresa, 'estado'),
+      'cep': _digits(_valor(row, _ImportacaoCadastroTipo.empresa, 'cep')),
+      'ambiente': _ambiente(_valor(row, _ImportacaoCadastroTipo.empresa, 'ambiente')),
+      'regime': regimeId != null ? {'id': regimeId} : null,
+      'aplicativo': {'id': appId},
+      'centroCustoObrigatorio': false,
+    });
+
+    final atualizar = _atualizar[_ImportacaoCadastroTipo.empresa] == true;
+    final existente = atualizar
+        ? await _buscarExistente('${widget.baseUrl}/api/empresa', cnpj.isNotEmpty ? 'cnpj' : 'nome', cnpj.isNotEmpty ? cnpj : nome)
+        : null;
+
+    if (existente != null) {
+      await _put('${widget.baseUrl}/api/empresa/update/$existente', payload);
+      return existente;
+    }
+
+    final body = await _post('${widget.baseUrl}/api/empresa', payload);
+    final id = _extractId(body);
+    if (id != null) {
+      await _put('${widget.baseUrl}/api/empresa/update/$id', {'id': id, ...payload});
+    }
+    return id;
+  }
+
+  Future<int?> _importarParceiro(Map<String, String> row) async {
+    final nome = _valor(row, _ImportacaoCadastroTipo.parceiros, 'nome');
+    if (nome.isEmpty) throw Exception('Nome do parceiro obrigatorio');
+
+    final empresaId = _empresaId(row, _ImportacaoCadastroTipo.parceiros);
+    if (empresaId == null) throw Exception('Selecione a empresa destino ou informe empresa_id no CSV');
+
+    final documento = _digits(_valor(row, _ImportacaoCadastroTipo.parceiros, 'cpf'));
+    final tipoParceiroId = _toInt(_valor(row, _ImportacaoCadastroTipo.parceiros, 'tipo_parceiro_id')) ?? 1;
+    final regimeId = _regimeId(_valor(row, _ImportacaoCadastroTipo.parceiros, 'regime_codigo'));
+    final status = _status(_valor(row, _ImportacaoCadastroTipo.parceiros, 'status'));
+
+    final payload = _compact({
+      'nome': nome,
+      'cpf': documento,
+      'codProdutor': _valor(row, _ImportacaoCadastroTipo.parceiros, 'codProdutor'),
+      'email': _valor(row, _ImportacaoCadastroTipo.parceiros, 'email'),
+      'telefone1': _valor(row, _ImportacaoCadastroTipo.parceiros, 'telefone1'),
+      'razao_social': _valor(row, _ImportacaoCadastroTipo.parceiros, 'razaoSocial'),
+      'incr_mun': _valor(row, _ImportacaoCadastroTipo.parceiros, 'incrMun'),
+      'ie': _valor(row, _ImportacaoCadastroTipo.parceiros, 'ie'),
+      'rua': _valor(row, _ImportacaoCadastroTipo.parceiros, 'rua'),
+      'bairro': _valor(row, _ImportacaoCadastroTipo.parceiros, 'bairro'),
+      'cidade': _valor(row, _ImportacaoCadastroTipo.parceiros, 'cidade'),
+      'estado': _valor(row, _ImportacaoCadastroTipo.parceiros, 'estado'),
+      'cep': _digits(_valor(row, _ImportacaoCadastroTipo.parceiros, 'cep')),
+      'numero': _valor(row, _ImportacaoCadastroTipo.parceiros, 'numero'),
+      'status': status,
+      'tipo_cliente': _valor(row, _ImportacaoCadastroTipo.parceiros, 'tipoCliente').isNotEmpty
+          ? _valor(row, _ImportacaoCadastroTipo.parceiros, 'tipoCliente')
+          : 'CLIENTE',
+      'empresa': {'id': empresaId},
+      'regime': regimeId != null ? {'id': regimeId} : null,
+      'tipos_parceiro': [{'id': tipoParceiroId}],
+      'valor_mensal': _money(_valor(row, _ImportacaoCadastroTipo.parceiros, 'valorMensal')),
+    });
+
+    final atualizar = _atualizar[_ImportacaoCadastroTipo.parceiros] == true;
+    final existente = atualizar
+        ? await _buscarExistente('${widget.baseUrl}/api/parceiro/empresa/$empresaId', documento.isNotEmpty ? 'cpf' : 'nome', documento.isNotEmpty ? documento : nome)
+        : null;
+
+    if (existente != null) {
+      await _put('${widget.baseUrl}/api/parceiro/update/$existente', {'id': existente, ...payload});
+      return existente;
+    }
+
+    final body = await _post('${widget.baseUrl}/api/parceiro/insert', payload);
+    return _extractId(body);
+  }
+
+  Future<int?> _importarFuncionarioLogin(Map<String, String> row) async {
+    final nome = _valor(row, _ImportacaoCadastroTipo.funcionarios, 'nome');
+    final email = _valor(row, _ImportacaoCadastroTipo.funcionarios, 'email');
+    final cpf = _digits(_valor(row, _ImportacaoCadastroTipo.funcionarios, 'cpf'));
+    if (nome.isEmpty) throw Exception('Nome do funcionario obrigatorio');
+    if (email.isEmpty) throw Exception('Email/login obrigatorio');
+    if (cpf.isEmpty) throw Exception('CPF obrigatorio');
+
+    final empresaId = _empresaId(row, _ImportacaoCadastroTipo.funcionarios);
+    if (empresaId == null) throw Exception('Selecione a empresa destino ou informe empresa_id no CSV');
+
+    final tipoLogin = _valor(row, _ImportacaoCadastroTipo.funcionarios, 'tipoLogin').isNotEmpty
+        ? _valor(row, _ImportacaoCadastroTipo.funcionarios, 'tipoLogin')
+        : 'APP_ABRACO';
+    final senha = _valor(row, _ImportacaoCadastroTipo.funcionarios, 'senha').isNotEmpty
+        ? _valor(row, _ImportacaoCadastroTipo.funcionarios, 'senha')
+        : '123456';
+    final ativo = _boolOrNull(_valor(row, _ImportacaoCadastroTipo.funcionarios, 'ativo')) ?? true;
+
+    final loginPayload = _compact({
+      'email': email,
+      'senha': senha,
+      'nome': nome,
+      'cpfCnpj': cpf,
+      'tipoLogin': tipoLogin,
+      'empresa': {'id': empresaId},
+      'aplicativo': {'id': TenantContext.aplicativoId ?? 1},
+    });
+
+    final atualizar = _atualizar[_ImportacaoCadastroTipo.funcionarios] == true;
+    var loginId = atualizar ? await _buscarExistente('${widget.baseUrl}/api/logins', 'email', email) : null;
+    if (loginId != null) {
+      await _put('${widget.baseUrl}/api/logins/$loginId', loginPayload);
+    } else {
+      loginId = _extractId(await _post('${widget.baseUrl}/api/logins', loginPayload));
+    }
+
+    final funcionarioPayload = _compact({
+      'nome': nome,
+      'cpf': cpf,
+      'email': email,
+      'status': 'A',
+      'tipoCliente': 'FUNCIONARIO',
+      'ativo': ativo,
+      'observacao': _valor(row, _ImportacaoCadastroTipo.funcionarios, 'setor'),
+      'empresa': {'id': empresaId},
+      'login': loginId != null ? {'id': loginId} : null,
+    });
+
+    var funcionarioId = atualizar ? await _buscarExistente('${widget.baseUrl}/api/funcionario', 'cpf', cpf) : null;
+    if (funcionarioId != null) {
+      await _put('${widget.baseUrl}/api/funcionario/$funcionarioId', {'id': funcionarioId, ...funcionarioPayload});
+    } else {
+      funcionarioId = _extractId(await _post('${widget.baseUrl}/api/funcionario', funcionarioPayload));
+    }
+
+    if (loginId != null && funcionarioId != null) {
+      await _put('${widget.baseUrl}/api/logins/$loginId', {
+        ...loginPayload,
+        'parceiro': {'id': funcionarioId},
+      });
+    }
+    return funcionarioId ?? loginId;
+  }
+
+  Future<int?> _importarPlano(Map<String, String> row) async {
+    final nome = _valor(row, _ImportacaoCadastroTipo.planos, 'nome');
+    if (nome.isEmpty) throw Exception('Nome do plano obrigatorio');
+
+    final academia = _isPlanoAcademia(row);
+    final endpoint = academia ? '${widget.baseUrl}/api/planos_academia' : '${widget.baseUrl}/api/planos';
+    final payload = _compact({
+      'nome': nome,
+      'descricao': _valor(row, _ImportacaoCadastroTipo.planos, 'descricao'),
+      'valor': _money(_valor(row, _ImportacaoCadastroTipo.planos, 'valor')),
+      'dt_inicio': _dateOrNull(_valor(row, _ImportacaoCadastroTipo.planos, 'dt_inicio')),
+      'dt_final': _dateOrNull(_valor(row, _ImportacaoCadastroTipo.planos, 'dt_final')),
+      'qtd_aula': academia ? null : _toInt(_valor(row, _ImportacaoCadastroTipo.planos, 'qtd_aula')),
+      'cod_personal': academia ? null : _toInt(_valor(row, _ImportacaoCadastroTipo.planos, 'cod_personal')),
+      'cod_academia': academia ? _toInt(_valor(row, _ImportacaoCadastroTipo.planos, 'cod_academia')) : null,
+    });
+
+    final atualizar = _atualizar[_ImportacaoCadastroTipo.planos] == true;
+    final existente = atualizar ? await _buscarExistente(endpoint, 'nome', nome) : null;
+    if (existente != null) {
+      await _put('$endpoint/$existente', {'id': existente, ...payload});
+      return existente;
+    }
+
+    final body = await _post(endpoint, payload);
+    return _extractId(body);
+  }
+
+  Future<dynamic> _post(String url, Map<String, dynamic> body) async {
+    final resp = await TenantContext.post(url, _compact(body));
+    _ensureOk(resp);
+    return _decode(resp.body);
+  }
+
+  Future<dynamic> _put(String url, Map<String, dynamic> body) async {
+    final resp = await TenantContext.put(url, _compact(body));
+    _ensureOk(resp);
+    return _decode(resp.body);
+  }
+
+  void _ensureOk(http.Response resp) {
+    if (resp.statusCode < 200 || resp.statusCode >= 300) {
+      throw Exception('HTTP ${resp.statusCode}: ${_shortBody(resp.body)}');
+    }
+  }
+
+  Future<int?> _buscarExistente(String url, String campo, String valor) async {
+    if (valor.trim().isEmpty) return null;
+    try {
+      final resp = await TenantContext.get(url);
+      if (resp.statusCode != 200) return null;
+      final lista = _extractList(jsonDecode(resp.body));
+      final valorDigits = _digits(valor);
+      final valorNorm = _normalizar(valor);
+      for (final item in lista) {
+        final itemValor = item[campo]?.toString() ?? '';
+        if (valorDigits.isNotEmpty && _digits(itemValor) == valorDigits) return _extractId(item);
+        if (valorNorm.isNotEmpty && _normalizar(itemValor) == valorNorm) return _extractId(item);
+      }
+    } catch (_) {}
+    return null;
+  }
+
+  int? _empresaId(Map<String, String> row, _ImportacaoCadastroTipo tipo) {
+    return _toInt(_valor(row, tipo, 'empresa_id'))
+        ?? _toInt(_empresaIdSelecionada ?? '')
+        ?? TenantContext.empresaId;
+  }
+
+  String _valor(Map<String, String> row, _ImportacaoCadastroTipo tipo, String campo) {
+    final coluna = _ctrl[tipo]?[campo]?.text.trim() ?? '';
+    if (coluna.isNotEmpty && row.containsKey(coluna)) return row[coluna]?.trim() ?? '';
+
+    final alvo = _normalizar(coluna.isNotEmpty ? coluna : campo);
+    for (final entry in row.entries) {
+      if (_normalizar(entry.key) == alvo) return entry.value.trim();
+    }
+    return '';
+  }
+
+  bool _linhaVazia(Map<String, String> row) => row.values.every((v) => v.trim().isEmpty);
+
+  Map<String, dynamic> _compact(Map<String, dynamic> value) {
+    final out = <String, dynamic>{};
+    value.forEach((key, raw) {
+      dynamic v = raw;
+      if (v is Map<String, dynamic>) v = _compact(v);
+      if (v is List) {
+        v = v.map((e) => e is Map<String, dynamic> ? _compact(e) : e).where((e) {
+          if (e == null) return false;
+          if (e is String) return e.trim().isNotEmpty;
+          if (e is Map) return e.isNotEmpty;
+          return true;
+        }).toList();
+      }
+      if (v == null) return;
+      if (v is String && v.trim().isEmpty) return;
+      if (v is Map && v.isEmpty) return;
+      if (v is List && v.isEmpty) return;
+      out[key] = v;
+    });
+    return out;
+  }
+
+  dynamic _decode(String body) {
+    if (body.trim().isEmpty) return {};
+    try {
+      return jsonDecode(body);
+    } catch (_) {
+      return {'body': body};
+    }
+  }
+
+  List<Map<String, dynamic>> _extractList(dynamic body) {
+    dynamic data = body;
+    if (data is Map && data['data'] != null) data = data['data'];
+    if (data is Map && data['dados'] != null) data = data['dados'];
+    if (data is Map && data['content'] != null) data = data['content'];
+    if (data is List) {
+      return data.whereType<Map>().map((e) => Map<String, dynamic>.from(e)).toList();
+    }
+    return [];
+  }
+
+  int? _extractId(dynamic body) {
+    if (body is Map) {
+      for (final key in ['id', 'codigo', 'cod']) {
+        final id = _toInt(body[key]?.toString() ?? '');
+        if (id != null) return id;
+      }
+      for (final key in ['data', 'dados', 'login', 'parceiro']) {
+        final nested = body[key];
+        if (nested is Map) {
+          final id = _extractId(nested);
+          if (id != null) return id;
+        }
+      }
+    }
+    return null;
+  }
+
+  String _shortBody(String body) {
+    final clean = body.replaceAll(RegExp(r'\s+'), ' ').trim();
+    if (clean.length <= 240) return clean;
+    return '${clean.substring(0, 240)}...';
+  }
+
+  String _digits(String value) => value.replaceAll(RegExp(r'[^0-9]'), '');
+
+  int? _toInt(String value) {
+    final digits = _digits(value);
+    if (digits.isEmpty) return null;
+    return int.tryParse(digits);
+  }
+
+  double? _money(String value) {
+    var clean = value.trim();
+    if (clean.isEmpty) return null;
+    clean = clean.replaceAll(RegExp(r'[^0-9,.-]'), '');
+    if (clean.contains(',') && clean.contains('.')) {
+      clean = clean.replaceAll('.', '').replaceAll(',', '.');
+    } else {
+      clean = clean.replaceAll(',', '.');
+    }
+    return double.tryParse(clean);
+  }
+
+  bool? _boolOrNull(String value) {
+    final v = _normalizar(value);
+    if (['s', 'sim', 'true', '1', 'ativo', 'a'].contains(v)) return true;
+    if (['n', 'nao', 'false', '0', 'inativo', 'i'].contains(v)) return false;
+    return null;
+  }
+
+  String? _dateOrNull(String value) {
+    final v = value.trim();
+    if (v.isEmpty) return null;
+    if (RegExp(r'^\d{4}-\d{2}-\d{2}$').hasMatch(v)) return v;
+    final m = RegExp(r'^(\d{1,2})/(\d{1,2})/(\d{4})$').firstMatch(v);
+    if (m == null) return v;
+    final d = m.group(1)!.padLeft(2, '0');
+    final month = m.group(2)!.padLeft(2, '0');
+    final y = m.group(3)!;
+    return '$y-$month-$d';
+  }
+
+  int? _regimeId(String value) {
+    final v = _normalizar(value);
+    if (v.isEmpty) return null;
+    if (v == '1' || v.contains('simples') || v == 'sn') return 1;
+    if (v == '2' || v.contains('presumido') || v == 'lp') return 2;
+    if (v == '3' || v.contains('real') || v == 'lr') return 3;
+    return _toInt(value);
+  }
+
+  String? _status(String value) {
+    final v = _normalizar(value);
+    if (v.isEmpty) return null;
+    if (['i', 'inativo', 'inativa', 'baixada'].contains(v)) return 'I';
+    return 'A';
+  }
+
+  String? _ambiente(String value) {
+    final v = _normalizar(value);
+    if (v.isEmpty) return null;
+    if (v.contains('prod')) return 'PRODUCAO';
+    return 'HOMOLOGACAO';
+  }
+
+  bool _isPlanoAcademia(Map<String, String> row) {
+    final tipo = _normalizar(_valor(row, _ImportacaoCadastroTipo.planos, 'tipo_plano'));
+    final codAcademia = _valor(row, _ImportacaoCadastroTipo.planos, 'cod_academia');
+    return tipo.contains('academia') || codAcademia.trim().isNotEmpty;
+  }
+
+  _CadastroImportConfig _config(_ImportacaoCadastroTipo tipo) =>
+      _configs.firstWhere((c) => c.tipo == tipo);
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+      Row(children: [
+        const Icon(Icons.upload_file_outlined, color: _primary, size: 18),
+        const SizedBox(width: 8),
+        const Text('Importacao de Cadastros', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: _primary)),
+        const Spacer(),
+        if (_loadingEmpresas)
+          SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.grey.shade600)),
+      ]),
+      const SizedBox(height: 8),
+      _destinoCard(),
+      const SizedBox(height: 10),
+      for (final config in _configs) ...[
+        _importCard(config),
+        const SizedBox(height: 10),
+      ],
+    ]);
+  }
+
+  Widget _destinoCard() {
+    return Card(
+      elevation: 0,
+      color: Colors.grey.shade50,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8), side: BorderSide(color: _border)),
+      child: Padding(
+        padding: const EdgeInsets.all(12),
+        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Row(children: [
+            Icon(Icons.domain_add_outlined, color: Colors.grey.shade700, size: 18),
+            const SizedBox(width: 8),
+            const Text('Destino dos Cadastros', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+          ]),
+          const SizedBox(height: 8),
+          Row(children: [
+            Expanded(child: _empresaDropdown()),
+            const SizedBox(width: 12),
+            Expanded(child: Text(
+              'Usado como empresa padrao para parceiros, funcionarios e logins quando o CSV nao tiver empresa_id.',
+              style: TextStyle(fontSize: 11, color: Colors.grey.shade600),
+            )),
+          ]),
+        ]),
+      ),
+    );
+  }
+
+  Widget _empresaDropdown() {
+    final fixo = TenantContext.hasEmpresa;
+    final value = fixo ? TenantContext.empresaId.toString() : _empresaIdSelecionada;
+    final items = _empresas.map((e) => DropdownMenuItem<String>(
+      value: e['id']?.toString(),
+      child: Text('${e['nome']}'),
+    )).toList();
+    if (value != null && items.every((i) => i.value != value)) {
+      items.add(DropdownMenuItem<String>(value: value, child: Text('Empresa $value')));
+    }
+
+    return DropdownButtonFormField<String>(
+      value: value,
+      items: items,
+      onChanged: fixo ? null : (v) => setState(() => _empresaIdSelecionada = v),
+      decoration: InputDecoration(
+        labelText: fixo ? 'Empresa do login' : 'Empresa padrao',
+        prefixIcon: const Icon(Icons.business, size: 16),
+        border: const OutlineInputBorder(),
+        isDense: true,
+      ),
+    );
+  }
+
+  Widget _importCard(_CadastroImportConfig config) {
+    final arquivo = _arquivos[config.tipo];
+    final loading = _loading[config.tipo] == true;
+    final colunas = _colunas[config.tipo] ?? [];
+    final resultado = _resultados[config.tipo];
+
+    return Card(
+      elevation: 0,
+      color: config.color.withValues(alpha: 0.04),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(8),
+        side: BorderSide(color: config.color.withValues(alpha: 0.35)),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(12),
+        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Row(children: [
+            Container(
+              width: 34,
+              height: 34,
+              decoration: BoxDecoration(color: config.color.withValues(alpha: 0.12), borderRadius: BorderRadius.circular(8)),
+              child: Icon(config.icon, color: config.color, size: 19),
+            ),
+            const SizedBox(width: 10),
+            Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Text(config.title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+              const SizedBox(height: 2),
+              Text(config.subtitle, style: TextStyle(fontSize: 11, color: Colors.grey.shade600)),
+            ])),
+            OutlinedButton.icon(
+              onPressed: loading ? null : () => _selecionarArquivo(config.tipo),
+              icon: const Icon(Icons.folder_open, size: 15),
+              label: const Text('Selecionar CSV', style: TextStyle(fontSize: 11)),
+              style: OutlinedButton.styleFrom(foregroundColor: config.color, side: BorderSide(color: config.color)),
+            ),
+          ]),
+          const SizedBox(height: 10),
+          Container(
+            height: 34,
+            padding: const EdgeInsets.symmetric(horizontal: 10),
+            decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(6), border: Border.all(color: _border)),
+            child: Row(children: [
+              Icon(Icons.insert_drive_file_outlined, size: 14, color: Colors.grey.shade600),
+              const SizedBox(width: 8),
+              Expanded(child: Text(
+                arquivo?.name ?? 'Nenhum arquivo selecionado',
+                style: TextStyle(fontSize: 11, color: arquivo == null ? Colors.grey.shade500 : Colors.grey.shade800),
+                overflow: TextOverflow.ellipsis,
+              )),
+              if (colunas.isNotEmpty)
+                Text('${colunas.length} colunas', style: TextStyle(fontSize: 10, color: Colors.grey.shade500)),
+            ]),
+          ),
+          const SizedBox(height: 8),
+          _mappingTile(config, colunas),
+          const SizedBox(height: 8),
+          Row(children: [
+            Expanded(child: Row(children: [
+              Icon(Icons.sync_alt, size: 14, color: Colors.grey.shade600),
+              const SizedBox(width: 6),
+              Text(
+                _atualizar[config.tipo] == true ? 'Modo: Atualizar se existir' : 'Modo: Apenas Inserir',
+                style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 12),
+              ),
+              const SizedBox(width: 8),
+              Expanded(child: Text(
+                _atualizar[config.tipo] == true
+                    ? 'Busca por CNPJ, CPF, email ou nome antes de criar.'
+                    : 'Cria novos registros e deixa duplicidades para a API validar.',
+                style: TextStyle(fontSize: 10, color: Colors.grey.shade600),
+                overflow: TextOverflow.ellipsis,
+              )),
+            ])),
+            Switch(
+              value: _atualizar[config.tipo] == true,
+              onChanged: loading ? null : (v) => setState(() => _atualizar[config.tipo] = v),
+            ),
+          ]),
+          const SizedBox(height: 6),
+          SizedBox(
+            width: double.infinity,
+            height: 34,
+            child: ElevatedButton.icon(
+              onPressed: arquivo == null || loading ? null : () => _importar(config.tipo),
+              icon: loading
+                  ? const SizedBox(width: 13, height: 13, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                  : const Icon(Icons.upload, size: 15),
+              label: Text(loading ? 'Importando...' : 'Importar', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: config.color,
+                foregroundColor: Colors.white,
+                disabledBackgroundColor: Colors.grey.shade300,
+              ),
+            ),
+          ),
+          if (resultado != null) ...[
+            const SizedBox(height: 10),
+            _resultadoCard(resultado, config.color),
+          ],
+        ]),
+      ),
+    );
+  }
+
+  Widget _mappingTile(_CadastroImportConfig config, List<String> colunas) {
+    return Theme(
+      data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
+      child: ExpansionTile(
+        tilePadding: const EdgeInsets.symmetric(horizontal: 10),
+        childrenPadding: const EdgeInsets.fromLTRB(10, 0, 10, 10),
+        collapsedShape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6), side: BorderSide(color: config.color.withValues(alpha: 0.25))),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6), side: BorderSide(color: config.color.withValues(alpha: 0.35))),
+        title: Row(children: [
+          Icon(Icons.tune, size: 14, color: config.color),
+          const SizedBox(width: 6),
+          Text('Mapeamento de colunas do CSV', style: TextStyle(fontSize: 11, color: config.color)),
+        ]),
+        children: [
+          if (colunas.isNotEmpty)
+            Align(
+              alignment: Alignment.centerLeft,
+              child: Padding(
+                padding: const EdgeInsets.only(bottom: 8),
+                child: Text('Detectadas: ${colunas.join(', ')}', style: TextStyle(fontSize: 10, color: Colors.grey.shade600)),
+              ),
+            ),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: config.campos.map((campo) => SizedBox(
+              width: 260,
+              child: TextField(
+                controller: _ctrl[config.tipo]![campo.key],
+                style: const TextStyle(fontSize: 12),
+                decoration: InputDecoration(
+                  labelText: campo.label,
+                  isDense: true,
+                  border: const OutlineInputBorder(),
+                  suffixIcon: _ctrl[config.tipo]![campo.key]!.text.isNotEmpty
+                      ? IconButton(
+                          icon: const Icon(Icons.clear, size: 14),
+                          onPressed: () => setState(() => _ctrl[config.tipo]![campo.key]!.clear()),
+                        )
+                      : null,
+                ),
+                onChanged: (_) => setState(() {}),
+              ),
+            )).toList(),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _resultadoCard(Map<String, dynamic> resultado, Color color) {
+    final detalhes = (resultado['detalhes'] as List?)?.cast<Map<String, dynamic>>() ?? [];
+    final problemas = detalhes.where((d) => d['status'] != 'sucesso').toList();
+
+    return Container(
+      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(6), border: Border.all(color: color.withValues(alpha: 0.35))),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Padding(
+          padding: const EdgeInsets.all(10),
+          child: Row(children: [
+            _chipMini('Total', resultado['total'] ?? 0, Colors.grey.shade700),
+            const SizedBox(width: 8),
+            _chipMini('Sucesso', resultado['sucesso'] ?? 0, Colors.green.shade700),
+            const SizedBox(width: 8),
+            _chipMini('Erros', resultado['erros'] ?? 0, Colors.red.shade700),
+            const SizedBox(width: 8),
+            _chipMini('Ignorados', resultado['ignorados'] ?? 0, Colors.orange.shade700),
+            const Spacer(),
+            if (problemas.isNotEmpty)
+              TextButton.icon(
+                onPressed: () {
+                  final texto = problemas.map((d) => 'Linha ${d['linha']} [${d['status']}]: ${d['mensagem']}').join('\n');
+                  Clipboard.setData(ClipboardData(text: texto));
+                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                    content: Text('${problemas.length} problema(s) copiado(s)'),
+                    duration: const Duration(seconds: 2),
+                  ));
+                },
+                icon: const Icon(Icons.copy_all, size: 14),
+                label: const Text('Copiar erros', style: TextStyle(fontSize: 11)),
+              ),
+          ]),
+        ),
+        if (problemas.isNotEmpty) ...[
+          const Divider(height: 1),
+          Container(
+            constraints: const BoxConstraints(maxHeight: 150),
+            child: ListView.builder(
+              shrinkWrap: true,
+              padding: const EdgeInsets.all(10),
+              itemCount: problemas.take(12).length,
+              itemBuilder: (_, i) {
+                final d = problemas.take(12).toList()[i];
+                final erro = d['status'] == 'erro';
+                final cor = erro ? Colors.red.shade700 : Colors.orange.shade700;
+                return Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 2),
+                  child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                    Icon(erro ? Icons.cancel_outlined : Icons.info_outline, size: 13, color: cor),
+                    const SizedBox(width: 6),
+                    Text('Linha ${d['linha']}: ', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: cor)),
+                    Expanded(child: SelectableText(d['mensagem']?.toString() ?? '', style: TextStyle(fontSize: 11, color: cor))),
+                  ]),
+                );
+              },
+            ),
+          ),
+        ],
+      ]),
+    );
+  }
+
+  Widget _chipMini(String label, dynamic value, Color color) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: color.withValues(alpha: 0.25)),
+      ),
+      child: Row(mainAxisSize: MainAxisSize.min, children: [
+        Text('$value', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: color)),
+        const SizedBox(width: 4),
+        Text(label, style: TextStyle(fontSize: 10, color: color)),
       ]),
     );
   }

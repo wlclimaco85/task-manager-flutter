@@ -9,7 +9,7 @@ import '../../../utils/api_links.dart';
 import '../../../utils/grid_colors.dart';
 import '../../../utils/tenant_context.dart';
 import '../../../widgets/finance/billing_charge_dialog.dart';
-import '../../../widgets/generic_grid_windows_screen.dart' show CustomAction, FieldConfigWindows;
+import '../../../widgets/generic_grid_windows_screen.dart' show CustomAction, FieldConfigWindows, FieldType;
 import '../../../web/screens/baixa_dialog_receber.dart';
 import '../../../web/dialogs/baixa_lote_dialog.dart';
 import '../../../web/dialogs/parcelar_receber_dialog.dart';

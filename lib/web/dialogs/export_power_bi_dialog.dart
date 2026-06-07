@@ -1,5 +1,6 @@
-import 'dart:html' as html;
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import '../../helpers/download_helper.dart';
 import '../../utils/api_links.dart';
 import '../../utils/grid_colors.dart';
 import '../../utils/tenant_context.dart';
@@ -73,12 +74,9 @@ class _ExportPowerBiDialogState extends State<ExportPowerBiDialog> {
       if (resp.statusCode == 200) {
         // Download CSV
         final bytes = resp.bodyBytes;
-        final blob = html.Blob([bytes], 'text/csv');
-        final urlBlob = html.Url.createObjectUrlFromBlob(blob);
-        html.AnchorElement(href: urlBlob)
-          ..setAttribute('download', '${_tipoSelecionado}_${DateTime.now().millisecondsSinceEpoch}.csv')
-          ..click();
-        html.Url.revokeObjectUrl(urlBlob);
+        if (kIsWeb) {
+          await downloadCsvBytes(bytes, '${_tipoSelecionado}_${DateTime.now().millisecondsSinceEpoch}.csv');
+        }
 
         Navigator.pop(context);
         ScaffoldMessenger.of(context).showSnackBar(
