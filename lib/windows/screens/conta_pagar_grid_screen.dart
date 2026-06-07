@@ -6,6 +6,7 @@ import 'dart:typed_data';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import '../../../utils/dropdown_helpers.dart';
+import '../../../models/auth_utility.dart';
 import '../../../widgets/generic_grid_windows_screen.dart'
     show CustomAction, FieldConfigWindows, FieldType;
 import '../../../customization/dynamic_grid_windows_screen.dart';
@@ -326,6 +327,34 @@ class _WindowsContaPagarGridScreenState
                   dropdownFutureBuilder: () => DropdownHelpers.parceiros(),
                   dropdownValueField: 'id',
                   dropdownDisplayField: 'nome'),
+              // Competência Obrigação: dropdown de obrigações fiscais, envia descricao como string
+              FieldConfigWindows(
+                  fieldName: 'competenciaObrigacao',
+                  label: 'Competência Obrigação',
+                  isInForm: true,
+                  isInGrid: false,
+                  isVisibleByDefault: false,
+                  fieldType: FieldType.dropdown,
+                  enabled: true,
+                  dropdownFutureBuilder: () async {
+                    final token = AuthUtility.userInfo?.token;
+                    final resp = await http.get(
+                      Uri.parse('${ApiLinks.baseUrl}/api/obrigacao_fiscal'),
+                      headers: {'Authorization': 'Bearer $token'},
+                    );
+                    if (resp.statusCode == 200) {
+                      final list = (jsonDecode(resp.body) is List)
+                          ? jsonDecode(resp.body) as List
+                          : (jsonDecode(resp.body)['data'] as List? ?? []);
+                      return list.map<Map<String, dynamic>>((e) => {
+                        'value': e['descricao'] ?? e['nome'] ?? '',
+                        'label': e['descricao'] ?? e['nome'] ?? '',
+                      }).toList();
+                    }
+                    return <Map<String, dynamic>>[];
+                  },
+                  dropdownValueField: 'value',
+                  dropdownDisplayField: 'label'),
               // Campos de baixa: somente leitura - preenchidos via acao "Baixa"
               const FieldConfigWindows(
                   fieldName: 'dataBaixa',
