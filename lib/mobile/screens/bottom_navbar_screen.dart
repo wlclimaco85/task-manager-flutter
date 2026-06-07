@@ -59,7 +59,7 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
 
   Future<void> _fetchAlerts() async {
     try {
-      final data = await AlertCaller().fetchItensAVenda(context);
+      final data = await AlertCaller().fetchNotificacoes(context);
       if (mounted) {
         setState(() {
           _notifications = data;

@@ -343,7 +343,7 @@ class _WebBottomNavBarScreenState extends State<WebBottomNavBarScreen> {
   Future<void> fetchAlerts() async {
     try {
       final List<Alert> alertData =
-          await AlertCaller().fetchItensAVenda(context);
+          await AlertCaller().fetchNotificacoes(context);
       if (!mounted) return;
       if (alertData.isNotEmpty) {
         setState(() {

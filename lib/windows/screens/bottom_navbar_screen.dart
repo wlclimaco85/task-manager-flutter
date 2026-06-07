@@ -335,7 +335,7 @@ class _WindowsBottomNavBarScreenState extends State<WindowsBottomNavBarScreen> {
   Future<void> fetchAlerts() async {
     try {
       final List<Alert> alertData =
-          await AlertCaller().fetchItensAVenda(context);
+          await AlertCaller().fetchNotificacoes(context);
       if (alertData.isNotEmpty && mounted) {
         setState(() {
           notifications = alertData;
