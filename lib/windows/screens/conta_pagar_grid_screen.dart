@@ -280,12 +280,7 @@ class _WindowsContaPagarGridScreenState
             deleteEndpointOverride: ApiLinks.deleteContaPagar(':id'),
             extraParams: _filterParams,
             fieldOverrides: [
-              const FieldConfigWindows(
-                  fieldName: 'parceiro',
-                  label: '',
-                  isInForm: false,
-                  isInGrid: false,
-                  isVisibleByDefault: false),
+              // Fornecedor (parceiroDev): 2o campo, locked no parceiro do login
               FieldConfigWindows(
                   fieldName: 'parceiroDev',
                   label: 'Fornecedor',
@@ -293,20 +288,56 @@ class _WindowsContaPagarGridScreenState
                   isInGrid: false,
                   isVisibleByDefault: false,
                   fieldType: FieldType.dropdown,
-                  dropdownFutureBuilder: () => DropdownHelpers.parceirosPorEmpresa(TenantContext.empresaId?.toString()),
+                  enabled: false,
+                  fieldOrder: 11,
+                  dropdownSelectedValue: TenantContext.parceiroId?.toString(),
+                  dropdownFutureBuilder: () async {
+                    final id = TenantContext.parceiroId;
+                    if (id == null) return <Map<String, dynamic>>[];
+                    final all = await DropdownHelpers.parceiros();
+                    return all.where((p) => p['id']?.toString() == id.toString()).toList();
+                  },
                   dropdownValueField: 'id',
-                  dropdownDisplayField: 'nome',
-                  fieldOrder: 20), // posição 2: logo abaixo de Empresa (fieldOrder 10)
+                  dropdownDisplayField: 'nome'),
+              // Parceiro: locked no parceiro do login
+              FieldConfigWindows(
+                  fieldName: 'parceiro',
+                  label: 'Parceiro',
+                  isInForm: true,
+                  isInGrid: false,
+                  isVisibleByDefault: false,
+                  fieldType: FieldType.dropdown,
+                  enabled: false,
+                  fieldOrder: 12,
+                  dropdownSelectedValue: TenantContext.parceiroId?.toString(),
+                  dropdownFutureBuilder: () async {
+                    final id = TenantContext.parceiroId;
+                    if (id == null) return <Map<String, dynamic>>[];
+                    final all = await DropdownHelpers.parceiros();
+                    return all.where((p) => p['id']?.toString() == id.toString()).toList();
+                  },
+                  dropdownValueField: 'id',
+                  dropdownDisplayField: 'nome'),
+              // Parceiro Rec: locked no parceiro do login
               FieldConfigWindows(
                   fieldName: 'parceiroRec',
                   label: 'Parceiro Rec',
                   isInForm: TenantContext.hasParceiro,
+                  isInGrid: false,
                   isVisibleByDefault: false,
+                  fieldType: FieldType.dropdown,
                   enabled: false,
-                  defaultValue: TenantContext.hasParceiro
-                      ? TenantContext.parceiroId?.toString()
-                      : null),
-              // Campos de baixa: somente leitura — preenchidos via ação "Baixa"
+                  fieldOrder: 13,
+                  dropdownSelectedValue: TenantContext.parceiroId?.toString(),
+                  dropdownFutureBuilder: () async {
+                    final id = TenantContext.parceiroId;
+                    if (id == null) return <Map<String, dynamic>>[];
+                    final all = await DropdownHelpers.parceiros();
+                    return all.where((p) => p['id']?.toString() == id.toString()).toList();
+                  },
+                  dropdownValueField: 'id',
+                  dropdownDisplayField: 'nome'),
+              // Campos de baixa: somente leitura - preenchidos via acao "Baixa"
               const FieldConfigWindows(
                   fieldName: 'dataBaixa',
                   label: 'Data da Baixa',
