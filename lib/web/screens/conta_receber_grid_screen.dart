@@ -19,6 +19,8 @@ import 'package:http/http.dart' as http;
 
 import '../../../web/dialogs/anexo_upload_dialog.dart';
 import '../../../web/dialogs/export_power_bi_dialog.dart';
+import '../../../utils/dropdown_helpers.dart';
+import '../../../models/auth_utility.dart';
 
 class WebContaReceberGridScreen extends StatefulWidget {
   final SecurityCheck hasPermission;
@@ -289,10 +291,81 @@ class _WebContaReceberGridScreenState extends State<WebContaReceberGridScreen> {
             updateEndpointOverride: ApiLinks.updateContaReceber(':id'),
             deleteEndpointOverride: ApiLinks.deleteContaReceber(':id'),
             extraParams: _filterParams,
-            fieldOverrides: const [
-              FieldConfigWindows(fieldName: 'parceiro',    label: 'Parceiro',     isInForm: true, isInGrid: false, isVisibleByDefault: false),
-              FieldConfigWindows(fieldName: 'parceiroDev', label: 'Parceiro Dev', isInForm: true, isInGrid: false, isVisibleByDefault: false),
-              FieldConfigWindows(fieldName: 'parceiroRec', label: 'Parceiro Rec', isInForm: true, isInGrid: false, isVisibleByDefault: false),
+            fieldOverrides: [
+              // Fornecedor (parceiroDev): 2o campo, dropdown com todos os parceiros (quem nos devem pagar)
+              FieldConfigWindows(
+                  fieldName: 'parceiroDev',
+                  label: 'Fornecedor',
+                  isInForm: true,
+                  isInGrid: false,
+                  isVisibleByDefault: false,
+                  fieldType: FieldType.dropdown,
+                  enabled: true,
+                  fieldOrder: 11,
+                  dropdownFutureBuilder: () => DropdownHelpers.parceiros(),
+                  dropdownValueField: 'id',
+                  dropdownDisplayField: 'nome'),
+              // Parceiro: locked no parceiro do login
+              FieldConfigWindows(
+                  fieldName: 'parceiro',
+                  label: 'Parceiro',
+                  isInForm: true,
+                  isInGrid: false,
+                  isVisibleByDefault: false,
+                  fieldType: FieldType.dropdown,
+                  enabled: false,
+                  fieldOrder: 12,
+                  dropdownSelectedValue: TenantContext.parceiroId?.toString(),
+                  dropdownFutureBuilder: () async {
+                    final id = TenantContext.parceiroId;
+                    if (id == null) return <Map<String, dynamic>>[];
+                    final all = await DropdownHelpers.parceiros();
+                    return all.where((p) => p['id']?.toString() == id.toString()).toList();
+                  },
+                  dropdownValueField: 'id',
+                  dropdownDisplayField: 'nome'),
+              // Parceiro Rec: dropdown com todos os parceiros, pré-marcado com o parceiro do login (editável)
+              FieldConfigWindows(
+                  fieldName: 'parceiroRec',
+                  label: 'Parceiro Rec',
+                  isInForm: TenantContext.hasParceiro,
+                  isInGrid: false,
+                  isVisibleByDefault: false,
+                  fieldType: FieldType.dropdown,
+                  enabled: true,
+                  fieldOrder: 13,
+                  dropdownSelectedValue: TenantContext.parceiroId?.toString(),
+                  dropdownFutureBuilder: () => DropdownHelpers.parceiros(),
+                  dropdownValueField: 'id',
+                  dropdownDisplayField: 'nome'),
+              // Competência Obrigação: dropdown de obrigações fiscais, envia descricao como string
+              FieldConfigWindows(
+                  fieldName: 'competenciaObrigacao',
+                  label: 'Competência Obrigação',
+                  isInForm: true,
+                  isInGrid: false,
+                  isVisibleByDefault: false,
+                  fieldType: FieldType.dropdown,
+                  enabled: true,
+                  dropdownFutureBuilder: () async {
+                    final token = AuthUtility.userInfo?.token;
+                    final resp = await http.get(
+                      Uri.parse('${ApiLinks.baseUrl}/api/obrigacao_fiscal'),
+                      headers: {'Authorization': 'Bearer $token'},
+                    );
+                    if (resp.statusCode == 200) {
+                      final list = (jsonDecode(resp.body) is List)
+                          ? jsonDecode(resp.body) as List
+                          : (jsonDecode(resp.body)['data'] as List? ?? []);
+                      return list.map<Map<String, dynamic>>((e) => {
+                        'value': e['descricao'] ?? e['nome'] ?? '',
+                        'label': e['descricao'] ?? e['nome'] ?? '',
+                      }).toList();
+                    }
+                    return <Map<String, dynamic>>[];
+                  },
+                  dropdownValueField: 'value',
+                  dropdownDisplayField: 'label'),
             ],
             headerActions: [
               OutlinedButton.icon(

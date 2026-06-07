@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 import '../../../customization/dynamic_grid_windows_screen.dart';
 import '../../../models/conta_receber_model.dart';
 import '../../../utils/api_links.dart';
+import '../../../models/auth_utility.dart';
 import '../../../utils/dropdown_helpers.dart';
 import '../../../utils/grid_colors.dart';
 import '../../../utils/tenant_context.dart';
@@ -278,86 +279,80 @@ class _WindowsContaReceberGridScreenState extends State<WindowsContaReceberGridS
             deleteEndpointOverride: ApiLinks.deleteContaReceber(':id'),
             extraParams: _filterParams,
             fieldOverrides: [
-              // empresa: pré-selecionado do TenantContext; disabled quando logado em empresa
+              // Fornecedor (parceiroDev): 2o campo, dropdown com todos os parceiros
               FieldConfigWindows(
-                fieldName: 'empresa',
-                label: 'Empresa',
-                displayFieldName: 'empresa.nome',
-                fieldType: FieldType.dropdown,
-                dropdownValueField: 'id',
-                dropdownDisplayField: 'nome',
-                enabled: TenantContext.empresaId == null,
-                isInForm: true,
-                dropdownSelectedValue: TenantContext.empresaId,
-                dropdownFutureBuilder: DropdownHelpers.empresas,
-                fieldOrder: 10,
-              ),
-              // parceiro: oculto quando sem parceiro; disabled+pré-preenchido em contexto multi-tenant
+                  fieldName: 'parceiroDev',
+                  label: 'Fornecedor',
+                  isInForm: true,
+                  isInGrid: false,
+                  isVisibleByDefault: false,
+                  fieldType: FieldType.dropdown,
+                  enabled: true,
+                  fieldOrder: 11,
+                  dropdownFutureBuilder: () => DropdownHelpers.parceiros(),
+                  dropdownValueField: 'id',
+                  dropdownDisplayField: 'nome'),
+              // Parceiro: locked no parceiro do login
               FieldConfigWindows(
-                fieldName: 'parceiro',
-                label: 'Parceiro',
-                isInForm: TenantContext.hasParceiro,
-                isVisibleByDefault: false,
-                enabled: false,
-                defaultValue: TenantContext.hasParceiro
-                    ? TenantContext.parceiroId?.toString()
-                    : null,
-                fieldOrder: 15,
-              ),
-              // parceiroDev: dropdown principal (cliente devedor — quem vai pagar)
+                  fieldName: 'parceiro',
+                  label: 'Parceiro',
+                  isInForm: true,
+                  isInGrid: false,
+                  isVisibleByDefault: false,
+                  fieldType: FieldType.dropdown,
+                  enabled: false,
+                  fieldOrder: 12,
+                  dropdownSelectedValue: TenantContext.parceiroId?.toString(),
+                  dropdownFutureBuilder: () async {
+                    final id = TenantContext.parceiroId;
+                    if (id == null) return <Map<String, dynamic>>[];
+                    final all = await DropdownHelpers.parceiros();
+                    return all.where((p) => p['id']?.toString() == id.toString()).toList();
+                  },
+                  dropdownValueField: 'id',
+                  dropdownDisplayField: 'nome'),
+              // Parceiro Rec: pré-marcado com parceiro do login (editável)
               FieldConfigWindows(
-                fieldName: 'parceiroDev',
-                label: 'Parceiro',
-                isInForm: true,
-                isInGrid: false,
-                isVisibleByDefault: false,
-                fieldType: FieldType.dropdown,
-                dropdownFutureBuilder: () => DropdownHelpers.parceirosPorEmpresa(TenantContext.empresaId?.toString()),
-                dropdownValueField: 'id',
-                dropdownDisplayField: 'nome',
-                fieldOrder: 20, // logo abaixo de Empresa (10) e Parceiro tenant (15)
-              ),
-              // parceiroRec: oculto — backend auto-propaga com o valor de parceiroDev no save()
-              // Ambas variantes (camelCase + snake_case) para cobrir DB com diferentes padrões
-              const FieldConfigWindows(
-                fieldName: 'parceiroRec',
-                label: '',
-                isInForm: false,
-                isVisibleByDefault: false,
-              ),
-              const FieldConfigWindows(
-                fieldName: 'parceiro_rec',
-                label: '',
-                isInForm: false,
-                isVisibleByDefault: false,
-              ),
-              // tipoRecorrencia: dropdown enum (igual ao conta_pagar)
+                  fieldName: 'parceiroRec',
+                  label: 'Parceiro Rec',
+                  isInForm: TenantContext.hasParceiro,
+                  isInGrid: false,
+                  isVisibleByDefault: false,
+                  fieldType: FieldType.dropdown,
+                  enabled: true,
+                  fieldOrder: 13,
+                  dropdownSelectedValue: TenantContext.parceiroId?.toString(),
+                  dropdownFutureBuilder: () => DropdownHelpers.parceiros(),
+                  dropdownValueField: 'id',
+                  dropdownDisplayField: 'nome'),
+              // Competência Obrigação: dropdown envia descricao como string
               FieldConfigWindows(
-                fieldName: 'tipoRecorrencia',
-                label: 'Tipo Recorrência',
-                isInForm: true,
-                fieldType: FieldType.dropdown,
-                dropdownValueField: 'value',
-                dropdownDisplayField: 'label',
-                dropdownFutureBuilder: () => DropdownHelpers.load(
-                  '${ApiLinks.baseUrl}/api/enums/TipoRecorrenciaEnum',
-                  displayField: 'label',
-                ),
-                fieldOrder: 70,
-              ),
-              // Campos de baixa: somente leitura — preenchidos via ação "Baixa"
-              const FieldConfigWindows(
-                fieldName: 'dataBaixa',
-                label: 'Data da Baixa',
-                isInForm: true,
-                enabled: false,
-              ),
-              const FieldConfigWindows(
-                fieldName: 'valorBaixa',
-                label: 'Valor da Baixa',
-                isInForm: true,
-                enabled: false,
-              ),
+                  fieldName: 'competenciaObrigacao',
+                  label: 'Competência Obrigação',
+                  isInForm: true,
+                  isInGrid: false,
+                  isVisibleByDefault: false,
+                  fieldType: FieldType.dropdown,
+                  enabled: true,
+                  dropdownFutureBuilder: () async {
+                    final token = AuthUtility.userInfo?.token;
+                    final resp = await http.get(
+                      Uri.parse('${ApiLinks.baseUrl}/api/obrigacao_fiscal'),
+                      headers: {'Authorization': 'Bearer $token'},
+                    );
+                    if (resp.statusCode == 200) {
+                      final list = (jsonDecode(resp.body) is List)
+                          ? jsonDecode(resp.body) as List
+                          : (jsonDecode(resp.body)['data'] as List? ?? []);
+                      return list.map<Map<String, dynamic>>((e) => {
+                        'value': e['descricao'] ?? e['nome'] ?? '',
+                        'label': e['descricao'] ?? e['nome'] ?? '',
+                      }).toList();
+                    }
+                    return <Map<String, dynamic>>[];
+                  },
+                  dropdownValueField: 'value',
+                  dropdownDisplayField: 'label'),
             ],
             headerActions: [
               OutlinedButton.icon(
