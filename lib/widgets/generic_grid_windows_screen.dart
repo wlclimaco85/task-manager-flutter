@@ -101,6 +101,11 @@ class FieldConfigWindows {
   /// do servidor. Útil para campos Flutter-only (ex: dropdowns de substituição)
   /// que precisam aparecer em posição específica.
   final int? fieldOrder;
+  /// Quando definido, o campo só aparece no form se o campo indicado por
+  /// `visibleWhenField` tiver o valor igual a `visibleWhenValue`.
+  /// Útil para campos que devem aparecer apenas quando um checkbox está marcado.
+  final String? visibleWhenField;
+  final dynamic visibleWhenValue;
 
   const FieldConfigWindows({
     required this.label,
@@ -130,6 +135,8 @@ class FieldConfigWindows {
     this.dropdownSelectedValue,
     this.fieldSpecificConfig,
     this.fieldOrder,
+    this.visibleWhenField,
+    this.visibleWhenValue,
   });
 }
 
@@ -2065,7 +2072,19 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
                 if (item == null && config.fieldName == widget.idFieldName) {
                   return false;
                 }
-                return config.isInForm;
+                if (!config.isInForm) return false;
+                // visibleWhen: só mostra o campo se o campo referenciado tiver o valor esperado
+                if (config.visibleWhenField != null) {
+                  final depCtrl = controllers[config.visibleWhenField!];
+                  if (depCtrl == null) return false;
+                  final depValue = depCtrl.text;
+                  // Suporta bool (checkbox: 'true'/'false') e string
+                  if (config.visibleWhenValue is bool) {
+                    return depValue.toLowerCase() == (config.visibleWhenValue ? 'true' : 'false');
+                  }
+                  return depValue == config.visibleWhenValue?.toString();
+                }
+                return true;
               }).expand((config) {
                 // Campo id no edit → sempre disabled
                 final isIdField =
@@ -2098,6 +2117,8 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
                         maxLines: config.maxLines,
                         isSortable: config.isSortable,
                         validator: config.validator,
+                        visibleWhenField: config.visibleWhenField,
+                        visibleWhenValue: config.visibleWhenValue,
                       )
                     : config;
                 final mainField = Padding(

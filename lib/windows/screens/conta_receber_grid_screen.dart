@@ -7,7 +7,6 @@ import 'package:flutter/material.dart';
 import '../../../customization/dynamic_grid_windows_screen.dart';
 import '../../../models/conta_receber_model.dart';
 import '../../../utils/api_links.dart';
-import '../../../models/auth_utility.dart';
 import '../../../utils/dropdown_helpers.dart';
 import '../../../utils/grid_colors.dart';
 import '../../../utils/tenant_context.dart';
@@ -282,7 +281,7 @@ class _WindowsContaReceberGridScreenState extends State<WindowsContaReceberGridS
               // Fornecedor (parceiroDev): 2o campo, dropdown com todos os parceiros
               FieldConfigWindows(
                   fieldName: 'parceiroDev',
-                  label: 'Fornecedor',
+                  label: 'Cliente',
                   isInForm: true,
                   isInGrid: false,
                   isVisibleByDefault: false,
@@ -325,7 +324,7 @@ class _WindowsContaReceberGridScreenState extends State<WindowsContaReceberGridS
                   dropdownFutureBuilder: () => DropdownHelpers.parceiros(),
                   dropdownValueField: 'id',
                   dropdownDisplayField: 'nome'),
-              // Competência Obrigação: dropdown envia descricao como string
+              // Competência Obrigação: dropdown de obrigações fiscais, envia descricao como string
               FieldConfigWindows(
                   fieldName: 'competenciaObrigacao',
                   label: 'Competência Obrigação',
@@ -334,6 +333,8 @@ class _WindowsContaReceberGridScreenState extends State<WindowsContaReceberGridS
                   isVisibleByDefault: false,
                   fieldType: FieldType.dropdown,
                   enabled: true,
+                  visibleWhenField: 'obrigacaoFiscal',
+                  visibleWhenValue: true,
                   dropdownFutureBuilder: () async {
                     final token = AuthUtility.userInfo?.token;
                     final resp = await http.get(
@@ -353,6 +354,61 @@ class _WindowsContaReceberGridScreenState extends State<WindowsContaReceberGridS
                   },
                   dropdownValueField: 'value',
                   dropdownDisplayField: 'label'),
+              // Tipo Recorrência: só aparece quando recorrenciaAtiva está marcado
+              FieldConfigWindows(
+                  fieldName: 'tipoRecorrencia',
+                  label: 'Tipo Recorrência',
+                  isInForm: true,
+                  isInGrid: false,
+                  isVisibleByDefault: false,
+                  fieldType: FieldType.dropdown,
+                  enabled: true,
+                  visibleWhenField: 'recorrenciaAtiva',
+                  visibleWhenValue: true,
+                  fieldOrder: 56,
+                  dropdownFutureBuilder: () async {
+                    final token = AuthUtility.userInfo?.token;
+                    final resp = await http.get(
+                      Uri.parse('${ApiLinks.baseUrl}/api/enums/TipoRecorrenciaEnum'),
+                      headers: {'Authorization': 'Bearer $token'},
+                    );
+                    if (resp.statusCode == 200) {
+                      final list = (jsonDecode(resp.body) is List)
+                          ? jsonDecode(resp.body) as List
+                          : (jsonDecode(resp.body)['data'] as List? ?? []);
+                      return list.map<Map<String, dynamic>>((e) => {
+                        'value': e['value'] ?? e,
+                        'label': e['label'] ?? e['value'] ?? e.toString(),
+                      }).toList();
+                    }
+                    return <Map<String, dynamic>>[];
+                  },
+                  dropdownValueField: 'value',
+                  dropdownDisplayField: 'label'),
+              // Quantidade Recorrência
+              FieldConfigWindows(
+                  fieldName: 'quantidadeRecorrencia',
+                  label: 'Quantidade Recorrência',
+                  isInForm: true,
+                  isInGrid: false,
+                  isVisibleByDefault: false,
+                  fieldType: FieldType.number,
+                  enabled: true,
+                  visibleWhenField: 'recorrenciaAtiva',
+                  visibleWhenValue: true,
+                  fieldOrder: 57),
+              // Dia Vencimento
+              FieldConfigWindows(
+                  fieldName: 'diaVencimento',
+                  label: 'Dia Vencimento',
+                  isInForm: true,
+                  isInGrid: false,
+                  isVisibleByDefault: false,
+                  fieldType: FieldType.number,
+                  enabled: true,
+                  visibleWhenField: 'recorrenciaAtiva',
+                  visibleWhenValue: true,
+                  fieldOrder: 58),
             ],
             headerActions: [
               OutlinedButton.icon(
