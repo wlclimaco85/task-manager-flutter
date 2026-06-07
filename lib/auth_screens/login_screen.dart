@@ -137,7 +137,10 @@ class _LoginScreenState extends State<LoginScreen>
           : resp.statusCode == -1
               ? GridTexts.loginNoConnection
               : 'Erro ${resp.statusCode}';
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text(msg, style: const TextStyle(color: Colors.white)),
+        backgroundColor: Colors.red.shade700,
+      ));
     }
   }
 
