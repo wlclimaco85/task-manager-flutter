@@ -317,7 +317,12 @@ class _GenericDetailFormScreenState extends State<GenericDetailFormScreen>
                         controller: _tabController,
                         children: [
                           _buildFormTab(tela),
-                          ...allTabs.map(_buildAutoTab),
+                          for (var i = 0; i < allTabs.length; i++)
+                            _LazyTab(
+                              controller: _tabController!,
+                              tabIndex: i + 1,
+                              builder: () => _buildAutoTab(allTabs[i]),
+                            ),
                         ],
                       )
                     : _buildFormTab(tela),
@@ -1071,6 +1076,82 @@ class _TelaServiceHelper {
     );
     if (tela == null) throw Exception('Tela $telaNome não encontrada no cache');
     return tela;
+  }
+}
+
+// ---------------------------------------------------------------
+// Lazy tab — só constrói (e dispara fetch) o conteúdo da aba quando ela é
+// selecionada pela primeira vez. Evita que TODAS as abas relacionadas
+// (Parceiros, Logins, Contas a Pagar, etc.) disparem requisições HTTP ao
+// montar a tela de detalhe — TabBarView constrói todos os children de
+// imediato, então sem essa proteção cada DynamicGridWindowsScreen chamaria
+// initState/fetch simultaneamente, causando lentidão e loaders concorrentes.
+// Uma vez construída, a aba permanece viva (AutomaticKeepAlive) para não
+// recarregar ao trocar de aba.
+// ---------------------------------------------------------------
+class _LazyTab extends StatefulWidget {
+  final TabController controller;
+  final int tabIndex;
+  final WidgetBuilder0 builder;
+
+  const _LazyTab({
+    required this.controller,
+    required this.tabIndex,
+    required this.builder,
+  });
+
+  @override
+  State<_LazyTab> createState() => _LazyTabState();
+}
+
+typedef WidgetBuilder0 = Widget Function();
+
+class _LazyTabState extends State<_LazyTab>
+    with AutomaticKeepAliveClientMixin {
+  bool _activated = false;
+
+  @override
+  bool get wantKeepAlive => _activated;
+
+  @override
+  void initState() {
+    super.initState();
+    _checkActive();
+    widget.controller.addListener(_onTabChanged);
+  }
+
+  @override
+  void didUpdateWidget(covariant _LazyTab oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.controller != widget.controller) {
+      oldWidget.controller.removeListener(_onTabChanged);
+      widget.controller.addListener(_onTabChanged);
+      _checkActive();
+    }
+  }
+
+  @override
+  void dispose() {
+    widget.controller.removeListener(_onTabChanged);
+    super.dispose();
+  }
+
+  void _onTabChanged() => _checkActive();
+
+  void _checkActive() {
+    final isActive = widget.controller.index == widget.tabIndex;
+    if (isActive && !_activated) {
+      setState(() => _activated = true);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    super.build(context);
+    if (!_activated) {
+      return const Center(child: CircularProgressIndicator());
+    }
+    return widget.builder();
   }
 }
 
