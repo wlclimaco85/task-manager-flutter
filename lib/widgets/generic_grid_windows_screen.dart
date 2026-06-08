@@ -68,6 +68,7 @@ class FieldConfigWindows {
   final String fieldName;
   final bool isFilterable;
   final bool isInForm;
+
   /// H12: quando false, o campo não aparece como coluna na grid,
   /// mas continua disponível no formulário (diferente de isVisibleByDefault
   /// que só oculta por padrão e pode ser reativado pelo usuário).
@@ -79,10 +80,12 @@ class FieldConfigWindows {
   final FieldType fieldType;
   final List<Map<String, dynamic>>? dropdownOptions;
   final Future<List<Map<String, dynamic>>> Function()? dropdownFutureBuilder;
+
   /// Para dropdown cascadeado: função que recebe o valor do campo pai e
   /// retorna a lista filtrada. Quando definido, ignora dropdownFutureBuilder.
   final Future<List<Map<String, dynamic>>> Function(String? param)?
       dropdownFutureBuilderWithParam;
+
   /// Nome do campo (fieldName) do qual este dropdown depende para cascade.
   final String? dependsOnField;
   final String dropdownValueField;
@@ -97,10 +100,12 @@ class FieldConfigWindows {
   final FileConfig? fileConfig;
   final dynamic dropdownSelectedValue;
   final Map<String, dynamic>? fieldSpecificConfig;
+
   /// Ordem explícita do campo no formulário. Quando definido, sobrepõe a ordem
   /// do servidor. Útil para campos Flutter-only (ex: dropdowns de substituição)
   /// que precisam aparecer em posição específica.
   final int? fieldOrder;
+
   /// Quando definido, o campo só aparece no form se o campo indicado por
   /// `visibleWhenField` tiver o valor igual a `visibleWhenValue`.
   /// Útil para campos que devem aparecer apenas quando um checkbox está marcado.
@@ -389,6 +394,7 @@ class FieldFactory {
     required Map<String, List<PlatformFile>> fileCache,
     required Map<String, List<Map<String, dynamic>>> dropdownCache,
     dynamic item,
+
     /// Mapa de todos os controllers do formulário — necessário para cascading.
     Map<String, TextEditingController>? allControllers,
   }) {
@@ -448,9 +454,10 @@ class FieldFactory {
       case FieldType.multiline:
         return _buildMultilineField(config, controller);
       case FieldType.dropdown:
-        final dependsOnCtrl = config.dependsOnField != null && allControllers != null
-            ? allControllers[config.dependsOnField]
-            : null;
+        final dependsOnCtrl =
+            config.dependsOnField != null && allControllers != null
+                ? allControllers[config.dependsOnField]
+                : null;
         return _buildDropdownField(config, controller, dropdownCache,
             dependsOnController: dependsOnCtrl);
       case FieldType.file:
@@ -988,8 +995,7 @@ class FieldFactory {
             onSurface: GridColors.secondary,
           ),
           textButtonTheme: TextButtonThemeData(
-            style:
-                TextButton.styleFrom(foregroundColor: GridColors.primary),
+            style: TextButton.styleFrom(foregroundColor: GridColors.primary),
           ),
         ),
         child: child!,
@@ -1541,7 +1547,8 @@ class GenericGridScreen<T> extends StatefulWidget {
   final List<Widget>? headerActions;
   final String? helpTelaNome;
   final void Function()? onAfterCreate;
-  final void Function(Set<String> ids, List<Map<String, dynamic>> selectedData)? onSelectedRowsChanged;
+  final void Function(Set<String> ids, List<Map<String, dynamic>> selectedData)?
+      onSelectedRowsChanged;
 
   const GenericGridScreen({
     super.key,
@@ -2080,7 +2087,8 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
                   final depValue = depCtrl.text;
                   // Suporta bool (checkbox: 'true'/'false') e string
                   if (config.visibleWhenValue is bool) {
-                    return depValue.toLowerCase() == (config.visibleWhenValue ? 'true' : 'false');
+                    return depValue.toLowerCase() ==
+                        (config.visibleWhenValue ? 'true' : 'false');
                   }
                   return depValue == config.visibleWhenValue?.toString();
                 }
@@ -2346,7 +2354,9 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
       // Dropdown fields: static enums send raw value; FK relations send {id: X} object
       if (config.fieldType == FieldType.dropdown && value.isNotEmpty) {
         // Static dropdown (no backend endpoint) → send raw value (e.g. status integer)
-        if (config.dropdownFutureBuilder == null && config.dropdownOptions != null && config.dropdownOptions!.isNotEmpty) {
+        if (config.dropdownFutureBuilder == null &&
+            config.dropdownOptions != null &&
+            config.dropdownOptions!.isNotEmpty) {
           if (config.fieldName.contains('.')) {
             final parts = config.fieldName.split('.');
             _setNestedValue(formData, parts, value);
@@ -2447,7 +2457,8 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
       return false;
     }
 
-    final Map<String, dynamic> enrichedFormData = Map.from(normalizeFormData(formData));
+    final Map<String, dynamic> enrichedFormData =
+        Map.from(normalizeFormData(formData));
 
     if (widget.extraParams != null) {
       enrichedFormData.addAll(widget.extraParams!);
@@ -2599,7 +2610,8 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
       }
     } else {
       // Only inject status=0 if the entity actually has a status field configured
-      final hasStatusField = widget.FieldConfigWindowss.any((f) => f.fieldName == "status");
+      final hasStatusField =
+          widget.FieldConfigWindowss.any((f) => f.fieldName == "status");
       if (hasStatusField) {
         updated["status"] = 0;
       }
@@ -2655,7 +2667,7 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
 
     setState(() => _isDeleting = true);
 
-    final response = await NetworkCaller().getRequest(
+    final response = await NetworkCaller().deleteRequest(
       widget.deleteEndpoint.replaceAll(':id', id),
     );
 
@@ -3116,8 +3128,7 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
       return;
     }
 
-    final visibleFields = widget.FieldConfigWindowss
-        .where((c) =>
+    final visibleFields = widget.FieldConfigWindowss.where((c) =>
             c.isVisibleByDefault &&
             c.label.trim().isNotEmpty &&
             !c.label.startsWith('_'))
@@ -3220,11 +3231,14 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisSize: MainAxisSize.min,
               children: sections.isEmpty
-                  ? [_helpBlock('Para que serve', [_purposeForTitle()])]
+                  ? [
+                      _helpBlock('Para que serve', [_purposeForTitle()])
+                    ]
                   : sections
                       .expand(
                         (section) => [
-                          _helpBlock(section.key, _splitHelpText(section.value!)),
+                          _helpBlock(
+                              section.key, _splitHelpText(section.value!)),
                           const SizedBox(height: 14),
                         ],
                       )
@@ -4283,6 +4297,7 @@ class _SearchableDropdownWindows extends StatefulWidget {
   final FieldConfigWindows config;
   final TextEditingController controller;
   final List<Map<String, dynamic>> options;
+
   /// Quando definido (cascade), o widget observa este controller e re-busca
   /// as opções usando [config.dropdownFutureBuilderWithParam] toda vez que o
   /// valor do campo pai mudar.

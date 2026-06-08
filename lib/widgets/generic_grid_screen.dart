@@ -16,6 +16,7 @@ import '../../../models/auth_utility.dart';
 import '../../../models/network_response.dart';
 import '../../../utils/api_links.dart';
 import '../../services/network_caller.dart';
+import 'searchable_dropdown.dart';
 
 import 'package:task_manager_flutter/utils/app_logger.dart';
 import 'package:task_manager_flutter/models/tela_ajuda_model.dart';
@@ -683,30 +684,18 @@ class FieldFactory {
       currentValue = null;
     }
 
-    return DropdownButtonFormField<dynamic>(
-      initialValue: currentValue,
-      decoration: _buildInputDecoration(config),
-      isExpanded: true,
-      menuMaxHeight: 300,
-      itemHeight: 48,
-      items: uniqueOptions.map<DropdownMenuItem<dynamic>>((option) {
-        final optionValue = option[config.dropdownValueField];
-        final optionLabel =
-            option[config.dropdownDisplayField]?.toString() ?? '';
-        return DropdownMenuItem<dynamic>(
-          value: optionValue,
-          child: Text(optionLabel, overflow: TextOverflow.ellipsis),
-        );
-      }).toList(),
-      onChanged: (value) {
-        controller.text = value?.toString() ?? '';
-      },
-      validator: (value) {
-        if (config.validator != null) {
-          return config.validator!(value?.toString());
-        }
-        return null;
-      },
+    return SearchableDropdownField(
+      label: config.label,
+      value: currentValue?.toString(),
+      items: uniqueOptions,
+      valueField: config.dropdownValueField,
+      displayField: config.dropdownDisplayField,
+      enabled: config.enabled,
+      isRequired: config.isRequired,
+      nullable: !config.isRequired,
+      nullLabel: GridTexts.clearSelection,
+      validator: config.validator,
+      onChanged: (v) => controller.text = v ?? '',
     );
   }
 
@@ -1755,7 +1744,7 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
 
     setState(() => _isDeleting = true);
 
-    final response = await NetworkCaller().getRequest(
+    final response = await NetworkCaller().deleteRequest(
       widget.deleteEndpoint.replaceAll(':id', id),
     );
 
@@ -2331,11 +2320,14 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisSize: MainAxisSize.min,
               children: sections.isEmpty
-                  ? [_helpBlock('Para que serve', [_purposeForTitle()])]
+                  ? [
+                      _helpBlock('Para que serve', [_purposeForTitle()])
+                    ]
                   : sections
                       .expand(
                         (section) => [
-                          _helpBlock(section.key, _splitHelpText(section.value!)),
+                          _helpBlock(
+                              section.key, _splitHelpText(section.value!)),
                           const SizedBox(height: 14),
                         ],
                       )

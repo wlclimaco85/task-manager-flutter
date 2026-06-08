@@ -38,6 +38,8 @@ class _NfseDetailScreenState extends State<NfseDetailScreen> {
   final List<Map<String, dynamic>> _empresas = [];
   List<Map<String, dynamic>> _tomadores = []; // parceiros
   List<Map<String, dynamic>> _produtos = []; // somente isServico == true
+  List<Map<String, dynamic>> _series = []; // nfse_serie
+  List<Map<String, dynamic>> _cidades = []; // todas as cidades
 
   // Controllers cabeçalho
   final _numeroCtrl = TextEditingController();
@@ -48,6 +50,8 @@ class _NfseDetailScreenState extends State<NfseDetailScreen> {
   String? _ambienteVal;
   String? _empresaId;
   String? _tomadorId;
+  String? _serieId;
+  String? _cidadeId;
   DateTime? _dataEmissao;
   DateTime? _dataCompetencia;
 
@@ -102,6 +106,22 @@ class _NfseDetailScreenState extends State<NfseDetailScreen> {
             : (i['parceiro'] is Map ? i['parceiro']['id'] : i['tomador'] ?? i['parceiro']))
         ?.toString();
 
+    // Série: tentar extrair id da série (se vier como objeto) ou usar o valor textual
+    if (i['serie'] is Map) {
+      _serieId = i['serie']['id']?.toString();
+      _serieCtrl.text = i['serie']['serie']?.toString() ?? '';
+    } else {
+      _serieCtrl.text = i['serie']?.toString() ?? '';
+    }
+
+    // Cidade: tentar extrair id (se vier como objeto) ou buscar pelo nome
+    if (i['cidade'] is Map) {
+      _cidadeId = i['cidade']['id']?.toString();
+    }
+    if (i['municipioPrestacao'] != null) {
+      _municipioCtrl.text = i['municipioPrestacao']?.toString() ?? '';
+    }
+
     _dataEmissao = _parseData(i['dataEmissao'] ?? i['dhEmissao']);
     _dataCompetencia = _parseData(i['dataCompetencia']);
   }
@@ -123,21 +143,19 @@ class _NfseDetailScreenState extends State<NfseDetailScreen> {
       _loadList('${ApiLinks.baseUrl}/api/parceiro?tamanho=500${empId != null ? '&empId=$empId' : ''}',
           (d) => setState(() => _tomadores = d)),
       _loadProdutosServico(empId),
+      _loadList('${ApiLinks.baseUrl}/api/nfse-serie?tamanho=100${empId != null ? '&empId=$empId' : ''}',
+          (d) => setState(() => _series = d)),
+      _loadList('${ApiLinks.baseUrl}/api/cidade?tamanho=5000',
+          (d) => setState(() => _cidades = d)),
     ]);
   }
 
-  /// Busca produtos e filtra client-side por isServico == true
-  /// (espelha Produto.isServico). Tenta também ?isServico=true caso o
-  /// backend já suporte o filtro server-side.
+  /// Busca produtos de serviço via /api/produto_contabil (retorna entity completa com isServico)
   Future<void> _loadProdutosServico(String? empId) async {
-    final base = '${ApiLinks.baseUrl}/api/produto?tamanho=500'
-        '${empId != null ? '&empId=$empId' : ''}';
+    final base = '${ApiLinks.baseUrl}/api/produto-contabil?tamanho=500'
+        '${empId != null ? '&empId=$empId' : ''}&isServico=true';
     List<Map<String, dynamic>> produtos = [];
-    await _loadList('$base&isServico=true', (d) => produtos = d);
-    if (produtos.isEmpty) {
-      await _loadList(base, (d) => produtos = d);
-      produtos = produtos.where((p) => p['isServico'] == true).toList();
-    }
+    await _loadList(base, (d) => produtos = d);
     if (mounted) setState(() => _produtos = produtos);
   }
 
@@ -337,11 +355,11 @@ class _NfseDetailScreenState extends State<NfseDetailScreen> {
                   ? _inpDisabledText('Empresa', _empresaNome!)
                   : _ddObj('Empresa', _empresaId, _empresas, 'nome', (v) => setState(() => _empresaId = v)),
               _ddObj('Tomador / Parceiro', _tomadorId, _tomadores, 'nome', (v) => setState(() => _tomadorId = v)),
-              _inp('Série', _serieCtrl),
+              _ddSerie(),
               _inp('Número', _numeroCtrl),
               _dateField('Data Emissão', _dataEmissao, (d) => setState(() => _dataEmissao = d)),
               _dateField('Data Competência', _dataCompetencia, (d) => setState(() => _dataCompetencia = d)),
-              _inp('Município de Prestação', _municipioCtrl),
+              _ddCidade(),
               _inp('Código de Serviço Municipal', _codigoServicoCtrl),
               _inpDisabledText('Status', _statusVal ?? 'PENDENTE'),
               _dd('Ambiente', _ambienteVal, ['HOMOLOGACAO', 'PRODUCAO'], (v) => setState(() => _ambienteVal = v)),
@@ -411,6 +429,67 @@ class _NfseDetailScreenState extends State<NfseDetailScreen> {
         nullable: true,
         nullLabel: '— Selecione —',
         onChanged: cb,
+      ),
+    );
+  }
+
+  /// Dropdown de Série NFSe — carrega de /api/nfse-serie
+  Widget _ddSerie() {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: SearchableDropdownField(
+        label: 'Série',
+        value: _series.any((o) => o['id']?.toString() == _serieId) ? _serieId : null,
+        items: _series.map((s) => <String, dynamic>{
+          'id': s['id']?.toString() ?? '',
+          'nome': '${s['serie'] ?? ''} (atual: ${s['numeroAtual'] ?? 1})',
+        }).toList(),
+        valueField: 'id',
+        displayField: 'nome',
+        nullable: true,
+        nullLabel: '— Selecione —',
+        onChanged: (v) {
+          setState(() => _serieId = v);
+          final s = _series.firstWhere((o) => o['id']?.toString() == v, orElse: () => {});
+          if (s.isNotEmpty) {
+            _serieCtrl.text = s['serie']?.toString() ?? '';
+            // Auto-preencher próximo número
+            final proximo = int.tryParse(s['numeroAtual'].toString()) ?? 1;
+            _numeroCtrl.text = proximo.toString();
+          }
+        },
+      ),
+    );
+  }
+
+  /// Dropdown de Município (Cidade) — carrega de /api/cidade
+  /// Ao selecionar, preenche o código de serviço municipal se a cidade tiver
+  Widget _ddCidade() {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: SearchableDropdownField(
+        label: 'Município de Prestação',
+        value: _cidades.any((o) => o['id']?.toString() == _cidadeId) ? _cidadeId : null,
+        items: _cidades.map((c) => <String, dynamic>{
+          'id': c['id']?.toString() ?? '',
+          'nome': c['nome']?.toString() ?? '',
+        }).toList(),
+        valueField: 'id',
+        displayField: 'nome',
+        nullable: true,
+        nullLabel: '— Selecione —',
+        onChanged: (v) {
+          setState(() => _cidadeId = v);
+          final c = _cidades.firstWhere((o) => o['id']?.toString() == v, orElse: () => {});
+          if (c.isNotEmpty) {
+            _municipioCtrl.text = c['nome']?.toString() ?? '';
+            // Auto-preencher código de serviço municipal se a cidade tiver
+            final codServico = c['codigoServicoMunicipal']?.toString();
+            if (codServico != null && codServico.isNotEmpty) {
+              _codigoServicoCtrl.text = codServico;
+            }
+          }
+        },
       ),
     );
   }
@@ -558,11 +637,17 @@ class _NfseDetailScreenState extends State<NfseDetailScreen> {
       child: SearchableDropdownField(
         label: label,
         value: opts.any((o) => o['id']?.toString() == val) ? val : null,
-        items: opts.map((o) => <String, dynamic>{'id': o['id']?.toString() ?? '', 'nome': o[df]?.toString() ?? ''}).toList(),
+        items: opts.map((o) {
+          final nome = o[df]?.toString() ?? '';
+          final preco = o['preco']?.toString() ?? '';
+          final codigo = o['codigoTributacaoMunicipal']?.toString() ?? o['cnae']?.toString() ?? '';
+          final display = codigo.isNotEmpty ? '$nome (R\$ $preco) [$codigo]' : '$nome (R\$ $preco)';
+          return <String, dynamic>{'id': o['id']?.toString() ?? '', 'nome': display};
+        }).toList(),
         valueField: 'id',
         displayField: 'nome',
         nullable: true,
-        nullLabel: '— Selecione —',
+        nullLabel: '— Selecione Serviço —',
         onChanged: cb,
       ),
     );
