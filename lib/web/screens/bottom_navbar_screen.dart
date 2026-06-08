@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import '../../constants/custom_colors.dart';
 import '../../../models/alert_model.dart';
 import '../../../models/auth_utility.dart';
@@ -91,7 +92,10 @@ import '../../features/trading/services/backtest_repository.dart';
 import '../../features/trading/screens/carteira_screen.dart';
 import '../../utils/api_links.dart';
 import '../../utils/tenant_context.dart';
+import '../../utils/menu_config.dart';
 import '../../widgets/app_sidebar.dart';
+import '../../widgets/internal_tab_strip.dart';
+import '../../models/open_tab.dart';
 import './alvara_grid_screen.dart';
 import './fornecedor_grid_screen.dart';
 import './nfce/pdv_screen.dart';
@@ -127,18 +131,27 @@ class WebBottomNavBarScreen extends StatefulWidget {
 }
 
 class _WebBottomNavBarScreenState extends State<WebBottomNavBarScreen> {
-  int _selectedIndex = 31; // Calendário como tela inicial
+  static const int _maxOpenTabs = 5;
+
+  late int _initialScreenIndex;
   bool _isSidebarCollapsed = false;
   int unreadAlerts = 0;
   List<Alert> notifications = [];
   Timer? _periodicTimer;
   OverlayEntry? notificationOverlay;
   bool _isLoading = true;
+  late List<Widget> _screens;
+
+  final List<OpenTab> _openTabs = [];
+  int _activeTabIndex = 0;
+
+  int get _selectedIndex =>
+      _openTabs.isEmpty ? _initialScreenIndex : _openTabs[_activeTabIndex].screenIndex;
 
   @override
   void initState() {
     super.initState();
-    _selectedIndex = widget.initialIndex;
+    _initialScreenIndex = widget.initialIndex;
     _loadUserAndInit();
   }
 
@@ -155,8 +168,96 @@ class _WebBottomNavBarScreenState extends State<WebBottomNavBarScreen> {
       );
       return;
     }
-    setState(() => _isLoading = false);
+    setState(() {
+      _screens = _buildScreensList();
+      _isLoading = false;
+      _openInitialTab();
+    });
     _startPeriodicFetch();
+  }
+
+  // ── Gerenciamento de abas internas ───────────────────────────────────────
+
+  MenuItem? _menuItemForScreenIndex(int screenIndex) {
+    final all = [...MenuConfig.groups.expand((g) => g.items), ...MenuConfig.loose];
+    for (final item in all) {
+      if (item.screenIndex == screenIndex) return item;
+    }
+    return null;
+  }
+
+  OpenTab _buildTab(int screenIndex) {
+    final menuItem = _menuItemForScreenIndex(screenIndex);
+    final widgetIndex = screenIndex.clamp(0, _screens.length - 1);
+    return OpenTab(
+      id: 'screen_$screenIndex',
+      label: menuItem?.label ?? 'Tela $screenIndex',
+      icon: menuItem?.icon ?? FontAwesomeIcons.fileLines,
+      content: KeyedSubtree(
+        key: ValueKey('screen_$screenIndex'),
+        child: _screens[widgetIndex],
+      ),
+      screenIndex: screenIndex,
+    );
+  }
+
+  void _openInitialTab() {
+    if (_openTabs.isEmpty) {
+      _openTabs.add(_buildTab(_initialScreenIndex));
+      _activeTabIndex = 0;
+    }
+  }
+
+  void _activateOrOpenTab(MenuItem item) {
+    if (item.screenIndex < 0) return;
+    final screenIndex = item.screenIndex;
+
+    final existingIndex = _openTabs.indexWhere((t) => t.screenIndex == screenIndex);
+    if (existingIndex != -1) {
+      setState(() => _activeTabIndex = existingIndex);
+      return;
+    }
+
+    if (_openTabs.length < _maxOpenTabs) {
+      setState(() {
+        _openTabs.add(_buildTab(screenIndex));
+        _activeTabIndex = _openTabs.length - 1;
+      });
+      return;
+    }
+
+    _showTabLimitDialogAndReplace(screenIndex, item.label);
+  }
+
+  Future<void> _showTabLimitDialogAndReplace(int newScreenIndex, String newLabel) async {
+    final tabToCloseIndex = await showTabLimitDialog(
+      context: context,
+      tabs: _openTabs,
+      newTabLabel: newLabel,
+      isCompact: true,
+    );
+    if (tabToCloseIndex == null || !mounted) return;
+
+    setState(() {
+      _openTabs[tabToCloseIndex] = _buildTab(newScreenIndex);
+      _activeTabIndex = tabToCloseIndex;
+    });
+  }
+
+  void _closeTab(int index) {
+    if (index < 0 || index >= _openTabs.length) return;
+    setState(() {
+      _openTabs.removeAt(index);
+      if (_openTabs.isEmpty) {
+        _openInitialTab();
+        return;
+      }
+      if (_activeTabIndex == index) {
+        _activeTabIndex = (index - 1).clamp(0, _openTabs.length - 1);
+      } else if (_activeTabIndex > index) {
+        _activeTabIndex -= 1;
+      }
+    });
   }
 
   String get userName {
@@ -174,7 +275,7 @@ class _WebBottomNavBarScreenState extends State<WebBottomNavBarScreen> {
     return 'Usuário';
   }
 
-  List<Widget> get _screens {
+  List<Widget> _buildScreensList() {
     final userInfo = AuthUtility.userInfo?.data;
     final loginInfo = AuthUtility.userInfo?.login;
     final isLoggedIn = (userInfo?.id != null) || (loginInfo?.id != null);
@@ -523,7 +624,7 @@ class _WebBottomNavBarScreenState extends State<WebBottomNavBarScreen> {
           // Sidebar com submenus, busca e favoritos
           AppSidebar(
             selectedIndex: _selectedIndex,
-            onSelect: (idx) => setState(() => _selectedIndex = idx),
+            onSelect: _activateOrOpenTab,
             isCollapsed: _isSidebarCollapsed,
             onToggleCollapse: () =>
                 setState(() => _isSidebarCollapsed = !_isSidebarCollapsed),
@@ -538,11 +639,27 @@ class _WebBottomNavBarScreenState extends State<WebBottomNavBarScreen> {
                 AuthUtility.userInfo?.login?.email ??
                 '',
           ),
-          // Conteúdo principal
+          // Conteúdo principal: faixa de abas internas + IndexedStack preservando estado
           Expanded(
             child: Container(
               color: Colors.grey[50],
-              child: _screens[_selectedIndex.clamp(0, _screens.length - 1)],
+              child: Column(
+                children: [
+                  InternalTabStrip(
+                    tabs: _openTabs,
+                    activeIndex: _activeTabIndex,
+                    onActivate: (i) => setState(() => _activeTabIndex = i),
+                    onClose: _closeTab,
+                    isCompact: true,
+                  ),
+                  Expanded(
+                    child: IndexedStack(
+                      index: _activeTabIndex,
+                      children: _openTabs.map((t) => t.content).toList(),
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
         ],

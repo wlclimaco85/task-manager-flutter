@@ -10,7 +10,7 @@ import '../utils/menu_config.dart';
 /// Usado tanto no Windows quanto no Web (drawer).
 class AppSidebar extends StatefulWidget {
   final int selectedIndex;
-  final ValueChanged<int> onSelect;
+  final ValueChanged<MenuItem> onSelect;
   final bool isCollapsed;
   final VoidCallback onToggleCollapse;
   final int unreadAlerts;
@@ -94,7 +94,7 @@ class _AppSidebarState extends State<AppSidebar> {
 
   void _navigate(MenuItem item) {
     if (item.screenIndex >= 0) {
-      widget.onSelect(item.screenIndex);
+      widget.onSelect(item);
     }
   }
 
