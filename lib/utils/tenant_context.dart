@@ -71,6 +71,8 @@ class TenantContext {
     final params = Map<String, String>.from(uri.queryParameters);
     final skipEmpresaScope = _flag(params.remove('skipTenantEmpresa')) ||
         _flag(params.remove('semFiltroEmpresa'));
+    final skipParceiroScope = _flag(params.remove('skipTenantParceiro')) ||
+        _flag(params.remove('semFiltroParceiro'));
 
     final hasExplicitEmpresaScope = params.containsKey('empId') ||
         params.containsKey('empresaId') ||
@@ -96,7 +98,7 @@ class TenantContext {
 
     // Parceiro/Cliente: mesmo princípio, evita misturar filtro de aba com
     // parceiro do login atual.
-    if (!isMaster && hasParceiro && !hasExplicitParceiroScope) {
+    if (!isMaster && hasParceiro && !hasExplicitParceiroScope && !skipParceiroScope) {
       params['parceiro'] = parceiroId.toString();
       params['parceiroId'] = parceiroId.toString();
       params['parcId'] = parceiroId.toString();

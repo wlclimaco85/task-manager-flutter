@@ -80,6 +80,7 @@ class WindowsLoginGridScreen extends StatelessWidget {
       hasPermission: hasPermission,
       fromJson: (json) => Login.fromJson(json),
       toJson: (a) => a.toJson(),
+      extraParams: const {'skipTenantParceiro': 'true'},
       fieldOverrides: const [
         // Dropdowns reais — os campos FK (empresa_id, parceiro_id, aplicativo_id)
         // e datas automáticas são ocultados automaticamente pelo _convert
