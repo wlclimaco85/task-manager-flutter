@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import '../../../models/alert_model.dart';
 import '../../../models/auth_utility.dart';
 import '../../services/alert_caller.dart';
@@ -68,7 +69,7 @@ class _UserBannerAppBarState extends State<UserBannerAppBar> {
       if (AuthUtility.userInfo?.data?.id != null &&
           AuthUtility.userInfo!.data!.id! > 0) {
         final List<Alert> alertData =
-            await AlertCaller().fetchItensAVenda(context);
+            await AlertCaller().fetchNotificacoes(context);
         setState(() {
           notifications = alertData;
           unreadAlerts = notifications.length;
@@ -92,6 +93,13 @@ class _UserBannerAppBarState extends State<UserBannerAppBar> {
       notifications.removeWhere((n) => n.id == id);
       unreadAlerts = notifications.length;
     });
+  }
+
+  String? _formatNotificationDate(String? data) {
+    if (data == null || data.isEmpty) return null;
+    final parsed = DateTime.tryParse(data);
+    if (parsed == null) return null;
+    return DateFormat('dd/MM/yyyy HH:mm').format(parsed);
   }
 
   void deleteAllNotifications() {
@@ -121,7 +129,7 @@ class _UserBannerAppBarState extends State<UserBannerAppBar> {
           ),
           child: Container(
             width: 320,
-            height: 400,
+            constraints: const BoxConstraints(maxHeight: 420, minHeight: 160),
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
               color: GridColors.card,
@@ -166,25 +174,68 @@ class _UserBannerAppBarState extends State<UserBannerAppBar> {
                 const Divider(height: 1, color: GridColors.divider),
                 Expanded(
                   child: notifications.isNotEmpty
-                      ? ListView.builder(
+                      ? ListView.separated(
                           itemCount: notifications.length,
+                          separatorBuilder: (_, __) => Divider(
+                            height: 1,
+                            color: GridColors.divider.withValues(alpha: 0.5),
+                          ),
                           itemBuilder: (context, index) {
                             final n = notifications[index];
+                            final dataFormatada =
+                                _formatNotificationDate(n.data);
                             return ListTile(
+                              dense: true,
+                              contentPadding: const EdgeInsets.symmetric(
+                                  horizontal: 12, vertical: 4),
                               leading: const Icon(Icons.notifications,
-                                  color: GridColors.primary),
-                              title: Text(n.texto,
-                                  maxLines: 2, overflow: TextOverflow.ellipsis),
+                                  color: GridColors.primary, size: 22),
+                              title: Text(
+                                n.texto,
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                                style: const TextStyle(
+                                    fontSize: 14,
+                                    color: GridColors.textSecondary),
+                              ),
+                              subtitle: dataFormatada != null
+                                  ? Text(
+                                      dataFormatada,
+                                      style: const TextStyle(
+                                          fontSize: 11,
+                                          color: GridColors.textMuted),
+                                    )
+                                  : null,
                               trailing: IconButton(
-                                icon: const Icon(Icons.clear,
-                                    color: GridColors.error),
+                                icon: const Icon(Icons.delete_outline,
+                                    color: GridColors.error, size: 18),
+                                constraints: const BoxConstraints(
+                                    maxWidth: 32, maxHeight: 32),
+                                padding: EdgeInsets.zero,
                                 onPressed: () => deleteNotification(n.id),
                               ),
                               onTap: () => markNotificationAsRead(n.id),
                             );
                           },
                         )
-                      : const Center(child: Text("Nenhuma notificação")),
+                      : Center(
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(Icons.notifications_off_outlined,
+                                  size: 48,
+                                  color: GridColors.textSecondary
+                                      .withValues(alpha: 0.4)),
+                              const SizedBox(height: 12),
+                              const Text(
+                                'Nenhuma notificação',
+                                style: TextStyle(
+                                    fontSize: 14,
+                                    color: GridColors.textSecondary),
+                              ),
+                            ],
+                          ),
+                        ),
                 ),
               ],
             ),
