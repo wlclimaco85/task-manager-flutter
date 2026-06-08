@@ -1,6 +1,9 @@
-import 'dart:convert';
+﻿import 'dart:convert';
+import 'dart:typed_data';
 import 'package:file_picker/file_picker.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import '../../helpers/file_upload_helper.dart';
 import '../../utils/grid_colors.dart';
 import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
@@ -245,7 +248,7 @@ class _ConfiguracoesSistemaScreenState extends State<ConfiguracoesSistemaScreen>
 
   Future<void> _gerarTelasFullReset() async => _executar('gerar_telas_full', () async {
     final resp = await TenantContext.post('${ApiLinks.baseUrl}/api/telas/generate', {'forceUpdate': true, 'forceRebuild': true, 'fullReset': true});
-    // Limpa cache local de telas para forçar reload do banco
+    // Limpa cache local de telas para forÃ§ar reload do banco
     await TelaService.clearAllTelaCache();
     return resp;
   });
@@ -300,7 +303,7 @@ class _ConfiguracoesSistemaScreenState extends State<ConfiguracoesSistemaScreen>
     finally { setState(() => _loading['apagar_noticias'] = false); }
   }
 
-  // ── Apagar Empresa Mock ─────────────────────────────────────────────────
+  // â”€â”€ Apagar Empresa Mock â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   int? _deleteEmpresaId;
 
   Widget _deleteEmpresaCard() {
@@ -429,7 +432,7 @@ class _ConfiguracoesSistemaScreenState extends State<ConfiguracoesSistemaScreen>
   }
 }
 
-// ── Controle de Jobs ──────────────────────────────────────────────────────────
+// â”€â”€ Controle de Jobs â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 class _JobsSection extends StatefulWidget {
   final String baseUrl;
   const _JobsSection({required this.baseUrl});
@@ -655,7 +658,7 @@ class _JobsSectionState extends State<_JobsSection> {
           ]),
         ),
 
-        // ── Erro com textarea copiavel ────────────────────────────────────────
+        // â”€â”€ Erro com textarea copiavel â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         if (status == 'ERRO' && erro != null && erro.isNotEmpty) ...[
           Padding(
             padding: const EdgeInsets.fromLTRB(12, 0, 12, 4),
@@ -708,7 +711,7 @@ class _JobsSectionState extends State<_JobsSection> {
             ),
         ],
 
-        // ── Historico expandido ───────────────────────────────────────────────
+        // â”€â”€ Historico expandido â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         if (histAberto) ...[
           const Divider(height: 1, indent: 12, endIndent: 12),
           Padding(padding: const EdgeInsets.fromLTRB(12, 6, 12, 4),
@@ -789,7 +792,7 @@ class _JobsSectionState extends State<_JobsSection> {
   }
 }
 
-// ── Importacao CSV ────────────────────────────────────────────────────────────
+// â”€â”€ Importacao CSV â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 class _ImportacaoSection extends StatefulWidget {
   final String baseUrl;
   const _ImportacaoSection({required this.baseUrl});
@@ -798,7 +801,7 @@ class _ImportacaoSection extends StatefulWidget {
 }
 
 class _ImportacaoSectionState extends State<_ImportacaoSection> {
-  // ── Empresa / Parceiro selecionados ───────────────────────────────────────
+  // â”€â”€ Empresa / Parceiro selecionados â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   // Listas carregadas da API
   List<Map<String, dynamic>> _empresas  = [];
   List<Map<String, dynamic>> _parceiros = [];
@@ -809,7 +812,7 @@ class _ImportacaoSectionState extends State<_ImportacaoSection> {
   String? _empresaIdSelecionada;
   String? _parceiroIdSelecionado;
 
-  // ── Estado Contas a Pagar ─────────────────────────────────────────────────
+  // â”€â”€ Estado Contas a Pagar â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   PlatformFile? _arquivoCP;
   bool _importandoCP = false;
   bool _upsertCP = false;
@@ -833,7 +836,7 @@ class _ImportacaoSectionState extends State<_ImportacaoSection> {
     'colContaBancaria':  TextEditingController(text: ''),
   };
 
-  // ── Estado Contas a Receber ───────────────────────────────────────────────
+  // â”€â”€ Estado Contas a Receber â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   PlatformFile? _arquivoCR;
   bool _importandoCR = false;
   bool _upsertCR = false;
@@ -878,10 +881,10 @@ class _ImportacaoSectionState extends State<_ImportacaoSection> {
   @override
   void initState() {
     super.initState();
-    // Sempre carrega empresas — mesmo quando fixada pelo login,
+    // Sempre carrega empresas â€” mesmo quando fixada pelo login,
     // precisamos da lista para resolver o nome a exibir no campo bloqueado.
     _carregarEmpresas();
-    // Sempre carrega parceiros filtrados pela empresa (do contexto ou aguarda seleção)
+    // Sempre carrega parceiros filtrados pela empresa (do contexto ou aguarda seleÃ§Ã£o)
     if (TenantContext.hasEmpresa) {
       _carregarParceiros(TenantContext.empresaId.toString());
     }
@@ -912,7 +915,7 @@ class _ImportacaoSectionState extends State<_ImportacaoSection> {
   Future<void> _carregarParceiros([String? empresaId]) async {
     setState(() { _loadingParceiros = true; _parceiros = []; _parceiroIdSelecionado = null; });
     try {
-      // Usa empresa do contexto, ou a passada como parâmetro, ou carrega todos
+      // Usa empresa do contexto, ou a passada como parÃ¢metro, ou carrega todos
       final empId = empresaId
           ?? (TenantContext.hasEmpresa ? TenantContext.empresaId.toString() : null);
 
@@ -953,7 +956,7 @@ class _ImportacaoSectionState extends State<_ImportacaoSection> {
     super.dispose();
   }
 
-  // Colunas detectadas no CSV após seleção
+  // Colunas detectadas no CSV apÃ³s seleÃ§Ã£o
   List<String> _colunasCP = [];
   List<String> _colunasCR = [];
 
@@ -966,7 +969,7 @@ class _ImportacaoSectionState extends State<_ImportacaoSection> {
     if (result != null && result.files.isNotEmpty) {
       final file = result.files.first;
 
-      // Detecta colunas localmente (fallback rápido)
+      // Detecta colunas localmente (fallback rÃ¡pido)
       final colunasLocal = _detectarColunas(file.bytes);
       setState(() {
         if (isCP) {
@@ -982,7 +985,7 @@ class _ImportacaoSectionState extends State<_ImportacaoSection> {
         }
       });
 
-      // Chama o preview da API para detecção precisa (suporta tab, BOM, etc.)
+      // Chama o preview da API para detecÃ§Ã£o precisa (suporta tab, BOM, etc.)
       try {
         final resp = await TenantContext.postMultipart(
           '${widget.baseUrl}/api/importacao/preview',
@@ -1006,12 +1009,12 @@ class _ImportacaoSectionState extends State<_ImportacaoSection> {
           }
         }
       } catch (_) {
-        // Mantém detecção local se API falhar
+        // MantÃ©m detecÃ§Ã£o local se API falhar
       }
     }
   }
 
-  /// Lê o cabeçalho do CSV e retorna os nomes das colunas
+  /// LÃª o cabeÃ§alho do CSV e retorna os nomes das colunas
   List<String> _detectarColunas(List<int>? bytes) {
     if (bytes == null) return [];
     try {
@@ -1022,10 +1025,10 @@ class _ImportacaoSectionState extends State<_ImportacaoSection> {
     } catch (_) { return []; }
   }
 
-  /// Normaliza string igual ao backend: minúsculo, sem acentos, underscore
+  /// Normaliza string igual ao backend: minÃºsculo, sem acentos, underscore
   String _normalizar(String s) {
-    const acentos = 'àáâãäåèéêëìíîïòóôõöùúûüýÿñçÀÁÂÃÄÅÈÉÊËÌÍÎÏÒÓÔÕÖÙÚÛÜÝÑÇ';
-    const semAcento = 'aaaaaaeeeeiiiioooooouuuuyyñcAAAAAAEEEEIIIIOOOOOUUUUYNC';
+    const acentos = 'Ã Ã¡Ã¢Ã£Ã¤Ã¥Ã¨Ã©ÃªÃ«Ã¬Ã­Ã®Ã¯Ã²Ã³Ã´ÃµÃ¶Ã¹ÃºÃ»Ã¼Ã½Ã¿Ã±Ã§Ã€ÃÃ‚ÃƒÃ„Ã…ÃˆÃ‰ÃŠÃ‹ÃŒÃÃŽÃÃ’Ã“Ã”Ã•Ã–Ã™ÃšÃ›ÃœÃÃ‘Ã‡';
+    const semAcento = 'aaaaaaeeeeiiiioooooouuuuyyÃ±cAAAAAAEEEEIIIIOOOOOUUUUYNC';
     var r = s.toLowerCase();
     for (var i = 0; i < acentos.length; i++) {
       r = r.replaceAll(acentos[i], semAcento[i]);
@@ -1035,7 +1038,7 @@ class _ImportacaoSectionState extends State<_ImportacaoSection> {
 
   /// Tenta mapear automaticamente as colunas detectadas para os campos conhecidos
   void _autoMapear(Map<String, TextEditingController> ctrl, List<String> colunas) {
-    // Mapa de sinônimos: campo → lista de possíveis nomes normalizados
+    // Mapa de sinÃ´nimos: campo â†’ lista de possÃ­veis nomes normalizados
     final sinonimos = <String, List<String>>{
       'colDescricao':      ['descricao', 'description', 'historico', 'lancamento', 'titulo', 'nome', 'descricao_tipo_de_titulo', 'descricao_natureza'],
       'colValor':          ['valor', 'value', 'montante', 'total', 'vlr', 'vl', 'valor_liquido', 'vlr_do_desdobramento'],
@@ -1074,7 +1077,7 @@ class _ImportacaoSectionState extends State<_ImportacaoSection> {
     if (arquivo == null || arquivo.bytes == null) return;
 
     // empId vem do TenantContext (injetado automaticamente por applyToUrl),
-    // ou do dropdown quando o usuário não tem empresa no contexto.
+    // ou do dropdown quando o usuÃ¡rio nÃ£o tem empresa no contexto.
     final empIdCtx  = TenantContext.hasEmpresa  ? TenantContext.empresaId?.toString()  : _empresaIdSelecionada;
     final parIdCtx  = TenantContext.hasParceiro ? TenantContext.parceiroId?.toString() : _parceiroIdSelecionado;
 
@@ -1093,10 +1096,10 @@ class _ImportacaoSectionState extends State<_ImportacaoSection> {
       final ctrl     = isCP ? _ctrlCP : _ctrlCR;
       final endpoint = isCP ? 'conta-pagar' : 'conta-receber';
 
-      // Monta URL com todos os parâmetros necessários.
-      // empId: se não está no TenantContext (applyToUrl não injeta), passa manualmente.
-      // parId: SEMPRE passa quando disponível — applyToUrl passa parceiroId/parcId mas
-      //         o endpoint de importação usa parId para vincular empresa/parceiro ao registro.
+      // Monta URL com todos os parÃ¢metros necessÃ¡rios.
+      // empId: se nÃ£o estÃ¡ no TenantContext (applyToUrl nÃ£o injeta), passa manualmente.
+      // parId: SEMPRE passa quando disponÃ­vel â€” applyToUrl passa parceiroId/parcId mas
+      //         o endpoint de importaÃ§Ã£o usa parId para vincular empresa/parceiro ao registro.
       var url = '${widget.baseUrl}/api/importacao/$endpoint';
       final upsert = isCP ? _upsertCP : _upsertCR;
       {
@@ -1109,7 +1112,7 @@ class _ImportacaoSectionState extends State<_ImportacaoSection> {
         url = uri.replace(queryParameters: params).toString();
       }
 
-      // Apenas campos de mapeamento de colunas vão no form-data
+      // Apenas campos de mapeamento de colunas vÃ£o no form-data
       final fields = <String, String>{};
       for (final entry in ctrl.entries) {
         if (entry.value.text.trim().isNotEmpty) {
@@ -1135,7 +1138,7 @@ class _ImportacaoSectionState extends State<_ImportacaoSection> {
           _resultadoCR = resp.statusCode < 300 ? body : {'error': 'HTTP ${resp.statusCode}: ${resp.body}'};
         }
 
-        // Se 100% ignorado, abre o mapeamento automaticamente para o usuário corrigir
+        // Se 100% ignorado, abre o mapeamento automaticamente para o usuÃ¡rio corrigir
         if (resp.statusCode < 300 && body is Map) {
           final s = body['sucesso'] as int? ?? 0;
           final e = body['erros']   as int? ?? 0;
@@ -1180,7 +1183,7 @@ class _ImportacaoSectionState extends State<_ImportacaoSection> {
       ]),
       const SizedBox(height: 10),
 
-      // ── Seleção de Empresa e Parceiro ─────────────────────────────────
+      // â”€â”€ SeleÃ§Ã£o de Empresa e Parceiro â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
       Card(
         margin: EdgeInsets.zero,
         shape: RoundedRectangleBorder(
@@ -1198,10 +1201,10 @@ class _ImportacaoSectionState extends State<_ImportacaoSection> {
               style: TextStyle(fontSize: 11, color: Colors.grey)),
             const SizedBox(height: 12),
             Row(children: [
-              // ── Empresa ──────────────────────────────────────────────
+              // â”€â”€ Empresa â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
               Expanded(child: _buildDropdownEmpresa()),
               const SizedBox(width: 12),
-              // ── Parceiro ─────────────────────────────────────────────
+              // â”€â”€ Parceiro â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
               Expanded(child: _buildDropdownParceiro()),
             ]),
           ]),
@@ -1239,7 +1242,7 @@ class _ImportacaoSectionState extends State<_ImportacaoSection> {
     ]);
   }
 
-  // ── Dropdown Empresa ──────────────────────────────────────────────────────
+  // â”€â”€ Dropdown Empresa â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   Widget _buildDropdownEmpresa() {
     final fixo = TenantContext.hasEmpresa;
     final empresaIdCtx = TenantContext.empresaId?.toString();
@@ -1247,7 +1250,7 @@ class _ImportacaoSectionState extends State<_ImportacaoSection> {
     // Label do valor fixo (do contexto)
     String? labelFixo;
     if (fixo && empresaIdCtx != null) {
-      // Tenta achar o nome na lista carregada; se não tiver, mostra o ID
+      // Tenta achar o nome na lista carregada; se nÃ£o tiver, mostra o ID
       final found = _empresas.where((e) => e['id'] == empresaIdCtx).firstOrNull;
       labelFixo = found?['nome'] as String? ?? 'Empresa #$empresaIdCtx';
     }
@@ -1285,7 +1288,7 @@ class _ImportacaoSectionState extends State<_ImportacaoSection> {
           ]),
         )
       else
-        // Dropdown editável
+        // Dropdown editÃ¡vel
         _loadingEmpresas
             ? const SizedBox(height: 44,
                 child: Center(child: SizedBox(width: 18, height: 18,
@@ -1308,7 +1311,7 @@ class _ImportacaoSectionState extends State<_ImportacaoSection> {
     ]);
   }
 
-  // ── Dropdown Parceiro ─────────────────────────────────────────────────────
+  // â”€â”€ Dropdown Parceiro â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   Widget _buildDropdownParceiro() {
     final fixo = TenantContext.hasParceiro;
     final parceiroIdCtx = TenantContext.parceiroId?.toString();
@@ -1363,7 +1366,7 @@ class _ImportacaoSectionState extends State<_ImportacaoSection> {
                 displayField: 'nome',
                 hintText: 'Nenhum (opcional)',
                 nullable: true,
-                nullLabel: 'Limpar seleção',
+                nullLabel: 'Limpar seleÃ§Ã£o',
                 onChanged: (v) => setState(() => _parceiroIdSelecionado = v),
               ),
     ]);
@@ -1393,7 +1396,7 @@ class _ImportacaoSectionState extends State<_ImportacaoSection> {
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          // ── Cabeçalho ──────────────────────────────────────────────────
+          // â”€â”€ CabeÃ§alho â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
           Row(children: [
             Container(width: 40, height: 40,
               decoration: BoxDecoration(color: cor.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(8)),
@@ -1406,7 +1409,7 @@ class _ImportacaoSectionState extends State<_ImportacaoSection> {
           ]),
           const SizedBox(height: 14),
 
-          // ── Seleção de arquivo ─────────────────────────────────────────
+          // â”€â”€ SeleÃ§Ã£o de arquivo â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
           Row(children: [
             Expanded(
               child: Container(
@@ -1442,7 +1445,7 @@ class _ImportacaoSectionState extends State<_ImportacaoSection> {
                 padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12))),
           ]),
 
-          // ── Colunas detectadas no CSV ──────────────────────────────────
+          // â”€â”€ Colunas detectadas no CSV â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
           if ((isCP ? _colunasCP : _colunasCR).isNotEmpty) ...[
             const SizedBox(height: 8),
             Container(
@@ -1456,7 +1459,7 @@ class _ImportacaoSectionState extends State<_ImportacaoSection> {
                   Icon(Icons.table_chart_outlined, size: 13, color: cor),
                   const SizedBox(width: 5),
                   Expanded(child: Text(
-                    'Colunas detectadas — clique para usar como Descricao:',
+                    'Colunas detectadas â€” clique para usar como Descricao:',
                     style: TextStyle(fontSize: 11, color: cor, fontWeight: FontWeight.w500))),
                 ]),
                 const SizedBox(height: 6),
@@ -1466,9 +1469,9 @@ class _ImportacaoSectionState extends State<_ImportacaoSection> {
                     message: 'Usar "$col" como coluna de Descricao',
                     child: InkWell(
                       onTap: () {
-                        // Preenche o campo de descrição com o nome desta coluna
+                        // Preenche o campo de descriÃ§Ã£o com o nome desta coluna
                         ctrl['colDescricao']?.text = col;
-                        // Abre o mapeamento para o usuário ver o que foi preenchido
+                        // Abre o mapeamento para o usuÃ¡rio ver o que foi preenchido
                         if (!mapeamentoExpandido) onToggleMapeamento();
                         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
                           content: Text('"$col" definido como coluna de Descricao'),
@@ -1494,7 +1497,7 @@ class _ImportacaoSectionState extends State<_ImportacaoSection> {
           ],
           const SizedBox(height: 10),
 
-          // ── Mapeamento de colunas (expansível) ─────────────────────────
+          // â”€â”€ Mapeamento de colunas (expansÃ­vel) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
           InkWell(
             onTap: onToggleMapeamento,
             borderRadius: BorderRadius.circular(6),
@@ -1516,7 +1519,7 @@ class _ImportacaoSectionState extends State<_ImportacaoSection> {
           ),
           if (mapeamentoExpandido) ...[
             const SizedBox(height: 10),
-            // Instrução contextual
+            // InstruÃ§Ã£o contextual
             Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
@@ -1533,14 +1536,14 @@ class _ImportacaoSectionState extends State<_ImportacaoSection> {
               ]),
             ),
             const SizedBox(height: 10),
-            // Se temos colunas detectadas, mostra dropdown; senão, campo de texto
+            // Se temos colunas detectadas, mostra dropdown; senÃ£o, campo de texto
             Wrap(spacing: 10, runSpacing: 10,
               children: _camposMapeamento.map((campo) {
                 final colunas = isCP ? _colunasCP : _colunasCR;
                 return SizedBox(
                   width: 220,
                   child: colunas.isNotEmpty
-                    // Dropdown pesquisável com as colunas do CSV
+                    // Dropdown pesquisÃ¡vel com as colunas do CSV
                     ? SearchableDropdownField(
                         label: campo['label'] as String,
                         value: colunas.contains(ctrl[campo['key']]?.text)
@@ -1551,9 +1554,9 @@ class _ImportacaoSectionState extends State<_ImportacaoSection> {
                             .toList(),
                         valueField: 'id',
                         displayField: 'nome',
-                        hintText: '— não importar —',
+                        hintText: 'â€” nÃ£o importar â€”',
                         nullable: true,
-                        nullLabel: '— não importar —',
+                        nullLabel: 'â€” nÃ£o importar â€”',
                         onChanged: (v) =>
                             setState(() => ctrl[campo['key']]?.text = v ?? ''),
                       )
@@ -1572,7 +1575,7 @@ class _ImportacaoSectionState extends State<_ImportacaoSection> {
           ],
           const SizedBox(height: 12),
 
-          // ── Opção Upsert ───────────────────────────────────────────────
+          // â”€â”€ OpÃ§Ã£o Upsert â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
           InkWell(
             onTap: onToggleUpsert,
             borderRadius: BorderRadius.circular(6),
@@ -1606,7 +1609,7 @@ class _ImportacaoSectionState extends State<_ImportacaoSection> {
           ),
           const SizedBox(height: 10),
 
-          // ── Botão importar ─────────────────────────────────────────────
+          // â”€â”€ BotÃ£o importar â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
           SizedBox(
             width: double.infinity,
             child: ElevatedButton.icon(
@@ -1622,7 +1625,7 @@ class _ImportacaoSectionState extends State<_ImportacaoSection> {
                 textStyle: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600))),
           ),
 
-          // ── Resultado ─────────────────────────────────────────────────
+          // â”€â”€ Resultado â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
           if (resultado != null) ...[
             const SizedBox(height: 14),
             _buildResultadoImportacao(resultado, cor),
@@ -1671,7 +1674,7 @@ class _ImportacaoSectionState extends State<_ImportacaoSection> {
         borderRadius: BorderRadius.circular(8),
         border: Border.all(color: corStatus.withValues(alpha: 0.3))),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        // ── Cabeçalho ───────────────────────────────────────────────────
+        // â”€â”€ CabeÃ§alho â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
           decoration: BoxDecoration(
@@ -1683,7 +1686,7 @@ class _ImportacaoSectionState extends State<_ImportacaoSection> {
               color: corStatus, size: 18),
             const SizedBox(width: 8),
             Text(
-              tudo100Ignorado ? 'Nenhum registro importado — verifique o mapeamento'
+              tudo100Ignorado ? 'Nenhum registro importado â€” verifique o mapeamento'
                   : 'Importacao concluida',
               style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13, color: corStatus)),
             const Spacer(),
@@ -1702,7 +1705,7 @@ class _ImportacaoSectionState extends State<_ImportacaoSection> {
           ]),
         ),
 
-        // ── Aviso de mapeamento incorreto ────────────────────────────────
+        // â”€â”€ Aviso de mapeamento incorreto â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         if (avisoMapeamento != null) ...[
           Container(
             margin: const EdgeInsets.fromLTRB(14, 10, 14, 0),
@@ -1720,7 +1723,7 @@ class _ImportacaoSectionState extends State<_ImportacaoSection> {
           ),
         ],
 
-        // ── Chips de contagem ────────────────────────────────────────────
+        // â”€â”€ Chips de contagem â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         Padding(
           padding: const EdgeInsets.fromLTRB(14, 10, 14, 10),
           child: Wrap(spacing: 10, runSpacing: 8, children: [
@@ -1733,7 +1736,7 @@ class _ImportacaoSectionState extends State<_ImportacaoSection> {
           ]),
         ),
 
-        // ── Avisos de criação automática ─────────────────────────────────
+        // â”€â”€ Avisos de criaÃ§Ã£o automÃ¡tica â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         if (novosParceiros > 0) ...[
           Container(
             margin: const EdgeInsets.fromLTRB(14, 0, 14, 8),
@@ -1746,7 +1749,7 @@ class _ImportacaoSectionState extends State<_ImportacaoSection> {
               Icon(Icons.warning_amber_rounded, color: Colors.amber.shade800, size: 16),
               const SizedBox(width: 8),
               Expanded(child: Text(
-                '$novosParceiros parceiro(s) criado(s) automaticamente — verifique e complete o cadastro',
+                '$novosParceiros parceiro(s) criado(s) automaticamente â€” verifique e complete o cadastro',
                 style: TextStyle(fontSize: 11, color: Colors.amber.shade900, height: 1.5))),
             ]),
           ),
@@ -1763,13 +1766,13 @@ class _ImportacaoSectionState extends State<_ImportacaoSection> {
               Icon(Icons.info_outline, color: Colors.orange.shade800, size: 16),
               const SizedBox(width: 8),
               Expanded(child: Text(
-                '$novasFormas forma(s) de pagamento criada(s) automaticamente — verifique e complete o cadastro',
+                '$novasFormas forma(s) de pagamento criada(s) automaticamente â€” verifique e complete o cadastro',
                 style: TextStyle(fontSize: 11, color: Colors.orange.shade900, height: 1.5))),
             ]),
           ),
         ],
 
-        // ── Colunas detectadas no CSV (do backend) ───────────────────────
+        // â”€â”€ Colunas detectadas no CSV (do backend) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         if (colunasCSV.isNotEmpty) ...[
           const Divider(height: 1),
           Padding(
@@ -1783,7 +1786,7 @@ class _ImportacaoSectionState extends State<_ImportacaoSection> {
           ),
         ],
 
-        // ── Detalhes (erros e ignorados) ─────────────────────────────────
+        // â”€â”€ Detalhes (erros e ignorados) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         if (detalhes.any((d) => d['status'] != 'sucesso')) ...[
           const Divider(height: 1),
           Padding(
@@ -1792,12 +1795,12 @@ class _ImportacaoSectionState extends State<_ImportacaoSection> {
               Text('Detalhes de erros e ignorados',
                 style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.grey.shade700)),
               const SizedBox(width: 8),
-              // Mostra só as primeiras 20 linhas para não travar
+              // Mostra sÃ³ as primeiras 20 linhas para nÃ£o travar
               if (detalhes.where((d) => d['status'] != 'sucesso').length > 20)
                 Text('(mostrando primeiras 20 de ${detalhes.where((d) => d['status'] != 'sucesso').length})',
                   style: TextStyle(fontSize: 10, color: Colors.grey.shade500)),
               const Spacer(),
-              // ── Botão copiar todos os erros ──────────────────────────
+              // â”€â”€ BotÃ£o copiar todos os erros â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
               TextButton.icon(
                 onPressed: () {
                   final todos = detalhes.where((d) => d['status'] != 'sucesso').toList();
@@ -1909,6 +1912,8 @@ class _ImportacaoCadastrosSectionState extends State<_ImportacaoCadastrosSection
   final Map<_ImportacaoCadastroTipo, bool> _loading = {};
   final Map<_ImportacaoCadastroTipo, bool> _atualizar = {};
   final Map<_ImportacaoCadastroTipo, Map<String, dynamic>?> _resultados = {};
+  final Map<_ImportacaoCadastroTipo, String?> _avisosArquivo = {};
+  final Map<_ImportacaoCadastroTipo, List<Map<String, String>>> _previews = {};
 
   List<Map<String, dynamic>> _empresas = [];
   String? _empresaIdSelecionada;
@@ -1947,7 +1952,7 @@ class _ImportacaoCadastrosSectionState extends State<_ImportacaoCadastrosSection
       color: Colors.teal.shade700,
       campos: const [
         _CadastroImportField('external_id', 'External ID', ['external_id', 'codigo', 'cod_parceiro']),
-        _CadastroImportField('empresa_id', 'Empresa ID', ['empresa_id', 'cod_empresa', 'id_empresa']),
+        _CadastroImportField('empresa_id', 'Empresa ID', ['empresa_id', 'empresa_external_id', 'cod_empresa', 'id_empresa']),
         _CadastroImportField('nome', 'Nome *', ['nome', 'cliente', 'parceiro', 'nome_fantasia']),
         _CadastroImportField('razaoSocial', 'Razao Social', ['razao_social', 'razaosocial', 'razo_social']),
         _CadastroImportField('cpf', 'CPF/CNPJ', ['cpf', 'cnpj', 'cpf_cnpj', 'documento']),
@@ -1965,7 +1970,7 @@ class _ImportacaoCadastrosSectionState extends State<_ImportacaoCadastrosSection
         _CadastroImportField('regime_codigo', 'Regime', ['regime_codigo', 'regime', 'regime_tributario', 'tributacao']),
         _CadastroImportField('status', 'Status', ['status', 'situacao']),
         _CadastroImportField('tipoCliente', 'Tipo Cliente', ['tipo_cliente', 'tipo', 'classificacao']),
-        _CadastroImportField('tipo_parceiro_id', 'Tipo Parceiro ID', ['tipo_parceiro_id', 'tipo_parceiro', 'perfil']),
+        _CadastroImportField('tipo_parceiro_id', 'Tipo Parceiro ID', ['tipo_parceiro_id', 'tipo_parceiro', 'tipoParceiro', 'perfil']),
         _CadastroImportField('valorMensal', 'Valor Mensal', ['valor_mensal', 'mensalidade', 'valor']),
       ],
     ),
@@ -1976,7 +1981,7 @@ class _ImportacaoCadastrosSectionState extends State<_ImportacaoCadastrosSection
       icon: Icons.badge_outlined,
       color: Colors.blue.shade700,
       campos: const [
-        _CadastroImportField('empresa_id', 'Empresa ID', ['empresa_id', 'cod_empresa', 'id_empresa']),
+        _CadastroImportField('empresa_id', 'Empresa ID', ['empresa_id', 'empresa_external_id', 'cod_empresa', 'id_empresa']),
         _CadastroImportField('nome', 'Nome *', ['nome', 'funcionario', 'colaborador']),
         _CadastroImportField('cpf', 'CPF *', ['cpf', 'cpf_cnpj', 'documento']),
         _CadastroImportField('email', 'Email/Login *', ['email', 'login', 'usuario', 'e_mail']),
@@ -2049,21 +2054,51 @@ class _ImportacaoCadastrosSectionState extends State<_ImportacaoCadastrosSection
   }
 
   Future<void> _selecionarArquivo(_ImportacaoCadastroTipo tipo) async {
-    final result = await FilePicker.pickFiles(
-      type: FileType.custom,
-      allowedExtensions: ['csv'],
-      withData: true,
-    );
-    if (result == null || result.files.isEmpty) return;
+    try {
+      if (!kIsWeb) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Importacao de arquivo so disponivel no navegador.')),
+        );
+        return;
+      }
+      final bytes = await pickAndReadFile(accept: '.csv,.txt,text/csv,text/plain');
+      if (bytes == null || bytes.isEmpty) return;
 
-    final arquivo = result.files.first;
+      final arquivo = PlatformFile(name: file.name, size: file.size, bytes: bytes);
+      _aplicarArquivoSelecionado(tipo, arquivo);
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text('Falha ao selecionar arquivo: $e'),
+          backgroundColor: Colors.red.shade700,
+        ));
+      }
+      return;
+    }
+  }
+
+  void _aplicarArquivoSelecionado(_ImportacaoCadastroTipo tipo, PlatformFile arquivo) {
     final colunas = _detectarColunas(arquivo.bytes);
+    final preview = _previewCsv(arquivo, 3);
+    final aviso = arquivo.bytes == null
+        ? 'Arquivo selecionado, mas o conteÃºdo nÃ£o veio para leitura. Selecione novamente ou use um CSV menor.'
+        : colunas.isEmpty
+            ? 'Arquivo selecionado, mas nÃ£o consegui detectar o cabeÃ§alho. Confira se Ã© CSV texto com a primeira linha contendo os nomes das colunas.'
+            : null;
     setState(() {
       _arquivos[tipo] = arquivo;
       _colunas[tipo] = colunas;
       _resultados[tipo] = null;
+      _avisosArquivo[tipo] = aviso;
+      _previews[tipo] = preview;
       _autoMapear(tipo, colunas);
     });
+    if (aviso != null && mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text(aviso),
+        backgroundColor: Colors.orange.shade800,
+      ));
+    }
   }
 
   List<String> _detectarColunas(List<int>? bytes) {
@@ -2084,7 +2119,9 @@ class _ImportacaoCadastrosSectionState extends State<_ImportacaoCadastrosSection
 
   List<Map<String, String>> _parseCsv(PlatformFile arquivo) {
     final bytes = arquivo.bytes;
-    if (bytes == null) return [];
+    if (bytes == null) {
+      throw Exception('O arquivo selecionado nÃ£o foi carregado para memÃ³ria. Selecione o CSV novamente.');
+    }
     final texto = utf8.decode(bytes, allowMalformed: true).replaceAll('\uFEFF', '');
     final linhas = texto
       .split(RegExp(r'\r?\n'))
@@ -2105,6 +2142,14 @@ class _ImportacaoCadastrosSectionState extends State<_ImportacaoCadastrosSection
       if (row.values.any((v) => v.trim().isNotEmpty)) rows.add(row);
     }
     return rows;
+  }
+
+  List<Map<String, String>> _previewCsv(PlatformFile arquivo, int maxRows) {
+    try {
+      return _parseCsv(arquivo).take(maxRows).toList();
+    } catch (_) {
+      return [];
+    }
   }
 
   String _separatorFor(String line) {
@@ -2140,12 +2185,12 @@ class _ImportacaoCadastrosSectionState extends State<_ImportacaoCadastrosSection
   String _normalizar(String value) {
     var r = value.toLowerCase().trim();
     const mapa = {
-      'á': 'a', 'à': 'a', 'â': 'a', 'ã': 'a', 'ä': 'a',
-      'é': 'e', 'è': 'e', 'ê': 'e', 'ë': 'e',
-      'í': 'i', 'ì': 'i', 'î': 'i', 'ï': 'i',
-      'ó': 'o', 'ò': 'o', 'ô': 'o', 'õ': 'o', 'ö': 'o',
-      'ú': 'u', 'ù': 'u', 'û': 'u', 'ü': 'u',
-      'ç': 'c', 'ñ': 'n',
+      'Ã¡': 'a', 'Ã ': 'a', 'Ã¢': 'a', 'Ã£': 'a', 'Ã¤': 'a',
+      'Ã©': 'e', 'Ã¨': 'e', 'Ãª': 'e', 'Ã«': 'e',
+      'Ã­': 'i', 'Ã¬': 'i', 'Ã®': 'i', 'Ã¯': 'i',
+      'Ã³': 'o', 'Ã²': 'o', 'Ã´': 'o', 'Ãµ': 'o', 'Ã¶': 'o',
+      'Ãº': 'u', 'Ã¹': 'u', 'Ã»': 'u', 'Ã¼': 'u',
+      'Ã§': 'c', 'Ã±': 'n',
     };
     mapa.forEach((a, b) => r = r.replaceAll(a, b));
     return r
@@ -2182,6 +2227,7 @@ class _ImportacaoCadastrosSectionState extends State<_ImportacaoCadastrosSection
     var erros = 0;
     var ignorados = 0;
     var total = 0;
+    int? ultimoIdSalvo;
 
     try {
       final rows = _parseCsv(arquivo);
@@ -2197,6 +2243,7 @@ class _ImportacaoCadastrosSectionState extends State<_ImportacaoCadastrosSection
           }
 
           final id = await _importarLinha(tipo, row);
+          if (id != null) ultimoIdSalvo = id;
           sucesso++;
           detalhes.add({
             'linha': linha,
@@ -2216,6 +2263,9 @@ class _ImportacaoCadastrosSectionState extends State<_ImportacaoCadastrosSection
     if (mounted) {
       setState(() {
         _loading[tipo] = false;
+        if (tipo == _ImportacaoCadastroTipo.empresa && ultimoIdSalvo != null) {
+          _empresaIdSelecionada = ultimoIdSalvo.toString();
+        }
         _resultados[tipo] = {
           'total': total,
           'sucesso': sucesso,
@@ -2225,6 +2275,9 @@ class _ImportacaoCadastrosSectionState extends State<_ImportacaoCadastrosSection
           'arquivo': arquivo.name,
         };
       });
+      if (tipo == _ImportacaoCadastroTipo.empresa && ultimoIdSalvo != null) {
+        _carregarEmpresas();
+      }
     }
   }
 
@@ -2474,9 +2527,19 @@ class _ImportacaoCadastrosSectionState extends State<_ImportacaoCadastrosSection
     final coluna = _ctrl[tipo]?[campo]?.text.trim() ?? '';
     if (coluna.isNotEmpty && row.containsKey(coluna)) return row[coluna]?.trim() ?? '';
 
-    final alvo = _normalizar(coluna.isNotEmpty ? coluna : campo);
+    final candidatos = <String>{coluna.isNotEmpty ? coluna : campo};
+    final config = _config(tipo);
+    for (final field in config.campos) {
+      if (field.key == campo) {
+        candidatos
+          ..add(field.key)
+          ..addAll(field.sinonimos);
+        break;
+      }
+    }
+    final alvos = candidatos.map(_normalizar).where((c) => c.isNotEmpty).toSet();
     for (final entry in row.entries) {
-      if (_normalizar(entry.key) == alvo) return entry.value.trim();
+      if (alvos.contains(_normalizar(entry.key))) return entry.value.trim();
     }
     return '';
   }
@@ -2658,7 +2721,7 @@ class _ImportacaoCadastrosSectionState extends State<_ImportacaoCadastrosSection
             Expanded(child: _empresaDropdown()),
             const SizedBox(width: 12),
             Expanded(child: Text(
-              'Usado como empresa padrao para parceiros, funcionarios e logins quando o CSV nao tiver empresa_id.',
+              'Empresa nao precisa de destino. Use este campo para parceiros, funcionarios e logins.',
               style: TextStyle(fontSize: 11, color: Colors.grey.shade600),
             )),
           ]),
@@ -2696,6 +2759,8 @@ class _ImportacaoCadastrosSectionState extends State<_ImportacaoCadastrosSection
     final loading = _loading[config.tipo] == true;
     final colunas = _colunas[config.tipo] ?? [];
     final resultado = _resultados[config.tipo];
+    final aviso = _avisosArquivo[config.tipo];
+    final preview = _previews[config.tipo] ?? [];
 
     return Card(
       elevation: 0,
@@ -2744,8 +2809,20 @@ class _ImportacaoCadastrosSectionState extends State<_ImportacaoCadastrosSection
                 Text('${colunas.length} colunas', style: TextStyle(fontSize: 10, color: Colors.grey.shade500)),
             ]),
           ),
+          if (aviso != null) ...[
+            const SizedBox(height: 6),
+            Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Icon(Icons.warning_amber_outlined, size: 15, color: Colors.orange.shade800),
+              const SizedBox(width: 6),
+              Expanded(child: Text(aviso, style: TextStyle(fontSize: 11, color: Colors.orange.shade900))),
+            ]),
+          ],
+          if (preview.isNotEmpty) ...[
+            const SizedBox(height: 8),
+            _previewCard(preview, colunas, config.color),
+          ],
           const SizedBox(height: 8),
-          _mappingTile(config, colunas),
+          _mappingTile(config, colunas, arquivo != null),
           const SizedBox(height: 8),
           Row(children: [
             Expanded(child: Row(children: [
@@ -2795,10 +2872,82 @@ class _ImportacaoCadastrosSectionState extends State<_ImportacaoCadastrosSection
     );
   }
 
-  Widget _mappingTile(_CadastroImportConfig config, List<String> colunas) {
+  Widget _previewCard(List<Map<String, String>> preview, List<String> colunas, Color color) {
+    final visiveis = colunas.take(5).toList();
+    if (visiveis.isEmpty) return const SizedBox.shrink();
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(10),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(6),
+        border: Border.all(color: color.withValues(alpha: 0.28)),
+      ),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Row(children: [
+          Icon(Icons.visibility_outlined, size: 14, color: color),
+          const SizedBox(width: 6),
+          Text(
+            'Preview do CSV',
+            style: TextStyle(fontSize: 11, color: color, fontWeight: FontWeight.w700),
+          ),
+          const SizedBox(width: 8),
+          Text(
+            '${preview.length} linha(s) exibida(s)',
+            style: TextStyle(fontSize: 10, color: Colors.grey.shade600),
+          ),
+        ]),
+        const SizedBox(height: 8),
+        SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          child: DataTable(
+            headingRowHeight: 28,
+            dataRowMinHeight: 28,
+            dataRowMaxHeight: 36,
+            columnSpacing: 18,
+            columns: visiveis
+                .map((coluna) => DataColumn(
+                      label: Text(
+                        coluna,
+                        style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ))
+                .toList(),
+            rows: preview
+                .map((row) => DataRow(
+                      cells: visiveis
+                          .map((coluna) => DataCell(SizedBox(
+                                width: 150,
+                                child: Text(
+                                  row[coluna] ?? '',
+                                  style: const TextStyle(fontSize: 10),
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              )))
+                          .toList(),
+                    ))
+                .toList(),
+          ),
+        ),
+        if (colunas.length > visiveis.length) ...[
+          const SizedBox(height: 4),
+          Text(
+            '+ ${colunas.length - visiveis.length} coluna(s) no mapeamento abaixo',
+            style: TextStyle(fontSize: 10, color: Colors.grey.shade600),
+          ),
+        ],
+      ]),
+    );
+  }
+
+  Widget _mappingTile(_CadastroImportConfig config, List<String> colunas, bool arquivoSelecionado) {
     return Theme(
       data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
       child: ExpansionTile(
+        key: ValueKey('${config.tipo}-${arquivoSelecionado ? 'arquivo' : 'vazio'}-${colunas.join('|')}'),
+        initiallyExpanded: arquivoSelecionado,
         tilePadding: const EdgeInsets.symmetric(horizontal: 10),
         childrenPadding: const EdgeInsets.fromLTRB(10, 0, 10, 10),
         collapsedShape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6), side: BorderSide(color: config.color.withValues(alpha: 0.25))),
@@ -2848,6 +2997,9 @@ class _ImportacaoCadastrosSectionState extends State<_ImportacaoCadastrosSection
   Widget _resultadoCard(Map<String, dynamic> resultado, Color color) {
     final detalhes = (resultado['detalhes'] as List?)?.cast<Map<String, dynamic>>() ?? [];
     final problemas = detalhes.where((d) => d['status'] != 'sucesso').toList();
+    final textoProblemas = problemas
+        .map((d) => 'Linha ${d['linha']} [${d['status']}]: ${d['mensagem']}')
+        .join('\n');
 
     return Container(
       decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(6), border: Border.all(color: color.withValues(alpha: 0.35))),
@@ -2866,8 +3018,7 @@ class _ImportacaoCadastrosSectionState extends State<_ImportacaoCadastrosSection
             if (problemas.isNotEmpty)
               TextButton.icon(
                 onPressed: () {
-                  final texto = problemas.map((d) => 'Linha ${d['linha']} [${d['status']}]: ${d['mensagem']}').join('\n');
-                  Clipboard.setData(ClipboardData(text: texto));
+                  Clipboard.setData(ClipboardData(text: textoProblemas));
                   ScaffoldMessenger.of(context).showSnackBar(SnackBar(
                     content: Text('${problemas.length} problema(s) copiado(s)'),
                     duration: const Duration(seconds: 2),
@@ -2901,6 +3052,36 @@ class _ImportacaoCadastrosSectionState extends State<_ImportacaoCadastrosSection
                 );
               },
             ),
+          ),
+          const Divider(height: 1),
+          Padding(
+            padding: const EdgeInsets.all(10),
+            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Row(children: [
+                Icon(Icons.notes_outlined, size: 14, color: Colors.red.shade700),
+                const SizedBox(width: 6),
+                Text(
+                  'Erros completos para enviar ao suporte',
+                  style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.red.shade700),
+                ),
+              ]),
+              const SizedBox(height: 6),
+              TextFormField(
+                key: ValueKey('cadastro-import-erros-${textoProblemas.hashCode}'),
+                initialValue: textoProblemas,
+                readOnly: true,
+                minLines: 4,
+                maxLines: 8,
+                decoration: InputDecoration(
+                  isDense: true,
+                  filled: true,
+                  fillColor: Colors.red.shade50,
+                  border: const OutlineInputBorder(),
+                  contentPadding: const EdgeInsets.all(10),
+                ),
+                style: const TextStyle(fontSize: 11, fontFamily: 'monospace'),
+              ),
+            ]),
           ),
         ],
       ]),
