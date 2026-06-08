@@ -1,7 +1,14 @@
 import 'dart:html' as html;
 import 'dart:typed_data';
 
-Future<List<int>?> pickAndReadFile({String accept = '.csv,.txt'}) async {
+class FileUploadResult {
+  final String name;
+  final int size;
+  final List<int> bytes;
+  const FileUploadResult({required this.name, required this.size, required this.bytes});
+}
+
+Future<FileUploadResult?> pickAndReadFile({String accept = '.csv,.txt'}) async {
   final input = html.FileUploadInputElement()
     ..accept = accept
     ..multiple = false;
@@ -19,5 +26,5 @@ Future<List<int>?> pickAndReadFile({String accept = '.csv,.txt'}) async {
       : raw is Uint8List
           ? raw
           : Uint8List.fromList(raw is List<int> ? raw : const <int>[]);
-  return bytes;
+  return FileUploadResult(name: file.name, size: file.size, bytes: bytes);
 }

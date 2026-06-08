@@ -2061,10 +2061,10 @@ class _ImportacaoCadastrosSectionState extends State<_ImportacaoCadastrosSection
         );
         return;
       }
-      final bytes = await pickAndReadFile(accept: '.csv,.txt,text/csv,text/plain');
-      if (bytes == null || bytes.isEmpty) return;
+      final result = await pickAndReadFile(accept: '.csv,.txt,text/csv,text/plain');
+      if (result == null || result.bytes.isEmpty) return;
 
-      final arquivo = PlatformFile(name: file.name, size: file.size, bytes: bytes);
+      final arquivo = PlatformFile(name: result.name, size: result.size, bytes: Uint8List.fromList(result.bytes));
       _aplicarArquivoSelecionado(tipo, arquivo);
     } catch (e) {
       if (mounted) {
