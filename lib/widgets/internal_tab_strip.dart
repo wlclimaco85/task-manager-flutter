@@ -125,7 +125,7 @@ class _TabChipState extends State<_TabChip> {
               ),
               border: Border(
                 top: BorderSide(
-                  color: isActive ? GridColors.primary : Colors.transparent,
+                  color: isActive ? GridColors.secondary : Colors.transparent,
                   width: 2,
                 ),
               ),
@@ -133,7 +133,7 @@ class _TabChipState extends State<_TabChip> {
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                FaIcon(widget.tab.icon, size: 13, color: isActive ? GridColors.primary : GridColors.textMuted),
+                FaIcon(widget.tab.icon, size: 13, color: isActive ? GridColors.secondary : GridColors.textMuted),
                 const SizedBox(width: 6),
                 Flexible(
                   child: Text(
