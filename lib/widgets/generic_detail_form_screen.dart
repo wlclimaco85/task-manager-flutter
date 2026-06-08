@@ -73,6 +73,10 @@ class _GenericDetailFormScreenState extends State<GenericDetailFormScreen>
   final _multiValues = <String, List<dynamic>>{};
   final _checkboxValues = <String, bool>{};
   final _dropdownCache = <String, List<Map<String, dynamic>>>{};
+  // Memoiza o Future em andamento por campo: evita recriar a requisição HTTP
+  // (e reiniciar o FutureBuilder em ConnectionState.waiting) a cada rebuild
+  // do formulário enquanto o fetch ainda não terminou.
+  final _dropdownFutures = <String, Future<List<Map<String, dynamic>>>>{};
 
   bool _saving = false;
 
@@ -835,11 +839,14 @@ class _GenericDetailFormScreenState extends State<GenericDetailFormScreen>
     if (_dropdownCache.containsKey(ef.fieldName)) {
       return _dropdownWidget(ef, _dropdownCache[ef.fieldName]!);
     }
-    final future = ef.dropdownFutureBuilder != null
-        ? ef.dropdownFutureBuilder!()
-        : ef.dropdownEndpoint != null
-            ? _loadEndpoint(ef.dropdownEndpoint!)
-            : Future.value(ef.dropdownOptions ?? <Map<String, dynamic>>[]);
+    final future = _dropdownFutures.putIfAbsent(
+      ef.fieldName,
+      () => ef.dropdownFutureBuilder != null
+          ? ef.dropdownFutureBuilder!()
+          : ef.dropdownEndpoint != null
+              ? _loadEndpoint(ef.dropdownEndpoint!)
+              : Future.value(ef.dropdownOptions ?? <Map<String, dynamic>>[]),
+    );
     return FutureBuilder<List<Map<String, dynamic>>>(
       future: future,
       builder: (ctx, snap) {
@@ -895,11 +902,14 @@ class _GenericDetailFormScreenState extends State<GenericDetailFormScreen>
     if (_dropdownCache.containsKey(cacheKey)) {
       return _multiWidget(ef, _dropdownCache[cacheKey]!);
     }
-    final future = ef.dropdownFutureBuilder != null
-        ? ef.dropdownFutureBuilder!()
-        : ef.dropdownEndpoint != null
-            ? _loadEndpoint(ef.dropdownEndpoint!)
-            : Future.value(ef.dropdownOptions ?? <Map<String, dynamic>>[]);
+    final future = _dropdownFutures.putIfAbsent(
+      cacheKey,
+      () => ef.dropdownFutureBuilder != null
+          ? ef.dropdownFutureBuilder!()
+          : ef.dropdownEndpoint != null
+              ? _loadEndpoint(ef.dropdownEndpoint!)
+              : Future.value(ef.dropdownOptions ?? <Map<String, dynamic>>[]),
+    );
     return FutureBuilder<List<Map<String, dynamic>>>(
       future: future,
       builder: (ctx, snap) {
