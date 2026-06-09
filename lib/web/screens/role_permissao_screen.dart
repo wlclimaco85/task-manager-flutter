@@ -4,6 +4,7 @@ import '../../utils/grid_colors.dart';
 import 'package:http/http.dart' as http;
 import '../../utils/api_links.dart';
 import '../../utils/tenant_context.dart';
+import '../../utils/menu_config.dart';
 
 // ─── Cores ────────────────────────────────────────────────────────────────────
 const _red   = GridColors.primary;
@@ -14,71 +15,23 @@ const _bg    = Color(0xFFF5F5F5);
 const _card  = Colors.white;
 
 // ─── Catálogo de telas do sistema ─────────────────────────────────────────────
-const List<Map<String, String>> _todasTelas = [
-  // Cadastros base
-  {'nome': 'logins',                 'label': 'Logins',                  'grupo': 'Cadastros'},
-  {'nome': 'empresas',               'label': 'Empresas',                'grupo': 'Cadastros'},
-  {'nome': 'parceiros',              'label': 'Parceiros',               'grupo': 'Cadastros'},
-  {'nome': 'setores',                'label': 'Setores',                 'grupo': 'Cadastros'},
-  {'nome': 'funcionarios',           'label': 'Funcionários',            'grupo': 'Cadastros'},
-  {'nome': 'feriados',               'label': 'Feriados',                'grupo': 'Cadastros'},
-  {'nome': 'regimeTributario',       'label': 'Regime Tributário',       'grupo': 'Cadastros'},
-  {'nome': 'tipoParceiro',           'label': 'Tipo Parceiro',           'grupo': 'Cadastros'},
-  {'nome': 'servicoContratado',      'label': 'Serviço Contratado',      'grupo': 'Cadastros'},
-  {'nome': 'moduloServico',          'label': 'Módulo Serviço',          'grupo': 'Cadastros'},
-  {'nome': 'roles',                  'label': 'Roles',                   'grupo': 'Cadastros'},
-  // Produto / NF-e
-  {'nome': 'produto',                'label': 'Produto',                 'grupo': 'Produto / NF-e'},
-  {'nome': 'unidadeMedida',          'label': 'Unidade de Medida',       'grupo': 'Produto / NF-e'},
-  {'nome': 'catalogoProduto',        'label': 'Catálogo Produto',        'grupo': 'Produto / NF-e'},
-  {'nome': 'nfeSerie',               'label': 'NF-e Série',              'grupo': 'Produto / NF-e'},
-  {'nome': 'nfeEntrada',             'label': 'NF-e Entrada',            'grupo': 'Produto / NF-e'},
-  {'nome': 'nfeSaida',               'label': 'NF-e Saída',              'grupo': 'Produto / NF-e'},
-  {'nome': 'obrigacoesFiscais',      'label': 'Obrigações Fiscais',      'grupo': 'Produto / NF-e'},
-  // Financeiro
-  {'nome': 'contasPagar',            'label': 'Contas a Pagar',          'grupo': 'Financeiro'},
-  {'nome': 'contasReceber',          'label': 'Contas a Receber',        'grupo': 'Financeiro'},
-  {'nome': 'contasBancarias',        'label': 'Contas Bancárias',        'grupo': 'Financeiro'},
-  {'nome': 'contaBancaria',          'label': 'Conta Bancária',          'grupo': 'Financeiro'},
-  {'nome': 'formasPagamento',        'label': 'Formas de Pagamento',     'grupo': 'Financeiro'},
-  {'nome': 'pedidos',                'label': 'Pedidos',                 'grupo': 'Financeiro'},
-  // Atendimento
-  {'nome': 'chamados',               'label': 'Chamados',                'grupo': 'Atendimento'},
-  {'nome': 'kanbanChamados',         'label': 'Kanban Chamados',         'grupo': 'Atendimento'},
-  {'nome': 'comunicados',            'label': 'Comunicados',             'grupo': 'Atendimento'},
-  {'nome': 'chat',                   'label': 'Chat',                    'grupo': 'Atendimento'},
-  // GED
-  {'nome': 'ged',                    'label': 'GED',                     'grupo': 'GED'},
-  {'nome': 'diretorios',             'label': 'Diretórios',              'grupo': 'GED'},
-  {'nome': 'arquivos',               'label': 'Arquivos',                'grupo': 'GED'},
-  // Ponto
-  {'nome': 'ponto',                  'label': 'Ponto',                   'grupo': 'Ponto'},
-  {'nome': 'pontoWeb',               'label': 'Ponto Web',               'grupo': 'Ponto'},
-  {'nome': 'solicitacaoAjustePonto', 'label': 'Solicitação Ajuste',      'grupo': 'Ponto'},
-  {'nome': 'ajustePonto',            'label': 'Ajuste de Ponto',         'grupo': 'Ponto'},
-  // Dashboard
-  {'nome': 'dashboard',              'label': 'Dashboard',               'grupo': 'Dashboard'},
-  {'nome': 'dashKpis',               'label': 'KPIs',                    'grupo': 'Dashboard'},
-  {'nome': 'dashFinanceCards',       'label': 'Cards Financeiros',       'grupo': 'Dashboard'},
-  {'nome': 'dashFluxoDiario',        'label': 'Fluxo Diário',            'grupo': 'Dashboard'},
-  {'nome': 'dashTendenciaFinanceira','label': 'Tendência Financeira',    'grupo': 'Dashboard'},
-  {'nome': 'dashDistribuicaoClientes','label': 'Distribuição Clientes',  'grupo': 'Dashboard'},
-  {'nome': 'dashComparativoTrimestral','label': 'Comparativo Trimestral','grupo': 'Dashboard'},
-  {'nome': 'dashAlertas',            'label': 'Alertas',                 'grupo': 'Dashboard'},
-  {'nome': 'dashChamadosCards',      'label': 'Cards Chamados',          'grupo': 'Dashboard'},
-  {'nome': 'dashChamadosPie',        'label': 'Pizza Chamados',          'grupo': 'Dashboard'},
-  {'nome': 'dashTendenciaChamados',  'label': 'Tendência Chamados',      'grupo': 'Dashboard'},
-  {'nome': 'dashChatsLinha',         'label': 'Chats Linha',             'grupo': 'Dashboard'},
-  {'nome': 'dashChatsDiario',        'label': 'Chats Diário',            'grupo': 'Dashboard'},
-  {'nome': 'dashSaldoContas',        'label': 'Saldo Contas',            'grupo': 'Dashboard'},
-  {'nome': 'dashEvolucaoSaldos',     'label': 'Evolução Saldos',         'grupo': 'Dashboard'},
-  // Sistema
-  {'nome': 'calendario',             'label': 'Calendário',              'grupo': 'Sistema'},
-  {'nome': 'noticias',               'label': 'Notícias',                'grupo': 'Sistema'},
-  {'nome': 'perfil',                 'label': 'Perfil',                  'grupo': 'Sistema'},
-  {'nome': 'configuracoesAdmin',     'label': 'Configurações Admin',     'grupo': 'Sistema'},
-  {'nome': 'configSistema',          'label': 'Config. Sistema',         'grupo': 'Sistema'},
-];
+// Fonte ÚNICA = MenuConfig (o mesmo menu lateral). Gerado dinamicamente para
+// nunca ficar dessincronizado: cada grupo/submenu do menu vira uma tela aqui.
+// telaNome = MenuItem.id (chave canônica usada no PUT /api/role-permissao).
+final List<Map<String, String>> _todasTelas = _buildTodasTelas();
+
+List<Map<String, String>> _buildTodasTelas() {
+  final list = <Map<String, String>>[];
+  for (final g in MenuConfig.groups) {
+    for (final item in g.items) {
+      list.add({'nome': item.id, 'label': item.label, 'grupo': g.label});
+    }
+  }
+  for (final item in MenuConfig.loose) {
+    list.add({'nome': item.id, 'label': item.label, 'grupo': 'Outros'});
+  }
+  return list;
+}
 
 // ─────────────────────────────────────────────────────────────────────────────
 class RolePermissaoScreen extends StatefulWidget {
@@ -385,6 +338,13 @@ class _RolePermissaoScreenState extends State<RolePermissaoScreen> {
                 style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
             Text('$totalAcesso de $total telas com acesso',
                 style: const TextStyle(fontSize: 11, color: _grey)),
+            const SizedBox(height: 2),
+            Row(mainAxisSize: MainAxisSize.min, children: const [
+              Icon(Icons.cloud_done, size: 12, color: _green),
+              SizedBox(width: 4),
+              Text('Alterações salvas automaticamente',
+                  style: TextStyle(fontSize: 10, color: _green, fontStyle: FontStyle.italic)),
+            ]),
           ])),
           // Barra de progresso
           SizedBox(
