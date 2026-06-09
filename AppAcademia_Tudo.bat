@@ -53,6 +53,7 @@ echo  [D] Subir um Flutter especifico no Android/simulador
 echo  [E] Subir tudo: backend + 2 Chrome + Meu Treino/Safra no BlueStacks
 echo  [F] Build 4 APKs com backend deployado + instalar no BlueStacks
 echo  [G] Build Android APK de um projeto (backend local)
+echo  [H] Atualizar todos os repositorios (git pull)
 echo  [P] Build APK unico com backend deployado
 echo  [0] Sair
 echo.
@@ -124,6 +125,10 @@ if /i "%OP%"=="G" (
     call :BUILD_ONE_ANDROID_LOCAL
     goto END_MENU
 )
+if /i "%OP%"=="H" (
+    call :GIT_PULL_ALL
+    goto END_MENU
+)
 if /i "%OP%"=="P" (
     call :BUILD_ANDROID_DEPLOY
     goto END_MENU
@@ -174,8 +179,8 @@ echo.
 echo Matando backend na porta %BACKEND_PORT%...
 powershell -NoProfile -ExecutionPolicy Bypass -Command "$procIds = Get-NetTCPConnection -LocalPort %BACKEND_PORT% -State Listen -ErrorAction SilentlyContinue | Select-Object -ExpandProperty OwningProcess -Unique; foreach ($procId in $procIds) { if ($procId -and $procId -ne 0) { Stop-Process -Id $procId -Force -ErrorAction SilentlyContinue; Write-Host ('  PID ' + $procId + ' encerrado') } }"
 
-echo Matando processos Flutter/Chrome ligados ao task_manager_flutter...
-powershell -NoProfile -ExecutionPolicy Bypass -Command "$items = Get-CimInstance Win32_Process | Where-Object { ($_.Name -match 'flutter|dart|chrome|cmd') -and ($_.CommandLine -like '*task_manager_flutter*' -or $_.CommandLine -like '*task_manager_AppAcademiaV003*' -or $_.CommandLine -like '*task_manager_appDaniel*' -or $_.CommandLine -like '*AppAcademia-Flutter*') }; foreach ($p in $items) { Stop-Process -Id $p.ProcessId -Force -ErrorAction SilentlyContinue; Write-Host ('  PID ' + $p.ProcessId + ' encerrado: ' + $p.Name) }"
+echo Matando processos Flutter/Dart ligados aos projetos...
+powershell -NoProfile -ExecutionPolicy Bypass -Command "$items = Get-CimInstance Win32_Process | Where-Object { ($_.Name -match 'flutter|dart|cmd') -and ($_.CommandLine -like '*task_manager_flutter*' -or $_.CommandLine -like '*task_manager_AppAcademiaV003*' -or $_.CommandLine -like '*task_manager_appDaniel*' -or $_.CommandLine -like '*AppAcademia*') }; foreach ($p in $items) { Stop-Process -Id $p.ProcessId -Force -ErrorAction SilentlyContinue; Write-Host ('  PID ' + $p.ProcessId + ' encerrado: ' + $p.Name) }"
 timeout /t 2 /nobreak >nul
 exit /b 0
 
@@ -904,6 +909,37 @@ echo.
 echo [4/4] Iniciando app...
 "%ADB%" -s 127.0.0.1:5555 shell monkey -p %APP_PACKAGE_ABRACO% -c android.intent.category.LAUNCHER 1 >nul 2>&1
 echo App iniciado.
+exit /b 0
+
+:GIT_PULL_ALL
+echo.
+echo ============================================
+echo  Atualizando todos os repositorios
+echo ============================================
+echo.
+set "REPOS=%APP_ROOT%\AppAcademia %APP_ROOT%\task_manager_flutter %APP_ROOT%\task_manager_flutter_merged_final %APP_ROOT%\task_manager_AppAcademiaV003 %APP_ROOT%\task_manager_appDaniel %APP_ROOT%\entusiasta-tributario"
+for %%R in (%REPOS%) do (
+    if exist "%%R\.git" (
+        echo ----------------------------------------
+        echo Repositorio: %%~nxR
+        echo ----------------------------------------
+        cd /d "%%R"
+        git checkout main 2>nul || git checkout master 2>nul
+        git pull --rebase
+        if errorlevel 1 (
+            echo [ATENCAO] Falha ao atualizar %%~nxR - pode haver conflitos.
+        ) else (
+            echo OK
+        )
+        echo.
+    ) else (
+        echo [AVISO] %%R nao e um repositorio git
+    )
+)
+cd /d "%APP_ROOT%"
+echo ============================================
+echo  Todos os repositorios atualizados!
+echo ============================================
 exit /b 0
 
 :RUN_ALL
