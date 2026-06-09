@@ -19,6 +19,7 @@ class Login {
   Empresa? empresa;
   Parceiro? parceiro;
   Aplicativo? aplicativo;
+  bool? trocarSenhaProximoLogin;
   DateTime? dhCreatedAt;
   DateTime? dhUpdatedAt;
 
@@ -33,6 +34,7 @@ class Login {
     this.empresa,
     this.parceiro,
     this.aplicativo,
+    this.trocarSenhaProximoLogin,
     this.dhCreatedAt,
     this.dhUpdatedAt,
   });
@@ -49,6 +51,7 @@ class Login {
       'empresa': empresa?.toJson(),
       'parceiro': parceiro?.toJson(),
       'aplicativo': aplicativo?.toJson(),
+      'trocarSenhaProximoLogin': trocarSenhaProximoLogin,
       'dhCreatedAt': dhCreatedAt?.toIso8601String(),
       'dhUpdatedAt': dhUpdatedAt?.toIso8601String(),
     };
@@ -82,6 +85,8 @@ class Login {
 
       parceiro =
           json['parceiro'] != null ? Parceiro.fromJson(json['parceiro']) : null;
+
+      trocarSenhaProximoLogin = json['trocarSenhaProximoLogin'] == true;
 
       // CORRIGIDO: chaves corretas para as datas
       dhCreatedAt = json['dhCreatedAt'] != null

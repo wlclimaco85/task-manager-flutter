@@ -129,7 +129,12 @@ class _LoginScreenState extends State<LoginScreen>
       }
       await AuthUtility.setUserInfo(model);
       await ModuloAccess.load();
-      if (mounted) _goHome();
+      if (!mounted) return;
+      if (model.login?.trocarSenhaProximoLogin == true) {
+        await _showTrocarSenhaDialog(model.login!.email ?? '');
+        return;
+      }
+      _goHome();
     } else if (mounted) {
       _passwordController.clear();
       final msg = resp.statusCode == 400 || resp.statusCode == 401
@@ -142,6 +147,135 @@ class _LoginScreenState extends State<LoginScreen>
         backgroundColor: Colors.red.shade700,
       ));
     }
+  }
+
+  Future<void> _showTrocarSenhaDialog(String email) async {
+    final atualCtrl  = TextEditingController();
+    final novaCtrl   = TextEditingController();
+    final confirmCtrl = TextEditingController();
+    bool obscureAtual   = true;
+    bool obscureNova    = true;
+    bool obscureConfirm = true;
+    bool loading = false;
+    String? erro;
+
+    await showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setS) => AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          title: Row(children: [
+            Icon(Icons.lock_reset, color: GridColors.secondary, size: 24),
+            const SizedBox(width: 8),
+            const Text('Trocar senha', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
+          ]),
+          content: SizedBox(
+            width: 320,
+            child: Column(mainAxisSize: MainAxisSize.min, children: [
+              const Text(
+                'É necessário definir uma nova senha antes de continuar.',
+                style: TextStyle(fontSize: 13, color: Colors.black54),
+              ),
+              const SizedBox(height: 16),
+              if (erro != null)
+                Container(
+                  margin: const EdgeInsets.only(bottom: 10),
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: Colors.red.shade50,
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: Colors.red.shade200),
+                  ),
+                  child: Text(erro!, style: TextStyle(color: Colors.red.shade700, fontSize: 12)),
+                ),
+              _SenhaField(
+                label: 'Senha atual',
+                ctrl: atualCtrl,
+                obscure: obscureAtual,
+                onToggle: () => setS(() => obscureAtual = !obscureAtual),
+              ),
+              const SizedBox(height: 10),
+              _SenhaField(
+                label: 'Nova senha',
+                ctrl: novaCtrl,
+                obscure: obscureNova,
+                onToggle: () => setS(() => obscureNova = !obscureNova),
+              ),
+              const SizedBox(height: 10),
+              _SenhaField(
+                label: 'Confirmar nova senha',
+                ctrl: confirmCtrl,
+                obscure: obscureConfirm,
+                onToggle: () => setS(() => obscureConfirm = !obscureConfirm),
+              ),
+            ]),
+          ),
+          actions: [
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: GridColors.secondary,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                ),
+                onPressed: loading
+                    ? null
+                    : () async {
+                        final atual   = atualCtrl.text.trim();
+                        final nova    = novaCtrl.text.trim();
+                        final confirm = confirmCtrl.text.trim();
+                        if (atual.isEmpty || nova.isEmpty || confirm.isEmpty) {
+                          setS(() => erro = 'Preencha todos os campos.');
+                          return;
+                        }
+                        if (nova.length < 6) {
+                          setS(() => erro = 'A nova senha deve ter pelo menos 6 caracteres.');
+                          return;
+                        }
+                        if (nova != confirm) {
+                          setS(() => erro = 'Nova senha e confirmação não conferem.');
+                          return;
+                        }
+                        setS(() { loading = true; erro = null; });
+                        // Valida senha atual tentando autenticar
+                        final checkResp = await NetworkCaller().postRequest(
+                          ApiLinks.login,
+                          {'email': email, 'password': atual},
+                        );
+                        if (!checkResp.isSuccess) {
+                          setS(() { loading = false; erro = 'Senha atual incorreta.'; });
+                          return;
+                        }
+                        // Altera senha
+                        final alterResp = await NetworkCaller().postRequest(
+                          '${ApiLinks.baseUrl}/api/login/alterar-senha',
+                          {'email': email, 'novaSenha': nova},
+                        );
+                        setS(() => loading = false);
+                        if (alterResp.isSuccess) {
+                          Navigator.of(ctx).pop(true);
+                        } else {
+                          setS(() => erro = 'Erro ao alterar senha. Tente novamente.');
+                        }
+                      },
+                child: loading
+                    ? const SizedBox(height: 18, width: 18, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                    : const Text('Confirmar', style: TextStyle(fontWeight: FontWeight.w600)),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+
+    atualCtrl.dispose();
+    novaCtrl.dispose();
+    confirmCtrl.dispose();
+
+    if (mounted) _goHome();
   }
 
   @override
@@ -877,4 +1011,37 @@ class _EmpresaFooter extends StatelessWidget {
         const SizedBox(width: 4),
         Text(text, style: const TextStyle(color: Colors.white, fontSize: 11)),
       ]);
+}
+
+/// Campo de senha reutilizável dentro do dialog de troca de senha.
+class _SenhaField extends StatelessWidget {
+  final String label;
+  final TextEditingController ctrl;
+  final bool obscure;
+  final VoidCallback onToggle;
+
+  const _SenhaField({
+    required this.label,
+    required this.ctrl,
+    required this.obscure,
+    required this.onToggle,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return TextFormField(
+      controller: ctrl,
+      obscureText: obscure,
+      decoration: InputDecoration(
+        labelText: label,
+        labelStyle: const TextStyle(fontSize: 13),
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+        suffixIcon: IconButton(
+          icon: Icon(obscure ? Icons.visibility_off : Icons.visibility, size: 18),
+          onPressed: onToggle,
+        ),
+      ),
+    );
+  }
 }
