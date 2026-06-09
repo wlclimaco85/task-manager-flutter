@@ -3,6 +3,7 @@ import '../../../widgets/generic_detail_form_screen.dart';
 import '../../../widgets/generic_grid_windows_screen.dart'
     show SecurityCheck, FieldConfigWindows, FieldType;
 import '../certificado_empresa_screen.dart';
+import '../login_grid_screen.dart' show WindowsLoginGridScreen;
 
 class WindowsEmpresaDetailScreen extends StatelessWidget {
   final Map<String, dynamic> item;
@@ -59,6 +60,19 @@ class WindowsEmpresaDetailScreen extends StatelessWidget {
           icon: Icons.person,
           telaNome: 'login',
           extraParams: {'empId': id},
+          fieldOverrides: const [
+            FieldConfigWindows(
+              label: 'Roles',
+              fieldName: 'roles',
+              icon: Icons.security,
+              fieldType: FieldType.multiselect,
+              dropdownFutureBuilder: WindowsLoginGridScreen.loadRoles,
+              dropdownValueField: 'value',
+              dropdownDisplayField: 'label',
+              isInForm: true,
+              isFilterable: false,
+            ),
+          ],
         ),
         RelatedGridTab(
           title: 'Contas a Pagar',

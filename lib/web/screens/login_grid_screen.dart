@@ -14,7 +14,7 @@ class WebLoginGridScreen extends StatelessWidget {
 
   const WebLoginGridScreen({super.key, required this.hasPermission});
 
-  static Future<List<Map<String, dynamic>>> _loadRoles() async {
+  static Future<List<Map<String, dynamic>>> loadRoles() async {
     final response = await NetworkCaller().getRequest('${ApiLinks.baseUrl}/api/role');
     if (response.isSuccess && response.body != null) {
       final body = response.body!;
@@ -92,7 +92,7 @@ class WebLoginGridScreen extends StatelessWidget {
           fieldName: 'roles',
           icon: Icons.security,
           fieldType: FieldType.multiselect,
-          dropdownFutureBuilder: _loadRoles,
+          dropdownFutureBuilder: WebLoginGridScreen.loadRoles,
           dropdownValueField: 'value',
           dropdownDisplayField: 'label',
           isInForm: true,

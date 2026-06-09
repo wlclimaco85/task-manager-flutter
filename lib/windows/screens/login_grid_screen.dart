@@ -14,7 +14,7 @@ class WindowsLoginGridScreen extends StatelessWidget {
 
   const WindowsLoginGridScreen({super.key, required this.hasPermission});
 
-  static Future<List<Map<String, dynamic>>> _loadRoles() async {
+  static Future<List<Map<String, dynamic>>> loadRoles() async {
     final response = await NetworkCaller().getRequest('${ApiLinks.baseUrl}/api/role');
     if (response.isSuccess && response.body != null) {
       final body = response.body!;
@@ -91,7 +91,7 @@ class WindowsLoginGridScreen extends StatelessWidget {
           fieldName: 'roles',
           icon: Icons.security,
           fieldType: FieldType.multiselect,
-          dropdownFutureBuilder: _loadRoles,
+          dropdownFutureBuilder: WindowsLoginGridScreen.loadRoles,
           dropdownValueField: 'value',
           dropdownDisplayField: 'label',
           isInForm: true,

@@ -3166,123 +3166,168 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
     );
   }
 
-  /// Dropdown de filtro para campos com tipo [FieldType.dropdown] ou [FieldType.boolean].
-  /// As opções são pré-carregadas em initState via dropdownFutureBuilder / dropdownOptions.
+  /// Dropdown de filtro com busca digitável (tipo [FieldType.dropdown]).
+  /// Boolean mantém DropdownButton simples (só 2 opções).
+  /// Dropdown abre diálogo com campo de busca, igual ao _MultiSelectField nos forms.
   Widget _buildFilterDropdown(FieldConfigWindows config) {
     final cacheKey = 'filter_${config.fieldName}';
-    final List<Map<String, dynamic>> options;
 
-    // boolean → opções fixas Sim/Não
+    // ── boolean: DropdownButton simples com Sim/Não ───────────────────────────
     if (config.fieldType == FieldType.boolean) {
-      options = [
+      const boolOptions = [
         {'value': 'true', 'label': 'Sim'},
         {'value': 'false', 'label': 'Não'},
       ];
-    } else {
-      final cached = _dropdownCache[cacheKey];
-      if (cached == null) {
-        // Ainda carregando — mostra progress
-        return InputDecorator(
-          decoration: InputDecoration(
-            labelText: config.label,
-            prefixIcon: Icon(config.icon ?? Icons.filter_alt_outlined, size: 18),
+      final currentValue = _filterControllers[config.fieldName]?.text;
+      final hasValue = currentValue != null && currentValue.isNotEmpty;
+      final validValue = hasValue &&
+              boolOptions.any((o) => o['value'] == currentValue)
+          ? currentValue
+          : null;
+      return InputDecorator(
+        decoration: InputDecoration(
+          labelText: config.label,
+          prefixIcon: Icon(config.icon ?? Icons.filter_alt_outlined, size: 18),
+          isDense: true,
+          filled: true,
+          fillColor: GridColors.card,
+          border: OutlineInputBorder(borderRadius: BorderRadius.circular(6), borderSide: const BorderSide(color: GridColors.divider)),
+          enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(6), borderSide: const BorderSide(color: GridColors.divider)),
+          focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(6), borderSide: const BorderSide(color: GridColors.primary)),
+          suffixIcon: hasValue
+              ? IconButton(
+                  icon: const Icon(Icons.clear, size: 16),
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(minWidth: 24, minHeight: 24),
+                  onPressed: () {
+                    setState(() {
+                      _filterControllers[config.fieldName]?.clear();
+                      _filterDropdownValues.remove(config.fieldName);
+                      _filterDropdownLabels.remove(config.fieldName);
+                    });
+                    _applyFilters();
+                  },
+                )
+              : null,
+        ),
+        child: DropdownButtonHideUnderline(
+          child: DropdownButton<String>(
+            value: validValue,
             isDense: true,
-            filled: true,
-            fillColor: GridColors.card,
-            border: OutlineInputBorder(borderRadius: BorderRadius.circular(6)),
-            enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(6), borderSide: const BorderSide(color: GridColors.divider)),
+            isExpanded: true,
+            hint: Text('Todos', style: TextStyle(fontSize: 14, color: Colors.grey.shade500)),
+            items: [
+              DropdownMenuItem<String>(value: '', child: Text('Todos', style: TextStyle(fontSize: 14, color: Colors.grey.shade600))),
+              ...boolOptions.map((opt) => DropdownMenuItem<String>(
+                    value: opt['value']!,
+                    child: Text(opt['label']!, style: const TextStyle(fontSize: 14)),
+                  )),
+            ],
+            onChanged: (val) {
+              setState(() {
+                if (val == null || val.isEmpty) {
+                  _filterControllers[config.fieldName]?.clear();
+                  _filterDropdownValues.remove(config.fieldName);
+                  _filterDropdownLabels.remove(config.fieldName);
+                } else {
+                  _filterControllers[config.fieldName]!.text = val;
+                  _filterDropdownValues[config.fieldName] = val;
+                  _filterDropdownLabels[config.fieldName] =
+                      boolOptions.firstWhere((o) => o['value'] == val, orElse: () => {})[
+                          'label'] ??
+                          val;
+                }
+              });
+              _applyFilters();
+            },
           ),
-          child: const SizedBox(
-            height: 18,
-            child: LinearProgressIndicator(minHeight: 2),
-          ),
-        );
-      }
-      options = cached;
+        ),
+      );
     }
 
+    // ── dropdown: campo clicável que abre diálogo com busca ──────────────────
+    final cached = _dropdownCache[cacheKey];
+    if (cached == null) {
+      // Ainda carregando — mostra progress
+      return InputDecorator(
+        decoration: InputDecoration(
+          labelText: config.label,
+          prefixIcon: Icon(config.icon ?? Icons.filter_alt_outlined, size: 18),
+          isDense: true,
+          filled: true,
+          fillColor: GridColors.card,
+          border: OutlineInputBorder(borderRadius: BorderRadius.circular(6)),
+          enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(6), borderSide: const BorderSide(color: GridColors.divider)),
+        ),
+        child: const SizedBox(height: 18, child: LinearProgressIndicator(minHeight: 2)),
+      );
+    }
+
+    final options = cached;
     final vf = config.dropdownValueField.isNotEmpty ? config.dropdownValueField : 'value';
     final df = config.dropdownDisplayField.isNotEmpty ? config.dropdownDisplayField : 'label';
-    final currentValue = _filterControllers[config.fieldName]?.text;
-    final hasValue = currentValue != null && currentValue.isNotEmpty;
+    final currentLabel = _filterDropdownLabels[config.fieldName] ?? '';
+    final hasValue = currentLabel.isNotEmpty;
 
-    // Garante que currentValue existe nas opções (evita assert do DropdownButton)
-    final validValue = hasValue &&
-            options.any((o) => o[vf]?.toString() == currentValue)
-        ? currentValue
-        : null;
+    void clearFilter() {
+      setState(() {
+        _filterControllers[config.fieldName]?.clear();
+        _filterDropdownValues.remove(config.fieldName);
+        _filterDropdownLabels.remove(config.fieldName);
+      });
+      _applyFilters();
+    }
 
-    return InputDecorator(
-      decoration: InputDecoration(
-        labelText: config.label,
-        prefixIcon: Icon(config.icon ?? Icons.filter_alt_outlined, size: 18),
-        isDense: true,
-        filled: true,
-        fillColor: GridColors.card,
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(6), borderSide: const BorderSide(color: GridColors.divider)),
-        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(6), borderSide: const BorderSide(color: GridColors.divider)),
-        focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(6), borderSide: const BorderSide(color: GridColors.primary)),
-        suffixIcon: hasValue
-            ? IconButton(
-                icon: const Icon(Icons.clear, size: 16),
-                padding: EdgeInsets.zero,
-                constraints: const BoxConstraints(minWidth: 24, minHeight: 24),
-                onPressed: () {
-                  setState(() {
-                    _filterControllers[config.fieldName]?.clear();
-                    _filterDropdownValues.remove(config.fieldName);
-                    _filterDropdownLabels.remove(config.fieldName);
-                  });
-                  _applyFilters();
-                },
-              )
-            : null,
-      ),
-      child: DropdownButtonHideUnderline(
-        child: DropdownButton<String>(
-          value: validValue,
+    return GestureDetector(
+      onTap: () async {
+        final result = await showDialog<Map<String, dynamic>>(
+          context: context,
+          builder: (_) => _FilterSearchDialog(options: options, vf: vf, df: df),
+        );
+        if (result == null) return; // cancelado
+        final val = result[vf]?.toString() ?? '';
+        setState(() {
+          if (val.isEmpty) {
+            _filterControllers[config.fieldName]?.clear();
+            _filterDropdownValues.remove(config.fieldName);
+            _filterDropdownLabels.remove(config.fieldName);
+          } else {
+            _filterControllers[config.fieldName]!.text = val;
+            _filterDropdownValues[config.fieldName] = val;
+            _filterDropdownLabels[config.fieldName] = result[df]?.toString() ?? val;
+          }
+        });
+        _applyFilters();
+      },
+      child: InputDecorator(
+        decoration: InputDecoration(
+          labelText: config.label,
+          prefixIcon: Icon(config.icon ?? Icons.filter_alt_outlined, size: 18),
           isDense: true,
-          isExpanded: true,
-          hint: Text(
-            'Todos',
-            style: TextStyle(fontSize: 14, color: Colors.grey.shade500),
+          filled: true,
+          fillColor: GridColors.card,
+          border: OutlineInputBorder(borderRadius: BorderRadius.circular(6), borderSide: const BorderSide(color: GridColors.divider)),
+          enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(6), borderSide: const BorderSide(color: GridColors.divider)),
+          focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(6), borderSide: const BorderSide(color: GridColors.primary)),
+          suffixIcon: hasValue
+              ? IconButton(
+                  icon: const Icon(Icons.clear, size: 16),
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(minWidth: 24, minHeight: 24),
+                  onPressed: clearFilter,
+                )
+              : const Padding(
+                  padding: EdgeInsets.all(8),
+                  child: Icon(Icons.search, size: 18, color: GridColors.inputBorder),
+                ),
+        ),
+        child: Text(
+          hasValue ? currentLabel : 'Todos',
+          overflow: TextOverflow.ellipsis,
+          style: TextStyle(
+            fontSize: 14,
+            color: hasValue ? null : Colors.grey.shade500,
           ),
-          items: [
-            DropdownMenuItem<String>(
-              value: '',
-              child: Text('Todos', style: TextStyle(fontSize: 14, color: Colors.grey.shade600)),
-            ),
-            ...options.map((opt) {
-              final val = opt[vf]?.toString() ?? '';
-              final lbl = opt[df]?.toString() ?? opt[vf]?.toString() ?? val;
-              return DropdownMenuItem<String>(
-                value: val,
-                child: Text(lbl,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(fontSize: 14)),
-              );
-            }),
-          ],
-          onChanged: (val) {
-            setState(() {
-              if (val == null || val.isEmpty) {
-                _filterControllers[config.fieldName]?.clear();
-                _filterDropdownValues.remove(config.fieldName);
-                _filterDropdownLabels.remove(config.fieldName);
-              } else {
-                _filterControllers[config.fieldName]!.text = val;
-                _filterDropdownValues[config.fieldName] = val;
-                // Armazena label para exibir na tag de filtro
-                final opt = options.firstWhere(
-                  (o) => o[vf]?.toString() == val,
-                  orElse: () => {},
-                );
-                _filterDropdownLabels[config.fieldName] =
-                    opt[df]?.toString() ?? val;
-              }
-            });
-            _applyFilters();
-          },
         ),
       ),
     );
@@ -4906,6 +4951,115 @@ class _DropdownSearchDialogState extends State<_DropdownSearchDialog> {
                         );
                       },
                     ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Diálogo de busca usado pelo _buildFilterDropdown para dropdowns dinâmicos.
+// Abre uma lista filtrada conforme o usuário digita, igual ao _MultiSelectField.
+// ─────────────────────────────────────────────────────────────────────────────
+class _FilterSearchDialog extends StatefulWidget {
+  final List<Map<String, dynamic>> options;
+  final String vf; // campo de valor (ex: 'value' ou 'id')
+  final String df; // campo de display (ex: 'label' ou 'nome')
+
+  const _FilterSearchDialog({
+    required this.options,
+    required this.vf,
+    required this.df,
+  });
+
+  @override
+  State<_FilterSearchDialog> createState() => _FilterSearchDialogState();
+}
+
+class _FilterSearchDialogState extends State<_FilterSearchDialog> {
+  String _query = '';
+  final _searchCtrl = TextEditingController();
+
+  @override
+  void dispose() {
+    _searchCtrl.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final filtered = _query.isEmpty
+        ? widget.options
+        : widget.options
+            .where((o) => (o[widget.df]?.toString() ?? '')
+                .toLowerCase()
+                .contains(_query.toLowerCase()))
+            .toList();
+
+    return Dialog(
+      backgroundColor: GridColors.dialogBackground,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+      child: Padding(
+        padding: const EdgeInsets.all(12),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            // Campo de busca
+            TextField(
+              controller: _searchCtrl,
+              autofocus: true,
+              decoration: const InputDecoration(
+                hintText: 'Buscar...',
+                prefixIcon: Icon(Icons.search, size: 18),
+                isDense: true,
+                border: OutlineInputBorder(),
+                contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              ),
+              onChanged: (v) => setState(() => _query = v),
+            ),
+            const SizedBox(height: 8),
+            // Lista de opções
+            ConstrainedBox(
+              constraints: const BoxConstraints(maxHeight: 300, minWidth: 280),
+              child: ListView(
+                shrinkWrap: true,
+                children: [
+                  ListTile(
+                    dense: true,
+                    title: Text(
+                      'Todos',
+                      style: TextStyle(fontSize: 14, color: Colors.grey.shade600),
+                    ),
+                    onTap: () => Navigator.pop(
+                        context, {widget.vf: '', widget.df: ''}),
+                  ),
+                  const Divider(height: 1),
+                  ...filtered.map((opt) {
+                    final lbl = opt[widget.df]?.toString() ??
+                        opt[widget.vf]?.toString() ??
+                        '';
+                    return ListTile(
+                      dense: true,
+                      title: Text(lbl, style: const TextStyle(fontSize: 14)),
+                      onTap: () => Navigator.pop(context, opt),
+                    );
+                  }),
+                ],
+              ),
+            ),
+            // Botão cancelar
+            Align(
+              alignment: Alignment.centerRight,
+              child: TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text(
+                  'Cancelar',
+                  style: TextStyle(color: GridColors.textSecondary),
+                ),
+              ),
             ),
           ],
         ),
