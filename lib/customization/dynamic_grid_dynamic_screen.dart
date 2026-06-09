@@ -680,9 +680,46 @@ class _DynamicGridDynamicScreenState extends State<DynamicGridDynamicScreen> {
     if (name == 'telefone' || name == 'celular' || name.endsWith('_telefone')) {
       return FieldType.phone;
     }
-    if (type.index < FieldType.values.length)
-      return FieldType.values[type.index];
-    return FieldType.text;
+    // Mapeamento explícito para evitar bugs por diferença de índice entre
+    // TelaFieldType (modelo) e FieldType (UI) — os dois enums não são idênticos.
+    switch (type) {
+      case TelaFieldType.text:
+        return FieldType.text;
+      case TelaFieldType.number:
+        return FieldType.number;
+      case TelaFieldType.email:
+        return FieldType.email;
+      case TelaFieldType.date:
+        return FieldType.date;
+      case TelaFieldType.multiline:
+        return FieldType.multiline;
+      case TelaFieldType.dropdown:
+        return FieldType.dropdown;
+      case TelaFieldType.boolean:
+        return FieldType.boolean;
+      case TelaFieldType.file:
+        return FieldType.file;
+      case TelaFieldType.password:
+        return FieldType.password;
+      case TelaFieldType.phone:
+        return FieldType.phone;
+      case TelaFieldType.cpf:
+        return FieldType.cpf;
+      case TelaFieldType.cnpj:
+        return FieldType.cnpj;
+      case TelaFieldType.cpfCnpj:
+        return FieldType.cpf; // cpfCnpj não existe no FieldType, usa cpf
+      case TelaFieldType.cep:
+        return FieldType.text; // cep não existe no FieldType, usa text
+      case TelaFieldType.currency:
+        return FieldType.currency;
+      case TelaFieldType.percentage:
+        return FieldType.percentage;
+      case TelaFieldType.url:
+        return FieldType.url;
+      case TelaFieldType.multiselect:
+        return FieldType.multiselect;
+    }
   }
 
   String _endpoint(String? override, String backendEndpoint) {
@@ -787,7 +824,7 @@ class _DynamicGridDynamicScreenState extends State<DynamicGridDynamicScreen> {
               extraParams: widget.extraParams,
               enableSearch: tela.enableSearch,
               enableDebugMode: tela.enableDebugMode,
-              useUserBannerAppBar: tela.useUserBannerAppBar,
+              useUserBannerAppBar: widget.showAppBar && tela.useUserBannerAppBar,
               onUserBannerTapped: widget.onUserBannerTapped,
               onBannerRefresh: widget.onBannerRefresh,
               additionalFormData: widget.additionalFormData,

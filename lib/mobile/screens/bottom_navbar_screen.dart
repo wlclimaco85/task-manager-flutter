@@ -198,6 +198,7 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
       telaNome: telaNome,
       hasPermission: (action) => _hasPermissionFor(sec, screen, action),
       storageKey: 'mobile_dynamic_$telaNome',
+      showAppBar: false,
     );
   }
 

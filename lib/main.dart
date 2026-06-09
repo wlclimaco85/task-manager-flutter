@@ -6,6 +6,7 @@ import 'package:intl/date_symbol_data_local.dart';
 
 import 'models/auth_utility.dart';
 import 'auth_screens/login_screen.dart';
+import 'utils/grid_colors.dart';
 import 'utils/security_matrix.dart';
 import 'web/screens/bottom_navbar_screen.dart';
 import 'mobile/screens/bottom_navbar_screen.dart';
@@ -46,6 +47,10 @@ class TaskManagerApp extends StatelessWidget {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       title: 'Task Manager',
+      theme: ThemeData(
+        colorScheme: ColorScheme.fromSeed(seedColor: GridColors.primary),
+        useMaterial3: true,
+      ),
       locale: const Locale('pt', 'BR'),
       supportedLocales: const [Locale('pt', 'BR')],
       localizationsDelegates: const [

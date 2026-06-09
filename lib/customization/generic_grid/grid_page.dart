@@ -48,6 +48,7 @@ class GenericMobileGridScreen extends StatefulWidget {
   final Future<Map<String, String>> Function()? authHeadersProvider;
 
   final List<ServerAction>? serverActions;
+  final bool showAppBar;
 
   const GenericMobileGridScreen({
     super.key,
@@ -78,6 +79,7 @@ class GenericMobileGridScreen extends StatefulWidget {
     this.baseUrlForMultipart,
     this.authHeadersProvider,
     this.serverActions = const [],
+    this.showAppBar = true,
   });
 
   @override
@@ -343,7 +345,7 @@ class _GenericMobileGridScreenState extends State<GenericMobileGridScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: GridColors.background,
-      appBar: _buildAppBar(context),
+      appBar: widget.showAppBar ? _buildAppBar(context) : null,
       floatingActionButton: _buildFab(),
       body: Column(
         children: [
@@ -386,6 +388,9 @@ class _GenericMobileGridScreenState extends State<GenericMobileGridScreen> {
               baseUrlForMultipart: widget.baseUrlForMultipart,
               authHeadersProvider: widget.authHeadersProvider,
               serverActions: widget.serverActions,
+              // Evita Scaffold aninhado: AppBar e FAB já existem no Scaffold pai
+              showAppBar: false,
+              showFab: false,
             ),
           ),
         ],

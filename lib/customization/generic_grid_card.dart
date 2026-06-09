@@ -1956,20 +1956,15 @@ class _GenericMobileGridScreenState<T>
     return Scaffold(
       backgroundColor: GridColors.pageBackground,
       appBar: widget.useUserBannerAppBar
-          ? PreferredSize(
-              preferredSize: Size.fromHeight(
-                widget.useUserBannerAppBar == true ? 94 : kToolbarHeight,
-              ),
-              child: UserBannerAppBar(
-                screenTitle: widget.title,
-                onTapped: widget.onUserBannerTapped,
-                onRefresh:
-                    widget.onBannerRefresh ?? () => _loadItems(reset: true),
-                isLoading: isLoading,
-                onFilterToggle: () =>
-                    setState(() => filtrosAbertos = !filtrosAbertos),
-                showFilterButton: widget.useUserBannerAppBar ?? true,
-              ),
+          ? UserBannerAppBar(
+              screenTitle: widget.title,
+              onTapped: widget.onUserBannerTapped,
+              onRefresh:
+                  widget.onBannerRefresh ?? () => _loadItems(reset: true),
+              isLoading: isLoading,
+              onFilterToggle: () =>
+                  setState(() => filtrosAbertos = !filtrosAbertos),
+              showFilterButton: true,
             )
           : (_isSelectionMode ? _buildSelectionAppBar() : _buildNormalAppBar()),
       floatingActionButton:
