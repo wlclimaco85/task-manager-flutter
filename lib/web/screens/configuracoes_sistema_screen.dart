@@ -3410,12 +3410,9 @@ class _ImportacaoCadastrosSectionState
           await _post('${widget.baseUrl}/api/funcionario', funcionarioPayload));
     }
 
-    if (loginId != null && funcionarioId != null) {
-      await _put('${widget.baseUrl}/api/logins/$loginId', {
-        ...loginPayload,
-        'parceiro': {'id': funcionarioId},
-      });
-    }
+    // funcionario.login_id já é vinculado via funcionarioPayload['login']
+    // id_parceiro no login só deve ser preenchido se o usuário informar
+    // explicitamente o campo parceiro na tela — não via import automático
     return funcionarioId ?? loginId;
   }
 
