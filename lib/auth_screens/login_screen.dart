@@ -236,7 +236,9 @@ class _LoginBanner extends StatelessWidget {
                 letterSpacing: 1.5,
                 height: 1.3)),
         const SizedBox(width: 32),
-        Expanded(
+        Flexible(
+            child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 400),
             child: Form(
                 key: formKey,
                 child: Row(
@@ -322,7 +324,7 @@ class _LoginBanner extends StatelessWidget {
                                 style: TextStyle(
                                     color: Colors.white70, fontSize: 10))),
                       ]),
-                    ]))),
+                    ])))),
       ]),
     );
   }
