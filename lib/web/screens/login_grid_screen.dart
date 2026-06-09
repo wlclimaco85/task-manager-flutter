@@ -135,8 +135,8 @@ class WebLoginGridScreen extends StatelessWidget {
       ],
       customActions: () => [
         CustomAction<Login>(
-          icon: Icons.payment,
-          label: 'Baixar',
+          icon: Icons.admin_panel_settings,
+          label: 'Permissões',
           onPressed: (context, object) => _showBaixaDialog(context, object),
           isVisible: (chamado) => true,
         ),
