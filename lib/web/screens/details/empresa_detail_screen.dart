@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../widgets/generic_detail_form_screen.dart';
-import '../../../widgets/generic_grid_windows_screen.dart' show SecurityCheck;
+import '../../../widgets/generic_grid_windows_screen.dart'
+    show SecurityCheck, FieldConfigWindows, FieldType;
 import '../certificado_empresa_screen.dart';
 
 class WebEmpresaDetailScreen extends StatelessWidget {
@@ -19,6 +20,31 @@ class WebEmpresaDetailScreen extends StatelessWidget {
       item: item,
       telaNome: 'empresa',
       hasPermission: hasPermission,
+      fieldOverrides: const [
+        // fileAttachment: dropdown FK que envia "" quando vazio → 500 no backend
+        // Ocultado do formulário — upload de arquivo tem tela própria
+        FieldConfigWindows(
+          label: 'File Attachments',
+          fieldName: 'fileAttachment',
+          isInForm: false,
+          isVisibleByDefault: false,
+          enabled: false,
+        ),
+        // Ambiente: inteiro 1=Produção / 2=Homologação — exibir label
+        FieldConfigWindows(
+          label: 'Ambiente',
+          fieldName: 'ambiente',
+          icon: Icons.cloud_outlined,
+          fieldType: FieldType.dropdown,
+          dropdownOptions: [
+            {'value': '1', 'label': 'Produção'},
+            {'value': '2', 'label': 'Homologação'},
+          ],
+          dropdownValueField: 'value',
+          dropdownDisplayField: 'label',
+          isInForm: true,
+        ),
+      ],
       relatedTabs: [
         RelatedGridTab(
           title: 'Parceiros',
