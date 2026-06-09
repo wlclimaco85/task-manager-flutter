@@ -361,7 +361,7 @@ class _LoginBanner extends StatelessWidget {
           child: _SafeLogoWidget(size: 80),
         ),
         const SizedBox(width: 16),
-        const Text(GridTexts.appShortTitle,
+        const Text(GridTexts.appTitle,
             textAlign: TextAlign.left,
             maxLines: 1,
             softWrap: false,
@@ -373,9 +373,7 @@ class _LoginBanner extends StatelessWidget {
                 letterSpacing: 1.5,
                 height: 1.3)),
         const SizedBox(width: 32),
-        Flexible(
-            child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 400),
+        Expanded(
             child: Form(
                 key: formKey,
                 child: Row(
@@ -461,7 +459,7 @@ class _LoginBanner extends StatelessWidget {
                                 style: TextStyle(
                                     color: Colors.white70, fontSize: 10))),
                       ]),
-                    ])))),
+                    ]))),
       ]),
     );
   }
