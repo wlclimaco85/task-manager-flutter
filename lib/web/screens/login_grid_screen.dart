@@ -28,13 +28,16 @@ class WebLoginGridScreen extends StatelessWidget {
         lista = body as List;
       }
       return lista
-          .map((e) => {
-                'value': e['id'].toString(),
-                'label': e['description']?.toString() ??
-                    e['nome']?.toString() ??
-                    e['name']?.toString() ??
-                    e['key']?.toString() ??
-                    e['id'].toString()
+          .map((e) {
+                final desc = e['description']?.toString();
+                final key  = e['key']?.toString() ?? e['name']?.toString();
+                // Usa description se não-nulo e não-vazio; senão key; senão "Role #id"
+                final label = (desc != null && desc.isNotEmpty)
+                    ? desc
+                    : (key != null && key.isNotEmpty)
+                        ? key
+                        : 'Role #${e['id']}';
+                return {'value': e['id'].toString(), 'label': label};
               })
           .toList();
     }
