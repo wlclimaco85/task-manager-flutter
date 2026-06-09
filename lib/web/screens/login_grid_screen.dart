@@ -49,7 +49,7 @@ class WebLoginGridScreen extends StatelessWidget {
     if (response.isSuccess && response.body != null) {
       final lista = response.body!['data']['dados'] as List;
       return lista
-          .map((e) => {'value': e['id'].toString(), 'label': e['nome'].toString()})
+          .map((e) => {'id': e['id'].toString(), 'label': e['nome'].toString()})
           .toList();
     }
     return [];
@@ -60,7 +60,7 @@ class WebLoginGridScreen extends StatelessWidget {
     if (response.isSuccess && response.body != null) {
       final lista = response.body!['data']['dados'] as List;
       return lista
-          .map((e) => {'value': e['id'].toString(), 'label': e['nome'].toString()})
+          .map((e) => {'id': e['id'].toString(), 'label': e['nome'].toString()})
           .toList();
     }
     return [];
@@ -71,7 +71,7 @@ class WebLoginGridScreen extends StatelessWidget {
     if (response.isSuccess && response.body != null) {
       final lista = response.body!['data']['dados'] as List;
       return lista
-          .map((e) => {'value': e['id'].toString(), 'label': e['nome'].toString()})
+          .map((e) => {'id': e['id'].toString(), 'label': e['nome'].toString()})
           .toList();
     }
     return [];
@@ -105,7 +105,7 @@ class WebLoginGridScreen extends StatelessWidget {
           icon: Icons.business,
           fieldType: FieldType.dropdown,
           dropdownFutureBuilder: _loadEmpresas,
-          dropdownValueField: 'value',
+          dropdownValueField: 'id',
           dropdownDisplayField: 'label',
           isInForm: true,
           isFilterable: true,
@@ -117,7 +117,7 @@ class WebLoginGridScreen extends StatelessWidget {
           icon: Icons.person_outline,
           fieldType: FieldType.dropdown,
           dropdownFutureBuilder: _loadParceiros,
-          dropdownValueField: 'value',
+          dropdownValueField: 'id',
           dropdownDisplayField: 'label',
           isInForm: true,
           isFilterable: true,
@@ -129,7 +129,7 @@ class WebLoginGridScreen extends StatelessWidget {
           icon: Icons.apps,
           fieldType: FieldType.dropdown,
           dropdownFutureBuilder: _loadAplicativos,
-          dropdownValueField: 'value',
+          dropdownValueField: 'id',
           dropdownDisplayField: 'label',
           isInForm: true,
           isFilterable: true,

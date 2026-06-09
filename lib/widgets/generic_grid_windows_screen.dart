@@ -1996,7 +1996,14 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
 
       String initialValue = '';
       if (item != null) {
-        final value = _getNestedValue(itemMap, config.fieldName);
+        // Para dropdown/multiselect: usar acesso raw (sem _formatValue) para
+        // obter o ID numérico, não o label de exibição. _getNestedValue chama
+        // _formatValue que converte {'id':1,'nome':'Abraco...'} → "Abraco..."
+        // fazendo o controller receber o label e o backend falhar ao parsear.
+        final value = (config.fieldType == FieldType.dropdown ||
+                config.fieldType == FieldType.multiselect)
+            ? _getNestedRawValue(itemMap, config.fieldName)
+            : _getNestedValue(itemMap, config.fieldName);
         if (value is Map) {
           initialValue =
               (value[config.dropdownValueField] ?? value['id'])?.toString() ??
@@ -4080,6 +4087,24 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
       }
     }
 
+    return null;
+  }
+
+  /// Como [_getNestedValue] mas sem chamar [_formatValue] — retorna o Map/List
+  /// bruto. Usado em _openForm para campos dropdown/multiselect, onde precisamos
+  /// do ID numérico, não do label de exibição.
+  dynamic _getNestedRawValue(dynamic map, String fieldName) {
+    if (map == null || map is! Map) return null;
+    dynamic val = _tryGet(map, fieldName);
+    if (val != null) return val; // retorna Map/List/primitive SEM formatação
+    if (fieldName.contains('.')) {
+      final parts = fieldName.split('.');
+      dynamic parent = _tryGet(map, parts[0]);
+      if (parent is Map && parts.length > 1) {
+        return _tryGet(parent, parts[1]) ?? parent;
+      }
+      if (parent is List) return parent;
+    }
     return null;
   }
 
