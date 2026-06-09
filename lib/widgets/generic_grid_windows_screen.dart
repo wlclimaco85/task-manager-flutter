@@ -2926,6 +2926,13 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
   }
 
   bool _isTechnicalFilter(FieldConfigWindows config) {
+    // Override explícito de dropdown/boolean com isFilterable=true NUNCA é técnico.
+    // O desenvolvedor configurou esse campo intencionalmente como filtro visível.
+    if (config.fieldType == FieldType.dropdown ||
+        config.fieldType == FieldType.boolean) {
+      return false;
+    }
+
     final keys = [
       _normalizeFilterKey(config.fieldName),
       _normalizeFilterKey(config.label),
