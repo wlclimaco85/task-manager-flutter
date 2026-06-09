@@ -304,6 +304,37 @@ class SecurityMatrix {
   bool canUpdate(AppScreen screen) => _can(screen, AppAction.update);
   bool canDelete(AppScreen screen) => _can(screen, AppAction.delete);
 
+  // ───────────────────────────────────────────────────────────────────────────
+  // Enforcement por telaNome canônico (= MenuConfig.id). Independe do enum
+  // AppScreen (que cobre só parte das telas). Usado pelo filtro do menu lateral.
+  // ───────────────────────────────────────────────────────────────────────────
+
+  /// MASTER/SYSTEM têm acesso total e ignoram o filtro de permissões.
+  bool get isMaster =>
+      profile == UserProfile.system || tipoLogin == LoginEnum.MASTER;
+
+  /// IDs de tela (telaNome) que o usuário pode VISUALIZAR, vindas do backend.
+  Set<String> get viewableTelaIds {
+    final result = <String>{};
+    _backendPerms.forEach((tela, actions) {
+      if (actions.contains(AppAction.view)) result.add(tela);
+    });
+    return result;
+  }
+
+  /// Calcula quais [allKnownIds] (ids do menu) o usuário pode ver.
+  /// Retorna `null` quando NÃO deve filtrar (mostrar tudo) — casos anti-lockout:
+  ///  - usuário MASTER/SYSTEM;
+  ///  - role sem nenhuma permissão de view aplicável ao menu (não configurada
+  ///    ou apenas com dados legados que não casam com nenhum id do menu).
+  /// Caso contrário retorna o conjunto de ids liberados.
+  Set<String>? allowedTelaIds(Set<String> allKnownIds) {
+    if (isMaster) return null;
+    final viewable = viewableTelaIds.intersection(allKnownIds);
+    if (viewable.isEmpty) return null; // anti-lockout
+    return viewable;
+  }
+
   bool hasRoleKey(String roleKey) {
     final roles = AuthUtility.userInfo?.login?.roles ?? const [];
     return roles.any((role) => role.key == roleKey);

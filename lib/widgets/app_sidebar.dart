@@ -5,6 +5,7 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import '../models/auth_utility.dart';
 import '../services/favorites_service.dart';
 import '../utils/menu_config.dart';
+import '../utils/security_matrix.dart';
 
 /// Sidebar com submenus, busca e favoritos.
 /// Usado tanto no Windows quanto no Web (drawer).
@@ -50,9 +51,18 @@ class _AppSidebarState extends State<AppSidebar> {
   final Set<String> _expandedGroups = {};
   String _userId = '';
 
+  // Permissão: ids de tela liberados. `null` = mostrar tudo (MASTER ou
+  // anti-lockout — ver SecurityMatrix.allowedTelaIds).
+  Set<String>? _allowedIds;
+
+  /// true se o item pode aparecer no menu para o usuário logado.
+  bool _canSee(MenuItem item) =>
+      _allowedIds == null || _allowedIds!.contains(item.id);
+
   @override
   void initState() {
     super.initState();
+    _computeAllowed();
     _loadFavorites();
     _searchCtrl.addListener(() {
       setState(() => _searchQuery = _searchCtrl.text);
@@ -63,6 +73,11 @@ class _AppSidebarState extends State<AppSidebar> {
   void dispose() {
     _searchCtrl.dispose();
     super.dispose();
+  }
+
+  void _computeAllowed() {
+    final allMenuIds = MenuConfig.allItems.map((m) => m.id).toSet();
+    _allowedIds = SecurityMatrix.current().allowedTelaIds(allMenuIds);
   }
 
   Future<void> _loadFavorites() async {
@@ -102,7 +117,7 @@ class _AppSidebarState extends State<AppSidebar> {
 
   List<MenuItem> get _favoriteItems {
     return MenuConfig.allItems
-        .where((m) => _favorites.contains(m.id))
+        .where((m) => _favorites.contains(m.id) && _canSee(m))
         .toList()
       ..sort((a, b) => a.label.compareTo(b.label));
   }
@@ -250,7 +265,7 @@ class _AppSidebarState extends State<AppSidebar> {
 
   // ── Resultados de busca ───────────────────────────────────────────────────
   Widget _buildSearchResults() {
-    final results = MenuConfig.search(_searchQuery);
+    final results = MenuConfig.search(_searchQuery).where(_canSee).toList();
     if (results.isEmpty) {
       return const Center(child: Text('Nenhuma tela encontrada', style: TextStyle(color: _textMuted, fontSize: 12)));
     }
@@ -271,12 +286,18 @@ class _AppSidebarState extends State<AppSidebar> {
           ..._favoriteItems.map((item) => _buildMenuItem(item, indent: true)),
           const Divider(color: Color(0xFF004a20), height: 16),
         ],
-        // Grupos com submenus
-        ...MenuConfig.groups.map((group) => _buildGroup(group)),
+        // Grupos com submenus (grupos sem itens visíveis são omitidos)
+        ...MenuConfig.groups
+            .where((g) => g.items.any(_canSee))
+            .map((group) => _buildGroup(group)),
         // Itens soltos
-        const Divider(color: Color(0xFF004a20), height: 16),
-        _buildSectionHeader('Outros'),
-        ...MenuConfig.loose.map((item) => _buildMenuItem(item, indent: true)),
+        if (MenuConfig.loose.any(_canSee)) ...[
+          const Divider(color: Color(0xFF004a20), height: 16),
+          _buildSectionHeader('Outros'),
+          ...MenuConfig.loose
+              .where(_canSee)
+              .map((item) => _buildMenuItem(item, indent: true)),
+        ],
       ],
     );
   }
@@ -330,9 +351,11 @@ class _AppSidebarState extends State<AppSidebar> {
             ),
           ),
         ),
-        // Itens do grupo
+        // Itens do grupo (apenas os visíveis)
         if (isExpanded)
-          ...group.items.map((item) => _buildMenuItem(item, indent: true)),
+          ...group.items
+              .where(_canSee)
+              .map((item) => _buildMenuItem(item, indent: true)),
       ],
     );
   }
@@ -393,7 +416,7 @@ class _AppSidebarState extends State<AppSidebar> {
     return ListView(
       padding: const EdgeInsets.symmetric(vertical: 4),
       children: allItems
-          .where((i) => i.screenIndex >= 0)
+          .where((i) => i.screenIndex >= 0 && _canSee(i))
           .map((item) {
             final isSelected = item.screenIndex == widget.selectedIndex;
             return Tooltip(
