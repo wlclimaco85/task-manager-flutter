@@ -1658,6 +1658,10 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
   final TextEditingController _searchController = TextEditingController();
   final Map<String, List<Map<String, dynamic>>> _dropdownCache = {};
   final Map<String, List<PlatformFile>> _fileCache = {};
+  // Para filtros do tipo dropdown: armazena o valor selecionado (para manter
+  // consistência no DropdownButton) e o label para exibição nas tags de filtro.
+  final Map<String, String?> _filterDropdownValues = {};
+  final Map<String, String> _filterDropdownLabels = {};
   final ScrollController _tableScrollController = ScrollController();
 
   int? sortColumnIndex;
@@ -1680,6 +1684,21 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
     for (final config
         in widget.FieldConfigWindowss.where((c) => c.isFilterable)) {
       _filterControllers[config.fieldName] = TextEditingController();
+    }
+
+    // Pré-carrega opções para campos dropdown/boolean filtráveis uma única vez
+    for (final config in widget.FieldConfigWindowss.where((c) =>
+        c.isFilterable &&
+        (c.fieldType == FieldType.dropdown ||
+            c.fieldType == FieldType.boolean))) {
+      final cacheKey = 'filter_${config.fieldName}';
+      if (config.dropdownOptions != null) {
+        _dropdownCache[cacheKey] = config.dropdownOptions!;
+      } else if (config.dropdownFutureBuilder != null) {
+        config.dropdownFutureBuilder!().then((opts) {
+          if (mounted) setState(() => _dropdownCache[cacheKey] = opts);
+        });
+      }
     }
 
     if (widget.initialFilters != null) {
@@ -2893,7 +2912,7 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
     return const SizedBox.shrink();
   }
 
-  static const int _maxAdvancedFilters = 10;
+  static const int _maxAdvancedFilters = 16;
 
   String _normalizeFilterKey(String value) {
     return value.toLowerCase().replaceAll(RegExp(r'[^a-z0-9]'), '');
@@ -2939,11 +2958,23 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
         key.contains('fileattachm'));
   }
 
-  List<FieldConfigWindows> get _visibleFilterConfigs =>
-      widget.FieldConfigWindowss.where(
-              (config) => config.isFilterable && !_isTechnicalFilter(config))
-          .take(_maxAdvancedFilters)
-          .toList();
+  List<FieldConfigWindows> get _visibleFilterConfigs {
+    final all = widget.FieldConfigWindowss
+        .where((c) => c.isFilterable && !_isTechnicalFilter(c))
+        .toList();
+    // Prioriza campos dropdown/boolean (empresa, parceiro, status, etc.)
+    // para aparecerem ANTES dos campos texto livres — evita que sejam
+    // cortados pelo limite quando há muitos filtros de texto.
+    all.sort((a, b) {
+      final aIsDropdown = a.fieldType == FieldType.dropdown ||
+          a.fieldType == FieldType.boolean;
+      final bIsDropdown = b.fieldType == FieldType.dropdown ||
+          b.fieldType == FieldType.boolean;
+      if (aIsDropdown == bIsDropdown) return 0;
+      return aIsDropdown ? -1 : 1; // dropdowns primeiro
+    });
+    return all.take(_maxAdvancedFilters).toList();
+  }
 
   bool get _hasActiveFilterValues {
     if (_searchController.text.isNotEmpty) return true;
@@ -2956,6 +2987,8 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
     _searchController.clear();
     for (final config in _visibleFilterConfigs) {
       _filterControllers[config.fieldName]?.clear();
+      _filterDropdownValues.remove(config.fieldName);
+      _filterDropdownLabels.remove(config.fieldName);
     }
     _applyFilters();
   }
@@ -3062,54 +3095,7 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
                         for (final config in advancedFilters)
                           SizedBox(
                             width: fieldWidth,
-                            child: TextField(
-                              controller: _filterControllers[config.fieldName],
-                              decoration: InputDecoration(
-                                labelText: config.label,
-                                hintText: 'Filtrar',
-                                prefixIcon:
-                                    Icon(config.icon ?? Icons.search, size: 18),
-                                isDense: true,
-                                filled: true,
-                                fillColor: GridColors.card,
-                                suffixIcon: (_filterControllers[
-                                                config.fieldName]
-                                            ?.text
-                                            .isNotEmpty ??
-                                        false)
-                                    ? IconButton(
-                                        icon: const Icon(Icons.clear, size: 16),
-                                        onPressed: () {
-                                          _filterControllers[config.fieldName]
-                                              ?.clear();
-                                          _applyFilters();
-                                        },
-                                      )
-                                    : null,
-                                border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(6),
-                                  borderSide: const BorderSide(
-                                    color: GridColors.divider,
-                                  ),
-                                ),
-                                enabledBorder: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(6),
-                                  borderSide: const BorderSide(
-                                    color: GridColors.divider,
-                                  ),
-                                ),
-                                focusedBorder: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(6),
-                                  borderSide: const BorderSide(
-                                    color: GridColors.primary,
-                                  ),
-                                ),
-                              ),
-                              onChanged: (_) {
-                                setState(() {});
-                                _applyFilters();
-                              },
-                            ),
+                            child: _buildFilterWidget(config),
                           ),
                       ],
                     );
@@ -3123,6 +3109,180 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
     );
   }
 
+  // ─────────────────────────────────────────────────────────────────────────
+  // FILTRO: widget dispatch por tipo de campo
+  // ─────────────────────────────────────────────────────────────────────────
+
+  Widget _buildFilterWidget(FieldConfigWindows config) {
+    if (config.fieldType == FieldType.dropdown ||
+        config.fieldType == FieldType.boolean) {
+      return _buildFilterDropdown(config);
+    }
+    // Default: TextField de busca livre
+    return TextField(
+      controller: _filterControllers[config.fieldName],
+      decoration: InputDecoration(
+        labelText: config.label,
+        hintText: 'Filtrar',
+        prefixIcon: Icon(config.icon ?? Icons.search, size: 18),
+        isDense: true,
+        filled: true,
+        fillColor: GridColors.card,
+        suffixIcon: (_filterControllers[config.fieldName]?.text.isNotEmpty ??
+                false)
+            ? IconButton(
+                icon: const Icon(Icons.clear, size: 16),
+                onPressed: () {
+                  _filterControllers[config.fieldName]?.clear();
+                  _applyFilters();
+                },
+              )
+            : null,
+        border:
+            OutlineInputBorder(borderRadius: BorderRadius.circular(6), borderSide: const BorderSide(color: GridColors.divider)),
+        enabledBorder:
+            OutlineInputBorder(borderRadius: BorderRadius.circular(6), borderSide: const BorderSide(color: GridColors.divider)),
+        focusedBorder:
+            OutlineInputBorder(borderRadius: BorderRadius.circular(6), borderSide: const BorderSide(color: GridColors.primary)),
+      ),
+      onChanged: (_) {
+        setState(() {});
+        _applyFilters();
+      },
+    );
+  }
+
+  /// Dropdown de filtro para campos com tipo [FieldType.dropdown] ou [FieldType.boolean].
+  /// As opções são pré-carregadas em initState via dropdownFutureBuilder / dropdownOptions.
+  Widget _buildFilterDropdown(FieldConfigWindows config) {
+    final cacheKey = 'filter_${config.fieldName}';
+    final List<Map<String, dynamic>> options;
+
+    // boolean → opções fixas Sim/Não
+    if (config.fieldType == FieldType.boolean) {
+      options = [
+        {'value': 'true', 'label': 'Sim'},
+        {'value': 'false', 'label': 'Não'},
+      ];
+    } else {
+      final cached = _dropdownCache[cacheKey];
+      if (cached == null) {
+        // Ainda carregando — mostra progress
+        return InputDecorator(
+          decoration: InputDecoration(
+            labelText: config.label,
+            prefixIcon: Icon(config.icon ?? Icons.filter_alt_outlined, size: 18),
+            isDense: true,
+            filled: true,
+            fillColor: GridColors.card,
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(6)),
+            enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(6), borderSide: const BorderSide(color: GridColors.divider)),
+          ),
+          child: const SizedBox(
+            height: 18,
+            child: LinearProgressIndicator(minHeight: 2),
+          ),
+        );
+      }
+      options = cached;
+    }
+
+    final vf = config.dropdownValueField.isNotEmpty ? config.dropdownValueField : 'value';
+    final df = config.dropdownDisplayField.isNotEmpty ? config.dropdownDisplayField : 'label';
+    final currentValue = _filterControllers[config.fieldName]?.text;
+    final hasValue = currentValue != null && currentValue.isNotEmpty;
+
+    // Garante que currentValue existe nas opções (evita assert do DropdownButton)
+    final validValue = hasValue &&
+            options.any((o) => o[vf]?.toString() == currentValue)
+        ? currentValue
+        : null;
+
+    return InputDecorator(
+      decoration: InputDecoration(
+        labelText: config.label,
+        prefixIcon: Icon(config.icon ?? Icons.filter_alt_outlined, size: 18),
+        isDense: true,
+        filled: true,
+        fillColor: GridColors.card,
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(6), borderSide: const BorderSide(color: GridColors.divider)),
+        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(6), borderSide: const BorderSide(color: GridColors.divider)),
+        focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(6), borderSide: const BorderSide(color: GridColors.primary)),
+        suffixIcon: hasValue
+            ? IconButton(
+                icon: const Icon(Icons.clear, size: 16),
+                padding: EdgeInsets.zero,
+                constraints: const BoxConstraints(minWidth: 24, minHeight: 24),
+                onPressed: () {
+                  setState(() {
+                    _filterControllers[config.fieldName]?.clear();
+                    _filterDropdownValues.remove(config.fieldName);
+                    _filterDropdownLabels.remove(config.fieldName);
+                  });
+                  _applyFilters();
+                },
+              )
+            : null,
+      ),
+      child: DropdownButtonHideUnderline(
+        child: DropdownButton<String>(
+          value: validValue,
+          isDense: true,
+          isExpanded: true,
+          hint: Text(
+            'Todos',
+            style: TextStyle(fontSize: 14, color: Colors.grey.shade500),
+          ),
+          items: [
+            DropdownMenuItem<String>(
+              value: '',
+              child: Text('Todos', style: TextStyle(fontSize: 14, color: Colors.grey.shade600)),
+            ),
+            ...options.map((opt) {
+              final val = opt[vf]?.toString() ?? '';
+              final lbl = opt[df]?.toString() ?? opt[vf]?.toString() ?? val;
+              return DropdownMenuItem<String>(
+                value: val,
+                child: Text(lbl,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(fontSize: 14)),
+              );
+            }),
+          ],
+          onChanged: (val) {
+            setState(() {
+              if (val == null || val.isEmpty) {
+                _filterControllers[config.fieldName]?.clear();
+                _filterDropdownValues.remove(config.fieldName);
+                _filterDropdownLabels.remove(config.fieldName);
+              } else {
+                _filterControllers[config.fieldName]!.text = val;
+                _filterDropdownValues[config.fieldName] = val;
+                // Armazena label para exibir na tag de filtro
+                final opt = options.firstWhere(
+                  (o) => o[vf]?.toString() == val,
+                  orElse: () => {},
+                );
+                _filterDropdownLabels[config.fieldName] =
+                    opt[df]?.toString() ?? val;
+              }
+            });
+            _applyFilters();
+          },
+        ),
+      ),
+    );
+  }
+
+  /// Para filtros dropdown, exibe o label (nome) em vez do valor bruto (ID).
+  String _getFilterDisplayValue(FieldConfigWindows config, String value) {
+    if (config.fieldType == FieldType.dropdown ||
+        config.fieldType == FieldType.boolean) {
+      return _filterDropdownLabels[config.fieldName] ?? value;
+    }
+    return value;
+  }
+
   Widget _buildActiveFilterTags() {
     final tags = <Widget>[];
     if (_searchController.text.isNotEmpty) {
@@ -3134,8 +3294,12 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
     for (final config in _visibleFilterConfigs) {
       final v = _filterControllers[config.fieldName]?.text ?? '';
       if (v.isNotEmpty) {
-        tags.add(_filterTag(config.label, v, () {
+        final displayValue = _getFilterDisplayValue(config, v);
+        tags.add(_filterTag(config.label, displayValue, () {
           _filterControllers[config.fieldName]?.clear();
+          _filterDropdownValues.remove(config.fieldName);
+          _filterDropdownLabels.remove(config.fieldName);
+          setState(() {});
           _applyFilters();
         }));
       }
