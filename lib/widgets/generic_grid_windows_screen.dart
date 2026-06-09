@@ -1692,12 +1692,20 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
         (c.fieldType == FieldType.dropdown ||
             c.fieldType == FieldType.boolean))) {
       final cacheKey = 'filter_${config.fieldName}';
-      if (config.dropdownOptions != null) {
+      // Preferir as opções estáticas SÓ quando realmente existem. FKs do grid
+      // dinâmico recebem dropdownOptions=[] (lista vazia, não-nula) e carregam
+      // via dropdownFutureBuilder — por isso a lista vazia não pode "ganhar"
+      // do futureBuilder, senão o filtro fica só com "Todos".
+      final hasStaticOptions =
+          config.dropdownOptions != null && config.dropdownOptions!.isNotEmpty;
+      if (hasStaticOptions) {
         _dropdownCache[cacheKey] = config.dropdownOptions!;
       } else if (config.dropdownFutureBuilder != null) {
         config.dropdownFutureBuilder!().then((opts) {
           if (mounted) setState(() => _dropdownCache[cacheKey] = opts);
         });
+      } else if (config.dropdownOptions != null) {
+        _dropdownCache[cacheKey] = config.dropdownOptions!;
       }
     }
 
@@ -5000,64 +5008,93 @@ class _FilterSearchDialogState extends State<_FilterSearchDialog> {
 
     return Dialog(
       backgroundColor: GridColors.dialogBackground,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-      child: Padding(
-        padding: const EdgeInsets.all(12),
+      insetPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+      child: SizedBox(
+        width: 360, // largura fixa e compacta — não estica na tela toda
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             // Campo de busca
-            TextField(
-              controller: _searchCtrl,
-              autofocus: true,
-              decoration: const InputDecoration(
-                hintText: 'Buscar...',
-                prefixIcon: Icon(Icons.search, size: 18),
-                isDense: true,
-                border: OutlineInputBorder(),
-                contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(12, 12, 12, 8),
+              child: TextField(
+                controller: _searchCtrl,
+                autofocus: true,
+                style: const TextStyle(fontSize: 13),
+                decoration: InputDecoration(
+                  hintText: 'Buscar...',
+                  prefixIcon: const Icon(Icons.search, size: 18, color: GridColors.inputBorder),
+                  isDense: true,
+                  filled: true,
+                  fillColor: GridColors.card,
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                  border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                      borderSide: const BorderSide(color: GridColors.divider)),
+                  enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                      borderSide: const BorderSide(color: GridColors.divider)),
+                  focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                      borderSide: const BorderSide(color: GridColors.secondary)),
+                ),
+                onChanged: (v) => setState(() => _query = v),
               ),
-              onChanged: (v) => setState(() => _query = v),
             ),
-            const SizedBox(height: 8),
+            const Divider(height: 1, color: GridColors.divider),
             // Lista de opções
             ConstrainedBox(
-              constraints: const BoxConstraints(maxHeight: 300, minWidth: 280),
+              constraints: const BoxConstraints(maxHeight: 280),
               child: ListView(
                 shrinkWrap: true,
+                padding: EdgeInsets.zero,
                 children: [
                   ListTile(
                     dense: true,
-                    title: Text(
-                      'Todos',
-                      style: TextStyle(fontSize: 14, color: Colors.grey.shade600),
-                    ),
+                    visualDensity: VisualDensity.compact,
+                    leading: const Icon(Icons.clear_all, size: 18, color: GridColors.textSecondary),
+                    title: const Text('Todos',
+                        style: TextStyle(fontSize: 13, color: GridColors.textSecondary)),
                     onTap: () => Navigator.pop(
                         context, {widget.vf: '', widget.df: ''}),
                   ),
-                  const Divider(height: 1),
+                  const Divider(height: 1, color: GridColors.divider),
                   ...filtered.map((opt) {
                     final lbl = opt[widget.df]?.toString() ??
                         opt[widget.vf]?.toString() ??
                         '';
                     return ListTile(
                       dense: true,
-                      title: Text(lbl, style: const TextStyle(fontSize: 14)),
+                      visualDensity: VisualDensity.compact,
+                      title: Text(lbl,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(fontSize: 13)),
                       onTap: () => Navigator.pop(context, opt),
                     );
                   }),
+                  if (filtered.isEmpty)
+                    const Padding(
+                      padding: EdgeInsets.symmetric(vertical: 16),
+                      child: Center(
+                        child: Text('Nenhum resultado',
+                            style: TextStyle(fontSize: 12, color: GridColors.textSecondary)),
+                      ),
+                    ),
                 ],
               ),
             ),
+            const Divider(height: 1, color: GridColors.divider),
             // Botão cancelar
             Align(
               alignment: Alignment.centerRight,
-              child: TextButton(
-                onPressed: () => Navigator.pop(context),
-                child: const Text(
-                  'Cancelar',
-                  style: TextStyle(color: GridColors.textSecondary),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                child: TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text('Cancelar',
+                      style: TextStyle(color: GridColors.textSecondary, fontSize: 13)),
                 ),
               ),
             ),
