@@ -229,6 +229,7 @@ class _LoginBanner extends StatelessWidget {
         const SizedBox(width: 16),
         const Text(GridTexts.appShortTitle,
             textAlign: TextAlign.left,
+            maxLines: 1,
             softWrap: false,
             overflow: TextOverflow.ellipsis,
             style: TextStyle(
@@ -369,6 +370,8 @@ class _LoginBanner extends StatelessWidget {
                       const Expanded(
                         child: Text(
                           GridTexts.appShortTitle,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                           style: TextStyle(
                               color: Colors.white,
                               fontSize: 20,
