@@ -25,6 +25,11 @@ class RelatedGridTab {
   final Map<String, dynamic>? extraParams;
   final List<FieldConfigWindows>? fieldOverrides;
 
+  /// Sobrescreve o endpoint de exclusão do grid. Use `:id` como placeholder do
+  /// id da linha. Útil quando "excluir" nesta aba deve DESVINCULAR em vez de
+  /// apagar a entidade (ex.: aba Roles do login → DELETE /api/logins/{loginId}/roles/:id).
+  final String? deleteEndpointOverride;
+
   /// Widget customizado — quando informado, ignora telaNome e exibe este widget na aba
   final Widget? customWidget;
 
@@ -34,6 +39,7 @@ class RelatedGridTab {
     this.telaNome,
     this.extraParams,
     this.fieldOverrides,
+    this.deleteEndpointOverride,
     this.customWidget,
   }) : assert(telaNome != null || customWidget != null,
             'RelatedGridTab requer telaNome ou customWidget');
@@ -288,6 +294,7 @@ class _GenericDetailFormScreenState extends State<GenericDetailFormScreen>
             gridTelaNome: rt.telaNome,
             extraParams: rt.extraParams,
             fieldOverrides: rt.fieldOverrides,
+            deleteEndpointOverride: rt.deleteEndpointOverride,
             customWidget: rt.customWidget,
           );
         }).toList();
@@ -632,7 +639,12 @@ class _GenericDetailFormScreenState extends State<GenericDetailFormScreen>
     }
     if (tab.gridTelaNome != null) {
       final isMobileWidth = MediaQuery.of(context).size.width < 720;
-      if (isMobileWidth && tab.fieldOverrides == null) {
+      // Quando há deleteEndpointOverride (ex.: desvincular role do login) usa
+      // sempre o grid desktop, pois só ele aplica o override — evita que o grid
+      // mobile faça o delete destrutivo padrão (apagar a entidade global).
+      if (isMobileWidth &&
+          tab.fieldOverrides == null &&
+          tab.deleteEndpointOverride == null) {
         return mobile_dyn.DynamicGridDynamicScreen(
           telaNome: tab.gridTelaNome!,
           hasPermission: widget.hasPermission,
@@ -647,6 +659,7 @@ class _GenericDetailFormScreenState extends State<GenericDetailFormScreen>
         toJson: (obj) => obj,
         extraParams: tab.extraParams,
         fieldOverrides: tab.fieldOverrides,
+        deleteEndpointOverride: tab.deleteEndpointOverride,
         showAppBar: false,
       );
     }
@@ -1175,6 +1188,7 @@ class _AutoTab {
   final String? gridTelaNome;
   final Map<String, dynamic>? extraParams;
   final List<FieldConfigWindows>? fieldOverrides;
+  final String? deleteEndpointOverride;
   final Widget? customWidget;
   _AutoTab(
       {required this.title,
@@ -1183,6 +1197,7 @@ class _AutoTab {
       this.gridTelaNome,
       this.extraParams,
       this.fieldOverrides,
+      this.deleteEndpointOverride,
       this.customWidget});
 }
 

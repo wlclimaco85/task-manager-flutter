@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../models/login_model.dart';
+import '../../../utils/api_links.dart';
 import '../../../widgets/generic_detail_form_screen.dart';
 import '../../../widgets/generic_grid_windows_screen.dart' show SecurityCheck;
 
@@ -22,6 +23,10 @@ class WindowsLoginDetailScreen extends StatelessWidget {
           icon: Icons.security,
           telaNome: 'role',
           extraParams: {'loginId': loginId},
+          // "Excluir" nesta aba DESVINCULA a role do login (não apaga a role).
+          // Backend: DELETE /api/logins/{loginId}/roles/{roleId} (removerRole).
+          deleteEndpointOverride:
+              '${ApiLinks.baseUrl}/api/logins/$loginId/roles/:id',
         ),
         RelatedGridTab(
           title: 'Chamados',
