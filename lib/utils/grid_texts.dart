@@ -6,7 +6,7 @@ class GridTexts {
   static String genericError(String error) => 'Erro: $error';
 
   static const String appTitle = 'Abraço Contabilidade';
-  static const String appShortTitle = 'ABRAÇO\nCONT';
+  static const String appShortTitle = 'ABRAÇO CONT';
   static const String companyName = 'Abraço Contabilidade';
   static const String companyTagline = 'Seu escritório contábil conectado.';
   static const String footerCompany = 'ABRAÇO CONTABILIDADE';

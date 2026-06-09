@@ -229,6 +229,8 @@ class _LoginBanner extends StatelessWidget {
         const SizedBox(width: 16),
         const Text(GridTexts.appShortTitle,
             textAlign: TextAlign.left,
+            softWrap: false,
+            overflow: TextOverflow.ellipsis,
             style: TextStyle(
                 color: Colors.white,
                 fontSize: 16,
