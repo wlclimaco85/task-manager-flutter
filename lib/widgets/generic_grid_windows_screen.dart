@@ -1117,28 +1117,20 @@ class FieldFactory {
     BuildContext context,
   ) {
     final cacheKey = '${config.fieldName}_dropdown';
-    final options = dropdownCache[cacheKey];
-
-    if (options != null) {
-      return _buildMultiselectContent(
-          config, controller, options, dropdownCache, context);
-    } else if (config.dropdownFutureBuilder != null) {
-      return FutureBuilder<List<Map<String, dynamic>>>(
-        future: config.dropdownFutureBuilder!(),
-        builder: (ctx, snap) {
-          if (snap.connectionState == ConnectionState.waiting) {
-            return const LinearProgressIndicator();
-          }
-          final opts = snap.data ?? [];
-          dropdownCache[cacheKey] = opts;
-          return _buildMultiselectContent(
-              config, controller, opts, dropdownCache, context);
-        },
-      );
-    } else {
-      return _buildMultiselectContent(config, controller,
-          config.dropdownOptions ?? [], dropdownCache, context);
-    }
+    final cached = dropdownCache[cacheKey];
+    return _MultiSelectField(
+      config: config,
+      controller: controller,
+      // Passa opções já carregadas (cache hit) ou null para o widget
+      // buscar internamente via dropdownFutureBuilder (cache miss).
+      // Nunca cria um novo Future aqui — evita reiniciar a cada rebuild.
+      initialOptions: cached,
+      dropdownFutureBuilder: cached == null ? config.dropdownFutureBuilder : null,
+      dropdownOptions: cached == null && config.dropdownFutureBuilder == null
+          ? (config.dropdownOptions ?? [])
+          : null,
+      onOptionsLoaded: (opts) => dropdownCache[cacheKey] = opts,
+    );
   }
 
   static Widget _buildMultiselectContent(
@@ -1151,7 +1143,7 @@ class FieldFactory {
     return _MultiSelectField(
       config: config,
       controller: controller,
-      options: options,
+      initialOptions: options,
     );
   }
 }
@@ -1163,12 +1155,23 @@ class FieldFactory {
 class _MultiSelectField extends StatefulWidget {
   final FieldConfigWindows config;
   final TextEditingController controller;
-  final List<Map<String, dynamic>> options;
+
+  /// Opções já resolvidas (cache hit). Se null, o widget carrega via
+  /// [dropdownFutureBuilder] ou usa [dropdownOptions] estático.
+  final List<Map<String, dynamic>>? initialOptions;
+  final Future<List<Map<String, dynamic>>> Function()? dropdownFutureBuilder;
+  final List<Map<String, dynamic>>? dropdownOptions;
+
+  /// Callback para propagar o resultado carregado de volta ao cache externo.
+  final void Function(List<Map<String, dynamic>> opts)? onOptionsLoaded;
 
   const _MultiSelectField({
     required this.config,
     required this.controller,
-    required this.options,
+    this.initialOptions,
+    this.dropdownFutureBuilder,
+    this.dropdownOptions,
+    this.onOptionsLoaded,
   });
 
   @override
@@ -1177,6 +1180,8 @@ class _MultiSelectField extends StatefulWidget {
 
 class _MultiSelectFieldState extends State<_MultiSelectField> {
   late List<String> _selectedValues;
+  List<Map<String, dynamic>> _options = [];
+  bool _loadingOptions = false;
 
   String get _valueField => widget.config.dropdownValueField.isNotEmpty
       ? widget.config.dropdownValueField
@@ -1190,6 +1195,33 @@ class _MultiSelectFieldState extends State<_MultiSelectField> {
     super.initState();
     _selectedValues = _parseController();
     widget.controller.addListener(_onControllerChanged);
+    // Inicia carga de opções UMA ÚNICA VEZ — o Future fica cacheado no estado
+    if (widget.initialOptions != null) {
+      _options = widget.initialOptions!;
+    } else if (widget.dropdownFutureBuilder != null) {
+      _loadingOptions = true;
+      widget.dropdownFutureBuilder!().then((opts) {
+        if (mounted) {
+          setState(() {
+            _options = opts;
+            _loadingOptions = false;
+          });
+          widget.onOptionsLoaded?.call(opts);
+        }
+      });
+    } else {
+      _options = widget.dropdownOptions ?? [];
+    }
+  }
+
+  @override
+  void didUpdateWidget(_MultiSelectField oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // Se o cache externo foi populado (initialOptions mudou de null para dados),
+    // atualiza as opções locais sem nova requisição HTTP.
+    if (widget.initialOptions != null && _options.isEmpty && !_loadingOptions) {
+      setState(() => _options = widget.initialOptions!);
+    }
   }
 
   @override
@@ -1216,7 +1248,7 @@ class _MultiSelectFieldState extends State<_MultiSelectField> {
   }
 
   String get _labels {
-    return widget.options
+    return _options
         .where((o) => _selectedValues.contains(o[_valueField]?.toString()))
         .map((o) => o[_displayField]?.toString() ?? '')
         .where((l) => l.isNotEmpty)
@@ -1228,7 +1260,7 @@ class _MultiSelectFieldState extends State<_MultiSelectField> {
       context: context,
       builder: (ctx) => _MultiSelectGridDialog(
         title: widget.config.label,
-        options: widget.options,
+        options: _options,
         valueField: _valueField,
         displayField: _displayField,
         initialSelected: List.from(_selectedValues),
@@ -1242,6 +1274,20 @@ class _MultiSelectFieldState extends State<_MultiSelectField> {
 
   @override
   Widget build(BuildContext context) {
+    if (_loadingOptions) {
+      return InputDecorator(
+        decoration: FieldFactory._buildInputDecoration(widget.config).copyWith(
+          suffixIcon: const SizedBox(
+              width: 16,
+              height: 16,
+              child: Padding(
+                  padding: EdgeInsets.all(14),
+                  child: CircularProgressIndicator(strokeWidth: 2))),
+        ),
+        child: const Text('Carregando...',
+            style: TextStyle(color: Colors.grey, fontSize: 14)),
+      );
+    }
     final labels = _labels;
     return InkWell(
       onTap: _openDialog,
