@@ -340,7 +340,12 @@ class _LoginBanner extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isCompact = MediaQuery.sizeOf(context).width < 720;
+    // Mobile (Android/iOS) usa sempre o layout compacto centralizado,
+    // independente da largura reportada pelo emulador.
+    final bool isMobile =
+        !kIsWeb && defaultTargetPlatform != TargetPlatform.windows;
+    final bool isCompact =
+        isMobile || MediaQuery.sizeOf(context).width < 720;
     if (isCompact) return _buildCompact(context);
 
     return Container(

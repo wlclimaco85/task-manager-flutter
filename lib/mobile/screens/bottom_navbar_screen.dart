@@ -34,6 +34,7 @@ import 'conta_pagar_grid_screen.dart';
 import 'conta_receber_grid_screen.dart';
 import 'conta_bancaria_grid_screen.dart';
 import 'parceiro_grid_screen.dart';
+import '../../windows/screens/extrato_importacao_screen.dart';
 
 class BottomNavBarScreen extends StatefulWidget {
   const BottomNavBarScreen({super.key});
@@ -661,6 +662,14 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
           sec: sec,
         );
         break;
+      case "Importar Extratos":
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => const ExtratoImportacaoScreen(),
+          ),
+        );
+        break;
       case "Voltar":
         break;
       case "Sair":
@@ -794,6 +803,8 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
       if (sec.canView(AppScreen.mensalidades))
         const _MoreMenuAction(Icons.receipt_long, "Mensalidades"),
       const _MoreMenuAction(Icons.verified_user, "Alvarás"),
+      if (sec.canView(AppScreen.contasBancarias))
+        const _MoreMenuAction(Icons.upload_file, "Importar Extratos"),
       const _MoreMenuAction(Icons.exit_to_app, "Sair", isDestructive: true),
     ];
 
