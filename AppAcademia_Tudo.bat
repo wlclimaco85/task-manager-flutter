@@ -186,25 +186,37 @@ exit /b 0
 
 :START_APP
 call :CHECK_PATHS
-if errorlevel 1 exit /b 1
+if errorlevel 1 (
+    echo [ERRO] CHECK_PATHS falhou - veja acima qual pasta nao existe.
+    pause
+    exit /b 1
+)
 
 set "RESTART=%~1"
 if "%RESTART%"=="1" call :KILL_APP
 
 echo.
-echo [1/3] Compilando backend (mvn package -DskipTests)...
+echo [DIAG] JAVA_HOME = %JAVA_HOME%
+echo [DIAG] Java:
+java -version
+echo [DIAG] Dir: %BACKEND_DIR%
+
+echo.
+echo [1/3] Compilando backend...
 cd /d %BACKEND_DIR%
-call mvnw.cmd package -DskipTests -q
+call mvnw.cmd package -DskipTests
 if errorlevel 1 (
-    echo [ERRO] Falha na compilacao do backend!
+    echo.
+    echo [ERRO] Falha na compilacao do backend! Veja o erro acima.
+    pause
     exit /b 1
 )
 echo Backend compilado com sucesso.
 
 echo.
 echo [2/3] Backend na porta %BACKEND_PORT%...
-start "AppAcademia-Backend" cmd /k "cd /d %BACKEND_DIR% && java -Dspring.devtools.restart.enabled=false -DJWT_SECRET=%JWT_SECRET% -DACCOUNT_SECRET=%ACCOUNT_SECRET% -jar target\AppAcademia.jar --server.port=%BACKEND_PORT% --server.address=0.0.0.0 --app.base-url=%ANDROID_BACKEND_URL%/boletobancos --spring.profiles.active=dev --spring.datasource.url=jdbc:postgresql://localhost:5432/boletobancos --spring.datasource.username=postgres --spring.datasource.password=admin"
-echo Backend iniciando em janela propria.
+start "AppAcademia-Backend" cmd /k "cd /d %BACKEND_DIR% && java -Dspring.devtools.restart.enabled=false -DJWT_SECRET=%JWT_SECRET% -DACCOUNT_SECRET=%ACCOUNT_SECRET% -jar target\AppAcademia.jar --server.port=%BACKEND_PORT% --server.address=0.0.0.0 --app.base-url=%ANDROID_BACKEND_URL%/boletobancos --spring.profiles.active=dev --spring.datasource.url=jdbc:postgresql://localhost:5432/boletobancos --spring.datasource.username=postgres --spring.datasource.password=admin --logging.level.root=WARN --logging.level.org.flywaydb=INFO --logging.level.br.com.appAcademia=INFO"
+echo Backend iniciando em janela propria. Se der erro, olhe a janela "AppAcademia-Backend".
 
 echo.
 echo [3/3] Flutter no Chrome...
