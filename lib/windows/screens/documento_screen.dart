@@ -7,6 +7,7 @@ import '../../../utils/api_links.dart';
 import '../../../utils/app_logger.dart';
 import '../../../utils/grid_colors.dart';
 import '../../../utils/tenant_context.dart';
+import '../../../widgets/user_banners.dart';
 
 // ─── Internal data models ────────────────────────────────────────────────────
 
@@ -603,6 +604,7 @@ class _WindowsCalendarScreenState extends State<WindowsCalendarScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: GridColors.divider,
+      appBar: const UserBannerAppBar(showFilterButton: false),
       body: Column(
         children: [
           _buildHeader(),

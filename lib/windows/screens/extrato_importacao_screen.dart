@@ -110,7 +110,7 @@ class _ExtratoImportacaoScreenState extends State<ExtratoImportacaoScreen> {
     return Scaffold(
       backgroundColor: Colors.grey[100],
       appBar: AppBar(
-        backgroundColor: GridColors.secondary,
+        backgroundColor: GridColors.primary,
         foregroundColor: Colors.white,
         title: const Text('Importação de Extrato Bancário'),
         elevation: 0,

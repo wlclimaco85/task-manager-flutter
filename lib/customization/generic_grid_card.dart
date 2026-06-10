@@ -1885,22 +1885,20 @@ class _GenericMobileGridScreenState<T>
   }
 
   Widget _buildAddButton() {
-    final colorScheme = Theme.of(context).colorScheme;
     return FloatingActionButton.small(
       onPressed: () => _openForm(),
-      backgroundColor: colorScheme.primaryContainer,
-      foregroundColor: colorScheme.onPrimaryContainer,
+      backgroundColor: GridColors.primary,
+      foregroundColor: GridColors.textPrimary,
       elevation: 2,
       child: const Icon(Icons.add),
     );
   }
 
   FloatingActionButton _buildFloatingActionButton() {
-    final colorScheme = Theme.of(context).colorScheme;
     return FloatingActionButton(
       onPressed: () => _openForm(),
-      backgroundColor: colorScheme.primary,
-      foregroundColor: colorScheme.onPrimary,
+      backgroundColor: GridColors.primary,
+      foregroundColor: GridColors.textPrimary,
       elevation: 4,
       child: const Icon(Icons.add),
     );
@@ -2432,60 +2430,62 @@ class _GenericMobileGridScreenState<T>
   }
 
   Widget _buildCardActions(T item, Map<String, dynamic> itemMap) {
+    Widget actionBtn(IconData icon, Color color, VoidCallback onPressed,
+        String tooltip) {
+      return Padding(
+        padding: const EdgeInsets.only(left: 4),
+        child: Tooltip(
+          message: tooltip,
+          child: InkWell(
+            onTap: onPressed,
+            borderRadius: BorderRadius.circular(6),
+            child: Container(
+              padding: const EdgeInsets.all(5),
+              decoration: BoxDecoration(
+                border: Border.all(color: GridColors.divider),
+                borderRadius: BorderRadius.circular(6),
+              ),
+              child: Icon(icon, size: 18, color: color),
+            ),
+          ),
+        ),
+      );
+    }
+
     return Row(
       mainAxisAlignment: MainAxisAlignment.end,
       children: [
         if (widget.enableDebugMode)
-          IconButton(
-            icon: Icon(Icons.bug_report,
-                size: 16,
-                color: GridColors.textSecondary.withValues(alpha: 0.6)),
-            onPressed: () => _showAllFieldsDebug(context, item),
-            tooltip: 'Ver todos os campos',
-          ),
+          actionBtn(Icons.bug_report,
+              GridColors.textSecondary.withValues(alpha: 0.6),
+              () => _showAllFieldsDebug(context, item), 'Debug'),
         if (widget.detailScreenBuilder != null && widget.hasPermission('view'))
-          IconButton(
-            icon: Icon(Icons.visibility_outlined,
-                size: 16,
-                color: GridColors.textSecondary.withValues(alpha: 0.6)),
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => widget.detailScreenBuilder!(item),
-                ),
-              );
-            },
-            tooltip: 'Visualizar',
-          ),
+          actionBtn(
+              Icons.visibility_outlined,
+              GridColors.secondary,
+              () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                      builder: (_) => widget.detailScreenBuilder!(item))),
+              'Visualizar'),
         if (widget.hasPermission('edit'))
-          IconButton(
-            icon: Icon(Icons.edit_outlined,
-                size: 16,
-                color: GridColors.textSecondary.withValues(alpha: 0.6)),
-            onPressed: () => _openForm(item: item),
-            tooltip: 'Editar',
-          ),
+          actionBtn(Icons.edit_outlined, GridColors.primary,
+              () => _openForm(item: item), 'Editar'),
         if (widget.hasPermission('delete'))
-          IconButton(
-            icon: const Icon(Icons.delete_outline,
-                size: 16, color: GridColors.error),
-            onPressed: () => _deleteItem(
-              _getNestedValue(itemMap, widget.idFieldName).toString(),
-            ),
-            tooltip: 'Excluir',
-          ),
+          actionBtn(
+              Icons.delete_outline,
+              GridColors.error,
+              () => _deleteItem(
+                  _getNestedValue(itemMap, widget.idFieldName).toString()),
+              'Excluir'),
         ..._customActions
             .where((action) => action.isVisible?.call(item) ?? true)
-            .map(
-              (action) => IconButton(
-                icon: Icon(action.icon,
-                    size: 16,
-                    color: GridColors.textSecondary.withValues(alpha: 0.6)),
-                onPressed: () => action.onPressed(context, item),
-                tooltip: action.label,
-              ),
-            ),
+            .map((action) => actionBtn(
+                  action.icon,
+                  GridColors.secondary,
+                  () => action.onPressed(context, item),
+                  action.label,
+                )),
       ],
     );
   }

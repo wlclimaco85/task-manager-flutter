@@ -509,7 +509,7 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
     };
   }
 
-  void _pushDynamicGrid({
+  Future<void> _pushDynamicGrid({
     required String telaNome,
     required SecurityMatrix sec,
     AppScreen? screen,
@@ -518,7 +518,7 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
     String? updateEndpointOverride,
     String? deleteEndpointOverride,
   }) {
-    Navigator.push(
+    return Navigator.push(
       context,
       MaterialPageRoute(
         builder: (_) => DynamicGridDynamicScreen(
@@ -537,10 +537,12 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
   }
 
   void onMenuOptionSelected(String option, SecurityMatrix sec) {
-    Navigator.pop(context);
+    Navigator.pop(context); // fecha o bottom sheet do menu
+    Future<void>? nav;
+
     switch (option) {
       case "Contas Pagar":
-        Navigator.push(
+        nav = Navigator.push(
           context,
           MaterialPageRoute(
             builder: (_) => ContaPagarGridScreen(
@@ -551,7 +553,7 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
         );
         break;
       case "Contas Receber":
-        Navigator.push(
+        nav = Navigator.push(
           context,
           MaterialPageRoute(
             builder: (_) => ContaReceberGridScreen(
@@ -562,7 +564,7 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
         );
         break;
       case "Parceiros":
-        Navigator.push(
+        nav = Navigator.push(
           context,
           MaterialPageRoute(
             builder: (_) => ParceiroGridScreen(
@@ -573,26 +575,26 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
         );
         break;
       case "Produtos":
-        _pushDynamicGrid(
+        nav = _pushDynamicGrid(
           telaNome: 'produto',
           sec: sec,
           screen: AppScreen.produto,
         );
         break;
       case "Dashboard":
-        Navigator.push(
+        nav = Navigator.push(
           context,
           MaterialPageRoute(builder: (_) => const DashboardPage()),
         );
         break;
       case "Trading":
-        Navigator.push(
+        nav = Navigator.push(
           context,
           MaterialPageRoute(builder: (_) => const TradingDashboardScreen()),
         );
         break;
       case "Backtesting":
-        Navigator.push(
+        nav = Navigator.push(
           context,
           MaterialPageRoute(
             builder: (_) => BacktestScreen(
@@ -603,31 +605,31 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
         );
         break;
       case "PDV":
-        Navigator.push(
+        nav = Navigator.push(
           context,
           MaterialPageRoute(builder: (_) => const PdvScreen()),
         );
         break;
       case "Config Fiscal":
-        Navigator.push(
+        nav = Navigator.push(
           context,
           MaterialPageRoute(builder: (_) => const ConfigFiscalScreen()),
         );
         break;
       case "CRM/Funil":
-        Navigator.push(
+        nav = Navigator.push(
           context,
           MaterialPageRoute(builder: (_) => const CrmPipelineScreen()),
         );
         break;
       case "Obrigacoes":
-        Navigator.push(
+        nav = Navigator.push(
           context,
           MaterialPageRoute(builder: (_) => const FiscalAutomationScreen()),
         );
         break;
       case "Contas Bancarias":
-        Navigator.push(
+        nav = Navigator.push(
           context,
           MaterialPageRoute(
             builder: (_) => ContaBancariaGridScreen(
@@ -638,32 +640,32 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
         );
         break;
       case "Bater Ponto":
-        Navigator.push(
+        nav = Navigator.push(
           context,
           MaterialPageRoute(builder: (_) => const PontoScreen()),
         );
         break;
       case "Funcionários":
-        _pushDynamicGrid(
+        nav = _pushDynamicGrid(
           telaNome: 'funcionario',
           sec: sec,
           screen: AppScreen.funcionarios,
         );
         break;
       case "Mensalidades":
-        Navigator.push(
+        nav = Navigator.push(
           context,
           MaterialPageRoute(builder: (_) => const MobileMensalidadeScreen()),
         );
         break;
       case "Alvarás":
-        _pushDynamicGrid(
+        nav = _pushDynamicGrid(
           telaNome: 'alvara',
           sec: sec,
         );
         break;
       case "Importar Extratos":
-        Navigator.push(
+        nav = Navigator.push(
           context,
           MaterialPageRoute(
             builder: (_) => const ExtratoImportacaoScreen(),
@@ -671,7 +673,7 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
         );
         break;
       case "Voltar":
-        break;
+        return;
       case "Sair":
         showDialog(
           context: context,
@@ -703,8 +705,14 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
             ],
           ),
         );
-        break;
+        return; // logout não reabre o menu
     }
+
+    // Quando o usuário pressionar voltar em qualquer tela do menu "Mais",
+    // reabrir o menu automaticamente.
+    nav?.then((_) {
+      if (mounted) _showMenuOptions(context, sec);
+    });
   }
 
   @override
@@ -731,19 +739,6 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
           const AppLoggerOverlay(),
         ],
       ),
-      floatingActionButton: _unreadCount > 0
-          ? FloatingActionButton.small(
-              backgroundColor: GridColors.primary,
-              onPressed: () => _showNotificationsSheet(context),
-              child: Badge(
-                label:
-                    Text('$_unreadCount', style: const TextStyle(fontSize: 10)),
-                child: const Icon(Icons.notifications,
-                    color: Colors.white, size: 20),
-              ),
-            )
-          : null,
-      floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
       bottomNavigationBar: Container(
         decoration: BoxDecoration(
           color: GridColors.primary,

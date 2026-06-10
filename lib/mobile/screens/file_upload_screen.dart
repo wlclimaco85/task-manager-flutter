@@ -277,7 +277,7 @@ class _FileManagerScreenState extends State<FileManagerScreen> {
               icon: const Icon(Icons.upload, color: GridColors.textPrimary),
               label: const Text("Enviar"),
               style: ElevatedButton.styleFrom(
-                backgroundColor: GridColors.success,
+                backgroundColor: GridColors.primary,
                 foregroundColor: GridColors.textPrimary,
                 shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(8)),
@@ -864,7 +864,7 @@ class _FileManagerScreenState extends State<FileManagerScreen> {
           _buildFAB(Icons.refresh, GridColors.primary, GridColors.textPrimary,
               _loadDiretorios, "refresh"),
           const SizedBox(height: 10),
-          _buildFAB(Icons.add, GridColors.secondary, GridColors.textPrimary,
+          _buildFAB(Icons.add, GridColors.primary, GridColors.textPrimary,
               _showUploadDialog, "add"),
         ],
       ),

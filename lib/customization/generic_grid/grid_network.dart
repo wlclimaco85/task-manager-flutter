@@ -32,6 +32,30 @@ Map<String, String> _defaultHeaders({Map<String, String>? extra}) {
 }
 
 /// ---------------------------------------------------------------------------
+/// NORMALIZAÇÃO DE BODY — converte string IDs para objetos entidade
+/// Spring/JPA espera {"empresa": {"id": 185}} mas o form envia {"empresa": "185"}.
+/// ---------------------------------------------------------------------------
+const _entityFields = [
+  'empresa', 'parceiro', 'aplicativo', 'fornecedor', 'cliente',
+  'contaBancaria', 'setor', 'centroCusto', 'formaPagamento',
+];
+
+Map<String, dynamic> _prepareBody(Map<String, dynamic> body) {
+  // 1. injeta tenant se ausente
+  final result = TenantContext.applyToBody(Map<String, dynamic>.from(body));
+  // 2. converte campos de entidade de string/int para {"id": value}
+  for (final field in _entityFields) {
+    final value = result[field];
+    if (value is String && value.isNotEmpty) {
+      result[field] = {'id': int.tryParse(value) ?? value};
+    } else if (value is num) {
+      result[field] = {'id': value.toInt()};
+    }
+  }
+  return result;
+}
+
+/// ---------------------------------------------------------------------------
 /// REQUISIÇÕES BÁSICAS
 /// ---------------------------------------------------------------------------
 
@@ -47,22 +71,24 @@ Future<NetworkResponse> getJson(String url,
 
 Future<NetworkResponse> postJson(String url, Map<String, dynamic> body,
     {Map<String, String>? headers}) async {
-  L.d('[POST] $url');
+  final prepared = _prepareBody(body);
+  L.d('[POST] $url | body=${jsonEncode(prepared)}');
   final resp = await http.post(
-    Uri.parse(url),
+    Uri.parse(TenantContext.applyToUrl(url)),
     headers: _defaultHeaders(extra: {'Content-Type': 'application/json', ...?headers}),
-    body: jsonEncode(body),
+    body: jsonEncode(prepared),
   );
   return _parseResponse(resp);
 }
 
 Future<NetworkResponse> putJson(String url, Map<String, dynamic> body,
     {Map<String, String>? headers}) async {
-  L.d('[PUT] $url');
+  final prepared = _prepareBody(body);
+  L.d('[PUT] $url | body=${jsonEncode(prepared)}');
   final resp = await http.put(
-    Uri.parse(url),
+    Uri.parse(TenantContext.applyToUrl(url)),
     headers: _defaultHeaders(extra: {'Content-Type': 'application/json', ...?headers}),
-    body: jsonEncode(body),
+    body: jsonEncode(prepared),
   );
   return _parseResponse(resp);
 }
