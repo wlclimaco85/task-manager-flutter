@@ -734,14 +734,15 @@ class _WindowsCalendarScreenState extends State<WindowsCalendarScreen> {
   }
 
   // ── Day view ─────────────────────────────────────────────────────────────
+  // Layout: calendário em cima, painel de detalhe do dia abaixo (mobile-first).
   Widget _buildDayView() {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
+    return Column(
       children: [
-        Expanded(
-          flex: 3,
+        // Calendário ocupa altura fixa para não colapsar quando o painel aparece
+        SizedBox(
+          height: 340,
           child: Card(
-            margin: const EdgeInsets.all(12),
+            margin: const EdgeInsets.fromLTRB(12, 12, 12, 0),
             elevation: 2,
             shape:
                 RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
@@ -761,10 +762,13 @@ class _WindowsCalendarScreenState extends State<WindowsCalendarScreen> {
             ),
           ),
         ),
+        // Painel de detalhe do dia — aparece abaixo do calendário
         if (_selectedDay != null)
-          SizedBox(
-            width: 360,
-            child: _buildDaySidePanel(),
+          Expanded(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(12, 8, 12, 12),
+              child: _buildDaySidePanel(),
+            ),
           ),
       ],
     );
@@ -1030,7 +1034,7 @@ class _WindowsCalendarScreenState extends State<WindowsCalendarScreen> {
     final saldo = totalReceber - totalPagar;
 
     return Card(
-      margin: const EdgeInsets.fromLTRB(0, 12, 12, 12),
+      margin: EdgeInsets.zero,
       elevation: 2,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
       child: Column(

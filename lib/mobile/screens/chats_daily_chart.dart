@@ -16,7 +16,18 @@ class ChatDailyPoint {
   ChatDailyPoint(this.date, this.count);
 
   factory ChatDailyPoint.fromJson(Map<String, dynamic> j) {
-    return ChatDailyPoint(DateTime.parse(j['date']), j['count']);
+    final rawCount = j['count'];
+    final int count;
+    if (rawCount == null) {
+      count = 0;
+    } else if (rawCount is int) {
+      count = rawCount;
+    } else if (rawCount is num) {
+      count = rawCount.toInt();
+    } else {
+      count = int.tryParse(rawCount.toString()) ?? 0;
+    }
+    return ChatDailyPoint(DateTime.parse(j['date']), count);
   }
 }
 

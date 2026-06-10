@@ -385,7 +385,7 @@ class _GedArquivosScreenState extends State<GedArquivosScreen> {
     return Scaffold(
       backgroundColor: Colors.grey[100],
       appBar: AppBar(
-        backgroundColor: GridColors.secondary,
+        backgroundColor: GridColors.primary,
         foregroundColor: Colors.white,
         title: Text(_tituloAppBar),
         elevation: 0,

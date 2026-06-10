@@ -359,8 +359,7 @@ class _GenericMobileGridScreenState extends State<GenericMobileGridScreen> {
               onClear: _clearFilters,
               onClose: () => setState(() => _filtersOpen = false),
             ),
-          if ((widget.serverActions?.isNotEmpty ?? false))
-            _buildServerActionsBar(context),
+
           Expanded(
             child: GridListScreen(
               title: widget.title,
@@ -426,16 +425,9 @@ class _GenericMobileGridScreenState extends State<GenericMobileGridScreen> {
     if (!canCreate) return null;
 
     return FloatingActionButton(
-      onPressed: () async {
-        final ok = await _confirm(
-          title: 'Novo registro',
-          message: 'Deseja abrir o formulário para adicionar um novo item?',
-          confirmText: 'Abrir',
-        );
-        if (ok == true) {
-          L.d('[GridPage] abrir form de criação');
-          _openForm();
-        }
+      onPressed: () {
+        L.d('[GridPage] abrir form de criação');
+        _openForm();
       },
       backgroundColor: GridColors.primary,
       foregroundColor: GridColors.textPrimary,

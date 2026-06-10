@@ -15,7 +15,6 @@ import '../../../windows/screens/chamado_grid_screen.dart';
 import '../../../windows/screens/chatMenssageScreen.dart';
 import '../../../windows/screens/chatMessageListScreen.dart';
 import '../../../windows/screens/comunicado_componente_screen.dart';
-import '../../../windows/screens/comunicado_screen.dart';
 import '../../../windows/screens/integracoes_financeiras_screen.dart';
 import '../../../windows/screens/conta_pagar_grid_screen.dart';
 import '../../../windows/screens/conta_receber_grid_screen.dart';
@@ -269,7 +268,7 @@ class _WindowsBottomNavBarScreenState extends State<WindowsBottomNavBarScreen> {
   }
 
   List<Widget> _buildScreens(dynamic userInfo) => [
-        const WindowsComunicadoGridScreen(),
+        WindowsComunicadoGridComponentesScreen(hasPermission: (permission) => true),
         const WindowsChatMessageScreen(
           sector: 'Financeiro',
           userName: 'Usuário',

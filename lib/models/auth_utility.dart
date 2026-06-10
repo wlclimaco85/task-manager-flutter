@@ -6,6 +6,28 @@ import '../../../models/login_model.dart';
 
 
 import 'package:task_manager_flutter/utils/app_logger.dart';
+
+// ---------------------------------------------------------------------------
+// Utilitário para decodificar e verificar expiração do JWT sem biblioteca extra
+// ---------------------------------------------------------------------------
+bool _isJwtExpired(String token) {
+  try {
+    final parts = token.split('.');
+    if (parts.length != 3) return true;
+    // Adiciona padding base64 se necessário
+    String payload = parts[1];
+    final rem = payload.length % 4;
+    if (rem != 0) payload += '=' * (4 - rem);
+    final decoded = utf8.decode(base64Url.decode(payload));
+    final json = jsonDecode(decoded) as Map<String, dynamic>;
+    final exp = json['exp'];
+    if (exp == null) return false; // sem expiração = não expira
+    final expDate = DateTime.fromMillisecondsSinceEpoch((exp as int) * 1000);
+    return DateTime.now().isAfter(expDate);
+  } catch (_) {
+    return true; // se não conseguir decodificar, considera expirado
+  }
+}
 class AuthUtility {
   static LoginModel? userInfo;
 
@@ -46,6 +68,12 @@ class AuthUtility {
 
     if (isLogin) {
       userInfo = await getUserInfo();
+      // Se o token armazenado estiver expirado, força novo login
+      if (userInfo?.token != null && _isJwtExpired(userInfo!.token!)) {
+        L.w('[AuthUtility] token expirado — limpando sessão e forçando re-login');
+        await clearUserInfo();
+        return false;
+      }
     }
 
     return isLogin && userInfo != null;

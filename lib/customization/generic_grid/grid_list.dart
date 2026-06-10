@@ -955,7 +955,7 @@ class _GridListScreenState extends State<GridListScreen> {
             );
           },
         ),
-      if (_can('edit'))
+      if (_can('edit') && widget.hasPermission('edit'))
         IconButton(
           icon: Icon(Icons.edit_outlined,
               size: 16, color: Colors.black.withValues(alpha: 0.6)),
@@ -970,7 +970,7 @@ class _GridListScreenState extends State<GridListScreen> {
             }
           },
         ),
-      if (_can('delete'))
+      if (_can('delete') && widget.hasPermission('delete'))
         IconButton(
           icon: const Icon(Icons.delete_outline,
               size: 16, color: GridColors.error),

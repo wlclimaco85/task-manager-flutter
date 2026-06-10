@@ -7,9 +7,11 @@ import '../models/conta_model.dart';
 import '../utils/api_links.dart';
 import '../utils/utils.dart';
 
-final token = AuthUtility.userInfo?.token;
-
 class ContaApi {
+  /// Retorna o token no momento da chamada (nao em nivel de arquivo)
+  /// para garantir que o token pos-login seja sempre usado.
+  String? get _token => AuthUtility.userInfo?.token;
+
   Map<String, String> _companyQuery() {
     final empresaId = pegarEmpresaLogada() ?? 0;
     final parceiroId = pegarParceiroLogada();
@@ -22,13 +24,12 @@ class ContaApi {
   Future<List<ContaBancariaModel>> listarSaldos() async {
     final uri = Uri.parse(ApiLinks.financeFluxoDiarioSaldo)
         .replace(queryParameters: _companyQuery());
-    final r = await http.get(
-      uri,
-      headers: {
-        'Authorization': 'Bearer $token',
-        'Accept': 'application/json',
-      },
-    );
+    final currentToken = _token;
+    final headers = <String, String>{'Accept': 'application/json'};
+    if (currentToken != null && currentToken.isNotEmpty) {
+      headers['Authorization'] = 'Bearer $currentToken';
+    }
+    final r = await http.get(uri, headers: headers);
     if (r.statusCode == 204) return [];
     if (r.statusCode != 200) throw Exception('Saldos HTTP ${r.statusCode}');
     final arr = jsonDecode(r.body) as List;
@@ -47,13 +48,12 @@ class ContaApi {
         'days': days.toString(),
       },
     );
-    final r = await http.get(
-      uri,
-      headers: {
-        'Authorization': 'Bearer $token',
-        'Accept': 'application/json',
-      },
-    );
+    final currentToken = _token;
+    final headers2 = <String, String>{'Accept': 'application/json'};
+    if (currentToken != null && currentToken.isNotEmpty) {
+      headers2['Authorization'] = 'Bearer $currentToken';
+    }
+    final r = await http.get(uri, headers: headers2);
     if (r.statusCode == 204) return [];
     if (r.statusCode != 200) throw Exception('Evolução HTTP ${r.statusCode}');
     final arr = jsonDecode(r.body) as List;
@@ -83,13 +83,12 @@ class ContaApi {
           'categoriaFinanceiraId': categoriaFinanceiraId.toString(),
       },
     );
-    final r = await http.get(
-      uri,
-      headers: {
-        'Authorization': 'Bearer $token',
-        'Accept': 'application/json',
-      },
-    );
+    final currentToken3 = _token;
+    final headers3 = <String, String>{'Accept': 'application/json'};
+    if (currentToken3 != null && currentToken3.isNotEmpty) {
+      headers3['Authorization'] = 'Bearer $currentToken3';
+    }
+    final r = await http.get(uri, headers: headers3);
     if (r.statusCode == 204) {
       return ContaExtratoOperacional.empty(
         visao: visao,

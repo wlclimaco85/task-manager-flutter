@@ -250,14 +250,19 @@ class NetworkCaller {
 
       AppLogger.i.info('📤 [POST] url=$enrichedUrl | body=${jsonEncode(body)}');
 
+      final token = AuthUtility.userInfo?.token;
+      final Map<String, String> headers = {
+        'Content-Type': 'application/json;charset=UTF-8',
+      };
+      if (isAuthRequest) {
+        headers['Authorization'] = 'c2Fua2h5YTpzdXA=';
+      } else if (token != null && token.isNotEmpty) {
+        headers['Authorization'] = 'Bearer $token';
+      }
+
       Response response = await post(
         Uri.parse(enrichedUrl),
-        headers: {
-          'Content-Type': 'application/json;charset=UTF-8',
-          'Authorization': isAuthRequest
-              ? 'c2Fua2h5YTpzdXA='
-              : 'Bearer ${AuthUtility.userInfo?.token}',
-        },
+        headers: headers,
         body: jsonEncode(body),
       );
 

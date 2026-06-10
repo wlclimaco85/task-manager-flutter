@@ -180,7 +180,7 @@ echo Matando backend na porta %BACKEND_PORT%...
 powershell -NoProfile -ExecutionPolicy Bypass -Command "$procIds = Get-NetTCPConnection -LocalPort %BACKEND_PORT% -State Listen -ErrorAction SilentlyContinue | Select-Object -ExpandProperty OwningProcess -Unique; foreach ($procId in $procIds) { if ($procId -and $procId -ne 0) { Stop-Process -Id $procId -Force -ErrorAction SilentlyContinue; Write-Host ('  PID ' + $procId + ' encerrado') } }"
 
 echo Matando processos Flutter/Dart ligados aos projetos...
-powershell -NoProfile -ExecutionPolicy Bypass -Command "$items = Get-CimInstance Win32_Process | Where-Object { ($_.Name -match 'flutter|dart|cmd') -and ($_.CommandLine -like '*task_manager_flutter*' -or $_.CommandLine -like '*task_manager_AppAcademiaV003*' -or $_.CommandLine -like '*task_manager_appDaniel*' -or $_.CommandLine -like '*AppAcademia*') }; foreach ($p in $items) { Stop-Process -Id $p.ProcessId -Force -ErrorAction SilentlyContinue; Write-Host ('  PID ' + $p.ProcessId + ' encerrado: ' + $p.Name) }"
+powershell -NoProfile -ExecutionPolicy Bypass -Command "$currentPid = $pid; $items = Get-CimInstance Win32_Process | Where-Object { $_.ProcessId -ne $currentPid -and ($_.Name -match 'flutter|dart|cmd') -and ($_.CommandLine -like '*task_manager_flutter*' -or $_.CommandLine -like '*task_manager_AppAcademiaV003*' -or $_.CommandLine -like '*task_manager_appDaniel*' -or $_.CommandLine -like '*AppAcademia*') }; foreach ($p in $items) { Stop-Process -Id $p.ProcessId -Force -ErrorAction SilentlyContinue; Write-Host ('  PID ' + $p.ProcessId + ' encerrado: ' + $p.Name) }"
 timeout /t 2 /nobreak >nul
 exit /b 0
 

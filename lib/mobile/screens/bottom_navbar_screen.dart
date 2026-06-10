@@ -9,6 +9,9 @@ import 'package:task_manager_flutter/utils/grid_colors.dart';
 import 'package:task_manager_flutter/utils/security_matrix.dart';
 
 import '../../customization/dynamic_grid_dynamic_screen.dart';
+import '../../customization/generic_grid/grid_models.dart' show CustomAction;
+import '../../windows/screens/comunicado_detalhe_screen.dart';
+import '../../windows/screens/fechar_chamado_dialog.dart';
 import 'sem_acesso_screen.dart';
 import '../../auth_screens/login_screen.dart';
 import 'chatMessageListScreen.dart';
@@ -172,17 +175,9 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
             ? ChatListScreen(userName: AuthUtility.userInfo?.login?.email ?? '')
             : const ChatListScreen(userName: 'Usuario'),
       if (sec.canView(AppScreen.comunicados))
-        _dynamicGridInline(
-          telaNome: 'comunicado',
-          sec: sec,
-          screen: AppScreen.comunicados,
-        ),
+        _comunicadoGridInline(sec: sec),
       if (sec.canView(AppScreen.chamados))
-        _dynamicGridInline(
-          telaNome: 'chamado',
-          sec: sec,
-          screen: AppScreen.chamados,
-        ),
+        _chamadoGridInline(sec: sec),
       if (sec.canView(AppScreen.ged)) const FileManagerScreen(),
       Container(), // slot do botao "Mais"
     ];
@@ -199,6 +194,156 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
       hasPermission: (action) => _hasPermissionFor(sec, screen, action),
       storageKey: 'mobile_dynamic_$telaNome',
       showAppBar: false,
+    );
+  }
+
+  /// Tela de Comunicados mobile: apenas o botao "Visualizar" — sem editar/deletar.
+  Widget _comunicadoGridInline({required SecurityMatrix sec}) {
+    return DynamicGridDynamicScreen(
+      key: const ValueKey('mobile_dynamic_inline_comunicado'),
+      telaNome: 'comunicado',
+      // Bloqueia editar e deletar — comunicados sao somente leitura no mobile.
+      hasPermission: (action) {
+        final lower = action.toLowerCase();
+        if (lower == 'edit' || lower == 'update' ||
+            lower == 'delete' || lower == 'remove') return false;
+        return _hasPermissionFor(sec, AppScreen.comunicados, action);
+      },
+      storageKey: 'mobile_dynamic_comunicado',
+      showAppBar: false,
+      customActions: () => [
+        CustomAction(
+          icon: Icons.visibility_outlined,
+          label: 'Visualizar comunicado',
+          onPressed: (context, item) {
+            Navigator.of(context).push(
+              MaterialPageRoute(
+                builder: (_) => WindowsComunicadoDetalheScreen(
+                  comunicado: item,
+                ),
+              ),
+            );
+          },
+          isVisible: (_) => true,
+        ),
+      ],
+    );
+  }
+
+  /// Tela de Chamados mobile: "Visualizar" e "Fechar chamado" — sem editar/deletar.
+  Widget _chamadoGridInline({required SecurityMatrix sec}) {
+    return DynamicGridDynamicScreen(
+      key: const ValueKey('mobile_dynamic_inline_chamado'),
+      telaNome: 'chamado',
+      // Bloqueia editar e deletar no mobile — acoes via customActions abaixo.
+      hasPermission: (action) {
+        final lower = action.toLowerCase();
+        if (lower == 'edit' || lower == 'update' ||
+            lower == 'delete' || lower == 'remove') return false;
+        return _hasPermissionFor(sec, AppScreen.chamados, action);
+      },
+      storageKey: 'mobile_dynamic_chamado',
+      showAppBar: false,
+      customActions: () => [
+        CustomAction(
+          icon: Icons.open_in_new_outlined,
+          label: 'Visualizar chamado',
+          onPressed: (ctx, item) => _mostrarDetalheChamado(ctx, item),
+          isVisible: (_) => true,
+        ),
+        CustomAction(
+          icon: Icons.task_alt_outlined,
+          label: 'Fechar chamado',
+          onPressed: (ctx, item) {
+            final id = item['id'];
+            if (id == null) return;
+            final chamadoId = id is int ? id : int.tryParse(id.toString()) ?? 0;
+            if (chamadoId == 0) return;
+            showDialog(
+              context: ctx,
+              builder: (_) => FecharChamadoDialog(chamadoId: chamadoId),
+            );
+          },
+          isVisible: (item) {
+            final status = (item['status'] ?? '').toString().toLowerCase();
+            return status != 'fechado' && status != 'cancelado' && status != '3' && status != '4';
+          },
+        ),
+      ],
+    );
+  }
+
+  /// Exibe um bottom sheet com os detalhes do chamado.
+  void _mostrarDetalheChamado(BuildContext context, Map<String, dynamic> item) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      useSafeArea: true,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (_) => DraggableScrollableSheet(
+        expand: false,
+        initialChildSize: 0.6,
+        maxChildSize: 0.92,
+        builder: (_, sc) => ListView(
+          controller: sc,
+          padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
+          children: [
+            Center(
+              child: Container(
+                width: 44,
+                height: 4,
+                margin: const EdgeInsets.only(bottom: 16),
+                decoration: BoxDecoration(
+                  color: GridColors.divider,
+                  borderRadius: BorderRadius.circular(99),
+                ),
+              ),
+            ),
+            Text(
+              item['titulo']?.toString() ?? 'Chamado',
+              style: const TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: GridColors.textSecondary,
+              ),
+            ),
+            const SizedBox(height: 16),
+            _detalheRow('Descricao', item['descricao']),
+            _detalheRow('Status', item['status']),
+            _detalheRow('Prioridade', item['prioridade']),
+            _detalheRow('Setor', item['setor']?['nome'] ?? item['setor']),
+            _detalheRow('Abertura', item['dhCreatedAt'] ?? item['dataAbertura']),
+            if ((item['motivoFechamento'] ?? '').toString().isNotEmpty)
+              _detalheRow('Motivo fechamento', item['motivoFechamento']),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _detalheRow(String label, dynamic value) {
+    final text = value?.toString() ?? '';
+    if (text.isEmpty) return const SizedBox.shrink();
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            label,
+            style: const TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.w600,
+              color: GridColors.textMuted,
+            ),
+          ),
+          const SizedBox(height: 2),
+          Text(text, style: const TextStyle(fontSize: 14)),
+        ],
+      ),
     );
   }
 

@@ -12,7 +12,6 @@ import './aplicativo_screen.dart';
 import '../../../auth_screens/login_screen.dart';
 import './chamado_grid_screen.dart';
 import './alimento_grid_screen.dart';
-import './comunicado_screen.dart';
 import './comunicado_componente_screen.dart';
 import './dieta_grid_screen.dart';
 import './empresa_grid_screen.dart';
@@ -281,7 +280,7 @@ class _WebBottomNavBarScreenState extends State<WebBottomNavBarScreen> {
     final isLoggedIn = (userInfo?.id != null) || (loginInfo?.id != null);
     if (!isLoggedIn) return [const LoginScreen()];
     return [
-      const WebComunicadoGridScreen(), // 0:  Comunicados
+      WebComunicadoGridComponentesScreen(hasPermission: (p) => true), // 0:  Comunicados
       WebChatListScreen(
           userName: AuthUtility.userInfo?.login?.email ?? 'Usuário'), // 1: Chat
       WebComunicadoGridComponentesScreen(

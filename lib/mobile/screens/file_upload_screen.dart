@@ -62,8 +62,15 @@ class _FileManagerScreenState extends State<FileManagerScreen> {
     final diretorioCaller = DiretorioCaller();
     final parceiroCaller = ParceiroCaller();
 
-    final diretorios = await diretorioCaller.fetchDiretoriosDropdown();
-    final parceiros = await parceiroCaller.fetchParceiross();
+    // Busca diretórios e parceiros de forma segura (sem throw)
+    final List<Map<String, dynamic>> diretorios =
+        await diretorioCaller.fetchDiretoriosDropdown().catchError((_) => <Map<String, dynamic>>[]);
+    final List<Map<String, dynamic>> parceiroItems =
+        await parceiroCaller.fetchParceiroDropdown().catchError((_) => <Map<String, dynamic>>[]);
+
+    // Empresa logada (somente exibição)
+    final empresaNome =
+        AuthUtility.userInfo?.login?.empresa?.nome ?? 'Empresa atual';
 
     int? diretorioSelecionado;
     int? parceiroSelecionado;
@@ -136,6 +143,24 @@ class _FileManagerScreenState extends State<FileManagerScreen> {
                         v == null || v.isEmpty ? "Informe o nome" : null,
                   ),
                   const SizedBox(height: 12),
+                  // Empresa logada — somente exibição
+                  TextFormField(
+                    initialValue: empresaNome,
+                    readOnly: true,
+                    decoration: const InputDecoration(
+                      labelText: "Empresa",
+                      labelStyle:
+                          TextStyle(color: GridColors.textSecondary),
+                      border: OutlineInputBorder(
+                          borderSide: BorderSide(color: GridColors.primary)),
+                      focusedBorder: OutlineInputBorder(
+                          borderSide:
+                              BorderSide(color: GridColors.primary, width: 2)),
+                      prefixIcon: Icon(Icons.business,
+                          color: GridColors.secondary),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
                   DropdownButtonFormField<int>(
                     decoration: const InputDecoration(
                       labelText: "Diretório",
@@ -167,8 +192,9 @@ class _FileManagerScreenState extends State<FileManagerScreen> {
                     items: [
                       const DropdownMenuItem<int>(
                           value: null, child: Text('Sem parceiro')),
-                      ...parceiros.map((p) => DropdownMenuItem<int>(
-                          value: p.id, child: Text(p.nome ?? 'Sem nome'))),
+                      ...parceiroItems.map((p) => DropdownMenuItem<int>(
+                          value: p['value'] as int?,
+                          child: Text((p['label'] as String?) ?? 'Sem nome'))),
                     ],
                     onChanged: (v) =>
                         setStateDialog(() => parceiroSelecionado = v),
