@@ -29,6 +29,12 @@ set "APP_PACKAGE_PORTAL=br.com.portalcont.app"
 set "APP_PACKAGE_MEU_TREINO=com.washingtonclimaco.task_manager_appacademia"
 set "APP_PACKAGE_SAFRA=br.com.safradireto.app"
 
+rem Temp curto para o backend: o pipe NIO do Tomcat (Unix Domain Socket) falha
+rem com "Unable to establish loopback connection" usando o temp do perfil do usuario.
+if not exist "C:\Temp" mkdir "C:\Temp" >nul 2>&1
+set "TMP=C:\Temp"
+set "TEMP=C:\Temp"
+
 call :DETECT_HOST_IP
 
 :MENU
@@ -204,7 +210,7 @@ echo [DIAG] Dir: %BACKEND_DIR%
 echo.
 echo [1/3] Compilando backend...
 cd /d %BACKEND_DIR%
-call mvnw.cmd package -DskipTests
+call mvnw.cmd clean package -DskipTests
 if errorlevel 1 (
     echo.
     echo [ERRO] Falha na compilacao do backend! Veja o erro acima.
@@ -217,7 +223,7 @@ echo.
 echo [2/3] Backend na porta %BACKEND_PORT%...
 set "BLOG=%BACKEND_DIR%\backend_startup.log"
 if exist "%BLOG%" del "%BLOG%" >nul 2>&1
-start "AppAcademia-Backend" cmd /k "cd /d %BACKEND_DIR% && java -Dspring.devtools.restart.enabled=false -DJWT_SECRET=%JWT_SECRET% -DACCOUNT_SECRET=%ACCOUNT_SECRET% -jar target\AppAcademia.jar --server.port=%BACKEND_PORT% --server.address=0.0.0.0 --app.base-url=%ANDROID_BACKEND_URL%/boletobancos --spring.profiles.active=dev --spring.datasource.url=jdbc:postgresql://localhost:5432/boletobancos --spring.datasource.username=postgres --spring.datasource.password=admin --logging.level.root=INFO --logging.level.org.flywaydb=INFO 2>&1 | powershell -Command \"$input | Tee-Object -FilePath '%BLOG%'\""
+start "AppAcademia-Backend" cmd /k "cd /d %BACKEND_DIR% && java -Djava.io.tmpdir=C:\Temp -Djdk.net.unixdomain.tmpdir=C:\Temp -Dspring.devtools.restart.enabled=false -DJWT_SECRET=%JWT_SECRET% -DACCOUNT_SECRET=%ACCOUNT_SECRET% -jar target\AppAcademia.jar --server.port=%BACKEND_PORT% --server.address=0.0.0.0 --app.base-url=%ANDROID_BACKEND_URL%/boletobancos --spring.profiles.active=dev --spring.datasource.url=jdbc:postgresql://localhost:5432/boletobancos --spring.datasource.username=postgres --spring.datasource.password=admin --logging.level.root=INFO --logging.level.org.flywaydb=INFO 2>&1 | powershell -Command \"$input | Tee-Object -FilePath '%BLOG%'\""
 echo Aguardando backend iniciar (25 segundos)...
 timeout /t 25 /nobreak >nul
 echo.
@@ -426,7 +432,7 @@ echo.
 echo Backend na porta %BACKEND_PORT%...
 powershell -NoProfile -ExecutionPolicy Bypass -Command "if (Get-NetTCPConnection -LocalPort %BACKEND_PORT% -State Listen -ErrorAction SilentlyContinue) { exit 0 } else { exit 1 }"
 if errorlevel 1 (
-    start "AppAcademia-Backend" cmd /k "cd /d %BACKEND_DIR% && java -Dspring.devtools.restart.enabled=false -DJWT_SECRET=%JWT_SECRET% -DACCOUNT_SECRET=%ACCOUNT_SECRET% -jar target\AppAcademia.jar --server.port=%BACKEND_PORT% --server.address=0.0.0.0 --app.base-url=%ANDROID_BACKEND_URL%/boletobancos --spring.profiles.active=dev --spring.datasource.url=jdbc:postgresql://localhost:5432/boletobancos --spring.datasource.username=postgres --spring.datasource.password=admin"
+    start "AppAcademia-Backend" cmd /k "cd /d %BACKEND_DIR% && java -Djava.io.tmpdir=C:\Temp -Djdk.net.unixdomain.tmpdir=C:\Temp -Dspring.devtools.restart.enabled=false -DJWT_SECRET=%JWT_SECRET% -DACCOUNT_SECRET=%ACCOUNT_SECRET% -jar target\AppAcademia.jar --server.port=%BACKEND_PORT% --server.address=0.0.0.0 --app.base-url=%ANDROID_BACKEND_URL%/boletobancos --spring.profiles.active=dev --spring.datasource.url=jdbc:postgresql://localhost:5432/boletobancos --spring.datasource.username=postgres --spring.datasource.password=admin"
     echo Backend iniciando em janela propria.
 ) else (
     echo Backend ja esta rodando.
