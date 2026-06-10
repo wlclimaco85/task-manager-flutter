@@ -30,6 +30,10 @@ import 'ponto_screen.dart';
 import '../../widgets/crm/crm_pipeline_screen.dart';
 import '../../widgets/fiscal/fiscal_automation_screen.dart';
 import 'mensalidade_screen.dart';
+import 'conta_pagar_grid_screen.dart';
+import 'conta_receber_grid_screen.dart';
+import 'conta_bancaria_grid_screen.dart';
+import 'parceiro_grid_screen.dart';
 
 class BottomNavBarScreen extends StatefulWidget {
   const BottomNavBarScreen({super.key});
@@ -197,18 +201,14 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
     );
   }
 
-  /// Tela de Comunicados mobile: apenas o botao "Visualizar" — sem editar/deletar.
+  /// Tela de Comunicados mobile: apenas o botao "Visualizar comunicado" (customAction).
+  /// hasPermission retorna false para tudo — bloqueia todos os botoes automaticos
+  /// (server actions, detailScreenBuilder). Os customActions nao sao afetados.
   Widget _comunicadoGridInline({required SecurityMatrix sec}) {
     return DynamicGridDynamicScreen(
       key: const ValueKey('mobile_dynamic_inline_comunicado'),
       telaNome: 'comunicado',
-      // Bloqueia editar e deletar — comunicados sao somente leitura no mobile.
-      hasPermission: (action) {
-        final lower = action.toLowerCase();
-        if (lower == 'edit' || lower == 'update' ||
-            lower == 'delete' || lower == 'remove') return false;
-        return _hasPermissionFor(sec, AppScreen.comunicados, action);
-      },
+      hasPermission: (action) => false,
       storageKey: 'mobile_dynamic_comunicado',
       showAppBar: false,
       customActions: () => [
@@ -230,17 +230,21 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
     );
   }
 
-  /// Tela de Chamados mobile: "Visualizar" e "Fechar chamado" — sem editar/deletar.
+  /// Tela de Chamados mobile: "Visualizar", "Fechar" e "Reabrir" — sem botoes automaticos.
+  /// hasPermission retorna false para tudo exceto insert/create — bloqueia server actions
+  /// e detailScreenBuilder. Os customActions nao sao afetados pelo hasPermission.
   Widget _chamadoGridInline({required SecurityMatrix sec}) {
     return DynamicGridDynamicScreen(
       key: const ValueKey('mobile_dynamic_inline_chamado'),
       telaNome: 'chamado',
-      // Bloqueia editar e deletar no mobile — acoes via customActions abaixo.
       hasPermission: (action) {
         final lower = action.toLowerCase();
-        if (lower == 'edit' || lower == 'update' ||
-            lower == 'delete' || lower == 'remove') return false;
-        return _hasPermissionFor(sec, AppScreen.chamados, action);
+        // Permite criar chamados no mobile
+        if (lower == 'insert' || lower == 'create') {
+          return _hasPermissionFor(sec, AppScreen.chamados, action);
+        }
+        // Bloqueia todos os outros botoes automaticos — acoes via customActions
+        return false;
       },
       storageKey: 'mobile_dynamic_chamado',
       showAppBar: false,
@@ -269,7 +273,73 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
             return status != 'fechado' && status != 'cancelado' && status != '3' && status != '4';
           },
         ),
+        CustomAction(
+          icon: Icons.replay_outlined,
+          label: 'Reabrir chamado',
+          onPressed: (ctx, item) => _mostrarReabrirChamadoDialog(ctx, item),
+          isVisible: (item) {
+            final status = (item['status'] ?? '').toString().toLowerCase();
+            return status == 'fechado' || status == 'cancelado' || status == '3' || status == '4';
+          },
+        ),
       ],
+    );
+  }
+
+  /// Exibe um dialog para digitar o motivo e reabrir o chamado.
+  void _mostrarReabrirChamadoDialog(BuildContext context, Map<String, dynamic> item) {
+    final id = item['id'];
+    if (id == null) return;
+    final chamadoId = id is int ? id : int.tryParse(id.toString()) ?? 0;
+    if (chamadoId == 0) return;
+    final motivoCtrl = TextEditingController();
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Reabrir chamado'),
+        content: TextField(
+          controller: motivoCtrl,
+          decoration: const InputDecoration(
+            labelText: 'Motivo da reabertura',
+            border: OutlineInputBorder(),
+          ),
+          maxLines: 3,
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Cancelar'),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: GridColors.primary),
+            onPressed: () async {
+              Navigator.pop(ctx);
+              try {
+                final url = '${ApiLinks.baseUrl}/api/chamados/$chamadoId/reabrir';
+                await TenantContext.post(url, {'motivo': motivoCtrl.text});
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      backgroundColor: GridColors.success,
+                      content: Text('Chamado reaberto com sucesso'),
+                    ),
+                  );
+                }
+              } catch (e) {
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      backgroundColor: GridColors.error,
+                      content: Text('Erro ao reabrir chamado: $e'),
+                    ),
+                  );
+                }
+              }
+            },
+            child: const Text('Reabrir', style: TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
     );
   }
 
@@ -469,32 +539,36 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
     Navigator.pop(context);
     switch (option) {
       case "Contas Pagar":
-        _pushDynamicGrid(
-          telaNome: 'conta_pagar',
-          sec: sec,
-          screen: AppScreen.contasPagar,
-          fetchEndpointOverride: ApiLinks.allContasPagar,
-          createEndpointOverride: ApiLinks.createContaPagar,
-          updateEndpointOverride: ApiLinks.updateContaPagar(':id'),
-          deleteEndpointOverride: ApiLinks.deleteContaPagar(':id'),
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => ContaPagarGridScreen(
+              hasPermission: (action) =>
+                  _hasPermissionFor(sec, AppScreen.contasPagar, action),
+            ),
+          ),
         );
         break;
       case "Contas Receber":
-        _pushDynamicGrid(
-          telaNome: 'conta_receber',
-          sec: sec,
-          screen: AppScreen.contasReceber,
-          fetchEndpointOverride: ApiLinks.allContasReceber,
-          createEndpointOverride: ApiLinks.createContaReceber,
-          updateEndpointOverride: ApiLinks.updateContaReceber(':id'),
-          deleteEndpointOverride: ApiLinks.deleteContaReceber(':id'),
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => ContaReceberGridScreen(
+              hasPermission: (action) =>
+                  _hasPermissionFor(sec, AppScreen.contasReceber, action),
+            ),
+          ),
         );
         break;
       case "Parceiros":
-        _pushDynamicGrid(
-          telaNome: 'parceiro',
-          sec: sec,
-          screen: AppScreen.parceiros,
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => ParceiroGridScreen(
+              hasPermission: (action) =>
+                  _hasPermissionFor(sec, AppScreen.parceiros, action),
+            ),
+          ),
         );
         break;
       case "Produtos":
@@ -552,10 +626,14 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
         );
         break;
       case "Contas Bancarias":
-        _pushDynamicGrid(
-          telaNome: 'conta_bancaria',
-          sec: sec,
-          screen: AppScreen.contasBancarias,
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => ContaBancariaGridScreen(
+              hasPermission: (action) =>
+                  _hasPermissionFor(sec, AppScreen.contasBancarias, action),
+            ),
+          ),
         );
         break;
       case "Bater Ponto":

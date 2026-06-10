@@ -930,8 +930,8 @@ class _GridListScreenState extends State<GridListScreen> {
         .where((a) => (a.endpoint).contains(':id'))
         .where((a) {
       final perm = a.requiredPermission;
-      if (perm == null || perm.isEmpty) return true;
-      return _can(perm);
+      final effectivePerm = (perm == null || perm.isEmpty) ? 'view' : perm;
+      return _can(effectivePerm) && widget.hasPermission(effectivePerm);
     }).toList();
 
     return Row(mainAxisAlignment: MainAxisAlignment.end, children: [
@@ -942,7 +942,7 @@ class _GridListScreenState extends State<GridListScreen> {
           tooltip: 'Ver JSON',
           onPressed: () => _showAllFieldsDebug(context, item),
         ),
-      if (widget.detailScreenBuilder != null && _can('view'))
+      if (widget.detailScreenBuilder != null && _can('view') && widget.hasPermission('view'))
         IconButton(
           icon: Icon(Icons.visibility_outlined,
               size: 16, color: Colors.black.withValues(alpha: 0.6)),
@@ -985,6 +985,16 @@ class _GridListScreenState extends State<GridListScreen> {
           onPressed: () => _runServerAction(context, a, item),
         ),
       ),
+      ..._customActions
+          .where((a) => a.isVisible == null || a.isVisible!(item))
+          .map(
+            (a) => IconButton(
+              icon: Icon(a.icon,
+                  size: 16, color: Colors.black.withValues(alpha: 0.7)),
+              tooltip: a.label,
+              onPressed: () => a.onPressed(context, item),
+            ),
+          ),
     ]);
   }
 
