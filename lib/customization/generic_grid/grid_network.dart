@@ -2,9 +2,11 @@
 import 'dart:convert';
 
 import 'package:http/http.dart' as http;
-import 'package:http_parser/http_parser.dart'; // 👈 IMPORT NECESSÁRIO
+import 'package:http_parser/http_parser.dart';
 
+import '../../../models/auth_utility.dart';
 import '../../../utils/app_logger.dart';
+import '../../../utils/tenant_context.dart';
 
 /// Estrutura de resposta simplificada
 class NetworkResponse {
@@ -16,13 +18,30 @@ class NetworkResponse {
 }
 
 /// ---------------------------------------------------------------------------
+/// HEADERS PADRÃO (Bearer token + tenant)
+/// ---------------------------------------------------------------------------
+
+Map<String, String> _defaultHeaders({Map<String, String>? extra}) {
+  final token = AuthUtility.userInfo?.token;
+  final tenantId = TenantContext.empresaId?.toString();
+  return {
+    if (token != null && token.isNotEmpty) 'Authorization': 'Bearer $token',
+    if (tenantId != null) 'X-Tenant-ID': tenantId,
+    ...?extra,
+  };
+}
+
+/// ---------------------------------------------------------------------------
 /// REQUISIÇÕES BÁSICAS
 /// ---------------------------------------------------------------------------
 
 Future<NetworkResponse> getJson(String url,
     {Map<String, String>? headers}) async {
   L.d('[GET] $url');
-  final resp = await http.get(Uri.parse(url), headers: headers);
+  final resp = await http.get(
+    Uri.parse(url),
+    headers: _defaultHeaders(extra: headers),
+  );
   return _parseResponse(resp);
 }
 
@@ -31,7 +50,7 @@ Future<NetworkResponse> postJson(String url, Map<String, dynamic> body,
   L.d('[POST] $url');
   final resp = await http.post(
     Uri.parse(url),
-    headers: {'Content-Type': 'application/json', ...?headers},
+    headers: _defaultHeaders(extra: {'Content-Type': 'application/json', ...?headers}),
     body: jsonEncode(body),
   );
   return _parseResponse(resp);
@@ -42,7 +61,7 @@ Future<NetworkResponse> putJson(String url, Map<String, dynamic> body,
   L.d('[PUT] $url');
   final resp = await http.put(
     Uri.parse(url),
-    headers: {'Content-Type': 'application/json', ...?headers},
+    headers: _defaultHeaders(extra: {'Content-Type': 'application/json', ...?headers}),
     body: jsonEncode(body),
   );
   return _parseResponse(resp);
@@ -51,7 +70,10 @@ Future<NetworkResponse> putJson(String url, Map<String, dynamic> body,
 Future<NetworkResponse> deleteJson(String url,
     {Map<String, String>? headers}) async {
   L.d('[DELETE] $url');
-  final resp = await http.delete(Uri.parse(url), headers: headers);
+  final resp = await http.delete(
+    Uri.parse(url),
+    headers: _defaultHeaders(extra: headers),
+  );
   return _parseResponse(resp);
 }
 
