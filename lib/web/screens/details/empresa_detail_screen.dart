@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../utils/api_links.dart';
 import '../../../widgets/generic_detail_form_screen.dart';
 import '../../../widgets/generic_grid_windows_screen.dart'
     show SecurityCheck, FieldConfigWindows, FieldType;
@@ -58,6 +59,9 @@ class WebEmpresaDetailScreen extends StatelessWidget {
           icon: Icons.person,
           telaNome: 'login',
           extraParams: {'empId': id},
+          // "Excluir" nesta aba INATIVA o login (soft-delete), não apaga.
+          // Backend: DELETE /api/logins/{id}/inativar (inativarLogin).
+          deleteEndpointOverride: '${ApiLinks.baseUrl}/api/logins/:id/inativar',
           fieldOverrides: const [
             FieldConfigWindows(
               label: 'Roles',
