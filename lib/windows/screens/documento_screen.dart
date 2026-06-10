@@ -734,42 +734,47 @@ class _WindowsCalendarScreenState extends State<WindowsCalendarScreen> {
   }
 
   // ── Day view ─────────────────────────────────────────────────────────────
-  // Layout: calendário em cima, painel de detalhe do dia abaixo (mobile-first).
+  // Layout: calendário ocupa a tela toda quando nenhum dia selecionado.
+  // Ao selecionar um dia: calendário fica em altura fixa (320) e painel de
+  // detalhe aparece abaixo em Expanded. Clicar no mesmo dia fecha o painel.
   Widget _buildDayView() {
+    final hasSelection = _selectedDay != null;
+
+    Widget calendarCard = Card(
+      margin: const EdgeInsets.fromLTRB(12, 12, 12, 0),
+      elevation: 2,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+      child: Padding(
+        padding: const EdgeInsets.all(12),
+        child: Column(
+          children: [
+            _buildMonthNav(),
+            const SizedBox(height: 8),
+            _buildWeekdayHeaders(),
+            const SizedBox(height: 4),
+            Expanded(child: _buildCalendarGrid()),
+            const Divider(height: 16),
+            _buildLegend(),
+          ],
+        ),
+      ),
+    );
+
+    if (!hasSelection) {
+      // Sem seleção: calendário ocupa toda a área disponível
+      return calendarCard;
+    }
+
+    // Com seleção: calendário fixo em 320px + painel de detalhe abaixo
     return Column(
       children: [
-        // Calendário ocupa altura fixa para não colapsar quando o painel aparece
-        SizedBox(
-          height: 340,
-          child: Card(
-            margin: const EdgeInsets.fromLTRB(12, 12, 12, 0),
-            elevation: 2,
-            shape:
-                RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-            child: Padding(
-              padding: const EdgeInsets.all(12),
-              child: Column(
-                children: [
-                  _buildMonthNav(),
-                  const SizedBox(height: 8),
-                  _buildWeekdayHeaders(),
-                  const SizedBox(height: 4),
-                  Expanded(child: _buildCalendarGrid()),
-                  const Divider(height: 16),
-                  _buildLegend(),
-                ],
-              ),
-            ),
+        SizedBox(height: 320, child: calendarCard),
+        Expanded(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(12, 8, 12, 12),
+            child: _buildDaySidePanel(),
           ),
         ),
-        // Painel de detalhe do dia — aparece abaixo do calendário
-        if (_selectedDay != null)
-          Expanded(
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(12, 8, 12, 12),
-              child: _buildDaySidePanel(),
-            ),
-          ),
       ],
     );
   }
@@ -928,8 +933,12 @@ class _WindowsCalendarScreenState extends State<WindowsCalendarScreen> {
 
     return GestureDetector(
       onTap: () {
-        setState(() => _selectedDay = date);
-        _loadDayData(date);
+        if (isSelected) {
+          setState(() => _selectedDay = null);
+        } else {
+          setState(() => _selectedDay = date);
+          _loadDayData(date);
+        }
       },
       child: Container(
         decoration: BoxDecoration(
