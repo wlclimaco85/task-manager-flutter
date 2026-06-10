@@ -220,20 +220,41 @@ if errorlevel 1 (
 echo Backend compilado com sucesso.
 
 echo.
-echo [2/3] Backend na porta %BACKEND_PORT%...
-start "AppAcademia-Backend" cmd /k "cd /d %BACKEND_DIR% && java -Djava.io.tmpdir=C:\Temp -Djdk.net.unixdomain.tmpdir=C:\Temp -Dspring.devtools.restart.enabled=false -DJWT_SECRET=%JWT_SECRET% -DACCOUNT_SECRET=%ACCOUNT_SECRET% -jar target\AppAcademia.jar --server.port=%BACKEND_PORT% --server.address=0.0.0.0 --app.base-url=%ANDROID_BACKEND_URL%/boletobancos --spring.profiles.active=dev --spring.datasource.url=jdbc:postgresql://localhost:5432/boletobancos --spring.datasource.username=postgres --spring.datasource.password=admin"
-echo Backend iniciando na janela AppAcademia-Backend.
+echo [2/3] Iniciando backend na porta %BACKEND_PORT%...
+set "BLOG=C:\Temp\backend_startup.log"
+if not exist C:\Temp mkdir C:\Temp
+if exist "%BLOG%" del "%BLOG%" >nul 2>&1
+
+echo Log em: %BLOG%
+echo.
+
+java -Djava.io.tmpdir=C:\Temp -Djdk.net.unixdomain.tmpdir=C:\Temp ^
+     -Dspring.devtools.restart.enabled=false ^
+     -DJWT_SECRET=%JWT_SECRET% ^
+     -DACCOUNT_SECRET=%ACCOUNT_SECRET% ^
+     -jar "%BACKEND_DIR%\target\AppAcademia.jar" ^
+     --server.port=%BACKEND_PORT% ^
+     --server.address=0.0.0.0 ^
+     --app.base-url=%ANDROID_BACKEND_URL%/boletobancos ^
+     --spring.profiles.active=dev ^
+     --spring.datasource.url=jdbc:postgresql://localhost:5432/boletobancos ^
+     --spring.datasource.username=postgres ^
+     --spring.datasource.password=admin ^
+     --logging.level.root=INFO ^
+     --logging.level.org.flywaydb=DEBUG ^
+     --logging.level.br.com.appAcademia=INFO ^
+     >> "%BLOG%" 2>&1
 
 echo.
-echo [3/3] Flutter no Chrome...
-start "AppAcademia-Flutter" cmd /k "cd /d %FLUTTER_DIR% && flutter pub get && flutter run -d chrome"
-echo Flutter iniciando em janela propria.
-
+echo ============================================================
+echo BACKEND ENCERROU - errorlevel %ERRORLEVEL%
+echo LOG: %BLOG%
+echo ============================================================
 echo.
-echo Backend: http://localhost:%BACKEND_PORT%
-echo Backend BlueStacks: %ANDROID_BACKEND_URL%
-echo Flutter: abrira no Chrome apos compilar
-exit /b 0
+type "%BLOG%"
+echo.
+pause
+exit /b 1
 
 :SET_FLUTTER_PROJECT
 set "PROJECT_KEY=%~1"
