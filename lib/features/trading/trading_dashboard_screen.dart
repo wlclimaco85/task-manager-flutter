@@ -1519,6 +1519,7 @@ class _BrokerConfigTabState extends State<BrokerConfigTab>
     }
 
     return SingleChildScrollView(
+      key: const Key('broker_config_scroll'),
       padding: const EdgeInsets.all(16),
       child: Form(
         key: _formKey,
@@ -1595,6 +1596,7 @@ class _BrokerConfigTabState extends State<BrokerConfigTab>
                     ),
                     const SizedBox(height: 12),
                     DropdownButtonFormField<String>(
+                      key: const Key('broker_config_ambiente_dropdown'),
                       value: _ambientePadrao,
                       decoration: const InputDecoration(
                         labelText: 'Ambiente padrão *',
@@ -1607,6 +1609,7 @@ class _BrokerConfigTabState extends State<BrokerConfigTab>
                     ),
                     const SizedBox(height: 8),
                     SwitchListTile(
+                      key: const Key('broker_config_ativo_switch'),
                       value: _ativo,
                       contentPadding: EdgeInsets.zero,
                       title: const Text('Configuração ativa'),
@@ -1638,6 +1641,7 @@ class _BrokerConfigTabState extends State<BrokerConfigTab>
                     Align(
                       alignment: Alignment.centerRight,
                       child: ElevatedButton.icon(
+                        key: const Key('broker_config_salvar_btn'),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: GridColors.primary,
                           foregroundColor: Colors.white,

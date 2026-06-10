@@ -293,6 +293,11 @@ class MenuConfig {
             icon: FontAwesomeIcons.ticketSimple,
             screenIndex: 27),
         MenuItem(
+            id: 'diretorios',
+            label: 'Diretórios',
+            icon: FontAwesomeIcons.folderTree,
+            screenIndex: 29),
+        MenuItem(
             id: 'ged',
             label: 'GED',
             icon: FontAwesomeIcons.folderOpen,
@@ -609,6 +614,11 @@ class MenuConfig {
             label: 'Configuracao da Corretora',
             icon: FontAwesomeIcons.gear,
             screenIndex: 119),
+        MenuItem(
+            id: 'trading_corretora',
+            label: 'Configuração da Corretora',
+            icon: FontAwesomeIcons.buildingColumns,
+            screenIndex: 129),
         MenuItem(
             id: 'trading_carteira',
             label: 'Minha Carteira',
