@@ -221,16 +221,8 @@ echo Backend compilado com sucesso.
 
 echo.
 echo [2/3] Backend na porta %BACKEND_PORT%...
-set "BLOG=%BACKEND_DIR%\backend_startup.log"
-if exist "%BLOG%" del "%BLOG%" >nul 2>&1
-start "AppAcademia-Backend" cmd /k "cd /d %BACKEND_DIR% && java -Djava.io.tmpdir=C:\Temp -Djdk.net.unixdomain.tmpdir=C:\Temp -Dspring.devtools.restart.enabled=false -DJWT_SECRET=%JWT_SECRET% -DACCOUNT_SECRET=%ACCOUNT_SECRET% -jar target\AppAcademia.jar --server.port=%BACKEND_PORT% --server.address=0.0.0.0 --app.base-url=%ANDROID_BACKEND_URL%/boletobancos --spring.profiles.active=dev --spring.datasource.url=jdbc:postgresql://localhost:5432/boletobancos --spring.datasource.username=postgres --spring.datasource.password=admin --logging.level.root=INFO --logging.level.org.flywaydb=INFO 2>&1 | powershell -Command \"$input | Tee-Object -FilePath '%BLOG%'\""
-echo Aguardando backend iniciar (25 segundos)...
-timeout /t 25 /nobreak >nul
-echo.
-echo ========== LOG DO BACKEND ==========
-if exist "%BLOG%" ( type "%BLOG%" ) else ( echo [AVISO] Log nao gerado ainda. )
-echo ====================================
-echo.
+start "AppAcademia-Backend" cmd /k "cd /d %BACKEND_DIR% && java -Djava.io.tmpdir=C:\Temp -Djdk.net.unixdomain.tmpdir=C:\Temp -Dspring.devtools.restart.enabled=false -DJWT_SECRET=%JWT_SECRET% -DACCOUNT_SECRET=%ACCOUNT_SECRET% -jar target\AppAcademia.jar --server.port=%BACKEND_PORT% --server.address=0.0.0.0 --app.base-url=%ANDROID_BACKEND_URL%/boletobancos --spring.profiles.active=dev --spring.datasource.url=jdbc:postgresql://localhost:5432/boletobancos --spring.datasource.username=postgres --spring.datasource.password=admin"
+echo Backend iniciando na janela AppAcademia-Backend.
 
 echo.
 echo [3/3] Flutter no Chrome...
