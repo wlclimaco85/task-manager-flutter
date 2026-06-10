@@ -228,6 +228,17 @@ echo.
 
 start "AppAcademia-Backend" cmd /k "cd /d %BACKEND_DIR% && java -Djava.io.tmpdir=C:\Temp -Djdk.net.unixdomain.tmpdir=C:\Temp -Dspring.devtools.restart.enabled=false -DJWT_SECRET=%JWT_SECRET% -DACCOUNT_SECRET=%ACCOUNT_SECRET% -jar target\AppAcademia.jar --server.port=%BACKEND_PORT% --server.address=0.0.0.0 --app.base-url=%ANDROID_BACKEND_URL%/boletobancos --spring.profiles.active=dev --spring.datasource.url=jdbc:postgresql://localhost:5432/boletobancos --spring.datasource.username=postgres --spring.datasource.password=admin --logging.level.root=INFO --logging.level.br.com.appAcademia=INFO"
 
+echo.
+echo [3/3] Flutter no Chrome...
+start "AppAcademia-Flutter" cmd /k "cd /d %FLUTTER_DIR% && flutter pub get && flutter run -d chrome"
+echo Flutter iniciando em janela propria.
+
+echo.
+echo Backend: http://localhost:%BACKEND_PORT%
+echo Backend BlueStacks: %ANDROID_BACKEND_URL%
+echo Flutter: abrira no Chrome apos compilar
+exit /b 0
+
 :SET_FLUTTER_PROJECT
 set "PROJECT_KEY=%~1"
 set "PROJECT_NAME="
