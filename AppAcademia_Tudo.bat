@@ -743,7 +743,8 @@ call :ENSURE_BLUESTACKS_ADB
 if errorlevel 1 exit /b 1
 
 set "BUILD_BACKEND_URL=%DEPLOY_BACKEND_URL%"
-set "BUILD_WS_URL=wss://%DEPLOY_BACKEND_URL%/boletobancos"
+set "DEPLOY_HOST=appacademia-production-be7e.up.railway.app"
+set "BUILD_WS_URL=wss://%DEPLOY_HOST%/boletobancos"
 
 echo.
 echo ============================================
@@ -965,14 +966,13 @@ echo [1/4] Incrementando versionCode...
 for /f "usebackq delims=" %%V in (`powershell -NoProfile -ExecutionPolicy Bypass -Command "$f = Get-Content '%GRADLE_FILE%' -Raw; if ($f -match 'versionCode\s*=\s*(\d+)') { $Matches[1] } else { '0' }"`) do set "OLD_CODE=%%V"
 set /a NEW_CODE=%OLD_CODE%+1
 
-rem -- Calcula novo versionName: le major.minor do arquivo e usa NEW_CODE como patch
-for /f "usebackq delims=" %%V in (`powershell -NoProfile -ExecutionPolicy Bypass -Command "$f = Get-Content '%GRADLE_FILE%' -Raw; if ($f -match 'versionName\s*=\s*""""([0-9]+)\.([0-9]+)\.[0-9]+""""') { $Matches[1] + '.' + $Matches[2] } else { '1.0' }"`) do set "VER_PREFIX=%%V"
-set "NEW_NAME=%VER_PREFIX%.%NEW_CODE%"
+rem -- Calcula novo versionName como 1.0.<NEW_CODE>
+set "NEW_NAME=1.0.%NEW_CODE%"
 
 echo   versionCode: %OLD_CODE% -^> %NEW_CODE%
 echo   versionName: -^> %NEW_NAME%
 
-powershell -NoProfile -ExecutionPolicy Bypass -Command "$f = Get-Content '%GRADLE_FILE%' -Raw; $f = $f -replace 'versionCode\s*=\s*\d+', 'versionCode = %NEW_CODE%'; $f = $f -replace 'versionName\s*=\s*\042[^\042]+\042', 'versionName = \042%NEW_NAME%\042'; Set-Content '%GRADLE_FILE%' $f -NoNewline"
+powershell -NoProfile -ExecutionPolicy Bypass -Command "(Get-Content '%GRADLE_FILE%') -replace 'versionCode = \d+','versionCode = %NEW_CODE%' -replace 'versionName = ""[^""]+""','versionName = ""%NEW_NAME%""' | Set-Content '%GRADLE_FILE%'"
 if errorlevel 1 (
     echo [ERRO] Falha ao atualizar versionCode/versionName.
     exit /b 1
