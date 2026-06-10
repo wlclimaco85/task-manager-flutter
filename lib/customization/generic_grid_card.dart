@@ -2060,8 +2060,7 @@ class _GenericMobileGridScreenState<T>
     final textTheme = Theme.of(context).textTheme;
 
     return Container(
-      margin: const EdgeInsets.symmetric(
-          horizontal: 12, vertical: 4), // Menor espaçamento
+      margin: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
       child: Card(
         elevation: 2,
         shadowColor:
@@ -2091,7 +2090,7 @@ class _GenericMobileGridScreenState<T>
             }
           },
           child: Padding(
-            padding: const EdgeInsets.all(12), // Padding menor
+            padding: const EdgeInsets.fromLTRB(10, 8, 10, 6),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -2135,12 +2134,12 @@ class _GenericMobileGridScreenState<T>
                   ],
                 ),
 
-                const SizedBox(height: 8), // Espaço menor
+                const SizedBox(height: 4),
 
                 // Campos em linha (label e valor lado a lado)
                 ..._buildVisibleFieldsForCard(itemMap),
 
-                const SizedBox(height: 8), // Espaço menor
+                const SizedBox(height: 4),
 
                 // Ações
                 if (!_isSelectionMode) _buildCardActions(item, itemMap),
@@ -2157,43 +2156,40 @@ class _GenericMobileGridScreenState<T>
   // ==============================================
 
   List<Widget> _buildVisibleFieldsForCard(Map<String, dynamic> itemMap) {
+    // Filtra apenas campos com valor não-vazio para evitar linhas em branco
     final visibleConfigs = widget.fieldConfigs
         .where((config) =>
             _fieldVisibility[config.fieldName] == true &&
             config.fieldName != widget.idFieldName &&
-            config.showInCard)
+            config.showInCard &&
+            _hasVisibleValue(config, itemMap))
         .toList();
 
-    final textTheme = Theme.of(context).textTheme;
-
-    // Divide os campos em linhas de 2 colunas
     final rows = <Widget>[];
     for (int i = 0; i < visibleConfigs.length; i += 2) {
-      final rowFields = <Widget>[];
-
-      // Primeira coluna
-      if (i < visibleConfigs.length) {
-        rowFields.add(_buildFieldInLine(visibleConfigs[i], itemMap));
-      }
-
-      // Segunda coluna
-      if (i + 1 < visibleConfigs.length) {
-        rowFields.add(const SizedBox(width: 16));
-        rowFields.add(_buildFieldInLine(visibleConfigs[i + 1], itemMap));
-      }
+      final col1 = _buildFieldInLine(visibleConfigs[i], itemMap);
+      final col2 = i + 1 < visibleConfigs.length
+          ? _buildFieldInLine(visibleConfigs[i + 1], itemMap)
+          : const Expanded(child: SizedBox.shrink());
 
       rows.add(
         Padding(
-          padding:
-              const EdgeInsets.only(bottom: 6), // Espaço menor entre linhas
-          child: Row(
-            children: rowFields,
-          ),
+          padding: const EdgeInsets.only(bottom: 4),
+          child: Row(children: [col1, const SizedBox(width: 12), col2]),
         ),
       );
     }
 
     return rows;
+  }
+
+  bool _hasVisibleValue(FieldConfig config, Map<String, dynamic> itemMap) {
+    if (config.fieldType == FieldType.file) {
+      final fileData = _extractFileData(itemMap, config);
+      return (fileData['id'] ?? 0) != 0 && (fileData['nome'] ?? fileData['fileName'] ?? '').isNotEmpty;
+    }
+    final rawValue = _getNestedValue(itemMap, config.displayFieldName ?? config.fieldName);
+    return rawValue != null && rawValue.toString().isNotEmpty;
   }
 
   Widget _buildFieldInLine(FieldConfig config, Map<String, dynamic> itemMap) {
