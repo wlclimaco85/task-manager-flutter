@@ -228,9 +228,15 @@ class NetworkCaller {
     try {
       final user = AuthUtility.userInfo?.login;
 
-      // Não adiciona campos extras para login/auth endpoints
-      final bool isAuthRequest =
-          url.contains('login') || url.contains('inserirAluno');
+      // Não adiciona campos extras para login/auth endpoints.
+      // Usa verificação por path específico para evitar falso-positivo
+      // em URLs que contenham a palavra 'login' como prefixo de base URL.
+      final uri = Uri.tryParse(url);
+      final String uriPath = uri?.path ?? '';
+      final bool isAuthRequest = uriPath.contains('/rest/auth/') ||
+          uriPath.contains('/rest/auth/login') ||
+          uriPath.endsWith('/login') ||
+          uriPath.contains('inserirAluno');
 
       if (!isAuthRequest && body != null) {
         // Usa TenantContext para injetar empresa/parceiro/aplicativo no body
@@ -251,6 +257,9 @@ class NetworkCaller {
       AppLogger.i.info('📤 [POST] url=$enrichedUrl | body=${jsonEncode(body)}');
 
       final token = AuthUtility.userInfo?.token;
+      if (!isAuthRequest && (token == null || token.isEmpty)) {
+        AppLogger.i.warn('[POST] AVISO: token ausente para requisição protegida. url=$enrichedUrl');
+      }
       final Map<String, String> headers = {
         'Content-Type': 'application/json;charset=UTF-8',
       };

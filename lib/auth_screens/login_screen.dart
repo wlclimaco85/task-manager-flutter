@@ -468,121 +468,128 @@ class _LoginBanner extends StatelessWidget {
     final minHeight = MediaQuery.sizeOf(context).height -
         MediaQuery.paddingOf(context).vertical;
 
+    // SingleChildScrollView com ConstrainedBox(minHeight) + Center interno
+    // garante centralização vertical quando há espaço e scroll quando necessário.
     return Container(
       width: double.infinity,
-      constraints: BoxConstraints(minHeight: fullHeightCompact ? minHeight : 0),
       color: GridColors.secondary,
-      child: Center(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.fromLTRB(24, 20, 24, 28),
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 420),
-            child: Form(
-              key: formKey,
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Row(
+      child: SingleChildScrollView(
+        child: ConstrainedBox(
+          constraints: BoxConstraints(
+              minHeight: fullHeightCompact ? minHeight : 0),
+          child: Center(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(24, 20, 24, 28),
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 420),
+                child: Form(
+                  key: formKey,
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      Container(
-                        decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(12),
-                            boxShadow: [
-                              BoxShadow(
-                                  color: Colors.black.withValues(alpha: 0.2),
-                                  blurRadius: 10,
-                                  offset: const Offset(0, 4))
-                            ]),
-                        padding: const EdgeInsets.all(8),
-                        child: _SafeLogoWidget(size: 86),
+                      Row(
+                        children: [
+                          Container(
+                            decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(12),
+                                boxShadow: [
+                                  BoxShadow(
+                                      color: Colors.black.withValues(alpha: 0.2),
+                                      blurRadius: 10,
+                                      offset: const Offset(0, 4))
+                                ]),
+                            padding: const EdgeInsets.all(8),
+                            child: _SafeLogoWidget(size: 86),
+                          ),
+                          const SizedBox(width: 18),
+                          const Expanded(
+                            child: Text(
+                              GridTexts.appShortTitle,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 20,
+                                  fontWeight: FontWeight.w800,
+                                  letterSpacing: 1.2,
+                                  height: 1.25),
+                            ),
+                          ),
+                        ],
                       ),
-                      const SizedBox(width: 18),
-                      const Expanded(
-                        child: Text(
-                          GridTexts.appShortTitle,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 20,
-                              fontWeight: FontWeight.w800,
-                              letterSpacing: 1.2,
-                              height: 1.25),
+                      const SizedBox(height: 34),
+                      _field(
+                          ctrl: emailCtrl,
+                          hint: GridTexts.loginUserHint,
+                          icon: Icons.person_outline,
+                          textInputAction: TextInputAction.next,
+                          onFieldSubmitted: (_) =>
+                              FocusScope.of(context).nextFocus(),
+                          validator: (v) => (v == null || v.isEmpty)
+                              ? GridTexts.loginUserRequired
+                              : null),
+                      const SizedBox(height: 14),
+                      _field(
+                          ctrl: passCtrl,
+                          hint: GridTexts.loginPasswordHint,
+                          icon: Icons.lock_outline,
+                          obscure: obscure,
+                          textInputAction: TextInputAction.done,
+                          onFieldSubmitted: (_) {
+                            if (!loading) onLogin();
+                          },
+                          suffix: IconButton(
+                              onPressed: onToggleObscure,
+                              icon: Icon(
+                                  obscure ? Icons.visibility_off : Icons.visibility,
+                                  color: Colors.white60,
+                                  size: 20)),
+                          validator: (v) =>
+                              (v == null || v.isEmpty) ? GridTexts.loginPasswordRequired : null),
+                      const SizedBox(height: 18),
+                      SizedBox(
+                        height: 48,
+                        child: ElevatedButton(
+                          style: ElevatedButton.styleFrom(
+                              backgroundColor: GridColors.primary,
+                              foregroundColor: Colors.white,
+                              shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(10))),
+                          onPressed: loading ? null : onLogin,
+                          child: loading
+                              ? const SizedBox(
+                                  width: 20,
+                                  height: 20,
+                                  child: CircularProgressIndicator(
+                                      color: Colors.white, strokeWidth: 2))
+                              : const Text(GridTexts.loginAction,
+                                  style: TextStyle(
+                                      fontSize: 15, fontWeight: FontWeight.w700)),
                         ),
                       ),
-                    ],
-                  ),
-                  const SizedBox(height: 34),
-                  _field(
-                      ctrl: emailCtrl,
-                      hint: GridTexts.loginUserHint,
-                      icon: Icons.person_outline,
-                      textInputAction: TextInputAction.next,
-                      onFieldSubmitted: (_) =>
-                          FocusScope.of(context).nextFocus(),
-                      validator: (v) => (v == null || v.isEmpty)
-                          ? GridTexts.loginUserRequired
-                          : null),
-                  const SizedBox(height: 14),
-                  _field(
-                      ctrl: passCtrl,
-                      hint: GridTexts.loginPasswordHint,
-                      icon: Icons.lock_outline,
-                      obscure: obscure,
-                      textInputAction: TextInputAction.done,
-                      onFieldSubmitted: (_) {
-                        if (!loading) onLogin();
-                      },
-                      suffix: IconButton(
-                          onPressed: onToggleObscure,
-                          icon: Icon(
-                              obscure ? Icons.visibility_off : Icons.visibility,
-                              color: Colors.white60,
-                              size: 20)),
-                      validator: (v) =>
-                          (v == null || v.isEmpty) ? GridTexts.loginPasswordRequired : null),
-                  const SizedBox(height: 18),
-                  SizedBox(
-                    height: 48,
-                    child: ElevatedButton(
-                      style: ElevatedButton.styleFrom(
-                          backgroundColor: GridColors.primary,
-                          foregroundColor: Colors.white,
-                          shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(10))),
-                      onPressed: loading ? null : onLogin,
-                      child: loading
-                          ? const SizedBox(
-                              width: 20,
-                              height: 20,
-                              child: CircularProgressIndicator(
-                                  color: Colors.white, strokeWidth: 2))
-                          : const Text(GridTexts.loginAction,
-                              style: TextStyle(
-                                  fontSize: 15, fontWeight: FontWeight.w700)),
-                    ),
-                  ),
-                  const SizedBox(height: 10),
-                  Wrap(
-                    alignment: WrapAlignment.center,
-                    spacing: 10,
-                    runSpacing: 0,
-                    children: [
-                      TextButton(
-                        onPressed: onForgot,
-                        child: const Text(GridTexts.forgotPassword,
-                            style: TextStyle(color: Colors.white70)),
-                      ),
-                      TextButton(
-                        onPressed: onRequestAccess,
-                        child: const Text(GridTexts.requestAccess,
-                            style: TextStyle(color: Colors.white)),
+                      const SizedBox(height: 10),
+                      Wrap(
+                        alignment: WrapAlignment.center,
+                        spacing: 10,
+                        runSpacing: 0,
+                        children: [
+                          TextButton(
+                            onPressed: onForgot,
+                            child: const Text(GridTexts.forgotPassword,
+                                style: TextStyle(color: Colors.white70)),
+                          ),
+                          TextButton(
+                            onPressed: onRequestAccess,
+                            child: const Text(GridTexts.requestAccess,
+                                style: TextStyle(color: Colors.white)),
+                          ),
+                        ],
                       ),
                     ],
                   ),
-                ],
+                ),
               ),
             ),
           ),
