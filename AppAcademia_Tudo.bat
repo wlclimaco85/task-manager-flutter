@@ -60,6 +60,7 @@ echo  [E] Subir tudo: backend + 2 Chrome + Meu Treino/Safra no BlueStacks
 echo  [F] Build 4 APKs com backend deployado + instalar no BlueStacks
 echo  [G] Build Android APK de um projeto (backend local)
 echo  [H] Atualizar todos os repositorios (git pull)
+echo  [I] Subir Flutter (Chrome) apontando para Railway (sem backend local)
 echo  [P] Build APK unico com backend deployado
 echo  [0] Sair
 echo.
@@ -133,6 +134,10 @@ if /i "%OP%"=="G" (
 )
 if /i "%OP%"=="H" (
     call :GIT_PULL_ALL
+    goto END_MENU
+)
+if /i "%OP%"=="I" (
+    call :START_FLUTTER_WEB_RAILWAY
     goto END_MENU
 )
 if /i "%OP%"=="P" (
@@ -931,6 +936,22 @@ echo.
 echo [4/4] Iniciando app...
 "%ADB%" -s 127.0.0.1:5555 shell monkey -p %APP_PACKAGE_ABRACO% -c android.intent.category.LAUNCHER 1 >nul 2>&1
 echo App iniciado.
+exit /b 0
+
+:START_FLUTTER_WEB_RAILWAY
+echo.
+echo ============================================
+echo  Flutter (Chrome) apontando para Railway
+echo ============================================
+echo Backend deployado: %DEPLOY_BACKEND_URL%
+echo.
+if not exist "%FLUTTER_DIR%" (
+    echo [ERRO] Pasta Flutter nao encontrada: %FLUTTER_DIR%
+    exit /b 1
+)
+start "AppAcademia-Flutter-Railway" cmd /k "cd /d %FLUTTER_DIR% && flutter pub get && flutter run -d chrome --dart-define=BACKEND_URL=%DEPLOY_BACKEND_URL% --dart-define=WS_BACKEND_URL=wss://appacademia-production-be7e.up.railway.app/boletobancos"
+echo Flutter iniciando no Chrome apontando para Railway.
+echo URL Railway: %DEPLOY_BACKEND_URL%
 exit /b 0
 
 :GIT_PULL_ALL
