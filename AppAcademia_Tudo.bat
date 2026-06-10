@@ -1047,7 +1047,7 @@ for %%R in (%REPOS%) do (
         echo ----------------------------------------
         cd /d "%%R"
         git checkout main 2>nul || git checkout master 2>nul
-        git pull --rebase
+        git pull --rebase --autostash
         if errorlevel 1 (
             echo [ATENCAO] Falha ao atualizar %%~nxR - pode haver conflitos.
         ) else (
