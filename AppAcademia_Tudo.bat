@@ -61,6 +61,7 @@ echo  [F] Build 4 APKs com backend deployado + instalar no BlueStacks
 echo  [G] Build Android APK de um projeto (backend local)
 echo  [H] Atualizar todos os repositorios (git pull)
 echo  [I] Subir Flutter (Chrome) apontando para Railway (sem backend local)
+echo  [J] Build AAB (Play Store) com backend Railway + auto-incrementa versao
 echo  [P] Build APK unico com backend deployado
 echo  [0] Sair
 echo.
@@ -138,6 +139,10 @@ if /i "%OP%"=="H" (
 )
 if /i "%OP%"=="I" (
     call :START_FLUTTER_WEB_RAILWAY
+    goto END_MENU
+)
+if /i "%OP%"=="J" (
+    call :BUILD_AAB_RAILWAY
     goto END_MENU
 )
 if /i "%OP%"=="P" (
@@ -936,6 +941,80 @@ echo.
 echo [4/4] Iniciando app...
 "%ADB%" -s 127.0.0.1:5555 shell monkey -p %APP_PACKAGE_ABRACO% -c android.intent.category.LAUNCHER 1 >nul 2>&1
 echo App iniciado.
+exit /b 0
+
+:BUILD_AAB_RAILWAY
+call :CHECK_PATHS
+if errorlevel 1 exit /b 1
+
+set "GRADLE_FILE=%FLUTTER_DIR%\android\app\build.gradle.kts"
+if not exist "%GRADLE_FILE%" (
+    echo [ERRO] build.gradle.kts nao encontrado: %GRADLE_FILE%
+    exit /b 1
+)
+
+echo.
+echo ============================================
+echo  Build AAB - Play Store - Backend Railway
+echo ============================================
+echo Backend: %DEPLOY_BACKEND_URL%
+echo.
+
+rem -- Le versionCode atual e incrementa via PowerShell
+echo [1/4] Incrementando versionCode...
+for /f "usebackq delims=" %%V in (`powershell -NoProfile -ExecutionPolicy Bypass -Command "$f = Get-Content '%GRADLE_FILE%' -Raw; if ($f -match 'versionCode\s*=\s*(\d+)') { $Matches[1] } else { '0' }"`) do set "OLD_CODE=%%V"
+set /a NEW_CODE=%OLD_CODE%+1
+
+rem -- Calcula novo versionName: le major.minor do arquivo e usa NEW_CODE como patch
+for /f "usebackq delims=" %%V in (`powershell -NoProfile -ExecutionPolicy Bypass -Command "$f = Get-Content '%GRADLE_FILE%' -Raw; if ($f -match 'versionName\s*=\s*""""([0-9]+)\.([0-9]+)\.[0-9]+""""') { $Matches[1] + '.' + $Matches[2] } else { '1.0' }"`) do set "VER_PREFIX=%%V"
+set "NEW_NAME=%VER_PREFIX%.%NEW_CODE%"
+
+echo   versionCode: %OLD_CODE% -^> %NEW_CODE%
+echo   versionName: -^> %NEW_NAME%
+
+powershell -NoProfile -ExecutionPolicy Bypass -Command "$f = Get-Content '%GRADLE_FILE%' -Raw; $f = $f -replace 'versionCode\s*=\s*\d+', 'versionCode = %NEW_CODE%'; $f = $f -replace 'versionName\s*=\s*\042[^\042]+\042', 'versionName = \042%NEW_NAME%\042'; Set-Content '%GRADLE_FILE%' $f -NoNewline"
+if errorlevel 1 (
+    echo [ERRO] Falha ao atualizar versionCode/versionName.
+    exit /b 1
+)
+echo Versao atualizada com sucesso.
+
+echo.
+echo [2/4] flutter pub get...
+cd /d "%FLUTTER_DIR%"
+call flutter pub get
+if errorlevel 1 (
+    echo [ERRO] flutter pub get falhou.
+    exit /b 1
+)
+
+echo.
+echo [3/4] Buildando AAB release...
+call flutter build appbundle --release --dart-define=BACKEND_URL=%DEPLOY_BACKEND_URL% --dart-define=WS_BACKEND_URL=wss://appacademia-production-be7e.up.railway.app/boletobancos
+if errorlevel 1 (
+    echo [ERRO] Build AAB falhou.
+    exit /b 1
+)
+
+echo.
+echo [4/4] Copiando AAB para o Desktop...
+set "AAB_SRC=%FLUTTER_DIR%\build\app\outputs\bundle\release\app-release.aab"
+set "AAB_DEST=%DESKTOP%\AppAcademia_%NEW_NAME%_%NEW_CODE%.aab"
+copy /y "%AAB_SRC%" "%AAB_DEST%" >nul
+if errorlevel 1 (
+    echo [ERRO] Falha ao copiar AAB para o Desktop.
+    exit /b 1
+)
+
+echo.
+echo ============================================
+echo  AAB gerado com sucesso!
+echo ============================================
+echo Arquivo : %AAB_DEST%
+echo Versao  : %NEW_NAME% (versionCode %NEW_CODE%)
+echo Backend : %DEPLOY_BACKEND_URL%
+echo.
+echo Faca upload deste AAB no Google Play Console.
 exit /b 0
 
 :START_FLUTTER_WEB_RAILWAY
