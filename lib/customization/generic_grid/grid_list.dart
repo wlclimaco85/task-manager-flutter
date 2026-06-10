@@ -853,6 +853,20 @@ class _GridListScreenState extends State<GridListScreen> {
     );
   }
 
+  /// Formata datas ISO 8601 para dd/MM/yyyy nos cards.
+  String _formatarValorCampo(String valor) {
+    if (valor.length > 10 && valor.contains('T')) {
+      final parsed = DateTime.tryParse(valor);
+      if (parsed != null) {
+        final dia = parsed.day.toString().padLeft(2, '0');
+        final mes = parsed.month.toString().padLeft(2, '0');
+        final ano = parsed.year.toString();
+        return '$dia/$mes/$ano';
+      }
+    }
+    return valor;
+  }
+
   List<Widget> _visibleFields(Map<String, dynamic> item) {
     final visible = widget.fieldConfigs
         .where((c) =>
@@ -907,10 +921,11 @@ class _GridListScreenState extends State<GridListScreen> {
       );
     }
 
-    final value =
+    final raw =
         getNestedValue(item, c.displayFieldName ?? c.fieldName)?.toString() ??
             '';
-    if (value.isEmpty) return const SizedBox.shrink();
+    if (raw.isEmpty) return const SizedBox.shrink();
+    final value = _formatarValorCampo(raw);
     return Expanded(
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         Text(c.label,
@@ -934,18 +949,45 @@ class _GridListScreenState extends State<GridListScreen> {
       return _can(effectivePerm) && widget.hasPermission(effectivePerm);
     }).toList();
 
+    Widget _iconBtn({
+      required IconData icon,
+      required Color color,
+      required VoidCallback onPressed,
+      String? tooltip,
+    }) {
+      return Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 2),
+        child: Tooltip(
+          message: tooltip ?? '',
+          child: InkWell(
+            onTap: onPressed,
+            borderRadius: BorderRadius.circular(6),
+            child: Container(
+              padding: const EdgeInsets.all(4),
+              decoration: BoxDecoration(
+                border: Border.all(color: GridColors.divider),
+                borderRadius: BorderRadius.circular(6),
+              ),
+              child: Icon(icon, size: 20, color: color),
+            ),
+          ),
+        ),
+      );
+    }
+
     return Row(mainAxisAlignment: MainAxisAlignment.end, children: [
       if (widget.enableDebugMode)
-        IconButton(
-          icon: Icon(Icons.bug_report,
-              size: 16, color: Colors.black.withValues(alpha: 0.6)),
+        _iconBtn(
+          icon: Icons.bug_report,
+          color: Colors.black.withValues(alpha: 0.6),
           tooltip: 'Ver JSON',
           onPressed: () => _showAllFieldsDebug(context, item),
         ),
       if (widget.detailScreenBuilder != null && _can('view') && widget.hasPermission('view'))
-        IconButton(
-          icon: Icon(Icons.visibility_outlined,
-              size: 16, color: Colors.black.withValues(alpha: 0.6)),
+        _iconBtn(
+          icon: Icons.visibility_outlined,
+          color: GridColors.secondary,
+          tooltip: 'Ver detalhes',
           onPressed: () {
             L.d('[GridList] abrir detalhes do item ${getNestedValue(item, widget.idFieldName)}');
             Navigator.push(
@@ -956,9 +998,10 @@ class _GridListScreenState extends State<GridListScreen> {
           },
         ),
       if (_can('edit') && widget.hasPermission('edit'))
-        IconButton(
-          icon: Icon(Icons.edit_outlined,
-              size: 16, color: Colors.black.withValues(alpha: 0.6)),
+        _iconBtn(
+          icon: Icons.edit_outlined,
+          color: GridColors.primary,
+          tooltip: 'Editar',
           onPressed: () async {
             final ok = await _confirm(
               title: 'Editar',
@@ -971,16 +1014,17 @@ class _GridListScreenState extends State<GridListScreen> {
           },
         ),
       if (_can('delete') && widget.hasPermission('delete'))
-        IconButton(
-          icon: const Icon(Icons.delete_outline,
-              size: 16, color: GridColors.error),
+        _iconBtn(
+          icon: Icons.delete_outline,
+          color: GridColors.error,
+          tooltip: 'Excluir',
           onPressed: () =>
               _deleteItem(getNestedValue(item, widget.idFieldName).toString()),
         ),
       ...perItemServer.map(
-        (a) => IconButton(
-          icon: Icon(a.icon ?? Icons.play_arrow,
-              size: 16, color: Colors.black.withValues(alpha: 0.7)),
+        (a) => _iconBtn(
+          icon: a.icon ?? Icons.play_arrow,
+          color: GridColors.secondary,
           tooltip: a.label,
           onPressed: () => _runServerAction(context, a, item),
         ),
@@ -988,9 +1032,9 @@ class _GridListScreenState extends State<GridListScreen> {
       ..._customActions
           .where((a) => a.isVisible == null || a.isVisible!(item))
           .map(
-            (a) => IconButton(
-              icon: Icon(a.icon,
-                  size: 16, color: Colors.black.withValues(alpha: 0.7)),
+            (a) => _iconBtn(
+              icon: a.icon,
+              color: GridColors.secondary,
               tooltip: a.label,
               onPressed: () => a.onPressed(context, item),
             ),

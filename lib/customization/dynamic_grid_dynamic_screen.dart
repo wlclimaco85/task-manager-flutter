@@ -191,7 +191,14 @@ class _DynamicGridDynamicScreenState extends State<DynamicGridDynamicScreen> {
         titulo: 'Alvaras',
         endpoint: '/api/alvara',
         fields: [
-          TelaField(label: 'ID', fieldName: 'id', isInForm: false),
+          TelaField(
+            label: 'ID',
+            fieldName: 'id',
+            isInForm: true,
+            enabled: false,
+            showInCard: false,
+            fieldOrder: 0,
+          ),
           TelaField(
             label: 'Descricao',
             fieldName: 'descricao',
@@ -202,6 +209,15 @@ class _DynamicGridDynamicScreenState extends State<DynamicGridDynamicScreen> {
           TelaField(
             label: 'Tipo',
             fieldName: 'tipoAlvara',
+            fieldType: TelaFieldType.dropdown,
+            dropdownOptions: [
+              DropdownOption(optionValue: 'Alvara de Funcionamento', optionLabel: 'Alvara de Funcionamento'),
+              DropdownOption(optionValue: 'Alvara de Construcao', optionLabel: 'Alvara de Construcao'),
+              DropdownOption(optionValue: 'Alvara Sanitario', optionLabel: 'Alvara Sanitario'),
+              DropdownOption(optionValue: 'Licenca Ambiental', optionLabel: 'Licenca Ambiental'),
+            ],
+            dropdownValueField: 'value',
+            dropdownDisplayField: 'label',
             fieldOrder: 3,
           ),
           TelaField(
@@ -210,7 +226,22 @@ class _DynamicGridDynamicScreenState extends State<DynamicGridDynamicScreen> {
             fieldType: TelaFieldType.date,
             fieldOrder: 4,
           ),
-          TelaField(label: 'Status', fieldName: 'status', fieldOrder: 5),
+          TelaField(
+            label: 'Status',
+            fieldName: 'status',
+            fieldType: TelaFieldType.dropdown,
+            dropdownOptions: [
+              DropdownOption(optionValue: 'Pendente', optionLabel: 'Pendente'),
+              DropdownOption(optionValue: 'Ativo', optionLabel: 'Ativo'),
+              DropdownOption(optionValue: 'Vencido', optionLabel: 'Vencido'),
+              DropdownOption(optionValue: 'Cancelado', optionLabel: 'Cancelado'),
+            ],
+            dropdownValueField: 'value',
+            dropdownDisplayField: 'label',
+            defaultValue: 'Pendente',
+            showInInsert: true,
+            fieldOrder: 5,
+          ),
           TelaField(
             label: 'Observacao',
             fieldName: 'observacao',

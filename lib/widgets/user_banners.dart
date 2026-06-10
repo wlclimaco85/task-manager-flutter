@@ -293,9 +293,10 @@ class _UserBannerAppBarState extends State<UserBannerAppBar> {
           mainAxisSize: MainAxisSize.min,
           children: [
             Image.asset(
-              'assets/images/iconApp.png',
+              'assets/images/logo_contabilidade.jpg',
               width: 36,
               height: 36,
+              fit: BoxFit.contain,
               errorBuilder: (_, __, ___) {
                 return const Icon(Icons.apps, color: GridColors.textPrimary);
               },
