@@ -281,34 +281,127 @@ class _ExtratoImportacaoScreenState extends State<ExtratoImportacaoScreen> {
             _buildResumo(totalLinhas, totalDebitos, totalCreditos),
             const SizedBox(height: 16),
             if (linhas.isNotEmpty)
-              SingleChildScrollView(
-                scrollDirection: Axis.horizontal,
-                child: DataTable(
-                  columnSpacing: 20,
-                  headingRowColor:
-                      WidgetStateProperty.all(GridColors.secondaryLight),
-                  headingTextStyle: const TextStyle(
-                      color: Colors.white, fontWeight: FontWeight.bold),
-                  columns: const [
-                    DataColumn(label: Text('Data')),
-                    DataColumn(label: Text('Descrição')),
-                    DataColumn(label: Text('Valor'), numeric: true),
-                    DataColumn(label: Text('Tipo')),
-                  ],
-                  rows: linhas.take(100).map((linha) {
-                    return DataRow(cells: [
-                      DataCell(Text(linha['data']?.toString() ?? '')),
-                      DataCell(Text(linha['descricao']?.toString() ??
-                          linha['descricao']?.toString() ??
-                          '')),
-                      DataCell(Text(_formatValor(
-                          (linha['valor'] ?? 0.0).toDouble()))),
-                      DataCell(Text(linha['tipo']?.toString() ??
-                          linha['debitoCredito']?.toString() ??
-                          '')),
-                    ]);
-                  }).toList(),
+              GridView.builder(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: 2,
+                  childAspectRatio: 1.1,
+                  crossAxisSpacing: 8,
+                  mainAxisSpacing: 8,
                 ),
+                itemCount: linhas.take(100).length,
+                itemBuilder: (context, index) {
+                  final linha = linhas[index];
+                  final tipo = linha['tipo']?.toString() ??
+                      linha['debitoCredito']?.toString() ??
+                      '';
+                  final valor = (linha['valor'] ?? 0.0).toDouble();
+                  final ehCredito = tipo == 'CREDITO' ||
+                      tipo == 'C' ||
+                      (tipo.isEmpty && valor > 0);
+                  final ehDebito = tipo == 'DEBITO' ||
+                      tipo == 'D' ||
+                      (tipo.isEmpty && valor < 0);
+                  final corTipo = ehCredito
+                      ? GridColors.success
+                      : ehDebito
+                          ? GridColors.error
+                          : Colors.grey;
+                  final iconeTipo = ehCredito
+                      ? Icons.arrow_downward
+                      : ehDebito
+                          ? Icons.arrow_upward
+                          : Icons.swap_horiz;
+                  final tipoLabel = ehCredito
+                      ? 'CRÉDITO'
+                      : ehDebito
+                          ? 'DÉBITO'
+                          : tipo.toUpperCase();
+                  final valorFormatado =
+                      'R\$ ${valor.abs().toStringAsFixed(2).replaceAll('.', ',')}';
+                  final descricao =
+                      linha['descricao']?.toString() ?? '';
+                  final data = linha['data']?.toString() ?? '';
+
+                  return Container(
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border(
+                        left: BorderSide(color: corTipo, width: 4),
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: corTipo.withValues(alpha: 0.15),
+                          blurRadius: 5,
+                        ),
+                      ],
+                    ),
+                    padding: const EdgeInsets.all(12),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // Cabeçalho: ícone + tipo + badge valor
+                        Row(
+                          children: [
+                            Icon(iconeTipo, size: 20, color: corTipo),
+                            const SizedBox(width: 4),
+                            Text(
+                              tipoLabel,
+                              style: TextStyle(
+                                fontSize: 10,
+                                color: corTipo,
+                                fontWeight: FontWeight.w600,
+                                letterSpacing: 0.5,
+                              ),
+                            ),
+                            const Spacer(),
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 8, vertical: 4),
+                              decoration: BoxDecoration(
+                                color: corTipo.withValues(alpha: 0.1),
+                                borderRadius: BorderRadius.circular(6),
+                              ),
+                              child: Text(
+                                valorFormatado,
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.bold,
+                                  color: corTipo,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 6),
+                        // Descrição
+                        Text(
+                          descricao,
+                          style: const TextStyle(
+                              fontSize: 12, fontWeight: FontWeight.bold),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        const SizedBox(height: 4),
+                        // Data
+                        Row(
+                          children: [
+                            const Icon(Icons.calendar_today,
+                                size: 11, color: Colors.grey),
+                            const SizedBox(width: 4),
+                            Text(
+                              data,
+                              style: const TextStyle(
+                                  fontSize: 11, color: Colors.grey),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  );
+                },
               ),
             if (linhas.length > 100)
               Padding(
