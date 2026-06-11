@@ -2056,95 +2056,139 @@ class _GenericMobileGridScreenState<T>
     final itemMap = widget.toJson(item);
     final id = _getNestedValue(itemMap, widget.idFieldName).toString();
     final isSelected = _cardSelection[id] ?? false;
-    final colorScheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
 
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
-      child: Card(
-        elevation: 2,
-        shadowColor:
-            GridColors.primary.withValues(alpha: 0.3), // Sombra na cor primária
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
-          side: BorderSide(
-            color: isSelected
-                ? GridColors.primary
-                : GridColors.primary
-                    .withValues(alpha: 0.3), // Borda na cor primária
-            width: isSelected ? 2 : 1,
-          ),
-        ),
+      margin: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      decoration: BoxDecoration(
         color: isSelected
-            ? GridColors.primary.withValues(alpha: 0.08)
+            ? GridColors.primary.withValues(alpha: 0.06)
             : GridColors.card,
-        child: InkWell(
-          borderRadius: BorderRadius.circular(12),
-          onTap: _isSelectionMode
-              ? () => _toggleCardSelection(id, !isSelected)
-              : () => widget.onItemTap?.call(item, context),
-          onLongPress: () {
-            if (!_isSelectionMode) {
-              _toggleSelectionMode();
-              _toggleCardSelection(id, true);
-            }
-          },
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(10, 8, 10, 6),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Header com ID, Status e Checkbox
-                Row(
-                  children: [
-                    if (_isSelectionMode)
-                      Padding(
-                        padding: const EdgeInsets.only(right: 8),
-                        child: Checkbox(
-                          value: isSelected,
-                          onChanged: (value) =>
-                              _toggleCardSelection(id, value ?? false),
-                          fillColor:
-                              WidgetStateProperty.all(GridColors.primary),
-                        ),
-                      ),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(
+          color: isSelected
+              ? GridColors.primary
+              : GridColors.divider,
+          width: isSelected ? 1.5 : 1,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: GridColors.primary.withValues(alpha: 0.08),
+            blurRadius: 6,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(10),
+        child: IntrinsicHeight(
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              // Barra vertical esquerda (left accent)
+              Container(
+                width: 3,
+                color: isSelected
+                    ? GridColors.primary
+                    : GridColors.primary.withValues(alpha: 0.7),
+              ),
+              // Conteúdo do card
+              Expanded(
+                child: InkWell(
+                  onTap: _isSelectionMode
+                      ? () => _toggleCardSelection(id, !isSelected)
+                      : () => widget.onItemTap?.call(item, context),
+                  onLongPress: () {
+                    if (!_isSelectionMode) {
+                      _toggleSelectionMode();
+                      _toggleCardSelection(id, true);
+                    }
+                  },
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(10, 7, 10, 0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // Header com ID, Checkbox e Status
+                        Row(
+                          children: [
+                            if (_isSelectionMode)
+                              Padding(
+                                padding: const EdgeInsets.only(right: 6),
+                                child: SizedBox(
+                                  width: 20,
+                                  height: 20,
+                                  child: Checkbox(
+                                    value: isSelected,
+                                    onChanged: (value) =>
+                                        _toggleCardSelection(id, value ?? false),
+                                    fillColor: WidgetStateProperty.all(
+                                        GridColors.primary),
+                                    materialTapTargetSize:
+                                        MaterialTapTargetSize.shrinkWrap,
+                                  ),
+                                ),
+                              ),
 
-                    // ID
-                    if (_fieldVisibility[widget.idFieldName] == true)
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 6, vertical: 2), // Menor padding
-                        decoration: BoxDecoration(
-                          color: GridColors.primary.withValues(alpha: 0.1),
-                          borderRadius: BorderRadius.circular(4),
+                            // Badge de ID
+                            if (_fieldVisibility[widget.idFieldName] == true)
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 5, vertical: 2),
+                                decoration: BoxDecoration(
+                                  color:
+                                      GridColors.primary.withValues(alpha: 0.1),
+                                  borderRadius: BorderRadius.circular(4),
+                                ),
+                                child: Text(
+                                  '#$id',
+                                  style: textTheme.labelSmall?.copyWith(
+                                    fontWeight: FontWeight.w700,
+                                    color: GridColors.primary,
+                                    fontSize: 11,
+                                  ),
+                                ),
+                              ),
+
+                            const Spacer(),
+
+                            // Badge de Status
+                            if (_hasStatusField(itemMap))
+                              _buildStatusBadge(itemMap),
+                          ],
                         ),
-                        child: Text(
-                          '#$id',
-                          style: textTheme.labelSmall?.copyWith(
-                            fontWeight: FontWeight.w600,
-                            color: GridColors.primary,
+
+                        const SizedBox(height: 5),
+
+                        // Separador fino
+                        Divider(
+                          height: 1,
+                          thickness: 1,
+                          color: GridColors.divider,
+                        ),
+
+                        const SizedBox(height: 5),
+
+                        // Campos em duas colunas
+                        ..._buildVisibleFieldsForCard(itemMap),
+
+                        // Separador antes das ações
+                        if (!_isSelectionMode) ...[
+                          const SizedBox(height: 4),
+                          Divider(
+                            height: 1,
+                            thickness: 1,
+                            color: GridColors.divider,
                           ),
-                        ),
-                      ),
-
-                    const Spacer(),
-
-                    // Status
-                    if (_hasStatusField(itemMap)) _buildStatusBadge(itemMap),
-                  ],
+                          _buildCardActions(item, itemMap),
+                        ] else
+                          const SizedBox(height: 6),
+                      ],
+                    ),
+                  ),
                 ),
-
-                const SizedBox(height: 4),
-
-                // Campos em linha (label e valor lado a lado)
-                ..._buildVisibleFieldsForCard(itemMap),
-
-                const SizedBox(height: 4),
-
-                // Ações
-                if (!_isSelectionMode) _buildCardActions(item, itemMap),
-              ],
-            ),
+              ),
+            ],
           ),
         ),
       ),
@@ -2156,7 +2200,6 @@ class _GenericMobileGridScreenState<T>
   // ==============================================
 
   List<Widget> _buildVisibleFieldsForCard(Map<String, dynamic> itemMap) {
-    // Filtra apenas campos com valor não-vazio para evitar linhas em branco
     final visibleConfigs = widget.fieldConfigs
         .where((config) =>
             _fieldVisibility[config.fieldName] == true &&
@@ -2174,8 +2217,11 @@ class _GenericMobileGridScreenState<T>
 
       rows.add(
         Padding(
-          padding: const EdgeInsets.only(bottom: 4),
-          child: Row(children: [col1, const SizedBox(width: 12), col2]),
+          padding: const EdgeInsets.only(bottom: 5),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [col1, const SizedBox(width: 8), col2],
+          ),
         ),
       );
     }
@@ -2193,15 +2239,13 @@ class _GenericMobileGridScreenState<T>
   }
 
   Widget _buildFieldInLine(FieldConfig config, Map<String, dynamic> itemMap) {
-    final textTheme = Theme.of(context).textTheme;
-
     if (config.fieldType == FieldType.file) {
       final fileData = _extractFileData(itemMap, config);
       final int fileId = fileData['id'] ?? 0;
       final String fileName = fileData['nome'] ?? fileData['fileName'] ?? '';
 
       if (fileId == 0 || fileName.isEmpty) {
-        return const SizedBox.shrink();
+        return const Expanded(child: SizedBox.shrink());
       }
 
       return Expanded(
@@ -2209,10 +2253,12 @@ class _GenericMobileGridScreenState<T>
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              config.label,
-              style: textTheme.labelSmall?.copyWith(
-                fontWeight: FontWeight.w500,
-                color: GridColors.textSecondary.withValues(alpha: 0.7),
+              config.label.toUpperCase(),
+              style: const TextStyle(
+                fontSize: 9,
+                fontWeight: FontWeight.w600,
+                color: GridColors.textSecondary,
+                letterSpacing: 0.4,
               ),
             ),
             const SizedBox(height: 2),
@@ -2221,17 +2267,15 @@ class _GenericMobileGridScreenState<T>
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const Icon(
-                    Icons.attach_file,
-                    size: 14,
-                    color: GridColors.primary,
-                  ),
-                  const SizedBox(width: 4),
+                  const Icon(Icons.attach_file,
+                      size: 13, color: GridColors.primary),
+                  const SizedBox(width: 3),
                   Flexible(
                     child: Text(
                       fileName,
                       style: const TextStyle(
                         fontSize: 12,
+                        fontWeight: FontWeight.w600,
                         color: GridColors.primary,
                         decoration: TextDecoration.underline,
                       ),
@@ -2265,25 +2309,28 @@ class _GenericMobileGridScreenState<T>
 
       final displayValue = rawValue?.toString() ?? '';
 
-      if (displayValue.isEmpty) return const SizedBox.shrink();
+      if (displayValue.isEmpty) return const Expanded(child: SizedBox.shrink());
 
       return Expanded(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              config.label,
-              style: textTheme.labelSmall?.copyWith(
-                fontWeight: FontWeight.w500,
-                color: GridColors.textSecondary.withValues(alpha: 0.7),
+              config.label.toUpperCase(),
+              style: const TextStyle(
+                fontSize: 9,
+                fontWeight: FontWeight.w600,
+                color: GridColors.textSecondary,
+                letterSpacing: 0.4,
               ),
             ),
             const SizedBox(height: 2),
             Text(
               displayValue,
-              style: textTheme.bodySmall?.copyWith(
-                color: GridColors.textSecondary,
-                fontWeight: FontWeight.w400,
+              style: const TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                color: Color(0xFF1A1A1A),
               ),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
@@ -2381,6 +2428,7 @@ class _GenericMobileGridScreenState<T>
 
     Color badgeColor;
     String badgeText;
+    IconData badgeIcon;
 
     switch (status) {
       case 'ativo':
@@ -2389,6 +2437,7 @@ class _GenericMobileGridScreenState<T>
       case 'aberto':
         badgeColor = GridColors.success;
         badgeText = 'Ativo';
+        badgeIcon = Icons.check_circle_outline;
         break;
       case 'inativo':
       case 'false':
@@ -2396,93 +2445,130 @@ class _GenericMobileGridScreenState<T>
       case 'fechado':
         badgeColor = GridColors.error;
         badgeText = 'Inativo';
+        badgeIcon = Icons.cancel_outlined;
         break;
       case 'pendente':
         badgeColor = GridColors.warning;
         badgeText = 'Pendente';
+        badgeIcon = Icons.schedule_outlined;
         break;
       default:
         badgeColor = GridColors.primary;
-        badgeText = status?.toUpperCase() ?? 'Status';
+        badgeText = status != null && status.isNotEmpty
+            ? status[0].toUpperCase() + status.substring(1)
+            : 'Status';
+        badgeIcon = Icons.info_outline;
     }
 
     return Container(
-      padding: const EdgeInsets.symmetric(
-          horizontal: 6, vertical: 2), // Menor padding
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
       decoration: BoxDecoration(
         color: badgeColor.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(4),
-        border: Border.all(color: badgeColor.withValues(alpha: 0.3)),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: badgeColor.withValues(alpha: 0.35), width: 1),
       ),
-      child: Text(
-        badgeText,
-        style: Theme.of(context).textTheme.labelSmall?.copyWith(
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(badgeIcon, size: 11, color: badgeColor),
+          const SizedBox(width: 3),
+          Text(
+            badgeText,
+            style: TextStyle(
               color: badgeColor,
-              fontWeight: FontWeight.w600,
-              fontSize: 10, // Fonte menor
+              fontWeight: FontWeight.w700,
+              fontSize: 10,
+              letterSpacing: 0.2,
             ),
+          ),
+        ],
       ),
     );
   }
 
   Widget _buildCardActions(T item, Map<String, dynamic> itemMap) {
-    Widget actionBtn(IconData icon, Color color, VoidCallback onPressed,
+    Widget actionBtn(
+        IconData icon, Color iconColor, Color bgColor, VoidCallback onPressed,
         String tooltip) {
-      return Padding(
-        padding: const EdgeInsets.only(left: 4),
-        child: Tooltip(
-          message: tooltip,
-          child: InkWell(
-            onTap: onPressed,
-            borderRadius: BorderRadius.circular(6),
-            child: Container(
-              padding: const EdgeInsets.all(5),
-              decoration: BoxDecoration(
-                border: Border.all(color: GridColors.divider),
-                borderRadius: BorderRadius.circular(6),
-              ),
-              child: Icon(icon, size: 18, color: color),
+      return Tooltip(
+        message: tooltip,
+        child: InkWell(
+          onTap: onPressed,
+          borderRadius: BorderRadius.circular(6),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
+            decoration: BoxDecoration(
+              color: bgColor,
+              borderRadius: BorderRadius.circular(6),
             ),
+            child: Icon(icon, size: 16, color: iconColor),
           ),
         ),
       );
     }
 
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.end,
-      children: [
-        if (widget.enableDebugMode)
-          actionBtn(Icons.bug_report,
-              GridColors.textSecondary.withValues(alpha: 0.6),
-              () => _showAllFieldsDebug(context, item), 'Debug'),
-        if (widget.detailScreenBuilder != null && widget.hasPermission('view'))
-          actionBtn(
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 6),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.end,
+        children: [
+          if (widget.enableDebugMode) ...[
+            actionBtn(
+              Icons.bug_report,
+              GridColors.textSecondary,
+              GridColors.textSecondary.withValues(alpha: 0.1),
+              () => _showAllFieldsDebug(context, item),
+              'Debug',
+            ),
+            const SizedBox(width: 4),
+          ],
+          if (widget.detailScreenBuilder != null &&
+              widget.hasPermission('view')) ...[
+            actionBtn(
               Icons.visibility_outlined,
               GridColors.secondary,
+              GridColors.secondary.withValues(alpha: 0.1),
               () => Navigator.push(
                   context,
                   MaterialPageRoute(
                       builder: (_) => widget.detailScreenBuilder!(item))),
-              'Visualizar'),
-        if (widget.hasPermission('edit'))
-          actionBtn(Icons.edit_outlined, GridColors.primary,
-              () => _openForm(item: item), 'Editar'),
-        if (widget.hasPermission('delete'))
-          actionBtn(
+              'Visualizar',
+            ),
+            const SizedBox(width: 4),
+          ],
+          if (widget.hasPermission('edit')) ...[
+            actionBtn(
+              Icons.edit_outlined,
+              GridColors.primary,
+              GridColors.primary.withValues(alpha: 0.1),
+              () => _openForm(item: item),
+              'Editar',
+            ),
+            const SizedBox(width: 4),
+          ],
+          ..._customActions
+              .where((action) => action.isVisible?.call(item) ?? true)
+              .expand((action) => [
+                    actionBtn(
+                      action.icon,
+                      GridColors.secondary,
+                      GridColors.secondary.withValues(alpha: 0.1),
+                      () => action.onPressed(context, item),
+                      action.label,
+                    ),
+                    const SizedBox(width: 4),
+                  ]),
+          if (widget.hasPermission('delete'))
+            actionBtn(
               Icons.delete_outline,
               GridColors.error,
+              GridColors.error.withValues(alpha: 0.1),
               () => _deleteItem(
                   _getNestedValue(itemMap, widget.idFieldName).toString()),
-              'Excluir'),
-        ..._customActions
-            .where((action) => action.isVisible?.call(item) ?? true)
-            .map((action) => actionBtn(
-                  action.icon,
-                  GridColors.secondary,
-                  () => action.onPressed(context, item),
-                  action.label,
-                )),
-      ],
+              'Excluir',
+            ),
+        ],
+      ),
     );
   }
 
