@@ -2087,10 +2087,16 @@ class _GenericMobileGridScreenState<T>
             children: [
               // Barra vertical esquerda (left accent)
               Container(
-                width: 3,
-                color: isSelected
-                    ? GridColors.primary
-                    : GridColors.primary.withValues(alpha: 0.7),
+                width: 4,
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: isSelected
+                        ? [GridColors.primary, GridColors.secondary]
+                        : [GridColors.primary, GridColors.primary.withValues(alpha: 0.5)],
+                  ),
+                ),
               ),
               // Conteúdo do card
               Expanded(
@@ -2105,7 +2111,7 @@ class _GenericMobileGridScreenState<T>
                     }
                   },
                   child: Padding(
-                    padding: const EdgeInsets.fromLTRB(10, 7, 10, 0),
+                    padding: const EdgeInsets.fromLTRB(12, 8, 12, 0),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -2217,7 +2223,7 @@ class _GenericMobileGridScreenState<T>
 
       rows.add(
         Padding(
-          padding: const EdgeInsets.only(bottom: 5),
+          padding: const EdgeInsets.only(bottom: 6),
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [col1, const SizedBox(width: 8), col2],
@@ -2255,13 +2261,13 @@ class _GenericMobileGridScreenState<T>
             Text(
               config.label.toUpperCase(),
               style: const TextStyle(
-                fontSize: 9,
+                fontSize: 10,
                 fontWeight: FontWeight.w600,
-                color: GridColors.textSecondary,
-                letterSpacing: 0.4,
+                color: GridColors.textMuted,
+                letterSpacing: 0.5,
               ),
             ),
-            const SizedBox(height: 2),
+            const SizedBox(height: 3),
             InkWell(
               onTap: () => _downloadFile(fileId, fileName),
               child: Row(
@@ -2318,19 +2324,19 @@ class _GenericMobileGridScreenState<T>
             Text(
               config.label.toUpperCase(),
               style: const TextStyle(
-                fontSize: 9,
+                fontSize: 10,
                 fontWeight: FontWeight.w600,
-                color: GridColors.textSecondary,
-                letterSpacing: 0.4,
+                color: GridColors.textMuted,
+                letterSpacing: 0.5,
               ),
             ),
-            const SizedBox(height: 2),
+            const SizedBox(height: 3),
             Text(
               displayValue,
               style: const TextStyle(
-                fontSize: 12,
+                fontSize: 13,
                 fontWeight: FontWeight.w600,
-                color: Color(0xFF1A1A1A),
+                color: GridColors.textSecondary,
               ),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
@@ -2494,14 +2500,18 @@ class _GenericMobileGridScreenState<T>
         message: tooltip,
         child: InkWell(
           onTap: onPressed,
-          borderRadius: BorderRadius.circular(6),
+          borderRadius: BorderRadius.circular(8),
           child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
             decoration: BoxDecoration(
               color: bgColor,
-              borderRadius: BorderRadius.circular(6),
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(
+                color: iconColor.withValues(alpha: 0.18),
+                width: 1,
+              ),
             ),
-            child: Icon(icon, size: 16, color: iconColor),
+            child: Icon(icon, size: 15, color: iconColor),
           ),
         ),
       );
