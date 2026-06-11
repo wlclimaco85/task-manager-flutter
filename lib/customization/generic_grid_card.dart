@@ -11,6 +11,7 @@ import '../../services/upload_file_caller.dart';
 import '../../../widgets/user_banners.dart';
 
 import 'package:task_manager_flutter/utils/app_logger.dart';
+import '../widgets/searchable_dropdown.dart';
 // ==============================================
 // MOBILE GRID SCREEN - MATERIAL DESIGN 3 COMPLETO
 // ==============================================
@@ -972,12 +973,50 @@ class _GenericMobileGridScreenState<T>
 
   Widget _buildDropdownField(
       FieldConfig config, TextEditingController controller) {
+    // Campos com FutureBuilder e lista dinâmica usam SearchableDropdownField
+    if (config.dropdownFutureBuilder != null) {
+      return FutureBuilder<List<Map<String, dynamic>>>(
+        future: config.dropdownFutureBuilder!(),
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Padding(
+              padding: EdgeInsets.symmetric(vertical: 8),
+              child: LinearProgressIndicator(),
+            );
+          }
+          return SearchableDropdownField(
+            label: config.label + (config.isRequired ? ' *' : ''),
+            items: snapshot.data ?? [],
+            valueField: config.dropdownValueField,
+            displayField: config.dropdownDisplayField,
+            value: controller.text.isNotEmpty ? controller.text : null,
+            enabled: config.enabled,
+            onChanged: (v) {
+              setState(() => controller.text = v ?? '');
+            },
+          );
+        },
+      );
+    }
+
+    // Campos com opções estáticas também usam SearchableDropdownField
+    if (config.dropdownOptions != null && config.dropdownOptions!.isNotEmpty) {
+      return SearchableDropdownField(
+        label: config.label + (config.isRequired ? ' *' : ''),
+        items: config.dropdownOptions!,
+        valueField: config.dropdownValueField,
+        displayField: config.dropdownDisplayField,
+        value: controller.text.isNotEmpty ? controller.text : null,
+        enabled: config.enabled,
+        onChanged: (v) {
+          setState(() => controller.text = v ?? '');
+        },
+      );
+    }
+
+    // Fallback: DropdownButtonFormField nativo (sem opções dinâmicas)
     Future<List<Map<String, dynamic>>> getOptions() async {
-      if (config.dropdownFutureBuilder != null) {
-        return await config.dropdownFutureBuilder!();
-      } else {
-        return config.dropdownOptions ?? [];
-      }
+      return config.dropdownOptions ?? [];
     }
 
     return FutureBuilder<List<Map<String, dynamic>>>(
@@ -1583,7 +1622,7 @@ class _GenericMobileGridScreenState<T>
     showDialog(
       context: context,
       builder: (ctx) => StatefulBuilder(
-        builder: (context, setState) {
+        builder: (ctx2, setDialogState) {
           return AlertDialog(
             title: const Text('Campos Visíveis'),
             content: SizedBox(
@@ -1598,7 +1637,7 @@ class _GenericMobileGridScreenState<T>
                     onChanged: config.isFixed
                         ? null
                         : (value) {
-                            setState(() {
+                            setDialogState(() {
                               _fieldVisibility[config.fieldName] =
                                   value ?? false;
                             });
@@ -1615,6 +1654,7 @@ class _GenericMobileGridScreenState<T>
               ElevatedButton(
                 onPressed: () {
                   _saveFieldPreferences();
+                  // Chama setState do widget pai para atualizar os cards
                   setState(() {});
                   Navigator.pop(ctx);
                 },
@@ -1724,46 +1764,97 @@ class _GenericMobileGridScreenState<T>
               runSpacing: 16,
               children: widget.fieldConfigs
                   .where((c) => c.isFilterable)
-                  .map((config) => SizedBox(
-                        width: 250,
-                        child: TextField(
-                          controller: _filterControllers[config.fieldName],
-                          decoration: InputDecoration(
-                            labelText: config.label,
-                            hintText:
-                                'Filtrar por ${config.label.toLowerCase()}...',
-                            prefixIcon: Icon(
-                                config.icon ?? Icons.filter_list_alt,
-                                size: 20),
-                            suffixIcon: _filterControllers[config.fieldName]
-                                        ?.text
-                                        .isNotEmpty ==
-                                    true
-                                ? IconButton(
-                                    icon: const Icon(Icons.clear, size: 16),
-                                    onPressed: () {
-                                      _filterControllers[config.fieldName]
-                                          ?.clear();
-                                      _applyFilters();
-                                    },
-                                  )
-                                : null,
-                            filled: true,
-                            fillColor: colorScheme.surfaceContainerHighest
-                                .withValues(alpha: 0.3),
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(8),
-                              borderSide: BorderSide.none,
-                            ),
-                            contentPadding: const EdgeInsets.symmetric(
-                              horizontal: 12,
-                              vertical: 8,
-                            ),
-                          ),
-                          onChanged: (_) => _applyFilters(),
-                        ),
-                      ))
-                  .toList(),
+                  .map((config) {
+                // Campos dropdown com lista dinâmica: usa SearchableDropdownField
+                if (config.fieldType == FieldType.dropdown &&
+                    config.dropdownFutureBuilder != null) {
+                  return SizedBox(
+                    width: 250,
+                    child: FutureBuilder<List<Map<String, dynamic>>>(
+                      future: config.dropdownFutureBuilder!(),
+                      builder: (context, snapshot) {
+                        return SearchableDropdownField(
+                          label: config.label,
+                          items: snapshot.data ?? [],
+                          valueField: config.dropdownValueField,
+                          displayField: config.dropdownDisplayField,
+                          value: _filterControllers[config.fieldName]?.text
+                              .isNotEmpty == true
+                              ? _filterControllers[config.fieldName]!.text
+                              : null,
+                          onChanged: (v) {
+                            _filterControllers[config.fieldName]?.text =
+                                v ?? '';
+                            _applyFilters();
+                          },
+                        );
+                      },
+                    ),
+                  );
+                }
+
+                // Campos dropdown com opções estáticas
+                if (config.fieldType == FieldType.dropdown &&
+                    config.dropdownOptions != null) {
+                  return SizedBox(
+                    width: 250,
+                    child: SearchableDropdownField(
+                      label: config.label,
+                      items: config.dropdownOptions!,
+                      valueField: config.dropdownValueField,
+                      displayField: config.dropdownDisplayField,
+                      value: _filterControllers[config.fieldName]?.text
+                          .isNotEmpty == true
+                          ? _filterControllers[config.fieldName]!.text
+                          : null,
+                      onChanged: (v) {
+                        _filterControllers[config.fieldName]?.text = v ?? '';
+                        _applyFilters();
+                      },
+                    ),
+                  );
+                }
+
+                // Demais campos: TextField padrão
+                return SizedBox(
+                  width: 250,
+                  child: TextField(
+                    controller: _filterControllers[config.fieldName],
+                    decoration: InputDecoration(
+                      labelText: config.label,
+                      hintText:
+                          'Filtrar por ${config.label.toLowerCase()}...',
+                      prefixIcon: Icon(
+                          config.icon ?? Icons.filter_list_alt,
+                          size: 20),
+                      suffixIcon: _filterControllers[config.fieldName]
+                                  ?.text
+                                  .isNotEmpty ==
+                              true
+                          ? IconButton(
+                              icon: const Icon(Icons.clear, size: 16),
+                              onPressed: () {
+                                _filterControllers[config.fieldName]?.clear();
+                                _applyFilters();
+                              },
+                            )
+                          : null,
+                      filled: true,
+                      fillColor: colorScheme.surfaceContainerHighest
+                          .withValues(alpha: 0.3),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8),
+                        borderSide: BorderSide.none,
+                      ),
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 8,
+                      ),
+                    ),
+                    onChanged: (_) => _applyFilters(),
+                  ),
+                );
+              }).toList(),
             ),
 
             const SizedBox(height: 24),
@@ -2465,7 +2556,14 @@ class _GenericMobileGridScreenState<T>
   }
 
   Widget _buildStatusBadge(Map<String, dynamic> itemMap) {
-    final rawStatus = _getNestedValue(itemMap, 'status')?.toString() ?? '';
+    // Lê campo status; se ausente, tenta o campo 'ativo' (boolean) como fallback
+    String rawStatus = _getNestedValue(itemMap, 'status')?.toString() ?? '';
+    if (rawStatus.isEmpty) {
+      final rawAtivo = _getNestedValue(itemMap, 'ativo');
+      if (rawAtivo != null) {
+        rawStatus = rawAtivo.toString(); // 'true' ou 'false'
+      }
+    }
     final status = rawStatus.toLowerCase();
 
     Color badgeColor;
