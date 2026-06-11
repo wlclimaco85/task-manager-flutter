@@ -3,6 +3,7 @@ import 'dart:typed_data';
 
 import 'package:file_picker/file_picker.dart';
 import 'package:http/http.dart' as http;
+import 'package:http_parser/http_parser.dart';
 
 import '../models/anexo_financeiro_model.dart';
 import '../models/auth_utility.dart';
@@ -11,7 +12,6 @@ import '../utils/tenant_context.dart';
 
 const int _maxBytes = 10 * 1024 * 1024; // 10MB
 const List<String> _allowedExtensions = ['pdf', 'jpg', 'jpeg', 'png', 'xml'];
-const List<String> _allowedTypes = ['application/pdf', 'image/jpeg', 'image/png', 'application/xml', 'text/xml'];
 
 class AnexoFinanceiroService {
   Future<List<AnexoFinanceiro>> listar(int lancamentoId, String tipo) async {
@@ -38,10 +38,16 @@ class AnexoFinanceiroService {
     request.fields['lancamentoId'] = lancamentoId.toString();
     request.fields['tipo'] = tipo;
 
-    final bytes = file.bytes ?? (file.path != null ? await _readFile(file.path!) : null);
-    if (bytes == null) throw const AnexoException('Não foi possível ler o arquivo');
+    final bytes = file.bytes;
+    if (bytes == null) throw const AnexoException('Não foi possível ler o arquivo. Use withData: true no FilePicker.');
 
-    request.files.add(http.MultipartFile.fromBytes('file', bytes, filename: file.name));
+    final mimeType = _inferirMimeType(file.name);
+    request.files.add(http.MultipartFile.fromBytes(
+      'file',
+      bytes,
+      filename: file.name,
+      contentType: mimeType,
+    ));
 
     final streamed = await request.send();
     final body = await streamed.stream.bytesToString();
@@ -82,9 +88,17 @@ class AnexoFinanceiroService {
     }
   }
 
-  Future<Uint8List> _readFile(String path) async {
-    final f = await http.get(Uri.file(path));
-    return f.bodyBytes;
+  /// Infere o MediaType pelo nome do arquivo para garantir upload correto no mobile.
+  MediaType _inferirMimeType(String fileName) {
+    final ext = fileName.split('.').last.toLowerCase();
+    return switch (ext) {
+      'pdf'  => MediaType('application', 'pdf'),
+      'jpg'  => MediaType('image', 'jpeg'),
+      'jpeg' => MediaType('image', 'jpeg'),
+      'png'  => MediaType('image', 'png'),
+      'xml'  => MediaType('application', 'xml'),
+      _      => MediaType('application', 'octet-stream'),
+    };
   }
 }
 

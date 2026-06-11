@@ -76,14 +76,17 @@ class ContaReceberGridScreen extends StatelessWidget {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
-      ),
-      builder: (_) => Padding(
-        padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
-        child: AnexoFinanceiroWidget(
-          lancamentoId: conta.id!,
-          lancamentoTipo: 'RECEBER',
+      backgroundColor: Colors.transparent,
+      builder: (_) => DraggableScrollableSheet(
+        initialChildSize: 0.65,
+        minChildSize: 0.4,
+        maxChildSize: 0.92,
+        builder: (ctx, scrollController) => ClipRRect(
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+          child: AnexoFinanceiroWidget(
+            lancamentoId: conta.id!,
+            lancamentoTipo: 'RECEBER',
+          ),
         ),
       ),
     );
