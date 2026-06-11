@@ -113,6 +113,13 @@ class FieldConfigWindows {
   final String? visibleWhenField;
   final dynamic visibleWhenValue;
 
+  /// Controle granular de habilitação por modo do formulário.
+  /// Quando null, usa o valor de [enabled].
+  /// Útil para campos que devem ser somente-leitura no INSERT mas editáveis no EDIT
+  /// (ex: status de um alvará).
+  final bool? enabledOnInsert;
+  final bool? enabledOnEdit;
+
   const FieldConfigWindows({
     required this.label,
     required this.fieldName,
@@ -143,6 +150,8 @@ class FieldConfigWindows {
     this.fieldOrder,
     this.visibleWhenField,
     this.visibleWhenValue,
+    this.enabledOnInsert,
+    this.enabledOnEdit,
   });
 }
 
@@ -2219,8 +2228,23 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
                     item != null && config.fieldName == widget.idFieldName;
                 // Se o campo foi pré-preenchido via extraParams, desabilita
                 final isPreFilled = preFilledFields0.contains(config.fieldName);
-                final effectiveConfig = (isPreFilled || isIdField)
-                    ? FieldConfigWindows(
+
+                // Calcula enabled efetivo considerando enabledOnInsert/enabledOnEdit
+                final isEditMode = item != null;
+                bool effectiveEnabled;
+                if (isPreFilled || isIdField) {
+                  effectiveEnabled = false;
+                } else if (!isEditMode && config.enabledOnInsert != null) {
+                  effectiveEnabled = config.enabledOnInsert!;
+                } else if (isEditMode && config.enabledOnEdit != null) {
+                  effectiveEnabled = config.enabledOnEdit!;
+                } else {
+                  effectiveEnabled = config.enabled;
+                }
+
+                final effectiveConfig = effectiveEnabled == config.enabled
+                    ? config
+                    : FieldConfigWindows(
                         label: config.label,
                         fieldName: config.fieldName,
                         displayFieldName: config.displayFieldName,
@@ -2230,7 +2254,7 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
                         isRequired: config.isRequired,
                         isVisibleByDefault: config.isVisibleByDefault,
                         isFixed: config.isFixed,
-                        enabled: false, // desabilitado
+                        enabled: effectiveEnabled,
                         dropdownFutureBuilder: config.dropdownFutureBuilder,
                         dropdownFutureBuilderWithParam:
                             config.dropdownFutureBuilderWithParam,
@@ -2247,8 +2271,9 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
                         validator: config.validator,
                         visibleWhenField: config.visibleWhenField,
                         visibleWhenValue: config.visibleWhenValue,
-                      )
-                    : config;
+                        enabledOnInsert: config.enabledOnInsert,
+                        enabledOnEdit: config.enabledOnEdit,
+                      );
                 final mainField = Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 18)
                       .copyWith(bottom: 12),
