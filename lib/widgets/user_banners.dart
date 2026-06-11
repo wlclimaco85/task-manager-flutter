@@ -109,6 +109,47 @@ class _UserBannerAppBarState extends State<UserBannerAppBar> {
     });
   }
 
+  /// Retorna ícone e cor representando o tipo de notificação.
+  _NotificationTipoMeta _resolverTipo(String status) {
+    final s = status.toUpperCase();
+    if (s.contains('ALVAR') || s.contains('CERTID')) {
+      return _NotificationTipoMeta(
+          Icons.verified_outlined, GridColors.warning, 'Documento');
+    }
+    if (s.contains('VENC') || s.contains('PRAZO')) {
+      return _NotificationTipoMeta(
+          Icons.schedule_outlined, GridColors.error, 'Vencimento');
+    }
+    if (s.contains('CHAT') || s.contains('MENSAG')) {
+      return _NotificationTipoMeta(
+          Icons.chat_bubble_outline, GridColors.info, 'Mensagem');
+    }
+    if (s.contains('GED') || s.contains('ARQUIVO')) {
+      return _NotificationTipoMeta(
+          Icons.attach_file_outlined, GridColors.secondary, 'Arquivo');
+    }
+    if (s.contains('COMUNICADO')) {
+      return _NotificationTipoMeta(
+          Icons.campaign_outlined, GridColors.primaryLight, 'Comunicado');
+    }
+    return _NotificationTipoMeta(
+        Icons.notifications_outlined, GridColors.primary, 'Aviso');
+  }
+
+  /// Formata data relativa: "agora", "há 2h", "ontem", "dd/MM".
+  String _dataRelativa(String? data) {
+    if (data == null || data.isEmpty) return '';
+    final parsed = DateTime.tryParse(data);
+    if (parsed == null) return '';
+    final diff = DateTime.now().difference(parsed);
+    if (diff.inMinutes < 1) return 'agora';
+    if (diff.inMinutes < 60) return 'há ${diff.inMinutes}min';
+    if (diff.inHours < 24) return 'há ${diff.inHours}h';
+    if (diff.inDays == 1) return 'ontem';
+    if (diff.inDays < 7) return 'há ${diff.inDays} dias';
+    return DateFormat('dd/MM').format(parsed);
+  }
+
   void showNotificationDropdown(BuildContext context) {
     if (notificationOverlay != null) {
       notificationOverlay!.remove();
@@ -116,135 +157,109 @@ class _UserBannerAppBarState extends State<UserBannerAppBar> {
       return;
     }
 
+    // Mobile: usa bottom sheet; desktop/web: overlay posicionado
+    final isMobile = MediaQuery.of(context).size.width < 600;
+    if (isMobile) {
+      _mostrarBottomSheet(context);
+      return;
+    }
+
     final overlay = Overlay.of(context);
+    final topOffset =
+        kToolbarHeight + ((widget.showFilterButton == true) ? 68 : 12);
 
     notificationOverlay = OverlayEntry(
-      builder: (context) => Positioned(
-        top: kToolbarHeight + ((widget.showFilterButton == true) ? 68 : 16),
-        right: 8,
-        child: Material(
-          elevation: 8,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: Container(
-            width: 320,
-            constraints: const BoxConstraints(maxHeight: 420, minHeight: 160),
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: GridColors.card,
-              borderRadius: BorderRadius.circular(12),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.2),
-                  blurRadius: 10,
-                  offset: const Offset(0, 4),
+      builder: (ctx) => GestureDetector(
+        behavior: HitTestBehavior.translucent,
+        onTap: () {
+          notificationOverlay?.remove();
+          notificationOverlay = null;
+        },
+        child: Stack(
+          children: [
+            Positioned(
+              top: topOffset,
+              right: 8,
+              child: GestureDetector(
+                onTap: () {}, // impede fechar ao clicar no painel
+                child: _NotificationPanel(
+                  notifications: notifications,
+                  onMarcarLida: (id) {
+                    markNotificationAsRead(id);
+                    notificationOverlay?.remove();
+                    notificationOverlay = null;
+                  },
+                  onDeletar: (id) {
+                    deleteNotification(id);
+                    notificationOverlay?.remove();
+                    notificationOverlay = null;
+                  },
+                  onMarcarTodas: () {
+                    deleteAllNotifications();
+                    notificationOverlay?.remove();
+                    notificationOverlay = null;
+                  },
+                  onFechar: () {
+                    notificationOverlay?.remove();
+                    notificationOverlay = null;
+                  },
+                  resolverTipo: _resolverTipo,
+                  dataRelativa: _dataRelativa,
                 ),
-              ],
+              ),
             ),
-            child: Column(
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    const Text(
-                      "Notificações",
-                      style:
-                          TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
-                    ),
-                    IconButton(
-                      icon: const Icon(Icons.close, color: GridColors.error),
-                      onPressed: () {
-                        notificationOverlay?.remove();
-                        notificationOverlay = null;
-                      },
-                    ),
-                  ],
-                ),
-                const Divider(height: 1, color: GridColors.divider),
-                ListTile(
-                  leading:
-                      const Icon(Icons.delete_sweep, color: GridColors.error),
-                  title: const Text("Limpar Todas",
-                      style: TextStyle(
-                          color: GridColors.error,
-                          fontWeight: FontWeight.w500)),
-                  onTap: deleteAllNotifications,
-                ),
-                const Divider(height: 1, color: GridColors.divider),
-                Expanded(
-                  child: notifications.isNotEmpty
-                      ? ListView.separated(
-                          itemCount: notifications.length,
-                          separatorBuilder: (_, __) => Divider(
-                            height: 1,
-                            color: GridColors.divider.withValues(alpha: 0.5),
-                          ),
-                          itemBuilder: (context, index) {
-                            final n = notifications[index];
-                            final dataFormatada =
-                                _formatNotificationDate(n.data);
-                            return ListTile(
-                              dense: true,
-                              contentPadding: const EdgeInsets.symmetric(
-                                  horizontal: 12, vertical: 4),
-                              leading: const Icon(Icons.notifications,
-                                  color: GridColors.primary, size: 22),
-                              title: Text(
-                                n.texto,
-                                maxLines: 2,
-                                overflow: TextOverflow.ellipsis,
-                                style: const TextStyle(
-                                    fontSize: 14,
-                                    color: GridColors.textSecondary),
-                              ),
-                              subtitle: dataFormatada != null
-                                  ? Text(
-                                      dataFormatada,
-                                      style: const TextStyle(
-                                          fontSize: 11,
-                                          color: GridColors.textMuted),
-                                    )
-                                  : null,
-                              trailing: IconButton(
-                                icon: const Icon(Icons.delete_outline,
-                                    color: GridColors.error, size: 18),
-                                constraints: const BoxConstraints(
-                                    maxWidth: 32, maxHeight: 32),
-                                padding: EdgeInsets.zero,
-                                onPressed: () => deleteNotification(n.id),
-                              ),
-                              onTap: () => markNotificationAsRead(n.id),
-                            );
-                          },
-                        )
-                      : Center(
-                          child: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(Icons.notifications_off_outlined,
-                                  size: 48,
-                                  color: GridColors.textSecondary
-                                      .withValues(alpha: 0.4)),
-                              const SizedBox(height: 12),
-                              const Text(
-                                'Nenhuma notificação',
-                                style: TextStyle(
-                                    fontSize: 14,
-                                    color: GridColors.textSecondary),
-                              ),
-                            ],
-                          ),
-                        ),
-                ),
-              ],
-            ),
-          ),
+          ],
         ),
       ),
     );
 
     overlay.insert(notificationOverlay!);
+  }
+
+  void _mostrarBottomSheet(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => DraggableScrollableSheet(
+        initialChildSize: 0.6,
+        minChildSize: 0.3,
+        maxChildSize: 0.9,
+        expand: false,
+        builder: (__, scrollController) => Container(
+          decoration: const BoxDecoration(
+            color: GridColors.card,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+          ),
+          child: Column(
+            children: [
+              // Alça de drag
+              Container(
+                margin: const EdgeInsets.only(top: 12, bottom: 8),
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: GridColors.divider,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              Expanded(
+                child: _NotificationPanel(
+                  notifications: notifications,
+                  onMarcarLida: markNotificationAsRead,
+                  onDeletar: deleteNotification,
+                  onMarcarTodas: deleteAllNotifications,
+                  onFechar: () => Navigator.pop(context),
+                  resolverTipo: _resolverTipo,
+                  dataRelativa: _dataRelativa,
+                  scrollController: scrollController,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 
   void _handleLogout() {
@@ -490,6 +505,319 @@ class _UserBannerAppBarState extends State<UserBannerAppBar> {
               ),
             )
           : null,
+    );
+  }
+}
+
+// =============================================================================
+// NOTIFICAÇÕES — tipos e painel redesenhado
+// =============================================================================
+
+class _NotificationTipoMeta {
+  final IconData icone;
+  final Color cor;
+  final String rotulo;
+
+  const _NotificationTipoMeta(this.icone, this.cor, this.rotulo);
+}
+
+/// Painel de notificações com visual tipo banco digital.
+/// Funciona tanto como overlay (web/desktop) quanto embutido em bottom sheet (mobile).
+class _NotificationPanel extends StatelessWidget {
+  final List<Alert> notifications;
+  final void Function(int id) onMarcarLida;
+  final void Function(int id) onDeletar;
+  final VoidCallback onMarcarTodas;
+  final VoidCallback onFechar;
+  final _NotificationTipoMeta Function(String status) resolverTipo;
+  final String Function(String? data) dataRelativa;
+  final ScrollController? scrollController;
+
+  const _NotificationPanel({
+    required this.notifications,
+    required this.onMarcarLida,
+    required this.onDeletar,
+    required this.onMarcarTodas,
+    required this.onFechar,
+    required this.resolverTipo,
+    required this.dataRelativa,
+    this.scrollController,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      elevation: 12,
+      shadowColor: Colors.black.withValues(alpha: 0.18),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      child: Container(
+        width: 360,
+        constraints: const BoxConstraints(maxHeight: 520, minHeight: 180),
+        decoration: BoxDecoration(
+          color: GridColors.card,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: GridColors.divider),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            _buildCabecalho(context),
+            if (notifications.isNotEmpty) _buildAcoes(),
+            const Divider(height: 1, thickness: 1, color: GridColors.divider),
+            Flexible(
+              child: notifications.isNotEmpty
+                  ? _buildLista()
+                  : _buildVazio(),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildCabecalho(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.fromLTRB(20, 16, 12, 12),
+      decoration: const BoxDecoration(
+        color: GridColors.primary,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      child: Row(
+        children: [
+          const Icon(Icons.notifications_active_outlined,
+              color: GridColors.textPrimary, size: 20),
+          const SizedBox(width: 10),
+          const Expanded(
+            child: Text(
+              'Notificações',
+              style: TextStyle(
+                color: GridColors.textPrimary,
+                fontWeight: FontWeight.w700,
+                fontSize: 16,
+                letterSpacing: 0.2,
+              ),
+            ),
+          ),
+          if (notifications.isNotEmpty)
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.2),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Text(
+                '${notifications.length}',
+                style: const TextStyle(
+                  color: GridColors.textPrimary,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ),
+          const SizedBox(width: 4),
+          InkWell(
+            onTap: onFechar,
+            borderRadius: BorderRadius.circular(20),
+            child: const Padding(
+              padding: EdgeInsets.all(6),
+              child: Icon(Icons.close,
+                  color: GridColors.textPrimary, size: 18),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildAcoes() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.end,
+        children: [
+          TextButton.icon(
+            onPressed: onMarcarTodas,
+            icon: const Icon(Icons.done_all, size: 16, color: GridColors.success),
+            label: const Text(
+              'Marcar todas como lidas',
+              style: TextStyle(
+                color: GridColors.success,
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            style: TextButton.styleFrom(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildLista() {
+    return ListView.builder(
+      controller: scrollController,
+      shrinkWrap: true,
+      padding: const EdgeInsets.only(bottom: 8),
+      itemCount: notifications.length,
+      itemBuilder: (context, index) {
+        final n = notifications[index];
+        final meta = resolverTipo(n.status);
+        final dataStr = dataRelativa(n.data);
+        // Primeiro item ou itens não lidos ficam com fundo levemente colorido
+        final isNaoLido = n.status.toUpperCase() == 'NOVO' || index == 0;
+
+        return InkWell(
+          onTap: () => onMarcarLida(n.id),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            decoration: BoxDecoration(
+              color: isNaoLido
+                  ? meta.cor.withValues(alpha: 0.06)
+                  : Colors.transparent,
+              border: Border(
+                bottom: BorderSide(
+                    color: GridColors.divider.withValues(alpha: 0.5)),
+              ),
+            ),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Ícone colorido por tipo
+                Container(
+                  width: 38,
+                  height: 38,
+                  decoration: BoxDecoration(
+                    color: meta.cor.withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Icon(meta.icone, color: meta.cor, size: 20),
+                ),
+                const SizedBox(width: 12),
+                // Texto principal
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 6, vertical: 1),
+                            decoration: BoxDecoration(
+                              color: meta.cor.withValues(alpha: 0.1),
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                            child: Text(
+                              meta.rotulo,
+                              style: TextStyle(
+                                color: meta.cor,
+                                fontSize: 10,
+                                fontWeight: FontWeight.w700,
+                                letterSpacing: 0.4,
+                              ),
+                            ),
+                          ),
+                          if (isNaoLido) ...[
+                            const SizedBox(width: 6),
+                            Container(
+                              width: 6,
+                              height: 6,
+                              decoration: BoxDecoration(
+                                color: meta.cor,
+                                shape: BoxShape.circle,
+                              ),
+                            ),
+                          ],
+                          const Spacer(),
+                          if (dataStr.isNotEmpty)
+                            Text(
+                              dataStr,
+                              style: const TextStyle(
+                                fontSize: 11,
+                                color: GridColors.textMuted,
+                              ),
+                            ),
+                        ],
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        n.texto,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: GridColors.textSecondary,
+                          fontWeight: isNaoLido
+                              ? FontWeight.w600
+                              : FontWeight.normal,
+                          height: 1.4,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 4),
+                // Botão deletar
+                InkWell(
+                  onTap: () => onDeletar(n.id),
+                  borderRadius: BorderRadius.circular(16),
+                  child: Padding(
+                    padding: const EdgeInsets.all(4),
+                    child: Icon(
+                      Icons.close,
+                      size: 16,
+                      color: GridColors.textMuted.withValues(alpha: 0.6),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildVazio() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 40, horizontal: 24),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: 72,
+            height: 72,
+            decoration: BoxDecoration(
+              color: GridColors.primarySoft,
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(
+              Icons.notifications_none_outlined,
+              size: 36,
+              color: GridColors.primary,
+            ),
+          ),
+          const SizedBox(height: 16),
+          const Text(
+            'Tudo em dia!',
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w700,
+              color: GridColors.textSecondary,
+            ),
+          ),
+          const SizedBox(height: 6),
+          const Text(
+            'Nenhuma notificação pendente.',
+            style: TextStyle(fontSize: 13, color: GridColors.textMuted),
+            textAlign: TextAlign.center,
+          ),
+        ],
+      ),
     );
   }
 }

@@ -16,6 +16,7 @@ import '../utils/grid_texts.dart';
 import '../../../models/auth_utility.dart';
 import '../../../models/network_response.dart';
 import '../../../utils/api_links.dart';
+import '../../../utils/tenant_context.dart';
 import '../../services/network_caller.dart';
 
 import 'package:task_manager_flutter/utils/app_logger.dart';
@@ -1709,6 +1710,27 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
       }
     }
 
+    // Pré-carrega opções para campos dropdown do FORM (não apenas filtros).
+    // Evita que o FutureBuilder dentro de _buildDropdownField recrie o Future
+    // a cada rebuild do diálogo, causando dropdowns sempre vazios no web.
+    for (final config in widget.FieldConfigWindowss.where((c) =>
+        c.isInForm &&
+        !c.isFilterable &&
+        c.fieldType == FieldType.dropdown &&
+        c.dropdownFutureBuilderWithParam == null)) {
+      final cacheKey = '${config.fieldName}_dropdown';
+      if (_dropdownCache.containsKey(cacheKey)) continue;
+      final hasStaticOptions =
+          config.dropdownOptions != null && config.dropdownOptions!.isNotEmpty;
+      if (hasStaticOptions) {
+        _dropdownCache[cacheKey] = config.dropdownOptions!;
+      } else if (config.dropdownFutureBuilder != null) {
+        config.dropdownFutureBuilder!().then((opts) {
+          if (mounted) setState(() => _dropdownCache[cacheKey] = opts);
+        });
+      }
+    }
+
     if (widget.initialFilters != null) {
       widget.initialFilters!.forEach((key, value) {
         if (_filterControllers.containsKey(key)) {
@@ -2052,6 +2074,24 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
         }
         if (initialValue.isEmpty && config.defaultValue != null) {
           initialValue = config.defaultValue.toString();
+        }
+
+        // TAREFA 1: pré-preencher empresa e parceiro a partir do TenantContext
+        // quando o campo ainda está vazio (não veio de extraParams nem defaultValue)
+        if (initialValue.isEmpty &&
+            config.fieldType == FieldType.dropdown &&
+            config.dropdownValueField == 'id') {
+          final fn = config.fieldName.toLowerCase();
+          if ((fn == 'empresa' || fn.contains('empresa')) &&
+              TenantContext.hasEmpresa) {
+            initialValue = TenantContext.empresaId.toString();
+            preFilledFields.add(config.fieldName);
+          } else if ((fn == 'parceiro' || fn.contains('parceiro') ||
+                  fn == 'cliente') &&
+              TenantContext.hasParceiro) {
+            initialValue = TenantContext.parceiroId.toString();
+            preFilledFields.add(config.fieldName);
+          }
         }
       }
 
