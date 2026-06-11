@@ -24,7 +24,7 @@ set "BACKEND_URL=http://127.0.0.1:9001"
 set "HOST_IP=127.0.0.1"
 set "ANDROID_BACKEND_URL=http://127.0.0.1:9001"
 set "ANDROID_WS_BACKEND_URL=ws://127.0.0.1:9001/boletobancos"
-set "APP_PACKAGE_ABRACO=br.com.abracocontabilidade.app"
+set "APP_PACKAGE_ABRACO=com.washingtonclimaco.task_manager_flutter"
 set "APP_PACKAGE_PORTAL=br.com.portalcont.app"
 set "APP_PACKAGE_MEU_TREINO=com.washingtonclimaco.task_manager_appacademia"
 set "APP_PACKAGE_SAFRA=br.com.safradireto.app"
@@ -847,13 +847,13 @@ exit /b 0
 
 :CLEANUP_LEGACY_APPS
 rem O app "Abraco Contabilidade" trocou de applicationId em algum momento
-rem (de com.washingtonclimaco.task_manager_flutter para br.com.abracocontabilidade.app).
+rem (entre com.washingtonclimaco.task_manager_flutter e br.com.abracocontabilidade.app).
 rem O Android trata isso como apps DIFERENTES: "adb install -r" nunca substitui
 rem o app antigo, que fica esquecido no BlueStacks com o icone generico
 rem "task_manager_flutter" e codigo/backend antigos (causa de "Incorrect email or
 rem password" ao tentar logar nele em vez do app novo). Remove o residuo aqui,
 rem antes de qualquer instalacao, para nao confundir o usuario com 2 icones iguais.
-"%ADB%" -s 127.0.0.1:5555 shell pm uninstall com.washingtonclimaco.task_manager_flutter >nul 2>&1
+"%ADB%" -s 127.0.0.1:5555 shell pm uninstall br.com.abracocontabilidade.app >nul 2>&1
 exit /b 0
 
 :INSTALL_APK_FILE
@@ -865,8 +865,10 @@ if not exist "%INSTALL_APK%" (
     exit /b 1
 )
 echo.
+echo Desinstalando versao anterior de %INSTALL_LABEL%...
+"%ADB%" -s 127.0.0.1:5555 shell pm uninstall %INSTALL_PACKAGE% >nul 2>&1
 echo Instalando %INSTALL_LABEL% no BlueStacks...
-"%ADB%" -s 127.0.0.1:5555 install -r "%INSTALL_APK%"
+"%ADB%" -s 127.0.0.1:5555 install "%INSTALL_APK%"
 if errorlevel 1 (
     echo [ERRO] Falha na instalacao de %INSTALL_LABEL%.
     exit /b 1
@@ -972,7 +974,7 @@ set "NEW_NAME=1.0.%NEW_CODE%"
 echo   versionCode: %OLD_CODE% -^> %NEW_CODE%
 echo   versionName: -^> %NEW_NAME%
 
-powershell -NoProfile -ExecutionPolicy Bypass -Command "(Get-Content '%GRADLE_FILE%') -replace 'versionCode = \d+','versionCode = %NEW_CODE%' -replace 'versionName = ""[^""]+""','versionName = ""%NEW_NAME%""' | Set-Content '%GRADLE_FILE%'"
+powershell -NoProfile -ExecutionPolicy Bypass -Command "$f = Get-Content '%GRADLE_FILE%' -Raw; $f = $f -replace 'versionCode = \d+', 'versionCode = %NEW_CODE%'; $f = $f -replace 'versionName = [^\r\n]+', ('versionName = ' + [char]34 + '%NEW_NAME%' + [char]34); Set-Content '%GRADLE_FILE%' $f -NoNewline"
 if errorlevel 1 (
     echo [ERRO] Falha ao atualizar versionCode/versionName.
     exit /b 1

@@ -25,6 +25,7 @@ migrate_working_dir/
 **/doc/api/
 **/ios/Flutter/.last_build_id
 .dart_tool/
+.gradle-release-cache/
 .flutter-plugins
 .flutter-plugins-dependencies
 .packages
@@ -47,7 +48,9 @@ app.*.map.json
 # Fastlane — arquivos sensíveis (NUNCA commitar)
 fastlane/.env
 fastlane/google-play-key.json
+android/fastlane/play-store-key.json
 fastlane/AuthKey*.p8
+fastlane/report.xml
 android/*.jks
 android/app/*.jks
 Gemfile.lock

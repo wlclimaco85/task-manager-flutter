@@ -1,0 +1,66 @@
+name: Android Internal Release
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  publish-internal:
+    name: Build and publish internal test
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Set up Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: "3.3"
+          bundler-cache: true
+
+      - name: Restore signing and Play credentials
+        shell: bash
+        run: |
+          mkdir -p android/app fastlane
+          printf '%s' "$GOOGLE_PLAY_JSON_KEY" > fastlane/google-play-key.json
+          printf '%s' "$ANDROID_KEYSTORE_BASE64" | base64 --decode > android/app/release-upload.jks
+        env:
+          GOOGLE_PLAY_JSON_KEY: ${{ secrets.GOOGLE_PLAY_JSON_KEY }}
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+
+      - name: Compute build version
+        shell: bash
+        run: |
+          VERSION_NAME="$(grep '^version:' pubspec.yaml | sed -E 's/version:[[:space:]]*([^+]+).*/\1/')"
+          VERSION_CODE=$((1000 + GITHUB_RUN_NUMBER))
+          echo "FLUTTER_BUILD_NAME=$VERSION_NAME" >> "$GITHUB_ENV"
+          echo "FLUTTER_BUILD_NUMBER=$VERSION_CODE" >> "$GITHUB_ENV"
+
+      - name: Publish to Google Play internal testing
+        env:
+          BACKEND_URL: https://appacademia-production-be7e.up.railway.app
+          WS_BACKEND_URL: wss://appacademia-production-be7e.up.railway.app/boletobancos
+          GOOGLE_PLAY_JSON_KEY: ${{ github.workspace }}/fastlane/google-play-key.json
+          ANDROID_KEYSTORE_PATH: ${{ github.workspace }}/android/app/release-upload.jks
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_STORE_PASSWORD: ${{ secrets.ANDROID_STORE_PASSWORD }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: bundle exec fastlane android beta

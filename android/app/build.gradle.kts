@@ -17,7 +17,7 @@ fun keyProp(name: String, envFallback: String) =
     keyProperties.getProperty(name) ?: System.getenv(envFallback) ?: ""
 
 android {
-    namespace = "br.com.abracocontabilidade.app"
+    namespace = "com.washingtonclimaco.task_manager_flutter"
     compileSdk = flutter.compileSdkVersion
     ndkVersion = flutter.ndkVersion
 
@@ -32,13 +32,13 @@ android {
 
     defaultConfig {
         // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
-        applicationId = "br.com.abracocontabilidade.app"
+        applicationId = "com.washingtonclimaco.task_manager_flutter"
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
         minSdk = flutter.minSdkVersion
         targetSdk = flutter.targetSdkVersion
-        versionCode = 9
-        versionName = "1.0.9"
+        versionCode = flutter.versionCode
+        versionName = flutter.versionName
     }
 
     signingConfigs {
