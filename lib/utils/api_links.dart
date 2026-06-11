@@ -1056,6 +1056,9 @@ class ApiLinks {
   static String anexoFinanceiroDownload(String id) =>
       '$_baseUrlNew/api/financeiro/anexos/$id/download';
 
+  // Boleto bancário — upload e download
+  static String get uploadBoleto => '$_baseUrlNew/rest/boleto/upload';
+
   // Cobrança Automática
   static String get cobrancaAutomaticaEnviar =>
       '$_baseUrlNew/api/financeiro/cobranca-automatica/enviar';

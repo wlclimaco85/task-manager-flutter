@@ -3,6 +3,7 @@ import '../../../utils/api_links.dart';
 import '../../customization/generic_grid_card.dart';
 import '../../../models/conta_receber_model.dart';
 import '../../../widgets/anexo_financeiro_widget.dart';
+import '../../../widgets/finance/boleto_widget.dart';
 import '../../widgets/finance/billing_charge_dialog.dart';
 import '../screens/baixa_dialog_receber.dart';
 import '../screens/desfazer_baixa_dialog.dart';
@@ -62,6 +63,12 @@ class ContaReceberGridScreen extends StatelessWidget {
           isVisible: (obj) => obj.id != null,
           onPressed: (context, object) => _showAnexos(context, object),
         ),
+        CustomAction<ContaReceber>(
+          icon: Icons.receipt,
+          label: 'Boleto',
+          isVisible: (obj) => obj.id != null,
+          onPressed: (context, object) => _showBoleto(context, object),
+        ),
       ],
       useUserBannerAppBar: true,
       paginationConfig: const PaginationConfig(
@@ -69,6 +76,26 @@ class ContaReceberGridScreen extends StatelessWidget {
         availableRowsPerPage: [10, 25, 50],
       ),
       enableSearch: true,
+    );
+  }
+
+  void _showBoleto(BuildContext context, ContaReceber conta) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => DraggableScrollableSheet(
+        initialChildSize: 0.5,
+        minChildSize: 0.35,
+        maxChildSize: 0.85,
+        builder: (ctx, scrollController) => ClipRRect(
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+          child: BoletoWidget(
+            lancamentoId: conta.id!,
+            lancamentoTipo: 'RECEBER',
+          ),
+        ),
+      ),
     );
   }
 
