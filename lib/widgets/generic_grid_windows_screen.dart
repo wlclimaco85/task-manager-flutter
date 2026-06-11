@@ -2502,6 +2502,12 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
         widget.onAfterCreate!();
       }
       Navigator.pop(context);
+      if (item == null) {
+        // Ao criar, vai para primeira página com sort DESC para o novo item aparecer
+        _currentPage = 0;
+        sortColumnIndex = null;
+        sortAscending = false;
+      }
       _loadItems(_currentPage, rowsPerPage);
     }
 
