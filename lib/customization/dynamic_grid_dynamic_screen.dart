@@ -191,11 +191,11 @@ class _DynamicGridDynamicScreenState extends State<DynamicGridDynamicScreen> {
         titulo: 'Alvaras',
         endpoint: '/api/alvara',
         fields: [
+          // ID nunca aparece no formulario — somente no card via isVisibleByDefault
           TelaField(
             label: 'ID',
             fieldName: 'id',
-            isInForm: true,
-            enabled: false,
+            isInForm: false,
             showInCard: false,
             fieldOrder: 0,
           ),
@@ -206,18 +206,14 @@ class _DynamicGridDynamicScreenState extends State<DynamicGridDynamicScreen> {
             isRequired: true,
           ),
           TelaField(label: 'Numero', fieldName: 'numero', fieldOrder: 2),
+          // T2 — Tipo Alvara via dicionario de dados
           TelaField(
             label: 'Tipo',
             fieldName: 'tipoAlvara',
             fieldType: TelaFieldType.dropdown,
-            dropdownOptions: [
-              DropdownOption(optionValue: 'Alvara de Funcionamento', optionLabel: 'Alvara de Funcionamento'),
-              DropdownOption(optionValue: 'Alvara de Construcao', optionLabel: 'Alvara de Construcao'),
-              DropdownOption(optionValue: 'Alvara Sanitario', optionLabel: 'Alvara Sanitario'),
-              DropdownOption(optionValue: 'Licenca Ambiental', optionLabel: 'Licenca Ambiental'),
-            ],
-            dropdownValueField: 'value',
-            dropdownDisplayField: 'label',
+            dropdownEndpoint: '/boletobancos/rest/dicionario/listar?tipo=TIPO_ALVARA',
+            dropdownValueField: 'valor',
+            dropdownDisplayField: 'descricao',
             fieldOrder: 3,
           ),
           TelaField(
@@ -226,20 +222,15 @@ class _DynamicGridDynamicScreenState extends State<DynamicGridDynamicScreen> {
             fieldType: TelaFieldType.date,
             fieldOrder: 4,
           ),
+          // T3 — Status: dropdown do dicionario; defaultValue Pendente para INSERT
           TelaField(
             label: 'Status',
             fieldName: 'status',
             fieldType: TelaFieldType.dropdown,
-            dropdownOptions: [
-              DropdownOption(optionValue: 'Pendente', optionLabel: 'Pendente'),
-              DropdownOption(optionValue: 'Ativo', optionLabel: 'Ativo'),
-              DropdownOption(optionValue: 'Vencido', optionLabel: 'Vencido'),
-              DropdownOption(optionValue: 'Cancelado', optionLabel: 'Cancelado'),
-            ],
-            dropdownValueField: 'value',
-            dropdownDisplayField: 'label',
+            dropdownEndpoint: '/boletobancos/rest/dicionario/listar?tipo=STATUS_ALVARA',
+            dropdownValueField: 'valor',
+            dropdownDisplayField: 'descricao',
             defaultValue: 'Pendente',
-            showInInsert: true,
             fieldOrder: 5,
           ),
           TelaField(
@@ -855,6 +846,7 @@ class _DynamicGridDynamicScreenState extends State<DynamicGridDynamicScreen> {
               extraParams: widget.extraParams,
               enableSearch: tela.enableSearch,
               enableDebugMode: tela.enableDebugMode,
+              showAppBar: widget.showAppBar,
               useUserBannerAppBar: widget.showAppBar && tela.useUserBannerAppBar,
               onUserBannerTapped: widget.onUserBannerTapped,
               onBannerRefresh: widget.onBannerRefresh,

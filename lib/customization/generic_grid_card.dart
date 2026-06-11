@@ -174,6 +174,9 @@ class GenericMobileGridScreen<T> extends StatefulWidget {
   final Map<String, dynamic>? extraParams;
   final bool enableDebugMode;
   final bool useUserBannerAppBar;
+  /// Quando false, nenhum AppBar e renderizado — util quando a tela e encapsulada
+  /// em um Scaffold externo que ja tem seu proprio AppBar (ex: UserBannerAppBar).
+  final bool showAppBar;
   final VoidCallback? onUserBannerTapped;
   final VoidCallback? onBannerRefresh;
   // NOVA PROPRIEDADE SIMPLES
@@ -203,6 +206,7 @@ class GenericMobileGridScreen<T> extends StatefulWidget {
     this.extraParams,
     this.enableDebugMode = false,
     this.useUserBannerAppBar = false,
+    this.showAppBar = true,
     this.onUserBannerTapped,
     this.onBannerRefresh,
     this.additionalFormData, // NOVO PARÂMETRO
@@ -1951,20 +1955,26 @@ class _GenericMobileGridScreenState<T>
     final colorScheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
 
+    PreferredSizeWidget? resolvedAppBar;
+    if (!widget.showAppBar) {
+      resolvedAppBar = null;
+    } else if (widget.useUserBannerAppBar) {
+      resolvedAppBar = UserBannerAppBar(
+        screenTitle: widget.title,
+        onTapped: widget.onUserBannerTapped,
+        onRefresh: widget.onBannerRefresh ?? () => _loadItems(reset: true),
+        isLoading: isLoading,
+        onFilterToggle: () => setState(() => filtrosAbertos = !filtrosAbertos),
+        showFilterButton: true,
+      );
+    } else {
+      resolvedAppBar =
+          _isSelectionMode ? _buildSelectionAppBar() : _buildNormalAppBar();
+    }
+
     return Scaffold(
       backgroundColor: GridColors.pageBackground,
-      appBar: widget.useUserBannerAppBar
-          ? UserBannerAppBar(
-              screenTitle: widget.title,
-              onTapped: widget.onUserBannerTapped,
-              onRefresh:
-                  widget.onBannerRefresh ?? () => _loadItems(reset: true),
-              isLoading: isLoading,
-              onFilterToggle: () =>
-                  setState(() => filtrosAbertos = !filtrosAbertos),
-              showFilterButton: true,
-            )
-          : (_isSelectionMode ? _buildSelectionAppBar() : _buildNormalAppBar()),
+      appBar: resolvedAppBar,
       floatingActionButton:
           widget.hasPermission('create') ? _buildFloatingActionButton() : null,
       body: Column(
@@ -2313,7 +2323,7 @@ class _GenericMobileGridScreenState<T>
         }
       }
 
-      final displayValue = rawValue?.toString() ?? '';
+      final displayValue = _formatDisplayValue(rawValue, config);
 
       if (displayValue.isEmpty) return const Expanded(child: SizedBox.shrink());
 
@@ -2429,39 +2439,101 @@ class _GenericMobileGridScreenState<T>
     }
   }
 
+  /// Converte datas ISO (ex: 2026-06-28T00:00:00.000) para dd/MM/yyyy.
+  /// Para outros campos retorna o valor como string normalmente.
+  String _formatDisplayValue(dynamic rawValue, FieldConfig config) {
+    if (rawValue == null) return '';
+    final str = rawValue.toString();
+    if (str.isEmpty) return '';
+
+    // Tenta formatar automaticamente se o valor parece uma data ISO
+    if (config.fieldType == FieldType.date ||
+        config.fieldName.toLowerCase().contains('data') ||
+        config.fieldName.toLowerCase().contains('vencimento') ||
+        config.fieldName.toLowerCase().contains('criado') ||
+        config.fieldName.toLowerCase().contains('date')) {
+      final dt = DateTime.tryParse(str);
+      if (dt != null) {
+        final d = dt.day.toString().padLeft(2, '0');
+        final m = dt.month.toString().padLeft(2, '0');
+        final y = dt.year.toString();
+        return '$d/$m/$y';
+      }
+    }
+
+    return str;
+  }
+
   Widget _buildStatusBadge(Map<String, dynamic> itemMap) {
-    final status = _getNestedValue(itemMap, 'status')?.toString().toLowerCase();
+    final rawStatus = _getNestedValue(itemMap, 'status')?.toString() ?? '';
+    final status = rawStatus.toLowerCase();
 
     Color badgeColor;
     String badgeText;
     IconData badgeIcon;
 
     switch (status) {
+      // Ativo / Aberto / Pago confirmado
       case 'ativo':
       case 'true':
-      case '1':
       case 'aberto':
+      case 'aberta':
         badgeColor = GridColors.success;
-        badgeText = 'Ativo';
+        badgeText = status == 'aberto' || status == 'aberta' ? 'Aberto' : 'Ativo';
         badgeIcon = Icons.check_circle_outline;
         break;
+      // Pago / Baixado
+      case 'pago':
+      case 'baixado':
+      case 'baixada':
+      case '1':
+        badgeColor = GridColors.success;
+        badgeText = status == 'baixado' || status == 'baixada' ? 'Baixada' : 'Pago';
+        badgeIcon = Icons.check_circle_outline;
+        break;
+      // Inativo / Fechado
       case 'inativo':
       case 'false':
-      case '0':
       case 'fechado':
         badgeColor = GridColors.error;
         badgeText = 'Inativo';
         badgeIcon = Icons.cancel_outlined;
         break;
+      // Cancelado
+      case 'cancelado':
+      case 'cancelada':
+      case '2':
+        badgeColor = GridColors.error;
+        badgeText = 'Cancelado';
+        badgeIcon = Icons.cancel_outlined;
+        break;
+      // Aberto como inteiro 0 (ContaPagar/ContaReceber ABERTA)
+      case '0':
+        badgeColor = GridColors.success;
+        badgeText = 'Aberto';
+        badgeIcon = Icons.check_circle_outline;
+        break;
+      // Pendente / Atrasado / Vencido
       case 'pendente':
+      case 'atrasado':
+      case 'atrasada':
+      case 'vencido':
+      case 'vencida':
         badgeColor = GridColors.warning;
-        badgeText = 'Pendente';
+        badgeText = status[0].toUpperCase() + status.substring(1);
         badgeIcon = Icons.schedule_outlined;
+        break;
+      // Suspenso
+      case 'suspenso':
+      case 'suspensa':
+        badgeColor = GridColors.primary;
+        badgeText = 'Suspenso';
+        badgeIcon = Icons.pause_circle_outline;
         break;
       default:
         badgeColor = GridColors.primary;
-        badgeText = status != null && status.isNotEmpty
-            ? status[0].toUpperCase() + status.substring(1)
+        badgeText = rawStatus.isNotEmpty
+            ? rawStatus[0].toUpperCase() + rawStatus.substring(1)
             : 'Status';
         badgeIcon = Icons.info_outline;
     }
