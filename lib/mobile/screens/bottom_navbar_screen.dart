@@ -35,6 +35,7 @@ import 'conta_receber_grid_screen.dart';
 import 'conta_bancaria_grid_screen.dart';
 import 'parceiro_grid_screen.dart';
 import '../../windows/screens/extrato_importacao_screen.dart';
+import '../../widgets/user_banners.dart';
 
 class BottomNavBarScreen extends StatefulWidget {
   const BottomNavBarScreen({super.key});
@@ -206,28 +207,31 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
   /// hasPermission retorna false para tudo — bloqueia todos os botoes automaticos
   /// (server actions, detailScreenBuilder). Os customActions nao sao afetados.
   Widget _comunicadoGridInline({required SecurityMatrix sec}) {
-    return DynamicGridDynamicScreen(
-      key: const ValueKey('mobile_dynamic_inline_comunicado'),
-      telaNome: 'comunicado',
-      hasPermission: (action) => false,
-      storageKey: 'mobile_dynamic_comunicado',
-      showAppBar: false,
-      customActions: () => [
-        CustomAction(
-          icon: Icons.visibility_outlined,
-          label: 'Visualizar comunicado',
-          onPressed: (context, item) {
-            Navigator.of(context).push(
-              MaterialPageRoute(
-                builder: (_) => WindowsComunicadoDetalheScreen(
-                  comunicado: item,
+    return Scaffold(
+      appBar: const UserBannerAppBar(showFilterButton: false),
+      body: DynamicGridDynamicScreen(
+        key: const ValueKey('mobile_dynamic_inline_comunicado'),
+        telaNome: 'comunicado',
+        hasPermission: (action) => false,
+        storageKey: 'mobile_dynamic_comunicado',
+        showAppBar: false,
+        customActions: () => [
+          CustomAction(
+            icon: Icons.visibility_outlined,
+            label: 'Visualizar comunicado',
+            onPressed: (context, item) {
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (_) => WindowsComunicadoDetalheScreen(
+                    comunicado: item,
+                  ),
                 ),
-              ),
-            );
-          },
-          isVisible: (_) => true,
-        ),
-      ],
+              );
+            },
+            isVisible: (_) => true,
+          ),
+        ],
+      ),
     );
   }
 
@@ -235,7 +239,9 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
   /// hasPermission retorna false para tudo exceto insert/create — bloqueia server actions
   /// e detailScreenBuilder. Os customActions nao sao afetados pelo hasPermission.
   Widget _chamadoGridInline({required SecurityMatrix sec}) {
-    return DynamicGridDynamicScreen(
+    return Scaffold(
+      appBar: const UserBannerAppBar(showFilterButton: false),
+      body: DynamicGridDynamicScreen(
       key: const ValueKey('mobile_dynamic_inline_chamado'),
       telaNome: 'chamado',
       hasPermission: (action) {
@@ -284,6 +290,7 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
           },
         ),
       ],
+      ),
     );
   }
 
