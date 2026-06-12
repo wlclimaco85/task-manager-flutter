@@ -6,6 +6,7 @@ import '../../../utils/api_links.dart';
 import '../../utils/grid_texts.dart';
 import '../../../widgets/generic_grid_windows_screen.dart'
     show FieldConfigWindows, FieldType, CustomAction;
+import 'details/produto_detail_screen.dart';
 
 class WindowsProdutoGridScreen extends StatelessWidget {
   final SecurityCheck hasPermission;
@@ -68,6 +69,8 @@ class WindowsProdutoGridScreen extends StatelessWidget {
       fromJson: (json) => json,
       toJson: (a) => a,
       fieldOverrides: fieldOverrides.isNotEmpty ? fieldOverrides : null,
+      detailScreenBuilder: (item) =>
+          WindowsProdutoDetailScreen(item: item, hasPermission: hasPermission),
       // H4: ações de editar e excluir na grid de produto
       customActions: () => [
         CustomAction<Map<String, dynamic>>(

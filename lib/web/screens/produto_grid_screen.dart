@@ -5,9 +5,9 @@ import '../../../models/auth_utility.dart';
 import '../../../utils/api_links.dart';
 import '../../../widgets/generic_grid_windows_screen.dart'
     show FieldConfigWindows, FieldType, CustomAction;
-import '../../../widgets/produto_detalhes_dialog.dart';
 import '../../../widgets/produto_saidas_chart_dialog.dart';
 import './ged_arquivos_screen.dart';
+import 'details/produto_detail_screen.dart';
 import '../../utils/grid_texts.dart';
 
 class WebProdutoGridScreen extends StatelessWidget {
@@ -71,14 +71,19 @@ class WebProdutoGridScreen extends StatelessWidget {
       fromJson: (json) => json,
       toJson: (a) => a,
       fieldOverrides: fieldOverrides.isNotEmpty ? fieldOverrides : null,
+      detailScreenBuilder: (item) =>
+          WebProdutoDetailScreen(item: item, hasPermission: hasPermission),
       // H4: ações na grid de produto; H5-21: GED filtrado pelo produto
       customActions: () => [
         CustomAction<Map<String, dynamic>>(
           icon: Icons.info_outline,
           label: 'Detalhes',
-          onPressed: (ctx, item) => showDialog(
-            context: ctx,
-            builder: (_) => ProdutoDetalhesDialog(produto: item),
+          onPressed: (ctx, item) => Navigator.push(
+            ctx,
+            MaterialPageRoute(
+              builder: (_) =>
+                  WebProdutoDetailScreen(item: item, hasPermission: hasPermission),
+            ),
           ),
           isVisible: (_) => true,
         ),
