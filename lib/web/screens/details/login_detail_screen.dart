@@ -29,6 +29,16 @@ class WebLoginDetailScreen extends StatelessWidget {
               '${ApiLinks.baseUrl}/api/logins/$loginId/roles/:id',
         ),
         RelatedGridTab(
+          title: 'Setores',
+          icon: Icons.business_center,
+          telaNome: 'setor',
+          extraParams: {'loginId': loginId},
+          // "Excluir" nesta aba DESVINCULA o setor do login (não apaga o setor).
+          // Backend: DELETE /api/login/{loginId}/setores/{setorId}
+          deleteEndpointOverride:
+              '${ApiLinks.baseUrl}/api/login/$loginId/setores/:id',
+        ),
+        RelatedGridTab(
           title: 'Chamados',
           icon: Icons.support_agent,
           telaNome: 'chamado',
