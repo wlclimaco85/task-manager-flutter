@@ -1953,6 +1953,9 @@ class _GenericMobileGridScreenState<T>
       shadowColor: colorScheme.shadow,
       surfaceTintColor: Colors.transparent,
       actions: [
+        // Notificações + Logout — presentes em toda tela mobile
+        const AppBarActions(),
+
         // Botão de Refresh
         _buildRefreshButton(),
 

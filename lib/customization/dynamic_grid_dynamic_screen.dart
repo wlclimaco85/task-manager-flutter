@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 
 import '../models/auth_utility.dart';
@@ -847,7 +848,10 @@ class _DynamicGridDynamicScreenState extends State<DynamicGridDynamicScreen> {
               enableSearch: tela.enableSearch,
               enableDebugMode: tela.enableDebugMode,
               showAppBar: widget.showAppBar,
-              useUserBannerAppBar: widget.showAppBar && tela.useUserBannerAppBar,
+              // No mobile, sempre usa UserBannerAppBar para mostrar notificações e logout.
+              // Na web/windows, respeita a config da tela (tela.useUserBannerAppBar).
+              useUserBannerAppBar: widget.showAppBar &&
+                  (tela.useUserBannerAppBar || !kIsWeb),
               onUserBannerTapped: widget.onUserBannerTapped,
               onBannerRefresh: widget.onBannerRefresh,
               additionalFormData: widget.additionalFormData,
