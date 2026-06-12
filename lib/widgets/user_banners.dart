@@ -438,7 +438,7 @@ class _UserBannerAppBarState extends State<UserBannerAppBar> {
             ] else ...[
               Flexible(
                 child: Text(
-                  widget.screenTitle ?? "Comunicados",
+                  widget.screenTitle ?? "",
                   style: const TextStyle(
                     color: GridColors.textPrimary,
                     fontWeight: FontWeight.bold,
