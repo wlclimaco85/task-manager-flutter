@@ -48,7 +48,13 @@ class TaskManagerApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       title: 'Task Manager',
       theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: GridColors.primary),
+        // Sobrescreve surface/background do Material 3 para evitar o fundo rosa
+        // gerado automaticamente pelo fromSeed com seed vermelho
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: GridColors.primary,
+          surface: GridColors.background,
+        ),
+        scaffoldBackgroundColor: GridColors.background,
         useMaterial3: true,
       ),
       locale: const Locale('pt', 'BR'),
