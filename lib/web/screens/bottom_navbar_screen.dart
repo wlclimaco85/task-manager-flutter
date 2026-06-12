@@ -229,17 +229,21 @@ class _WebBottomNavBarScreenState extends State<WebBottomNavBarScreen> {
   }
 
   Future<void> _showTabLimitDialogAndReplace(int newScreenIndex, String newLabel) async {
-    final tabToCloseIndex = await showTabLimitDialog(
+    final indicesParaFechar = await showTabLimitDialog(
       context: context,
       tabs: _openTabs,
       newTabLabel: newLabel,
       isCompact: true,
     );
-    if (tabToCloseIndex == null || !mounted) return;
+    if (indicesParaFechar == null || indicesParaFechar.isEmpty || !mounted) return;
 
     setState(() {
-      _openTabs[tabToCloseIndex] = _buildTab(newScreenIndex);
-      _activeTabIndex = tabToCloseIndex;
+      final ordenados = [...indicesParaFechar]..sort((a, b) => b.compareTo(a));
+      for (final i in ordenados) {
+        _openTabs.removeAt(i);
+      }
+      _openTabs.add(_buildTab(newScreenIndex));
+      _activeTabIndex = _openTabs.length - 1;
     });
   }
 
