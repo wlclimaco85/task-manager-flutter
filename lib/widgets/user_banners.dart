@@ -81,18 +81,40 @@ class _UserBannerAppBarState extends State<UserBannerAppBar> {
   }
 
   Future<void> markNotificationAsRead(int id) async {
-    await AlertCaller().markNotificationAsRead(id);
+    final notificacao = notifications.where((n) => n.id == id).firstOrNull;
+    if (notificacao == null) return;
+
+    final sucesso = await AlertCaller().marcarNotificacaoLida(notificacao);
+    if (!sucesso) {
+      _mostrarErroNotificacao('Não foi possível marcar a notificação como lida.');
+      return;
+    }
     setState(() {
       notifications.removeWhere((n) => n.id == id);
       unreadAlerts = notifications.length;
     });
   }
 
-  void deleteNotification(int id) {
+  Future<void> deleteNotification(int id) async {
+    final notificacao = notifications.where((n) => n.id == id).firstOrNull;
+    if (notificacao == null) return;
+
+    final sucesso = await AlertCaller().marcarNotificacaoLida(notificacao);
+    if (!sucesso) {
+      _mostrarErroNotificacao('Não foi possível excluir a notificação.');
+      return;
+    }
     setState(() {
       notifications.removeWhere((n) => n.id == id);
       unreadAlerts = notifications.length;
     });
+  }
+
+  void _mostrarErroNotificacao(String mensagem) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(mensagem), backgroundColor: GridColors.error),
+    );
   }
 
   String? _formatNotificationDate(String? data) {
@@ -102,7 +124,12 @@ class _UserBannerAppBarState extends State<UserBannerAppBar> {
     return DateFormat('dd/MM/yyyy HH:mm').format(parsed);
   }
 
-  void deleteAllNotifications() {
+  Future<void> deleteAllNotifications() async {
+    final sucesso = await AlertCaller().marcarTodasNotificacoesLidas();
+    if (!sucesso) {
+      _mostrarErroNotificacao('Não foi possível marcar todas as notificações como lidas.');
+      return;
+    }
     setState(() {
       notifications.clear();
       unreadAlerts = 0;
@@ -246,9 +273,9 @@ class _UserBannerAppBarState extends State<UserBannerAppBar> {
               Expanded(
                 child: _NotificationPanel(
                   notifications: notifications,
-                  onMarcarLida: markNotificationAsRead,
-                  onDeletar: deleteNotification,
-                  onMarcarTodas: deleteAllNotifications,
+                  onMarcarLida: (id) => markNotificationAsRead(id),
+                  onDeletar: (id) => deleteNotification(id),
+                  onMarcarTodas: () => deleteAllNotifications(),
                   onFechar: () => Navigator.pop(context),
                   resolverTipo: _resolverTipo,
                   dataRelativa: _dataRelativa,

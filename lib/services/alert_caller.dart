@@ -115,22 +115,49 @@ class AlertCaller {
     return model;
   }
 
-  // New function to mark notification as read
-  Future<void> markNotificationAsRead(int id) async {
+  /// Marca a notificação [n] como lida para o login logado.
+  ///
+  /// POST /api/notificacoes/marcar-lida com body
+  /// `{"notificacaoChave": "TIPO:referenciaId"}`, onde `tipo` e `referenciaId`
+  /// vêm de [Alert.status] e [Alert.id] (mapeados a partir do `NotificacaoDTO`
+  /// em [fetchNotificacoes]). Após essa chamada, o próximo
+  /// `GET /api/notificacoes` não traz mais essa notificação.
+  Future<bool> marcarNotificacaoLida(Alert n) async {
     try {
-      final NetworkResponse response = await NetworkCaller().postRequest(
-        ApiLinks.allAlerts,
-        {"id": id},
+      final response = await TenantContext.post(
+        '${ApiLinks.baseUrl}/api/notificacoes/marcar-lida',
+        {'notificacaoChave': '${n.status}:${n.id}'},
       );
-
-      if (response.isSuccess) {
-        // Success is handled in the calling widget which will update its state
-        debugPrint('Notification marked as read successfully');
-      } else {
-        debugPrint('Failed to mark notification as read');
-      }
+      if (response.statusCode == 200) return true;
+      L.d('Erro: falha ao marcar notificação como lida (status ${response.statusCode})');
+      return false;
     } catch (e) {
-      debugPrint('Error marking notification as read: $e');
+      L.d('Erro: $e');
+      return false;
+    }
+  }
+
+  /// Marca todas as notificações não lidas (do login logado) como lidas.
+  ///
+  /// POST /api/notificacoes/marcar-todas-lidas?empresaId=...&diasAviso=...,
+  /// usando os mesmos parâmetros de [fetchNotificacoes].
+  Future<bool> marcarTodasNotificacoesLidas({int diasAviso = 30}) async {
+    try {
+      final empresaId = TenantContext.empresaId;
+      final query = StringBuffer('?diasAviso=$diasAviso');
+      if (empresaId != null) {
+        query.write('&empresaId=$empresaId');
+      }
+      final response = await TenantContext.post(
+        '${ApiLinks.baseUrl}/api/notificacoes/marcar-todas-lidas$query',
+        {},
+      );
+      if (response.statusCode == 200) return true;
+      L.d('Erro: falha ao marcar todas as notificações como lidas (status ${response.statusCode})');
+      return false;
+    } catch (e) {
+      L.d('Erro: $e');
+      return false;
     }
   }
 }
