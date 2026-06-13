@@ -21,6 +21,7 @@
   <meta name="description" content="A new Flutter project.">
 
   <!-- iOS meta tags & icons -->
+  <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black">
   <meta name="apple-mobile-web-app-title" content="task_manager_flutter">
@@ -43,6 +44,31 @@
 
 </head>
 <body>
+  <script>
+    // LOG DE DIAGNÓSTICO TEMPORÁRIO — marcos de carregamento no console do navegador.
+    console.log('[WEB-BOOT] index.html carregado:', new Date().toISOString());
+    window.addEventListener('error', function (e) {
+      console.error('[WEB-ERROR] erro JS global:', e.message, (e.filename || '') + ':' + (e.lineno || ''));
+    });
+    window.addEventListener('unhandledrejection', function (e) {
+      console.error('[WEB-ERROR] promessa rejeitada sem tratamento:', e.reason);
+    });
+
+    // Service worker: força atualização e recarrega quando uma nova versão assume,
+    // evitando ficar preso numa versão antiga em cache (causa do "fundo rosa").
+    if ('serviceWorker' in navigator) {
+      var recarregando = false;
+      navigator.serviceWorker.addEventListener('controllerchange', function () {
+        if (recarregando) return;
+        recarregando = true;
+        console.log('[SW] nova versão ativada — recarregando a página.');
+        window.location.reload();
+      });
+      navigator.serviceWorker.getRegistrations().then(function (regs) {
+        regs.forEach(function (r) { r.update(); });
+      }).catch(function () {});
+    }
+  </script>
   <script src="flutter_bootstrap.js" async></script>
 </body>
 </html>
