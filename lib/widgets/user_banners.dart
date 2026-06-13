@@ -894,7 +894,16 @@ class _AppBarActionsState extends State<AppBarActions> {
   }
 
   Future<void> _markRead(int id) async {
-    await AlertCaller().markNotificationAsRead(id);
+    Alert? alert;
+    for (final a in _alerts) {
+      if (a.id == id) {
+        alert = a;
+        break;
+      }
+    }
+    if (alert != null) {
+      await AlertCaller().marcarNotificacaoLida(alert);
+    }
     if (mounted) {
       setState(() {
         _alerts.removeWhere((a) => a.id == id);
