@@ -128,7 +128,7 @@ class _SearchableDropdownFieldState extends State<SearchableDropdownField> {
 
   @override
   Widget build(BuildContext context) {
-    final primary = Theme.of(context).primaryColor;
+    final primary = GridColors.primary;
     final labelText = widget.label + (widget.isRequired ? ' *' : '');
     final displayText = _displayLabel ?? '';
     final isEmpty = displayText.isEmpty;
@@ -264,7 +264,7 @@ class _SearchDialogState extends State<_SearchDialog> {
 
   @override
   Widget build(BuildContext context) {
-    final primary = Theme.of(context).primaryColor;
+    final primary = GridColors.primary;
 
     return Dialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),

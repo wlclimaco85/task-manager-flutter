@@ -179,68 +179,91 @@ class _TabChipState extends State<_TabChip> {
   }
 }
 
-/// Mostra o popup de "limite de abas atingido", permitindo ao usuário fechar
-/// uma das abas abertas para liberar espaço para a [newTabLabel].
+/// Mostra o popup de "limite de abas atingido", permitindo ao usuário marcar
+/// várias abas abertas (ou todas) para fechar e liberar espaço para a
+/// [newTabLabel].
 ///
-/// Retorna o índice da aba que o usuário escolheu fechar (para que o chamador
-/// feche essa aba e abra a nova no lugar), ou `null` se o usuário cancelou.
-Future<int?> showTabLimitDialog({
+/// Retorna a lista de índices das abas que o usuário escolheu fechar (para
+/// que o chamador feche essas abas e abra a nova), ou `null` se o usuário
+/// cancelou.
+Future<List<int>?> showTabLimitDialog({
   required BuildContext context,
   required List<OpenTab> tabs,
   required String newTabLabel,
   required bool isCompact,
 }) {
-  return showDialog<int>(
+  return showDialog<List<int>>(
     context: context,
     builder: (ctx) {
-      return AlertDialog(
-        backgroundColor: GridColors.dialogBackground,
-        content: SizedBox(
-          width: isCompact ? 360 : 420,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text(
-                'Limite de abas atingido',
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  color: GridColors.textSecondary,
-                  fontSize: 16,
-                ),
-              ),
-              const SizedBox(height: 6),
-              Text(
-                'Você já tem 5 abas abertas. Feche uma para abrir "$newTabLabel".',
-                style: const TextStyle(color: GridColors.textMuted, fontSize: 13),
-              ),
-              const SizedBox(height: 12),
-              for (int i = 0; i < tabs.length; i++) ...[
-                if (i > 0) const Divider(height: 1, color: GridColors.divider),
-                ListTile(
-                  visualDensity: VisualDensity.compact,
-                  dense: true,
-                  leading: FaIcon(tabs[i].icon, color: GridColors.primary, size: 18),
-                  title: Text(
-                    tabs[i].label,
-                    style: const TextStyle(color: GridColors.textSecondary, fontSize: 14),
+      final selecionados = <int>{};
+
+      return StatefulBuilder(
+        builder: (ctx, setState) {
+          return AlertDialog(
+            backgroundColor: GridColors.dialogBackground,
+            content: SizedBox(
+              width: isCompact ? 360 : 420,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Limite de abas atingido',
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: GridColors.textSecondary,
+                      fontSize: 16,
+                    ),
                   ),
-                  trailing: IconButton(
-                    icon: const Icon(Icons.close, color: GridColors.error),
-                    tooltip: 'Fechar esta aba e abrir a nova',
-                    onPressed: () => Navigator.of(ctx).pop(i),
+                  const SizedBox(height: 6),
+                  Text(
+                    'Você já tem 5 abas abertas. Selecione as que deseja fechar para abrir "$newTabLabel".',
+                    style: const TextStyle(color: GridColors.textMuted, fontSize: 13),
                   ),
-                ),
-              ],
+                  const SizedBox(height: 12),
+                  for (int i = 0; i < tabs.length; i++) ...[
+                    if (i > 0) const Divider(height: 1, color: GridColors.divider),
+                    CheckboxListTile(
+                      value: selecionados.contains(i),
+                      onChanged: (marcado) => setState(() {
+                        if (marcado ?? false) {
+                          selecionados.add(i);
+                        } else {
+                          selecionados.remove(i);
+                        }
+                      }),
+                      controlAffinity: ListTileControlAffinity.leading,
+                      visualDensity: VisualDensity.compact,
+                      dense: true,
+                      activeColor: GridColors.primary,
+                      secondary: FaIcon(tabs[i].icon, color: GridColors.primary, size: 18),
+                      title: Text(
+                        tabs[i].label,
+                        style: const TextStyle(color: GridColors.textSecondary, fontSize: 14),
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(ctx).pop(),
+                child: const Text('Cancelar', style: TextStyle(color: GridColors.textSecondary)),
+              ),
+              TextButton(
+                onPressed: selecionados.isEmpty
+                    ? null
+                    : () => Navigator.of(ctx).pop(selecionados.toList()),
+                child: const Text('Fechar selecionadas e abrir'),
+              ),
+              TextButton(
+                onPressed: () => Navigator.of(ctx).pop(List.generate(tabs.length, (i) => i)),
+                child: const Text('Fechar todas e abrir'),
+              ),
             ],
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(),
-            child: const Text('Cancelar', style: TextStyle(color: GridColors.textSecondary)),
-          ),
-        ],
+          );
+        },
       );
     },
   );

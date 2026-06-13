@@ -208,6 +208,10 @@ class TelaField {
   final bool multiSelect; // dropdown com seleção múltipla
   final int fieldOrder; // ordem do campo no form
 
+  /// Visibilidade condicional, formato "<fieldName>==<valor>" (ex.: "isServico==false").
+  /// Quando nulo, o campo é sempre visível.
+  final String? visibleWhen;
+
   TelaField({
     required this.label,
     required this.fieldName,
@@ -242,6 +246,7 @@ class TelaField {
     this.showInCard = true,
     this.multiSelect = false,
     this.fieldOrder = 0,
+    this.visibleWhen,
   });
 
   factory TelaField.fromJson(Map<String, dynamic> json) {
@@ -319,6 +324,7 @@ class TelaField {
           : (json['showInCard'] as bool? ?? true),
       multiSelect: json['multiSelect'] == true,
       fieldOrder: json['fieldOrder'] is int ? json['fieldOrder'] : 0,
+      visibleWhen: json['visibleWhen'] as String?,
     );
   }
 
@@ -421,6 +427,7 @@ class TelaField {
         'showInCard': showInCard,
         'multiSelect': multiSelect,
         'fieldOrder': fieldOrder,
+        'visibleWhen': visibleWhen,
       };
 }
 

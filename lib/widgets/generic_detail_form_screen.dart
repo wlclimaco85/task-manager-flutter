@@ -12,6 +12,38 @@ import '../customization/dynamic_grid_windows_screen.dart' as dyn;
 import 'generic_grid_windows_screen.dart'
     show FieldConfigWindows, FieldType, SecurityCheck;
 
+/// Avalia a expressão `visibleWhen` (formato "<fieldName>==<valor>") contra o
+/// estado atual do formulário. Sem expressão, o campo é sempre visível.
+///
+/// Quando o campo referenciado não existe no estado, usa o valor padrão do
+/// tipo esperado: bool ausente == false; demais tipos ausentes == null.
+bool avaliarVisibleWhen(
+    String? expressao, Map<String, dynamic> estadoFormulario) {
+  if (expressao == null || expressao.trim().isEmpty) return true;
+
+  final partes = expressao.split('==');
+  if (partes.length != 2) return true;
+
+  final fieldName = partes[0].trim();
+  final valorEsperadoTexto = partes[1].trim();
+
+  dynamic valorEsperado;
+  if (valorEsperadoTexto == 'true') {
+    valorEsperado = true;
+  } else if (valorEsperadoTexto == 'false') {
+    valorEsperado = false;
+  } else {
+    valorEsperado = valorEsperadoTexto;
+  }
+
+  dynamic valorAtual = estadoFormulario[fieldName];
+  if (!estadoFormulario.containsKey(fieldName)) {
+    valorAtual = valorEsperado is bool ? false : null;
+  }
+
+  return valorAtual == valorEsperado;
+}
+
 // ---------------------------------------------------------------
 // GenericDetailFormScreen
 // ---------------------------------------------------------------
@@ -389,6 +421,19 @@ class _GenericDetailFormScreenState extends State<GenericDetailFormScreen>
     );
   }
 
+  /// Monta o estado atual do formulário (checkbox, dropdown, multiselect,
+  /// texto) para avaliação de `visibleWhen`.
+  Map<String, dynamic> _estadoFormularioAtual() {
+    final estado = <String, dynamic>{};
+    estado.addAll(_checkboxValues);
+    estado.addAll(_dropdownValues);
+    estado.addAll(_multiValues);
+    for (final entry in _controllers.entries) {
+      estado[entry.key] = entry.value.text;
+    }
+    return estado;
+  }
+
   Widget _buildFormTab(TelaConfig tela) {
     final effectiveFields = <_EF>[];
     final inserted = <String>{};
@@ -480,6 +525,11 @@ class _GenericDetailFormScreenState extends State<GenericDetailFormScreen>
         inserted.add(o.fieldName);
       }
     }
+
+    // Aplica visibilidade condicional (visibleWhen) com base no estado atual
+    final estadoFormulario = _estadoFormularioAtual();
+    effectiveFields.removeWhere(
+        (f) => !avaliarVisibleWhen(f.visibleWhen, estadoFormulario));
 
     return Form(
       key: _formKey,
@@ -1211,6 +1261,7 @@ class _EF {
   final String? dropdownEndpoint;
   final Future<List<Map<String, dynamic>>> Function()? dropdownFutureBuilder;
   final List<Map<String, dynamic>>? dropdownOptions;
+  final String? visibleWhen;
 
   _EF(
       {required this.fieldName,
@@ -1221,7 +1272,8 @@ class _EF {
       this.dField = 'nome',
       this.dropdownEndpoint,
       this.dropdownFutureBuilder,
-      this.dropdownOptions});
+      this.dropdownOptions,
+      this.visibleWhen});
 
   factory _EF.fromTelaField(TelaField f, FieldType type) => _EF(
         fieldName: f.fieldName,
@@ -1238,6 +1290,7 @@ class _EF {
                   'nome': e.optionLabel ?? e.optionValue.toString()
                 })
             .toList(),
+        visibleWhen: f.visibleWhen,
       );
 
   factory _EF.fromOverride(FieldConfigWindows o) => _EF(
@@ -1252,6 +1305,7 @@ class _EF {
         dropdownOptions: o.dropdownOptions
             ?.map((e) => Map<String, dynamic>.from(e as Map))
             .toList(),
+        visibleWhen: null,
       );
 }
 

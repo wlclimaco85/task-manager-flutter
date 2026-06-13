@@ -61,13 +61,16 @@ class _State extends State<NfeSankhyaDetailScreen> {
 
   // Dropdowns
   final List<Map<String, dynamic>> _empresas = [];
-  final List<Map<String, dynamic>> _parceiros = [];
+  List<Map<String, dynamic>> _parceiros = [];
   List<Map<String, dynamic>> _destinatarios = []; // parceiros do parceiro logado
   List<Map<String, dynamic>> _formasPagamento = [];
   List<Map<String, dynamic>> _finalidades = [];
   List<Map<String, dynamic>> _produtos = [];
   List<Map<String, dynamic>> _series = [];
   List<Map<String, dynamic>> _unidades = [];
+  List<Map<String, dynamic>> _tiposOperacao = [];
+  String? _tipoOperacaoId;
+  Map<String, dynamic> _topSelected = {};
 
   // Controllers cabeçalho
   final _chaveCtrl = TextEditingController();
@@ -126,6 +129,9 @@ class _State extends State<NfeSankhyaDetailScreen> {
     _destinatarioId = (i['destinatario'] is Map ? i['destinatario']['id'] : i['destinatario'])?.toString();
     _formaPagId = (i['formaPagamento'] is Map ? i['formaPagamento']['id'] : null)?.toString();
     _finalidadeId = (i['nfeFinalidade'] is Map ? i['nfeFinalidade']['id'] : null)?.toString();
+
+    final topData = i['nfeTipoOperacao'];
+    _tipoOperacaoId = (topData is Map ? topData['id'] : topData)?.toString();
   }
 
   Future<void> _loadDropdowns() async {
@@ -136,14 +142,22 @@ class _State extends State<NfeSankhyaDetailScreen> {
     await Future.wait([
       _loadList('${ApiLinks.baseUrl}/api/forma_pagamento?tamanho=100', (d) => setState(() => _formasPagamento = d)),
       _loadList('${ApiLinks.baseUrl}/api/nfe-finalidade?tamanho=50', (d) => setState(() => _finalidades = d)),
-      _loadList('${ApiLinks.baseUrl}/api/produto-contabil?tamanho=500${empId != null ? '&empId=$empId' : ''}${parcId != null ? '&parceiroId=$parcId' : ''}',
+      _loadList('${ApiLinks.baseUrl}/api/produto-contabil?tamanho=500${empId != null ? '&empId=$empId' : ''}${parcId != null ? '&parceiroId=$parcId' : ''}&isServico=false',
           (d) => setState(() => _produtos = d)),
       _loadList('${ApiLinks.baseUrl}/api/nfe-serie?tamanho=100${empId != null ? '&empId=$empId' : ''}',
           (d) => setState(() => _series = d)),
       _loadList('${ApiLinks.baseUrl}/api/unidade_medida?tamanho=200', (d) => setState(() => _unidades = d)),
+      _loadList('${ApiLinks.baseUrl}/api/parceiro?tamanho=500${empId != null ? '&empId=$empId' : ''}',
+          (d) => setState(() => _parceiros = d)),
+      _loadList('${ApiLinks.baseUrl}/api/nfe-tipo-operacao?tamanho=200', (d) => setState(() => _tiposOperacao = d)),
       // Destinatários: parceiros vinculados ao parceiro logado (mesma empresa)
       _loadDestinatarios(empId, parcId),
     ]);
+
+    if (_tipoOperacaoId != null) {
+      final found = _tiposOperacao.firstWhere((e) => e['id']?.toString() == _tipoOperacaoId, orElse: () => {});
+      if (found.isNotEmpty) setState(() => _topSelected = found);
+    }
   }
 
   Future<void> _loadDestinatarios(String? empId, String? parcId) async {
@@ -675,6 +689,8 @@ class _State extends State<NfeSankhyaDetailScreen> {
         _isEntrada
           ? _inp('Série', _serieCtrl)
           : _ddObjSerie('Série', _serieCtrl.text, _series),
+        // Tipo de Operação: usado para pré-preencher CFOP/CST/Alíquota ICMS no Novo Item
+        _ddTipoOperacao(),
         // Status: disabled (PENDENTE no insert, muda só ao transmitir)
         _inpDisabledText('Status', _statusVal ?? 'PENDENTE'),
         _dd('Ambiente', _ambienteVal, ['HOMOLOGACAO','PRODUCAO'], (v) => setState(() => _ambienteVal = v)),
@@ -693,6 +709,32 @@ class _State extends State<NfeSankhyaDetailScreen> {
         _ddObj('Finalidade', _finalidadeId, _finalidades, 'descricao', (v) => setState(() => _finalidadeId = v)),
       ]))),
     ]));
+  }
+
+  /// Dropdown de Tipo de Operação — define CFOP/CST/Alíquota ICMS herdados pelos itens
+  Widget _ddTipoOperacao() {
+    final opts = _tiposOperacao.map((e) => <String, dynamic>{
+      'id': e['id']?.toString() ?? '',
+      'nome': '${e['codigo'] ?? ''} - ${e['descricao'] ?? ''}',
+    }).toList();
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: SearchableDropdownField(
+        label: 'Tipo de Operação',
+        value: opts.any((o) => o['id'] == _tipoOperacaoId) ? _tipoOperacaoId : null,
+        items: opts,
+        valueField: 'id',
+        displayField: 'nome',
+        nullable: true,
+        nullLabel: '— Selecione —',
+        onChanged: (v) {
+          setState(() {
+            _tipoOperacaoId = v;
+            _topSelected = _tiposOperacao.firstWhere((e) => e['id']?.toString() == v, orElse: () => {});
+          });
+        },
+      ),
+    );
   }
 
   /// Campo de texto desabilitado (readonly visual)
@@ -855,6 +897,7 @@ class _State extends State<NfeSankhyaDetailScreen> {
       if (_destinatarioId != null) 'destinatario': {'id': int.tryParse(_destinatarioId!) ?? _destinatarioId},
       if (_formaPagId != null) 'formaPagamento': {'id': int.tryParse(_formaPagId!) ?? _formaPagId},
       if (_finalidadeId != null) 'nfeFinalidade': {'id': int.tryParse(_finalidadeId!) ?? _finalidadeId},
+      if (_tipoOperacaoId != null) 'nfeTipoOperacao': {'id': int.tryParse(_tipoOperacaoId!) ?? _tipoOperacaoId},
     };
     try {
       final r = _isNovo
@@ -952,7 +995,7 @@ class _State extends State<NfeSankhyaDetailScreen> {
       _iInp('NCM', item, 'ncm', 'ncm'),
       _iInp('CFOP', item, 'cfop', 'cfop'),
       // Unidade como dropdown
-      _ddObjItem('Unidade', item['u_com']?.toString() ?? item['uCom']?.toString(), _unidades.isNotEmpty ? _unidades : _unidadesFallback(), 'sigla', (v) {
+      _ddObjItem('Unidade', item['u_com']?.toString() ?? item['uCom']?.toString(), _unidades.isNotEmpty ? _unidades : _unidadesFallback(), 'nome', (v) {
         setState(() { item['u_com'] = v; item['uCom'] = v; });
       }),
       _iInp('Quantidade', item, 'q_com', 'qCom'),
@@ -1081,7 +1124,17 @@ class _State extends State<NfeSankhyaDetailScreen> {
     );
   }
 
-  void _novoItem() => setState(() { _itens.add({'nfe_id': int.tryParse(_nfeId) ?? 0}); _selItem = _itens.length - 1; _itensGrid = false; });
+  void _novoItem() => setState(() {
+    final novoItem = <String, dynamic>{'nfe_id': int.tryParse(_nfeId) ?? 0};
+    if (_topSelected.isNotEmpty) {
+      novoItem['cfop'] = _topSelected['cfop']?.toString() ?? '';
+      novoItem['cst_icms'] = _topSelected['cstIcms']?.toString() ?? '';
+      novoItem['aliq_icms'] = _topSelected['aliqIcms']?.toString() ?? '';
+    }
+    _itens.add(novoItem);
+    _selItem = _itens.length - 1;
+    _itensGrid = false;
+  });
 
   /// Grid sem AppBar — usa MediaQuery para dar padding zero ao topo
   /// evitando o header duplo dentro do detail
@@ -1099,20 +1152,20 @@ class _State extends State<NfeSankhyaDetailScreen> {
 
   // Unidades padrão quando o endpoint não existe
   List<Map<String, dynamic>> _unidadesFallback() => [
-    {'id': 'UN', 'sigla': 'UN', 'descricao': 'Unidade'},
-    {'id': 'KG', 'sigla': 'KG', 'descricao': 'Quilograma'},
-    {'id': 'G', 'sigla': 'G', 'descricao': 'Grama'},
-    {'id': 'L', 'sigla': 'L', 'descricao': 'Litro'},
-    {'id': 'ML', 'sigla': 'ML', 'descricao': 'Mililitro'},
-    {'id': 'M', 'sigla': 'M', 'descricao': 'Metro'},
-    {'id': 'M2', 'sigla': 'M2', 'descricao': 'Metro Quadrado'},
-    {'id': 'M3', 'sigla': 'M3', 'descricao': 'Metro Cúbico'},
-    {'id': 'CX', 'sigla': 'CX', 'descricao': 'Caixa'},
-    {'id': 'PC', 'sigla': 'PC', 'descricao': 'Peça'},
-    {'id': 'PAR', 'sigla': 'PAR', 'descricao': 'Par'},
-    {'id': 'DZ', 'sigla': 'DZ', 'descricao': 'Dúzia'},
-    {'id': 'SC', 'sigla': 'SC', 'descricao': 'Saco'},
-    {'id': 'T', 'sigla': 'T', 'descricao': 'Tonelada'},
+    {'id': 'UN', 'nome': 'UN', 'descricao': 'Unidade'},
+    {'id': 'KG', 'nome': 'KG', 'descricao': 'Quilograma'},
+    {'id': 'G', 'nome': 'G', 'descricao': 'Grama'},
+    {'id': 'L', 'nome': 'L', 'descricao': 'Litro'},
+    {'id': 'ML', 'nome': 'ML', 'descricao': 'Mililitro'},
+    {'id': 'M', 'nome': 'M', 'descricao': 'Metro'},
+    {'id': 'M2', 'nome': 'M2', 'descricao': 'Metro Quadrado'},
+    {'id': 'M3', 'nome': 'M3', 'descricao': 'Metro Cúbico'},
+    {'id': 'CX', 'nome': 'CX', 'descricao': 'Caixa'},
+    {'id': 'PC', 'nome': 'PC', 'descricao': 'Peça'},
+    {'id': 'PAR', 'nome': 'PAR', 'descricao': 'Par'},
+    {'id': 'DZ', 'nome': 'DZ', 'descricao': 'Dúzia'},
+    {'id': 'SC', 'nome': 'SC', 'descricao': 'Saco'},
+    {'id': 'T', 'nome': 'T', 'descricao': 'Tonelada'},
   ];
 
   Widget _togBtn(IconData ic, bool on, VoidCallback cb) => InkWell(onTap: cb,
