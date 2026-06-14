@@ -448,7 +448,13 @@ class _GedArquivosScreenState extends State<GedArquivosScreen> {
               onChanged: (v) => setState(() => _busca = v),
             ),
           ),
-          const SizedBox(width: 8),
+          const SizedBox(width: 4),
+          IconButton(
+            icon: const Icon(Icons.refresh_rounded, size: 20),
+            tooltip: 'Recarregar',
+            onPressed: _carregando ? null : _buscarArquivos,
+          ),
+          const SizedBox(width: 4),
           ElevatedButton.icon(
             style: ElevatedButton.styleFrom(
               backgroundColor: GridColors.primary,
@@ -580,23 +586,29 @@ class _GedArquivosScreenState extends State<GedArquivosScreen> {
       );
     }
 
-    final largura = MediaQuery.of(context).size.width;
-    final colunas = largura < 480
-        ? 2
-        : largura < 900
-            ? 3
-            : 4;
+    // LayoutBuilder mede o widget real, não a tela — funciona corretamente
+    // quando o GED está embutido dentro de um tab com painel lateral aberto
+    return LayoutBuilder(
+      builder: (ctx, constraints) {
+        final largura = constraints.maxWidth;
+        final colunas = largura < 480
+            ? 2
+            : largura < 900
+                ? 3
+                : 4;
 
-    return GridView.builder(
-      padding: const EdgeInsets.all(12),
-      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: colunas,
-        crossAxisSpacing: 10,
-        mainAxisSpacing: 10,
-        childAspectRatio: 0.85,
-      ),
-      itemCount: filtrados.length,
-      itemBuilder: (context, index) => _buildCard(filtrados[index]),
+        return GridView.builder(
+          padding: const EdgeInsets.all(12),
+          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: colunas,
+            crossAxisSpacing: 10,
+            mainAxisSpacing: 10,
+            childAspectRatio: 0.85,
+          ),
+          itemCount: filtrados.length,
+          itemBuilder: (context, index) => _buildCard(filtrados[index]),
+        );
+      },
     );
   }
 

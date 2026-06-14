@@ -80,16 +80,16 @@ class _NotificacoesDrawerState extends State<NotificacoesDrawer> {
 
   Color _corTipo(String? tipo) {
     switch (tipo?.toUpperCase()) {
-      case 'ALVARA':            return const Color(0xFFF59E0B); // amber
-      case 'ALVARA_CADASTRADO': return const Color(0xFF0D9488); // teal
-      case 'ALVARA_VENDIDO':    return const Color(0xFF16A34A); // green
-      case 'ALVARA_STATUS':     return const Color(0xFFD97706); // amber dark
-      case 'CP':                return const Color(0xFFDC2626); // red
-      case 'CR':                return const Color(0xFF2563EB); // blue
-      case 'GED':               return const Color(0xFF4F46E5); // indigo
-      case 'COMUNICADO':        return const Color(0xFF7C3AED); // violet
-      case 'CHAMADO':           return const Color(0xFFEA580C); // orange
-      default:                  return const Color(0xFF6B7280); // gray
+      case 'ALVARA':            return GridColors.warning;
+      case 'ALVARA_CADASTRADO': return GridColors.secondaryLight;
+      case 'ALVARA_VENDIDO':    return GridColors.success;
+      case 'ALVARA_STATUS':     return GridColors.warningDark;
+      case 'CP':                return GridColors.error;
+      case 'CR':                return GridColors.info;
+      case 'GED':               return GridColors.statusHoliday;
+      case 'COMUNICADO':        return GridColors.statusClosed;
+      case 'CHAMADO':           return GridColors.warningDark;
+      default:                  return GridColors.neutral;
     }
   }
 
@@ -113,9 +113,12 @@ class _NotificacoesDrawerState extends State<NotificacoesDrawer> {
     try {
       final dt = DateTime.parse(valor).toLocal();
       final hoje = DateTime.now();
-      final diff = hoje.difference(dt).inDays;
-      if (diff == 0) return 'Hoje';
-      if (diff == 1) return 'Ontem';
+      // Normaliza para meia-noite para evitar falsos "Hoje" perto da virada do dia
+      final diffDias = DateTime(hoje.year, hoje.month, hoje.day)
+          .difference(DateTime(dt.year, dt.month, dt.day))
+          .inDays;
+      if (diffDias == 0) return 'Hoje';
+      if (diffDias == 1) return 'Ontem';
       return '${dt.day.toString().padLeft(2, '0')}/${dt.month.toString().padLeft(2, '0')}/${dt.year}';
     } catch (_) {
       return valor;
@@ -130,7 +133,7 @@ class _NotificacoesDrawerState extends State<NotificacoesDrawer> {
     final demais = _notifs.where((n) => !_isUrgente(n['tipo']?.toString())).toList();
 
     return Drawer(
-      backgroundColor: const Color(0xFFF3F4F6),
+      backgroundColor: GridColors.pageBackground,
       child: SafeArea(
         child: Column(
           children: [
@@ -147,11 +150,11 @@ class _NotificacoesDrawerState extends State<NotificacoesDrawer> {
                   padding: const EdgeInsets.symmetric(vertical: 8),
                   children: [
                     if (urgentes.isNotEmpty) ...[
-                      _buildSecaoLabel('Requer atenção', urgentes.length, const Color(0xFFDC2626)),
+                      _buildSecaoLabel('Requer atenção', urgentes.length, GridColors.error),
                       ...urgentes.map(_buildCard),
                     ],
                     if (demais.isNotEmpty) ...[
-                      _buildSecaoLabel('Informações', demais.length, const Color(0xFF6B7280)),
+                      _buildSecaoLabel('Informações', demais.length, GridColors.neutral),
                       ...demais.map(_buildCard),
                     ],
                   ],
@@ -169,7 +172,7 @@ class _NotificacoesDrawerState extends State<NotificacoesDrawer> {
       padding: const EdgeInsets.fromLTRB(16, 16, 8, 16),
       decoration: const BoxDecoration(
         color: Colors.white,
-        border: Border(bottom: BorderSide(color: Color(0xFFE5E7EB))),
+        border: Border(bottom: BorderSide(color: GridColors.divider)),
       ),
       child: Row(
         children: [
@@ -343,7 +346,7 @@ class _NotificacoesDrawerState extends State<NotificacoesDrawer> {
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: const BoxDecoration(
         color: Colors.white,
-        border: Border(top: BorderSide(color: Color(0xFFE5E7EB))),
+        border: Border(top: BorderSide(color: GridColors.divider)),
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -352,11 +355,11 @@ class _NotificacoesDrawerState extends State<NotificacoesDrawer> {
             Container(
               width: 8,
               height: 8,
-              decoration: const BoxDecoration(color: Color(0xFFDC2626), shape: BoxShape.circle),
+              decoration: BoxDecoration(color: GridColors.error, shape: BoxShape.circle),
             ),
             const SizedBox(width: 6),
             Text('$urgentes urgente${urgentes > 1 ? 's' : ''}',
-                style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Color(0xFFDC2626))),
+                style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: GridColors.error)),
             const SizedBox(width: 12),
           ],
           Text('${_notifs.length} total',
@@ -420,7 +423,7 @@ class _NotificacoesSinoButtonState extends State<NotificacoesSinoButton> {
             child: Container(
               width: 16,
               height: 16,
-              decoration: const BoxDecoration(color: Color(0xFFDC2626), shape: BoxShape.circle),
+              decoration: BoxDecoration(color: GridColors.error, shape: BoxShape.circle),
               child: Center(
                 child: Text(
                   _count > 9 ? '9+' : '$_count',
