@@ -357,7 +357,15 @@ class _UserBannerAppBarState extends State<UserBannerAppBar> {
                           context: context,
                           builder: (_) => const MeuPerfilDialog(),
                         ).then((salvou) {
-                          if (salvou == true) setState(() {});
+                          if (salvou == true) {
+                            setState(() {});
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('Perfil atualizado com sucesso.'),
+                                backgroundColor: GridColors.success,
+                              ),
+                            );
+                          }
                         });
                       },
                       child: CircleAvatar(

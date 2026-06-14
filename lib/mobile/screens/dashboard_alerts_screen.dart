@@ -107,22 +107,57 @@ class _AlertsPanelState extends State<AlertsPanel> {
       return SizedBox(
           height: 180,
           child: Center(
-              child: Text(error!, style: const TextStyle(color: Colors.red))));
+              child:
+                  Text(error!, style: const TextStyle(color: GridColors.error))));
     }
 
-    Widget list(String title, List<AlertItem> items, Color color) {
-      return Container(
-        padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(
-            color: Colors.white, borderRadius: BorderRadius.circular(16)),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(title,
-                style: const TextStyle(
-                    fontWeight: FontWeight.bold,
-                    color: GridColors.textSecondary)),
-            const SizedBox(height: 8),
+    return Column(
+      children: [
+        AlertListCard(title: 'Atrasados', items: overdue, color: GridColors.error),
+        const SizedBox(height: 12),
+        AlertListCard(
+            title: 'Vencendo em ${widget.daysSoon} dias',
+            items: dueSoon,
+            color: GridColors.warning),
+      ],
+    );
+  }
+}
+
+/// Card de uma seção de alertas (Atrasados / Vencendo em X dias).
+///
+/// Uso interno desta tela: extraído como widget para permitir teste
+/// isolado sem depender de chamadas HTTP do [AlertsPanel].
+class AlertListCard extends StatelessWidget {
+  final String title;
+  final List<AlertItem> items;
+  final Color color;
+
+  const AlertListCard({
+    super.key,
+    required this.title,
+    required this.items,
+    required this.color,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+          color: GridColors.card, borderRadius: BorderRadius.circular(16)),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(title,
+              style: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                  color: GridColors.textSecondary)),
+          const SizedBox(height: 8),
+          if (items.isEmpty)
+            const Text('Nenhum lançamento.',
+                style: TextStyle(color: GridColors.textMuted, fontSize: 13))
+          else
             for (final a in items.take(5))
               ListTile(
                 dense: true,
@@ -132,17 +167,8 @@ class _AlertsPanelState extends State<AlertsPanel> {
                     'Venc.: ${a.dataVencimento.day}/${a.dataVencimento.month} — R\$ ${a.valor.toStringAsFixed(2)}'),
                 trailing: Text(a.tipo, style: TextStyle(color: color)),
               ),
-          ],
-        ),
-      );
-    }
-
-    return Column(
-      children: [
-        list('Atrasados', overdue, Colors.red),
-        const SizedBox(height: 12),
-        list('Vencendo em ${widget.daysSoon} dias', dueSoon, Colors.orange),
-      ],
+        ],
+      ),
     );
   }
 }

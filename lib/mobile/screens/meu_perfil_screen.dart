@@ -21,6 +21,7 @@ class _MeuPerfilScreenState extends State<MeuPerfilScreen> {
   late final TextEditingController _nomeController;
   String? _novaFotoBase64;
   bool _salvando = false;
+  String? _nomeErro;
 
   @override
   void initState() {
@@ -58,6 +59,12 @@ class _MeuPerfilScreenState extends State<MeuPerfilScreen> {
   }
 
   Future<void> _salvar() async {
+    if (_nomeController.text.trim().isEmpty) {
+      setState(() => _nomeErro = 'Informe o nome.');
+      return;
+    }
+    setState(() => _nomeErro = null);
+
     final login = AuthUtility.userInfo?.login;
     if (login?.id == null) return;
 
@@ -181,9 +188,10 @@ class _MeuPerfilScreenState extends State<MeuPerfilScreen> {
             TextField(
               controller: _nomeController,
               enabled: !_salvando,
-              decoration: const InputDecoration(
+              decoration: InputDecoration(
                 labelText: 'Nome',
-                border: OutlineInputBorder(),
+                border: const OutlineInputBorder(),
+                errorText: _nomeErro,
               ),
             ),
             const SizedBox(height: 12),
