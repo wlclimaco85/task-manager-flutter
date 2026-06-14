@@ -189,7 +189,7 @@ if not exist "%FLUTTER_DANIEL_DIR%" (
 exit /b 0
 
 :CHECK_SELENIUM
-if not exist "%SELENIUM_DIR%\run_tests.bat" (
+if not exist "%SELENIUM_DIR%\run_selenium_tests.ps1" (
     echo [ERRO] Harness Selenium nao encontrado: %SELENIUM_DIR%
     exit /b 1
 )
@@ -201,7 +201,7 @@ echo Matando backend na porta %BACKEND_PORT%...
 powershell -NoProfile -ExecutionPolicy Bypass -Command "$procIds = Get-NetTCPConnection -LocalPort %BACKEND_PORT% -State Listen -ErrorAction SilentlyContinue | Select-Object -ExpandProperty OwningProcess -Unique; foreach ($procId in $procIds) { if ($procId -and $procId -ne 0) { Stop-Process -Id $procId -Force -ErrorAction SilentlyContinue; Write-Host ('  PID ' + $procId + ' encerrado') } }"
 
 echo Matando processos Flutter/Dart ligados aos projetos...
-powershell -NoProfile -ExecutionPolicy Bypass -Command "$currentPid = $pid; $items = Get-CimInstance Win32_Process | Where-Object { $_.ProcessId -ne $currentPid -and ($_.Name -match 'flutter|dart|cmd') -and ($_.CommandLine -like '*task_manager_flutter*' -or $_.CommandLine -like '*task_manager_AppAcademiaV003*' -or $_.CommandLine -like '*task_manager_appDaniel*' -or $_.CommandLine -like '*AppAcademia*') }; foreach ($p in $items) { Stop-Process -Id $p.ProcessId -Force -ErrorAction SilentlyContinue; Write-Host ('  PID ' + $p.ProcessId + ' encerrado: ' + $p.Name) }"
+powershell -NoProfile -ExecutionPolicy Bypass -Command "$currentPid = $pid; $parentPid = (Get-CimInstance Win32_Process -Filter ('ProcessId=' + $currentPid)).ParentProcessId; $items = Get-CimInstance Win32_Process | Where-Object { $_.ProcessId -ne $currentPid -and $_.ProcessId -ne $parentPid -and ($_.Name -match 'flutter|dart|cmd') -and ($_.CommandLine -like '*task_manager_flutter*' -or $_.CommandLine -like '*task_manager_AppAcademiaV003*' -or $_.CommandLine -like '*task_manager_appDaniel*' -or $_.CommandLine -like '*AppAcademia*') }; foreach ($p in $items) { Stop-Process -Id $p.ProcessId -Force -ErrorAction SilentlyContinue; Write-Host ('  PID ' + $p.ProcessId + ' encerrado: ' + $p.Name) }"
 timeout /t 2 /nobreak >nul
 exit /b 0
 
@@ -613,7 +613,7 @@ if errorlevel 1 (
     echo Flutter Web ja esta rodando na porta 5200.
 )
 set "APP_ACADEMIA_BASE_URL=http://localhost:5200"
-call "%SELENIUM_DIR%\run_tests.bat"
+powershell -NoProfile -ExecutionPolicy Bypass -File "%SELENIUM_DIR%\run_selenium_tests.ps1" -Browser chrome -Projects "client,base"
 if errorlevel 1 (
     set "SELENIUM_STATUS=FALHOU"
 ) else (
