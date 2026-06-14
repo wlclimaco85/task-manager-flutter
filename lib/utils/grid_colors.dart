@@ -55,6 +55,13 @@ class GridColors {
   static const Color suggestionMedium = Color(0xFFFFF8E1);
   static const Color dialogBackground = Color(0xFFFFFFFF);
   static const Color shadow = Color(0x2693070A);
+
+  // Cores por tipo de arquivo (GED)
+  static const Color fileTypePdf = Colors.red;
+  static const Color fileTypeImage = Colors.blue;
+  static const Color fileTypeSheet = Colors.green;
+  static const Color fileTypeWord = Colors.indigo;
+  static const Color fileTypeDefault = Colors.grey;
 }
 
 class CustomColors {

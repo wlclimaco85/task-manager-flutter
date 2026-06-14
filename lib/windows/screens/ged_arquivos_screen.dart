@@ -8,6 +8,7 @@ import 'package:intl/intl.dart';
 
 import '../../../models/auth_utility.dart';
 import '../../../utils/api_links.dart';
+import '../../../utils/ged_file_type.dart';
 import '../../../utils/grid_colors.dart';
 import '../../../utils/tenant_context.dart';
 import '../../services/ai_assistant_service.dart';
@@ -857,16 +858,7 @@ class _GedArquivosScreenState extends State<GedArquivosScreen> {
     final ext = tipo.contains('/')
         ? tipo.split('/').last.toUpperCase()
         : tipo.toUpperCase();
-    Color cor = Colors.grey;
-    if (tipo.startsWith('image/')) {
-      cor = Colors.blue;
-    } else if (tipo.contains('pdf'))
-      cor = Colors.red;
-    else if (tipo.contains('word') || tipo.contains('doc'))
-      cor = Colors.indigo;
-    else if (tipo.contains('excel') ||
-        tipo.contains('sheet') ||
-        tipo.contains('csv')) cor = Colors.green;
+    final cor = corParaTipoArquivo(tipo);
 
     return Chip(
       label: Text(ext.length > 8 ? ext.substring(0, 8) : ext,

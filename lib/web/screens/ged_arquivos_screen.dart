@@ -2,14 +2,15 @@ import 'package:file_picker/file_picker.dart';
 import 'package:file_saver/file_saver.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
-import 'package:intl/intl.dart';
 
 import '../../../models/auth_utility.dart';
 import '../../../utils/api_links.dart';
 import '../../../utils/grid_colors.dart';
 import '../../../utils/grid_texts.dart';
 import '../../../utils/tenant_context.dart';
+import '../../services/ai_assistant_service.dart';
 import '../../services/network_caller.dart';
+import '../widgets/ged_file_card.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
 /// Tela GED — Gestão Eletrônica de Documentos (layout mobile/web com cards)
@@ -277,6 +278,63 @@ class _GedArquivosScreenState extends State<GedArquivosScreen> {
   }
 
   // ──────────────────────────────────────────────────────────────────────────
+  // Edição (rename)
+  // ──────────────────────────────────────────────────────────────────────────
+
+  Future<bool> _salvarEdicaoNome(
+      Map<String, dynamic> arq, String novoNome) async {
+    final r = await NetworkCaller().putRequest(
+      ApiLinks.updateArquivo(arq['id'].toString()),
+      {'fileName': novoNome},
+    );
+    if (r.isSuccess) {
+      _snack('Nome atualizado');
+      await _buscarArquivos();
+      return true;
+    }
+    _snack('Erro ao atualizar', erro: true);
+    return false;
+  }
+
+  // ──────────────────────────────────────────────────────────────────────────
+  // Classificação com IA
+  // ──────────────────────────────────────────────────────────────────────────
+
+  Future<void> _classificarArquivo(Map<String, dynamic> arq) async {
+    try {
+      final result = await AiAssistantService().classifyDocument(
+        fileName: arq['fileName']?.toString(),
+        fileType: arq['fileType']?.toString(),
+        description: [
+          arq['diretorioNome']?.toString(),
+          arq['parceiroNome']?.toString(),
+        ].whereType<String>().join(' '),
+      );
+      if (!mounted) return;
+      showDialog<void>(
+        context: context,
+        builder: (_) => AlertDialog(
+          title: const Text('Classificacao do documento'),
+          content: Text(
+            'Categoria: ${result.category}\n'
+            'Confianca: ${result.confidence}\n'
+            'Status sugerido: ${result.suggestedStatus}\n'
+            'Tags: ${result.tags.join(', ')}',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Fechar'),
+            ),
+          ],
+        ),
+      );
+    } catch (e) {
+      _snack('Erro ao classificar documento: $e', erro: true);
+    }
+  }
+
+  // ──────────────────────────────────────────────────────────────────────────
   // Delete
   // ──────────────────────────────────────────────────────────────────────────
 
@@ -495,128 +553,17 @@ class _GedArquivosScreenState extends State<GedArquivosScreen> {
 
   // ── Card individual ───────────────────────────────────────────────────────
   Widget _buildCard(Map<String, dynamic> arq) {
-    final tipo = arq['fileType']?.toString() ?? '';
-    final corTipo = _corParaTipo(tipo);
-    final icone = _iconeParaTipo(tipo);
-    final fileName = arq['fileName']?.toString() ?? '—';
-    final diretorioNome = arq['diretorioNome']?.toString();
-    final parceiroNome = arq['parceiroNome']?.toString();
-    final uploadDate = arq['uploadDate']?.toString();
     final audit = arq['audit'] as Map<String, dynamic>?;
-
     final podeExcluir =
         audit?['userLogadoId']?.toString() == TenantContext.userId?.toString();
 
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(10),
-        border: Border(
-          left: BorderSide(color: corTipo, width: 4),
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: corTipo.withValues(alpha: 0.2),
-            blurRadius: 6,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      padding: const EdgeInsets.all(12),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Header: ícone tipo + chip tipo
-          Row(
-            children: [
-              Icon(icone, size: 32, color: corTipo),
-              const Spacer(),
-              _chipTipo(tipo),
-            ],
-          ),
-          const SizedBox(height: 8),
-
-          // Nome do arquivo
-          Text(
-            fileName,
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
-            style: const TextStyle(
-              fontWeight: FontWeight.bold,
-              fontSize: 13,
-            ),
-          ),
-          const SizedBox(height: 4),
-
-          // Diretório
-          if (diretorioNome != null && diretorioNome.isNotEmpty)
-            Row(
-              children: [
-                const Icon(Icons.folder, size: 12, color: Colors.grey),
-                const SizedBox(width: 4),
-                Expanded(
-                  child: Text(
-                    diretorioNome,
-                    style: const TextStyle(fontSize: 11, color: Colors.grey),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ),
-              ],
-            ),
-
-          // Parceiro
-          if (parceiroNome != null && parceiroNome.isNotEmpty)
-            Row(
-              children: [
-                const Icon(Icons.person, size: 12, color: Colors.grey),
-                const SizedBox(width: 4),
-                Expanded(
-                  child: Text(
-                    parceiroNome,
-                    style: const TextStyle(fontSize: 11, color: Colors.grey),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ),
-              ],
-            ),
-
-          const SizedBox(height: 4),
-
-          // Data
-          if (uploadDate != null)
-            Text(
-              _formatarData(uploadDate),
-              style: const TextStyle(fontSize: 10, color: Colors.grey),
-            ),
-
-          const Spacer(),
-
-          // Botões de ação
-          Row(
-            mainAxisAlignment: MainAxisAlignment.end,
-            children: [
-              IconButton(
-                icon: const Icon(Icons.download, color: Colors.blue, size: 20),
-                tooltip: 'Download',
-                onPressed: () => _baixarArquivo(arq),
-                constraints: const BoxConstraints(),
-                padding: const EdgeInsets.all(6),
-              ),
-              if (podeExcluir)
-                IconButton(
-                  icon: const Icon(Icons.delete_outline,
-                      color: Colors.red, size: 20),
-                  tooltip: 'Excluir',
-                  onPressed: () => _confirmarDelete(arq),
-                  constraints: const BoxConstraints(),
-                  padding: const EdgeInsets.all(6),
-                ),
-            ],
-          ),
-        ],
-      ),
+    return GedFileCard(
+      arq: arq,
+      podeExcluir: podeExcluir,
+      onDownload: () => _baixarArquivo(arq),
+      onDelete: () => _confirmarDelete(arq),
+      onRename: (novoNome) => _salvarEdicaoNome(arq, novoNome),
+      onClassify: () => _classificarArquivo(arq),
     );
   }
 
@@ -806,55 +753,6 @@ class _GedArquivosScreenState extends State<GedArquivosScreen> {
       contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       isDense: true,
     );
-  }
-
-  Widget _chipTipo(String tipo) {
-    final ext = tipo.contains('/')
-        ? tipo.split('/').last.toUpperCase()
-        : tipo.toUpperCase();
-    final cor = _corParaTipo(tipo);
-    final label = ext.length > 8 ? ext.substring(0, 8) : ext;
-
-    return Chip(
-      label: Text(label,
-          style: const TextStyle(
-            fontSize: 9,
-            color: Colors.white,
-            fontWeight: FontWeight.bold,
-            letterSpacing: 0.5,
-          )),
-      backgroundColor: cor,
-      padding: EdgeInsets.zero,
-      materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-      visualDensity: VisualDensity.compact,
-    );
-  }
-
-  Color _corParaTipo(String tipo) {
-    if (tipo.contains('pdf')) return Colors.red;
-    if (tipo.startsWith('image/')) return Colors.blue;
-    if (tipo.contains('excel') || tipo.contains('sheet') || tipo.contains('csv'))
-      return Colors.green;
-    if (tipo.contains('word') || tipo.contains('doc')) return Colors.indigo;
-    return Colors.grey;
-  }
-
-  IconData _iconeParaTipo(String tipo) {
-    if (tipo.contains('pdf')) return Icons.picture_as_pdf;
-    if (tipo.startsWith('image/')) return Icons.image;
-    if (tipo.contains('excel') || tipo.contains('sheet') || tipo.contains('csv'))
-      return Icons.table_chart;
-    if (tipo.contains('word') || tipo.contains('doc')) return Icons.description;
-    return Icons.insert_drive_file;
-  }
-
-  String _formatarData(String raw) {
-    try {
-      final fmt = DateFormat('dd/MM/yyyy');
-      return fmt.format(DateTime.parse(raw));
-    } catch (_) {
-      return raw;
-    }
   }
 
   void _snack(String msg, {bool erro = false}) {
