@@ -12,7 +12,7 @@ class WindowsHomeScreen extends StatelessWidget {
     return MaterialApp(
       navigatorKey: globalKey,
       debugShowCheckedModeBanner: false,
-      title: "Task Manager",
+      title: "Abraço Contabilidade",
       theme: ThemeData(
         primarySwatch: Colors.green,
         inputDecorationTheme: const InputDecorationTheme(

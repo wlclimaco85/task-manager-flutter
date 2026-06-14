@@ -132,7 +132,7 @@ class TaskManagerApp extends StatelessWidget {
 
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      title: 'Task Manager',
+      title: 'Abraço Contabilidade',
       theme: ThemeData(
         // Sobrescreve surface/background do Material 3 para evitar o fundo rosa
         // gerado automaticamente pelo fromSeed com seed vermelho
