@@ -3,6 +3,7 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../../utils/api_links.dart';
 import '../../../utils/app_logger.dart';
 import '../../../utils/grid_colors.dart';
@@ -767,17 +768,24 @@ class _WindowsCalendarScreenState extends State<WindowsCalendarScreen> {
       return calendarCard;
     }
 
-    // Com seleção: calendário fixo em 320px + painel de detalhe abaixo
-    return Column(
-      children: [
-        SizedBox(height: 320, child: calendarCard),
-        Expanded(
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(12, 8, 12, 12),
-            child: _buildDaySidePanel(),
-          ),
-        ),
-      ],
+    // Com seleção: calendário em altura adaptativa + painel de detalhe abaixo
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        // Reserva no mínimo 180px para o painel de detalhe
+        final calHeight =
+            (constraints.maxHeight - 180).clamp(200.0, 340.0);
+        return Column(
+          children: [
+            SizedBox(height: calHeight, child: calendarCard),
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(12, 8, 12, 12),
+                child: _buildDaySidePanel(),
+              ),
+            ),
+          ],
+        );
+      },
     );
   }
 
@@ -1164,6 +1172,14 @@ class _WindowsCalendarScreenState extends State<WindowsCalendarScreen> {
     final parceiro = (item['parceiro'] as Map?)?.cast<String, dynamic>();
     final parceiroNome = parceiro?['nome'] as String? ?? '';
 
+    // Detecta arquivo anexado (boleto ou comprovante)
+    final fileMap = item['file'] as Map?;
+    final fileId = fileMap?['id'];
+    final hasAnexo = fileId != null && fileId.toString() != '0' && fileId.toString().isNotEmpty;
+    final downloadUrl = hasAnexo
+        ? '${ApiLinks.baseUrl}/rest/file/download/$fileId'
+        : null;
+
     final today = DateTime.now();
     final vencStr = _dateKey(item);
     final vencDate = DateTime.tryParse(vencStr);
@@ -1247,6 +1263,30 @@ class _WindowsCalendarScreenState extends State<WindowsCalendarScreen> {
                 ],
               ),
             ),
+            // Ícone de download quando há arquivo anexado
+            if (hasAnexo) ...[
+              const SizedBox(width: 4),
+              GestureDetector(
+                onTap: () async {
+                  final uri = Uri.parse(downloadUrl!);
+                  if (await canLaunchUrl(uri)) {
+                    await launchUrl(uri, mode: LaunchMode.externalApplication);
+                  }
+                },
+                child: Tooltip(
+                  message: 'Baixar anexo',
+                  child: Container(
+                    padding: const EdgeInsets.all(4),
+                    decoration: BoxDecoration(
+                      color: GridColors.info.withValues(alpha: 0.12),
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    child: const Icon(Icons.download,
+                        color: GridColors.info, size: 16),
+                  ),
+                ),
+              ),
+            ],
             const SizedBox(width: 6),
             // Right side: value + chips
             Column(

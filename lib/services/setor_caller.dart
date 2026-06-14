@@ -29,4 +29,45 @@ class SetorCaller {
     final setores = await fetchAllSetores();
     return setores.map((s) => {'value': s.id, 'label': s.nome}).toList();
   }
+
+  Future<List<Setor>> fetchSetoresDoLogin(int loginId) async {
+    List<Setor> list = [];
+    try {
+      final NetworkResponse response = await NetworkCaller().getRequest(
+        ApiLinks.getSetoresLoginId(loginId),
+      );
+      if (response.isSuccess && response.body != null) {
+        final data = response.body!['data']['dados'] ?? response.body!['data'] ?? [];
+        list = (data as List).map((item) => Setor.fromJson(item)).toList();
+      }
+    } catch (e) {
+      L.d('Erro ao carregar setores do login $loginId: $e');
+    }
+    return list;
+  }
+
+  Future<bool> associarSetorAoLogin(int loginId, int setorId) async {
+    try {
+      final NetworkResponse response = await NetworkCaller().postRequest(
+        ApiLinks.associateSetorToLogin(loginId, setorId),
+        {},
+      );
+      return response.isSuccess;
+    } catch (e) {
+      L.d('Erro ao associar setor $setorId ao login $loginId: $e');
+      return false;
+    }
+  }
+
+  Future<bool> removerSetorDoLogin(int loginId, int setorId) async {
+    try {
+      final NetworkResponse response = await NetworkCaller().deleteRequest(
+        ApiLinks.removeSetorFromLogin(loginId, setorId),
+      );
+      return response.isSuccess;
+    } catch (e) {
+      L.d('Erro ao remover setor $setorId do login $loginId: $e');
+      return false;
+    }
+  }
 }

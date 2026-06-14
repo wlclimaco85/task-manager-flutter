@@ -9,6 +9,7 @@ import '../../../utils/tenant_context.dart';
 import '../../customization/generic_grid_card.dart';
 import '../../../models/conta_pagar_model.dart';
 import '../../../widgets/anexo_financeiro_widget.dart';
+import '../../../widgets/finance/boleto_widget.dart';
 import '../screens/baixa_dialog.dart';
 import '../screens/desfazer_baixa_dialog.dart';
 
@@ -69,6 +70,12 @@ class _ContaPagarGridScreenState extends State<ContaPagarGridScreen> {
               label: 'Anexos',
               isVisible: (obj) => obj.id != null,
               onPressed: (context, object) => _showAnexos(context, object),
+            ),
+            CustomAction<ContaPagar>(
+              icon: Icons.receipt,
+              label: 'Boleto',
+              isVisible: (obj) => obj.id != null,
+              onPressed: (context, object) => _showBoleto(context, object),
             ),
           ],
           useUserBannerAppBar: true,
@@ -166,14 +173,37 @@ class _ContaPagarGridScreenState extends State<ContaPagarGridScreen> {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      backgroundColor: Colors.transparent,
+      builder: (_) => DraggableScrollableSheet(
+        initialChildSize: 0.65,
+        minChildSize: 0.4,
+        maxChildSize: 0.92,
+        builder: (ctx, scrollController) => ClipRRect(
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+          child: AnexoFinanceiroWidget(
+            lancamentoId: conta.id!,
+            lancamentoTipo: 'PAGAR',
+          ),
+        ),
       ),
-      builder: (_) => Padding(
-        padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
-        child: AnexoFinanceiroWidget(
-          lancamentoId: conta.id!,
-          lancamentoTipo: 'PAGAR',
+    );
+  }
+
+  void _showBoleto(BuildContext context, ContaPagar conta) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => DraggableScrollableSheet(
+        initialChildSize: 0.5,
+        minChildSize: 0.35,
+        maxChildSize: 0.85,
+        builder: (ctx, scrollController) => ClipRRect(
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+          child: BoletoWidget(
+            lancamentoId: conta.id!,
+            lancamentoTipo: 'PAGAR',
+          ),
         ),
       ),
     );

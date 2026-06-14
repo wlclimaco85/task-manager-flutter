@@ -27,6 +27,7 @@ import '../../web/screens/nfce/config_fiscal_screen.dart';
 import 'documento_screen.dart';
 import 'file_upload_screen.dart';
 import 'meu_perfil_screen.dart';
+import '../../web/screens/ged_arquivos_screen.dart';
 import 'ponto_screen.dart';
 import '../../widgets/crm/crm_pipeline_screen.dart';
 import '../../widgets/fiscal/fiscal_automation_screen.dart';
@@ -185,7 +186,7 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
         _comunicadoGridInline(sec: sec),
       if (sec.canView(AppScreen.chamados))
         _chamadoGridInline(sec: sec),
-      if (sec.canView(AppScreen.ged)) const FileManagerScreen(),
+      if (sec.canView(AppScreen.ged)) const GedArquivosScreen(),
       Container(), // slot do botao "Mais"
     ];
   }

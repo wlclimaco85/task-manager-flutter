@@ -163,6 +163,8 @@ class WebAlvaraGridScreen extends StatelessWidget {
         ),
 
         // ── Status → dropdown ─────────────────────────────────────────────
+        // No INSERT o status não deve ser editável (o backend define o valor
+        // inicial); no EDIT o usuário pode alterar livremente.
         FieldConfigWindows(
           fieldName: 'status',
           label: 'Status',
@@ -174,6 +176,8 @@ class WebAlvaraGridScreen extends StatelessWidget {
           isVisibleByDefault: true,
           isFilterable: true,
           enabled: true,
+          enabledOnInsert: false,
+          enabledOnEdit: true,
         ),
 
         // ── Empresa → dropdown ────────────────────────────────────────────

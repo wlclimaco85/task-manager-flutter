@@ -422,7 +422,7 @@ class _UserBannerAppBarState extends State<UserBannerAppBar> {
             ] else ...[
               Flexible(
                 child: Text(
-                  widget.screenTitle ?? "Comunicados",
+                  widget.screenTitle ?? "",
                   style: const TextStyle(
                     color: GridColors.textPrimary,
                     fontWeight: FontWeight.bold,
@@ -806,7 +806,205 @@ class _NotificationPanel extends StatelessWidget {
   }
 }
 
+// =============================================================================
+// APP BAR ACTIONS — notificação + logout reutilizáveis em qualquer AppBar
+// =============================================================================
+
+/// Ícones de notificação (com badge) e logout para adicionar em `actions` de
+/// qualquer AppBar sem precisar usar UserBannerAppBar completo.
+///
+/// Uso: `actions: [const AppBarActions(), ...outrasActions]`
+class AppBarActions extends StatefulWidget {
+  const AppBarActions({super.key});
+
+  @override
+  State<AppBarActions> createState() => _AppBarActionsState();
+}
+
+class _AppBarActionsState extends State<AppBarActions> {
+  List<Alert> _alerts = [];
+  int _unreadCount = 0;
+  Timer? _timer;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchAlerts();
+    _timer = Timer.periodic(const Duration(minutes: 2), (_) {
+      if (mounted) _fetchAlerts();
+    });
+  }
+
+  Future<void> _fetchAlerts() async {
+    try {
+      final userId = AuthUtility.userInfo?.data?.id;
+      if (userId == null || userId <= 0) return;
+      if (!mounted) return;
+      final alerts = await AlertCaller().fetchNotificacoes(context);
+      if (mounted) {
+        setState(() {
+          _alerts = alerts;
+          _unreadCount = alerts.length;
+        });
+      }
+    } catch (_) {}
+  }
+
+  Future<void> _markRead(int id) async {
+    Alert? alert;
+    for (final a in _alerts) {
+      if (a.id == id) {
+        alert = a;
+        break;
+      }
+    }
+    if (alert != null) {
+      await AlertCaller().marcarNotificacaoLida(alert);
+    }
+    if (mounted) {
+      setState(() {
+        _alerts.removeWhere((a) => a.id == id);
+        _unreadCount = _alerts.length;
+      });
+    }
+  }
+
+  void _markAll() {
+    if (mounted) {
+      setState(() {
+        _alerts.clear();
+        _unreadCount = 0;
+      });
+    }
+  }
+
+  String _dataRelativa(String? data) {
+    if (data == null || data.isEmpty) return '';
+    final d = DateTime.tryParse(data);
+    if (d == null) return '';
+    final diff = DateTime.now().difference(d);
+    if (diff.inMinutes < 1) return 'agora';
+    if (diff.inMinutes < 60) return 'há ${diff.inMinutes}min';
+    if (diff.inHours < 24) return 'há ${diff.inHours}h';
+    if (diff.inDays == 1) return 'ontem';
+    if (diff.inDays < 7) return 'há ${diff.inDays} dias';
+    return DateFormat('dd/MM').format(d);
+  }
+
+  _NotificationTipoMeta _resolverTipo(String status) {
+    final s = status.toUpperCase();
+    if (s.contains('CHAMADO') || s.contains('TICKET'))
+      return _NotificationTipoMeta(
+          Icons.support_agent, GridColors.info, 'Chamado');
+    if (s.contains('PAGAR') || s.contains('VENCIMENTO'))
+      return _NotificationTipoMeta(
+          Icons.payments_outlined, GridColors.error, 'A Pagar');
+    if (s.contains('RECEBER'))
+      return _NotificationTipoMeta(
+          Icons.account_balance_wallet_outlined, GridColors.success, 'A Receber');
+    if (s.contains('AVISO') || s.contains('COMUNICADO'))
+      return _NotificationTipoMeta(
+          Icons.campaign_outlined, GridColors.primaryLight, 'Aviso');
+    return _NotificationTipoMeta(
+        Icons.notifications_outlined, GridColors.primaryLight, 'Notificação');
+  }
+
+  void _showNotifications(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => DraggableScrollableSheet(
+        initialChildSize: 0.6,
+        minChildSize: 0.35,
+        maxChildSize: 0.92,
+        builder: (ctx, scrollController) => _NotificationPanel(
+          notifications: _alerts,
+          onMarcarLida: _markRead,
+          onDeletar: _markRead,
+          onMarcarTodas: _markAll,
+          onFechar: () => Navigator.pop(ctx),
+          resolverTipo: _resolverTipo,
+          dataRelativa: _dataRelativa,
+          scrollController: scrollController,
+        ),
+      ),
+    );
+  }
+
+  void _logout(BuildContext context) {
+    AuthUtility.clearUserInfo();
+    Navigator.of(context).pushAndRemoveUntil(
+      MaterialPageRoute(builder: (_) => const LoginScreen()),
+      (route) => false,
+    );
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final isLoggedIn = AuthUtility.userInfo?.data?.id != null &&
+        (AuthUtility.userInfo!.data!.id ?? 0) > 0;
+    if (!isLoggedIn) return const SizedBox.shrink();
+
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Stack(
+          alignment: Alignment.center,
+          children: [
+            IconButton(
+              iconSize: 22,
+              icon: const Icon(Icons.notifications,
+                  color: GridColors.textPrimary),
+              onPressed: () => _showNotifications(context),
+              tooltip: 'Notificações',
+            ),
+            if (_unreadCount > 0)
+              Positioned(
+                right: 6,
+                top: 6,
+                child: Container(
+                  padding: const EdgeInsets.all(1),
+                  decoration: const BoxDecoration(
+                    color: Colors.red,
+                    shape: BoxShape.circle,
+                  ),
+                  constraints:
+                      const BoxConstraints(minWidth: 14, minHeight: 14),
+                  child: Text(
+                    _unreadCount > 9 ? '9+' : '$_unreadCount',
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 8,
+                      fontWeight: FontWeight.bold,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                ),
+              ),
+          ],
+        ),
+        IconButton(
+          iconSize: 22,
+          icon:
+              const Icon(Icons.logout, color: GridColors.textPrimary),
+          onPressed: () => _logout(context),
+          tooltip: 'Sair',
+        ),
+      ],
+    );
+  }
+}
+
+// =============================================================================
 // Nova barra de ações secundária
+// =============================================================================
 class FilterActionBar extends StatelessWidget {
   final VoidCallback? onRefresh;
   final bool? isLoading;

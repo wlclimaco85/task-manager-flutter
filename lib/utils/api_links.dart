@@ -591,6 +591,16 @@ class ApiLinks {
   static String getRolesLoginId(String id) =>
       '$_baseUrlNew/api/logins/$id/roles';
 
+  // Setores de um login (roteamento de alertas)
+  static String getSetoresLoginId(int loginId) =>
+      '$_baseUrlNew/api/login/$loginId/setores';
+
+  static String associateSetorToLogin(int loginId, int setorId) =>
+      '$_baseUrlNew/api/login/$loginId/setores/$setorId';
+
+  static String removeSetorFromLogin(int loginId, int setorId) =>
+      '$_baseUrlNew/api/login/$loginId/setores/$setorId';
+
   static String fecharChamados(String id) => "$_baseUrlNew/chamados/$id/fechar";
 
   static String chatByEmpesaId(String id) => '$_baseUrlNew/api/chat/chat/$id';
@@ -1055,6 +1065,9 @@ class ApiLinks {
       '$_baseUrlNew/api/financeiro/anexos/$id';
   static String anexoFinanceiroDownload(String id) =>
       '$_baseUrlNew/api/financeiro/anexos/$id/download';
+
+  // Boleto bancário — upload e download
+  static String get uploadBoleto => '$_baseUrlNew/rest/boleto/upload';
 
   // Cobrança Automática
   static String get cobrancaAutomaticaEnviar =>
