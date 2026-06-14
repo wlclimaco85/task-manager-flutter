@@ -14,6 +14,7 @@ class Login {
   String? senha;
   String? nome;
   String? cpfCnpj;
+  String? foto;
   List<Role>? roles;
   LoginEnum? tipoLogin;
   Empresa? empresa;
@@ -29,6 +30,7 @@ class Login {
     this.senha,
     this.nome,
     this.cpfCnpj,
+    this.foto,
     this.roles,
     this.tipoLogin,
     this.empresa,
@@ -46,6 +48,7 @@ class Login {
       'senha': senha,
       'nome': nome,
       'cpfCnpj': cpfCnpj,
+      'foto': foto,
       'roles': roles?.map((role) => role.toJson()).toList(),
       'tipoLogin': tipoLogin?.value, // Salve o value em vez do index
       'empresa': empresa?.toJson(),
@@ -64,6 +67,7 @@ class Login {
       senha = json['senha']?.toString();
       nome = json['nome']?.toString();
       cpfCnpj = json['cpfCnpj']?.toString();
+      foto = json['foto']?.toString();
 
       roles = json['roles'] != null
           ? (json['roles'] as List).map((i) => Role.fromJson(i)).toList()

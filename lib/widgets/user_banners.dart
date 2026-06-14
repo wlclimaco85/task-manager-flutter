@@ -7,7 +7,7 @@ import '../../../models/alert_model.dart';
 import '../../../models/auth_utility.dart';
 import '../../services/alert_caller.dart';
 import '../../../auth_screens/login_screen.dart';
-import '../../mobile/screens/user_edit_screen.dart';
+import 'meu_perfil_dialog.dart';
 import '../../../utils/grid_colors.dart'; // ★ adicionado para aplicar o tema
 
 // AppBar customizado (apenas cabeçalho)
@@ -298,7 +298,8 @@ class _UserBannerAppBarState extends State<UserBannerAppBar> {
   }
 
   Uint8List _getUserAvatar() {
-    final base64String = AuthUtility.userInfo?.data?.codDadosPessoal?.photo;
+    final base64String = AuthUtility.userInfo?.login?.foto ??
+        AuthUtility.userInfo?.data?.codDadosPessoal?.photo;
     if (base64String != null && base64String.trim().isNotEmpty) {
       try {
         final UriData? data =
@@ -352,55 +353,11 @@ class _UserBannerAppBarState extends State<UserBannerAppBar> {
                     // CORREÇÃO: GestureDetector apenas no CircleAvatar
                     GestureDetector(
                       onTap: () {
-                        // Prepara os dados atuais do usuário
-                        final userData = {
-                          'id': AuthUtility.userInfo?.data?.codDadosPessoal?.id,
-                          'nome':
-                              AuthUtility.userInfo?.data?.codDadosPessoal?.nome,
-                          'cpf':
-                              AuthUtility.userInfo?.data?.codDadosPessoal?.cpf,
-                          'telefone1': AuthUtility
-                              .userInfo?.data?.codDadosPessoal?.telefone1,
-                          'logradouro': AuthUtility
-                              .userInfo?.data?.codDadosPessoal?.logradouro,
-                          'numero': AuthUtility
-                              .userInfo?.data?.codDadosPessoal?.numero,
-                          'cep':
-                              AuthUtility.userInfo?.data?.codDadosPessoal?.cep,
-                          'bairro': AuthUtility
-                              .userInfo?.data?.codDadosPessoal?.bairro,
-                          'cidade': AuthUtility
-                              .userInfo?.data?.codDadosPessoal?.cidade,
-                          'estado': AuthUtility
-                              .userInfo?.data?.codDadosPessoal?.estado,
-                          'pais':
-                              AuthUtility.userInfo?.data?.codDadosPessoal?.pais,
-                          'email': AuthUtility
-                              .userInfo?.data?.codDadosPessoal?.email,
-                          'photo': AuthUtility
-                              .userInfo?.data?.codDadosPessoal?.photo,
-                          'incrMun': AuthUtility
-                              .userInfo?.data?.codDadosPessoal?.incrMun,
-                          'razaoSocial': AuthUtility
-                              .userInfo?.data?.codDadosPessoal?.razaoSocial,
-                        };
-
-                        // Navega para a tela de edição
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) =>
-                                UserEditScreen(initialData: userData),
-                          ),
-                        ).then((updatedData) {
-                          if (updatedData != null) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text('Perfil atualizado com sucesso!'),
-                                backgroundColor: GridColors.success,
-                              ),
-                            );
-                          }
+                        showDialog(
+                          context: context,
+                          builder: (_) => const MeuPerfilDialog(),
+                        ).then((salvou) {
+                          if (salvou == true) setState(() {});
                         });
                       },
                       child: CircleAvatar(
