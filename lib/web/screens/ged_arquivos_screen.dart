@@ -386,38 +386,80 @@ class _GedArquivosScreenState extends State<GedArquivosScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.grey[100],
-      appBar: AppBar(
-        backgroundColor: GridColors.primary,
-        foregroundColor: Colors.white,
-        title: Text(_tituloAppBar),
-        elevation: 0,
-        actions: [
-          if (widget.moduloOrigem != null)
-            Padding(
-              padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 4),
-              child: Chip(
-                label: Text(
-                  _capitalize(widget.moduloOrigem!),
-                  style: const TextStyle(fontSize: 11, color: Colors.white),
+      // Quando embutido em tab (contextualizado), o pai já tem AppBar — suprimir o nosso
+      appBar: _contextualizado
+          ? null
+          : AppBar(
+              backgroundColor: GridColors.primary,
+              foregroundColor: Colors.white,
+              title: Text(_tituloAppBar),
+              elevation: 0,
+              actions: [
+                if (widget.moduloOrigem != null)
+                  Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 4),
+                    child: Chip(
+                      label: Text(
+                        _capitalize(widget.moduloOrigem!),
+                        style: const TextStyle(fontSize: 11, color: Colors.white),
+                      ),
+                      backgroundColor: GridColors.primary,
+                      padding: EdgeInsets.zero,
+                      materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                      visualDensity: VisualDensity.compact,
+                    ),
+                  ),
+                IconButton(
+                  icon: const Icon(Icons.upload_file),
+                  tooltip: 'Novo Upload',
+                  onPressed: _empresaFiltroId != null ? _abrirDialogUpload : null,
                 ),
-                backgroundColor: GridColors.primary,
-                padding: EdgeInsets.zero,
-                materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                visualDensity: VisualDensity.compact,
-              ),
+                const SizedBox(width: 8),
+              ],
             ),
-          IconButton(
-            icon: const Icon(Icons.upload_file),
-            tooltip: 'Novo Upload',
-            onPressed: _empresaFiltroId != null ? _abrirDialogUpload : null,
-          ),
-          const SizedBox(width: 8),
-        ],
-      ),
       body: Column(
         children: [
           if (!_contextualizado) _buildFiltros(),
+          if (_contextualizado) _buildBarraContextualizada(),
           Expanded(child: _buildGridCards()),
+        ],
+      ),
+    );
+  }
+
+  // Barra compacta de busca + upload quando GED é embutido em tab (sem AppBar próprio)
+  Widget _buildBarraContextualizada() {
+    return Container(
+      color: Colors.white,
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      child: Row(
+        children: [
+          Expanded(
+            child: TextField(
+              decoration: InputDecoration(
+                hintText: 'Buscar arquivo...',
+                prefixIcon: const Icon(Icons.search, size: 18),
+                isDense: true,
+                contentPadding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8)),
+              ),
+              onChanged: (v) => setState(() => _busca = v),
+            ),
+          ),
+          const SizedBox(width: 8),
+          ElevatedButton.icon(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: GridColors.primary,
+              foregroundColor: Colors.white,
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+            ),
+            icon: const Icon(Icons.upload_file, size: 18),
+            label: const Text('Upload'),
+            onPressed: _empresaFiltroId != null ? _abrirDialogUpload : null,
+          ),
         ],
       ),
     );
@@ -538,10 +580,17 @@ class _GedArquivosScreenState extends State<GedArquivosScreen> {
       );
     }
 
+    final largura = MediaQuery.of(context).size.width;
+    final colunas = largura < 480
+        ? 2
+        : largura < 900
+            ? 3
+            : 4;
+
     return GridView.builder(
       padding: const EdgeInsets.all(12),
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 2,
+      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: colunas,
         crossAxisSpacing: 10,
         mainAxisSpacing: 10,
         childAspectRatio: 0.85,

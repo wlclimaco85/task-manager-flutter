@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../utils/api_links.dart';
+import '../../../services/network_caller.dart';
 import '../../../widgets/generic_detail_form_screen.dart';
 import '../../../widgets/generic_grid_windows_screen.dart'
     show SecurityCheck, FieldConfigWindows, FieldType;
@@ -11,6 +12,28 @@ class WebEmpresaDetailScreen extends StatelessWidget {
   final SecurityCheck hasPermission;
 
   const WebEmpresaDetailScreen({super.key, required this.item, required this.hasPermission});
+
+  static Future<List<Map<String, dynamic>>> _loadTiposParceiro() async {
+    final r = await NetworkCaller().getRequest(ApiLinks.allTipoParceiro);
+    if (!r.isSuccess || r.body == null) return [];
+    final raw = r.body!['data']?['dados'] ?? r.body!['data'] ?? r.body!['content'] ?? r.body;
+    if (raw is! List) return [];
+    return raw.map<Map<String, dynamic>>((e) {
+      final label = e['descricao']?.toString() ?? e['nome']?.toString() ?? e['id']?.toString() ?? '';
+      return {'value': e['id']?.toString() ?? '', 'label': label};
+    }).where((m) => m['value']!.isNotEmpty).toList();
+  }
+
+  static Future<List<Map<String, dynamic>>> _loadModulosServico() async {
+    final r = await NetworkCaller().getRequest(ApiLinks.allModuloServico);
+    if (!r.isSuccess || r.body == null) return [];
+    final raw = r.body!['data']?['dados'] ?? r.body!['data'] ?? r.body!['content'] ?? r.body;
+    if (raw is! List) return [];
+    return raw.map<Map<String, dynamic>>((e) {
+      final label = e['descricao']?.toString() ?? e['nome']?.toString() ?? e['id']?.toString() ?? '';
+      return {'value': e['id']?.toString() ?? '', 'label': label};
+    }).where((m) => m['value']!.isNotEmpty).toList();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -53,6 +76,46 @@ class WebEmpresaDetailScreen extends StatelessWidget {
           icon: Icons.people,
           telaNome: 'parceiro',
           extraParams: {'empresa': id},
+          fieldOverrides: [
+            // Ambiente NFS-e do parceiro: enum PRODUCAO/HOMOLOGACAO
+            const FieldConfigWindows(
+              label: 'Ambiente',
+              fieldName: 'ambiente',
+              icon: Icons.cloud_outlined,
+              fieldType: FieldType.dropdown,
+              dropdownOptions: [
+                {'value': 'PRODUCAO', 'label': 'Produção'},
+                {'value': 'HOMOLOGACAO', 'label': 'Homologação'},
+              ],
+              dropdownValueField: 'value',
+              dropdownDisplayField: 'label',
+              isInForm: true,
+            ),
+            // Tipos de parceiro (multiselect M:N)
+            FieldConfigWindows(
+              label: 'Tipo Parceiros',
+              fieldName: 'tiposParceiro',
+              icon: Icons.category_outlined,
+              fieldType: FieldType.multiselect,
+              dropdownFutureBuilder: _loadTiposParceiro,
+              dropdownValueField: 'value',
+              dropdownDisplayField: 'label',
+              isInForm: true,
+              isFilterable: false,
+            ),
+            // Módulos de serviço contratados (multiselect M:N via parceiro_modulo)
+            FieldConfigWindows(
+              label: 'Modulo Servicos',
+              fieldName: 'modulosServico',
+              icon: Icons.settings_outlined,
+              fieldType: FieldType.multiselect,
+              dropdownFutureBuilder: _loadModulosServico,
+              dropdownValueField: 'value',
+              dropdownDisplayField: 'label',
+              isInForm: true,
+              isFilterable: false,
+            ),
+          ],
         ),
         RelatedGridTab(
           title: 'Logins',
