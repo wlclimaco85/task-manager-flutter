@@ -63,6 +63,7 @@ echo  [H] Atualizar todos os repositorios (git pull)
 echo  [I] Subir Flutter (Chrome) apontando para Railway (sem backend local)
 echo  [J] Build AAB (Play Store) com backend Railway + auto-incrementa versao
 echo  [P] Build APK unico com backend deployado
+echo  [K] Commitar tudo nos repositorios
 echo  [0] Sair
 echo.
 set "OP="
@@ -147,6 +148,10 @@ if /i "%OP%"=="J" (
 )
 if /i "%OP%"=="P" (
     call :BUILD_ANDROID_DEPLOY
+    goto END_MENU
+)
+if /i "%OP%"=="K" (
+    call :GIT_COMMIT_ALL
     goto END_MENU
 )
 goto MENU
@@ -1033,6 +1038,52 @@ if not exist "%FLUTTER_DIR%" (
 start "AppAcademia-Flutter-Railway" cmd /k "cd /d %FLUTTER_DIR% && flutter pub get && flutter run -d chrome --dart-define=BACKEND_URL=%DEPLOY_BACKEND_URL% --dart-define=WS_BACKEND_URL=wss://appacademia-production-be7e.up.railway.app/boletobancos"
 echo Flutter iniciando no Chrome apontando para Railway.
 echo URL Railway: %DEPLOY_BACKEND_URL%
+exit /b 0
+
+:GIT_COMMIT_ALL
+echo.
+echo ============================================
+echo  Commitar tudo nos repositorios
+echo ============================================
+echo.
+set "DEFAULT_MSG=atualizacao geral"
+set "MSG=%DEFAULT_MSG%"
+set /p "MSG=Mensagem de commit (Enter para usar '%DEFAULT_MSG%'): "
+if "%MSG%"=="" set "MSG=%DEFAULT_MSG%"
+echo.
+set "REPOS=%APP_ROOT%\AppAcademia %APP_ROOT%\task_manager_flutter %APP_ROOT%\task_manager_flutter_merged_final %APP_ROOT%\task_manager_AppAcademiaV003 %APP_ROOT%\task_manager_appDaniel %APP_ROOT%\entusiasta-tributario"
+for %%R in (%REPOS%) do (
+    if exist "%%R\.git" (
+        echo ----------------------------------------
+        echo Repositorio: %%~nxR
+        echo ----------------------------------------
+        cd /d "%%R"
+        git checkout main 2>nul || git checkout master 2>nul
+        set "HAS_CHANGES=0"
+        for /f "tokens=*" %%C in ('git status --porcelain 2^>nul') do set "HAS_CHANGES=1"
+        if "!HAS_CHANGES!"=="1" (
+            git add -A
+            git commit -m "%MSG%"
+            if errorlevel 1 (
+                echo [ERRO] Falha ao commitar %%~nxR
+            ) else (
+                git push origin main 2>nul || git push origin master 2>nul
+                if errorlevel 1 (
+                    echo [ERRO] Falha ao push %%~nxR
+                ) else (
+                    echo OK - commitado e pushado
+                )
+            )
+        ) else (
+            echo Nada para commitar
+        )
+        echo.
+    )
+)
+cd /d "%APP_ROOT%"
+echo ============================================
+echo  Commit finalizado!
+echo ============================================
 exit /b 0
 
 :GIT_PULL_ALL
