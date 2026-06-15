@@ -23,6 +23,9 @@ RUN flutter precache --web
 # Copy full source
 COPY . .
 
+# Cache buster — atualizar data para forçar rebuild no Railway
+RUN echo "build-2026-06-15-v1-force-rebuild"
+
 # Build with configurable backend URL
 ARG BACKEND_URL=https://appacademia-production-be7e.up.railway.app
 RUN echo "Building with BACKEND_URL=${BACKEND_URL}" && \
