@@ -993,30 +993,31 @@ class _WindowsCalendarScreenState extends State<WindowsCalendarScreen> {
             width: (isToday || isSelected) ? 2 : 0.7,
           ),
         ),
-        padding: const EdgeInsets.all(5),
+        padding: const EdgeInsets.all(4),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
           children: [
             Text(
               '$day',
               style: TextStyle(
-                fontSize: 13,
+                fontSize: 12,
                 fontWeight: FontWeight.w800,
                 color: textColor,
               ),
             ),
-            const SizedBox(height: 2),
+            const SizedBox(height: 1),
             Wrap(
               spacing: 1,
               runSpacing: 1,
               children: [
                 if (markers.hasPagar)
-                  _miniIcon(Icons.arrow_upward, GridColors.error, 11),
+                  _miniIcon(Icons.arrow_upward, GridColors.error, 10),
                 if (markers.hasReceber)
-                  _miniIcon(Icons.arrow_downward, GridColors.success, 11),
-                if (markers.hasPago) _miniIcon(Icons.check, Colors.grey, 11),
+                  _miniIcon(Icons.arrow_downward, GridColors.success, 10),
+                if (markers.hasPago) _miniIcon(Icons.check, Colors.grey, 10),
                 if (markers.hasRecebido)
-                  _miniIcon(Icons.check_circle, GridColors.success, 11),
+                  _miniIcon(Icons.check_circle, GridColors.success, 10),
                 if (markers.hasTributo)
                   Container(
                     decoration: BoxDecoration(
@@ -1026,7 +1027,7 @@ class _WindowsCalendarScreenState extends State<WindowsCalendarScreen> {
                     ),
                     padding: const EdgeInsets.all(1),
                     child: const Icon(Icons.receipt_long,
-                        color: GridColors.info, size: 13),
+                        color: GridColors.info, size: 11),
                   ),
               ],
             ),

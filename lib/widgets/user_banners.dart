@@ -66,8 +66,7 @@ class _UserBannerAppBarState extends State<UserBannerAppBar> {
 
   Future<void> fetchAlerts() async {
     try {
-      if (AuthUtility.userInfo?.data?.id != null &&
-          AuthUtility.userInfo!.data!.id! > 0) {
+      if (AuthUtility.isLoggedIn) {
         final List<Alert> alertData =
             await AlertCaller().fetchNotificacoes(context);
         setState(() {
@@ -323,8 +322,7 @@ class _UserBannerAppBarState extends State<UserBannerAppBar> {
 
   @override
   Widget build(BuildContext context) {
-    final isLoggedIn = AuthUtility.userInfo?.data?.id != null &&
-        AuthUtility.userInfo!.data!.id! > 0;
+    final isLoggedIn = AuthUtility.isLoggedIn;
 
     return AppBar(
       backgroundColor: GridColors.primary,
@@ -403,6 +401,7 @@ class _UserBannerAppBarState extends State<UserBannerAppBar> {
                         children: [
                           Text(
                             AuthUtility.userInfo?.data?.codDadosPessoal?.nome ??
+                                AuthUtility.userInfo?.login?.nome ??
                                 "Usuário",
                             style: const TextStyle(
                               fontSize: 12,
@@ -845,8 +844,7 @@ class _AppBarActionsState extends State<AppBarActions> {
 
   Future<void> _fetchAlerts() async {
     try {
-      final userId = AuthUtility.userInfo?.data?.id;
-      if (userId == null || userId <= 0) return;
+      if (!AuthUtility.isLoggedIn) return;
       if (!mounted) return;
       final alerts = await AlertCaller().fetchNotificacoes(context);
       if (mounted) {
@@ -956,9 +954,7 @@ class _AppBarActionsState extends State<AppBarActions> {
 
   @override
   Widget build(BuildContext context) {
-    final isLoggedIn = AuthUtility.userInfo?.data?.id != null &&
-        (AuthUtility.userInfo!.data!.id ?? 0) > 0;
-    if (!isLoggedIn) return const SizedBox.shrink();
+    if (!AuthUtility.isLoggedIn) return const SizedBox.shrink();
 
     return Row(
       mainAxisSize: MainAxisSize.min,
@@ -1006,6 +1002,72 @@ class _AppBarActionsState extends State<AppBarActions> {
           tooltip: 'Sair',
         ),
       ],
+    );
+  }
+}
+
+// =============================================================================
+// SIMPLE APP BAR — header padrão: ícone + título da tela + alertas + logout
+// =============================================================================
+
+/// AppBar único e consistente para telas standalone: à esquerda um ícone e o
+/// nome da tela; à direita o sino de notificações (com badge) e o botão de
+/// sair, via [AppBarActions]. Evita o "header duplo" e mantém o mesmo padrão
+/// visual em todo o app.
+class SimpleAppBar extends StatelessWidget implements PreferredSizeWidget {
+  final String title;
+  final IconData icon;
+
+  /// Ações extras inseridas antes do sino/logout (ex.: refresh, upload).
+  final List<Widget> extraActions;
+
+  /// Barra inferior opcional (ex.: filtros, toggles de visualização).
+  final PreferredSizeWidget? bottom;
+
+  const SimpleAppBar({
+    super.key,
+    required this.title,
+    this.icon = Icons.dashboard_rounded,
+    this.extraActions = const [],
+    this.bottom,
+  });
+
+  @override
+  Size get preferredSize =>
+      Size.fromHeight(kToolbarHeight + (bottom?.preferredSize.height ?? 0));
+
+  @override
+  Widget build(BuildContext context) {
+    return AppBar(
+      backgroundColor: GridColors.primary,
+      elevation: 0,
+      automaticallyImplyLeading: false,
+      titleSpacing: 12,
+      title: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, color: GridColors.textPrimary, size: 20),
+          const SizedBox(width: 8),
+          Flexible(
+            child: Text(
+              title,
+              style: const TextStyle(
+                color: GridColors.textPrimary,
+                fontWeight: FontWeight.bold,
+                fontSize: 16,
+                overflow: TextOverflow.ellipsis,
+              ),
+              maxLines: 1,
+            ),
+          ),
+        ],
+      ),
+      actions: [
+        ...extraActions,
+        const AppBarActions(),
+        const SizedBox(width: 4),
+      ],
+      bottom: bottom,
     );
   }
 }

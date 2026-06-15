@@ -210,7 +210,7 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
   /// (server actions, detailScreenBuilder). Os customActions nao sao afetados.
   Widget _comunicadoGridInline({required SecurityMatrix sec}) {
     return Scaffold(
-      appBar: const UserBannerAppBar(showFilterButton: false),
+      appBar: const SimpleAppBar(title: 'Comunicados', icon: Icons.campaign),
       body: DynamicGridDynamicScreen(
         key: const ValueKey('mobile_dynamic_inline_comunicado'),
         telaNome: 'comunicado',
@@ -242,7 +242,7 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
   /// e detailScreenBuilder. Os customActions nao sao afetados pelo hasPermission.
   Widget _chamadoGridInline({required SecurityMatrix sec}) {
     return Scaffold(
-      appBar: const UserBannerAppBar(showFilterButton: false),
+      appBar: const SimpleAppBar(title: 'Solicitacoes', icon: Icons.support_agent),
       body: DynamicGridDynamicScreen(
       key: const ValueKey('mobile_dynamic_inline_chamado'),
       telaNome: 'chamado',

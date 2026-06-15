@@ -31,6 +31,20 @@ bool _isJwtExpired(String token) {
 class AuthUtility {
   static LoginModel? userInfo;
 
+  /// Considera o usuário autenticado quando há sessão com token OU identidade.
+  ///
+  /// O backend nem sempre popula `data.id` no login (popula `login`), então
+  /// checar apenas `data.id` escondia indevidamente os botões de alerta/logout
+  /// do header. Aceita token, `login.id` ou `data.id` como prova de sessão.
+  static bool get isLoggedIn {
+    final u = userInfo;
+    if (u == null) return false;
+    final hasToken = u.token != null && u.token!.isNotEmpty;
+    final hasLoginId = (u.login?.id ?? 0) > 0;
+    final hasDataId = (u.data?.id ?? 0) > 0;
+    return hasToken || hasLoginId || hasDataId;
+  }
+
   static Future<void> setUserInfo(LoginModel model) async {
     SharedPreferences _sharedPreferences =
         await SharedPreferences.getInstance();
