@@ -8,6 +8,7 @@ import '../../../utils/api_links.dart';
 import '../../../utils/grid_colors.dart';
 import '../../../utils/grid_texts.dart';
 import '../../../utils/tenant_context.dart';
+import '../../../widgets/user_banners.dart' show AppBarActions;
 import '../../services/ai_assistant_service.dart';
 import '../../services/network_caller.dart';
 import '../widgets/ged_file_card.dart';
@@ -414,7 +415,9 @@ class _GedArquivosScreenState extends State<GedArquivosScreen> {
                   tooltip: 'Novo Upload',
                   onPressed: _empresaFiltroId != null ? _abrirDialogUpload : null,
                 ),
-                const SizedBox(width: 8),
+                // Alertas e logout padrão do sistema
+                const AppBarActions(),
+                const SizedBox(width: 4),
               ],
             ),
       body: Column(

@@ -605,83 +605,41 @@ class _WindowsCalendarScreenState extends State<WindowsCalendarScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: GridColors.divider,
-      appBar: const UserBannerAppBar(showFilterButton: false),
-      body: Column(
-        children: [
-          _buildHeader(),
-          Expanded(
-            child: _viewMode == 'day'
-                ? _buildSingleDayView()
-                : _viewMode == 'year'
-                    ? _buildMonthView()
-                    : _buildDayView(),
-          ),
-        ],
-      ),
-    );
-  }
-
-  // ── Header ───────────────────────────────────────────────────────────────
-  Widget _buildHeader() {
-    return Container(
-      color: GridColors.error,
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-      child: Row(
-        children: [
-          // Left: title
-          const Icon(Icons.calendar_month, color: Colors.white, size: 22),
-          const SizedBox(width: 8),
-          const Text(
-            'Calendário Financeiro',
-            style: TextStyle(
-              color: Colors.white,
-              fontWeight: FontWeight.bold,
-              fontSize: 16,
+      appBar: AppBar(
+        backgroundColor: GridColors.primary,
+        elevation: 0,
+        automaticallyImplyLeading: false,
+        titleSpacing: 12,
+        title: const Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.calendar_month_rounded, color: Colors.white, size: 20),
+            SizedBox(width: 8),
+            Flexible(
+              child: Text(
+                'Calendário Financeiro',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 16,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                maxLines: 1,
+              ),
             ),
-          ),
-          const Spacer(),
-          // Center: toggle buttons
-          _buildToggleBtn(
-            icon: Icons.calendar_view_day,
-            label: 'Dia',
-            active: _viewMode == 'day',
-            onTap: () {
-              final day = _selectedDay ?? DateTime.now();
-              setState(() {
-                _viewMode = 'day';
-                _selectedDay = day;
-                _currentMonth = DateTime(day.year, day.month);
-              });
-              _loadMonthMarkers(_currentMonth);
-              _loadDayData(day);
-            },
-          ),
-          const SizedBox(width: 6),
-          _buildToggleBtn(
-            icon: Icons.calendar_view_month,
-            label: 'Mês',
-            active: _viewMode == 'month',
-            onTap: () => setState(() => _viewMode = 'month'),
-          ),
-          const SizedBox(width: 6),
-          _buildToggleBtn(
-            icon: Icons.calendar_month,
-            label: 'Ano',
-            active: _viewMode == 'year',
-            onTap: () {
-              setState(() => _viewMode = 'year');
-              _autoCarregarResumoAno(_currentMonth.year);
-            },
-          ),
-          const Spacer(),
-          // Right: Hoje button
+          ],
+        ),
+        actions: [
+          // Botão Hoje
           TextButton(
             style: TextButton.styleFrom(
               backgroundColor: Colors.white24,
               foregroundColor: Colors.white,
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
               shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(6)),
+              minimumSize: Size.zero,
+              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
             ),
             onPressed: () {
               final today = DateTime.now();
@@ -693,10 +651,63 @@ class _WindowsCalendarScreenState extends State<WindowsCalendarScreen> {
               _loadDayData(today);
             },
             child: const Text('Hoje',
-                style: TextStyle(fontWeight: FontWeight.bold)),
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
           ),
+          const SizedBox(width: 4),
+          // Alertas + Logout (reutiliza o widget já existente)
+          const AppBarActions(),
+          const SizedBox(width: 4),
         ],
+        // Linha de formato: Dia | Mês | Ano
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(44),
+          child: Container(
+            color: GridColors.primary,
+            padding: const EdgeInsets.fromLTRB(12, 0, 12, 8),
+            child: Row(
+              children: [
+                _buildToggleBtn(
+                  icon: Icons.calendar_view_day,
+                  label: 'Dia',
+                  active: _viewMode == 'day',
+                  onTap: () {
+                    final day = _selectedDay ?? DateTime.now();
+                    setState(() {
+                      _viewMode = 'day';
+                      _selectedDay = day;
+                      _currentMonth = DateTime(day.year, day.month);
+                    });
+                    _loadMonthMarkers(_currentMonth);
+                    _loadDayData(day);
+                  },
+                ),
+                const SizedBox(width: 6),
+                _buildToggleBtn(
+                  icon: Icons.calendar_view_month,
+                  label: 'Mês',
+                  active: _viewMode == 'month',
+                  onTap: () => setState(() => _viewMode = 'month'),
+                ),
+                const SizedBox(width: 6),
+                _buildToggleBtn(
+                  icon: Icons.calendar_month,
+                  label: 'Ano',
+                  active: _viewMode == 'year',
+                  onTap: () {
+                    setState(() => _viewMode = 'year');
+                    _autoCarregarResumoAno(_currentMonth.year);
+                  },
+                ),
+              ],
+            ),
+          ),
+        ),
       ),
+      body: _viewMode == 'day'
+          ? _buildSingleDayView()
+          : _viewMode == 'year'
+              ? _buildMonthView()
+              : _buildDayView(),
     );
   }
 
