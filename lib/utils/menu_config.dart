@@ -76,6 +76,7 @@ class MenuGroup {
 /// 112:RegraFiscal (Windows only)
 /// 113:ContaContabil 114:LancamentoContabil 115:Balancete
 /// 116:FechamentoPeriodo 117:AiDashboard 118:AiAssistente 119:TradingCorretora
+/// 124:Academia
 
 class MenuConfig {
   MenuConfig._();
@@ -86,6 +87,11 @@ class MenuConfig {
       label: 'App Academia',
       icon: FontAwesomeIcons.dumbbell,
       items: [
+        MenuItem(
+            id: 'academia',
+            label: 'Academias',
+            icon: FontAwesomeIcons.building,
+            screenIndex: 124),
         MenuItem(
             id: 'alimentos',
             label: 'Alimentos',

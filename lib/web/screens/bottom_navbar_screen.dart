@@ -54,6 +54,7 @@ import './pedido_grid_screen.dart';
 import './ticket_grid_screen.dart';
 import './alerta_aluno_grid_screen.dart';
 import './avaliacao_fisica_grid_screen.dart';
+import './academia_grid_screen.dart';
 import './conta_bancaria_grid_screen.dart';
 import './centro_custo_grid_screen.dart';
 import './categoria_financeira_grid_screen.dart';
@@ -436,6 +437,7 @@ class _WebBottomNavBarScreenState extends State<WebBottomNavBarScreen> {
       const CobrancaAutomaticaScreen(), // 133: Cobrança Automática
       const KanbanPagamentosScreen(), // 134: Kanban de Pagamentos
       const WebAprovacaoPagamentosScreen(), // 135: Aprovação de Pagamentos
+      WebAcademiaGridScreen(hasPermission: (p) => true), // 124: Academia
     ];
   }
 

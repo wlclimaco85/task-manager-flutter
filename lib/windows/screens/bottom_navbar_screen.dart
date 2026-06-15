@@ -54,6 +54,7 @@ import '../../../windows/screens/pedido_grid_screen.dart';
 import '../../../windows/screens/ticket_grid_screen.dart';
 import '../../../windows/screens/alerta_aluno_grid_screen.dart';
 import '../../../windows/screens/avaliacao_fisica_grid_screen.dart';
+import '../../../windows/screens/academia_grid_screen.dart';
 import '../../../windows/screens/conta_bancaria_grid_screen.dart';
 import '../../../windows/screens/centro_custo_grid_screen.dart';
 import '../../../windows/screens/categoria_financeira_grid_screen.dart';
@@ -415,6 +416,7 @@ class _WindowsBottomNavBarScreenState extends State<WindowsBottomNavBarScreen> {
         const CobrancaAutomaticaScreen(), // 133: Cobrança Automática
         const KanbanPagamentosScreen(), // 134: Kanban de Pagamentos
         const WebAprovacaoPagamentosScreen(), // 135: Aprovação de Pagamentos
+        WindowsAcademiaGridScreen(hasPermission: (perm) => true), // 124: Academia
       ];
 
   String get userName {
