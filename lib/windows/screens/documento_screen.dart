@@ -629,74 +629,84 @@ class _WindowsCalendarScreenState extends State<WindowsCalendarScreen> {
             ),
           ],
         ),
-        actions: [
-          // Botão Hoje
-          TextButton(
-            style: TextButton.styleFrom(
-              backgroundColor: Colors.white24,
-              foregroundColor: Colors.white,
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-              shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(6)),
-              minimumSize: Size.zero,
-              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-            ),
-            onPressed: () {
-              final today = DateTime.now();
-              setState(() {
-                _selectedDay = today;
-                _currentMonth = DateTime(today.year, today.month);
-              });
-              _loadMonthMarkers(_currentMonth);
-              _loadDayData(today);
-            },
-            child: const Text('Hoje',
-                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-          ),
-          const SizedBox(width: 4),
-          // Alertas + Logout (reutiliza o widget já existente)
-          const AppBarActions(),
-          const SizedBox(width: 4),
+        actions: const [
+          AppBarActions(),
+          SizedBox(width: 4),
         ],
-        // Linha de formato: Dia | Mês | Ano
+        // Linha de formato: [Dia | Mês | Ano centralizados] + [Hoje à direita]
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(44),
           child: Container(
             color: GridColors.primary,
-            padding: const EdgeInsets.fromLTRB(12, 0, 12, 8),
-            child: Row(
+            padding: const EdgeInsets.fromLTRB(8, 4, 8, 6),
+            child: Stack(
+              alignment: Alignment.center,
               children: [
-                _buildToggleBtn(
-                  icon: Icons.calendar_view_day,
-                  label: 'Dia',
-                  active: _viewMode == 'day',
-                  onTap: () {
-                    final day = _selectedDay ?? DateTime.now();
-                    setState(() {
-                      _viewMode = 'day';
-                      _selectedDay = day;
-                      _currentMonth = DateTime(day.year, day.month);
-                    });
-                    _loadMonthMarkers(_currentMonth);
-                    _loadDayData(day);
-                  },
+                // Toggles centralizados
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    _buildToggleBtn(
+                      icon: Icons.calendar_view_day,
+                      label: 'Dia',
+                      active: _viewMode == 'day',
+                      onTap: () {
+                        final day = _selectedDay ?? DateTime.now();
+                        setState(() {
+                          _viewMode = 'day';
+                          _selectedDay = day;
+                          _currentMonth = DateTime(day.year, day.month);
+                        });
+                        _loadMonthMarkers(_currentMonth);
+                        _loadDayData(day);
+                      },
+                    ),
+                    const SizedBox(width: 6),
+                    _buildToggleBtn(
+                      icon: Icons.calendar_view_month,
+                      label: 'Mês',
+                      active: _viewMode == 'month',
+                      onTap: () => setState(() => _viewMode = 'month'),
+                    ),
+                    const SizedBox(width: 6),
+                    _buildToggleBtn(
+                      icon: Icons.calendar_month,
+                      label: 'Ano',
+                      active: _viewMode == 'year',
+                      onTap: () {
+                        setState(() => _viewMode = 'year');
+                        _autoCarregarResumoAno(_currentMonth.year);
+                      },
+                    ),
+                  ],
                 ),
-                const SizedBox(width: 6),
-                _buildToggleBtn(
-                  icon: Icons.calendar_view_month,
-                  label: 'Mês',
-                  active: _viewMode == 'month',
-                  onTap: () => setState(() => _viewMode = 'month'),
-                ),
-                const SizedBox(width: 6),
-                _buildToggleBtn(
-                  icon: Icons.calendar_month,
-                  label: 'Ano',
-                  active: _viewMode == 'year',
-                  onTap: () {
-                    setState(() => _viewMode = 'year');
-                    _autoCarregarResumoAno(_currentMonth.year);
-                  },
+                // Hoje alinhado à direita
+                Positioned(
+                  right: 0,
+                  child: TextButton(
+                    style: TextButton.styleFrom(
+                      backgroundColor: Colors.white24,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 10, vertical: 4),
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(6)),
+                      minimumSize: Size.zero,
+                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                    ),
+                    onPressed: () {
+                      final today = DateTime.now();
+                      setState(() {
+                        _selectedDay = today;
+                        _currentMonth = DateTime(today.year, today.month);
+                      });
+                      _loadMonthMarkers(_currentMonth);
+                      _loadDayData(today);
+                    },
+                    child: const Text('Hoje',
+                        style: TextStyle(
+                            fontWeight: FontWeight.bold, fontSize: 13)),
+                  ),
                 ),
               ],
             ),
@@ -759,15 +769,15 @@ class _WindowsCalendarScreenState extends State<WindowsCalendarScreen> {
       elevation: 2,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
       child: Padding(
-        padding: const EdgeInsets.all(12),
+        padding: const EdgeInsets.fromLTRB(10, 6, 10, 8),
         child: Column(
           children: [
             _buildMonthNav(),
-            const SizedBox(height: 8),
+            const SizedBox(height: 4),
             _buildWeekdayHeaders(),
             const SizedBox(height: 4),
-            Expanded(child: _buildCalendarGrid()),
-            const Divider(height: 16),
+            Expanded(child: ClipRect(child: _buildCalendarGrid())),
+            const Divider(height: 12),
             _buildLegend(),
           ],
         ),
@@ -782,9 +792,10 @@ class _WindowsCalendarScreenState extends State<WindowsCalendarScreen> {
     // Com seleção: calendário em altura adaptativa + painel de detalhe abaixo
     return LayoutBuilder(
       builder: (context, constraints) {
-        // Reserva no mínimo 180px para o painel de detalhe
+        // Reserva no mínimo 180px para o painel de detalhe;
+        // max 400 para dar espaço suficiente às rows do grid (≥40px/row × 6 rows)
         final calHeight =
-            (constraints.maxHeight - 180).clamp(200.0, 340.0);
+            (constraints.maxHeight - 180).clamp(200.0, 400.0);
         return Column(
           children: [
             SizedBox(height: calHeight, child: calendarCard),
@@ -816,31 +827,39 @@ class _WindowsCalendarScreenState extends State<WindowsCalendarScreen> {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        IconButton(
-          icon: const Icon(Icons.chevron_left, color: GridColors.success),
-          tooltip: 'Mês anterior',
-          onPressed: () {
-            final prev = DateTime(_currentMonth.year, _currentMonth.month - 1);
+        InkWell(
+          onTap: () {
+            final prev =
+                DateTime(_currentMonth.year, _currentMonth.month - 1);
             setState(() => _currentMonth = prev);
             _loadMonthMarkers(prev);
           },
+          borderRadius: BorderRadius.circular(16),
+          child: const Padding(
+            padding: EdgeInsets.symmetric(horizontal: 8, vertical: 5),
+            child: Icon(Icons.chevron_left, color: GridColors.success, size: 20),
+          ),
         ),
         Text(
           DateFormat('MMMM yyyy', 'pt_BR').format(_currentMonth),
           style: const TextStyle(
             fontWeight: FontWeight.bold,
-            fontSize: 15,
+            fontSize: 14,
             color: GridColors.textSecondary,
           ),
         ),
-        IconButton(
-          icon: const Icon(Icons.chevron_right, color: GridColors.success),
-          tooltip: 'Próximo mês',
-          onPressed: () {
-            final next = DateTime(_currentMonth.year, _currentMonth.month + 1);
+        InkWell(
+          onTap: () {
+            final next =
+                DateTime(_currentMonth.year, _currentMonth.month + 1);
             setState(() => _currentMonth = next);
             _loadMonthMarkers(next);
           },
+          borderRadius: BorderRadius.circular(16),
+          child: const Padding(
+            padding: EdgeInsets.symmetric(horizontal: 8, vertical: 5),
+            child: Icon(Icons.chevron_right, color: GridColors.success, size: 20),
+          ),
         ),
       ],
     );
