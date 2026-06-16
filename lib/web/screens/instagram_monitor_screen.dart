@@ -180,7 +180,14 @@ class _InstagramMonitorScreenState extends State<InstagramMonitorScreen> with Si
     _animController.reset();
 
     // 1. Buscar perfil e posts
-    final profile = await InstagramService.fetchProfile(username);
+    InstagramProfile? profile;
+    String? erroFetch;
+    try {
+      profile = await InstagramService.fetchProfile(username);
+    } on InstagramException catch (e) {
+      erroFetch = e.mensagem;
+    } catch (_) {}
+
     List<InstagramPost> posts = [];
     if (profile != null) {
       posts = await InstagramService.fetchPosts(username);
@@ -216,10 +223,9 @@ class _InstagramMonitorScreenState extends State<InstagramMonitorScreen> with Si
             recentPosts: posts.isNotEmpty ? posts : profile.recentPosts,
           );
           _animController.forward();
-          // Esconde botoes de monitoramento quando o perfil ja esta tracked
           _showMonitorButtons = !_isProfileTracked(username);
         } else {
-          _error = 'Perfil nao encontrado ou privado';
+          _error = erroFetch ?? 'Perfil nao encontrado ou privado';
         }
       });
     }
@@ -448,21 +454,74 @@ class _InstagramMonitorScreenState extends State<InstagramMonitorScreen> with Si
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xFFF5F5F8),
-      body: Column(
+    return DefaultTabController(
+      length: 3,
+      child: Scaffold(
+        backgroundColor: const Color(0xFFF5F5F8),
+        body: Column(
+          children: [
+            _buildHeader(),
+            _buildTrackedChips(),
+            _buildSearchInput(),
+            if (_profile != null) _buildTabBar(),
+            Expanded(
+              child: _loading
+                  ? const Center(child: CircularProgressIndicator(color: Color(0xFFE1306C)))
+                  : _error != null
+                      ? _buildError()
+                      : _profile != null
+                          ? _buildTabContent()
+                          : _buildEmpty(),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildTabBar() {
+    return Container(
+      color: Colors.white,
+      child: TabBar(
+        indicatorColor: const Color(0xFFE1306C),
+        labelColor: const Color(0xFFE1306C),
+        unselectedLabelColor: Colors.grey,
+        tabs: const [
+          Tab(icon: Icon(Icons.person_outline, size: 18), text: 'Perfil'),
+          Tab(icon: Icon(Icons.timeline, size: 18), text: 'Timeline'),
+          Tab(icon: Icon(Icons.receipt_long, size: 18), text: 'Logs'),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTabContent() {
+    return FadeTransition(
+      opacity: _fadeAnimation,
+      child: TabBarView(
         children: [
-          _buildHeader(),
-          _buildTrackedChips(),
-          if (_profile != null || _showMonitorButtons) _buildSearchInput(),
-          Expanded(
-            child: _loading
-                ? const Center(child: CircularProgressIndicator(color: Color(0xFFE1306C)))
-                : _error != null
-                    ? _buildError()
-                    : _profile != null
-                        ? _buildContent()
-                        : _buildEmpty(),
+          SingleChildScrollView(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _buildProfileCard(),
+                const SizedBox(height: 16),
+                _buildStatsRow(),
+                const SizedBox(height: 16),
+                if (_localApiStatus) _buildQuickActions(),
+                if (_localApiStatus) const SizedBox(height: 20),
+                _buildPostsSection(),
+              ],
+            ),
+          ),
+          SingleChildScrollView(
+            padding: const EdgeInsets.all(16),
+            child: _events.isEmpty ? _buildEmptyTimeline() : _buildTimelineList(),
+          ),
+          SingleChildScrollView(
+            padding: const EdgeInsets.all(16),
+            child: _buildChangeLogsSection(),
           ),
         ],
       ),
@@ -492,7 +551,10 @@ class _InstagramMonitorScreenState extends State<InstagramMonitorScreen> with Si
           decoration: InputDecoration(
             hintText: 'Digite o @ do Instagram',
             hintStyle: TextStyle(color: Colors.grey[400]),
-            prefixIcon: const Icon(Icons.search, color: Color(0xFFE1306C)),
+            prefixIcon: IconButton(
+                icon: const Icon(Icons.search, color: Color(0xFFE1306C)),
+                onPressed: _onSearch,
+              ),
             suffixIcon: _controller.text.isNotEmpty
                 ? IconButton(
                     icon: const Icon(Icons.clear, size: 20),
@@ -662,67 +724,6 @@ class _InstagramMonitorScreenState extends State<InstagramMonitorScreen> with Si
             ),
           ),
         ],
-      ),
-    );
-  }
-
-  Widget _buildContent() {
-    return FadeTransition(
-      opacity: _fadeAnimation,
-      child: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // --- PARTE DE CIMA: MATCH (Perfil + Stats + Posts) ---
-            _buildProfileCard(),
-            const SizedBox(height: 16),
-            _buildStatsRow(),
-            const SizedBox(height: 16),
-            if (_localApiStatus) _buildQuickActions(),
-            if (_localApiStatus) const SizedBox(height: 20),
-            _buildPostsSection(),
-
-            // --- DIVISOR ---
-            const Padding(
-              padding: EdgeInsets.symmetric(vertical: 24),
-              child: Row(
-                children: [
-                  Expanded(child: Divider()),
-                  Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 16),
-                    child: Text('TIMELINE', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: Colors.grey, letterSpacing: 2)),
-                  ),
-                  Expanded(child: Divider()),
-                ],
-              ),
-            ),
-
-            // --- PARTE DE BAIXO: TIMELINE ---
-            if (_events.isEmpty)
-              _buildEmptyTimeline()
-            else
-              _buildTimelineList(),
-
-            // --- DIVISOR LOGS ---
-            const Padding(
-              padding: EdgeInsets.symmetric(vertical: 24),
-              child: Row(
-                children: [
-                  Expanded(child: Divider()),
-                  Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 16),
-                    child: Text('LOGS DE ALTERACOES', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: Colors.grey, letterSpacing: 2)),
-                  ),
-                  Expanded(child: Divider()),
-                ],
-              ),
-            ),
-
-            // --- LOGS DE ALTERACOES ---
-            _buildChangeLogsSection(),
-          ],
-        ),
       ),
     );
   }
