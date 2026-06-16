@@ -32,7 +32,8 @@ class _OportunidadesScreenState extends State<OportunidadesScreen> {
       ops.sort((a, b) => b.scoreValue.compareTo(a.scoreValue));
       if (mounted) setState(() => _oportunidades = ops);
     } catch (e) {
-      if (mounted) setState(() => _error = 'Erro ao carregar oportunidades: $e');
+      if (mounted)
+        setState(() => _error = 'Erro ao carregar oportunidades: $e');
     } finally {
       if (mounted) setState(() => _loading = false);
     }
@@ -77,8 +78,8 @@ class _OportunidadesScreenState extends State<OportunidadesScreen> {
                   ? const Center(
                       child: Text(
                         'Nenhuma oportunidade identificada',
-                        style: TextStyle(
-                            color: GridColors.divider, fontSize: 16),
+                        style:
+                            TextStyle(color: GridColors.divider, fontSize: 16),
                       ),
                     )
                   : RefreshIndicator(
@@ -87,8 +88,7 @@ class _OportunidadesScreenState extends State<OportunidadesScreen> {
                       child: ListView.separated(
                         padding: const EdgeInsets.all(12),
                         itemCount: _oportunidades.length,
-                        separatorBuilder: (_, __) =>
-                            const SizedBox(height: 8),
+                        separatorBuilder: (_, __) => const SizedBox(height: 8),
                         itemBuilder: (_, i) => _OportunidadeCard(
                             op: _oportunidades[i], rank: i + 1),
                       ),
@@ -106,8 +106,8 @@ class _OportunidadeCard extends StatelessWidget {
     // scoreValue é 0–1 (BigDecimal) ou 0–100 — normaliza
     final normalizado = score > 1 ? score / 100.0 : score;
     if (normalizado >= 0.8) return GridColors.secondary; // verde
-    if (normalizado >= 0.5) return GridColors.warning;   // amarelo
-    return GridColors.error;                             // vermelho
+    if (normalizado >= 0.5) return GridColors.warning; // amarelo
+    return GridColors.error; // vermelho
   }
 
   String _scoreLabel(double score) {
@@ -118,10 +118,14 @@ class _OportunidadeCard extends StatelessWidget {
   Color _riskColor(String? riskLevel) {
     switch (riskLevel?.toUpperCase()) {
       case 'LOW':
+      case 'BAIXO':
         return GridColors.secondary;
       case 'MEDIUM':
+      case 'MEDIO':
+      case 'MÉDIO':
         return GridColors.warning;
       case 'HIGH':
+      case 'ALTO':
         return GridColors.error;
       default:
         return Colors.grey;
@@ -182,9 +186,19 @@ class _OportunidadeCard extends StatelessWidget {
                   if (op.recommendation.isNotEmpty)
                     Text(
                       op.recommendation,
-                      style: const TextStyle(
-                          color: Colors.black87, fontSize: 13),
+                      style:
+                          const TextStyle(color: Colors.black87, fontSize: 13),
                     ),
+                  if (op.scoreResumo.isNotEmpty) ...[
+                    const SizedBox(height: 4),
+                    Text(
+                      op.scoreResumo,
+                      maxLines: 3,
+                      overflow: TextOverflow.ellipsis,
+                      style:
+                          const TextStyle(color: Colors.black54, fontSize: 12),
+                    ),
+                  ],
                   // Risk Level + Horizon
                   if (op.riskLevel != null || op.horizon != null)
                     Row(
@@ -207,8 +221,7 @@ class _OportunidadeCard extends StatelessWidget {
                   if (op.calculatedAt != null)
                     Text(
                       _formatDate(op.calculatedAt!),
-                      style: const TextStyle(
-                          color: Colors.grey, fontSize: 11),
+                      style: const TextStyle(color: Colors.grey, fontSize: 11),
                     ),
                 ],
               ),
@@ -265,8 +278,8 @@ class _Tag extends StatelessWidget {
       ),
       child: Text(
         label,
-        style: TextStyle(
-            fontSize: 11, fontWeight: FontWeight.w600, color: color),
+        style:
+            TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: color),
       ),
     );
   }

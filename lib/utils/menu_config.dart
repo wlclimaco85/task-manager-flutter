@@ -517,17 +517,17 @@ class MenuConfig {
             id: 'cobranca_automatica',
             label: 'Régua de Cobrança',
             icon: FontAwesomeIcons.moneyBillWave,
-            screenIndex: 133),
+            screenIndex: 121),
         MenuItem(
             id: 'kanban_pagamentos',
             label: 'Kanban de Pagamentos',
             icon: FontAwesomeIcons.tableColumns,
-            screenIndex: 134),
+            screenIndex: 122),
         MenuItem(
             id: 'aprovacao_pagamentos_web',
             label: 'Aprovação de Pagamentos',
             icon: FontAwesomeIcons.checkDouble,
-            screenIndex: 135),
+            screenIndex: 123),
       ],
     ),
     MenuGroup(
@@ -640,20 +640,15 @@ class MenuConfig {
             icon: FontAwesomeIcons.clockRotateLeft,
             screenIndex: 85),
         MenuItem(
-            id: 'trading_config',
-            label: 'Configuracao da Corretora',
-            icon: FontAwesomeIcons.gear,
-            screenIndex: 119),
-        MenuItem(
             id: 'trading_corretora',
             label: 'Configuração da Corretora',
-            icon: FontAwesomeIcons.buildingColumns,
-            screenIndex: 129),
+            icon: FontAwesomeIcons.gear,
+            screenIndex: 119),
         MenuItem(
             id: 'trading_carteira',
             label: 'Minha Carteira',
             icon: FontAwesomeIcons.briefcase,
-            screenIndex: 132),
+            screenIndex: 120),
       ],
     ),
     MenuGroup(

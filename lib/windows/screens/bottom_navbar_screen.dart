@@ -159,8 +159,9 @@ class _WindowsBottomNavBarScreenState extends State<WindowsBottomNavBarScreen> {
   final List<OpenTab> _openTabs = [];
   int _activeTabIndex = 0;
 
-  int get _selectedIndex =>
-      _openTabs.isEmpty ? _initialScreenIndex : _openTabs[_activeTabIndex].screenIndex;
+  int get _selectedIndex => _openTabs.isEmpty
+      ? _initialScreenIndex
+      : _openTabs[_activeTabIndex].screenIndex;
 
   @override
   void initState() {
@@ -191,7 +192,10 @@ class _WindowsBottomNavBarScreenState extends State<WindowsBottomNavBarScreen> {
   // ── Gerenciamento de abas internas ───────────────────────────────────────
 
   MenuItem? _menuItemForScreenIndex(int screenIndex) {
-    final all = [...MenuConfig.groups.expand((g) => g.items), ...MenuConfig.loose];
+    final all = [
+      ...MenuConfig.groups.expand((g) => g.items),
+      ...MenuConfig.loose
+    ];
     for (final item in all) {
       if (item.screenIndex == screenIndex) return item;
     }
@@ -224,7 +228,8 @@ class _WindowsBottomNavBarScreenState extends State<WindowsBottomNavBarScreen> {
     if (item.screenIndex < 0) return;
     final screenIndex = item.screenIndex;
 
-    final existingIndex = _openTabs.indexWhere((t) => t.screenIndex == screenIndex);
+    final existingIndex =
+        _openTabs.indexWhere((t) => t.screenIndex == screenIndex);
     if (existingIndex != -1) {
       setState(() => _activeTabIndex = existingIndex);
       return;
@@ -241,14 +246,16 @@ class _WindowsBottomNavBarScreenState extends State<WindowsBottomNavBarScreen> {
     _showTabLimitDialogAndReplace(screenIndex, item.label);
   }
 
-  Future<void> _showTabLimitDialogAndReplace(int newScreenIndex, String newLabel) async {
+  Future<void> _showTabLimitDialogAndReplace(
+      int newScreenIndex, String newLabel) async {
     final indicesParaFechar = await showTabLimitDialog(
       context: context,
       tabs: _openTabs,
       newTabLabel: newLabel,
       isCompact: false,
     );
-    if (indicesParaFechar == null || indicesParaFechar.isEmpty || !mounted) return;
+    if (indicesParaFechar == null || indicesParaFechar.isEmpty || !mounted)
+      return;
 
     setState(() {
       final ordenados = [...indicesParaFechar]..sort((a, b) => b.compareTo(a));
@@ -278,7 +285,8 @@ class _WindowsBottomNavBarScreenState extends State<WindowsBottomNavBarScreen> {
   }
 
   List<Widget> _buildScreens(dynamic userInfo) => [
-        WindowsComunicadoGridComponentesScreen(hasPermission: (permission) => true),
+        WindowsComunicadoGridComponentesScreen(
+            hasPermission: (permission) => true),
         const WindowsChatMessageScreen(
           sector: 'Financeiro',
           userName: 'Usuário',
@@ -417,14 +425,12 @@ class _WindowsBottomNavBarScreenState extends State<WindowsBottomNavBarScreen> {
         const WebAiDashboardScreen(), // 117: Dashboard IA
         const WebAiAssistenteScreen(), // 118: Assistente IA
         const TradingConfigScreen(), // 119: Configuracao da Corretora
-        // ── Posicoes 120-123: reservadas (placeholders) ──
-        const SizedBox.shrink(), // 120
-        const SizedBox.shrink(), // 121
-        const SizedBox.shrink(), // 122
-        const SizedBox.shrink(), // 123
+        const CarteiraScreen(), // 120: Minha Carteira
+        const CobrancaAutomaticaScreen(), // 121: Cobranca Automatica
+        const KanbanPagamentosScreen(), // 122: Kanban de Pagamentos
+        const WebAprovacaoPagamentosScreen(), // 123: Aprovacao de Pagamentos
         WindowsAcademiaGridScreen(
             hasPermission: (perm) => true), // 124: Academia
-        // ── Posicoes 125-131: reservadas (placeholders) ──
         const SizedBox.shrink(), // 125
         const SizedBox.shrink(), // 126
         const SizedBox.shrink(), // 127
@@ -432,18 +438,18 @@ class _WindowsBottomNavBarScreenState extends State<WindowsBottomNavBarScreen> {
         const SizedBox.shrink(), // 129
         const SizedBox.shrink(), // 130
         const SizedBox.shrink(), // 131
-        const CarteiraScreen(), // 132: Minha Carteira
-        const CobrancaAutomaticaScreen(), // 133: Cobrança Automática
-        const KanbanPagamentosScreen(), // 134: Kanban de Pagamentos
-        const WebAprovacaoPagamentosScreen(), // 135: Aprovação de Pagamentos
-        const InstagramMonitorScreen(), // 136: Instagram Monitor (unificado)
-        const SizedBox.shrink(), // 137: (removido - unificado no 136)
-        const WindowsAtividadeDiariaScreen(), // 138: Atividade Diária
-        const WindowsDiarioRefeicaoScreen(), // 139: Diário Nutricional
-        const WindowsHomeSaudeAlunoScreen(), // 140: Home Saúde do Aluno
+        const SizedBox.shrink(), // 132
+        const SizedBox.shrink(), // 133
+        const SizedBox.shrink(), // 134
+        const SizedBox.shrink(), // 135
+        const InstagramMonitorScreen(), // 136: Instagram Monitor
+        const SizedBox.shrink(), // 137
+        const WindowsAtividadeDiariaScreen(), // 138: Atividade Diaria
+        const WindowsDiarioRefeicaoScreen(), // 139: Diario Nutricional
+        const WindowsHomeSaudeAlunoScreen(), // 140: Home Saude do Aluno
         HistoricoTreinoScreen(
           alunoId: AuthUtility.userInfo?.data?.id ?? 0,
-        ), // 141: Histórico de Treinos
+        ), // 141: Historico de Treinos
       ];
 
   String get userName {

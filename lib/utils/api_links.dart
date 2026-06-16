@@ -1005,6 +1005,10 @@ class ApiLinks {
       '$_baseUrlNew/api/trading/carteira/operacoes';
   static String tradingCarteiraOperacao(String id) =>
       '$_baseUrlNew/api/trading/carteira/operacao/$id';
+  static String get tradingCarteiraCorretoras =>
+      '$_baseUrlNew/api/trading/carteira/corretoras';
+  static String get tradingCarteiraCorretoraMovimento =>
+      '$_baseUrlNew/api/trading/carteira/corretoras/movimento';
   // Departamento Pessoal profissional
   static String get dpDashboard => '$_baseUrlNew/api/dp/dashboard';
   static String get dpRelatorioResumo =>

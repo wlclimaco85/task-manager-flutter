@@ -37,7 +37,8 @@ class OperacaoAcao {
         corretora: j['corretora'],
         taxas: (j['taxas'] ?? 0).toDouble(),
         observacao: j['observacao'],
-        custoTotal: j['custoTotal'] != null ? (j['custoTotal']).toDouble() : null,
+        custoTotal:
+            j['custoTotal'] != null ? (j['custoTotal']).toDouble() : null,
       );
 
   Map<String, dynamic> toJson() => {
@@ -50,6 +51,31 @@ class OperacaoAcao {
         'taxas': taxas,
         if (observacao != null) 'observacao': observacao,
       };
+}
+
+class CorretoraInvestimento {
+  final int? id;
+  final String nome;
+  final double saldo;
+  final bool ativa;
+  final String? observacao;
+
+  const CorretoraInvestimento({
+    this.id,
+    required this.nome,
+    required this.saldo,
+    this.ativa = true,
+    this.observacao,
+  });
+
+  factory CorretoraInvestimento.fromJson(Map<String, dynamic> j) =>
+      CorretoraInvestimento(
+        id: j['id'],
+        nome: j['nome'] ?? '',
+        saldo: (j['saldo'] ?? 0).toDouble(),
+        ativa: j['ativa'] ?? true,
+        observacao: j['observacao'],
+      );
 }
 
 class PosicaoAcao {

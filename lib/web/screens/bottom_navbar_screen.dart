@@ -150,8 +150,9 @@ class _WebBottomNavBarScreenState extends State<WebBottomNavBarScreen> {
   final List<OpenTab> _openTabs = [];
   int _activeTabIndex = 0;
 
-  int get _selectedIndex =>
-      _openTabs.isEmpty ? _initialScreenIndex : _openTabs[_activeTabIndex].screenIndex;
+  int get _selectedIndex => _openTabs.isEmpty
+      ? _initialScreenIndex
+      : _openTabs[_activeTabIndex].screenIndex;
 
   @override
   void initState() {
@@ -184,7 +185,10 @@ class _WebBottomNavBarScreenState extends State<WebBottomNavBarScreen> {
   // ── Gerenciamento de abas internas ───────────────────────────────────────
 
   MenuItem? _menuItemForScreenIndex(int screenIndex) {
-    final all = [...MenuConfig.groups.expand((g) => g.items), ...MenuConfig.loose];
+    final all = [
+      ...MenuConfig.groups.expand((g) => g.items),
+      ...MenuConfig.loose
+    ];
     for (final item in all) {
       if (item.screenIndex == screenIndex) return item;
     }
@@ -217,7 +221,8 @@ class _WebBottomNavBarScreenState extends State<WebBottomNavBarScreen> {
     if (item.screenIndex < 0) return;
     final screenIndex = item.screenIndex;
 
-    final existingIndex = _openTabs.indexWhere((t) => t.screenIndex == screenIndex);
+    final existingIndex =
+        _openTabs.indexWhere((t) => t.screenIndex == screenIndex);
     if (existingIndex != -1) {
       setState(() => _activeTabIndex = existingIndex);
       return;
@@ -234,14 +239,16 @@ class _WebBottomNavBarScreenState extends State<WebBottomNavBarScreen> {
     _showTabLimitDialogAndReplace(screenIndex, item.label);
   }
 
-  Future<void> _showTabLimitDialogAndReplace(int newScreenIndex, String newLabel) async {
+  Future<void> _showTabLimitDialogAndReplace(
+      int newScreenIndex, String newLabel) async {
     final indicesParaFechar = await showTabLimitDialog(
       context: context,
       tabs: _openTabs,
       newTabLabel: newLabel,
       isCompact: true,
     );
-    if (indicesParaFechar == null || indicesParaFechar.isEmpty || !mounted) return;
+    if (indicesParaFechar == null || indicesParaFechar.isEmpty || !mounted)
+      return;
 
     setState(() {
       final ordenados = [...indicesParaFechar]..sort((a, b) => b.compareTo(a));
@@ -290,7 +297,8 @@ class _WebBottomNavBarScreenState extends State<WebBottomNavBarScreen> {
     final isLoggedIn = (userInfo?.id != null) || (loginInfo?.id != null);
     if (!isLoggedIn) return [const LoginScreen()];
     return [
-      WebComunicadoGridComponentesScreen(hasPermission: (p) => true), // 0:  Comunicados
+      WebComunicadoGridComponentesScreen(
+          hasPermission: (p) => true), // 0:  Comunicados
       WebChatListScreen(
           userName: AuthUtility.userInfo?.login?.email ?? 'Usuário'), // 1: Chat
       WebComunicadoGridComponentesScreen(
@@ -438,14 +446,11 @@ class _WebBottomNavBarScreenState extends State<WebBottomNavBarScreen> {
       const WebAiDashboardScreen(), // 117: Dashboard IA
       const WebAiAssistenteScreen(), // 118: Assistente IA
       const TradingConfigScreen(), // 119: Configuracao da Corretora
-      // ── Posicoes 120-123: reservadas (placeholders) ──
-      const SizedBox.shrink(), // 120
-      const SizedBox.shrink(), // 121
-      const SizedBox.shrink(), // 122
-      const SizedBox.shrink(), // 123
-      WebAcademiaGridScreen(
-          hasPermission: (p) => true), // 124: Academia
-      // ── Posicoes 125-131: reservadas (placeholders) ──
+      const CarteiraScreen(), // 120: Minha Carteira
+      const CobrancaAutomaticaScreen(), // 121: Cobranca Automatica
+      const KanbanPagamentosScreen(), // 122: Kanban de Pagamentos
+      const WebAprovacaoPagamentosScreen(), // 123: Aprovacao de Pagamentos
+      WebAcademiaGridScreen(hasPermission: (p) => true), // 124: Academia
       const SizedBox.shrink(), // 125
       const SizedBox.shrink(), // 126
       const SizedBox.shrink(), // 127
@@ -453,18 +458,18 @@ class _WebBottomNavBarScreenState extends State<WebBottomNavBarScreen> {
       const SizedBox.shrink(), // 129
       const SizedBox.shrink(), // 130
       const SizedBox.shrink(), // 131
-      const CarteiraScreen(), // 132: Minha Carteira
-      const CobrancaAutomaticaScreen(), // 133: Cobrança Automática
-      const KanbanPagamentosScreen(), // 134: Kanban de Pagamentos
-      const WebAprovacaoPagamentosScreen(), // 135: Aprovação de Pagamentos
-      const InstagramMonitorScreen(), // 136: Instagram Monitor (unificado)
-      const SizedBox.shrink(), // 137: (removido - unificado no 136)
-      const WebAtividadeDiariaScreen(), // 138: Atividade Diária
-      const WebDiarioRefeicaoScreen(), // 139: Diário Nutricional
-      const WebHomeSaudeAlunoScreen(), // 140: Home Saúde do Aluno
+      const SizedBox.shrink(), // 132
+      const SizedBox.shrink(), // 133
+      const SizedBox.shrink(), // 134
+      const SizedBox.shrink(), // 135
+      const InstagramMonitorScreen(), // 136: Instagram Monitor
+      const SizedBox.shrink(), // 137
+      const WebAtividadeDiariaScreen(), // 138: Atividade Diaria
+      const WebDiarioRefeicaoScreen(), // 139: Diario Nutricional
+      const WebHomeSaudeAlunoScreen(), // 140: Home Saude do Aluno
       HistoricoTreinoScreen(
         alunoId: AuthUtility.userInfo?.data?.id ?? 0,
-      ), // 141: Histórico de Treinos
+      ), // 141: Historico de Treinos
     ];
   }
 

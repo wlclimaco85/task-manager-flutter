@@ -2,14 +2,16 @@
 // e configuração de corretora.
 // Campos alinhados com o JSON retornado pelo backend Spring Boot.
 
+import 'dart:convert';
+
 class TradingSignal {
   final String id;
   final String assetSymbol; // backend: assetSymbol
-  final String signalType;  // backend: signalType (ex: "BUY" | "SELL" | "HOLD")
-  final String status;      // backend: status
-  final double score;       // backend: score (BigDecimal → double)
+  final String signalType; // backend: signalType (ex: "BUY" | "SELL" | "HOLD")
+  final String status; // backend: status
+  final double score; // backend: score (BigDecimal → double)
   final double priceAtSignal; // backend: priceAtSignal
-  final String triggeredAt;   // backend: triggeredAt (Instant → String ISO-8601)
+  final String triggeredAt; // backend: triggeredAt (Instant → String ISO-8601)
   final String? source;
   final double? confidence;
   final String? timeframe;
@@ -31,18 +33,23 @@ class TradingSignal {
     return TradingSignal(
       id: json['id']?.toString() ?? '',
       // aceita 'assetSymbol' (backend) ou 'asset' (legado)
-      assetSymbol: json['assetSymbol']?.toString() ?? json['asset']?.toString() ?? '',
+      assetSymbol:
+          json['assetSymbol']?.toString() ?? json['asset']?.toString() ?? '',
       // aceita 'signalType' (backend) ou 'direction' (legado)
-      signalType: json['signalType']?.toString() ?? json['direction']?.toString() ?? '',
+      signalType:
+          json['signalType']?.toString() ?? json['direction']?.toString() ?? '',
       status: json['status']?.toString() ?? '',
       // aceita 'score' ou 'confidence' como fallback
       score: _toDouble(json['score'] ?? json['confidence']),
       // aceita 'priceAtSignal' (backend) ou 'price' (legado)
       priceAtSignal: _toDouble(json['priceAtSignal'] ?? json['price']),
       // aceita 'triggeredAt' (backend) ou 'createdAt' (legado)
-      triggeredAt: json['triggeredAt']?.toString() ?? json['createdAt']?.toString() ?? '',
+      triggeredAt: json['triggeredAt']?.toString() ??
+          json['createdAt']?.toString() ??
+          '',
       source: json['source']?.toString(),
-      confidence: json['confidence'] != null ? _toDouble(json['confidence']) : null,
+      confidence:
+          json['confidence'] != null ? _toDouble(json['confidence']) : null,
       timeframe: json['timeframe']?.toString(),
     );
   }
@@ -77,12 +84,13 @@ class TradingSignal {
 
 class Opportunity {
   final String id;
-  final String assetSymbol;   // backend: assetSymbol
-  final double scoreValue;    // backend: scoreValue
+  final String assetSymbol; // backend: assetSymbol
+  final double scoreValue; // backend: scoreValue
   final String recommendation; // backend: recommendation
-  final String? riskLevel;    // backend: riskLevel
-  final String? horizon;      // backend: horizon
+  final String? riskLevel; // backend: riskLevel
+  final String? horizon; // backend: horizon
   final String? calculatedAt; // backend: calculatedAt
+  final String? scoreComponents; // backend: scoreComponents
 
   const Opportunity({
     required this.id,
@@ -92,22 +100,52 @@ class Opportunity {
     this.riskLevel,
     this.horizon,
     this.calculatedAt,
+    this.scoreComponents,
   });
 
   factory Opportunity.fromJson(Map<String, dynamic> json) {
     return Opportunity(
       id: json['id']?.toString() ?? '',
       // aceita 'assetSymbol' (backend) ou 'asset' (legado)
-      assetSymbol: json['assetSymbol']?.toString() ?? json['asset']?.toString() ?? '',
+      assetSymbol:
+          json['assetSymbol']?.toString() ?? json['asset']?.toString() ?? '',
       // aceita 'scoreValue' (backend) numérico
       scoreValue: _toDouble(json['scoreValue'] ?? json['score']),
       // aceita 'recommendation' (backend) ou 'description' (legado)
       recommendation: json['recommendation']?.toString() ??
-          json['description']?.toString() ?? '',
+          json['description']?.toString() ??
+          '',
       riskLevel: json['riskLevel']?.toString(),
       horizon: json['horizon']?.toString(),
-      calculatedAt: json['calculatedAt']?.toString() ?? json['detectedAt']?.toString(),
+      calculatedAt:
+          json['calculatedAt']?.toString() ?? json['detectedAt']?.toString(),
+      scoreComponents: json['scoreComponents']?.toString(),
     );
+  }
+
+  String get scoreResumo {
+    final raw = scoreComponents;
+    if (raw == null || raw.trim().isEmpty) return '';
+    try {
+      final decoded = jsonDecode(raw);
+      if (decoded is Map<String, dynamic>) {
+        final fonteCotacao = decoded['fonte_cotacao']?.toString();
+        final fontesPlanejadas = decoded['fontes_planejadas'];
+        final observacao = decoded['observacao']?.toString();
+        final fontes = <String>[
+          if (fonteCotacao != null && fonteCotacao.isNotEmpty) fonteCotacao,
+          if (fontesPlanejadas is List)
+            ...fontesPlanejadas.map((e) => e.toString()),
+        ];
+        if (fontes.isNotEmpty) {
+          return 'Fontes: ${fontes.join(', ')}'
+              '${observacao == null || observacao.isEmpty ? '' : ' - $observacao'}';
+        }
+      }
+    } catch (_) {
+      return raw;
+    }
+    return raw;
   }
 
   static double _toDouble(dynamic v) {
@@ -124,6 +162,7 @@ class Opportunity {
         if (riskLevel != null) 'riskLevel': riskLevel,
         if (horizon != null) 'horizon': horizon,
         if (calculatedAt != null) 'calculatedAt': calculatedAt,
+        if (scoreComponents != null) 'scoreComponents': scoreComponents,
       };
 }
 
@@ -166,7 +205,7 @@ class TradingAlerta {
   final String assetSymbol;
   final double priceTarget;
   final String direction; // "ABOVE" | "BELOW"
-  final String status;    // "ATIVO" | "DISPARADO" | "CANCELADO"
+  final String status; // "ATIVO" | "DISPARADO" | "CANCELADO"
   final String? triggeredAt;
   final String? message;
 
@@ -218,11 +257,12 @@ class TradingAlerta {
 class OperacaoAssistida {
   final String id;
   final String assetSymbol;
-  final String direcao;   // "BUY" | "SELL"
+  final String direcao; // "BUY" | "SELL"
   final double quantidade;
   final double? stopLoss;
   final double? takeProfit;
-  final String status;    // "PENDENTE" | "ENVIADA" | "EXECUTADA" | "CANCELADA" | "ERRO"
+  final String
+      status; // "PENDENTE" | "ENVIADA" | "EXECUTADA" | "CANCELADA" | "ERRO"
   final String? externalOrderId;
   final String? errorMessage;
   final String createdAt;
@@ -262,7 +302,8 @@ class OperacaoAssistida {
       direcao: json['direcao']?.toString() ?? '',
       quantidade: _toDouble(json['quantidade']),
       stopLoss: json['stopLoss'] != null ? _toDouble(json['stopLoss']) : null,
-      takeProfit: json['takeProfit'] != null ? _toDouble(json['takeProfit']) : null,
+      takeProfit:
+          json['takeProfit'] != null ? _toDouble(json['takeProfit']) : null,
       status: json['status']?.toString() ?? 'PENDENTE',
       externalOrderId: json['externalOrderId']?.toString(),
       errorMessage: json['errorMessage']?.toString(),

@@ -9,7 +9,8 @@ String _extractErrorMessage(http.Response response, String fallback) {
     try {
       final decoded = jsonDecode(response.body);
       if (decoded is Map<String, dynamic>) {
-        final message = decoded['message'] ?? decoded['error'] ?? decoded['mensagem'];
+        final message =
+            decoded['message'] ?? decoded['error'] ?? decoded['mensagem'];
         if (message != null && message.toString().trim().isNotEmpty) {
           return message.toString();
         }
@@ -21,17 +22,31 @@ String _extractErrorMessage(http.Response response, String fallback) {
 
 List<dynamic> _decodeListBody(String body, {List<String> keys = const []}) {
   final decoded = jsonDecode(body);
-  if (decoded is List<dynamic>) return decoded;
-  if (decoded is Map<String, dynamic>) {
-    for (final key in keys) {
-      final value = decoded[key];
-      if (value is List<dynamic>) return value;
-    }
-  }
+  final list = _findList(decoded, [
+    ...keys,
+    'data',
+    'dados',
+    'content',
+    'items',
+    'results',
+    'sinais',
+  ]);
+  if (list != null) return list;
   throw const FormatException('Resposta da API não está no formato esperado.');
 }
 
 /// Repositório de trading — sinais, oportunidades, watchlist e alertas.
+List<dynamic>? _findList(dynamic value, List<String> keys) {
+  if (value is List<dynamic>) return value;
+  if (value is Map<String, dynamic>) {
+    for (final key in keys) {
+      final found = _findList(value[key], keys);
+      if (found != null) return found;
+    }
+  }
+  return null;
+}
+
 class TradingRepository {
   Map<String, String> get headers => TenantContext.jsonHeaders;
 
@@ -84,13 +99,15 @@ class TradingRepository {
 
   Future<List<TradingSignal>> fetchSignals() async {
     final response = await http.get(
-      Uri.parse('${ApiLinks.baseUrl}/api/trading/signals'),
+      Uri.parse(
+          TenantContext.applyToUrl('${ApiLinks.baseUrl}/api/trading/signals')),
       headers: headers,
     );
     if (response.statusCode != 200) {
       throw Exception('Erro ao buscar sinais: ${response.statusCode}');
     }
-    final data = _decodeListBody(response.body, keys: const ['signals', 'data']);
+    final data =
+        _decodeListBody(response.body, keys: const ['signals', 'data']);
     return data
         .map((e) => TradingSignal.fromJson(e as Map<String, dynamic>))
         .toList();
@@ -100,7 +117,8 @@ class TradingRepository {
 
   Future<List<Opportunity>> fetchOpportunities() async {
     final response = await http.get(
-      Uri.parse('${ApiLinks.baseUrl}/api/trading/opportunities'),
+      Uri.parse(TenantContext.applyToUrl(
+          '${ApiLinks.baseUrl}/api/trading/opportunities')),
       headers: headers,
     );
     if (response.statusCode != 200) {
@@ -117,13 +135,15 @@ class TradingRepository {
 
   Future<List<TradingSignal>> analyzeWatchlist() async {
     final response = await http.post(
-      Uri.parse('${ApiLinks.baseUrl}/api/trading/analyze'),
+      Uri.parse(
+          TenantContext.applyToUrl('${ApiLinks.baseUrl}/api/trading/analyze')),
       headers: headers,
     );
     if (response.statusCode != 200) {
       throw Exception('Erro ao analisar watchlist: ${response.statusCode}');
     }
-    final data = _decodeListBody(response.body, keys: const ['signals', 'data']);
+    final data =
+        _decodeListBody(response.body, keys: const ['signals', 'data']);
     return data
         .map((e) => TradingSignal.fromJson(e as Map<String, dynamic>))
         .toList();
@@ -153,8 +173,7 @@ class TradingRepository {
       body: jsonEncode(body),
     );
     if (response.statusCode != 200 && response.statusCode != 201) {
-      throw Exception(
-          'Erro ao adicionar à watchlist: ${response.statusCode}');
+      throw Exception('Erro ao adicionar à watchlist: ${response.statusCode}');
     }
     return WatchlistItem.fromJson(
         jsonDecode(response.body) as Map<String, dynamic>);
@@ -166,8 +185,7 @@ class TradingRepository {
       headers: headers,
     );
     if (response.statusCode != 200 && response.statusCode != 204) {
-      throw Exception(
-          'Erro ao remover da watchlist: ${response.statusCode}');
+      throw Exception('Erro ao remover da watchlist: ${response.statusCode}');
     }
   }
 
@@ -259,8 +277,10 @@ class TradingRepository {
       if (stopLoss != null) 'stopLoss': stopLoss,
       if (takeProfit != null) 'takeProfit': takeProfit,
       if (signalId != null) 'signalId': signalId,
-      if (brokerLogin != null && brokerLogin.isNotEmpty) 'brokerLogin': brokerLogin,
-      if (brokerPassword != null && brokerPassword.isNotEmpty) 'brokerPassword': brokerPassword,
+      if (brokerLogin != null && brokerLogin.isNotEmpty)
+        'brokerLogin': brokerLogin,
+      if (brokerPassword != null && brokerPassword.isNotEmpty)
+        'brokerPassword': brokerPassword,
     };
 
     final response = await http.post(
@@ -269,7 +289,8 @@ class TradingRepository {
       body: jsonEncode(body),
     );
     if (response.statusCode != 200 && response.statusCode != 201) {
-      throw Exception(_extractErrorMessage(response, 'Erro ao enviar operação'));
+      throw Exception(
+          _extractErrorMessage(response, 'Erro ao enviar operação'));
     }
     return OperacaoAssistida.fromJson(
         jsonDecode(response.body) as Map<String, dynamic>);
