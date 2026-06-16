@@ -549,7 +549,7 @@ class _InstagramMonitorScreenState extends State<InstagramMonitorScreen> with Si
           onSubmitted: (_) => _onSearch(),
           style: const TextStyle(fontSize: 15),
           decoration: InputDecoration(
-            hintText: 'Digite o @ do Instagram',
+            hintText: '@usuario ou link do Instagram',
             hintStyle: TextStyle(color: Colors.grey[400]),
             prefixIcon: IconButton(
                 icon: const Icon(Icons.search, color: Color(0xFFE1306C)),
