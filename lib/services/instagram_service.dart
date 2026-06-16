@@ -239,7 +239,7 @@ class InstagramService {
 
   static String get _backendUrl {
     const env = String.fromEnvironment('BACKEND_URL', defaultValue: 'http://127.0.0.1:9001');
-    return '$env/boletobancos';
+    return env;
   }
 
   static const _mobileHeaders = {
@@ -439,24 +439,6 @@ class InstagramService {
         final data = json.decode(r.body);
         if (data.containsKey('events')) {
           return (data['events'] as List).map((e) => TimelineEvent.fromJson(e)).toList();
-        }
-      }
-    } catch (_) {}
-    return [];
-  }
-
-  static Future<List<TimelineEvent>> fetchCommentsTimeline(String username) async {
-    try {
-      final r = await http.get(Uri.parse('$_backendUrl/api/instagram/timeline/$username'))
-          .timeout(const Duration(seconds: 15));
-      if (r.statusCode == 200) {
-        final data = json.decode(r.body);
-        if (data.containsKey('events')) {
-          final all = (data['events'] as List)
-              .map((e) => TimelineEvent.fromJson(e))
-              .where((e) => e.type == 'comment')
-              .toList();
-          return all;
         }
       }
     } catch (_) {}

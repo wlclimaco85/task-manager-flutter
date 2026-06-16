@@ -60,14 +60,15 @@ class _InstagramMonitorScreenState extends State<InstagramMonitorScreen> with Si
     if (mounted) setState(() => _localApiStatus = InstagramService.hasLocalApi);
   }
 
-  /// Extrai username de qualquer formato: URL, @user, ou user puro
-  String _cleanUsername(String input) {
+  /// Extrai e valida username de URL, @user ou username puro. Retorna null se inválido.
+  String? _cleanUsername(String input) {
     var clean = input.trim();
     clean = clean.replaceAll(RegExp(r'https?://(www\.)?instagram\.com/'), '');
     clean = clean.replaceAll(RegExp(r'/+$'), '');
     clean = clean.replaceAll('@', '');
-    clean = clean.split('?').first;
-    return clean.trim();
+    clean = clean.split('?').first.trim();
+    if (clean.isEmpty || !RegExp(r'^[a-zA-Z0-9._]{1,30}$').hasMatch(clean)) return null;
+    return clean;
   }
 
   /// Verifica se o perfil buscado ja esta monitorado
@@ -186,9 +187,7 @@ class _InstagramMonitorScreenState extends State<InstagramMonitorScreen> with Si
     }
 
     // 2. Buscar timeline
-    final timelineEvents = await InstagramService.fetchTimeline(username);
-    final comments = await InstagramService.fetchCommentsTimeline(username);
-    final allEvents = [...timelineEvents, ...comments];
+    final allEvents = await InstagramService.fetchTimeline(username);
     allEvents.sort((a, b) {
       final da = a.dateTime ?? DateTime(2000);
       final db = b.dateTime ?? DateTime(2000);
@@ -229,7 +228,10 @@ class _InstagramMonitorScreenState extends State<InstagramMonitorScreen> with Si
   /// Acao de busca a partir do input: limpa username, mostra botoes, carrega dados
   Future<void> _onSearch() async {
     final username = _cleanUsername(_controller.text);
-    if (username.isEmpty) return;
+    if (username == null) {
+      setState(() => _error = 'Username invalido. Use @nome ou instagram.com/nome');
+      return;
+    }
 
     // Atualiza o chip selecionado
     setState(() {
@@ -592,9 +594,21 @@ class _InstagramMonitorScreenState extends State<InstagramMonitorScreen> with Si
           const SizedBox(height: 40),
           Icon(Icons.camera_alt_outlined, size: 60, color: Colors.grey[300]),
           const SizedBox(height: 16),
-          Text('Digite um @ para monitorar', style: TextStyle(fontSize: 16, color: Colors.grey[400])),
+          Text('Monitore um perfil do Instagram', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Colors.grey[500])),
           const SizedBox(height: 8),
-          Text('ou selecione um perfil monitorado acima', style: TextStyle(fontSize: 13, color: Colors.grey[400])),
+          Text('Cole um link ou @username no campo acima', style: TextStyle(fontSize: 13, color: Colors.grey[400])),
+          const SizedBox(height: 20),
+          ElevatedButton.icon(
+            onPressed: () => _focusNode.requestFocus(),
+            icon: const Icon(Icons.search, size: 18),
+            label: const Text('Buscar perfil'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFFE1306C),
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+            ),
+          ),
           if (!_localApiStatus) ...[
             const SizedBox(height: 24),
             Container(
@@ -1276,48 +1290,10 @@ class _InstagramMonitorScreenState extends State<InstagramMonitorScreen> with Si
                 ),
               ),
               Expanded(
-                child: FutureBuilder<List<InstagramLiker>>(
-                  future: type == 'followers'
-                      ? InstagramService.fetchFollowers(_profile!.username)
-                      : InstagramService.fetchFollowing(_profile!.username),
-                  builder: (context, snapshot) {
-                    if (snapshot.connectionState == ConnectionState.waiting) {
-                      return const Center(child: CircularProgressIndicator(color: Color(0xFFE1306C)));
-                    }
-                    if (snapshot.hasError || !snapshot.hasData || snapshot.data!.isEmpty) {
-                      return const Center(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(Icons.lock_outline, size: 40, color: Colors.grey),
-                            SizedBox(height: 12),
-                            Text('Servidor local indisponivel', style: TextStyle(color: Colors.grey)),
-                            Text('Inicie: python instagram_api/server.py', style: TextStyle(color: Colors.grey, fontSize: 12)),
-                          ],
-                        ),
-                      );
-                    }
-                    final list = snapshot.data!;
-                    return ListView.builder(
-                      controller: scrollController,
-                      itemCount: list.length,
-                      itemBuilder: (context, index) {
-                        final user = list[index];
-                        return ListTile(
-                          leading: CircleAvatar(
-                            backgroundColor: const Color(0xFFE1306C).withValues(alpha: 0.1),
-                            child: Text(user.username[0].toUpperCase(), style: const TextStyle(color: Color(0xFFE1306C), fontWeight: FontWeight.w700)),
-                          ),
-                          title: Text('@${user.username}', style: const TextStyle(fontWeight: FontWeight.w600)),
-                          subtitle: user.fullName.isNotEmpty ? Text(user.fullName, style: const TextStyle(fontSize: 12)) : null,
-                          trailing: IconButton(
-                            icon: const Icon(Icons.open_in_new, size: 18),
-                            onPressed: () {},
-                          ),
-                        );
-                      },
-                    );
-                  },
+                child: _ModalListaUsuarios(
+                  username: _profile!.username,
+                  tipo: type,
+                  scrollController: scrollController,
                 ),
               ),
             ],
@@ -1595,6 +1571,83 @@ class _InstagramMonitorScreenState extends State<InstagramMonitorScreen> with Si
           Text(dateStr, style: TextStyle(fontSize: 10, color: Colors.grey[500])),
         ],
       ),
+    );
+  }
+}
+
+/// Widget dedicado para o modal de seguidores/seguindo.
+/// Mantém o Future fixo no initState para evitar recriar requisições a cada rebuild do DraggableScrollableSheet.
+class _ModalListaUsuarios extends StatefulWidget {
+  final String username;
+  final String tipo;
+  final ScrollController scrollController;
+
+  const _ModalListaUsuarios({
+    required this.username,
+    required this.tipo,
+    required this.scrollController,
+  });
+
+  @override
+  State<_ModalListaUsuarios> createState() => _ModalListaUsuariosState();
+}
+
+class _ModalListaUsuariosState extends State<_ModalListaUsuarios> {
+  late final Future<List<InstagramLiker>> _futuroUsuarios;
+
+  @override
+  void initState() {
+    super.initState();
+    _futuroUsuarios = widget.tipo == 'followers'
+        ? InstagramService.fetchFollowers(widget.username)
+        : InstagramService.fetchFollowing(widget.username);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return FutureBuilder<List<InstagramLiker>>(
+      future: _futuroUsuarios,
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Center(child: CircularProgressIndicator(color: Color(0xFFE1306C)));
+        }
+        if (!snapshot.hasData || snapshot.data!.isEmpty) {
+          return const Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(Icons.lock_outline, size: 40, color: Colors.grey),
+                SizedBox(height: 12),
+                Text('Servidor local indisponivel', style: TextStyle(color: Colors.grey)),
+                Text('Inicie: python instagram_api/server.py',
+                    style: TextStyle(color: Colors.grey, fontSize: 12)),
+              ],
+            ),
+          );
+        }
+        return ListView.builder(
+          controller: widget.scrollController,
+          itemCount: snapshot.data!.length,
+          itemBuilder: (context, index) {
+            final user = snapshot.data![index];
+            return ListTile(
+              leading: CircleAvatar(
+                backgroundColor: const Color(0xFFE1306C).withValues(alpha: 0.1),
+                child: Text(user.username[0].toUpperCase(),
+                    style: const TextStyle(color: Color(0xFFE1306C), fontWeight: FontWeight.w700)),
+              ),
+              title: Text('@${user.username}', style: const TextStyle(fontWeight: FontWeight.w600)),
+              subtitle: user.fullName.isNotEmpty
+                  ? Text(user.fullName, style: const TextStyle(fontSize: 12))
+                  : null,
+              trailing: IconButton(
+                icon: const Icon(Icons.open_in_new, size: 18),
+                onPressed: () {},
+              ),
+            );
+          },
+        );
+      },
     );
   }
 }
