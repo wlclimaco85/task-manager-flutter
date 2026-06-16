@@ -1169,8 +1169,8 @@ call "%IG_DIR%\venv\Scripts\activate.bat"
 pip install -q -r "%IG_DIR%\requirements.txt"
 
 echo Iniciando Instagram API na porta 8500...
-set "IG_USERNAME=pablopersonalp"
-set "IG_PASSWORD=123Mudar$"
+set "IG_USERNAME=washingtonkirokiro"
+set "IG_PASSWORD=123Mudar$$$"
 echo.
 start "Instagram-API" cmd /k "title Instagram API - Porta 8500 && cd /d %IG_DIR% && call venv\Scripts\activate.bat && python server.py"
 echo Instagram API iniciado em http://localhost:8500
