@@ -212,7 +212,8 @@ class _DynamicGridDynamicScreenState extends State<DynamicGridDynamicScreen> {
             label: 'Tipo',
             fieldName: 'tipoAlvara',
             fieldType: TelaFieldType.dropdown,
-            dropdownEndpoint: '/boletobancos/rest/dicionario/listar?tipo=TIPO_ALVARA',
+            dropdownEndpoint:
+                '/boletobancos/rest/dicionario/listar?tipo=TIPO_ALVARA',
             dropdownValueField: 'valor',
             dropdownDisplayField: 'descricao',
             fieldOrder: 3,
@@ -228,7 +229,8 @@ class _DynamicGridDynamicScreenState extends State<DynamicGridDynamicScreen> {
             label: 'Status',
             fieldName: 'status',
             fieldType: TelaFieldType.dropdown,
-            dropdownEndpoint: '/boletobancos/rest/dicionario/listar?tipo=STATUS_ALVARA',
+            dropdownEndpoint:
+                '/boletobancos/rest/dicionario/listar?tipo=STATUS_ALVARA',
             dropdownValueField: 'valor',
             dropdownDisplayField: 'descricao',
             defaultValue: 'Pendente',
@@ -698,8 +700,9 @@ class _DynamicGridDynamicScreenState extends State<DynamicGridDynamicScreen> {
     if (name == 'cpf' || name.endsWith('_cpf')) return FieldType.cpf;
     if (name == 'cnpj' || name.endsWith('_cnpj')) return FieldType.cnpj;
     if (name == 'cpfcnpj' || name == 'cpf_cnpj' || name == 'documento') {
-      return FieldType.cpf;
+      return FieldType.cpfCnpj;
     }
+    if (name == 'cep' || name.endsWith('_cep')) return FieldType.cep;
     if (name == 'telefone' || name == 'celular' || name.endsWith('_telefone')) {
       return FieldType.phone;
     }
@@ -850,8 +853,8 @@ class _DynamicGridDynamicScreenState extends State<DynamicGridDynamicScreen> {
               showAppBar: widget.showAppBar,
               // No mobile, sempre usa UserBannerAppBar para mostrar notificações e logout.
               // Na web/windows, respeita a config da tela (tela.useUserBannerAppBar).
-              useUserBannerAppBar: widget.showAppBar &&
-                  (tela.useUserBannerAppBar || !kIsWeb),
+              useUserBannerAppBar:
+                  widget.showAppBar && (tela.useUserBannerAppBar || !kIsWeb),
               onUserBannerTapped: widget.onUserBannerTapped,
               onBannerRefresh: widget.onBannerRefresh,
               additionalFormData: widget.additionalFormData,

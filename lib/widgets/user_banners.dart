@@ -7,6 +7,7 @@ import '../../../models/alert_model.dart';
 import '../../../models/auth_utility.dart';
 import '../../services/alert_caller.dart';
 import '../../../auth_screens/login_screen.dart';
+import 'package:task_manager_flutter/mobile/screens/meu_perfil_screen.dart';
 import 'meu_perfil_dialog.dart';
 import '../../../utils/grid_colors.dart'; // ★ adicionado para aplicar o tema
 
@@ -85,7 +86,8 @@ class _UserBannerAppBarState extends State<UserBannerAppBar> {
 
     final sucesso = await AlertCaller().marcarNotificacaoLida(notificacao);
     if (!sucesso) {
-      _mostrarErroNotificacao('Não foi possível marcar a notificação como lida.');
+      _mostrarErroNotificacao(
+          'Não foi possível marcar a notificação como lida.');
       return;
     }
     setState(() {
@@ -126,7 +128,8 @@ class _UserBannerAppBarState extends State<UserBannerAppBar> {
   Future<void> deleteAllNotifications() async {
     final sucesso = await AlertCaller().marcarTodasNotificacoesLidas();
     if (!sucesso) {
-      _mostrarErroNotificacao('Não foi possível marcar todas as notificações como lidas.');
+      _mostrarErroNotificacao(
+          'Não foi possível marcar todas as notificações como lidas.');
       return;
     }
     setState(() {
@@ -351,6 +354,22 @@ class _UserBannerAppBarState extends State<UserBannerAppBar> {
                     // CORREÇÃO: GestureDetector apenas no CircleAvatar
                     GestureDetector(
                       onTap: () {
+                        if (widget.onUserTap != null) {
+                          widget.onUserTap!();
+                          return;
+                        }
+                        if (MediaQuery.of(context).size.width < 700) {
+                          Navigator.of(context)
+                              .push(
+                            MaterialPageRoute(
+                              builder: (_) => const MeuPerfilScreen(),
+                            ),
+                          )
+                              .then((_) {
+                            if (mounted) setState(() {});
+                          });
+                          return;
+                        }
                         showDialog(
                           context: context,
                           builder: (_) => const MeuPerfilDialog(),
@@ -557,9 +576,7 @@ class _NotificationPanel extends StatelessWidget {
             if (notifications.isNotEmpty) _buildAcoes(),
             const Divider(height: 1, thickness: 1, color: GridColors.divider),
             Flexible(
-              child: notifications.isNotEmpty
-                  ? _buildLista()
-                  : _buildVazio(),
+              child: notifications.isNotEmpty ? _buildLista() : _buildVazio(),
             ),
           ],
         ),
@@ -612,8 +629,7 @@ class _NotificationPanel extends StatelessWidget {
             borderRadius: BorderRadius.circular(20),
             child: const Padding(
               padding: EdgeInsets.all(6),
-              child: Icon(Icons.close,
-                  color: GridColors.textPrimary, size: 18),
+              child: Icon(Icons.close, color: GridColors.textPrimary, size: 18),
             ),
           ),
         ],
@@ -629,7 +645,8 @@ class _NotificationPanel extends StatelessWidget {
         children: [
           TextButton.icon(
             onPressed: onMarcarTodas,
-            icon: const Icon(Icons.done_all, size: 16, color: GridColors.success),
+            icon:
+                const Icon(Icons.done_all, size: 16, color: GridColors.success),
             label: const Text(
               'Marcar todas como lidas',
               style: TextStyle(
@@ -742,9 +759,8 @@ class _NotificationPanel extends StatelessWidget {
                         style: TextStyle(
                           fontSize: 13,
                           color: GridColors.textSecondary,
-                          fontWeight: isNaoLido
-                              ? FontWeight.w600
-                              : FontWeight.normal,
+                          fontWeight:
+                              isNaoLido ? FontWeight.w600 : FontWeight.normal,
                           height: 1.4,
                         ),
                       ),
@@ -906,8 +922,8 @@ class _AppBarActionsState extends State<AppBarActions> {
       return _NotificationTipoMeta(
           Icons.payments_outlined, GridColors.error, 'A Pagar');
     if (s.contains('RECEBER'))
-      return _NotificationTipoMeta(
-          Icons.account_balance_wallet_outlined, GridColors.success, 'A Receber');
+      return _NotificationTipoMeta(Icons.account_balance_wallet_outlined,
+          GridColors.success, 'A Receber');
     if (s.contains('AVISO') || s.contains('COMUNICADO'))
       return _NotificationTipoMeta(
           Icons.campaign_outlined, GridColors.primaryLight, 'Aviso');
@@ -996,8 +1012,7 @@ class _AppBarActionsState extends State<AppBarActions> {
         ),
         IconButton(
           iconSize: 22,
-          icon:
-              const Icon(Icons.logout, color: GridColors.textPrimary),
+          icon: const Icon(Icons.logout, color: GridColors.textPrimary),
           onPressed: () => _logout(context),
           tooltip: 'Sair',
         ),

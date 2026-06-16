@@ -10,8 +10,13 @@ import '../screens/desfazer_baixa_dialog.dart';
 
 class ContaReceberGridScreen extends StatelessWidget {
   final SecurityCheck hasPermission;
+  final VoidCallback? onUserBannerTapped;
 
-  const ContaReceberGridScreen({super.key, required this.hasPermission});
+  const ContaReceberGridScreen({
+    super.key,
+    required this.hasPermission,
+    this.onUserBannerTapped,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -71,6 +76,7 @@ class ContaReceberGridScreen extends StatelessWidget {
         ),
       ],
       useUserBannerAppBar: true,
+      onUserBannerTapped: onUserBannerTapped,
       paginationConfig: const PaginationConfig(
         defaultRowsPerPage: 10,
         availableRowsPerPage: [10, 25, 50],

@@ -14,6 +14,7 @@ import '../../utils/api_links.dart';
 import '../../utils/grid_colors.dart';
 import '../../utils/tenant_context.dart';
 import '../../utils/utils.dart';
+import '../../widgets/user_banners.dart';
 import '../screens/chats_daily_chart.dart';
 import '../screens/dashboard_alerts_screen.dart';
 import '../screens/dashboard_client_distribution_screen.dart';
@@ -26,7 +27,9 @@ import '../screens/dashboard_quarterly_screen.dart';
 import '../screens/dashboard_tickets_trend_screen.dart';
 
 class DashboardPage extends StatefulWidget {
-  const DashboardPage({super.key});
+  final VoidCallback? onUserBannerTapped;
+
+  const DashboardPage({super.key, this.onUserBannerTapped});
 
   @override
   State<DashboardPage> createState() => _DashboardPageState();
@@ -149,7 +152,11 @@ class _DashboardPageState extends State<DashboardPage> {
 
     if (error != null) {
       return Scaffold(
-        appBar: AppBar(title: const Text('Dashboard')),
+        appBar: UserBannerAppBar(
+          screenTitle: 'Dashboard',
+          showFilterButton: false,
+          onUserTap: widget.onUserBannerTapped,
+        ),
         body: Center(
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -171,10 +178,10 @@ class _DashboardPageState extends State<DashboardPage> {
     }
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Dashboard'),
-        backgroundColor: GridColors.primary,
-        foregroundColor: GridColors.textPrimary,
+      appBar: UserBannerAppBar(
+        screenTitle: 'Dashboard',
+        showFilterButton: false,
+        onUserTap: widget.onUserBannerTapped,
       ),
       body: RefreshIndicator(
         onRefresh: _load,

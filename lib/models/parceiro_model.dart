@@ -12,7 +12,8 @@ import '../../services/network_caller.dart';
 import '../../../models/regime_tributario_model.dart';
 
 // FieldConfig do MOBILE (GenericMobileGridScreen / GenericGridCard)
-import '../../../customization/generic_grid_card.dart' show FieldConfig;
+import '../../../customization/generic_grid_card.dart' as mobile_grid
+    show FieldConfig, FieldType;
 
 class Endereco {
   int? id;
@@ -286,6 +287,15 @@ class Parceiro {
       fieldType: FieldType.text,
     ),
     const FieldConfigWindows(
+      label: "Estado",
+      fieldName: "estado",
+      icon: Icons.map_outlined,
+      isInForm: true,
+      isVisibleByDefault: false,
+      isFixed: false,
+      fieldType: FieldType.text,
+    ),
+    const FieldConfigWindows(
       label: "País",
       fieldName: "pais",
       icon: Icons.public,
@@ -390,9 +400,9 @@ class Parceiro {
   // ==========================================================
   // CONVERTE FieldConfigWindows → FieldConfig (para MOBILE)
   // ==========================================================
-  static List<FieldConfig> fieldConfigsMobile() {
+  static List<mobile_grid.FieldConfig> fieldConfigsMobile() {
     return fieldConfigsWindows().map((fw) {
-      return FieldConfig(
+      return mobile_grid.FieldConfig(
         label: fw.label,
         fieldName: fw.fieldName,
         icon: fw.icon,
@@ -400,13 +410,54 @@ class Parceiro {
         isFilterable: true,
         isVisibleByDefault: fw.isVisibleByDefault,
         isFixed: fw.isFixed,
-        // fieldType: fw.fieldType,
+        fieldType: _mobileFieldType(fw.fieldType),
         dropdownOptions: fw.dropdownOptions,
         dropdownFutureBuilder: fw.dropdownFutureBuilder,
         dropdownValueField: fw.dropdownValueField,
         dropdownDisplayField: fw.dropdownDisplayField,
       );
     }).toList();
+  }
+
+  static mobile_grid.FieldType _mobileFieldType(FieldType type) {
+    switch (type) {
+      case FieldType.number:
+        return mobile_grid.FieldType.number;
+      case FieldType.email:
+        return mobile_grid.FieldType.email;
+      case FieldType.date:
+        return mobile_grid.FieldType.date;
+      case FieldType.multiline:
+        return mobile_grid.FieldType.multiline;
+      case FieldType.dropdown:
+        return mobile_grid.FieldType.dropdown;
+      case FieldType.boolean:
+        return mobile_grid.FieldType.boolean;
+      case FieldType.file:
+        return mobile_grid.FieldType.file;
+      case FieldType.password:
+        return mobile_grid.FieldType.password;
+      case FieldType.phone:
+        return mobile_grid.FieldType.phone;
+      case FieldType.cpf:
+        return mobile_grid.FieldType.cpf;
+      case FieldType.cnpj:
+        return mobile_grid.FieldType.cnpj;
+      case FieldType.cpfCnpj:
+        return mobile_grid.FieldType.cpfCnpj;
+      case FieldType.cep:
+        return mobile_grid.FieldType.cep;
+      case FieldType.currency:
+        return mobile_grid.FieldType.currency;
+      case FieldType.percentage:
+        return mobile_grid.FieldType.percentage;
+      case FieldType.url:
+        return mobile_grid.FieldType.url;
+      case FieldType.multiselect:
+        return mobile_grid.FieldType.multiselect;
+      case FieldType.text:
+        return mobile_grid.FieldType.text;
+    }
   }
 }
 

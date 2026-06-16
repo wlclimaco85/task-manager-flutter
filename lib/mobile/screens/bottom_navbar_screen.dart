@@ -25,7 +25,6 @@ import '../../utils/tenant_context.dart';
 import '../../web/screens/nfce/pdv_screen.dart';
 import '../../web/screens/nfce/config_fiscal_screen.dart';
 import 'documento_screen.dart';
-import 'file_upload_screen.dart';
 import 'meu_perfil_screen.dart';
 import '../../web/screens/ged_arquivos_screen.dart';
 import 'ponto_screen.dart';
@@ -182,11 +181,13 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
         AuthUtility.userInfo?.login?.email != null
             ? ChatListScreen(userName: AuthUtility.userInfo?.login?.email ?? '')
             : const ChatListScreen(userName: 'Usuario'),
-      if (sec.canView(AppScreen.comunicados))
-        _comunicadoGridInline(sec: sec),
-      if (sec.canView(AppScreen.chamados))
-        _chamadoGridInline(sec: sec),
-      if (sec.canView(AppScreen.ged)) const GedArquivosScreen(),
+      if (sec.canView(AppScreen.comunicados)) _comunicadoGridInline(sec: sec),
+      if (sec.canView(AppScreen.chamados)) _chamadoGridInline(sec: sec),
+      if (sec.canView(AppScreen.ged))
+        GedArquivosScreen(
+          useUserBannerHeader: true,
+          onUserBannerTapped: _openProfile,
+        ),
       Container(), // slot do botao "Mais"
     ];
   }
@@ -202,6 +203,7 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
       hasPermission: (action) => _hasPermissionFor(sec, screen, action),
       storageKey: 'mobile_dynamic_$telaNome',
       showAppBar: false,
+      onUserBannerTapped: _openProfile,
     );
   }
 
@@ -210,7 +212,11 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
   /// (server actions, detailScreenBuilder). Os customActions nao sao afetados.
   Widget _comunicadoGridInline({required SecurityMatrix sec}) {
     return Scaffold(
-      appBar: const SimpleAppBar(title: 'Comunicados', icon: Icons.campaign),
+      appBar: UserBannerAppBar(
+        screenTitle: 'Comunicados',
+        showFilterButton: false,
+        onUserTap: _openProfile,
+      ),
       body: DynamicGridDynamicScreen(
         key: const ValueKey('mobile_dynamic_inline_comunicado'),
         telaNome: 'comunicado',
@@ -242,62 +248,74 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
   /// e detailScreenBuilder. Os customActions nao sao afetados pelo hasPermission.
   Widget _chamadoGridInline({required SecurityMatrix sec}) {
     return Scaffold(
-      appBar: const SimpleAppBar(title: 'Solicitacoes', icon: Icons.support_agent),
+      appBar: UserBannerAppBar(
+        screenTitle: 'Solicitacoes',
+        showFilterButton: false,
+        onUserTap: _openProfile,
+      ),
       body: DynamicGridDynamicScreen(
-      key: const ValueKey('mobile_dynamic_inline_chamado'),
-      telaNome: 'chamado',
-      hasPermission: (action) {
-        final lower = action.toLowerCase();
-        // Permite criar chamados no mobile
-        if (lower == 'insert' || lower == 'create') {
-          return _hasPermissionFor(sec, AppScreen.chamados, action);
-        }
-        // Bloqueia todos os outros botoes automaticos — acoes via customActions
-        return false;
-      },
-      storageKey: 'mobile_dynamic_chamado',
-      showAppBar: false,
-      customActions: () => [
-        CustomAction(
-          icon: Icons.open_in_new_outlined,
-          label: 'Visualizar chamado',
-          onPressed: (ctx, item) => _mostrarDetalheChamado(ctx, item),
-          isVisible: (_) => true,
-        ),
-        CustomAction(
-          icon: Icons.task_alt_outlined,
-          label: 'Fechar chamado',
-          onPressed: (ctx, item) {
-            final id = item['id'];
-            if (id == null) return;
-            final chamadoId = id is int ? id : int.tryParse(id.toString()) ?? 0;
-            if (chamadoId == 0) return;
-            showDialog(
-              context: ctx,
-              builder: (_) => FecharChamadoDialog(chamadoId: chamadoId),
-            );
-          },
-          isVisible: (item) {
-            final status = (item['status'] ?? '').toString().toLowerCase();
-            return status != 'fechado' && status != 'cancelado' && status != '3' && status != '4';
-          },
-        ),
-        CustomAction(
-          icon: Icons.replay_outlined,
-          label: 'Reabrir chamado',
-          onPressed: (ctx, item) => _mostrarReabrirChamadoDialog(ctx, item),
-          isVisible: (item) {
-            final status = (item['status'] ?? '').toString().toLowerCase();
-            return status == 'fechado' || status == 'cancelado' || status == '3' || status == '4';
-          },
-        ),
-      ],
+        key: const ValueKey('mobile_dynamic_inline_chamado'),
+        telaNome: 'chamado',
+        hasPermission: (action) {
+          final lower = action.toLowerCase();
+          // Permite criar chamados no mobile
+          if (lower == 'insert' || lower == 'create') {
+            return _hasPermissionFor(sec, AppScreen.chamados, action);
+          }
+          // Bloqueia todos os outros botoes automaticos — acoes via customActions
+          return false;
+        },
+        storageKey: 'mobile_dynamic_chamado',
+        showAppBar: false,
+        customActions: () => [
+          CustomAction(
+            icon: Icons.open_in_new_outlined,
+            label: 'Visualizar chamado',
+            onPressed: (ctx, item) => _mostrarDetalheChamado(ctx, item),
+            isVisible: (_) => true,
+          ),
+          CustomAction(
+            icon: Icons.task_alt_outlined,
+            label: 'Fechar chamado',
+            onPressed: (ctx, item) {
+              final id = item['id'];
+              if (id == null) return;
+              final chamadoId =
+                  id is int ? id : int.tryParse(id.toString()) ?? 0;
+              if (chamadoId == 0) return;
+              showDialog(
+                context: ctx,
+                builder: (_) => FecharChamadoDialog(chamadoId: chamadoId),
+              );
+            },
+            isVisible: (item) {
+              final status = (item['status'] ?? '').toString().toLowerCase();
+              return status != 'fechado' &&
+                  status != 'cancelado' &&
+                  status != '3' &&
+                  status != '4';
+            },
+          ),
+          CustomAction(
+            icon: Icons.replay_outlined,
+            label: 'Reabrir chamado',
+            onPressed: (ctx, item) => _mostrarReabrirChamadoDialog(ctx, item),
+            isVisible: (item) {
+              final status = (item['status'] ?? '').toString().toLowerCase();
+              return status == 'fechado' ||
+                  status == 'cancelado' ||
+                  status == '3' ||
+                  status == '4';
+            },
+          ),
+        ],
       ),
     );
   }
 
   /// Exibe um dialog para digitar o motivo e reabrir o chamado.
-  void _mostrarReabrirChamadoDialog(BuildContext context, Map<String, dynamic> item) {
+  void _mostrarReabrirChamadoDialog(
+      BuildContext context, Map<String, dynamic> item) {
     final id = item['id'];
     if (id == null) return;
     final chamadoId = id is int ? id : int.tryParse(id.toString()) ?? 0;
@@ -321,11 +339,13 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
             child: const Text('Cancelar'),
           ),
           ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: GridColors.primary),
+            style:
+                ElevatedButton.styleFrom(backgroundColor: GridColors.primary),
             onPressed: () async {
               Navigator.pop(ctx);
               try {
-                final url = '${ApiLinks.baseUrl}/api/chamados/$chamadoId/reabrir';
+                final url =
+                    '${ApiLinks.baseUrl}/api/chamados/$chamadoId/reabrir';
                 await TenantContext.post(url, {'motivo': motivoCtrl.text});
                 if (mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(
@@ -395,7 +415,8 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
             _detalheRow('Status', item['status']),
             _detalheRow('Prioridade', item['prioridade']),
             _detalheRow('Setor', item['setor']?['nome'] ?? item['setor']),
-            _detalheRow('Abertura', item['dhCreatedAt'] ?? item['dataAbertura']),
+            _detalheRow(
+                'Abertura', item['dhCreatedAt'] ?? item['dataAbertura']),
             if ((item['motivoFechamento'] ?? '').toString().isNotEmpty)
               _detalheRow('Motivo fechamento', item['motivoFechamento']),
           ],
@@ -540,9 +561,18 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
           createEndpointOverride: createEndpointOverride,
           updateEndpointOverride: updateEndpointOverride,
           deleteEndpointOverride: deleteEndpointOverride,
+          onUserBannerTapped: _openProfile,
         ),
       ),
     );
+  }
+
+  Future<void> _openProfile() async {
+    await Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => const MeuPerfilScreen()),
+    );
+    if (mounted) setState(() {});
   }
 
   void onMenuOptionSelected(String option, SecurityMatrix sec) {
@@ -557,6 +587,7 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
             builder: (_) => ContaPagarGridScreen(
               hasPermission: (action) =>
                   _hasPermissionFor(sec, AppScreen.contasPagar, action),
+              onUserBannerTapped: _openProfile,
             ),
           ),
         );
@@ -568,6 +599,7 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
             builder: (_) => ContaReceberGridScreen(
               hasPermission: (action) =>
                   _hasPermissionFor(sec, AppScreen.contasReceber, action),
+              onUserBannerTapped: _openProfile,
             ),
           ),
         );
@@ -579,6 +611,7 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
             builder: (_) => ParceiroGridScreen(
               hasPermission: (action) =>
                   _hasPermissionFor(sec, AppScreen.parceiros, action),
+              onUserBannerTapped: _openProfile,
             ),
           ),
         );
@@ -593,7 +626,9 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
       case "Dashboard":
         nav = Navigator.push(
           context,
-          MaterialPageRoute(builder: (_) => const DashboardPage()),
+          MaterialPageRoute(
+            builder: (_) => DashboardPage(onUserBannerTapped: _openProfile),
+          ),
         );
         break;
       case "Trading":
@@ -644,6 +679,7 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
             builder: (_) => ContaBancariaGridScreen(
               hasPermission: (action) =>
                   _hasPermissionFor(sec, AppScreen.contasBancarias, action),
+              onUserBannerTapped: _openProfile,
             ),
           ),
         );
@@ -679,12 +715,6 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
           MaterialPageRoute(
             builder: (_) => const ExtratoImportacaoScreen(),
           ),
-        );
-        break;
-      case "Meu Perfil":
-        nav = Navigator.push(
-          context,
-          MaterialPageRoute(builder: (_) => const MeuPerfilScreen()),
         );
         break;
       case "Voltar":
@@ -815,7 +845,6 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
       const _MoreMenuAction(Icons.verified_user, "Alvarás"),
       if (sec.canView(AppScreen.contasBancarias))
         const _MoreMenuAction(Icons.upload_file, "Importar Extratos"),
-      const _MoreMenuAction(Icons.account_circle, "Meu Perfil"),
       const _MoreMenuAction(Icons.exit_to_app, "Sair", isDestructive: true),
     ];
 

@@ -1,6 +1,9 @@
+import 'dart:convert';
+
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../utils/grid_colors.dart';
@@ -30,6 +33,8 @@ enum FieldType {
   phone,
   cpf,
   cnpj,
+  cpfCnpj,
+  cep,
   currency,
   percentage,
   url,
@@ -175,6 +180,7 @@ class GenericMobileGridScreen<T> extends StatefulWidget {
   final Map<String, dynamic>? extraParams;
   final bool enableDebugMode;
   final bool useUserBannerAppBar;
+
   /// Quando false, nenhum AppBar e renderizado — util quando a tela e encapsulada
   /// em um Scaffold externo que ja tem seu proprio AppBar (ex: UserBannerAppBar).
   final bool showAppBar;
@@ -564,8 +570,8 @@ class _GenericMobileGridScreenState<T>
                 child: Column(
                   children: widget.fieldConfigs
                       .where((config) => config.isInForm)
-                      .map((config) => _buildFormField(
-                          config, formControllers[config.fieldName]!))
+                      .map((config) => _buildFormField(config,
+                          formControllers[config.fieldName]!, formControllers))
                       .toList(),
                 ),
               ),
@@ -618,7 +624,11 @@ class _GenericMobileGridScreenState<T>
     );
   }
 
-  Widget _buildFormField(FieldConfig config, TextEditingController controller) {
+  Widget _buildFormField(
+    FieldConfig config,
+    TextEditingController controller,
+    Map<String, TextEditingController> allControllers,
+  ) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 16),
       child: Column(
@@ -642,6 +652,8 @@ class _GenericMobileGridScreenState<T>
             _buildDateField(config, controller)
           else if (config.fieldType == FieldType.file) // NOVO: Campo de arquivo
             _buildFileField(config, controller)
+          else if (config.fieldType == FieldType.cep)
+            _buildCepField(config, controller, allControllers)
           else
             _buildTextField(config, controller),
         ],
@@ -931,6 +943,79 @@ class _GenericMobileGridScreenState<T>
       keyboardType: _getKeyboardType(config.fieldType),
       maxLines: config.maxLines,
     );
+  }
+
+  Widget _buildCepField(
+    FieldConfig config,
+    TextEditingController controller,
+    Map<String, TextEditingController> allControllers,
+  ) {
+    var lastCepBuscado = '';
+
+    return Focus(
+      onFocusChange: (hasFocus) {
+        if (hasFocus) return;
+        final cep = controller.text.replaceAll(RegExp(r'\D'), '');
+        if (cep.length == 8 && cep != lastCepBuscado) {
+          lastCepBuscado = cep;
+          _buscarCepEPreencher(cep, allControllers);
+        }
+      },
+      child: TextField(
+        controller: controller,
+        enabled: config.enabled,
+        decoration: InputDecoration(
+          hintText: '00000-000',
+          suffixIcon: const Icon(Icons.search),
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(8),
+            borderSide:
+                BorderSide(color: Theme.of(context).colorScheme.outline),
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(8),
+            borderSide: BorderSide(
+                color: Theme.of(context).colorScheme.primary, width: 2),
+          ),
+        ),
+        keyboardType: TextInputType.number,
+        inputFormatters: [
+          FilteringTextInputFormatter.digitsOnly,
+          LengthLimitingTextInputFormatter(8),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _buscarCepEPreencher(
+    String cep,
+    Map<String, TextEditingController> allControllers,
+  ) async {
+    try {
+      final resp =
+          await http.get(Uri.parse('https://viacep.com.br/ws/$cep/json/'));
+      if (resp.statusCode != 200) return;
+
+      final data = jsonDecode(resp.body) as Map<String, dynamic>;
+      if (data['erro'] == true) return;
+
+      void setField(String field, String? value) {
+        final text = value?.trim() ?? '';
+        if (text.isNotEmpty && allControllers.containsKey(field)) {
+          allControllers[field]!.text = text;
+        }
+      }
+
+      setState(() {
+        setField('rua', data['logradouro']?.toString());
+        setField('bairro', data['bairro']?.toString());
+        setField('cidade', data['localidade']?.toString());
+        setField('estado', data['uf']?.toString());
+        setField('pais', 'Brasil');
+      });
+    } catch (_) {
+      // Mantem o preenchimento manual quando a consulta de CEP falhar.
+    }
   }
 
   Widget _buildMultilineField(
@@ -1778,8 +1863,10 @@ class _GenericMobileGridScreenState<T>
                           items: snapshot.data ?? [],
                           valueField: config.dropdownValueField,
                           displayField: config.dropdownDisplayField,
-                          value: _filterControllers[config.fieldName]?.text
-                              .isNotEmpty == true
+                          value: _filterControllers[config.fieldName]
+                                      ?.text
+                                      .isNotEmpty ==
+                                  true
                               ? _filterControllers[config.fieldName]!.text
                               : null,
                           onChanged: (v) {
@@ -1803,8 +1890,10 @@ class _GenericMobileGridScreenState<T>
                       items: config.dropdownOptions!,
                       valueField: config.dropdownValueField,
                       displayField: config.dropdownDisplayField,
-                      value: _filterControllers[config.fieldName]?.text
-                          .isNotEmpty == true
+                      value: _filterControllers[config.fieldName]
+                                  ?.text
+                                  .isNotEmpty ==
+                              true
                           ? _filterControllers[config.fieldName]!.text
                           : null,
                       onChanged: (v) {
@@ -1822,11 +1911,9 @@ class _GenericMobileGridScreenState<T>
                     controller: _filterControllers[config.fieldName],
                     decoration: InputDecoration(
                       labelText: config.label,
-                      hintText:
-                          'Filtrar por ${config.label.toLowerCase()}...',
-                      prefixIcon: Icon(
-                          config.icon ?? Icons.filter_list_alt,
-                          size: 20),
+                      hintText: 'Filtrar por ${config.label.toLowerCase()}...',
+                      prefixIcon:
+                          Icon(config.icon ?? Icons.filter_list_alt, size: 20),
                       suffixIcon: _filterControllers[config.fieldName]
                                   ?.text
                                   .isNotEmpty ==
@@ -2056,6 +2143,7 @@ class _GenericMobileGridScreenState<T>
       resolvedAppBar = UserBannerAppBar(
         screenTitle: widget.title,
         onTapped: widget.onUserBannerTapped,
+        onUserTap: widget.onUserBannerTapped,
         onRefresh: widget.onBannerRefresh ?? () => _loadItems(reset: true),
         isLoading: isLoading,
         onFilterToggle: () => setState(() => filtrosAbertos = !filtrosAbertos),
@@ -2170,9 +2258,7 @@ class _GenericMobileGridScreenState<T>
             : GridColors.card,
         borderRadius: BorderRadius.circular(10),
         border: Border.all(
-          color: isSelected
-              ? GridColors.primary
-              : GridColors.divider,
+          color: isSelected ? GridColors.primary : GridColors.divider,
           width: isSelected ? 1.5 : 1,
         ),
         boxShadow: [
@@ -2198,7 +2284,10 @@ class _GenericMobileGridScreenState<T>
                     end: Alignment.bottomCenter,
                     colors: isSelected
                         ? [GridColors.primary, GridColors.secondary]
-                        : [GridColors.primary, GridColors.primary.withValues(alpha: 0.5)],
+                        : [
+                            GridColors.primary,
+                            GridColors.primary.withValues(alpha: 0.5)
+                          ],
                   ),
                 ),
               ),
@@ -2230,8 +2319,8 @@ class _GenericMobileGridScreenState<T>
                                   height: 20,
                                   child: Checkbox(
                                     value: isSelected,
-                                    onChanged: (value) =>
-                                        _toggleCardSelection(id, value ?? false),
+                                    onChanged: (value) => _toggleCardSelection(
+                                        id, value ?? false),
                                     fillColor: WidgetStateProperty.all(
                                         GridColors.primary),
                                     materialTapTargetSize:
@@ -2342,9 +2431,11 @@ class _GenericMobileGridScreenState<T>
   bool _hasVisibleValue(FieldConfig config, Map<String, dynamic> itemMap) {
     if (config.fieldType == FieldType.file) {
       final fileData = _extractFileData(itemMap, config);
-      return (fileData['id'] ?? 0) != 0 && (fileData['nome'] ?? fileData['fileName'] ?? '').isNotEmpty;
+      return (fileData['id'] ?? 0) != 0 &&
+          (fileData['nome'] ?? fileData['fileName'] ?? '').isNotEmpty;
     }
-    final rawValue = _getNestedValue(itemMap, config.displayFieldName ?? config.fieldName);
+    final rawValue =
+        _getNestedValue(itemMap, config.displayFieldName ?? config.fieldName);
     return rawValue != null && rawValue.toString().isNotEmpty;
   }
 
@@ -2580,7 +2671,8 @@ class _GenericMobileGridScreenState<T>
       case 'aberto':
       case 'aberta':
         badgeColor = GridColors.success;
-        badgeText = status == 'aberto' || status == 'aberta' ? 'Aberto' : 'Ativo';
+        badgeText =
+            status == 'aberto' || status == 'aberta' ? 'Aberto' : 'Ativo';
         badgeIcon = Icons.check_circle_outline;
         break;
       // Pago / Baixado
@@ -2589,7 +2681,8 @@ class _GenericMobileGridScreenState<T>
       case 'baixada':
       case '1':
         badgeColor = GridColors.success;
-        badgeText = status == 'baixado' || status == 'baixada' ? 'Baixada' : 'Pago';
+        badgeText =
+            status == 'baixado' || status == 'baixada' ? 'Baixada' : 'Pago';
         badgeIcon = Icons.check_circle_outline;
         break;
       // Inativo / Fechado
@@ -2666,9 +2759,8 @@ class _GenericMobileGridScreenState<T>
   }
 
   Widget _buildCardActions(T item, Map<String, dynamic> itemMap) {
-    Widget actionBtn(
-        IconData icon, Color iconColor, Color bgColor, VoidCallback onPressed,
-        String tooltip) {
+    Widget actionBtn(IconData icon, Color iconColor, Color bgColor,
+        VoidCallback onPressed, String tooltip) {
       return Tooltip(
         message: tooltip,
         child: InkWell(

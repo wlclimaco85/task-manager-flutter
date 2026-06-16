@@ -2,7 +2,7 @@ class ApiLinks {
   ApiLinks._();
 
   // URL do backend
-  // Dev local: flutter run (usa default IP local 192.168.100.113)
+  // Dev local: flutter run (usa default http://127.0.0.1:9001)
   // Producao Railway: flutter run --dart-define=BACKEND_URL=https://appacademia-production-be7e.up.railway.app
   static const String _backendUrl = String.fromEnvironment(
     'BACKEND_URL',
@@ -11,16 +11,17 @@ class ApiLinks {
 
   static const String _baseIp = _backendUrl;
 
-  // WebSocket: converte httpâ†’ws e httpsâ†’wss
+  // WebSocket: converte http→ws e https→wss
   static String get _wsUrl => _backendUrl
       .replaceFirst('https://', 'wss://')
       .replaceFirst('http://', 'ws://');
 
-  static String get _chatId => '$_wsUrl/boletobancos';
+  // _chatId usado apenas por chatStart (WebSocket) — derivada do host do backend.
+  // Mantida como String get por causa do _wsUrl ser get; cacheada em static final
+  // para evitar recriar a string a cada chamada de chatStart().
+  static final String _chatId = '$_wsUrl/boletobancos';
   static const String _baseUrl = 'https://task.teamrabbil.com/api/v1';
   static const String _baseUrlNew = '$_baseIp/boletobancos';
-  //static const String _baseUrlNew =
-  //    'https://academia-app-919f42758cd6.herokuapp.com/boletobancos';
   static const String allPersonal = '$_baseUrlNew/personal/findAll';
   static const String allAcademia = '$_baseUrlNew/academia/findAll';
   static const String allModalidade = '$_baseUrlNew/modalidade/findAll';

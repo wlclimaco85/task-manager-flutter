@@ -2626,7 +2626,13 @@ class _ImportacaoSectionState extends State<_ImportacaoSection> {
   }
 }
 
-enum _ImportacaoCadastroTipo { empresa, parceiros, funcionarios, planos }
+enum _ImportacaoCadastroTipo {
+  empresa,
+  parceiros,
+  funcionarios,
+  loginsClientes,
+  planos
+}
 
 class _CadastroImportField {
   final String key;
@@ -2779,6 +2785,34 @@ class _ImportacaoCadastrosSectionState
         _CadastroImportField(
             'senha', 'Senha Padrao', ['senha', 'senha_padrao', 'password']),
         _CadastroImportField('ativo', 'Ativo', ['ativo', 'status', 'situacao']),
+      ],
+    ),
+    _CadastroImportConfig(
+      tipo: _ImportacaoCadastroTipo.loginsClientes,
+      title: 'Importar Logins de Clientes',
+      subtitle:
+          'Cria ou atualiza logins de clientes vinculando pelo CNPJ do parceiro.',
+      icon: Icons.manage_accounts_outlined,
+      color: Colors.indigo.shade700,
+      campos: const [
+        _CadastroImportField('external_id', 'External ID',
+            ['external_id', 'codigo', 'cod_parceiro']),
+        _CadastroImportField('empresa_id', 'Empresa ID',
+            ['empresa_id', 'empresa_external_id', 'cod_empresa', 'id_empresa']),
+        _CadastroImportField('parceiro_cnpj', 'CNPJ Cliente *',
+            ['parceiro_cnpj', 'codigo_cliente', 'cnpj', 'cpf', 'documento']),
+        _CadastroImportField('codigo_faturamento', 'Codigo Faturamento',
+            ['codigo_faturamento', 'cod_faturamento']),
+        _CadastroImportField(
+            'nome', 'Nome *', ['nome', 'cliente', 'parceiro', 'razao_social']),
+        _CadastroImportField(
+            'email', 'Email/Login *', ['email', 'login', 'usuario', 'e_mail']),
+        _CadastroImportField(
+            'senha', 'Senha Padrao', ['senha', 'senha_padrao', 'password']),
+        _CadastroImportField(
+            'tipoLogin', 'Tipo Login', ['tipo_login', 'tipologin', 'perfil']),
+        _CadastroImportField(
+            'app_id', 'App ID', ['app_id', 'aplicativo_id', 'aplicativo']),
       ],
     ),
     _CadastroImportConfig(
@@ -3190,6 +3224,8 @@ class _ImportacaoCadastrosSectionState
         return _importarParceiro(row);
       case _ImportacaoCadastroTipo.funcionarios:
         return _importarFuncionarioLogin(row);
+      case _ImportacaoCadastroTipo.loginsClientes:
+        return _importarLoginCliente(row);
       case _ImportacaoCadastroTipo.planos:
         return _importarPlano(row);
     }
@@ -3426,6 +3462,77 @@ class _ImportacaoCadastrosSectionState
     // id_parceiro no login só deve ser preenchido se o usuário informar
     // explicitamente o campo parceiro na tela — não via import automático
     return funcionarioId ?? loginId;
+  }
+
+  Future<int?> _importarLoginCliente(Map<String, String> row) async {
+    final nome = _valor(row, _ImportacaoCadastroTipo.loginsClientes, 'nome');
+    final email = _valor(row, _ImportacaoCadastroTipo.loginsClientes, 'email')
+        .trim()
+        .toLowerCase();
+    final documento = _digits(
+        _valor(row, _ImportacaoCadastroTipo.loginsClientes, 'parceiro_cnpj'));
+    if (nome.isEmpty) throw Exception('Nome do cliente obrigatorio');
+    if (email.isEmpty) throw Exception('Email/login obrigatorio');
+    if (documento.isEmpty) throw Exception('CNPJ/CPF do cliente obrigatorio');
+
+    final empresaId = _empresaId(row, _ImportacaoCadastroTipo.loginsClientes);
+    if (empresaId == null) {
+      throw Exception(
+          'Selecione a empresa destino ou informe empresa_id no CSV');
+    }
+
+    final parceiros = await _listarParceirosEmpresa(empresaId);
+    final parceiro = _buscarParceiroNaLista(parceiros, documento: documento);
+    if (parceiro == null) {
+      final codigo = _valor(
+          row, _ImportacaoCadastroTipo.loginsClientes, 'codigo_faturamento');
+      throw Exception(codigo.isNotEmpty
+          ? 'Cliente CNPJ $documento nao encontrado para codigo $codigo'
+          : 'Cliente CNPJ $documento nao encontrado na empresa destino');
+    }
+
+    final senha =
+        _valor(row, _ImportacaoCadastroTipo.loginsClientes, 'senha').isNotEmpty
+            ? _valor(row, _ImportacaoCadastroTipo.loginsClientes, 'senha')
+            : '123456';
+    final tipoLogin =
+        _valor(row, _ImportacaoCadastroTipo.loginsClientes, 'tipoLogin')
+                .isNotEmpty
+            ? _valor(row, _ImportacaoCadastroTipo.loginsClientes, 'tipoLogin')
+            : 'APP_ABRACO';
+    final appId =
+        _toInt(_valor(row, _ImportacaoCadastroTipo.loginsClientes, 'app_id')) ??
+            TenantContext.aplicativoId ??
+            1;
+
+    final payload = _compact({
+      'email': email,
+      'senha': senha,
+      'nome': nome,
+      'cpfCnpj': documento,
+      'tipoLogin': tipoLogin,
+      'empresa': {'id': empresaId},
+      'parceiro': {'id': _extractId(parceiro)},
+      'aplicativo': {'id': appId},
+      'ativo': true,
+      'trocarSenhaProximoLogin': false,
+    });
+
+    final atualizar =
+        _atualizar[_ImportacaoCadastroTipo.loginsClientes] == true;
+    final loginExistente =
+        await _buscarExistente('${widget.baseUrl}/api/logins', 'email', email);
+    if (loginExistente != null && !atualizar) {
+      throw Exception(
+          'Email $email ja existe. Ative "Atualizar se existir" para atualizar.');
+    }
+    if (loginExistente != null) {
+      await _put('${widget.baseUrl}/api/logins/$loginExistente', payload);
+      return loginExistente;
+    }
+
+    final body = await _post('${widget.baseUrl}/api/logins', payload);
+    return _extractId(body);
   }
 
   Future<int?> _importarPlano(Map<String, String> row) async {

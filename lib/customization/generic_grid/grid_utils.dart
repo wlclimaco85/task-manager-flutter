@@ -115,6 +115,11 @@ TextInputType keyboardForFieldType(FieldType t) {
       return TextInputType.emailAddress;
     case FieldType.phone:
       return TextInputType.phone;
+    case FieldType.cpf:
+    case FieldType.cnpj:
+    case FieldType.cpfCnpj:
+    case FieldType.cep:
+      return TextInputType.number;
     default:
       return TextInputType.text;
   }

@@ -4,6 +4,7 @@ import 'dart:convert';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
 import '../../../utils/app_logger.dart';
 
@@ -202,6 +203,8 @@ class _GridFormDialogState extends State<GridFormDialog> {
         return _fileField(c, ctrl);
       case FieldType.multiselect:
         return _buildMultiselect(c, ctrl);
+      case FieldType.cep:
+        return _cepField(c, ctrl);
       default:
         return _textField(c, ctrl);
     }
@@ -243,6 +246,70 @@ class _GridFormDialogState extends State<GridFormDialog> {
       ),
       keyboardType: keyboardForFieldType(c.fieldType),
     );
+  }
+
+  Widget _cepField(FieldConfig c, TextEditingController ctrl) {
+    var lastCepBuscado = '';
+    return Focus(
+      onFocusChange: (hasFocus) {
+        if (hasFocus) return;
+        final cep = ctrl.text.replaceAll(RegExp(r'\D'), '');
+        if (cep.length == 8 && cep != lastCepBuscado) {
+          lastCepBuscado = cep;
+          _buscarCepEPreencher(cep);
+        }
+      },
+      child: TextField(
+        controller: ctrl,
+        enabled: c.enabled,
+        maxLines: 1,
+        style: const TextStyle(color: Color(0xFF212121)),
+        decoration: InputDecoration(
+          labelText: c.label + (c.isRequired ? ' *' : ''),
+          labelStyle: const TextStyle(color: Color(0xFF757575)),
+          suffixIcon:
+              const Icon(Icons.search, color: GridColors.primary, size: 18),
+          filled: true,
+          fillColor: c.enabled ? Colors.white : const Color(0xFFF5F5F5),
+          border: _defaultBorder(),
+          enabledBorder: _defaultBorder(),
+          focusedBorder: _focusedBorder(),
+          disabledBorder: _disabledBorder(),
+          hintText: '00000-000',
+        ),
+        keyboardType: TextInputType.number,
+        inputFormatters: [
+          FilteringTextInputFormatter.digitsOnly,
+          LengthLimitingTextInputFormatter(8),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _buscarCepEPreencher(String cep) async {
+    try {
+      final resp =
+          await http.get(Uri.parse('https://viacep.com.br/ws/$cep/json/'));
+      if (resp.statusCode != 200) return;
+      final data = jsonDecode(resp.body) as Map<String, dynamic>;
+      if (data['erro'] == true) return;
+
+      void setField(String field, String? value) {
+        final text = value?.trim() ?? '';
+        final ctrl = _controllers[field];
+        if (text.isNotEmpty && ctrl != null) ctrl.text = text;
+      }
+
+      setState(() {
+        setField('rua', data['logradouro']?.toString());
+        setField('bairro', data['bairro']?.toString());
+        setField('cidade', data['localidade']?.toString());
+        setField('estado', data['uf']?.toString());
+        setField('pais', 'Brasil');
+      });
+    } catch (_) {
+      // Permite preenchimento manual quando a consulta falhar.
+    }
   }
 
   Widget _dateField(FieldConfig c, TextEditingController ctrl) {
@@ -549,6 +616,9 @@ class _GridFormDialogState extends State<GridFormDialog> {
         } else if (c.fieldType == FieldType.boolean) {
           addToFormData(
               formData, c.fieldName, valueText.toLowerCase() == 'true');
+        } else if (c.fieldName == 'regime') {
+          final regimeId = int.tryParse(valueText);
+          addToFormData(formData, 'regime.id', regimeId ?? valueText);
         } else {
           addToFormData(formData, c.fieldName, valueText);
         }

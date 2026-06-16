@@ -807,6 +807,7 @@ class _GenericMobileGridScreenState extends State<GenericMobileGridScreen> {
               child: UserBannerAppBar(
                 screenTitle: widget.title,
                 onTapped: widget.onUserBannerTapped,
+                onUserTap: widget.onUserBannerTapped,
                 onRefresh:
                     widget.onBannerRefresh ?? () => _loadItems(reset: true),
                 isLoading: isLoading,

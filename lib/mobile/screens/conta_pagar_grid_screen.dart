@@ -15,8 +15,13 @@ import '../screens/desfazer_baixa_dialog.dart';
 
 class ContaPagarGridScreen extends StatefulWidget {
   final SecurityCheck hasPermission;
+  final VoidCallback? onUserBannerTapped;
 
-  const ContaPagarGridScreen({super.key, required this.hasPermission});
+  const ContaPagarGridScreen({
+    super.key,
+    required this.hasPermission,
+    this.onUserBannerTapped,
+  });
 
   @override
   State<ContaPagarGridScreen> createState() => _ContaPagarGridScreenState();
@@ -59,7 +64,8 @@ class _ContaPagarGridScreenState extends State<ContaPagarGridScreen> {
                   contaId: object.id!,
                   dataBaixa: object.dataBaixa ?? DateTime.now(),
                   valorBaixa: object.valorBaixa ?? object.valor,
-                  contaLabel: object.contaBaixa?.descricao ?? 'Conta nao informada',
+                  contaLabel:
+                      object.contaBaixa?.descricao ?? 'Conta nao informada',
                   formaPagamentoLabel:
                       object.formaPagamento?.nome ?? 'Forma nao informada',
                 );
@@ -79,6 +85,7 @@ class _ContaPagarGridScreenState extends State<ContaPagarGridScreen> {
             ),
           ],
           useUserBannerAppBar: true,
+          onUserBannerTapped: widget.onUserBannerTapped,
           paginationConfig: const PaginationConfig(
             defaultRowsPerPage: 10,
             availableRowsPerPage: [10, 25, 50],

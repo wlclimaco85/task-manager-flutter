@@ -8,7 +8,8 @@ import '../../../utils/api_links.dart';
 import '../../../utils/grid_colors.dart';
 import '../../../utils/grid_texts.dart';
 import '../../../utils/tenant_context.dart';
-import '../../../widgets/user_banners.dart' show AppBarActions;
+import '../../../widgets/user_banners.dart'
+    show AppBarActions, UserBannerAppBar;
 import '../../services/ai_assistant_service.dart';
 import '../../services/network_caller.dart';
 import '../widgets/ged_file_card.dart';
@@ -34,6 +35,8 @@ class GedArquivosScreen extends StatefulWidget {
 
   /// Empresa do registro de origem.
   final int? empresaId;
+  final bool useUserBannerHeader;
+  final VoidCallback? onUserBannerTapped;
 
   const GedArquivosScreen({
     super.key,
@@ -41,6 +44,8 @@ class GedArquivosScreen extends StatefulWidget {
     this.idOrigem,
     this.nomeOrigem,
     this.empresaId,
+    this.useUserBannerHeader = false,
+    this.onUserBannerTapped,
   });
 
   @override
@@ -204,7 +209,8 @@ class _GedArquivosScreenState extends State<GedArquivosScreen> {
 
   Future<void> _selecionarArquivo() async {
     final result = await FilePicker.pickFiles(withData: true);
-    if (result != null) setState(() => _arquivoSelecionado = result.files.first);
+    if (result != null)
+      setState(() => _arquivoSelecionado = result.files.first);
   }
 
   Future<void> _fazerUpload(BuildContext ctx) async {
@@ -233,8 +239,10 @@ class _GedArquivosScreenState extends State<GedArquivosScreen> {
       req.fields['diretorio'] = '{"id":${_diretorioUploadId ?? 0}}';
       req.fields['empresa'] = '{"id":$_empresaFiltroId}';
       req.fields['parceiro'] = '{"id":${_parceiroUploadId ?? 0}}';
-      if (_moduloOrigemFiltro != null) req.fields['modulo'] = _moduloOrigemFiltro!;
-      if (_idOrigemFiltro != null) req.fields['idOrigem'] = _idOrigemFiltro.toString();
+      if (_moduloOrigemFiltro != null)
+        req.fields['modulo'] = _moduloOrigemFiltro!;
+      if (_idOrigemFiltro != null)
+        req.fields['idOrigem'] = _idOrigemFiltro.toString();
 
       final resp = await req.send();
       if (!mounted) return;
@@ -264,8 +272,7 @@ class _GedArquivosScreenState extends State<GedArquivosScreen> {
     try {
       final token = AuthUtility.userInfo?.token ?? '';
       final uri = Uri.parse(url);
-      final resp = await http.get(
-          uri,
+      final resp = await http.get(uri,
           headers: token.isNotEmpty ? {'Authorization': 'Bearer $token'} : {});
       if (resp.statusCode == 200) {
         await FileSaver.instance.saveFile(name: nome, bytes: resp.bodyBytes);
@@ -390,36 +397,55 @@ class _GedArquivosScreenState extends State<GedArquivosScreen> {
       // Quando embutido em tab (contextualizado), o pai já tem AppBar — suprimir o nosso
       appBar: _contextualizado
           ? null
-          : AppBar(
-              backgroundColor: GridColors.primary,
-              foregroundColor: Colors.white,
-              title: Text(_tituloAppBar),
-              elevation: 0,
-              actions: [
-                if (widget.moduloOrigem != null)
-                  Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 4),
-                    child: Chip(
-                      label: Text(
-                        _capitalize(widget.moduloOrigem!),
-                        style: const TextStyle(fontSize: 11, color: Colors.white),
+          : widget.useUserBannerHeader
+              ? UserBannerAppBar(
+                  screenTitle: _tituloAppBar,
+                  showFilterButton: false,
+                  onUserTap: widget.onUserBannerTapped,
+                )
+              : AppBar(
+                  backgroundColor: GridColors.primary,
+                  foregroundColor: Colors.white,
+                  title: Text(_tituloAppBar),
+                  elevation: 0,
+                  actions: [
+                    if (widget.moduloOrigem != null)
+                      Padding(
+                        padding: const EdgeInsets.symmetric(
+                            vertical: 10, horizontal: 4),
+                        child: Chip(
+                          label: Text(
+                            _capitalize(widget.moduloOrigem!),
+                            style: const TextStyle(
+                                fontSize: 11, color: Colors.white),
+                          ),
+                          backgroundColor: GridColors.primary,
+                          padding: EdgeInsets.zero,
+                          materialTapTargetSize:
+                              MaterialTapTargetSize.shrinkWrap,
+                          visualDensity: VisualDensity.compact,
+                        ),
                       ),
-                      backgroundColor: GridColors.primary,
-                      padding: EdgeInsets.zero,
-                      materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                      visualDensity: VisualDensity.compact,
+                    IconButton(
+                      icon: const Icon(Icons.upload_file),
+                      tooltip: 'Novo Upload',
+                      onPressed:
+                          _empresaFiltroId != null ? _abrirDialogUpload : null,
                     ),
-                  ),
-                IconButton(
-                  icon: const Icon(Icons.upload_file),
-                  tooltip: 'Novo Upload',
-                  onPressed: _empresaFiltroId != null ? _abrirDialogUpload : null,
+                    // Alertas e logout padrão do sistema
+                    const AppBarActions(),
+                    const SizedBox(width: 4),
+                  ],
                 ),
-                // Alertas e logout padrão do sistema
-                const AppBarActions(),
-                const SizedBox(width: 4),
-              ],
-            ),
+      floatingActionButton: (!_contextualizado && widget.useUserBannerHeader)
+          ? FloatingActionButton.small(
+              heroTag: 'ged_upload_fab',
+              tooltip: 'Novo Upload',
+              backgroundColor: GridColors.primary,
+              onPressed: _empresaFiltroId != null ? _abrirDialogUpload : null,
+              child: const Icon(Icons.upload_file, color: Colors.white),
+            )
+          : null,
       body: Column(
         children: [
           if (!_contextualizado) _buildFiltros(),
@@ -445,8 +471,8 @@ class _GedArquivosScreenState extends State<GedArquivosScreen> {
                 isDense: true,
                 contentPadding:
                     const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8)),
+                border:
+                    OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
               ),
               onChanged: (v) => setState(() => _busca = v),
             ),
@@ -462,8 +488,7 @@ class _GedArquivosScreenState extends State<GedArquivosScreen> {
             style: ElevatedButton.styleFrom(
               backgroundColor: GridColors.primary,
               foregroundColor: Colors.white,
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
             ),
             icon: const Icon(Icons.upload_file, size: 18),
             label: const Text('Upload'),

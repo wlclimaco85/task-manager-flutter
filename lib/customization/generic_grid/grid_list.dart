@@ -316,6 +316,7 @@ class _GridListScreenState extends State<GridListScreen> {
                   child: UserBannerAppBar(
                     screenTitle: widget.title,
                     onTapped: widget.onUserBannerTapped,
+                    onUserTap: widget.onUserBannerTapped,
                     onRefresh:
                         widget.onBannerRefresh ?? () => _load(reset: true),
                     isLoading: _loading,
@@ -949,7 +950,7 @@ class _GridListScreenState extends State<GridListScreen> {
       return _can(effectivePerm) && widget.hasPermission(effectivePerm);
     }).toList();
 
-    Widget _iconBtn({
+    Widget iconBtn({
       required IconData icon,
       required Color color,
       required VoidCallback onPressed,
@@ -977,14 +978,16 @@ class _GridListScreenState extends State<GridListScreen> {
 
     return Row(mainAxisAlignment: MainAxisAlignment.end, children: [
       if (widget.enableDebugMode)
-        _iconBtn(
+        iconBtn(
           icon: Icons.bug_report,
           color: Colors.black.withValues(alpha: 0.6),
           tooltip: 'Ver JSON',
           onPressed: () => _showAllFieldsDebug(context, item),
         ),
-      if (widget.detailScreenBuilder != null && _can('view') && widget.hasPermission('view'))
-        _iconBtn(
+      if (widget.detailScreenBuilder != null &&
+          _can('view') &&
+          widget.hasPermission('view'))
+        iconBtn(
           icon: Icons.visibility_outlined,
           color: GridColors.secondary,
           tooltip: 'Ver detalhes',
@@ -998,7 +1001,7 @@ class _GridListScreenState extends State<GridListScreen> {
           },
         ),
       if (_can('edit') && widget.hasPermission('edit'))
-        _iconBtn(
+        iconBtn(
           icon: Icons.edit_outlined,
           color: GridColors.primary,
           tooltip: 'Editar',
@@ -1014,7 +1017,7 @@ class _GridListScreenState extends State<GridListScreen> {
           },
         ),
       if (_can('delete') && widget.hasPermission('delete'))
-        _iconBtn(
+        iconBtn(
           icon: Icons.delete_outline,
           color: GridColors.error,
           tooltip: 'Excluir',
@@ -1022,7 +1025,7 @@ class _GridListScreenState extends State<GridListScreen> {
               _deleteItem(getNestedValue(item, widget.idFieldName).toString()),
         ),
       ...perItemServer.map(
-        (a) => _iconBtn(
+        (a) => iconBtn(
           icon: a.icon ?? Icons.play_arrow,
           color: GridColors.secondary,
           tooltip: a.label,
@@ -1032,7 +1035,7 @@ class _GridListScreenState extends State<GridListScreen> {
       ..._customActions
           .where((a) => a.isVisible == null || a.isVisible!(item))
           .map(
-            (a) => _iconBtn(
+            (a) => iconBtn(
               icon: a.icon,
               color: GridColors.secondary,
               tooltip: a.label,

@@ -13,8 +13,13 @@ import '../../utils/grid_texts.dart';
 
 class ContaBancariaGridScreen extends StatelessWidget {
   final SecurityCheck hasPermission;
+  final VoidCallback? onUserBannerTapped;
 
-  const ContaBancariaGridScreen({super.key, required this.hasPermission});
+  const ContaBancariaGridScreen({
+    super.key,
+    required this.hasPermission,
+    this.onUserBannerTapped,
+  });
 
   static String _contaLabel(ContaBancaria conta) {
     final partes = [conta.banco, conta.agencia, conta.numero, conta.descricao]
@@ -35,11 +40,13 @@ class ContaBancariaGridScreen extends StatelessWidget {
         deleteEndpoint: ApiLinks.deleteContaBancaria(":id"),
         dynamicAdditionalFormData: (item) => {
           if (pegarEmpresaLogada() != null) 'empresa.id': pegarEmpresaLogada(),
-          if (pegarParceiroLogada() != null) 'parceiro.id': pegarParceiroLogada(),
+          if (pegarParceiroLogada() != null)
+            'parceiro.id': pegarParceiroLogada(),
         },
         fieldConfigs: ContaBancaria.fieldConfigs,
         idFieldName: 'id',
         useUserBannerAppBar: true,
+        onUserBannerTapped: onUserBannerTapped,
         enableSearch: true,
         paginationConfig: const PaginationConfig(
           defaultRowsPerPage: 10,
@@ -124,8 +131,7 @@ class ContaBancariaGridScreen extends StatelessWidget {
                 padding: const EdgeInsets.fromLTRB(20, 16, 12, 16),
                 decoration: const BoxDecoration(
                   color: Color(0xFF1565C0),
-                  borderRadius:
-                      BorderRadius.vertical(top: Radius.circular(20)),
+                  borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
                 ),
                 child: Row(
                   children: [
@@ -150,8 +156,8 @@ class ContaBancariaGridScreen extends StatelessWidget {
                       ),
                     ),
                     IconButton(
-                      icon:
-                          const Icon(Icons.close, color: Colors.white70, size: 20),
+                      icon: const Icon(Icons.close,
+                          color: Colors.white70, size: 20),
                       onPressed: () => Navigator.pop(ctx),
                       padding: EdgeInsets.zero,
                       constraints: const BoxConstraints(),
@@ -257,8 +263,8 @@ class ContaBancariaGridScreen extends StatelessWidget {
                         onPressed: () async {
                           if (contaDestinoId == null ||
                               valorController.text.isEmpty) {
-                            _showSnack(ctx,
-                                "Preencha todos os campos obrigatórios.");
+                            _showSnack(
+                                ctx, "Preencha todos os campos obrigatórios.");
                             return;
                           }
                           Navigator.pop(ctx);
@@ -277,8 +283,7 @@ class ContaBancariaGridScreen extends StatelessWidget {
                             sucesso
                                 ? _showSuccessDialog(
                                     context, "Transferência concluída!")
-                                : _showSnack(
-                                    context, "Erro ao transferir.");
+                                : _showSnack(context, "Erro ao transferir.");
                           }
                         },
                         style: ElevatedButton.styleFrom(
@@ -335,8 +340,7 @@ class ContaBancariaGridScreen extends StatelessWidget {
                 padding: const EdgeInsets.fromLTRB(20, 16, 12, 16),
                 decoration: const BoxDecoration(
                   color: Color(0xFF1B5E20),
-                  borderRadius:
-                      BorderRadius.vertical(top: Radius.circular(20)),
+                  borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
                 ),
                 child: Row(
                   children: [
@@ -393,7 +397,8 @@ class ContaBancariaGridScreen extends StatelessWidget {
                       child: InputDecorator(
                         decoration: InputDecoration(
                           labelText: 'Data inicial',
-                          prefixIcon: const Icon(Icons.calendar_today, size: 18),
+                          prefixIcon:
+                              const Icon(Icons.calendar_today, size: 18),
                           suffixIcon:
                               const Icon(Icons.arrow_drop_down, size: 22),
                           border: OutlineInputBorder(
@@ -433,7 +438,8 @@ class ContaBancariaGridScreen extends StatelessWidget {
                       child: InputDecorator(
                         decoration: InputDecoration(
                           labelText: 'Data final',
-                          prefixIcon: const Icon(Icons.calendar_today, size: 18),
+                          prefixIcon:
+                              const Icon(Icons.calendar_today, size: 18),
                           suffixIcon:
                               const Icon(Icons.arrow_drop_down, size: 22),
                           border: OutlineInputBorder(
@@ -587,7 +593,8 @@ class ContaBancariaGridScreen extends StatelessWidget {
                 if (await canLaunchUrl(uri)) {
                   await launchUrl(uri, mode: LaunchMode.externalApplication);
                 }
-                if (context.mounted) _showSuccessDialog(context, "Consolidado gerado!");
+                if (context.mounted)
+                  _showSuccessDialog(context, "Consolidado gerado!");
               } else if (context.mounted) {
                 _showSnack(context, "Erro ao gerar consolidado.");
               }
