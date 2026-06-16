@@ -746,6 +746,11 @@ class _JobsSectionState extends State<_JobsSection> {
       'label': 'Cotacao Dolar',
       'cron': 'Seg-Sex a cada hora'
     },
+    {
+      'nome': 'InstagramDataCollector',
+      'label': 'Instagram Monitor',
+      'cron': 'A cada hora'
+    },
   ];
 
   @override
@@ -3413,7 +3418,8 @@ class _ImportacaoCadastrosSectionState
 
     final atualizar = _atualizar[_ImportacaoCadastroTipo.funcionarios] == true;
     var loginId = atualizar
-        ? await _buscarExistente('${widget.baseUrl}/api/logins', 'email', email)
+        ? await _buscarExistente(
+            '${widget.baseUrl}/api/logins?empId=$empresaId', 'email', email)
         : null;
     if (loginId != null) {
       await _put('${widget.baseUrl}/api/logins/$loginId', loginPayload);
@@ -3436,7 +3442,7 @@ class _ImportacaoCadastrosSectionState
 
     var funcionarioId = atualizar
         ? await _buscarExistente(
-            '${widget.baseUrl}/api/funcionario', 'cpf', cpf)
+            '${widget.baseUrl}/api/funcionario?empId=$empresaId', 'cpf', cpf)
         : null;
     if (funcionarioId != null) {
       await _put('${widget.baseUrl}/api/funcionario/$funcionarioId',

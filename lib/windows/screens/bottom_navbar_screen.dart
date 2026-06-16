@@ -131,6 +131,7 @@ import '../../web/screens/contabil/ai_assistente_screen.dart';
 import '../../web/screens/cobranca_automatica_screen.dart';
 import '../../web/screens/kanban_pagamentos_screen.dart';
 import '../../web/screens/aprovacao_pagamentos_screen.dart';
+import '../../web/screens/instagram_monitor_screen.dart';
 
 class WindowsBottomNavBarScreen extends StatefulWidget {
   const WindowsBottomNavBarScreen({super.key});
@@ -412,11 +413,27 @@ class _WindowsBottomNavBarScreenState extends State<WindowsBottomNavBarScreen> {
         const WebAiDashboardScreen(), // 117: Dashboard IA
         const WebAiAssistenteScreen(), // 118: Assistente IA
         const TradingConfigScreen(), // 119: Configuracao da Corretora
+        // ── Posicoes 120-123: reservadas (placeholders) ──
+        const SizedBox.shrink(), // 120
+        const SizedBox.shrink(), // 121
+        const SizedBox.shrink(), // 122
+        const SizedBox.shrink(), // 123
+        WindowsAcademiaGridScreen(
+            hasPermission: (perm) => true), // 124: Academia
+        // ── Posicoes 125-131: reservadas (placeholders) ──
+        const SizedBox.shrink(), // 125
+        const SizedBox.shrink(), // 126
+        const SizedBox.shrink(), // 127
+        const SizedBox.shrink(), // 128
+        const SizedBox.shrink(), // 129
+        const SizedBox.shrink(), // 130
+        const SizedBox.shrink(), // 131
         const CarteiraScreen(), // 132: Minha Carteira
         const CobrancaAutomaticaScreen(), // 133: Cobrança Automática
         const KanbanPagamentosScreen(), // 134: Kanban de Pagamentos
         const WebAprovacaoPagamentosScreen(), // 135: Aprovação de Pagamentos
-        WindowsAcademiaGridScreen(hasPermission: (perm) => true), // 124: Academia
+        const InstagramMonitorScreen(), // 136: Instagram Monitor (unificado)
+        const SizedBox.shrink(), // 137: (removido - unificado no 136)
       ];
 
   String get userName {

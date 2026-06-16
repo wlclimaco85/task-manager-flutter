@@ -55,9 +55,15 @@ class _AppSidebarState extends State<AppSidebar> {
   // anti-lockout — ver SecurityMatrix.allowedTelaIds).
   Set<String>? _allowedIds;
 
-  /// true se o item pode aparecer no menu para o usuário logado.
-  bool _canSee(MenuItem item) =>
-      _allowedIds == null || _allowedIds!.contains(item.id);
+  /// true se o item pode aparecer no menu para o usuario logado.
+  bool _canSee(MenuItem item) {
+    // Match e Timeline so para wlclimaco@gmail.com
+    if (item.id == 'match' || item.id == 'timeline') {
+      final email = widget.userEmail.toLowerCase();
+      return email == 'wlclimaco@gmail.com';
+    }
+    return _allowedIds == null || _allowedIds!.contains(item.id);
+  }
 
   @override
   void initState() {

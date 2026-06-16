@@ -64,6 +64,7 @@ echo  [I] Subir Flutter (Chrome) apontando para Railway (sem backend local)
 echo  [J] Build AAB (Play Store) com backend Railway + auto-incrementa versao
 echo  [P] Build APK unico com backend deployado
 echo  [K] Commitar tudo nos repositorios
+echo  [L] Subir Instagram API (Python local, porta 8500)
 echo  [0] Sair
 echo.
 set "OP="
@@ -152,6 +153,10 @@ if /i "%OP%"=="P" (
 )
 if /i "%OP%"=="K" (
     call :GIT_COMMIT_ALL
+    goto END_MENU
+)
+if /i "%OP%"=="L" (
+    call :START_INSTAGRAM_API
     goto END_MENU
 )
 goto MENU
@@ -1131,4 +1136,43 @@ if not defined HOST_IP set "HOST_IP=127.0.0.1"
 set "BACKEND_URL=http://127.0.0.1:%BACKEND_PORT%"
 set "ANDROID_BACKEND_URL=http://%HOST_IP%:%BACKEND_PORT%"
 set "ANDROID_WS_BACKEND_URL=ws://%HOST_IP%:%BACKEND_PORT%/boletobancos"
+exit /b 0
+
+:START_INSTAGRAM_API
+echo.
+echo ============================================
+echo  Instagram API (Python local)
+echo ============================================
+echo.
+set "IG_DIR=%APP_ROOT%\instagram_api"
+
+if not exist "%IG_DIR%\server.py" (
+    echo [ERRO] server.py nao encontrado em %IG_DIR%
+    exit /b 1
+)
+
+REM Verificar se Python esta disponivel
+where python >nul 2>&1
+if errorlevel 1 (
+    echo [ERRO] Python nao encontrado no PATH
+    exit /b 1
+)
+
+REM Verificar/criar virtualenv com Python 3.12
+if not exist "%IG_DIR%\venv" (
+    echo Criando virtualenv com Python 3.12...
+    py -3.12 -m venv "%IG_DIR%\venv"
+)
+
+REM Ativar venv e instalar dependencias
+call "%IG_DIR%\venv\Scripts\activate.bat"
+pip install -q -r "%IG_DIR%\requirements.txt"
+
+echo Iniciando Instagram API na porta 8500...
+set "IG_USERNAME=pablopersonalp"
+set "IG_PASSWORD=123Mudar$"
+echo.
+start "Instagram-API" cmd /k "title Instagram API - Porta 8500 && cd /d %IG_DIR% && call venv\Scripts\activate.bat && python server.py"
+echo Instagram API iniciado em http://localhost:8500
+echo Endpoints: /health, /profile, /posts, /likers, /followers, /following
 exit /b 0

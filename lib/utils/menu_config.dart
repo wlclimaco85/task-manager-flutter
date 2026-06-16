@@ -677,6 +677,11 @@ class MenuConfig {
             label: 'Teste de Endpoints',
             icon: FontAwesomeIcons.vials,
             screenIndex: 65),
+        MenuItem(
+            id: 'match',
+            label: 'Instagram Monitor',
+            icon: FontAwesomeIcons.instagram,
+            screenIndex: 136),
       ],
     ),
   ];
