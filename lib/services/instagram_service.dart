@@ -1,6 +1,13 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 
+class InstagramException implements Exception {
+  final String mensagem;
+  const InstagramException(this.mensagem);
+  @override
+  String toString() => mensagem;
+}
+
 class InstagramProfile {
   final String username;
   final String fullName;
@@ -260,19 +267,27 @@ class InstagramService {
 
   static bool get hasLocalApi => _localAvailable;
 
+  /// Retorna perfil ou lança [InstagramException] com mensagem específica.
   static Future<InstagramProfile?> fetchProfile(String username) async {
     final clean = username.replaceAll('@', '').trim();
-    
+
     if (_localAvailable) {
       try {
-        final r = await http.get(Uri.parse('$_localApi/profile?username=$clean')).timeout(const Duration(seconds: 15));
+        final r = await http.get(Uri.parse('$_localApi/profile?username=$clean'))
+            .timeout(const Duration(seconds: 20));
         if (r.statusCode == 200) {
           final data = json.decode(r.body);
           if (!data.containsKey('error')) {
             final postsData = await fetchPosts(clean);
             return InstagramProfile.fromJson(data).copyWith(posts: postsData);
           }
+        } else if (r.statusCode == 429) {
+          throw InstagramException('Instagram bloqueou este IP por excesso de requests. Aguarde alguns minutos ou configure um proxy.');
+        } else if (r.statusCode == 401) {
+          throw InstagramException('Instagram exige login autenticado. Configure IG_USERNAME e IG_PASSWORD no servidor local e reinicie-o.');
         }
+      } on InstagramException {
+        rethrow;
       } catch (_) {}
     }
 
@@ -286,6 +301,8 @@ class InstagramService {
     } catch (_) {}
     return null;
   }
+
+  static final InstagramException notFound = InstagramException('Perfil nao encontrado ou privado');
 
   static Future<List<InstagramPost>> fetchPosts(String username, {int amount = 12}) async {
     if (_localAvailable) {
