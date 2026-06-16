@@ -350,6 +350,17 @@ class InstagramService {
     return count.toString();
   }
 
+  static Future<bool> untrackProfile(int id) async {
+    try {
+      final r = await http.delete(
+        Uri.parse('$_backendUrl/api/instagram/tracked/$id'),
+      ).timeout(const Duration(seconds: 10));
+      return r.statusCode == 200;
+    } catch (_) {
+      return false;
+    }
+  }
+
   static Future<bool> trackProfile(String username) async {
     try {
       final r = await http.post(

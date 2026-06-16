@@ -70,6 +70,69 @@ class _InstagramMonitorScreenState extends State<InstagramMonitorScreen> with Si
     return clean.trim();
   }
 
+  /// Verifica se o perfil buscado ja esta monitorado
+  bool _isProfileTracked(String username) {
+    return _trackedProfiles.any((p) => p['username'] == username);
+  }
+
+  /// Retorna o id do perfil monitorado (ou null)
+  int? _getTrackedId(String username) {
+    for (final p in _trackedProfiles) {
+      if (p['username'] == username) return p['id'] as int?;
+    }
+    return null;
+  }
+
+  /// Remove perfil do monitoramento com confirmacao
+  Future<void> _untrackProfile(String username, int id) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: Row(
+          children: [
+            const Icon(Icons.delete_outline, color: Color(0xFFE1306C), size: 24),
+            const SizedBox(width: 10),
+            const Text('Remover monitoramento', style: TextStyle(fontSize: 16)),
+          ],
+        ),
+        content: Text(
+          'Remover @$username do monitoramento?',
+          style: const TextStyle(fontSize: 14),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: Text('Cancelar', style: TextStyle(color: Colors.grey[600])),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Remover', style: TextStyle(color: Color(0xFFE1306C), fontWeight: FontWeight.w700)),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true) {
+      final success = await InstagramService.untrackProfile(id);
+      if (success) {
+        await _loadTrackedProfiles();
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('@$username removido do monitoramento'),
+              backgroundColor: Colors.green.shade700,
+            ),
+          );
+        }
+      } else if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Falha ao remover perfil'), backgroundColor: Colors.red),
+        );
+      }
+    }
+  }
+
   /// Busca perfis monitorados do backend
   Future<void> _loadTrackedProfiles() async {
     setState(() => _loadingTracked = true);
@@ -455,6 +518,7 @@ class _InstagramMonitorScreenState extends State<InstagramMonitorScreen> with Si
     final username = profile['username'] ?? '';
     final fullName = profile['fullName'] ?? '';
     final active = profile['active'] ?? true;
+    final profileId = profile['id'] as int?;
 
     return InkWell(
       onTap: () {
@@ -468,13 +532,31 @@ class _InstagramMonitorScreenState extends State<InstagramMonitorScreen> with Si
         ),
         child: Row(
           children: [
-            CircleAvatar(
-              radius: 20,
-              backgroundColor: const Color(0xFFE1306C).withValues(alpha: 0.1),
-              child: Text(
-                username.isNotEmpty ? username[0].toUpperCase() : '?',
-                style: const TextStyle(color: Color(0xFFE1306C), fontWeight: FontWeight.w700),
-              ),
+            Stack(
+              children: [
+                CircleAvatar(
+                  radius: 20,
+                  backgroundColor: const Color(0xFFE1306C).withValues(alpha: 0.1),
+                  child: Text(
+                    username.isNotEmpty ? username[0].toUpperCase() : '?',
+                    style: const TextStyle(color: Color(0xFFE1306C), fontWeight: FontWeight.w700),
+                  ),
+                ),
+                if (active)
+                  Positioned(
+                    right: 0,
+                    bottom: 0,
+                    child: Container(
+                      width: 12,
+                      height: 12,
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF4CAF50),
+                        shape: BoxShape.circle,
+                        border: Border.all(color: Colors.white, width: 2),
+                      ),
+                    ),
+                  ),
+              ],
             ),
             const SizedBox(width: 12),
             Expanded(
@@ -502,7 +584,16 @@ class _InstagramMonitorScreenState extends State<InstagramMonitorScreen> with Si
                 ),
               ),
             ),
-            const SizedBox(width: 8),
+            const SizedBox(width: 6),
+            if (profileId != null)
+              IconButton(
+                icon: const Icon(Icons.delete_outline, size: 20),
+                color: Colors.red[300],
+                padding: EdgeInsets.zero,
+                constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+                onPressed: () => _untrackProfile(username, profileId),
+                tooltip: 'Remover',
+              ),
             Icon(Icons.chevron_right, color: Colors.grey[400], size: 20),
           ],
         ),
@@ -643,6 +734,8 @@ class _InstagramMonitorScreenState extends State<InstagramMonitorScreen> with Si
               const SizedBox(height: 4),
               Text(_profile!.fullName, style: const TextStyle(fontSize: 14, color: Colors.grey)),
             ],
+            const SizedBox(height: 16),
+            _buildMonitorButton(),
             if (_profile!.biography.isNotEmpty) ...[
               const SizedBox(height: 12),
               Container(
@@ -1223,6 +1316,51 @@ class _InstagramMonitorScreenState extends State<InstagramMonitorScreen> with Si
         const SizedBox(width: 4),
         Text(text, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
       ],
+    );
+  }
+
+  Widget _buildMonitorButton() {
+    final tracked = _isProfileTracked(_currentUsername);
+    return SizedBox(
+      width: double.infinity,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 300),
+        child: ElevatedButton.icon(
+          onPressed: tracked
+              ? null
+              : () async {
+                  final success = await InstagramService.trackProfile(_currentUsername);
+                  if (success) {
+                    await _loadTrackedProfiles();
+                    if (mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text('@$_currentUsername adicionado ao monitoramento'),
+                          backgroundColor: Colors.green.shade700,
+                        ),
+                      );
+                    }
+                  }
+                },
+          icon: Icon(
+            tracked ? Icons.check_circle_outline : Icons.visibility,
+            size: 18,
+          ),
+          label: Text(
+            tracked ? 'Monitorando' : 'Monitorar',
+            style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14),
+          ),
+          style: ElevatedButton.styleFrom(
+            backgroundColor: tracked ? Colors.grey[200] : const Color(0xFF4CAF50),
+            foregroundColor: tracked ? Colors.grey[600] : Colors.white,
+            disabledBackgroundColor: Colors.grey[200],
+            disabledForegroundColor: Colors.grey[600],
+            padding: const EdgeInsets.symmetric(vertical: 14),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            elevation: tracked ? 0 : 3,
+          ),
+        ),
+      ),
     );
   }
 
