@@ -503,6 +503,35 @@ class InstagramService {
     return [];
   }
 
+  /// Retorna lista com última execução de cada job do monitor.
+  static Future<List<Map<String, dynamic>>?> fetchJobsStatus() async {
+    try {
+      final r = await http.get(
+        Uri.parse('$_backendUrl/api/admin/jobs'),
+        headers: await AuthService().jsonHeaders(),
+      ).timeout(const Duration(seconds: 10));
+      if (r.statusCode == 200) {
+        final data = json.decode(r.body);
+        return List<Map<String, dynamic>>.from(data);
+      }
+    } catch (_) {}
+    return null;
+  }
+
+  /// Retorna curtidas e comentários detectados para o username monitorado.
+  static Future<Map<String, dynamic>?> fetchInteracoes(String username, {int limit = 20}) async {
+    try {
+      final r = await http.get(
+        Uri.parse('$_backendUrl/api/instagram/interacoes?username=${Uri.encodeComponent(username)}&limit=$limit'),
+        headers: await AuthService().jsonHeaders(),
+      ).timeout(const Duration(seconds: 15));
+      if (r.statusCode == 200) {
+        return json.decode(r.body) as Map<String, dynamic>;
+      }
+    } catch (_) {}
+    return null;
+  }
+
   /// Carrega configurações de API (rapidapi_key, python_server_url) do backend Java.
   static Future<Map<String, String>?> fetchApiConfig() async {
     try {
