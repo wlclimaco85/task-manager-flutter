@@ -254,6 +254,13 @@ class _InstagramMonitorScreenState extends State<InstagramMonitorScreen> with Si
     }
   }
 
+  Future<void> _abrirConfigSessoes() async {
+    await showDialog(
+      context: context,
+      builder: (_) => const _ConfigSessoesDialog(),
+    );
+  }
+
   Future<void> _takeSnapshot() async {
     if (_currentUsername.isEmpty) return;
 
@@ -280,169 +287,197 @@ class _InstagramMonitorScreenState extends State<InstagramMonitorScreen> with Si
     }
   }
 
-  // --- Chips de perfis monitorados ---
+  // --- Painel de perfis monitorados (20% da altura, scroll horizontal) ---
 
-  Widget _buildTrackedChips() {
-    if (_loadingTracked && _trackedProfiles.isEmpty) {
-      return const SizedBox(
-        height: 52,
-        child: Center(child: CircularProgressIndicator(color: Color(0xFFE1306C), strokeWidth: 2)),
-      );
-    }
-
+  Widget _buildPainelMonitorados(double alturaPanel) {
     return Container(
-      height: 52,
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      child: ListView(
-        scrollDirection: Axis.horizontal,
+      height: alturaPanel,
+      color: const Color(0xFFF5F5F8),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          ..._trackedProfiles.map((p) => _buildChip(p)),
-          _buildAddChip(),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
+            child: Row(
+              children: [
+                const Icon(Icons.monitor_heart_outlined, size: 14, color: Color(0xFFE1306C)),
+                const SizedBox(width: 6),
+                Text(
+                  'Monitorados (${_trackedProfiles.length})',
+                  style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: Color(0xFF262626)),
+                ),
+                const Spacer(),
+                GestureDetector(
+                  onTap: () {
+                    _controller.clear();
+                    _focusNode.requestFocus();
+                    setState(() {
+                      _selectedChipUsername = null;
+                      _showMonitorButtons = false;
+                      _profile = null;
+                      _events = [];
+                      _changeLogs = [];
+                      _currentUsername = '';
+                      _error = null;
+                    });
+                  },
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFE1306C).withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: const Color(0xFFE1306C).withValues(alpha: 0.4)),
+                    ),
+                    child: const Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.add, size: 13, color: Color(0xFFE1306C)),
+                        SizedBox(width: 3),
+                        Text('Adicionar', style: TextStyle(fontSize: 11, color: Color(0xFFE1306C), fontWeight: FontWeight.w600)),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Expanded(
+            child: _loadingTracked && _trackedProfiles.isEmpty
+                ? const Center(child: CircularProgressIndicator(color: Color(0xFFE1306C), strokeWidth: 2))
+                : _trackedProfiles.isEmpty
+                    ? const Center(
+                        child: Text(
+                          'Nenhum perfil monitorado. Busque e clique "Monitorar".',
+                          style: TextStyle(fontSize: 11, color: Colors.grey),
+                          textAlign: TextAlign.center,
+                        ),
+                      )
+                    : ListView.separated(
+                        scrollDirection: Axis.horizontal,
+                        padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
+                        itemCount: _trackedProfiles.length,
+                        separatorBuilder: (_, __) => const SizedBox(width: 10),
+                        itemBuilder: (context, index) => _buildCartaoPerfil(_trackedProfiles[index]),
+                      ),
+          ),
         ],
       ),
     );
   }
 
-  Widget _buildChip(Map<String, dynamic> profile) {
-    final username = profile['username'] ?? '';
-    final active = profile['active'] ?? true;
+  Widget _buildCartaoPerfil(Map<String, dynamic> profile) {
+    final username = profile['username'] as String? ?? '';
+    final fullName = profile['fullName'] as String? ?? '';
+    final profilePicUrl = profile['profilePicUrl'] as String? ?? '';
     final profileId = profile['id'] as int?;
+    final changeCount = (profile['changeCount'] as num?)?.toInt() ?? 0;
     final isSelected = _selectedChipUsername == username;
 
-    return Padding(
-      padding: const EdgeInsets.only(right: 8, top: 8, bottom: 8),
-      child: GestureDetector(
-        onTap: () {
-          setState(() {
-            _selectedChipUsername = username;
-            _showMonitorButtons = false;
-          });
-          _controller.text = username;
-          _loadProfileData(username);
-        },
-        onLongPress: profileId != null
-            ? () => _untrackProfile(username, profileId)
-            : null,
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 200),
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-          decoration: BoxDecoration(
-            color: isSelected ? const Color(0xFF833AB4).withValues(alpha: 0.08) : Colors.white,
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(
-              color: isSelected
-                  ? const Color(0xFFE1306C)
-                  : Colors.grey.withValues(alpha: 0.3),
-              width: isSelected ? 2 : 1,
-            ),
-            boxShadow: isSelected
-                ? [
-                    BoxShadow(
-                      color: const Color(0xFFE1306C).withValues(alpha: 0.15),
-                      blurRadius: 6,
-                      offset: const Offset(0, 2),
-                    ),
-                  ]
-                : [],
+    return GestureDetector(
+      onTap: () {
+        setState(() {
+          _selectedChipUsername = username;
+          _showMonitorButtons = false;
+        });
+        _controller.text = username;
+        _loadProfileData(username);
+      },
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        width: 110,
+        decoration: BoxDecoration(
+          color: isSelected ? const Color(0xFF833AB4).withValues(alpha: 0.08) : Colors.white,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(
+            color: isSelected ? const Color(0xFFE1306C) : Colors.grey.withValues(alpha: 0.25),
+            width: isSelected ? 2 : 1,
           ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
+          boxShadow: [
+            BoxShadow(
+              color: isSelected
+                  ? const Color(0xFFE1306C).withValues(alpha: 0.12)
+                  : Colors.black.withValues(alpha: 0.04),
+              blurRadius: 6,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(8),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Stack(
+                clipBehavior: Clip.none,
                 children: [
                   CircleAvatar(
-                    radius: 10,
-                    backgroundColor: active
-                        ? const Color(0xFFE1306C)
-                        : Colors.grey,
-                    child: Text(
-                      username.isNotEmpty ? username[0].toUpperCase() : '?',
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.w700,
-                        fontSize: 11,
-                      ),
-                    ),
+                    radius: 20,
+                    backgroundColor: const Color(0xFFE1306C).withValues(alpha: 0.15),
+                    backgroundImage: profilePicUrl.isNotEmpty ? NetworkImage(profilePicUrl) : null,
+                    child: profilePicUrl.isEmpty
+                        ? Text(
+                            username.isNotEmpty ? username[0].toUpperCase() : '?',
+                            style: const TextStyle(color: Color(0xFFE1306C), fontWeight: FontWeight.w800, fontSize: 16),
+                          )
+                        : null,
                   ),
-                  if (active)
+                  if (changeCount > 0)
                     Positioned(
-                      right: -1,
-                      bottom: -1,
+                      top: -4,
+                      right: -4,
                       child: Container(
-                        width: 8,
-                        height: 8,
+                        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
                         decoration: BoxDecoration(
-                          color: const Color(0xFF4CAF50),
-                          shape: BoxShape.circle,
+                          color: const Color(0xFFE1306C),
+                          borderRadius: BorderRadius.circular(8),
                           border: Border.all(color: Colors.white, width: 1.5),
+                        ),
+                        child: Text(
+                          changeCount > 99 ? '99+' : '$changeCount',
+                          style: const TextStyle(color: Colors.white, fontSize: 9, fontWeight: FontWeight.w800),
                         ),
                       ),
                     ),
                 ],
               ),
-              const SizedBox(width: 8),
+              const SizedBox(height: 5),
               Text(
                 '@$username',
                 style: TextStyle(
-                  fontSize: 13,
-                  fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                  fontSize: 10,
+                  fontWeight: isSelected ? FontWeight.w700 : FontWeight.w600,
                   color: isSelected ? const Color(0xFFE1306C) : const Color(0xFF262626),
                 ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
               ),
-              if (isSelected && profileId != null) ...[
-                const SizedBox(width: 6),
+              if (fullName.isNotEmpty)
+                Text(
+                  fullName,
+                  style: TextStyle(fontSize: 9, color: Colors.grey[500]),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              const SizedBox(height: 4),
+              if (profileId != null)
                 GestureDetector(
                   onTap: () => _untrackProfile(username, profileId),
-                  child: Icon(Icons.close, size: 14, color: Colors.grey[500]),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: Colors.red.withValues(alpha: 0.08),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: const Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.close, size: 10, color: Colors.red),
+                        SizedBox(width: 2),
+                        Text('Parar', style: TextStyle(fontSize: 9, color: Colors.red, fontWeight: FontWeight.w600)),
+                      ],
+                    ),
+                  ),
                 ),
-              ],
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildAddChip() {
-    return Padding(
-      padding: const EdgeInsets.only(right: 8, top: 8, bottom: 8),
-      child: GestureDetector(
-        onTap: () {
-          _controller.clear();
-          _focusNode.requestFocus();
-          setState(() {
-            _selectedChipUsername = null;
-            _showMonitorButtons = false;
-            _profile = null;
-            _events = [];
-            _changeLogs = [];
-            _currentUsername = '';
-            _error = null;
-          });
-        },
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(
-              color: const Color(0xFFE1306C).withValues(alpha: 0.5),
-              width: 1,
-            ),
-          ),
-          child: const Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(Icons.add, size: 16, color: Color(0xFFE1306C)),
-              SizedBox(width: 4),
-              Text(
-                'Adicionar',
-                style: TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w500,
-                  color: Color(0xFFE1306C),
-                ),
-              ),
             ],
           ),
         ),
@@ -458,22 +493,27 @@ class _InstagramMonitorScreenState extends State<InstagramMonitorScreen> with Si
       length: 3,
       child: Scaffold(
         backgroundColor: const Color(0xFFF5F5F8),
-        body: Column(
-          children: [
-            _buildHeader(),
-            _buildTrackedChips(),
-            _buildSearchInput(),
-            if (_profile != null) _buildTabBar(),
-            Expanded(
-              child: _loading
-                  ? const Center(child: CircularProgressIndicator(color: Color(0xFFE1306C)))
-                  : _error != null
-                      ? _buildError()
-                      : _profile != null
-                          ? _buildTabContent()
-                          : _buildEmpty(),
-            ),
-          ],
+        body: LayoutBuilder(
+          builder: (context, constraints) {
+            final alturaPanel = constraints.maxHeight * 0.20;
+            return Column(
+              children: [
+                _buildHeader(),
+                _buildPainelMonitorados(alturaPanel),
+                _buildSearchInput(),
+                if (_profile != null) _buildTabBar(),
+                Expanded(
+                  child: _loading
+                      ? const Center(child: CircularProgressIndicator(color: Color(0xFFE1306C)))
+                      : _error != null
+                          ? _buildError()
+                          : _profile != null
+                              ? _buildTabContent()
+                              : _buildEmpty(),
+                ),
+              ],
+            );
+          },
         ),
       ),
     );
@@ -618,8 +658,13 @@ class _InstagramMonitorScreenState extends State<InstagramMonitorScreen> with Si
                   ],
                 ),
               ),
+              const SizedBox(width: 8),
+              IconButton(
+                icon: const Icon(Icons.settings, color: Colors.white),
+                onPressed: _abrirConfigSessoes,
+                tooltip: 'Configurar sessões do Instagram',
+              ),
               if (_profile != null) ...[
-                const SizedBox(width: 8),
                 _snapshotting
                     ? const Padding(
                         padding: EdgeInsets.all(8),
@@ -862,7 +907,12 @@ class _InstagramMonitorScreenState extends State<InstagramMonitorScreen> with Si
         Expanded(
           child: ElevatedButton.icon(
             onPressed: () async {
-              final success = await InstagramService.trackProfile(_currentUsername);
+              final success = await InstagramService.trackProfile(
+                _currentUsername,
+                fullName: _profile?.fullName ?? '',
+                profilePicUrl: _profile?.profilePicUrl ?? '',
+              );
+              if (!mounted) return;
               if (success) {
                 await _loadTrackedProfiles();
                 if (mounted) {
@@ -877,6 +927,13 @@ class _InstagramMonitorScreenState extends State<InstagramMonitorScreen> with Si
                     ),
                   );
                 }
+              } else {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('Falha ao monitorar @$_currentUsername. Verifique se você está logado e se o backend está no ar.'),
+                    backgroundColor: Colors.red.shade700,
+                  ),
+                );
               }
             },
             icon: const Icon(Icons.monitor_heart_outlined, size: 18),
@@ -1649,6 +1706,283 @@ class _ModalListaUsuariosState extends State<_ModalListaUsuarios> {
           },
         );
       },
+    );
+  }
+}
+
+/// Campo de uma sessão no diálogo de configuração (apelido + session id).
+class _CampoSessao {
+  final TextEditingController label = TextEditingController();
+  final TextEditingController sessionId = TextEditingController();
+  void dispose() {
+    label.dispose();
+    sessionId.dispose();
+  }
+}
+
+/// Diálogo para configurar o pool de sessões do Instagram (1 ou mais contas).
+/// Mostra as sessões existentes (com status de erro) e permite remover ou adicionar novas.
+class _ConfigSessoesDialog extends StatefulWidget {
+  const _ConfigSessoesDialog();
+  @override
+  State<_ConfigSessoesDialog> createState() => _ConfigSessoesDialogState();
+}
+
+class _ConfigSessoesDialogState extends State<_ConfigSessoesDialog> {
+  // Sessões já salvas no servidor (sem sessionId por segurança)
+  List<Map<String, dynamic>> _sessoesExistentes = [];
+  // Campos para adicionar novas
+  final List<_CampoSessao> _novos = [_CampoSessao()];
+  bool _salvando = false;
+  bool _carregando = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _carregarStatus();
+  }
+
+  Future<void> _carregarStatus() async {
+    final status = await InstagramService.fetchSessionsStatus();
+    if (mounted) {
+      setState(() {
+        _carregando = false;
+        if (status != null) {
+          _sessoesExistentes = List<Map<String, dynamic>>.from(
+            status['sessions_list'] ?? [],
+          );
+        }
+      });
+    }
+  }
+
+  void _adicionarCampo() => setState(() => _novos.add(_CampoSessao()));
+
+  void _removerCampo(int i) {
+    if (_novos.length == 1) return;
+    setState(() => _novos.removeAt(i).dispose());
+  }
+
+  Future<void> _removerExistente(String label) async {
+    setState(() => _salvando = true);
+    final ok = await InstagramService.deleteSession(label);
+    if (!mounted) return;
+    setState(() => _salvando = false);
+    if (ok) {
+      setState(() => _sessoesExistentes.removeWhere((s) => s['label'] == label));
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Sessão "$label" removida'), backgroundColor: Colors.green.shade700),
+        );
+      }
+    } else {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Falha ao remover. Servidor rodando?'), backgroundColor: Colors.red),
+        );
+      }
+    }
+  }
+
+  Future<void> _salvar() async {
+    final sessoes = <Map<String, String>>[];
+    for (var i = 0; i < _novos.length; i++) {
+      final sid = _novos[i].sessionId.text.trim();
+      if (sid.isEmpty) continue;
+      final apelido = _novos[i].label.text.trim();
+      sessoes.add({'label': apelido.isEmpty ? 'sessao${_sessoesExistentes.length + i + 1}' : apelido, 'sessionid': sid});
+    }
+    if (sessoes.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Informe ao menos um Session ID'), backgroundColor: Colors.orange),
+      );
+      return;
+    }
+    setState(() => _salvando = true);
+    final total = await InstagramService.saveSessions(sessoes);
+    if (!mounted) return;
+    setState(() => _salvando = false);
+    if (total != null) {
+      Navigator.pop(context);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('$total sessão(ões) salva(s) com sucesso'), backgroundColor: Colors.green.shade700),
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Falha ao salvar. O servidor local (porta 8500) está rodando?'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
+  @override
+  void dispose() {
+    for (final c in _novos) {
+      c.dispose();
+    }
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: Row(
+        children: [
+          const Icon(Icons.settings, color: Color(0xFF833AB4), size: 22),
+          const SizedBox(width: 8),
+          const Text('Sessões do Instagram'),
+        ],
+      ),
+      content: SizedBox(
+        width: 480,
+        child: _carregando
+            ? const SizedBox(height: 80, child: Center(child: CircularProgressIndicator()))
+            : SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Sessões existentes
+                    if (_sessoesExistentes.isNotEmpty) ...[
+                      const Text(
+                        'Sessões configuradas:',
+                        style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: Colors.black87),
+                      ),
+                      const SizedBox(height: 8),
+                      ..._sessoesExistentes.map((s) {
+                        final label = s['label'] as String? ?? '';
+                        final isActive = s['is_active'] as bool? ?? false;
+                        final hasError = s['has_error'] as bool? ?? false;
+                        return Container(
+                          margin: const EdgeInsets.only(bottom: 6),
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                          decoration: BoxDecoration(
+                            color: hasError
+                                ? Colors.red.withValues(alpha: 0.05)
+                                : isActive
+                                    ? Colors.green.withValues(alpha: 0.05)
+                                    : Colors.grey.withValues(alpha: 0.05),
+                            borderRadius: BorderRadius.circular(10),
+                            border: Border.all(
+                              color: hasError
+                                  ? Colors.red.withValues(alpha: 0.3)
+                                  : isActive
+                                      ? Colors.green.withValues(alpha: 0.3)
+                                      : Colors.grey.withValues(alpha: 0.2),
+                            ),
+                          ),
+                          child: Row(
+                            children: [
+                              Icon(
+                                hasError ? Icons.error : isActive ? Icons.check_circle : Icons.circle_outlined,
+                                size: 16,
+                                color: hasError ? Colors.red : isActive ? Colors.green : Colors.grey,
+                              ),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(label, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
+                                    Text(
+                                      hasError ? 'Erro — Instagram bloqueou esta sessão' : isActive ? 'Em uso' : 'Em espera no pool',
+                                      style: TextStyle(
+                                        fontSize: 10,
+                                        color: hasError ? Colors.red : isActive ? Colors.green : Colors.grey,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              if (hasError)
+                                const Padding(
+                                  padding: EdgeInsets.only(right: 6),
+                                  child: Text('?', style: TextStyle(fontSize: 18, color: Colors.red, fontWeight: FontWeight.w900)),
+                                ),
+                              IconButton(
+                                icon: const Icon(Icons.delete_outline, size: 18, color: Colors.red),
+                                onPressed: _salvando ? null : () => _removerExistente(label),
+                                tooltip: 'Remover sessão',
+                                padding: EdgeInsets.zero,
+                                constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+                              ),
+                            ],
+                          ),
+                        );
+                      }),
+                      const Divider(height: 20),
+                    ],
+                    // Adicionar novas sessões
+                    Text(
+                      _sessoesExistentes.isEmpty
+                          ? 'Nenhuma sessão configurada. Cole o Session ID abaixo (encontre em DevTools → Application → Cookies → instagram.com → sessionid).'
+                          : 'Adicionar novas sessões (quanto mais contas, mais resiliente ao bloqueio):',
+                      style: const TextStyle(fontSize: 12, color: Colors.black54),
+                    ),
+                    const SizedBox(height: 10),
+                    for (var i = 0; i < _novos.length; i++)
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 10),
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Expanded(
+                              child: Column(
+                                children: [
+                                  TextField(
+                                    controller: _novos[i].label,
+                                    decoration: const InputDecoration(
+                                      labelText: 'Apelido (opcional)',
+                                      isDense: true,
+                                      border: OutlineInputBorder(),
+                                    ),
+                                  ),
+                                  const SizedBox(height: 6),
+                                  TextField(
+                                    controller: _novos[i].sessionId,
+                                    obscureText: true,
+                                    decoration: const InputDecoration(
+                                      labelText: 'Session ID',
+                                      isDense: true,
+                                      border: OutlineInputBorder(),
+                                      helperText: 'DevTools → Application → Cookies → instagram.com → sessionid',
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            IconButton(
+                              icon: const Icon(Icons.delete_outline, color: Colors.red),
+                              onPressed: _novos.length == 1 ? null : () => _removerCampo(i),
+                              tooltip: 'Remover',
+                            ),
+                          ],
+                        ),
+                      ),
+                    TextButton.icon(
+                      onPressed: _adicionarCampo,
+                      icon: const Icon(Icons.add, size: 18),
+                      label: const Text('Adicionar outra conta'),
+                    ),
+                  ],
+                ),
+              ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: _salvando ? null : () => Navigator.pop(context),
+          child: const Text('Fechar'),
+        ),
+        ElevatedButton(
+          onPressed: _salvando ? null : _salvar,
+          style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF833AB4), foregroundColor: Colors.white),
+          child: _salvando
+              ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+              : const Text('Salvar novas'),
+        ),
+      ],
     );
   }
 }

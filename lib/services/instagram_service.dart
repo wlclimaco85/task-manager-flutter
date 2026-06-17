@@ -1,5 +1,7 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'auth_service.dart';
+import '../utils/api_links.dart';
 
 class InstagramException implements Exception {
   final String mensagem;
@@ -244,10 +246,10 @@ class InstagramService {
   static const _localApi = 'http://127.0.0.1:8500';
   static bool _localAvailable = false;
 
-  static String get _backendUrl {
-    const env = String.fromEnvironment('BACKEND_URL', defaultValue: 'http://127.0.0.1:9001');
-    return env;
-  }
+  // Base do backend Java (AppAcademia). Usa a mesma base canônica do app
+  // (ApiLinks.baseUrl = $BACKEND_URL/boletobancos) — o context-path /boletobancos
+  // é obrigatório, sem ele todos os endpoints Java retornam 404.
+  static String get _backendUrl => ApiLinks.baseUrl;
 
   static const _mobileHeaders = {
     'User-Agent': 'Instagram 301.0.0.27.109 Android (30/11; 420dpi; 1080x2400; samsung; SM-A525F; a52; exynos1280; en_US; 516783258)',
@@ -371,6 +373,7 @@ class InstagramService {
     try {
       final r = await http.delete(
         Uri.parse('$_backendUrl/api/instagram/tracked/$id'),
+        headers: await AuthService().jsonHeaders(),
       ).timeout(const Duration(seconds: 10));
       return r.statusCode == 200;
     } catch (_) {
@@ -378,12 +381,16 @@ class InstagramService {
     }
   }
 
-  static Future<bool> trackProfile(String username) async {
+  static Future<bool> trackProfile(String username, {String fullName = '', String profilePicUrl = ''}) async {
     try {
       final r = await http.post(
         Uri.parse('$_backendUrl/api/instagram/track'),
-        headers: {'Content-Type': 'application/json'},
-        body: json.encode({'username': username}),
+        headers: await AuthService().jsonHeaders(),
+        body: json.encode({
+          'username': username,
+          'fullName': fullName,
+          'profilePicUrl': profilePicUrl,
+        }),
       ).timeout(const Duration(seconds: 10));
       return r.statusCode == 200;
     } catch (_) {
@@ -410,7 +417,7 @@ class InstagramService {
     try {
       await http.post(
         Uri.parse('$_backendUrl/api/instagram/snapshot'),
-        headers: {'Content-Type': 'application/json'},
+        headers: await AuthService().jsonHeaders(),
         body: json.encode({
           'username': username,
           'snapshotType': 'followers',
@@ -420,7 +427,7 @@ class InstagramService {
 
       await http.post(
         Uri.parse('$_backendUrl/api/instagram/snapshot'),
-        headers: {'Content-Type': 'application/json'},
+        headers: await AuthService().jsonHeaders(),
         body: json.encode({
           'username': username,
           'snapshotType': 'following',
@@ -430,7 +437,7 @@ class InstagramService {
 
       await http.post(
         Uri.parse('$_backendUrl/api/instagram/snapshot'),
-        headers: {'Content-Type': 'application/json'},
+        headers: await AuthService().jsonHeaders(),
         body: json.encode({
           'username': username,
           'snapshotType': 'post_likes',
@@ -450,8 +457,10 @@ class InstagramService {
 
   static Future<List<TimelineEvent>> fetchTimeline(String username, {int days = 30}) async {
     try {
-      final r = await http.get(Uri.parse('$_backendUrl/api/instagram/timeline/$username'))
-          .timeout(const Duration(seconds: 15));
+      final r = await http.get(
+        Uri.parse('$_backendUrl/api/instagram/timeline/$username'),
+        headers: await AuthService().jsonHeaders(),
+      ).timeout(const Duration(seconds: 15));
       if (r.statusCode == 200) {
         final data = json.decode(r.body);
         if (data.containsKey('events')) {
@@ -464,8 +473,10 @@ class InstagramService {
 
   static Future<List<Map<String, dynamic>>> fetchTrackedProfiles() async {
     try {
-      final r = await http.get(Uri.parse('$_backendUrl/api/instagram/tracked'))
-          .timeout(const Duration(seconds: 10));
+      final r = await http.get(
+        Uri.parse('$_backendUrl/api/instagram/tracked'),
+        headers: await AuthService().jsonHeaders(),
+      ).timeout(const Duration(seconds: 10));
       if (r.statusCode == 200) {
         final data = json.decode(r.body);
         if (data.containsKey('profiles')) {
@@ -478,8 +489,10 @@ class InstagramService {
 
   static Future<List<Map<String, dynamic>>> fetchChangeLogs(String username) async {
     try {
-      final r = await http.get(Uri.parse('$_backendUrl/api/instagram/change-logs/$username'))
-          .timeout(const Duration(seconds: 15));
+      final r = await http.get(
+        Uri.parse('$_backendUrl/api/instagram/change-logs/$username'),
+        headers: await AuthService().jsonHeaders(),
+      ).timeout(const Duration(seconds: 15));
       if (r.statusCode == 200) {
         final data = json.decode(r.body);
         if (data.containsKey('logs')) {
@@ -488,6 +501,45 @@ class InstagramService {
       }
     } catch (_) {}
     return [];
+  }
+
+  /// Status do pool de sessões no servidor Python local (total, ativa, labels).
+  static Future<Map<String, dynamic>?> fetchSessionsStatus() async {
+    try {
+      final r = await http.get(Uri.parse('$_localApi/sessions'))
+          .timeout(const Duration(seconds: 5));
+      if (r.statusCode == 200) return json.decode(r.body) as Map<String, dynamic>;
+    } catch (_) {}
+    return null;
+  }
+
+  /// Remove uma sessão do pool pelo apelido. Retorna true se removida.
+  static Future<bool> deleteSession(String label) async {
+    try {
+      final r = await http.delete(
+        Uri.parse('$_localApi/sessions/${Uri.encodeComponent(label)}'),
+      ).timeout(const Duration(seconds: 5));
+      return r.statusCode == 200;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  /// Salva o pool de sessões (1+ contas) no servidor Python local.
+  /// Cada item: {'label': ..., 'sessionid': ...}. Retorna o total salvo, ou null em falha.
+  static Future<int?> saveSessions(List<Map<String, String>> sessoes) async {
+    try {
+      final r = await http.post(
+        Uri.parse('$_localApi/sessions'),
+        headers: {'Content-Type': 'application/json'},
+        body: json.encode({'sessions': sessoes}),
+      ).timeout(const Duration(seconds: 15));
+      if (r.statusCode == 200) {
+        final data = json.decode(r.body);
+        return data['total'] as int?;
+      }
+    } catch (_) {}
+    return null;
   }
 }
 
