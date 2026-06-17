@@ -9,7 +9,7 @@ class InstagramMonitorScreen extends StatefulWidget {
   State<InstagramMonitorScreen> createState() => _InstagramMonitorScreenState();
 }
 
-class _InstagramMonitorScreenState extends State<InstagramMonitorScreen> with SingleTickerProviderStateMixin {
+class _InstagramMonitorScreenState extends State<InstagramMonitorScreen> with TickerProviderStateMixin {
   // Controladores e estado do Match
   final _controller = TextEditingController();
   final _focusNode = FocusNode();
@@ -18,6 +18,7 @@ class _InstagramMonitorScreenState extends State<InstagramMonitorScreen> with Si
   String? _error;
   late AnimationController _animController;
   late Animation<double> _fadeAnimation;
+  late TabController _tabController;
   bool _localApiStatus = false;
 
   // Estado da Timeline
@@ -43,6 +44,7 @@ class _InstagramMonitorScreenState extends State<InstagramMonitorScreen> with Si
     super.initState();
     _animController = AnimationController(vsync: this, duration: const Duration(milliseconds: 600));
     _fadeAnimation = CurvedAnimation(parent: _animController, curve: Curves.easeInOut);
+    _tabController = TabController(length: 3, vsync: this);
     _checkLocalApi();
     _loadTrackedProfiles();
   }
@@ -52,6 +54,7 @@ class _InstagramMonitorScreenState extends State<InstagramMonitorScreen> with Si
     _controller.dispose();
     _focusNode.dispose();
     _animController.dispose();
+    _tabController.dispose();
     super.dispose();
   }
 
@@ -287,7 +290,8 @@ class _InstagramMonitorScreenState extends State<InstagramMonitorScreen> with Si
             backgroundColor: Colors.green.shade700,
           ),
         );
-        _loadProfileData(_currentUsername); // Atualiza tudo apos snapshot
+        await _loadProfileData(_currentUsername);
+        if (mounted) _tabController.animateTo(0);
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Falha ao tirar snapshot'), backgroundColor: Colors.red),
@@ -508,9 +512,7 @@ class _InstagramMonitorScreenState extends State<InstagramMonitorScreen> with Si
 
   @override
   Widget build(BuildContext context) {
-    return DefaultTabController(
-      length: 3,
-      child: Scaffold(
+    return Scaffold(
         backgroundColor: const Color(0xFFF5F5F8),
         body: LayoutBuilder(
           builder: (context, constraints) {
@@ -534,7 +536,6 @@ class _InstagramMonitorScreenState extends State<InstagramMonitorScreen> with Si
             );
           },
         ),
-      ),
     );
   }
 
@@ -542,6 +543,7 @@ class _InstagramMonitorScreenState extends State<InstagramMonitorScreen> with Si
     return Container(
       color: Colors.white,
       child: TabBar(
+        controller: _tabController,
         indicatorColor: const Color(0xFFE1306C),
         labelColor: const Color(0xFFE1306C),
         unselectedLabelColor: Colors.grey,
@@ -558,6 +560,7 @@ class _InstagramMonitorScreenState extends State<InstagramMonitorScreen> with Si
     return FadeTransition(
       opacity: _fadeAnimation,
       child: TabBarView(
+        controller: _tabController,
         children: [
           SingleChildScrollView(
             padding: const EdgeInsets.all(16),
@@ -1147,19 +1150,34 @@ class _InstagramMonitorScreenState extends State<InstagramMonitorScreen> with Si
   // --- Widgets da Timeline ---
 
   Widget _buildEmptyTimeline() {
+    final temBaseline = _lastSnapshotTime != null;
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(32),
       decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(20)),
       child: Column(
         children: [
-          Icon(Icons.timeline, size: 50, color: Colors.grey[300]),
+          Icon(
+            temBaseline ? Icons.check_circle_outline : Icons.timeline,
+            size: 50,
+            color: temBaseline ? Colors.green.shade300 : Colors.grey[300],
+          ),
           const SizedBox(height: 12),
-          Text('Nenhum evento registrado', style: TextStyle(color: Colors.grey[400], fontSize: 14)),
+          Text(
+            temBaseline ? 'Baseline salvo com sucesso' : 'Nenhum evento registrado',
+            style: TextStyle(
+              color: temBaseline ? Colors.green.shade600 : Colors.grey[400],
+              fontSize: 14,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
           const SizedBox(height: 8),
           Text(
-            'Faca um snapshot para comecar a monitorar',
-            style: TextStyle(fontSize: 12, color: Colors.grey[400]),
+            temBaseline
+                ? 'Snapshot de $_lastSnapshotTime salvo como linha de base.\nTome outro snapshot depois de atividade no Instagram para ver as mudanças aqui.'
+                : 'Faca um snapshot para comecar a monitorar',
+            style: TextStyle(fontSize: 12, color: Colors.grey[500]),
+            textAlign: TextAlign.center,
           ),
         ],
       ),
