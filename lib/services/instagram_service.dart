@@ -503,6 +503,35 @@ class InstagramService {
     return [];
   }
 
+  /// Carrega configurações de API (rapidapi_key, python_server_url) do backend Java.
+  static Future<Map<String, String>?> fetchApiConfig() async {
+    try {
+      final r = await http.get(
+        Uri.parse('$_backendUrl/api/instagram/config'),
+        headers: await AuthService().jsonHeaders(),
+      ).timeout(const Duration(seconds: 10));
+      if (r.statusCode == 200) {
+        final data = json.decode(r.body) as Map<String, dynamic>;
+        return data.map((k, v) => MapEntry(k, v?.toString() ?? ''));
+      }
+    } catch (_) {}
+    return null;
+  }
+
+  /// Salva configurações de API no backend Java.
+  static Future<bool> saveApiConfig(Map<String, String> config) async {
+    try {
+      final headers = await AuthService().jsonHeaders();
+      final r = await http.put(
+        Uri.parse('$_backendUrl/api/instagram/config'),
+        headers: {...headers, 'Content-Type': 'application/json'},
+        body: json.encode(config),
+      ).timeout(const Duration(seconds: 10));
+      return r.statusCode == 200;
+    } catch (_) {}
+    return false;
+  }
+
   /// Status do pool de sessões no servidor Python local (total, ativa, labels).
   static Future<Map<String, dynamic>?> fetchSessionsStatus() async {
     try {

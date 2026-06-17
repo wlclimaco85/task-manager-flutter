@@ -413,13 +413,23 @@ class _InstagramMonitorScreenState extends State<InstagramMonitorScreen> with Si
                   CircleAvatar(
                     radius: 20,
                     backgroundColor: const Color(0xFFE1306C).withValues(alpha: 0.15),
-                    backgroundImage: profilePicUrl.isNotEmpty ? NetworkImage(profilePicUrl) : null,
-                    child: profilePicUrl.isEmpty
-                        ? Text(
+                    child: profilePicUrl.isNotEmpty
+                        ? ClipOval(
+                            child: Image.network(
+                              profilePicUrl,
+                              width: 40,
+                              height: 40,
+                              fit: BoxFit.cover,
+                              errorBuilder: (_, __, ___) => Text(
+                                username.isNotEmpty ? username[0].toUpperCase() : '?',
+                                style: const TextStyle(color: Color(0xFFE1306C), fontWeight: FontWeight.w800, fontSize: 16),
+                              ),
+                            ),
+                          )
+                        : Text(
                             username.isNotEmpty ? username[0].toUpperCase() : '?',
                             style: const TextStyle(color: Color(0xFFE1306C), fontWeight: FontWeight.w800, fontSize: 16),
-                          )
-                        : null,
+                          ),
                   ),
                   if (changeCount > 0)
                     Positioned(
@@ -801,8 +811,18 @@ class _InstagramMonitorScreenState extends State<InstagramMonitorScreen> with Si
                 backgroundColor: Colors.white,
                 child: CircleAvatar(
                   radius: 42,
-                  backgroundImage: _profile!.profilePicUrl.isNotEmpty ? NetworkImage(_profile!.profilePicUrl) : null,
-                  child: _profile!.profilePicUrl.isEmpty ? const Icon(Icons.person, size: 40, color: Colors.grey) : null,
+                  backgroundColor: Colors.grey[100],
+                  child: _profile!.profilePicUrl.isNotEmpty
+                      ? ClipOval(
+                          child: Image.network(
+                            _profile!.profilePicUrl,
+                            width: 84,
+                            height: 84,
+                            fit: BoxFit.cover,
+                            errorBuilder: (_, __, ___) => const Icon(Icons.person, size: 40, color: Colors.grey),
+                          ),
+                        )
+                      : const Icon(Icons.person, size: 40, color: Colors.grey),
                 ),
               ),
             ),
@@ -1052,7 +1072,7 @@ class _InstagramMonitorScreenState extends State<InstagramMonitorScreen> with Si
         GridView.builder(
           shrinkWrap: true,
           physics: const NeverScrollableScrollPhysics(),
-          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 3, crossAxisSpacing: 3, mainAxisSpacing: 3),
+          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 4, crossAxisSpacing: 4, mainAxisSpacing: 4),
           itemCount: posts.length,
           itemBuilder: (context, index) => _buildPostCard(posts[index]),
         ),
@@ -1085,20 +1105,20 @@ class _InstagramMonitorScreenState extends State<InstagramMonitorScreen> with Si
             Positioned(
               bottom: 0, left: 0, right: 0,
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 9),
                 decoration: BoxDecoration(
                   gradient: LinearGradient(colors: [Colors.black87, Colors.black26], begin: Alignment.bottomCenter, end: Alignment.topCenter),
                 ),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    const Icon(Icons.favorite, color: Colors.white, size: 14),
+                    const Icon(Icons.favorite, color: Colors.white, size: 16),
                     const SizedBox(width: 4),
-                    Text(InstagramService.formatCount(post.likes), style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w700)),
+                    Text(InstagramService.formatCount(post.likes), style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w700)),
                     const SizedBox(width: 12),
-                    const Icon(Icons.chat_bubble, color: Colors.white, size: 14),
+                    const Icon(Icons.chat_bubble, color: Colors.white, size: 16),
                     const SizedBox(width: 4),
-                    Text(InstagramService.formatCount(post.comments), style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w700)),
+                    Text(InstagramService.formatCount(post.comments), style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w700)),
                   ],
                 ),
               ),
@@ -1670,16 +1690,29 @@ class _ModalListaUsuariosState extends State<_ModalListaUsuarios> {
           return const Center(child: CircularProgressIndicator(color: Color(0xFFE1306C)));
         }
         if (!snapshot.hasData || snapshot.data!.isEmpty) {
-          return const Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(Icons.lock_outline, size: 40, color: Colors.grey),
-                SizedBox(height: 12),
-                Text('Servidor local indisponivel', style: TextStyle(color: Colors.grey)),
-                Text('Inicie: python instagram_api/server.py',
-                    style: TextStyle(color: Colors.grey, fontSize: 12)),
-              ],
+          return Center(
+            child: Padding(
+              padding: const EdgeInsets.all(24),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.block, size: 40, color: Colors.orange[300]),
+                  const SizedBox(height: 12),
+                  const Text(
+                    'Nao foi possivel carregar a lista',
+                    style: TextStyle(color: Colors.grey, fontWeight: FontWeight.w600),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'O Instagram pode estar bloqueando temporariamente a sessao (soft-block).\n'
+                    'Os dados de seguidores/seguidos exigem autenticacao privada.\n'
+                    'Aguarde alguns minutos e tente novamente.',
+                    style: TextStyle(color: Colors.grey[500], fontSize: 12),
+                    textAlign: TextAlign.center,
+                  ),
+                ],
+              ),
             ),
           );
         }
@@ -1736,6 +1769,10 @@ class _ConfigSessoesDialogState extends State<_ConfigSessoesDialog> {
   bool _salvando = false;
   bool _carregando = true;
 
+  // Configurações de API
+  final _rapidApiKeyCtrl = TextEditingController();
+  final _pythonUrlCtrl = TextEditingController();
+
   @override
   void initState() {
     super.initState();
@@ -1744,6 +1781,7 @@ class _ConfigSessoesDialogState extends State<_ConfigSessoesDialog> {
 
   Future<void> _carregarStatus() async {
     final status = await InstagramService.fetchSessionsStatus();
+    final apiConfig = await InstagramService.fetchApiConfig();
     if (mounted) {
       setState(() {
         _carregando = false;
@@ -1752,8 +1790,26 @@ class _ConfigSessoesDialogState extends State<_ConfigSessoesDialog> {
             status['sessions_list'] ?? [],
           );
         }
+        if (apiConfig != null) {
+          _rapidApiKeyCtrl.text = apiConfig['rapidapi_key'] ?? '';
+          _pythonUrlCtrl.text = apiConfig['python_server_url'] ?? 'http://127.0.0.1:8500';
+        }
       });
     }
+  }
+
+  Future<void> _salvarApiConfig() async {
+    setState(() => _salvando = true);
+    final ok = await InstagramService.saveApiConfig({
+      'rapidapi_key': _rapidApiKeyCtrl.text.trim(),
+      'python_server_url': _pythonUrlCtrl.text.trim(),
+    });
+    if (!mounted) return;
+    setState(() => _salvando = false);
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+      content: Text(ok ? 'APIs salvas com sucesso' : 'Falha ao salvar. Backend rodando?'),
+      backgroundColor: ok ? Colors.green.shade700 : Colors.red,
+    ));
   }
 
   void _adicionarCampo() => setState(() => _novos.add(_CampoSessao()));
@@ -1822,6 +1878,8 @@ class _ConfigSessoesDialogState extends State<_ConfigSessoesDialog> {
     for (final c in _novos) {
       c.dispose();
     }
+    _rapidApiKeyCtrl.dispose();
+    _pythonUrlCtrl.dispose();
     super.dispose();
   }
 
@@ -1832,7 +1890,7 @@ class _ConfigSessoesDialogState extends State<_ConfigSessoesDialog> {
         children: [
           const Icon(Icons.settings, color: Color(0xFF833AB4), size: 22),
           const SizedBox(width: 8),
-          const Text('Sessões do Instagram'),
+          const Text('Configurações do Monitor'),
         ],
       ),
       content: SizedBox(
@@ -1844,6 +1902,41 @@ class _ConfigSessoesDialogState extends State<_ConfigSessoesDialog> {
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    // --- APIs de coleta ---
+                    const Text('APIs de coleta:', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: Colors.black87)),
+                    const SizedBox(height: 8),
+                    TextField(
+                      controller: _pythonUrlCtrl,
+                      decoration: const InputDecoration(
+                        labelText: 'URL do servidor Python',
+                        isDense: true,
+                        border: OutlineInputBorder(),
+                        helperText: 'Ex: http://127.0.0.1:8500',
+                        prefixIcon: Icon(Icons.computer, size: 18),
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    TextField(
+                      controller: _rapidApiKeyCtrl,
+                      obscureText: true,
+                      decoration: const InputDecoration(
+                        labelText: 'Chave RapidAPI',
+                        isDense: true,
+                        border: OutlineInputBorder(),
+                        helperText: 'instagram-scraper-stable-api.p.rapidapi.com',
+                        prefixIcon: Icon(Icons.vpn_key, size: 18),
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Align(
+                      alignment: Alignment.centerRight,
+                      child: TextButton.icon(
+                        onPressed: _salvando ? null : _salvarApiConfig,
+                        icon: const Icon(Icons.save, size: 16),
+                        label: const Text('Salvar APIs'),
+                      ),
+                    ),
+                    const Divider(height: 20),
                     // Sessões existentes
                     if (_sessoesExistentes.isNotEmpty) ...[
                       const Text(
