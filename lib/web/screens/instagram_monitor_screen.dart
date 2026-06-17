@@ -2108,14 +2108,23 @@ class _PainelJobsDialog extends StatefulWidget {
 }
 
 class _PainelJobsDialogState extends State<_PainelJobsDialog> {
-  bool _carregando = true;
-  List<Map<String, dynamic>> _jobs = [];
-  Map<String, dynamic>? _interacoes;
+  static const _corRoxo = Color(0xFF833AB4);
+  static const _corRosa = Color(0xFFE1306C);
+  static const _corLaranja = Color(0xFFF77737);
 
   static const _nomeDisplayJob = {
     'InstagramDataCollector': 'Coleta Horária',
     'InstagramInteracaoJob': 'Interação Following',
   };
+
+  static const _iconeJob = {
+    'InstagramDataCollector': Icons.cloud_download_outlined,
+    'InstagramInteracaoJob': Icons.people_alt_outlined,
+  };
+
+  bool _carregando = true;
+  List<Map<String, dynamic>> _jobs = [];
+  Map<String, dynamic>? _interacoes;
 
   @override
   void initState() {
@@ -2141,122 +2150,372 @@ class _PainelJobsDialogState extends State<_PainelJobsDialog> {
     }
   }
 
+  String _tempoRelativo(String? isoStr) {
+    if (isoStr == null || isoStr.isEmpty) return '';
+    try {
+      final dt = DateTime.parse(isoStr).toLocal();
+      final diff = DateTime.now().difference(dt);
+      if (diff.inMinutes < 1) return 'agora mesmo';
+      if (diff.inMinutes < 60) return 'há ${diff.inMinutes} min';
+      if (diff.inHours < 24) return 'há ${diff.inHours}h';
+      return 'há ${diff.inDays} dia${diff.inDays > 1 ? 's' : ''}';
+    } catch (_) {
+      return '';
+    }
+  }
+
+  String _formatarDataHora(String? isoStr) {
+    if (isoStr == null || isoStr.isEmpty) return '';
+    try {
+      final dt = DateTime.parse(isoStr).toLocal();
+      return '${dt.day.toString().padLeft(2, '0')}/${dt.month.toString().padLeft(2, '0')} '
+          '${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}';
+    } catch (_) {
+      return '';
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    return AlertDialog(
-      title: Row(
-        children: const [
-          Icon(Icons.analytics, color: Color(0xFF833AB4), size: 22),
-          SizedBox(width: 8),
-          Text('Jobs e Interações'),
+    final alturaMaxima = MediaQuery.of(context).size.height * 0.80;
+
+    return Dialog(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      clipBehavior: Clip.antiAlias,
+      child: ConstrainedBox(
+        constraints: BoxConstraints(maxWidth: 560, maxHeight: alturaMaxima),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            _buildHeader(),
+            Flexible(
+              child: _carregando ? _buildSkeleton() : _buildCorpo(),
+            ),
+            _buildRodape(),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildHeader() {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.fromLTRB(20, 18, 20, 18),
+      decoration: const BoxDecoration(
+        gradient: LinearGradient(
+          colors: [_corRoxo, _corRosa, _corLaranja],
+          begin: Alignment.centerLeft,
+          end: Alignment.centerRight,
+        ),
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: Colors.white.withValues(alpha: 0.18),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: const Icon(Icons.analytics_outlined, color: Colors.white, size: 22),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Jobs e Interações',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: 0.2,
+                  ),
+                ),
+                if (widget.username != null && widget.username!.isNotEmpty)
+                  Text(
+                    '@${widget.username}',
+                    style: TextStyle(
+                      color: Colors.white.withValues(alpha: 0.80),
+                      fontSize: 12,
+                    ),
+                  ),
+              ],
+            ),
+          ),
         ],
       ),
-      content: SizedBox(
-        width: 520,
-        child: _carregando
-            ? const SizedBox(
-                height: 80,
-                child: Center(child: CircularProgressIndicator()))
-            : SingleChildScrollView(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      'Status dos Jobs',
-                      style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700),
-                    ),
-                    const SizedBox(height: 8),
-                    ..._jobs.map(_buildJobCard),
-                    if (_jobs.isEmpty)
-                      Text(
-                        'Nenhum job executado ainda.',
-                        style: TextStyle(color: Colors.grey[500], fontSize: 13),
-                      ),
-                    if (_interacoes != null || widget.username != null) ...[
-                      const Divider(height: 24),
-                      _buildSecaoInteracoes(),
-                    ],
-                  ],
-                ),
-              ),
+    );
+  }
+
+  Widget _buildSkeleton() {
+    return Padding(
+      padding: const EdgeInsets.all(20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: List.generate(3, (i) => _skeletonBloco(i)),
       ),
-      actions: [
-        TextButton(onPressed: _carregar, child: const Text('Atualizar')),
-        TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Fechar')),
+    );
+  }
+
+  Widget _skeletonBloco(int indice) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: Colors.grey[100],
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 40,
+            height: 40,
+            decoration: BoxDecoration(
+              color: Colors.grey[300],
+              borderRadius: BorderRadius.circular(10),
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Container(
+                  height: 12,
+                  width: indice == 0 ? 120 : 90,
+                  decoration: BoxDecoration(
+                    color: Colors.grey[300],
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                ),
+                const SizedBox(height: 6),
+                Container(
+                  height: 10,
+                  width: 160,
+                  decoration: BoxDecoration(
+                    color: Colors.grey[200],
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCorpo() {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.fromLTRB(20, 20, 20, 4),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _buildRotulo('Status dos Jobs', Icons.schedule_outlined, _corRoxo),
+          const SizedBox(height: 10),
+          if (_jobs.isEmpty)
+            _buildEstadoVazioJobs()
+          else
+            ..._jobs.map(_buildJobCard),
+          const SizedBox(height: 20),
+          const Divider(height: 1, thickness: 1),
+          const SizedBox(height: 20),
+          _buildRotulo('Interações detectadas', Icons.notifications_active_outlined, _corRosa),
+          const SizedBox(height: 10),
+          _buildSecaoInteracoes(),
+          const SizedBox(height: 8),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildRotulo(String titulo, IconData icone, Color cor) {
+    return Row(
+      children: [
+        Icon(icone, size: 15, color: cor),
+        const SizedBox(width: 6),
+        Text(
+          titulo.toUpperCase(),
+          style: TextStyle(
+            fontSize: 10,
+            fontWeight: FontWeight.w800,
+            color: cor,
+            letterSpacing: 0.8,
+          ),
+        ),
       ],
+    );
+  }
+
+  Widget _buildEstadoVazioJobs() {
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 18, horizontal: 14),
+      decoration: BoxDecoration(
+        color: Colors.grey[50],
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.grey[200]!),
+      ),
+      child: Row(
+        children: [
+          Icon(Icons.hourglass_empty_outlined, color: Colors.grey[400], size: 28),
+          const SizedBox(width: 12),
+          Text(
+            'Nenhum job executado ainda.',
+            style: TextStyle(color: Colors.grey[500], fontSize: 13),
+          ),
+        ],
+      ),
     );
   }
 
   Widget _buildJobCard(Map<String, dynamic> job) {
     final nome = job['jobNome'] as String? ?? '';
     final nomeDisplay = _nomeDisplayJob[nome] ?? nome;
+    final icone = _iconeJob[nome] ?? Icons.settings_outlined;
     final status = job['status'] as String? ?? '';
     final inicio = job['iniciadoEm'] as String?;
     final durMs = job['duracaoMs'] as int?;
     final resultado = job['resultado'] as String? ?? '';
-    final isOk = status == 'SUCESSO';
 
-    String durStr = durMs != null ? '${durMs}ms' : '';
-    String dataStr = '';
-    if (inicio != null) {
-      try {
-        final dt = DateTime.parse(inicio).toLocal();
-        dataStr =
-            '${dt.day.toString().padLeft(2, '0')}/${dt.month.toString().padLeft(2, '0')} ${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}';
-      } catch (_) {}
-    }
+    final isOk = status == 'SUCESSO';
+    final nunca = status.isEmpty;
+
+    final corChip = nunca
+        ? Colors.grey[400]!
+        : isOk
+            ? const Color(0xFF2E7D32)
+            : const Color(0xFFC62828);
+    final corFundoChip = nunca
+        ? Colors.grey[100]!
+        : isOk
+            ? const Color(0xFFE8F5E9)
+            : const Color(0xFFFFEBEE);
+    final labelChip = nunca ? 'Nunca' : isOk ? 'Sucesso' : 'Erro';
+    final iconeChip = nunca
+        ? Icons.remove_circle_outline
+        : isOk
+            ? Icons.check_circle_outline
+            : Icons.error_outline;
+
+    final dataExibicao = _formatarDataHora(inicio);
+    final tempoRel = _tempoRelativo(inicio);
+    final durStr = durMs != null ? '${durMs}ms' : null;
 
     return Container(
-      margin: const EdgeInsets.only(bottom: 8),
-      padding: const EdgeInsets.all(12),
+      margin: const EdgeInsets.only(bottom: 10),
+      padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: isOk
-            ? Colors.green.withValues(alpha: 0.05)
-            : Colors.red.withValues(alpha: 0.05),
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(
-          color: isOk
-              ? Colors.green.withValues(alpha: 0.25)
-              : Colors.red.withValues(alpha: 0.25),
-        ),
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.grey[200]!),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.04),
+            blurRadius: 6,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
-      child: Column(
+      child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            children: [
-              Icon(isOk ? Icons.check_circle : Icons.error,
-                  size: 16,
-                  color: isOk ? Colors.green : Colors.red),
-              const SizedBox(width: 6),
-              Text(nomeDisplay,
-                  style: const TextStyle(
-                      fontSize: 13, fontWeight: FontWeight.w700)),
-              const Spacer(),
-              if (durStr.isNotEmpty)
-                Text(durStr,
-                    style:
-                        TextStyle(fontSize: 11, color: Colors.grey[500])),
-              if (dataStr.isNotEmpty) ...[
-                const SizedBox(width: 8),
-                Text(dataStr,
-                    style:
-                        TextStyle(fontSize: 11, color: Colors.grey[500])),
-              ],
-            ],
-          ),
-          if (resultado.isNotEmpty) ...[
-            const SizedBox(height: 4),
-            Text(
-              resultado,
-              style: TextStyle(fontSize: 11, color: Colors.grey[600]),
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
+          Container(
+            width: 44,
+            height: 44,
+            decoration: BoxDecoration(
+              gradient: const LinearGradient(
+                colors: [_corRoxo, _corRosa],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              borderRadius: BorderRadius.circular(12),
             ),
-          ],
+            child: Icon(icone, color: Colors.white, size: 22),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        nomeDisplay,
+                        style: const TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w700,
+                          color: Color(0xFF1A1A2E),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                      decoration: BoxDecoration(
+                        color: corFundoChip,
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(iconeChip, size: 11, color: corChip),
+                          const SizedBox(width: 3),
+                          Text(
+                            labelChip,
+                            style: TextStyle(
+                              fontSize: 10,
+                              fontWeight: FontWeight.w700,
+                              color: corChip,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 4),
+                if (dataExibicao.isNotEmpty)
+                  RichText(
+                    text: TextSpan(
+                      style: TextStyle(fontSize: 11, color: Colors.grey[500]),
+                      children: [
+                        TextSpan(text: dataExibicao),
+                        if (tempoRel.isNotEmpty)
+                          TextSpan(
+                            text: '  ·  $tempoRel',
+                            style: TextStyle(
+                              color: Colors.grey[400],
+                              fontStyle: FontStyle.italic,
+                            ),
+                          ),
+                        if (durStr != null)
+                          TextSpan(
+                            text: '  ·  $durStr',
+                            style: const TextStyle(fontWeight: FontWeight.w600),
+                          ),
+                      ],
+                    ),
+                  )
+                else
+                  Text(
+                    'Aguardando primeira execução',
+                    style: TextStyle(fontSize: 11, color: Colors.grey[400], fontStyle: FontStyle.italic),
+                  ),
+                if (resultado.isNotEmpty) ...[
+                  const SizedBox(height: 4),
+                  Text(
+                    resultado,
+                    style: TextStyle(fontSize: 11, color: Colors.grey[600]),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
+              ],
+            ),
+          ),
         ],
       ),
     );
@@ -2264,153 +2523,259 @@ class _PainelJobsDialogState extends State<_PainelJobsDialog> {
 
   Widget _buildSecaoInteracoes() {
     if (widget.username == null || widget.username!.isEmpty) {
-      return Text('Selecione um perfil para ver interações.',
-          style: TextStyle(color: Colors.grey[500], fontSize: 13));
+      return _buildEstadoVazioInteracoes('Selecione um perfil para ver interações.');
     }
 
     if (_interacoes == null) {
-      return Text('Erro ao carregar interações.',
-          style: TextStyle(color: Colors.grey[500], fontSize: 13));
+      return _buildEstadoVazioInteracoes('Erro ao carregar interações.');
     }
 
-    final curtidas =
-        List<Map<String, dynamic>>.from(_interacoes!['curtidas'] ?? []);
-    final comentarios =
-        List<Map<String, dynamic>>.from(_interacoes!['comentarios'] ?? []);
-    final totalCurtidas = _interacoes!['totalCurtidas'] ?? 0;
-    final totalComentarios = _interacoes!['totalComentarios'] ?? 0;
+    final curtidas = List<Map<String, dynamic>>.from(_interacoes!['curtidas'] ?? []);
+    final comentarios = List<Map<String, dynamic>>.from(_interacoes!['comentarios'] ?? []);
+    final totalCurtidas = _interacoes!['totalCurtidas'] ?? curtidas.length;
+    final totalComentarios = _interacoes!['totalComentarios'] ?? comentarios.length;
 
     if (curtidas.isEmpty && comentarios.isEmpty) {
-      return Padding(
-        padding: const EdgeInsets.symmetric(vertical: 12),
-        child: Text(
-          'Nenhuma interação detectada para @${widget.username}.\nO job roda todos os dias às 23:59.',
-          style: TextStyle(color: Colors.grey[500], fontSize: 13),
-          textAlign: TextAlign.center,
-        ),
+      return _buildEstadoVazioInteracoes(
+        'Nenhuma interação detectada para @${widget.username}.\nO job roda todos os dias às 23:59.',
       );
     }
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          'Interações de @${widget.username}',
-          style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700),
-        ),
-        const SizedBox(height: 10),
         if (curtidas.isNotEmpty) ...[
-          Row(children: [
-            const Icon(Icons.favorite, color: Color(0xFFE1306C), size: 14),
-            const SizedBox(width: 4),
-            Text(
-              '$totalCurtidas curtida(s)',
-              style: const TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
-                  color: Color(0xFFE1306C)),
-            ),
-          ]),
-          const SizedBox(height: 6),
-          ...curtidas.take(10).map((c) => _buildInteracaoRow(c, false)),
-          const SizedBox(height: 10),
+          _buildSubtituloInteracao(
+            Icons.favorite_rounded,
+            '$totalCurtidas curtida${totalCurtidas != 1 ? 's' : ''}',
+            _corRosa,
+          ),
+          const SizedBox(height: 8),
+          ...curtidas.take(10).map((c) => _buildCartaoInteracao(c, false)),
+          if (comentarios.isNotEmpty) const SizedBox(height: 14),
         ],
         if (comentarios.isNotEmpty) ...[
-          Row(children: [
-            const Icon(Icons.chat_bubble, color: Color(0xFF833AB4), size: 14),
-            const SizedBox(width: 4),
-            Text(
-              '$totalComentarios comentário(s)',
-              style: const TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
-                  color: Color(0xFF833AB4)),
-            ),
-          ]),
-          const SizedBox(height: 6),
-          ...comentarios.take(10).map((c) => _buildInteracaoRow(c, true)),
+          _buildSubtituloInteracao(
+            Icons.chat_bubble_rounded,
+            '$totalComentarios comentário${totalComentarios != 1 ? 's' : ''}',
+            _corRoxo,
+          ),
+          const SizedBox(height: 8),
+          ...comentarios.take(10).map((c) => _buildCartaoInteracao(c, true)),
         ],
       ],
     );
   }
 
-  Widget _buildInteracaoRow(Map<String, dynamic> item, bool isComentario) {
+  Widget _buildEstadoVazioInteracoes(String mensagem) {
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 14),
+      decoration: BoxDecoration(
+        color: Colors.grey[50],
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.grey[200]!),
+      ),
+      child: Center(
+        child: Column(
+          children: [
+            Icon(Icons.notifications_none_outlined, size: 36, color: Colors.grey[300]),
+            const SizedBox(height: 10),
+            Text(
+              mensagem,
+              style: TextStyle(color: Colors.grey[500], fontSize: 13, height: 1.5),
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSubtituloInteracao(IconData icone, String label, Color cor) {
+    return Row(
+      children: [
+        Container(
+          padding: const EdgeInsets.all(5),
+          decoration: BoxDecoration(
+            color: cor.withValues(alpha: 0.10),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Icon(icone, size: 14, color: cor),
+        ),
+        const SizedBox(width: 8),
+        Text(
+          label,
+          style: TextStyle(
+            fontSize: 12,
+            fontWeight: FontWeight.w700,
+            color: cor,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildCartaoInteracao(Map<String, dynamic> item, bool isComentario) {
     final owner = item['postOwnerUsername'] as String? ?? '';
     final shortcode = item['postShortcode'] as String? ?? '';
     final texto = item['textoComentario'] as String? ?? '';
     final detected = item['detectedAt'] as String? ?? '';
+    final interactor = widget.username ?? '';
 
-    String timeStr = '';
-    if (detected.isNotEmpty) {
-      try {
-        final dt = DateTime.parse(detected).toLocal();
-        timeStr =
-            '${dt.day.toString().padLeft(2, '0')}/${dt.month.toString().padLeft(2, '0')} ${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}';
-      } catch (_) {}
-    }
+    final tempoRel = _tempoRelativo(detected.isNotEmpty ? detected : null);
+    final corBase = isComentario ? _corRoxo : _corRosa;
+    final inicial = interactor.isNotEmpty ? interactor[0].toUpperCase() : '?';
 
-    final corBase =
-        isComentario ? const Color(0xFF833AB4) : const Color(0xFFE1306C);
+    final descricao = isComentario
+        ? '@$interactor comentou em um post de @$owner'
+        : '@$interactor curtiu um post de @$owner';
 
     return Container(
-      margin: const EdgeInsets.only(bottom: 6),
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+      margin: const EdgeInsets.only(bottom: 8),
+      padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: corBase.withValues(alpha: 0.04),
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: corBase.withValues(alpha: 0.15)),
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: corBase.withValues(alpha: 0.18)),
+        boxShadow: [
+          BoxShadow(
+            color: corBase.withValues(alpha: 0.06),
+            blurRadius: 6,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
-      child: Column(
+      child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            children: [
-              Icon(
-                isComentario
-                    ? Icons.chat_bubble_outline
-                    : Icons.favorite_border,
-                size: 13,
-                color: corBase,
+          Container(
+            width: 36,
+            height: 36,
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [corBase, corBase.withValues(alpha: 0.60)],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
               ),
-              const SizedBox(width: 5),
-              Expanded(
-                child: Text(
-                  isComentario
-                      ? 'Comentou no post de @$owner'
-                      : 'Curtiu post de @$owner',
-                  style: const TextStyle(
-                      fontSize: 12, fontWeight: FontWeight.w600),
-                  overflow: TextOverflow.ellipsis,
+              shape: BoxShape.circle,
+            ),
+            child: Center(
+              child: Text(
+                inicial,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w700,
+                  fontSize: 15,
                 ),
               ),
-              if (timeStr.isNotEmpty)
-                Text(timeStr,
-                    style:
-                        TextStyle(fontSize: 10, color: Colors.grey[500])),
-            ],
+            ),
           ),
-          if (shortcode.isNotEmpty) ...[
-            const SizedBox(height: 2),
-            Text(
-              'instagram.com/p/$shortcode',
-              style: TextStyle(fontSize: 10, color: Colors.grey[500]),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(
+                      child: Text(
+                        descricao,
+                        style: const TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          color: Color(0xFF1A1A2E),
+                          height: 1.4,
+                        ),
+                      ),
+                    ),
+                    if (tempoRel.isNotEmpty) ...[
+                      const SizedBox(width: 6),
+                      Text(
+                        tempoRel,
+                        style: TextStyle(
+                          fontSize: 10,
+                          color: Colors.grey[400],
+                          fontStyle: FontStyle.italic,
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+                if (shortcode.isNotEmpty) ...[
+                  const SizedBox(height: 3),
+                  Row(
+                    children: [
+                      Icon(Icons.link, size: 11, color: Colors.grey[400]),
+                      const SizedBox(width: 3),
+                      Text(
+                        'instagram.com/p/$shortcode',
+                        style: TextStyle(fontSize: 10, color: Colors.grey[400]),
+                      ),
+                    ],
+                  ),
+                ],
+                if (isComentario && texto.isNotEmpty) ...[
+                  const SizedBox(height: 6),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+                    decoration: BoxDecoration(
+                      color: _corRoxo.withValues(alpha: 0.05),
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: _corRoxo.withValues(alpha: 0.12)),
+                    ),
+                    child: Text(
+                      '"$texto"',
+                      style: const TextStyle(
+                        fontSize: 12,
+                        fontStyle: FontStyle.italic,
+                        color: Color(0xFF4A4A6A),
+                        height: 1.4,
+                      ),
+                    ),
+                  ),
+                ],
+              ],
             ),
-          ],
-          if (isComentario && texto.isNotEmpty) ...[
-            const SizedBox(height: 4),
-            Container(
-              padding: const EdgeInsets.all(6),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(4),
-              ),
-              child: Text(
-                '"$texto"',
-                style: const TextStyle(
-                    fontSize: 12, fontStyle: FontStyle.italic),
-              ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildRodape() {
+    return Container(
+      padding: const EdgeInsets.fromLTRB(20, 12, 20, 16),
+      decoration: BoxDecoration(
+        color: Colors.grey[50],
+        border: Border(top: BorderSide(color: Colors.grey[200]!)),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.end,
+        children: [
+          OutlinedButton.icon(
+            onPressed: _carregando ? null : _carregar,
+            icon: const Icon(Icons.refresh, size: 15),
+            label: const Text('Atualizar'),
+            style: OutlinedButton.styleFrom(
+              foregroundColor: _corRoxo,
+              side: const BorderSide(color: _corRoxo),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
             ),
-          ],
+          ),
+          const SizedBox(width: 10),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(context),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: _corRoxo,
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+              elevation: 0,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+            ),
+            child: const Text('Fechar', style: TextStyle(fontWeight: FontWeight.w600)),
+          ),
         ],
       ),
     );
