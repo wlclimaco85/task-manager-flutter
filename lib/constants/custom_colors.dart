@@ -28,6 +28,9 @@ class GridColors {
   static const Color selectedRow = Color(0xFFEAF5EE);
   static const Color dialogBackground = Color(0xFFFFFFFF);
   static const Color shadow = Color(0x26000000);
+  static const Color textPrimaryMuted = Color(0xB3FFFFFF);
+  static const Color accent = Color(0xFF2E7D32);
+  static const Color neutral = Color(0xFF757575);
 }
 
 class CustomColors {
