@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'dart:async';
 import '../../services/instagram_service.dart';
 
@@ -1749,27 +1750,67 @@ class _ModalListaUsuariosState extends State<_ModalListaUsuarios> {
             ),
           );
         }
-        return ListView.builder(
-          controller: widget.scrollController,
-          itemCount: snapshot.data!.length,
-          itemBuilder: (context, index) {
-            final user = snapshot.data![index];
-            return ListTile(
-              leading: CircleAvatar(
-                backgroundColor: const Color(0xFFE1306C).withValues(alpha: 0.1),
-                child: Text(user.username[0].toUpperCase(),
-                    style: const TextStyle(color: Color(0xFFE1306C), fontWeight: FontWeight.w700)),
+        final usuarios = snapshot.data!;
+        return Column(
+          children: [
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    '${usuarios.length} ${widget.tipo == 'followers' ? 'seguidores' : 'seguindo'}',
+                    style: TextStyle(fontSize: 12, color: Colors.grey[500]),
+                  ),
+                  TextButton.icon(
+                    icon: const Icon(Icons.copy, size: 16),
+                    label: const Text('Copiar todos', style: TextStyle(fontSize: 13)),
+                    style: TextButton.styleFrom(foregroundColor: const Color(0xFFE1306C)),
+                    onPressed: () {
+                      final texto = usuarios
+                          .map((u) => u.fullName.isNotEmpty
+                              ? '@${u.username} - ${u.fullName}'
+                              : '@${u.username}')
+                          .join('\n');
+                      Clipboard.setData(ClipboardData(text: texto));
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text('${usuarios.length} usuários copiados para a área de transferência'),
+                          backgroundColor: Colors.green.shade700,
+                          duration: const Duration(seconds: 2),
+                        ),
+                      );
+                    },
+                  ),
+                ],
               ),
-              title: Text('@${user.username}', style: const TextStyle(fontWeight: FontWeight.w600)),
-              subtitle: user.fullName.isNotEmpty
-                  ? Text(user.fullName, style: const TextStyle(fontSize: 12))
-                  : null,
-              trailing: IconButton(
-                icon: const Icon(Icons.open_in_new, size: 18),
-                onPressed: () {},
+            ),
+            const Divider(height: 1),
+            Expanded(
+              child: ListView.builder(
+                controller: widget.scrollController,
+                itemCount: usuarios.length,
+                itemBuilder: (context, index) {
+                  final user = usuarios[index];
+                  return ListTile(
+                    leading: CircleAvatar(
+                      backgroundColor: const Color(0xFFE1306C).withValues(alpha: 0.1),
+                      child: Text(user.username[0].toUpperCase(),
+                          style: const TextStyle(color: Color(0xFFE1306C), fontWeight: FontWeight.w700)),
+                    ),
+                    title: Text('@${user.username}', style: const TextStyle(fontWeight: FontWeight.w600)),
+                    subtitle: user.fullName.isNotEmpty
+                        ? Text(user.fullName, style: const TextStyle(fontSize: 12))
+                        : null,
+                    trailing: IconButton(
+                      icon: const Icon(Icons.open_in_new, size: 18),
+                      onPressed: () {},
+                    ),
+                  );
+                },
               ),
-            );
-          },
+            ),
+          ],
         );
       },
     );
