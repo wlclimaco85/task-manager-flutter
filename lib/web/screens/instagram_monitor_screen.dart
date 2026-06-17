@@ -1721,7 +1721,19 @@ class _ModalListaUsuariosState extends State<_ModalListaUsuarios> {
       future: _futuroUsuarios,
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Center(child: CircularProgressIndicator(color: Color(0xFFE1306C)));
+          return Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const CircularProgressIndicator(color: Color(0xFFE1306C)),
+                const SizedBox(height: 16),
+                Text(
+                  'Buscando todos os ${widget.tipo == 'followers' ? 'seguidores' : 'seguindo'}...',
+                  style: TextStyle(color: Colors.grey[500], fontSize: 13),
+                ),
+              ],
+            ),
+          );
         }
         if (!snapshot.hasData || snapshot.data!.isEmpty) {
           return Center(

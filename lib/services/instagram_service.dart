@@ -335,10 +335,10 @@ class InstagramService {
     return [];
   }
 
-  static Future<List<InstagramLiker>> fetchFollowers(String username, {int amount = 50}) async {
+  static Future<List<InstagramLiker>> fetchFollowers(String username, {int amount = 5000}) async {
     if (!_localAvailable) return [];
     try {
-      final r = await http.get(Uri.parse('$_localApi/followers?username=$username&amount=$amount')).timeout(const Duration(seconds: 30));
+      final r = await http.get(Uri.parse('$_localApi/followers?username=$username&amount=$amount')).timeout(const Duration(seconds: 90));
       if (r.statusCode == 200) {
         final data = json.decode(r.body);
         if (data.containsKey('followers')) {
@@ -349,10 +349,10 @@ class InstagramService {
     return [];
   }
 
-  static Future<List<InstagramLiker>> fetchFollowing(String username, {int amount = 50}) async {
+  static Future<List<InstagramLiker>> fetchFollowing(String username, {int amount = 5000}) async {
     if (!_localAvailable) return [];
     try {
-      final r = await http.get(Uri.parse('$_localApi/following?username=$username&amount=$amount')).timeout(const Duration(seconds: 30));
+      final r = await http.get(Uri.parse('$_localApi/following?username=$username&amount=$amount')).timeout(const Duration(seconds: 90));
       if (r.statusCode == 200) {
         final data = json.decode(r.body);
         if (data.containsKey('following')) {
@@ -401,8 +401,8 @@ class InstagramService {
   static Future<Map<String, dynamic>?> takeSnapshot(String username) async {
     if (!_localAvailable) return null;
 
-    final followers = await fetchFollowers(username, amount: 100);
-    final following = await fetchFollowing(username, amount: 100);
+    final followers = await fetchFollowers(username);
+    final following = await fetchFollowing(username);
 
     final followerData = followers.map((f) => {'username': f.username, 'full_name': f.fullName}).toList();
     final followingData = following.map((f) => {'username': f.username, 'full_name': f.fullName}).toList();
