@@ -1,13 +1,17 @@
 import 'package:shared_preferences/shared_preferences.dart';
+import '../models/auth_utility.dart';
 
 class AuthService {
   static const _tokenKey = 'auth_token';
   static const _permissionsKey = 'user_permissions';
 
-  /// 🔑 Retorna o token JWT salvo localmente
+  /// 🔑 Retorna o token JWT salvo localmente.
+  /// O login salva o modelo completo em "user_data" via AuthUtility —
+  /// lemos dali para garantir que o header Authorization seja preenchido.
   Future<String?> getToken() async {
-    final prefs = await SharedPreferences.getInstance();
-    return prefs.getString(_tokenKey);
+    if (AuthUtility.userInfo?.token != null) return AuthUtility.userInfo!.token;
+    final model = await AuthUtility.getUserInfo();
+    return model?.token;
   }
 
   /// 💾 Salva o token JWT
