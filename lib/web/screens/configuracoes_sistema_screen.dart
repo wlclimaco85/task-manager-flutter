@@ -775,21 +775,24 @@ class _JobsSectionState extends State<_JobsSection> {
     if (mounted) setState(() => _carregando = false);
   }
 
-  Future<void> _executar(String nome) async {
-    setState(() => _executando[nome] = true);
+  Future<void> _executar(String nome, {bool forcar = false}) async {
+    final chave = forcar ? '${nome}_forcado' : nome;
+    setState(() => _executando[chave] = true);
     try {
-      final resp = await TenantContext.post(
-          '${widget.baseUrl}/api/admin/jobs/$nome/executar', {});
+      final url = forcar
+          ? '${widget.baseUrl}/api/admin/jobs/$nome/executar?forcar=true'
+          : '${widget.baseUrl}/api/admin/jobs/$nome/executar';
+      final resp = await TenantContext.post(url, {});
       if (resp.statusCode < 300) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-              content: Text('Job $nome iniciado'), backgroundColor: _green));
+              content: Text(forcar ? 'Job $nome iniciado (FORÇADO)' : 'Job $nome iniciado'),
+              backgroundColor: forcar ? Colors.orange : _green));
         }
         await Future.delayed(const Duration(seconds: 3));
         await _carregar();
         if (_historicoAberto.contains(nome)) await _carregarHistorico(nome);
       } else {
-        // Mostra dialog com textarea copiavel para o erro HTTP
         if (mounted)
           _mostrarErroDialog(context, 'Erro ao executar $nome', resp.body);
       }
@@ -797,7 +800,7 @@ class _JobsSectionState extends State<_JobsSection> {
       if (mounted)
         _mostrarErroDialog(context, 'Erro ao executar $nome', e.toString());
     } finally {
-      if (mounted) setState(() => _executando[nome] = false);
+      if (mounted) setState(() => _executando[chave] = false);
     }
   }
 
@@ -1025,6 +1028,20 @@ class _JobsSectionState extends State<_JobsSection> {
                       tooltip: 'Executar agora',
                       color: _green,
                       onPressed: () => _executar(nome)),
+              if (nome == 'InstagramDataCollector')
+                (_executando['${nome}_forcado'] ?? false)
+                    ? const SizedBox(
+                        width: 36,
+                        height: 36,
+                        child: Padding(
+                            padding: EdgeInsets.all(8),
+                            child: CircularProgressIndicator(
+                                strokeWidth: 2, color: Colors.orange)))
+                    : IconButton(
+                        icon: const Icon(Icons.bolt, size: 22),
+                        tooltip: 'Forçar coleta completa (ignora cache de contagem)',
+                        color: Colors.orange,
+                        onPressed: () => _executar(nome, forcar: true)),
             ]),
           ]),
         ),
