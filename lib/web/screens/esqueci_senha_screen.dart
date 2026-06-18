@@ -49,7 +49,7 @@ class _EsqueciSenhaScreenState extends State<EsqueciSenhaScreen> {
     });
 
     try {
-      final uri = Uri.parse('${AppLink.base}${'/rest/auth/recuperar-senha'}');
+      final uri = Uri.parse('${ApiLinks.baseUrl}/rest/auth/recuperar-senha');
       final response = await http
           .post(
             uri,

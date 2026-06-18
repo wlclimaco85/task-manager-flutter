@@ -50,10 +50,12 @@ class _TimelineScreenState extends State<TimelineScreen> {
     });
 
     await InstagramService.trackProfile(username);
+    // fetchTimeline ja retorna todos os eventos, inclusive comentarios
+    // (InstagramEvent com eventType "comment"); nao buscar em separado para
+    // nao duplicar.
     final events = await InstagramService.fetchTimeline(username);
-    final comments = await InstagramService.fetchCommentsTimeline(username);
 
-    final all = [...events, ...comments];
+    final all = [...events];
     all.sort((a, b) {
       final da = a.dateTime ?? DateTime(2000);
       final db = b.dateTime ?? DateTime(2000);
