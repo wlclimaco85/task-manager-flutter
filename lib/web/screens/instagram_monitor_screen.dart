@@ -1820,6 +1820,68 @@ class _InstagramMonitorScreenState extends State<InstagramMonitorScreen> with Ti
     );
   }
 
+  Future<void> _confirmarApagarTimeline() async {
+    if (_currentUsername.isEmpty) return;
+    final confirmar = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Apagar timeline'),
+        content: Text('Apagar todos os eventos da timeline de @$_currentUsername? Esta ação não pode ser desfeita.'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancelar')),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Apagar', style: TextStyle(color: Colors.redAccent)),
+          ),
+        ],
+      ),
+    );
+    if (confirmar != true) return;
+    final ok = await InstagramService.limparTimeline(_currentUsername);
+    if (!mounted) return;
+    if (ok) {
+      setState(() { _events = []; _timelineTemMais = false; });
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Timeline apagada com sucesso.'), backgroundColor: Colors.green),
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Erro ao apagar timeline.'), backgroundColor: Colors.red),
+      );
+    }
+  }
+
+  Future<void> _confirmarApagarLogs() async {
+    if (_currentUsername.isEmpty) return;
+    final confirmar = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Apagar logs'),
+        content: Text('Apagar todos os logs de @$_currentUsername? Esta ação não pode ser desfeita.'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancelar')),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Apagar', style: TextStyle(color: Colors.redAccent)),
+          ),
+        ],
+      ),
+    );
+    if (confirmar != true) return;
+    final ok = await InstagramService.limparChangeLogs(_currentUsername);
+    if (!mounted) return;
+    if (ok) {
+      setState(() { _changeLogs = []; });
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Logs apagados com sucesso.'), backgroundColor: Colors.green),
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Erro ao apagar logs.'), backgroundColor: Colors.red),
+      );
+    }
+  }
+
   Widget _buildTimelineList() {
     final eventosFiltrados = _filtroTimeline == null
         ? _events
@@ -1828,6 +1890,16 @@ class _InstagramMonitorScreenState extends State<InstagramMonitorScreen> with Ti
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.end,
+          children: [
+            TextButton.icon(
+              onPressed: () => _confirmarApagarTimeline(),
+              icon: const Icon(Icons.delete_sweep_outlined, size: 16, color: Colors.redAccent),
+              label: const Text('Apagar timeline', style: TextStyle(color: Colors.redAccent, fontSize: 12)),
+            ),
+          ],
+        ),
         _buildFiltrosChips(_filtroTimeline, (v) => setState(() => _filtroTimeline = v)),
         const SizedBox(height: 8),
         if (eventosFiltrados.isEmpty)
@@ -2305,6 +2377,12 @@ class _InstagramMonitorScreenState extends State<InstagramMonitorScreen> with Ti
                 const SizedBox(width: 8),
                 Text('Historico de eventos (${eventosFiltrados.length})',
                     style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14)),
+                const Spacer(),
+                TextButton.icon(
+                  onPressed: () => _confirmarApagarLogs(),
+                  icon: const Icon(Icons.delete_sweep_outlined, size: 16, color: Colors.redAccent),
+                  label: const Text('Apagar logs', style: TextStyle(color: Colors.redAccent, fontSize: 12)),
+                ),
               ],
             ),
           ),

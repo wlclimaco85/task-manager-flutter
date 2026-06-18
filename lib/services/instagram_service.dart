@@ -512,6 +512,30 @@ class InstagramService {
     return [];
   }
 
+  static Future<bool> limparChangeLogs(String username) async {
+    try {
+      final r = await http.delete(
+        Uri.parse('$_backendUrl/api/instagram/change-logs/$username'),
+        headers: await AuthService().jsonHeaders(),
+      ).timeout(const Duration(seconds: 10));
+      return r.statusCode == 200;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  static Future<bool> limparTimeline(String username) async {
+    try {
+      final r = await http.delete(
+        Uri.parse('$_backendUrl/api/instagram/timeline/$username'),
+        headers: await AuthService().jsonHeaders(),
+      ).timeout(const Duration(seconds: 10));
+      return r.statusCode == 200;
+    } catch (_) {
+      return false;
+    }
+  }
+
   static Future<List<Map<String, dynamic>>> fetchTrackedProfiles() async {
     try {
       final r = await http.get(
