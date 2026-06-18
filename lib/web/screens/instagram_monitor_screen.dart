@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'dart:async';
+import 'package:fl_chart/fl_chart.dart';
 import '../../services/instagram_service.dart';
 import '../../utils/api_links.dart';
 
@@ -51,12 +52,21 @@ class _InstagramMonitorScreenState extends State<InstagramMonitorScreen> with Ti
   bool _carregandoMais = false;
   int _timelineTotal = 0;
 
+  // Dashboard
+  bool _dashLoading = false;
+  int _dashSeguidores = 0;
+  int _dashSeguindo = 0;
+  int _dashMutuos = 0;
+  int _dashSigoNaoMeSegue = 0;
+  int _dashMeSegueNaoSigo = 0;
+  List<Map<String, dynamic>> _dashSerie = [];
+
   @override
   void initState() {
     super.initState();
     _animController = AnimationController(vsync: this, duration: const Duration(milliseconds: 600));
     _fadeAnimation = CurvedAnimation(parent: _animController, curve: Curves.easeInOut);
-    _tabController = TabController(length: 3, vsync: this);
+    _tabController = TabController(length: 4, vsync: this);
     _checkLocalApi();
     _loadTrackedProfiles();
   }
@@ -193,6 +203,24 @@ class _InstagramMonitorScreenState extends State<InstagramMonitorScreen> with Ti
     }
   }
 
+  Future<void> _loadDashboard(String username) async {
+    setState(() => _dashLoading = true);
+    final d = await InstagramService.fetchDashboard(username);
+    if (mounted) {
+      setState(() {
+        _dashSeguidores = (d['seguidores'] as num?)?.toInt() ?? 0;
+        _dashSeguindo = (d['seguindo'] as num?)?.toInt() ?? 0;
+        _dashMutuos = (d['mutuos'] as num?)?.toInt() ?? 0;
+        _dashSigoNaoMeSegue = (d['sigoNaoMeSegue'] as num?)?.toInt() ?? 0;
+        _dashMeSegueNaoSigo = (d['meSegueNaoSigo'] as num?)?.toInt() ?? 0;
+        _dashSerie = ((d['serie'] as List?) ?? [])
+            .map((e) => Map<String, dynamic>.from(e as Map))
+            .toList();
+        _dashLoading = false;
+      });
+    }
+  }
+
   Future<void> _carregarMaisTimeline() async {
     if (_carregandoMais || !_timelineTemMais || _currentUsername.isEmpty) return;
     setState(() => _carregandoMais = true);
@@ -249,8 +277,9 @@ class _InstagramMonitorScreenState extends State<InstagramMonitorScreen> with Ti
     final timelineTotal = (timelineResp['total'] as num).toInt();
     final timelineTemMais = timelineResp['hasMore'] as bool;
 
-    // 3. Carregar logs de alteracoes
+    // 3. Carregar logs de alteracoes e dashboard
     _loadChangeLogs(username);
+    _loadDashboard(username);
 
     if (mounted) {
       setState(() {
@@ -587,6 +616,342 @@ class _InstagramMonitorScreenState extends State<InstagramMonitorScreen> with Ti
     );
   }
 
+  // ====================== ABA DASHBOARD ======================
+
+  // Paleta da tela (mantem consistencia com as outras abas)
+  static const Color _rosaInstagram = Color(0xFFE1306C);
+  static const Color _roxoInstagram = Color(0xFF833AB4);
+
+  Widget _buildDashboardTab() {
+    if (_dashLoading) {
+      return const Center(
+        child: CircularProgressIndicator(color: _rosaInstagram),
+      );
+    }
+
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          _buildMetricsGrid(),
+          const SizedBox(height: 16),
+          _buildEvolutionCard(),
+        ],
+      ),
+    );
+  }
+
+  // Grid responsivo de metricas. Usa Wrap para nao estourar em telas estreitas.
+  Widget _buildMetricsGrid() {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        const double espacamento = 12;
+        final int colunas = constraints.maxWidth < 360 ? 2 : 3;
+        final double larguraCard =
+            (constraints.maxWidth - espacamento * (colunas - 1)) / colunas;
+
+        final List<Widget> cards = [
+          _buildMetricCard(
+            valor: _dashMutuos,
+            rotulo: 'Mutuos',
+            icone: Icons.handshake_outlined,
+            cor: const Color(0xFF2E7D32),
+            largura: larguraCard,
+          ),
+          _buildMetricCard(
+            valor: _dashSigoNaoMeSegue,
+            rotulo: 'Eu sigo / nao me seguem',
+            icone: Icons.person_remove_outlined,
+            cor: const Color(0xFFEF6C00),
+            largura: larguraCard,
+          ),
+          _buildMetricCard(
+            valor: _dashMeSegueNaoSigo,
+            rotulo: 'Me seguem / nao sigo',
+            icone: Icons.person_add_alt_1_outlined,
+            cor: const Color(0xFF1565C0),
+            largura: larguraCard,
+          ),
+          _buildMetricCard(
+            valor: _dashSeguidores,
+            rotulo: 'Seguidores',
+            icone: Icons.group_outlined,
+            cor: _rosaInstagram,
+            largura: larguraCard,
+          ),
+          _buildMetricCard(
+            valor: _dashSeguindo,
+            rotulo: 'Seguindo',
+            icone: Icons.how_to_reg_outlined,
+            cor: _roxoInstagram,
+            largura: larguraCard,
+          ),
+        ];
+
+        return Wrap(
+          spacing: espacamento,
+          runSpacing: espacamento,
+          children: cards,
+        );
+      },
+    );
+  }
+
+  Widget _buildMetricCard({
+    required int valor,
+    required String rotulo,
+    required IconData icone,
+    required Color cor,
+    required double largura,
+  }) {
+    return Container(
+      width: largura,
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.04),
+            blurRadius: 10,
+            offset: const Offset(0, 3),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: cor.withValues(alpha: 0.10),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Icon(icone, size: 18, color: cor),
+          ),
+          const SizedBox(height: 10),
+          Text(
+            '$valor',
+            style: TextStyle(
+              fontWeight: FontWeight.w800,
+              fontSize: 24,
+              color: cor,
+            ),
+          ),
+          const SizedBox(height: 2),
+          Text(
+            rotulo,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(
+              fontWeight: FontWeight.w500,
+              fontSize: 12,
+              color: Colors.black54,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildEvolutionCard() {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.04),
+            blurRadius: 10,
+            offset: const Offset(0, 3),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: const [
+              Icon(Icons.show_chart, size: 18, color: _rosaInstagram),
+              SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  'Evolucao (seguidores x seguindo)',
+                  style: TextStyle(fontWeight: FontWeight.w700, fontSize: 14),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          if (_dashSerie.length < 2)
+            _buildChartEmptyState()
+          else ...[
+            _buildLegenda(),
+            const SizedBox(height: 12),
+            SizedBox(height: 220, child: _buildEvolutionChart()),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildLegenda() {
+    return Row(
+      children: [
+        _legendaItem(_rosaInstagram, 'Seguidores'),
+        const SizedBox(width: 16),
+        _legendaItem(_roxoInstagram, 'Seguindo'),
+      ],
+    );
+  }
+
+  Widget _legendaItem(Color cor, String texto) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          width: 12,
+          height: 12,
+          decoration: BoxDecoration(
+            color: cor,
+            borderRadius: BorderRadius.circular(3),
+          ),
+        ),
+        const SizedBox(width: 6),
+        Text(
+          texto,
+          style: const TextStyle(fontSize: 12, color: Colors.black54),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildChartEmptyState() {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(vertical: 32, horizontal: 16),
+      child: Column(
+        children: const [
+          Icon(Icons.timeline, size: 40, color: Colors.black26),
+          SizedBox(height: 12),
+          Text(
+            'Sem historico suficiente ainda — os pontos aparecem '
+            'conforme o job coleta dia a dia.',
+            textAlign: TextAlign.center,
+            style: TextStyle(fontSize: 13, color: Colors.black54),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildEvolutionChart() {
+    final List<FlSpot> pontosSeguidores = [];
+    final List<FlSpot> pontosSeguindo = [];
+    double maxY = 0;
+
+    for (int i = 0; i < _dashSerie.length; i++) {
+      final item = _dashSerie[i];
+      final double followers = (item['followers'] as num?)?.toDouble() ?? 0;
+      final double following = (item['following'] as num?)?.toDouble() ?? 0;
+      pontosSeguidores.add(FlSpot(i.toDouble(), followers));
+      pontosSeguindo.add(FlSpot(i.toDouble(), following));
+      if (followers > maxY) maxY = followers;
+      if (following > maxY) maxY = following;
+    }
+
+    final double topo = maxY <= 0 ? 10 : maxY * 1.1;
+    final double intervaloY = topo / 4;
+
+    return LineChart(
+      LineChartData(
+        minX: 0,
+        maxX: (_dashSerie.length - 1).toDouble(),
+        minY: 0,
+        maxY: topo,
+        gridData: FlGridData(
+          show: true,
+          drawVerticalLine: false,
+          horizontalInterval: intervaloY <= 0 ? 1 : intervaloY,
+          getDrawingHorizontalLine: (value) => FlLine(
+            color: Colors.black.withValues(alpha: 0.06),
+            strokeWidth: 1,
+          ),
+        ),
+        borderData: FlBorderData(show: false),
+        titlesData: FlTitlesData(
+          topTitles: const AxisTitles(
+            sideTitles: SideTitles(showTitles: false),
+          ),
+          rightTitles: const AxisTitles(
+            sideTitles: SideTitles(showTitles: false),
+          ),
+          leftTitles: AxisTitles(
+            sideTitles: SideTitles(
+              showTitles: true,
+              reservedSize: 40,
+              interval: intervaloY <= 0 ? 1 : intervaloY,
+              getTitlesWidget: (value, meta) => Text(
+                value.toInt().toString(),
+                style: const TextStyle(fontSize: 10, color: Colors.black45),
+              ),
+            ),
+          ),
+          bottomTitles: AxisTitles(
+            sideTitles: SideTitles(
+              showTitles: true,
+              reservedSize: 28,
+              interval: 1,
+              getTitlesWidget: (value, meta) {
+                final int indice = value.toInt();
+                if (indice < 0 || indice >= _dashSerie.length) {
+                  return const SizedBox.shrink();
+                }
+                return Padding(
+                  padding: const EdgeInsets.only(top: 6),
+                  child: Text(
+                    _formatarDataEixo(_dashSerie[indice]['data']?.toString()),
+                    style: const TextStyle(fontSize: 9, color: Colors.black45),
+                  ),
+                );
+              },
+            ),
+          ),
+        ),
+        lineBarsData: [
+          _linhaGrafico(pontosSeguidores, _rosaInstagram),
+          _linhaGrafico(pontosSeguindo, _roxoInstagram),
+        ],
+      ),
+    );
+  }
+
+  LineChartBarData _linhaGrafico(List<FlSpot> pontos, Color cor) {
+    return LineChartBarData(
+      spots: pontos,
+      isCurved: true,
+      color: cor,
+      barWidth: 3,
+      isStrokeCapRound: true,
+      dotData: const FlDotData(show: true),
+      belowBarData: BarAreaData(
+        show: true,
+        color: cor.withValues(alpha: 0.08),
+      ),
+    );
+  }
+
+  // Converte '2026-06-15' em '15/06' para caber no eixo X.
+  String _formatarDataEixo(String? data) {
+    if (data == null || data.isEmpty) return '';
+    final partes = data.split('-');
+    if (partes.length != 3) return data;
+    return '${partes[2]}/${partes[1]}';
+  }
+
   Widget _buildTabBar() {
     return Container(
       color: Colors.white,
@@ -599,6 +964,7 @@ class _InstagramMonitorScreenState extends State<InstagramMonitorScreen> with Ti
           Tab(icon: Icon(Icons.person_outline, size: 18), text: 'Perfil'),
           Tab(icon: Icon(Icons.timeline, size: 18), text: 'Timeline'),
           Tab(icon: Icon(Icons.receipt_long, size: 18), text: 'Logs'),
+          Tab(icon: Icon(Icons.dashboard_outlined, size: 18), text: 'Dashboard'),
         ],
       ),
     );
@@ -633,6 +999,7 @@ class _InstagramMonitorScreenState extends State<InstagramMonitorScreen> with Ti
             padding: const EdgeInsets.all(16),
             child: _buildChangeLogsSection(),
           ),
+          _buildDashboardTab(),
         ],
       ),
     );

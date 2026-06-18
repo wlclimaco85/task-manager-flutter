@@ -478,6 +478,20 @@ class InstagramService {
     return {'events': <TimelineEvent>[], 'total': 0, 'hasMore': false, 'page': page};
   }
 
+  /// Resumo do dashboard: relacoes atuais + serie temporal de seguidores/seguindo.
+  static Future<Map<String, dynamic>> fetchDashboard(String username) async {
+    try {
+      final r = await http.get(
+        Uri.parse('$_backendUrl/api/instagram/dashboard/$username'),
+        headers: await AuthService().jsonHeaders(),
+      ).timeout(const Duration(seconds: 20));
+      if (r.statusCode == 200) {
+        return json.decode(r.body) as Map<String, dynamic>;
+      }
+    } catch (_) {}
+    return {};
+  }
+
   static Future<List<TimelineEvent>> fetchTimeline(String username, {int days = 30}) async {
     try {
       final r = await http.get(
