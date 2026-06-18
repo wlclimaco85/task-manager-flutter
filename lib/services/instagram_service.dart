@@ -674,6 +674,24 @@ class InstagramService {
     }
   }
 
+  /// Importa manualmente uma lista de usernames para followers ou following do perfil monitorado.
+  /// tipo: 'followers' | 'following'. Retorna {inseridos, duplicatasIgnoradas} ou null em falha.
+  static Future<Map<String, dynamic>?> importarManual(
+      String username, String tipo, List<String> usernames) async {
+    try {
+      final headers = await AuthService().jsonHeaders();
+      final r = await http.post(
+        Uri.parse('$_backendUrl/api/instagram/perfis/$username/importar-manual'),
+        headers: {...headers, 'Content-Type': 'application/json'},
+        body: json.encode({'tipo': tipo, 'usernames': usernames}),
+      ).timeout(const Duration(seconds: 30));
+      if (r.statusCode == 200) {
+        return json.decode(r.body) as Map<String, dynamic>;
+      }
+    } catch (_) {}
+    return null;
+  }
+
   /// Salva o pool de sessões (1+ contas) no servidor Python local.
   /// Cada item: {'label': ..., 'sessionid': ...}. Retorna o total salvo, ou null em falha.
   static Future<int?> saveSessions(List<Map<String, String>> sessoes) async {

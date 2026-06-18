@@ -705,6 +705,97 @@ class _InstagramMonitorScreenState extends State<InstagramMonitorScreen> with Ti
     );
   }
 
+  Future<void> _showDialogImportManual(String tipo, String rotulo, Color cor) async {
+    if (_currentUsername.isEmpty) return;
+    final ctrl = TextEditingController();
+    bool enviando = false;
+
+    await showDialog<void>(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setStateDlg) => AlertDialog(
+          title: Row(
+            children: [
+              Icon(Icons.upload_outlined, color: cor, size: 20),
+              const SizedBox(width: 8),
+              Text('Importar $rotulo', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+            ],
+          ),
+          content: SizedBox(
+            width: 420,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Cole os usernames abaixo, um por linha.\nO @ no inicio é opcional.',
+                  style: const TextStyle(fontSize: 13, color: Colors.black54),
+                ),
+                const SizedBox(height: 10),
+                TextField(
+                  controller: ctrl,
+                  maxLines: 12,
+                  decoration: const InputDecoration(
+                    hintText: 'joao_silva\n@maria123\npedro.dev',
+                    border: OutlineInputBorder(),
+                    isDense: true,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: enviando ? null : () => Navigator.pop(ctx),
+              child: const Text('Cancelar'),
+            ),
+            ElevatedButton.icon(
+              onPressed: enviando
+                  ? null
+                  : () async {
+                      final linhas = ctrl.text
+                          .split('\n')
+                          .map((l) => l.trim().replaceAll('@', ''))
+                          .where((l) => l.isNotEmpty)
+                          .toList();
+                      if (linhas.isEmpty) return;
+                      setStateDlg(() => enviando = true);
+                      final resultado = await InstagramService.importarManual(
+                          _currentUsername, tipo, linhas);
+                      if (!ctx.mounted) return;
+                      Navigator.pop(ctx);
+                      if (resultado != null) {
+                        final inseridos = resultado['inseridos'] ?? 0;
+                        final ignorados = resultado['duplicatasIgnoradas'] ?? 0;
+                        if (mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                            content: Text('$inseridos inseridos, $ignorados ignorados (duplicatas)'),
+                            backgroundColor: Colors.green.shade700,
+                          ));
+                          if (inseridos > 0) _loadDashboard(_currentUsername);
+                        }
+                      } else {
+                        if (mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                            content: const Text('Erro ao importar. Verifique o backend.'),
+                            backgroundColor: Colors.red.shade700,
+                          ));
+                        }
+                      }
+                    },
+              icon: enviando
+                  ? const SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                  : const Icon(Icons.upload, size: 16),
+              label: Text(enviando ? 'Importando...' : 'Importar'),
+              style: ElevatedButton.styleFrom(backgroundColor: cor, foregroundColor: Colors.white),
+            ),
+          ],
+        ),
+      ),
+    );
+    ctrl.dispose();
+  }
+
   Widget _buildDashboardTab() {
     if (_dashLoading) {
       return const Center(
@@ -765,12 +856,14 @@ class _InstagramMonitorScreenState extends State<InstagramMonitorScreen> with Ti
             icone: Icons.group_outlined,
             cor: _rosaInstagram,
             largura: larguraCard,
+            tipoImport: 'followers',
           ),
           _buildMetricCard(
             valor: _dashSeguindo,
             rotulo: 'Seguindo',
             icone: Icons.how_to_reg_outlined,
             cor: _roxoInstagram,
+            tipoImport: 'following',
             largura: larguraCard,
           ),
         ];
@@ -791,6 +884,7 @@ class _InstagramMonitorScreenState extends State<InstagramMonitorScreen> with Ti
     required Color cor,
     required double largura,
     String? relacaoTipo,
+    String? tipoImport,
   }) {
     return Container(
       width: largura,
@@ -830,6 +924,18 @@ class _InstagramMonitorScreenState extends State<InstagramMonitorScreen> with Ti
                     child: Padding(
                       padding: const EdgeInsets.all(4),
                       child: Icon(Icons.visibility_outlined, size: 18, color: cor),
+                    ),
+                  ),
+                ),
+              if (tipoImport != null)
+                InkWell(
+                  onTap: () => _showDialogImportManual(tipoImport, rotulo, cor),
+                  borderRadius: BorderRadius.circular(20),
+                  child: Tooltip(
+                    message: 'Importar manualmente',
+                    child: Padding(
+                      padding: const EdgeInsets.all(4),
+                      child: Icon(Icons.upload_outlined, size: 18, color: cor),
                     ),
                   ),
                 ),
