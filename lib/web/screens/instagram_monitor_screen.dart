@@ -64,6 +64,19 @@ class _InstagramMonitorScreenState extends State<InstagramMonitorScreen> with Ti
     if (mounted) setState(() => _localApiStatus = InstagramService.hasLocalApi);
   }
 
+  Future<void> _reconectarApi() async {
+    if (mounted) setState(() => _localApiStatus = false);
+    await InstagramService.checkLocalApi();
+    if (!mounted) return;
+    final conectou = InstagramService.hasLocalApi;
+    setState(() => _localApiStatus = conectou);
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+      content: Text(conectou ? 'API reconectada com sucesso' : 'API offline — verifique se o servidor está rodando'),
+      backgroundColor: conectou ? Colors.green.shade700 : Colors.red.shade700,
+      duration: const Duration(seconds: 3),
+    ));
+  }
+
   /// Extrai e valida username de URL, @user ou username puro. Retorna null se inválido.
   String? _cleanUsername(String input) {
     var clean = input.trim();
@@ -663,22 +676,30 @@ class _InstagramMonitorScreenState extends State<InstagramMonitorScreen> with Ti
                 ),
               ),
               const Spacer(),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                decoration: BoxDecoration(
-                  color: _localApiStatus ? Colors.green.withValues(alpha: 0.3) : Colors.white24,
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(Icons.circle, size: 8, color: _localApiStatus ? Colors.greenAccent : Colors.orange),
-                    const SizedBox(width: 4),
-                    Text(
-                      _localApiStatus ? 'API Local' : 'Publico',
-                      style: const TextStyle(color: Colors.white, fontSize: 10),
-                    ),
-                  ],
+              GestureDetector(
+                onTap: _reconectarApi,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: _localApiStatus ? Colors.green.withValues(alpha: 0.3) : Colors.red.withValues(alpha: 0.4),
+                    borderRadius: BorderRadius.circular(12),
+                    border: _localApiStatus ? null : Border.all(color: Colors.orange, width: 1),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.circle, size: 8, color: _localApiStatus ? Colors.greenAccent : Colors.orange),
+                      const SizedBox(width: 4),
+                      Text(
+                        _localApiStatus ? 'API Local' : 'Offline',
+                        style: const TextStyle(color: Colors.white, fontSize: 10),
+                      ),
+                      if (!_localApiStatus) ...[
+                        const SizedBox(width: 4),
+                        const Icon(Icons.refresh, size: 12, color: Colors.orange),
+                      ],
+                    ],
+                  ),
                 ),
               ),
               const SizedBox(width: 8),
@@ -1544,7 +1565,7 @@ class _InstagramMonitorScreenState extends State<InstagramMonitorScreen> with Ti
       );
     }
 
-    if (_changeLogs.isEmpty) {
+    if (_events.isEmpty) {
       return Container(
         width: double.infinity,
         padding: const EdgeInsets.all(24),
@@ -1557,10 +1578,10 @@ class _InstagramMonitorScreenState extends State<InstagramMonitorScreen> with Ti
         ),
         child: const Column(
           children: [
-            Icon(Icons.receipt_long, size: 40, color: Colors.grey),
+            Icon(Icons.history_toggle_off, size: 40, color: Colors.grey),
             SizedBox(height: 8),
-            Text('Nenhuma alteracao registrada', style: TextStyle(color: Colors.grey, fontSize: 13)),
-            Text('Os logs apareceram quando o job detectar mudancas', style: TextStyle(color: Colors.grey, fontSize: 11)),
+            Text('Nenhum evento registrado', style: TextStyle(color: Colors.grey, fontSize: 13)),
+            Text('Os eventos aparecao quando o job detectar mudancas de seguidores, curtidas ou comentarios', style: TextStyle(color: Colors.grey, fontSize: 11)),
           ],
         ),
       );
@@ -1584,51 +1605,74 @@ class _InstagramMonitorScreenState extends State<InstagramMonitorScreen> with Ti
               children: [
                 const Icon(Icons.history, size: 18, color: Color(0xFF833AB4)),
                 const SizedBox(width: 8),
-                Text('Ultimas alteracoes (${_changeLogs.length})',
+                Text('Historico de eventos (${_events.length})',
                     style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14)),
               ],
             ),
           ),
           const Divider(height: 1),
-          ..._changeLogs.map((log) => _buildChangeLogItem(log)),
+          ..._events.map((ev) => _buildChangeLogItem(ev)),
         ],
       ),
     );
   }
 
-  Widget _buildChangeLogItem(Map<String, dynamic> log) {
-    final type = (log['changeType'] ?? '') as String;
-    final desc = (log['description'] ?? '') as String;
-    final oldVal = (log['oldValue'] ?? '') as String;
-    final newVal = (log['newValue'] ?? '') as String;
-    final createdAt = (log['createdAt'] ?? '') as String;
+  Widget _buildChangeLogItem(TimelineEvent ev) {
+    final type = ev.type;
+    final username = ev.username;
+    final fullName = ev.fullName;
+    final commentText = ev.text ?? '';
+    final createdAt = ev.date;
 
     IconData icon;
     Color color;
+    String acao;
+
     switch (type) {
-      case 'followers_count':
-        icon = Icons.people;
+      case 'new_follower':
+        icon = Icons.person_add_alt_1;
         color = const Color(0xFFE1306C);
+        acao = 'comecou a te seguir';
         break;
-      case 'following_count':
+      case 'unfollowed':
+        icon = Icons.person_remove;
+        color = Colors.grey;
+        acao = 'deixou de te seguir';
+        break;
+      case 'you_followed':
         icon = Icons.person_add;
         color = const Color(0xFF833AB4);
+        acao = 'voce comecou a seguir';
         break;
-      case 'posts_count':
-        icon = Icons.photo_library;
-        color = const Color(0xFFF77737);
+      case 'unfollowed_by_you':
+        icon = Icons.person_off;
+        color = Colors.blueGrey;
+        acao = 'voce deixou de seguir';
         break;
-      case 'post_likes':
+      case 'liked_post':
         icon = Icons.favorite;
         color = Colors.red;
+        acao = 'curtiu uma publicacao';
         break;
-      case 'post_comments':
+      case 'unliked_post':
+        icon = Icons.favorite_border;
+        color = Colors.grey;
+        acao = 'removeu curtida';
+        break;
+      case 'comment':
         icon = Icons.comment;
         color = const Color(0xFF405DE6);
+        acao = 'comentou';
+        break;
+      case 'bio_updated':
+        icon = Icons.edit_note;
+        color = const Color(0xFFF77737);
+        acao = 'bio atualizada';
         break;
       default:
-        icon = Icons.info;
+        icon = Icons.info_outline;
         color = Colors.grey;
+        acao = type.isNotEmpty ? type : 'evento';
     }
 
     String dateStr = '';
@@ -1662,21 +1706,37 @@ class _InstagramMonitorScreenState extends State<InstagramMonitorScreen> with Ti
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(desc, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
-                const SizedBox(height: 4),
-                Row(
-                  children: [
-                    if (oldVal.isNotEmpty) ...[
-                      Text(oldVal, style: TextStyle(fontSize: 11, color: Colors.grey[600], decoration: TextDecoration.lineThrough)),
-                      const Padding(
-                        padding: EdgeInsets.symmetric(horizontal: 6),
-                        child: Icon(Icons.arrow_forward, size: 12, color: Colors.grey),
+                RichText(
+                  text: TextSpan(
+                    style: const TextStyle(fontSize: 13, color: Colors.black87),
+                    children: [
+                      TextSpan(
+                        text: fullName.isNotEmpty ? fullName : username,
+                        style: const TextStyle(fontWeight: FontWeight.w700),
                       ),
+                      if (username.isNotEmpty && fullName != username) ...[
+                        const TextSpan(text: ' '),
+                        TextSpan(
+                          text: '@$username',
+                          style: TextStyle(color: Colors.grey[600], fontSize: 11),
+                        ),
+                      ],
+                      TextSpan(text: '  $acao'),
                     ],
-                    if (newVal.isNotEmpty)
-                      Text(newVal, style: TextStyle(fontSize: 11, color: Colors.grey[800], fontWeight: FontWeight.w600)),
-                  ],
+                  ),
                 ),
+                if (commentText.isNotEmpty) ...[
+                  const SizedBox(height: 4),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: Colors.grey.withValues(alpha: 0.08),
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    child: Text('"$commentText"',
+                        style: TextStyle(fontSize: 11, color: Colors.grey[700], fontStyle: FontStyle.italic)),
+                  ),
+                ],
               ],
             ),
           ),
