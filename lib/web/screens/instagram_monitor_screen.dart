@@ -40,6 +40,10 @@ class _InstagramMonitorScreenState extends State<InstagramMonitorScreen> with Ti
   String? _selectedChipUsername;
   bool _showMonitorButtons = false;
 
+  // Filtros por tipo de evento
+  String? _filtroLog;
+  String? _filtroTimeline;
+
   @override
   void initState() {
     super.initState();
@@ -1210,12 +1214,25 @@ class _InstagramMonitorScreenState extends State<InstagramMonitorScreen> with Ti
   }
 
   Widget _buildTimelineList() {
-    final grouped = _groupByDay(_events);
+    final eventosFiltrados = _filtroTimeline == null
+        ? _events
+        : _events.where((e) => e.type == _filtroTimeline).toList();
+    final grouped = _groupByDay(eventosFiltrados);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
-      children: grouped.entries.map((entry) {
-        return _buildDaySection(entry.key, entry.value);
-      }).toList(),
+      children: [
+        _buildFiltrosChips(_filtroTimeline, (v) => setState(() => _filtroTimeline = v)),
+        const SizedBox(height: 8),
+        if (eventosFiltrados.isEmpty)
+          const Padding(
+            padding: EdgeInsets.all(24),
+            child: Center(
+              child: Text('Nenhum evento com este filtro', style: TextStyle(color: Colors.grey, fontSize: 13)),
+            ),
+          )
+        else
+          ...grouped.entries.map((entry) => _buildDaySection(entry.key, entry.value)),
+      ],
     );
   }
 
@@ -1560,6 +1577,51 @@ class _InstagramMonitorScreenState extends State<InstagramMonitorScreen> with Ti
     );
   }
 
+  static final List<MapEntry<String, String?>> _filtrosDisponiveis = [
+    const MapEntry('Todos', null),
+    const MapEntry('Começou a seguir', 'new_follower'),
+    const MapEntry('Deixou de seguir', 'unfollowed'),
+    const MapEntry('Você seguiu', 'you_followed'),
+    const MapEntry('Você deixou de seguir', 'unfollowed_by_you'),
+    const MapEntry('Curtidas', 'liked_post'),
+    const MapEntry('Comentários', 'comment'),
+  ];
+
+  Widget _buildFiltrosChips(String? filtroAtivo, void Function(String?) onSelect) {
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+      child: Row(
+        children: _filtrosDisponiveis.map((par) {
+          final label = par.key;
+          final value = par.value;
+          final selecionado = filtroAtivo == value;
+          return Padding(
+            padding: const EdgeInsets.only(right: 8),
+            child: FilterChip(
+              label: Text(label, style: TextStyle(
+                fontSize: 12,
+                color: selecionado ? Colors.white : const Color(0xFF262626),
+                fontWeight: selecionado ? FontWeight.w600 : FontWeight.normal,
+              )),
+              selected: selecionado,
+              onSelected: (_) => onSelect(selecionado ? null : value),
+              backgroundColor: Colors.grey[100],
+              selectedColor: const Color(0xFFE1306C),
+              checkmarkColor: Colors.white,
+              showCheckmark: false,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+              side: BorderSide(
+                color: selecionado ? const Color(0xFFE1306C) : Colors.grey[300]!,
+              ),
+              padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 0),
+            ),
+          );
+        }).toList(),
+      ),
+    );
+  }
+
   Widget _buildChangeLogsSection() {
     if (_loadingLogs) {
       return const Padding(
@@ -1590,6 +1652,10 @@ class _InstagramMonitorScreenState extends State<InstagramMonitorScreen> with Ti
       );
     }
 
+    final eventosFiltrados = _filtroLog == null
+        ? _events
+        : _events.where((e) => e.type == _filtroLog).toList();
+
     return Container(
       width: double.infinity,
       decoration: BoxDecoration(
@@ -1608,13 +1674,23 @@ class _InstagramMonitorScreenState extends State<InstagramMonitorScreen> with Ti
               children: [
                 const Icon(Icons.history, size: 18, color: Color(0xFF833AB4)),
                 const SizedBox(width: 8),
-                Text('Historico de eventos (${_events.length})',
+                Text('Historico de eventos (${eventosFiltrados.length})',
                     style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14)),
               ],
             ),
           ),
+          _buildFiltrosChips(_filtroLog, (v) => setState(() => _filtroLog = v)),
+          const SizedBox(height: 8),
           const Divider(height: 1),
-          ..._events.map((ev) => _buildChangeLogItem(ev)),
+          if (eventosFiltrados.isEmpty)
+            const Padding(
+              padding: EdgeInsets.all(24),
+              child: Center(
+                child: Text('Nenhum evento com este filtro', style: TextStyle(color: Colors.grey, fontSize: 13)),
+              ),
+            )
+          else
+            ...eventosFiltrados.map((ev) => _buildChangeLogItem(ev)),
         ],
       ),
     );
