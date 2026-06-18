@@ -622,6 +622,89 @@ class _InstagramMonitorScreenState extends State<InstagramMonitorScreen> with Ti
   static const Color _rosaInstagram = Color(0xFFE1306C);
   static const Color _roxoInstagram = Color(0xFF833AB4);
 
+  // Abre um modal com a lista de usuarios de uma relacao do dashboard.
+  void _showRelacao(String tipo, String titulo, Color cor) {
+    if (_profile == null) return;
+    final username = _profile!.username;
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => DraggableScrollableSheet(
+        initialChildSize: 0.85,
+        minChildSize: 0.5,
+        maxChildSize: 0.95,
+        builder: (context, scrollController) => Container(
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+          ),
+          child: Column(
+            children: [
+              Container(
+                margin: const EdgeInsets.only(top: 12),
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(color: Colors.grey[300], borderRadius: BorderRadius.circular(2)),
+              ),
+              Expanded(
+                child: FutureBuilder<List<InstagramLiker>>(
+                  future: InstagramService.fetchRelacaoDashboard(username, tipo),
+                  builder: (context, snap) {
+                    if (snap.connectionState == ConnectionState.waiting) {
+                      return Center(child: CircularProgressIndicator(color: cor));
+                    }
+                    final lista = snap.data ?? [];
+                    return Column(
+                      children: [
+                        Padding(
+                          padding: const EdgeInsets.all(16),
+                          child: Row(
+                            children: [
+                              Icon(Icons.people_outline, size: 20, color: cor),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: Text('$titulo (${lista.length})',
+                                    style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const Divider(height: 1),
+                        Expanded(
+                          child: lista.isEmpty
+                              ? const Center(child: Text('Nenhum usuario nesta categoria', style: TextStyle(color: Colors.grey)))
+                              : ListView.builder(
+                                  controller: scrollController,
+                                  itemCount: lista.length,
+                                  itemBuilder: (context, i) {
+                                    final u = lista[i];
+                                    return ListTile(
+                                      leading: CircleAvatar(
+                                        backgroundColor: cor.withValues(alpha: 0.12),
+                                        child: Text(
+                                          u.username.isNotEmpty ? u.username[0].toUpperCase() : '?',
+                                          style: TextStyle(color: cor, fontWeight: FontWeight.w700),
+                                        ),
+                                      ),
+                                      title: Text('@${u.username}'),
+                                      subtitle: u.fullName.isNotEmpty ? Text(u.fullName) : null,
+                                    );
+                                  },
+                                ),
+                        ),
+                      ],
+                    );
+                  },
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   Widget _buildDashboardTab() {
     if (_dashLoading) {
       return const Center(
@@ -658,6 +741,7 @@ class _InstagramMonitorScreenState extends State<InstagramMonitorScreen> with Ti
             icone: Icons.handshake_outlined,
             cor: const Color(0xFF2E7D32),
             largura: larguraCard,
+            relacaoTipo: 'mutuos',
           ),
           _buildMetricCard(
             valor: _dashSigoNaoMeSegue,
@@ -665,6 +749,7 @@ class _InstagramMonitorScreenState extends State<InstagramMonitorScreen> with Ti
             icone: Icons.person_remove_outlined,
             cor: const Color(0xFFEF6C00),
             largura: larguraCard,
+            relacaoTipo: 'sigo_nao_me_segue',
           ),
           _buildMetricCard(
             valor: _dashMeSegueNaoSigo,
@@ -672,6 +757,7 @@ class _InstagramMonitorScreenState extends State<InstagramMonitorScreen> with Ti
             icone: Icons.person_add_alt_1_outlined,
             cor: const Color(0xFF1565C0),
             largura: larguraCard,
+            relacaoTipo: 'me_segue_nao_sigo',
           ),
           _buildMetricCard(
             valor: _dashSeguidores,
@@ -704,6 +790,7 @@ class _InstagramMonitorScreenState extends State<InstagramMonitorScreen> with Ti
     required IconData icone,
     required Color cor,
     required double largura,
+    String? relacaoTipo,
   }) {
     return Container(
       width: largura,
@@ -723,13 +810,30 @@ class _InstagramMonitorScreenState extends State<InstagramMonitorScreen> with Ti
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisSize: MainAxisSize.min,
         children: [
-          Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: cor.withValues(alpha: 0.10),
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: Icon(icone, size: 18, color: cor),
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: cor.withValues(alpha: 0.10),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Icon(icone, size: 18, color: cor),
+              ),
+              const Spacer(),
+              if (relacaoTipo != null)
+                InkWell(
+                  onTap: () => _showRelacao(relacaoTipo, rotulo, cor),
+                  borderRadius: BorderRadius.circular(20),
+                  child: Tooltip(
+                    message: 'Ver lista',
+                    child: Padding(
+                      padding: const EdgeInsets.all(4),
+                      child: Icon(Icons.visibility_outlined, size: 18, color: cor),
+                    ),
+                  ),
+                ),
+            ],
           ),
           const SizedBox(height: 10),
           Text(

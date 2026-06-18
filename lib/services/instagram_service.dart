@@ -478,6 +478,24 @@ class InstagramService {
     return {'events': <TimelineEvent>[], 'total': 0, 'hasMore': false, 'page': page};
   }
 
+  /// Lista os usuarios de uma relacao do dashboard.
+  /// tipo: 'mutuos' | 'sigo_nao_me_segue' | 'me_segue_nao_sigo'.
+  static Future<List<InstagramLiker>> fetchRelacaoDashboard(String username, String tipo) async {
+    try {
+      final r = await http.get(
+        Uri.parse('$_backendUrl/api/instagram/dashboard/$username/relacao?tipo=$tipo'),
+        headers: await AuthService().jsonHeaders(),
+      ).timeout(const Duration(seconds: 20));
+      if (r.statusCode == 200) {
+        final data = json.decode(r.body);
+        return (data['itens'] as List? ?? [])
+            .map((e) => InstagramLiker(username: e['username'] ?? '', fullName: e['fullName'] ?? ''))
+            .toList();
+      }
+    } catch (_) {}
+    return [];
+  }
+
   /// Resumo do dashboard: relacoes atuais + serie temporal de seguidores/seguindo.
   static Future<Map<String, dynamic>> fetchDashboard(String username) async {
     try {
