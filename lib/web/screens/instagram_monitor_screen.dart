@@ -3,7 +3,6 @@ import 'package:flutter/services.dart';
 import 'dart:async';
 import 'package:fl_chart/fl_chart.dart';
 import '../../services/instagram_service.dart';
-import '../../services/pdf_export_service.dart';
 import '../../utils/api_links.dart';
 
 class InstagramMonitorScreen extends StatefulWidget {
@@ -27,16 +26,9 @@ class _InstagramMonitorScreenState extends State<InstagramMonitorScreen> with Ti
 
   // Estado da Timeline
   List<TimelineEvent> _events = [];
+  bool _snapshotting = false;
+  String? _lastSnapshotTime;
   String _currentUsername = '';
-  TimelineEvent? _eventoSelecionado;
-
-  // Controle de lazy loading por aba
-  bool _timelineCarregada = false;
-  bool _logsCarregados = false;
-  bool _dashboardCarregado = false;
-
-  // Controle de coleta imediata
-  bool _coletando = false;
 
   // Perfis monitorados
   List<Map<String, dynamic>> _trackedProfiles = [];
@@ -75,20 +67,6 @@ class _InstagramMonitorScreenState extends State<InstagramMonitorScreen> with Ti
     _animController = AnimationController(vsync: this, duration: const Duration(milliseconds: 600));
     _fadeAnimation = CurvedAnimation(parent: _animController, curve: Curves.easeInOut);
     _tabController = TabController(length: 4, vsync: this);
-    _tabController.addListener(() {
-      if (_tabController.indexIsChanging || _currentUsername.isEmpty) return;
-      switch (_tabController.index) {
-        case 1:
-          if (!_timelineCarregada) _carregarTimeline(_currentUsername);
-          break;
-        case 2:
-          if (!_logsCarregados) _loadChangeLogs(_currentUsername);
-          break;
-        case 3:
-          if (!_dashboardCarregado) _loadDashboard(_currentUsername);
-          break;
-      }
-    });
     _checkLocalApi();
     _loadTrackedProfiles();
   }
@@ -118,31 +96,6 @@ class _InstagramMonitorScreenState extends State<InstagramMonitorScreen> with Ti
       backgroundColor: conectou ? Colors.green.shade700 : Colors.red.shade700,
       duration: const Duration(seconds: 3),
     ));
-  }
-
-  Future<void> _coletarAgora() async {
-    if (_currentUsername.isEmpty || _coletando) return;
-    setState(() => _coletando = true);
-    final ok = await InstagramService.coletarAgora(_currentUsername);
-    if (!mounted) return;
-    setState(() {
-      _coletando = false;
-      _timelineCarregada = false;
-      _logsCarregados = false;
-    });
-    if (ok) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Coleta iniciada. Aguarde alguns segundos e clique em Timeline/Logs para ver os resultados.'),
-          backgroundColor: Color(0xFF4CAF50),
-          duration: Duration(seconds: 4),
-        ),
-      );
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Falha ao iniciar coleta'), backgroundColor: Colors.red),
-      );
-    }
   }
 
   /// Extrai e valida username de URL, @user ou username puro. Retorna null se inválido.
@@ -240,26 +193,17 @@ class _InstagramMonitorScreenState extends State<InstagramMonitorScreen> with Ti
   }
 
   Future<void> _loadChangeLogs(String username) async {
-    if (_logsCarregados) return;
     setState(() => _loadingLogs = true);
     final logs = await InstagramService.fetchChangeLogs(username);
-    List<TimelineEvent> eventos = _events;
-    if (eventos.isEmpty) {
-      final resp = await InstagramService.fetchTimelinePaginado(username, page: 0, size: 200);
-      eventos = resp['events'] as List<TimelineEvent>;
-    }
     if (mounted) {
       setState(() {
         _changeLogs = logs;
-        if (_events.isEmpty) _events = eventos;
         _loadingLogs = false;
-        _logsCarregados = true;
       });
     }
   }
 
   Future<void> _loadDashboard(String username) async {
-    if (_dashboardCarregado) return;
     setState(() => _dashLoading = true);
     final d = await InstagramService.fetchDashboard(username);
     if (mounted) {
@@ -273,7 +217,6 @@ class _InstagramMonitorScreenState extends State<InstagramMonitorScreen> with Ti
             .map((e) => Map<String, dynamic>.from(e as Map))
             .toList();
         _dashLoading = false;
-        _dashboardCarregado = true;
       });
     }
   }
@@ -297,23 +240,19 @@ class _InstagramMonitorScreenState extends State<InstagramMonitorScreen> with Ti
 
   // --- Acoes de busca e snapshot ---
 
-  /// Carrega apenas perfil e posts (aba 0). As demais abas carregam sob demanda.
+  /// Carrega dados do perfil (perfil, posts, timeline, logs) SEM chamar trackProfile
   Future<void> _loadProfileData(String username) async {
     setState(() {
       _loading = true;
       _error = null;
       _profile = null;
       _events = [];
-      _changeLogs = [];
       _currentUsername = username;
-      _timelineCarregada = false;
-      _logsCarregados = false;
-      _dashboardCarregado = false;
-      _eventoSelecionado = null;
     });
 
     _animController.reset();
 
+    // 1. Buscar perfil e posts
     InstagramProfile? profile;
     String? erroFetch;
     try {
@@ -322,14 +261,45 @@ class _InstagramMonitorScreenState extends State<InstagramMonitorScreen> with Ti
       erroFetch = e.mensagem;
     } catch (_) {}
 
-    List<InstagramPost> posts = [];
-    if (profile != null) {
-      posts = await InstagramService.fetchPostsFromDb(username);
+    if (profile == null) {
+      if (mounted) {
+        setState(() {
+          _loading = false;
+          _events = [];
+          _timelinePagina = 0;
+          _timelineTotal = 0;
+          _timelineTemMais = false;
+          _showMonitorButtons = false;
+          _error = erroFetch ?? 'Perfil @$username nao esta monitorado. A busca usa apenas dados ja coletados no banco.';
+        });
+      }
+      return;
     }
+
+    final posts = await InstagramService.fetchPostsFromDb(username);
+
+    // 2. Buscar timeline (primeira pagina)
+    final timelineResp = await InstagramService.fetchTimelinePaginado(username, page: 0, size: 100);
+    final allEvents = (timelineResp['events'] as List<TimelineEvent>);
+    allEvents.sort((a, b) {
+      final da = a.dateTime ?? DateTime(2000);
+      final db = b.dateTime ?? DateTime(2000);
+      return db.compareTo(da);
+    });
+    final timelineTotal = (timelineResp['total'] as num).toInt();
+    final timelineTemMais = timelineResp['hasMore'] as bool;
+
+    // 3. Carregar logs de alteracoes e dashboard
+    _loadChangeLogs(username);
+    _loadDashboard(username);
 
     if (mounted) {
       setState(() {
         _loading = false;
+        _events = allEvents;
+        _timelinePagina = 0;
+        _timelineTotal = timelineTotal;
+        _timelineTemMais = timelineTemMais;
         if (profile != null) {
           _profile = InstagramProfile(
             username: profile.username,
@@ -346,30 +316,7 @@ class _InstagramMonitorScreenState extends State<InstagramMonitorScreen> with Ti
           );
           _animController.forward();
           _showMonitorButtons = !_isProfileTracked(username);
-        } else {
-          _error = erroFetch ?? 'Perfil nao encontrado ou privado';
         }
-      });
-    }
-  }
-
-  /// Carrega a timeline ao abrir a aba 1 (lazy).
-  Future<void> _carregarTimeline(String username) async {
-    if (_timelineCarregada) return;
-    final timelineResp = await InstagramService.fetchTimelinePaginado(username, page: 0, size: 100);
-    final allEvents = (timelineResp['events'] as List<TimelineEvent>);
-    allEvents.sort((a, b) {
-      final da = a.dateTime ?? DateTime(2000);
-      final db = b.dateTime ?? DateTime(2000);
-      return db.compareTo(da);
-    });
-    if (mounted) {
-      setState(() {
-        _events = allEvents;
-        _timelinePagina = 0;
-        _timelineTotal = (timelineResp['total'] as num).toInt();
-        _timelineTemMais = timelineResp['hasMore'] as bool;
-        _timelineCarregada = true;
       });
     }
   }
@@ -413,6 +360,32 @@ class _InstagramMonitorScreenState extends State<InstagramMonitorScreen> with Ti
     );
   }
 
+  Future<void> _takeSnapshot() async {
+    if (_currentUsername.isEmpty) return;
+
+    setState(() => _snapshotting = true);
+
+    final result = await InstagramService.takeSnapshot(_currentUsername);
+
+    if (mounted) {
+      setState(() => _snapshotting = false);
+      if (result != null) {
+        _lastSnapshotTime = DateTime.now().toString().substring(0, 19);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Snapshot salvo: ${result['followers']} seguidores, ${result['following']} seguindo'),
+            backgroundColor: Colors.green.shade700,
+          ),
+        );
+        await _loadProfileData(_currentUsername);
+        if (mounted) _tabController.animateTo(0);
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Falha ao tirar snapshot'), backgroundColor: Colors.red),
+        );
+      }
+    }
+  }
 
   // --- Painel de perfis monitorados (20% da altura, scroll horizontal) ---
 
@@ -742,97 +715,6 @@ class _InstagramMonitorScreenState extends State<InstagramMonitorScreen> with Ti
     );
   }
 
-  Future<void> _showDialogImportManual(String tipo, String rotulo, Color cor) async {
-    if (_currentUsername.isEmpty) return;
-    final ctrl = TextEditingController();
-    bool enviando = false;
-
-    await showDialog<void>(
-      context: context,
-      builder: (ctx) => StatefulBuilder(
-        builder: (ctx, setStateDlg) => AlertDialog(
-          title: Row(
-            children: [
-              Icon(Icons.upload_outlined, color: cor, size: 20),
-              const SizedBox(width: 8),
-              Text('Importar $rotulo', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
-            ],
-          ),
-          content: SizedBox(
-            width: 420,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Cole os usernames abaixo, um por linha.\nO @ no inicio é opcional.',
-                  style: const TextStyle(fontSize: 13, color: Colors.black54),
-                ),
-                const SizedBox(height: 10),
-                TextField(
-                  controller: ctrl,
-                  maxLines: 12,
-                  decoration: const InputDecoration(
-                    hintText: 'joao_silva\n@maria123\npedro.dev',
-                    border: OutlineInputBorder(),
-                    isDense: true,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: enviando ? null : () => Navigator.pop(ctx),
-              child: const Text('Cancelar'),
-            ),
-            ElevatedButton.icon(
-              onPressed: enviando
-                  ? null
-                  : () async {
-                      final linhas = ctrl.text
-                          .split('\n')
-                          .map((l) => l.trim().replaceAll('@', ''))
-                          .where((l) => l.isNotEmpty)
-                          .toList();
-                      if (linhas.isEmpty) return;
-                      setStateDlg(() => enviando = true);
-                      final resultado = await InstagramService.importarManual(
-                          _currentUsername, tipo, linhas);
-                      if (!ctx.mounted) return;
-                      Navigator.pop(ctx);
-                      if (resultado != null) {
-                        final inseridos = resultado['inseridos'] ?? 0;
-                        final ignorados = resultado['duplicatasIgnoradas'] ?? 0;
-                        if (mounted) {
-                          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                            content: Text('$inseridos inseridos, $ignorados ignorados (duplicatas)'),
-                            backgroundColor: Colors.green.shade700,
-                          ));
-                          if (inseridos > 0) _loadDashboard(_currentUsername);
-                        }
-                      } else {
-                        if (mounted) {
-                          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                            content: const Text('Erro ao importar. Verifique o backend.'),
-                            backgroundColor: Colors.red.shade700,
-                          ));
-                        }
-                      }
-                    },
-              icon: enviando
-                  ? const SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                  : const Icon(Icons.upload, size: 16),
-              label: Text(enviando ? 'Importando...' : 'Importar'),
-              style: ElevatedButton.styleFrom(backgroundColor: cor, foregroundColor: Colors.white),
-            ),
-          ],
-        ),
-      ),
-    );
-    ctrl.dispose();
-  }
-
   Widget _buildDashboardTab() {
     if (_dashLoading) {
       return const Center(
@@ -893,16 +775,12 @@ class _InstagramMonitorScreenState extends State<InstagramMonitorScreen> with Ti
             icone: Icons.group_outlined,
             cor: _rosaInstagram,
             largura: larguraCard,
-            tipoImport: 'followers',
-            tipoLista: 'followers',
           ),
           _buildMetricCard(
             valor: _dashSeguindo,
             rotulo: 'Seguindo',
             icone: Icons.how_to_reg_outlined,
             cor: _roxoInstagram,
-            tipoImport: 'following',
-            tipoLista: 'following',
             largura: larguraCard,
           ),
         ];
@@ -923,8 +801,6 @@ class _InstagramMonitorScreenState extends State<InstagramMonitorScreen> with Ti
     required Color cor,
     required double largura,
     String? relacaoTipo,
-    String? tipoImport,
-    String? tipoLista,
   }) {
     return Container(
       width: largura,
@@ -964,30 +840,6 @@ class _InstagramMonitorScreenState extends State<InstagramMonitorScreen> with Ti
                     child: Padding(
                       padding: const EdgeInsets.all(4),
                       child: Icon(Icons.visibility_outlined, size: 18, color: cor),
-                    ),
-                  ),
-                ),
-              if (tipoLista != null)
-                InkWell(
-                  onTap: () => _showList(tipoLista),
-                  borderRadius: BorderRadius.circular(20),
-                  child: Tooltip(
-                    message: 'Ver lista do banco',
-                    child: Padding(
-                      padding: const EdgeInsets.all(4),
-                      child: Icon(Icons.list_alt_outlined, size: 18, color: cor),
-                    ),
-                  ),
-                ),
-              if (tipoImport != null)
-                InkWell(
-                  onTap: () => _showDialogImportManual(tipoImport, rotulo, cor),
-                  borderRadius: BorderRadius.circular(20),
-                  child: Tooltip(
-                    message: 'Importar manualmente',
-                    child: Padding(
-                      padding: const EdgeInsets.all(4),
-                      child: Icon(Icons.upload_outlined, size: 18, color: cor),
                     ),
                   ),
                 ),
@@ -1255,7 +1107,7 @@ class _InstagramMonitorScreenState extends State<InstagramMonitorScreen> with Ti
           ),
           SingleChildScrollView(
             padding: const EdgeInsets.all(16),
-            child: _buildTimelineGrafico(),
+            child: _events.isEmpty ? _buildEmptyTimeline() : _buildTimelineList(),
           ),
           SingleChildScrollView(
             padding: const EdgeInsets.all(16),
@@ -1380,48 +1232,23 @@ class _InstagramMonitorScreenState extends State<InstagramMonitorScreen> with Ti
                 onPressed: _abrirConfigSessoes,
                 tooltip: 'Configurar sessões do Instagram',
               ),
-              if (_profile != null)
+              if (_profile != null) ...[
+                _snapshotting
+                    ? const Padding(
+                        padding: EdgeInsets.all(8),
+                        child: SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2)),
+                      )
+                    : IconButton(
+                        icon: const Icon(Icons.camera_alt, color: Colors.white),
+                        onPressed: _takeSnapshot,
+                        tooltip: 'Tirar Snapshot',
+                      ),
                 IconButton(
                   icon: const Icon(Icons.refresh, color: Colors.white),
                   onPressed: () => _loadProfileData(_currentUsername),
                   tooltip: 'Atualizar',
                 ),
-              if (_profile != null)
-                PopupMenuButton<String>(
-                  icon: const Icon(Icons.delete_sweep, color: Colors.white),
-                  tooltip: 'Apagar dados',
-                  onSelected: (v) {
-                    if (v == 'timeline') _confirmarApagarTimeline();
-                    if (v == 'logs') _confirmarApagarLogs();
-                  },
-                  itemBuilder: (_) => const [
-                    PopupMenuItem(value: 'timeline', child: Row(children: [
-                      Icon(Icons.clear_all, color: Colors.redAccent, size: 18),
-                      SizedBox(width: 8),
-                      Text('Apagar timeline'),
-                    ])),
-                    PopupMenuItem(value: 'logs', child: Row(children: [
-                      Icon(Icons.delete_outline, color: Colors.redAccent, size: 18),
-                      SizedBox(width: 8),
-                      Text('Apagar logs'),
-                    ])),
-                  ],
-                ),
-              if (_profile != null)
-                _coletando
-                    ? const Padding(
-                        padding: EdgeInsets.all(8),
-                        child: SizedBox(
-                          width: 20,
-                          height: 20,
-                          child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
-                        ),
-                      )
-                    : IconButton(
-                        icon: const Icon(Icons.sync, color: Colors.white),
-                        onPressed: _coletarAgora,
-                        tooltip: 'Coletar dados agora',
-                      ),
+              ],
             ],
           ),
           const SizedBox(height: 4),
@@ -1819,8 +1646,8 @@ class _InstagramMonitorScreenState extends State<InstagramMonitorScreen> with Ti
         child: Stack(
           fit: StackFit.expand,
           children: [
-            if (post.imageUrl.isNotEmpty)
-              Image.network(post.imageUrl, fit: BoxFit.cover, errorBuilder: (_, __, ___) => Container(
+            if (post.displayUrl.isNotEmpty)
+              Image.network(ApiLinks.imageProxy(post.displayUrl), fit: BoxFit.cover, errorBuilder: (_, __, ___) => Container(
                 color: Colors.grey[300],
                 child: const Icon(Icons.broken_image, color: Colors.grey),
               )),
@@ -1863,21 +1690,32 @@ class _InstagramMonitorScreenState extends State<InstagramMonitorScreen> with Ti
   // --- Widgets da Timeline ---
 
   Widget _buildEmptyTimeline() {
+    final temBaseline = _lastSnapshotTime != null;
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(32),
       decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(20)),
       child: Column(
         children: [
-          Icon(Icons.timeline, size: 50, color: Colors.grey[300]),
+          Icon(
+            temBaseline ? Icons.check_circle_outline : Icons.timeline,
+            size: 50,
+            color: temBaseline ? Colors.green.shade300 : Colors.grey[300],
+          ),
           const SizedBox(height: 12),
           Text(
-            'Nenhum evento registrado',
-            style: TextStyle(color: Colors.grey[400], fontSize: 14, fontWeight: FontWeight.w600),
+            temBaseline ? 'Baseline salvo com sucesso' : 'Nenhum evento registrado',
+            style: TextStyle(
+              color: temBaseline ? Colors.green.shade600 : Colors.grey[400],
+              fontSize: 14,
+              fontWeight: FontWeight.w600,
+            ),
           ),
           const SizedBox(height: 8),
           Text(
-            'Os jobs coletam dados automaticamente a cada 6 horas',
+            temBaseline
+                ? 'Snapshot de $_lastSnapshotTime salvo como linha de base.\nTome outro snapshot depois de atividade no Instagram para ver as mudanças aqui.'
+                : 'Faca um snapshot para comecar a monitorar',
             style: TextStyle(fontSize: 12, color: Colors.grey[500]),
             textAlign: TextAlign.center,
           ),
@@ -1886,355 +1724,92 @@ class _InstagramMonitorScreenState extends State<InstagramMonitorScreen> with Ti
     );
   }
 
-  Future<void> _confirmarApagarTimeline() async {
-    if (_currentUsername.isEmpty) return;
-    final confirmar = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Apagar timeline'),
-        content: Text('Apagar todos os eventos da timeline de @$_currentUsername? Esta ação não pode ser desfeita.'),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancelar')),
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('Apagar', style: TextStyle(color: Colors.redAccent)),
-          ),
-        ],
-      ),
-    );
-    if (confirmar != true) return;
-    final ok = await InstagramService.limparTimeline(_currentUsername);
-    if (!mounted) return;
-    if (ok) {
-      setState(() { _events = []; _timelineTemMais = false; });
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Timeline apagada com sucesso.'), backgroundColor: Colors.green),
-      );
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Erro ao apagar timeline.'), backgroundColor: Colors.red),
-      );
-    }
-  }
-
-  Future<void> _confirmarApagarLogs() async {
-    if (_currentUsername.isEmpty) return;
-    final confirmar = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Apagar logs'),
-        content: Text('Apagar todos os logs de @$_currentUsername? Esta ação não pode ser desfeita.'),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancelar')),
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('Apagar', style: TextStyle(color: Colors.redAccent)),
-          ),
-        ],
-      ),
-    );
-    if (confirmar != true) return;
-    final ok = await InstagramService.limparChangeLogs(_currentUsername);
-    if (!mounted) return;
-    if (ok) {
-      setState(() { _changeLogs = []; });
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Logs apagados com sucesso.'), backgroundColor: Colors.green),
-      );
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Erro ao apagar logs.'), backgroundColor: Colors.red),
-      );
-    }
-  }
-
-  // --- Gráfico de Timeline Horizontal ---
-
-  Widget _buildTimelineGrafico() {
+  Widget _buildTimelineList() {
     final eventosFiltrados = _filtroTimeline == null
         ? _events
         : _events.where((e) => e.type == _filtroTimeline).toList();
-
+    final grouped = _groupByDay(eventosFiltrados);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Row(
-          children: [
-            Expanded(
-              child: _buildFiltrosChips(
-                _filtroTimeline,
-                (v) => setState(() {
-                  _filtroTimeline = v;
-                  _eventoSelecionado = null;
-                }),
-              ),
-            ),
-            TextButton.icon(
-              onPressed: _confirmarApagarTimeline,
-              icon: const Icon(Icons.delete_sweep_outlined, size: 16, color: Colors.redAccent),
-              label: const Text('Apagar', style: TextStyle(color: Colors.redAccent, fontSize: 12)),
-            ),
-          ],
-        ),
+        _buildFiltrosChips(_filtroTimeline, (v) => setState(() => _filtroTimeline = v)),
         const SizedBox(height: 8),
         if (eventosFiltrados.isEmpty)
-          _buildEmptyTimeline()
-        else ...[
-          _buildGraficoHorizontal(eventosFiltrados),
-          if (_eventoSelecionado != null) _buildDetalheEvento(_eventoSelecionado!),
-        ],
+          const Padding(
+            padding: EdgeInsets.all(24),
+            child: Center(
+              child: Text('Nenhum evento com este filtro', style: TextStyle(color: Colors.grey, fontSize: 13)),
+            ),
+          )
+        else
+          ...grouped.entries.map((entry) => _buildDaySection(entry.key, entry.value)),
         _buildBotaoCarregarMais(),
       ],
     );
   }
 
-  Widget _buildGraficoHorizontal(List<TimelineEvent> eventos) {
-    final Map<String, List<TimelineEvent>> porDia = {};
-    for (final e in eventos) {
+  Map<String, List<TimelineEvent>> _groupByDay(List<TimelineEvent> events) {
+    final map = <String, List<TimelineEvent>>{};
+    for (final e in events) {
       final dt = e.dateTime;
-      if (dt == null) continue;
-      final chave = '${dt.day.toString().padLeft(2, '0')}/${dt.month.toString().padLeft(2, '0')}';
-      porDia.putIfAbsent(chave, () => []).add(e);
+      String key;
+      if (dt == null) {
+        key = 'Sem data';
+      } else {
+        final now = DateTime.now();
+        final today = DateTime(now.year, now.month, now.day);
+        final eventDay = DateTime(dt.year, dt.month, dt.day);
+        final diff = today.difference(eventDay).inDays;
+        if (diff == 0) key = 'Hoje';
+        else if (diff == 1) key = 'Ontem';
+        else if (diff < 7) key = 'Ha $diff dias';
+        else key = '${dt.day.toString().padLeft(2, '0')}/${dt.month.toString().padLeft(2, '0')}/${dt.year}';
+      }
+      map.putIfAbsent(key, () => []).add(e);
     }
-
-    final diasOrdenados = porDia.keys.toList()
-      ..sort((a, b) {
-        final pa = a.split('/');
-        final pb = b.split('/');
-        final mA = int.tryParse(pa[1]) ?? 0;
-        final dA = int.tryParse(pa[0]) ?? 0;
-        final mB = int.tryParse(pb[1]) ?? 0;
-        final dB = int.tryParse(pb[0]) ?? 0;
-        if (mA != mB) return mA.compareTo(mB);
-        return dA.compareTo(dB);
-      });
-
-    final hoje = DateTime.now();
-    final hojeChave =
-        '${hoje.day.toString().padLeft(2, '0')}/${hoje.month.toString().padLeft(2, '0')}';
-
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-              color: Colors.black.withValues(alpha: 0.05),
-              blurRadius: 8,
-              offset: const Offset(0, 2))
-        ],
-      ),
-      padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-      child: SingleChildScrollView(
-        scrollDirection: Axis.horizontal,
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.end,
-          children: diasOrdenados
-              .map((dia) => _buildColunaEvento(dia, porDia[dia]!, dia == hojeChave))
-              .toList(),
-        ),
-      ),
-    );
+    return map;
   }
 
-  Widget _buildColunaEvento(String dia, List<TimelineEvent> eventos, bool eHoje) {
-    const largura = 148.0;
-    return SizedBox(
-      width: largura,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          ...eventos.map((e) => _buildChipEvento(e)),
-          const SizedBox(height: 8),
-          // Eixo horizontal
-          Stack(
-            clipBehavior: Clip.none,
+  Widget _buildDaySection(String day, List<TimelineEvent> events) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.symmetric(vertical: 8),
+          child: Row(
             children: [
               Container(
-                height: 2,
-                color: eHoje ? const Color(0xFF4FC3F7) : const Color(0xFFDDDDDD),
-              ),
-              Positioned(
-                left: largura / 2 - 1,
-                top: -3,
-                child: Container(
-                  width: 2,
-                  height: 8,
-                  color: eHoje ? const Color(0xFF4FC3F7) : const Color(0xFFAAAAAA),
+                width: 10, height: 10,
+                decoration: const BoxDecoration(
+                  shape: BoxShape.circle,
+                  gradient: LinearGradient(colors: [Color(0xFF833AB4), Color(0xFFE1306C)]),
                 ),
+              ),
+              const SizedBox(width: 10),
+              Text(day, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: Color(0xFF262626))),
+              const SizedBox(width: 8),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFE1306C).withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Text('${events.length}', style: const TextStyle(fontSize: 11, color: Color(0xFFE1306C), fontWeight: FontWeight.w700)),
               ),
             ],
           ),
-          const SizedBox(height: 6),
-          Center(
-            child: Column(
-              children: [
-                Text(
-                  dia,
-                  style: TextStyle(
-                    fontSize: 11,
-                    fontWeight: eHoje ? FontWeight.w700 : FontWeight.normal,
-                    color: eHoje ? const Color(0xFF4FC3F7) : const Color(0xFF888888),
-                  ),
-                ),
-                if (eHoje)
-                  Text(
-                    'hoje',
-                    style: TextStyle(
-                      fontSize: 9,
-                      color: const Color(0xFF4FC3F7).withValues(alpha: 0.8),
-                    ),
-                  ),
-              ],
-            ),
-          ),
-        ],
-      ),
+        ),
+        ...events.map((e) => _buildEventCard(e)),
+        Container(
+          margin: const EdgeInsets.only(left: 4),
+          width: 2,
+          height: 20,
+          color: Colors.grey[300],
+        ),
+      ],
     );
   }
 
-  Widget _buildChipEvento(TimelineEvent evento) {
-    final cor = _eventColor(evento.type);
-    final selecionado = _eventoSelecionado == evento;
-    return GestureDetector(
-      onTap: () => setState(
-          () => _eventoSelecionado = selecionado ? null : evento),
-      child: Container(
-        margin: const EdgeInsets.only(bottom: 4),
-        padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 4),
-        decoration: BoxDecoration(
-          color: selecionado
-              ? cor.withValues(alpha: 0.22)
-              : cor.withValues(alpha: 0.09),
-          border: Border.all(
-              color: cor.withValues(alpha: selecionado ? 0.8 : 0.35)),
-          borderRadius: BorderRadius.circular(20),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              width: 18,
-              height: 18,
-              decoration: BoxDecoration(color: cor, shape: BoxShape.circle),
-              child: Center(
-                  child: Text(evento.emoji,
-                      style: const TextStyle(fontSize: 9))),
-            ),
-            const SizedBox(width: 5),
-            Flexible(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    '@${evento.username}',
-                    style: const TextStyle(
-                        fontSize: 10,
-                        color: Color(0xFF333333),
-                        fontWeight: FontWeight.w600),
-                    overflow: TextOverflow.ellipsis,
-                    maxLines: 1,
-                  ),
-                  if (evento.fullName.isNotEmpty)
-                    Text(
-                      evento.fullName,
-                      style: TextStyle(fontSize: 9, color: Colors.grey[500]),
-                      overflow: TextOverflow.ellipsis,
-                      maxLines: 1,
-                    ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildDetalheEvento(TimelineEvent evento) {
-    final cor = _eventColor(evento.type);
-    final label = _eventTypeLabel(evento.type);
-    return Container(
-      margin: const EdgeInsets.only(top: 12),
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-      decoration: BoxDecoration(
-        color: cor.withValues(alpha: 0.08),
-        border: Border(left: BorderSide(color: cor, width: 3)),
-        borderRadius: const BorderRadius.only(
-          topRight: Radius.circular(8),
-          bottomRight: Radius.circular(8),
-        ),
-      ),
-      child: Row(
-        children: [
-          Text(evento.emoji, style: const TextStyle(fontSize: 20)),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Text(label,
-                        style: TextStyle(
-                            color: cor,
-                            fontWeight: FontWeight.w700,
-                            fontSize: 13)),
-                    if (evento.dateTime != null) ...[
-                      const SizedBox(width: 8),
-                      Text(
-                        '${evento.dateTime!.day.toString().padLeft(2, '0')}/${evento.dateTime!.month.toString().padLeft(2, '0')} às ${evento.dateTime!.hour.toString().padLeft(2, '0')}:${evento.dateTime!.minute.toString().padLeft(2, '0')}',
-                        style: const TextStyle(
-                            color: Color(0xFF888888), fontSize: 11),
-                      ),
-                    ],
-                  ],
-                ),
-                const SizedBox(height: 2),
-                Text('@${evento.username}',
-                    style: const TextStyle(
-                        color: Color(0xFF333333),
-                        fontSize: 13,
-                        fontWeight: FontWeight.w600)),
-                if (evento.fullName.isNotEmpty &&
-                    evento.fullName != evento.username)
-                  Text(evento.fullName,
-                      style: const TextStyle(
-                          color: Color(0xFF888888), fontSize: 12)),
-                if (evento.text != null && evento.text!.isNotEmpty)
-                  Padding(
-                    padding: const EdgeInsets.only(top: 4),
-                    child: Text(
-                      '"${evento.text}"',
-                      style: const TextStyle(
-                          color: Color(0xFF555555),
-                          fontSize: 12,
-                          fontStyle: FontStyle.italic),
-                    ),
-                  ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  String _eventTypeLabel(String type) {
-    switch (type) {
-      case 'new_follower': return 'Novo seguidor';
-      case 'unfollowed': return 'Deixou de seguir';
-      case 'you_followed': return 'Você seguiu';
-      case 'unfollowed_by_you': return 'Você deixou de seguir';
-      case 'liked_post': return 'Curtiu post';
-      case 'unliked_post': return 'Descurtiu post';
-      case 'comment': return 'Comentário';
-      default: return type;
-    }
-  }
-
-  // placeholder para manter compatibilidade com código legado que ainda usa _buildEventCard
   Widget _buildEventCard(TimelineEvent event) {
     final color = _eventColor(event.type);
     return Container(
@@ -2419,10 +1994,10 @@ class _InstagramMonitorScreenState extends State<InstagramMonitorScreen> with Ti
                   controller: scrollController,
                   padding: const EdgeInsets.all(16),
                   children: [
-                    if (post.imageUrl.isNotEmpty)
+                    if (post.displayUrl.isNotEmpty)
                       ClipRRect(
                         borderRadius: BorderRadius.circular(12),
-                        child: Image.network(post.imageUrl, fit: BoxFit.contain, errorBuilder: (_, __, ___) => Container(
+                        child: Image.network(ApiLinks.imageProxy(post.displayUrl), fit: BoxFit.contain, errorBuilder: (_, __, ___) => Container(
                           height: 300,
                           color: Colors.grey[200],
                           child: const Center(child: Icon(Icons.broken_image, size: 50)),
@@ -2462,10 +2037,8 @@ class _InstagramMonitorScreenState extends State<InstagramMonitorScreen> with Ti
   }
 
   Widget _buildLikersSection(InstagramPost post) {
-    // Likers não disponíveis sem API Python — seção desativada
-    return const SizedBox.shrink();
     return FutureBuilder<List<InstagramLiker>>(
-      future: Future.value([]),
+      future: InstagramService.fetchLikers(post.id),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Padding(
@@ -2590,7 +2163,7 @@ class _InstagramMonitorScreenState extends State<InstagramMonitorScreen> with Ti
       );
     }
 
-    if (_changeLogs.isEmpty) {
+    if (_events.isEmpty) {
       return Container(
         width: double.infinity,
         padding: const EdgeInsets.all(24),
@@ -2605,12 +2178,16 @@ class _InstagramMonitorScreenState extends State<InstagramMonitorScreen> with Ti
           children: [
             Icon(Icons.history_toggle_off, size: 40, color: Colors.grey),
             SizedBox(height: 8),
-            Text('Nenhum log registrado', style: TextStyle(color: Colors.grey, fontSize: 13)),
-            Text('Os logs aparecem quando o job detectar mudancas no perfil', style: TextStyle(color: Colors.grey, fontSize: 11)),
+            Text('Nenhum evento registrado', style: TextStyle(color: Colors.grey, fontSize: 13)),
+            Text('Os eventos aparecao quando o job detectar mudancas de seguidores, curtidas ou comentarios', style: TextStyle(color: Colors.grey, fontSize: 11)),
           ],
         ),
       );
     }
+
+    final eventosFiltrados = _filtroLog == null
+        ? _events
+        : _events.where((e) => e.type == _filtroLog).toList();
 
     return Container(
       width: double.infinity,
@@ -2630,133 +2207,92 @@ class _InstagramMonitorScreenState extends State<InstagramMonitorScreen> with Ti
               children: [
                 const Icon(Icons.history, size: 18, color: Color(0xFF833AB4)),
                 const SizedBox(width: 8),
-                Text('Historico de mudancas (${_changeLogs.length})',
+                Text('Historico de eventos (${eventosFiltrados.length})',
                     style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14)),
-                const Spacer(),
-                TextButton.icon(
-                  onPressed: () => _confirmarApagarLogs(),
-                  icon: const Icon(Icons.delete_sweep_outlined, size: 16, color: Colors.redAccent),
-                  label: const Text('Apagar logs', style: TextStyle(color: Colors.redAccent, fontSize: 12)),
-                ),
               ],
             ),
           ),
+          _buildFiltrosChips(_filtroLog, (v) => setState(() => _filtroLog = v)),
+          const SizedBox(height: 8),
           const Divider(height: 1),
-          ..._changeLogs.map((log) => _buildChangeLogEntry(log)),
-          _buildEventosNomeadosSection(),
-        ],
-      ),
-    );
-  }
-
-  static const _tiposNomeados = {'new_follower', 'unfollowed', 'you_followed', 'unfollowed_by_you'};
-
-  Widget _buildEventosNomeadosSection() {
-    final eventosPessoas = _events
-        .where((e) => _tiposNomeados.contains(e.type))
-        .toList();
-    if (eventosPessoas.isEmpty) return const SizedBox.shrink();
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Divider(height: 1),
-        Padding(
-          padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
-          child: Row(
-            children: [
-              const Icon(Icons.person_search, size: 16, color: Color(0xFF833AB4)),
-              const SizedBox(width: 6),
-              Text(
-                'Quem seguiu / Quem saiu (${eventosPessoas.length})',
-                style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13, color: Color(0xFF833AB4)),
+          if (eventosFiltrados.isEmpty)
+            const Padding(
+              padding: EdgeInsets.all(24),
+              child: Center(
+                child: Text('Nenhum evento com este filtro', style: TextStyle(color: Colors.grey, fontSize: 13)),
               ),
-            ],
-          ),
-        ),
-        ...eventosPessoas.map((e) => _buildEventoNomeadoEntry(e)),
-      ],
-    );
-  }
-
-  Widget _buildEventoNomeadoEntry(TimelineEvent e) {
-    final cor = _eventColor(e.type);
-    final label = _eventTypeLabel(e.type);
-    String dateStr = '';
-    if (e.dateTime != null) {
-      final dt = e.dateTime!;
-      dateStr = '${dt.day.toString().padLeft(2, '0')}/${dt.month.toString().padLeft(2, '0')} '
-          '${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}';
-    }
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-      child: Row(
-        children: [
-          Container(
-            width: 32,
-            height: 32,
-            decoration: BoxDecoration(color: cor.withValues(alpha: 0.12), shape: BoxShape.circle),
-            child: Center(child: Text(e.emoji, style: const TextStyle(fontSize: 14))),
-          ),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  '@${e.username}${e.fullName.isNotEmpty ? ' · ${e.fullName}' : ''}',
-                  style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF262626)),
-                  overflow: TextOverflow.ellipsis,
-                ),
-                Text(label, style: TextStyle(fontSize: 11, color: cor, fontWeight: FontWeight.w500)),
-              ],
-            ),
-          ),
-          Text(dateStr, style: TextStyle(fontSize: 10, color: Colors.grey[400])),
+            )
+          else
+            ...eventosFiltrados.map((ev) => _buildChangeLogItem(ev)),
+          _buildBotaoCarregarMais(),
         ],
       ),
     );
   }
 
-  Widget _buildChangeLogEntry(Map<String, dynamic> log) {
-    final changeType = (log['changeType'] as String? ?? '').toLowerCase();
-    final description = log['description'] as String? ?? '';
-    final oldValue = log['oldValue'] as String? ?? '';
-    final newValue = log['newValue'] as String? ?? '';
-    final createdAt = log['createdAt'] as String? ?? '';
+  Widget _buildChangeLogItem(TimelineEvent ev) {
+    final type = ev.type;
+    final username = ev.username;
+    final fullName = ev.fullName;
+    final commentText = ev.text ?? '';
+    final createdAt = ev.date;
 
     IconData icon;
     Color color;
+    String acao;
 
-    if (changeType.contains('followers')) {
-      final diff = int.tryParse(newValue) != null && int.tryParse(oldValue) != null
-          ? (int.parse(newValue) - int.parse(oldValue))
-          : 0;
-      icon = diff >= 0 ? Icons.group_add : Icons.group_remove;
-      color = diff >= 0 ? const Color(0xFFE1306C) : Colors.grey;
-    } else if (changeType.contains('following')) {
-      final diff = int.tryParse(newValue) != null && int.tryParse(oldValue) != null
-          ? (int.parse(newValue) - int.parse(oldValue))
-          : 0;
-      icon = diff >= 0 ? Icons.person_add : Icons.person_off;
-      color = diff >= 0 ? const Color(0xFF833AB4) : Colors.blueGrey;
-    } else if (changeType.contains('posts')) {
-      icon = Icons.photo_library_outlined;
-      color = const Color(0xFFF77737);
-    } else if (changeType.contains('bio')) {
-      icon = Icons.edit_note;
-      color = const Color(0xFF405DE6);
-    } else {
-      icon = Icons.info_outline;
-      color = Colors.grey;
+    switch (type) {
+      case 'new_follower':
+        icon = Icons.person_add_alt_1;
+        color = const Color(0xFFE1306C);
+        acao = 'comecou a te seguir';
+        break;
+      case 'unfollowed':
+        icon = Icons.person_remove;
+        color = Colors.grey;
+        acao = 'deixou de te seguir';
+        break;
+      case 'you_followed':
+        icon = Icons.person_add;
+        color = const Color(0xFF833AB4);
+        acao = 'voce comecou a seguir';
+        break;
+      case 'unfollowed_by_you':
+        icon = Icons.person_off;
+        color = Colors.blueGrey;
+        acao = 'voce deixou de seguir';
+        break;
+      case 'liked_post':
+        icon = Icons.favorite;
+        color = Colors.red;
+        acao = 'curtiu uma publicacao';
+        break;
+      case 'unliked_post':
+        icon = Icons.favorite_border;
+        color = Colors.grey;
+        acao = 'removeu curtida';
+        break;
+      case 'comment':
+        icon = Icons.comment;
+        color = const Color(0xFF405DE6);
+        acao = 'comentou';
+        break;
+      case 'bio_updated':
+        icon = Icons.edit_note;
+        color = const Color(0xFFF77737);
+        acao = 'bio atualizada';
+        break;
+      default:
+        icon = Icons.info_outline;
+        color = Colors.grey;
+        acao = type.isNotEmpty ? type : 'evento';
     }
 
     String dateStr = '';
     if (createdAt.isNotEmpty) {
       try {
         final dt = DateTime.parse(createdAt);
-        dateStr = '${dt.day.toString().padLeft(2, '0')}/${dt.month.toString().padLeft(2, '0')} '
-            '${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}';
+        dateStr = '${dt.day.toString().padLeft(2, '0')}/${dt.month.toString().padLeft(2, '0')} ${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}';
       } catch (_) {
         dateStr = createdAt;
       }
@@ -2783,18 +2319,37 @@ class _InstagramMonitorScreenState extends State<InstagramMonitorScreen> with Ti
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  description,
-                  style: const TextStyle(fontSize: 13, color: Colors.black87),
-                ),
-                if (oldValue.isNotEmpty && newValue.isNotEmpty)
-                  Padding(
-                    padding: const EdgeInsets.only(top: 3),
-                    child: Text(
-                      '$oldValue → $newValue',
-                      style: TextStyle(fontSize: 11, color: Colors.grey[600]),
-                    ),
+                RichText(
+                  text: TextSpan(
+                    style: const TextStyle(fontSize: 13, color: Colors.black87),
+                    children: [
+                      TextSpan(
+                        text: fullName.isNotEmpty ? fullName : username,
+                        style: const TextStyle(fontWeight: FontWeight.w700),
+                      ),
+                      if (username.isNotEmpty && fullName != username) ...[
+                        const TextSpan(text: ' '),
+                        TextSpan(
+                          text: '@$username',
+                          style: TextStyle(color: Colors.grey[600], fontSize: 11),
+                        ),
+                      ],
+                      TextSpan(text: '  $acao'),
+                    ],
                   ),
+                ),
+                if (commentText.isNotEmpty) ...[
+                  const SizedBox(height: 4),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: Colors.grey.withValues(alpha: 0.08),
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    child: Text('"$commentText"',
+                        style: TextStyle(fontSize: 11, color: Colors.grey[700], fontStyle: FontStyle.italic)),
+                  ),
+                ],
               ],
             ),
           ),
@@ -2853,54 +2408,27 @@ class _ModalListaUsuariosState extends State<_ModalListaUsuarios> {
             ),
           );
         }
-        if (snapshot.hasError) {
-          return Center(
-            child: Padding(
-              padding: const EdgeInsets.all(24),
-              child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-                Icon(Icons.error_outline, size: 40, color: Colors.red[300]),
-                const SizedBox(height: 12),
-                Text('Erro ao carregar: ${snapshot.error}',
-                    style: const TextStyle(color: Colors.grey), textAlign: TextAlign.center),
-              ]),
-            ),
-          );
-        }
         if (!snapshot.hasData || snapshot.data!.isEmpty) {
-          final tipo = widget.tipo == 'followers' ? 'seguidores' : 'seguindo';
           return Center(
             child: Padding(
               padding: const EdgeInsets.all(24),
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(Icons.people_outline, size: 48, color: Colors.grey[300]),
+                  Icon(Icons.block, size: 40, color: Colors.orange[300]),
                   const SizedBox(height: 12),
-                  Text(
-                    'Nenhum $tipo coletado ainda',
-                    style: const TextStyle(color: Colors.grey, fontWeight: FontWeight.w600),
+                  const Text(
+                    'Nao foi possivel carregar a lista',
+                    style: TextStyle(color: Colors.grey, fontWeight: FontWeight.w600),
                     textAlign: TextAlign.center,
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    widget.tipo == 'followers'
-                        ? 'Os seguidores precisam ser coletados via job ou importados manualmente.\n'
-                          'Dados de seguidores exigem sessao autenticada no Python (setup-session).'
-                        : 'Nenhuma conta encontrada no banco. Execute a coleta para preencher.',
+                    'O Instagram pode estar bloqueando temporariamente a sessao (soft-block).\n'
+                    'Os dados de seguidores/seguidos exigem autenticacao privada.\n'
+                    'Aguarde alguns minutos e tente novamente.',
                     style: TextStyle(color: Colors.grey[500], fontSize: 12),
                     textAlign: TextAlign.center,
-                  ),
-                  const SizedBox(height: 16),
-                  OutlinedButton.icon(
-                    icon: const Icon(Icons.sync, size: 16),
-                    label: const Text('Coletar agora'),
-                    onPressed: () {
-                      Navigator.pop(context);
-                      InstagramService.coletarAgora(widget.username);
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Coleta iniciada — aguarde alguns minutos')),
-                      );
-                    },
                   ),
                 ],
               ),
@@ -2908,7 +2436,6 @@ class _ModalListaUsuariosState extends State<_ModalListaUsuarios> {
           );
         }
         final usuarios = snapshot.data!;
-        final labelTipo = widget.tipo == 'followers' ? 'seguidores' : 'seguindo';
         return Column(
           children: [
             Padding(
@@ -2917,43 +2444,29 @@ class _ModalListaUsuariosState extends State<_ModalListaUsuarios> {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
-                    '${usuarios.length} $labelTipo',
+                    '${usuarios.length} ${widget.tipo == 'followers' ? 'seguidores' : 'seguindo'}',
                     style: TextStyle(fontSize: 12, color: Colors.grey[500]),
                   ),
-                  Row(mainAxisSize: MainAxisSize.min, children: [
-                    IconButton(
-                      icon: const Icon(Icons.copy, size: 18),
-                      tooltip: 'Copiar todos',
-                      color: const Color(0xFFE1306C),
-                      onPressed: () {
-                        final texto = usuarios
-                            .map((u) => u.fullName.isNotEmpty
-                                ? '@${u.username} - ${u.fullName}'
-                                : '@${u.username}')
-                            .join('\n');
-                        Clipboard.setData(ClipboardData(text: texto));
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text('${usuarios.length} usuários copiados'),
-                            backgroundColor: Colors.green.shade700,
-                            duration: const Duration(seconds: 2),
-                          ),
-                        );
-                      },
-                    ),
-                    IconButton(
-                      icon: const Icon(Icons.download, size: 18),
-                      tooltip: 'Exportar CSV',
-                      color: const Color(0xFF833AB4),
-                      onPressed: () => _exportarCsv(context, usuarios, labelTipo, widget.username),
-                    ),
-                    IconButton(
-                      icon: const Icon(Icons.picture_as_pdf, size: 18),
-                      tooltip: 'Exportar PDF',
-                      color: const Color(0xFFF77737),
-                      onPressed: () => _exportarPdf(context, usuarios, labelTipo, widget.username),
-                    ),
-                  ]),
+                  TextButton.icon(
+                    icon: const Icon(Icons.copy, size: 16),
+                    label: const Text('Copiar todos', style: TextStyle(fontSize: 13)),
+                    style: TextButton.styleFrom(foregroundColor: const Color(0xFFE1306C)),
+                    onPressed: () {
+                      final texto = usuarios
+                          .map((u) => u.fullName.isNotEmpty
+                              ? '@${u.username} - ${u.fullName}'
+                              : '@${u.username}')
+                          .join('\n');
+                      Clipboard.setData(ClipboardData(text: texto));
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text('${usuarios.length} usuários copiados para a área de transferência'),
+                          backgroundColor: Colors.green.shade700,
+                          duration: const Duration(seconds: 2),
+                        ),
+                      );
+                    },
+                  ),
                 ],
               ),
             ),
@@ -2985,35 +2498,6 @@ class _ModalListaUsuariosState extends State<_ModalListaUsuarios> {
           ],
         );
       },
-    );
-  }
-
-  void _exportarCsv(BuildContext ctx, List<InstagramLiker> lista, String tipo, String perfil) {
-    final buf = StringBuffer();
-    buf.writeln('username,full_name');
-    for (final u in lista) {
-      final nome = u.fullName.replaceAll('"', '""');
-      buf.writeln('"${u.username}","$nome"');
-    }
-    Clipboard.setData(ClipboardData(text: buf.toString()));
-    ScaffoldMessenger.of(ctx).showSnackBar(
-      SnackBar(
-        content: Text('CSV de ${lista.length} $tipo copiado para a área de transferência'),
-        backgroundColor: const Color(0xFF833AB4),
-        duration: const Duration(seconds: 3),
-      ),
-    );
-  }
-
-  Future<void> _exportarPdf(BuildContext ctx, List<InstagramLiker> lista, String tipo, String perfil) async {
-    final linhas = lista.map((u) => [
-      '@${u.username}',
-      u.fullName,
-    ]).toList();
-    await PdfExportService.exportar(
-      titulo: 'Instagram $tipo — @$perfil',
-      cabecalhos: const ['Username', 'Nome'],
-      linhas: linhas,
     );
   }
 }
@@ -3406,12 +2890,12 @@ class _PainelJobsDialogState extends State<_PainelJobsDialog> {
 
   static const _nomeDisplayJob = {
     'InstagramDataCollector': 'Coleta Horária',
-    'InstagramInteracaoFollowingJob': 'Interação Following',
+    'InstagramInteracaoJob': 'Interação Following',
   };
 
   static const _iconeJob = {
     'InstagramDataCollector': Icons.cloud_download_outlined,
-    'InstagramInteracaoFollowingJob': Icons.people_alt_outlined,
+    'InstagramInteracaoJob': Icons.people_alt_outlined,
   };
 
   bool _carregando = true;
@@ -3435,7 +2919,7 @@ class _PainelJobsDialogState extends State<_PainelJobsDialog> {
         _carregando = false;
         _jobs = (jobs ?? [])
             .where((j) =>
-                ['InstagramDataCollector', 'InstagramInteracaoFollowingJob'].contains(j['jobNome']))
+                ['InstagramDataCollector', 'InstagramInteracaoJob'].contains(j['jobNome']))
             .toList();
         _interacoes = interacoes;
       });

@@ -38,21 +38,62 @@ class InstagramProfile {
   });
 
   factory InstagramProfile.fromJson(Map<String, dynamic> json) {
-    if (json.containsKey('followers')) {
+    final profileJson = (json['profile'] is Map)
+        ? Map<String, dynamic>.from(json['profile'] as Map)
+        : json;
+
+    int readInt(List<String> keys) {
+      for (final key in keys) {
+        final value = profileJson[key];
+        if (value is num) return value.toInt();
+        if (value is String) return int.tryParse(value) ?? 0;
+      }
+      return 0;
+    }
+
+    String readString(List<String> keys) {
+      for (final key in keys) {
+        final value = profileJson[key];
+        if (value != null) return value.toString();
+      }
+      return '';
+    }
+
+    bool readBool(List<String> keys) {
+      for (final key in keys) {
+        final value = profileJson[key];
+        if (value is bool) return value;
+        if (value is String) return value.toLowerCase() == 'true';
+      }
+      return false;
+    }
+
+    final postsJson = profileJson['recentPosts'] ?? profileJson['recent_posts'];
+    final recentPosts = postsJson is List
+        ? postsJson
+            .whereType<Map>()
+            .map((post) => InstagramPost.fromJson(Map<String, dynamic>.from(post)))
+            .toList()
+        : <InstagramPost>[];
+
+    if (profileJson.containsKey('followers') ||
+        profileJson.containsKey('seguidores') ||
+        profileJson.containsKey('followersCount')) {
       return InstagramProfile(
-        username: json['username'] ?? '',
-        fullName: json['full_name'] ?? '',
-        biography: json['biography'] ?? '',
-        profilePicUrl: json['profile_pic_url'] ?? json['hd_profile_pic'] ?? '',
-        followers: json['followers'] ?? 0,
-        following: json['following'] ?? 0,
-        posts: json['posts'] ?? 0,
-        isPrivate: json['is_private'] ?? false,
-        isVerified: json['is_verified'] ?? false,
-        externalUrl: json['external_url'],
+        username: readString(['username']),
+        fullName: readString(['fullName', 'full_name']),
+        biography: readString(['biography', 'bio']),
+        profilePicUrl: readString(['profilePicUrl', 'profile_pic_url', 'hd_profile_pic']),
+        followers: readInt(['followers', 'seguidores', 'followersCount']),
+        following: readInt(['following', 'seguindo', 'followingCount']),
+        posts: readInt(['posts', 'postsCount']),
+        isPrivate: readBool(['isPrivate', 'is_private']),
+        isVerified: readBool(['isVerified', 'is_verified']),
+        externalUrl: profileJson['externalUrl']?.toString() ?? profileJson['external_url']?.toString(),
+        recentPosts: recentPosts,
       );
     }
-    final user = json['data']?['user'] ?? json;
+    final user = profileJson['data']?['user'] ?? profileJson;
     final edgeFollowedBy = user['edge_followed_by'] ?? {};
     final edgeFollow = user['edge_follow'] ?? {};
     final edgeMedia = user['edge_owner_to_timeline_media'] ?? {};
@@ -73,7 +114,6 @@ class InstagramProfile {
 
 class InstagramPost {
   final String id;
-  final String shortcode;
   final String displayUrl;
   final String? caption;
   final int likes;
@@ -84,7 +124,6 @@ class InstagramPost {
 
   InstagramPost({
     required this.id,
-    required this.shortcode,
     required this.displayUrl,
     this.caption,
     required this.likes,
@@ -94,43 +133,23 @@ class InstagramPost {
     this.videoUrl,
   });
 
-  /// URL estavel para a imagem do post.
-  /// Usa shortcode (nao expira) quando disponivel; fallback para display_url.
-  String get imageUrl {
-    // Imagem do post passa pelo mesmo proxy do backend que a foto de perfil usa,
-    // evitando o bloqueio de CORS/login-wall do CDN do Instagram no Flutter Web.
-    if (displayUrl.isNotEmpty) {
-      return ApiLinks.imageProxy(displayUrl);
-    }
-    if (shortcode.isNotEmpty) {
-      return ApiLinks.imageProxy('https://www.instagram.com/p/$shortcode/media/?size=t');
-    }
-    return '';
-  }
-
   factory InstagramPost.fromJson(Map<String, dynamic> json) {
-    // Backend Java serializa a entidade em camelCase (displayUrl/likesCount/commentsCount/
-    // isVideo/postId/postDate); a API Python usa snake_case (display_url/likes/comments).
-    // Aceita os dois formatos para nao cair no branch GraphQL (que zerava likes/comments
-    // e deixava a imagem vazia).
-    if (json.containsKey('display_url') || json.containsKey('displayUrl')) {
+    if (json.containsKey('display_url')) {
       return InstagramPost(
-        id: (json['postId'] ?? json['id'] ?? '').toString(),
-        shortcode: json['shortcode'] ?? '',
-        displayUrl: json['displayUrl'] ?? json['display_url'] ?? '',
+        id: json['id'] ?? '',
+        displayUrl: json['display_url'] ?? '',
         caption: json['caption'],
-        likes: json['likesCount'] ?? json['likes'] ?? 0,
-        comments: json['commentsCount'] ?? json['comments'] ?? 0,
-        timestamp: (json['postDate'] ?? json['timestamp'] ?? '').toString(),
-        isVideo: json['isVideo'] ?? json['is_video'] ?? false,
-        videoUrl: json['videoUrl'] ?? json['video_url'],
+        likes: json['likes'] ?? 0,
+        comments: json['comments'] ?? 0,
+        timestamp: json['timestamp'] ?? '',
+        isVideo: json['is_video'] ?? false,
+        videoUrl: json['video_url'],
       );
     }
     final edgeLiked = json['edge_liked_by'] ?? json['edge_media_preview_like'] ?? {};
     final edgeComment = json['edge_media_to_comment'] ?? {};
     return InstagramPost(
-      id: (json['id'] ?? '').toString(),
-      shortcode: json['shortcode'] ?? json['id']?.toString() ?? '',
+      id: json['id'] ?? '',
       displayUrl: json['display_url'] ?? '',
       caption: json['edge_media_to_caption']?['edges']?.isNotEmpty == true
           ? json['edge_media_to_caption']['edges'][0]['node']['text']
@@ -211,9 +230,6 @@ class TimelineEvent {
       case 'liked_post': return 'Curtiu sua foto';
       case 'unliked_post': return 'Deixou de curtir sua foto';
       case 'comment': return 'Comentou';
-      case 'followers_count': return 'Seguidores';
-      case 'following_count': return 'Seguindo';
-      case 'posts_count': return 'Posts';
       default: return type;
     }
   }
@@ -227,9 +243,6 @@ class TimelineEvent {
       case 'liked_post': return '\u{2764}\u{FE0F}';
       case 'unliked_post': return '\u{1F941}';
       case 'comment': return '\u{1F4AC}';
-      case 'followers_count': return '\u{1F465}';
-      case 'following_count': return '\u{27A1}\u{FE0F}';
-      case 'posts_count': return '\u{1F5BC}\u{FE0F}';
       default: return '\u{1F514}';
     }
   }
@@ -279,13 +292,6 @@ class InstagramService {
   // é obrigatório, sem ele todos os endpoints Java retornam 404.
   static String get _backendUrl => ApiLinks.baseUrl;
 
-  static const _mobileHeaders = {
-    'User-Agent': 'Instagram 301.0.0.27.109 Android (30/11; 420dpi; 1080x2400; samsung; SM-A525F; a52; exynos1280; en_US; 516783258)',
-    'X-IG-App-ID': '936619743392459',
-    'X-IG-Client-ID': 'IGSB',
-    'Accept-Language': 'en-US',
-  };
-
   static Future<void> checkLocalApi() async {
     try {
       final r = await http.get(Uri.parse('$_localApi/health')).timeout(const Duration(seconds: 2));
@@ -297,28 +303,95 @@ class InstagramService {
 
   static bool get hasLocalApi => _localAvailable;
 
-  /// Retorna perfil do banco de dados local via backend Java.
-  /// Lança [InstagramException] se o perfil não estiver monitorado.
+  /// Retorna perfil ou lança [InstagramException] com mensagem específica.
   static Future<InstagramProfile?> fetchProfile(String username) async {
     final clean = username.replaceAll('@', '').trim();
+    if (clean.isEmpty) return null;
+
     try {
       final r = await http.get(
-        Uri.parse('$_backendUrl/api/instagram/perfis/$clean'),
+        Uri.parse('$_backendUrl/api/instagram/perfis/${Uri.encodeComponent(clean)}'),
         headers: await AuthService().jsonHeaders(),
-      ).timeout(const Duration(seconds: 10));
+      ).timeout(const Duration(seconds: 15));
+
       if (r.statusCode == 200) {
-        return InstagramProfile.fromJson(json.decode(r.body));
+        final data = json.decode(r.body) as Map<String, dynamic>;
+        return InstagramProfile.fromJson(data);
       }
+
       if (r.statusCode == 404) {
-        throw InstagramException('Perfil não monitorado. Adicione ao monitoramento primeiro.');
+        throw InstagramException('Perfil @$clean nao esta monitorado. A busca manual usa apenas dados ja coletados no banco.');
+      }
+
+      if (r.statusCode == 401 || r.statusCode == 403) {
+        throw const InstagramException('Sessao expirada ou sem permissao para consultar o Instagram Monitor.');
       }
     } on InstagramException {
       rethrow;
-    } catch (_) {}
+    } catch (_) {
+      throw const InstagramException('Nao foi possivel consultar o perfil no backend. Verifique sua conexao e tente novamente.');
+    }
     return null;
   }
 
   static final InstagramException notFound = InstagramException('Perfil nao encontrado ou privado');
+
+  static Future<List<InstagramPost>> fetchPosts(String username, {int amount = 12}) async {
+    if (_localAvailable) {
+      try {
+        final r = await http.get(Uri.parse('$_localApi/posts?username=$username&amount=$amount')).timeout(const Duration(seconds: 20));
+        if (r.statusCode == 200) {
+          final data = json.decode(r.body);
+          if (data.containsKey('posts')) {
+            return (data['posts'] as List).map((p) => InstagramPost.fromJson(p)).toList();
+          }
+        }
+      } catch (_) {}
+    }
+    return [];
+  }
+
+  static Future<List<InstagramLiker>> fetchLikers(String mediaId) async {
+    if (!_localAvailable) return [];
+    try {
+      final r = await http.get(Uri.parse('$_localApi/likers?media_id=$mediaId')).timeout(const Duration(seconds: 15));
+      if (r.statusCode == 200) {
+        final data = json.decode(r.body);
+        if (data.containsKey('likers')) {
+          return (data['likers'] as List).map((l) => InstagramLiker.fromJson(l)).toList();
+        }
+      }
+    } catch (_) {}
+    return [];
+  }
+
+  static Future<List<InstagramLiker>> fetchFollowers(String username, {int amount = 5000}) async {
+    if (!_localAvailable) return [];
+    try {
+      final r = await http.get(Uri.parse('$_localApi/followers?username=$username&amount=$amount')).timeout(const Duration(seconds: 90));
+      if (r.statusCode == 200) {
+        final data = json.decode(r.body);
+        if (data.containsKey('followers')) {
+          return (data['followers'] as List).map((f) => InstagramLiker.fromJson(f)).toList();
+        }
+      }
+    } catch (_) {}
+    return [];
+  }
+
+  static Future<List<InstagramLiker>> fetchFollowing(String username, {int amount = 5000}) async {
+    if (!_localAvailable) return [];
+    try {
+      final r = await http.get(Uri.parse('$_localApi/following?username=$username&amount=$amount')).timeout(const Duration(seconds: 90));
+      if (r.statusCode == 200) {
+        final data = json.decode(r.body);
+        if (data.containsKey('following')) {
+          return (data['following'] as List).map((f) => InstagramLiker.fromJson(f)).toList();
+        }
+      }
+    } catch (_) {}
+    return [];
+  }
 
   static String formatCount(int count) {
     if (count >= 1000000) return '${(count / 1000000).toStringAsFixed(1)}M';
@@ -352,6 +425,63 @@ class InstagramService {
       return r.statusCode == 200;
     } catch (_) {
       return false;
+    }
+  }
+
+  static Future<Map<String, dynamic>?> takeSnapshot(String username) async {
+    if (!_localAvailable) return null;
+
+    final followers = await fetchFollowers(username);
+    final following = await fetchFollowing(username);
+
+    final followerData = followers.map((f) => {'username': f.username, 'full_name': f.fullName}).toList();
+    final followingData = following.map((f) => {'username': f.username, 'full_name': f.fullName}).toList();
+
+    final posts = await fetchPosts(username, amount: 12);
+    final postLikes = <String, List<Map<String, String>>>{};
+    for (final post in posts) {
+      final likers = await fetchLikers(post.id);
+      postLikes[post.id] = likers.map((l) => {'username': l.username, 'full_name': l.fullName}).toList();
+    }
+
+    try {
+      await http.post(
+        Uri.parse('$_backendUrl/api/instagram/snapshot'),
+        headers: await AuthService().jsonHeaders(),
+        body: json.encode({
+          'username': username,
+          'snapshotType': 'followers',
+          'data': json.encode(followerData),
+        }),
+      ).timeout(const Duration(seconds: 30));
+
+      await http.post(
+        Uri.parse('$_backendUrl/api/instagram/snapshot'),
+        headers: await AuthService().jsonHeaders(),
+        body: json.encode({
+          'username': username,
+          'snapshotType': 'following',
+          'data': json.encode(followingData),
+        }),
+      ).timeout(const Duration(seconds: 30));
+
+      await http.post(
+        Uri.parse('$_backendUrl/api/instagram/snapshot'),
+        headers: await AuthService().jsonHeaders(),
+        body: json.encode({
+          'username': username,
+          'snapshotType': 'post_likes',
+          'data': json.encode(postLikes),
+        }),
+      ).timeout(const Duration(seconds: 30));
+
+      return {
+        'followers': followerData.length,
+        'following': followingData.length,
+        'posts_liked': postLikes.length,
+      };
+    } catch (_) {
+      return null;
     }
   }
 
@@ -424,30 +554,6 @@ class InstagramService {
       }
     } catch (_) {}
     return [];
-  }
-
-  static Future<bool> limparChangeLogs(String username) async {
-    try {
-      final r = await http.delete(
-        Uri.parse('$_backendUrl/api/instagram/change-logs/$username'),
-        headers: await AuthService().jsonHeaders(),
-      ).timeout(const Duration(seconds: 10));
-      return r.statusCode == 200;
-    } catch (_) {
-      return false;
-    }
-  }
-
-  static Future<bool> limparTimeline(String username) async {
-    try {
-      final r = await http.delete(
-        Uri.parse('$_backendUrl/api/instagram/timeline/$username'),
-        headers: await AuthService().jsonHeaders(),
-      ).timeout(const Duration(seconds: 10));
-      return r.statusCode == 200;
-    } catch (_) {
-      return false;
-    }
   }
 
   static Future<List<Map<String, dynamic>>> fetchTrackedProfiles() async {
@@ -598,24 +704,6 @@ class InstagramService {
     }
   }
 
-  /// Importa manualmente uma lista de usernames para followers ou following do perfil monitorado.
-  /// tipo: 'followers' | 'following'. Retorna {inseridos, duplicatasIgnoradas} ou null em falha.
-  static Future<Map<String, dynamic>?> importarManual(
-      String username, String tipo, List<String> usernames) async {
-    try {
-      final headers = await AuthService().jsonHeaders();
-      final r = await http.post(
-        Uri.parse('$_backendUrl/api/instagram/perfis/$username/importar-manual'),
-        headers: {...headers, 'Content-Type': 'application/json'},
-        body: json.encode({'tipo': tipo, 'usernames': usernames}),
-      ).timeout(const Duration(seconds: 30));
-      if (r.statusCode == 200) {
-        return json.decode(r.body) as Map<String, dynamic>;
-      }
-    } catch (_) {}
-    return null;
-  }
-
   /// Salva o pool de sessões (1+ contas) no servidor Python local.
   /// Cada item: {'label': ..., 'sessionid': ...}. Retorna o total salvo, ou null em falha.
   static Future<int?> saveSessions(List<Map<String, String>> sessoes) async {
@@ -632,39 +720,6 @@ class InstagramService {
     } catch (_) {}
     return null;
   }
-
-  /// Dispara coleta imediata de dados para o username monitorado.
-  static Future<bool> coletarAgora(String username) async {
-    try {
-      final headers = await AuthService().jsonHeaders();
-      final r = await http.post(
-        Uri.parse('$_backendUrl/api/instagram/perfis/$username/coletar-agora'),
-        headers: {...headers, 'Content-Type': 'application/json'},
-        body: '{}',
-      ).timeout(const Duration(seconds: 30));
-      return r.statusCode == 200;
-    } catch (_) {
-      return false;
-    }
-  }
-
-  /// Busca posts do username a partir do banco de dados via backend Java.
-  static Future<List<InstagramPost>> fetchPostsFromDb(String username) async {
-    final backendUrl = ApiLinks.baseUrl;
-    final r = await http.get(
-      Uri.parse('$backendUrl/api/instagram/posts/$username'),
-      headers: await AuthService().jsonHeaders(),
-    ).timeout(const Duration(seconds: 20));
-    if (r.statusCode == 200) {
-      final body = json.decode(r.body);
-      final List<dynamic> lista =
-          body is List ? body : (body['content'] ?? body['data'] ?? []);
-      return lista
-          .map((e) => InstagramPost.fromJson(e as Map<String, dynamic>))
-          .toList();
-    }
-    return [];
-  }
 }
 
 extension _ProfileCopy on InstagramProfile {
@@ -680,7 +735,7 @@ extension _ProfileCopy on InstagramProfile {
       isPrivate: isPrivate,
       isVerified: isVerified,
       externalUrl: externalUrl,
-      recentPosts: posts ?? this.recentPosts,
+      recentPosts: posts ?? recentPosts,
     );
   }
 }
