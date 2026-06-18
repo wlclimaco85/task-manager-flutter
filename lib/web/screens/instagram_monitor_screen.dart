@@ -1771,8 +1771,8 @@ class _ModalListaUsuariosState extends State<_ModalListaUsuarios> {
   void initState() {
     super.initState();
     _futuroUsuarios = widget.tipo == 'followers'
-        ? InstagramService.fetchFollowers(widget.username)
-        : InstagramService.fetchFollowing(widget.username);
+        ? InstagramService.fetchFollowersFromDb(widget.username)
+        : InstagramService.fetchFollowingFromDb(widget.username);
   }
 
   @override

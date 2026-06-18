@@ -503,6 +503,42 @@ class InstagramService {
     return [];
   }
 
+  static Future<List<InstagramLiker>> fetchFollowersFromDb(String username) async {
+    try {
+      final r = await http.get(
+        Uri.parse('$_backendUrl/api/instagram/followers/$username'),
+        headers: await AuthService().jsonHeaders(),
+      ).timeout(const Duration(seconds: 15));
+      if (r.statusCode == 200) {
+        final data = json.decode(r.body);
+        if (data.containsKey('followers')) {
+          return (data['followers'] as List)
+              .map((f) => InstagramLiker(username: f['username'] ?? '', fullName: f['fullName'] ?? ''))
+              .toList();
+        }
+      }
+    } catch (_) {}
+    return [];
+  }
+
+  static Future<List<InstagramLiker>> fetchFollowingFromDb(String username) async {
+    try {
+      final r = await http.get(
+        Uri.parse('$_backendUrl/api/instagram/following/$username'),
+        headers: await AuthService().jsonHeaders(),
+      ).timeout(const Duration(seconds: 15));
+      if (r.statusCode == 200) {
+        final data = json.decode(r.body);
+        if (data.containsKey('following')) {
+          return (data['following'] as List)
+              .map((f) => InstagramLiker(username: f['username'] ?? '', fullName: f['fullName'] ?? ''))
+              .toList();
+        }
+      }
+    } catch (_) {}
+    return [];
+  }
+
   /// Retorna lista com última execução de cada job do monitor.
   static Future<List<Map<String, dynamic>>?> fetchJobsStatus() async {
     try {
