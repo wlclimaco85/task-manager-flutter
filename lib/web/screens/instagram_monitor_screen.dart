@@ -666,13 +666,16 @@ class _InstagramMonitorScreenState extends State<InstagramMonitorScreen> with Ti
             children: [
               const Icon(Icons.auto_graph, color: Colors.white, size: 28),
               const SizedBox(width: 10),
-              const Text(
-                'INSTAGRAM MONITOR',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 22,
-                  fontWeight: FontWeight.w800,
-                  letterSpacing: 2,
+              Flexible(
+                child: Text(
+                  'INSTAGRAM MONITOR',
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 18,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: 1,
+                  ),
                 ),
               ),
               const Spacer(),
