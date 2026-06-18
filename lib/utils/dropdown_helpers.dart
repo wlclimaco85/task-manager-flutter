@@ -1,7 +1,8 @@
 import '../services/network_caller.dart';
 import '../utils/api_links.dart';
 import '../utils/tenant_context.dart';
-import '../widgets/generic_grid_windows_screen.dart' show FieldConfigWindows, FieldType;
+import '../widgets/generic_grid_windows_screen.dart'
+    show FieldConfigWindows, FieldType;
 
 /// Helper centralizado para carregar dropdowns comuns
 class DropdownHelpers {
@@ -27,9 +28,14 @@ class DropdownHelpers {
       }
       return lista.whereType<Map>().map((e) {
         final item = Map<String, dynamic>.from(e);
-        if (item[displayField] == null || item[displayField].toString().isEmpty) {
-          item[displayField] = item['nome'] ?? item['descricao'] ??
-              item['codigo'] ?? item['name'] ?? item['id']?.toString() ?? '';
+        if (item[displayField] == null ||
+            item[displayField].toString().isEmpty) {
+          item[displayField] = item['nome'] ??
+              item['descricao'] ??
+              item['codigo'] ??
+              item['name'] ??
+              item['id']?.toString() ??
+              '';
         }
         return item;
       }).toList();
@@ -63,7 +69,8 @@ class DropdownHelpers {
       load('${ApiLinks.baseUrl}/api/regime_tributario', displayField: 'codigo');
 
   static Future<List<Map<String, dynamic>>> formasPagamento() =>
-      load('${ApiLinks.baseUrl}/api/forma_pagamento', displayField: 'descricao');
+      load('${ApiLinks.baseUrl}/api/forma_pagamento',
+          displayField: 'descricao');
 
   static Future<List<Map<String, dynamic>>> paises() =>
       load('${ApiLinks.baseUrl}/api/pais', displayField: 'nome');
@@ -100,6 +107,9 @@ class DropdownHelpers {
 
   static Future<List<Map<String, dynamic>>> gruposMusculares() =>
       load('${ApiLinks.baseUrl}/api/grupos-musculares', displayField: 'nome');
+
+  static Future<List<Map<String, dynamic>>> tiposExercicio() =>
+      load('${ApiLinks.baseUrl}/api/tipo_exercicios', displayField: 'nome');
 
   static Future<List<Map<String, dynamic>>> cargos() =>
       load('${ApiLinks.baseUrl}/api/cargo', displayField: 'nome');
@@ -138,8 +148,11 @@ class DropdownHelpers {
     if (cachedParceiroId == null) {
       // Sem parceiro em cache → suprime o campo do form
       return const FieldConfigWindows(
-        label: 'Parceiro', fieldName: 'parceiro',
-        isInForm: false, isVisibleByDefault: false, enabled: false,
+        label: 'Parceiro',
+        fieldName: 'parceiro',
+        isInForm: false,
+        isVisibleByDefault: false,
+        enabled: false,
       );
     }
     return FieldConfigWindows(
@@ -185,99 +198,158 @@ class DropdownHelpers {
 
   static FieldConfigWindows aplicativoField({bool required = false}) =>
       FieldConfigWindows(
-        label: 'Aplicativo', fieldName: 'aplicativo',
+        label: 'Aplicativo',
+        fieldName: 'aplicativo',
         displayFieldName: 'aplicativo.nome',
         fieldType: FieldType.dropdown,
-        dropdownValueField: 'id', dropdownDisplayField: 'nome',
-        enabled: true, isInForm: true,
+        dropdownValueField: 'id',
+        dropdownDisplayField: 'nome',
+        enabled: true,
+        isInForm: true,
         isRequired: required,
         dropdownFutureBuilder: aplicativos,
       );
 
   static FieldConfigWindows setorField({bool required = false}) =>
       FieldConfigWindows(
-        label: 'Setor', fieldName: 'setor',
+        label: 'Setor',
+        fieldName: 'setor',
         displayFieldName: 'setor.descricao',
         fieldType: FieldType.dropdown,
-        dropdownValueField: 'id', dropdownDisplayField: 'descricao',
-        enabled: true, isInForm: true,
+        dropdownValueField: 'id',
+        dropdownDisplayField: 'descricao',
+        enabled: true,
+        isInForm: true,
         isRequired: required,
         dropdownFutureBuilder: setores,
       );
 
   static FieldConfigWindows regimeField({bool required = false}) =>
       FieldConfigWindows(
-        label: 'Regime Tributário', fieldName: 'regime',
+        label: 'Regime Tributário',
+        fieldName: 'regime',
         displayFieldName: 'regime.codigo',
         fieldType: FieldType.dropdown,
-        dropdownValueField: 'id', dropdownDisplayField: 'codigo',
-        enabled: true, isInForm: true,
+        dropdownValueField: 'id',
+        dropdownDisplayField: 'codigo',
+        enabled: true,
+        isInForm: true,
         isRequired: required,
         dropdownFutureBuilder: regimes,
       );
 
   static FieldConfigWindows formaPagamentoField({bool required = false}) =>
       FieldConfigWindows(
-        label: 'Forma de Pagamento', fieldName: 'formaPagamento',
+        label: 'Forma de Pagamento',
+        fieldName: 'formaPagamento',
         displayFieldName: 'formaPagamento.descricao',
         fieldType: FieldType.dropdown,
-        dropdownValueField: 'id', dropdownDisplayField: 'descricao',
-        enabled: true, isInForm: true,
+        dropdownValueField: 'id',
+        dropdownDisplayField: 'descricao',
+        enabled: true,
+        isInForm: true,
         isRequired: required,
         dropdownFutureBuilder: formasPagamento,
       );
 
   static FieldConfigWindows contaBancariaField({bool required = false}) =>
       FieldConfigWindows(
-        label: 'Conta Bancária', fieldName: 'contaBaixa',
+        label: 'Conta Bancária',
+        fieldName: 'contaBaixa',
         displayFieldName: 'contaBaixa.nome',
         fieldType: FieldType.dropdown,
-        dropdownValueField: 'id', dropdownDisplayField: 'nome',
-        enabled: true, isInForm: true,
+        dropdownValueField: 'id',
+        dropdownDisplayField: 'nome',
+        enabled: true,
+        isInForm: true,
         isRequired: required,
         dropdownFutureBuilder: contasBancarias,
       );
 
   static FieldConfigWindows grupoMuscularField({bool required = false}) =>
       FieldConfigWindows(
-        label: 'Grupo Muscular', fieldName: 'grupoMuscular',
+        label: 'Grupo Muscular',
+        fieldName: 'grupoMuscular',
         displayFieldName: 'grupoMuscular.nome',
         fieldType: FieldType.dropdown,
-        dropdownValueField: 'id', dropdownDisplayField: 'nome',
-        enabled: true, isInForm: true,
+        dropdownValueField: 'id',
+        dropdownDisplayField: 'nome',
+        enabled: true,
+        isInForm: true,
         isRequired: required,
         dropdownFutureBuilder: gruposMusculares,
       );
 
+  static FieldConfigWindows codGrupoMuscularField({bool required = false}) =>
+      FieldConfigWindows(
+        label: 'Grupo Muscular',
+        fieldName: 'codGrupMusc',
+        displayFieldName: 'codGrupMusc',
+        fieldType: FieldType.dropdown,
+        dropdownValueField: 'id',
+        dropdownDisplayField: 'nome',
+        enabled: true,
+        isInForm: true,
+        isFilterable: true,
+        isRequired: required,
+        dropdownFutureBuilder: gruposMusculares,
+        fieldOrder: 20,
+      );
+
+  static FieldConfigWindows codTipoExercicioField({bool required = false}) =>
+      FieldConfigWindows(
+        label: 'Tipo de Exercicio',
+        fieldName: 'codTipoExerc',
+        displayFieldName: 'codTipoExerc',
+        fieldType: FieldType.dropdown,
+        dropdownValueField: 'id',
+        dropdownDisplayField: 'nome',
+        enabled: true,
+        isInForm: true,
+        isFilterable: true,
+        isRequired: required,
+        dropdownFutureBuilder: tiposExercicio,
+        fieldOrder: 30,
+      );
+
   static FieldConfigWindows cargoField({bool required = false}) =>
       FieldConfigWindows(
-        label: 'Cargo', fieldName: 'cargo',
+        label: 'Cargo',
+        fieldName: 'cargo',
         displayFieldName: 'cargo.nome',
         fieldType: FieldType.dropdown,
-        dropdownValueField: 'id', dropdownDisplayField: 'nome',
-        enabled: true, isInForm: true,
+        dropdownValueField: 'id',
+        dropdownDisplayField: 'nome',
+        enabled: true,
+        isInForm: true,
         isRequired: required,
         dropdownFutureBuilder: cargos,
       );
 
   static FieldConfigWindows departamentoField({bool required = false}) =>
       FieldConfigWindows(
-        label: 'Departamento', fieldName: 'departamento',
+        label: 'Departamento',
+        fieldName: 'departamento',
         displayFieldName: 'departamento.nome',
         fieldType: FieldType.dropdown,
-        dropdownValueField: 'id', dropdownDisplayField: 'nome',
-        enabled: true, isInForm: true,
+        dropdownValueField: 'id',
+        dropdownDisplayField: 'nome',
+        enabled: true,
+        isInForm: true,
         isRequired: required,
         dropdownFutureBuilder: departamentos,
       );
 
   static FieldConfigWindows horarioFuncField({bool required = false}) =>
       FieldConfigWindows(
-        label: 'Horário', fieldName: 'horarioFunc',
+        label: 'Horário',
+        fieldName: 'horarioFunc',
         displayFieldName: 'horarioFunc.nome',
         fieldType: FieldType.dropdown,
-        dropdownValueField: 'id', dropdownDisplayField: 'nome',
-        enabled: true, isInForm: true,
+        dropdownValueField: 'id',
+        dropdownDisplayField: 'nome',
+        enabled: true,
+        isInForm: true,
         isRequired: required,
         dropdownFutureBuilder: horariosFunc,
       );
