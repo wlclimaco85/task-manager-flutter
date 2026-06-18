@@ -862,6 +862,13 @@ class ApiLinks {
   static String updateTreino(String id) => '$_baseUrlNew/api/treinos/$id';
   static String deleteTreino(String id) => '$_baseUrlNew/api/treinos/$id';
 
+  // Hidratacao
+  static String get hidratacaoResumo => '$_baseUrlNew/api/hidratacao/resumo';
+  static String get hidratacaoRegistros => '$_baseUrlNew/api/hidratacao/registros';
+  static String hidratacaoRegistro(int id) => '$_baseUrlNew/api/hidratacao/registros/$id';
+  static String get hidratacaoMeta => '$_baseUrlNew/api/hidratacao/meta';
+  static String get hidratacaoHistorico => '$_baseUrlNew/api/hidratacao/historico';
+
   // Nota Fiscal Entrada
   static String get allNotasFiscaisEntrada =>
       '$_baseUrlNew/api/notas-fiscais-entrada';

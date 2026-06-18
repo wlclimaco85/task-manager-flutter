@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:typed_data';
 
+import 'package:task_manager_flutter/features/hidratacao/hidratacao_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import '../../constants/custom_colors.dart';
@@ -431,7 +432,7 @@ class _WindowsBottomNavBarScreenState extends State<WindowsBottomNavBarScreen> {
         const WebAprovacaoPagamentosScreen(), // 123: Aprovacao de Pagamentos
         WindowsAcademiaGridScreen(
             hasPermission: (perm) => true), // 124: Academia
-        const SizedBox.shrink(), // 125
+        const HidratacaoScreen(), // 125: Hidratacao
         const SizedBox.shrink(), // 126
         const SizedBox.shrink(), // 127
         const SizedBox.shrink(), // 128

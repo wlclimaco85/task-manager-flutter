@@ -167,6 +167,11 @@ class MenuConfig {
             icon: FontAwesomeIcons.personRunning,
             screenIndex: 49),
         MenuItem(
+            id: 'hidratacao',
+            label: 'Hidratacao',
+            icon: FontAwesomeIcons.droplet,
+            screenIndex: 125),
+        MenuItem(
             id: 'historico_treinos',
             label: 'Histórico de Treinos',
             icon: FontAwesomeIcons.clipboardCheck,
