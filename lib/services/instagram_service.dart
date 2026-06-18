@@ -455,6 +455,29 @@ class InstagramService {
     }
   }
 
+  static Future<Map<String, dynamic>> fetchTimelinePaginado(
+      String username, {int page = 0, int size = 100}) async {
+    try {
+      final r = await http.get(
+        Uri.parse('$_backendUrl/api/instagram/timeline/$username?page=$page&size=$size'),
+        headers: await AuthService().jsonHeaders(),
+      ).timeout(const Duration(seconds: 20));
+      if (r.statusCode == 200) {
+        final data = json.decode(r.body) as Map<String, dynamic>;
+        final eventos = (data['events'] as List? ?? [])
+            .map((e) => TimelineEvent.fromJson(e))
+            .toList();
+        return {
+          'events': eventos,
+          'total': data['total'] ?? 0,
+          'hasMore': data['hasMore'] ?? false,
+          'page': data['page'] ?? page,
+        };
+      }
+    } catch (_) {}
+    return {'events': <TimelineEvent>[], 'total': 0, 'hasMore': false, 'page': page};
+  }
+
   static Future<List<TimelineEvent>> fetchTimeline(String username, {int days = 30}) async {
     try {
       final r = await http.get(

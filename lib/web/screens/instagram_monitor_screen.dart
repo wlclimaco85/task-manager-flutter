@@ -44,6 +44,12 @@ class _InstagramMonitorScreenState extends State<InstagramMonitorScreen> with Ti
   String? _filtroLog;
   String? _filtroTimeline;
 
+  // Paginação da timeline
+  int _timelinePagina = 0;
+  bool _timelineTemMais = false;
+  bool _carregandoMais = false;
+  int _timelineTotal = 0;
+
   @override
   void initState() {
     super.initState();
@@ -186,6 +192,23 @@ class _InstagramMonitorScreenState extends State<InstagramMonitorScreen> with Ti
     }
   }
 
+  Future<void> _carregarMaisTimeline() async {
+    if (_carregandoMais || !_timelineTemMais || _currentUsername.isEmpty) return;
+    setState(() => _carregandoMais = true);
+    final proxPagina = _timelinePagina + 1;
+    final resp = await InstagramService.fetchTimelinePaginado(
+        _currentUsername, page: proxPagina, size: 100);
+    final novos = (resp['events'] as List<TimelineEvent>);
+    if (mounted) {
+      setState(() {
+        _events = [..._events, ...novos];
+        _timelinePagina = proxPagina;
+        _timelineTemMais = resp['hasMore'] as bool;
+        _carregandoMais = false;
+      });
+    }
+  }
+
   // --- Acoes de busca e snapshot ---
 
   /// Carrega dados do perfil (perfil, posts, timeline, logs) SEM chamar trackProfile
@@ -214,13 +237,16 @@ class _InstagramMonitorScreenState extends State<InstagramMonitorScreen> with Ti
       posts = await InstagramService.fetchPosts(username);
     }
 
-    // 2. Buscar timeline
-    final allEvents = await InstagramService.fetchTimeline(username);
+    // 2. Buscar timeline (primeira pagina)
+    final timelineResp = await InstagramService.fetchTimelinePaginado(username, page: 0, size: 100);
+    final allEvents = (timelineResp['events'] as List<TimelineEvent>);
     allEvents.sort((a, b) {
       final da = a.dateTime ?? DateTime(2000);
       final db = b.dateTime ?? DateTime(2000);
       return db.compareTo(da);
     });
+    final timelineTotal = (timelineResp['total'] as num).toInt();
+    final timelineTemMais = timelineResp['hasMore'] as bool;
 
     // 3. Carregar logs de alteracoes
     _loadChangeLogs(username);
@@ -229,6 +255,9 @@ class _InstagramMonitorScreenState extends State<InstagramMonitorScreen> with Ti
       setState(() {
         _loading = false;
         _events = allEvents;
+        _timelinePagina = 0;
+        _timelineTotal = timelineTotal;
+        _timelineTemMais = timelineTemMais;
         if (profile != null) {
           _profile = InstagramProfile(
             username: profile.username,
@@ -1232,6 +1261,7 @@ class _InstagramMonitorScreenState extends State<InstagramMonitorScreen> with Ti
           )
         else
           ...grouped.entries.map((entry) => _buildDaySection(entry.key, entry.value)),
+        _buildBotaoCarregarMais(),
       ],
     );
   }
@@ -1577,6 +1607,27 @@ class _InstagramMonitorScreenState extends State<InstagramMonitorScreen> with Ti
     );
   }
 
+  Widget _buildBotaoCarregarMais() {
+    if (!_timelineTemMais && !_carregandoMais) return const SizedBox.shrink();
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 16),
+      child: Center(
+        child: _carregandoMais
+            ? const CircularProgressIndicator(color: Color(0xFFE1306C), strokeWidth: 2)
+            : OutlinedButton.icon(
+                onPressed: _carregarMaisTimeline,
+                icon: const Icon(Icons.expand_more, size: 18),
+                label: Text('Carregar mais (${_events.length} de $_timelineTotal)'),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: const Color(0xFFE1306C),
+                  side: const BorderSide(color: Color(0xFFE1306C)),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                ),
+              ),
+      ),
+    );
+  }
+
   static final List<MapEntry<String, String?>> _filtrosDisponiveis = [
     const MapEntry('Todos', null),
     const MapEntry('Começou a seguir', 'new_follower'),
@@ -1691,6 +1742,7 @@ class _InstagramMonitorScreenState extends State<InstagramMonitorScreen> with Ti
             )
           else
             ...eventosFiltrados.map((ev) => _buildChangeLogItem(ev)),
+          _buildBotaoCarregarMais(),
         ],
       ),
     );
