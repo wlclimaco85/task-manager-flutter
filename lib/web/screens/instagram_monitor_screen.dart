@@ -1917,6 +1917,8 @@ class _ConfigSessoesDialogState extends State<_ConfigSessoesDialog> {
 
   // Configurações de API
   final _rapidApiKeyCtrl = TextEditingController();
+  final _rapidApiKey2Ctrl = TextEditingController();
+  final _rapidApiKey3Ctrl = TextEditingController();
   final _pythonUrlCtrl = TextEditingController();
 
   @override
@@ -1938,6 +1940,8 @@ class _ConfigSessoesDialogState extends State<_ConfigSessoesDialog> {
         }
         if (apiConfig != null) {
           _rapidApiKeyCtrl.text = apiConfig['rapidapi_key'] ?? '';
+          _rapidApiKey2Ctrl.text = apiConfig['rapidapi_key_2'] ?? '';
+          _rapidApiKey3Ctrl.text = apiConfig['rapidapi_key_3'] ?? '';
           _pythonUrlCtrl.text = apiConfig['python_server_url'] ?? 'http://127.0.0.1:8500';
         }
       });
@@ -1948,6 +1952,8 @@ class _ConfigSessoesDialogState extends State<_ConfigSessoesDialog> {
     setState(() => _salvando = true);
     final ok = await InstagramService.saveApiConfig({
       'rapidapi_key': _rapidApiKeyCtrl.text.trim(),
+      'rapidapi_key_2': _rapidApiKey2Ctrl.text.trim(),
+      'rapidapi_key_3': _rapidApiKey3Ctrl.text.trim(),
       'python_server_url': _pythonUrlCtrl.text.trim(),
     });
     if (!mounted) return;
@@ -2025,6 +2031,8 @@ class _ConfigSessoesDialogState extends State<_ConfigSessoesDialog> {
       c.dispose();
     }
     _rapidApiKeyCtrl.dispose();
+    _rapidApiKey2Ctrl.dispose();
+    _rapidApiKey3Ctrl.dispose();
     _pythonUrlCtrl.dispose();
     super.dispose();
   }
@@ -2066,11 +2074,35 @@ class _ConfigSessoesDialogState extends State<_ConfigSessoesDialog> {
                       controller: _rapidApiKeyCtrl,
                       obscureText: true,
                       decoration: const InputDecoration(
-                        labelText: 'Chave RapidAPI',
+                        labelText: 'Chave RapidAPI 1',
                         isDense: true,
                         border: OutlineInputBorder(),
                         helperText: 'instagram-scraper-stable-api.p.rapidapi.com',
                         prefixIcon: Icon(Icons.vpn_key, size: 18),
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    TextField(
+                      controller: _rapidApiKey2Ctrl,
+                      obscureText: true,
+                      decoration: const InputDecoration(
+                        labelText: 'Chave RapidAPI 2 (opcional)',
+                        isDense: true,
+                        border: OutlineInputBorder(),
+                        helperText: 'Usada como fallback quando a chave 1 for bloqueada',
+                        prefixIcon: Icon(Icons.vpn_key_outlined, size: 18),
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    TextField(
+                      controller: _rapidApiKey3Ctrl,
+                      obscureText: true,
+                      decoration: const InputDecoration(
+                        labelText: 'Chave RapidAPI 3 (opcional)',
+                        isDense: true,
+                        border: OutlineInputBorder(),
+                        helperText: 'Usada como fallback quando a chave 2 for bloqueada',
+                        prefixIcon: Icon(Icons.vpn_key_outlined, size: 18),
                       ),
                     ),
                     const SizedBox(height: 8),
