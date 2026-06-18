@@ -76,7 +76,7 @@ class MenuGroup {
 /// 112:RegraFiscal (Windows only)
 /// 113:ContaContabil 114:LancamentoContabil 115:Balancete
 /// 116:FechamentoPeriodo 117:AiDashboard 118:AiAssistente 119:TradingCorretora
-/// 124:Academia
+/// 124:Academia 125:Hidratacao 126:DiarioNutricional
 /// 138:AtividadeDiaria
 /// 139:DiarioNutricional
 /// 140:HomeSaudeAluno
@@ -107,7 +107,7 @@ class MenuConfig {
             icon: FontAwesomeIcons.personWalking,
             screenIndex: 138),
         MenuItem(
-            id: 'diario_nutricional',
+            id: 'diario_refeicoes',
             label: 'Diário Nutricional',
             icon: FontAwesomeIcons.utensils,
             screenIndex: 139),
@@ -171,6 +171,11 @@ class MenuConfig {
             label: 'Hidratacao',
             icon: FontAwesomeIcons.droplet,
             screenIndex: 125),
+        MenuItem(
+            id: 'diario_nutricional',
+            label: 'Diario nutricional',
+            icon: FontAwesomeIcons.utensils,
+            screenIndex: 126),
         MenuItem(
             id: 'historico_treinos',
             label: 'Histórico de Treinos',

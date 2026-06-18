@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:typed_data';
 
+import 'package:task_manager_flutter/features/diario_nutricional/diario_nutricional_screen.dart';
 import 'package:task_manager_flutter/features/hidratacao/hidratacao_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
@@ -433,7 +434,7 @@ class _WindowsBottomNavBarScreenState extends State<WindowsBottomNavBarScreen> {
         WindowsAcademiaGridScreen(
             hasPermission: (perm) => true), // 124: Academia
         const HidratacaoScreen(), // 125: Hidratacao
-        const SizedBox.shrink(), // 126
+        const DiarioNutricionalScreen(), // 126: Diario nutricional
         const SizedBox.shrink(), // 127
         const SizedBox.shrink(), // 128
         const SizedBox.shrink(), // 129

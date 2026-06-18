@@ -869,6 +869,16 @@ class ApiLinks {
   static String get hidratacaoMeta => '$_baseUrlNew/api/hidratacao/meta';
   static String get hidratacaoHistorico => '$_baseUrlNew/api/hidratacao/historico';
 
+  // Diario nutricional
+  static String diarioNutricionalResumo(String data) =>
+      '$_baseUrlNew/api/diario-nutricional/resumo?data=$data';
+  static String get diarioNutricionalRefeicoes =>
+      '$_baseUrlNew/api/diario-nutricional/refeicoes';
+  static String get diarioNutricionalItens =>
+      '$_baseUrlNew/api/diario-nutricional/itens';
+  static String diarioNutricionalItem(int id) =>
+      '$_baseUrlNew/api/diario-nutricional/itens/$id';
+
   // Nota Fiscal Entrada
   static String get allNotasFiscaisEntrada =>
       '$_baseUrlNew/api/notas-fiscais-entrada';
