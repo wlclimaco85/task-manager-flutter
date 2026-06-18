@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'dart:async';
 import '../../services/instagram_service.dart';
+import '../../utils/api_links.dart';
 
 class InstagramMonitorScreen extends StatefulWidget {
   const InstagramMonitorScreen({super.key});
@@ -476,7 +477,7 @@ class _InstagramMonitorScreenState extends State<InstagramMonitorScreen> with Ti
                     child: profilePicUrl.isNotEmpty
                         ? ClipOval(
                             child: Image.network(
-                              profilePicUrl,
+                              ApiLinks.imageProxy(profilePicUrl),
                               width: 40,
                               height: 40,
                               fit: BoxFit.cover,
@@ -891,7 +892,7 @@ class _InstagramMonitorScreenState extends State<InstagramMonitorScreen> with Ti
                   child: _profile!.profilePicUrl.isNotEmpty
                       ? ClipOval(
                           child: Image.network(
-                            _profile!.profilePicUrl,
+                            ApiLinks.imageProxy(_profile!.profilePicUrl),
                             width: 84,
                             height: 84,
                             fit: BoxFit.cover,
@@ -1165,7 +1166,7 @@ class _InstagramMonitorScreenState extends State<InstagramMonitorScreen> with Ti
           fit: StackFit.expand,
           children: [
             if (post.displayUrl.isNotEmpty)
-              Image.network(post.displayUrl, fit: BoxFit.cover, errorBuilder: (_, __, ___) => Container(
+              Image.network(ApiLinks.imageProxy(post.displayUrl), fit: BoxFit.cover, errorBuilder: (_, __, ___) => Container(
                 color: Colors.grey[300],
                 child: const Icon(Icons.broken_image, color: Colors.grey),
               )),
@@ -1515,7 +1516,7 @@ class _InstagramMonitorScreenState extends State<InstagramMonitorScreen> with Ti
                     if (post.displayUrl.isNotEmpty)
                       ClipRRect(
                         borderRadius: BorderRadius.circular(12),
-                        child: Image.network(post.displayUrl, fit: BoxFit.contain, errorBuilder: (_, __, ___) => Container(
+                        child: Image.network(ApiLinks.imageProxy(post.displayUrl), fit: BoxFit.contain, errorBuilder: (_, __, ___) => Container(
                           height: 300,
                           color: Colors.grey[200],
                           child: const Center(child: Icon(Icons.broken_image, size: 50)),

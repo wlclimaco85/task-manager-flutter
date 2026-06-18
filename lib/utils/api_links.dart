@@ -568,6 +568,14 @@ class ApiLinks {
 
   static String get baseUrl => _baseUrlNew;
 
+  /// Proxia imagens externas (ex.: CDN do Instagram) pelo backend para
+  /// contornar o bloqueio de CORS no Flutter Web. Devolve a url original
+  /// se ela estiver vazia ou ja apontar para o proprio proxy.
+  static String imageProxy(String url) {
+    if (url.isEmpty || url.contains('/api/image-proxy')) return url;
+    return '$_baseUrlNew/api/image-proxy?url=${Uri.encodeComponent(url)}';
+  }
+
   // Certificado Digital
   static String certificadosByEmpresa(int empresaId) =>
       '$_baseUrlNew/api/certificados?empresaId=$empresaId';
