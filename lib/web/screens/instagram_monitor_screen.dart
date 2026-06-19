@@ -242,9 +242,15 @@ class _InstagramMonitorScreenState extends State<InstagramMonitorScreen> with Ti
     if (_logsCarregados) return;
     setState(() => _loadingLogs = true);
     final logs = await InstagramService.fetchChangeLogs(username);
+    List<TimelineEvent> eventos = _events;
+    if (eventos.isEmpty) {
+      final resp = await InstagramService.fetchTimelinePaginado(username, page: 0, size: 200);
+      eventos = resp['events'] as List<TimelineEvent>;
+    }
     if (mounted) {
       setState(() {
         _changeLogs = logs;
+        if (_events.isEmpty) _events = eventos;
         _loadingLogs = false;
         _logsCarregados = true;
       });
@@ -2080,14 +2086,27 @@ class _InstagramMonitorScreenState extends State<InstagramMonitorScreen> with Ti
             ),
             const SizedBox(width: 5),
             Flexible(
-              child: Text(
-                '@${evento.username}',
-                style: const TextStyle(
-                    fontSize: 10,
-                    color: Color(0xFF333333),
-                    fontWeight: FontWeight.w500),
-                overflow: TextOverflow.ellipsis,
-                maxLines: 1,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    '@${evento.username}',
+                    style: const TextStyle(
+                        fontSize: 10,
+                        color: Color(0xFF333333),
+                        fontWeight: FontWeight.w600),
+                    overflow: TextOverflow.ellipsis,
+                    maxLines: 1,
+                  ),
+                  if (evento.fullName.isNotEmpty)
+                    Text(
+                      evento.fullName,
+                      style: TextStyle(fontSize: 9, color: Colors.grey[500]),
+                      overflow: TextOverflow.ellipsis,
+                      maxLines: 1,
+                    ),
+                ],
               ),
             ),
           ],
@@ -2587,6 +2606,76 @@ class _InstagramMonitorScreenState extends State<InstagramMonitorScreen> with Ti
           ),
           const Divider(height: 1),
           ..._changeLogs.map((log) => _buildChangeLogEntry(log)),
+          _buildEventosNomeadosSection(),
+        ],
+      ),
+    );
+  }
+
+  static const _tiposNomeados = {'new_follower', 'unfollowed', 'you_followed', 'unfollowed_by_you'};
+
+  Widget _buildEventosNomeadosSection() {
+    final eventosPessoas = _events
+        .where((e) => _tiposNomeados.contains(e.type))
+        .toList();
+    if (eventosPessoas.isEmpty) return const SizedBox.shrink();
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Divider(height: 1),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
+          child: Row(
+            children: [
+              const Icon(Icons.person_search, size: 16, color: Color(0xFF833AB4)),
+              const SizedBox(width: 6),
+              Text(
+                'Quem seguiu / Quem saiu (${eventosPessoas.length})',
+                style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13, color: Color(0xFF833AB4)),
+              ),
+            ],
+          ),
+        ),
+        ...eventosPessoas.map((e) => _buildEventoNomeadoEntry(e)),
+      ],
+    );
+  }
+
+  Widget _buildEventoNomeadoEntry(TimelineEvent e) {
+    final cor = _eventColor(e.type);
+    final label = _eventTypeLabel(e.type);
+    String dateStr = '';
+    if (e.dateTime != null) {
+      final dt = e.dateTime!;
+      dateStr = '${dt.day.toString().padLeft(2, '0')}/${dt.month.toString().padLeft(2, '0')} '
+          '${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}';
+    }
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+      child: Row(
+        children: [
+          Container(
+            width: 32,
+            height: 32,
+            decoration: BoxDecoration(color: cor.withValues(alpha: 0.12), shape: BoxShape.circle),
+            child: Center(child: Text(e.emoji, style: const TextStyle(fontSize: 14))),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  '@${e.username}${e.fullName.isNotEmpty ? ' · ${e.fullName}' : ''}',
+                  style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF262626)),
+                  overflow: TextOverflow.ellipsis,
+                ),
+                Text(label, style: TextStyle(fontSize: 11, color: cor, fontWeight: FontWeight.w500)),
+              ],
+            ),
+          ),
+          Text(dateStr, style: TextStyle(fontSize: 10, color: Colors.grey[400])),
         ],
       ),
     );
