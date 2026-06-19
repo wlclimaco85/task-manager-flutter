@@ -73,6 +73,7 @@ class InstagramProfile {
 
 class InstagramPost {
   final String id;
+  final String shortcode;
   final String displayUrl;
   final String? caption;
   final int likes;
@@ -83,6 +84,7 @@ class InstagramPost {
 
   InstagramPost({
     required this.id,
+    required this.shortcode,
     required this.displayUrl,
     this.caption,
     required this.likes,
@@ -92,10 +94,20 @@ class InstagramPost {
     this.videoUrl,
   });
 
+  /// URL estavel para a imagem do post.
+  /// Usa shortcode (nao expira) quando disponivel; fallback para display_url.
+  String get imageUrl {
+    if (shortcode.isNotEmpty) {
+      return 'https://www.instagram.com/p/$shortcode/media/?size=t';
+    }
+    return displayUrl;
+  }
+
   factory InstagramPost.fromJson(Map<String, dynamic> json) {
     if (json.containsKey('display_url')) {
       return InstagramPost(
         id: json['id'] ?? '',
+        shortcode: json['shortcode'] ?? json['id'] ?? '',
         displayUrl: json['display_url'] ?? '',
         caption: json['caption'],
         likes: json['likes'] ?? 0,
@@ -109,6 +121,7 @@ class InstagramPost {
     final edgeComment = json['edge_media_to_comment'] ?? {};
     return InstagramPost(
       id: json['id'] ?? '',
+      shortcode: json['shortcode'] ?? json['id'] ?? '',
       displayUrl: json['display_url'] ?? '',
       caption: json['edge_media_to_caption']?['edges']?.isNotEmpty == true
           ? json['edge_media_to_caption']['edges'][0]['node']['text']

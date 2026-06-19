@@ -67,6 +67,11 @@ class _InstagramMonitorScreenState extends State<InstagramMonitorScreen> with Ti
     _animController = AnimationController(vsync: this, duration: const Duration(milliseconds: 600));
     _fadeAnimation = CurvedAnimation(parent: _animController, curve: Curves.easeInOut);
     _tabController = TabController(length: 4, vsync: this);
+    _tabController.addListener(() {
+      if (!_tabController.indexIsChanging && _tabController.index == 3 && _currentUsername.isNotEmpty) {
+        _loadDashboard(_currentUsername);
+      }
+    });
     _checkLocalApi();
     _loadTrackedProfiles();
   }
@@ -1742,8 +1747,8 @@ class _InstagramMonitorScreenState extends State<InstagramMonitorScreen> with Ti
         child: Stack(
           fit: StackFit.expand,
           children: [
-            if (post.displayUrl.isNotEmpty)
-              Image.network(ApiLinks.imageProxy(post.displayUrl), fit: BoxFit.cover, errorBuilder: (_, __, ___) => Container(
+            if (post.imageUrl.isNotEmpty)
+              Image.network(post.imageUrl, fit: BoxFit.cover, errorBuilder: (_, __, ___) => Container(
                 color: Colors.grey[300],
                 child: const Icon(Icons.broken_image, color: Colors.grey),
               )),
@@ -2162,10 +2167,10 @@ class _InstagramMonitorScreenState extends State<InstagramMonitorScreen> with Ti
                   controller: scrollController,
                   padding: const EdgeInsets.all(16),
                   children: [
-                    if (post.displayUrl.isNotEmpty)
+                    if (post.imageUrl.isNotEmpty)
                       ClipRRect(
                         borderRadius: BorderRadius.circular(12),
-                        child: Image.network(ApiLinks.imageProxy(post.displayUrl), fit: BoxFit.contain, errorBuilder: (_, __, ___) => Container(
+                        child: Image.network(post.imageUrl, fit: BoxFit.contain, errorBuilder: (_, __, ___) => Container(
                           height: 300,
                           color: Colors.grey[200],
                           child: const Center(child: Icon(Icons.broken_image, size: 50)),
