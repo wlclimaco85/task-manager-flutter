@@ -106,8 +106,8 @@ class InstagramPost {
   factory InstagramPost.fromJson(Map<String, dynamic> json) {
     if (json.containsKey('display_url')) {
       return InstagramPost(
-        id: json['id'] ?? '',
-        shortcode: json['shortcode'] ?? json['id'] ?? '',
+        id: (json['id'] ?? '').toString(),
+        shortcode: json['shortcode'] ?? json['id']?.toString() ?? '',
         displayUrl: json['display_url'] ?? '',
         caption: json['caption'],
         likes: json['likes'] ?? 0,
@@ -120,8 +120,8 @@ class InstagramPost {
     final edgeLiked = json['edge_liked_by'] ?? json['edge_media_preview_like'] ?? {};
     final edgeComment = json['edge_media_to_comment'] ?? {};
     return InstagramPost(
-      id: json['id'] ?? '',
-      shortcode: json['shortcode'] ?? json['id'] ?? '',
+      id: (json['id'] ?? '').toString(),
+      shortcode: json['shortcode'] ?? json['id']?.toString() ?? '',
       displayUrl: json['display_url'] ?? '',
       caption: json['edge_media_to_caption']?['edges']?.isNotEmpty == true
           ? json['edge_media_to_caption']['edges'][0]['node']['text']
