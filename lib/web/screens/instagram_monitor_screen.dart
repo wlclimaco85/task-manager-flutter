@@ -34,6 +34,9 @@ class _InstagramMonitorScreenState extends State<InstagramMonitorScreen> with Ti
   bool _logsCarregados = false;
   bool _dashboardCarregado = false;
 
+  // Controle de coleta imediata
+  bool _coletando = false;
+
   // Perfis monitorados
   List<Map<String, dynamic>> _trackedProfiles = [];
   bool _loadingTracked = false;
@@ -114,6 +117,31 @@ class _InstagramMonitorScreenState extends State<InstagramMonitorScreen> with Ti
       backgroundColor: conectou ? Colors.green.shade700 : Colors.red.shade700,
       duration: const Duration(seconds: 3),
     ));
+  }
+
+  Future<void> _coletarAgora() async {
+    if (_currentUsername.isEmpty || _coletando) return;
+    setState(() => _coletando = true);
+    final ok = await InstagramService.coletarAgora(_currentUsername);
+    if (!mounted) return;
+    setState(() {
+      _coletando = false;
+      _timelineCarregada = false;
+      _logsCarregados = false;
+    });
+    if (ok) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Coleta iniciada. Aguarde alguns segundos e clique em Timeline/Logs para ver os resultados.'),
+          backgroundColor: Color(0xFF4CAF50),
+          duration: Duration(seconds: 4),
+        ),
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Falha ao iniciar coleta'), backgroundColor: Colors.red),
+      );
+    }
   }
 
   /// Extrai e valida username de URL, @user ou username puro. Retorna null se inválido.
@@ -1336,6 +1364,21 @@ class _InstagramMonitorScreenState extends State<InstagramMonitorScreen> with Ti
                   onPressed: () => _loadProfileData(_currentUsername),
                   tooltip: 'Atualizar',
                 ),
+              if (_profile != null)
+                _coletando
+                    ? const Padding(
+                        padding: EdgeInsets.all(8),
+                        child: SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                        ),
+                      )
+                    : IconButton(
+                        icon: const Icon(Icons.sync, color: Colors.white),
+                        onPressed: _coletarAgora,
+                        tooltip: 'Coletar dados agora',
+                      ),
             ],
           ),
           const SizedBox(height: 4),

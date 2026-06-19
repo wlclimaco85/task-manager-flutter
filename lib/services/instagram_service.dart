@@ -618,6 +618,21 @@ class InstagramService {
     return null;
   }
 
+  /// Dispara coleta imediata de dados para o username monitorado.
+  static Future<bool> coletarAgora(String username) async {
+    try {
+      final headers = await AuthService().jsonHeaders();
+      final r = await http.post(
+        Uri.parse('$_backendUrl/api/instagram/perfis/$username/coletar-agora'),
+        headers: {...headers, 'Content-Type': 'application/json'},
+        body: '{}',
+      ).timeout(const Duration(seconds: 30));
+      return r.statusCode == 200;
+    } catch (_) {
+      return false;
+    }
+  }
+
   /// Busca posts do username a partir do banco de dados via backend Java.
   static Future<List<InstagramPost>> fetchPostsFromDb(String username) async {
     final backendUrl = ApiLinks.baseUrl;
