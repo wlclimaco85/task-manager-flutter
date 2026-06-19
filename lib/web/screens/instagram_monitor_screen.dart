@@ -2331,7 +2331,7 @@ class _InstagramMonitorScreenState extends State<InstagramMonitorScreen> with Ti
       );
     }
 
-    if (_events.isEmpty) {
+    if (_changeLogs.isEmpty) {
       return Container(
         width: double.infinity,
         padding: const EdgeInsets.all(24),
@@ -2346,16 +2346,12 @@ class _InstagramMonitorScreenState extends State<InstagramMonitorScreen> with Ti
           children: [
             Icon(Icons.history_toggle_off, size: 40, color: Colors.grey),
             SizedBox(height: 8),
-            Text('Nenhum evento registrado', style: TextStyle(color: Colors.grey, fontSize: 13)),
-            Text('Os eventos aparecao quando o job detectar mudancas de seguidores, curtidas ou comentarios', style: TextStyle(color: Colors.grey, fontSize: 11)),
+            Text('Nenhum log registrado', style: TextStyle(color: Colors.grey, fontSize: 13)),
+            Text('Os logs aparecem quando o job detectar mudancas no perfil', style: TextStyle(color: Colors.grey, fontSize: 11)),
           ],
         ),
       );
     }
-
-    final eventosFiltrados = _filtroLog == null
-        ? _events
-        : _events.where((e) => e.type == _filtroLog).toList();
 
     return Container(
       width: double.infinity,
@@ -2375,7 +2371,7 @@ class _InstagramMonitorScreenState extends State<InstagramMonitorScreen> with Ti
               children: [
                 const Icon(Icons.history, size: 18, color: Color(0xFF833AB4)),
                 const SizedBox(width: 8),
-                Text('Historico de eventos (${eventosFiltrados.length})',
+                Text('Historico de mudancas (${_changeLogs.length})',
                     style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14)),
                 const Spacer(),
                 TextButton.icon(
@@ -2386,87 +2382,52 @@ class _InstagramMonitorScreenState extends State<InstagramMonitorScreen> with Ti
               ],
             ),
           ),
-          _buildFiltrosChips(_filtroLog, (v) => setState(() => _filtroLog = v)),
-          const SizedBox(height: 8),
           const Divider(height: 1),
-          if (eventosFiltrados.isEmpty)
-            const Padding(
-              padding: EdgeInsets.all(24),
-              child: Center(
-                child: Text('Nenhum evento com este filtro', style: TextStyle(color: Colors.grey, fontSize: 13)),
-              ),
-            )
-          else
-            ...eventosFiltrados.map((ev) => _buildChangeLogItem(ev)),
-          _buildBotaoCarregarMais(),
+          ..._changeLogs.map((log) => _buildChangeLogEntry(log)),
         ],
       ),
     );
   }
 
-  Widget _buildChangeLogItem(TimelineEvent ev) {
-    final type = ev.type;
-    final username = ev.username;
-    final fullName = ev.fullName;
-    final commentText = ev.text ?? '';
-    final createdAt = ev.date;
+  Widget _buildChangeLogEntry(Map<String, dynamic> log) {
+    final changeType = (log['changeType'] as String? ?? '').toLowerCase();
+    final description = log['description'] as String? ?? '';
+    final oldValue = log['oldValue'] as String? ?? '';
+    final newValue = log['newValue'] as String? ?? '';
+    final createdAt = log['createdAt'] as String? ?? '';
 
     IconData icon;
     Color color;
-    String acao;
 
-    switch (type) {
-      case 'new_follower':
-        icon = Icons.person_add_alt_1;
-        color = const Color(0xFFE1306C);
-        acao = 'comecou a te seguir';
-        break;
-      case 'unfollowed':
-        icon = Icons.person_remove;
-        color = Colors.grey;
-        acao = 'deixou de te seguir';
-        break;
-      case 'you_followed':
-        icon = Icons.person_add;
-        color = const Color(0xFF833AB4);
-        acao = 'voce comecou a seguir';
-        break;
-      case 'unfollowed_by_you':
-        icon = Icons.person_off;
-        color = Colors.blueGrey;
-        acao = 'voce deixou de seguir';
-        break;
-      case 'liked_post':
-        icon = Icons.favorite;
-        color = Colors.red;
-        acao = 'curtiu uma publicacao';
-        break;
-      case 'unliked_post':
-        icon = Icons.favorite_border;
-        color = Colors.grey;
-        acao = 'removeu curtida';
-        break;
-      case 'comment':
-        icon = Icons.comment;
-        color = const Color(0xFF405DE6);
-        acao = 'comentou';
-        break;
-      case 'bio_updated':
-        icon = Icons.edit_note;
-        color = const Color(0xFFF77737);
-        acao = 'bio atualizada';
-        break;
-      default:
-        icon = Icons.info_outline;
-        color = Colors.grey;
-        acao = type.isNotEmpty ? type : 'evento';
+    if (changeType.contains('followers')) {
+      final diff = int.tryParse(newValue) != null && int.tryParse(oldValue) != null
+          ? (int.parse(newValue) - int.parse(oldValue))
+          : 0;
+      icon = diff >= 0 ? Icons.group_add : Icons.group_remove;
+      color = diff >= 0 ? const Color(0xFFE1306C) : Colors.grey;
+    } else if (changeType.contains('following')) {
+      final diff = int.tryParse(newValue) != null && int.tryParse(oldValue) != null
+          ? (int.parse(newValue) - int.parse(oldValue))
+          : 0;
+      icon = diff >= 0 ? Icons.person_add : Icons.person_off;
+      color = diff >= 0 ? const Color(0xFF833AB4) : Colors.blueGrey;
+    } else if (changeType.contains('posts')) {
+      icon = Icons.photo_library_outlined;
+      color = const Color(0xFFF77737);
+    } else if (changeType.contains('bio')) {
+      icon = Icons.edit_note;
+      color = const Color(0xFF405DE6);
+    } else {
+      icon = Icons.info_outline;
+      color = Colors.grey;
     }
 
     String dateStr = '';
     if (createdAt.isNotEmpty) {
       try {
         final dt = DateTime.parse(createdAt);
-        dateStr = '${dt.day.toString().padLeft(2, '0')}/${dt.month.toString().padLeft(2, '0')} ${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}';
+        dateStr = '${dt.day.toString().padLeft(2, '0')}/${dt.month.toString().padLeft(2, '0')} '
+            '${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}';
       } catch (_) {
         dateStr = createdAt;
       }
@@ -2493,37 +2454,18 @@ class _InstagramMonitorScreenState extends State<InstagramMonitorScreen> with Ti
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                RichText(
-                  text: TextSpan(
-                    style: const TextStyle(fontSize: 13, color: Colors.black87),
-                    children: [
-                      TextSpan(
-                        text: fullName.isNotEmpty ? fullName : username,
-                        style: const TextStyle(fontWeight: FontWeight.w700),
-                      ),
-                      if (username.isNotEmpty && fullName != username) ...[
-                        const TextSpan(text: ' '),
-                        TextSpan(
-                          text: '@$username',
-                          style: TextStyle(color: Colors.grey[600], fontSize: 11),
-                        ),
-                      ],
-                      TextSpan(text: '  $acao'),
-                    ],
-                  ),
+                Text(
+                  description,
+                  style: const TextStyle(fontSize: 13, color: Colors.black87),
                 ),
-                if (commentText.isNotEmpty) ...[
-                  const SizedBox(height: 4),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: Colors.grey.withValues(alpha: 0.08),
-                      borderRadius: BorderRadius.circular(6),
+                if (oldValue.isNotEmpty && newValue.isNotEmpty)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 3),
+                    child: Text(
+                      '$oldValue → $newValue',
+                      style: TextStyle(fontSize: 11, color: Colors.grey[600]),
                     ),
-                    child: Text('"$commentText"',
-                        style: TextStyle(fontSize: 11, color: Colors.grey[700], fontStyle: FontStyle.italic)),
                   ),
-                ],
               ],
             ),
           ),
