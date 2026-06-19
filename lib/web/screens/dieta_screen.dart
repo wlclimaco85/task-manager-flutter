@@ -172,7 +172,7 @@ class _WebDietaScreenState extends State<WebDietaScreen> {
         onPressed: _dietasDados.isEmpty
             ? null
             : () {
-                final nomeAluno = AuthUtility.userInfo?.data?.nome ?? 'Aluno';
+                final nomeAluno = AuthUtility.userInfo?.data?.codDadosPessoal?.nome ?? 'Aluno';
                 final primeiro = _dietasDados.first;
                 PdfExportHelper.exportarDieta(
                   context,

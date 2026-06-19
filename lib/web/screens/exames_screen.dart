@@ -181,7 +181,7 @@ class _WebExameScreenState extends State<WebExameScreen> {
         onPressed: _examesDados.isEmpty
             ? null
             : () {
-                final nomeAluno = AuthUtility.userInfo?.data?.nome ?? 'Aluno';
+                final nomeAluno = AuthUtility.userInfo?.data?.codDadosPessoal?.nome ?? 'Aluno';
                 final primeiro = _examesDados.first;
                 PdfExportHelper.exportarExame(
                   context,

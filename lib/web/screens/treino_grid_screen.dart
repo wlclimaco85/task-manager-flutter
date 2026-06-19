@@ -10,7 +10,7 @@ class WebTreinoGridScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final nomeAluno = AuthUtility.userInfo?.data?.nome ?? 'Aluno';
+    final nomeAluno = AuthUtility.userInfo?.data?.codDadosPessoal?.nome ?? 'Aluno';
     return DynamicGridWindowsScreen<Treino>(
       telaNome: 'treino',
       hasPermission: hasPermission,
