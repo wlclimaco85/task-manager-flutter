@@ -45,16 +45,15 @@ class _WebHomeSaudeAlunoScreenState extends State<WebHomeSaudeAlunoScreen> {
       AvaliacaoFisica? ultimaAvaliacao;
       Treino? ultimoTreino;
 
-      if (resAvaliacao.isSuccess && resAvaliacao.responseData != null) {
-        final lista = resAvaliacao.responseData;
+      if (resAvaliacao.isSuccess && resAvaliacao.body != null) {
+        final body = resAvaliacao.body!;
         List<dynamic> itens = [];
-        if (lista is List) {
-          itens = lista;
-        } else if (lista is Map && lista['content'] is List) {
-          itens = lista['content'] as List;
+        if (body['content'] is List) {
+          itens = body['content'] as List;
+        } else if (body['data'] is List) {
+          itens = body['data'] as List;
         }
         if (itens.isNotEmpty) {
-          // Pega o mais recente (último da lista ou ordena por dtAvaliacao)
           final avaliacoes = itens
               .map((e) => AvaliacaoFisica.fromJson(e as Map<String, dynamic>))
               .toList();
@@ -64,20 +63,19 @@ class _WebHomeSaudeAlunoScreenState extends State<WebHomeSaudeAlunoScreen> {
         }
       }
 
-      if (resTreino.isSuccess && resTreino.responseData != null) {
-        final lista = resTreino.responseData;
+      if (resTreino.isSuccess && resTreino.body != null) {
+        final body = resTreino.body!;
         List<dynamic> itens = [];
-        if (lista is List) {
-          itens = lista;
-        } else if (lista is Map && lista['content'] is List) {
-          itens = lista['content'] as List;
+        if (body['content'] is List) {
+          itens = body['content'] as List;
+        } else if (body['data'] is List) {
+          itens = body['data'] as List;
         }
         if (itens.isNotEmpty) {
           final treinos = itens
               .map((e) => Treino.fromJson(e as Map<String, dynamic>))
               .toList();
-          treinos
-              .sort((a, b) => (b.dtTreino ?? '').compareTo(a.dtTreino ?? ''));
+          treinos.sort((a, b) => (b.dtTreino ?? '').compareTo(a.dtTreino ?? ''));
           ultimoTreino = treinos.first;
         }
       }
