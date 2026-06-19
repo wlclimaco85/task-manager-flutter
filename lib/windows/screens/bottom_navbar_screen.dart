@@ -135,6 +135,7 @@ import '../../web/screens/instagram_monitor_screen.dart';
 import './atividade_diaria_screen.dart';
 import './diario_refeicao_screen.dart';
 import './home_saude_aluno_screen.dart';
+import './historico_treino_screen.dart';
 
 class WindowsBottomNavBarScreen extends StatefulWidget {
   const WindowsBottomNavBarScreen({super.key});
@@ -440,6 +441,9 @@ class _WindowsBottomNavBarScreenState extends State<WindowsBottomNavBarScreen> {
         const WindowsAtividadeDiariaScreen(), // 138: Atividade Diária
         const WindowsDiarioRefeicaoScreen(), // 139: Diário Nutricional
         const WindowsHomeSaudeAlunoScreen(), // 140: Home Saúde do Aluno
+        HistoricoTreinoScreen(
+          alunoId: AuthUtility.userInfo?.data?.id ?? 0,
+        ), // 141: Histórico de Treinos
       ];
 
   String get userName {

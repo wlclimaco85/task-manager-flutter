@@ -79,6 +79,8 @@ class MenuGroup {
 /// 124:Academia
 /// 138:AtividadeDiaria
 /// 139:DiarioNutricional
+/// 140:HomeSaudeAluno
+/// 141:HistoricoTreinos
 
 class MenuConfig {
   MenuConfig._();
@@ -164,6 +166,11 @@ class MenuConfig {
             label: 'Treino',
             icon: FontAwesomeIcons.personRunning,
             screenIndex: 49),
+        MenuItem(
+            id: 'historico_treinos',
+            label: 'Histórico de Treinos',
+            icon: FontAwesomeIcons.clipboardCheck,
+            screenIndex: 141),
       ],
     ),
     MenuGroup(

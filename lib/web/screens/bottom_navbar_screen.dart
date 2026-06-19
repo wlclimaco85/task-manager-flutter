@@ -125,6 +125,7 @@ import './instagram_monitor_screen.dart';
 import './atividade_diaria_screen.dart';
 import './diario_refeicao_screen.dart';
 import './home_saude_aluno_screen.dart';
+import './historico_treino_screen.dart';
 
 class WebBottomNavBarScreen extends StatefulWidget {
   final int initialIndex;
@@ -461,6 +462,9 @@ class _WebBottomNavBarScreenState extends State<WebBottomNavBarScreen> {
       const WebAtividadeDiariaScreen(), // 138: Atividade Diária
       const WebDiarioRefeicaoScreen(), // 139: Diário Nutricional
       const WebHomeSaudeAlunoScreen(), // 140: Home Saúde do Aluno
+      HistoricoTreinoScreen(
+        alunoId: AuthUtility.userInfo?.data?.id ?? 0,
+      ), // 141: Histórico de Treinos
     ];
   }
 
