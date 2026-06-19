@@ -26,9 +26,8 @@ class _InstagramMonitorScreenState extends State<InstagramMonitorScreen> with Ti
 
   // Estado da Timeline
   List<TimelineEvent> _events = [];
-  bool _snapshotting = false;
-  String? _lastSnapshotTime;
   String _currentUsername = '';
+  TimelineEvent? _eventoSelecionado;
 
   // Perfis monitorados
   List<Map<String, dynamic>> _trackedProfiles = [];
@@ -268,7 +267,7 @@ class _InstagramMonitorScreenState extends State<InstagramMonitorScreen> with Ti
 
     List<InstagramPost> posts = [];
     if (profile != null) {
-      posts = await InstagramService.fetchPosts(username);
+      posts = await InstagramService.fetchPostsFromDb(username);
     }
 
     // 2. Buscar timeline (primeira pagina)
@@ -355,32 +354,6 @@ class _InstagramMonitorScreenState extends State<InstagramMonitorScreen> with Ti
     );
   }
 
-  Future<void> _takeSnapshot() async {
-    if (_currentUsername.isEmpty) return;
-
-    setState(() => _snapshotting = true);
-
-    final result = await InstagramService.takeSnapshot(_currentUsername);
-
-    if (mounted) {
-      setState(() => _snapshotting = false);
-      if (result != null) {
-        _lastSnapshotTime = DateTime.now().toString().substring(0, 19);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Snapshot salvo: ${result['followers']} seguidores, ${result['following']} seguindo'),
-            backgroundColor: Colors.green.shade700,
-          ),
-        );
-        await _loadProfileData(_currentUsername);
-        if (mounted) _tabController.animateTo(0);
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Falha ao tirar snapshot'), backgroundColor: Colors.red),
-        );
-      }
-    }
-  }
 
   // --- Painel de perfis monitorados (20% da altura, scroll horizontal) ---
 
@@ -1208,7 +1181,7 @@ class _InstagramMonitorScreenState extends State<InstagramMonitorScreen> with Ti
           ),
           SingleChildScrollView(
             padding: const EdgeInsets.all(16),
-            child: _events.isEmpty ? _buildEmptyTimeline() : _buildTimelineList(),
+            child: _buildTimelineGrafico(),
           ),
           SingleChildScrollView(
             padding: const EdgeInsets.all(16),
@@ -1333,23 +1306,12 @@ class _InstagramMonitorScreenState extends State<InstagramMonitorScreen> with Ti
                 onPressed: _abrirConfigSessoes,
                 tooltip: 'Configurar sessões do Instagram',
               ),
-              if (_profile != null) ...[
-                _snapshotting
-                    ? const Padding(
-                        padding: EdgeInsets.all(8),
-                        child: SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2)),
-                      )
-                    : IconButton(
-                        icon: const Icon(Icons.camera_alt, color: Colors.white),
-                        onPressed: _takeSnapshot,
-                        tooltip: 'Tirar Snapshot',
-                      ),
+              if (_profile != null)
                 IconButton(
                   icon: const Icon(Icons.refresh, color: Colors.white),
                   onPressed: () => _loadProfileData(_currentUsername),
                   tooltip: 'Atualizar',
                 ),
-              ],
             ],
           ),
           const SizedBox(height: 4),
@@ -1791,32 +1753,21 @@ class _InstagramMonitorScreenState extends State<InstagramMonitorScreen> with Ti
   // --- Widgets da Timeline ---
 
   Widget _buildEmptyTimeline() {
-    final temBaseline = _lastSnapshotTime != null;
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(32),
       decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(20)),
       child: Column(
         children: [
-          Icon(
-            temBaseline ? Icons.check_circle_outline : Icons.timeline,
-            size: 50,
-            color: temBaseline ? Colors.green.shade300 : Colors.grey[300],
-          ),
+          Icon(Icons.timeline, size: 50, color: Colors.grey[300]),
           const SizedBox(height: 12),
           Text(
-            temBaseline ? 'Baseline salvo com sucesso' : 'Nenhum evento registrado',
-            style: TextStyle(
-              color: temBaseline ? Colors.green.shade600 : Colors.grey[400],
-              fontSize: 14,
-              fontWeight: FontWeight.w600,
-            ),
+            'Nenhum evento registrado',
+            style: TextStyle(color: Colors.grey[400], fontSize: 14, fontWeight: FontWeight.w600),
           ),
           const SizedBox(height: 8),
           Text(
-            temBaseline
-                ? 'Snapshot de $_lastSnapshotTime salvo como linha de base.\nTome outro snapshot depois de atividade no Instagram para ver as mudanças aqui.'
-                : 'Faca um snapshot para comecar a monitorar',
+            'Os jobs coletam dados automaticamente a cada 6 horas',
             style: TextStyle(fontSize: 12, color: Colors.grey[500]),
             textAlign: TextAlign.center,
           ),
@@ -1887,102 +1838,280 @@ class _InstagramMonitorScreenState extends State<InstagramMonitorScreen> with Ti
     }
   }
 
-  Widget _buildTimelineList() {
+  // --- Gráfico de Timeline Horizontal ---
+
+  Widget _buildTimelineGrafico() {
     final eventosFiltrados = _filtroTimeline == null
         ? _events
         : _events.where((e) => e.type == _filtroTimeline).toList();
-    final grouped = _groupByDay(eventosFiltrados);
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Row(
-          mainAxisAlignment: MainAxisAlignment.end,
           children: [
+            Expanded(
+              child: _buildFiltrosChips(
+                _filtroTimeline,
+                (v) => setState(() {
+                  _filtroTimeline = v;
+                  _eventoSelecionado = null;
+                }),
+              ),
+            ),
             TextButton.icon(
-              onPressed: () => _confirmarApagarTimeline(),
+              onPressed: _confirmarApagarTimeline,
               icon: const Icon(Icons.delete_sweep_outlined, size: 16, color: Colors.redAccent),
-              label: const Text('Apagar timeline', style: TextStyle(color: Colors.redAccent, fontSize: 12)),
+              label: const Text('Apagar', style: TextStyle(color: Colors.redAccent, fontSize: 12)),
             ),
           ],
         ),
-        _buildFiltrosChips(_filtroTimeline, (v) => setState(() => _filtroTimeline = v)),
         const SizedBox(height: 8),
         if (eventosFiltrados.isEmpty)
-          const Padding(
-            padding: EdgeInsets.all(24),
-            child: Center(
-              child: Text('Nenhum evento com este filtro', style: TextStyle(color: Colors.grey, fontSize: 13)),
-            ),
-          )
-        else
-          ...grouped.entries.map((entry) => _buildDaySection(entry.key, entry.value)),
+          _buildEmptyTimeline()
+        else ...[
+          _buildGraficoHorizontal(eventosFiltrados),
+          if (_eventoSelecionado != null) _buildDetalheEvento(_eventoSelecionado!),
+        ],
         _buildBotaoCarregarMais(),
       ],
     );
   }
 
-  Map<String, List<TimelineEvent>> _groupByDay(List<TimelineEvent> events) {
-    final map = <String, List<TimelineEvent>>{};
-    for (final e in events) {
+  Widget _buildGraficoHorizontal(List<TimelineEvent> eventos) {
+    final Map<String, List<TimelineEvent>> porDia = {};
+    for (final e in eventos) {
       final dt = e.dateTime;
-      String key;
-      if (dt == null) {
-        key = 'Sem data';
-      } else {
-        final now = DateTime.now();
-        final today = DateTime(now.year, now.month, now.day);
-        final eventDay = DateTime(dt.year, dt.month, dt.day);
-        final diff = today.difference(eventDay).inDays;
-        if (diff == 0) key = 'Hoje';
-        else if (diff == 1) key = 'Ontem';
-        else if (diff < 7) key = 'Ha $diff dias';
-        else key = '${dt.day.toString().padLeft(2, '0')}/${dt.month.toString().padLeft(2, '0')}/${dt.year}';
-      }
-      map.putIfAbsent(key, () => []).add(e);
+      if (dt == null) continue;
+      final chave = '${dt.day.toString().padLeft(2, '0')}/${dt.month.toString().padLeft(2, '0')}';
+      porDia.putIfAbsent(chave, () => []).add(e);
     }
-    return map;
-  }
 
-  Widget _buildDaySection(String day, List<TimelineEvent> events) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Padding(
-          padding: const EdgeInsets.symmetric(vertical: 8),
-          child: Row(
-            children: [
-              Container(
-                width: 10, height: 10,
-                decoration: const BoxDecoration(
-                  shape: BoxShape.circle,
-                  gradient: LinearGradient(colors: [Color(0xFF833AB4), Color(0xFFE1306C)]),
-                ),
-              ),
-              const SizedBox(width: 10),
-              Text(day, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: Color(0xFF262626))),
-              const SizedBox(width: 8),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFE1306C).withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: Text('${events.length}', style: const TextStyle(fontSize: 11, color: Color(0xFFE1306C), fontWeight: FontWeight.w700)),
-              ),
-            ],
-          ),
+    final diasOrdenados = porDia.keys.toList()
+      ..sort((a, b) {
+        final pa = a.split('/');
+        final pb = b.split('/');
+        final mA = int.tryParse(pa[1]) ?? 0;
+        final dA = int.tryParse(pa[0]) ?? 0;
+        final mB = int.tryParse(pb[1]) ?? 0;
+        final dB = int.tryParse(pb[0]) ?? 0;
+        if (mA != mB) return mA.compareTo(mB);
+        return dA.compareTo(dB);
+      });
+
+    final hoje = DateTime.now();
+    final hojeChave =
+        '${hoje.day.toString().padLeft(2, '0')}/${hoje.month.toString().padLeft(2, '0')}';
+
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+              color: Colors.black.withValues(alpha: 0.05),
+              blurRadius: 8,
+              offset: const Offset(0, 2))
+        ],
+      ),
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.end,
+          children: diasOrdenados
+              .map((dia) => _buildColunaEvento(dia, porDia[dia]!, dia == hojeChave))
+              .toList(),
         ),
-        ...events.map((e) => _buildEventCard(e)),
-        Container(
-          margin: const EdgeInsets.only(left: 4),
-          width: 2,
-          height: 20,
-          color: Colors.grey[300],
-        ),
-      ],
+      ),
     );
   }
 
+  Widget _buildColunaEvento(String dia, List<TimelineEvent> eventos, bool eHoje) {
+    const largura = 148.0;
+    return SizedBox(
+      width: largura,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          ...eventos.map((e) => _buildChipEvento(e)),
+          const SizedBox(height: 8),
+          // Eixo horizontal
+          Stack(
+            clipBehavior: Clip.none,
+            children: [
+              Container(
+                height: 2,
+                color: eHoje ? const Color(0xFF4FC3F7) : const Color(0xFFDDDDDD),
+              ),
+              Positioned(
+                left: largura / 2 - 1,
+                top: -3,
+                child: Container(
+                  width: 2,
+                  height: 8,
+                  color: eHoje ? const Color(0xFF4FC3F7) : const Color(0xFFAAAAAA),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 6),
+          Center(
+            child: Column(
+              children: [
+                Text(
+                  dia,
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: eHoje ? FontWeight.w700 : FontWeight.normal,
+                    color: eHoje ? const Color(0xFF4FC3F7) : const Color(0xFF888888),
+                  ),
+                ),
+                if (eHoje)
+                  Text(
+                    'hoje',
+                    style: TextStyle(
+                      fontSize: 9,
+                      color: const Color(0xFF4FC3F7).withValues(alpha: 0.8),
+                    ),
+                  ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildChipEvento(TimelineEvent evento) {
+    final cor = _eventColor(evento.type);
+    final selecionado = _eventoSelecionado == evento;
+    return GestureDetector(
+      onTap: () => setState(
+          () => _eventoSelecionado = selecionado ? null : evento),
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 4),
+        padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 4),
+        decoration: BoxDecoration(
+          color: selecionado
+              ? cor.withValues(alpha: 0.22)
+              : cor.withValues(alpha: 0.09),
+          border: Border.all(
+              color: cor.withValues(alpha: selecionado ? 0.8 : 0.35)),
+          borderRadius: BorderRadius.circular(20),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 18,
+              height: 18,
+              decoration: BoxDecoration(color: cor, shape: BoxShape.circle),
+              child: Center(
+                  child: Text(evento.emoji,
+                      style: const TextStyle(fontSize: 9))),
+            ),
+            const SizedBox(width: 5),
+            Flexible(
+              child: Text(
+                '@${evento.username}',
+                style: const TextStyle(
+                    fontSize: 10,
+                    color: Color(0xFF333333),
+                    fontWeight: FontWeight.w500),
+                overflow: TextOverflow.ellipsis,
+                maxLines: 1,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDetalheEvento(TimelineEvent evento) {
+    final cor = _eventColor(evento.type);
+    final label = _eventTypeLabel(evento.type);
+    return Container(
+      margin: const EdgeInsets.only(top: 12),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+      decoration: BoxDecoration(
+        color: cor.withValues(alpha: 0.08),
+        border: Border(left: BorderSide(color: cor, width: 3)),
+        borderRadius: const BorderRadius.only(
+          topRight: Radius.circular(8),
+          bottomRight: Radius.circular(8),
+        ),
+      ),
+      child: Row(
+        children: [
+          Text(evento.emoji, style: const TextStyle(fontSize: 20)),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Text(label,
+                        style: TextStyle(
+                            color: cor,
+                            fontWeight: FontWeight.w700,
+                            fontSize: 13)),
+                    if (evento.dateTime != null) ...[
+                      const SizedBox(width: 8),
+                      Text(
+                        '${evento.dateTime!.day.toString().padLeft(2, '0')}/${evento.dateTime!.month.toString().padLeft(2, '0')} às ${evento.dateTime!.hour.toString().padLeft(2, '0')}:${evento.dateTime!.minute.toString().padLeft(2, '0')}',
+                        style: const TextStyle(
+                            color: Color(0xFF888888), fontSize: 11),
+                      ),
+                    ],
+                  ],
+                ),
+                const SizedBox(height: 2),
+                Text('@${evento.username}',
+                    style: const TextStyle(
+                        color: Color(0xFF333333),
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600)),
+                if (evento.fullName.isNotEmpty &&
+                    evento.fullName != evento.username)
+                  Text(evento.fullName,
+                      style: const TextStyle(
+                          color: Color(0xFF888888), fontSize: 12)),
+                if (evento.text != null && evento.text!.isNotEmpty)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 4),
+                    child: Text(
+                      '"${evento.text}"',
+                      style: const TextStyle(
+                          color: Color(0xFF555555),
+                          fontSize: 12,
+                          fontStyle: FontStyle.italic),
+                    ),
+                  ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  String _eventTypeLabel(String type) {
+    switch (type) {
+      case 'new_follower': return 'Novo seguidor';
+      case 'unfollowed': return 'Deixou de seguir';
+      case 'you_followed': return 'Você seguiu';
+      case 'unfollowed_by_you': return 'Você deixou de seguir';
+      case 'liked_post': return 'Curtiu post';
+      case 'unliked_post': return 'Descurtiu post';
+      case 'comment': return 'Comentário';
+      default: return type;
+    }
+  }
+
+  // placeholder para manter compatibilidade com código legado que ainda usa _buildEventCard
   Widget _buildEventCard(TimelineEvent event) {
     final color = _eventColor(event.type);
     return Container(
@@ -2210,8 +2339,10 @@ class _InstagramMonitorScreenState extends State<InstagramMonitorScreen> with Ti
   }
 
   Widget _buildLikersSection(InstagramPost post) {
+    // Likers não disponíveis sem API Python — seção desativada
+    return const SizedBox.shrink();
     return FutureBuilder<List<InstagramLiker>>(
-      future: InstagramService.fetchLikers(post.id),
+      future: Future.value([]),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Padding(
@@ -3011,12 +3142,12 @@ class _PainelJobsDialogState extends State<_PainelJobsDialog> {
 
   static const _nomeDisplayJob = {
     'InstagramDataCollector': 'Coleta Horária',
-    'InstagramInteracaoJob': 'Interação Following',
+    'InstagramInteracaoFollowingJob': 'Interação Following',
   };
 
   static const _iconeJob = {
     'InstagramDataCollector': Icons.cloud_download_outlined,
-    'InstagramInteracaoJob': Icons.people_alt_outlined,
+    'InstagramInteracaoFollowingJob': Icons.people_alt_outlined,
   };
 
   bool _carregando = true;
@@ -3040,7 +3171,7 @@ class _PainelJobsDialogState extends State<_PainelJobsDialog> {
         _carregando = false;
         _jobs = (jobs ?? [])
             .where((j) =>
-                ['InstagramDataCollector', 'InstagramInteracaoJob'].contains(j['jobNome']))
+                ['InstagramDataCollector', 'InstagramInteracaoFollowingJob'].contains(j['jobNome']))
             .toList();
         _interacoes = interacoes;
       });
