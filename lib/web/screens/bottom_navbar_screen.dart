@@ -123,6 +123,7 @@ import './kanban_pagamentos_screen.dart';
 import './aprovacao_pagamentos_screen.dart';
 import './instagram_monitor_screen.dart';
 import './atividade_diaria_screen.dart';
+import './diario_refeicao_screen.dart';
 
 class WebBottomNavBarScreen extends StatefulWidget {
   final int initialIndex;
@@ -457,6 +458,7 @@ class _WebBottomNavBarScreenState extends State<WebBottomNavBarScreen> {
       const InstagramMonitorScreen(), // 136: Instagram Monitor (unificado)
       const SizedBox.shrink(), // 137: (removido - unificado no 136)
       const WebAtividadeDiariaScreen(), // 138: Atividade Diária
+      const WebDiarioRefeicaoScreen(), // 139: Diário Nutricional
     ];
   }
 

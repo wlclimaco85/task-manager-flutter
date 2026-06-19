@@ -78,6 +78,7 @@ class MenuGroup {
 /// 116:FechamentoPeriodo 117:AiDashboard 118:AiAssistente 119:TradingCorretora
 /// 124:Academia
 /// 138:AtividadeDiaria
+/// 139:DiarioNutricional
 
 class MenuConfig {
   MenuConfig._();
@@ -98,6 +99,11 @@ class MenuConfig {
             label: 'Atividade Diária',
             icon: FontAwesomeIcons.personWalking,
             screenIndex: 138),
+        MenuItem(
+            id: 'diario_nutricional',
+            label: 'Diário Nutricional',
+            icon: FontAwesomeIcons.utensils,
+            screenIndex: 139),
         MenuItem(
             id: 'alimentos',
             label: 'Alimentos',
