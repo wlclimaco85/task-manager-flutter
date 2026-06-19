@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../utils/api_links.dart';
 import '../../../utils/fotos_util.dart';
+import '../../../utils/pdf_export_helper.dart';
 import '../../../widgets/user_banners.dart';
 import '../../../web/screens/update_profile.dart';
 import '../../../models/network_response.dart';
@@ -39,6 +40,9 @@ class _WebDietaScreenState extends State<WebDietaScreen> {
   bool outlinedSelected = false;
   int count = 0;
   final List<String> modalidadeList = ['Musculação'];
+
+  /// Dados brutos de dieta para exportação PDF.
+  List<Map<String, dynamic>> _dietasDados = [];
 
   void log(String message) => L.d(message);
 
@@ -87,6 +91,7 @@ class _WebDietaScreenState extends State<WebDietaScreen> {
       if (mounted) {
         dynamic data = response.body?['data'];
         List<dynamic> datas = data;
+        _dietasDados = datas.map((e) => Map<String, dynamic>.from(e as Map)).toList();
         mywidgets = [];
         mywidgets.add(
           InputBuscarField(
@@ -158,6 +163,30 @@ class _WebDietaScreenState extends State<WebDietaScreen> {
             ),
           );
         },
+      ),
+      floatingActionButton: FloatingActionButton.extended(
+        tooltip: 'Exportar PDF',
+        backgroundColor: const Color(0xFF93070A),
+        icon: const Icon(Icons.picture_as_pdf, color: Colors.white),
+        label: const Text('Exportar PDF', style: TextStyle(color: Colors.white)),
+        onPressed: _dietasDados.isEmpty
+            ? null
+            : () {
+                final nomeAluno = AuthUtility.userInfo?.data?.nome ?? 'Aluno';
+                final primeiro = _dietasDados.first;
+                PdfExportHelper.exportarDieta(
+                  context,
+                  nomeAluno: nomeAluno,
+                  nutricionista: primeiro['nutricionista']?.toString() ?? '',
+                  objetivo: primeiro['objetivo']?.toString() ?? '',
+                  dtConsulta: primeiro['dtConsulta']?.toString() ?? '',
+                  dtInicio: primeiro['dtInicio']?.toString() ?? '',
+                  dtFinal: primeiro['dtFinal']?.toString() ?? '',
+                  descricao: primeiro['descricao']?.toString() ?? '',
+                  oQueAchou: primeiro['oQueAchou']?.toString() ?? '',
+                  nota: (primeiro['nota'] as int?) ?? 0,
+                );
+              },
       ),
       body: SingleChildScrollView(
         child: ConstrainedBox(

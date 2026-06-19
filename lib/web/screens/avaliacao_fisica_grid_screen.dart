@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import '../../../customization/dynamic_grid_windows_screen.dart';
+import '../../../models/auth_utility.dart';
 import '../../../models/avaliacao_fisica_model.dart';
+import '../../../utils/pdf_export_helper.dart';
 
 class WebAvaliacaoFisicaGridScreen extends StatelessWidget {
   final SecurityCheck hasPermission;
@@ -8,11 +10,25 @@ class WebAvaliacaoFisicaGridScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final nomeAluno = AuthUtility.userInfo?.data?.nome ?? 'Aluno';
     return DynamicGridWindowsScreen<AvaliacaoFisica>(
       telaNome: 'avaliacao_fisica',
       hasPermission: hasPermission,
       fromJson: (json) => AvaliacaoFisica.fromJson(json),
       toJson: (a) => a.toJson(),
+      headerActions: [
+        ElevatedButton.icon(
+          style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF93070A)),
+          icon: const Icon(Icons.picture_as_pdf, color: Colors.white),
+          label: const Text('Exportar PDF', style: TextStyle(color: Colors.white)),
+          onPressed: () => PdfExportHelper.exportarListaGenerica(
+            context,
+            titulo: 'Avaliação Física',
+            nomeAluno: nomeAluno,
+            registros: const [],
+          ),
+        ),
+      ],
     );
   }
 }

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../utils/api_links.dart';
+import '../../../utils/pdf_export_helper.dart';
 import '../../../widgets/user_banners.dart';
 import '../../../windows/screens/update_profile.dart';
 import '../../../widgets/home_list_model.dart';
@@ -39,6 +40,9 @@ class _ExameScreenState extends State<WindowsExameScreen> {
   bool outlinedSelected = false;
   int count = 0;
   final List<String> modalidadeList = ['Musculação'];
+
+  /// Dados brutos de exames para exportação PDF.
+  List<Map<String, dynamic>> _examesDados = [];
 
   void log(String message) => L.d(message);
 
@@ -87,6 +91,7 @@ class _ExameScreenState extends State<WindowsExameScreen> {
       if (mounted) {
         dynamic data = response.body?['data'];
         List<dynamic> datas = data;
+        _examesDados = datas.map((e) => Map<String, dynamic>.from(e as Map)).toList();
         mywidgets = [];
         mywidgets.add(
           InputBuscarField(
@@ -167,6 +172,28 @@ class _ExameScreenState extends State<WindowsExameScreen> {
             ),
           );
         },
+      ),
+      floatingActionButton: FloatingActionButton.extended(
+        tooltip: 'Exportar PDF',
+        backgroundColor: const Color(0xFF93070A),
+        icon: const Icon(Icons.picture_as_pdf, color: Colors.white),
+        label: const Text('Exportar PDF', style: TextStyle(color: Colors.white)),
+        onPressed: _examesDados.isEmpty
+            ? null
+            : () {
+                final nomeAluno = AuthUtility.userInfo?.data?.nome ?? 'Aluno';
+                final primeiro = _examesDados.first;
+                PdfExportHelper.exportarExame(
+                  context,
+                  nomeAluno: nomeAluno,
+                  nomeExame: primeiro['nome']?.toString() ?? '',
+                  medico: primeiro['medico']?.toString() ?? '',
+                  dataExame: primeiro['dataExame']?.toString() ?? '',
+                  dataEntrega: primeiro['dataEntrega']?.toString() ?? '',
+                  dataConsulta: primeiro['dataConsulta']?.toString() ?? '',
+                  laudo: primeiro['resultado']?.toString() ?? '',
+                );
+              },
       ),
       body: SingleChildScrollView(
         child: ConstrainedBox(
