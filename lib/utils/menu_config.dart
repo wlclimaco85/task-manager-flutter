@@ -90,6 +90,11 @@ class MenuConfig {
       icon: FontAwesomeIcons.dumbbell,
       items: [
         MenuItem(
+            id: 'home_saude_aluno',
+            label: 'Home Saúde',
+            icon: FontAwesomeIcons.heartPulse,
+            screenIndex: 140),
+        MenuItem(
             id: 'academia',
             label: 'Academias',
             icon: FontAwesomeIcons.building,
