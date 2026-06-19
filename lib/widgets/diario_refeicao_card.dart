@@ -148,7 +148,8 @@ class _DiarioRefeicaoCardState extends State<DiarioRefeicaoCard> {
           '${ApiLinks.baseUrl}/api/diario-refeicao/${widget.alunoId}/hoje');
       final resp = await http.get(uri, headers: TenantContext.jsonHeaders);
       if (resp.statusCode == 200) {
-        final lista = (jsonDecode(resp.body) as List)
+        final body = jsonDecode(resp.body) as Map<String, dynamic>;
+        final lista = (body['refeicoes'] as List)
             .map((e) => DiarioRefeicaoModel.fromJson(e))
             .toList();
         setState(() => _resumo = ResumoDiarioModel.fromRefeicoes(lista));
