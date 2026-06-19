@@ -77,6 +77,7 @@ class MenuGroup {
 /// 113:ContaContabil 114:LancamentoContabil 115:Balancete
 /// 116:FechamentoPeriodo 117:AiDashboard 118:AiAssistente 119:TradingCorretora
 /// 124:Academia
+/// 138:AtividadeDiaria
 
 class MenuConfig {
   MenuConfig._();
@@ -92,6 +93,11 @@ class MenuConfig {
             label: 'Academias',
             icon: FontAwesomeIcons.building,
             screenIndex: 124),
+        MenuItem(
+            id: 'atividade_diaria',
+            label: 'Atividade Diária',
+            icon: FontAwesomeIcons.personWalking,
+            screenIndex: 138),
         MenuItem(
             id: 'alimentos',
             label: 'Alimentos',

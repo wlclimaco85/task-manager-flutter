@@ -132,6 +132,7 @@ import '../../web/screens/cobranca_automatica_screen.dart';
 import '../../web/screens/kanban_pagamentos_screen.dart';
 import '../../web/screens/aprovacao_pagamentos_screen.dart';
 import '../../web/screens/instagram_monitor_screen.dart';
+import './atividade_diaria_screen.dart';
 
 class WindowsBottomNavBarScreen extends StatefulWidget {
   const WindowsBottomNavBarScreen({super.key});
@@ -434,6 +435,7 @@ class _WindowsBottomNavBarScreenState extends State<WindowsBottomNavBarScreen> {
         const WebAprovacaoPagamentosScreen(), // 135: Aprovação de Pagamentos
         const InstagramMonitorScreen(), // 136: Instagram Monitor (unificado)
         const SizedBox.shrink(), // 137: (removido - unificado no 136)
+        const WindowsAtividadeDiariaScreen(), // 138: Atividade Diária
       ];
 
   String get userName {

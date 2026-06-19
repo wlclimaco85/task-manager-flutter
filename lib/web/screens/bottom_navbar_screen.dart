@@ -122,6 +122,7 @@ import './cobranca_automatica_screen.dart';
 import './kanban_pagamentos_screen.dart';
 import './aprovacao_pagamentos_screen.dart';
 import './instagram_monitor_screen.dart';
+import './atividade_diaria_screen.dart';
 
 class WebBottomNavBarScreen extends StatefulWidget {
   final int initialIndex;
@@ -455,6 +456,7 @@ class _WebBottomNavBarScreenState extends State<WebBottomNavBarScreen> {
       const WebAprovacaoPagamentosScreen(), // 135: Aprovação de Pagamentos
       const InstagramMonitorScreen(), // 136: Instagram Monitor (unificado)
       const SizedBox.shrink(), // 137: (removido - unificado no 136)
+      const WebAtividadeDiariaScreen(), // 138: Atividade Diária
     ];
   }
 
