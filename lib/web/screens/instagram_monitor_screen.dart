@@ -29,6 +29,11 @@ class _InstagramMonitorScreenState extends State<InstagramMonitorScreen> with Ti
   String _currentUsername = '';
   TimelineEvent? _eventoSelecionado;
 
+  // Controle de lazy loading por aba
+  bool _timelineCarregada = false;
+  bool _logsCarregados = false;
+  bool _dashboardCarregado = false;
+
   // Perfis monitorados
   List<Map<String, dynamic>> _trackedProfiles = [];
   bool _loadingTracked = false;
@@ -67,8 +72,17 @@ class _InstagramMonitorScreenState extends State<InstagramMonitorScreen> with Ti
     _fadeAnimation = CurvedAnimation(parent: _animController, curve: Curves.easeInOut);
     _tabController = TabController(length: 4, vsync: this);
     _tabController.addListener(() {
-      if (!_tabController.indexIsChanging && _tabController.index == 3 && _currentUsername.isNotEmpty) {
-        _loadDashboard(_currentUsername);
+      if (_tabController.indexIsChanging || _currentUsername.isEmpty) return;
+      switch (_tabController.index) {
+        case 1:
+          if (!_timelineCarregada) _carregarTimeline(_currentUsername);
+          break;
+        case 2:
+          if (!_logsCarregados) _loadChangeLogs(_currentUsername);
+          break;
+        case 3:
+          if (!_dashboardCarregado) _loadDashboard(_currentUsername);
+          break;
       }
     });
     _checkLocalApi();
@@ -197,17 +211,20 @@ class _InstagramMonitorScreenState extends State<InstagramMonitorScreen> with Ti
   }
 
   Future<void> _loadChangeLogs(String username) async {
+    if (_logsCarregados) return;
     setState(() => _loadingLogs = true);
     final logs = await InstagramService.fetchChangeLogs(username);
     if (mounted) {
       setState(() {
         _changeLogs = logs;
         _loadingLogs = false;
+        _logsCarregados = true;
       });
     }
   }
 
   Future<void> _loadDashboard(String username) async {
+    if (_dashboardCarregado) return;
     setState(() => _dashLoading = true);
     final d = await InstagramService.fetchDashboard(username);
     if (mounted) {
@@ -221,6 +238,7 @@ class _InstagramMonitorScreenState extends State<InstagramMonitorScreen> with Ti
             .map((e) => Map<String, dynamic>.from(e as Map))
             .toList();
         _dashLoading = false;
+        _dashboardCarregado = true;
       });
     }
   }
@@ -244,19 +262,23 @@ class _InstagramMonitorScreenState extends State<InstagramMonitorScreen> with Ti
 
   // --- Acoes de busca e snapshot ---
 
-  /// Carrega dados do perfil (perfil, posts, timeline, logs) SEM chamar trackProfile
+  /// Carrega apenas perfil e posts (aba 0). As demais abas carregam sob demanda.
   Future<void> _loadProfileData(String username) async {
     setState(() {
       _loading = true;
       _error = null;
       _profile = null;
       _events = [];
+      _changeLogs = [];
       _currentUsername = username;
+      _timelineCarregada = false;
+      _logsCarregados = false;
+      _dashboardCarregado = false;
+      _eventoSelecionado = null;
     });
 
     _animController.reset();
 
-    // 1. Buscar perfil e posts
     InstagramProfile? profile;
     String? erroFetch;
     try {
@@ -270,28 +292,9 @@ class _InstagramMonitorScreenState extends State<InstagramMonitorScreen> with Ti
       posts = await InstagramService.fetchPostsFromDb(username);
     }
 
-    // 2. Buscar timeline (primeira pagina)
-    final timelineResp = await InstagramService.fetchTimelinePaginado(username, page: 0, size: 100);
-    final allEvents = (timelineResp['events'] as List<TimelineEvent>);
-    allEvents.sort((a, b) {
-      final da = a.dateTime ?? DateTime(2000);
-      final db = b.dateTime ?? DateTime(2000);
-      return db.compareTo(da);
-    });
-    final timelineTotal = (timelineResp['total'] as num).toInt();
-    final timelineTemMais = timelineResp['hasMore'] as bool;
-
-    // 3. Carregar logs de alteracoes e dashboard
-    _loadChangeLogs(username);
-    _loadDashboard(username);
-
     if (mounted) {
       setState(() {
         _loading = false;
-        _events = allEvents;
-        _timelinePagina = 0;
-        _timelineTotal = timelineTotal;
-        _timelineTemMais = timelineTemMais;
         if (profile != null) {
           _profile = InstagramProfile(
             username: profile.username,
@@ -304,13 +307,34 @@ class _InstagramMonitorScreenState extends State<InstagramMonitorScreen> with Ti
             isPrivate: profile.isPrivate,
             isVerified: profile.isVerified,
             externalUrl: profile.externalUrl,
-            recentPosts: posts.isNotEmpty ? posts : profile.recentPosts,
+            recentPosts: posts,
           );
           _animController.forward();
           _showMonitorButtons = !_isProfileTracked(username);
         } else {
           _error = erroFetch ?? 'Perfil nao encontrado ou privado';
         }
+      });
+    }
+  }
+
+  /// Carrega a timeline ao abrir a aba 1 (lazy).
+  Future<void> _carregarTimeline(String username) async {
+    if (_timelineCarregada) return;
+    final timelineResp = await InstagramService.fetchTimelinePaginado(username, page: 0, size: 100);
+    final allEvents = (timelineResp['events'] as List<TimelineEvent>);
+    allEvents.sort((a, b) {
+      final da = a.dateTime ?? DateTime(2000);
+      final db = b.dateTime ?? DateTime(2000);
+      return db.compareTo(da);
+    });
+    if (mounted) {
+      setState(() {
+        _events = allEvents;
+        _timelinePagina = 0;
+        _timelineTotal = (timelineResp['total'] as num).toInt();
+        _timelineTemMais = timelineResp['hasMore'] as bool;
+        _timelineCarregada = true;
       });
     }
   }
