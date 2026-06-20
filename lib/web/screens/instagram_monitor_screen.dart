@@ -1371,6 +1371,27 @@ class _InstagramMonitorScreenState extends State<InstagramMonitorScreen> with Ti
                   tooltip: 'Atualizar',
                 ),
               if (_profile != null)
+                PopupMenuButton<String>(
+                  icon: const Icon(Icons.delete_sweep, color: Colors.white),
+                  tooltip: 'Apagar dados',
+                  onSelected: (v) {
+                    if (v == 'timeline') _confirmarApagarTimeline();
+                    if (v == 'logs') _confirmarApagarLogs();
+                  },
+                  itemBuilder: (_) => const [
+                    PopupMenuItem(value: 'timeline', child: Row(children: [
+                      Icon(Icons.clear_all, color: Colors.redAccent, size: 18),
+                      SizedBox(width: 8),
+                      Text('Apagar timeline'),
+                    ])),
+                    PopupMenuItem(value: 'logs', child: Row(children: [
+                      Icon(Icons.delete_outline, color: Colors.redAccent, size: 18),
+                      SizedBox(width: 8),
+                      Text('Apagar logs'),
+                    ])),
+                  ],
+                ),
+              if (_profile != null)
                 _coletando
                     ? const Padding(
                         padding: EdgeInsets.all(8),
@@ -2816,27 +2837,54 @@ class _ModalListaUsuariosState extends State<_ModalListaUsuarios> {
             ),
           );
         }
+        if (snapshot.hasError) {
+          return Center(
+            child: Padding(
+              padding: const EdgeInsets.all(24),
+              child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
+                Icon(Icons.error_outline, size: 40, color: Colors.red[300]),
+                const SizedBox(height: 12),
+                Text('Erro ao carregar: ${snapshot.error}',
+                    style: const TextStyle(color: Colors.grey), textAlign: TextAlign.center),
+              ]),
+            ),
+          );
+        }
         if (!snapshot.hasData || snapshot.data!.isEmpty) {
+          final tipo = widget.tipo == 'followers' ? 'seguidores' : 'seguindo';
           return Center(
             child: Padding(
               padding: const EdgeInsets.all(24),
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(Icons.block, size: 40, color: Colors.orange[300]),
+                  Icon(Icons.people_outline, size: 48, color: Colors.grey[300]),
                   const SizedBox(height: 12),
-                  const Text(
-                    'Nao foi possivel carregar a lista',
-                    style: TextStyle(color: Colors.grey, fontWeight: FontWeight.w600),
+                  Text(
+                    'Nenhum $tipo coletado ainda',
+                    style: const TextStyle(color: Colors.grey, fontWeight: FontWeight.w600),
                     textAlign: TextAlign.center,
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    'O Instagram pode estar bloqueando temporariamente a sessao (soft-block).\n'
-                    'Os dados de seguidores/seguidos exigem autenticacao privada.\n'
-                    'Aguarde alguns minutos e tente novamente.',
+                    widget.tipo == 'followers'
+                        ? 'Os seguidores precisam ser coletados via job ou importados manualmente.\n'
+                          'Dados de seguidores exigem sessao autenticada no Python (setup-session).'
+                        : 'Nenhuma conta encontrada no banco. Execute a coleta para preencher.',
                     style: TextStyle(color: Colors.grey[500], fontSize: 12),
                     textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 16),
+                  OutlinedButton.icon(
+                    icon: const Icon(Icons.sync, size: 16),
+                    label: const Text('Coletar agora'),
+                    onPressed: () {
+                      Navigator.pop(context);
+                      InstagramService.coletarAgora(widget.username);
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Coleta iniciada — aguarde alguns minutos')),
+                      );
+                    },
                   ),
                 ],
               ),
