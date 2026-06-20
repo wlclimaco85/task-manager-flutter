@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'dart:async';
 import 'package:fl_chart/fl_chart.dart';
 import '../../services/instagram_service.dart';
+import '../../services/pdf_export_service.dart';
 import '../../utils/api_links.dart';
 
 class InstagramMonitorScreen extends StatefulWidget {
@@ -893,6 +894,7 @@ class _InstagramMonitorScreenState extends State<InstagramMonitorScreen> with Ti
             cor: _rosaInstagram,
             largura: larguraCard,
             tipoImport: 'followers',
+            tipoLista: 'followers',
           ),
           _buildMetricCard(
             valor: _dashSeguindo,
@@ -900,6 +902,7 @@ class _InstagramMonitorScreenState extends State<InstagramMonitorScreen> with Ti
             icone: Icons.how_to_reg_outlined,
             cor: _roxoInstagram,
             tipoImport: 'following',
+            tipoLista: 'following',
             largura: larguraCard,
           ),
         ];
@@ -921,6 +924,7 @@ class _InstagramMonitorScreenState extends State<InstagramMonitorScreen> with Ti
     required double largura,
     String? relacaoTipo,
     String? tipoImport,
+    String? tipoLista,
   }) {
     return Container(
       width: largura,
@@ -960,6 +964,18 @@ class _InstagramMonitorScreenState extends State<InstagramMonitorScreen> with Ti
                     child: Padding(
                       padding: const EdgeInsets.all(4),
                       child: Icon(Icons.visibility_outlined, size: 18, color: cor),
+                    ),
+                  ),
+                ),
+              if (tipoLista != null)
+                InkWell(
+                  onTap: () => _showList(tipoLista),
+                  borderRadius: BorderRadius.circular(20),
+                  child: Tooltip(
+                    message: 'Ver lista do banco',
+                    child: Padding(
+                      padding: const EdgeInsets.all(4),
+                      child: Icon(Icons.list_alt_outlined, size: 18, color: cor),
                     ),
                   ),
                 ),
@@ -2892,6 +2908,7 @@ class _ModalListaUsuariosState extends State<_ModalListaUsuarios> {
           );
         }
         final usuarios = snapshot.data!;
+        final labelTipo = widget.tipo == 'followers' ? 'seguidores' : 'seguindo';
         return Column(
           children: [
             Padding(
@@ -2900,29 +2917,43 @@ class _ModalListaUsuariosState extends State<_ModalListaUsuarios> {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
-                    '${usuarios.length} ${widget.tipo == 'followers' ? 'seguidores' : 'seguindo'}',
+                    '${usuarios.length} $labelTipo',
                     style: TextStyle(fontSize: 12, color: Colors.grey[500]),
                   ),
-                  TextButton.icon(
-                    icon: const Icon(Icons.copy, size: 16),
-                    label: const Text('Copiar todos', style: TextStyle(fontSize: 13)),
-                    style: TextButton.styleFrom(foregroundColor: const Color(0xFFE1306C)),
-                    onPressed: () {
-                      final texto = usuarios
-                          .map((u) => u.fullName.isNotEmpty
-                              ? '@${u.username} - ${u.fullName}'
-                              : '@${u.username}')
-                          .join('\n');
-                      Clipboard.setData(ClipboardData(text: texto));
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text('${usuarios.length} usuários copiados para a área de transferência'),
-                          backgroundColor: Colors.green.shade700,
-                          duration: const Duration(seconds: 2),
-                        ),
-                      );
-                    },
-                  ),
+                  Row(mainAxisSize: MainAxisSize.min, children: [
+                    IconButton(
+                      icon: const Icon(Icons.copy, size: 18),
+                      tooltip: 'Copiar todos',
+                      color: const Color(0xFFE1306C),
+                      onPressed: () {
+                        final texto = usuarios
+                            .map((u) => u.fullName.isNotEmpty
+                                ? '@${u.username} - ${u.fullName}'
+                                : '@${u.username}')
+                            .join('\n');
+                        Clipboard.setData(ClipboardData(text: texto));
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text('${usuarios.length} usuários copiados'),
+                            backgroundColor: Colors.green.shade700,
+                            duration: const Duration(seconds: 2),
+                          ),
+                        );
+                      },
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.download, size: 18),
+                      tooltip: 'Exportar CSV',
+                      color: const Color(0xFF833AB4),
+                      onPressed: () => _exportarCsv(context, usuarios, labelTipo, widget.username),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.picture_as_pdf, size: 18),
+                      tooltip: 'Exportar PDF',
+                      color: const Color(0xFFF77737),
+                      onPressed: () => _exportarPdf(context, usuarios, labelTipo, widget.username),
+                    ),
+                  ]),
                 ],
               ),
             ),
@@ -2954,6 +2985,35 @@ class _ModalListaUsuariosState extends State<_ModalListaUsuarios> {
           ],
         );
       },
+    );
+  }
+
+  void _exportarCsv(BuildContext ctx, List<InstagramLiker> lista, String tipo, String perfil) {
+    final buf = StringBuffer();
+    buf.writeln('username,full_name');
+    for (final u in lista) {
+      final nome = u.fullName.replaceAll('"', '""');
+      buf.writeln('"${u.username}","$nome"');
+    }
+    Clipboard.setData(ClipboardData(text: buf.toString()));
+    ScaffoldMessenger.of(ctx).showSnackBar(
+      SnackBar(
+        content: Text('CSV de ${lista.length} $tipo copiado para a área de transferência'),
+        backgroundColor: const Color(0xFF833AB4),
+        duration: const Duration(seconds: 3),
+      ),
+    );
+  }
+
+  Future<void> _exportarPdf(BuildContext ctx, List<InstagramLiker> lista, String tipo, String perfil) async {
+    final linhas = lista.map((u) => [
+      '@${u.username}',
+      u.fullName,
+    ]).toList();
+    await PdfExportService.exportar(
+      titulo: 'Instagram $tipo — @$perfil',
+      cabecalhos: const ['Username', 'Nome'],
+      linhas: linhas,
     );
   }
 }
