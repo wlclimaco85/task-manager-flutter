@@ -26,8 +26,7 @@ class DashboardAreaState<T> {
         dados = null,
         mensagemErro = mensagem;
 
-  const DashboardAreaState.sucesso(T dados)
+  const DashboardAreaState.sucesso(this.dados)
       : status = DashboardAreaStatus.sucesso,
-        dados = dados,
         mensagemErro = null;
 }
