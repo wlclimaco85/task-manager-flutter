@@ -202,6 +202,9 @@ class TimelineEvent {
       case 'liked_post': return 'Curtiu sua foto';
       case 'unliked_post': return 'Deixou de curtir sua foto';
       case 'comment': return 'Comentou';
+      case 'followers_count': return 'Seguidores';
+      case 'following_count': return 'Seguindo';
+      case 'posts_count': return 'Posts';
       default: return type;
     }
   }
@@ -215,6 +218,9 @@ class TimelineEvent {
       case 'liked_post': return '\u{2764}\u{FE0F}';
       case 'unliked_post': return '\u{1F941}';
       case 'comment': return '\u{1F4AC}';
+      case 'followers_count': return '\u{1F465}';
+      case 'following_count': return '\u{27A1}\u{FE0F}';
+      case 'posts_count': return '\u{1F5BC}\u{FE0F}';
       default: return '\u{1F514}';
     }
   }
