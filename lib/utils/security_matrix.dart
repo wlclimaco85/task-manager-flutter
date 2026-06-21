@@ -1,5 +1,6 @@
 // lib/utils/security_matrix.dart
 import 'dart:convert';
+import 'package:flutter/foundation.dart' show visibleForTesting;
 import 'package:http/http.dart' as http;
 import '../models/auth_utility.dart';
 import '../models/login_model.dart';
@@ -488,4 +489,13 @@ class ModuloAccess {
       screens.where((s) => isScreenAllowed(s)).toList();
 
   static void reset() { _modulosContratados = []; _loaded = false; }
+
+  /// Define os módulos contratados diretamente, sem chamada de rede — só
+  /// para testes unitários de SecurityMatrix/ModuloAccess (Tarefa F4, Fase
+  /// 171). Nunca usar em código de produção.
+  @visibleForTesting
+  static void setContratadosParaTeste(List<String> modulos) {
+    _modulosContratados = modulos;
+    _loaded = true;
+  }
 }
