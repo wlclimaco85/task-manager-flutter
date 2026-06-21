@@ -30,6 +30,11 @@ import './regime_grid_screen.dart';
 import './noticias_grid_screen.dart';
 import './conta_pagar_grid_screen.dart';
 import './dashboard_financeiro_screen.dart';
+import '../../widgets/dashboard_area/placeholder/dashboard_financeiro_area_placeholder_screen.dart';
+import '../../widgets/dashboard_area/placeholder/dashboard_dp_area_placeholder_screen.dart';
+import '../../widgets/dashboard_area/placeholder/dashboard_atendimento_placeholder_screen.dart';
+import '../../widgets/dashboard_area/placeholder/dashboard_comercial_placeholder_screen.dart';
+import '../../widgets/dashboard_area/placeholder/dashboard_fiscal_placeholder_screen.dart';
 import './conta_receber_grid_screen.dart';
 import './lancamento_financeiro_grid_screen.dart';
 import './diretorio_grid_screen.dart';
@@ -472,6 +477,11 @@ class _WebBottomNavBarScreenState extends State<WebBottomNavBarScreen> {
       HistoricoTreinoScreen(
         alunoId: AuthUtility.userInfo?.data?.id ?? 0,
       ), // 141: Historico de Treinos
+      const DashboardFinanceiroAreaPlaceholderScreen(), // 142: Dashboard Financeiro (Área)
+      const DashboardDpAreaPlaceholderScreen(), // 143: Dashboard DP (Área)
+      const DashboardAtendimentoPlaceholderScreen(), // 144: Dashboard Atendimento (Área)
+      const DashboardComercialPlaceholderScreen(), // 145: Dashboard Comercial (Área)
+      const DashboardFiscalPlaceholderScreen(), // 146: Dashboard Fiscal (Área)
     ];
   }
 

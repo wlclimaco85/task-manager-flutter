@@ -1293,4 +1293,19 @@ class ApiLinks {
       '$_baseUrlNew/api/ai/prever-obrigacoes?empresaId=$empresaId';
   static String perguntarAiUrl(String empresaId, String pergunta) =>
       '$_baseUrlNew/api/ai/perguntar?empresaId=$empresaId&pergunta=${Uri.encodeComponent(pergunta)}';
+
+  // ── Dashboards por área (Fase 171 — fundação) ──────────────────────────
+  // Rotas kebab-case distintas das legadas (/api/dashboard/financeiro,
+  // /api/dp/dashboard) para não colidir. empresaId é resolvido no backend
+  // via TenantContext — nunca enviado como query param.
+  static String get dashboardAtendimentoKpis =>
+      '$_baseUrlNew/api/dashboard/atendimento/kpis';
+  static String get dashboardFinanceiroAreaKpis =>
+      '$_baseUrlNew/api/dashboard/financeiro-area/kpis';
+  static String get dashboardComercialKpis =>
+      '$_baseUrlNew/api/dashboard/comercial/kpis';
+  static String get dashboardDpAreaKpis =>
+      '$_baseUrlNew/api/dashboard/dp-area/kpis';
+  static String get dashboardFiscalKpis =>
+      '$_baseUrlNew/api/dashboard/fiscal/kpis';
 }

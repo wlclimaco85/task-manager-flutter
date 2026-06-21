@@ -273,6 +273,11 @@ class MenuConfig {
             label: 'Devoluções',
             icon: FontAwesomeIcons.arrowRotateLeft,
             screenIndex: 110),
+        MenuItem(
+            id: 'dashComercialArea',
+            label: 'Dashboard Comercial (Área)',
+            icon: FontAwesomeIcons.chartLine,
+            screenIndex: 145),
       ],
     ),
     MenuGroup(
@@ -310,6 +315,11 @@ class MenuConfig {
             label: 'Cancelamento e CC-e',
             icon: FontAwesomeIcons.filePen,
             screenIndex: 111),
+        MenuItem(
+            id: 'dashFiscalArea',
+            label: 'Dashboard Fiscal (Área)',
+            icon: FontAwesomeIcons.chartLine,
+            screenIndex: 146),
       ],
     ),
     MenuGroup(
@@ -352,6 +362,11 @@ class MenuConfig {
             label: 'Kanban',
             icon: FontAwesomeIcons.trello,
             screenIndex: 51),
+        MenuItem(
+            id: 'dashAtendimentoArea',
+            label: 'Dashboard Atendimento (Área)',
+            icon: FontAwesomeIcons.chartLine,
+            screenIndex: 144),
       ],
     ),
     MenuGroup(
@@ -421,6 +436,11 @@ class MenuConfig {
             label: 'Solicitar Ajuste Ponto',
             icon: FontAwesomeIcons.penToSquare,
             screenIndex: 61),
+        MenuItem(
+            id: 'dashDpArea',
+            label: 'Dashboard DP (Área)',
+            icon: FontAwesomeIcons.chartLine,
+            screenIndex: 143),
       ],
     ),
     MenuGroup(
@@ -473,6 +493,14 @@ class MenuConfig {
             label: 'Dashboard Financeiro',
             icon: FontAwesomeIcons.chartPie,
             screenIndex: 91),
+        // id = tela_nome exato do backend (role_permissao), nao um id
+        // descritivo — AppSidebar filtra por MenuItem.id == tela_nome via
+        // SecurityMatrix.allowedTelaIds (ver app_sidebar.dart linha 85-86).
+        MenuItem(
+            id: 'dashFinanceiroArea',
+            label: 'Dashboard Financeiro (Área)',
+            icon: FontAwesomeIcons.chartLine,
+            screenIndex: 142),
         MenuItem(
             id: 'lancamentos_financeiros',
             label: 'Lançamentos Financeiros',

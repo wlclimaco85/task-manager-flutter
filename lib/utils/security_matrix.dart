@@ -38,6 +38,9 @@ enum AppScreen {
   produto,
   // Cadastros auxiliares NF-e e produto
   unidadeMedida, catalogoProduto, nfeSerie, pdvNfce, configFiscal,
+  // Dashboards por área (Fase 171 — fundação)
+  dashAtendimentoArea, dashFinanceiroArea, dashComercialArea,
+  dashDpArea, dashFiscalArea,
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -117,6 +120,11 @@ const _escritorioScreens = {
   AppScreen.dashChatsDiario:           _ro,
   AppScreen.dashSaldoContas:           _ro,
   AppScreen.dashEvolucaoSaldos:        _ro,
+  AppScreen.dashAtendimentoArea:       _ro,
+  AppScreen.dashFinanceiroArea:        _ro,
+  AppScreen.dashComercialArea:         _ro,
+  AppScreen.dashDpArea:                _ro,
+  AppScreen.dashFiscalArea:            _ro,
   AppScreen.ponto:                     _all,
   AppScreen.pontoWeb:                  _all,
   AppScreen.solicitacaoAjustePonto:    _all,
@@ -392,6 +400,9 @@ const Map<String, Set<AppScreen>> _moduloToScreens = {
     AppScreen.dashFinanceCards, AppScreen.dashFluxoDiario,
     AppScreen.dashTendenciaFinanceira, AppScreen.dashComparativoTrimestral,
     AppScreen.dashSaldoContas, AppScreen.dashEvolucaoSaldos,
+    // Fase 171 — dashboard de área Financeiro reaproveita o mesmo módulo já
+    // usado pelo dashboard financeiro legado (Tarefa F3a do PLAN.md).
+    AppScreen.dashFinanceiroArea,
   },
   'Notas Fiscais': {
     AppScreen.nfeEntrada, AppScreen.nfeSaida, AppScreen.pdvNfce, AppScreen.configFiscal, AppScreen.obrigacoesFiscais,
@@ -400,6 +411,9 @@ const Map<String, Set<AppScreen>> _moduloToScreens = {
   'Departamento Pessoal': {
     AppScreen.ponto, AppScreen.pontoWeb, AppScreen.solicitacaoAjustePonto,
     AppScreen.ajustePonto, AppScreen.funcionarios, AppScreen.feriados,
+    // Fase 171 — dashDpArea entra no mesmo módulo 'Departamento Pessoal' já
+    // existente (confirmado no RESEARCH desta fase, Tarefa F3a do PLAN.md).
+    AppScreen.dashDpArea,
   },
   'Chamados': {
     AppScreen.chamados, AppScreen.kanbanChamados,
@@ -409,6 +423,17 @@ const Map<String, Set<AppScreen>> _moduloToScreens = {
   'Chat': { AppScreen.chat, AppScreen.dashChatsLinha, AppScreen.dashChatsDiario },
   'GED': { AppScreen.ged, AppScreen.diretorios, AppScreen.arquivos },
   'Dashboard': { AppScreen.dashboard, AppScreen.dashKpis, AppScreen.dashAlertas, AppScreen.dashDistribuicaoClientes },
+  // Fase 171 (Tarefa F3b/F3c) — decisão registrada: o RESEARCH não confirma
+  // um módulo isolado pré-existente para Atendimento, Comercial ou Fiscal
+  // como áreas dedicadas (o legado mistura Atendimento dentro de
+  // 'Chamados'/'Chat', e Comercial/Fiscal não têm módulo de dashboard
+  // anterior). PERGUNTA A CONFIRMAR (ver MATRIZ-KPI.md e SUMMARY desta
+  // fase): dashAtendimentoArea, dashComercialArea e dashFiscalArea ficam
+  // FORA de _moduloToScreens nesta fundação — liberados por padrão a quem
+  // tiver role_permissao de view (comportamento de "nao pertence a nenhum
+  // modulo" já documentado no Pitfall 3 da pesquisa). Os cards dependentes
+  // de Atendimento/Comercial/Fiscal devem revisar esta decisão quando
+  // tiverem clareza do módulo comercial/contratado correspondente.
 };
 
 class ModuloAccess {
