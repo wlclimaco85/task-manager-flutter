@@ -55,7 +55,7 @@ class _CobrancaAutomaticaScreenState extends State<CobrancaAutomaticaScreen>
       ]);
       if (!mounted) return;
       setState(() {
-        _reguas = (resultados[0] as List<ReguaCobranca>)
+        _reguas = List<ReguaCobranca>.from(resultados[0] as List<ReguaCobranca>)
           ..sort((a, b) => a.ordem.compareTo(b.ordem));
         _pendencias = resultados[1] as List<CobrancaRegua>;
         _fila = resultados[2] as List<CobrancaRegua>;
@@ -168,7 +168,9 @@ class _CobrancaAutomaticaScreenState extends State<CobrancaAutomaticaScreen>
   }
 
   Widget _cabecalho() {
-    final compacto = MediaQuery.sizeOf(context).width < 700;
+    final size = MediaQuery.sizeOf(context);
+    final compacto = size.width < 700;
+    final alturaBaixa = size.height < 700;
     final botoes = Wrap(
       spacing: 8,
       runSpacing: 8,
@@ -192,27 +194,29 @@ class _CobrancaAutomaticaScreenState extends State<CobrancaAutomaticaScreen>
         ),
       ],
     );
+    final conteudo = compacto
+        ? Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            const _Titulo(),
+            if (_painel != null) ...[
+              const SizedBox(height: 12),
+              _PainelResumo(painel: _painel!),
+            ],
+            const SizedBox(height: 12),
+            botoes,
+          ])
+        : Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Row(children: [const Expanded(child: _Titulo()), botoes]),
+            if (_painel != null) ...[
+              const SizedBox(height: 12),
+              _PainelResumo(painel: _painel!),
+            ],
+          ]);
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(16),
+      constraints: alturaBaixa ? const BoxConstraints(maxHeight: 220) : null,
+      padding: EdgeInsets.all(alturaBaixa ? 10 : 16),
       color: Theme.of(context).colorScheme.surfaceContainerLow,
-      child: compacto
-          ? Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              const _Titulo(),
-              if (_painel != null) ...[
-                const SizedBox(height: 12),
-                _PainelResumo(painel: _painel!),
-              ],
-              const SizedBox(height: 12),
-              botoes,
-            ])
-          : Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Row(children: [const Expanded(child: _Titulo()), botoes]),
-              if (_painel != null) ...[
-                const SizedBox(height: 12),
-                _PainelResumo(painel: _painel!),
-              ],
-            ]),
+      child: alturaBaixa ? SingleChildScrollView(child: conteudo) : conteudo,
     );
   }
 
@@ -305,11 +309,10 @@ class _CobrancaAutomaticaScreenState extends State<CobrancaAutomaticaScreen>
         return ListView.builder(
           padding: const EdgeInsets.all(12),
           itemCount: itens.length,
-          itemBuilder: (_, i) =>
-              _CobrancaCard(
-                  cobranca: itens[i],
-                  historico: historico,
-                  onReprocessar: fila ? () => _reprocessar(itens[i]) : null),
+          itemBuilder: (_, i) => _CobrancaCard(
+              cobranca: itens[i],
+              historico: historico,
+              onReprocessar: fila ? () => _reprocessar(itens[i]) : null),
         );
       }
       return SingleChildScrollView(
@@ -536,17 +539,23 @@ class _PainelResumo extends StatelessWidget {
   final PainelReguaCobranca painel;
 
   @override
-  Widget build(BuildContext context) => Wrap(
-        spacing: 8,
-        runSpacing: 8,
-        children: [
-          _ResumoCard('Em aberto', '${painel.titulosEmAberto}'),
-          _ResumoCard('Valor vencido', _moeda(painel.valorVencido)),
-          _ResumoCard('A vencer', _moeda(painel.valorAVencer)),
-          _ResumoCard('Pendentes', '${painel.enviosPendentes}'),
-          _ResumoCard('Enviados', '${painel.enviosEnviados}'),
-          _ResumoCard('Falhas', '${painel.enviosFalha}'),
-        ],
+  Widget build(BuildContext context) => SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: Row(
+          children: [
+            _ResumoCard('Em aberto', '${painel.titulosEmAberto}'),
+            const SizedBox(width: 8),
+            _ResumoCard('Valor vencido', _moeda(painel.valorVencido)),
+            const SizedBox(width: 8),
+            _ResumoCard('A vencer', _moeda(painel.valorAVencer)),
+            const SizedBox(width: 8),
+            _ResumoCard('Pendentes', '${painel.enviosPendentes}'),
+            const SizedBox(width: 8),
+            _ResumoCard('Enviados', '${painel.enviosEnviados}'),
+            const SizedBox(width: 8),
+            _ResumoCard('Falhas', '${painel.enviosFalha}'),
+          ],
+        ),
       );
 }
 
