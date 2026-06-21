@@ -36,6 +36,15 @@ class ReguaCobrancaService {
       _listarCobrancas('pendencias');
   Future<List<CobrancaRegua>> listarHistorico() =>
       _listarCobrancas('historico');
+  Future<List<CobrancaRegua>> listarFila() => _listarCobrancas('fila');
+
+  Future<PainelReguaCobranca> carregarPainel() async {
+    final response =
+        await _caller.getRequest('${ApiLinks.cobrancasRegua}/painel');
+    final body =
+        _requireMap(response.isSuccess, response.statusCode, response.body);
+    return PainelReguaCobranca.fromJson(_unwrapMap(body));
+  }
 
   Future<List<CobrancaRegua>> _listarCobrancas(String recurso) async {
     final response =
@@ -59,6 +68,14 @@ class ReguaCobrancaService {
       throw const ReguaCobrancaException('Resposta inesperada do servidor.');
     }
     return ExecucaoReguaResultado.fromJson(_unwrapMap(body));
+  }
+
+  Future<void> reprocessar(int acaoId) async {
+    final response = await _caller.postRequest(
+      '${ApiLinks.cobrancasRegua}/acoes/$acaoId/reprocessar',
+      const <String, dynamic>{},
+    );
+    _requireMap(response.isSuccess, response.statusCode, response.body);
   }
 
   List<Map<String, dynamic>> _requireList(

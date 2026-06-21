@@ -1,8 +1,8 @@
 enum CanalCobranca {
   email('EMAIL', 'E-mail', true),
   notificacaoInterna('NOTIFICACAO_INTERNA', 'Notificacao interna', true),
-  whatsapp('WHATSAPP', 'WhatsApp', false),
-  sms('SMS', 'SMS', false);
+  whatsapp('WHATSAPP', 'WhatsApp', true),
+  sms('SMS', 'SMS', true);
 
   const CanalCobranca(this.apiValue, this.label, this.disponivel);
 
@@ -44,7 +44,10 @@ class ReguaCobranca {
     return ReguaCobranca(
       id: _asInt(json['id']),
       nome: json['nome']?.toString() ?? 'Etapa de cobranca',
-      diasAposVencimento: _asInt(json['diasAposVencimento']) ?? 0,
+      diasAposVencimento: _asInt(
+            json['diasRelativosVencimento'] ?? json['diasAposVencimento'],
+          ) ??
+          0,
       canal: CanalCobranca.fromJson(json['canal']),
       mensagem: json['mensagem']?.toString() ?? '',
       somenteDiaUtil: _asBool(json['somenteDiaUtil'], fallback: true),
@@ -63,6 +66,63 @@ class ReguaCobranca {
         'ordem': ordem,
         'ativo': ativo,
       };
+}
+
+class PainelReguaCobranca {
+  const PainelReguaCobranca({
+    required this.titulosEmAberto,
+    required this.enviosPendentes,
+    required this.enviosEnviados,
+    required this.enviosFalha,
+    required this.valorVencido,
+    required this.valorAVencer,
+    required this.valorRecuperado,
+    required this.aging,
+  });
+
+  final int titulosEmAberto;
+  final int enviosPendentes;
+  final int enviosEnviados;
+  final int enviosFalha;
+  final double valorVencido;
+  final double valorAVencer;
+  final double valorRecuperado;
+  final List<AgingReguaCobranca> aging;
+
+  factory PainelReguaCobranca.fromJson(Map<String, dynamic> json) =>
+      PainelReguaCobranca(
+        titulosEmAberto: _asInt(json['titulosEmAberto']) ?? 0,
+        enviosPendentes: _asInt(json['enviosPendentes']) ?? 0,
+        enviosEnviados: _asInt(json['enviosEnviados']) ?? 0,
+        enviosFalha: _asInt(json['enviosFalha']) ?? 0,
+        valorVencido: _asDouble(json['valorVencido']) ?? 0,
+        valorAVencer: _asDouble(json['valorAVencer']) ?? 0,
+        valorRecuperado: _asDouble(json['valorRecuperado']) ?? 0,
+        aging: ((json['aging'] as List?) ?? const [])
+            .whereType<Map>()
+            .map((item) => AgingReguaCobranca.fromJson(
+                item.map((key, value) => MapEntry(key.toString(), value))))
+            .toList(),
+      );
+}
+
+class AgingReguaCobranca {
+  const AgingReguaCobranca({
+    required this.faixa,
+    required this.quantidade,
+    required this.valor,
+  });
+
+  final String faixa;
+  final int quantidade;
+  final double valor;
+
+  factory AgingReguaCobranca.fromJson(Map<String, dynamic> json) =>
+      AgingReguaCobranca(
+        faixa: json['faixa']?.toString() ?? '-',
+        quantidade: _asInt(json['quantidade']) ?? 0,
+        valor: _asDouble(json['valor']) ?? 0,
+      );
 }
 
 class ExecucaoReguaResultado {
@@ -95,6 +155,9 @@ class CobrancaRegua {
     this.canal,
     this.executadaEm,
     this.resultado,
+    this.destinatario,
+    this.tentativas,
+    this.ultimoErro,
   });
 
   final int id;
@@ -106,6 +169,9 @@ class CobrancaRegua {
   final CanalCobranca? canal;
   final DateTime? executadaEm;
   final String? resultado;
+  final String? destinatario;
+  final int? tentativas;
+  final String? ultimoErro;
 
   factory CobrancaRegua.fromJson(Map<String, dynamic> json) {
     final cliente = json['cliente'];
@@ -129,6 +195,9 @@ class CobrancaRegua {
       executadaEm: _asDate(json['executadaEm'] ?? json['dataAcao']),
       resultado:
           json['resultado']?.toString() ?? json['mensagemErro']?.toString(),
+      destinatario: json['destinatario']?.toString(),
+      tentativas: _asInt(json['tentativas']),
+      ultimoErro: json['ultimoErro']?.toString(),
     );
   }
 }

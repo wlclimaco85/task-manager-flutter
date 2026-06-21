@@ -6,7 +6,7 @@ void main() {
     final regra = ReguaCobranca.fromJson({
       'id': 7,
       'nome': 'Primeiro lembrete',
-      'diasAposVencimento': 3,
+      'diasRelativosVencimento': -3,
       'canal': 'EMAIL',
       'mensagem': 'Pagamento pendente',
       'somenteDiaUtil': true,
@@ -16,15 +16,15 @@ void main() {
 
     expect(regra.id, 7);
     expect(regra.canal, CanalCobranca.email);
-    expect(regra.toJson(), containsPair('diasAposVencimento', 3));
+    expect(regra.toJson(), containsPair('diasAposVencimento', -3));
     expect(regra.toJson(), containsPair('somenteDiaUtil', true));
   });
 
-  test('marca canais sem provider como indisponiveis', () {
+  test('mantem canais multicanal habilitados para provider configuravel', () {
     expect(CanalCobranca.email.disponivel, isTrue);
     expect(CanalCobranca.notificacaoInterna.disponivel, isTrue);
-    expect(CanalCobranca.whatsapp.disponivel, isFalse);
-    expect(CanalCobranca.sms.disponivel, isFalse);
+    expect(CanalCobranca.whatsapp.disponivel, isTrue);
+    expect(CanalCobranca.sms.disponivel, isTrue);
   });
 
   test('converte pendencia e resultado de execucao', () {

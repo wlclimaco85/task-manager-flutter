@@ -19,7 +19,9 @@ class _CobrancaAutomaticaScreenState extends State<CobrancaAutomaticaScreen>
   late final TabController _tabs;
   List<ReguaCobranca> _reguas = const [];
   List<CobrancaRegua> _pendencias = const [];
+  List<CobrancaRegua> _fila = const [];
   List<CobrancaRegua> _historico = const [];
+  PainelReguaCobranca? _painel;
   bool _loading = true;
   bool _executando = false;
   String? _erro;
@@ -28,7 +30,7 @@ class _CobrancaAutomaticaScreenState extends State<CobrancaAutomaticaScreen>
   void initState() {
     super.initState();
     _service = widget.service ?? ReguaCobrancaService();
-    _tabs = TabController(length: 3, vsync: this);
+    _tabs = TabController(length: 4, vsync: this);
     _carregar();
   }
 
@@ -47,14 +49,18 @@ class _CobrancaAutomaticaScreenState extends State<CobrancaAutomaticaScreen>
       final resultados = await Future.wait([
         _service.listarReguas(),
         _service.listarPendencias(),
+        _service.listarFila(),
         _service.listarHistorico(),
+        _service.carregarPainel(),
       ]);
       if (!mounted) return;
       setState(() {
         _reguas = (resultados[0] as List<ReguaCobranca>)
           ..sort((a, b) => a.ordem.compareTo(b.ordem));
         _pendencias = resultados[1] as List<CobrancaRegua>;
-        _historico = resultados[2] as List<CobrancaRegua>;
+        _fila = resultados[2] as List<CobrancaRegua>;
+        _historico = resultados[3] as List<CobrancaRegua>;
+        _painel = resultados[4] as PainelReguaCobranca;
       });
     } catch (e) {
       if (mounted) setState(() => _erro = e.toString());
@@ -127,6 +133,17 @@ class _CobrancaAutomaticaScreenState extends State<CobrancaAutomaticaScreen>
     ));
   }
 
+  Future<void> _reprocessar(CobrancaRegua item) async {
+    try {
+      await _service.reprocessar(item.id);
+      if (!mounted) return;
+      _mensagem('Envio reenfileirado para processamento.');
+      await _carregar();
+    } catch (e) {
+      if (mounted) _mensagem(e.toString(), erro: true);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Column(
@@ -140,6 +157,7 @@ class _CobrancaAutomaticaScreenState extends State<CobrancaAutomaticaScreen>
             tabs: [
               Tab(text: 'Etapas (${_reguas.length})'),
               Tab(text: 'Pendências (${_pendencias.length})'),
+              Tab(text: 'Fila (${_fila.length})'),
               Tab(text: 'Histórico (${_historico.length})'),
             ],
           ),
@@ -181,10 +199,20 @@ class _CobrancaAutomaticaScreenState extends State<CobrancaAutomaticaScreen>
       child: compacto
           ? Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
               const _Titulo(),
+              if (_painel != null) ...[
+                const SizedBox(height: 12),
+                _PainelResumo(painel: _painel!),
+              ],
               const SizedBox(height: 12),
               botoes,
             ])
-          : Row(children: [const Expanded(child: _Titulo()), botoes]),
+          : Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Row(children: [const Expanded(child: _Titulo()), botoes]),
+              if (_painel != null) ...[
+                const SizedBox(height: 12),
+                _PainelResumo(painel: _painel!),
+              ],
+            ]),
     );
   }
 
@@ -217,6 +245,13 @@ class _CobrancaAutomaticaScreenState extends State<CobrancaAutomaticaScreen>
                 titulo: 'Nenhuma pendência',
                 descricao: 'Não há títulos vencidos aguardando ação.')
             : _listaCobrancas(_pendencias, historico: false),
+        _fila.isEmpty
+            ? const _EstadoVazio(
+                icon: Icons.outgoing_mail,
+                titulo: 'Fila vazia',
+                descricao:
+                    'Não há envios pendentes, em retry ou indisponíveis.')
+            : _listaCobrancas(_fila, historico: true, fila: true),
         _historico.isEmpty
             ? const _EstadoVazio(
                 icon: Icons.history,
@@ -241,7 +276,7 @@ class _CobrancaAutomaticaScreenState extends State<CobrancaAutomaticaScreen>
               subtitle: Padding(
                 padding: const EdgeInsets.only(top: 6),
                 child: Wrap(spacing: 8, runSpacing: 6, children: [
-                  _Chip('${etapa.diasAposVencimento} dia(s) após o vencimento',
+                  _Chip(_descricaoOffset(etapa.diasAposVencimento),
                       Icons.calendar_today),
                   _Chip(etapa.canal.label, Icons.outgoing_mail),
                   if (etapa.somenteDiaUtil)
@@ -263,14 +298,18 @@ class _CobrancaAutomaticaScreenState extends State<CobrancaAutomaticaScreen>
         },
       );
 
-  Widget _listaCobrancas(List<CobrancaRegua> itens, {required bool historico}) {
+  Widget _listaCobrancas(List<CobrancaRegua> itens,
+      {required bool historico, bool fila = false}) {
     return LayoutBuilder(builder: (context, constraints) {
       if (constraints.maxWidth < 760) {
         return ListView.builder(
           padding: const EdgeInsets.all(12),
           itemCount: itens.length,
           itemBuilder: (_, i) =>
-              _CobrancaCard(cobranca: itens[i], historico: historico),
+              _CobrancaCard(
+                  cobranca: itens[i],
+                  historico: historico,
+                  onReprocessar: fila ? () => _reprocessar(itens[i]) : null),
         );
       }
       return SingleChildScrollView(
@@ -279,12 +318,13 @@ class _CobrancaAutomaticaScreenState extends State<CobrancaAutomaticaScreen>
           width: constraints.maxWidth,
           child: DataTable(
             columns: historico
-                ? const [
+                ? [
                     DataColumn(label: Text('Cliente')),
                     DataColumn(label: Text('Execução')),
                     DataColumn(label: Text('Canal')),
                     DataColumn(label: Text('Status')),
                     DataColumn(label: Text('Resultado')),
+                    if (fila) DataColumn(label: Text('Ação')),
                   ]
                 : const [
                     DataColumn(label: Text('Cliente')),
@@ -301,6 +341,11 @@ class _CobrancaAutomaticaScreenState extends State<CobrancaAutomaticaScreen>
                   DataCell(Text(item.canal?.label ?? item.etapa ?? '-')),
                   DataCell(_Status(texto: item.status)),
                   DataCell(Text(item.resultado ?? '-')),
+                  if (fila)
+                    DataCell(TextButton(
+                      onPressed: () => _reprocessar(item),
+                      child: const Text('Reprocessar'),
+                    )),
                 ]);
               }
               return DataRow(cells: [
@@ -382,7 +427,7 @@ class _EtapaDialogState extends State<_EtapaDialog> {
                         controller: _dias,
                         keyboardType: TextInputType.number,
                         decoration: const InputDecoration(
-                            labelText: 'Dias após o vencimento'),
+                            labelText: 'Dias relativos ao vencimento'),
                         validator: _inteiroNaoNegativo)),
                 const SizedBox(width: 12),
                 Expanded(
@@ -413,6 +458,14 @@ class _EtapaDialogState extends State<_EtapaDialog> {
                   maxLines: 4,
                   decoration: const InputDecoration(labelText: 'Mensagem'),
                   validator: _obrigatorio),
+              const SizedBox(height: 8),
+              const Align(
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  'Variáveis: {{cliente}}, {{descricao}}, {{valor}}, {{vencimento}}, {{dias_atraso}}, {{linha_digitavel}}, {{pix_copia_cola}}, {{link_pagamento}}, {{nome_empresa}}, {{contato_empresa}}',
+                  style: TextStyle(fontSize: 12),
+                ),
+              ),
               SwitchListTile(
                   contentPadding: EdgeInsets.zero,
                   title: const Text('Executar somente em dia útil'),
@@ -440,7 +493,7 @@ class _EtapaDialogState extends State<_EtapaDialog> {
       value == null || value.trim().isEmpty ? 'Campo obrigatório' : null;
   String? _inteiroNaoNegativo(String? value) {
     final numero = int.tryParse(value ?? '');
-    return numero == null || numero < 0 ? 'Informe zero ou mais' : null;
+    return numero == null ? 'Informe um número' : null;
   }
 
   String? _inteiroPositivo(String? value) {
@@ -476,6 +529,53 @@ class _Titulo extends StatelessWidget {
         Text(
             'Automatize lembretes, acompanhe pendências e preserve o histórico dos contatos.'),
       ]);
+}
+
+class _PainelResumo extends StatelessWidget {
+  const _PainelResumo({required this.painel});
+  final PainelReguaCobranca painel;
+
+  @override
+  Widget build(BuildContext context) => Wrap(
+        spacing: 8,
+        runSpacing: 8,
+        children: [
+          _ResumoCard('Em aberto', '${painel.titulosEmAberto}'),
+          _ResumoCard('Valor vencido', _moeda(painel.valorVencido)),
+          _ResumoCard('A vencer', _moeda(painel.valorAVencer)),
+          _ResumoCard('Pendentes', '${painel.enviosPendentes}'),
+          _ResumoCard('Enviados', '${painel.enviosEnviados}'),
+          _ResumoCard('Falhas', '${painel.enviosFalha}'),
+        ],
+      );
+}
+
+class _ResumoCard extends StatelessWidget {
+  const _ResumoCard(this.label, this.valor);
+  final String label;
+  final String valor;
+
+  @override
+  Widget build(BuildContext context) => Container(
+        constraints: const BoxConstraints(minWidth: 130),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+        decoration: BoxDecoration(
+          color: Theme.of(context).colorScheme.surface,
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: Theme.of(context).dividerColor),
+        ),
+        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Text(label, style: Theme.of(context).textTheme.labelSmall),
+          const SizedBox(height: 2),
+          Text(valor, style: Theme.of(context).textTheme.titleMedium),
+        ]),
+      );
+}
+
+String _descricaoOffset(int dias) {
+  if (dias < 0) return '${dias.abs()} dia(s) antes do vencimento';
+  if (dias == 0) return 'No vencimento';
+  return '$dias dia(s) apos o vencimento';
 }
 
 class _EstadoVazio extends StatelessWidget {
@@ -527,9 +627,11 @@ class _Status extends StatelessWidget {
 }
 
 class _CobrancaCard extends StatelessWidget {
-  const _CobrancaCard({required this.cobranca, required this.historico});
+  const _CobrancaCard(
+      {required this.cobranca, required this.historico, this.onReprocessar});
   final CobrancaRegua cobranca;
   final bool historico;
+  final VoidCallback? onReprocessar;
   @override
   Widget build(BuildContext context) => Card(
           child: ListTile(
@@ -538,7 +640,12 @@ class _CobrancaCard extends StatelessWidget {
         subtitle: Text(
             '${_moeda(cobranca.valor)} • vencimento ${_data(cobranca.vencimento)}\n${historico ? (cobranca.canal?.label ?? cobranca.etapa ?? '-') : _diasAtraso(cobranca)}'),
         isThreeLine: true,
-        trailing: _Status(texto: cobranca.status),
+        trailing: onReprocessar == null
+            ? _Status(texto: cobranca.status)
+            : TextButton(
+                onPressed: onReprocessar,
+                child: const Text('Reprocessar'),
+              ),
       ));
 }
 
