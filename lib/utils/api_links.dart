@@ -210,8 +210,10 @@ class ApiLinks {
       '$_baseUrlNew/api/cadastros/fornecedores/$id';
 
   // Personal
-  static String allPersonais = '$_baseUrlNew/api/personal'; // controller: /api/personal
-  static String createPersonal = '$_baseUrlNew/api/personal'; // @PostMapping root
+  static String allPersonais =
+      '$_baseUrlNew/api/personal'; // controller: /api/personal
+  static String createPersonal =
+      '$_baseUrlNew/api/personal'; // @PostMapping root
   static String updatePersonal(String id) =>
       '$_baseUrlNew/api/personal/$id'; // @PutMapping("/{id}")
   static String deletePersonal(String id) =>
@@ -239,9 +241,9 @@ class ApiLinks {
   static String allSuplementos = '$_baseUrlNew/api/suplementos';
   static String createSuplemento = '$_baseUrlNew/api/suplementos/insert';
   static String updateSuplemento(String id) =>
-      '$_baseUrlNew/api/suplementos/$id'; // controller: @PutMapping("/{id}")
+      '$_baseUrlNew/api/suplementos/update/$id';
   static String deleteSuplemento(String id) =>
-      '$_baseUrlNew/api/suplementos/$id'; // controller: @DeleteMapping("/{id}")
+      '$_baseUrlNew/api/suplementos/delete/$id';
 
   // Suplemento
   static String allAplicativos = '$_baseUrlNew/api/aplicativos';
@@ -296,7 +298,8 @@ class ApiLinks {
 
   // Baixa em Lote
   static String get baixaLotePagar => '$_baseUrlNew/api/conta_pagar/baixa-lote';
-  static String get baixaLoteReceber => '$_baseUrlNew/api/conta_receber/baixa-lote';
+  static String get baixaLoteReceber =>
+      '$_baseUrlNew/api/conta_receber/baixa-lote';
 
   // Contas a Receber
   static String get allContasReceber => '$_baseUrlNew/api/conta_receber';
@@ -998,7 +1001,8 @@ class ApiLinks {
       '$_baseUrlNew/api/trading/operacao-assistida/$id';
 
   static String get tradingCarteira => '$_baseUrlNew/api/trading/carteira';
-  static String get tradingCarteiraOperacoes => '$_baseUrlNew/api/trading/carteira/operacoes';
+  static String get tradingCarteiraOperacoes =>
+      '$_baseUrlNew/api/trading/carteira/operacoes';
   static String tradingCarteiraOperacao(String id) =>
       '$_baseUrlNew/api/trading/carteira/operacao/$id';
   // Departamento Pessoal profissional
@@ -1075,7 +1079,7 @@ class ApiLinks {
   static String anexoFinanceiroDownload(String id) =>
       '$_baseUrlNew/api/financeiro/anexos/$id/download';
 
-  // Boleto bancário — upload e download
+  // Boleto bancário — upload
   static String get uploadBoleto => '$_baseUrlNew/rest/boleto/upload';
 
   // Cobrança Automática
@@ -1087,6 +1091,11 @@ class ApiLinks {
       '$_baseUrlNew/api/financeiro/cobranca-automatica/historico';
   static String get cobrancaAutomaticaPendentes =>
       '$_baseUrlNew/api/financeiro/cobranca-automatica/pendentes';
+
+  // Regua de cobranca
+  static String get reguasCobranca => '$_baseUrlNew/api/financeiro/reguas';
+  static String reguaCobranca(int id) => '$reguasCobranca/$id';
+  static String get cobrancasRegua => '$_baseUrlNew/api/financeiro/cobrancas';
 
   // Contingência e Rejeições
   static String get listarContingencia => '$_baseUrlNew/api/contingencia';

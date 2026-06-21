@@ -26,7 +26,6 @@ import '../../web/screens/nfce/pdv_screen.dart';
 import '../../web/screens/nfce/config_fiscal_screen.dart';
 import 'documento_screen.dart';
 import 'meu_perfil_screen.dart';
-import '../../web/screens/ged_arquivos_screen.dart';
 import 'ponto_screen.dart';
 import '../../widgets/crm/crm_pipeline_screen.dart';
 import '../../widgets/fiscal/fiscal_automation_screen.dart';
@@ -36,6 +35,7 @@ import 'conta_receber_grid_screen.dart';
 import 'conta_bancaria_grid_screen.dart';
 import 'parceiro_grid_screen.dart';
 import '../../windows/screens/extrato_importacao_screen.dart';
+import '../../web/screens/cobranca_automatica_screen.dart';
 import '../../widgets/user_banners.dart';
 
 class BottomNavBarScreen extends StatefulWidget {
@@ -183,13 +183,22 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
             : const ChatListScreen(userName: 'Usuario'),
       if (sec.canView(AppScreen.comunicados)) _comunicadoGridInline(sec: sec),
       if (sec.canView(AppScreen.chamados)) _chamadoGridInline(sec: sec),
-      if (sec.canView(AppScreen.ged))
-        GedArquivosScreen(
-          useUserBannerHeader: true,
-          onUserBannerTapped: _openProfile,
-        ),
+      if (sec.canView(AppScreen.ged)) _gedDynamicGrid(sec),
       Container(), // slot do botao "Mais"
     ];
+  }
+
+  Widget _gedDynamicGrid(SecurityMatrix sec) {
+    return DynamicGridDynamicScreen(
+      key: const ValueKey('mobile_dynamic_inline_ged_arquivo'),
+      telaNome: 'arquivo',
+      hasPermission: (action) => _hasPermissionFor(sec, AppScreen.ged, action),
+      storageKey: 'mobile_dynamic_ged_arquivo',
+      fetchEndpointOverride: ApiLinks.allArquivos,
+      createEndpointOverride: ApiLinks.createArquivo,
+      updateEndpointOverride: ApiLinks.updateArquivo(':id'),
+      deleteEndpointOverride: ApiLinks.deleteArquivo(':id'),
+    );
   }
 
   Widget _dynamicGridInline({
@@ -203,7 +212,6 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
       hasPermission: (action) => _hasPermissionFor(sec, screen, action),
       storageKey: 'mobile_dynamic_$telaNome',
       showAppBar: false,
-      onUserBannerTapped: _openProfile,
     );
   }
 
@@ -212,33 +220,14 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
   /// (server actions, detailScreenBuilder). Os customActions nao sao afetados.
   Widget _comunicadoGridInline({required SecurityMatrix sec}) {
     return Scaffold(
-      appBar: UserBannerAppBar(
-        screenTitle: 'Comunicados',
-        showFilterButton: false,
-        onUserTap: _openProfile,
-      ),
+      appBar: const SimpleAppBar(title: 'Comunicados', icon: Icons.campaign),
       body: DynamicGridDynamicScreen(
         key: const ValueKey('mobile_dynamic_inline_comunicado'),
         telaNome: 'comunicado',
         hasPermission: (action) => false,
         storageKey: 'mobile_dynamic_comunicado',
         showAppBar: false,
-        customActions: () => [
-          CustomAction(
-            icon: Icons.visibility_outlined,
-            label: 'Visualizar comunicado',
-            onPressed: (context, item) {
-              Navigator.of(context).push(
-                MaterialPageRoute(
-                  builder: (_) => WindowsComunicadoDetalheScreen(
-                    comunicado: item,
-                  ),
-                ),
-              );
-            },
-            isVisible: (_) => true,
-          ),
-        ],
+        customActions: _comunicadoActionsBuilder,
       ),
     );
   }
@@ -248,11 +237,8 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
   /// e detailScreenBuilder. Os customActions nao sao afetados pelo hasPermission.
   Widget _chamadoGridInline({required SecurityMatrix sec}) {
     return Scaffold(
-      appBar: UserBannerAppBar(
-        screenTitle: 'Solicitacoes',
-        showFilterButton: false,
-        onUserTap: _openProfile,
-      ),
+      appBar:
+          const SimpleAppBar(title: 'Solicitacoes', icon: Icons.support_agent),
       body: DynamicGridDynamicScreen(
         key: const ValueKey('mobile_dynamic_inline_chamado'),
         telaNome: 'chamado',
@@ -373,7 +359,6 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
     );
   }
 
-  /// Exibe um bottom sheet com os detalhes do chamado.
   void _mostrarDetalheChamado(BuildContext context, Map<String, dynamic> item) {
     showModalBottomSheet(
       context: context,
@@ -539,6 +524,21 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
     };
   }
 
+  static List<CustomAction> _comunicadoActionsBuilder() {
+    return [
+      CustomAction(
+        icon: Icons.visibility_outlined,
+        label: 'Visualizar comunicado',
+        onPressed: (BuildContext ctx, Map<String, dynamic> item) {
+          Navigator.of(ctx).push(MaterialPageRoute(
+            builder: (_) => WindowsComunicadoDetalheScreen(comunicado: item),
+          ));
+        },
+        isVisible: (_) => true,
+      ),
+    ];
+  }
+
   Future<void> _pushDynamicGrid({
     required String telaNome,
     required SecurityMatrix sec,
@@ -561,18 +561,9 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
           createEndpointOverride: createEndpointOverride,
           updateEndpointOverride: updateEndpointOverride,
           deleteEndpointOverride: deleteEndpointOverride,
-          onUserBannerTapped: _openProfile,
         ),
       ),
     );
-  }
-
-  Future<void> _openProfile() async {
-    await Navigator.push(
-      context,
-      MaterialPageRoute(builder: (_) => const MeuPerfilScreen()),
-    );
-    if (mounted) setState(() {});
   }
 
   void onMenuOptionSelected(String option, SecurityMatrix sec) {
@@ -587,7 +578,6 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
             builder: (_) => ContaPagarGridScreen(
               hasPermission: (action) =>
                   _hasPermissionFor(sec, AppScreen.contasPagar, action),
-              onUserBannerTapped: _openProfile,
             ),
           ),
         );
@@ -599,7 +589,16 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
             builder: (_) => ContaReceberGridScreen(
               hasPermission: (action) =>
                   _hasPermissionFor(sec, AppScreen.contasReceber, action),
-              onUserBannerTapped: _openProfile,
+            ),
+          ),
+        );
+        break;
+      case "Régua de Cobrança":
+        nav = Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => const Scaffold(
+              body: SafeArea(child: CobrancaAutomaticaScreen()),
             ),
           ),
         );
@@ -611,7 +610,6 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
             builder: (_) => ParceiroGridScreen(
               hasPermission: (action) =>
                   _hasPermissionFor(sec, AppScreen.parceiros, action),
-              onUserBannerTapped: _openProfile,
             ),
           ),
         );
@@ -626,9 +624,7 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
       case "Dashboard":
         nav = Navigator.push(
           context,
-          MaterialPageRoute(
-            builder: (_) => DashboardPage(onUserBannerTapped: _openProfile),
-          ),
+          MaterialPageRoute(builder: (_) => const DashboardPage()),
         );
         break;
       case "Trading":
@@ -679,7 +675,6 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
             builder: (_) => ContaBancariaGridScreen(
               hasPermission: (action) =>
                   _hasPermissionFor(sec, AppScreen.contasBancarias, action),
-              onUserBannerTapped: _openProfile,
             ),
           ),
         );
@@ -707,6 +702,12 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
         nav = _pushDynamicGrid(
           telaNome: 'alvara',
           sec: sec,
+        );
+        break;
+      case "Meu Perfil":
+        nav = Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => const MeuPerfilScreen()),
         );
         break;
       case "Importar Extratos":
@@ -834,6 +835,8 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
         const _MoreMenuAction(Icons.payments, "Contas Pagar"),
       if (sec.canView(AppScreen.contasReceber))
         const _MoreMenuAction(Icons.account_balance_wallet, "Contas Receber"),
+      if (sec.canView(AppScreen.contasReceber))
+        const _MoreMenuAction(Icons.notifications_active, "Régua de Cobrança"),
       if (sec.canView(AppScreen.dashboard))
         const _MoreMenuAction(Icons.bar_chart, "Dashboard"),
       if (sec.canView(AppScreen.contasBancarias))
@@ -843,6 +846,7 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
       if (sec.canView(AppScreen.mensalidades))
         const _MoreMenuAction(Icons.receipt_long, "Mensalidades"),
       const _MoreMenuAction(Icons.verified_user, "Alvarás"),
+      const _MoreMenuAction(Icons.account_circle, "Meu Perfil"),
       if (sec.canView(AppScreen.contasBancarias))
         const _MoreMenuAction(Icons.upload_file, "Importar Extratos"),
       const _MoreMenuAction(Icons.exit_to_app, "Sair", isDestructive: true),

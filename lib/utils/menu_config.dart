@@ -515,7 +515,7 @@ class MenuConfig {
             screenIndex: 107),
         MenuItem(
             id: 'cobranca_automatica',
-            label: 'Cobrança Automática',
+            label: 'Régua de Cobrança',
             icon: FontAwesomeIcons.moneyBillWave,
             screenIndex: 133),
         MenuItem(

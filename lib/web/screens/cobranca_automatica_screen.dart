@@ -1,281 +1,557 @@
-// lib/web/screens/cobranca_automatica_screen.dart
 import 'package:flutter/material.dart';
-import '../../services/cobranca_service.dart';
-import '../../utils/grid_colors.dart';
 
-/// Screen for automatic cobrança (collection) management.
+import '../../models/regua_cobranca_model.dart';
+import '../../services/regua_cobranca_service.dart';
+
 class CobrancaAutomaticaScreen extends StatefulWidget {
-  const CobrancaAutomaticaScreen({super.key});
+  const CobrancaAutomaticaScreen({super.key, this.service});
+
+  final ReguaCobrancaService? service;
 
   @override
-  State<CobrancaAutomaticaScreen> createState() => _CobrancaAutomaticaScreenState();
+  State<CobrancaAutomaticaScreen> createState() =>
+      _CobrancaAutomaticaScreenState();
 }
 
 class _CobrancaAutomaticaScreenState extends State<CobrancaAutomaticaScreen>
     with SingleTickerProviderStateMixin {
-  final _service = CobrancaService();
-  late TabController _tabCtrl;
-
-  List<Map<String, dynamic>> _pendentes = [];
-  bool _loadingPendentes = false;
-  Set<String> _selectedPendentes = {};
-
-  List<Map<String, dynamic>> _historico = [];
-  bool _loadingHistorico = false;
-
-  String _statusFilter = 'Todos';
-  final _statusOptions = ['Todos', 'ENVIADO', 'AGUARDANDO', 'ERRO', 'CONCLUIDO'];
+  late final ReguaCobrancaService _service;
+  late final TabController _tabs;
+  List<ReguaCobranca> _reguas = const [];
+  List<CobrancaRegua> _pendencias = const [];
+  List<CobrancaRegua> _historico = const [];
+  bool _loading = true;
+  bool _executando = false;
+  String? _erro;
 
   @override
   void initState() {
     super.initState();
-    _tabCtrl = TabController(length: 2, vsync: this);
-    _loadPendentes();
+    _service = widget.service ?? ReguaCobrancaService();
+    _tabs = TabController(length: 3, vsync: this);
+    _carregar();
   }
 
   @override
   void dispose() {
-    _tabCtrl.dispose();
+    _tabs.dispose();
     super.dispose();
   }
 
-  Future<void> _loadPendentes() async {
-    setState(() => _loadingPendentes = true);
+  Future<void> _carregar() async {
+    setState(() {
+      _loading = true;
+      _erro = null;
+    });
     try {
-      _pendentes = await _service.getPendentes();
-    } catch (_) {
-      _pendentes = [];
+      final resultados = await Future.wait([
+        _service.listarReguas(),
+        _service.listarPendencias(),
+        _service.listarHistorico(),
+      ]);
+      if (!mounted) return;
+      setState(() {
+        _reguas = (resultados[0] as List<ReguaCobranca>)
+          ..sort((a, b) => a.ordem.compareTo(b.ordem));
+        _pendencias = resultados[1] as List<CobrancaRegua>;
+        _historico = resultados[2] as List<CobrancaRegua>;
+      });
+    } catch (e) {
+      if (mounted) setState(() => _erro = e.toString());
+    } finally {
+      if (mounted) setState(() => _loading = false);
     }
-    if (mounted) setState(() => _loadingPendentes = false);
   }
 
-  Future<void> _loadHistorico() async {
-    setState(() => _loadingHistorico = true);
-    try {
-      _historico = await _service.getHistorico();
-    } catch (_) {
-      _historico = [];
-    }
-    if (mounted) setState(() => _loadingHistorico = false);
-  }
-
-  Future<void> _enviarCobranca() async {
-    if (_selectedPendentes.isEmpty) return;
-    final ids = _selectedPendentes.map((id) => int.tryParse(id) ?? 0).toList();
-    final confirm = await showDialog<bool>(
+  Future<void> _editar([ReguaCobranca? regua]) async {
+    final salva = await showDialog<ReguaCobranca>(
       context: context,
-      builder: (_) => AlertDialog(
-        title: const Text('Enviar Cobrança'),
-        content: Text('Enviar cobrança para ${ids.length} conta(s) selecionada(s)?'),
+      builder: (_) =>
+          _EtapaDialog(regua: regua, proximaOrdem: _reguas.length + 1),
+    );
+    if (salva == null) return;
+    setState(() => _loading = true);
+    try {
+      await _service.salvarRegua(salva);
+      if (!mounted) return;
+      _mensagem('Etapa salva com sucesso.');
+      await _carregar();
+    } catch (e) {
+      if (mounted) {
+        setState(() => _loading = false);
+        _mensagem(e.toString(), erro: true);
+      }
+    }
+  }
+
+  Future<void> _executar() async {
+    final confirmado = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Executar régua agora?'),
+        content: const Text(
+          'Os títulos vencidos serão avaliados e os envios elegíveis serão enfileirados. Duplicidades serão ignoradas.',
+        ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancelar')),
-          ElevatedButton(
-            onPressed: () => Navigator.pop(context, true),
-            style: ElevatedButton.styleFrom(backgroundColor: GridColors.secondary, foregroundColor: Colors.white),
-            child: const Text('Enviar'),
-          ),
+          TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: const Text('Cancelar')),
+          FilledButton(
+              onPressed: () => Navigator.pop(context, true),
+              child: const Text('Executar')),
         ],
       ),
     );
-    if (confirm != true) return;
-    setState(() => _loadingPendentes = true);
+    if (confirmado != true) return;
+    setState(() => _executando = true);
     try {
-      final result = await _service.enviarCobranca(ids);
-      if (mounted) {
-        final success = result['success'] ?? false;
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          backgroundColor: success ? GridColors.success : GridColors.error,
-          content: Text(result['mensagem'] ?? (success ? 'Cobrança enviada com sucesso!' : 'Erro ao enviar cobrança')),
-        ));
-        if (success) {
-          _selectedPendentes.clear();
-          await _loadPendentes();
-        }
-      }
+      final resultado = await _service.executar();
+      if (!mounted) return;
+      _mensagem(
+        '${resultado.titulosAvaliados} títulos avaliados, '
+        '${resultado.enviosEnfileirados} envios enfileirados e '
+        '${resultado.duplicadosIgnorados} duplicidades ignoradas.',
+      );
+      await _carregar();
     } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(backgroundColor: GridColors.error, content: Text('Erro: $e')));
-      }
-    }
-    if (mounted) setState(() => _loadingPendentes = false);
-  }
-
-  List<Map<String, dynamic>> get _filteredPendentes {
-    if (_statusFilter == 'Todos') return _pendentes;
-    return _pendentes.where((p) => (p['status']?.toString().toUpperCase() ?? '') == _statusFilter).toList();
-  }
-
-  Color _statusColor(String? status) {
-    switch (status?.toUpperCase()) {
-      case 'ENVIADO': return GridColors.success;
-      case 'AGUARDANDO': return GridColors.warning;
-      case 'ERRO': return GridColors.error;
-      case 'CONCLUIDO': return GridColors.primary;
-      default: return GridColors.textMuted;
+      if (mounted) _mensagem(e.toString(), erro: true);
+    } finally {
+      if (mounted) setState(() => _executando = false);
     }
   }
 
-  IconData _statusIcon(String? status) {
-    switch (status?.toUpperCase()) {
-      case 'ENVIADO': return Icons.check_circle;
-      case 'AGUARDANDO': return Icons.hourglass_empty;
-      case 'ERRO': return Icons.error;
-      case 'CONCLUIDO': return Icons.done_all;
-      default: return Icons.help_outline;
-    }
+  void _mensagem(String texto, {bool erro = false}) {
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+      content: Text(texto),
+      backgroundColor: erro ? Colors.red.shade700 : Colors.green.shade700,
+    ));
   }
 
   @override
   Widget build(BuildContext context) {
     return Column(
       children: [
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-          decoration: const BoxDecoration(color: GridColors.card, border: Border(bottom: BorderSide(color: GridColors.divider))),
-          child: Row(
-            children: [
-              const Icon(Icons.money_off, color: GridColors.secondary, size: 24),
-              const SizedBox(width: 10),
-              const Text('Cobrança Automática', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: GridColors.textSecondary)),
-              const Spacer(),
-              if (_selectedPendentes.isNotEmpty)
-                ElevatedButton.icon(
-                  onPressed: _loadingPendentes ? null : _enviarCobranca,
-                  icon: const Icon(Icons.send, size: 16),
-                  label: Text('Enviar Cobrança (${_selectedPendentes.length})'),
-                  style: ElevatedButton.styleFrom(backgroundColor: GridColors.secondary, foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6))),
-                ),
-              const SizedBox(width: 8),
-              IconButton(
-                icon: const Icon(Icons.refresh),
-                onPressed: () { if (_tabCtrl.index == 0) _loadPendentes(); else _loadHistorico(); },
-                tooltip: 'Atualizar',
-              ),
+        _cabecalho(),
+        Material(
+          color: Theme.of(context).colorScheme.surface,
+          child: TabBar(
+            controller: _tabs,
+            isScrollable: MediaQuery.sizeOf(context).width < 600,
+            tabs: [
+              Tab(text: 'Etapas (${_reguas.length})'),
+              Tab(text: 'Pendências (${_pendencias.length})'),
+              Tab(text: 'Histórico (${_historico.length})'),
             ],
           ),
         ),
-        Container(
-          color: GridColors.card,
-          child: TabBar(
-            controller: _tabCtrl,
-            onTap: (i) { if (i == 1) _loadHistorico(); },
-            labelColor: GridColors.secondary,
-            unselectedLabelColor: GridColors.textMuted,
-            indicatorColor: GridColors.secondary,
-            tabs: const [Tab(text: 'Pendentes'), Tab(text: 'Histórico')],
-          ),
-        ),
-        if (_tabCtrl.index == 0)
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            color: GridColors.filterBackground.withOpacity(0.5),
-            child: Row(
-              children: [
-                const Text('Status:', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500)),
-                const SizedBox(width: 8),
-                SizedBox(
-                  width: 140,
-                  height: 34,
-                  child: DropdownButtonFormField<String>(
-                    value: _statusFilter,
-                    isDense: true,
-                    decoration: const InputDecoration(contentPadding: EdgeInsets.symmetric(horizontal: 8, vertical: 4), border: OutlineInputBorder()),
-                    items: _statusOptions.map((s) => DropdownMenuItem(value: s, child: Text(s, style: const TextStyle(fontSize: 13)))).toList(),
-                    onChanged: (v) => setState(() => _statusFilter = v!),
-                  ),
-                ),
-                const Spacer(),
-                Text('${_filteredPendentes.length} registro(s)', style: const TextStyle(fontSize: 12, color: GridColors.textMuted)),
-              ],
-            ),
-          ),
-        Expanded(
-          child: TabBarView(controller: _tabCtrl, children: [_buildPendentesTab(), _buildHistoricoTab()]),
-        ),
+        Expanded(child: _conteudo()),
       ],
     );
   }
 
-  Widget _buildPendentesTab() {
-    if (_loadingPendentes) return const Center(child: CircularProgressIndicator());
-    if (_filteredPendentes.isEmpty) return const Center(child: Text('Nenhuma cobrança pendente', style: TextStyle(color: GridColors.textMuted)));
-
-    return SingleChildScrollView(
-      child: DataTable(
-        headingRowColor: WidgetStateProperty.all(GridColors.gridHeader),
-        columns: [
-          const DataColumn(label: Text('')),
-          const DataColumn(label: Text('Cliente')),
-          const DataColumn(label: Text('Descrição')),
-          const DataColumn(label: Text('Valor')),
-          const DataColumn(label: Text('Vencimento')),
-          const DataColumn(label: Text('Status')),
-        ],
-        rows: _filteredPendentes.map((p) {
-          final id = p['id']?.toString() ?? '';
-          final selected = _selectedPendentes.contains(id);
-          return DataRow(
-            selected: selected,
-            onSelectChanged: (v) { setState(() { if (v == true) { _selectedPendentes.add(id); } else { _selectedPendentes.remove(id); } }); },
-            cells: [
-              DataCell(Checkbox(value: selected, onChanged: (v) { setState(() { if (v == true) { _selectedPendentes.add(id); } else { _selectedPendentes.remove(id); } }); })),
-              DataCell(Text(p['clienteNome']?.toString() ?? p['parceiro']?.toString() ?? '')),
-              DataCell(Text(p['descricao']?.toString() ?? '', overflow: TextOverflow.ellipsis)),
-              DataCell(Text('R\$ ${(p['valor'] ?? 0).toDouble().toStringAsFixed(2)}', style: const TextStyle(fontWeight: FontWeight.bold))),
-              DataCell(Text(p['dataVencimento']?.toString() ?? '')),
-              DataCell(
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                  decoration: BoxDecoration(color: _statusColor(p['status']).withOpacity(0.1), borderRadius: BorderRadius.circular(4)),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(_statusIcon(p['status']), size: 14, color: _statusColor(p['status'])),
-                      const SizedBox(width: 4),
-                      Text(p['status']?.toString() ?? '', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w500, color: _statusColor(p['status']))),
-                    ],
-                  ),
-                ),
-              ),
-            ],
-          );
-        }).toList(),
-      ),
+  Widget _cabecalho() {
+    final compacto = MediaQuery.sizeOf(context).width < 700;
+    final botoes = Wrap(
+      spacing: 8,
+      runSpacing: 8,
+      children: [
+        OutlinedButton.icon(
+            onPressed: _loading ? null : _carregar,
+            icon: const Icon(Icons.refresh),
+            label: const Text('Atualizar')),
+        FilledButton.tonalIcon(
+            onPressed: _loading ? null : () => _editar(),
+            icon: const Icon(Icons.add),
+            label: const Text('Nova etapa')),
+        FilledButton.icon(
+          onPressed: _loading || _executando ? null : _executar,
+          icon: _executando
+              ? const SizedBox.square(
+                  dimension: 16,
+                  child: CircularProgressIndicator(strokeWidth: 2))
+              : const Icon(Icons.play_arrow),
+          label: const Text('Executar agora'),
+        ),
+      ],
+    );
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      color: Theme.of(context).colorScheme.surfaceContainerLow,
+      child: compacto
+          ? Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              const _Titulo(),
+              const SizedBox(height: 12),
+              botoes,
+            ])
+          : Row(children: [const Expanded(child: _Titulo()), botoes]),
     );
   }
 
-  Widget _buildHistoricoTab() {
-    if (_loadingHistorico) return const Center(child: CircularProgressIndicator());
-    if (_historico.isEmpty) return const Center(child: Text('Nenhum histórico encontrado', style: TextStyle(color: GridColors.textMuted)));
+  Widget _conteudo() {
+    if (_loading) return const Center(child: CircularProgressIndicator());
+    if (_erro != null) {
+      return _EstadoVazio(
+        icon: Icons.cloud_off,
+        titulo: 'Não foi possível carregar a régua',
+        descricao: _erro!,
+        acao: TextButton.icon(
+            onPressed: _carregar,
+            icon: const Icon(Icons.refresh),
+            label: const Text('Tentar novamente')),
+      );
+    }
+    return TabBarView(
+      controller: _tabs,
+      children: [
+        _reguas.isEmpty
+            ? const _EstadoVazio(
+                icon: Icons.rule,
+                titulo: 'Nenhuma etapa configurada',
+                descricao:
+                    'Crie a primeira etapa para iniciar sua régua de cobrança.')
+            : _listaEtapas(),
+        _pendencias.isEmpty
+            ? const _EstadoVazio(
+                icon: Icons.task_alt,
+                titulo: 'Nenhuma pendência',
+                descricao: 'Não há títulos vencidos aguardando ação.')
+            : _listaCobrancas(_pendencias, historico: false),
+        _historico.isEmpty
+            ? const _EstadoVazio(
+                icon: Icons.history,
+                titulo: 'Histórico vazio',
+                descricao: 'As execuções da régua aparecerão aqui.')
+            : _listaCobrancas(_historico, historico: true),
+      ],
+    );
+  }
 
-    return SingleChildScrollView(
-      child: DataTable(
-        headingRowColor: WidgetStateProperty.all(GridColors.gridHeader),
-        columns: const [
-          DataColumn(label: Text('Data')),
-          DataColumn(label: Text('Cliente')),
-          DataColumn(label: Text('Descrição')),
-          DataColumn(label: Text('Valor')),
-          DataColumn(label: Text('Status')),
-          DataColumn(label: Text('Detalhes')),
-        ],
-        rows: _historico.map((h) {
-          return DataRow(cells: [
-            DataCell(Text(h['dataEnvio']?.toString() ?? h['createdAt']?.toString() ?? '')),
-            DataCell(Text(h['clienteNome']?.toString() ?? h['parceiro']?.toString() ?? '')),
-            DataCell(Text(h['descricao']?.toString() ?? '', overflow: TextOverflow.ellipsis)),
-            DataCell(Text('R\$ ${(h['valor'] ?? 0).toDouble().toStringAsFixed(2)}', style: const TextStyle(fontWeight: FontWeight.bold))),
-            DataCell(
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                decoration: BoxDecoration(color: _statusColor(h['status']).withOpacity(0.1), borderRadius: BorderRadius.circular(4)),
-                child: Text(h['status']?.toString() ?? '', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w500, color: _statusColor(h['status']))),
+  Widget _listaEtapas() => ListView.separated(
+        padding: const EdgeInsets.all(16),
+        itemCount: _reguas.length,
+        separatorBuilder: (_, __) => const SizedBox(height: 8),
+        itemBuilder: (_, index) {
+          final etapa = _reguas[index];
+          return Card(
+            child: ListTile(
+              leading: CircleAvatar(child: Text('${etapa.ordem}')),
+              title: Text(etapa.nome,
+                  style: const TextStyle(fontWeight: FontWeight.w600)),
+              subtitle: Padding(
+                padding: const EdgeInsets.only(top: 6),
+                child: Wrap(spacing: 8, runSpacing: 6, children: [
+                  _Chip('${etapa.diasAposVencimento} dia(s) após o vencimento',
+                      Icons.calendar_today),
+                  _Chip(etapa.canal.label, Icons.outgoing_mail),
+                  if (etapa.somenteDiaUtil)
+                    const _Chip('Somente dia útil', Icons.work_outline),
+                  if (!etapa.canal.disponivel)
+                    const _Chip('Provider indisponível', Icons.block,
+                        alerta: true),
+                ]),
               ),
+              trailing: Row(mainAxisSize: MainAxisSize.min, children: [
+                Switch(value: etapa.ativo, onChanged: (_) => _editar(etapa)),
+                IconButton(
+                    onPressed: () => _editar(etapa),
+                    icon: const Icon(Icons.edit_outlined),
+                    tooltip: 'Editar etapa'),
+              ]),
             ),
-            DataCell(Text(h['mensagem']?.toString() ?? h['detalhes']?.toString() ?? '', overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 12, color: GridColors.textMuted))),
-          ]);
-        }).toList(),
+          );
+        },
+      );
+
+  Widget _listaCobrancas(List<CobrancaRegua> itens, {required bool historico}) {
+    return LayoutBuilder(builder: (context, constraints) {
+      if (constraints.maxWidth < 760) {
+        return ListView.builder(
+          padding: const EdgeInsets.all(12),
+          itemCount: itens.length,
+          itemBuilder: (_, i) =>
+              _CobrancaCard(cobranca: itens[i], historico: historico),
+        );
+      }
+      return SingleChildScrollView(
+        padding: const EdgeInsets.all(16),
+        child: SizedBox(
+          width: constraints.maxWidth,
+          child: DataTable(
+            columns: historico
+                ? const [
+                    DataColumn(label: Text('Cliente')),
+                    DataColumn(label: Text('Execução')),
+                    DataColumn(label: Text('Canal')),
+                    DataColumn(label: Text('Status')),
+                    DataColumn(label: Text('Resultado')),
+                  ]
+                : const [
+                    DataColumn(label: Text('Cliente')),
+                    DataColumn(label: Text('Valor')),
+                    DataColumn(label: Text('Vencimento')),
+                    DataColumn(label: Text('Dias em atraso')),
+                    DataColumn(label: Text('Status')),
+                  ],
+            rows: itens.map((item) {
+              if (historico) {
+                return DataRow(cells: [
+                  DataCell(Text(item.clienteNome)),
+                  DataCell(Text(_dataHora(item.executadaEm))),
+                  DataCell(Text(item.canal?.label ?? item.etapa ?? '-')),
+                  DataCell(_Status(texto: item.status)),
+                  DataCell(Text(item.resultado ?? '-')),
+                ]);
+              }
+              return DataRow(cells: [
+                DataCell(Text(item.clienteNome)),
+                DataCell(Text(_moeda(item.valor))),
+                DataCell(Text(_data(item.vencimento))),
+                DataCell(Text(_diasAtraso(item))),
+                DataCell(_Status(texto: item.status)),
+              ]);
+            }).toList(),
+          ),
+        ),
+      );
+    });
+  }
+}
+
+class _EtapaDialog extends StatefulWidget {
+  const _EtapaDialog({this.regua, required this.proximaOrdem});
+  final ReguaCobranca? regua;
+  final int proximaOrdem;
+
+  @override
+  State<_EtapaDialog> createState() => _EtapaDialogState();
+}
+
+class _EtapaDialogState extends State<_EtapaDialog> {
+  final _form = GlobalKey<FormState>();
+  late final TextEditingController _nome;
+  late final TextEditingController _dias;
+  late final TextEditingController _mensagem;
+  late final TextEditingController _ordem;
+  late CanalCobranca _canal;
+  late bool _somenteDiaUtil;
+  late bool _ativo;
+
+  @override
+  void initState() {
+    super.initState();
+    final r = widget.regua;
+    _nome = TextEditingController(text: r?.nome ?? 'Lembrete de pagamento');
+    _dias = TextEditingController(text: '${r?.diasAposVencimento ?? 1}');
+    _mensagem = TextEditingController(
+        text: r?.mensagem ??
+            'Olá, identificamos um pagamento em aberto. Podemos ajudar?');
+    _ordem = TextEditingController(text: '${r?.ordem ?? widget.proximaOrdem}');
+    _canal = r?.canal ?? CanalCobranca.email;
+    _somenteDiaUtil = r?.somenteDiaUtil ?? true;
+    _ativo = r?.ativo ?? true;
+  }
+
+  @override
+  void dispose() {
+    _nome.dispose();
+    _dias.dispose();
+    _mensagem.dispose();
+    _ordem.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: Text(widget.regua == null ? 'Nova etapa' : 'Editar etapa'),
+      content: SizedBox(
+        width: 520,
+        child: Form(
+          key: _form,
+          child: SingleChildScrollView(
+            child: Column(mainAxisSize: MainAxisSize.min, children: [
+              TextFormField(
+                  controller: _nome,
+                  decoration: const InputDecoration(labelText: 'Nome'),
+                  validator: _obrigatorio),
+              const SizedBox(height: 12),
+              Row(children: [
+                Expanded(
+                    child: TextFormField(
+                        controller: _dias,
+                        keyboardType: TextInputType.number,
+                        decoration: const InputDecoration(
+                            labelText: 'Dias após o vencimento'),
+                        validator: _inteiroNaoNegativo)),
+                const SizedBox(width: 12),
+                Expanded(
+                    child: TextFormField(
+                        controller: _ordem,
+                        keyboardType: TextInputType.number,
+                        decoration: const InputDecoration(labelText: 'Ordem'),
+                        validator: _inteiroPositivo)),
+              ]),
+              const SizedBox(height: 12),
+              DropdownButtonFormField<CanalCobranca>(
+                value: _canal,
+                decoration: const InputDecoration(labelText: 'Canal'),
+                items: CanalCobranca.values
+                    .map((canal) => DropdownMenuItem(
+                          value: canal,
+                          enabled: canal.disponivel,
+                          child: Text(canal.disponivel
+                              ? canal.label
+                              : '${canal.label} (indisponível)'),
+                        ))
+                    .toList(),
+                onChanged: (value) => setState(() => _canal = value ?? _canal),
+              ),
+              const SizedBox(height: 12),
+              TextFormField(
+                  controller: _mensagem,
+                  maxLines: 4,
+                  decoration: const InputDecoration(labelText: 'Mensagem'),
+                  validator: _obrigatorio),
+              SwitchListTile(
+                  contentPadding: EdgeInsets.zero,
+                  title: const Text('Executar somente em dia útil'),
+                  value: _somenteDiaUtil,
+                  onChanged: (v) => setState(() => _somenteDiaUtil = v)),
+              SwitchListTile(
+                  contentPadding: EdgeInsets.zero,
+                  title: const Text('Etapa ativa'),
+                  value: _ativo,
+                  onChanged: (v) => setState(() => _ativo = v)),
+            ]),
+          ),
+        ),
       ),
+      actions: [
+        TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancelar')),
+        FilledButton(onPressed: _salvar, child: const Text('Salvar')),
+      ],
     );
   }
+
+  String? _obrigatorio(String? value) =>
+      value == null || value.trim().isEmpty ? 'Campo obrigatório' : null;
+  String? _inteiroNaoNegativo(String? value) {
+    final numero = int.tryParse(value ?? '');
+    return numero == null || numero < 0 ? 'Informe zero ou mais' : null;
+  }
+
+  String? _inteiroPositivo(String? value) {
+    final numero = int.tryParse(value ?? '');
+    return numero == null || numero < 1 ? 'Informe 1 ou mais' : null;
+  }
+
+  void _salvar() {
+    if (!(_form.currentState?.validate() ?? false)) return;
+    Navigator.pop(
+        context,
+        ReguaCobranca(
+          id: widget.regua?.id,
+          nome: _nome.text.trim(),
+          diasAposVencimento: int.parse(_dias.text),
+          canal: _canal,
+          mensagem: _mensagem.text.trim(),
+          somenteDiaUtil: _somenteDiaUtil,
+          ordem: int.parse(_ordem.text),
+          ativo: _ativo,
+        ));
+  }
+}
+
+class _Titulo extends StatelessWidget {
+  const _Titulo();
+  @override
+  Widget build(BuildContext context) =>
+      const Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Text('Régua de Cobrança',
+            style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
+        SizedBox(height: 4),
+        Text(
+            'Automatize lembretes, acompanhe pendências e preserve o histórico dos contatos.'),
+      ]);
+}
+
+class _EstadoVazio extends StatelessWidget {
+  const _EstadoVazio(
+      {required this.icon,
+      required this.titulo,
+      required this.descricao,
+      this.acao});
+  final IconData icon;
+  final String titulo;
+  final String descricao;
+  final Widget? acao;
+  @override
+  Widget build(BuildContext context) => Center(
+          child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(mainAxisSize: MainAxisSize.min, children: [
+          Icon(icon, size: 48, color: Theme.of(context).colorScheme.outline),
+          const SizedBox(height: 12),
+          Text(titulo,
+              style: Theme.of(context).textTheme.titleMedium,
+              textAlign: TextAlign.center),
+          const SizedBox(height: 6),
+          Text(descricao, textAlign: TextAlign.center),
+          if (acao != null) ...[const SizedBox(height: 10), acao!],
+        ]),
+      ));
+}
+
+class _Chip extends StatelessWidget {
+  const _Chip(this.texto, this.icon, {this.alerta = false});
+  final String texto;
+  final IconData icon;
+  final bool alerta;
+  @override
+  Widget build(BuildContext context) => Chip(
+        avatar: Icon(icon, size: 15),
+        label: Text(texto),
+        backgroundColor: alerta ? Colors.orange.shade50 : null,
+      );
+}
+
+class _Status extends StatelessWidget {
+  const _Status({required this.texto});
+  final String texto;
+  @override
+  Widget build(BuildContext context) =>
+      Chip(label: Text(texto), visualDensity: VisualDensity.compact);
+}
+
+class _CobrancaCard extends StatelessWidget {
+  const _CobrancaCard({required this.cobranca, required this.historico});
+  final CobrancaRegua cobranca;
+  final bool historico;
+  @override
+  Widget build(BuildContext context) => Card(
+          child: ListTile(
+        title: Text(cobranca.clienteNome,
+            style: const TextStyle(fontWeight: FontWeight.w600)),
+        subtitle: Text(
+            '${_moeda(cobranca.valor)} • vencimento ${_data(cobranca.vencimento)}\n${historico ? (cobranca.canal?.label ?? cobranca.etapa ?? '-') : _diasAtraso(cobranca)}'),
+        isThreeLine: true,
+        trailing: _Status(texto: cobranca.status),
+      ));
+}
+
+String _moeda(double valor) =>
+    'R\$ ${valor.toStringAsFixed(2).replaceAll('.', ',')}';
+String _data(DateTime? data) => data == null
+    ? '-'
+    : '${data.day.toString().padLeft(2, '0')}/${data.month.toString().padLeft(2, '0')}/${data.year}';
+String _dataHora(DateTime? data) => data == null
+    ? '-'
+    : '${_data(data)} ${data.hour.toString().padLeft(2, '0')}:${data.minute.toString().padLeft(2, '0')}';
+String _diasAtraso(CobrancaRegua item) {
+  if (item.vencimento == null) return '-';
+  final dias = DateTime.now().difference(item.vencimento!).inDays;
+  return '$dias dia(s)';
 }

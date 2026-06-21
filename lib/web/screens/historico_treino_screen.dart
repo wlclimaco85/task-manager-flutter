@@ -2,6 +2,8 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 
+import '../../../models/auth_utility.dart';
+import '../../../services/pdf_export_service.dart';
 import '../../../utils/api_links.dart';
 import '../../../utils/grid_colors.dart';
 import '../../../utils/tenant_context.dart';
@@ -77,6 +79,25 @@ class _HistoricoTreinoScreenState extends State<HistoricoTreinoScreen> {
     return '$mm:$ss';
   }
 
+  // ── Exporta PDF com o histórico de sessões ──────────────────────────────────
+  Future<void> _exportarPdf() async {
+    final sessoes = await _futureSessoes;
+    final nomeAluno = AuthUtility.userInfo?.data?.codDadosPessoal?.nome ?? 'Aluno';
+    final linhas = sessoes.map((s) {
+      return [
+        _formatarData(s['dataInicio'] ?? s['createdAt']),
+        _formatarDuracao(s['duracaoSegundos']),
+        '${(s['feedbackNota'] as num?)?.toInt() ?? 0}/5',
+        s['feedbackTexto']?.toString() ?? '',
+      ];
+    }).toList();
+    await PdfExportService.exportar(
+      titulo: 'Histórico de Treinos — $nomeAluno',
+      cabecalhos: const ['Data', 'Duração', 'Nota', 'Feedback'],
+      linhas: linhas,
+    );
+  }
+
   // ── Formata data ISO para DD/MM/YYYY HH:MM ──────────────────────────────────
   String _formatarData(dynamic dataIso) {
     if (dataIso == null) return '—';
@@ -100,6 +121,13 @@ class _HistoricoTreinoScreenState extends State<HistoricoTreinoScreen> {
         title: const Text('Histórico de Treinos'),
         backgroundColor: GridColors.primary,
         foregroundColor: GridColors.textPrimary,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.picture_as_pdf),
+            tooltip: 'Exportar PDF',
+            onPressed: () => _exportarPdf(),
+          ),
+        ],
       ),
       body: FutureBuilder<List<Map<String, dynamic>>>(
         future: _futureSessoes,

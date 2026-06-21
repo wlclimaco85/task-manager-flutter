@@ -83,6 +83,7 @@ class _State extends State<NfeSankhyaDetailScreen> {
   String? _destinatarioId;
   String? _formaPagId;
   String? _finalidadeId;
+  String? _serieId; // ID da série selecionada (separado do texto _serieCtrl)
 
   // Dados do usuário logado (para campos disabled)
   String? _empresaNome;
@@ -145,7 +146,14 @@ class _State extends State<NfeSankhyaDetailScreen> {
       _loadList('${ApiLinks.baseUrl}/api/produto-contabil?tamanho=500${empId != null ? '&empId=$empId' : ''}${parcId != null ? '&parceiroId=$parcId' : ''}&isServico=false',
           (d) => setState(() => _produtos = d)),
       _loadList('${ApiLinks.baseUrl}/api/nfe-serie?tamanho=100${empId != null ? '&empId=$empId' : ''}',
-          (d) => setState(() => _series = d)),
+          (d) => setState(() {
+            _series = d;
+            // Resolve _serieId pelo texto já carregado no _serieCtrl (edição de NF-e existente)
+            if (_serieCtrl.text.isNotEmpty && _serieId == null) {
+              final match = d.where((s) => s['serie']?.toString() == _serieCtrl.text).firstOrNull;
+              if (match != null) _serieId = match['id']?.toString();
+            }
+          })),
       _loadList('${ApiLinks.baseUrl}/api/unidade_medida?tamanho=200', (d) => setState(() => _unidades = d)),
       _loadList('${ApiLinks.baseUrl}/api/parceiro?tamanho=500${empId != null ? '&empId=$empId' : ''}',
           (d) => setState(() => _parceiros = d)),
@@ -688,7 +696,7 @@ class _State extends State<NfeSankhyaDetailScreen> {
         // Série: dropdown para SAÍDA (auto-preenche número), input para ENTRADA
         _isEntrada
           ? _inp('Série', _serieCtrl)
-          : _ddObjSerie('Série', _serieCtrl.text, _series),
+          : _ddObjSerie('Série', _serieId, _series),
         // Tipo de Operação: usado para pré-preencher CFOP/CST/Alíquota ICMS no Novo Item
         _ddTipoOperacao(),
         // Status: disabled (PENDENTE no insert, muda só ao transmitir)
@@ -1067,12 +1075,12 @@ class _State extends State<NfeSankhyaDetailScreen> {
   }
 
   // Dropdown de série para NF-e SAÍDA — ao selecionar, busca próximo número
-  Widget _ddObjSerie(String label, String? val, List<Map<String, dynamic>> opts) {
+  Widget _ddObjSerie(String label, String? serieId, List<Map<String, dynamic>> opts) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
       child: SearchableDropdownField(
         label: label,
-        value: opts.any((o) => o['id']?.toString() == val) ? val : null,
+        value: opts.any((o) => o['id']?.toString() == serieId) ? serieId : null,
         items: opts
             .map((o) => <String, dynamic>{
                   'id': o['id']?.toString() ?? '',
@@ -1087,15 +1095,16 @@ class _State extends State<NfeSankhyaDetailScreen> {
           if (v == null) return;
           final serie = opts.firstWhere((o) => o['id']?.toString() == v, orElse: () => {});
           setState(() {
+            _serieId = v;
             _serieCtrl.text = serie['serie']?.toString() ?? '';
           });
-          // Busca próximo número da série
+          // Busca próximo número da série e preenche campo Número
           try {
             final r = await TenantContext.get('${ApiLinks.baseUrl}/api/nfe-serie/$v');
             if (r.statusCode == 200) {
               final b = jsonDecode(r.body);
-              final num = b['numeroAtual']?.toString() ?? '';
-              setState(() => _numeroCtrl.text = num);
+              final num = b['data']?['numeroAtual']?.toString() ?? b['numeroAtual']?.toString() ?? '';
+              if (num.isNotEmpty) setState(() => _numeroCtrl.text = num);
             }
           } catch (_) {}
         },
@@ -1567,3 +1576,5 @@ class _DestinatarioSearchState extends State<_DestinatarioSearch> {
     );
   }
 }
+
+
