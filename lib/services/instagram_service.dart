@@ -351,6 +351,27 @@ class InstagramService {
     return [];
   }
 
+  static Future<List<InstagramPost>> fetchPostsFromDb(String username) async {
+    final clean = username.replaceAll('@', '').trim();
+    if (clean.isEmpty) return [];
+    try {
+      final r = await http.get(
+        Uri.parse('$_backendUrl/api/instagram/posts/${Uri.encodeComponent(clean)}'),
+        headers: await AuthService().jsonHeaders(),
+      ).timeout(const Duration(seconds: 15));
+      if (r.statusCode == 200) {
+        final data = json.decode(r.body);
+        if (data is List) {
+          return data
+              .whereType<Map>()
+              .map((post) => InstagramPost.fromJson(Map<String, dynamic>.from(post)))
+              .toList();
+        }
+      }
+    } catch (_) {}
+    return [];
+  }
+
   static Future<List<InstagramLiker>> fetchLikers(String mediaId) async {
     if (!_localAvailable) return [];
     try {
