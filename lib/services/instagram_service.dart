@@ -97,24 +97,33 @@ class InstagramPost {
   /// URL estavel para a imagem do post.
   /// Usa shortcode (nao expira) quando disponivel; fallback para display_url.
   String get imageUrl {
-    if (shortcode.isNotEmpty) {
-      return 'https://www.instagram.com/p/$shortcode/media/?size=t';
+    // Imagem do post passa pelo mesmo proxy do backend que a foto de perfil usa,
+    // evitando o bloqueio de CORS/login-wall do CDN do Instagram no Flutter Web.
+    if (displayUrl.isNotEmpty) {
+      return ApiLinks.imageProxy(displayUrl);
     }
-    return displayUrl;
+    if (shortcode.isNotEmpty) {
+      return ApiLinks.imageProxy('https://www.instagram.com/p/$shortcode/media/?size=t');
+    }
+    return '';
   }
 
   factory InstagramPost.fromJson(Map<String, dynamic> json) {
-    if (json.containsKey('display_url')) {
+    // Backend Java serializa a entidade em camelCase (displayUrl/likesCount/commentsCount/
+    // isVideo/postId/postDate); a API Python usa snake_case (display_url/likes/comments).
+    // Aceita os dois formatos para nao cair no branch GraphQL (que zerava likes/comments
+    // e deixava a imagem vazia).
+    if (json.containsKey('display_url') || json.containsKey('displayUrl')) {
       return InstagramPost(
-        id: (json['id'] ?? '').toString(),
-        shortcode: json['shortcode'] ?? json['id']?.toString() ?? '',
-        displayUrl: json['display_url'] ?? '',
+        id: (json['postId'] ?? json['id'] ?? '').toString(),
+        shortcode: json['shortcode'] ?? '',
+        displayUrl: json['displayUrl'] ?? json['display_url'] ?? '',
         caption: json['caption'],
-        likes: json['likes'] ?? 0,
-        comments: json['comments'] ?? 0,
-        timestamp: json['timestamp'] ?? '',
-        isVideo: json['is_video'] ?? false,
-        videoUrl: json['video_url'],
+        likes: json['likesCount'] ?? json['likes'] ?? 0,
+        comments: json['commentsCount'] ?? json['comments'] ?? 0,
+        timestamp: (json['postDate'] ?? json['timestamp'] ?? '').toString(),
+        isVideo: json['isVideo'] ?? json['is_video'] ?? false,
+        videoUrl: json['videoUrl'] ?? json['video_url'],
       );
     }
     final edgeLiked = json['edge_liked_by'] ?? json['edge_media_preview_like'] ?? {};
