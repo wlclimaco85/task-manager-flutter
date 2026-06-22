@@ -122,10 +122,9 @@ class _BaixaDialogState extends State<BaixaDialog> {
                     letterSpacing: 0.2,
                   ),
                 ),
-                if (widget.conta.descricao != null &&
-                    widget.conta.descricao!.isNotEmpty)
+                if (widget.conta.descricao.isNotEmpty)
                   Text(
-                    widget.conta.descricao!,
+                    widget.conta.descricao,
                     style: const TextStyle(
                       color: GridColors.textPrimaryMuted,
                       fontSize: 12,

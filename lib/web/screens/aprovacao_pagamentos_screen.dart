@@ -397,7 +397,7 @@ class _WebAprovacaoPagamentosScreenState
               DataCell(Text(_fmtValor(item['valor'] ?? item['valorTotal']),
                   style: const TextStyle(fontWeight: FontWeight.w600))),
               DataCell(Text(
-                  item['dataVencimento']?.toString()?.substring(0, 10) ??
+                  item['dataVencimento']?.toString().substring(0, 10) ??
                       '-')),
               DataCell(Text(item['solicitanteNome']?.toString() ?? '-')),
               DataCell(Row(
@@ -502,8 +502,8 @@ class _WebAprovacaoPagamentosScreenState
               ),
               DataCell(Text(item['justificativa']?.toString() ?? '-')),
               DataCell(Text(
-                  item['dataAprovacao']?.toString()?.substring(0, 10) ??
-                      item['data']?.toString()?.substring(0, 10) ??
+                  item['dataAprovacao']?.toString().substring(0, 10) ??
+                      item['data']?.toString().substring(0, 10) ??
                       '-')),
             ]);
           }).toList(),

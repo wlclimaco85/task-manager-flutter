@@ -458,7 +458,7 @@ class _PagamentoCard extends StatelessWidget {
 
   String get _descricao => conta['descricao']?.toString() ?? 'Sem descrição';
   String get _tipo => conta['_tipo']?.toString() ?? 'PAGAR';
-  String get _vencimento => conta['dataVencimento']?.toString()?.substring(0, 10) ?? '-';
+  String get _vencimento => conta['dataVencimento']?.toString().substring(0, 10) ?? '-';
   dynamic get _valor => conta['valor'] ?? 0;
   String get _status => (conta['status'] ?? '').toString();
   int? get _id => conta['id'] is int ? conta['id'] as int : int.tryParse('${conta['id']}');

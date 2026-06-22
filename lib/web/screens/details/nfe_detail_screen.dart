@@ -13,6 +13,7 @@ import '../../../utils/api_links.dart';
 import '../../../utils/tenant_context.dart';
 import '../../../widgets/searchable_dropdown.dart';
 import '../../../utils/grid_texts.dart';
+import '../produto_grid_screen.dart';
 
 const _red = GridColors.primary;
 const _green = GridColors.secondary;
@@ -999,6 +1000,18 @@ class _State extends State<NfeSankhyaDetailScreen> {
           }
         });
       }),
+      // Estado vazio do lookup de Produto: oferece cadastro de novo produto
+      if (_produtos.isEmpty)
+        Padding(
+          padding: const EdgeInsets.only(bottom: 8),
+          child: SizedBox(width: double.infinity, child: OutlinedButton.icon(
+            onPressed: _abrirCadastroProduto,
+            icon: const Icon(Icons.add_business, size: 14),
+            label: const Text('Cadastrar novo produto', style: TextStyle(fontSize: 11)),
+            style: OutlinedButton.styleFrom(foregroundColor: _green, side: const BorderSide(color: _green),
+              padding: const EdgeInsets.symmetric(vertical: 6)),
+          )),
+        ),
       _iInp('Descrição (xProd)', item, 'x_prod', 'xProd'),
       _iInp('NCM', item, 'ncm', 'ncm'),
       _iInp('CFOP', item, 'cfop', 'cfop'),
@@ -1144,6 +1157,31 @@ class _State extends State<NfeSankhyaDetailScreen> {
     _selItem = _itens.length - 1;
     _itensGrid = false;
   });
+
+  /// Abre a tela de cadastro de Produto a partir do lookup vazio.
+  /// Preserva o contexto da NF-e: ao retornar, recarrega a lista de produtos
+  /// para que o item recém-cadastrado fique disponível no dropdown.
+  Future<void> _abrirCadastroProduto() async {
+    await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => WebProdutoGridScreen(hasPermission: (p) => true),
+      ),
+    );
+    if (!mounted) return;
+    await _recarregarProdutos();
+  }
+
+  /// Recarrega apenas a lista de produtos contábeis (mesma query do _loadDropdowns).
+  Future<void> _recarregarProdutos() async {
+    final login = AuthUtility.userInfo?.login;
+    final parcId = login?.parceiro?.id?.toString() ?? _parceiroId;
+    final empId  = login?.empresa?.id?.toString() ?? _empresaId;
+    await _loadList(
+      '${ApiLinks.baseUrl}/api/produto-contabil?tamanho=500${empId != null ? '&empId=$empId' : ''}${parcId != null ? '&parceiroId=$parcId' : ''}&isServico=false',
+      (d) => setState(() => _produtos = d),
+    );
+  }
 
   /// Grid sem AppBar — usa MediaQuery para dar padding zero ao topo
   /// evitando o header duplo dentro do detail
