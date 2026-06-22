@@ -95,8 +95,6 @@ import '../../features/trading/screens/backtest_screen.dart';
 import '../../features/trading/screens/trading_config_screen.dart';
 import '../../features/trading/services/backtest_repository.dart';
 import '../../features/trading/screens/carteira_screen.dart';
-import 'package:task_manager_flutter/features/diario_nutricional/diario_nutricional_screen.dart';
-import 'package:task_manager_flutter/features/hidratacao/hidratacao_screen.dart';
 import '../../utils/api_links.dart';
 import '../../utils/tenant_context.dart';
 import '../../utils/menu_config.dart';
@@ -458,8 +456,8 @@ class _WebBottomNavBarScreenState extends State<WebBottomNavBarScreen> {
       const KanbanPagamentosScreen(), // 122: Kanban de Pagamentos
       const WebAprovacaoPagamentosScreen(), // 123: Aprovacao de Pagamentos
       WebAcademiaGridScreen(hasPermission: (p) => true), // 124: Academia
-      const HidratacaoScreen(), // 125: Hidratacao
-      const DiarioNutricionalScreen(), // 126: Diario nutricional
+      const SizedBox.shrink(), // 125: reservado AppAcademiaV003
+      const SizedBox.shrink(), // 126: reservado AppAcademiaV003
       const SizedBox.shrink(), // 127
       const SizedBox.shrink(), // 128
       const SizedBox.shrink(), // 129

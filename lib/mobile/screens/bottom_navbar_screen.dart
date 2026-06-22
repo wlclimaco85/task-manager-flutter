@@ -19,8 +19,6 @@ import 'dashboard_screen.dart';
 import '../../features/trading/trading_dashboard_screen.dart';
 import '../../features/trading/screens/backtest_screen.dart';
 import '../../features/trading/services/backtest_repository.dart';
-import 'package:task_manager_flutter/features/diario_nutricional/diario_nutricional_screen.dart';
-import 'package:task_manager_flutter/features/hidratacao/hidratacao_screen.dart';
 import '../../utils/api_links.dart';
 import '../../utils/app_logger.dart';
 import '../../utils/tenant_context.dart';
@@ -687,18 +685,6 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
           MaterialPageRoute(builder: (_) => const PontoScreen()),
         );
         break;
-      case "Hidratacao":
-        nav = Navigator.push(
-          context,
-          MaterialPageRoute(builder: (_) => const HidratacaoScreen()),
-        );
-        break;
-      case "Diario nutricional":
-        nav = Navigator.push(
-          context,
-          MaterialPageRoute(builder: (_) => const DiarioNutricionalScreen()),
-        );
-        break;
       case "Funcionários":
         nav = _pushDynamicGrid(
           telaNome: 'funcionario',
@@ -859,9 +845,6 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
         const _MoreMenuAction(Icons.people, "Parceiros"),
       if (sec.canView(AppScreen.mensalidades))
         const _MoreMenuAction(Icons.receipt_long, "Mensalidades"),
-      const _MoreMenuAction(Icons.water_drop_outlined, "Hidratacao"),
-      const _MoreMenuAction(
-          Icons.restaurant_menu_outlined, "Diario nutricional"),
       const _MoreMenuAction(Icons.verified_user, "Alvarás"),
       const _MoreMenuAction(Icons.account_circle, "Meu Perfil"),
       if (sec.canView(AppScreen.contasBancarias))
