@@ -648,6 +648,7 @@ class _GridFormDialogState extends State<GridFormDialog> {
 
       dynamic resp;
       if (filesToUpload.isNotEmpty) {
+        _prepareMultipartFields(formData, filesToUpload);
         L.d('[GridForm] sending MULTIPART to: $endpoint');
         resp = await sendMultipart(
           endpoint: endpoint,
@@ -677,6 +678,54 @@ class _GridFormDialogState extends State<GridFormDialog> {
     } finally {
       if (mounted) setState(() => _saving = false);
     }
+  }
+
+  void _prepareMultipartFields(
+    Map<String, dynamic> formData,
+    List<MultipartFieldFile> filesToUpload,
+  ) {
+    formData.putIfAbsent(
+      'fileName',
+      () => filesToUpload.first.file.name?.toString() ?? '',
+    );
+    formData.putIfAbsent(
+      'fileType',
+      () => _mimeFromFileName(filesToUpload.first.file.name?.toString() ?? ''),
+    );
+
+    for (final key in const ['empresa', 'diretorio', 'parceiro']) {
+      final value = formData[key];
+      if (value == null || value.toString().trim().isEmpty) {
+        if (key == 'parceiro') formData[key] = jsonEncode({'id': null});
+        continue;
+      }
+      if (value is Map) {
+        formData[key] = jsonEncode(value);
+        continue;
+      }
+      final text = value.toString().trim();
+      if (text.startsWith('{')) continue;
+      final parsed = int.tryParse(text);
+      formData[key] = jsonEncode({'id': parsed ?? text});
+    }
+  }
+
+  String _mimeFromFileName(String name) {
+    final lower = name.toLowerCase();
+    if (lower.endsWith('.jpg') || lower.endsWith('.jpeg')) return 'image/jpeg';
+    if (lower.endsWith('.png')) return 'image/png';
+    if (lower.endsWith('.webp')) return 'image/webp';
+    if (lower.endsWith('.pdf')) return 'application/pdf';
+    if (lower.endsWith('.doc')) return 'application/msword';
+    if (lower.endsWith('.docx')) {
+      return 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
+    }
+    if (lower.endsWith('.xls')) return 'application/vnd.ms-excel';
+    if (lower.endsWith('.xlsx')) {
+      return 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
+    }
+    if (lower.endsWith('.csv')) return 'text/csv';
+    return 'application/octet-stream';
   }
 
   void _snack(String msg) {

@@ -30,6 +30,7 @@ import './regime_grid_screen.dart';
 import './noticias_grid_screen.dart';
 import './conta_pagar_grid_screen.dart';
 import './dashboard_financeiro_screen.dart';
+import './mensalidade_dashboard_screen.dart';
 import '../../widgets/dashboard_area/placeholder/dashboard_financeiro_area_placeholder_screen.dart';
 import '../../widgets/dashboard_area/placeholder/dashboard_dp_area_placeholder_screen.dart';
 import '../../widgets/dashboard_area/placeholder/dashboard_atendimento_placeholder_screen.dart';
@@ -480,6 +481,7 @@ class _WebBottomNavBarScreenState extends State<WebBottomNavBarScreen> {
       const DashboardAtendimentoPlaceholderScreen(), // 144: Dashboard Atendimento (Área)
       const DashboardComercialPlaceholderScreen(), // 145: Dashboard Comercial (Área)
       const DashboardFiscalPlaceholderScreen(), // 146: Dashboard Fiscal (Área)
+      const WebMensalidadeDashboardScreen(), // 147: Dashboard de Mensalidades
     ];
   }
 

@@ -959,6 +959,12 @@ class ApiLinks {
   static String get allNfseSerie => '$_baseUrlNew/api/nfse_serie';
   static String nfseSerie(String id) => '$_baseUrlNew/api/nfse_serie/$id';
 
+  // Dashboard de mensalidades/modulos (pago/atrasado/pendente) + relatorio PDF
+  static String get mensalidadeDashboard =>
+      '$_baseUrlNew/api/financeiro/mensalidade-dashboard';
+  static String get mensalidadeDashboardPdf =>
+      '$_baseUrlNew/api/financeiro/mensalidade-dashboard/relatorio-pdf';
+
   // CRM / RecorrÃªncias e Faturas
   static String get allRecurringContracts => '$_baseUrlNew/api/crm/contracts';
   static String get createRecurringContract => '$_baseUrlNew/api/crm/contracts';

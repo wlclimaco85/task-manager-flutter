@@ -740,6 +740,11 @@ class _JobsSectionState extends State<_JobsSection> {
       'label': 'Cotacao Dolar',
       'cron': 'Seg-Sex a cada hora'
     },
+    {
+      'nome': 'MensalidadeEscritorioJob',
+      'label': 'Mensalidade do Escritorio (gera parcela)',
+      'cron': '1o dia do mes 06:00'
+    },
   ];
 
   @override
