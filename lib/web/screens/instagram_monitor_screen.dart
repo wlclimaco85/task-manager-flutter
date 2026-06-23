@@ -568,7 +568,7 @@ class _InstagramMonitorScreenState extends State<InstagramMonitorScreen> with Ti
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
-              const SizedBox(height: 4),
+              _buildCollectionStatusBadge(profile),
               if (profileId != null)
                 GestureDetector(
                   onTap: () => _untrackProfile(username, profileId),
@@ -593,6 +593,90 @@ class _InstagramMonitorScreenState extends State<InstagramMonitorScreen> with Ti
         ),
       ),
     );
+  }
+
+  Widget _buildCollectionStatusBadge(Map<String, dynamic> profile) {
+    final collectionStatus = profile['collectionStatus'];
+    final followers = _collectionStatusItem(collectionStatus, 'followers');
+    final following = _collectionStatusItem(collectionStatus, 'following');
+    final status = _worstCollectionStatus([
+      followers['status']?.toString(),
+      following['status']?.toString(),
+    ]);
+    final color = _collectionStatusColor(status);
+    final label = status;
+    final tooltip = [
+      'Seguidores: ${_statusTooltipLine(followers)}',
+      'Seguindo: ${_statusTooltipLine(following)}',
+    ].join('\n');
+
+    return Tooltip(
+      message: tooltip,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+        decoration: BoxDecoration(
+          color: color.withValues(alpha: 0.1),
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: color.withValues(alpha: 0.35)),
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            fontSize: 8,
+            color: color,
+            fontWeight: FontWeight.w800,
+          ),
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+        ),
+      ),
+    );
+  }
+
+  Map<String, dynamic> _collectionStatusItem(dynamic collectionStatus, String key) {
+    if (collectionStatus is Map && collectionStatus[key] is Map) {
+      return Map<String, dynamic>.from(collectionStatus[key] as Map);
+    }
+    return const {
+      'status': 'DESCONHECIDA',
+      'source': '',
+      'reason': 'sem_coleta',
+      'count': 0,
+      'expectedCount': 0,
+    };
+  }
+
+  String _worstCollectionStatus(List<String?> statuses) {
+    final normalized = statuses
+        .map((s) => (s ?? 'DESCONHECIDA').toUpperCase())
+        .toList();
+    if (normalized.contains('VAZIA')) return 'VAZIA';
+    if (normalized.contains('TRUNCADA')) return 'TRUNCADA';
+    if (normalized.contains('DESCONHECIDA')) return 'DESCONHECIDA';
+    if (normalized.contains('COMPLETA')) return 'COMPLETA';
+    return 'DESCONHECIDA';
+  }
+
+  Color _collectionStatusColor(String status) {
+    switch (status) {
+      case 'COMPLETA':
+        return const Color(0xFF2E7D32);
+      case 'TRUNCADA':
+        return const Color(0xFFF9A825);
+      case 'VAZIA':
+        return const Color(0xFFC62828);
+      default:
+        return const Color(0xFF757575);
+    }
+  }
+
+  String _statusTooltipLine(Map<String, dynamic> item) {
+    final status = item['status']?.toString() ?? 'DESCONHECIDA';
+    final source = item['source']?.toString() ?? '';
+    final reason = item['reason']?.toString() ?? '';
+    final count = item['count']?.toString() ?? '0';
+    final expected = item['expectedCount']?.toString() ?? '0';
+    return '$status ($source/$reason, $count/$expected)';
   }
 
   // --- Widgets da UI ---
