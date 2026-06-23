@@ -4,6 +4,7 @@ import 'dart:async';
 import 'package:fl_chart/fl_chart.dart';
 import '../../services/instagram_service.dart';
 import '../../utils/api_links.dart';
+import '../../models/instagram_historico_item.dart';
 
 class InstagramMonitorScreen extends StatefulWidget {
   const InstagramMonitorScreen({super.key});
@@ -38,6 +39,13 @@ class _InstagramMonitorScreenState extends State<InstagramMonitorScreen> with Ti
   List<Map<String, dynamic>> _changeLogs = [];
   bool _loadingLogs = false;
 
+  // Histórico unificado
+  List<InstagramHistoricoItem> _historico = [];
+  bool _loadingHistorico = false;
+  int _historicoPagina = 0;
+  bool _historicoTemMais = false;
+  int _historicoTotal = 0;
+
   // Novos estados para chips e monitoramento
   String? _selectedChipUsername;
   bool _showMonitorButtons = false;
@@ -66,7 +74,7 @@ class _InstagramMonitorScreenState extends State<InstagramMonitorScreen> with Ti
     super.initState();
     _animController = AnimationController(vsync: this, duration: const Duration(milliseconds: 600));
     _fadeAnimation = CurvedAnimation(parent: _animController, curve: Curves.easeInOut);
-    _tabController = TabController(length: 4, vsync: this);
+    _tabController = TabController(length: 5, vsync: this);
     _checkLocalApi();
     _loadTrackedProfiles();
   }
@@ -203,6 +211,42 @@ class _InstagramMonitorScreenState extends State<InstagramMonitorScreen> with Ti
     }
   }
 
+  Future<void> _loadHistorico(String username, {bool resetar = true}) async {
+    if (resetar) {
+      setState(() {
+        _loadingHistorico = true;
+        _historico = [];
+        _historicoPagina = 0;
+        _historicoTemMais = false;
+        _historicoTotal = 0;
+      });
+    } else {
+      setState(() => _loadingHistorico = true);
+    }
+    final resp = await InstagramService.fetchHistorico(
+      username,
+      page: resetar ? 0 : _historicoPagina,
+      size: 50,
+    );
+    final novos = (resp['items'] as List? ?? [])
+        .whereType<Map>()
+        .map((e) => InstagramHistoricoItem.fromJson(Map<String, dynamic>.from(e)))
+        .toList();
+    if (mounted) {
+      setState(() {
+        if (resetar) {
+          _historico = novos;
+        } else {
+          _historico = [..._historico, ...novos];
+        }
+        _historicoPagina = (resp['page'] as num?)?.toInt() ?? 0;
+        _historicoTemMais = resp['hasMore'] as bool? ?? false;
+        _historicoTotal = (resp['total'] as num?)?.toInt() ?? 0;
+        _loadingHistorico = false;
+      });
+    }
+  }
+
   Future<void> _loadDashboard(String username) async {
     setState(() => _dashLoading = true);
     final d = await InstagramService.fetchDashboard(username);
@@ -289,8 +333,9 @@ class _InstagramMonitorScreenState extends State<InstagramMonitorScreen> with Ti
     final timelineTotal = (timelineResp['total'] as num).toInt();
     final timelineTemMais = timelineResp['hasMore'] as bool;
 
-    // 3. Carregar logs de alteracoes e dashboard
+    // 3. Carregar logs de alteracoes, historico e dashboard
     _loadChangeLogs(username);
+    _loadHistorico(username);
     _loadDashboard(username);
 
     if (mounted) {
@@ -1163,6 +1208,7 @@ class _InstagramMonitorScreenState extends State<InstagramMonitorScreen> with Ti
           Tab(icon: Icon(Icons.timeline, size: 18), text: 'Timeline'),
           Tab(icon: Icon(Icons.receipt_long, size: 18), text: 'Logs'),
           Tab(icon: Icon(Icons.dashboard_outlined, size: 18), text: 'Dashboard'),
+          Tab(icon: Icon(Icons.history, size: 18), text: 'Histórico'),
         ],
       ),
     );
@@ -1198,6 +1244,7 @@ class _InstagramMonitorScreenState extends State<InstagramMonitorScreen> with Ti
             child: _buildChangeLogsSection(),
           ),
           _buildDashboardTab(),
+          _buildHistoricoTab(),
         ],
       ),
     );
@@ -2439,6 +2486,227 @@ class _InstagramMonitorScreenState extends State<InstagramMonitorScreen> with Ti
           ),
           Text(dateStr, style: TextStyle(fontSize: 10, color: Colors.grey[500])),
         ],
+      ),
+    );
+  }
+
+  // ====================== ABA HISTÓRICO ======================
+
+  Widget _buildHistoricoTab() {
+    if (_loadingHistorico && _historico.isEmpty) {
+      return const Center(child: CircularProgressIndicator(color: Color(0xFFE1306C)));
+    }
+
+    if (_historico.isEmpty) {
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.all(32),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: const [
+              Icon(Icons.history, size: 48, color: Colors.black26),
+              SizedBox(height: 12),
+              Text(
+                'Sem dados no histórico',
+                style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: Colors.black45),
+              ),
+              SizedBox(height: 4),
+              Text(
+                'Os registros aparecem conforme o monitor coleta eventos',
+                style: TextStyle(fontSize: 12, color: Colors.black38),
+                textAlign: TextAlign.center,
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    return ListView.separated(
+      padding: const EdgeInsets.all(12),
+      itemCount: _historico.length + (_historicoTemMais ? 1 : 0),
+      separatorBuilder: (_, __) => const SizedBox(height: 6),
+      itemBuilder: (context, index) {
+        if (index == _historico.length) {
+          return Padding(
+            padding: const EdgeInsets.symmetric(vertical: 12),
+            child: Center(
+              child: _loadingHistorico
+                  ? const CircularProgressIndicator(color: Color(0xFFE1306C), strokeWidth: 2)
+                  : OutlinedButton.icon(
+                      onPressed: () async {
+                        setState(() {
+                          _historicoPagina += 1;
+                          _loadingHistorico = true;
+                        });
+                        await _loadHistorico(_currentUsername, resetar: false);
+                      },
+                      icon: const Icon(Icons.expand_more, size: 18),
+                      label: Text('Carregar mais (${_historico.length} de $_historicoTotal)'),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: const Color(0xFFE1306C),
+                        side: const BorderSide(color: Color(0xFFE1306C)),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                      ),
+                    ),
+            ),
+          );
+        }
+        return _buildHistoricoItem(_historico[index]);
+      },
+    );
+  }
+
+  IconData _iconeOrigem(String origem) {
+    switch (origem) {
+      case 'interacao_following':
+        return Icons.chat_bubble_outline;
+      case 'change_log':
+        return Icons.bar_chart;
+      default:
+        return Icons.timeline;
+    }
+  }
+
+  String _labelTipoAcao(String tipoAcao) {
+    switch (tipoAcao) {
+      case 'new_follower':
+        return 'Novo seguidor';
+      case 'unfollowed':
+        return 'Perdeu seguidor';
+      case 'you_followed':
+        return 'Passou a seguir';
+      case 'unfollowed_by_you':
+        return 'Deixou de seguir';
+      case 'CURTIU':
+        return 'Curtiu post';
+      case 'COMENTOU':
+        return 'Comentou post';
+      case 'bio_updated':
+        return 'Bio atualizada';
+      case 'followers_count':
+        return 'Contagem seguidores';
+      case 'following_count':
+        return 'Contagem seguindo';
+      case 'posts_count':
+        return 'Contagem posts';
+      default:
+        return tipoAcao;
+    }
+  }
+
+  Color _corOrigem(String origem) {
+    switch (origem) {
+      case 'interacao_following':
+        return const Color(0xFF833AB4);
+      case 'change_log':
+        return const Color(0xFF1565C0);
+      default:
+        return const Color(0xFFE1306C);
+    }
+  }
+
+  Widget _buildHistoricoItem(InstagramHistoricoItem item) {
+    final cor = _corOrigem(item.origem);
+    final icone = _iconeOrigem(item.origem);
+    final label = _labelTipoAcao(item.tipoAcao);
+
+    String dataFormatada = '';
+    if (item.ocorridoEm != null && item.ocorridoEm!.isNotEmpty) {
+      try {
+        final dt = DateTime.parse(item.ocorridoEm!);
+        dataFormatada =
+            '${dt.day.toString().padLeft(2, '0')}/${dt.month.toString().padLeft(2, '0')} '
+            '${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}';
+      } catch (_) {
+        dataFormatada = item.ocorridoEm!;
+      }
+    }
+
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: cor.withValues(alpha: 0.06),
+            blurRadius: 6,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: cor.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Icon(icone, size: 18, color: cor),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                        decoration: BoxDecoration(
+                          color: cor.withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        child: Text(
+                          label,
+                          style: TextStyle(
+                            fontSize: 11,
+                            color: cor,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ),
+                      const Spacer(),
+                      Text(
+                        dataFormatada,
+                        style: const TextStyle(fontSize: 10, color: Colors.black38),
+                      ),
+                    ],
+                  ),
+                  if (item.atorUsername != null && item.atorUsername!.isNotEmpty) ...[
+                    const SizedBox(height: 4),
+                    Text(
+                      '@${item.atorUsername}${item.atorFullName != null && item.atorFullName!.isNotEmpty ? '  ${item.atorFullName}' : ''}',
+                      style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF262626)),
+                    ),
+                  ],
+                  if (item.texto != null && item.texto!.isNotEmpty) ...[
+                    const SizedBox(height: 4),
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: Colors.grey[50],
+                        borderRadius: BorderRadius.circular(6),
+                        border: Border.all(color: Colors.grey[200]!),
+                      ),
+                      child: Text(
+                        item.texto!,
+                        style: const TextStyle(fontSize: 12, color: Color(0xFF262626), height: 1.4),
+                        maxLines: 3,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

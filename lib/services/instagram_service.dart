@@ -593,6 +593,22 @@ class InstagramService {
     return [];
   }
 
+  /// Retorna o histórico unificado de ações para o username monitorado.
+  /// Endpoint: GET /api/instagram/historico/{username}?page=0&size=50
+  static Future<Map<String, dynamic>> fetchHistorico(
+      String username, {int page = 0, int size = 50}) async {
+    try {
+      final r = await http.get(
+        Uri.parse('$_backendUrl/api/instagram/historico/${Uri.encodeComponent(username)}?page=$page&size=$size'),
+        headers: await AuthService().jsonHeaders(),
+      ).timeout(const Duration(seconds: 20));
+      if (r.statusCode == 200) {
+        return json.decode(r.body) as Map<String, dynamic>;
+      }
+    } catch (_) {}
+    return {'items': <dynamic>[], 'total': 0, 'page': page, 'size': size, 'hasMore': false};
+  }
+
   static Future<List<Map<String, dynamic>>> fetchChangeLogs(String username) async {
     try {
       final r = await http.get(
