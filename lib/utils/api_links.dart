@@ -1068,7 +1068,7 @@ class ApiLinks {
 
   // Dashboard Financeiro Gerencial
   static const String dashboardFinanceiro =
-      '$_baseUrlNew/api/dashboard/financeiro';
+      '$_baseUrlNew/api/financeiro/dashboard';
 
   // ConciliaÃ§Ã£o BancÃ¡ria
   static const String conciliacaoPendentes =
@@ -1151,9 +1151,9 @@ class ApiLinks {
 
   // Dashboard Financeiro KPIs
   static String dashboardFinanceiroKpis({String? empresaId, int? dias}) =>
-      '$_baseUrlNew/api/dashboard/financeiro/kpis${_buildQueryParams(empresaId: empresaId, dias: dias)}';
+      '$_baseUrlNew/api/financeiro/dashboard/kpis${_buildQueryParams(empresaId: empresaId, dias: dias)}';
   static String dashboardFinanceiroProjecao({String? empresaId, int? meses}) =>
-      '$_baseUrlNew/api/dashboard/financeiro/projecao${_buildQueryParams(empresaId: empresaId, meses: meses)}';
+      '$_baseUrlNew/api/financeiro/dashboard/projecao${_buildQueryParams(empresaId: empresaId, meses: meses)}';
 
   // Exportação Power BI / CSV
   static String exportarCsv(String tipo) =>

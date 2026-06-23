@@ -29,4 +29,28 @@ class DashboardFinanceiroCaller {
     }
     return {};
   }
+
+  Future<Map<String, dynamic>> obterKpis({int? empresaId, int? dias}) async {
+    final url = ApiLinks.dashboardFinanceiroKpis(
+      empresaId: empresaId?.toString(),
+      dias: dias,
+    );
+    final NetworkResponse response = await NetworkCaller().getRequest(url);
+    if (response.isSuccess && response.body != null) {
+      return Map<String, dynamic>.from(response.body!);
+    }
+    return {};
+  }
+
+  Future<List<dynamic>> obterProjecao({int? empresaId, int? meses}) async {
+    final url = ApiLinks.dashboardFinanceiroProjecao(
+      empresaId: empresaId?.toString(),
+      meses: meses,
+    );
+    final NetworkResponse response = await NetworkCaller().getRequest(url);
+    if (response.isSuccess && response.body != null && response.body is List) {
+      return response.body as List<dynamic>;
+    }
+    return [];
+  }
 }

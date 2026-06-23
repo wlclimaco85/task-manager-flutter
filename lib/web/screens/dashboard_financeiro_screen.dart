@@ -76,14 +76,24 @@ class _WebDashboardFinanceiroScreenState
     });
 
     try {
-      final data = await DashboardFinanceiroCaller().obterDashboard(
+      final results = await Future.wait([
+        DashboardFinanceiroCaller().obterDashboard(
+          empresaId: _empresaId,
+          contaBancariaId: _contaBancariaId,
+          dataInicio: _dataInicio?.toIso8601String().split('T').first,
+          dataFim: _dataFim?.toIso8601String().split('T').first,
+        ),
+        DashboardFinanceiroCaller().obterKpis(empresaId: _empresaId),
+      ]);
+
+      final projecaoRaw = await DashboardFinanceiroCaller().obterProjecao(
         empresaId: _empresaId,
-        contaBancariaId: _contaBancariaId,
-        dataInicio: _dataInicio?.toIso8601String().split('T').first,
-        dataFim: _dataFim?.toIso8601String().split('T').first,
       );
 
       if (!mounted) return;
+
+      final data = results[0];
+      final kpisData = results[1];
 
       if (data.isEmpty) {
         setState(() {
@@ -93,7 +103,7 @@ class _WebDashboardFinanceiroScreenState
         return;
       }
 
-      final body = data['data'] is Map ? data['data'] : data;
+      final body = (data['data'] is Map ? data['data'] : data) as Map;
 
       setState(() {
         _aPagar = _toDouble(body['aPagar'] ?? body['totalAPagar'] ?? 0);
@@ -103,19 +113,18 @@ class _WebDashboardFinanceiroScreenState
         _totalVencido =
             _toDouble(body['totalVencido'] ?? body['vencido'] ?? 0);
 
-        // KPIs adicionais
-        _kpiSaldo = _toDouble(body['kpiSaldo'] ?? body['saldoAtual'] ?? _saldoProjetado);
-        _kpiEntradas = _toDouble(body['kpiEntradas'] ?? body['totalEntradas'] ?? 0);
-        _kpiSaidas = _toDouble(body['kpiSaidas'] ?? body['totalSaidas'] ?? 0);
-        _kpiInadimplencia = _toDouble(body['kpiInadimplencia'] ?? body['inadimplencia'] ?? 0);
+        // KPIs do endpoint /kpis
+        _kpiSaldo = _toDouble(kpisData['saldoAtual'] ?? _saldoProjetado);
+        _kpiEntradas = _toDouble(kpisData['totalEntradas'] ?? 0);
+        _kpiSaidas = _toDouble(kpisData['totalSaidas'] ?? 0);
+        _kpiInadimplencia = _toDouble(kpisData['inadimplencia'] ?? 0);
 
         _fluxo = _parseFluxo(body['fluxoCaixaProjetado'] ?? body['fluxo'] ?? []);
         _categorias = _parseCategorias(
             body['categorias'] ?? body['categoriasFinanceiras'] ?? []);
         _topParceiros = _parseParceiros(
             body['topParceiros'] ?? body['topClientes'] ?? body['topFornecedores'] ?? []);
-
-        _projecao = _parseProjecao(body['projecao'] ?? body['projecaoMensal'] ?? []);
+        _projecao = _parseProjecaoList(projecaoRaw);
 
         _loading = false;
       });
@@ -172,6 +181,17 @@ class _WebDashboardFinanceiroScreenState
         e['mes']?.toString() ?? e['label']?.toString() ?? '',
         _toDouble(e['saldo'] ?? e['saldoProjetado'] ?? 0),
         _toDouble(e['acumulado'] ?? 0),
+      );
+    }).toList();
+  }
+
+  List<_ProjecaoItem> _parseProjecaoList(List<dynamic> raw) {
+    return raw.map((e) {
+      if (e is! Map) return _ProjecaoItem('', 0, 0);
+      return _ProjecaoItem(
+        e['mes']?.toString() ?? e['label']?.toString() ?? '',
+        _toDouble(e['saldoPrevisto'] ?? e['saldo'] ?? 0),
+        _toDouble(e['entradasPrevistas'] ?? e['acumulado'] ?? 0),
       );
     }).toList();
   }
