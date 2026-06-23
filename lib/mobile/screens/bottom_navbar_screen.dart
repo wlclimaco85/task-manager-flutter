@@ -993,6 +993,10 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
       builder: (sheetContext) {
         return Padding(
           padding: const EdgeInsets.fromLTRB(16, 10, 16, 18),
+          // SingleChildScrollView: a lista de modulos cresce com o tempo (ja
+          // bateu o limite da tela em telas menores) — sem isso o conteudo
+          // estoura a altura do bottom sheet (overflow).
+          child: SingleChildScrollView(
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -1086,6 +1090,7 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
               ),
             ],
           ),
+          ),
         );
       },
     );
@@ -1112,28 +1117,28 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
           border: Border.all(color: GridColors.divider),
         ),
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 10),
+          padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Container(
-                width: 44,
-                height: 44,
+                width: 36,
+                height: 36,
                 decoration: BoxDecoration(
                   color: background,
                   shape: BoxShape.circle,
                 ),
-                child: Icon(icon, size: 24, color: accent),
+                child: Icon(icon, size: 18, color: accent),
               ),
-              const SizedBox(height: 8),
+              const SizedBox(height: 6),
               Text(
                 title,
                 textAlign: TextAlign.center,
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
                 style: TextStyle(
-                  fontSize: 12,
-                  height: 1.15,
+                  fontSize: 11,
+                  height: 1.1,
                   color: accent,
                   fontWeight: FontWeight.w700,
                 ),

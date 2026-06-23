@@ -7,6 +7,7 @@ import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
 import '../../../utils/app_logger.dart';
+import '../../../utils/tenant_context.dart';
 
 import 'grid_theme.dart';
 import 'grid_models.dart';
@@ -696,7 +697,17 @@ class _GridFormDialogState extends State<GridFormDialog> {
     for (final key in const ['empresa', 'diretorio', 'parceiro']) {
       final value = formData[key];
       if (value == null || value.toString().trim().isEmpty) {
-        if (key == 'parceiro') formData[key] = jsonEncode({'id': null});
+        // O backend (FileController) exige os 3 params SEMPRE presentes
+        // (@RequestParam sem required=false) — sem fallback aqui, o multipart
+        // saia sem a chave e o backend respondia 400 "Required request
+        // parameter 'empresa'/'diretorio' ... is not present". 'empresa' usa
+        // o tenant do usuario logado quando disponivel; os demais ficam
+        // {"id": null} (o backend trata null graciosamente).
+        if (key == 'empresa' && TenantContext.empresaId != null) {
+          formData[key] = jsonEncode({'id': TenantContext.empresaId});
+        } else {
+          formData[key] = jsonEncode({'id': null});
+        }
         continue;
       }
       if (value is Map) {
