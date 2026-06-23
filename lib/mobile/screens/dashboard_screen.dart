@@ -15,7 +15,6 @@ import '../../utils/grid_colors.dart';
 import '../../utils/tenant_context.dart';
 import '../../utils/utils.dart';
 import '../../widgets/user_banners.dart';
-import '../screens/chats_daily_chart.dart';
 import '../screens/dashboard_alerts_screen.dart';
 import '../screens/dashboard_client_distribution_screen.dart';
 import '../screens/dashboard_conta_evolucao_screen.dart';
@@ -24,7 +23,6 @@ import '../screens/dashboard_finance_fluxo_diario_screen.dart';
 import '../screens/dashboard_finance_trend_screen.dart';
 import '../screens/dashboard_kpis_screen.dart';
 import '../screens/dashboard_quarterly_screen.dart';
-import '../screens/dashboard_tickets_trend_screen.dart';
 
 class DashboardPage extends StatefulWidget {
   final VoidCallback? onUserBannerTapped;
@@ -44,8 +42,6 @@ class _DashboardPageState extends State<DashboardPage> {
 
   List<FinanceFluxoPoint> fluxoDiario = [];
   List<ContaBancariaModel> contas = [];
-  TicketStatusCounts? tickets;
-  List<ChatsDailyPoint> chats = [];
   Map<String, dynamic> dpDashboard = {};
   bool loading = true;
   String? error;
@@ -88,22 +84,6 @@ class _DashboardPageState extends State<DashboardPage> {
       }
     }
 
-    Future<TicketStatusCounts> ticketF() async {
-      try {
-        return await DashboardApiClient().fetchTicketStatusCounts();
-      } catch (_) {
-        return TicketStatusCounts(open: 0, inProgress: 0, closed: 0);
-      }
-    }
-
-    Future<List<ChatsDailyPoint>> chatsF() async {
-      try {
-        return await DashboardApiClient().fetchChatsDaily(days: 7);
-      } catch (_) {
-        return [];
-      }
-    }
-
     Future<Map<String, dynamic>> dpF() async {
       try {
         final resp = await TenantContext.get(ApiLinks.dpDashboard);
@@ -119,8 +99,6 @@ class _DashboardPageState extends State<DashboardPage> {
       final results = await Future.wait([
         fluxoF(),
         contasF(),
-        ticketF(),
-        chatsF(),
         dpF(),
       ], eagerError: false);
 
@@ -128,9 +106,7 @@ class _DashboardPageState extends State<DashboardPage> {
       setState(() {
         fluxoDiario = results[0] as List<FinanceFluxoPoint>;
         contas = results[1] as List<ContaBancariaModel>;
-        tickets = results[2] as TicketStatusCounts;
-        chats = results[3] as List<ChatsDailyPoint>;
-        dpDashboard = results[4] as Map<String, dynamic>;
+        dpDashboard = results[2] as Map<String, dynamic>;
         loading = false;
       });
     } catch (e) {
@@ -233,32 +209,6 @@ class _DashboardPageState extends State<DashboardPage> {
             _sectionTitle('Alertas de vencimentos'),
             const SizedBox(height: 8),
             AlertsPanel(empresaId: empresaId, parceiroId: parceiroId),
-            const SizedBox(height: 28),
-            _sectionTitle('Chamados'),
-            const SizedBox(height: 8),
-            _ticketsCards(),
-            const SizedBox(height: 16),
-            _ticketsPie(),
-            const SizedBox(height: 28),
-            _sectionTitle('Tendência de chamados'),
-            const SizedBox(height: 8),
-            TicketsTrendChart(
-              empresaId: empresaId,
-              parceiroId: parceiroId,
-              months: 6,
-            ),
-            const SizedBox(height: 28),
-            _sectionTitle('Chats'),
-            const SizedBox(height: 8),
-            _chatsLine(),
-            const SizedBox(height: 28),
-            _sectionTitle('Atividade diária de chats'),
-            const SizedBox(height: 8),
-            ChatsDailyChart(
-              empresaId: empresaId,
-              parceiroId: parceiroId,
-              days: 7,
-            ),
             const SizedBox(height: 28),
           ],
         ),
@@ -668,138 +618,5 @@ class _DashboardPageState extends State<DashboardPage> {
     if (value is num) return value.toDouble();
     if (value == null) return 0;
     return double.tryParse(value.toString()) ?? 0;
-  }
-
-  Widget _ticketsCards() {
-    final t = tickets!;
-    return Row(
-      children: [
-        _infoCard('Abertos', t.open.toString(), Colors.orange),
-        _infoCard('Em andamento', t.inProgress.toString(), Colors.blue),
-        _infoCard('Fechados', t.closed.toString(), Colors.green),
-      ],
-    );
-  }
-
-  Widget _ticketsPie() {
-    final t = tickets!;
-    final totalChamados = t.open + t.inProgress + t.closed;
-    if (totalChamados <= 0) {
-      return const SizedBox(
-        height: 240,
-        child: Center(child: Text('Sem chamados para exibir.')),
-      );
-    }
-    final total = totalChamados.toDouble();
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-      ),
-      height: 240,
-      child: PieChart(
-        PieChartData(
-          sectionsSpace: 2,
-          centerSpaceRadius: 40,
-          sections: [
-            PieChartSectionData(
-              value: t.open / total,
-              color: Colors.orange,
-              title: 'Abertos',
-            ),
-            PieChartSectionData(
-              value: t.inProgress / total,
-              color: Colors.blue,
-              title: 'Andamento',
-            ),
-            PieChartSectionData(
-              value: t.closed / total,
-              color: Colors.green,
-              title: 'Fechados',
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _chatsLine() {
-    final points = chats;
-    if (points.isEmpty) {
-      return const SizedBox(
-        height: 230,
-        child: Center(child: Text('Sem dados de chats no periodo.')),
-      );
-    }
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-      ),
-      height: 230,
-      child: LineChart(
-        LineChartData(
-          gridData: const FlGridData(show: false),
-          titlesData: FlTitlesData(
-            bottomTitles: AxisTitles(
-              sideTitles: SideTitles(
-                showTitles: true,
-                getTitlesWidget: (v, _) {
-                  final i = v.toInt();
-                  if (i < 0 || i >= points.length) {
-                    return const SizedBox.shrink();
-                  }
-                  final d = points[i].date;
-                  return Padding(
-                    padding: const EdgeInsets.only(top: 6),
-                    child: Text(
-                      '${d.day}/${d.month}',
-                      style: const TextStyle(
-                        fontSize: 10,
-                        color: GridColors.textSecondary,
-                      ),
-                    ),
-                  );
-                },
-              ),
-            ),
-            leftTitles: const AxisTitles(
-              sideTitles: SideTitles(showTitles: true, reservedSize: 28),
-            ),
-            rightTitles: const AxisTitles(
-              sideTitles: SideTitles(showTitles: false),
-            ),
-            topTitles: const AxisTitles(
-              sideTitles: SideTitles(showTitles: false),
-            ),
-          ),
-          borderData: FlBorderData(show: false),
-          lineBarsData: [
-            LineChartBarData(
-              isCurved: true,
-              color: GridColors.secondary,
-              spots: [
-                for (int i = 0; i < points.length; i++)
-                  FlSpot(i.toDouble(), points[i].openChats.toDouble()),
-              ],
-              dotData: const FlDotData(show: true),
-              belowBarData: BarAreaData(
-                show: true,
-                gradient: LinearGradient(
-                  colors: [
-                    GridColors.secondary.withValues(alpha: 0.4),
-                    Colors.transparent,
-                  ],
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
   }
 }

@@ -37,6 +37,7 @@ import 'parceiro_grid_screen.dart';
 import '../../windows/screens/extrato_importacao_screen.dart';
 import '../../web/screens/cobranca_automatica_screen.dart';
 import '../../widgets/user_banners.dart';
+import '../../widgets/dashboard_area/placeholder/dashboard_atendimento_placeholder_screen.dart';
 
 class BottomNavBarScreen extends StatefulWidget {
   const BottomNavBarScreen({super.key});
@@ -627,6 +628,13 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
           MaterialPageRoute(builder: (_) => const DashboardPage()),
         );
         break;
+      case "Atendimento":
+        nav = Navigator.push(
+          context,
+          MaterialPageRoute(
+              builder: (_) => const DashboardAtendimentoPlaceholderScreen()),
+        );
+        break;
       case "Trading":
         nav = Navigator.push(
           context,
@@ -839,6 +847,8 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
         const _MoreMenuAction(Icons.notifications_active, "Régua de Cobrança"),
       if (sec.canView(AppScreen.dashboard))
         const _MoreMenuAction(Icons.bar_chart, "Dashboard"),
+      if (sec.canView(AppScreen.dashAtendimentoArea))
+        const _MoreMenuAction(Icons.support_agent, "Atendimento"),
       if (sec.canView(AppScreen.contasBancarias))
         const _MoreMenuAction(Icons.account_balance, "Contas Bancarias"),
       if (sec.canView(AppScreen.parceiros))
