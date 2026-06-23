@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -150,11 +151,16 @@ class CustomAction<T> {
   final void Function(BuildContext context, T item) onPressed;
   final bool Function(T item)? isVisible;
 
+  /// Quando informado e > 0, exibe um badge numerico no canto do botao da acao
+  /// (ex.: quantidade de anexos da conta). 0 ou null = sem badge.
+  final int Function(T item)? badgeCount;
+
   const CustomAction({
     required this.icon,
     required this.label,
     required this.onPressed,
     this.isVisible,
+    this.badgeCount,
   });
 }
 
@@ -190,6 +196,10 @@ class GenericMobileGridScreen<T> extends StatefulWidget {
   final Map<String, dynamic>? additionalFormData;
   final Map<String, dynamic> Function(T? item)? dynamicAdditionalFormData;
 
+  /// Faixa informativa opcional renderizada acima da lista (ex.: microcopy do
+  /// modo "Financeiro limitado" explicando que o escritório lança as contas).
+  final Widget? infoBanner;
+
   const GenericMobileGridScreen({
     super.key,
     required this.title,
@@ -218,6 +228,7 @@ class GenericMobileGridScreen<T> extends StatefulWidget {
     this.onBannerRefresh,
     this.additionalFormData, // NOVO PARÂMETRO
     this.dynamicAdditionalFormData, // NOVO: Para dados dinâmicos
+    this.infoBanner,
   });
 
   @override
@@ -2139,7 +2150,9 @@ class _GenericMobileGridScreenState<T>
     PreferredSizeWidget? resolvedAppBar;
     if (!widget.showAppBar) {
       resolvedAppBar = null;
-    } else if (widget.useUserBannerAppBar) {
+    } else if (widget.useUserBannerAppBar || !kIsWeb) {
+      // No mobile, sempre usa o header principal (logo, empresa, usuario,
+      // alertas e sair). O nome da tela vai na barra de acoes secundaria.
       resolvedAppBar = UserBannerAppBar(
         screenTitle: widget.title,
         onTapped: widget.onUserBannerTapped,
@@ -2147,6 +2160,7 @@ class _GenericMobileGridScreenState<T>
         onRefresh: widget.onBannerRefresh ?? () => _loadItems(reset: true),
         isLoading: isLoading,
         onFilterToggle: () => setState(() => filtrosAbertos = !filtrosAbertos),
+        onColumns: _showFieldSettings,
         showFilterButton: true,
       );
     } else {
@@ -2163,6 +2177,9 @@ class _GenericMobileGridScreenState<T>
         children: [
           // Filtros (quando abertos)
           if (filtrosAbertos) _buildFilters(),
+
+          // Faixa informativa opcional (ex.: modo Financeiro limitado)
+          if (widget.infoBanner != null) widget.infoBanner!,
 
           // Lista de Itens
           Expanded(
@@ -2760,24 +2777,58 @@ class _GenericMobileGridScreenState<T>
 
   Widget _buildCardActions(T item, Map<String, dynamic> itemMap) {
     Widget actionBtn(IconData icon, Color iconColor, Color bgColor,
-        VoidCallback onPressed, String tooltip) {
+        VoidCallback onPressed, String tooltip,
+        {int badge = 0}) {
+      final Widget botao = Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+        decoration: BoxDecoration(
+          color: bgColor,
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(
+            color: iconColor.withValues(alpha: 0.18),
+            width: 1,
+          ),
+        ),
+        child: Icon(icon, size: 15, color: iconColor),
+      );
       return Tooltip(
         message: tooltip,
         child: InkWell(
           onTap: onPressed,
           borderRadius: BorderRadius.circular(8),
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
-            decoration: BoxDecoration(
-              color: bgColor,
-              borderRadius: BorderRadius.circular(8),
-              border: Border.all(
-                color: iconColor.withValues(alpha: 0.18),
-                width: 1,
-              ),
-            ),
-            child: Icon(icon, size: 15, color: iconColor),
-          ),
+          child: badge <= 0
+              ? botao
+              : Stack(
+                  clipBehavior: Clip.none,
+                  children: [
+                    botao,
+                    Positioned(
+                      top: -4,
+                      right: -4,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 3),
+                        constraints: const BoxConstraints(
+                            minWidth: 14, minHeight: 14),
+                        decoration: BoxDecoration(
+                          color: GridColors.primary,
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(color: Colors.white, width: 1.5),
+                        ),
+                        child: Center(
+                          child: Text(
+                            badge > 9 ? '9+' : '$badge',
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 8,
+                              fontWeight: FontWeight.bold,
+                              height: 1.0,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
         ),
       );
     }
@@ -2830,6 +2881,7 @@ class _GenericMobileGridScreenState<T>
                       GridColors.secondary.withValues(alpha: 0.1),
                       () => action.onPressed(context, item),
                       action.label,
+                      badge: action.badgeCount?.call(item) ?? 0,
                     ),
                     const SizedBox(width: 4),
                   ]),

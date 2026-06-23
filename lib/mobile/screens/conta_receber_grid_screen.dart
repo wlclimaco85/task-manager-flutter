@@ -43,7 +43,9 @@ class ContaReceberGridScreen extends StatelessWidget {
           icon: Icons.payment,
           label: 'Baixar',
           onPressed: (context, object) => _showBaixaDialog(context, object),
-          isVisible: (object) => object.status == StatusConta.ABERTA,
+          isVisible: (object) =>
+              object.status == StatusConta.ABERTA &&
+              hasPermission('baixar'),
         ),
         CustomAction<ContaReceber>(
           icon: Icons.undo,
@@ -66,6 +68,7 @@ class ContaReceberGridScreen extends StatelessWidget {
           icon: Icons.attach_file,
           label: 'Anexos',
           isVisible: (obj) => obj.id != null,
+          badgeCount: (obj) => obj.qtdAnexos,
           onPressed: (context, object) => _showAnexos(context, object),
         ),
         CustomAction<ContaReceber>(

@@ -69,10 +69,37 @@ class _AppSidebarState extends State<AppSidebar> {
   void initState() {
     super.initState();
     _computeAllowed();
+    _applyDefaultExpansion();
     _loadFavorites();
     _searchCtrl.addListener(() {
       setState(() => _searchQuery = _searchCtrl.text);
     });
+  }
+
+  /// Grupos com pelo menos um item visível ao usuário (após filtro de módulo/
+  /// permissão). É o conjunto que de fato aparece no menu.
+  List<MenuGroup> _visibleGroups() =>
+      MenuConfig.groups.where((g) => g.items.any(_canSee)).toList();
+
+  /// Colapso adaptativo (iniciativa "Acesso por Módulo do Cliente", spec UI):
+  ///  - 1 grupo visível  → itens renderizados flat (sem cabeçalho), tratado no
+  ///    build; nada a expandir aqui.
+  ///  - 2 grupos         → ambos abertos por padrão.
+  ///  - 3+ grupos        → tudo colapsado, exceto o grupo do item selecionado.
+  void _applyDefaultExpansion() {
+    final visibles = _visibleGroups();
+    _expandedGroups.clear();
+    if (visibles.length == 2) {
+      for (final g in visibles) {
+        _expandedGroups.add(g.id);
+      }
+    } else if (visibles.length >= 3) {
+      for (final g in visibles) {
+        if (g.items.any((i) => i.screenIndex == widget.selectedIndex)) {
+          _expandedGroups.add(g.id);
+        }
+      }
+    }
   }
 
   @override
@@ -292,10 +319,15 @@ class _AppSidebarState extends State<AppSidebar> {
           ..._favoriteItems.map((item) => _buildMenuItem(item, indent: true)),
           const Divider(color: Color(0xFF004a20), height: 16),
         ],
-        // Grupos com submenus (grupos sem itens visíveis são omitidos)
-        ...MenuConfig.groups
-            .where((g) => g.items.any(_canSee))
-            .map((group) => _buildGroup(group)),
+        // Grupos por módulo — colapso adaptativo. Com 1 só grupo visível,
+        // renderiza os itens direto (sem cabeçalho), evitando ruído quando o
+        // cliente tem um único módulo.
+        if (_visibleGroups().length == 1)
+          ..._visibleGroups().first.items
+              .where(_canSee)
+              .map((item) => _buildMenuItem(item, indent: true))
+        else
+          ..._visibleGroups().map((group) => _buildGroup(group)),
         // Itens soltos
         if (MenuConfig.loose.any(_canSee)) ...[
           const Divider(color: Color(0xFF004a20), height: 16),

@@ -5,6 +5,11 @@ import 'package:intl/intl.dart';
 import '../../../services/network_caller.dart';
 import '../../../utils/api_links.dart';
 import '../../../utils/tenant_context.dart';
+import '../../../widgets/anexo_financeiro_widget.dart';
+import '../../../models/conta_pagar_model.dart';
+import '../../../models/conta_receber_model.dart';
+import 'baixa_dialog.dart';
+import 'baixa_dialog_receber.dart';
 
 // ─── Internal data models ────────────────────────────────────────────────────
 
@@ -623,7 +628,100 @@ class _WindowsCalendarScreenState extends State<WindowsCalendarScreen> {
             child: const Text('Hoje',
                 style: TextStyle(fontWeight: FontWeight.bold)),
           ),
+          const SizedBox(width: 8),
+          _buildRefreshBtn(),
         ],
+      ),
+    );
+  }
+
+  // Botão de refresh no header (translúcido branco, ao lado de "Hoje").
+  Widget _buildRefreshBtn() {
+    final carregando = _loadingDay || _loadingMonth;
+    return Material(
+      color: Colors.white24,
+      shape: const CircleBorder(),
+      child: InkWell(
+        customBorder: const CircleBorder(),
+        onTap: carregando
+            ? null
+            : () {
+                final day = _selectedDay ?? DateTime.now();
+                _loadMonthMarkers(_currentMonth);
+                _loadDayData(day);
+              },
+        child: SizedBox(
+          width: 36,
+          height: 36,
+          child: Center(
+            child: carregando
+                ? const SizedBox(
+                    width: 16,
+                    height: 16,
+                    child: CircularProgressIndicator(
+                        strokeWidth: 2, color: Colors.white),
+                  )
+                : const Icon(Icons.refresh, size: 20, color: Colors.white),
+          ),
+        ),
+      ),
+    );
+  }
+
+  // Abre o popup de baixa da conta (a partir do item do calendário).
+  void _abrirBaixaConta(Map<String, dynamic> item, {required bool isPagar}) {
+    showDialog(
+      context: context,
+      builder: (_) => isPagar
+          ? WebBaixaDialog(conta: ContaPagar.fromJson(item))
+          : WebBaixaDialogReceber(conta: ContaReceber.fromJson(item)),
+    ).then((_) {
+      final day = _selectedDay ?? DateTime.now();
+      _loadMonthMarkers(_currentMonth);
+      _loadDayData(day);
+    });
+  }
+
+  // Abre o visualizador de anexos da conta (ver/baixar).
+  void _abrirAnexosConta(Map<String, dynamic> item, {required bool isPagar}) {
+    final id = (item['id'] as num?)?.toInt();
+    if (id == null) return;
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => DraggableScrollableSheet(
+        initialChildSize: 0.65,
+        minChildSize: 0.4,
+        maxChildSize: 0.92,
+        builder: (ctx, _) => ClipRRect(
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+          child: AnexoFinanceiroWidget(
+            lancamentoId: id,
+            lancamentoTipo: isPagar ? 'PAGAR' : 'RECEBER',
+          ),
+        ),
+      ),
+    );
+  }
+
+  // Ícone de ação compacto usado nos itens do detalhe do dia.
+  Widget _miniActionBtn({
+    required IconData icon,
+    required Color color,
+    required String tooltip,
+    required VoidCallback onTap,
+  }) {
+    return Tooltip(
+      message: tooltip,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(6),
+        child: Container(
+          constraints: const BoxConstraints(minWidth: 28, minHeight: 28),
+          alignment: Alignment.center,
+          child: Icon(icon, size: 18, color: color),
+        ),
       ),
     );
   }
@@ -1035,6 +1133,7 @@ class _WindowsCalendarScreenState extends State<WindowsCalendarScreen> {
     final tributo = item['documentoFiscal'] == true;
     final parceiro = (item['parceiro'] as Map?)?.cast<String, dynamic>();
     final parceiroNome = parceiro?['nome'] as String? ?? '';
+    final qtdAnexos = (item['qtdAnexos'] as num?)?.toInt() ?? 0;
 
     final today = DateTime.now();
     final vencStr = (item['dataVencimento'] as String?)?.substring(0, 10) ?? '';
@@ -1140,6 +1239,34 @@ class _WindowsCalendarScreenState extends State<WindowsCalendarScreen> {
                     _chip(statusLabel, statusColor, Colors.white),
                   ],
                 ),
+                // Ações: ver anexo (se houver) e baixar conta (se ABERTA)
+                if (status == 'ABERTA' || qtdAnexos > 0) ...[
+                  const SizedBox(height: 4),
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      if (qtdAnexos > 0)
+                        _miniActionBtn(
+                          icon: Icons.attach_file,
+                          color:
+                              GridColors.textPrimary.withValues(alpha: 0.55),
+                          tooltip: 'Ver anexo',
+                          onTap: () =>
+                              _abrirAnexosConta(item, isPagar: isPagar),
+                        ),
+                      if (status == 'ABERTA') ...[
+                        const SizedBox(width: 2),
+                        _miniActionBtn(
+                          icon: Icons.price_check,
+                          color: GridColors.success,
+                          tooltip: 'Baixar conta',
+                          onTap: () =>
+                              _abrirBaixaConta(item, isPagar: isPagar),
+                        ),
+                      ],
+                    ],
+                  ),
+                ],
               ],
             ),
           ],

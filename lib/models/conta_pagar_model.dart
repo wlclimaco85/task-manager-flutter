@@ -37,6 +37,9 @@ class ContaPagar {
   Audit audit;
   ContaBancaria? contaBaixa;
 
+  /// Quantidade de anexos vinculados (vem da listagem do backend). 0 = sem anexo.
+  int qtdAnexos;
+
   ContaPagar({
     this.id,
     required this.descricao,
@@ -57,6 +60,7 @@ class ContaPagar {
     this.centroCusto,
     required this.audit,
     this.contaBaixa,
+    this.qtdAnexos = 0,
   });
 
   factory ContaPagar.fromJson(Map<String, dynamic> json) {
@@ -88,6 +92,7 @@ class ContaPagar {
       contaBaixa: json['contaBaixa'] != null
           ? ContaBancaria.fromJson(json['contaBaixa'])
           : null,
+      qtdAnexos: (json['qtdAnexos'] as num?)?.toInt() ?? 0,
     );
   }
 

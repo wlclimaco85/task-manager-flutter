@@ -1,5 +1,6 @@
 import '../models/regua_cobranca_model.dart';
 import '../utils/api_links.dart';
+import '../utils/tenant_context.dart';
 import 'network_caller.dart';
 
 class ReguaCobrancaException implements Exception {
@@ -15,8 +16,19 @@ class ReguaCobrancaService {
 
   final NetworkCaller _caller;
 
+  /// O usuario MASTER nao tem empresa fixa no token; o backend resolve a empresa
+  /// pelo parametro empId (a empresa selecionada na UI). Sem isso a regua retorna
+  /// HTTP 500 ("Tenant da empresa nao identificado"). Para nao-master o backend
+  /// ignora o empId, entao anexar e seguro.
+  String _comEmpresa(String url) {
+    final empresaId = TenantContext.empresaId;
+    if (empresaId == null) return url;
+    final separador = url.contains('?') ? '&' : '?';
+    return '$url${separador}empId=$empresaId';
+  }
+
   Future<List<ReguaCobranca>> listarReguas() async {
-    final response = await _caller.getRequest(ApiLinks.reguasCobranca);
+    final response = await _caller.getRequest(_comEmpresa(ApiLinks.reguasCobranca));
     final items =
         _requireList(response.isSuccess, response.statusCode, response.body);
     return items.map(ReguaCobranca.fromJson).toList();
@@ -24,9 +36,10 @@ class ReguaCobrancaService {
 
   Future<ReguaCobranca> salvarRegua(ReguaCobranca regua) async {
     final response = regua.id == null
-        ? await _caller.postRequest(ApiLinks.reguasCobranca, regua.toJson())
+        ? await _caller.postRequest(
+            _comEmpresa(ApiLinks.reguasCobranca), regua.toJson())
         : await _caller.putRequest(
-            ApiLinks.reguaCobranca(regua.id!), regua.toJson());
+            _comEmpresa(ApiLinks.reguaCobranca(regua.id!)), regua.toJson());
     final body =
         _requireMap(response.isSuccess, response.statusCode, response.body);
     return ReguaCobranca.fromJson(_unwrapMap(body));
@@ -40,15 +53,15 @@ class ReguaCobrancaService {
 
   Future<PainelReguaCobranca> carregarPainel() async {
     final response =
-        await _caller.getRequest('${ApiLinks.cobrancasRegua}/painel');
+        await _caller.getRequest(_comEmpresa('${ApiLinks.cobrancasRegua}/painel'));
     final body =
         _requireMap(response.isSuccess, response.statusCode, response.body);
     return PainelReguaCobranca.fromJson(_unwrapMap(body));
   }
 
   Future<List<CobrancaRegua>> _listarCobrancas(String recurso) async {
-    final response =
-        await _caller.getRequest('${ApiLinks.cobrancasRegua}/$recurso');
+    final response = await _caller
+        .getRequest(_comEmpresa('${ApiLinks.cobrancasRegua}/$recurso'));
     final items =
         _requireList(response.isSuccess, response.statusCode, response.body);
     return items.map(CobrancaRegua.fromJson).toList();
@@ -56,7 +69,7 @@ class ReguaCobrancaService {
 
   Future<ExecucaoReguaResultado> executar() async {
     final response = await _caller.postRequest(
-      '${ApiLinks.cobrancasRegua}/executar',
+      _comEmpresa('${ApiLinks.cobrancasRegua}/executar'),
       const <String, dynamic>{},
     );
     if (!response.isSuccess) {
@@ -72,7 +85,7 @@ class ReguaCobrancaService {
 
   Future<void> reprocessar(int acaoId) async {
     final response = await _caller.postRequest(
-      '${ApiLinks.cobrancasRegua}/acoes/$acaoId/reprocessar',
+      _comEmpresa('${ApiLinks.cobrancasRegua}/acoes/$acaoId/reprocessar'),
       const <String, dynamic>{},
     );
     _requireMap(response.isSuccess, response.statusCode, response.body);

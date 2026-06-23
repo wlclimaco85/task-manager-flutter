@@ -9,7 +9,8 @@ import 'package:task_manager_flutter/utils/grid_colors.dart';
 import 'package:task_manager_flutter/utils/security_matrix.dart';
 
 import '../../customization/dynamic_grid_dynamic_screen.dart';
-import '../../customization/generic_grid/grid_models.dart' show CustomAction;
+import '../../customization/generic_grid/grid_models.dart'
+    show CustomAction, FieldConfig, FieldType, FileConfig;
 import '../../windows/screens/comunicado_detalhe_screen.dart';
 import '../../windows/screens/fechar_chamado_dialog.dart';
 import 'sem_acesso_screen.dart';
@@ -19,6 +20,7 @@ import 'dashboard_screen.dart';
 import '../../features/trading/trading_dashboard_screen.dart';
 import '../../features/trading/screens/backtest_screen.dart';
 import '../../features/trading/services/backtest_repository.dart';
+import '../../services/network_caller.dart';
 import '../../utils/api_links.dart';
 import '../../utils/app_logger.dart';
 import '../../utils/tenant_context.dart';
@@ -34,6 +36,8 @@ import 'conta_pagar_grid_screen.dart';
 import 'conta_receber_grid_screen.dart';
 import 'conta_bancaria_grid_screen.dart';
 import 'parceiro_grid_screen.dart';
+import 'nfse_consulta_screen.dart';
+import 'nfse_serie_screen.dart';
 import '../../windows/screens/extrato_importacao_screen.dart';
 import '../../web/screens/cobranca_automatica_screen.dart';
 import '../../widgets/user_banners.dart';
@@ -196,10 +200,91 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
       hasPermission: (action) => _hasPermissionFor(sec, AppScreen.ged, action),
       storageKey: 'mobile_dynamic_ged_arquivo',
       fetchEndpointOverride: ApiLinks.allArquivos,
-      createEndpointOverride: ApiLinks.createArquivo,
+      createEndpointOverride: ApiLinks.uploadArquivo,
       updateEndpointOverride: ApiLinks.updateArquivo(':id'),
       deleteEndpointOverride: ApiLinks.deleteArquivo(':id'),
+      fieldOverrides: _gedFieldOverrides(),
     );
+  }
+
+  List<FieldConfig> _gedFieldOverrides() {
+    return [
+      const FieldConfig(
+        label: 'ID',
+        fieldName: 'id',
+        isInForm: false,
+        showInCard: false,
+        isVisibleByDefault: false,
+      ),
+      const FieldConfig(
+        label: 'Arquivo',
+        fieldName: 'file',
+        fieldType: FieldType.file,
+        isRequired: true,
+        fileConfig: FileConfig(
+          allowedExtensions: [
+            'pdf',
+            'doc',
+            'docx',
+            'jpg',
+            'jpeg',
+            'png',
+            'xls',
+            'xlsx',
+            'csv',
+            'txt',
+          ],
+          maxFileSize: 10 * 1024 * 1024,
+          fileFieldName: 'file',
+        ),
+      ),
+      FieldConfig(
+        label: 'Diretorio',
+        fieldName: 'diretorio',
+        fieldType: FieldType.dropdown,
+        dropdownFutureBuilder: () => _dropdownFromEndpoint(
+          ApiLinks.allDiretorios,
+          labelKeys: const ['nome', 'descricao', 'label'],
+        ),
+        dropdownValueField: 'value',
+        dropdownDisplayField: 'label',
+      ),
+      FieldConfig(
+        label: 'Parceiro',
+        fieldName: 'parceiro',
+        fieldType: FieldType.dropdown,
+        dropdownFutureBuilder: () => _dropdownFromEndpoint(
+          ApiLinks.allParceiros,
+          labelKeys: const ['nome', 'razaoSocial', 'label'],
+        ),
+        dropdownValueField: 'value',
+        dropdownDisplayField: 'label',
+      ),
+    ];
+  }
+
+  Future<List<Map<String, dynamic>>> _dropdownFromEndpoint(
+    String endpoint, {
+    required List<String> labelKeys,
+  }) async {
+    final response = await NetworkCaller().getRequest(endpoint);
+    final raw = response.body?['data']?['dados'] ??
+        response.body?['data'] ??
+        response.body?['content'] ??
+        response.body;
+    if (!response.isSuccess || raw is! List) return [];
+
+    return raw.whereType<Map>().map((item) {
+      final map = Map<String, dynamic>.from(item);
+      final label = labelKeys
+          .map((key) => map[key]?.toString())
+          .firstWhere((value) => value != null && value.isNotEmpty,
+              orElse: () => map['id']?.toString() ?? '');
+      return {
+        'value': map['id']?.toString() ?? '',
+        'label': label,
+      };
+    }).where((item) => item['value']!.isNotEmpty).toList();
   }
 
   Widget _dynamicGridInline({
@@ -521,6 +606,7 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
       'insert' || 'create' => sec.canInsert(screen),
       'update' || 'edit' => sec.canUpdate(screen),
       'delete' || 'remove' => sec.canDelete(screen),
+      'baixar' || 'baixa' => sec.canBaixar(screen),
       _ => sec.canView(screen),
     };
   }
@@ -599,6 +685,13 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
           context,
           MaterialPageRoute(
             builder: (_) => const Scaffold(
+              // Header principal padrao (logo, empresa, usuario, alertas e sair).
+              // showFilterButton: false — a tela tem cabecalho proprio com
+              // Atualizar/Nova etapa/Executar, nao usa a barra de grid.
+              appBar: UserBannerAppBar(
+                screenTitle: 'Régua de Cobrança',
+                showFilterButton: false,
+              ),
               body: SafeArea(child: CobrancaAutomaticaScreen()),
             ),
           ),
@@ -611,6 +704,28 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
             builder: (_) => ParceiroGridScreen(
               hasPermission: (action) =>
                   _hasPermissionFor(sec, AppScreen.parceiros, action),
+            ),
+          ),
+        );
+        break;
+      case "Notas de Serviço (NFS-e)":
+        nav = Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => NfseConsultaScreen(
+              hasPermission: (action) =>
+                  _hasPermissionFor(sec, AppScreen.nfseLista, action),
+            ),
+          ),
+        );
+        break;
+      case "Séries NFS-e":
+        nav = Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => NfseSerieScreen(
+              hasPermission: (action) =>
+                  _hasPermissionFor(sec, AppScreen.nfseSerie, action),
             ),
           ),
         );
@@ -845,6 +960,10 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
         const _MoreMenuAction(Icons.account_balance_wallet, "Contas Receber"),
       if (sec.canView(AppScreen.contasReceber))
         const _MoreMenuAction(Icons.notifications_active, "Régua de Cobrança"),
+      if (sec.canView(AppScreen.nfseLista))
+        const _MoreMenuAction(Icons.description, "Notas de Serviço (NFS-e)"),
+      if (sec.canView(AppScreen.nfseSerie))
+        const _MoreMenuAction(Icons.tag, "Séries NFS-e"),
       if (sec.canView(AppScreen.dashboard))
         const _MoreMenuAction(Icons.bar_chart, "Dashboard"),
       if (sec.canView(AppScreen.dashAtendimentoArea))

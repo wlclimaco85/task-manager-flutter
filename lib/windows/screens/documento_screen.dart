@@ -9,6 +9,11 @@ import '../../../utils/app_logger.dart';
 import '../../../utils/grid_colors.dart';
 import '../../../utils/tenant_context.dart';
 import '../../../widgets/user_banners.dart';
+import '../../../widgets/anexo_financeiro_widget.dart';
+import '../../../models/conta_pagar_model.dart';
+import '../../../models/conta_receber_model.dart';
+import 'baixa_dialog.dart';
+import 'baixa_dialog_receber.dart';
 
 // ─── Internal data models ────────────────────────────────────────────────────
 
@@ -680,32 +685,39 @@ class _WindowsCalendarScreenState extends State<WindowsCalendarScreen> {
                     ),
                   ],
                 ),
-                // Hoje alinhado à direita
+                // Refresh + Hoje alinhados à direita
                 Positioned(
                   right: 0,
-                  child: TextButton(
-                    style: TextButton.styleFrom(
-                      backgroundColor: Colors.white24,
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 10, vertical: 4),
-                      shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(6)),
-                      minimumSize: Size.zero,
-                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                    ),
-                    onPressed: () {
-                      final today = DateTime.now();
-                      setState(() {
-                        _selectedDay = today;
-                        _currentMonth = DateTime(today.year, today.month);
-                      });
-                      _loadMonthMarkers(_currentMonth);
-                      _loadDayData(today);
-                    },
-                    child: const Text('Hoje',
-                        style: TextStyle(
-                            fontWeight: FontWeight.bold, fontSize: 13)),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      _buildRefreshBtn(),
+                      const SizedBox(width: 8),
+                      TextButton(
+                        style: TextButton.styleFrom(
+                          backgroundColor: Colors.white24,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 10, vertical: 4),
+                          shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(6)),
+                          minimumSize: Size.zero,
+                          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                        ),
+                        onPressed: () {
+                          final today = DateTime.now();
+                          setState(() {
+                            _selectedDay = today;
+                            _currentMonth = DateTime(today.year, today.month);
+                          });
+                          _loadMonthMarkers(_currentMonth);
+                          _loadDayData(today);
+                        },
+                        child: const Text('Hoje',
+                            style: TextStyle(
+                                fontWeight: FontWeight.bold, fontSize: 13)),
+                      ),
+                    ],
                   ),
                 ),
               ],
@@ -752,6 +764,76 @@ class _WindowsCalendarScreenState extends State<WindowsCalendarScreen> {
               ),
             ),
           ],
+        ),
+      ),
+    );
+  }
+
+  // Botão de refresh no header (translúcido branco, ao lado de "Hoje").
+  Widget _buildRefreshBtn() {
+    final carregando = _loadingDay || _loadingMonth;
+    return Material(
+      color: Colors.white24,
+      shape: const CircleBorder(),
+      child: InkWell(
+        customBorder: const CircleBorder(),
+        onTap: carregando
+            ? null
+            : () {
+                final day = _selectedDay ?? DateTime.now();
+                _loadMonthMarkers(_currentMonth);
+                _loadDayData(day);
+              },
+        child: SizedBox(
+          width: 32,
+          height: 32,
+          child: Center(
+            child: carregando
+                ? const SizedBox(
+                    width: 16,
+                    height: 16,
+                    child: CircularProgressIndicator(
+                        strokeWidth: 2, color: Colors.white),
+                  )
+                : const Icon(Icons.refresh, size: 20, color: Colors.white),
+          ),
+        ),
+      ),
+    );
+  }
+
+  // Abre o popup de baixa da conta (a partir do item do calendário).
+  void _abrirBaixaConta(Map<String, dynamic> item, {required bool isPagar}) {
+    showDialog(
+      context: context,
+      builder: (_) => isPagar
+          ? BaixaDialog(conta: ContaPagar.fromJson(item))
+          : BaixaDialogReceber(conta: ContaReceber.fromJson(item)),
+    ).then((_) {
+      final day = _selectedDay ?? DateTime.now();
+      _loadMonthMarkers(_currentMonth);
+      _loadDayData(day);
+    });
+  }
+
+  // Abre o visualizador de anexos da conta (ver/baixar).
+  void _abrirAnexosConta(Map<String, dynamic> item, {required bool isPagar}) {
+    final id = (item['id'] as num?)?.toInt();
+    if (id == null) return;
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => DraggableScrollableSheet(
+        initialChildSize: 0.65,
+        minChildSize: 0.4,
+        maxChildSize: 0.92,
+        builder: (ctx, _) => ClipRRect(
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+          child: AnexoFinanceiroWidget(
+            lancamentoId: id,
+            lancamentoTipo: isPagar ? 'PAGAR' : 'RECEBER',
+          ),
         ),
       ),
     );
@@ -1202,6 +1284,7 @@ class _WindowsCalendarScreenState extends State<WindowsCalendarScreen> {
     final tributo = _hasDocumentoFiscal(item);
     final parceiro = (item['parceiro'] as Map?)?.cast<String, dynamic>();
     final parceiroNome = parceiro?['nome'] as String? ?? '';
+    final qtdAnexos = (item['qtdAnexos'] as num?)?.toInt() ?? 0;
 
     // Detecta arquivo anexado (boleto ou comprovante)
     final fileMap = item['file'] as Map?;
@@ -1341,9 +1424,58 @@ class _WindowsCalendarScreenState extends State<WindowsCalendarScreen> {
                     _chip(statusLabel, statusColor, Colors.white),
                   ],
                 ),
+                // Ações: ver anexo (se houver) e baixar conta (se ABERTA)
+                if (status == 'ABERTA' || qtdAnexos > 0) ...[
+                  const SizedBox(height: 4),
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      if (qtdAnexos > 0)
+                        _miniActionBtn(
+                          icon: Icons.attach_file,
+                          color:
+                              GridColors.textPrimary.withValues(alpha: 0.55),
+                          tooltip: 'Ver anexo',
+                          onTap: () =>
+                              _abrirAnexosConta(item, isPagar: isPagar),
+                        ),
+                      if (status == 'ABERTA') ...[
+                        const SizedBox(width: 2),
+                        _miniActionBtn(
+                          icon: Icons.price_check,
+                          color: GridColors.success,
+                          tooltip: 'Baixar conta',
+                          onTap: () =>
+                              _abrirBaixaConta(item, isPagar: isPagar),
+                        ),
+                      ],
+                    ],
+                  ),
+                ],
               ],
             ),
           ],
+        ),
+      ),
+    );
+  }
+
+  // Ícone de ação compacto usado nos itens do detalhe do dia.
+  Widget _miniActionBtn({
+    required IconData icon,
+    required Color color,
+    required String tooltip,
+    required VoidCallback onTap,
+  }) {
+    return Tooltip(
+      message: tooltip,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(6),
+        child: Container(
+          constraints: const BoxConstraints(minWidth: 28, minHeight: 28),
+          alignment: Alignment.center,
+          child: Icon(icon, size: 18, color: color),
         ),
       ),
     );

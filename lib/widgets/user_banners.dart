@@ -20,6 +20,7 @@ class UserBannerAppBar extends StatefulWidget implements PreferredSizeWidget {
   final VoidCallback? onEmpresaTap;
   final VoidCallback? onUserTap;
   final VoidCallback? onFilterToggle;
+  final VoidCallback? onColumns;
   final bool? showFilterButton;
 
   const UserBannerAppBar({
@@ -31,6 +32,7 @@ class UserBannerAppBar extends StatefulWidget implements PreferredSizeWidget {
     this.onEmpresaTap,
     this.onUserTap,
     this.onFilterToggle,
+    this.onColumns,
     this.showFilterButton = true,
   });
 
@@ -509,9 +511,11 @@ class _UserBannerAppBarState extends State<UserBannerAppBar> {
           ? PreferredSize(
               preferredSize: const Size.fromHeight(52),
               child: FilterActionBar(
+                screenTitle: widget.screenTitle,
                 onRefresh: widget.onRefresh,
                 isLoading: widget.isLoading,
                 onFilterToggle: widget.onFilterToggle,
+                onColumns: widget.onColumns,
               ),
             )
           : null,
@@ -1091,21 +1095,26 @@ class SimpleAppBar extends StatelessWidget implements PreferredSizeWidget {
 // Nova barra de ações secundária
 // =============================================================================
 class FilterActionBar extends StatelessWidget {
+  final String? screenTitle;
   final VoidCallback? onRefresh;
   final bool? isLoading;
   final VoidCallback? onFilterToggle;
+  final VoidCallback? onColumns;
 
   const FilterActionBar({
     super.key,
+    this.screenTitle,
     this.onRefresh,
     this.isLoading,
     this.onFilterToggle,
+    this.onColumns,
   });
 
   @override
   Widget build(BuildContext context) {
     return Container(
       height: 52,
+      padding: const EdgeInsets.only(left: 16),
       decoration: BoxDecoration(
         color: Colors.white,
         border: const Border(
@@ -1120,8 +1129,20 @@ class FilterActionBar extends StatelessWidget {
         ],
       ),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
         children: [
+          // Nome da tela antes dos botoes de acao
+          Expanded(
+            child: Text(
+              screenTitle ?? "",
+              style: const TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+                color: GridColors.textPrimary,
+              ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
           if (onRefresh != null)
             IconButton(
               iconSize: 28,
@@ -1139,14 +1160,13 @@ class FilterActionBar extends StatelessWidget {
               onPressed: isLoading ?? false ? null : onRefresh,
               tooltip: 'Recarregar dados',
             ),
-          IconButton(
-            iconSize: 28,
-            icon: const Icon(Icons.view_column, color: GridColors.primary),
-            onPressed: () {
-              // ação configurar colunas
-            },
-            tooltip: 'Configurar campos visíveis',
-          ),
+          if (onColumns != null)
+            IconButton(
+              iconSize: 28,
+              icon: const Icon(Icons.view_column, color: GridColors.primary),
+              onPressed: onColumns,
+              tooltip: 'Configurar campos visíveis',
+            ),
           IconButton(
             iconSize: 28,
             icon: const Icon(Icons.filter_list, color: GridColors.primary),

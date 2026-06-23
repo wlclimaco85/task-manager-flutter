@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import '../../../utils/api_links.dart';
 import '../../../utils/grid_colors.dart';
+import '../../../utils/security_matrix.dart';
 import '../../../utils/tenant_context.dart';
 import '../../customization/generic_grid_card.dart';
 import '../../../models/conta_pagar_model.dart';
@@ -51,7 +52,9 @@ class _ContaPagarGridScreenState extends State<ContaPagarGridScreen> {
               icon: Icons.payment,
               label: 'Baixar',
               onPressed: (context, object) => _showBaixaDialog(context, object),
-              isVisible: (object) => object.status == StatusConta.ABERTA,
+              isVisible: (object) =>
+                  object.status == StatusConta.ABERTA &&
+                  widget.hasPermission('baixar'),
             ),
             CustomAction<ContaPagar>(
               icon: Icons.undo,
@@ -75,6 +78,7 @@ class _ContaPagarGridScreenState extends State<ContaPagarGridScreen> {
               icon: Icons.attach_file,
               label: 'Anexos',
               isVisible: (obj) => obj.id != null,
+              badgeCount: (obj) => obj.qtdAnexos,
               onPressed: (context, object) => _showAnexos(context, object),
             ),
             CustomAction<ContaPagar>(
@@ -91,9 +95,16 @@ class _ContaPagarGridScreenState extends State<ContaPagarGridScreen> {
             availableRowsPerPage: [10, 25, 50],
           ),
           enableSearch: true,
+          // Modo Financeiro limitado: microcopy explicando que o escritório
+          // lança as contas e o cliente só consulta/baixa.
+          infoBanner: SecurityMatrix.current().isFinanceiroLimitado
+              ? _buildInfoLimitado()
+              : null,
         ),
-        // FAB de importacao — posicionado sobre o GenericMobileGridScreen
-        Positioned(
+        // FAB de importacao (cria contas) — só com permissão de inserir; some no
+        // modo Financeiro limitado.
+        if (widget.hasPermission('create'))
+          Positioned(
           bottom: 88,
           right: 16,
           child: FloatingActionButton.small(
@@ -114,6 +125,27 @@ class _ContaPagarGridScreenState extends State<ContaPagarGridScreen> {
           ),
         ),
       ],
+    );
+  }
+
+  Widget _buildInfoLimitado() {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+      color: GridColors.pageBackground,
+      child: const Row(
+        children: [
+          Icon(Icons.info_outline, size: 16, color: GridColors.textMuted),
+          SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              'Estas contas são lançadas pelo seu escritório contábil. '
+              'Você pode consultá-las e registrar a baixa.',
+              style: TextStyle(fontSize: 12, color: GridColors.textMuted),
+            ),
+          ),
+        ],
+      ),
     );
   }
 

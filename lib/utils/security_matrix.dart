@@ -42,12 +42,17 @@ enum AppScreen {
   // Dashboards por área (Fase 171 — fundação)
   dashAtendimentoArea, dashFinanceiroArea, dashComercialArea,
   dashDpArea, dashFiscalArea,
+  // NFS-e (nota de serviço) — telas do módulo NFS-e do cliente (a construir).
+  nfseEmitir, nfseLista, nfseSerie, servicos,
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
 // 2. Ações
 // ─────────────────────────────────────────────────────────────────────────────
-enum AppAction { view, insert, update, delete }
+// `baixar` (Tarefa keystone "Acesso por Módulo"): ação de quitar título, usada
+// no modo Financeiro limitado (cliente sem o módulo Financeiro pode ver+baixar
+// Contas a Pagar, mas não inserir/editar/excluir).
+enum AppAction { view, insert, update, delete, baixar }
 
 // ─────────────────────────────────────────────────────────────────────────────
 // 3. Perfis (mantidos para compatibilidade com código legado)
@@ -299,19 +304,45 @@ class SecurityMatrix {
     if (_backendPerms.isNotEmpty) {
       final perms = _backendPerms[screen.name];
       if (perms == null) return false;
-      return perms.contains(action) && ModuloAccess.isScreenAllowed(screen);
+      return perms.contains(action) &&
+          ModuloAccess.isScreenAllowed(screen) &&
+          ModuloAccess.isActionAllowed(screen, action);
     }
 
     // Fallback: matrix hardcoded
     final hasRole = _fallbackMatrix[profile]?[screen]?.contains(action) ?? false;
     if (!hasRole) return false;
-    return ModuloAccess.isScreenAllowed(screen);
+    return ModuloAccess.isScreenAllowed(screen) &&
+        ModuloAccess.isActionAllowed(screen, action);
   }
 
   bool canView(AppScreen screen)   => _can(screen, AppAction.view);
   bool canInsert(AppScreen screen) => _can(screen, AppAction.insert);
   bool canUpdate(AppScreen screen) => _can(screen, AppAction.update);
   bool canDelete(AppScreen screen) => _can(screen, AppAction.delete);
+
+  /// Pode dar BAIXA (quitar título) na tela. O backend ainda não modela `baixar`
+  /// em role_permissao (follow-up), então deriva da visibilidade + regra de
+  /// módulo: quem vê a tela e não está bloqueado por módulo pode baixar. No modo
+  /// Financeiro limitado, `isActionAllowed` libera `baixar` em Contas a Pagar.
+  bool canBaixar(AppScreen screen) {
+    if (profile == UserProfile.system || tipoLogin == LoginEnum.MASTER) {
+      return ModuloAccess.isScreenAllowed(screen);
+    }
+    return canView(screen) &&
+        ModuloAccess.isActionAllowed(screen, AppAction.baixar);
+  }
+
+  /// True quando o usuário está no modo "Financeiro limitado": vê Contas a Pagar
+  /// (consulta + baixa) mas NÃO tem o módulo Financeiro completo (sem inserir,
+  /// sem Contas a Receber). Usado para microcopy/empty state explicativos —
+  /// derivado da engine (vê a tela mas não pode inserir).
+  bool get isFinanceiroLimitado {
+    if (profile == UserProfile.system || tipoLogin == LoginEnum.MASTER) {
+      return false;
+    }
+    return canView(AppScreen.contasPagar) && !canInsert(AppScreen.contasPagar);
+  }
 
   // ───────────────────────────────────────────────────────────────────────────
   // Enforcement por telaNome canônico (= MenuConfig.id). Independe do enum
@@ -397,13 +428,10 @@ class SecurityMatrix {
 const Map<String, Set<AppScreen>> _moduloToScreens = {
   'Financeiro': {
     AppScreen.contasPagar, AppScreen.contasReceber, AppScreen.contasBancarias,
-    AppScreen.contaBancaria, AppScreen.formasPagamento, AppScreen.trading,
+    AppScreen.contaBancaria, AppScreen.formasPagamento,
     AppScreen.dashFinanceCards, AppScreen.dashFluxoDiario,
     AppScreen.dashTendenciaFinanceira, AppScreen.dashComparativoTrimestral,
     AppScreen.dashSaldoContas, AppScreen.dashEvolucaoSaldos,
-    // Fase 171 — dashboard de área Financeiro reaproveita o mesmo módulo já
-    // usado pelo dashboard financeiro legado (Tarefa F3a do PLAN.md).
-    AppScreen.dashFinanceiroArea,
   },
   'Notas Fiscais': {
     AppScreen.nfeEntrada, AppScreen.nfeSaida, AppScreen.pdvNfce, AppScreen.configFiscal, AppScreen.obrigacoesFiscais,
@@ -415,6 +443,16 @@ const Map<String, Set<AppScreen>> _moduloToScreens = {
     // Fase 171 — dashDpArea entra no mesmo módulo 'Departamento Pessoal' já
     // existente (confirmado no RESEARCH desta fase, Tarefa F3a do PLAN.md).
     AppScreen.dashDpArea,
+  },
+  // Módulos do cliente (iniciativa "Acesso por Módulo do Cliente").
+  'Comercial': {
+    AppScreen.produto, AppScreen.pedidos, AppScreen.pdvNfce, AppScreen.nfeSaida,
+    AppScreen.formasPagamento, AppScreen.unidadeMedida, AppScreen.catalogoProduto,
+    AppScreen.dashComercialArea,
+  },
+  'NFS-e': {
+    AppScreen.nfseEmitir, AppScreen.nfseLista, AppScreen.nfseSerie,
+    AppScreen.servicos, AppScreen.configFiscal,
   },
   'Chamados': {
     AppScreen.chamados, AppScreen.kanbanChamados,
@@ -441,38 +479,84 @@ class ModuloAccess {
   static List<String> _modulosContratados = [];
   static bool _loaded = false;
 
-  static Future<void> load() async {
-    final parceiroId = AuthUtility.userInfo?.login?.parceiro?.id;
-    final tipoLogin = AuthUtility.userInfo?.login?.tipoLogin;
-
-    if (parceiroId == null || tipoLogin == LoginEnum.MASTER) {
-      _modulosContratados = _moduloToScreens.keys.toList();
-      _loaded = true;
-      return;
-    }
+  // Busca os nomes dos módulos de um endpoint (/api/parceiro-modulo ou
+  // /api/empresa-modulo). Lista vazia em qualquer falha.
+  static Future<List<String>> _fetchModulos(String url) async {
     try {
       final token = AuthUtility.userInfo?.token;
-      final url = '${ApiLinks.baseUrl}/api/parceiro-modulo?parceiroId=$parceiroId';
       final resp = await http.get(Uri.parse(url), headers: {
         if (token != null) 'Authorization': 'Bearer $token',
         'Accept': 'application/json',
       }).timeout(const Duration(seconds: 5));
-
       if (resp.statusCode == 200) {
         final List<dynamic> data = jsonDecode(resp.body);
-        _modulosContratados = data.map((m) => m['nome']?.toString() ?? '').toList();
-      } else {
-        _modulosContratados = _moduloToScreens.keys.toList();
+        return data
+            .map((m) => m['nome']?.toString() ?? '')
+            .where((s) => s.isNotEmpty)
+            .toList();
       }
-    } catch (_) {
+    } catch (_) {}
+    return <String>[];
+  }
+
+  /// Semântica (iniciativa "Acesso por Módulo"): EMPRESA = teto.
+  ///  - MASTER: todos os módulos.
+  ///  - Cliente (tem parceiro): interseção(empresa, parceiro); se a empresa não
+  ///    definiu teto, usa só os do parceiro; se o parceiro não restringe, herda
+  ///    os da empresa.
+  ///  - Escritório/contabilidade (sem parceiro): gateado pelos módulos da empresa.
+  /// Lista vazia = SEM gating (mantém compatibilidade: empresa/parceiro ainda
+  /// não configurados liberam tudo).
+  static Future<void> load() async {
+    final login = AuthUtility.userInfo?.login;
+    final parceiroId = login?.parceiro?.id;
+    final empresaId = login?.empresa?.id;
+    final tipoLogin = login?.tipoLogin;
+
+    if (tipoLogin == LoginEnum.MASTER) {
       _modulosContratados = _moduloToScreens.keys.toList();
+      _loaded = true;
+      return;
     }
+
+    final empresaModulos = empresaId != null
+        ? await _fetchModulos(
+            '${ApiLinks.baseUrl}/api/empresa-modulo?empresaId=$empresaId')
+        : <String>[];
+    final parceiroModulos = parceiroId != null
+        ? await _fetchModulos(
+            '${ApiLinks.baseUrl}/api/parceiro-modulo?parceiroId=$parceiroId')
+        : <String>[];
+
+    List<String> resultado;
+    if (parceiroId != null) {
+      if (empresaModulos.isEmpty) {
+        resultado = parceiroModulos; // empresa sem teto → só os do parceiro
+      } else if (parceiroModulos.isEmpty) {
+        resultado = empresaModulos; // parceiro sem restrição → herda o teto
+      } else {
+        resultado = parceiroModulos
+            .where((m) => empresaModulos.contains(m))
+            .toList(); // interseção
+      }
+    } else {
+      resultado = empresaModulos; // escritório: só o que a empresa contratou
+    }
+    _modulosContratados = resultado;
     _loaded = true;
   }
+
+  static bool _temFinanceiro() => _modulosContratados.contains('Financeiro');
 
   static bool isScreenAllowed(AppScreen screen) {
     if (!_loaded) return true;
     if (_modulosContratados.isEmpty) return true;
+
+    // Acesso mínimo Financeiro: Contas a Pagar fica SEMPRE visível, mesmo sem o
+    // módulo Financeiro contratado — em modo consulta + baixa (ver
+    // isActionAllowed). Contas a Receber continua escondida (pertence só ao
+    // módulo Financeiro). Regra da iniciativa "Acesso por Módulo do Cliente".
+    if (screen == AppScreen.contasPagar) return true;
 
     bool pertenceAAlgumModulo = false;
     for (final entry in _moduloToScreens.entries) {
@@ -483,6 +567,18 @@ class ModuloAccess {
     }
     if (!pertenceAAlgumModulo) return true;
     return false;
+  }
+
+  /// Gating por AÇÃO dirigido por módulo (dimensão nova sobre o gating por tela).
+  /// Hoje cobre o "Financeiro limitado": sem o módulo Financeiro, Contas a Pagar
+  /// é só consulta + baixa (sem inserir/editar/excluir). Semântica RESTRITIVA:
+  /// só remove ações, nunca concede além do que a role/backend já permite.
+  static bool isActionAllowed(AppScreen screen, AppAction action) {
+    if (!_loaded || _modulosContratados.isEmpty) return true;
+    if (screen == AppScreen.contasPagar && !_temFinanceiro()) {
+      return action == AppAction.view || action == AppAction.baixar;
+    }
+    return true;
   }
 
   static List<AppScreen> filter(List<AppScreen> screens) =>
