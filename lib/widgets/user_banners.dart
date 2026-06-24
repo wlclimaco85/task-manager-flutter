@@ -23,6 +23,12 @@ class UserBannerAppBar extends StatefulWidget implements PreferredSizeWidget {
   final VoidCallback? onColumns;
   final bool? showFilterButton;
 
+  /// Substitui a FilterActionBar padrão por uma barra inferior própria (ex.:
+  /// toggle Dia/Mês/Ano do Calendário Financeiro). Quando informado, ignora
+  /// showFilterButton/onFilterToggle/onColumns/onRefresh — quem passa um
+  /// bottom customizado é responsável pelo próprio refresh/filtro/etc.
+  final PreferredSizeWidget? customBottom;
+
   const UserBannerAppBar({
     super.key,
     this.onTapped,
@@ -34,6 +40,7 @@ class UserBannerAppBar extends StatefulWidget implements PreferredSizeWidget {
     this.onFilterToggle,
     this.onColumns,
     this.showFilterButton = true,
+    this.customBottom,
   });
 
   @override
@@ -41,8 +48,11 @@ class UserBannerAppBar extends StatefulWidget implements PreferredSizeWidget {
 
   @override
   Size get preferredSize {
-    // Ajusta a altura baseada no showFilterButton
     const baseHeight = kToolbarHeight;
+    if (customBottom != null) {
+      return Size.fromHeight(baseHeight + customBottom!.preferredSize.height);
+    }
+    // Ajusta a altura baseada no showFilterButton
     final filterBarHeight = (showFilterButton == true) ? 52.0 : 0.0;
     return Size.fromHeight(baseHeight + filterBarHeight);
   }
@@ -507,18 +517,19 @@ class _UserBannerAppBarState extends State<UserBannerAppBar> {
           ),
         ]
       ],
-      bottom: (widget.showFilterButton == true)
-          ? PreferredSize(
-              preferredSize: const Size.fromHeight(52),
-              child: FilterActionBar(
-                screenTitle: widget.screenTitle,
-                onRefresh: widget.onRefresh,
-                isLoading: widget.isLoading,
-                onFilterToggle: widget.onFilterToggle,
-                onColumns: widget.onColumns,
-              ),
-            )
-          : null,
+      bottom: widget.customBottom ??
+          ((widget.showFilterButton == true)
+              ? PreferredSize(
+                  preferredSize: const Size.fromHeight(52),
+                  child: FilterActionBar(
+                    screenTitle: widget.screenTitle,
+                    onRefresh: widget.onRefresh,
+                    isLoading: widget.isLoading,
+                    onFilterToggle: widget.onFilterToggle,
+                    onColumns: widget.onColumns,
+                  ),
+                )
+              : null),
     );
   }
 }
