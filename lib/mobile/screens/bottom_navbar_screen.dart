@@ -7,6 +7,8 @@ import 'package:task_manager_flutter/models/auth_utility.dart';
 import 'package:task_manager_flutter/services/alert_caller.dart';
 import 'package:task_manager_flutter/utils/grid_colors.dart';
 import 'package:task_manager_flutter/utils/security_matrix.dart';
+import 'package:task_manager_flutter/utils/module_priority.dart';
+import 'package:task_manager_flutter/widgets/contextual_home_screen.dart';
 
 import '../../customization/dynamic_grid_dynamic_screen.dart';
 import '../../customization/generic_grid/grid_models.dart'
@@ -180,17 +182,151 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
   }
 
   List<Widget> _buildScreens(SecurityMatrix sec) {
-    return [
-      if (sec.canView(AppScreen.calendario)) const CalendarScreen(),
-      if (sec.canView(AppScreen.chat))
-        AuthUtility.userInfo?.login?.email != null
-            ? ChatListScreen(userName: AuthUtility.userInfo?.login?.email ?? '')
-            : const ChatListScreen(userName: 'Usuario'),
-      if (sec.canView(AppScreen.comunicados)) _comunicadoGridInline(sec: sec),
-      if (sec.canView(AppScreen.chamados)) _chamadoGridInline(sec: sec),
-      if (sec.canView(AppScreen.ged)) _gedDynamicGrid(sec),
-      Container(), // slot do botao "Mais"
-    ];
+    final items = <Widget>[];
+
+    // 1. Início (sempre visível)
+    items.add(ContextualHomeScreen(
+      key: const ValueKey('inicio'),
+      onNavigate: (rota) => _navigateFromInicio(rota, sec),
+    ));
+
+    // 2. Chat (gateado)
+    items.add(
+      sec.canView(AppScreen.chat)
+          ? (AuthUtility.userInfo?.login?.email != null
+              ? ChatListScreen(
+                  key: const ValueKey('chat'),
+                  userName: AuthUtility.userInfo?.login?.email ?? '',
+                )
+              : const ChatListScreen(
+                  key: ValueKey('chat'), userName: 'Usuario'))
+          : _buildGatedPlaceholder('Chat indisponível'),
+    );
+
+    // 3. Comunicados (gateado)
+    items.add(
+      sec.canView(AppScreen.comunicados)
+          ? _comunicadoGridInline(sec: sec)
+          : _buildGatedPlaceholder('Comunicados indisponível'),
+    );
+
+    // 4. Slot dinâmico do módulo de maior prioridade (gateado)
+    final slot = _dynamicSlotInfo();
+    if (slot != null) {
+      items.add(_buildDynamicModuleScreen(slot.rota, sec));
+    } else {
+      items.add(_buildGatedPlaceholder('Nenhum módulo disponível'));
+    }
+
+    // 5. Mais (sempre presente — abre bottom sheet)
+    items.add(Container(key: const ValueKey('mais')));
+
+    return items;
+  }
+
+  /// Placeholder para slots sem permissão (evita IndexedStack quebrar).
+  Widget _buildGatedPlaceholder(String msg) {
+    return const SizedBox.shrink();
+  }
+
+  /// Constrói o widget do slot dinâmico baseado na rota do módulo.
+  Widget _buildDynamicModuleScreen(String rota, SecurityMatrix sec) {
+    switch (rota) {
+      case 'pdv':
+        return const PdvScreen(key: ValueKey('dynamic_pdv'));
+      case 'nfse':
+        return NfseConsultaScreen(
+          key: const ValueKey('dynamic_nfse'),
+          hasPermission: (action) =>
+              _hasPermissionFor(sec, AppScreen.nfseLista, action),
+        );
+      case 'contas_pagar':
+        return ContaPagarGridScreen(
+          key: const ValueKey('dynamic_contas_pagar'),
+          hasPermission: (action) =>
+              _hasPermissionFor(sec, AppScreen.contasPagar, action),
+        );
+      case 'calendario':
+        return const CalendarScreen(key: ValueKey('dynamic_calendario'));
+      case 'ponto':
+        return const PontoScreen(key: ValueKey('dynamic_ponto'));
+      case 'pedidos_venda':
+        return Container(key: const ValueKey('dynamic_pedidos_venda'));
+      default:
+        return _buildGatedPlaceholder('Módulo não disponível');
+    }
+  }
+
+  /// Navega a partir dos atalhos da ContextualHomeScreen para a tela correta
+  /// ou para o slot dinâmico na BottomNav.
+  void _navigateFromInicio(String rota, SecurityMatrix sec) {
+    // Se a rota for uma das telas dos slots fixos, muda o tab.
+    final slotIndexMap = <String, int>{
+      'chat': 1,
+    };
+    if (slotIndexMap.containsKey(rota)) {
+      setState(() => selectedIndex = slotIndexMap[rota]!);
+      return;
+    }
+
+    // Tenta encontrar o índice do slot dinâmico
+    final slot = _dynamicSlotInfo();
+    if (slot != null && slot.rota == rota) {
+      // O slot dinâmico está na posição 3 (após Inicio=0, Chat=1, Comunicados=2)
+      setState(() => selectedIndex = 3);
+      return;
+    }
+
+    // Fallback: navegação push normal
+    onMenuOptionSelected(_rotaParaLabel(rota), sec);
+  }
+
+  /// Mapa auxiliar: rota → label que o onMenuOptionSelected entende.
+  String _rotaParaLabel(String rota) {
+    return switch (rota) {
+      'pdv' => 'PDV',
+      'nfse' => 'Notas de Serviço (NFS-e)',
+      'contas_pagar' => 'Contas Pagar',
+      'calendario' => 'Calendario',
+      'ponto' => 'Bater Ponto',
+      'produtos' => 'Produtos',
+      'parceiros' => 'Parceiros',
+      'pedidos_venda' => 'Pedidos Venda',
+      'dashboard' => 'Dashboard',
+      'chat' => 'Chat',
+      'comunicados' => 'Comunicados',
+      'chamados' => 'Chamados',
+      _ => rota,
+    };
+  }
+
+  /// Retorna informações do slot dinâmico baseado no módulo de maior prioridade.
+  _DynamicSlot? _dynamicSlotInfo() {
+    final contratados = ModuloAccess.modulosContratados;
+    final modulo = ModulePriority.highest(contratados);
+
+    if (modulo == null) return null;
+    final limitado =
+        modulo == 'Financeiro' && SecurityMatrix.current().isFinanceiroLimitado;
+
+    return switch (modulo) {
+      'Comercial' => _DynamicSlot(Icons.point_of_sale, 'PDV', 'pdv'),
+      'NFS-e' => _DynamicSlot(Icons.description, 'NFS-e', 'nfse'),
+      'Financeiro' => limitado
+          ? _DynamicSlot(Icons.payments, 'Contas Pagar', 'contas_pagar')
+          : _DynamicSlot(Icons.calendar_month, 'Calendário', 'calendario'),
+      'Departamento Pessoal' =>
+        _DynamicSlot(Icons.access_time, 'Bater Ponto', 'ponto'),
+      _ => _DynamicSlot(Icons.apps, modulo, modulo),
+    };
+  }
+
+  /// Navega a partir do slot dinâmico da BottomNav.
+  void _onDynamicSlotTap() {
+    final slot = _dynamicSlotInfo();
+    if (slot != null) {
+      onMenuOptionSelected(slot.label, SecurityMatrix.current());
+    }
   }
 
   Widget _gedDynamicGrid(SecurityMatrix sec) {
@@ -274,17 +410,20 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
         response.body;
     if (!response.isSuccess || raw is! List) return [];
 
-    return raw.whereType<Map>().map((item) {
-      final map = Map<String, dynamic>.from(item);
-      final label = labelKeys
-          .map((key) => map[key]?.toString())
-          .firstWhere((value) => value != null && value.isNotEmpty,
+    return raw
+        .whereType<Map>()
+        .map((item) {
+          final map = Map<String, dynamic>.from(item);
+          final label = labelKeys.map((key) => map[key]?.toString()).firstWhere(
+              (value) => value != null && value.isNotEmpty,
               orElse: () => map['id']?.toString() ?? '');
-      return {
-        'value': map['id']?.toString() ?? '',
-        'label': label,
-      };
-    }).where((item) => item['value']!.isNotEmpty).toList();
+          return {
+            'value': map['id']?.toString() ?? '',
+            'label': label,
+          };
+        })
+        .where((item) => item['value']!.isNotEmpty)
+        .toList();
   }
 
   Widget _dynamicGridInline({
@@ -526,11 +665,9 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
     final items = <BottomNavigationBarItem>[];
 
     void addItem({
-      required bool visible,
       required IconData icon,
       required String label,
     }) {
-      if (!visible) return;
       final index = items.length;
       final active = index == selected;
       items.add(BottomNavigationBarItem(
@@ -539,37 +676,21 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
       ));
     }
 
-    addItem(
-      visible: sec.canView(AppScreen.calendario),
-      icon: Icons.calendar_today,
-      label: "Calendario",
-    );
-    addItem(
-      visible: sec.canView(AppScreen.chat),
-      icon: Icons.chat,
-      label: "Chat",
-    );
-    addItem(
-      visible: sec.canView(AppScreen.comunicados),
-      icon: Icons.campaign,
-      label: "Comunicados",
-    );
-    addItem(
-      visible: sec.canView(AppScreen.chamados),
-      icon: Icons.support_agent,
-      label: "Solicitacoes",
-    );
-    addItem(
-      visible: sec.canView(AppScreen.ged),
-      icon: Icons.folder_open,
-      label: "GED",
-    );
+    // 4 slots fixos
+    addItem(icon: Icons.home, label: "Início");
+    addItem(icon: Icons.chat, label: "Chat");
+    addItem(icon: Icons.campaign, label: "Comunicados");
 
-    final moreIndex = items.length;
-    items.add(BottomNavigationBarItem(
-      icon: _bottomNavIcon(Icons.more_horiz, active: moreIndex == selected),
-      label: "Mais",
-    ));
+    // Slot dinâmico do módulo de maior prioridade
+    final slot = _dynamicSlotInfo();
+    if (slot != null) {
+      addItem(icon: slot.icon, label: slot.label);
+    } else {
+      addItem(icon: Icons.apps, label: "Módulo");
+    }
+
+    // Último item = Mais
+    addItem(icon: Icons.more_horiz, label: "Mais");
 
     return items;
   }
@@ -940,8 +1061,16 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
           showUnselectedLabels: true,
           type: BottomNavigationBarType.fixed,
           onTap: (int index) {
-            if (index == navItems.length - 1) {
+            // Índice fixo: 0=Início, 1=Chat, 2=Comunicados, 3=Slot Dinâmico, 4=Mais
+            if (index == 4) {
+              // Último slot = Mais → abre bottom sheet agrupado
               _showMenuOptions(context, sec);
+            } else if (index == 3) {
+              // Slot dinâmico: verifica permissão antes de navegar
+              final slot = _dynamicSlotInfo();
+              if (slot != null) {
+                setState(() => selectedIndex = 3);
+              }
             } else {
               setState(() => selectedIndex = index);
             }
@@ -953,33 +1082,80 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
   }
 
   void _showMenuOptions(BuildContext context, SecurityMatrix sec) {
-    final menuItems = <_MoreMenuAction>[
-      if (sec.canView(AppScreen.contasPagar))
-        const _MoreMenuAction(Icons.payments, "Contas Pagar"),
-      if (sec.canView(AppScreen.contasReceber))
-        const _MoreMenuAction(Icons.account_balance_wallet, "Contas Receber"),
-      if (sec.canView(AppScreen.contasReceber))
-        const _MoreMenuAction(Icons.notifications_active, "Régua de Cobrança"),
-      if (sec.canView(AppScreen.nfseLista))
-        const _MoreMenuAction(Icons.description, "Notas de Serviço (NFS-e)"),
-      if (sec.canView(AppScreen.nfseSerie))
-        const _MoreMenuAction(Icons.tag, "Séries NFS-e"),
-      if (sec.canView(AppScreen.dashboard))
-        const _MoreMenuAction(Icons.bar_chart, "Dashboard"),
-      if (sec.canView(AppScreen.dashAtendimentoArea))
-        const _MoreMenuAction(Icons.support_agent, "Atendimento"),
-      if (sec.canView(AppScreen.contasBancarias))
-        const _MoreMenuAction(Icons.account_balance, "Contas Bancarias"),
-      if (sec.canView(AppScreen.parceiros))
-        const _MoreMenuAction(Icons.people, "Parceiros"),
-      if (sec.canView(AppScreen.mensalidades))
-        const _MoreMenuAction(Icons.receipt_long, "Mensalidades"),
-      const _MoreMenuAction(Icons.verified_user, "Alvarás"),
-      const _MoreMenuAction(Icons.account_circle, "Meu Perfil"),
-      if (sec.canView(AppScreen.contasBancarias))
-        const _MoreMenuAction(Icons.upload_file, "Importar Extratos"),
-      const _MoreMenuAction(Icons.exit_to_app, "Sair", isDestructive: true),
+    final contratados = ModuloAccess.modulosContratados;
+
+    // Define os grupos de módulos com seus itens (gateados por permissão)
+    final modulos = <_ModuloGroup>[
+      _ModuloGroup(
+        'Comercial',
+        Icons.business,
+        [
+          if (sec.canView(AppScreen.pdvNfce))
+            _MoreMenuAction(Icons.point_of_sale, 'PDV'),
+          if (sec.canView(AppScreen.produto))
+            _MoreMenuAction(Icons.inventory, 'Produtos'),
+          if (sec.canView(AppScreen.parceiros))
+            _MoreMenuAction(Icons.people, 'Parceiros'),
+        ],
+      ),
+      _ModuloGroup(
+        'Financeiro',
+        Icons.account_balance,
+        [
+          if (sec.canView(AppScreen.contasPagar))
+            _MoreMenuAction(Icons.payments, 'Contas Pagar'),
+          if (sec.canView(AppScreen.contasReceber))
+            _MoreMenuAction(Icons.account_balance_wallet, 'Contas Receber'),
+          if (sec.canView(AppScreen.contasBancarias))
+            _MoreMenuAction(Icons.account_balance, 'Contas Bancarias'),
+          if (sec.canView(AppScreen.dashboard))
+            _MoreMenuAction(Icons.bar_chart, 'Dashboard'),
+          if (sec.canView(AppScreen.contasReceber))
+            _MoreMenuAction(Icons.notifications_active, 'Régua de Cobrança'),
+          if (sec.canView(AppScreen.contasBancarias))
+            _MoreMenuAction(Icons.upload_file, 'Importar Extratos'),
+        ],
+      ),
+      _ModuloGroup(
+        'Departamento Pessoal',
+        Icons.badge,
+        [
+          if (sec.canView(AppScreen.ponto))
+            _MoreMenuAction(Icons.access_time, 'Bater Ponto'),
+          if (sec.canView(AppScreen.funcionarios))
+            _MoreMenuAction(Icons.people_outline, 'Funcionários'),
+        ],
+      ),
+      _ModuloGroup(
+        'NFS-e',
+        Icons.description,
+        [
+          if (sec.canView(AppScreen.nfseLista))
+            _MoreMenuAction(Icons.file_copy, 'Notas de Serviço (NFS-e)'),
+          if (sec.canView(AppScreen.nfseSerie))
+            _MoreMenuAction(Icons.tag, 'Séries NFS-e'),
+        ],
+      ),
+      _ModuloGroup(
+        'Outros',
+        Icons.apps,
+        [
+          if (sec.canView(AppScreen.parceiros))
+            _MoreMenuAction(Icons.handshake, 'Parceiros'),
+          if (sec.canView(AppScreen.dashAtendimentoArea))
+            _MoreMenuAction(Icons.support_agent, 'Atendimento'),
+          if (sec.canView(AppScreen.mensalidades))
+            _MoreMenuAction(Icons.receipt_long, 'Mensalidades'),
+          _MoreMenuAction(Icons.verified_user, 'Alvarás'),
+          _MoreMenuAction(Icons.account_circle, 'Meu Perfil'),
+          _MoreMenuAction(Icons.settings, 'Config Fiscal'),
+          _MoreMenuAction(Icons.exit_to_app, 'Sair', isDestructive: true),
+        ],
+      ),
     ];
+
+    // Filtra apenas grupos com itens visíveis
+    final gruposVisiveis = modulos.where((g) => g.items.isNotEmpty).toList();
 
     showModalBottomSheet(
       context: context,
@@ -993,110 +1169,170 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
       builder: (sheetContext) {
         return Padding(
           padding: const EdgeInsets.fromLTRB(16, 10, 16, 18),
-          // SingleChildScrollView: a lista de modulos cresce com o tempo (ja
-          // bateu o limite da tela em telas menores) — sem isso o conteudo
-          // estoura a altura do bottom sheet (overflow).
           child: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Center(
-                child: Container(
-                  width: 44,
-                  height: 4,
-                  decoration: BoxDecoration(
-                    color: GridColors.divider,
-                    borderRadius: BorderRadius.circular(99),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Center(
+                  child: Container(
+                    width: 44,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: GridColors.divider,
+                      borderRadius: BorderRadius.circular(99),
+                    ),
                   ),
                 ),
-              ),
-              const SizedBox(height: 16),
-              Row(
-                children: [
-                  Container(
-                    width: 40,
-                    height: 40,
-                    decoration: const BoxDecoration(
-                      color: GridColors.secondarySoft,
-                      shape: BoxShape.circle,
+                const SizedBox(height: 16),
+                Row(
+                  children: [
+                    Container(
+                      width: 40,
+                      height: 40,
+                      decoration: const BoxDecoration(
+                        color: GridColors.secondarySoft,
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(
+                        Icons.apps_rounded,
+                        color: GridColors.secondary,
+                      ),
                     ),
-                    child: const Icon(
-                      Icons.apps_rounded,
-                      color: GridColors.secondary,
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  const Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          "Mais opcoes",
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.w800,
-                            color: GridColors.textSecondary,
+                    const SizedBox(width: 12),
+                    const Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Mais opções',
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.w800,
+                              color: GridColors.textSecondary,
+                            ),
                           ),
-                        ),
-                        SizedBox(height: 2),
-                        Text(
-                          "Acesse os modulos do sistema",
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: GridColors.textMuted,
+                          SizedBox(height: 2),
+                          Text(
+                            'Acesse os módulos do sistema',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: GridColors.textMuted,
+                            ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
-                  ),
-                  IconButton(
-                    onPressed: () => Navigator.pop(sheetContext),
-                    icon: const Icon(Icons.close),
-                    color: GridColors.textMuted,
-                    tooltip: 'Fechar',
-                  ),
-                ],
-              ),
-              const SizedBox(height: 16),
-              GridView.builder(
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                itemCount: menuItems.length,
-                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 3,
-                  crossAxisSpacing: 10,
-                  mainAxisSpacing: 10,
-                  childAspectRatio: 0.92,
+                    IconButton(
+                      onPressed: () => Navigator.pop(sheetContext),
+                      icon: const Icon(Icons.close),
+                      color: GridColors.textMuted,
+                      tooltip: 'Fechar',
+                    ),
+                  ],
                 ),
-                itemBuilder: (_, index) {
-                  final item = menuItems[index];
-                  return _menuItem(
-                    item.icon,
-                    item.title,
+                const SizedBox(height: 8),
+                // Grupos do módulo contratado — com badge "contratado"
+                ...gruposVisiveis.map((grupo) {
+                  final contratado = contratados.contains(grupo.nome);
+                  return _buildModuloGroup(
+                    grupo,
+                    contratado,
                     sec,
-                    isDestructive: item.isDestructive,
                   );
-                },
-              ),
-              const SizedBox(height: 12),
-              SizedBox(
-                width: double.infinity,
-                child: OutlinedButton.icon(
-                  onPressed: () => Navigator.pop(sheetContext),
-                  icon: const Icon(Icons.arrow_downward_rounded),
-                  label: const Text('Fechar menu'),
+                }),
+                const SizedBox(height: 8),
+                SizedBox(
+                  width: double.infinity,
+                  child: OutlinedButton.icon(
+                    onPressed: () => Navigator.pop(sheetContext),
+                    icon: const Icon(Icons.arrow_downward_rounded),
+                    label: const Text('Fechar menu'),
+                  ),
                 ),
-              ),
-            ],
-          ),
+              ],
+            ),
           ),
         );
       },
     );
   }
 
-  Widget _menuItem(
+  Widget _buildModuloGroup(
+    _ModuloGroup grupo,
+    bool contratado,
+    SecurityMatrix sec,
+  ) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.only(left: 4, top: 12, bottom: 6),
+          child: Row(
+            children: [
+              Icon(grupo.icon,
+                  size: 16,
+                  color:
+                      contratado ? GridColors.secondary : GridColors.textMuted),
+              const SizedBox(width: 8),
+              Text(
+                grupo.nome,
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w700,
+                  color: contratado
+                      ? GridColors.textSecondary
+                      : GridColors.textMuted,
+                ),
+              ),
+              if (contratado) ...[
+                const SizedBox(width: 6),
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
+                  decoration: BoxDecoration(
+                    color: GridColors.success.withValues(alpha: 0.15),
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                  child: const Text(
+                    'contratado',
+                    style: TextStyle(
+                      fontSize: 9,
+                      fontWeight: FontWeight.w600,
+                      color: GridColors.success,
+                    ),
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ),
+        GridView.builder(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          itemCount: grupo.items.length,
+          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: 3,
+            crossAxisSpacing: 8,
+            mainAxisSpacing: 8,
+            childAspectRatio: 0.95,
+          ),
+          itemBuilder: (_, index) {
+            final item = grupo.items[index];
+            return _menuItemGrid(
+              item.icon,
+              item.title,
+              sec,
+              isDestructive: item.isDestructive,
+            );
+          },
+        ),
+        const Divider(height: 20),
+      ],
+    );
+  }
+
+  Widget _menuItemGrid(
     IconData icon,
     String title,
     SecurityMatrix sec, {
@@ -1161,4 +1397,20 @@ class _MoreMenuAction {
     this.title, {
     this.isDestructive = false,
   });
+}
+
+class _ModuloGroup {
+  final String nome;
+  final IconData icon;
+  final List<_MoreMenuAction> items;
+
+  const _ModuloGroup(this.nome, this.icon, this.items);
+}
+
+/// Informações do slot dinâmico da BottomNavBar.
+class _DynamicSlot {
+  final IconData icon;
+  final String label;
+  final String rota;
+  const _DynamicSlot(this.icon, this.label, this.rota);
 }

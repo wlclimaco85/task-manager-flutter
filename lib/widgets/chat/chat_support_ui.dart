@@ -257,6 +257,7 @@ class ChatConversationHeader extends StatelessWidget {
   final String userName;
   final bool compact;
   final VoidCallback? onBack;
+  final VoidCallback? onFinalize;
 
   const ChatConversationHeader({
     super.key,
@@ -264,6 +265,7 @@ class ChatConversationHeader extends StatelessWidget {
     required this.userName,
     this.compact = false,
     this.onBack,
+    this.onFinalize,
   });
 
   @override
@@ -325,6 +327,28 @@ class ChatConversationHeader extends StatelessWidget {
             ),
           ),
           const ChatStatusPill(status: 'Ativo'),
+          if (onFinalize != null) ...[
+            const SizedBox(width: 8),
+            SizedBox(
+              height: 32,
+              child: TextButton.icon(
+                style: TextButton.styleFrom(
+                  foregroundColor: GridColors.error,
+                  padding: const EdgeInsets.symmetric(horizontal: 10),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(6),
+                    side: BorderSide(
+                        color: GridColors.error.withValues(alpha: 0.4)),
+                  ),
+                ),
+                onPressed: onFinalize,
+                icon: const Icon(Icons.stop_circle_outlined, size: 16),
+                label: const Text('Finalizar',
+                    style:
+                        TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
+              ),
+            ),
+          ],
         ],
       ),
     );
