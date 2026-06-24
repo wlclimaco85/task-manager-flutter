@@ -741,9 +741,34 @@ class _JobsSectionState extends State<_JobsSection> {
       'cron': 'Seg-Sex a cada hora'
     },
     {
+      'nome': 'InstagramInteracaoJob',
+      'label': 'Instagram Interacoes (following)',
+      'cron': 'Diario 23:59'
+    },
+    {
       'nome': 'MensalidadeEscritorioJob',
       'label': 'Mensalidade do Escritorio (gera parcela)',
       'cron': '1o dia do mes 06:00'
+    },
+    {
+      'nome': 'ReguaCobrancaJob',
+      'label': 'Regua de Cobranca Automatica',
+      'cron': 'Diario 08:00'
+    },
+    {
+      'nome': 'AlertasVencimentoJob',
+      'label': 'Alertas de Vencimento (Contas a Pagar)',
+      'cron': 'Diario 07:00'
+    },
+    {
+      'nome': 'CertificadoExpiracaoJob',
+      'label': 'Verificacao de Certificados NFC-e',
+      'cron': 'Diario 08:00'
+    },
+    {
+      'nome': 'ContingenciaJob',
+      'label': 'Reenvio de NFC-e em Contingencia',
+      'cron': 'A cada 5 minutos'
     },
   ];
 
