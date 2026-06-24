@@ -313,127 +313,6 @@ class MenuConfig {
       ],
     ),
     MenuGroup(
-      id: 'suporte_comunicacao',
-      label: 'Suporte / Comunicação',
-      icon: FontAwesomeIcons.comments,
-      items: [
-        MenuItem(
-            id: 'chat',
-            label: 'Chat',
-            icon: FontAwesomeIcons.comments,
-            screenIndex: 64),
-        MenuItem(
-            id: 'comunicados',
-            label: 'Comunicados',
-            icon: FontAwesomeIcons.newspaper,
-            screenIndex: 0),
-        MenuItem(
-            id: 'chamados',
-            label: 'Chamados',
-            icon: FontAwesomeIcons.ticketSimple,
-            screenIndex: 27),
-        MenuItem(
-            id: 'diretorios',
-            label: 'Diretórios',
-            icon: FontAwesomeIcons.folderTree,
-            screenIndex: 29),
-        MenuItem(
-            id: 'ged',
-            label: 'GED',
-            icon: FontAwesomeIcons.folderOpen,
-            screenIndex: 30),
-        MenuItem(
-            id: 'noticias',
-            label: 'Notícias',
-            icon: FontAwesomeIcons.newspaper,
-            screenIndex: 87),
-        MenuItem(
-            id: 'kanban',
-            label: 'Kanban',
-            icon: FontAwesomeIcons.trello,
-            screenIndex: 51),
-        MenuItem(
-            id: 'dashAtendimentoArea',
-            label: 'Dashboard Atendimento (Área)',
-            icon: FontAwesomeIcons.chartLine,
-            screenIndex: 144),
-      ],
-    ),
-    MenuGroup(
-      id: 'configuracoes',
-      label: 'Configurações',
-      icon: FontAwesomeIcons.sliders,
-      items: [
-        MenuItem(
-            id: 'logins',
-            label: 'Logins',
-            icon: FontAwesomeIcons.userLock,
-            screenIndex: 4),
-        MenuItem(
-            id: 'obrigacoes_fiscais',
-            label: 'Obrigações Fiscais',
-            icon: FontAwesomeIcons.fileInvoiceDollar,
-            screenIndex: 32),
-        MenuItem(
-            id: 'regime_tributario',
-            label: 'Regime Tributário',
-            icon: FontAwesomeIcons.taxi,
-            screenIndex: 8),
-        MenuItem(
-            id: 'roles',
-            label: 'Roles',
-            icon: FontAwesomeIcons.userShield,
-            screenIndex: 22),
-        MenuItem(
-            id: 'alvaras',
-            label: 'Alvarás',
-            icon: FontAwesomeIcons.stamp,
-            screenIndex: 70),
-      ],
-    ),
-    MenuGroup(
-      id: 'depto_pessoal',
-      label: 'Depto. Pessoal',
-      icon: FontAwesomeIcons.idCard,
-      items: [
-        MenuItem(
-            id: 'ajuste_ponto',
-            label: 'Ajuste de Ponto',
-            icon: FontAwesomeIcons.clockRotateLeft,
-            screenIndex: 62),
-        MenuItem(
-            id: 'feriados',
-            label: 'Feriados',
-            icon: FontAwesomeIcons.umbrellaBeach,
-            screenIndex: 46),
-        MenuItem(
-            id: 'funcionarios',
-            label: 'Funcionários',
-            icon: FontAwesomeIcons.idCard,
-            screenIndex: 50),
-        MenuItem(
-            id: 'ponto',
-            label: 'Ponto',
-            icon: FontAwesomeIcons.clock,
-            screenIndex: 60),
-        MenuItem(
-            id: 'setores',
-            label: 'Setores',
-            icon: FontAwesomeIcons.sitemap,
-            screenIndex: 23),
-        MenuItem(
-            id: 'solicitar_ajuste',
-            label: 'Solicitar Ajuste Ponto',
-            icon: FontAwesomeIcons.penToSquare,
-            screenIndex: 61),
-        MenuItem(
-            id: 'dashDpArea',
-            label: 'Dashboard DP (Área)',
-            icon: FontAwesomeIcons.chartLine,
-            screenIndex: 143),
-      ],
-    ),
-    MenuGroup(
       id: 'financeiro',
       label: 'Financeiro',
       icon: FontAwesomeIcons.moneyBillTrendUp,
@@ -556,6 +435,127 @@ class MenuConfig {
             label: 'Aprovação de Pagamentos',
             icon: FontAwesomeIcons.checkDouble,
             screenIndex: 123),
+      ],
+    ),
+    MenuGroup(
+      id: 'depto_pessoal',
+      label: 'Depto. Pessoal',
+      icon: FontAwesomeIcons.idCard,
+      items: [
+        MenuItem(
+            id: 'ajuste_ponto',
+            label: 'Ajuste de Ponto',
+            icon: FontAwesomeIcons.clockRotateLeft,
+            screenIndex: 62),
+        MenuItem(
+            id: 'feriados',
+            label: 'Feriados',
+            icon: FontAwesomeIcons.umbrellaBeach,
+            screenIndex: 46),
+        MenuItem(
+            id: 'funcionarios',
+            label: 'Funcionários',
+            icon: FontAwesomeIcons.idCard,
+            screenIndex: 50),
+        MenuItem(
+            id: 'ponto',
+            label: 'Ponto',
+            icon: FontAwesomeIcons.clock,
+            screenIndex: 60),
+        MenuItem(
+            id: 'setores',
+            label: 'Setores',
+            icon: FontAwesomeIcons.sitemap,
+            screenIndex: 23),
+        MenuItem(
+            id: 'solicitar_ajuste',
+            label: 'Solicitar Ajuste Ponto',
+            icon: FontAwesomeIcons.penToSquare,
+            screenIndex: 61),
+        MenuItem(
+            id: 'dashDpArea',
+            label: 'Dashboard DP (Área)',
+            icon: FontAwesomeIcons.chartLine,
+            screenIndex: 143),
+      ],
+    ),
+    MenuGroup(
+      id: 'suporte_comunicacao',
+      label: 'Suporte / Comunicação',
+      icon: FontAwesomeIcons.comments,
+      items: [
+        MenuItem(
+            id: 'chat',
+            label: 'Chat',
+            icon: FontAwesomeIcons.comments,
+            screenIndex: 64),
+        MenuItem(
+            id: 'comunicados',
+            label: 'Comunicados',
+            icon: FontAwesomeIcons.newspaper,
+            screenIndex: 0),
+        MenuItem(
+            id: 'chamados',
+            label: 'Chamados',
+            icon: FontAwesomeIcons.ticketSimple,
+            screenIndex: 27),
+        MenuItem(
+            id: 'diretorios',
+            label: 'Diretórios',
+            icon: FontAwesomeIcons.folderTree,
+            screenIndex: 29),
+        MenuItem(
+            id: 'ged',
+            label: 'GED',
+            icon: FontAwesomeIcons.folderOpen,
+            screenIndex: 30),
+        MenuItem(
+            id: 'noticias',
+            label: 'Notícias',
+            icon: FontAwesomeIcons.newspaper,
+            screenIndex: 87),
+        MenuItem(
+            id: 'kanban',
+            label: 'Kanban',
+            icon: FontAwesomeIcons.trello,
+            screenIndex: 51),
+        MenuItem(
+            id: 'dashAtendimentoArea',
+            label: 'Dashboard Atendimento (Área)',
+            icon: FontAwesomeIcons.chartLine,
+            screenIndex: 144),
+      ],
+    ),
+    MenuGroup(
+      id: 'configuracoes',
+      label: 'Configurações',
+      icon: FontAwesomeIcons.sliders,
+      items: [
+        MenuItem(
+            id: 'logins',
+            label: 'Logins',
+            icon: FontAwesomeIcons.userLock,
+            screenIndex: 4),
+        MenuItem(
+            id: 'obrigacoes_fiscais',
+            label: 'Obrigações Fiscais',
+            icon: FontAwesomeIcons.fileInvoiceDollar,
+            screenIndex: 32),
+        MenuItem(
+            id: 'regime_tributario',
+            label: 'Regime Tributário',
+            icon: FontAwesomeIcons.taxi,
+            screenIndex: 8),
+        MenuItem(
+            id: 'roles',
+            label: 'Roles',
+            icon: FontAwesomeIcons.userShield,
+            screenIndex: 22),
+        MenuItem(
+            id: 'alvaras',
+            label: 'Alvarás',
+            icon: FontAwesomeIcons.stamp,
+            screenIndex: 70),
       ],
     ),
     MenuGroup(

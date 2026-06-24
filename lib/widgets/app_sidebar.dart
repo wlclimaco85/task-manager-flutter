@@ -84,6 +84,15 @@ class _AppSidebarState extends State<AppSidebar> {
   void _computeAllowed() {
     final allMenuIds = MenuConfig.allItems.map((m) => m.id).toSet();
     _allowedIds = SecurityMatrix.current().allowedTelaIds(allMenuIds);
+    _applyAdaptiveCollapse();
+  }
+
+  // Colapso adaptativo: ≤2 grupos visíveis → expande todos por default.
+  void _applyAdaptiveCollapse() {
+    final visibleGroups = MenuConfig.groups.where((g) => g.items.any(_canSee)).toList();
+    if (visibleGroups.length <= 2) {
+      _expandedGroups.addAll(visibleGroups.map((g) => g.id));
+    }
   }
 
   Future<void> _loadFavorites() async {
@@ -283,6 +292,7 @@ class _AppSidebarState extends State<AppSidebar> {
 
   // ── Menu completo ─────────────────────────────────────────────────────────
   Widget _buildFullMenu() {
+    final visibleGroups = MenuConfig.groups.where((g) => g.items.any(_canSee)).toList();
     return ListView(
       padding: const EdgeInsets.only(bottom: 8),
       children: [
@@ -292,10 +302,14 @@ class _AppSidebarState extends State<AppSidebar> {
           ..._favoriteItems.map((item) => _buildMenuItem(item, indent: true)),
           const Divider(color: Color(0xFF004a20), height: 16),
         ],
-        // Grupos com submenus (grupos sem itens visíveis são omitidos)
-        ...MenuConfig.groups
-            .where((g) => g.items.any(_canSee))
-            .map((group) => _buildGroup(group)),
+        // 1 grupo visível → flat sem cabeçalho de grupo
+        if (visibleGroups.length == 1)
+          ...visibleGroups.first.items
+              .where(_canSee)
+              .map((item) => _buildMenuItem(item, indent: false))
+        else
+          // 2+ grupos → comportamento normal com cabeçalhos (expandido por default quando ≤2)
+          ...visibleGroups.map((group) => _buildGroup(group)),
         // Itens soltos
         if (MenuConfig.loose.any(_canSee)) ...[
           const Divider(color: Color(0xFF004a20), height: 16),

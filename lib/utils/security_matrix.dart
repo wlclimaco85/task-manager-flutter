@@ -333,11 +333,16 @@ class SecurityMatrix {
   bool get isMaster =>
       profile == UserProfile.system || tipoLogin == LoginEnum.MASTER;
 
-  /// IDs de tela (telaNome) que o usuário pode VISUALIZAR, vindas do backend.
+  /// IDs de tela (telaNome) que o usuário pode VISUALIZAR, vindas do backend,
+  /// filtradas também por acesso de módulo contratado.
   Set<String> get viewableTelaIds {
     final result = <String>{};
     _backendPerms.forEach((tela, actions) {
-      if (actions.contains(AppAction.view)) result.add(tela);
+      if (!actions.contains(AppAction.view)) return;
+      // Filtra telas de módulos não contratados
+      final screen = AppScreen.values.where((s) => s.name == tela).firstOrNull;
+      if (screen != null && !ModuloAccess.isScreenAllowed(screen)) return;
+      result.add(tela);
     });
     return result;
   }

@@ -22,6 +22,7 @@ import 'package:http/http.dart' as http;
 import '../../../web/dialogs/anexo_upload_dialog.dart';
 import '../../../web/dialogs/export_power_bi_dialog.dart';
 import '../../../widgets/finance/boleto_widget.dart';
+import '../../../utils/security_matrix.dart';
 
 class WebContaPagarGridScreen extends StatefulWidget {
   final SecurityCheck hasPermission;
@@ -313,11 +314,40 @@ class _WebContaPagarGridScreenState extends State<WebContaPagarGridScreen> {
       );
   }
 
+  bool get _isFinanceiroLimitado =>
+      ModuloAccess.isModuloContratado('Financeiro Limitado') &&
+      !ModuloAccess.isModuloContratado('Financeiro');
+
+  Widget _buildMicrocopyLimitado() {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      color: GridColors.secondary.withOpacity(0.06),
+      child: Row(
+        children: [
+          const Icon(Icons.info_outline, size: 14, color: GridColors.secondary),
+          const SizedBox(width: 6),
+          Expanded(
+            child: Text(
+              'Estas contas são lançadas pelo seu escritório. '
+              'Você pode consultá-las e registrar a baixa quando pagar.',
+              style: TextStyle(
+                fontSize: 11.5,
+                color: GridColors.secondary.withOpacity(0.85),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Column(
       children: [
         _buildFilterBar(),
+        if (_isFinanceiroLimitado) _buildMicrocopyLimitado(),
         const SizedBox(height: 8),
         Expanded(
           child: DynamicGridWindowsScreen<Map<String, dynamic>>(
