@@ -44,27 +44,14 @@ class _DashboardFiscalPlaceholderScreenState
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Dashboard Fiscal (Área)')),
-      body: Column(
-        children: [
-          const Padding(
-            padding: EdgeInsets.all(12),
-            child: Text(
-              'Em construção — KPIs desta área chegam em fase futura.',
-              style: TextStyle(fontStyle: FontStyle.italic),
-            ),
-          ),
-          Expanded(
-            child: DashboardAreaScaffold(
-              titulo: 'Dashboard Fiscal (Área)',
-              state: _state,
-              onKpiTap: (periodoInicio, periodoFim, drillDownRota) =>
-                  DrillDownRouter.navigate(
-                      context, drillDownRota, periodoInicio, periodoFim),
-              onRetry: _carregar,
-            ),
-          ),
-        ],
+      appBar: AppBar(title: const Text('Dashboard Fiscal')),
+      body: DashboardAreaScaffold(
+        titulo: 'Dashboard Fiscal',
+        state: _state,
+        onKpiTap: (periodoInicio, periodoFim, drillDownRota) =>
+            DrillDownRouter.navigate(
+                context, drillDownRota, periodoInicio, periodoFim),
+        onRetry: _carregar,
       ),
     );
   }
