@@ -160,7 +160,7 @@ class ChatListTileCard extends StatelessWidget {
                               tooltip: 'Mais opcoes',
                               padding: EdgeInsets.zero,
                               icon: const Icon(Icons.more_horiz, size: 18),
-                              color: Colors.black54,
+                              color: GridColors.secondary,
                               onPressed: onMore,
                             ),
                           ),
@@ -347,8 +347,6 @@ class ChatComposer extends StatelessWidget {
   final VoidCallback onAttach;
   final VoidCallback onTicket;
   final VoidCallback onSend;
-  final VoidCallback? onCorrect;
-  final VoidCallback? onSummarize;
 
   const ChatComposer({
     super.key,
@@ -356,8 +354,6 @@ class ChatComposer extends StatelessWidget {
     required this.onAttach,
     required this.onTicket,
     required this.onSend,
-    this.onCorrect,
-    this.onSummarize,
   });
 
   @override
@@ -384,20 +380,6 @@ class ChatComposer extends StatelessWidget {
               color: GridColors.primary,
               onPressed: onTicket,
             ),
-            if (onCorrect != null)
-              IconButton(
-                tooltip: 'Corrigir mensagem',
-                icon: const Icon(Icons.auto_fix_high),
-                color: GridColors.secondary,
-                onPressed: onCorrect,
-              ),
-            if (onSummarize != null)
-              IconButton(
-                tooltip: 'Resumir atendimento',
-                icon: const Icon(Icons.summarize_outlined),
-                color: GridColors.primary,
-                onPressed: onSummarize,
-              ),
             Expanded(
               child: TextField(
                 controller: controller,
