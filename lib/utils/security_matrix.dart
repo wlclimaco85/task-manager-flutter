@@ -47,7 +47,7 @@ enum AppScreen {
 // ─────────────────────────────────────────────────────────────────────────────
 // 2. Ações
 // ─────────────────────────────────────────────────────────────────────────────
-enum AppAction { view, insert, update, delete }
+enum AppAction { view, insert, update, delete, baixar }
 
 // ─────────────────────────────────────────────────────────────────────────────
 // 3. Perfis (mantidos para compatibilidade com código legado)
@@ -71,8 +71,9 @@ const Map<String, UserProfile> _roleKeyToProfile = {
 // ─────────────────────────────────────────────────────────────────────────────
 // 5. Atalhos
 // ─────────────────────────────────────────────────────────────────────────────
-const _all = {AppAction.view, AppAction.insert, AppAction.update, AppAction.delete};
-const _ro  = {AppAction.view};
+const _all         = {AppAction.view, AppAction.insert, AppAction.update, AppAction.delete};
+const _allFinanceiro = {AppAction.view, AppAction.insert, AppAction.update, AppAction.delete, AppAction.baixar};
+const _ro          = {AppAction.view};
 
 // Telas do ESCRITORIO (fallback hardcoded)
 const _escritorioScreens = {
@@ -86,8 +87,8 @@ const _escritorioScreens = {
   AppScreen.unidadeMedida:      _all,
   AppScreen.catalogoProduto:    _all,
   AppScreen.nfeSerie:           _all,
-  AppScreen.contasPagar:        _all,
-  AppScreen.contasReceber:      _all,
+  AppScreen.contasPagar:        _allFinanceiro,
+  AppScreen.contasReceber:      _allFinanceiro,
   AppScreen.trading:            _ro,
   AppScreen.chamados:           _all,
   AppScreen.formasPagamento:    _all,
@@ -150,8 +151,8 @@ final Map<UserProfile, Map<AppScreen, Set<AppAction>>> _fallbackMatrix = {
     AppScreen.arquivos:        _all,
     AppScreen.contasBancarias: _all,
     AppScreen.contaBancaria:   _all,
-    AppScreen.contasPagar:     _all,
-    AppScreen.contasReceber:   _all,
+    AppScreen.contasPagar:     _allFinanceiro,
+    AppScreen.contasReceber:   _allFinanceiro,
     AppScreen.nfeEntrada:      _all,
     AppScreen.nfeSaida:        _all,
     AppScreen.pdvNfce:         _all,
@@ -185,8 +186,8 @@ final Map<UserProfile, Map<AppScreen, Set<AppAction>>> _fallbackMatrix = {
     AppScreen.arquivos:        _all,
     AppScreen.contasBancarias: _all,
     AppScreen.contaBancaria:   _all,
-    AppScreen.contasPagar:     _all,
-    AppScreen.contasReceber:   _all,
+    AppScreen.contasPagar:     _allFinanceiro,
+    AppScreen.contasReceber:   _allFinanceiro,
     AppScreen.nfeEntrada:      _all,
     AppScreen.nfeSaida:        _all,
     AppScreen.pdvNfce:         _all,
@@ -275,6 +276,7 @@ class SecurityMatrix {
         if (p.podeInserir)  existing.add(AppAction.insert);
         if (p.podeEditar)   existing.add(AppAction.update);
         if (p.podeDeletar)  existing.add(AppAction.delete);
+        if (p.podeBaixar)   existing.add(AppAction.baixar);
         backendPerms[p.telaNome] = existing;
       }
     }
@@ -295,6 +297,14 @@ class SecurityMatrix {
       return ModuloAccess.isScreenAllowed(screen);
     }
 
+    // Regra Financeiro Limitado: cliente sem módulo Financeiro completo só pode
+    // VER e BAIXAR em Contas a Pagar; Contas a Receber fica bloqueada.
+    if (screen == AppScreen.contasPagar &&
+        !ModuloAccess.isModuloContratado('Financeiro') &&
+        ModuloAccess.isModuloContratado('Financeiro Limitado')) {
+      return action == AppAction.view || action == AppAction.baixar;
+    }
+
     // Se backend retornou permissões, usa elas
     if (_backendPerms.isNotEmpty) {
       final perms = _backendPerms[screen.name];
@@ -312,6 +322,7 @@ class SecurityMatrix {
   bool canInsert(AppScreen screen) => _can(screen, AppAction.insert);
   bool canUpdate(AppScreen screen) => _can(screen, AppAction.update);
   bool canDelete(AppScreen screen) => _can(screen, AppAction.delete);
+  bool canBaixar(AppScreen screen) => _can(screen, AppAction.baixar);
 
   // ───────────────────────────────────────────────────────────────────────────
   // Enforcement por telaNome canônico (= MenuConfig.id). Independe do enum
@@ -408,17 +419,20 @@ const Map<String, Set<AppScreen>> _moduloToScreens = {
   'Notas Fiscais': {
     AppScreen.nfeEntrada, AppScreen.nfeSaida, AppScreen.pdvNfce, AppScreen.configFiscal, AppScreen.obrigacoesFiscais,
     AppScreen.produto, AppScreen.unidadeMedida, AppScreen.catalogoProduto, AppScreen.nfeSerie,
+    AppScreen.dashFiscalArea,
   },
   'Departamento Pessoal': {
     AppScreen.ponto, AppScreen.pontoWeb, AppScreen.solicitacaoAjustePonto,
     AppScreen.ajustePonto, AppScreen.funcionarios, AppScreen.feriados,
-    // Fase 171 — dashDpArea entra no mesmo módulo 'Departamento Pessoal' já
-    // existente (confirmado no RESEARCH desta fase, Tarefa F3a do PLAN.md).
     AppScreen.dashDpArea,
   },
   'Chamados': {
     AppScreen.chamados, AppScreen.kanbanChamados,
     AppScreen.dashChamadosCards, AppScreen.dashChamadosPie, AppScreen.dashTendenciaChamados,
+    AppScreen.dashAtendimentoArea,
+  },
+  'Financeiro Limitado': {
+    AppScreen.contasPagar,
   },
   'Comunicados': { AppScreen.comunicados },
   'Chat': { AppScreen.chat, AppScreen.dashChatsLinha, AppScreen.dashChatsDiario },
@@ -436,8 +450,6 @@ const Map<String, Set<AppScreen>> _moduloToScreens = {
     AppScreen.formasPagamento,
     AppScreen.dashComercialArea,
   },
-  // dashAtendimentoArea e dashFiscalArea ainda ficam fora de _moduloToScreens
-  // (liberados por padrão) — revisão pendente nos cards de Atendimento/Fiscal.
 };
 
 class ModuloAccess {
@@ -487,6 +499,9 @@ class ModuloAccess {
     if (!pertenceAAlgumModulo) return true;
     return false;
   }
+
+  static bool isModuloContratado(String nome) =>
+      _loaded && _modulosContratados.contains(nome);
 
   static List<AppScreen> filter(List<AppScreen> screens) =>
       screens.where((s) => isScreenAllowed(s)).toList();

@@ -328,6 +328,7 @@ class RolePermissaoItem {
   final bool podeInserir;
   final bool podeEditar;
   final bool podeDeletar;
+  final bool podeBaixar;
 
   const RolePermissaoItem({
     this.id,
@@ -339,6 +340,7 @@ class RolePermissaoItem {
     required this.podeInserir,
     required this.podeEditar,
     required this.podeDeletar,
+    this.podeBaixar = false,
   });
 
   factory RolePermissaoItem.fromJson(Map<String, dynamic> json) => RolePermissaoItem(
@@ -351,6 +353,7 @@ class RolePermissaoItem {
     podeInserir: json['podeInserir'] == true,
     podeEditar: json['podeEditar'] == true,
     podeDeletar: json['podeDeletar'] == true,
+    podeBaixar: json['podeBaixar'] == true,
   );
 
   Map<String, dynamic> toJson() => {
@@ -363,6 +366,7 @@ class RolePermissaoItem {
     'podeInserir': podeInserir,
     'podeEditar': podeEditar,
     'podeDeletar': podeDeletar,
+    'podeBaixar': podeBaixar,
   };
 }
 
