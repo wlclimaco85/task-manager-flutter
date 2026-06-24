@@ -39,6 +39,8 @@ enum AppScreen {
   produto,
   // Cadastros auxiliares NF-e e produto
   unidadeMedida, catalogoProduto, nfeSerie, pdvNfce, configFiscal,
+  // NFS-e (Notas Fiscais de Servico — modulo separado de Notas Fiscais NF-e)
+  nfse,
   // Dashboards por área (Fase 171 — fundação)
   dashAtendimentoArea, dashFinanceiroArea, dashComercialArea,
   dashDpArea, dashFiscalArea,
@@ -106,6 +108,7 @@ const _escritorioScreens = {
   AppScreen.kanbanChamados:     _all,
   AppScreen.nfeEntrada:         _all,
   AppScreen.nfeSaida:           _all,
+  AppScreen.nfse:               _all,
   AppScreen.pdvNfce:            _all,
   AppScreen.configFiscal:       _all,
   AppScreen.dashKpis:                  _ro,
@@ -155,6 +158,7 @@ final Map<UserProfile, Map<AppScreen, Set<AppAction>>> _fallbackMatrix = {
     AppScreen.contasReceber:   _allFinanceiro,
     AppScreen.nfeEntrada:      _all,
     AppScreen.nfeSaida:        _all,
+    AppScreen.nfse:            _all,
     AppScreen.pdvNfce:         _all,
     AppScreen.configFiscal:    _all,
     AppScreen.dashboard:       _ro,
@@ -190,6 +194,7 @@ final Map<UserProfile, Map<AppScreen, Set<AppAction>>> _fallbackMatrix = {
     AppScreen.contasReceber:   _allFinanceiro,
     AppScreen.nfeEntrada:      _all,
     AppScreen.nfeSaida:        _all,
+    AppScreen.nfse:            _all,
     AppScreen.pdvNfce:         _all,
     AppScreen.configFiscal:    _all,
     AppScreen.noticias:        _ro,
@@ -443,6 +448,11 @@ const Map<String, Set<AppScreen>> _moduloToScreens = {
   'Chat': { AppScreen.chat, AppScreen.dashChatsLinha, AppScreen.dashChatsDiario },
   'GED': { AppScreen.ged, AppScreen.diretorios, AppScreen.arquivos },
   'Dashboard': { AppScreen.dashboard, AppScreen.dashKpis, AppScreen.dashAlertas, AppScreen.dashDistribuicaoClientes },
+  // Modulo NFS-e separado de 'Notas Fiscais' (produto). Keystone [P0][ARQUITETURA].
+  'NFS-e': {
+    AppScreen.nfse,
+    AppScreen.obrigacoesFiscais,
+  },
   // Card #219 — módulo Comercial: telas mínimas para o cliente criar nota de venda.
   // pdvNfce duplicado intencionalmente com 'Notas Fiscais' (OR logic em isScreenAllowed).
   'Comercial': {
