@@ -1,10 +1,15 @@
 // ignore_for_file: library_private_types_in_public_api
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../utils/grid_colors.dart';
 import 'package:intl/intl.dart';
 import '../../../services/network_caller.dart';
+import '../../../models/conta_pagar_model.dart';
+import '../../../models/conta_receber_model.dart';
 import '../../../utils/api_links.dart';
 import '../../../utils/tenant_context.dart';
+import '../../../web/screens/baixa_dialog.dart';
+import '../../../mobile/screens/baixa_dialog_receber.dart';
 
 // ─── Internal data models ────────────────────────────────────────────────────
 
@@ -289,6 +294,11 @@ bool _hasDocumentoFiscal(Map<String, dynamic> item) {
   return value == true || value.toString().toLowerCase() == 'true';
 }
 
+bool _hasPdfAttachment(Map<String, dynamic> item) {
+  final value = item['anexoPdf'] ?? item['anexo_pdf'];
+  return value == true || value.toString().toLowerCase() == 'true';
+}
+
 bool _hasTipo(Map<String, dynamic> item) {
   return _stringValue(item, const [
     '_calendarioTipo',
@@ -425,7 +435,8 @@ class _WindowsCalendarScreenState extends State<WindowsCalendarScreen> {
     });
 
     final res = await NetworkCaller().getRequest(url);
-    final items = res.isSuccess ? _parseGroups(res.body) : const _FinancialItems();
+    final items =
+        res.isSuccess ? _parseGroups(res.body) : const _FinancialItems();
     final pagarList = items.pagar;
     final receberList = items.receber;
 
@@ -500,7 +511,8 @@ class _WindowsCalendarScreenState extends State<WindowsCalendarScreen> {
     });
 
     final res = await NetworkCaller().getRequest(url);
-    final items = res.isSuccess ? _parseGroups(res.body) : const _FinancialItems();
+    final items =
+        res.isSuccess ? _parseGroups(res.body) : const _FinancialItems();
 
     if (!mounted) return;
     setState(() {
@@ -508,6 +520,65 @@ class _WindowsCalendarScreenState extends State<WindowsCalendarScreen> {
       _contasReceber = items.receber;
       _loadingDay = false;
     });
+  }
+
+  Future<void> _abrirBaixaConta(
+    Map<String, dynamic> item, {
+    required bool isPagar,
+  }) async {
+    final id = item['id']?.toString();
+    if (id == null || id.isEmpty) return;
+
+    try {
+      final url = isPagar
+          ? ApiLinks.updateContaPagar(id)
+          : ApiLinks.updateContaReceber(id);
+      final response = await NetworkCaller().getRequest(url);
+      dynamic body = response.body;
+      while (body is Map && body.containsKey('data')) {
+        body = body['data'];
+      }
+      if (!response.isSuccess || body is! Map) {
+        throw StateError('Conta não encontrada.');
+      }
+
+      final result = await showDialog<bool>(
+        context: context,
+        builder: (_) => isPagar
+            ? WebBaixaDialog(
+                conta: ContaPagar.fromJson(Map<String, dynamic>.from(body)),
+              )
+            : BaixaDialogReceber(
+                conta: ContaReceber.fromJson(Map<String, dynamic>.from(body)),
+              ),
+      );
+
+      if (result == true && _selectedDay != null) {
+        await _loadDayData(_selectedDay!);
+        await _loadMonthMarkers(_currentMonth);
+      }
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+            content: Text('Não foi possível abrir a baixa da conta.')),
+      );
+    }
+  }
+
+  Future<void> _abrirPdfAnexo(Map<String, dynamic> item) async {
+    final fileId = item['fileId'] ?? item['file_id'];
+    if (fileId == null || !_hasPdfAttachment(item)) return;
+
+    final opened = await launchUrl(
+      Uri.parse(ApiLinks.downloadFile(fileId)),
+      mode: LaunchMode.externalApplication,
+    );
+    if (!opened && mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Não foi possível abrir o PDF anexado.')),
+      );
+    }
   }
 
   Future<_MonthSummary> _loadMonthSummary(int year, int month) async {
@@ -519,7 +590,8 @@ class _WindowsCalendarScreenState extends State<WindowsCalendarScreen> {
     });
 
     final res = await NetworkCaller().getRequest(url);
-    final items = res.isSuccess ? _parseGroups(res.body) : const _FinancialItems();
+    final items =
+        res.isSuccess ? _parseGroups(res.body) : const _FinancialItems();
     final pagarList = items.pagar;
     final receberList = items.receber;
 
@@ -1035,6 +1107,7 @@ class _WindowsCalendarScreenState extends State<WindowsCalendarScreen> {
     final tributo = item['documentoFiscal'] == true;
     final parceiro = (item['parceiro'] as Map?)?.cast<String, dynamic>();
     final parceiroNome = parceiro?['nome'] as String? ?? '';
+    final hasAnexoPdf = _hasPdfAttachment(item);
 
     final today = DateTime.now();
     final vencStr = (item['dataVencimento'] as String?)?.substring(0, 10) ?? '';
@@ -1118,6 +1191,24 @@ class _WindowsCalendarScreenState extends State<WindowsCalendarScreen> {
                 ],
               ),
             ),
+            if (status == 'ABERTA') ...[
+              const SizedBox(width: 4),
+              _contaActionButton(
+                icon: Icons.check_circle_outline,
+                color: _green,
+                tooltip: 'Baixar conta',
+                onTap: () => _abrirBaixaConta(item, isPagar: isPagar),
+              ),
+            ],
+            if (hasAnexoPdf) ...[
+              const SizedBox(width: 4),
+              _contaActionButton(
+                icon: Icons.attach_file,
+                color: _purple,
+                tooltip: 'Abrir PDF anexado',
+                onTap: () => _abrirPdfAnexo(item),
+              ),
+            ],
             const SizedBox(width: 6),
             // Right side: value + chips
             Column(
@@ -1143,6 +1234,29 @@ class _WindowsCalendarScreenState extends State<WindowsCalendarScreen> {
               ],
             ),
           ],
+        ),
+      ),
+    );
+  }
+
+  Widget _contaActionButton({
+    required IconData icon,
+    required Color color,
+    required String tooltip,
+    required VoidCallback onTap,
+  }) {
+    return Tooltip(
+      message: tooltip,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(6),
+        child: Container(
+          padding: const EdgeInsets.all(4),
+          decoration: BoxDecoration(
+            color: color.withValues(alpha: 0.12),
+            borderRadius: BorderRadius.circular(6),
+          ),
+          child: Icon(icon, color: color, size: 16),
         ),
       ),
     );

@@ -4,11 +4,15 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:url_launcher/url_launcher.dart';
+import '../../../models/conta_pagar_model.dart';
+import '../../../models/conta_receber_model.dart';
 import '../../../utils/api_links.dart';
 import '../../../utils/app_logger.dart';
 import '../../../utils/grid_colors.dart';
 import '../../../utils/tenant_context.dart';
 import '../../../widgets/user_banners.dart';
+import '../../../windows/screens/baixa_dialog.dart';
+import '../../../mobile/screens/baixa_dialog_receber.dart';
 
 // ─── Internal data models ────────────────────────────────────────────────────
 
@@ -325,6 +329,11 @@ bool _hasDocumentoFiscal(Map<String, dynamic> item) {
   return value == true || value.toString().toLowerCase() == 'true';
 }
 
+bool _hasPdfAttachment(Map<String, dynamic> item) {
+  final value = item['anexoPdf'] ?? item['anexo_pdf'];
+  return value == true || value.toString().toLowerCase() == 'true';
+}
+
 bool _hasTipo(Map<String, dynamic> item) {
   return _stringValue(item, const [
     '_calendarioTipo',
@@ -453,11 +462,68 @@ class _WindowsCalendarScreenState extends State<WindowsCalendarScreen> {
     if (dataInicio == dataFim && dataInicio.length == 10) {
       return _FinancialItems(
         pagar: items.pagar.where((i) => _dateKey(i) == dataInicio).toList(),
-        receber:
-            items.receber.where((i) => _dateKey(i) == dataInicio).toList(),
+        receber: items.receber.where((i) => _dateKey(i) == dataInicio).toList(),
       );
     }
     return items;
+  }
+
+  Future<void> _abrirBaixaConta(
+    Map<String, dynamic> item, {
+    required bool isPagar,
+  }) async {
+    final id = item['id']?.toString();
+    if (id == null || id.isEmpty) return;
+
+    try {
+      final url = isPagar
+          ? ApiLinks.updateContaPagar(id)
+          : ApiLinks.updateContaReceber(id);
+      dynamic body = await _fetchFinancialJson(url);
+      while (body is Map && body.containsKey('data')) {
+        body = body['data'];
+      }
+      if (body is! Map) {
+        throw StateError('Conta não encontrada.');
+      }
+
+      final result = await showDialog<bool>(
+        context: context,
+        builder: (_) => isPagar
+            ? BaixaDialog(
+                conta: ContaPagar.fromJson(Map<String, dynamic>.from(body)),
+              )
+            : BaixaDialogReceber(
+                conta: ContaReceber.fromJson(Map<String, dynamic>.from(body)),
+              ),
+      );
+
+      if (result == true && _selectedDay != null) {
+        await _loadDayData(_selectedDay!);
+        await _loadMonthMarkers(_currentMonth);
+      }
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+            content: Text('Não foi possível abrir a baixa da conta.')),
+      );
+    }
+  }
+
+  Future<void> _abrirPdfAnexo(Map<String, dynamic> item) async {
+    final fileId = item['fileId'] ?? item['file_id'];
+    if (fileId == null || !_hasPdfAttachment(item)) return;
+
+    final opened = await launchUrl(
+      Uri.parse(ApiLinks.downloadFile(fileId)),
+      mode: LaunchMode.externalApplication,
+    );
+    if (!opened && mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Não foi possível abrir o PDF anexado.')),
+      );
+    }
   }
 
   Future<void> _loadMonthMarkers(DateTime month) async {
@@ -794,8 +860,7 @@ class _WindowsCalendarScreenState extends State<WindowsCalendarScreen> {
       builder: (context, constraints) {
         // Reserva no mínimo 180px para o painel de detalhe;
         // max 400 para dar espaço suficiente às rows do grid (≥40px/row × 6 rows)
-        final calHeight =
-            (constraints.maxHeight - 180).clamp(200.0, 400.0);
+        final calHeight = (constraints.maxHeight - 180).clamp(200.0, 400.0);
         return Column(
           children: [
             SizedBox(height: calHeight, child: calendarCard),
@@ -829,15 +894,15 @@ class _WindowsCalendarScreenState extends State<WindowsCalendarScreen> {
       children: [
         InkWell(
           onTap: () {
-            final prev =
-                DateTime(_currentMonth.year, _currentMonth.month - 1);
+            final prev = DateTime(_currentMonth.year, _currentMonth.month - 1);
             setState(() => _currentMonth = prev);
             _loadMonthMarkers(prev);
           },
           borderRadius: BorderRadius.circular(16),
           child: const Padding(
             padding: EdgeInsets.symmetric(horizontal: 8, vertical: 5),
-            child: Icon(Icons.chevron_left, color: GridColors.success, size: 20),
+            child:
+                Icon(Icons.chevron_left, color: GridColors.success, size: 20),
           ),
         ),
         Text(
@@ -850,15 +915,15 @@ class _WindowsCalendarScreenState extends State<WindowsCalendarScreen> {
         ),
         InkWell(
           onTap: () {
-            final next =
-                DateTime(_currentMonth.year, _currentMonth.month + 1);
+            final next = DateTime(_currentMonth.year, _currentMonth.month + 1);
             setState(() => _currentMonth = next);
             _loadMonthMarkers(next);
           },
           borderRadius: BorderRadius.circular(16),
           child: const Padding(
             padding: EdgeInsets.symmetric(horizontal: 8, vertical: 5),
-            child: Icon(Icons.chevron_right, color: GridColors.success, size: 20),
+            child:
+                Icon(Icons.chevron_right, color: GridColors.success, size: 20),
           ),
         ),
       ],
@@ -1203,13 +1268,7 @@ class _WindowsCalendarScreenState extends State<WindowsCalendarScreen> {
     final parceiro = (item['parceiro'] as Map?)?.cast<String, dynamic>();
     final parceiroNome = parceiro?['nome'] as String? ?? '';
 
-    // Detecta arquivo anexado (boleto ou comprovante)
-    final fileMap = item['file'] as Map?;
-    final fileId = fileMap?['id'];
-    final hasAnexo = fileId != null && fileId.toString() != '0' && fileId.toString().isNotEmpty;
-    final downloadUrl = hasAnexo
-        ? '${ApiLinks.baseUrl}/rest/file/download/$fileId'
-        : null;
+    final hasAnexoPdf = _hasPdfAttachment(item);
 
     final today = DateTime.now();
     final vencStr = _dateKey(item);
@@ -1294,28 +1353,23 @@ class _WindowsCalendarScreenState extends State<WindowsCalendarScreen> {
                 ],
               ),
             ),
-            // Ícone de download quando há arquivo anexado
-            if (hasAnexo) ...[
+            // Ações rápidas da conta e do PDF anexado.
+            if (status == 'ABERTA') ...[
               const SizedBox(width: 4),
-              GestureDetector(
-                onTap: () async {
-                  final uri = Uri.parse(downloadUrl!);
-                  if (await canLaunchUrl(uri)) {
-                    await launchUrl(uri, mode: LaunchMode.externalApplication);
-                  }
-                },
-                child: Tooltip(
-                  message: 'Baixar anexo',
-                  child: Container(
-                    padding: const EdgeInsets.all(4),
-                    decoration: BoxDecoration(
-                      color: GridColors.info.withValues(alpha: 0.12),
-                      borderRadius: BorderRadius.circular(6),
-                    ),
-                    child: const Icon(Icons.download,
-                        color: GridColors.info, size: 16),
-                  ),
-                ),
+              _contaActionButton(
+                icon: Icons.check_circle_outline,
+                color: GridColors.success,
+                tooltip: 'Baixar conta',
+                onTap: () => _abrirBaixaConta(item, isPagar: isPagar),
+              ),
+            ],
+            if (hasAnexoPdf) ...[
+              const SizedBox(width: 4),
+              _contaActionButton(
+                icon: Icons.attach_file,
+                color: GridColors.info,
+                tooltip: 'Abrir PDF anexado',
+                onTap: () => _abrirPdfAnexo(item),
               ),
             ],
             const SizedBox(width: 6),
@@ -1344,6 +1398,29 @@ class _WindowsCalendarScreenState extends State<WindowsCalendarScreen> {
               ],
             ),
           ],
+        ),
+      ),
+    );
+  }
+
+  Widget _contaActionButton({
+    required IconData icon,
+    required Color color,
+    required String tooltip,
+    required VoidCallback onTap,
+  }) {
+    return Tooltip(
+      message: tooltip,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(6),
+        child: Container(
+          padding: const EdgeInsets.all(4),
+          decoration: BoxDecoration(
+            color: color.withValues(alpha: 0.12),
+            borderRadius: BorderRadius.circular(6),
+          ),
+          child: Icon(icon, color: color, size: 16),
         ),
       ),
     );
@@ -1647,8 +1724,7 @@ class _WindowsCalendarScreenState extends State<WindowsCalendarScreen> {
                       '$day',
                       style: TextStyle(
                         fontSize: 9,
-                        fontWeight:
-                            isToday ? FontWeight.w800 : FontWeight.w700,
+                        fontWeight: isToday ? FontWeight.w800 : FontWeight.w700,
                         color: isToday
                             ? GridColors.error
                             : GridColors.textSecondary,
@@ -1659,12 +1735,10 @@ class _WindowsCalendarScreenState extends State<WindowsCalendarScreen> {
                         mainAxisAlignment: MainAxisAlignment.center,
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          if (hasPagar)
-                            _dot(GridColors.error),
+                          if (hasPagar) _dot(GridColors.error),
                           if (hasPago)
                             _dot(GridColors.error.withValues(alpha: 0.45)),
-                          if (hasReceber)
-                            _dot(GridColors.success),
+                          if (hasReceber) _dot(GridColors.success),
                           if (hasRecebido)
                             _dot(GridColors.success.withValues(alpha: 0.45)),
                         ],
@@ -1744,18 +1818,14 @@ class _WindowsCalendarScreenState extends State<WindowsCalendarScreen> {
 
     for (int m = 1; m <= 12; m++) {
       perMonth[m] = _FinancialItems(
-        pagar: allItems.pagar
-            .where((i) {
-              final d = DateTime.tryParse(_dateKey(i));
-              return d != null && d.month == m && d.year == year;
-            })
-            .toList(),
-        receber: allItems.receber
-            .where((i) {
-              final d = DateTime.tryParse(_dateKey(i));
-              return d != null && d.month == m && d.year == year;
-            })
-            .toList(),
+        pagar: allItems.pagar.where((i) {
+          final d = DateTime.tryParse(_dateKey(i));
+          return d != null && d.month == m && d.year == year;
+        }).toList(),
+        receber: allItems.receber.where((i) {
+          final d = DateTime.tryParse(_dateKey(i));
+          return d != null && d.month == m && d.year == year;
+        }).toList(),
       );
     }
 
@@ -1779,7 +1849,9 @@ class _WindowsCalendarScreenState extends State<WindowsCalendarScreen> {
           hasTributo: old.hasTributo || tributo,
         );
         final v = _moneyValue(item, 'valor');
-        if (isBaixa) totalPago += v; else if (!_isCancelada(item)) totalPagar += v;
+        if (isBaixa)
+          totalPago += v;
+        else if (!_isCancelada(item)) totalPagar += v;
       }
 
       for (final item in items.receber) {
@@ -1796,7 +1868,9 @@ class _WindowsCalendarScreenState extends State<WindowsCalendarScreen> {
           hasTributo: old.hasTributo || tributo,
         );
         final v = _moneyValue(item, 'valor');
-        if (isBaixa) totalRecebido += v; else if (!_isCancelada(item)) totalReceber += v;
+        if (isBaixa)
+          totalRecebido += v;
+        else if (!_isCancelada(item)) totalReceber += v;
       }
 
       summaries[m] = _MonthSummary(
