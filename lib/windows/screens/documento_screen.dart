@@ -98,11 +98,18 @@ List<Map<String, dynamic>> _parseFinancialItems(dynamic body) {
 }
 
 _FinancialItems _parseFinancialGroups(dynamic body) {
+  if (body == null) return const _FinancialItems();
   L.d('[PARSE] Body type: ${body.runtimeType}');
   try {
     dynamic cursor = body;
+    // Percorre wrappers {"data": ...} somente enquanto cursor for Map.
+    // Guard explícito: se cursor['data'] for List, sai do loop antes de
+    // tentar acessar via String key num List (evita "type String is not a
+    // subtype of type int of 'index'").
     while (cursor is Map && cursor.containsKey('data')) {
-      cursor = cursor['data'];
+      final next = cursor['data'];
+      if (next == null) break;
+      cursor = next;
     }
 
     final pagar = <Map<String, dynamic>>[];
@@ -533,10 +540,26 @@ class _WindowsCalendarScreenState extends State<WindowsCalendarScreen> {
         DateUtils.getDaysInMonth(month.year, month.month));
 
     L.d('[CALENDARIO] Carregando marcadores de ${_dayParam(first)} a ${_dayParam(last)}');
-    final items = await _fetchContasCombined(
-      dataInicio: _dayParam(first),
-      dataFim: _dayParam(last),
-    );
+
+    _FinancialItems items;
+    try {
+      items = await _fetchContasCombined(
+        dataInicio: _dayParam(first),
+        dataFim: _dayParam(last),
+      );
+    } catch (e, st) {
+      L.d('[CALENDARIO] Erro ao carregar marcadores: $e\n$st');
+      if (!mounted) return;
+      setState(() => _loadingMonth = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Não foi possível carregar o calendário: $e'),
+          backgroundColor: GridColors.error,
+        ),
+      );
+      return;
+    }
+
     final pagarList = items.pagar;
     final receberList = items.receber;
     L.d('[CALENDARIO] Parsed - Pagar: ${pagarList.length}, Receber: ${receberList.length}');

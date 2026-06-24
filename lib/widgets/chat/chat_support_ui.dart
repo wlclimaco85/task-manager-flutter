@@ -257,6 +257,7 @@ class ChatConversationHeader extends StatelessWidget {
   final String userName;
   final bool compact;
   final VoidCallback? onBack;
+  final VoidCallback? onFinalize;
 
   const ChatConversationHeader({
     super.key,
@@ -264,6 +265,7 @@ class ChatConversationHeader extends StatelessWidget {
     required this.userName,
     this.compact = false,
     this.onBack,
+    this.onFinalize,
   });
 
   @override
@@ -325,6 +327,15 @@ class ChatConversationHeader extends StatelessWidget {
             ),
           ),
           const ChatStatusPill(status: 'Ativo'),
+          if (onFinalize != null) ...[
+            const SizedBox(width: 8),
+            IconButton(
+              tooltip: 'Finalizar atendimento',
+              onPressed: onFinalize,
+              icon: const Icon(Icons.stop_circle_outlined),
+              color: GridColors.error,
+            ),
+          ],
         ],
       ),
     );

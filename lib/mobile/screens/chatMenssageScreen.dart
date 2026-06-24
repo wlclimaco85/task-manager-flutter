@@ -407,6 +407,57 @@ class _ChatMessageScreenState extends State<ChatMessageScreen> {
     );
   }
 
+  Future<void> _finalizarChat() async {
+    final confirmar = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Finalizar atendimento'),
+        content: const Text(
+          'Deseja encerrar este atendimento? Esta ação não pode ser desfeita.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: const Text('Cancelar'),
+          ),
+          FilledButton(
+            style: FilledButton.styleFrom(
+              backgroundColor: GridColors.error,
+              foregroundColor: Colors.white,
+            ),
+            onPressed: () => Navigator.of(ctx).pop(true),
+            child: const Text('Finalizar'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmar != true || !mounted) return;
+
+    try {
+      final url = TenantContext.applyToUrl(ApiLinks.chatFinalize(widget.chatId));
+      final response = await http.put(
+        Uri.parse(url),
+        headers: TenantContext.headers,
+      );
+
+      if (!mounted) return;
+
+      if (response.statusCode == 200 || response.statusCode == 204) {
+        _showSnack('Atendimento finalizado com sucesso.');
+        Navigator.of(context).pop();
+      } else {
+        _showSnack(
+          'Não foi possível finalizar o atendimento (${response.statusCode}).',
+          error: true,
+        );
+      }
+    } catch (e) {
+      if (!mounted) return;
+      _showSnack('Erro ao finalizar atendimento: $e', error: true);
+    }
+  }
+
   @override
   void dispose() {
     _scrollController.dispose();
@@ -418,7 +469,7 @@ class _ChatMessageScreenState extends State<ChatMessageScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: ChatSupportPalette.page,
+      backgroundColor: GridColors.background,
       body: Column(
         children: [
           ChatConversationHeader(
@@ -426,6 +477,7 @@ class _ChatMessageScreenState extends State<ChatMessageScreen> {
             userName: _loggedUserEmail,
             compact: true,
             onBack: () => Navigator.pop(context),
+            onFinalize: _finalizarChat,
           ),
           if (_isLoading)
             const LinearProgressIndicator(color: GridColors.primary),
