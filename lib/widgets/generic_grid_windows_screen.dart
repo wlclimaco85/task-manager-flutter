@@ -188,11 +188,16 @@ class CustomAction<T> {
   final void Function(BuildContext context, T item) onPressed;
   final bool Function(T item)? isVisible;
 
+  /// Quando informado e > 0, exibe um badge numerico no canto do botao da acao
+  /// (ex.: quantidade de anexos da conta). 0 ou null = sem badge.
+  final int Function(T item)? badgeCount;
+
   const CustomAction({
     required this.icon,
     required this.label,
     required this.onPressed,
     this.isVisible,
+    this.badgeCount,
   });
 }
 
@@ -4186,12 +4191,31 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
     }
     for (final action
         in _customActions.where((a) => a.isVisible?.call(item) ?? true)) {
+      final badge = action.badgeCount?.call(item) ?? 0;
       menuItems.add(PopupMenuItem(
           value: '__custom__${action.label}',
           child: Row(children: [
             Icon(action.icon, size: 16),
             const SizedBox(width: 8),
-            Text(action.label, style: const TextStyle(fontSize: 13))
+            Expanded(
+              child: Text(action.label, style: const TextStyle(fontSize: 13)),
+            ),
+            if (badge > 0)
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
+                decoration: BoxDecoration(
+                  color: GridColors.primary.withOpacity(0.15),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Text(
+                  '$badge',
+                  style: const TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                    color: GridColors.primary,
+                  ),
+                ),
+              ),
           ])));
     }
 
