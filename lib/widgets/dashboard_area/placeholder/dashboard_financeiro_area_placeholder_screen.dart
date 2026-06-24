@@ -5,10 +5,6 @@ import '../dashboard_area_scaffold.dart';
 import '../dashboard_state.dart';
 import '../drill_down_router.dart';
 
-/// Screen-casca leve do dashboard de área Financeiro (Fase 171 — fundação).
-/// Reaproveitada idêntica nos 3 form factors (mesmo padrão de
-/// HidratacaoScreen) — toda a lógica de loading/vazio/erro/grid vive em
-/// DashboardAreaScaffold, esta classe só busca o dado e monta o Scaffold/AppBar.
 class DashboardFinanceiroAreaPlaceholderScreen extends StatefulWidget {
   const DashboardFinanceiroAreaPlaceholderScreen({super.key});
 
@@ -21,6 +17,8 @@ class _DashboardFinanceiroAreaPlaceholderScreenState
     extends State<DashboardFinanceiroAreaPlaceholderScreen> {
   DashboardAreaState<List<KpiDashboardModel>> _state =
       const DashboardAreaState.loading();
+  DateTime? _periodoInicio;
+  DateTime? _periodoFim;
 
   @override
   void initState() {
@@ -30,7 +28,10 @@ class _DashboardFinanceiroAreaPlaceholderScreenState
 
   Future<void> _carregar() async {
     setState(() => _state = const DashboardAreaState.loading());
-    final resposta = await DashboardFinanceiroAreaCaller().fetchKpis();
+    final resposta = await DashboardFinanceiroAreaCaller().fetchKpis(
+      periodoInicio: _periodoInicio,
+      periodoFim: _periodoFim,
+    );
     if (!mounted) return;
     if (resposta == null) {
       setState(() => _state =
@@ -44,23 +45,57 @@ class _DashboardFinanceiroAreaPlaceholderScreenState
     setState(() => _state = DashboardAreaState.sucesso(resposta.kpis));
   }
 
+  String get _periodoLabel {
+    if (_periodoInicio == null || _periodoFim == null) return 'Mes atual';
+    String fmt(DateTime d) =>
+        '${d.day.toString().padLeft(2, '0')}/${d.month.toString().padLeft(2, '0')}/${d.year}';
+    return '${fmt(_periodoInicio!)} - ${fmt(_periodoFim!)}';
+  }
+
+  Future<void> _selecionarPeriodo() async {
+    final agora = DateTime.now();
+    final inicial = DateTimeRange(
+      start: _periodoInicio ?? DateTime(agora.year, agora.month, 1),
+      end: _periodoFim ?? DateTime(agora.year, agora.month + 1, 0),
+    );
+    final range = await showDateRangePicker(
+      context: context,
+      firstDate: DateTime(2020),
+      lastDate: DateTime(agora.year + 2),
+      initialDateRange: inicial,
+    );
+    if (range != null) {
+      setState(() {
+        _periodoInicio = range.start;
+        _periodoFim = range.end;
+      });
+      _carregar();
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('Dashboard Financeiro (Área)')),
       body: Column(
         children: [
-          const Padding(
-            padding: EdgeInsets.all(12),
-            child: Text(
-              'Em construção — KPIs desta área chegam em fase futura.',
-              style: TextStyle(fontStyle: FontStyle.italic),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(12, 12, 12, 0),
+            child: Align(
+              alignment: Alignment.centerRight,
+              child: OutlinedButton.icon(
+                onPressed: _selecionarPeriodo,
+                icon: const Icon(Icons.date_range),
+                label: Text(_periodoLabel),
+              ),
             ),
           ),
           Expanded(
             child: DashboardAreaScaffold(
               titulo: 'Dashboard Financeiro (Área)',
               state: _state,
+              periodoInicio: _periodoInicio,
+              periodoFim: _periodoFim,
               onKpiTap: (periodoInicio, periodoFim, drillDownRota) =>
                   DrillDownRouter.navigate(
                       context, drillDownRota, periodoInicio, periodoFim),
