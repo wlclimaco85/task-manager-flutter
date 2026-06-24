@@ -424,17 +424,20 @@ const Map<String, Set<AppScreen>> _moduloToScreens = {
   'Chat': { AppScreen.chat, AppScreen.dashChatsLinha, AppScreen.dashChatsDiario },
   'GED': { AppScreen.ged, AppScreen.diretorios, AppScreen.arquivos },
   'Dashboard': { AppScreen.dashboard, AppScreen.dashKpis, AppScreen.dashAlertas, AppScreen.dashDistribuicaoClientes },
-  // Fase 171 (Tarefa F3b/F3c) — decisão registrada: o RESEARCH não confirma
-  // um módulo isolado pré-existente para Atendimento, Comercial ou Fiscal
-  // como áreas dedicadas (o legado mistura Atendimento dentro de
-  // 'Chamados'/'Chat', e Comercial/Fiscal não têm módulo de dashboard
-  // anterior). PERGUNTA A CONFIRMAR (ver MATRIZ-KPI.md e SUMMARY desta
-  // fase): dashAtendimentoArea, dashComercialArea e dashFiscalArea ficam
-  // FORA de _moduloToScreens nesta fundação — liberados por padrão a quem
-  // tiver role_permissao de view (comportamento de "nao pertence a nenhum
-  // modulo" já documentado no Pitfall 3 da pesquisa). Os cards dependentes
-  // de Atendimento/Comercial/Fiscal devem revisar esta decisão quando
-  // tiverem clareza do módulo comercial/contratado correspondente.
+  // Card #219 — módulo Comercial: telas mínimas para o cliente criar nota de venda.
+  // pdvNfce duplicado intencionalmente com 'Notas Fiscais' (OR logic em isScreenAllowed).
+  'Comercial': {
+    AppScreen.parceiros,
+    AppScreen.produto,
+    AppScreen.unidadeMedida,
+    AppScreen.catalogoProduto,
+    AppScreen.pedidos,
+    AppScreen.pdvNfce,
+    AppScreen.formasPagamento,
+    AppScreen.dashComercialArea,
+  },
+  // dashAtendimentoArea e dashFiscalArea ainda ficam fora de _moduloToScreens
+  // (liberados por padrão) — revisão pendente nos cards de Atendimento/Fiscal.
 };
 
 class ModuloAccess {
