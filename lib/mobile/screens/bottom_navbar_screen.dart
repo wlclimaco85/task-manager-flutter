@@ -175,17 +175,80 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
     );
   }
 
+  /// Retorna as informacoes do slot dinamico: tela, icone e label.
+  /// Retorna null quando nenhum modulo prioritario esta disponivel.
+  ({AppScreen screen, IconData icon, String label})? _dynamicSlotInfo(
+      SecurityMatrix sec) {
+    if (sec.canView(AppScreen.pedidos)) {
+      return (
+        screen: AppScreen.pedidos,
+        icon: Icons.shopping_cart_outlined,
+        label: 'Pedidos',
+      );
+    }
+    if (sec.canView(AppScreen.nfeSaida)) {
+      return (
+        screen: AppScreen.nfeSaida,
+        icon: Icons.receipt_long,
+        label: 'NFS-e',
+      );
+    }
+    if (sec.canView(AppScreen.contasPagar)) {
+      return (
+        screen: AppScreen.contasPagar,
+        icon: Icons.payments,
+        label: 'Financeiro',
+      );
+    }
+    if (sec.canView(AppScreen.ponto)) {
+      return (
+        screen: AppScreen.ponto,
+        icon: Icons.access_time,
+        label: 'Ponto',
+      );
+    }
+    return null;
+  }
+
+  /// Constroi a tela inline para o slot dinamico conforme o modulo detectado.
+  Widget _buildDynamicSlotScreen(
+      AppScreen screen, SecurityMatrix sec) {
+    switch (screen) {
+      case AppScreen.contasPagar:
+        return ContaPagarGridScreen(
+          hasPermission: (action) =>
+              _hasPermissionFor(sec, AppScreen.contasPagar, action),
+        );
+      case AppScreen.ponto:
+        return const PontoScreen();
+      default:
+        // pedidos, nfeSaida e demais: grade dinamica
+        final telaNome = screen == AppScreen.pedidos ? 'pedido' : 'nfe';
+        return DynamicGridDynamicScreen(
+          key: ValueKey('mobile_dynamic_inline_$telaNome'),
+          telaNome: telaNome,
+          hasPermission: (action) => _hasPermissionFor(sec, screen, action),
+          storageKey: 'mobile_dynamic_$telaNome',
+          showAppBar: false,
+        );
+    }
+  }
+
   List<Widget> _buildScreens(SecurityMatrix sec) {
+    final dynamic = _dynamicSlotInfo(sec);
     return [
-      if (sec.canView(AppScreen.calendario)) const CalendarScreen(),
-      if (sec.canView(AppScreen.chat))
-        AuthUtility.userInfo?.login?.email != null
-            ? ChatListScreen(userName: AuthUtility.userInfo?.login?.email ?? '')
-            : const ChatListScreen(userName: 'Usuario'),
-      if (sec.canView(AppScreen.comunicados)) _comunicadoGridInline(sec: sec),
-      if (sec.canView(AppScreen.chamados)) _chamadoGridInline(sec: sec),
-      if (sec.canView(AppScreen.ged)) _gedDynamicGrid(sec),
-      Container(), // slot do botao "Mais"
+      // Slot 0 — Inicio (Calendario)
+      const CalendarScreen(),
+      // Slot 1 — Chat
+      AuthUtility.userInfo?.login?.email != null
+          ? ChatListScreen(userName: AuthUtility.userInfo?.login?.email ?? '')
+          : const ChatListScreen(userName: 'Usuario'),
+      // Slot 2 — Comunicados
+      _comunicadoGridInline(sec: sec),
+      // Slot 3 — Slot dinamico (quando disponivel) ou placeholder
+      if (dynamic != null) _buildDynamicSlotScreen(dynamic.screen, sec),
+      // Slot 4 (ou 3 sem slot dinamico) — Mais (container vazio)
+      Container(),
     ];
   }
 
@@ -199,20 +262,6 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
       createEndpointOverride: ApiLinks.createArquivo,
       updateEndpointOverride: ApiLinks.updateArquivo(':id'),
       deleteEndpointOverride: ApiLinks.deleteArquivo(':id'),
-    );
-  }
-
-  Widget _dynamicGridInline({
-    required String telaNome,
-    required SecurityMatrix sec,
-    required AppScreen screen,
-  }) {
-    return DynamicGridDynamicScreen(
-      key: ValueKey('mobile_dynamic_inline_$telaNome'),
-      telaNome: telaNome,
-      hasPermission: (action) => _hasPermissionFor(sec, screen, action),
-      storageKey: 'mobile_dynamic_$telaNome',
-      showAppBar: false,
     );
   }
 
@@ -440,12 +489,7 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
   ) {
     final items = <BottomNavigationBarItem>[];
 
-    void addItem({
-      required bool visible,
-      required IconData icon,
-      required String label,
-    }) {
-      if (!visible) return;
+    void addItem({required IconData icon, required String label}) {
       final index = items.length;
       final active = index == selected;
       items.add(BottomNavigationBarItem(
@@ -454,36 +498,22 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
       ));
     }
 
-    addItem(
-      visible: sec.canView(AppScreen.calendario),
-      icon: Icons.calendar_today,
-      label: "Calendario",
-    );
-    addItem(
-      visible: sec.canView(AppScreen.chat),
-      icon: Icons.chat,
-      label: "Chat",
-    );
-    addItem(
-      visible: sec.canView(AppScreen.comunicados),
-      icon: Icons.campaign,
-      label: "Comunicados",
-    );
-    addItem(
-      visible: sec.canView(AppScreen.chamados),
-      icon: Icons.support_agent,
-      label: "Solicitacoes",
-    );
-    addItem(
-      visible: sec.canView(AppScreen.ged),
-      icon: Icons.folder_open,
-      label: "GED",
-    );
-
+    // Slot 0 — Inicio
+    addItem(icon: Icons.calendar_today, label: 'Inicio');
+    // Slot 1 — Chat
+    addItem(icon: Icons.chat, label: 'Chat');
+    // Slot 2 — Comunicados
+    addItem(icon: Icons.campaign, label: 'Comunicados');
+    // Slot 3 — Slot dinamico (opcional)
+    final dynamic = _dynamicSlotInfo(sec);
+    if (dynamic != null) {
+      addItem(icon: dynamic.icon, label: dynamic.label);
+    }
+    // Slot 4 (ou 3) — Mais
     final moreIndex = items.length;
     items.add(BottomNavigationBarItem(
       icon: _bottomNavIcon(Icons.more_horiz, active: moreIndex == selected),
-      label: "Mais",
+      label: 'Mais',
     ));
 
     return items;
@@ -572,6 +602,38 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
     Future<void>? nav;
 
     switch (option) {
+      case "Pedidos":
+        nav = _pushDynamicGrid(
+          telaNome: 'pedido',
+          sec: sec,
+          screen: AppScreen.pedidos,
+        );
+        break;
+      case "Solicitacoes":
+        nav = Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => _chamadoGridInline(sec: sec)),
+        );
+        break;
+      case "Comunicados":
+        nav = Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => _comunicadoGridInline(sec: sec)),
+        );
+        break;
+      case "GED":
+        nav = Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => _gedDynamicGrid(sec)),
+        );
+        break;
+      case "Produtos":
+        nav = _pushDynamicGrid(
+          telaNome: 'produto',
+          sec: sec,
+          screen: AppScreen.produto,
+        );
+        break;
       case "Contas Pagar":
         nav = Navigator.push(
           context,
@@ -613,13 +675,6 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
                   _hasPermissionFor(sec, AppScreen.parceiros, action),
             ),
           ),
-        );
-        break;
-      case "Produtos":
-        nav = _pushDynamicGrid(
-          telaNome: 'produto',
-          sec: sec,
-          screen: AppScreen.produto,
         );
         break;
       case "Dashboard":
@@ -838,29 +893,73 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
   }
 
   void _showMenuOptions(BuildContext context, SecurityMatrix sec) {
-    final menuItems = <_MoreMenuAction>[
-      if (sec.canView(AppScreen.contasPagar))
-        const _MoreMenuAction(Icons.payments, "Contas Pagar"),
-      if (sec.canView(AppScreen.contasReceber))
-        const _MoreMenuAction(Icons.account_balance_wallet, "Contas Receber"),
-      if (sec.canView(AppScreen.contasReceber))
-        const _MoreMenuAction(Icons.notifications_active, "Régua de Cobrança"),
-      if (sec.canView(AppScreen.dashboard))
-        const _MoreMenuAction(Icons.bar_chart, "Dashboard"),
-      if (sec.canView(AppScreen.dashAtendimentoArea))
-        const _MoreMenuAction(Icons.support_agent, "Atendimento"),
-      if (sec.canView(AppScreen.contasBancarias))
-        const _MoreMenuAction(Icons.account_balance, "Contas Bancarias"),
-      if (sec.canView(AppScreen.parceiros))
-        const _MoreMenuAction(Icons.people, "Parceiros"),
-      if (sec.canView(AppScreen.mensalidades))
-        const _MoreMenuAction(Icons.receipt_long, "Mensalidades"),
-      const _MoreMenuAction(Icons.verified_user, "Alvarás"),
-      const _MoreMenuAction(Icons.account_circle, "Meu Perfil"),
-      if (sec.canView(AppScreen.contasBancarias))
-        const _MoreMenuAction(Icons.upload_file, "Importar Extratos"),
-      const _MoreMenuAction(Icons.exit_to_app, "Sair", isDestructive: true),
+    // Grupos de modulos com seus itens (filtrados por permissao)
+    final grupos = <_MenuGrupo>[
+      _MenuGrupo(
+        titulo: 'Comercial',
+        icon: Icons.storefront_outlined,
+        itens: [
+          if (sec.canView(AppScreen.pedidos))
+            const _MoreMenuAction(Icons.shopping_cart_outlined, 'Pedidos'),
+          if (sec.canView(AppScreen.parceiros))
+            const _MoreMenuAction(Icons.people, 'Parceiros'),
+          if (sec.canView(AppScreen.produto))
+            const _MoreMenuAction(Icons.inventory_2_outlined, 'Produtos'),
+        ],
+      ),
+      _MenuGrupo(
+        titulo: 'Financeiro',
+        icon: Icons.account_balance_outlined,
+        itens: [
+          if (sec.canView(AppScreen.contasPagar))
+            const _MoreMenuAction(Icons.payments, 'Contas Pagar'),
+          if (sec.canView(AppScreen.contasReceber))
+            const _MoreMenuAction(
+                Icons.account_balance_wallet, 'Contas Receber'),
+          if (sec.canView(AppScreen.contasBancarias))
+            const _MoreMenuAction(Icons.account_balance, 'Contas Bancarias'),
+          if (sec.canView(AppScreen.dashboard))
+            const _MoreMenuAction(Icons.bar_chart, 'Dashboard'),
+        ],
+      ),
+      _MenuGrupo(
+        titulo: 'Atendimento',
+        icon: Icons.support_agent_outlined,
+        itens: [
+          if (sec.canView(AppScreen.chamados))
+            const _MoreMenuAction(Icons.support_agent, 'Solicitacoes'),
+          if (sec.canView(AppScreen.ged))
+            const _MoreMenuAction(Icons.folder_open, 'GED'),
+          if (sec.canView(AppScreen.comunicados))
+            const _MoreMenuAction(Icons.campaign, 'Comunicados'),
+        ],
+      ),
+      _MenuGrupo(
+        titulo: 'Pessoal',
+        icon: Icons.badge_outlined,
+        itens: [
+          if (sec.canView(AppScreen.ponto))
+            const _MoreMenuAction(Icons.access_time, 'Bater Ponto'),
+          if (sec.canView(AppScreen.funcionarios))
+            const _MoreMenuAction(Icons.badge, 'Funcionários'),
+          if (sec.canView(AppScreen.mensalidades))
+            const _MoreMenuAction(Icons.receipt_long, 'Mensalidades'),
+        ],
+      ),
+      _MenuGrupo(
+        titulo: 'Sistema',
+        icon: Icons.settings_outlined,
+        itens: const [
+          _MoreMenuAction(Icons.verified_user, 'Alvarás'),
+          _MoreMenuAction(Icons.account_circle, 'Meu Perfil'),
+          _MoreMenuAction(Icons.exit_to_app, 'Sair', isDestructive: true),
+        ],
+      ),
     ];
+
+    // Remove grupos sem nenhum item visivel
+    final gruposVisiveis =
+        grupos.where((g) => g.itens.isNotEmpty).toList();
 
     showModalBottomSheet(
       context: context,
@@ -872,97 +971,133 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
         borderRadius: BorderRadius.vertical(top: Radius.circular(8)),
       ),
       builder: (sheetContext) {
-        return Padding(
-          padding: const EdgeInsets.fromLTRB(16, 10, 16, 18),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
+        return DraggableScrollableSheet(
+          expand: false,
+          initialChildSize: 0.55,
+          maxChildSize: 0.85,
+          minChildSize: 0.3,
+          builder: (_, scrollCtrl) => Column(
             children: [
-              Center(
-                child: Container(
-                  width: 44,
-                  height: 4,
-                  decoration: BoxDecoration(
-                    color: GridColors.divider,
-                    borderRadius: BorderRadius.circular(99),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 16),
-              Row(
-                children: [
-                  Container(
-                    width: 40,
-                    height: 40,
-                    decoration: const BoxDecoration(
-                      color: GridColors.secondarySoft,
-                      shape: BoxShape.circle,
+              // Cabecalho fixo
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 10, 16, 0),
+                child: Column(
+                  children: [
+                    Center(
+                      child: Container(
+                        width: 44,
+                        height: 4,
+                        decoration: BoxDecoration(
+                          color: GridColors.divider,
+                          borderRadius: BorderRadius.circular(99),
+                        ),
+                      ),
                     ),
-                    child: const Icon(
-                      Icons.apps_rounded,
-                      color: GridColors.secondary,
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  const Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                    const SizedBox(height: 12),
+                    Row(
                       children: [
-                        Text(
-                          "Mais opcoes",
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.w800,
-                            color: GridColors.textSecondary,
+                        Container(
+                          width: 40,
+                          height: 40,
+                          decoration: const BoxDecoration(
+                            color: GridColors.secondarySoft,
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Icon(
+                            Icons.apps_rounded,
+                            color: GridColors.secondary,
                           ),
                         ),
-                        SizedBox(height: 2),
-                        Text(
-                          "Acesse os modulos do sistema",
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: GridColors.textMuted,
+                        const SizedBox(width: 12),
+                        const Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Mais opcoes',
+                                style: TextStyle(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.w800,
+                                  color: GridColors.textSecondary,
+                                ),
+                              ),
+                              SizedBox(height: 2),
+                              Text(
+                                'Acesse os modulos do sistema',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: GridColors.textMuted,
+                                ),
+                              ),
+                            ],
                           ),
+                        ),
+                        IconButton(
+                          onPressed: () => Navigator.pop(sheetContext),
+                          icon: const Icon(Icons.close),
+                          color: GridColors.textMuted,
+                          tooltip: 'Fechar',
                         ),
                       ],
                     ),
-                  ),
-                  IconButton(
-                    onPressed: () => Navigator.pop(sheetContext),
-                    icon: const Icon(Icons.close),
-                    color: GridColors.textMuted,
-                    tooltip: 'Fechar',
-                  ),
-                ],
-              ),
-              const SizedBox(height: 16),
-              GridView.builder(
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                itemCount: menuItems.length,
-                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 3,
-                  crossAxisSpacing: 10,
-                  mainAxisSpacing: 10,
-                  childAspectRatio: 0.92,
+                    const Divider(height: 16),
+                  ],
                 ),
-                itemBuilder: (_, index) {
-                  final item = menuItems[index];
-                  return _menuItem(
-                    item.icon,
-                    item.title,
-                    sec,
-                    isDestructive: item.isDestructive,
-                  );
-                },
               ),
-              const SizedBox(height: 12),
-              SizedBox(
-                width: double.infinity,
-                child: OutlinedButton.icon(
-                  onPressed: () => Navigator.pop(sheetContext),
-                  icon: const Icon(Icons.arrow_downward_rounded),
-                  label: const Text('Fechar menu'),
+              // Lista rolavel de grupos
+              Expanded(
+                child: ListView(
+                  controller: scrollCtrl,
+                  padding: const EdgeInsets.fromLTRB(8, 0, 8, 16),
+                  children: [
+                    for (final grupo in gruposVisiveis)
+                      Theme(
+                        data: Theme.of(sheetContext).copyWith(
+                          dividerColor: Colors.transparent,
+                        ),
+                        child: ExpansionTile(
+                          leading: Icon(grupo.icon,
+                              color: GridColors.secondary, size: 22),
+                          title: Text(
+                            grupo.titulo,
+                            style: const TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w700,
+                              color: GridColors.textSecondary,
+                            ),
+                          ),
+                          initiallyExpanded: true,
+                          iconColor: GridColors.secondary,
+                          collapsedIconColor: GridColors.textMuted,
+                          children: [
+                            for (final item in grupo.itens)
+                              ListTile(
+                                dense: true,
+                                leading: Icon(
+                                  item.icon,
+                                  size: 20,
+                                  color: item.isDestructive
+                                      ? GridColors.error
+                                      : GridColors.secondary,
+                                ),
+                                title: Text(
+                                  item.title,
+                                  style: TextStyle(
+                                    fontSize: 13,
+                                    color: item.isDestructive
+                                        ? GridColors.error
+                                        : GridColors.textSecondary,
+                                  ),
+                                ),
+                                onTap: () =>
+                                    onMenuOptionSelected(item.title, sec),
+                                contentPadding: const EdgeInsets.symmetric(
+                                    horizontal: 24, vertical: 0),
+                              ),
+                          ],
+                        ),
+                      ),
+                  ],
                 ),
               ),
             ],
@@ -972,59 +1107,18 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
     );
   }
 
-  Widget _menuItem(
-    IconData icon,
-    String title,
-    SecurityMatrix sec, {
-    bool isDestructive = false,
-  }) {
-    final Color accent =
-        isDestructive ? GridColors.primary : GridColors.secondary;
-    final Color background =
-        isDestructive ? GridColors.primarySoft : GridColors.secondarySoft;
+}
 
-    return InkWell(
-      onTap: () => onMenuOptionSelected(title, sec),
-      borderRadius: BorderRadius.circular(8),
-      child: Ink(
-        decoration: BoxDecoration(
-          color: GridColors.card,
-          borderRadius: BorderRadius.circular(8),
-          border: Border.all(color: GridColors.divider),
-        ),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 10),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Container(
-                width: 44,
-                height: 44,
-                decoration: BoxDecoration(
-                  color: background,
-                  shape: BoxShape.circle,
-                ),
-                child: Icon(icon, size: 24, color: accent),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                title,
-                textAlign: TextAlign.center,
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-                style: TextStyle(
-                  fontSize: 12,
-                  height: 1.15,
-                  color: accent,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
+class _MenuGrupo {
+  final String titulo;
+  final IconData icon;
+  final List<_MoreMenuAction> itens;
+
+  const _MenuGrupo({
+    required this.titulo,
+    required this.icon,
+    required this.itens,
+  });
 }
 
 class _MoreMenuAction {
