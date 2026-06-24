@@ -158,6 +158,25 @@ class ExtratoImportCaller {
     }
   }
 
+  static Future<bool> excluirImportacao(int id) async {
+    try {
+      final url =
+          TenantContext.applyToUrl(ApiLinks.excluirExtratoImportacao(id));
+      final token = AuthUtility.userInfo?.token;
+      final response = await http.delete(
+        Uri.parse(url),
+        headers: {
+          'Content-Type': 'application/json',
+          if (token != null) 'Authorization': 'Bearer $token',
+        },
+      );
+      return response.statusCode == 204 || response.statusCode == 200;
+    } catch (e) {
+      debugPrint('Erro ao excluir importação $id: $e');
+      return false;
+    }
+  }
+
   static Future<List<dynamic>> listarImportacoes() async {
     try {
       final url = TenantContext.applyToUrl(ApiLinks.extratoImportacoes);
