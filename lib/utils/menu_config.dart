@@ -371,6 +371,11 @@ class MenuConfig {
             icon: FontAwesomeIcons.chartLine,
             screenIndex: 142),
         MenuItem(
+            id: 'dashMensalidadeArea',
+            label: 'Dashboard de Mensalidades',
+            icon: FontAwesomeIcons.chartColumn,
+            screenIndex: 147),
+        MenuItem(
             id: 'lancamentos_financeiros',
             label: 'Lançamentos Financeiros',
             icon: FontAwesomeIcons.moneyBillTransfer,

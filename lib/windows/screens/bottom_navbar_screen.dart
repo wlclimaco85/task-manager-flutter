@@ -24,6 +24,7 @@ import '../../widgets/dashboard_area/placeholder/dashboard_dp_area_placeholder_s
 import '../../widgets/dashboard_area/placeholder/dashboard_atendimento_placeholder_screen.dart';
 import '../../widgets/dashboard_area/placeholder/dashboard_comercial_placeholder_screen.dart';
 import '../../widgets/dashboard_area/placeholder/dashboard_fiscal_placeholder_screen.dart';
+import '../../../windows/screens/dashboard_mensalidade_screen.dart';
 import '../../../windows/screens/lancamento_financeiro_grid_screen.dart';
 import '../../../windows/screens/dieta_grid_screen.dart';
 import '../../../windows/screens/diretorio_grid_screen.dart';
@@ -447,6 +448,7 @@ class _WindowsBottomNavBarScreenState extends State<WindowsBottomNavBarScreen> {
         const DashboardAtendimentoPlaceholderScreen(), // 144: Dashboard Atendimento (Área)
         const DashboardComercialPlaceholderScreen(), // 145: Dashboard Comercial (Área)
         const DashboardFiscalPlaceholderScreen(), // 146: Dashboard Fiscal (Área)
+        const WebDashboardMensalidadeScreen(), // 147: Dashboard de Mensalidades
       ];
 
   String get userName {

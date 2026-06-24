@@ -44,6 +44,8 @@ enum AppScreen {
   // Dashboards por área (Fase 171 — fundação)
   dashAtendimentoArea, dashFinanceiroArea, dashComercialArea,
   dashDpArea, dashFiscalArea,
+  // Dashboard de mensalidades do escritorio
+  dashMensalidadeArea,
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -130,6 +132,7 @@ const _escritorioScreens = {
   AppScreen.dashComercialArea:         _ro,
   AppScreen.dashDpArea:                _ro,
   AppScreen.dashFiscalArea:            _ro,
+  AppScreen.dashMensalidadeArea:       _ro,
   AppScreen.ponto:                     _all,
   AppScreen.pontoWeb:                  _all,
   AppScreen.solicitacaoAjustePonto:    _all,
@@ -425,6 +428,8 @@ const Map<String, Set<AppScreen>> _moduloToScreens = {
     // Fase 171 — dashboard de área Financeiro reaproveita o mesmo módulo já
     // usado pelo dashboard financeiro legado (Tarefa F3a do PLAN.md).
     AppScreen.dashFinanceiroArea,
+    // Dashboard de mensalidades do escritorio (contaReceber MENS-/MOD-)
+    AppScreen.dashMensalidadeArea,
   },
   'Notas Fiscais': {
     AppScreen.nfeEntrada, AppScreen.nfeSaida, AppScreen.pdvNfce, AppScreen.configFiscal, AppScreen.obrigacoesFiscais,
