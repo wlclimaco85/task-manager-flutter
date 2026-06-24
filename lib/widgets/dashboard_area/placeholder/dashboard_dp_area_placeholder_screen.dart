@@ -44,27 +44,14 @@ class _DashboardDpAreaPlaceholderScreenState
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Dashboard DP (Área)')),
-      body: Column(
-        children: [
-          const Padding(
-            padding: EdgeInsets.all(12),
-            child: Text(
-              'Em construção — KPIs desta área chegam em fase futura.',
-              style: TextStyle(fontStyle: FontStyle.italic),
-            ),
-          ),
-          Expanded(
-            child: DashboardAreaScaffold(
-              titulo: 'Dashboard DP (Área)',
-              state: _state,
-              onKpiTap: (periodoInicio, periodoFim, drillDownRota) =>
-                  DrillDownRouter.navigate(
-                      context, drillDownRota, periodoInicio, periodoFim),
-              onRetry: _carregar,
-            ),
-          ),
-        ],
+      appBar: AppBar(title: const Text('Dashboard Departamento Pessoal')),
+      body: DashboardAreaScaffold(
+        titulo: 'Dashboard Departamento Pessoal',
+        state: _state,
+        onKpiTap: (periodoInicio, periodoFim, drillDownRota) =>
+            DrillDownRouter.navigate(
+                context, drillDownRota, periodoInicio, periodoFim),
+        onRetry: _carregar,
       ),
     );
   }
