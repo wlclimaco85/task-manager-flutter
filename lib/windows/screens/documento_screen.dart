@@ -169,12 +169,38 @@ _FinancialItems _parseFinancialGroups(dynamic body) {
   return const _FinancialItems();
 }
 
+/// Normaliza campos de data que o Jackson serializa como array [yyyy, mm, dd]
+/// quando write-dates-as-timestamps esta habilitado (padrao). Converte para
+/// string ISO "yyyy-MM-dd" para que o parsing de datas funcione corretamente.
+void _normalizeDateArrayFields(Map<String, dynamic> map) {
+  const dateKeys = [
+    'dataVencimento', 'data_vencimento', 'dataPrevista', 'data_prevista',
+    'dataCompetencia', 'data_competencia', 'data', 'vencimento',
+    'dtVencimento', 'dt_vencimento', 'dueDate', 'dataBaixa', 'data_baixa',
+    'dataPagamento', 'dataEmissao',
+  ];
+  for (final key in dateKeys) {
+    final val = map[key];
+    if (val is List && val.length >= 3) {
+      try {
+        final y = val[0];
+        final m = val[1];
+        final d = val[2];
+        if (y is int && m is int && d is int) {
+          map[key] = '${y.toString().padLeft(4, '0')}-${m.toString().padLeft(2, '0')}-${d.toString().padLeft(2, '0')}';
+        }
+      } catch (_) {}
+    }
+  }
+}
+
 List<Map<String, dynamic>> _collectFinancialMaps(dynamic value,
     {String? tipo}) {
   final result = <Map<String, dynamic>>[];
   if (value is List) {
     for (final item in value.whereType<Map>()) {
       final map = Map<String, dynamic>.from(item);
+      _normalizeDateArrayFields(map);
       if (tipo != null && !_hasTipo(map)) {
         map['_calendarioTipo'] = tipo;
       }
@@ -473,79 +499,85 @@ class _WindowsCalendarScreenState extends State<WindowsCalendarScreen> {
 
   Future<void> _loadMonthMarkers(DateTime month) async {
     setState(() => _loadingMonth = true);
-    final first = DateTime(month.year, month.month, 1);
-    final last = DateTime(month.year, month.month,
-        DateUtils.getDaysInMonth(month.year, month.month));
+    try {
+      final first = DateTime(month.year, month.month, 1);
+      final last = DateTime(month.year, month.month,
+          DateUtils.getDaysInMonth(month.year, month.month));
 
-    L.d('[CALENDARIO] Carregando marcadores de ${_dayParam(first)} a ${_dayParam(last)}');
-    final items = await _fetchContasCombined(
-      dataInicio: _dayParam(first),
-      dataFim: _dayParam(last),
-    );
-    final pagarList = items.pagar;
-    final receberList = items.receber;
-    L.d('[CALENDARIO] Parsed - Pagar: ${pagarList.length}, Receber: ${receberList.length}');
-
-    final newMarkers = <String, _DayMarkers>{};
-
-    void addMarker(String key,
-        {bool pagar = false,
-        bool receber = false,
-        bool pago = false,
-        bool recebido = false,
-        bool tributo = false}) {
-      final old = newMarkers[key] ?? const _DayMarkers();
-      newMarkers[key] = _DayMarkers(
-        hasPagar: old.hasPagar || pagar,
-        hasReceber: old.hasReceber || receber,
-        hasPago: old.hasPago || pago,
-        hasRecebido: old.hasRecebido || recebido,
-        hasTributo: old.hasTributo || tributo,
+      L.d('[CALENDARIO] Carregando marcadores de ${_dayParam(first)} a ${_dayParam(last)}');
+      final items = await _fetchContasCombined(
+        dataInicio: _dayParam(first),
+        dataFim: _dayParam(last),
       );
-    }
+      final pagarList = items.pagar;
+      final receberList = items.receber;
+      L.d('[CALENDARIO] Parsed - Pagar: ${pagarList.length}, Receber: ${receberList.length}');
 
-    for (final item in pagarList) {
-      final dateStr = _dateKey(item);
-      if (dateStr.isEmpty) {
-        L.d('[CALENDARIO] PAGAR sem data: $item');
-        continue;
+      final newMarkers = <String, _DayMarkers>{};
+
+      void addMarker(String key,
+          {bool pagar = false,
+          bool receber = false,
+          bool pago = false,
+          bool recebido = false,
+          bool tributo = false}) {
+        final old = newMarkers[key] ?? const _DayMarkers();
+        newMarkers[key] = _DayMarkers(
+          hasPagar: old.hasPagar || pagar,
+          hasReceber: old.hasReceber || receber,
+          hasPago: old.hasPago || pago,
+          hasRecebido: old.hasRecebido || recebido,
+          hasTributo: old.hasTributo || tributo,
+        );
       }
-      final date = DateTime.tryParse(dateStr);
-      if (date == null) continue;
-      final isBaixa = _isBaixada(item);
-      final tributo = _hasDocumentoFiscal(item);
-      addMarker(
-        dateStr,
-        pagar: !isBaixa,
-        pago: isBaixa,
-        tributo: tributo,
-      );
-    }
 
-    for (final item in receberList) {
-      final dateStr = _dateKey(item);
-      if (dateStr.isEmpty) {
-        L.d('[CALENDARIO] RECEBER sem data: $item');
-        continue;
+      for (final item in pagarList) {
+        final dateStr = _dateKey(item);
+        if (dateStr.isEmpty) {
+          L.d('[CALENDARIO] PAGAR sem data: $item');
+          continue;
+        }
+        final date = DateTime.tryParse(dateStr);
+        if (date == null) continue;
+        final isBaixa = _isBaixada(item);
+        final tributo = _hasDocumentoFiscal(item);
+        addMarker(
+          dateStr,
+          pagar: !isBaixa,
+          pago: isBaixa,
+          tributo: tributo,
+        );
       }
-      final date = DateTime.tryParse(dateStr);
-      if (date == null) continue;
-      final isBaixa = _isBaixada(item);
-      final tributo = _hasDocumentoFiscal(item);
-      addMarker(
-        dateStr,
-        receber: !isBaixa,
-        recebido: isBaixa,
-        tributo: tributo,
-      );
-    }
 
-    if (!mounted) return;
-    setState(() {
-      // Merge: preserva marcadores de outros meses já carregados
-      _dayMarkers = {..._dayMarkers, ...newMarkers};
-      _loadingMonth = false;
-    });
+      for (final item in receberList) {
+        final dateStr = _dateKey(item);
+        if (dateStr.isEmpty) {
+          L.d('[CALENDARIO] RECEBER sem data: $item');
+          continue;
+        }
+        final date = DateTime.tryParse(dateStr);
+        if (date == null) continue;
+        final isBaixa = _isBaixada(item);
+        final tributo = _hasDocumentoFiscal(item);
+        addMarker(
+          dateStr,
+          receber: !isBaixa,
+          recebido: isBaixa,
+          tributo: tributo,
+        );
+      }
+
+      if (!mounted) return;
+      setState(() {
+        // Merge: preserva marcadores de outros meses já carregados
+        _dayMarkers = {..._dayMarkers, ...newMarkers};
+        _loadingMonth = false;
+      });
+    } catch (e, s) {
+      L.d('[CALENDARIO] Erro em _loadMonthMarkers: $e\n$s');
+      if (!mounted) return;
+      setState(() => _loadingMonth = false);
+    }
   }
 
   Future<void> _loadDayData(DateTime day) async {
@@ -554,21 +586,27 @@ class _WindowsCalendarScreenState extends State<WindowsCalendarScreen> {
       _contasPagar = [];
       _contasReceber = [];
     });
-    final dayStr = _dayParam(day);
+    try {
+      final dayStr = _dayParam(day);
 
-    L.d('[CALENDARIO_DAY] Carregando dia $dayStr');
-    final items = await _fetchContasCombined(
-      dataInicio: dayStr,
-      dataFim: dayStr,
-    );
-    L.d('[CALENDARIO_DAY] Parsed - Pagar: ${items.pagar.length}, Receber: ${items.receber.length}');
+      L.d('[CALENDARIO_DAY] Carregando dia $dayStr');
+      final items = await _fetchContasCombined(
+        dataInicio: dayStr,
+        dataFim: dayStr,
+      );
+      L.d('[CALENDARIO_DAY] Parsed - Pagar: ${items.pagar.length}, Receber: ${items.receber.length}');
 
-    if (!mounted) return;
-    setState(() {
-      _contasPagar = items.pagar;
-      _contasReceber = items.receber;
+      if (!mounted) return;
+      setState(() {
+        _contasPagar = items.pagar;
+        _contasReceber = items.receber;
       _loadingDay = false;
     });
+    } catch (e, s) {
+      L.d('[CALENDARIO_DAY] Erro em _loadDayData: $e\n$s');
+      if (!mounted) return;
+      setState(() => _loadingDay = false);
+    }
   }
 
   Future<_MonthSummary> _loadMonthSummary(int year, int month) async {
@@ -1847,97 +1885,103 @@ class _WindowsCalendarScreenState extends State<WindowsCalendarScreen> {
 
   Future<void> _carregarAnoCompleto(int year) async {
     setState(() => _loadingMonth = true);
-    final dataInicio = '$year-01-01';
-    final dataFim = '$year-12-31';
+    try {
+      final dataInicio = '$year-01-01';
+      final dataFim = '$year-12-31';
 
-    final url = _buildUrl(ApiLinks.calendarioFinanceiro, {
-      'dataInicio': dataInicio,
-      'dataFim': dataFim,
-    });
-    L.d('[CALENDARIO_ANO] GET $url');
-    final body = await _fetchFinancialJson(url);
-    final allItems = _parseFinancialGroups(body);
-    L.d('[CALENDARIO_ANO] Total - Pagar: ${allItems.pagar.length}, Receber: ${allItems.receber.length}');
+      final url = _buildUrl(ApiLinks.calendarioFinanceiro, {
+        'dataInicio': dataInicio,
+        'dataFim': dataFim,
+      });
+      L.d('[CALENDARIO_ANO] GET $url');
+      final body = await _fetchFinancialJson(url);
+      final allItems = _parseFinancialGroups(body);
+      L.d('[CALENDARIO_ANO] Total - Pagar: ${allItems.pagar.length}, Receber: ${allItems.receber.length}');
 
-    if (!mounted) return;
+      if (!mounted) return;
 
-    // Distribui itens por mês
-    final newMarkers = <String, _DayMarkers>{};
-    final summaries = <int, _MonthSummary>{};
-    final perMonth = <int, _FinancialItems>{};
+      // Distribui itens por mês
+      final newMarkers = <String, _DayMarkers>{};
+      final summaries = <int, _MonthSummary>{};
+      final perMonth = <int, _FinancialItems>{};
 
-    for (int m = 1; m <= 12; m++) {
-      perMonth[m] = _FinancialItems(
-        pagar: allItems.pagar
-            .where((i) {
-              final d = DateTime.tryParse(_dateKey(i));
-              return d != null && d.month == m && d.year == year;
-            })
-            .toList(),
-        receber: allItems.receber
-            .where((i) {
-              final d = DateTime.tryParse(_dateKey(i));
-              return d != null && d.month == m && d.year == year;
-            })
-            .toList(),
-      );
-    }
-
-    // Monta dayMarkers e summaries
-    for (final entry in perMonth.entries) {
-      final m = entry.key;
-      final items = entry.value;
-      double totalPagar = 0, totalPago = 0, totalReceber = 0, totalRecebido = 0;
-
-      for (final item in items.pagar) {
-        final dateStr = _dateKey(item);
-        if (dateStr.isEmpty) continue;
-        final isBaixa = _isBaixada(item);
-        final tributo = _hasDocumentoFiscal(item);
-        final old = newMarkers[dateStr] ?? const _DayMarkers();
-        newMarkers[dateStr] = _DayMarkers(
-          hasPagar: old.hasPagar || !isBaixa,
-          hasPago: old.hasPago || isBaixa,
-          hasReceber: old.hasReceber,
-          hasRecebido: old.hasRecebido,
-          hasTributo: old.hasTributo || tributo,
+      for (int m = 1; m <= 12; m++) {
+        perMonth[m] = _FinancialItems(
+          pagar: allItems.pagar
+              .where((i) {
+                final d = DateTime.tryParse(_dateKey(i));
+                return d != null && d.month == m && d.year == year;
+              })
+              .toList(),
+          receber: allItems.receber
+              .where((i) {
+                final d = DateTime.tryParse(_dateKey(i));
+                return d != null && d.month == m && d.year == year;
+              })
+              .toList(),
         );
-        final v = _moneyValue(item, 'valor');
-        if (isBaixa) totalPago += v; else if (!_isCancelada(item)) totalPagar += v;
       }
 
-      for (final item in items.receber) {
-        final dateStr = _dateKey(item);
-        if (dateStr.isEmpty) continue;
-        final isBaixa = _isBaixada(item);
-        final tributo = _hasDocumentoFiscal(item);
-        final old = newMarkers[dateStr] ?? const _DayMarkers();
-        newMarkers[dateStr] = _DayMarkers(
-          hasPagar: old.hasPagar,
-          hasPago: old.hasPago,
-          hasReceber: old.hasReceber || !isBaixa,
-          hasRecebido: old.hasRecebido || isBaixa,
-          hasTributo: old.hasTributo || tributo,
+      // Monta dayMarkers e summaries
+      for (final entry in perMonth.entries) {
+        final m = entry.key;
+        final items = entry.value;
+        double totalPagar = 0, totalPago = 0, totalReceber = 0, totalRecebido = 0;
+
+        for (final item in items.pagar) {
+          final dateStr = _dateKey(item);
+          if (dateStr.isEmpty) continue;
+          final isBaixa = _isBaixada(item);
+          final tributo = _hasDocumentoFiscal(item);
+          final old = newMarkers[dateStr] ?? const _DayMarkers();
+          newMarkers[dateStr] = _DayMarkers(
+            hasPagar: old.hasPagar || !isBaixa,
+            hasPago: old.hasPago || isBaixa,
+            hasReceber: old.hasReceber,
+            hasRecebido: old.hasRecebido,
+            hasTributo: old.hasTributo || tributo,
+          );
+          final v = _moneyValue(item, 'valor');
+          if (isBaixa) totalPago += v; else if (!_isCancelada(item)) totalPagar += v;
+        }
+
+        for (final item in items.receber) {
+          final dateStr = _dateKey(item);
+          if (dateStr.isEmpty) continue;
+          final isBaixa = _isBaixada(item);
+          final tributo = _hasDocumentoFiscal(item);
+          final old = newMarkers[dateStr] ?? const _DayMarkers();
+          newMarkers[dateStr] = _DayMarkers(
+            hasPagar: old.hasPagar,
+            hasPago: old.hasPago,
+            hasReceber: old.hasReceber || !isBaixa,
+            hasRecebido: old.hasRecebido || isBaixa,
+            hasTributo: old.hasTributo || tributo,
+          );
+          final v = _moneyValue(item, 'valor');
+          if (isBaixa) totalRecebido += v; else if (!_isCancelada(item)) totalReceber += v;
+        }
+
+        summaries[m] = _MonthSummary(
+          totalPagar: totalPagar,
+          totalPago: totalPago,
+          totalReceber: totalReceber,
+          totalRecebido: totalRecebido,
+          saldoPagar: totalPago - totalPagar,
+          saldoReceber: totalRecebido - totalReceber,
         );
-        final v = _moneyValue(item, 'valor');
-        if (isBaixa) totalRecebido += v; else if (!_isCancelada(item)) totalReceber += v;
       }
 
-      summaries[m] = _MonthSummary(
-        totalPagar: totalPagar,
-        totalPago: totalPago,
-        totalReceber: totalReceber,
-        totalRecebido: totalRecebido,
-        saldoPagar: totalPago - totalPagar,
-        saldoReceber: totalRecebido - totalReceber,
-      );
+      setState(() {
+        _dayMarkers = {..._dayMarkers, ...newMarkers};
+        _monthSummaries.addAll(summaries);
+        _loadingMonth = false;
+      });
+    } catch (e, s) {
+      L.d('[CALENDARIO_ANO] Erro em _carregarAnoCompleto: $e\n$s');
+      if (!mounted) return;
+      setState(() => _loadingMonth = false);
     }
-
-    setState(() {
-      _dayMarkers = {..._dayMarkers, ...newMarkers};
-      _monthSummaries.addAll(summaries);
-      _loadingMonth = false;
-    });
   }
 
   Future<void> _showMonthPopup(
