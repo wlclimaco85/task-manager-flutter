@@ -681,81 +681,68 @@ class _WindowsCalendarScreenState extends State<WindowsCalendarScreen> {
           child: Container(
             color: GridColors.primary,
             padding: const EdgeInsets.fromLTRB(8, 4, 8, 6),
-            child: Stack(
-              alignment: Alignment.center,
+            child: Row(
               children: [
-                // Toggles centralizados
-                Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    _buildToggleBtn(
-                      icon: Icons.calendar_view_day,
-                      label: 'Dia',
-                      active: _viewMode == 'day',
-                      onTap: () {
-                        final day = _selectedDay ?? DateTime.now();
-                        setState(() {
-                          _viewMode = 'day';
-                          _selectedDay = day;
-                          _currentMonth = DateTime(day.year, day.month);
-                        });
-                        _loadMonthMarkers(_currentMonth);
-                        _loadDayData(day);
-                      },
-                    ),
-                    const SizedBox(width: 6),
-                    _buildToggleBtn(
-                      icon: Icons.calendar_view_month,
-                      label: 'Mês',
-                      active: _viewMode == 'month',
-                      onTap: () => setState(() => _viewMode = 'month'),
-                    ),
-                    const SizedBox(width: 6),
-                    _buildToggleBtn(
-                      icon: Icons.calendar_month,
-                      label: 'Ano',
-                      active: _viewMode == 'year',
-                      onTap: () {
-                        setState(() => _viewMode = 'year');
-                        _autoCarregarResumoAno(_currentMonth.year);
-                      },
-                    ),
-                  ],
+                // Toggles à esquerda
+                _buildToggleBtn(
+                  icon: Icons.calendar_view_day,
+                  label: 'Dia',
+                  active: _viewMode == 'day',
+                  onTap: () {
+                    final day = _selectedDay ?? DateTime.now();
+                    setState(() {
+                      _viewMode = 'day';
+                      _selectedDay = day;
+                      _currentMonth = DateTime(day.year, day.month);
+                    });
+                    _loadMonthMarkers(_currentMonth);
+                    _loadDayData(day);
+                  },
                 ),
-                // Refresh + Hoje alinhados à direita
-                Positioned(
-                  right: 0,
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      _buildRefreshBtn(),
-                      const SizedBox(width: 8),
-                      TextButton(
-                        style: TextButton.styleFrom(
-                          backgroundColor: Colors.white24,
-                          foregroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 10, vertical: 4),
-                          shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(6)),
-                          minimumSize: Size.zero,
-                          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                        ),
-                        onPressed: () {
-                          final today = DateTime.now();
-                          setState(() {
-                            _selectedDay = today;
-                            _currentMonth = DateTime(today.year, today.month);
-                          });
-                          _loadMonthMarkers(_currentMonth);
-                          _loadDayData(today);
-                        },
-                        child: const Text('Hoje',
-                            style: TextStyle(
-                                fontWeight: FontWeight.bold, fontSize: 13)),
-                      ),
-                    ],
+                const SizedBox(width: 6),
+                _buildToggleBtn(
+                  icon: Icons.calendar_view_month,
+                  label: 'Mês',
+                  active: _viewMode == 'month',
+                  onTap: () => setState(() => _viewMode = 'month'),
+                ),
+                const SizedBox(width: 6),
+                _buildToggleBtn(
+                  icon: Icons.calendar_month,
+                  label: 'Ano',
+                  active: _viewMode == 'year',
+                  onTap: () {
+                    setState(() => _viewMode = 'year');
+                    _autoCarregarResumoAno(_currentMonth.year);
+                  },
+                ),
+                const Spacer(),
+                // Refresh + Hoje à direita (sem sobreposição)
+                _buildRefreshBtn(),
+                const SizedBox(width: 8),
+                TextButton(
+                  style: TextButton.styleFrom(
+                    backgroundColor: Colors.white24,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 10, vertical: 4),
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(6)),
+                    minimumSize: Size.zero,
+                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                   ),
+                  onPressed: () {
+                    final today = DateTime.now();
+                    setState(() {
+                      _selectedDay = today;
+                      _currentMonth = DateTime(today.year, today.month);
+                    });
+                    _loadMonthMarkers(_currentMonth);
+                    _loadDayData(today);
+                  },
+                  child: const Text('Hoje',
+                      style: TextStyle(
+                          fontWeight: FontWeight.bold, fontSize: 13)),
                 ),
               ],
             ),
