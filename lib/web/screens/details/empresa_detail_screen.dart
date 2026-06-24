@@ -35,6 +35,76 @@ class WebEmpresaDetailScreen extends StatelessWidget {
     }).where((m) => m['value']!.isNotEmpty).toList();
   }
 
+  // ── Módulos do PARCEIRO (campo "Modulo Servicos" — card za49Y7Eq) ────────
+  // O campo é orfao hoje: a entidade Parceiro nao tem "modulosServico", e o
+  // backend (FAIL_ON_UNKNOWN_PROPERTIES=false) ignora silenciosamente esse
+  // campo no save. O vinculo real e via tabela M:N (ParceiroModuloController,
+  // /api/parceiro-modulo) — pre-popula e persiste por fora do save principal.
+
+  // Baseline dos módulos confirmados pelo prefetch, por parceiroId. O POST
+  // /api/parceiro-modulo é um REPLACE destrutivo no backend (DELETE todos +
+  // INSERT de novo, zerando 'valor' de módulos não reenviados em 'valores')
+  // — só dispara quando o conjunto de módulos REALMENTE muda em relação ao
+  // que foi confirmado carregado, nunca "porque o usuário salvou o form"
+  // (ex.: editou só o campo Ambiente). Sem baseline confirmada (prefetch
+  // falhou ou nunca rodou) o save é pulado: melhor não persistir nada do que
+  // apagar vínculos reais com base num campo que o form não confirmou ter
+  // carregado certo.
+  static final Map<int, Set<int>> _modulosBaselineConfirmada = {};
+
+  static Future<Map<String, dynamic>> _prefetchModulosDoParceiro(
+      Map<String, dynamic> item) async {
+    final parceiroId = _asInt(item['id']);
+    if (parceiroId == null) return {};
+    final r = await NetworkCaller()
+        .getRequest('${ApiLinks.parceiroModulo}?parceiroId=$parceiroId');
+    if (!r.isSuccess || r.body == null) return {};
+    // NetworkResponse._toMap envolve resposta de array bruto em {'data': [...]}
+    final raw = r.body!['data'];
+    if (raw is! List) return {};
+    final modulos = raw.whereType<Map>().toList();
+    _modulosBaselineConfirmada[parceiroId] =
+        modulos.map((m) => _asInt(m['id'])).whereType<int>().toSet();
+    return {'modulosServico': modulos};
+  }
+
+  static Future<void> _salvarModulosDoParceiro(
+      Map<String, dynamic> formData, Map<String, dynamic>? item) async {
+    // So funciona em EDICAO (item != null): no CREATE o backend ainda nao
+    // devolveu o id do novo parceiro pro formData neste ponto. Quem criar um
+    // parceiro e quiser modulos precisa reabrir o registro pra editar.
+    final parceiroId = _asInt(item?['id']);
+    if (parceiroId == null) return;
+
+    final baseline = _modulosBaselineConfirmada[parceiroId];
+    if (baseline == null) return;
+
+    final raw = formData['modulosServico'];
+    final moduloIds = <int>[];
+    if (raw is List) {
+      for (final e in raw) {
+        final id = e is Map ? _asInt(e['id']) : _asInt(e);
+        if (id != null) moduloIds.add(id);
+      }
+    }
+    final novoSet = moduloIds.toSet();
+    if (novoSet.length == baseline.length && novoSet.containsAll(baseline)) {
+      return;
+    }
+
+    await NetworkCaller().postRequest(
+      ApiLinks.parceiroModulo,
+      {'parceiroId': parceiroId, 'moduloIds': moduloIds},
+    );
+    _modulosBaselineConfirmada[parceiroId] = novoSet;
+  }
+
+  static int? _asInt(dynamic v) {
+    if (v == null) return null;
+    if (v is int) return v;
+    return int.tryParse(v.toString());
+  }
+
   @override
   Widget build(BuildContext context) {
     final id = item['id']?.toString() ?? '';
@@ -76,6 +146,8 @@ class WebEmpresaDetailScreen extends StatelessWidget {
           icon: Icons.people,
           telaNome: 'parceiro',
           extraParams: {'empresa': id},
+          prefetchExtraFields: _prefetchModulosDoParceiro,
+          onAfterSave: _salvarModulosDoParceiro,
           fieldOverrides: [
             // Ambiente NFS-e do parceiro: enum PRODUCAO/HOMOLOGACAO
             const FieldConfigWindows(

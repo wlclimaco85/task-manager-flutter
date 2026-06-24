@@ -1606,6 +1606,21 @@ class GenericGridScreen<T> extends StatefulWidget {
   final void Function(Set<String> ids, List<Map<String, dynamic>> selectedData)?
       onSelectedRowsChanged;
 
+  /// Busca dados extras ANTES de abrir o form de edição (item != null) e
+  /// mescla no item carregado, no MESMO formato que os campos normais usam
+  /// (ex.: multiselect espera List<Map> com 'id'). Útil para campos que não
+  /// vêm na resposta padrão da entidade (ex.: módulos vinculados via tabela
+  /// M:N separada) — evita hardcoded por nome de campo neste arquivo
+  /// genérico; quem usa decide o que buscar.
+  final Future<Map<String, dynamic>> Function(T item)? prefetchExtraFields;
+
+  /// Chamado depois de salvar com sucesso (create OU update, diferente de
+  /// onAfterCreate que só dispara no create) — recebe o formData enviado e o
+  /// item original (null no create). Útil para persistir campos que o
+  /// endpoint principal não aceita (ex.: vínculo M:N via outro endpoint).
+  final Future<void> Function(Map<String, dynamic> formData, T? item)?
+      onAfterSave;
+
   const GenericGridScreen({
     super.key,
     required this.title,
@@ -1642,6 +1657,8 @@ class GenericGridScreen<T> extends StatefulWidget {
     this.helpTelaNome,
     this.onAfterCreate,
     this.onSelectedRowsChanged,
+    this.prefetchExtraFields,
+    this.onAfterSave,
   });
 
   @override
@@ -2020,9 +2037,24 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
     _loadItems(_currentPage, rowsPerPage);
   }
 
-  void _openForm({T? item}) {
+  Future<void> _openForm({T? item}) async {
     final controllers = <String, TextEditingController>{};
-    final itemMap = item != null ? widget.toJson(item) : {};
+    final itemMap = item != null
+        ? Map<String, dynamic>.from(widget.toJson(item))
+        : <String, dynamic>{};
+
+    // Busca dados extras (ex.: vínculos M:N que não vêm na entidade) ANTES de
+    // montar os controllers, mesclando no itemMap no formato que os campos
+    // normais já esperam — sem isso o form sempre abriria sem pré-seleção.
+    if (item != null && widget.prefetchExtraFields != null) {
+      try {
+        final extra = await widget.prefetchExtraFields!(item);
+        itemMap.addAll(extra);
+      } catch (_) {
+        // Falha no prefetch não deve bloquear a edição — o campo so fica vazio.
+      }
+    }
+    if (!mounted) return;
 
     // Campos que devem ser pré-preenchidos e desabilitados (vêm de extraParams)
     // Ex: ao abrir form dentro da aba de empresa, empresa já vem selecionada
@@ -2566,6 +2598,16 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
       if (item == null && widget.onAfterCreate != null) {
         widget.onAfterCreate!();
       }
+      if (widget.onAfterSave != null) {
+        try {
+          await widget.onAfterSave!(formData, item);
+        } catch (_) {
+          // Falha aqui não deve impedir o fechamento do form — o save
+          // principal já teve sucesso; quem implementa onAfterSave decide
+          // como avisar o usuário se precisar (ex.: snackbar próprio).
+        }
+      }
+      if (!mounted) return;
       Navigator.pop(context);
       if (item == null) {
         // Ao criar, vai para primeira página com sort DESC para o novo item aparecer

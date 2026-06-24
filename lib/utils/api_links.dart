@@ -965,6 +965,9 @@ class ApiLinks {
   static String get mensalidadeDashboardPdf =>
       '$_baseUrlNew/api/financeiro/mensalidade-dashboard/relatorio-pdf';
 
+  // Vinculo Parceiro x Modulo de Servico (ParceiroModuloController)
+  static String get parceiroModulo => '$_baseUrlNew/api/parceiro-modulo';
+
   // CRM / RecorrÃªncias e Faturas
   static String get allRecurringContracts => '$_baseUrlNew/api/crm/contracts';
   static String get createRecurringContract => '$_baseUrlNew/api/crm/contracts';
