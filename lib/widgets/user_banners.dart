@@ -206,8 +206,12 @@ class _UserBannerAppBarState extends State<UserBannerAppBar> {
     }
 
     final overlay = Overlay.of(context);
-    final topOffset =
-        kToolbarHeight + ((widget.showFilterButton == true) ? 68 : 12);
+    // Usa preferredSize (já soma kToolbarHeight + altura do bottom, seja
+    // FilterActionBar ou customBottom) em vez de reimplementar a conta —
+    // evitava desalinhar o dropdown quando customBottom tem altura diferente
+    // de 52 (ex.: 44 no Calendário Financeiro).
+    final hasBottomBar = widget.customBottom != null || widget.showFilterButton == true;
+    final topOffset = widget.preferredSize.height + (hasBottomBar ? 16 : 12);
 
     notificationOverlay = OverlayEntry(
       builder: (ctx) => GestureDetector(
