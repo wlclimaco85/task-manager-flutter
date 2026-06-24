@@ -60,6 +60,17 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
     _alertTimer = Timer.periodic(const Duration(minutes: 1), (_) {
       if (mounted) _fetchAlerts();
     });
+    WidgetsBinding.instance.addPostFrameCallback((_) => _definirHomeInicial());
+  }
+
+  // Redireciona para o slot dinâmico do módulo prioritário no pós-login
+  void _definirHomeInicial() {
+    if (!mounted) return;
+    final sec = SecurityMatrix.current();
+    final slot = _dynamicSlotInfo(sec);
+    if (slot != null) {
+      setState(() => selectedIndex = 3);
+    }
   }
 
   @override
