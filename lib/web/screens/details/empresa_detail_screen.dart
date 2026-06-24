@@ -49,18 +49,22 @@ class WebEmpresaDetailScreen extends StatelessWidget {
     return {...itemMap, 'modulosServico': ids};
   }
 
+  /// Persiste os módulos selecionados após salvar o parceiro.
+  /// Envia formato {parceiroId, modulos:[{id, valor}]} para o backend gerar
+  /// ContaReceber automaticamente em módulos novos com valor > 0.
   static Future<void> _salvarModulos(Map<String, dynamic> formData) async {
     final parceiroId = formData['id'];
     if (parceiroId == null) return;
     final raw = formData['modulosServico'] as String? ?? '';
-    final moduloIds = raw
+    final modulos = raw
         .split(',')
         .map((s) => int.tryParse(s.trim()))
         .whereType<int>()
+        .map((id) => {'id': id, 'valor': 0})
         .toList();
     await NetworkCaller().postRequest(
       '${ApiLinks.baseUrl}/api/parceiro-modulo',
-      {'parceiroId': parceiroId, 'moduloIds': moduloIds},
+      {'parceiroId': parceiroId, 'modulos': modulos},
     );
   }
 
