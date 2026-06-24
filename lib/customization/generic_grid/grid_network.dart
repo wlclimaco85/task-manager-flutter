@@ -145,9 +145,10 @@ Future<NetworkResponse> sendMultipart({
         : Uri.parse(endpoint);
     final req = http.MultipartRequest(isUpdate ? 'PUT' : 'POST', url);
     req.fields.addAll(fields);
-    if (authHeadersProvider != null) {
-      req.headers.addAll(await authHeadersProvider());
-    }
+    final authHeaders = authHeadersProvider != null
+        ? await authHeadersProvider()
+        : _defaultHeaders();
+    req.headers.addAll(authHeaders);
 
     for (final f in files) {
       final file = f.file;
