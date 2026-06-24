@@ -7,6 +7,7 @@ class Mensalidade {
   DateTime? dtPagamento;
   int? alunoId;
   int? planoId;
+  String? urlBoleto;
 
   Mensalidade({
     this.id,
@@ -14,6 +15,7 @@ class Mensalidade {
     this.dtPagamento,
     this.alunoId,
     this.planoId,
+    this.urlBoleto,
   });
 
   Mensalidade.fromJson(Map<String, dynamic> json) {
@@ -24,6 +26,7 @@ class Mensalidade {
         : null;
     alunoId = json['alunoId'];
     planoId = json['planoId'];
+    urlBoleto = json['urlBoleto'];
   }
 
   Map<String, dynamic> toJson() {
@@ -33,6 +36,7 @@ class Mensalidade {
       'dtPagamento': dtPagamento?.toIso8601String(),
       'alunoId': alunoId,
       'planoId': planoId,
+      'urlBoleto': urlBoleto,
     };
   }
 
