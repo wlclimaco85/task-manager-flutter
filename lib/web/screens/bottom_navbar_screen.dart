@@ -11,6 +11,7 @@ import '../../services/alert_caller.dart';
 import './aplicativo_screen.dart';
 import '../../../auth_screens/login_screen.dart';
 import './chamado_grid_screen.dart';
+import '../../../utils/security_matrix.dart';
 import './alimento_grid_screen.dart';
 import './comunicado_componente_screen.dart';
 import './dieta_grid_screen.dart';
