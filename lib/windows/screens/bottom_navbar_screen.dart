@@ -219,6 +219,7 @@ class _WindowsBottomNavBarScreenState extends State<WindowsBottomNavBarScreen> {
         child: _screens[widgetIndex],
       ),
       screenIndex: screenIndex,
+      openedAt: DateTime.now(),
     );
   }
 
@@ -248,26 +249,12 @@ class _WindowsBottomNavBarScreenState extends State<WindowsBottomNavBarScreen> {
       return;
     }
 
-    _showTabLimitDialogAndReplace(screenIndex, item.label);
-  }
-
-  Future<void> _showTabLimitDialogAndReplace(
-      int newScreenIndex, String newLabel) async {
-    final indicesParaFechar = await showTabLimitDialog(
-      context: context,
-      tabs: _openTabs,
-      newTabLabel: newLabel,
-      isCompact: false,
-    );
-    if (indicesParaFechar == null || indicesParaFechar.isEmpty || !mounted)
-      return;
-
+    // Limite de abas atingido: fecha automaticamente a aba mais antiga
+    // (menor openedAt) e abre a nova, sem diálogo de confirmação.
     setState(() {
-      final ordenados = [...indicesParaFechar]..sort((a, b) => b.compareTo(a));
-      for (final i in ordenados) {
-        _openTabs.removeAt(i);
-      }
-      _openTabs.add(_buildTab(newScreenIndex));
+      final oldestIndex = indexOfOldestTab(_openTabs);
+      _openTabs.removeAt(oldestIndex);
+      _openTabs.add(_buildTab(screenIndex));
       _activeTabIndex = _openTabs.length - 1;
     });
   }
