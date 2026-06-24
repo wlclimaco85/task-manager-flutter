@@ -1603,6 +1603,8 @@ class GenericGridScreen<T> extends StatefulWidget {
   final List<Widget>? headerActions;
   final String? helpTelaNome;
   final void Function()? onAfterCreate;
+  final Future<void> Function(Map<String, dynamic> formData)? onAfterSave;
+  final Future<Map<String, dynamic>> Function(Map<String, dynamic>)? onEditItem;
   final void Function(Set<String> ids, List<Map<String, dynamic>> selectedData)?
       onSelectedRowsChanged;
 
@@ -1641,6 +1643,8 @@ class GenericGridScreen<T> extends StatefulWidget {
     this.headerActions,
     this.helpTelaNome,
     this.onAfterCreate,
+    this.onAfterSave,
+    this.onEditItem,
     this.onSelectedRowsChanged,
   });
 
@@ -2020,9 +2024,12 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
     _loadItems(_currentPage, rowsPerPage);
   }
 
-  void _openForm({T? item}) {
+  Future<void> _openForm({T? item}) async {
     final controllers = <String, TextEditingController>{};
-    final itemMap = item != null ? widget.toJson(item) : {};
+    var itemMap = item != null ? widget.toJson(item) : <String, dynamic>{};
+    if (item != null && widget.onEditItem != null) {
+      itemMap = await widget.onEditItem!(itemMap);
+    }
 
     // Campos que devem ser pré-preenchidos e desabilitados (vêm de extraParams)
     // Ex: ao abrir form dentro da aba de empresa, empresa já vem selecionada
@@ -2565,6 +2572,9 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
       }
       if (item == null && widget.onAfterCreate != null) {
         widget.onAfterCreate!();
+      }
+      if (widget.onAfterSave != null) {
+        await widget.onAfterSave!(formData);
       }
       Navigator.pop(context);
       if (item == null) {

@@ -35,6 +35,35 @@ class WebEmpresaDetailScreen extends StatelessWidget {
     }).where((m) => m['value']!.isNotEmpty).toList();
   }
 
+  static Future<Map<String, dynamic>> _prePopularModulos(Map<String, dynamic> itemMap) async {
+    final parceiroId = itemMap['id'];
+    if (parceiroId == null) return itemMap;
+    final r = await NetworkCaller().getRequest(
+      '${ApiLinks.baseUrl}/api/parceiro-modulo?parceiroId=$parceiroId',
+    );
+    if (!r.isSuccess || r.body == null) return itemMap;
+    final body = r.body;
+    final raw = body is List ? body : (body?['data'] ?? body?['content'] ?? []);
+    if (raw is! List) return itemMap;
+    final ids = raw.map((e) => e['id']?.toString() ?? '').where((s) => s.isNotEmpty).join(', ');
+    return {...itemMap, 'modulosServico': ids};
+  }
+
+  static Future<void> _salvarModulos(Map<String, dynamic> formData) async {
+    final parceiroId = formData['id'];
+    if (parceiroId == null) return;
+    final raw = formData['modulosServico'] as String? ?? '';
+    final moduloIds = raw
+        .split(',')
+        .map((s) => int.tryParse(s.trim()))
+        .whereType<int>()
+        .toList();
+    await NetworkCaller().postRequest(
+      '${ApiLinks.baseUrl}/api/parceiro-modulo',
+      {'parceiroId': parceiroId, 'moduloIds': moduloIds},
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final id = item['id']?.toString() ?? '';
@@ -76,6 +105,8 @@ class WebEmpresaDetailScreen extends StatelessWidget {
           icon: Icons.people,
           telaNome: 'parceiro',
           extraParams: {'empresa': id},
+          onEditItem: _prePopularModulos,
+          onAfterSave: _salvarModulos,
           fieldOverrides: [
             // Ambiente NFS-e do parceiro: enum PRODUCAO/HOMOLOGACAO
             const FieldConfigWindows(

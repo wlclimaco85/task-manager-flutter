@@ -64,6 +64,8 @@ class RelatedGridTab {
 
   /// Widget customizado — quando informado, ignora telaNome e exibe este widget na aba
   final Widget? customWidget;
+  final Future<void> Function(Map<String, dynamic>)? onAfterSave;
+  final Future<Map<String, dynamic>> Function(Map<String, dynamic>)? onEditItem;
 
   const RelatedGridTab({
     required this.title,
@@ -73,6 +75,8 @@ class RelatedGridTab {
     this.fieldOverrides,
     this.deleteEndpointOverride,
     this.customWidget,
+    this.onAfterSave,
+    this.onEditItem,
   }) : assert(telaNome != null || customWidget != null,
             'RelatedGridTab requer telaNome ou customWidget');
 }
@@ -328,6 +332,8 @@ class _GenericDetailFormScreenState extends State<GenericDetailFormScreen>
             fieldOverrides: rt.fieldOverrides,
             deleteEndpointOverride: rt.deleteEndpointOverride,
             customWidget: rt.customWidget,
+            onAfterSave: rt.onAfterSave,
+            onEditItem: rt.onEditItem,
           );
         }).toList();
 
@@ -710,6 +716,8 @@ class _GenericDetailFormScreenState extends State<GenericDetailFormScreen>
         extraParams: tab.extraParams,
         fieldOverrides: tab.fieldOverrides,
         deleteEndpointOverride: tab.deleteEndpointOverride,
+        onAfterSave: tab.onAfterSave,
+        onEditItem: tab.onEditItem,
         showAppBar: false,
       );
     }
@@ -1240,6 +1248,8 @@ class _AutoTab {
   final List<FieldConfigWindows>? fieldOverrides;
   final String? deleteEndpointOverride;
   final Widget? customWidget;
+  final Future<void> Function(Map<String, dynamic>)? onAfterSave;
+  final Future<Map<String, dynamic>> Function(Map<String, dynamic>)? onEditItem;
   _AutoTab(
       {required this.title,
       required this.icon,
@@ -1248,7 +1258,9 @@ class _AutoTab {
       this.extraParams,
       this.fieldOverrides,
       this.deleteEndpointOverride,
-      this.customWidget});
+      this.customWidget,
+      this.onAfterSave,
+      this.onEditItem});
 }
 
 class _EF {
