@@ -24,11 +24,21 @@ class OpenTab {
   /// aba já aberta correspondente a um item de menu).
   final int screenIndex;
 
-  const OpenTab({
+  /// Momento em que a aba foi aberta (passado explicitamente pelo chamador
+  /// no ponto de criação, geralmente `DateTime.now()`).
+  ///
+  /// Usado para decidir qual aba fechar automaticamente quando o limite de
+  /// abas é atingido: fecha-se sempre a aba com menor [openedAt] (ordem de
+  /// abertura), não a de último acesso/ativação — decisão de produto do
+  /// card Trello 6a3bd688f903d71c5d0904c8.
+  final DateTime openedAt;
+
+  OpenTab({
     required this.id,
     required this.label,
     required this.icon,
     required this.content,
     required this.screenIndex,
+    required this.openedAt,
   });
 }

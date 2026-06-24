@@ -179,92 +179,26 @@ class _TabChipState extends State<_TabChip> {
   }
 }
 
-/// Mostra o popup de "limite de abas atingido", permitindo ao usuário marcar
-/// várias abas abertas (ou todas) para fechar e liberar espaço para a
-/// [newTabLabel].
+/// Retorna o índice da aba aberta há mais tempo (menor [OpenTab.openedAt]).
 ///
-/// Retorna a lista de índices das abas que o usuário escolheu fechar (para
-/// que o chamador feche essas abas e abra a nova), ou `null` se o usuário
-/// cancelou.
-Future<List<int>?> showTabLimitDialog({
-  required BuildContext context,
-  required List<OpenTab> tabs,
-  required String newTabLabel,
-  required bool isCompact,
-}) {
-  return showDialog<List<int>>(
-    context: context,
-    builder: (ctx) {
-      final selecionados = <int>{};
+/// "Mais antiga" aqui significa ordem de abertura (openedAt), não último
+/// acesso/ativação — decisão de design do card Trello
+/// 6a3bd688f903d71c5d0904c8: ao atingir o limite de abas, fecha-se
+/// automaticamente e silenciosamente a primeira aba que foi aberta, sem
+/// perguntar ao usuário.
+///
+/// Lança [ArgumentError] se [tabs] estiver vazia (não deveria ocorrer no
+/// fluxo real, já que só é chamada quando `_openTabs.length >= _maxOpenTabs`).
+int indexOfOldestTab(List<OpenTab> tabs) {
+  if (tabs.isEmpty) {
+    throw ArgumentError('tabs não pode ser vazia');
+  }
 
-      return StatefulBuilder(
-        builder: (ctx, setState) {
-          return AlertDialog(
-            backgroundColor: GridColors.dialogBackground,
-            content: SizedBox(
-              width: isCompact ? 360 : 420,
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    'Limite de abas atingido',
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      color: GridColors.textSecondary,
-                      fontSize: 16,
-                    ),
-                  ),
-                  const SizedBox(height: 6),
-                  Text(
-                    'Você já tem 5 abas abertas. Selecione as que deseja fechar para abrir "$newTabLabel".',
-                    style: const TextStyle(color: GridColors.textMuted, fontSize: 13),
-                  ),
-                  const SizedBox(height: 12),
-                  for (int i = 0; i < tabs.length; i++) ...[
-                    if (i > 0) const Divider(height: 1, color: GridColors.divider),
-                    CheckboxListTile(
-                      value: selecionados.contains(i),
-                      onChanged: (marcado) => setState(() {
-                        if (marcado ?? false) {
-                          selecionados.add(i);
-                        } else {
-                          selecionados.remove(i);
-                        }
-                      }),
-                      controlAffinity: ListTileControlAffinity.leading,
-                      visualDensity: VisualDensity.compact,
-                      dense: true,
-                      activeColor: GridColors.primary,
-                      secondary: FaIcon(tabs[i].icon, color: GridColors.primary, size: 18),
-                      title: Text(
-                        tabs[i].label,
-                        style: const TextStyle(color: GridColors.textSecondary, fontSize: 14),
-                      ),
-                    ),
-                  ],
-                ],
-              ),
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.of(ctx).pop(),
-                child: const Text('Cancelar', style: TextStyle(color: GridColors.textSecondary)),
-              ),
-              TextButton(
-                onPressed: selecionados.isEmpty
-                    ? null
-                    : () => Navigator.of(ctx).pop(selecionados.toList()),
-                child: const Text('Fechar selecionadas e abrir'),
-              ),
-              TextButton(
-                onPressed: () => Navigator.of(ctx).pop(List.generate(tabs.length, (i) => i)),
-                child: const Text('Fechar todas e abrir'),
-              ),
-            ],
-          );
-        },
-      );
-    },
-  );
+  var oldestIndex = 0;
+  for (var i = 1; i < tabs.length; i++) {
+    if (tabs[i].openedAt.isBefore(tabs[oldestIndex].openedAt)) {
+      oldestIndex = i;
+    }
+  }
+  return oldestIndex;
 }
