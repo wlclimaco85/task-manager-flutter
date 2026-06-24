@@ -44,27 +44,14 @@ class _DashboardComercialPlaceholderScreenState
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Dashboard Comercial (Área)')),
-      body: Column(
-        children: [
-          const Padding(
-            padding: EdgeInsets.all(12),
-            child: Text(
-              'Em construção — KPIs desta área chegam em fase futura.',
-              style: TextStyle(fontStyle: FontStyle.italic),
-            ),
-          ),
-          Expanded(
-            child: DashboardAreaScaffold(
-              titulo: 'Dashboard Comercial (Área)',
-              state: _state,
-              onKpiTap: (periodoInicio, periodoFim, drillDownRota) =>
-                  DrillDownRouter.navigate(
-                      context, drillDownRota, periodoInicio, periodoFim),
-              onRetry: _carregar,
-            ),
-          ),
-        ],
+      appBar: AppBar(title: const Text('Dashboard Comercial')),
+      body: DashboardAreaScaffold(
+        titulo: 'Dashboard Comercial',
+        state: _state,
+        onKpiTap: (periodoInicio, periodoFim, drillDownRota) =>
+            DrillDownRouter.navigate(
+                context, drillDownRota, periodoInicio, periodoFim),
+        onRetry: _carregar,
       ),
     );
   }
