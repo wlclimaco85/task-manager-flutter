@@ -1357,7 +1357,7 @@ class _WindowsCalendarScreenState extends State<WindowsCalendarScreen> {
             if (status == 'ABERTA') ...[
               const SizedBox(width: 4),
               _contaActionButton(
-                icon: Icons.check_circle_outline,
+                icon: Icons.price_check,
                 color: GridColors.success,
                 tooltip: 'Baixar conta',
                 onTap: () => _abrirBaixaConta(item, isPagar: isPagar),

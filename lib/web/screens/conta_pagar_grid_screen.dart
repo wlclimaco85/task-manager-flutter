@@ -21,6 +21,7 @@ import 'package:http/http.dart' as http;
 
 import '../../../web/dialogs/anexo_upload_dialog.dart';
 import '../../../web/dialogs/export_power_bi_dialog.dart';
+import '../../../widgets/finance/boleto_widget.dart';
 
 class WebContaPagarGridScreen extends StatefulWidget {
   final SecurityCheck hasPermission;
@@ -520,7 +521,7 @@ class _WebContaPagarGridScreenState extends State<WebContaPagarGridScreen> {
             onSelectedRowsChanged: _onSelectedRowsChanged,
             customActions: () => [
               CustomAction<Map<String, dynamic>>(
-                icon: Icons.check_circle,
+                icon: Icons.price_check,
                 label: 'Baixar',
                 onPressed: (context, object) => showDialog(
                   context: context,
@@ -572,6 +573,27 @@ class _WebContaPagarGridScreenState extends State<WebContaPagarGridScreen> {
                     builder: (_) => AnexoUploadDialog(
                       lancamentoId: id is int ? id : int.tryParse('$id') ?? 0,
                       lancamentoTipo: 'PAGAR',
+                    ),
+                  );
+                },
+                isVisible: (_) => true,
+              ),
+              CustomAction<Map<String, dynamic>>(
+                icon: Icons.receipt,
+                label: 'Boleto',
+                onPressed: (context, object) {
+                  final id = object['id'];
+                  final lancId = id is int ? id : int.tryParse('$id') ?? 0;
+                  showDialog(
+                    context: context,
+                    builder: (_) => Dialog(
+                      child: SizedBox(
+                        width: 480,
+                        child: BoletoWidget(
+                          lancamentoId: lancId,
+                          lancamentoTipo: 'PAGAR',
+                        ),
+                      ),
                     ),
                   );
                 },

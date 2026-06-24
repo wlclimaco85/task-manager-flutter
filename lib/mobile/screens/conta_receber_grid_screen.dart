@@ -40,7 +40,7 @@ class ContaReceberGridScreen extends StatelessWidget {
           isVisible: (object) => object.status == StatusConta.ABERTA,
         ),
         CustomAction<ContaReceber>(
-          icon: Icons.payment,
+          icon: Icons.price_check,
           label: 'Baixar',
           onPressed: (context, object) => _showBaixaDialog(context, object),
           isVisible: (object) => object.status == StatusConta.ABERTA,

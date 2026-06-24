@@ -19,6 +19,7 @@ import 'package:http/http.dart' as http;
 
 import '../../../web/dialogs/anexo_upload_dialog.dart';
 import '../../../web/dialogs/export_power_bi_dialog.dart';
+import '../../../widgets/finance/boleto_widget.dart';
 import '../../../utils/dropdown_helpers.dart';
 import '../../../models/auth_utility.dart';
 
@@ -485,7 +486,7 @@ class _WebContaReceberGridScreenState extends State<WebContaReceberGridScreen> {
                 isVisible: (m) => ContaReceber.fromJson(m).status == StatusConta.ABERTA,
               ),
               CustomAction<Map<String, dynamic>>(
-                icon: Icons.check_circle,
+                icon: Icons.price_check,
                 label: 'Baixar',
                 onPressed: (context, object) => showDialog(
                   context: context,
@@ -530,6 +531,27 @@ class _WebContaReceberGridScreenState extends State<WebContaReceberGridScreen> {
                     builder: (_) => AnexoUploadDialog(
                       lancamentoId: id is int ? id : int.tryParse('$id') ?? 0,
                       lancamentoTipo: 'RECEBER',
+                    ),
+                  );
+                },
+                isVisible: (_) => true,
+              ),
+              CustomAction<Map<String, dynamic>>(
+                icon: Icons.receipt,
+                label: 'Boleto',
+                onPressed: (context, object) {
+                  final id = object['id'];
+                  final lancId = id is int ? id : int.tryParse('$id') ?? 0;
+                  showDialog(
+                    context: context,
+                    builder: (_) => Dialog(
+                      child: SizedBox(
+                        width: 480,
+                        child: BoletoWidget(
+                          lancamentoId: lancId,
+                          lancamentoTipo: 'RECEBER',
+                        ),
+                      ),
                     ),
                   );
                 },

@@ -48,7 +48,7 @@ class _ContaPagarGridScreenState extends State<ContaPagarGridScreen> {
           dateFieldName: 'audit.createdAt',
           customActions: () => [
             CustomAction<ContaPagar>(
-              icon: Icons.payment,
+              icon: Icons.price_check,
               label: 'Baixar',
               onPressed: (context, object) => _showBaixaDialog(context, object),
               isVisible: (object) => object.status == StatusConta.ABERTA,
