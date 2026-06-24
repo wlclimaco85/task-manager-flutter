@@ -610,36 +610,10 @@ class _WindowsCalendarScreenState extends State<WindowsCalendarScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: GridColors.divider,
-      appBar: AppBar(
-        backgroundColor: GridColors.primary,
-        elevation: 0,
-        automaticallyImplyLeading: false,
-        titleSpacing: 12,
-        title: const Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(Icons.calendar_month_rounded, color: Colors.white, size: 20),
-            SizedBox(width: 8),
-            Flexible(
-              child: Text(
-                'Calendário Financeiro',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 16,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                maxLines: 1,
-              ),
-            ),
-          ],
-        ),
-        actions: const [
-          AppBarActions(),
-          SizedBox(width: 4),
-        ],
+      appBar: UserBannerAppBar(
+        screenTitle: 'Calendário Financeiro',
         // Linha de formato: [Dia | Mês | Ano centralizados] + [Hoje à direita]
-        bottom: PreferredSize(
+        customBottom: PreferredSize(
           preferredSize: const Size.fromHeight(44),
           child: Container(
             color: GridColors.primary,

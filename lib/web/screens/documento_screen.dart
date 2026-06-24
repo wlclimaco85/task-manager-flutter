@@ -6,6 +6,7 @@ import '../../../services/network_caller.dart';
 import '../../../utils/api_links.dart';
 import '../../../utils/tenant_context.dart';
 import '../../../widgets/anexo_financeiro_widget.dart';
+import '../../../widgets/user_banners.dart';
 import '../../../models/conta_pagar_model.dart';
 import '../../../models/conta_receber_model.dart';
 import 'baixa_dialog.dart';
@@ -562,37 +563,25 @@ class _WindowsCalendarScreenState extends State<WindowsCalendarScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: _grey,
-      body: Column(
-        children: [
-          _buildHeader(),
-          Expanded(
-            child: _viewMode == 'day' ? _buildDayView() : _buildMonthView(),
-          ),
-        ],
+      appBar: UserBannerAppBar(
+        screenTitle: 'Calendário Financeiro',
+        customBottom: PreferredSize(
+          preferredSize: const Size.fromHeight(52),
+          child: _buildToolbar(),
+        ),
       ),
+      body: _viewMode == 'day' ? _buildDayView() : _buildMonthView(),
     );
   }
 
-  // ── Header ───────────────────────────────────────────────────────────────
-  Widget _buildHeader() {
+  // ── Barra de toggle Dia/Mês + Hoje + refresh (título agora no UserBannerAppBar) ──
+  Widget _buildToolbar() {
     return Container(
       color: _red,
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
       child: Row(
         children: [
-          // Left: title
-          const Icon(Icons.calendar_month, color: Colors.white, size: 22),
-          const SizedBox(width: 8),
-          const Text(
-            'Calendário Financeiro',
-            style: TextStyle(
-              color: Colors.white,
-              fontWeight: FontWeight.bold,
-              fontSize: 16,
-            ),
-          ),
-          const Spacer(),
-          // Center: toggle buttons
+          // Toggle buttons
           _buildToggleBtn(
             icon: Icons.calendar_view_day,
             label: 'Dia',
