@@ -26,6 +26,7 @@ import '../utils/grid_texts.dart';
 import '../../../models/network_response.dart';
 // Serviços existentes no seu projeto
 import '../../services/network_caller.dart';
+import '../../../models/auth_utility.dart';
 import '../../../widgets/user_banners.dart';
 
 // ---------------------- CONFIGS ----------------------
@@ -636,6 +637,12 @@ class _GenericMobileGridScreenState extends State<GenericMobileGridScreen> {
     if (widget.authHeadersProvider != null) {
       final headers = await widget.authHeadersProvider!();
       request.headers.addAll(headers);
+    } else {
+      // Fallback: injeta Bearer token para uploads sem authHeadersProvider (ex. GED dinamico)
+      final token = AuthUtility.userInfo?.token;
+      if (token != null && token.isNotEmpty) {
+        request.headers['Authorization'] = 'Bearer $token';
+      }
     }
 
     request.fields.addAll(fields);
