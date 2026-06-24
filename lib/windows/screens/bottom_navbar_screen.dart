@@ -327,7 +327,7 @@ class _WindowsBottomNavBarScreenState extends State<WindowsBottomNavBarScreen> {
         WindowsFormaPagamentoGridScreen(hasPermission: (perm) => true),
         WindowsDiretorioGridScreen(hasPermission: (perm) => true),
         GedArquivosScreen(), // 30: GED
-        const WindowsCalendarScreen(),
+        const WindowsCalendarScreen(useLightHeader: true),
         WindowsObrigacaoFiscalGridScreen(hasPermission: (perm) => true),
         WindowsLoginGridScreen(hasPermission: (perm) => true),
         // Novas telas

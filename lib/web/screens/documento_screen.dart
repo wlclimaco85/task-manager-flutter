@@ -355,7 +355,13 @@ String _dateKey(Map<String, dynamic> item) {
 // ─── Main widget ─────────────────────────────────────────────────────────────
 
 class WindowsCalendarScreen extends StatefulWidget {
-  const WindowsCalendarScreen({super.key});
+  /// Quando true, usa header leve (SimpleAppBar) em vez do UserBannerAppBar
+  /// completo — evita duplicar usuario/notificacoes/logout que a AppSidebar
+  /// ja mostra fixa na Web/Windows. Mobile (sem sidebar) mantem o
+  /// UserBannerAppBar completo (default false).
+  final bool useLightHeader;
+
+  const WindowsCalendarScreen({super.key, this.useLightHeader = false});
 
   @override
   State<WindowsCalendarScreen> createState() => _WindowsCalendarScreenState();
@@ -563,13 +569,22 @@ class _WindowsCalendarScreenState extends State<WindowsCalendarScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: _grey,
-      appBar: UserBannerAppBar(
-        screenTitle: 'Calendário Financeiro',
-        customBottom: PreferredSize(
-          preferredSize: const Size.fromHeight(52),
-          child: _buildToolbar(),
-        ),
-      ),
+      appBar: widget.useLightHeader
+          ? SimpleAppBar(
+              title: 'Calendário Financeiro',
+              icon: Icons.calendar_month,
+              bottom: PreferredSize(
+                preferredSize: const Size.fromHeight(52),
+                child: _buildToolbar(),
+              ),
+            )
+          : UserBannerAppBar(
+              screenTitle: 'Calendário Financeiro',
+              customBottom: PreferredSize(
+                preferredSize: const Size.fromHeight(52),
+                child: _buildToolbar(),
+              ),
+            ),
       body: _viewMode == 'day' ? _buildDayView() : _buildMonthView(),
     );
   }

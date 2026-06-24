@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import '../utils/grid_colors.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
@@ -155,6 +156,21 @@ class _AppSidebarState extends State<AppSidebar> {
       ..sort((a, b) => a.label.compareTo(b.label));
   }
 
+  /// Mesma lógica de UserBannerAppBar._getUserAvatar() — decodifica a foto do
+  /// usuário (base64) vinda do login ou dos dados pessoais.
+  Uint8List _getUserAvatar() {
+    final base64String = AuthUtility.userInfo?.login?.foto ??
+        AuthUtility.userInfo?.data?.codDadosPessoal?.photo;
+    if (base64String != null && base64String.trim().isNotEmpty) {
+      try {
+        final UriData? data =
+            Uri.parse("data:image/png;base64,$base64String").data;
+        if (data != null) return data.contentAsBytes();
+      } catch (_) {}
+    }
+    return Uint8List(0);
+  }
+
   @override
   Widget build(BuildContext context) {
     return AnimatedContainer(
@@ -183,20 +199,60 @@ class _AppSidebarState extends State<AppSidebar> {
   }
 
   // ── Header ────────────────────────────────────────────────────────────────
+  // Avatar do usuário: foto real (mesma fonte do UserBannerAppBar) com
+  // fallback para a inicial do nome quando não há foto cadastrada.
+  Widget _buildUserAvatar(double radius) {
+    final avatar = _getUserAvatar();
+    return CircleAvatar(
+      radius: radius,
+      backgroundColor: _primary,
+      child: avatar.isNotEmpty
+          ? ClipOval(
+              child: Image.memory(
+                avatar,
+                width: radius * 2,
+                height: radius * 2,
+                fit: BoxFit.cover,
+                errorBuilder: (_, __, ___) => Text(
+                  widget.userName.isNotEmpty
+                      ? widget.userName[0].toUpperCase()
+                      : 'U',
+                  style: TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                      fontSize: radius * 0.8),
+                ),
+              ),
+            )
+          : Text(
+              widget.userName.isNotEmpty ? widget.userName[0].toUpperCase() : 'U',
+              style: TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                  fontSize: radius * 0.8),
+            ),
+    );
+  }
+
   Widget _buildHeader() {
     if (widget.isCollapsed) {
       return Container(
         padding: const EdgeInsets.symmetric(vertical: 12),
         child: Column(
           children: [
-            CircleAvatar(
-              radius: 18,
-              backgroundColor: _primary,
-              child: Text(
-                widget.userName.isNotEmpty ? widget.userName[0].toUpperCase() : 'U',
-                style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+            // Logo Abraço Contabilidade (versão compacta — só o avatar/ícone)
+            ClipOval(
+              child: Image.asset(
+                'assets/images/logo_contabilidade.jpg',
+                width: 30,
+                height: 30,
+                fit: BoxFit.cover,
+                errorBuilder: (_, __, ___) =>
+                    const Icon(Icons.apps, color: Colors.white, size: 22),
               ),
             ),
+            const SizedBox(height: 10),
+            _buildUserAvatar(18),
             const SizedBox(height: 8),
             _iconBtn(Icons.notifications, widget.unreadAlerts > 0 ? _primary : _textMuted, widget.onNotificationTap, badge: widget.unreadAlerts),
             const SizedBox(height: 4),
@@ -213,16 +269,35 @@ class _AppSidebarState extends State<AppSidebar> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // Logo da Abraço Contabilidade
           Row(
             children: [
-              CircleAvatar(
-                radius: 20,
-                backgroundColor: _primary,
-                child: Text(
-                  widget.userName.isNotEmpty ? widget.userName[0].toUpperCase() : 'U',
-                  style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16),
+              ClipRRect(
+                borderRadius: BorderRadius.circular(6),
+                child: Image.asset(
+                  'assets/images/logo_contabilidade.jpg',
+                  width: 32,
+                  height: 32,
+                  fit: BoxFit.cover,
+                  errorBuilder: (_, __, ___) =>
+                      const Icon(Icons.apps, color: Colors.white, size: 24),
                 ),
               ),
+              const SizedBox(width: 10),
+              const Expanded(
+                child: Text(
+                  'Abraço Contabilidade',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(color: _textColor, fontWeight: FontWeight.w700, fontSize: 13),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              _buildUserAvatar(20),
               const SizedBox(width: 10),
               Expanded(
                 child: Column(

@@ -379,7 +379,13 @@ Future<dynamic> _fetchFinancialJson(String url) async {
 }
 
 class WindowsCalendarScreen extends StatefulWidget {
-  const WindowsCalendarScreen({super.key});
+  /// Quando true, usa header leve (SimpleAppBar) em vez do UserBannerAppBar
+  /// completo — evita duplicar usuario/notificacoes/logout que a AppSidebar
+  /// ja mostra fixa na Web/Windows. Mobile (sem sidebar) mantem o
+  /// UserBannerAppBar completo (default false).
+  final bool useLightHeader;
+
+  const WindowsCalendarScreen({super.key, this.useLightHeader = false});
 
   @override
   State<WindowsCalendarScreen> createState() => _WindowsCalendarScreenState();
@@ -610,10 +616,29 @@ class _WindowsCalendarScreenState extends State<WindowsCalendarScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: GridColors.divider,
-      appBar: UserBannerAppBar(
-        screenTitle: 'Calendário Financeiro',
-        // Linha de formato: [Dia | Mês | Ano centralizados] + [Hoje à direita]
-        customBottom: PreferredSize(
+      appBar: widget.useLightHeader
+          ? SimpleAppBar(
+              title: 'Calendário Financeiro',
+              icon: Icons.calendar_month,
+              bottom: _buildCalendarBottomBar(),
+            )
+          : UserBannerAppBar(
+              screenTitle: 'Calendário Financeiro',
+              // Linha de formato: [Dia | Mês | Ano centralizados] + [Hoje à direita]
+              customBottom: _buildCalendarBottomBar(),
+            ),
+      body: _viewMode == 'day'
+          ? _buildSingleDayView()
+          : _viewMode == 'year'
+              ? _buildMonthView()
+              : _buildDayView(),
+    );
+  }
+
+  // Barra inferior com toggle Dia/Mês/Ano + Hoje/refresh — usada tanto no
+  // UserBannerAppBar (mobile) quanto no SimpleAppBar (Web/Windows).
+  PreferredSizeWidget _buildCalendarBottomBar() {
+    return PreferredSize(
           preferredSize: const Size.fromHeight(44),
           child: Container(
             color: GridColors.primary,
@@ -697,14 +722,7 @@ class _WindowsCalendarScreenState extends State<WindowsCalendarScreen> {
               ],
             ),
           ),
-        ),
-      ),
-      body: _viewMode == 'day'
-          ? _buildSingleDayView()
-          : _viewMode == 'year'
-              ? _buildMonthView()
-              : _buildDayView(),
-    );
+        );
   }
 
   Widget _buildToggleBtn({
