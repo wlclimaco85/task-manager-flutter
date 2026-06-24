@@ -1,9 +1,3 @@
-// test/widgets/internal_tab_strip_test.dart
-//
-// Testes de widget para showTabLimitDialog (popup de "limite de abas
-// atingido"). Valida seleção múltipla via checkboxes e a opção
-// "fechar todas".
-
 import 'dart:async';
 
 import 'package:flutter/material.dart';
@@ -36,7 +30,8 @@ Widget _wrap(VoidCallback onPressed) => MaterialApp(
 
 void main() {
   group('showTabLimitDialog — seleção múltipla', () {
-    testWidgets('retorna os índices das abas marcadas via checkbox', (tester) async {
+    testWidgets('retorna os índices das abas marcadas via checkbox',
+        (tester) async {
       List<int>? resultado;
 
       await tester.pumpWidget(_wrap(() {}));
@@ -50,7 +45,6 @@ void main() {
       ).then((value) => resultado = value));
       await tester.pumpAndSettle();
 
-      // Marca as abas de índice 1 e 3.
       await tester.tap(find.byType(Checkbox).at(1));
       await tester.pumpAndSettle();
       await tester.tap(find.byType(Checkbox).at(3));
@@ -62,7 +56,9 @@ void main() {
       expect(resultado, [1, 3]);
     });
 
-    testWidgets('botão "Fechar selecionadas e abrir" fica desabilitado sem seleção', (tester) async {
+    testWidgets(
+        'botão "Fechar selecionadas e abrir" fica desabilitado sem seleção',
+        (tester) async {
       await tester.pumpWidget(_wrap(() {}));
       final context = tester.element(find.byType(ElevatedButton));
 
@@ -74,11 +70,13 @@ void main() {
       ));
       await tester.pumpAndSettle();
 
-      final botao = tester.widget<TextButton>(find.widgetWithText(TextButton, 'Fechar selecionadas e abrir'));
+      final botao = tester.widget<TextButton>(
+          find.widgetWithText(TextButton, 'Fechar selecionadas e abrir'));
       expect(botao.onPressed, isNull);
     });
 
-    testWidgets('"Fechar todas e abrir" retorna todos os índices', (tester) async {
+    testWidgets('"Fechar todas e abrir" retorna todos os índices',
+        (tester) async {
       List<int>? resultado;
       final tabs = _buildTabs();
 
@@ -117,6 +115,76 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(resultado, isNull);
+    });
+  });
+
+  group('InternalTabStrip', () {
+    testWidgets('renderiza todas as abas', (tester) async {
+      await tester.pumpWidget(MaterialApp(
+        home: Scaffold(
+          body: InternalTabStrip(
+            tabs: _buildTabs(),
+            activeIndex: 0,
+            onActivate: (_) {},
+            onClose: (_) {},
+          ),
+        ),
+      ));
+      for (int i = 0; i < 5; i++) {
+        expect(find.text('Aba $i'), findsOneWidget);
+      }
+    });
+
+    testWidgets('isCompact reduz tamanho', (tester) async {
+      await tester.pumpWidget(MaterialApp(
+        home: Scaffold(
+          body: InternalTabStrip(
+            tabs: _buildTabs(),
+            activeIndex: 0,
+            onActivate: (_) {},
+            onClose: (_) {},
+            isCompact: true,
+          ),
+        ),
+      ));
+      expect(find.text('Aba 0'), findsOneWidget);
+    });
+
+    testWidgets('onClose eh chamado ao fechar aba', (tester) async {
+      int? closedIndex;
+      await tester.pumpWidget(MaterialApp(
+        home: Scaffold(
+          body: InternalTabStrip(
+            tabs: _buildTabs(),
+            activeIndex: 0,
+            onActivate: (_) {},
+            onClose: (i) => closedIndex = i,
+          ),
+        ),
+      ));
+      expect(find.text('Aba 0'), findsOneWidget);
+    });
+  });
+
+  group('auto-close (comportamento antigo popup removido)', () {
+    test('lista remove primeiro item e adiciona novo', () {
+      final tabs = _buildTabs();
+      expect(tabs.length, 5);
+
+      final novo = OpenTab(
+        id: 'screen_nova',
+        label: 'Nova Aba',
+        icon: FontAwesomeIcons.house,
+        content: const SizedBox.shrink(),
+        screenIndex: 99,
+      );
+
+      tabs.removeAt(0);
+      tabs.add(novo);
+
+      expect(tabs.length, 5);
+      expect(tabs[0].label, 'Aba 1');
+      expect(tabs[4].label, 'Nova Aba');
     });
   });
 }

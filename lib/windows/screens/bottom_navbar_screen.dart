@@ -248,25 +248,12 @@ class _WindowsBottomNavBarScreenState extends State<WindowsBottomNavBarScreen> {
       return;
     }
 
-    _showTabLimitDialogAndReplace(screenIndex, item.label);
+    _autoCloseOldestTab(screenIndex);
   }
 
-  Future<void> _showTabLimitDialogAndReplace(
-      int newScreenIndex, String newLabel) async {
-    final indicesParaFechar = await showTabLimitDialog(
-      context: context,
-      tabs: _openTabs,
-      newTabLabel: newLabel,
-      isCompact: false,
-    );
-    if (indicesParaFechar == null || indicesParaFechar.isEmpty || !mounted)
-      return;
-
+  void _autoCloseOldestTab(int newScreenIndex) {
     setState(() {
-      final ordenados = [...indicesParaFechar]..sort((a, b) => b.compareTo(a));
-      for (final i in ordenados) {
-        _openTabs.removeAt(i);
-      }
+      _openTabs.removeAt(0);
       _openTabs.add(_buildTab(newScreenIndex));
       _activeTabIndex = _openTabs.length - 1;
     });
