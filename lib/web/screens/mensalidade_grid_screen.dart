@@ -6,7 +6,6 @@ import '../../../utils/api_links.dart';
 import '../../../utils/tenant_context.dart';
 import '../../../widgets/generic_grid_screen.dart';
 import '../../../models/mensalidade_model.dart';
-import '../../../utils/grid_colors.dart';
 
 class WebMensalidadeGridScreen extends StatefulWidget {
   final SecurityCheck hasPermission;

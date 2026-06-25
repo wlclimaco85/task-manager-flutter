@@ -95,6 +95,24 @@ class LoginGridScreen extends StatelessWidget {
       ),
       fieldOverrides: [
         FieldConfig(
+          label: 'Email',
+          fieldName: 'email',
+          icon: Icons.email,
+          fieldType: FieldType.email,
+          isInForm: true,
+          isFilterable: true,
+          isRequired: true,
+        ),
+        FieldConfig(
+          label: 'Nome',
+          fieldName: 'nome',
+          icon: Icons.person,
+          fieldType: FieldType.text,
+          isInForm: true,
+          isFilterable: true,
+          isRequired: true,
+        ),
+        FieldConfig(
           label: 'Roles',
           fieldName: 'roles',
           icon: Icons.security,

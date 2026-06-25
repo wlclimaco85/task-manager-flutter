@@ -16,7 +16,6 @@ import '../../../utils/app_logger.dart';
 import '../../../utils/grid_colors.dart';
 import '../../../utils/tenant_context.dart';
 import '../../../widgets/chat/chat_support_ui.dart';
-import '../../services/ai_assistant_service.dart';
 import '../../services/chat_caller.dart';
 
 class WindowsChatMessageScreen extends StatefulWidget {
