@@ -64,8 +64,14 @@ class RelatedGridTab {
 
   /// Widget customizado — quando informado, ignora telaNome e exibe este widget na aba
   final Widget? customWidget;
-  final Future<void> Function(Map<String, dynamic>)? onAfterSave;
-  final Future<Map<String, dynamic>> Function(Map<String, dynamic>)? onEditItem;
+
+  /// Ver GenericGridScreen.prefetchExtraFields/onAfterSave — repassados como
+  /// estão até o grid (Map<String,dynamic> porque RelatedGridTab sempre usa o
+  /// grid dinâmico genérico, nunca um T tipado).
+  final Future<Map<String, dynamic>> Function(Map<String, dynamic> item)?
+      prefetchExtraFields;
+  final Future<void> Function(
+      Map<String, dynamic> formData, Map<String, dynamic>? item)? onAfterSave;
 
   const RelatedGridTab({
     required this.title,
@@ -75,8 +81,8 @@ class RelatedGridTab {
     this.fieldOverrides,
     this.deleteEndpointOverride,
     this.customWidget,
+    this.prefetchExtraFields,
     this.onAfterSave,
-    this.onEditItem,
   }) : assert(telaNome != null || customWidget != null,
             'RelatedGridTab requer telaNome ou customWidget');
 }
@@ -332,8 +338,8 @@ class _GenericDetailFormScreenState extends State<GenericDetailFormScreen>
             fieldOverrides: rt.fieldOverrides,
             deleteEndpointOverride: rt.deleteEndpointOverride,
             customWidget: rt.customWidget,
+            prefetchExtraFields: rt.prefetchExtraFields,
             onAfterSave: rt.onAfterSave,
-            onEditItem: rt.onEditItem,
           );
         }).toList();
 
@@ -700,7 +706,9 @@ class _GenericDetailFormScreenState extends State<GenericDetailFormScreen>
       // mobile faça o delete destrutivo padrão (apagar a entidade global).
       if (isMobileWidth &&
           tab.fieldOverrides == null &&
-          tab.deleteEndpointOverride == null) {
+          tab.deleteEndpointOverride == null &&
+          tab.prefetchExtraFields == null &&
+          tab.onAfterSave == null) {
         return mobile_dyn.DynamicGridDynamicScreen(
           telaNome: tab.gridTelaNome!,
           hasPermission: widget.hasPermission,
@@ -716,9 +724,9 @@ class _GenericDetailFormScreenState extends State<GenericDetailFormScreen>
         extraParams: tab.extraParams,
         fieldOverrides: tab.fieldOverrides,
         deleteEndpointOverride: tab.deleteEndpointOverride,
-        onAfterSave: tab.onAfterSave,
-        onEditItem: tab.onEditItem,
         showAppBar: false,
+        prefetchExtraFields: tab.prefetchExtraFields,
+        onAfterSave: tab.onAfterSave,
       );
     }
     final rows = tab.listData ?? [];
@@ -1248,8 +1256,10 @@ class _AutoTab {
   final List<FieldConfigWindows>? fieldOverrides;
   final String? deleteEndpointOverride;
   final Widget? customWidget;
-  final Future<void> Function(Map<String, dynamic>)? onAfterSave;
-  final Future<Map<String, dynamic>> Function(Map<String, dynamic>)? onEditItem;
+  final Future<Map<String, dynamic>> Function(Map<String, dynamic> item)?
+      prefetchExtraFields;
+  final Future<void> Function(
+      Map<String, dynamic> formData, Map<String, dynamic>? item)? onAfterSave;
   _AutoTab(
       {required this.title,
       required this.icon,
@@ -1259,8 +1269,8 @@ class _AutoTab {
       this.fieldOverrides,
       this.deleteEndpointOverride,
       this.customWidget,
-      this.onAfterSave,
-      this.onEditItem});
+      this.prefetchExtraFields,
+      this.onAfterSave});
 }
 
 class _EF {

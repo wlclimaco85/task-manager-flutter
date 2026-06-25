@@ -219,6 +219,7 @@ class _WindowsBottomNavBarScreenState extends State<WindowsBottomNavBarScreen> {
         child: _screens[widgetIndex],
       ),
       screenIndex: screenIndex,
+      openedAt: DateTime.now(),
     );
   }
 
@@ -248,13 +249,12 @@ class _WindowsBottomNavBarScreenState extends State<WindowsBottomNavBarScreen> {
       return;
     }
 
-    _autoCloseOldestTab(screenIndex);
-  }
-
-  void _autoCloseOldestTab(int newScreenIndex) {
+    // Limite de abas atingido: fecha automaticamente a aba mais antiga
+    // (menor openedAt) e abre a nova, sem diálogo de confirmação.
     setState(() {
-      _openTabs.removeAt(0);
-      _openTabs.add(_buildTab(newScreenIndex));
+      final oldestIndex = indexOfOldestTab(_openTabs);
+      _openTabs.removeAt(oldestIndex);
+      _openTabs.add(_buildTab(screenIndex));
       _activeTabIndex = _openTabs.length - 1;
     });
   }
@@ -314,7 +314,7 @@ class _WindowsBottomNavBarScreenState extends State<WindowsBottomNavBarScreen> {
         WindowsFormaPagamentoGridScreen(hasPermission: (perm) => true),
         WindowsDiretorioGridScreen(hasPermission: (perm) => true),
         GedArquivosScreen(), // 30: GED
-        const WindowsCalendarScreen(),
+        const WindowsCalendarScreen(useLightHeader: true),
         WindowsObrigacaoFiscalGridScreen(hasPermission: (perm) => true),
         WindowsLoginGridScreen(hasPermission: (perm) => true),
         // Novas telas

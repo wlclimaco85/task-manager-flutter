@@ -362,14 +362,14 @@ class MenuConfig {
             label: 'Dashboard Financeiro',
             icon: FontAwesomeIcons.chartPie,
             screenIndex: 91),
+        MenuItem(
+            id: 'dashboard_mensalidade',
+            label: 'Dashboard de Mensalidades',
+            icon: FontAwesomeIcons.fileInvoiceDollar,
+            screenIndex: 147),
         // id = tela_nome exato do backend (role_permissao), nao um id
         // descritivo — AppSidebar filtra por MenuItem.id == tela_nome via
         // SecurityMatrix.allowedTelaIds (ver app_sidebar.dart linha 85-86).
-        MenuItem(
-            id: 'dashFinanceiroArea',
-            label: 'Dashboard Financeiro (Área)',
-            icon: FontAwesomeIcons.chartLine,
-            screenIndex: 142),
         MenuItem(
             id: 'lancamentos_financeiros',
             label: 'Lançamentos Financeiros',

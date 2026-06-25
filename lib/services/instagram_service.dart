@@ -284,7 +284,8 @@ class TimelineEvent {
 }
 
 class InstagramService {
-  static const _localApi = 'http://127.0.0.1:8500';
+  static const _defaultLocalApi = 'http://127.0.0.1:8500';
+  static String _pythonApiUrl = _defaultLocalApi;
   static bool _localAvailable = false;
 
   // Base do backend Java (AppAcademia). Usa a mesma base canônica do app
@@ -294,7 +295,9 @@ class InstagramService {
 
   static Future<void> checkLocalApi() async {
     try {
-      final r = await http.get(Uri.parse('$_localApi/health')).timeout(const Duration(seconds: 2));
+      final config = await fetchApiConfig();
+      _pythonApiUrl = config?['python_server_url']?.trim() ?? _defaultLocalApi;
+      final r = await http.get(Uri.parse('$_pythonApiUrl/health')).timeout(const Duration(seconds: 2));
       _localAvailable = r.statusCode == 200;
     } catch (_) {
       _localAvailable = false;
@@ -339,7 +342,7 @@ class InstagramService {
   static Future<List<InstagramPost>> fetchPosts(String username, {int amount = 12}) async {
     if (_localAvailable) {
       try {
-        final r = await http.get(Uri.parse('$_localApi/posts?username=$username&amount=$amount')).timeout(const Duration(seconds: 20));
+        final r = await http.get(Uri.parse('$_pythonApiUrl/posts?username=$username&amount=$amount')).timeout(const Duration(seconds: 20));
         if (r.statusCode == 200) {
           final data = json.decode(r.body);
           if (data.containsKey('posts')) {
@@ -375,7 +378,7 @@ class InstagramService {
   static Future<List<InstagramLiker>> fetchLikers(String mediaId) async {
     if (!_localAvailable) return [];
     try {
-      final r = await http.get(Uri.parse('$_localApi/likers?media_id=$mediaId')).timeout(const Duration(seconds: 15));
+      final r = await http.get(Uri.parse('$_pythonApiUrl/likers?media_id=$mediaId')).timeout(const Duration(seconds: 15));
       if (r.statusCode == 200) {
         final data = json.decode(r.body);
         if (data.containsKey('likers')) {
@@ -389,7 +392,7 @@ class InstagramService {
   static Future<List<InstagramLiker>> fetchFollowers(String username, {int amount = 5000}) async {
     if (!_localAvailable) return [];
     try {
-      final r = await http.get(Uri.parse('$_localApi/followers?username=$username&amount=$amount')).timeout(const Duration(seconds: 90));
+      final r = await http.get(Uri.parse('$_pythonApiUrl/followers?username=$username&amount=$amount')).timeout(const Duration(seconds: 90));
       if (r.statusCode == 200) {
         final data = json.decode(r.body);
         if (data.containsKey('followers')) {
@@ -403,7 +406,7 @@ class InstagramService {
   static Future<List<InstagramLiker>> fetchFollowing(String username, {int amount = 5000}) async {
     if (!_localAvailable) return [];
     try {
-      final r = await http.get(Uri.parse('$_localApi/following?username=$username&amount=$amount')).timeout(const Duration(seconds: 90));
+      final r = await http.get(Uri.parse('$_pythonApiUrl/following?username=$username&amount=$amount')).timeout(const Duration(seconds: 90));
       if (r.statusCode == 200) {
         final data = json.decode(r.body);
         if (data.containsKey('following')) {
@@ -722,7 +725,7 @@ class InstagramService {
   /// Status do pool de sessões no servidor Python local (total, ativa, labels).
   static Future<Map<String, dynamic>?> fetchSessionsStatus() async {
     try {
-      final r = await http.get(Uri.parse('$_localApi/sessions'))
+      final r = await http.get(Uri.parse('$_pythonApiUrl/sessions'))
           .timeout(const Duration(seconds: 5));
       if (r.statusCode == 200) return json.decode(r.body) as Map<String, dynamic>;
     } catch (_) {}
@@ -733,7 +736,7 @@ class InstagramService {
   static Future<bool> deleteSession(String label) async {
     try {
       final r = await http.delete(
-        Uri.parse('$_localApi/sessions/${Uri.encodeComponent(label)}'),
+        Uri.parse('$_pythonApiUrl/sessions/${Uri.encodeComponent(label)}'),
       ).timeout(const Duration(seconds: 5));
       return r.statusCode == 200;
     } catch (_) {
@@ -746,7 +749,7 @@ class InstagramService {
   static Future<int?> saveSessions(List<Map<String, String>> sessoes) async {
     try {
       final r = await http.post(
-        Uri.parse('$_localApi/sessions'),
+        Uri.parse('$_pythonApiUrl/sessions'),
         headers: {'Content-Type': 'application/json'},
         body: json.encode({'sessions': sessoes}),
       ).timeout(const Duration(seconds: 15));

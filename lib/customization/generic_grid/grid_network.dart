@@ -145,10 +145,14 @@ Future<NetworkResponse> sendMultipart({
         : Uri.parse(endpoint);
     final req = http.MultipartRequest(isUpdate ? 'PUT' : 'POST', url);
     req.fields.addAll(fields);
-    final authHeaders = authHeadersProvider != null
-        ? await authHeadersProvider()
-        : _defaultHeaders();
-    req.headers.addAll(authHeaders);
+    // Sem authHeadersProvider explícito, usa os headers padrão (Bearer token +
+    // X-Tenant-ID). Sem isso o upload multipart (ex.: salvar arquivo no GED)
+    // ia sem Authorization e o backend respondia 401 "Nao autenticado".
+    if (authHeadersProvider != null) {
+      req.headers.addAll(await authHeadersProvider());
+    } else {
+      req.headers.addAll(_defaultHeaders());
+    }
 
     for (final f in files) {
       final file = f.file;

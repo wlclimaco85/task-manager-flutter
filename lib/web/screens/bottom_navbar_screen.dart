@@ -30,6 +30,7 @@ import './regime_grid_screen.dart';
 import './noticias_grid_screen.dart';
 import './conta_pagar_grid_screen.dart';
 import './dashboard_financeiro_screen.dart';
+import './mensalidade_dashboard_screen.dart';
 import '../../widgets/dashboard_area/placeholder/dashboard_financeiro_area_placeholder_screen.dart';
 import '../../widgets/dashboard_area/placeholder/dashboard_dp_area_placeholder_screen.dart';
 import '../../widgets/dashboard_area/placeholder/dashboard_atendimento_placeholder_screen.dart';
@@ -212,6 +213,7 @@ class _WebBottomNavBarScreenState extends State<WebBottomNavBarScreen> {
         child: _screens[widgetIndex],
       ),
       screenIndex: screenIndex,
+      openedAt: DateTime.now(),
     );
   }
 
@@ -241,13 +243,12 @@ class _WebBottomNavBarScreenState extends State<WebBottomNavBarScreen> {
       return;
     }
 
-    _autoCloseOldestTab(screenIndex);
-  }
-
-  void _autoCloseOldestTab(int newScreenIndex) {
+    // Limite de abas atingido: fecha automaticamente a aba mais antiga
+    // (menor openedAt) e abre a nova, sem diálogo de confirmação.
     setState(() {
-      _openTabs.removeAt(0);
-      _openTabs.add(_buildTab(newScreenIndex));
+      final oldestIndex = indexOfOldestTab(_openTabs);
+      _openTabs.removeAt(oldestIndex);
+      _openTabs.add(_buildTab(screenIndex));
       _activeTabIndex = _openTabs.length - 1;
     });
   }
@@ -328,7 +329,7 @@ class _WebBottomNavBarScreenState extends State<WebBottomNavBarScreen> {
           hasPermission: (p) => true), // 28: FormasPagamento
       WebDiretorioGridScreen(hasPermission: (p) => true), // 29: Diretorios
       const GedArquivosScreen(), // 30: GED — Arquivos
-      WebCalendarScreen(), // 31: Calendario
+      WebCalendarScreen(useLightHeader: true), // 31: Calendario
       WebObrigacaoFiscalGridScreen(
           hasPermission: (p) => true), // 32: ObrigacoesFiscais
       WebLoginGridScreen(hasPermission: (p) => true), // 33: Logins(dup)
@@ -467,6 +468,7 @@ class _WebBottomNavBarScreenState extends State<WebBottomNavBarScreen> {
       const DashboardAtendimentoPlaceholderScreen(), // 144: Dashboard Atendimento (Área)
       const DashboardComercialPlaceholderScreen(), // 145: Dashboard Comercial (Área)
       const DashboardFiscalPlaceholderScreen(), // 146: Dashboard Fiscal (Área)
+      const WebMensalidadeDashboardScreen(), // 147: Dashboard de Mensalidades
     ];
   }
 

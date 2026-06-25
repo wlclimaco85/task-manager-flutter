@@ -2,6 +2,7 @@
 // do navegador. Remover/reduzir verbosidade após localizar a causa do crash.
 // ignore_for_file: avoid_print
 import 'dart:async';
+import 'dart:math' as math;
 
 import 'package:flutter/foundation.dart' show kIsWeb, defaultTargetPlatform, TargetPlatform;
 import 'package:flutter/material.dart';
@@ -44,11 +45,18 @@ void main() {
       _logErr('AppLogger.initCapture', e, s);
     }
 
-    // Em vez da tela rosa / ErrorWidget mudo, mostra tela amigável. O erro
-    // detalhado já sai pelo FlutterError.onError acima — aqui não duplicar.
+    // Em vez da tela rosa / ErrorWidget mudo, mostra um indicador adaptativo.
+    // ErrorWidget.builder é GLOBAL: troca QUALQUER widget que falhe durante o
+    // build, em QUALQUER lugar da árvore — não só falha de boot do app
+    // inteiro. _BootErrorScreen (MaterialApp+Scaffold completos) só cabe
+    // quando o espaço disponível é de tela cheia; num ícone pequeno dentro de
+    // um card/popup ela conseguia causar overflow (faixas amarelo/preto) e
+    // mostrar so um retangulo vermelho/rosa vazio. _AdaptiveErrorBox decide o
+    // tamanho certo via LayoutBuilder. O erro detalhado já sai pelo
+    // FlutterError.onError acima — aqui não duplicar.
     ErrorWidget.builder = (FlutterErrorDetails details) {
-      print('[APP-ERROR] _BootErrorScreen exibida (detalhes acima via FlutterError).');
-      return const _BootErrorScreen();
+      print('[APP-ERROR] _AdaptiveErrorBox exibida (detalhes acima via FlutterError).');
+      return const _AdaptiveErrorBox();
     };
 
     try {
@@ -158,16 +166,92 @@ class TaskManagerApp extends StatelessWidget {
 /// Tela exibida quando o build de um widget falha (substitui o "fundo rosa" /
 /// ErrorWidget padrão). Oferece limpar dados locais e recarregar — caminho de
 /// recuperação para cache antigo ou storage corrompido.
-class _BootErrorScreen extends StatelessWidget {
-  const _BootErrorScreen();
+/// Substitui qualquer widget que falhe durante o build (ErrorWidget.builder é
+/// GLOBAL, então isso pode acontecer num ícone de 24px dentro de um card ou
+/// numa tela cheia no boot do app). Decide o tamanho certo via LayoutBuilder
+/// em vez de sempre forcar um MaterialApp+Scaffold completo (que conseguia
+/// causar overflow/fundo vazio em espacos pequenos — bug reportado como
+/// "fundo rosa" num popup do GED e "barra vermelha cortada" no calendario).
+class _AdaptiveErrorBox extends StatelessWidget {
+  const _AdaptiveErrorBox();
+
+  // Limiares de tamanho (review: nomeados para não exigir reler a cadeia de
+  // ifs pra saber o que cada número significa).
+  static const double _kTiny = 40;
+  static const double _kSmall = 120;
+  static const double _kMedium = 300;
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      debugShowCheckedModeBanner: false,
-      home: Scaffold(
-        backgroundColor: GridColors.background,
-        body: Center(
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final largura = constraints.maxWidth;
+        final altura = constraints.maxHeight;
+        // math.min direto em vez de List+where+reduce (review: mesma
+        // intenção, sem alocar coleção intermediária pra 2 valores).
+        final menorLado = math.min(
+          largura.isFinite ? largura : double.infinity,
+          altura.isFinite ? altura : double.infinity,
+        );
+
+        if (menorLado < _kTiny) {
+          return const Center(
+            child: Icon(Icons.error_outline, size: 16, color: GridColors.error),
+          );
+        }
+        if (menorLado < _kSmall) {
+          return const Center(
+            child: Tooltip(
+              message: 'Erro ao carregar',
+              child: Icon(Icons.error_outline, size: 20, color: GridColors.error),
+            ),
+          );
+        }
+        if (menorLado < _kMedium) {
+          // Column em vez de Row+Flexible: Row com filho flexível dentro de
+          // largura ILIMITADA (comum aqui — este branch também é alcançado
+          // quando a altura é pequena mas a largura do pai é infinita, ex.
+          // dentro de uma Column/ListView sem largura definida) lança
+          // "RenderFlex children have non-zero flex but incoming width
+          // constraints are unbounded". Column não tem esse problema no eixo
+          // cruzado sem filhos Expanded/Flexible.
+          return Center(
+            child: Padding(
+              padding: const EdgeInsets.all(8),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: const [
+                  Icon(Icons.error_outline, size: 28, color: GridColors.error),
+                  SizedBox(height: 6),
+                  Text('Erro ao carregar',
+                      textAlign: TextAlign.center,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis),
+                ],
+              ),
+            ),
+          );
+        }
+        return const _ErroTelaCompleta();
+      },
+    );
+  }
+}
+
+/// Versão completa (tela cheia / boot do app): mesmo conteúdo de antes, só
+/// renderizada quando o espaço disponível de fato comporta. Sem MaterialApp
+/// novo — usa Directionality+Material próprios para herdar o Theme/contexto
+/// já existentes em vez de duplicar a árvore do app.
+class _ErroTelaCompleta extends StatelessWidget {
+  const _ErroTelaCompleta();
+
+  @override
+  Widget build(BuildContext context) {
+    return Directionality(
+      textDirection: TextDirection.ltr,
+      child: Material(
+        color: GridColors.background,
+        child: Center(
           child: ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: 420),
             child: Padding(

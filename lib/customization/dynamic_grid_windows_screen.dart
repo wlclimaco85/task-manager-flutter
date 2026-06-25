@@ -45,6 +45,11 @@ class DynamicGridWindowsScreen<T> extends StatefulWidget {
   final Future<Map<String, dynamic>> Function(Map<String, dynamic>)? onEditItem;
   final void Function(Set<String> ids, List<Map<String, dynamic>> selectedData)? onSelectedRowsChanged;
 
+  /// Ver GenericGridScreen.prefetchExtraFields/onAfterSave — repassados como
+  /// estão, sem lógica própria neste nível (só plumbing).
+  final Future<Map<String, dynamic>> Function(T item)? prefetchExtraFields;
+  final Future<void> Function(Map<String, dynamic> formData, T? item)? onAfterSave;
+
   const DynamicGridWindowsScreen({
     super.key,
     required this.telaNome,
@@ -65,6 +70,8 @@ class DynamicGridWindowsScreen<T> extends StatefulWidget {
     this.onAfterSave,
     this.onEditItem,
     this.onSelectedRowsChanged,
+    this.prefetchExtraFields,
+    this.onAfterSave,
   });
 
   @override
@@ -430,6 +437,8 @@ class _DynamicGridWindowsScreenState<T>
           onAfterSave: widget.onAfterSave,
           onEditItem: widget.onEditItem,
           onSelectedRowsChanged: widget.onSelectedRowsChanged,
+          prefetchExtraFields: widget.prefetchExtraFields,
+          onAfterSave: widget.onAfterSave,
         );
       },
     );

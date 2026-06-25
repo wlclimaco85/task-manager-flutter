@@ -108,6 +108,11 @@ class Parceiro {
   Empresa? empresa;
   RegimeTributario? regime;
   double? valorMensal;
+
+  /// 1-30 = dia fixo do mes; 0 = "5º Dia Útil" (calculado pelo backend); null =
+  /// nao configurado (tratado como 0 pelo job de cobranca).
+  int? diaVencimentoMensalidade;
+
   String? observacao;
 
   Parceiro({
@@ -126,6 +131,7 @@ class Parceiro {
     this.empresa,
     this.regime,
     this.valorMensal,
+    this.diaVencimentoMensalidade,
     this.observacao,
   });
 
@@ -149,6 +155,8 @@ class Parceiro {
         ? RegimeTributario.fromJson(json['regime'])
         : null;
     valorMensal = json['valorMensal']?.toDouble();
+    diaVencimentoMensalidade =
+        (json['diaVencimentoMensalidade'] as num?)?.toInt();
     observacao = json['observacao'];
   }
 
@@ -170,6 +178,7 @@ class Parceiro {
     if (regime != null) data['regime'] = regime!.toJson();
     data['regime'] = regime;
     data['valorMensal'] = valorMensal;
+    data['diaVencimentoMensalidade'] = diaVencimentoMensalidade;
     data['observacao'] = observacao;
     return data;
   }
@@ -198,6 +207,14 @@ class Parceiro {
     }
     return [];
   }
+
+  /// Opções do dropdown "Dia de Vencimento": 0 = "5º Dia Útil" (default quando
+  /// não configurado), 1-30 = dia fixo do mês.
+  static List<Map<String, dynamic>> get diaVencimentoOptions => [
+        {'value': 0, 'label': '5º Dia Útil'},
+        for (var dia = 1; dia <= 30; dia++)
+          {'value': dia, 'label': 'Dia $dia'},
+      ];
 
   // ==========================================================
   // CONFIG PADRÃO WINDOWS (DynamicGridWindows / Detail Windows)
@@ -321,6 +338,18 @@ class Parceiro {
       isVisibleByDefault: false,
       isFixed: false,
       fieldType: FieldType.currency,
+    ),
+    FieldConfigWindows(
+      label: "Dia de Vencimento (mensalidade/módulos)",
+      fieldName: "diaVencimentoMensalidade",
+      icon: Icons.event,
+      isInForm: true,
+      isVisibleByDefault: false,
+      isFixed: false,
+      fieldType: FieldType.dropdown,
+      dropdownOptions: diaVencimentoOptions,
+      dropdownValueField: 'value',
+      dropdownDisplayField: 'label',
     ),
     const FieldConfigWindows(
       label: "Observação",

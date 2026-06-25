@@ -18,6 +18,8 @@ import '../../../windows/screens/baixa_dialog_receber.dart';
 import '../../../windows/dialogs/parcelar_receber_dialog.dart';
 import '../../../windows/dialogs/recorrencia_receber_dialog.dart';
 import '../../../windows/dialogs/renegociacao_receber_dialog.dart';
+import '../../../widgets/anexo_financeiro_widget.dart';
+import '../../../widgets/finance/boleto_widget.dart';
 import 'package:http/http.dart' as http;
 
 class WindowsContaReceberGridScreen extends StatefulWidget {
@@ -438,7 +440,7 @@ class _WindowsContaReceberGridScreenState extends State<WindowsContaReceberGridS
                 isVisible: (c) => c.status == StatusConta.ABERTA,
               ),
               CustomAction<ContaReceber>(
-                icon: Icons.check_circle,
+                icon: Icons.price_check,
                 label: GridTexts.lower,
                 onPressed: (context, object) => _showBaixaDialog(context, object),
                 isVisible: (c) => c.status == StatusConta.ABERTA,
@@ -461,6 +463,19 @@ class _WindowsContaReceberGridScreenState extends State<WindowsContaReceberGridS
                 onPressed: (context, object) => _showRenegociacaoDialog(context, object),
                 isVisible: (c) => c.status == StatusConta.ABERTA,
               ),
+              CustomAction<ContaReceber>(
+                icon: Icons.attach_file,
+                label: GridTexts.attachments,
+                badgeCount: (obj) => obj.qtdAnexos,
+                onPressed: (context, object) => _showAnexosDialog(context, object),
+                isVisible: (obj) => obj.id != null,
+              ),
+              CustomAction<ContaReceber>(
+                icon: Icons.receipt,
+                label: GridTexts.billingTicket,
+                onPressed: (context, object) => _showBoletoDialog(context, object),
+                isVisible: (obj) => obj.id != null,
+              ),
             ],
           ),
         ),
@@ -472,6 +487,132 @@ class _WindowsContaReceberGridScreenState extends State<WindowsContaReceberGridS
     showDialog(
       context: context,
       builder: (BuildContext context) => BaixaDialogReceber(conta: conta),
+    ).then((result) {
+      if (result == true && mounted) {
+        setState(() => _gridKey = UniqueKey());
+      }
+    });
+  }
+
+  void _showAnexosDialog(BuildContext context, ContaReceber conta) {
+    showDialog(
+      context: context,
+      builder: (_) => Dialog(
+        backgroundColor: Colors.transparent,
+        insetPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
+        child: SizedBox(
+          width: 600,
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(12),
+            child: Material(
+              color: GridColors.dialogBackground,
+              elevation: 8,
+              shadowColor: GridColors.shadow,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+                    decoration: const BoxDecoration(
+                      color: GridColors.primary,
+                    ),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.attach_file, color: GridColors.textPrimary, size: 20),
+                        const SizedBox(width: 10),
+                        const Expanded(
+                          child: Text(
+                            'Anexos',
+                            style: TextStyle(
+                              color: GridColors.textPrimary,
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                        IconButton(
+                          onPressed: () => Navigator.of(context).pop(),
+                          icon: const Icon(Icons.close, color: GridColors.textPrimaryMuted, size: 20),
+                          padding: EdgeInsets.zero,
+                          constraints: const BoxConstraints(minWidth: 28, minHeight: 28),
+                        ),
+                      ],
+                    ),
+                  ),
+                  SizedBox(
+                    height: 400,
+                    child: AnexoFinanceiroWidget(
+                      lancamentoId: conta.id!,
+                      lancamentoTipo: 'RECEBER',
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _showBoletoDialog(BuildContext context, ContaReceber conta) {
+    showDialog(
+      context: context,
+      builder: (_) => Dialog(
+        backgroundColor: Colors.transparent,
+        insetPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
+        child: SizedBox(
+          width: 500,
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(12),
+            child: Material(
+              color: GridColors.dialogBackground,
+              elevation: 8,
+              shadowColor: GridColors.shadow,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+                    decoration: const BoxDecoration(
+                      color: GridColors.primary,
+                    ),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.receipt, color: GridColors.textPrimary, size: 20),
+                        const SizedBox(width: 10),
+                        const Expanded(
+                          child: Text(
+                            'Boleto',
+                            style: TextStyle(
+                              color: GridColors.textPrimary,
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                        IconButton(
+                          onPressed: () => Navigator.of(context).pop(),
+                          icon: const Icon(Icons.close, color: GridColors.textPrimaryMuted, size: 20),
+                          padding: EdgeInsets.zero,
+                          constraints: const BoxConstraints(minWidth: 28, minHeight: 28),
+                        ),
+                      ],
+                    ),
+                  ),
+                  SizedBox(
+                    height: 350,
+                    child: BoletoWidget(
+                      lancamentoId: conta.id!,
+                      lancamentoTipo: 'RECEBER',
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
     );
   }
 

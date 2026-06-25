@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import '../utils/grid_colors.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
@@ -69,10 +70,37 @@ class _AppSidebarState extends State<AppSidebar> {
   void initState() {
     super.initState();
     _computeAllowed();
+    _applyDefaultExpansion();
     _loadFavorites();
     _searchCtrl.addListener(() {
       setState(() => _searchQuery = _searchCtrl.text);
     });
+  }
+
+  /// Grupos com pelo menos um item visível ao usuário (após filtro de módulo/
+  /// permissão). É o conjunto que de fato aparece no menu.
+  List<MenuGroup> _visibleGroups() =>
+      MenuConfig.groups.where((g) => g.items.any(_canSee)).toList();
+
+  /// Colapso adaptativo (iniciativa "Acesso por Módulo do Cliente", spec UI):
+  ///  - 1 grupo visível  → itens renderizados flat (sem cabeçalho), tratado no
+  ///    build; nada a expandir aqui.
+  ///  - 2 grupos         → ambos abertos por padrão.
+  ///  - 3+ grupos        → tudo colapsado, exceto o grupo do item selecionado.
+  void _applyDefaultExpansion() {
+    final visibles = _visibleGroups();
+    _expandedGroups.clear();
+    if (visibles.length == 2) {
+      for (final g in visibles) {
+        _expandedGroups.add(g.id);
+      }
+    } else if (visibles.length >= 3) {
+      for (final g in visibles) {
+        if (g.items.any((i) => i.screenIndex == widget.selectedIndex)) {
+          _expandedGroups.add(g.id);
+        }
+      }
+    }
   }
 
   @override
@@ -84,15 +112,6 @@ class _AppSidebarState extends State<AppSidebar> {
   void _computeAllowed() {
     final allMenuIds = MenuConfig.allItems.map((m) => m.id).toSet();
     _allowedIds = SecurityMatrix.current().allowedTelaIds(allMenuIds);
-    _applyAdaptiveCollapse();
-  }
-
-  // Colapso adaptativo: ≤2 grupos visíveis → expande todos por default.
-  void _applyAdaptiveCollapse() {
-    final visibleGroups = MenuConfig.groups.where((g) => g.items.any(_canSee)).toList();
-    if (visibleGroups.length <= 2) {
-      _expandedGroups.addAll(visibleGroups.map((g) => g.id));
-    }
   }
 
   Future<void> _loadFavorites() async {
@@ -137,6 +156,21 @@ class _AppSidebarState extends State<AppSidebar> {
       ..sort((a, b) => a.label.compareTo(b.label));
   }
 
+  /// Mesma lógica de UserBannerAppBar._getUserAvatar() — decodifica a foto do
+  /// usuário (base64) vinda do login ou dos dados pessoais.
+  Uint8List _getUserAvatar() {
+    final base64String = AuthUtility.userInfo?.login?.foto ??
+        AuthUtility.userInfo?.data?.codDadosPessoal?.photo;
+    if (base64String != null && base64String.trim().isNotEmpty) {
+      try {
+        final UriData? data =
+            Uri.parse("data:image/png;base64,$base64String").data;
+        if (data != null) return data.contentAsBytes();
+      } catch (_) {}
+    }
+    return Uint8List(0);
+  }
+
   @override
   Widget build(BuildContext context) {
     return AnimatedContainer(
@@ -165,20 +199,60 @@ class _AppSidebarState extends State<AppSidebar> {
   }
 
   // ── Header ────────────────────────────────────────────────────────────────
+  // Avatar do usuário: foto real (mesma fonte do UserBannerAppBar) com
+  // fallback para a inicial do nome quando não há foto cadastrada.
+  Widget _buildUserAvatar(double radius) {
+    final avatar = _getUserAvatar();
+    return CircleAvatar(
+      radius: radius,
+      backgroundColor: _primary,
+      child: avatar.isNotEmpty
+          ? ClipOval(
+              child: Image.memory(
+                avatar,
+                width: radius * 2,
+                height: radius * 2,
+                fit: BoxFit.cover,
+                errorBuilder: (_, __, ___) => Text(
+                  widget.userName.isNotEmpty
+                      ? widget.userName[0].toUpperCase()
+                      : 'U',
+                  style: TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                      fontSize: radius * 0.8),
+                ),
+              ),
+            )
+          : Text(
+              widget.userName.isNotEmpty ? widget.userName[0].toUpperCase() : 'U',
+              style: TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                  fontSize: radius * 0.8),
+            ),
+    );
+  }
+
   Widget _buildHeader() {
     if (widget.isCollapsed) {
       return Container(
         padding: const EdgeInsets.symmetric(vertical: 12),
         child: Column(
           children: [
-            CircleAvatar(
-              radius: 18,
-              backgroundColor: _primary,
-              child: Text(
-                widget.userName.isNotEmpty ? widget.userName[0].toUpperCase() : 'U',
-                style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+            // Logo Abraço Contabilidade (versão compacta — só o avatar/ícone)
+            ClipOval(
+              child: Image.asset(
+                'assets/images/logo_contabilidade.jpg',
+                width: 30,
+                height: 30,
+                fit: BoxFit.cover,
+                errorBuilder: (_, __, ___) =>
+                    const Icon(Icons.apps, color: Colors.white, size: 22),
               ),
             ),
+            const SizedBox(height: 10),
+            _buildUserAvatar(18),
             const SizedBox(height: 8),
             _iconBtn(Icons.notifications, widget.unreadAlerts > 0 ? _primary : _textMuted, widget.onNotificationTap, badge: widget.unreadAlerts),
             const SizedBox(height: 4),
@@ -195,16 +269,35 @@ class _AppSidebarState extends State<AppSidebar> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // Logo da Abraço Contabilidade
           Row(
             children: [
-              CircleAvatar(
-                radius: 20,
-                backgroundColor: _primary,
-                child: Text(
-                  widget.userName.isNotEmpty ? widget.userName[0].toUpperCase() : 'U',
-                  style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16),
+              ClipRRect(
+                borderRadius: BorderRadius.circular(6),
+                child: Image.asset(
+                  'assets/images/logo_contabilidade.jpg',
+                  width: 32,
+                  height: 32,
+                  fit: BoxFit.cover,
+                  errorBuilder: (_, __, ___) =>
+                      const Icon(Icons.apps, color: Colors.white, size: 24),
                 ),
               ),
+              const SizedBox(width: 10),
+              const Expanded(
+                child: Text(
+                  'Abraço Contabilidade',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(color: _textColor, fontWeight: FontWeight.w700, fontSize: 13),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              _buildUserAvatar(20),
               const SizedBox(width: 10),
               Expanded(
                 child: Column(
@@ -292,7 +385,6 @@ class _AppSidebarState extends State<AppSidebar> {
 
   // ── Menu completo ─────────────────────────────────────────────────────────
   Widget _buildFullMenu() {
-    final visibleGroups = MenuConfig.groups.where((g) => g.items.any(_canSee)).toList();
     return ListView(
       padding: const EdgeInsets.only(bottom: 8),
       children: [
@@ -302,14 +394,15 @@ class _AppSidebarState extends State<AppSidebar> {
           ..._favoriteItems.map((item) => _buildMenuItem(item, indent: true)),
           const Divider(color: Color(0xFF004a20), height: 16),
         ],
-        // 1 grupo visível → flat sem cabeçalho de grupo
-        if (visibleGroups.length == 1)
-          ...visibleGroups.first.items
+        // Grupos por módulo — colapso adaptativo. Com 1 só grupo visível,
+        // renderiza os itens direto (sem cabeçalho), evitando ruído quando o
+        // cliente tem um único módulo.
+        if (_visibleGroups().length == 1)
+          ..._visibleGroups().first.items
               .where(_canSee)
-              .map((item) => _buildMenuItem(item, indent: false))
+              .map((item) => _buildMenuItem(item, indent: true))
         else
-          // 2+ grupos → comportamento normal com cabeçalhos (expandido por default quando ≤2)
-          ...visibleGroups.map((group) => _buildGroup(group)),
+          ..._visibleGroups().map((group) => _buildGroup(group)),
         // Itens soltos
         if (MenuConfig.loose.any(_canSee)) ...[
           const Divider(color: Color(0xFF004a20), height: 16),

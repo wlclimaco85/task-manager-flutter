@@ -172,7 +172,10 @@ class _GridListScreenState extends State<GridListScreen> {
     for (final p in needs) {
       try {
         final ok = await f(p);
-        _permCache[p] = ok == true;
+        // Se async retornou false, respeita o hasPermission sincrono como
+        // fallback — evita bloquear acoes quando as permissoes ainda nao
+        // foram salvas no SharedPreferences.
+        _permCache[p] = (ok == true) || widget.hasPermission(p);
         L.d('[GridList] perm:$p => ${_permCache[p]}');
       } catch (e, st) {
         L.w('[GridList] perm:$p fallback true. $e\n$st');

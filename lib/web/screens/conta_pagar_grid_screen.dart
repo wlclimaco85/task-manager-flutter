@@ -22,7 +22,7 @@ import 'package:http/http.dart' as http;
 import '../../../web/dialogs/anexo_upload_dialog.dart';
 import '../../../web/dialogs/export_power_bi_dialog.dart';
 import '../../../widgets/finance/boleto_widget.dart';
-import '../../../utils/security_matrix.dart';
+import '../../../utils/grid_texts.dart';
 
 class WebContaPagarGridScreen extends StatefulWidget {
   final SecurityCheck hasPermission;
@@ -314,40 +314,11 @@ class _WebContaPagarGridScreenState extends State<WebContaPagarGridScreen> {
       );
   }
 
-  bool get _isFinanceiroLimitado =>
-      ModuloAccess.isModuloContratado('Financeiro Limitado') &&
-      !ModuloAccess.isModuloContratado('Financeiro');
-
-  Widget _buildMicrocopyLimitado() {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      color: GridColors.secondary.withOpacity(0.06),
-      child: Row(
-        children: [
-          const Icon(Icons.info_outline, size: 14, color: GridColors.secondary),
-          const SizedBox(width: 6),
-          Expanded(
-            child: Text(
-              'Estas contas são lançadas pelo seu escritório. '
-              'Você pode consultá-las e registrar a baixa quando pagar.',
-              style: TextStyle(
-                fontSize: 11.5,
-                color: GridColors.secondary.withOpacity(0.85),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     return Column(
       children: [
         _buildFilterBar(),
-        if (_isFinanceiroLimitado) _buildMicrocopyLimitado(),
         const SizedBox(height: 8),
         Expanded(
           child: DynamicGridWindowsScreen<Map<String, dynamic>>(
@@ -552,17 +523,23 @@ class _WebContaPagarGridScreenState extends State<WebContaPagarGridScreen> {
             customActions: () => [
               CustomAction<Map<String, dynamic>>(
                 icon: Icons.price_check,
-                label: 'Baixar',
-                onPressed: (context, object) => showDialog(
-                  context: context,
-                  builder: (_) =>
-                      WebBaixaDialog(conta: ContaPagar.fromJson(object)),
-                ),
+                label: GridTexts.lower,
+                onPressed: (context, object) {
+                  showDialog(
+                    context: context,
+                    builder: (_) =>
+                        WebBaixaDialog(conta: ContaPagar.fromJson(object)),
+                  ).then((result) {
+                    if (result == true && context.mounted) {
+                      setState(() => _gridKey = UniqueKey());
+                    }
+                  });
+                },
                 isVisible: (_) => true,
               ),
               CustomAction<Map<String, dynamic>>(
                 icon: Icons.credit_card,
-                label: 'Parcelar',
+                label: GridTexts.installment,
                 onPressed: (context, object) => showDialog(
                   context: context,
                   builder: (_) => WebParcelarContaDialog(
@@ -573,7 +550,7 @@ class _WebContaPagarGridScreenState extends State<WebContaPagarGridScreen> {
               ),
               CustomAction<Map<String, dynamic>>(
                 icon: Icons.repeat,
-                label: 'Recorrência',
+                label: GridTexts.recurrence,
                 onPressed: (context, object) => showDialog(
                   context: context,
                   builder: (_) => WebRecorrenciaContaDialog(
@@ -584,7 +561,7 @@ class _WebContaPagarGridScreenState extends State<WebContaPagarGridScreen> {
               ),
               CustomAction<Map<String, dynamic>>(
                 icon: Icons.swap_horiz,
-                label: 'Renegociar',
+                label: GridTexts.renegotiate,
                 onPressed: (context, object) => showDialog(
                   context: context,
                   builder: (_) => WebRenegociacaoContaDialog(
@@ -595,7 +572,8 @@ class _WebContaPagarGridScreenState extends State<WebContaPagarGridScreen> {
               ),
               CustomAction<Map<String, dynamic>>(
                 icon: Icons.attach_file,
-                label: 'Anexos',
+                label: GridTexts.attachments,
+                badgeCount: (obj) => (obj['qtdAnexos'] as num?)?.toInt() ?? 0,
                 onPressed: (context, object) {
                   final id = object['id'];
                   showDialog(
@@ -606,28 +584,64 @@ class _WebContaPagarGridScreenState extends State<WebContaPagarGridScreen> {
                     ),
                   );
                 },
-                isVisible: (_) => true,
+                isVisible: (obj) => (obj['id'] as num?)?.toInt() != null,
               ),
               CustomAction<Map<String, dynamic>>(
                 icon: Icons.receipt,
-                label: 'Boleto',
+                label: GridTexts.billingTicket,
                 onPressed: (context, object) {
                   final id = object['id'];
-                  final lancId = id is int ? id : int.tryParse('$id') ?? 0;
                   showDialog(
                     context: context,
                     builder: (_) => Dialog(
+                      backgroundColor: Colors.transparent,
+                      insetPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
                       child: SizedBox(
-                        width: 480,
-                        child: BoletoWidget(
-                          lancamentoId: lancId,
-                          lancamentoTipo: 'PAGAR',
+                        width: 500,
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(12),
+                          child: Material(
+                            color: GridColors.dialogBackground,
+                            elevation: 8,
+                            shadowColor: GridColors.shadow,
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+                                  decoration: const BoxDecoration(color: GridColors.primary),
+                                  child: Row(
+                                    children: [
+                                      const Icon(Icons.receipt, color: GridColors.textPrimary, size: 20),
+                                      const SizedBox(width: 10),
+                                      const Expanded(
+                                        child: Text('Boleto', style: TextStyle(color: GridColors.textPrimary, fontSize: 16, fontWeight: FontWeight.w600)),
+                                      ),
+                                      IconButton(
+                                        onPressed: () => Navigator.of(context).pop(),
+                                        icon: const Icon(Icons.close, color: GridColors.textPrimaryMuted, size: 20),
+                                        padding: EdgeInsets.zero,
+                                        constraints: const BoxConstraints(minWidth: 28, minHeight: 28),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                SizedBox(
+                                  height: 350,
+                                  child: BoletoWidget(
+                                    lancamentoId: id is int ? id : int.tryParse('$id') ?? 0,
+                                    lancamentoTipo: 'PAGAR',
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
                         ),
                       ),
                     ),
                   );
                 },
-                isVisible: (_) => true,
+                isVisible: (obj) => (obj['id'] as num?)?.toInt() != null,
               ),
               CustomAction<Map<String, dynamic>>(
                 icon: Icons.copy,

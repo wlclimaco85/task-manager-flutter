@@ -20,6 +20,7 @@ import 'package:http/http.dart' as http;
 import '../../../web/dialogs/anexo_upload_dialog.dart';
 import '../../../web/dialogs/export_power_bi_dialog.dart';
 import '../../../widgets/finance/boleto_widget.dart';
+import '../../../utils/grid_texts.dart';
 import '../../../utils/dropdown_helpers.dart';
 import '../../../models/auth_utility.dart';
 
@@ -476,7 +477,7 @@ class _WebContaReceberGridScreenState extends State<WebContaReceberGridScreen> {
             customActions: () => [
               CustomAction<Map<String, dynamic>>(
                 icon: Icons.receipt_long,
-                label: 'Cobrar',
+                label: GridTexts.charge,
                 onPressed: (context, object) => showDialog(
                   context: context,
                   builder: (_) => BillingChargeDialog(
@@ -487,16 +488,22 @@ class _WebContaReceberGridScreenState extends State<WebContaReceberGridScreen> {
               ),
               CustomAction<Map<String, dynamic>>(
                 icon: Icons.price_check,
-                label: 'Baixar',
-                onPressed: (context, object) => showDialog(
-                  context: context,
-                  builder: (_) => WebBaixaDialogReceber(conta: ContaReceber.fromJson(object)),
-                ),
+                label: GridTexts.lower,
+                onPressed: (context, object) {
+                  showDialog(
+                    context: context,
+                    builder: (_) => WebBaixaDialogReceber(conta: ContaReceber.fromJson(object)),
+                  ).then((result) {
+                    if (result == true && context.mounted) {
+                      setState(() => _gridKey = UniqueKey());
+                    }
+                  });
+                },
                 isVisible: (m) => ContaReceber.fromJson(m).status == StatusConta.ABERTA,
               ),
               CustomAction<Map<String, dynamic>>(
                 icon: Icons.credit_card,
-                label: 'Parcelar',
+                label: GridTexts.installment,
                 onPressed: (context, object) => showDialog(
                   context: context,
                   builder: (_) => WebParcelarReceberDialog(conta: ContaReceber.fromJson(object)),
@@ -505,7 +512,7 @@ class _WebContaReceberGridScreenState extends State<WebContaReceberGridScreen> {
               ),
               CustomAction<Map<String, dynamic>>(
                 icon: Icons.repeat,
-                label: 'Recorrência',
+                label: GridTexts.recurrence,
                 onPressed: (context, object) => showDialog(
                   context: context,
                   builder: (_) => WebRecorrenciaReceberDialog(conta: ContaReceber.fromJson(object)),
@@ -514,7 +521,7 @@ class _WebContaReceberGridScreenState extends State<WebContaReceberGridScreen> {
               ),
               CustomAction<Map<String, dynamic>>(
                 icon: Icons.swap_horiz,
-                label: 'Renegociar',
+                label: GridTexts.renegotiate,
                 onPressed: (context, object) => showDialog(
                   context: context,
                   builder: (_) => WebRenegociacaoReceberDialog(conta: ContaReceber.fromJson(object)),
@@ -523,7 +530,8 @@ class _WebContaReceberGridScreenState extends State<WebContaReceberGridScreen> {
               ),
               CustomAction<Map<String, dynamic>>(
                 icon: Icons.attach_file,
-                label: 'Anexos',
+                label: GridTexts.attachments,
+                badgeCount: (obj) => (obj['qtdAnexos'] as num?)?.toInt() ?? 0,
                 onPressed: (context, object) {
                   final id = object['id'];
                   showDialog(
@@ -534,28 +542,64 @@ class _WebContaReceberGridScreenState extends State<WebContaReceberGridScreen> {
                     ),
                   );
                 },
-                isVisible: (_) => true,
+                isVisible: (obj) => (obj['id'] as num?)?.toInt() != null,
               ),
               CustomAction<Map<String, dynamic>>(
                 icon: Icons.receipt,
-                label: 'Boleto',
+                label: GridTexts.billingTicket,
                 onPressed: (context, object) {
                   final id = object['id'];
-                  final lancId = id is int ? id : int.tryParse('$id') ?? 0;
                   showDialog(
                     context: context,
                     builder: (_) => Dialog(
+                      backgroundColor: Colors.transparent,
+                      insetPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
                       child: SizedBox(
-                        width: 480,
-                        child: BoletoWidget(
-                          lancamentoId: lancId,
-                          lancamentoTipo: 'RECEBER',
+                        width: 500,
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(12),
+                          child: Material(
+                            color: GridColors.dialogBackground,
+                            elevation: 8,
+                            shadowColor: GridColors.shadow,
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+                                  decoration: const BoxDecoration(color: GridColors.primary),
+                                  child: Row(
+                                    children: [
+                                      const Icon(Icons.receipt, color: GridColors.textPrimary, size: 20),
+                                      const SizedBox(width: 10),
+                                      const Expanded(
+                                        child: Text('Boleto', style: TextStyle(color: GridColors.textPrimary, fontSize: 16, fontWeight: FontWeight.w600)),
+                                      ),
+                                      IconButton(
+                                        onPressed: () => Navigator.of(context).pop(),
+                                        icon: const Icon(Icons.close, color: GridColors.textPrimaryMuted, size: 20),
+                                        padding: EdgeInsets.zero,
+                                        constraints: const BoxConstraints(minWidth: 28, minHeight: 28),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                SizedBox(
+                                  height: 350,
+                                  child: BoletoWidget(
+                                    lancamentoId: id is int ? id : int.tryParse('$id') ?? 0,
+                                    lancamentoTipo: 'RECEBER',
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
                         ),
                       ),
                     ),
                   );
                 },
-                isVisible: (_) => true,
+                isVisible: (obj) => (obj['id'] as num?)?.toInt() != null,
               ),
               CustomAction<Map<String, dynamic>>(
                 icon: Icons.copy,

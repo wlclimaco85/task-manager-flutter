@@ -188,11 +188,16 @@ class CustomAction<T> {
   final void Function(BuildContext context, T item) onPressed;
   final bool Function(T item)? isVisible;
 
+  /// Quando informado e > 0, exibe um badge numerico no canto do botao da acao
+  /// (ex.: quantidade de anexos da conta). 0 ou null = sem badge.
+  final int Function(T item)? badgeCount;
+
   const CustomAction({
     required this.icon,
     required this.label,
     required this.onPressed,
     this.isVisible,
+    this.badgeCount,
   });
 }
 
@@ -1603,10 +1608,23 @@ class GenericGridScreen<T> extends StatefulWidget {
   final List<Widget>? headerActions;
   final String? helpTelaNome;
   final void Function()? onAfterCreate;
-  final Future<void> Function(Map<String, dynamic> formData)? onAfterSave;
-  final Future<Map<String, dynamic>> Function(Map<String, dynamic>)? onEditItem;
   final void Function(Set<String> ids, List<Map<String, dynamic>> selectedData)?
       onSelectedRowsChanged;
+
+  /// Busca dados extras ANTES de abrir o form de edição (item != null) e
+  /// mescla no item carregado, no MESMO formato que os campos normais usam
+  /// (ex.: multiselect espera List<Map> com 'id'). Útil para campos que não
+  /// vêm na resposta padrão da entidade (ex.: módulos vinculados via tabela
+  /// M:N separada) — evita hardcoded por nome de campo neste arquivo
+  /// genérico; quem usa decide o que buscar.
+  final Future<Map<String, dynamic>> Function(T item)? prefetchExtraFields;
+
+  /// Chamado depois de salvar com sucesso (create OU update, diferente de
+  /// onAfterCreate que só dispara no create) — recebe o formData enviado e o
+  /// item original (null no create). Útil para persistir campos que o
+  /// endpoint principal não aceita (ex.: vínculo M:N via outro endpoint).
+  final Future<void> Function(Map<String, dynamic> formData, T? item)?
+      onAfterSave;
 
   const GenericGridScreen({
     super.key,
@@ -1643,9 +1661,9 @@ class GenericGridScreen<T> extends StatefulWidget {
     this.headerActions,
     this.helpTelaNome,
     this.onAfterCreate,
-    this.onAfterSave,
-    this.onEditItem,
     this.onSelectedRowsChanged,
+    this.prefetchExtraFields,
+    this.onAfterSave,
   });
 
   @override
@@ -2026,10 +2044,22 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
 
   Future<void> _openForm({T? item}) async {
     final controllers = <String, TextEditingController>{};
-    var itemMap = item != null ? widget.toJson(item) : <String, dynamic>{};
-    if (item != null && widget.onEditItem != null) {
-      itemMap = await widget.onEditItem!(itemMap);
+    final itemMap = item != null
+        ? Map<String, dynamic>.from(widget.toJson(item))
+        : <String, dynamic>{};
+
+    // Busca dados extras (ex.: vínculos M:N que não vêm na entidade) ANTES de
+    // montar os controllers, mesclando no itemMap no formato que os campos
+    // normais já esperam — sem isso o form sempre abriria sem pré-seleção.
+    if (item != null && widget.prefetchExtraFields != null) {
+      try {
+        final extra = await widget.prefetchExtraFields!(item);
+        itemMap.addAll(extra);
+      } catch (_) {
+        // Falha no prefetch não deve bloquear a edição — o campo so fica vazio.
+      }
     }
+    if (!mounted) return;
 
     // Campos que devem ser pré-preenchidos e desabilitados (vêm de extraParams)
     // Ex: ao abrir form dentro da aba de empresa, empresa já vem selecionada
@@ -2574,8 +2604,15 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
         widget.onAfterCreate!();
       }
       if (widget.onAfterSave != null) {
-        await widget.onAfterSave!(formData);
+        try {
+          await widget.onAfterSave!(formData, item);
+        } catch (_) {
+          // Falha aqui não deve impedir o fechamento do form — o save
+          // principal já teve sucesso; quem implementa onAfterSave decide
+          // como avisar o usuário se precisar (ex.: snackbar próprio).
+        }
       }
+      if (!mounted) return;
       Navigator.pop(context);
       if (item == null) {
         // Ao criar, vai para primeira página com sort DESC para o novo item aparecer
@@ -4154,12 +4191,31 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
     }
     for (final action
         in _customActions.where((a) => a.isVisible?.call(item) ?? true)) {
+      final badge = action.badgeCount?.call(item) ?? 0;
       menuItems.add(PopupMenuItem(
           value: '__custom__${action.label}',
           child: Row(children: [
             Icon(action.icon, size: 16),
             const SizedBox(width: 8),
-            Text(action.label, style: const TextStyle(fontSize: 13))
+            Expanded(
+              child: Text(action.label, style: const TextStyle(fontSize: 13)),
+            ),
+            if (badge > 0)
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
+                decoration: BoxDecoration(
+                  color: GridColors.primary.withOpacity(0.15),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Text(
+                  '$badge',
+                  style: const TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                    color: GridColors.primary,
+                  ),
+                ),
+              ),
           ])));
     }
 

@@ -953,6 +953,20 @@ class ApiLinks {
       '$_baseUrlNew/api/fiscal/nfse/status/$numero';
   static String get nfseCancelar => '$_baseUrlNew/api/fiscal/nfse/cancelar';
   static String get nfseAuditoria => '$_baseUrlNew/api/fiscal/nfse/auditoria';
+  // NFS-e grid (consulta CRUD) e series
+  static String get allNfse => '$_baseUrlNew/api/nfse';
+  static String nfse(String id) => '$_baseUrlNew/api/nfse/$id';
+  static String get allNfseSerie => '$_baseUrlNew/api/nfse_serie';
+  static String nfseSerie(String id) => '$_baseUrlNew/api/nfse_serie/$id';
+
+  // Dashboard de mensalidades/modulos (pago/atrasado/pendente) + relatorio PDF
+  static String get mensalidadeDashboard =>
+      '$_baseUrlNew/api/financeiro/mensalidade-dashboard';
+  static String get mensalidadeDashboardPdf =>
+      '$_baseUrlNew/api/financeiro/mensalidade-dashboard/relatorio-pdf';
+
+  // Vinculo Parceiro x Modulo de Servico (ParceiroModuloController)
+  static String get parceiroModulo => '$_baseUrlNew/api/parceiro-modulo';
 
   // CRM / RecorrÃªncias e Faturas
   static String get allRecurringContracts => '$_baseUrlNew/api/crm/contracts';
