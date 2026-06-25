@@ -30,12 +30,6 @@ import './regime_grid_screen.dart';
 import './noticias_grid_screen.dart';
 import './conta_pagar_grid_screen.dart';
 import './dashboard_financeiro_screen.dart';
-import './mensalidade_dashboard_screen.dart';
-import '../../widgets/dashboard_area/placeholder/dashboard_financeiro_area_placeholder_screen.dart';
-import '../../widgets/dashboard_area/placeholder/dashboard_dp_area_placeholder_screen.dart';
-import '../../widgets/dashboard_area/placeholder/dashboard_atendimento_placeholder_screen.dart';
-import '../../widgets/dashboard_area/placeholder/dashboard_comercial_placeholder_screen.dart';
-import '../../widgets/dashboard_area/placeholder/dashboard_fiscal_placeholder_screen.dart';
 import './conta_receber_grid_screen.dart';
 import './lancamento_financeiro_grid_screen.dart';
 import './diretorio_grid_screen.dart';
@@ -127,11 +121,6 @@ import 'contabil/ai_assistente_screen.dart';
 import './cobranca_automatica_screen.dart';
 import './kanban_pagamentos_screen.dart';
 import './aprovacao_pagamentos_screen.dart';
-import './instagram_monitor_screen.dart';
-import './atividade_diaria_screen.dart';
-import './diario_refeicao_screen.dart';
-import './home_saude_aluno_screen.dart';
-import './historico_treino_screen.dart';
 
 class WebBottomNavBarScreen extends StatefulWidget {
   final int initialIndex;
@@ -213,7 +202,6 @@ class _WebBottomNavBarScreenState extends State<WebBottomNavBarScreen> {
         child: _screens[widgetIndex],
       ),
       screenIndex: screenIndex,
-      openedAt: DateTime.now(),
     );
   }
 
@@ -243,12 +231,26 @@ class _WebBottomNavBarScreenState extends State<WebBottomNavBarScreen> {
       return;
     }
 
-    // Limite de abas atingido: fecha automaticamente a aba mais antiga
-    // (menor openedAt) e abre a nova, sem diálogo de confirmação.
+    _showTabLimitDialogAndReplace(screenIndex, item.label);
+  }
+
+  Future<void> _showTabLimitDialogAndReplace(
+      int newScreenIndex, String newLabel) async {
+    final indicesParaFechar = await showTabLimitDialog(
+      context: context,
+      tabs: _openTabs,
+      newTabLabel: newLabel,
+      isCompact: true,
+    );
+    if (indicesParaFechar == null || indicesParaFechar.isEmpty || !mounted)
+      return;
+
     setState(() {
-      final oldestIndex = indexOfOldestTab(_openTabs);
-      _openTabs.removeAt(oldestIndex);
-      _openTabs.add(_buildTab(screenIndex));
+      final ordenados = [...indicesParaFechar]..sort((a, b) => b.compareTo(a));
+      for (final i in ordenados) {
+        _openTabs.removeAt(i);
+      }
+      _openTabs.add(_buildTab(newScreenIndex));
       _activeTabIndex = _openTabs.length - 1;
     });
   }
@@ -329,7 +331,7 @@ class _WebBottomNavBarScreenState extends State<WebBottomNavBarScreen> {
           hasPermission: (p) => true), // 28: FormasPagamento
       WebDiretorioGridScreen(hasPermission: (p) => true), // 29: Diretorios
       const GedArquivosScreen(), // 30: GED — Arquivos
-      WebCalendarScreen(useLightHeader: true), // 31: Calendario
+      WebCalendarScreen(), // 31: Calendario
       WebObrigacaoFiscalGridScreen(
           hasPermission: (p) => true), // 32: ObrigacoesFiscais
       WebLoginGridScreen(hasPermission: (p) => true), // 33: Logins(dup)
@@ -440,35 +442,10 @@ class _WebBottomNavBarScreenState extends State<WebBottomNavBarScreen> {
       const WebAiAssistenteScreen(), // 118: Assistente IA
       const TradingConfigScreen(), // 119: Configuracao da Corretora
       const CarteiraScreen(), // 120: Minha Carteira
-      const CobrancaAutomaticaScreen(), // 121: Cobranca Automatica
+      const CobrancaAutomaticaScreen(), // 121: Cobrança Automática
       const KanbanPagamentosScreen(), // 122: Kanban de Pagamentos
-      const WebAprovacaoPagamentosScreen(), // 123: Aprovacao de Pagamentos
+      const WebAprovacaoPagamentosScreen(), // 123: Aprovação de Pagamentos
       WebAcademiaGridScreen(hasPermission: (p) => true), // 124: Academia
-      const SizedBox.shrink(), // 125: reservado AppAcademiaV003
-      const SizedBox.shrink(), // 126: reservado AppAcademiaV003
-      const SizedBox.shrink(), // 127
-      const SizedBox.shrink(), // 128
-      const SizedBox.shrink(), // 129
-      const SizedBox.shrink(), // 130
-      const SizedBox.shrink(), // 131
-      const SizedBox.shrink(), // 132
-      const SizedBox.shrink(), // 133
-      const SizedBox.shrink(), // 134
-      const SizedBox.shrink(), // 135
-      const InstagramMonitorScreen(), // 136: Instagram Monitor
-      const SizedBox.shrink(), // 137
-      const WebAtividadeDiariaScreen(), // 138: Atividade Diaria
-      const WebDiarioRefeicaoScreen(), // 139: Diario Nutricional
-      const WebHomeSaudeAlunoScreen(), // 140: Home Saude do Aluno
-      HistoricoTreinoScreen(
-        alunoId: AuthUtility.userInfo?.data?.id ?? 0,
-      ), // 141: Historico de Treinos
-      const DashboardFinanceiroAreaPlaceholderScreen(), // 142: Dashboard Financeiro (Área)
-      const DashboardDpAreaPlaceholderScreen(), // 143: Dashboard DP (Área)
-      const DashboardAtendimentoPlaceholderScreen(), // 144: Dashboard Atendimento (Área)
-      const DashboardComercialPlaceholderScreen(), // 145: Dashboard Comercial (Área)
-      const DashboardFiscalPlaceholderScreen(), // 146: Dashboard Fiscal (Área)
-      const WebMensalidadeDashboardScreen(), // 147: Dashboard de Mensalidades
     ];
   }
 
@@ -482,28 +459,29 @@ class _WebBottomNavBarScreenState extends State<WebBottomNavBarScreen> {
       final List<Alert> alertData =
           await AlertCaller().fetchNotificacoes(context);
       if (!mounted) return;
-      setState(() {
-        notifications = alertData;
-        unreadAlerts = notifications.length;
-      });
+      if (alertData.isNotEmpty) {
+        setState(() {
+          notifications = alertData;
+          unreadAlerts = notifications.length;
+        });
+      }
     } catch (e) {
       debugPrint('Error fetching notifications: $e');
     }
   }
 
-  Future<void> deleteNotification(Alert notificacao) async {
-    await AlertCaller().marcarNotificacaoLida(notificacao);
-    if (!mounted) return;
-    closeNotificationDropdown();
-    await fetchAlerts();
+  void deleteNotification(int id) {
+    setState(() {
+      notifications.removeWhere((n) => n.id == id);
+      unreadAlerts = notifications.length;
+    });
   }
 
-  Future<void> deleteAllNotifications(BuildContext ctx, Offset pos) async {
-    await AlertCaller().marcarTodasNotificacoesLidas();
-    if (!mounted) return;
-    closeNotificationDropdown();
-    await fetchAlerts();
-    if (mounted) showNotificationDropdown(ctx, pos);
+  void deleteAllNotifications() {
+    setState(() {
+      notifications.clear();
+      unreadAlerts = 0;
+    });
   }
 
   void closeNotificationDropdown() {
@@ -517,326 +495,94 @@ class _WebBottomNavBarScreenState extends State<WebBottomNavBarScreen> {
       return;
     }
     final overlay = Overlay.of(context);
-    final double esquerda = _isSidebarCollapsed ? 70.0 : 260.0;
-    final int totalNaoLidas = notifications.length;
-
     notificationOverlay = OverlayEntry(
-      builder: (ctx) => Stack(
-        children: [
-          // Camada transparente para fechar ao clicar fora
-          Positioned.fill(
-            child: GestureDetector(
-              onTap: closeNotificationDropdown,
-              behavior: HitTestBehavior.translucent,
-              child: const SizedBox.expand(),
+      builder: (ctx) => Positioned(
+        top: position.dy + 40,
+        left: _isSidebarCollapsed ? 70 : 260,
+        child: Material(
+          elevation: 4,
+          child: Container(
+            width: 300,
+            height: 400,
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: CustomColors().getLightGreenBackground(),
+              border: Border.all(
+                  color: CustomColors().getDarkGreenBorder(), width: 2),
+              borderRadius: BorderRadius.circular(8),
             ),
-          ),
-          Positioned(
-            top: position.dy + 48,
-            left: esquerda,
-            child: Material(
-              elevation: 8,
-              borderRadius: BorderRadius.circular(12),
-              shadowColor: GridColors.shadow,
-              child: Container(
-                width: 340,
-                constraints: const BoxConstraints(maxHeight: 480),
-                decoration: BoxDecoration(
-                  color: GridColors.card,
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: GridColors.divider, width: 1),
-                ),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
+            child: Column(
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    // ── Cabeçalho ──────────────────────────────────────────
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 16, vertical: 12),
-                      decoration: const BoxDecoration(
-                        color: GridColors.primary,
-                        borderRadius: BorderRadius.only(
-                          topLeft: Radius.circular(12),
-                          topRight: Radius.circular(12),
-                        ),
-                      ),
-                      child: Row(
-                        children: [
-                          const Icon(Icons.notifications_outlined,
-                              color: GridColors.textPrimary, size: 20),
-                          const SizedBox(width: 8),
-                          const Expanded(
-                            child: Text(
-                              'Notificações',
-                              style: TextStyle(
-                                color: GridColors.textPrimary,
-                                fontWeight: FontWeight.w600,
-                                fontSize: 15,
-                              ),
-                            ),
-                          ),
-                          if (totalNaoLidas > 0)
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 8, vertical: 2),
-                              decoration: BoxDecoration(
-                                color: GridColors.secondary,
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              child: Text(
-                                '$totalNaoLidas',
-                                style: const TextStyle(
-                                  color: GridColors.textPrimary,
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                            ),
-                          const SizedBox(width: 8),
-                          InkWell(
-                            onTap: closeNotificationDropdown,
-                            borderRadius: BorderRadius.circular(20),
-                            child: const Padding(
-                              padding: EdgeInsets.all(4),
-                              child: Icon(Icons.close,
-                                  color: GridColors.textPrimaryMuted, size: 18),
-                            ),
-                          ),
-                        ],
-                      ),
+                    Text('Notificações',
+                        style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16,
+                            color: CustomColors().getTextColor())),
+                    IconButton(
+                      icon: Icon(Icons.close,
+                          color: CustomColors().getCancelButtonColor()),
+                      onPressed: closeNotificationDropdown,
                     ),
-
-                    // ── Ação "Marcar todas como lidas" ─────────────────────
-                    if (notifications.isNotEmpty)
-                      InkWell(
-                        onTap: () =>
-                            deleteAllNotifications(context, position),
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 16, vertical: 10),
-                          decoration: const BoxDecoration(
-                            color: GridColors.filterBackground,
-                            border: Border(
-                              bottom: BorderSide(
-                                  color: GridColors.divider, width: 1),
-                            ),
-                          ),
-                          child: Row(
-                            children: const [
-                              Icon(Icons.done_all,
-                                  size: 16, color: GridColors.secondary),
-                              SizedBox(width: 6),
-                              Text(
-                                'Marcar todas como lidas',
-                                style: TextStyle(
-                                  fontSize: 13,
-                                  color: GridColors.secondary,
-                                  fontWeight: FontWeight.w500,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-
-                    // ── Lista ou estado vazio ───────────────────────────────
-                    notifications.isNotEmpty
-                        ? Flexible(
-                            child: ListView.separated(
-                              shrinkWrap: true,
-                              padding: const EdgeInsets.symmetric(vertical: 4),
-                              itemCount: notifications.length,
-                              separatorBuilder: (_, __) => const Divider(
-                                  height: 1,
-                                  thickness: 1,
-                                  color: GridColors.divider,
-                                  indent: 16,
-                                  endIndent: 16),
-                              itemBuilder: (_, i) {
-                                final n = notifications[i];
-                                final icone = _iconeParaTipo(n.status);
-                                final corIcone = _corParaTipo(n.status);
-                                final dataRelativa =
-                                    _dataRelativa(n.data);
-
-                                return Padding(
-                                  padding: const EdgeInsets.symmetric(
-                                      horizontal: 12, vertical: 6),
-                                  child: Row(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      // Ícone de tipo
-                                      Container(
-                                        width: 36,
-                                        height: 36,
-                                        decoration: BoxDecoration(
-                                          color: corIcone.withOpacity(0.12),
-                                          borderRadius:
-                                              BorderRadius.circular(8),
-                                        ),
-                                        child: Icon(icone,
-                                            size: 18, color: corIcone),
-                                      ),
-                                      const SizedBox(width: 10),
-                                      // Texto e data
-                                      Expanded(
-                                        child: Column(
-                                          crossAxisAlignment:
-                                              CrossAxisAlignment.start,
-                                          children: [
-                                            Text(
-                                              n.texto,
-                                              style: const TextStyle(
-                                                fontSize: 13,
-                                                color: GridColors.textSecondary,
-                                                fontWeight: FontWeight.w500,
-                                              ),
-                                              maxLines: 3,
-                                              overflow: TextOverflow.ellipsis,
-                                            ),
-                                            const SizedBox(height: 3),
-                                            Text(
-                                              dataRelativa,
-                                              style: const TextStyle(
-                                                fontSize: 11,
-                                                color: GridColors.textMuted,
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-                                      // Botão marcar lida
-                                      InkWell(
-                                        onTap: () => deleteNotification(n),
-                                        borderRadius:
-                                            BorderRadius.circular(20),
-                                        child: const Padding(
-                                          padding: EdgeInsets.all(6),
-                                          child: Icon(Icons.check_circle_outline,
-                                              size: 18,
-                                              color: GridColors.secondary),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                );
-                              },
-                            ),
-                          )
-                        : Padding(
-                            padding: const EdgeInsets.symmetric(vertical: 40),
-                            child: Column(
-                              mainAxisSize: MainAxisSize.min,
-                              children: const [
-                                Icon(Icons.notifications_off_outlined,
-                                    size: 48, color: GridColors.divider),
-                                SizedBox(height: 12),
-                                Text(
-                                  'Sem notificações',
-                                  style: TextStyle(
-                                    fontSize: 14,
-                                    color: GridColors.textMuted,
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                                ),
-                                SizedBox(height: 4),
-                                Text(
-                                  'Você está em dia!',
-                                  style: TextStyle(
-                                      fontSize: 12,
-                                      color: GridColors.textMuted),
-                                ),
-                              ],
-                            ),
-                          ),
                   ],
                 ),
-              ),
+                const Divider(color: Colors.green, thickness: 1),
+                ListTile(
+                  dense: true,
+                  title: Text('Deletar Tudo',
+                      style: TextStyle(
+                          fontSize: 14,
+                          color: CustomColors().getCancelButtonColor())),
+                  trailing: Icon(Icons.delete_forever,
+                      color: CustomColors().getCancelButtonColor(), size: 20),
+                  onTap: deleteAllNotifications,
+                ),
+                const Divider(color: Colors.green, thickness: 1),
+                Expanded(
+                  child: notifications.isNotEmpty
+                      ? ListView.builder(
+                          itemCount: notifications.length,
+                          itemBuilder: (_, i) {
+                            final n = notifications[i];
+                            final dt = DateTime.parse(n.data!);
+                            final fmt =
+                                '${dt.day.toString().padLeft(2, '0')}/${dt.month.toString().padLeft(2, '0')}/${dt.year} '
+                                '${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}';
+                            return ListTile(
+                              title: Text(n.texto,
+                                  style: TextStyle(
+                                      fontSize: 14,
+                                      color:
+                                          CustomColors().getButtonTextColor())),
+                              subtitle: Text(fmt,
+                                  style: TextStyle(
+                                      fontSize: 12,
+                                      color:
+                                          CustomColors().getButtonTextColor())),
+                              trailing: IconButton(
+                                icon: Icon(Icons.delete,
+                                    color:
+                                        CustomColors().getCancelButtonColor(),
+                                    size: 20),
+                                onPressed: () => deleteNotification(n.id),
+                              ),
+                            );
+                          },
+                        )
+                      : Center(
+                          child: Text('Sem notificações',
+                              style: TextStyle(
+                                  color: CustomColors().getButtonTextColor()))),
+                ),
+              ],
             ),
           ),
-        ],
+        ),
       ),
     );
     overlay.insert(notificationOverlay!);
-  }
-
-  /// Retorna ícone adequado ao tipo/status da notificação.
-  IconData _iconeParaTipo(String tipo) {
-    switch (tipo.toUpperCase()) {
-      case 'ALVARA':
-      case 'ALVARA_VENCENDO':
-        return Icons.assignment_late_outlined;
-      case 'CONTA_PAGAR':
-      case 'CP_VENCIDA':
-      case 'CP_A_VENCER':
-        return Icons.payments_outlined;
-      case 'CONTA_RECEBER':
-      case 'CR_VENCIDA':
-      case 'CR_A_VENCER':
-        return Icons.request_quote_outlined;
-      case 'CHAMADO':
-        return Icons.support_agent_outlined;
-      case 'CHAT':
-      case 'MENSAGEM':
-        return Icons.chat_bubble_outline;
-      case 'GED':
-        return Icons.attach_file_outlined;
-      case 'COMUNICADO':
-        return Icons.campaign_outlined;
-      default:
-        return Icons.circle_notifications_outlined;
-    }
-  }
-
-  /// Retorna cor associada ao tipo/status da notificação.
-  Color _corParaTipo(String tipo) {
-    switch (tipo.toUpperCase()) {
-      case 'ALVARA':
-      case 'ALVARA_VENCENDO':
-        return GridColors.warning;
-      case 'CONTA_PAGAR':
-      case 'CP_VENCIDA':
-        return GridColors.error;
-      case 'CP_A_VENCER':
-        return GridColors.warning;
-      case 'CONTA_RECEBER':
-      case 'CR_VENCIDA':
-        return GridColors.error;
-      case 'CR_A_VENCER':
-        return GridColors.warning;
-      case 'CHAMADO':
-        return GridColors.primary;
-      case 'CHAT':
-      case 'MENSAGEM':
-        return GridColors.secondary;
-      case 'GED':
-        return GridColors.info;
-      case 'COMUNICADO':
-        return GridColors.accent;
-      default:
-        return GridColors.neutral;
-    }
-  }
-
-  /// Converte uma data ISO 8601 em texto relativo legível (ex: "há 2 dias").
-  String _dataRelativa(String? isoData) {
-    if (isoData == null || isoData.isEmpty) return '';
-    try {
-      final dt = DateTime.parse(isoData).toLocal();
-      final agora = DateTime.now();
-      final diff = agora.difference(dt);
-      if (diff.inMinutes < 1) return 'agora mesmo';
-      if (diff.inMinutes < 60) return 'há ${diff.inMinutes} min';
-      if (diff.inHours < 24) return 'há ${diff.inHours}h';
-      if (diff.inDays == 1) return 'ontem';
-      if (diff.inDays < 7) return 'há ${diff.inDays} dias';
-      return '${dt.day.toString().padLeft(2, '0')}/'
-          '${dt.month.toString().padLeft(2, '0')}/'
-          '${dt.year}';
-    } catch (_) {
-      return isoData;
-    }
   }
 
   void _handleLogout() {
