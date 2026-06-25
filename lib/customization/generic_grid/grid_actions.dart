@@ -163,7 +163,7 @@ void _showSnack(BuildContext context, String msg, [bool error = false]) {
   ScaffoldMessenger.of(context).showSnackBar(
     SnackBar(
       content: Text(msg),
-      backgroundColor: error ? GridColors.error : GridColors.primary,
+      backgroundColor: error ? GridColors.error : GridColors.success,
       behavior: SnackBarBehavior.floating,
     ),
   );
