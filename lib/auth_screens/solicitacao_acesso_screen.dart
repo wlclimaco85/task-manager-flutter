@@ -20,11 +20,10 @@ class SolicitacaoAcessoScreen extends StatefulWidget {
 class _SolicitacaoAcessoScreenState extends State<SolicitacaoAcessoScreen> {
   final _formKey = GlobalKey<FormState>();
   final _nomeCtrl = TextEditingController();
-  final _cpfCtrl = TextEditingController();
   final _emailCtrl = TextEditingController();
   final _senhaCtrl = TextEditingController();
   final _confirmarSenhaCtrl = TextEditingController();
-  final _cnpjCtrl = TextEditingController();
+  final _cpfCnpjCtrl = TextEditingController();
 
   bool _obscureSenha = true;
   bool _obscureConfirmar = true;
@@ -35,11 +34,10 @@ class _SolicitacaoAcessoScreenState extends State<SolicitacaoAcessoScreen> {
   @override
   void dispose() {
     _nomeCtrl.dispose();
-    _cpfCtrl.dispose();
     _emailCtrl.dispose();
     _senhaCtrl.dispose();
     _confirmarSenhaCtrl.dispose();
-    _cnpjCtrl.dispose();
+    _cpfCnpjCtrl.dispose();
     super.dispose();
   }
 
@@ -50,17 +48,12 @@ class _SolicitacaoAcessoScreenState extends State<SolicitacaoAcessoScreen> {
     return null;
   }
 
-  String? _validarCpf(String? v) {
+  String? _validarCpfCnpj(String? v) {
     final digitos = _apenasDigitos(v ?? '');
-    if (digitos.isEmpty) return 'CPF é obrigatório';
-    if (digitos.length != 11) return 'CPF inválido';
-    return null;
-  }
-
-  String? _validarCnpj(String? v) {
-    final digitos = _apenasDigitos(v ?? '');
-    if (digitos.isEmpty) return 'CNPJ é obrigatório';
-    if (digitos.length != 14 && digitos.length != 11) return 'CNPJ inválido';
+    if (digitos.isEmpty) return 'CPF ou CNPJ é obrigatório';
+    if (digitos.length != 11 && digitos.length != 14) {
+      return 'Informe um CPF (11 dígitos) ou CNPJ (14 dígitos) válido';
+    }
     return null;
   }
 
@@ -97,10 +90,9 @@ class _SolicitacaoAcessoScreenState extends State<SolicitacaoAcessoScreen> {
             headers: const {'Content-Type': 'application/json'},
             body: jsonEncode({
               'nome': _nomeCtrl.text.trim(),
-              'cpf': _apenasDigitos(_cpfCtrl.text),
               'email': _emailCtrl.text.trim(),
+              'cpfCnpj': _apenasDigitos(_cpfCnpjCtrl.text),
               'senha': _senhaCtrl.text,
-              'cnpj': _apenasDigitos(_cnpjCtrl.text),
             }),
           )
           .timeout(const Duration(seconds: 15));
@@ -116,18 +108,20 @@ class _SolicitacaoAcessoScreenState extends State<SolicitacaoAcessoScreen> {
       }
 
       String mensagem = 'Erro ao enviar solicitação. Tente novamente.';
-      if (response.statusCode == 400) {
-        try {
-          final body = jsonDecode(response.body) as Map<String, dynamic>;
-          final err = body['error']?.toString() ?? '';
-          if (err.contains('Já existe uma solicitação pendente') ||
-              err.contains('Já existe um login cadastrado')) {
-            mensagem = 'Já existe uma solicitação pendente para este CPF/email.';
-          } else if (err.isNotEmpty) {
-            mensagem = err;
-          }
-        } catch (_) {}
-      } else {
+      if (response.statusCode == 409) {
+        mensagem = 'Já existe uma solicitação pendente para este email/CPF-CNPJ.';
+      }
+      try {
+        final body = jsonDecode(response.body) as Map<String, dynamic>;
+        final msg = (body['response'] as Map<String, dynamic>?)?['message']
+            ?.toString();
+        if (msg != null && msg.isNotEmpty) mensagem = msg;
+      } catch (e) {
+        debugPrint('[SolicitacaoAcessoScreen] falha ao parsear corpo do erro: $e');
+      }
+
+      // Controller atual so retorna 201 ou 409; qualquer outro status e inesperado.
+      if (response.statusCode != 409) {
         debugPrint(
             '[SolicitacaoAcessoScreen] erro inesperado statusCode=${response.statusCode} body=${response.body}');
       }
@@ -323,17 +317,6 @@ class _SolicitacaoAcessoScreenState extends State<SolicitacaoAcessoScreen> {
           ),
           const SizedBox(height: 14),
           _field(
-            ctrl: _cpfCtrl,
-            label: 'CPF',
-            icon: Icons.badge_outlined,
-            light: lightInputs,
-            enabled: !_enviando,
-            keyboardType: TextInputType.number,
-            inputFormatters: [_CpfInputFormatter()],
-            validator: _validarCpf,
-          ),
-          const SizedBox(height: 14),
-          _field(
             ctrl: _emailCtrl,
             label: 'Email',
             icon: Icons.email_outlined,
@@ -381,15 +364,15 @@ class _SolicitacaoAcessoScreenState extends State<SolicitacaoAcessoScreen> {
           ),
           const SizedBox(height: 14),
           _field(
-            ctrl: _cnpjCtrl,
-            label: 'CNPJ da empresa',
+            ctrl: _cpfCnpjCtrl,
+            label: 'CPF ou CNPJ',
             icon: Icons.apartment_outlined,
             light: lightInputs,
             enabled: !_enviando,
             keyboardType: TextInputType.number,
-            inputFormatters: [_CnpjInputFormatter()],
-            helperText: 'CNPJ do escritório/empresa que você representa',
-            validator: _validarCnpj,
+            inputFormatters: [_CpfCnpjInputFormatter()],
+            helperText: 'CPF ou CNPJ da empresa/escritório que você representa',
+            validator: _validarCpfCnpj,
           ),
           const SizedBox(height: 22),
           SizedBox(
@@ -546,36 +529,28 @@ class _SafeLogoWidget extends StatelessWidget {
   }
 }
 
-class _CpfInputFormatter extends TextInputFormatter {
-  @override
-  TextEditingValue formatEditUpdate(
-      TextEditingValue oldValue, TextEditingValue newValue) {
-    final digits = newValue.text.replaceAll(RegExp(r'\D'), '');
-    final limited = digits.length > 11 ? digits.substring(0, 11) : digits;
-    final buffer = StringBuffer();
-    for (var i = 0; i < limited.length; i++) {
-      buffer.write(limited[i]);
-      if (i == 2 || i == 5) buffer.write('.');
-      if (i == 8) buffer.write('-');
-    }
-    final text = buffer.toString();
-    return TextEditingValue(
-        text: text, selection: TextSelection.collapsed(offset: text.length));
-  }
-}
-
-class _CnpjInputFormatter extends TextInputFormatter {
+/// Aplica máscara de CPF (11 dígitos) ou CNPJ (14 dígitos) conforme o usuário digita.
+class _CpfCnpjInputFormatter extends TextInputFormatter {
   @override
   TextEditingValue formatEditUpdate(
       TextEditingValue oldValue, TextEditingValue newValue) {
     final digits = newValue.text.replaceAll(RegExp(r'\D'), '');
     final limited = digits.length > 14 ? digits.substring(0, 14) : digits;
+    final isCnpj = limited.length > 11;
     final buffer = StringBuffer();
-    for (var i = 0; i < limited.length; i++) {
-      buffer.write(limited[i]);
-      if (i == 1 || i == 4) buffer.write('.');
-      if (i == 7) buffer.write('/');
-      if (i == 11) buffer.write('-');
+    if (isCnpj) {
+      for (var i = 0; i < limited.length; i++) {
+        buffer.write(limited[i]);
+        if (i == 1 || i == 4) buffer.write('.');
+        if (i == 7) buffer.write('/');
+        if (i == 11) buffer.write('-');
+      }
+    } else {
+      for (var i = 0; i < limited.length; i++) {
+        buffer.write(limited[i]);
+        if (i == 2 || i == 5) buffer.write('.');
+        if (i == 8) buffer.write('-');
+      }
     }
     final text = buffer.toString();
     return TextEditingValue(
