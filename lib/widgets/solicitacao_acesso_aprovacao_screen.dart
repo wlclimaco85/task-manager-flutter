@@ -14,6 +14,7 @@ class SolicitacaoAcessoAprovacaoScreen extends StatefulWidget {
 class _SolicitacaoAcessoAprovacaoScreenState
     extends State<SolicitacaoAcessoAprovacaoScreen> {
   bool _carregando = true;
+  bool _erroCarregamento = false;
   List<SolicitacaoAcessoItem> _itens = [];
   final Set<int> _processando = {};
 
@@ -24,12 +25,19 @@ class _SolicitacaoAcessoAprovacaoScreenState
   }
 
   Future<void> _carregar() async {
-    setState(() => _carregando = true);
+    setState(() {
+      _carregando = true;
+      _erroCarregamento = false;
+    });
     final lista = await SolicitacaoAcessoCaller.listarPendentes();
     if (!mounted) return;
     setState(() {
-      _itens = lista;
       _carregando = false;
+      if (lista == null) {
+        _erroCarregamento = true;
+      } else {
+        _itens = lista;
+      }
     });
   }
 
@@ -97,25 +105,26 @@ class _SolicitacaoAcessoAprovacaoScreenState
   Future<void> _executar(SolicitacaoAcessoItem item,
       {required bool aprovar}) async {
     setState(() => _processando.add(item.id));
-    final erro = aprovar
+    final resultado = aprovar
         ? await SolicitacaoAcessoCaller.aprovar(item.id)
         : await SolicitacaoAcessoCaller.rejeitar(item.id);
     if (!mounted) return;
 
     setState(() {
       _processando.remove(item.id);
-      if (erro == null) {
+      if (resultado.sucesso) {
         _itens.removeWhere((i) => i.id == item.id);
       }
     });
 
     final messenger = ScaffoldMessenger.of(context);
-    if (erro != null) {
+    if (!resultado.sucesso) {
       messenger.showSnackBar(SnackBar(
         backgroundColor: GridColors.error,
-        content: Text(erro),
+        content: Text(resultado.mensagemErro ??
+            'Erro ao processar a solicitação. Tente novamente.'),
       ));
-      if (erro.contains('já foi processada')) {
+      if (resultado.conflito) {
         _carregar();
       }
     } else {
@@ -158,9 +167,11 @@ class _SolicitacaoAcessoAprovacaoScreenState
             Expanded(
               child: _carregando
                   ? _buildSkeleton()
-                  : _itens.isEmpty
-                      ? _buildEstadoVazio()
-                      : _buildTabela(),
+                  : _erroCarregamento
+                      ? _buildEstadoErro()
+                      : _itens.isEmpty
+                          ? _buildEstadoVazio()
+                          : _buildTabela(),
             ),
           ],
         ),
@@ -197,6 +208,32 @@ class _SolicitacaoAcessoAprovacaoScreenState
           SizedBox(height: 4),
           Text('Novas solicitações de acesso aparecerão aqui.',
               style: TextStyle(color: GridColors.textMuted, fontSize: 13)),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildEstadoErro() {
+    return Center(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Icon(Icons.error_outline, size: 64, color: GridColors.error),
+          const SizedBox(height: 12),
+          const Text('Não foi possível carregar as solicitações',
+              style: TextStyle(
+                  color: GridColors.textSecondary,
+                  fontSize: 16,
+                  fontWeight: FontWeight.w700)),
+          const SizedBox(height: 4),
+          const Text('Verifique sua conexão e tente novamente.',
+              style: TextStyle(color: GridColors.textMuted, fontSize: 13)),
+          const SizedBox(height: 16),
+          OutlinedButton.icon(
+            onPressed: _carregar,
+            icon: const Icon(Icons.refresh, size: 18),
+            label: const Text('Tentar novamente'),
+          ),
         ],
       ),
     );
@@ -289,7 +326,8 @@ class _SolicitacaoAcessoAprovacaoScreenState
     if (digits.length == 14) {
       return '${digits.substring(0, 2)}.***.***/****-${digits.substring(12)}';
     }
-    return doc;
+    // Documento com tamanho inesperado: nunca exibe sem mascara (PII).
+    return digits.isEmpty ? '—' : '***';
   }
 
   String _formatarData(DateTime? dt) {

@@ -40,6 +40,23 @@ class SolicitacaoAcessoItem {
   }
 }
 
+/// Resultado de uma acao (aprovar/rejeitar). [conflito] = true quando o
+/// backend respondeu 404 (outra pessoa ja decidiu a solicitacao antes).
+class SolicitacaoAcessoActionResult {
+  final bool sucesso;
+  final String? mensagemErro;
+  final bool conflito;
+
+  const SolicitacaoAcessoActionResult.ok()
+      : sucesso = true,
+        mensagemErro = null,
+        conflito = false;
+
+  const SolicitacaoAcessoActionResult.erro(this.mensagemErro,
+      {this.conflito = false})
+      : sucesso = false;
+}
+
 class SolicitacaoAcessoCaller {
   static Map<String, String> get _authHeaders {
     final headers = Map<String, String>.from(TenantContext.headers);
@@ -50,58 +67,76 @@ class SolicitacaoAcessoCaller {
     return headers;
   }
 
-  static Future<List<SolicitacaoAcessoItem>> listarPendentes() async {
+  /// Retorna null quando a requisicao falhou (rede/parsing) — distinto de
+  /// lista vazia (fila realmente sem pendencias).
+  static Future<List<SolicitacaoAcessoItem>?> listarPendentes() async {
     try {
       final url = TenantContext.applyToUrl(ApiLinks.solicitacaoAcessoPendentes);
       final response = await http.get(Uri.parse(url), headers: _authHeaders);
-      if (response.statusCode != 200) return [];
+      if (response.statusCode != 200) return null;
 
       final body = jsonDecode(response.body) as Map<String, dynamic>;
       final data = body['data'];
-      if (data is! List) return [];
+      if (data is! List) return null;
       return data
           .whereType<Map>()
           .map((e) =>
               SolicitacaoAcessoItem.fromJson(Map<String, dynamic>.from(e)))
           .toList();
     } catch (_) {
-      return [];
+      return null;
     }
   }
 
-  /// Retorna null em sucesso, ou a mensagem de erro do backend em caso de falha.
-  static Future<String?> aprovar(int id) async {
+  static Future<SolicitacaoAcessoActionResult> aprovar(int id) async {
+    return _executarAcao(
+      Uri.parse(TenantContext.applyToUrl(ApiLinks.solicitacaoAcessoAprovar(id))),
+      acaoLabel: 'aprovar',
+    );
+  }
+
+  static Future<SolicitacaoAcessoActionResult> rejeitar(int id) async {
+    return _executarAcao(
+      Uri.parse(TenantContext.applyToUrl(ApiLinks.solicitacaoAcessoRejeitar(id))),
+      acaoLabel: 'rejeitar',
+    );
+  }
+
+  static Future<SolicitacaoAcessoActionResult> _executarAcao(
+    Uri url, {
+    required String acaoLabel,
+  }) async {
     try {
-      final url =
-          TenantContext.applyToUrl(ApiLinks.solicitacaoAcessoAprovar(id));
-      final response = await http.post(Uri.parse(url), headers: _authHeaders);
-      if (response.statusCode == 200) return null;
-      return _extrairMensagemErro(response.body);
+      final response = await http.post(url, headers: _authHeaders);
+      if (response.statusCode == 200) {
+        return const SolicitacaoAcessoActionResult.ok();
+      }
+      // 404: SolicitacaoAcessoController retorna NOT_FOUND quando o id nao
+      // existe mais como PENDENTE — sinal de que outra pessoa ja decidiu.
+      if (response.statusCode == 404) {
+        return const SolicitacaoAcessoActionResult.erro(
+          'Esta solicitação já foi processada por outro usuário.',
+          conflito: true,
+        );
+      }
+      return SolicitacaoAcessoActionResult.erro(
+        _extrairMensagemErro(response.body) ??
+            'Erro ao $acaoLabel solicitação. Tente novamente.',
+      );
     } catch (_) {
-      return 'Erro de conexão ao aprovar solicitação.';
+      return SolicitacaoAcessoActionResult.erro(
+        'Erro de conexão ao $acaoLabel solicitação.',
+      );
     }
   }
 
-  /// Retorna null em sucesso, ou a mensagem de erro do backend em caso de falha.
-  static Future<String?> rejeitar(int id) async {
-    try {
-      final url =
-          TenantContext.applyToUrl(ApiLinks.solicitacaoAcessoRejeitar(id));
-      final response = await http.post(Uri.parse(url), headers: _authHeaders);
-      if (response.statusCode == 200) return null;
-      return _extrairMensagemErro(response.body);
-    } catch (_) {
-      return 'Erro de conexão ao rejeitar solicitação.';
-    }
-  }
-
-  static String _extrairMensagemErro(String body) {
+  static String? _extrairMensagemErro(String body) {
     try {
       final json = jsonDecode(body) as Map<String, dynamic>;
       final msg =
           (json['response'] as Map<String, dynamic>?)?['message']?.toString();
       if (msg != null && msg.isNotEmpty) return msg;
     } catch (_) {}
-    return 'Esta solicitação já foi processada por outro usuário.';
+    return null;
   }
 }
