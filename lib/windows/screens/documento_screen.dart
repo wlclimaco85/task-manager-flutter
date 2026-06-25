@@ -236,6 +236,28 @@ Map<String, dynamic>? _mapValue(Map<String, dynamic> item, List<String> keys) {
 }
 
 String _dateKey(Map<String, dynamic> item) {
+  // Verifica primeiro se alguma chave de data é um array [ano,mes,dia]
+  // (Jackson sem write-dates-as-timestamps=false serializa LocalDate assim)
+  for (final key in const [
+    'dataVencimento', 'data_vencimento', 'dataPrevista', 'data_prevista',
+    'dataCompetencia', 'data_competencia', 'data', 'vencimento',
+    'dtVencimento', 'dt_vencimento', 'dueDate',
+  ]) {
+    final raw = item[key];
+    if (raw == null) continue;
+    if (raw is List && raw.length >= 3) {
+      final y = raw[0];
+      final m = raw[1];
+      final d = raw[2];
+      if (y is int && m is int && d is int) {
+        final isoStr = '${y.toString()}-${m.toString().padLeft(2, '0')}-${d.toString().padLeft(2, '0')}';
+        final parsed = DateTime.tryParse(isoStr);
+        if (parsed != null) return DateFormat('yyyy-MM-dd').format(parsed);
+      }
+    }
+    if (raw != null) break; // achou valor não-nulo, para a busca por array
+  }
+
   final value = _stringValue(item, const [
     'dataVencimento',
     'data_vencimento',
@@ -333,11 +355,13 @@ bool _isCancelada(Map<String, dynamic> item) =>
 
 bool _hasDocumentoFiscal(Map<String, dynamic> item) {
   final value = item['documentoFiscal'] ?? item['documento_fiscal'];
+  if (value == null) return false;
   return value == true || value.toString().toLowerCase() == 'true';
 }
 
 bool _hasPdfAttachment(Map<String, dynamic> item) {
   final value = item['anexoPdf'] ?? item['anexo_pdf'];
+  if (value == null) return false;
   return value == true || value.toString().toLowerCase() == 'true';
 }
 
@@ -1288,8 +1312,12 @@ class _WindowsCalendarScreenState extends State<WindowsCalendarScreen> {
     final status = _statusValue(item).isEmpty ? 'ABERTA' : _statusValue(item);
     final descricao = item['descricao'] as String? ?? '';
     final tributo = _hasDocumentoFiscal(item);
-    final parceiro = (item['parceiro'] as Map?)?.cast<String, dynamic>();
-    final parceiroNome = parceiro?['nome'] as String? ?? '';
+    final parceiro = item['parceiro'] is Map
+        ? (item['parceiro'] as Map).cast<String, dynamic>()
+        : null;
+    final parceiroNome = parceiro?['nome'] as String? ??
+        item['parceiroNome'] as String? ??
+        '';
 
     final hasAnexoPdf = _hasPdfAttachment(item);
 
@@ -2162,8 +2190,12 @@ class _MonthDetailDialogState extends State<_MonthDetailDialog> {
     final valor = _moneyValue(item, 'valor');
     final descricao = item['descricao'] as String? ?? '';
     final tributo = _hasDocumentoFiscal(item);
-    final parceiro = (item['parceiro'] as Map?)?.cast<String, dynamic>();
-    final parceiroNome = parceiro?['nome'] as String? ?? '';
+    final parceiro = item['parceiro'] is Map
+        ? (item['parceiro'] as Map).cast<String, dynamic>()
+        : null;
+    final parceiroNome = parceiro?['nome'] as String? ??
+        item['parceiroNome'] as String? ??
+        '';
     final vencStr = _dateKey(item);
     final dia = vencStr.length >= 10 ? vencStr.substring(8, 10) : '';
     final mes = vencStr.length >= 7 ? vencStr.substring(5, 7) : '';
