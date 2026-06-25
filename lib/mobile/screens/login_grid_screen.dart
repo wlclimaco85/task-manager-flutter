@@ -143,6 +143,14 @@ class LoginGridScreen extends StatelessWidget {
           isRequired: true,
         ),
         FieldConfig(
+          label: 'Senha',
+          fieldName: 'senha',
+          icon: Icons.lock,
+          fieldType: FieldType.password,
+          isInForm: true,
+          isFilterable: false,
+        ),
+        FieldConfig(
           label: 'Trocar senha no próximo login',
           fieldName: 'trocarSenhaProximoLogin',
           icon: Icons.lock_reset,
