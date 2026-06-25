@@ -13,6 +13,9 @@ import '../../windows/screens/kanban_chamados_screen.dart' as windows_kanban;
 import '../../web/screens/chatMessageListScreen.dart' as web_chat;
 import '../../windows/screens/chatMessageListScreen.dart' as windows_chat;
 import '../../mobile/screens/chatMessageListScreen.dart' as mobile_chat;
+import '../../web/screens/conta_receber_grid_screen.dart' as web_receber;
+import '../../windows/screens/conta_receber_grid_screen.dart' as windows_receber;
+import '../../mobile/screens/conta_receber_grid_screen.dart' as mobile_receber;
 import '../../web/screens/orcamento_grid_screen.dart' as web_orcamento;
 import '../../windows/screens/orcamento_grid_screen.dart' as windows_orcamento;
 import '../../web/screens/pedido_venda_grid_screen.dart' as web_pedido;
@@ -72,6 +75,17 @@ class DrillDownRouter {
         return const windows_chat.WindowsChatListScreen(userName: '');
       }
       return const mobile_chat.ChatListScreen(userName: '');
+    },
+
+    // ── Drill-down Financeiro ────────────────────────────────────────────────
+    'contaReceberGrid': (context) {
+      if (kIsWeb) {
+        return web_receber.WebContaReceberGridScreen(hasPermission: (p) => true);
+      }
+      if (defaultTargetPlatform == TargetPlatform.windows) {
+        return windows_receber.WindowsContaReceberGridScreen(hasPermission: (p) => true);
+      }
+      return mobile_receber.ContaReceberGridScreen(hasPermission: (p) => true);
     },
 
     // ── Drill-down Comercial ─────────────────────────────────────────────────
