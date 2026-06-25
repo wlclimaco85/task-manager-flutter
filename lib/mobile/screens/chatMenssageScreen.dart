@@ -516,8 +516,6 @@ class _ChatMessageScreenState extends State<ChatMessageScreen> {
             onAttach: _uploadAndSendFile,
             onTicket: _createTicket,
             onSend: _sendMessage,
-            onCorrect: _correctDraft,
-            onSummarize: _summarizeChat,
           ),
         ],
       ),

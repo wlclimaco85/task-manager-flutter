@@ -41,6 +41,7 @@ enum AppScreen {
   unidadeMedida, catalogoProduto, nfeSerie, pdvNfce, configFiscal,
   // NFS-e (Notas Fiscais de Servico — modulo separado de Notas Fiscais NF-e)
   nfse,
+  nfseLista, nfseSerie,
   // Dashboards por área (Fase 171 — fundação)
   dashAtendimentoArea, dashFinanceiroArea, dashComercialArea,
   dashDpArea, dashFiscalArea,
@@ -529,6 +530,8 @@ class ModuloAccess {
 
   static List<AppScreen> filter(List<AppScreen> screens) =>
       screens.where((s) => isScreenAllowed(s)).toList();
+
+  static List<String> get modulosContratados => _modulosContratados;
 
   static void reset() { _modulosContratados = []; _loaded = false; }
 

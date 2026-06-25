@@ -66,9 +66,8 @@ class ContaReceberGridScreen extends StatelessWidget {
         ),
         CustomAction<ContaReceber>(
           icon: Icons.attach_file,
-          label: 'Anexos',
+              label: 'Anexos',
           isVisible: (obj) => obj.id != null,
-          badgeCount: (obj) => obj.qtdAnexos,
           onPressed: (context, object) => _showAnexos(context, object),
         ),
         CustomAction<ContaReceber>(

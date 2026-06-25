@@ -13,8 +13,8 @@ class WebLoginDetailScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final loginId = item.id?.toString() ?? '';
-    final empresaId = item.empresaId?.toString() ?? '';
-    final parceiroId = item.parceiroId?.toString() ?? '';
+    final empresaId = item.empresa?.id?.toString() ?? '';
+    final parceiroId = item.parceiro?.id?.toString() ?? '';
 
     return GenericDetailFormScreen(
       item: item.toJson(),

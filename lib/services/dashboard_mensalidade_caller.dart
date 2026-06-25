@@ -4,7 +4,7 @@ import '../utils/api_links.dart';
 import '../utils/tenant_context.dart';
 
 class DashboardMensalidadeCaller {
-  static const String _base = '${ApiLinks.baseUrl}/api/dashboard/mensalidade';
+  static final String _base = '${ApiLinks.baseUrl}/api/dashboard/mensalidade';
 
   Future<Map<String, dynamic>?> fetchKpis({String? mesInicio, String? mesFim}) async {
     try {

@@ -221,6 +221,7 @@ class _WindowsBottomNavBarScreenState extends State<WindowsBottomNavBarScreen> {
         child: _screens[widgetIndex],
       ),
       screenIndex: screenIndex,
+      openedAt: DateTime.now(),
     );
   }
 

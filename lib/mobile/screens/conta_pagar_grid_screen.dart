@@ -78,7 +78,6 @@ class _ContaPagarGridScreenState extends State<ContaPagarGridScreen> {
               icon: Icons.attach_file,
               label: 'Anexos',
               isVisible: (obj) => obj.id != null,
-              badgeCount: (obj) => obj.qtdAnexos,
               onPressed: (context, object) => _showAnexos(context, object),
             ),
             CustomAction<ContaPagar>(
@@ -95,11 +94,6 @@ class _ContaPagarGridScreenState extends State<ContaPagarGridScreen> {
             availableRowsPerPage: [10, 25, 50],
           ),
           enableSearch: true,
-          // Modo Financeiro limitado: microcopy explicando que o escritório
-          // lança as contas e o cliente só consulta/baixa.
-          infoBanner: SecurityMatrix.current().isFinanceiroLimitado
-              ? _buildInfoLimitado()
-              : null,
         ),
         // FAB de importacao (cria contas) — só com permissão de inserir; some no
         // modo Financeiro limitado.
@@ -125,27 +119,6 @@ class _ContaPagarGridScreenState extends State<ContaPagarGridScreen> {
           ),
         ),
       ],
-    );
-  }
-
-  Widget _buildInfoLimitado() {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-      color: GridColors.pageBackground,
-      child: const Row(
-        children: [
-          Icon(Icons.info_outline, size: 16, color: GridColors.textMuted),
-          SizedBox(width: 8),
-          Expanded(
-            child: Text(
-              'Estas contas são lançadas pelo seu escritório contábil. '
-              'Você pode consultá-las e registrar a baixa.',
-              style: TextStyle(fontSize: 12, color: GridColors.textMuted),
-            ),
-          ),
-        ],
-      ),
     );
   }
 
