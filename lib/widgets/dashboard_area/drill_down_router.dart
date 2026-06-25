@@ -13,6 +13,12 @@ import '../../windows/screens/kanban_chamados_screen.dart' as windows_kanban;
 import '../../web/screens/chatMessageListScreen.dart' as web_chat;
 import '../../windows/screens/chatMessageListScreen.dart' as windows_chat;
 import '../../mobile/screens/chatMessageListScreen.dart' as mobile_chat;
+import '../../web/screens/orcamento_grid_screen.dart' as web_orcamento;
+import '../../windows/screens/orcamento_grid_screen.dart' as windows_orcamento;
+import '../../web/screens/pedido_venda_grid_screen.dart' as web_pedido;
+import '../../windows/screens/pedido_venda_grid_screen.dart' as windows_pedido;
+import '../../web/screens/devolucao_grid_screen.dart' as web_devolucao;
+import '../../windows/screens/devolucao_grid_screen.dart' as windows_devolucao;
 
 /// Resolve drillDownRota (String vindo do backend) para a tela operacional
 /// Flutter real correspondente — Tarefa F1b (Onda 0, contrato de drill-down).
@@ -66,6 +72,35 @@ class DrillDownRouter {
         return const windows_chat.WindowsChatListScreen(userName: '');
       }
       return const mobile_chat.ChatListScreen(userName: '');
+    },
+
+    // ── Drill-down Comercial ─────────────────────────────────────────────────
+    'orcamentoGrid': (context) {
+      if (kIsWeb) {
+        return const web_orcamento.WebOrcamentoGridScreen();
+      }
+      if (defaultTargetPlatform == TargetPlatform.windows) {
+        return const windows_orcamento.WindowsOrcamentoGridScreen();
+      }
+      return const windows_orcamento.WindowsOrcamentoGridScreen();
+    },
+    'pedidoVendaGrid': (context) {
+      if (kIsWeb) {
+        return const web_pedido.WebPedidoVendaGridScreen();
+      }
+      if (defaultTargetPlatform == TargetPlatform.windows) {
+        return const windows_pedido.WindowsPedidoVendaGridScreen();
+      }
+      return const windows_pedido.WindowsPedidoVendaGridScreen();
+    },
+    'devolucaoComercialGrid': (context) {
+      if (kIsWeb) {
+        return const web_devolucao.WebDevolucaoGridScreen();
+      }
+      if (defaultTargetPlatform == TargetPlatform.windows) {
+        return const windows_devolucao.WindowsDevolucaoGridScreen();
+      }
+      return const windows_devolucao.WindowsDevolucaoGridScreen();
     },
   };
 
