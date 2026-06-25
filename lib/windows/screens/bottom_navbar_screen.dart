@@ -19,6 +19,12 @@ import '../../../windows/screens/integracoes_financeiras_screen.dart';
 import '../../../windows/screens/conta_pagar_grid_screen.dart';
 import '../../../windows/screens/conta_receber_grid_screen.dart';
 import '../../../windows/screens/dashboard_financeiro_screen.dart';
+import '../../widgets/dashboard_area/placeholder/dashboard_financeiro_area_placeholder_screen.dart';
+import '../../widgets/dashboard_area/placeholder/dashboard_dp_area_placeholder_screen.dart';
+import '../../widgets/dashboard_area/placeholder/dashboard_atendimento_placeholder_screen.dart';
+import '../../widgets/dashboard_area/placeholder/dashboard_comercial_placeholder_screen.dart';
+import '../../widgets/dashboard_area/placeholder/dashboard_fiscal_placeholder_screen.dart';
+import '../../../windows/screens/dashboard_mensalidade_screen.dart';
 import '../../../windows/screens/lancamento_financeiro_grid_screen.dart';
 import '../../../windows/screens/dieta_grid_screen.dart';
 import '../../../windows/screens/diretorio_grid_screen.dart';
@@ -131,6 +137,11 @@ import '../../web/screens/contabil/ai_assistente_screen.dart';
 import '../../web/screens/cobranca_automatica_screen.dart';
 import '../../web/screens/kanban_pagamentos_screen.dart';
 import '../../web/screens/aprovacao_pagamentos_screen.dart';
+import '../../web/screens/instagram_monitor_screen.dart';
+import './atividade_diaria_screen.dart';
+import './diario_refeicao_screen.dart';
+import './home_saude_aluno_screen.dart';
+import './historico_treino_screen.dart';
 
 class WindowsBottomNavBarScreen extends StatefulWidget {
   const WindowsBottomNavBarScreen({super.key});
@@ -238,25 +249,12 @@ class _WindowsBottomNavBarScreenState extends State<WindowsBottomNavBarScreen> {
       return;
     }
 
-    _showTabLimitDialogAndReplace(screenIndex, item.label);
+    _autoCloseOldestTab(screenIndex);
   }
 
-  Future<void> _showTabLimitDialogAndReplace(
-      int newScreenIndex, String newLabel) async {
-    final indicesParaFechar = await showTabLimitDialog(
-      context: context,
-      tabs: _openTabs,
-      newTabLabel: newLabel,
-      isCompact: false,
-    );
-    if (indicesParaFechar == null || indicesParaFechar.isEmpty || !mounted)
-      return;
-
+  void _autoCloseOldestTab(int newScreenIndex) {
     setState(() {
-      final ordenados = [...indicesParaFechar]..sort((a, b) => b.compareTo(a));
-      for (final i in ordenados) {
-        _openTabs.removeAt(i);
-      }
+      _openTabs.removeAt(0);
       _openTabs.add(_buildTab(newScreenIndex));
       _activeTabIndex = _openTabs.length - 1;
     });
@@ -421,11 +419,36 @@ class _WindowsBottomNavBarScreenState extends State<WindowsBottomNavBarScreen> {
         const WebAiAssistenteScreen(), // 118: Assistente IA
         const TradingConfigScreen(), // 119: Configuracao da Corretora
         const CarteiraScreen(), // 120: Minha Carteira
-        const CobrancaAutomaticaScreen(), // 121: Cobrança Automática
+        const CobrancaAutomaticaScreen(), // 121: Cobranca Automatica
         const KanbanPagamentosScreen(), // 122: Kanban de Pagamentos
-        const WebAprovacaoPagamentosScreen(), // 123: Aprovação de Pagamentos
+        const WebAprovacaoPagamentosScreen(), // 123: Aprovacao de Pagamentos
         WindowsAcademiaGridScreen(
             hasPermission: (perm) => true), // 124: Academia
+        const SizedBox.shrink(), // 125: reservado AppAcademiaV003
+        const SizedBox.shrink(), // 126: reservado AppAcademiaV003
+        const SizedBox.shrink(), // 127
+        const SizedBox.shrink(), // 128
+        const SizedBox.shrink(), // 129
+        const SizedBox.shrink(), // 130
+        const SizedBox.shrink(), // 131
+        const SizedBox.shrink(), // 132
+        const SizedBox.shrink(), // 133
+        const SizedBox.shrink(), // 134
+        const SizedBox.shrink(), // 135
+        const InstagramMonitorScreen(), // 136: Instagram Monitor
+        const SizedBox.shrink(), // 137
+        const WindowsAtividadeDiariaScreen(), // 138: Atividade Diaria
+        const WindowsDiarioRefeicaoScreen(), // 139: Diario Nutricional
+        const WindowsHomeSaudeAlunoScreen(), // 140: Home Saude do Aluno
+        HistoricoTreinoScreen(
+          alunoId: AuthUtility.userInfo?.data?.id ?? 0,
+        ), // 141: Historico de Treinos
+        const DashboardFinanceiroAreaPlaceholderScreen(), // 142: Dashboard Financeiro (Área)
+        const DashboardDpAreaPlaceholderScreen(), // 143: Dashboard DP (Área)
+        const DashboardAtendimentoPlaceholderScreen(), // 144: Dashboard Atendimento (Área)
+        const DashboardComercialPlaceholderScreen(), // 145: Dashboard Comercial (Área)
+        const DashboardFiscalPlaceholderScreen(), // 146: Dashboard Fiscal (Área)
+        const WebDashboardMensalidadeScreen(), // 147: Dashboard de Mensalidades
       ];
 
   String get userName {
@@ -448,29 +471,29 @@ class _WindowsBottomNavBarScreenState extends State<WindowsBottomNavBarScreen> {
     try {
       final List<Alert> alertData =
           await AlertCaller().fetchNotificacoes(context);
-      if (alertData.isNotEmpty && mounted) {
-        setState(() {
-          notifications = alertData;
-          unreadAlerts = notifications.length;
-        });
-      }
+      if (!mounted) return;
+      setState(() {
+        notifications = alertData;
+        unreadAlerts = notifications.length;
+      });
     } catch (e) {
       debugPrint('Error fetching notifications: $e');
     }
   }
 
-  void deleteNotification(int id) {
-    setState(() {
-      notifications.removeWhere((n) => n.id == id);
-      unreadAlerts = notifications.length;
-    });
+  Future<void> deleteNotification(Alert notificacao) async {
+    await AlertCaller().marcarNotificacaoLida(notificacao);
+    if (!mounted) return;
+    closeNotificationDropdown();
+    await fetchAlerts();
   }
 
-  void deleteAllNotifications() {
-    setState(() {
-      notifications.clear();
-      unreadAlerts = 0;
-    });
+  Future<void> deleteAllNotifications(BuildContext ctx, Offset pos) async {
+    await AlertCaller().marcarTodasNotificacoesLidas();
+    if (!mounted) return;
+    closeNotificationDropdown();
+    await fetchAlerts();
+    if (mounted) showNotificationDropdown(ctx, pos);
   }
 
   void closeNotificationDropdown() {
@@ -484,93 +507,319 @@ class _WindowsBottomNavBarScreenState extends State<WindowsBottomNavBarScreen> {
       return;
     }
     final overlay = Overlay.of(context);
+    final double esquerda = _isSidebarCollapsed ? 70.0 : 250.0;
+    final int totalNaoLidas = notifications.length;
+
     notificationOverlay = OverlayEntry(
-      builder: (context) => Positioned(
-        top: position.dy + 40,
-        left: _isSidebarCollapsed ? 70 : 250,
-        child: Material(
-          elevation: 4,
-          child: Container(
-            width: 300,
-            height: 400,
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: CustomColors().getLightGreenBackground(),
-              border: Border.all(
-                  color: CustomColors().getDarkGreenBorder(), width: 2),
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Column(
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text("Notificações",
-                        style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 16,
-                            color: CustomColors().getTextColor())),
-                    IconButton(
-                        icon: Icon(Icons.close,
-                            color: CustomColors().getCancelButtonColor()),
-                        onPressed: closeNotificationDropdown),
-                  ],
-                ),
-                const Divider(color: Colors.green, thickness: 1),
-                ListTile(
-                  dense: true,
-                  visualDensity: VisualDensity.compact,
-                  title: Text("Deletar Tudo",
-                      style: TextStyle(
-                          fontSize: 14,
-                          color: CustomColors().getCancelButtonColor())),
-                  trailing: Icon(Icons.delete_forever,
-                      color: CustomColors().getCancelButtonColor(), size: 20),
-                  onTap: deleteAllNotifications,
-                ),
-                const Divider(color: Colors.green, thickness: 1),
-                Expanded(
-                  child: notifications.isNotEmpty
-                      ? ListView.builder(
-                          itemCount: notifications.length,
-                          itemBuilder: (context, index) {
-                            final n = notifications[index];
-                            final dt = DateTime.parse(n.data!);
-                            final fmt =
-                                "${dt.day.toString().padLeft(2, '0')}/${dt.month.toString().padLeft(2, '0')}/${dt.year} ${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}";
-                            return ListTile(
-                              title: Text(n.texto,
-                                  style: TextStyle(
-                                      fontSize: 14,
-                                      color:
-                                          CustomColors().getButtonTextColor())),
-                              subtitle: Text(fmt,
-                                  style: TextStyle(
-                                      fontSize: 12,
-                                      color:
-                                          CustomColors().getButtonTextColor())),
-                              trailing: IconButton(
-                                icon: Icon(Icons.delete,
-                                    color:
-                                        CustomColors().getCancelButtonColor(),
-                                    size: 20),
-                                onPressed: () => deleteNotification(n.id),
-                              ),
-                            );
-                          },
-                        )
-                      : Center(
-                          child: Text("Sem notificações",
-                              style: TextStyle(
-                                  color: CustomColors().getButtonTextColor()))),
-                ),
-              ],
+      builder: (ctx) => Stack(
+        children: [
+          Positioned.fill(
+            child: GestureDetector(
+              onTap: closeNotificationDropdown,
+              behavior: HitTestBehavior.translucent,
+              child: const SizedBox.expand(),
             ),
           ),
-        ),
+          Positioned(
+            top: position.dy + 48,
+            left: esquerda,
+            child: Material(
+              elevation: 8,
+              borderRadius: BorderRadius.circular(12),
+              shadowColor: GridColors.shadow,
+              child: Container(
+                width: 340,
+                constraints: const BoxConstraints(maxHeight: 480),
+                decoration: BoxDecoration(
+                  color: GridColors.card,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: GridColors.divider, width: 1),
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 16, vertical: 12),
+                      decoration: const BoxDecoration(
+                        color: GridColors.primary,
+                        borderRadius: BorderRadius.only(
+                          topLeft: Radius.circular(12),
+                          topRight: Radius.circular(12),
+                        ),
+                      ),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.notifications_outlined,
+                              color: GridColors.textPrimary, size: 20),
+                          const SizedBox(width: 8),
+                          const Expanded(
+                            child: Text(
+                              'Notificações',
+                              style: TextStyle(
+                                color: GridColors.textPrimary,
+                                fontWeight: FontWeight.w600,
+                                fontSize: 15,
+                              ),
+                            ),
+                          ),
+                          if (totalNaoLidas > 0)
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 8, vertical: 2),
+                              decoration: BoxDecoration(
+                                color: GridColors.secondary,
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: Text(
+                                '$totalNaoLidas',
+                                style: const TextStyle(
+                                  color: GridColors.textPrimary,
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                          const SizedBox(width: 8),
+                          InkWell(
+                            onTap: closeNotificationDropdown,
+                            borderRadius: BorderRadius.circular(20),
+                            child: const Padding(
+                              padding: EdgeInsets.all(4),
+                              child: Icon(Icons.close,
+                                  color: GridColors.textPrimaryMuted, size: 18),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    if (notifications.isNotEmpty)
+                      InkWell(
+                        onTap: () =>
+                            deleteAllNotifications(context, position),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 16, vertical: 10),
+                          decoration: const BoxDecoration(
+                            color: GridColors.filterBackground,
+                            border: Border(
+                              bottom: BorderSide(
+                                  color: GridColors.divider, width: 1),
+                            ),
+                          ),
+                          child: Row(
+                            children: const [
+                              Icon(Icons.done_all,
+                                  size: 16, color: GridColors.secondary),
+                              SizedBox(width: 6),
+                              Text(
+                                'Marcar todas como lidas',
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  color: GridColors.secondary,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    notifications.isNotEmpty
+                        ? Flexible(
+                            child: ListView.separated(
+                              shrinkWrap: true,
+                              padding:
+                                  const EdgeInsets.symmetric(vertical: 4),
+                              itemCount: notifications.length,
+                              separatorBuilder: (_, __) => const Divider(
+                                  height: 1,
+                                  thickness: 1,
+                                  color: GridColors.divider,
+                                  indent: 16,
+                                  endIndent: 16),
+                              itemBuilder: (_, i) {
+                                final n = notifications[i];
+                                final icone = _iconeParaTipo(n.status);
+                                final corIcone = _corParaTipo(n.status);
+                                final dataRel = _dataRelativa(n.data);
+
+                                return Padding(
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 12, vertical: 6),
+                                  child: Row(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Container(
+                                        width: 36,
+                                        height: 36,
+                                        decoration: BoxDecoration(
+                                          color:
+                                              corIcone.withOpacity(0.12),
+                                          borderRadius:
+                                              BorderRadius.circular(8),
+                                        ),
+                                        child: Icon(icone,
+                                            size: 18, color: corIcone),
+                                      ),
+                                      const SizedBox(width: 10),
+                                      Expanded(
+                                        child: Column(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          children: [
+                                            Text(
+                                              n.texto,
+                                              style: const TextStyle(
+                                                fontSize: 13,
+                                                color:
+                                                    GridColors.textSecondary,
+                                                fontWeight: FontWeight.w500,
+                                              ),
+                                              maxLines: 3,
+                                              overflow:
+                                                  TextOverflow.ellipsis,
+                                            ),
+                                            const SizedBox(height: 3),
+                                            Text(
+                                              dataRel,
+                                              style: const TextStyle(
+                                                fontSize: 11,
+                                                color: GridColors.textMuted,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                      InkWell(
+                                        onTap: () =>
+                                            deleteNotification(n),
+                                        borderRadius:
+                                            BorderRadius.circular(20),
+                                        child: const Padding(
+                                          padding: EdgeInsets.all(6),
+                                          child: Icon(
+                                              Icons.check_circle_outline,
+                                              size: 18,
+                                              color: GridColors.secondary),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                );
+                              },
+                            ),
+                          )
+                        : const Padding(
+                            padding: EdgeInsets.symmetric(vertical: 40),
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(Icons.notifications_off_outlined,
+                                    size: 48, color: GridColors.divider),
+                                SizedBox(height: 12),
+                                Text(
+                                  'Sem notificações',
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    color: GridColors.textMuted,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                                SizedBox(height: 4),
+                                Text(
+                                  'Você está em dia!',
+                                  style: TextStyle(
+                                      fontSize: 12,
+                                      color: GridColors.textMuted),
+                                ),
+                              ],
+                            ),
+                          ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ],
       ),
     );
     overlay.insert(notificationOverlay!);
+  }
+
+  IconData _iconeParaTipo(String tipo) {
+    switch (tipo.toUpperCase()) {
+      case 'ALVARA':
+      case 'ALVARA_VENCENDO':
+        return Icons.assignment_late_outlined;
+      case 'CONTA_PAGAR':
+      case 'CP_VENCIDA':
+      case 'CP_A_VENCER':
+        return Icons.payments_outlined;
+      case 'CONTA_RECEBER':
+      case 'CR_VENCIDA':
+      case 'CR_A_VENCER':
+        return Icons.request_quote_outlined;
+      case 'CHAMADO':
+        return Icons.support_agent_outlined;
+      case 'CHAT':
+      case 'MENSAGEM':
+        return Icons.chat_bubble_outline;
+      case 'GED':
+        return Icons.attach_file_outlined;
+      case 'COMUNICADO':
+        return Icons.campaign_outlined;
+      default:
+        return Icons.circle_notifications_outlined;
+    }
+  }
+
+  Color _corParaTipo(String tipo) {
+    switch (tipo.toUpperCase()) {
+      case 'ALVARA':
+      case 'ALVARA_VENCENDO':
+        return GridColors.warning;
+      case 'CONTA_PAGAR':
+      case 'CP_VENCIDA':
+        return GridColors.error;
+      case 'CP_A_VENCER':
+        return GridColors.warning;
+      case 'CONTA_RECEBER':
+      case 'CR_VENCIDA':
+        return GridColors.error;
+      case 'CR_A_VENCER':
+        return GridColors.warning;
+      case 'CHAMADO':
+        return GridColors.primary;
+      case 'CHAT':
+      case 'MENSAGEM':
+        return GridColors.secondary;
+      case 'GED':
+        return GridColors.info;
+      case 'COMUNICADO':
+        return GridColors.accent;
+      default:
+        return GridColors.neutral;
+    }
+  }
+
+  String _dataRelativa(String? isoData) {
+    if (isoData == null || isoData.isEmpty) return '';
+    try {
+      final dt = DateTime.parse(isoData).toLocal();
+      final agora = DateTime.now();
+      final diff = agora.difference(dt);
+      if (diff.inMinutes < 1) return 'agora mesmo';
+      if (diff.inMinutes < 60) return 'há ${diff.inMinutes} min';
+      if (diff.inHours < 24) return 'há ${diff.inHours}h';
+      if (diff.inDays == 1) return 'ontem';
+      if (diff.inDays < 7) return 'há ${diff.inDays} dias';
+      return '${dt.day.toString().padLeft(2, '0')}/'
+          '${dt.month.toString().padLeft(2, '0')}/'
+          '${dt.year}';
+    } catch (_) {
+      return isoData ?? '';
+    }
   }
 
   void _handleLogout() {

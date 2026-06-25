@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import '../../../models/auth_utility.dart';
+import '../../../utils/security_matrix.dart';
 import '../../../widgets/generic_grid_windows_screen.dart' show CustomAction;
 import '../../../customization/dynamic_grid_windows_screen.dart';
 import '../../../models/role_model.dart';
@@ -10,39 +12,42 @@ class WindowsRoleGridScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    int loginId = ModalRoute.of(context)!.settings.arguments as int;
+    final int? loginId =
+        ModalRoute.of(context)?.settings.arguments as int?;
+
+    final bool isSystem = SecurityMatrix.current().isMaster;
+    final parceiroId = AuthUtility.userInfo?.login?.parceiro?.id;
+    final Map<String, dynamic>? filtroModulo =
+        (!isSystem && parceiroId != null) ? {'parceiroId': parceiroId} : null;
+
     return DynamicGridWindowsScreen<Role>(
-      telaNome: 'Roles', // nome da tela no banco
-      hasPermission: hasPermission,
+      telaNome: 'role',
+      hasPermission: (action) {
+        if (action == 'create' || action == 'edit' || action == 'delete') {
+          return isSystem;
+        }
+        return hasPermission(action);
+      },
+      extraParams: filtroModulo,
       fromJson: (json) => Role.fromJson(json),
       toJson: (a) => a.toJson(),
-
-      // 🔥 AQUI entram os botões extras por linha
       customActions: () => [
         CustomAction<Role>(
           icon: Icons.check_circle,
           label: 'Baixar',
           onPressed: (context, object) =>
               _showBaixaDialog(context, object, loginId),
-
-          // opcional: só mostra se ainda não estiver fechado
-          // ajusta de acordo com o seu modelo
-          isVisible: (chamado) {
-            // exemplo genérico, muda conforme seu ChamadoModel:
-            // return chamado.status != 'FECHADO';
-            return true;
-          },
+          isVisible: (_) => true,
         ),
       ],
     );
   }
 
-  void _showBaixaDialog(BuildContext context, Role conta, int loginId) {
+  void _showBaixaDialog(BuildContext context, Role conta, int? loginId) {
+    if (loginId == null) return;
     showDialog(
       context: context,
-      builder: (BuildContext context) {
-        return RoleDialog(loginId: loginId);
-      },
+      builder: (_) => RoleDialog(loginId: loginId),
     );
   }
 }

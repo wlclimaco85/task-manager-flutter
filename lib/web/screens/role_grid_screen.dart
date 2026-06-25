@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import '../../../models/auth_utility.dart';
 import '../../../utils/dropdown_helpers.dart';
+import '../../../utils/security_matrix.dart';
 import '../../../widgets/generic_grid_windows_screen.dart' show CustomAction;
 import '../../../customization/dynamic_grid_windows_screen.dart';
 import '../../../models/role_model.dart';
@@ -12,9 +14,24 @@ class WebRoleGridScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final int? loginId = ModalRoute.of(context)?.settings.arguments as int?;
+
+    // Somente system/master pode criar e editar roles
+    final bool isSystem = SecurityMatrix.current().isMaster;
+
+    // Filtra roles pelo modulo contratado do parceiro logado (nao-MASTER)
+    final parceiroId = AuthUtility.userInfo?.login?.parceiro?.id;
+    final Map<String, dynamic>? filtroModulo =
+        (!isSystem && parceiroId != null) ? {'parceiroId': parceiroId} : null;
+
     return DynamicGridWindowsScreen<Role>(
       telaNome: 'role',
-      hasPermission: hasPermission,
+      hasPermission: (action) {
+        if (action == 'create' || action == 'edit' || action == 'delete') {
+          return isSystem;
+        }
+        return hasPermission(action);
+      },
+      extraParams: filtroModulo,
       fromJson: (json) => Role.fromJson(json),
       toJson: (a) => a.toJson(),
       fieldOverrides: [
@@ -42,5 +59,3 @@ class WebRoleGridScreen extends StatelessWidget {
     );
   }
 }
-
-

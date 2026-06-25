@@ -4,16 +4,15 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:url_launcher/url_launcher.dart';
+import '../../../models/conta_pagar_model.dart';
+import '../../../models/conta_receber_model.dart';
 import '../../../utils/api_links.dart';
 import '../../../utils/app_logger.dart';
 import '../../../utils/grid_colors.dart';
 import '../../../utils/tenant_context.dart';
 import '../../../widgets/user_banners.dart';
-import '../../../widgets/anexo_financeiro_widget.dart';
-import '../../../models/conta_pagar_model.dart';
-import '../../../models/conta_receber_model.dart';
-import 'baixa_dialog.dart';
-import 'baixa_dialog_receber.dart';
+import '../../../windows/screens/baixa_dialog.dart';
+import '../../../mobile/screens/baixa_dialog_receber.dart';
 
 // ─── Internal data models ────────────────────────────────────────────────────
 
@@ -99,11 +98,18 @@ List<Map<String, dynamic>> _parseFinancialItems(dynamic body) {
 }
 
 _FinancialItems _parseFinancialGroups(dynamic body) {
+  if (body == null) return const _FinancialItems();
   L.d('[PARSE] Body type: ${body.runtimeType}');
   try {
     dynamic cursor = body;
+    // Percorre wrappers {"data": ...} somente enquanto cursor for Map.
+    // Guard explícito: se cursor['data'] for List, sai do loop antes de
+    // tentar acessar via String key num List (evita "type String is not a
+    // subtype of type int of 'index'").
     while (cursor is Map && cursor.containsKey('data')) {
-      cursor = cursor['data'];
+      final next = cursor['data'];
+      if (next == null) break;
+      cursor = next;
     }
 
     final pagar = <Map<String, dynamic>>[];
@@ -169,38 +175,12 @@ _FinancialItems _parseFinancialGroups(dynamic body) {
   return const _FinancialItems();
 }
 
-/// Normaliza campos de data que o Jackson serializa como array [yyyy, mm, dd]
-/// quando write-dates-as-timestamps esta habilitado (padrao). Converte para
-/// string ISO "yyyy-MM-dd" para que o parsing de datas funcione corretamente.
-void _normalizeDateArrayFields(Map<String, dynamic> map) {
-  const dateKeys = [
-    'dataVencimento', 'data_vencimento', 'dataPrevista', 'data_prevista',
-    'dataCompetencia', 'data_competencia', 'data', 'vencimento',
-    'dtVencimento', 'dt_vencimento', 'dueDate', 'dataBaixa', 'data_baixa',
-    'dataPagamento', 'dataEmissao',
-  ];
-  for (final key in dateKeys) {
-    final val = map[key];
-    if (val is List && val.length >= 3) {
-      try {
-        final y = val[0];
-        final m = val[1];
-        final d = val[2];
-        if (y is int && m is int && d is int) {
-          map[key] = '${y.toString().padLeft(4, '0')}-${m.toString().padLeft(2, '0')}-${d.toString().padLeft(2, '0')}';
-        }
-      } catch (_) {}
-    }
-  }
-}
-
 List<Map<String, dynamic>> _collectFinancialMaps(dynamic value,
     {String? tipo}) {
   final result = <Map<String, dynamic>>[];
   if (value is List) {
     for (final item in value.whereType<Map>()) {
       final map = Map<String, dynamic>.from(item);
-      _normalizeDateArrayFields(map);
       if (tipo != null && !_hasTipo(map)) {
         map['_calendarioTipo'] = tipo;
       }
@@ -356,6 +336,11 @@ bool _hasDocumentoFiscal(Map<String, dynamic> item) {
   return value == true || value.toString().toLowerCase() == 'true';
 }
 
+bool _hasPdfAttachment(Map<String, dynamic> item) {
+  final value = item['anexoPdf'] ?? item['anexo_pdf'];
+  return value == true || value.toString().toLowerCase() == 'true';
+}
+
 bool _hasTipo(Map<String, dynamic> item) {
   return _stringValue(item, const [
     '_calendarioTipo',
@@ -405,13 +390,7 @@ Future<dynamic> _fetchFinancialJson(String url) async {
 }
 
 class WindowsCalendarScreen extends StatefulWidget {
-  /// Quando true, usa header leve (SimpleAppBar) em vez do UserBannerAppBar
-  /// completo — evita duplicar usuario/notificacoes/logout que a AppSidebar
-  /// ja mostra fixa na Web/Windows. Mobile (sem sidebar) mantem o
-  /// UserBannerAppBar completo (default false).
-  final bool useLightHeader;
-
-  const WindowsCalendarScreen({super.key, this.useLightHeader = false});
+  const WindowsCalendarScreen({super.key});
 
   @override
   State<WindowsCalendarScreen> createState() => _WindowsCalendarScreenState();
@@ -490,94 +469,161 @@ class _WindowsCalendarScreenState extends State<WindowsCalendarScreen> {
     if (dataInicio == dataFim && dataInicio.length == 10) {
       return _FinancialItems(
         pagar: items.pagar.where((i) => _dateKey(i) == dataInicio).toList(),
-        receber:
-            items.receber.where((i) => _dateKey(i) == dataInicio).toList(),
+        receber: items.receber.where((i) => _dateKey(i) == dataInicio).toList(),
       );
     }
     return items;
   }
 
+  Future<void> _abrirBaixaConta(
+    Map<String, dynamic> item, {
+    required bool isPagar,
+  }) async {
+    final id = item['id']?.toString();
+    if (id == null || id.isEmpty) return;
+
+    try {
+      final url = isPagar
+          ? ApiLinks.updateContaPagar(id)
+          : ApiLinks.updateContaReceber(id);
+      dynamic body = await _fetchFinancialJson(url);
+      while (body is Map && body.containsKey('data')) {
+        body = body['data'];
+      }
+      if (body is! Map) {
+        throw StateError('Conta não encontrada.');
+      }
+
+      final result = await showDialog<bool>(
+        context: context,
+        builder: (_) => isPagar
+            ? BaixaDialog(
+                conta: ContaPagar.fromJson(Map<String, dynamic>.from(body)),
+              )
+            : BaixaDialogReceber(
+                conta: ContaReceber.fromJson(Map<String, dynamic>.from(body)),
+              ),
+      );
+
+      if (result == true && _selectedDay != null) {
+        await _loadDayData(_selectedDay!);
+        await _loadMonthMarkers(_currentMonth);
+      }
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+            content: Text('Não foi possível abrir a baixa da conta.')),
+      );
+    }
+  }
+
+  Future<void> _abrirPdfAnexo(Map<String, dynamic> item) async {
+    final fileId = item['fileId'] ?? item['file_id'];
+    if (fileId == null || !_hasPdfAttachment(item)) return;
+
+    final opened = await launchUrl(
+      Uri.parse(ApiLinks.downloadFile(fileId)),
+      mode: LaunchMode.externalApplication,
+    );
+    if (!opened && mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Não foi possível abrir o PDF anexado.')),
+      );
+    }
+  }
+
   Future<void> _loadMonthMarkers(DateTime month) async {
     setState(() => _loadingMonth = true);
-    try {
-      final first = DateTime(month.year, month.month, 1);
-      final last = DateTime(month.year, month.month,
-          DateUtils.getDaysInMonth(month.year, month.month));
+    final first = DateTime(month.year, month.month, 1);
+    final last = DateTime(month.year, month.month,
+        DateUtils.getDaysInMonth(month.year, month.month));
 
-      L.d('[CALENDARIO] Carregando marcadores de ${_dayParam(first)} a ${_dayParam(last)}');
-      final items = await _fetchContasCombined(
+    L.d('[CALENDARIO] Carregando marcadores de ${_dayParam(first)} a ${_dayParam(last)}');
+
+    _FinancialItems items;
+    try {
+      items = await _fetchContasCombined(
         dataInicio: _dayParam(first),
         dataFim: _dayParam(last),
       );
-      final pagarList = items.pagar;
-      final receberList = items.receber;
-      L.d('[CALENDARIO] Parsed - Pagar: ${pagarList.length}, Receber: ${receberList.length}');
-
-      final newMarkers = <String, _DayMarkers>{};
-
-      void addMarker(String key,
-          {bool pagar = false,
-          bool receber = false,
-          bool pago = false,
-          bool recebido = false,
-          bool tributo = false}) {
-        final old = newMarkers[key] ?? const _DayMarkers();
-        newMarkers[key] = _DayMarkers(
-          hasPagar: old.hasPagar || pagar,
-          hasReceber: old.hasReceber || receber,
-          hasPago: old.hasPago || pago,
-          hasRecebido: old.hasRecebido || recebido,
-          hasTributo: old.hasTributo || tributo,
-        );
-      }
-
-      for (final item in pagarList) {
-        final dateStr = _dateKey(item);
-        if (dateStr.isEmpty) {
-          L.d('[CALENDARIO] PAGAR sem data: $item');
-          continue;
-        }
-        final date = DateTime.tryParse(dateStr);
-        if (date == null) continue;
-        final isBaixa = _isBaixada(item);
-        final tributo = _hasDocumentoFiscal(item);
-        addMarker(
-          dateStr,
-          pagar: !isBaixa,
-          pago: isBaixa,
-          tributo: tributo,
-        );
-      }
-
-      for (final item in receberList) {
-        final dateStr = _dateKey(item);
-        if (dateStr.isEmpty) {
-          L.d('[CALENDARIO] RECEBER sem data: $item');
-          continue;
-        }
-        final date = DateTime.tryParse(dateStr);
-        if (date == null) continue;
-        final isBaixa = _isBaixada(item);
-        final tributo = _hasDocumentoFiscal(item);
-        addMarker(
-          dateStr,
-          receber: !isBaixa,
-          recebido: isBaixa,
-          tributo: tributo,
-        );
-      }
-
-      if (!mounted) return;
-      setState(() {
-        // Merge: preserva marcadores de outros meses já carregados
-        _dayMarkers = {..._dayMarkers, ...newMarkers};
-        _loadingMonth = false;
-      });
-    } catch (e, s) {
-      L.d('[CALENDARIO] Erro em _loadMonthMarkers: $e\n$s');
+    } catch (e, st) {
+      L.d('[CALENDARIO] Erro ao carregar marcadores: $e\n$st');
       if (!mounted) return;
       setState(() => _loadingMonth = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Não foi possível carregar o calendário: $e'),
+          backgroundColor: GridColors.error,
+        ),
+      );
+      return;
     }
+
+    final pagarList = items.pagar;
+    final receberList = items.receber;
+    L.d('[CALENDARIO] Parsed - Pagar: ${pagarList.length}, Receber: ${receberList.length}');
+
+    final newMarkers = <String, _DayMarkers>{};
+
+    void addMarker(String key,
+        {bool pagar = false,
+        bool receber = false,
+        bool pago = false,
+        bool recebido = false,
+        bool tributo = false}) {
+      final old = newMarkers[key] ?? const _DayMarkers();
+      newMarkers[key] = _DayMarkers(
+        hasPagar: old.hasPagar || pagar,
+        hasReceber: old.hasReceber || receber,
+        hasPago: old.hasPago || pago,
+        hasRecebido: old.hasRecebido || recebido,
+        hasTributo: old.hasTributo || tributo,
+      );
+    }
+
+    for (final item in pagarList) {
+      final dateStr = _dateKey(item);
+      if (dateStr.isEmpty) {
+        L.d('[CALENDARIO] PAGAR sem data: $item');
+        continue;
+      }
+      final date = DateTime.tryParse(dateStr);
+      if (date == null) continue;
+      final isBaixa = _isBaixada(item);
+      final tributo = _hasDocumentoFiscal(item);
+      addMarker(
+        dateStr,
+        pagar: !isBaixa,
+        pago: isBaixa,
+        tributo: tributo,
+      );
+    }
+
+    for (final item in receberList) {
+      final dateStr = _dateKey(item);
+      if (dateStr.isEmpty) {
+        L.d('[CALENDARIO] RECEBER sem data: $item');
+        continue;
+      }
+      final date = DateTime.tryParse(dateStr);
+      if (date == null) continue;
+      final isBaixa = _isBaixada(item);
+      final tributo = _hasDocumentoFiscal(item);
+      addMarker(
+        dateStr,
+        receber: !isBaixa,
+        recebido: isBaixa,
+        tributo: tributo,
+      );
+    }
+
+    if (!mounted) return;
+    setState(() {
+      // Merge: preserva marcadores de outros meses já carregados
+      _dayMarkers = {..._dayMarkers, ...newMarkers};
+      _loadingMonth = false;
+    });
   }
 
   Future<void> _loadDayData(DateTime day) async {
@@ -586,27 +632,21 @@ class _WindowsCalendarScreenState extends State<WindowsCalendarScreen> {
       _contasPagar = [];
       _contasReceber = [];
     });
-    try {
-      final dayStr = _dayParam(day);
+    final dayStr = _dayParam(day);
 
-      L.d('[CALENDARIO_DAY] Carregando dia $dayStr');
-      final items = await _fetchContasCombined(
-        dataInicio: dayStr,
-        dataFim: dayStr,
-      );
-      L.d('[CALENDARIO_DAY] Parsed - Pagar: ${items.pagar.length}, Receber: ${items.receber.length}');
+    L.d('[CALENDARIO_DAY] Carregando dia $dayStr');
+    final items = await _fetchContasCombined(
+      dataInicio: dayStr,
+      dataFim: dayStr,
+    );
+    L.d('[CALENDARIO_DAY] Parsed - Pagar: ${items.pagar.length}, Receber: ${items.receber.length}');
 
-      if (!mounted) return;
-      setState(() {
-        _contasPagar = items.pagar;
-        _contasReceber = items.receber;
+    if (!mounted) return;
+    setState(() {
+      _contasPagar = items.pagar;
+      _contasReceber = items.receber;
       _loadingDay = false;
     });
-    } catch (e, s) {
-      L.d('[CALENDARIO_DAY] Erro em _loadDayData: $e\n$s');
-      if (!mounted) return;
-      setState(() => _loadingDay = false);
-    }
   }
 
   Future<_MonthSummary> _loadMonthSummary(int year, int month) async {
@@ -654,72 +694,85 @@ class _WindowsCalendarScreenState extends State<WindowsCalendarScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: GridColors.divider,
-      appBar: widget.useLightHeader
-          ? SimpleAppBar(
-              title: 'Calendário Financeiro',
-              icon: Icons.calendar_month,
-              bottom: _buildCalendarBottomBar(),
-            )
-          : UserBannerAppBar(
-              screenTitle: 'Calendário Financeiro',
-              // Linha de formato: [Dia | Mês | Ano centralizados] + [Hoje à direita]
-              customBottom: _buildCalendarBottomBar(),
+      appBar: AppBar(
+        backgroundColor: GridColors.primary,
+        elevation: 0,
+        automaticallyImplyLeading: false,
+        titleSpacing: 12,
+        title: const Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.calendar_month_rounded, color: Colors.white, size: 20),
+            SizedBox(width: 8),
+            Flexible(
+              child: Text(
+                'Calendário Financeiro',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 16,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                maxLines: 1,
+              ),
             ),
-      body: _viewMode == 'day'
-          ? _buildSingleDayView()
-          : _viewMode == 'year'
-              ? _buildMonthView()
-              : _buildDayView(),
-    );
-  }
-
-  // Barra inferior com toggle Dia/Mês/Ano + Hoje/refresh — usada tanto no
-  // UserBannerAppBar (mobile) quanto no SimpleAppBar (Web/Windows).
-  PreferredSizeWidget _buildCalendarBottomBar() {
-    return PreferredSize(
+          ],
+        ),
+        actions: const [
+          AppBarActions(),
+          SizedBox(width: 4),
+        ],
+        // Linha de formato: [Dia | Mês | Ano centralizados] + [Hoje à direita]
+        bottom: PreferredSize(
           preferredSize: const Size.fromHeight(44),
           child: Container(
             color: GridColors.primary,
             padding: const EdgeInsets.fromLTRB(8, 4, 8, 6),
             child: Row(
               children: [
-                // Toggles à esquerda
-                _buildToggleBtn(
-                  icon: Icons.calendar_view_day,
-                  label: 'Dia',
-                  active: _viewMode == 'day',
-                  onTap: () {
-                    final day = _selectedDay ?? DateTime.now();
-                    setState(() {
-                      _viewMode = 'day';
-                      _selectedDay = day;
-                      _currentMonth = DateTime(day.year, day.month);
-                    });
-                    _loadMonthMarkers(_currentMonth);
-                    _loadDayData(day);
-                  },
+                // Espaço espelho à esquerda para manter os toggles centrados
+                const SizedBox(width: 60),
+                // Toggles centralizados sem sobreposição
+                Expanded(
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      _buildToggleBtn(
+                        icon: Icons.calendar_view_day,
+                        label: 'Dia',
+                        active: _viewMode == 'day',
+                        onTap: () {
+                          final day = _selectedDay ?? DateTime.now();
+                          setState(() {
+                            _viewMode = 'day';
+                            _selectedDay = day;
+                            _currentMonth = DateTime(day.year, day.month);
+                          });
+                          _loadMonthMarkers(_currentMonth);
+                          _loadDayData(day);
+                        },
+                      ),
+                      const SizedBox(width: 6),
+                      _buildToggleBtn(
+                        icon: Icons.calendar_view_month,
+                        label: 'Mês',
+                        active: _viewMode == 'month',
+                        onTap: () => setState(() => _viewMode = 'month'),
+                      ),
+                      const SizedBox(width: 6),
+                      _buildToggleBtn(
+                        icon: Icons.calendar_month,
+                        label: 'Ano',
+                        active: _viewMode == 'year',
+                        onTap: () {
+                          setState(() => _viewMode = 'year');
+                          _autoCarregarResumoAno(_currentMonth.year);
+                        },
+                      ),
+                    ],
+                  ),
                 ),
-                const SizedBox(width: 6),
-                _buildToggleBtn(
-                  icon: Icons.calendar_view_month,
-                  label: 'Mês',
-                  active: _viewMode == 'month',
-                  onTap: () => setState(() => _viewMode = 'month'),
-                ),
-                const SizedBox(width: 6),
-                _buildToggleBtn(
-                  icon: Icons.calendar_month,
-                  label: 'Ano',
-                  active: _viewMode == 'year',
-                  onTap: () {
-                    setState(() => _viewMode = 'year');
-                    _autoCarregarResumoAno(_currentMonth.year);
-                  },
-                ),
-                const Spacer(),
-                // Refresh + Hoje à direita (sem sobreposição)
-                _buildRefreshBtn(),
-                const SizedBox(width: 8),
+                // Hoje alinhado à direita — nunca sobrepõe os toggles
                 TextButton(
                   style: TextButton.styleFrom(
                     backgroundColor: Colors.white24,
@@ -747,7 +800,14 @@ class _WindowsCalendarScreenState extends State<WindowsCalendarScreen> {
               ],
             ),
           ),
-        );
+        ),
+      ),
+      body: _viewMode == 'day'
+          ? _buildSingleDayView()
+          : _viewMode == 'year'
+              ? _buildMonthView()
+              : _buildDayView(),
+    );
   }
 
   Widget _buildToggleBtn({
@@ -781,76 +841,6 @@ class _WindowsCalendarScreenState extends State<WindowsCalendarScreen> {
               ),
             ),
           ],
-        ),
-      ),
-    );
-  }
-
-  // Botão de refresh no header (translúcido branco, ao lado de "Hoje").
-  Widget _buildRefreshBtn() {
-    final carregando = _loadingDay || _loadingMonth;
-    return Material(
-      color: Colors.white24,
-      shape: const CircleBorder(),
-      child: InkWell(
-        customBorder: const CircleBorder(),
-        onTap: carregando
-            ? null
-            : () {
-                final day = _selectedDay ?? DateTime.now();
-                _loadMonthMarkers(_currentMonth);
-                _loadDayData(day);
-              },
-        child: SizedBox(
-          width: 32,
-          height: 32,
-          child: Center(
-            child: carregando
-                ? const SizedBox(
-                    width: 16,
-                    height: 16,
-                    child: CircularProgressIndicator(
-                        strokeWidth: 2, color: Colors.white),
-                  )
-                : const Icon(Icons.refresh, size: 20, color: Colors.white),
-          ),
-        ),
-      ),
-    );
-  }
-
-  // Abre o popup de baixa da conta (a partir do item do calendário).
-  void _abrirBaixaConta(Map<String, dynamic> item, {required bool isPagar}) {
-    showDialog(
-      context: context,
-      builder: (_) => isPagar
-          ? BaixaDialog(conta: ContaPagar.fromJson(item))
-          : BaixaDialogReceber(conta: ContaReceber.fromJson(item)),
-    ).then((_) {
-      final day = _selectedDay ?? DateTime.now();
-      _loadMonthMarkers(_currentMonth);
-      _loadDayData(day);
-    });
-  }
-
-  // Abre o visualizador de anexos da conta (ver/baixar).
-  void _abrirAnexosConta(Map<String, dynamic> item, {required bool isPagar}) {
-    final id = (item['id'] as num?)?.toInt();
-    if (id == null) return;
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (_) => DraggableScrollableSheet(
-        initialChildSize: 0.65,
-        minChildSize: 0.4,
-        maxChildSize: 0.92,
-        builder: (ctx, _) => ClipRRect(
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
-          child: AnexoFinanceiroWidget(
-            lancamentoId: id,
-            lancamentoTipo: isPagar ? 'PAGAR' : 'RECEBER',
-          ),
         ),
       ),
     );
@@ -893,8 +883,7 @@ class _WindowsCalendarScreenState extends State<WindowsCalendarScreen> {
       builder: (context, constraints) {
         // Reserva no mínimo 180px para o painel de detalhe;
         // max 400 para dar espaço suficiente às rows do grid (≥40px/row × 6 rows)
-        final calHeight =
-            (constraints.maxHeight - 180).clamp(200.0, 400.0);
+        final calHeight = (constraints.maxHeight - 180).clamp(200.0, 400.0);
         return Column(
           children: [
             SizedBox(height: calHeight, child: calendarCard),
@@ -928,15 +917,15 @@ class _WindowsCalendarScreenState extends State<WindowsCalendarScreen> {
       children: [
         InkWell(
           onTap: () {
-            final prev =
-                DateTime(_currentMonth.year, _currentMonth.month - 1);
+            final prev = DateTime(_currentMonth.year, _currentMonth.month - 1);
             setState(() => _currentMonth = prev);
             _loadMonthMarkers(prev);
           },
           borderRadius: BorderRadius.circular(16),
           child: const Padding(
             padding: EdgeInsets.symmetric(horizontal: 8, vertical: 5),
-            child: Icon(Icons.chevron_left, color: GridColors.success, size: 20),
+            child:
+                Icon(Icons.chevron_left, color: GridColors.success, size: 20),
           ),
         ),
         Text(
@@ -949,15 +938,15 @@ class _WindowsCalendarScreenState extends State<WindowsCalendarScreen> {
         ),
         InkWell(
           onTap: () {
-            final next =
-                DateTime(_currentMonth.year, _currentMonth.month + 1);
+            final next = DateTime(_currentMonth.year, _currentMonth.month + 1);
             setState(() => _currentMonth = next);
             _loadMonthMarkers(next);
           },
           borderRadius: BorderRadius.circular(16),
           child: const Padding(
             padding: EdgeInsets.symmetric(horizontal: 8, vertical: 5),
-            child: Icon(Icons.chevron_right, color: GridColors.success, size: 20),
+            child:
+                Icon(Icons.chevron_right, color: GridColors.success, size: 20),
           ),
         ),
       ],
@@ -1301,15 +1290,8 @@ class _WindowsCalendarScreenState extends State<WindowsCalendarScreen> {
     final tributo = _hasDocumentoFiscal(item);
     final parceiro = (item['parceiro'] as Map?)?.cast<String, dynamic>();
     final parceiroNome = parceiro?['nome'] as String? ?? '';
-    final qtdAnexos = (item['qtdAnexos'] as num?)?.toInt() ?? 0;
 
-    // Detecta arquivo anexado (boleto ou comprovante)
-    final fileMap = item['file'] as Map?;
-    final fileId = fileMap?['id'];
-    final hasAnexo = fileId != null && fileId.toString() != '0' && fileId.toString().isNotEmpty;
-    final downloadUrl = hasAnexo
-        ? '${ApiLinks.baseUrl}/rest/file/download/$fileId'
-        : null;
+    final hasAnexoPdf = _hasPdfAttachment(item);
 
     final today = DateTime.now();
     final vencStr = _dateKey(item);
@@ -1394,28 +1376,23 @@ class _WindowsCalendarScreenState extends State<WindowsCalendarScreen> {
                 ],
               ),
             ),
-            // Ícone de download quando há arquivo anexado
-            if (hasAnexo) ...[
+            // Ações rápidas da conta e do PDF anexado.
+            if (status == 'ABERTA') ...[
               const SizedBox(width: 4),
-              GestureDetector(
-                onTap: () async {
-                  final uri = Uri.parse(downloadUrl!);
-                  if (await canLaunchUrl(uri)) {
-                    await launchUrl(uri, mode: LaunchMode.externalApplication);
-                  }
-                },
-                child: Tooltip(
-                  message: 'Baixar anexo',
-                  child: Container(
-                    padding: const EdgeInsets.all(4),
-                    decoration: BoxDecoration(
-                      color: GridColors.info.withValues(alpha: 0.12),
-                      borderRadius: BorderRadius.circular(6),
-                    ),
-                    child: const Icon(Icons.download,
-                        color: GridColors.info, size: 16),
-                  ),
-                ),
+              _contaActionButton(
+                icon: Icons.price_check,
+                color: GridColors.success,
+                tooltip: 'Baixar conta',
+                onTap: () => _abrirBaixaConta(item, isPagar: isPagar),
+              ),
+            ],
+            if (hasAnexoPdf) ...[
+              const SizedBox(width: 4),
+              _contaActionButton(
+                icon: Icons.attach_file,
+                color: GridColors.info,
+                tooltip: 'Abrir PDF anexado',
+                onTap: () => _abrirPdfAnexo(item),
               ),
             ],
             const SizedBox(width: 6),
@@ -1441,34 +1418,6 @@ class _WindowsCalendarScreenState extends State<WindowsCalendarScreen> {
                     _chip(statusLabel, statusColor, Colors.white),
                   ],
                 ),
-                // Ações: ver anexo (se houver) e baixar conta (se ABERTA)
-                if (status == 'ABERTA' || qtdAnexos > 0) ...[
-                  const SizedBox(height: 4),
-                  Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      if (qtdAnexos > 0)
-                        _miniActionBtn(
-                          icon: Icons.attach_file,
-                          color:
-                              GridColors.textPrimary.withValues(alpha: 0.55),
-                          tooltip: 'Ver anexo',
-                          onTap: () =>
-                              _abrirAnexosConta(item, isPagar: isPagar),
-                        ),
-                      if (status == 'ABERTA') ...[
-                        const SizedBox(width: 2),
-                        _miniActionBtn(
-                          icon: Icons.price_check,
-                          color: GridColors.success,
-                          tooltip: 'Baixar conta',
-                          onTap: () =>
-                              _abrirBaixaConta(item, isPagar: isPagar),
-                        ),
-                      ],
-                    ],
-                  ),
-                ],
               ],
             ),
           ],
@@ -1477,8 +1426,7 @@ class _WindowsCalendarScreenState extends State<WindowsCalendarScreen> {
     );
   }
 
-  // Ícone de ação compacto usado nos itens do detalhe do dia.
-  Widget _miniActionBtn({
+  Widget _contaActionButton({
     required IconData icon,
     required Color color,
     required String tooltip,
@@ -1490,9 +1438,12 @@ class _WindowsCalendarScreenState extends State<WindowsCalendarScreen> {
         onTap: onTap,
         borderRadius: BorderRadius.circular(6),
         child: Container(
-          constraints: const BoxConstraints(minWidth: 28, minHeight: 28),
-          alignment: Alignment.center,
-          child: Icon(icon, size: 18, color: color),
+          padding: const EdgeInsets.all(4),
+          decoration: BoxDecoration(
+            color: color.withValues(alpha: 0.12),
+            borderRadius: BorderRadius.circular(6),
+          ),
+          child: Icon(icon, color: color, size: 16),
         ),
       ),
     );
@@ -1796,8 +1747,7 @@ class _WindowsCalendarScreenState extends State<WindowsCalendarScreen> {
                       '$day',
                       style: TextStyle(
                         fontSize: 9,
-                        fontWeight:
-                            isToday ? FontWeight.w800 : FontWeight.w700,
+                        fontWeight: isToday ? FontWeight.w800 : FontWeight.w700,
                         color: isToday
                             ? GridColors.error
                             : GridColors.textSecondary,
@@ -1808,12 +1758,10 @@ class _WindowsCalendarScreenState extends State<WindowsCalendarScreen> {
                         mainAxisAlignment: MainAxisAlignment.center,
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          if (hasPagar)
-                            _dot(GridColors.error),
+                          if (hasPagar) _dot(GridColors.error),
                           if (hasPago)
                             _dot(GridColors.error.withValues(alpha: 0.45)),
-                          if (hasReceber)
-                            _dot(GridColors.success),
+                          if (hasReceber) _dot(GridColors.success),
                           if (hasRecebido)
                             _dot(GridColors.success.withValues(alpha: 0.45)),
                         ],
@@ -1872,103 +1820,97 @@ class _WindowsCalendarScreenState extends State<WindowsCalendarScreen> {
 
   Future<void> _carregarAnoCompleto(int year) async {
     setState(() => _loadingMonth = true);
-    try {
-      final dataInicio = '$year-01-01';
-      final dataFim = '$year-12-31';
+    final dataInicio = '$year-01-01';
+    final dataFim = '$year-12-31';
 
-      final url = _buildUrl(ApiLinks.calendarioFinanceiro, {
-        'dataInicio': dataInicio,
-        'dataFim': dataFim,
-      });
-      L.d('[CALENDARIO_ANO] GET $url');
-      final body = await _fetchFinancialJson(url);
-      final allItems = _parseFinancialGroups(body);
-      L.d('[CALENDARIO_ANO] Total - Pagar: ${allItems.pagar.length}, Receber: ${allItems.receber.length}');
+    final url = _buildUrl(ApiLinks.calendarioFinanceiro, {
+      'dataInicio': dataInicio,
+      'dataFim': dataFim,
+    });
+    L.d('[CALENDARIO_ANO] GET $url');
+    final body = await _fetchFinancialJson(url);
+    final allItems = _parseFinancialGroups(body);
+    L.d('[CALENDARIO_ANO] Total - Pagar: ${allItems.pagar.length}, Receber: ${allItems.receber.length}');
 
-      if (!mounted) return;
+    if (!mounted) return;
 
-      // Distribui itens por mês
-      final newMarkers = <String, _DayMarkers>{};
-      final summaries = <int, _MonthSummary>{};
-      final perMonth = <int, _FinancialItems>{};
+    // Distribui itens por mês
+    final newMarkers = <String, _DayMarkers>{};
+    final summaries = <int, _MonthSummary>{};
+    final perMonth = <int, _FinancialItems>{};
 
-      for (int m = 1; m <= 12; m++) {
-        perMonth[m] = _FinancialItems(
-          pagar: allItems.pagar
-              .where((i) {
-                final d = DateTime.tryParse(_dateKey(i));
-                return d != null && d.month == m && d.year == year;
-              })
-              .toList(),
-          receber: allItems.receber
-              .where((i) {
-                final d = DateTime.tryParse(_dateKey(i));
-                return d != null && d.month == m && d.year == year;
-              })
-              .toList(),
-        );
-      }
-
-      // Monta dayMarkers e summaries
-      for (final entry in perMonth.entries) {
-        final m = entry.key;
-        final items = entry.value;
-        double totalPagar = 0, totalPago = 0, totalReceber = 0, totalRecebido = 0;
-
-        for (final item in items.pagar) {
-          final dateStr = _dateKey(item);
-          if (dateStr.isEmpty) continue;
-          final isBaixa = _isBaixada(item);
-          final tributo = _hasDocumentoFiscal(item);
-          final old = newMarkers[dateStr] ?? const _DayMarkers();
-          newMarkers[dateStr] = _DayMarkers(
-            hasPagar: old.hasPagar || !isBaixa,
-            hasPago: old.hasPago || isBaixa,
-            hasReceber: old.hasReceber,
-            hasRecebido: old.hasRecebido,
-            hasTributo: old.hasTributo || tributo,
-          );
-          final v = _moneyValue(item, 'valor');
-          if (isBaixa) totalPago += v; else if (!_isCancelada(item)) totalPagar += v;
-        }
-
-        for (final item in items.receber) {
-          final dateStr = _dateKey(item);
-          if (dateStr.isEmpty) continue;
-          final isBaixa = _isBaixada(item);
-          final tributo = _hasDocumentoFiscal(item);
-          final old = newMarkers[dateStr] ?? const _DayMarkers();
-          newMarkers[dateStr] = _DayMarkers(
-            hasPagar: old.hasPagar,
-            hasPago: old.hasPago,
-            hasReceber: old.hasReceber || !isBaixa,
-            hasRecebido: old.hasRecebido || isBaixa,
-            hasTributo: old.hasTributo || tributo,
-          );
-          final v = _moneyValue(item, 'valor');
-          if (isBaixa) totalRecebido += v; else if (!_isCancelada(item)) totalReceber += v;
-        }
-
-        summaries[m] = _MonthSummary(
-          totalPagar: totalPagar,
-          totalPago: totalPago,
-          totalReceber: totalReceber,
-          totalRecebido: totalRecebido,
-          saldoPagar: totalPago - totalPagar,
-          saldoReceber: totalRecebido - totalReceber,
-        );
-      }
-
-      setState(() {
-        _dayMarkers = {..._dayMarkers, ...newMarkers};
-        _monthSummaries.addAll(summaries);
-        _loadingMonth = false;
-      });
-    } catch (e, s) {
-      L.d('[CALENDARIO_ANO] Erro em _carregarAnoCompleto: $e\n$s');
-      if (!mounted) return;
-      setState(() => _loadingMonth = false);
+    for (int m = 1; m <= 12; m++) {
+      perMonth[m] = _FinancialItems(
+        pagar: allItems.pagar.where((i) {
+          final d = DateTime.tryParse(_dateKey(i));
+          return d != null && d.month == m && d.year == year;
+        }).toList(),
+        receber: allItems.receber.where((i) {
+          final d = DateTime.tryParse(_dateKey(i));
+          return d != null && d.month == m && d.year == year;
+        }).toList(),
+      );
     }
+
+    // Monta dayMarkers e summaries
+    for (final entry in perMonth.entries) {
+      final m = entry.key;
+      final items = entry.value;
+      double totalPagar = 0, totalPago = 0, totalReceber = 0, totalRecebido = 0;
+
+      for (final item in items.pagar) {
+        final dateStr = _dateKey(item);
+        if (dateStr.isEmpty) continue;
+        final isBaixa = _isBaixada(item);
+        final tributo = _hasDocumentoFiscal(item);
+        final old = newMarkers[dateStr] ?? const _DayMarkers();
+        newMarkers[dateStr] = _DayMarkers(
+          hasPagar: old.hasPagar || !isBaixa,
+          hasPago: old.hasPago || isBaixa,
+          hasReceber: old.hasReceber,
+          hasRecebido: old.hasRecebido,
+          hasTributo: old.hasTributo || tributo,
+        );
+        final v = _moneyValue(item, 'valor');
+        if (isBaixa)
+          totalPago += v;
+        else if (!_isCancelada(item)) totalPagar += v;
+      }
+
+      for (final item in items.receber) {
+        final dateStr = _dateKey(item);
+        if (dateStr.isEmpty) continue;
+        final isBaixa = _isBaixada(item);
+        final tributo = _hasDocumentoFiscal(item);
+        final old = newMarkers[dateStr] ?? const _DayMarkers();
+        newMarkers[dateStr] = _DayMarkers(
+          hasPagar: old.hasPagar,
+          hasPago: old.hasPago,
+          hasReceber: old.hasReceber || !isBaixa,
+          hasRecebido: old.hasRecebido || isBaixa,
+          hasTributo: old.hasTributo || tributo,
+        );
+        final v = _moneyValue(item, 'valor');
+        if (isBaixa)
+          totalRecebido += v;
+        else if (!_isCancelada(item)) totalReceber += v;
+      }
+
+      summaries[m] = _MonthSummary(
+        totalPagar: totalPagar,
+        totalPago: totalPago,
+        totalReceber: totalReceber,
+        totalRecebido: totalRecebido,
+        saldoPagar: totalPago - totalPagar,
+        saldoReceber: totalRecebido - totalReceber,
+      );
+    }
+
+    setState(() {
+      _dayMarkers = {..._dayMarkers, ...newMarkers};
+      _monthSummaries.addAll(summaries);
+      _loadingMonth = false;
+    });
   }
 
   Future<void> _showMonthPopup(

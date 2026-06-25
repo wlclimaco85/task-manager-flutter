@@ -195,7 +195,15 @@ class _GedArquivosScreenState extends State<GedArquivosScreen> {
         if (raw is List) {
           _arquivos = raw
               .map<Map<String, dynamic>>((e) => Map<String, dynamic>.from(e))
-              .toList();
+              .toList()
+            ..sort((a, b) {
+              final da = DateTime.tryParse(a['uploadDate']?.toString() ?? '');
+              final db = DateTime.tryParse(b['uploadDate']?.toString() ?? '');
+              if (da == null && db == null) return 0;
+              if (da == null) return 1;
+              if (db == null) return -1;
+              return db.compareTo(da);
+            });
         }
       } else {
         _arquivos = [];
@@ -586,6 +594,7 @@ class _GedArquivosScreenState extends State<GedArquivosScreen> {
   }
 
   // ── Grid de Cards ─────────────────────────────────────────────────────────
+  // ── Árvore de Diretórios ──────────────────────────────────────────────────
   Widget _buildGridCards() {
     if (_carregando) {
       return const Center(child: CircularProgressIndicator());
@@ -614,29 +623,99 @@ class _GedArquivosScreenState extends State<GedArquivosScreen> {
       );
     }
 
-    // LayoutBuilder mede o widget real, não a tela — funciona corretamente
-    // quando o GED está embutido dentro de um tab com painel lateral aberto
-    return LayoutBuilder(
-      builder: (ctx, constraints) {
-        final largura = constraints.maxWidth;
-        final colunas = largura < 480
-            ? 2
-            : largura < 900
-                ? 3
-                : 4;
+    // Agrupa por diretório (null/vazio → "Sem pasta")
+    final Map<String, List<Map<String, dynamic>>> grupos = {};
+    for (final arq in filtrados) {
+      final dir = arq['diretorioNome']?.toString().trim();
+      final chave = (dir == null || dir.isEmpty) ? 'Sem pasta' : dir;
+      grupos.putIfAbsent(chave, () => []).add(arq);
+    }
 
-        return GridView.builder(
-          padding: const EdgeInsets.all(12),
-          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: colunas,
-            crossAxisSpacing: 10,
-            mainAxisSpacing: 10,
-            childAspectRatio: 0.85,
+    // Ordena as chaves: "Sem pasta" por último
+    final chaves = grupos.keys.toList()
+      ..sort((a, b) {
+        if (a == 'Sem pasta') return 1;
+        if (b == 'Sem pasta') return -1;
+        return a.compareTo(b);
+      });
+
+    return ListView(
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      children: chaves.map((chave) {
+        final itens = grupos[chave]!;
+        return _buildDiretorioSecao(chave, itens);
+      }).toList(),
+    );
+  }
+
+  Widget _buildDiretorioSecao(
+      String nomeDir, List<Map<String, dynamic>> itens) {
+    return Card(
+      margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+      elevation: 0,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(8),
+        side: const BorderSide(color: GridColors.divider),
+      ),
+      child: ExpansionTile(
+        initiallyExpanded: true,
+        leading: Icon(
+          nomeDir == 'Sem pasta' ? Icons.inbox : Icons.folder,
+          color: nomeDir == 'Sem pasta' ? Colors.grey : GridColors.secondary,
+        ),
+        title: Text(
+          nomeDir,
+          style: const TextStyle(
+            fontWeight: FontWeight.w600,
+            fontSize: 14,
           ),
-          itemCount: filtrados.length,
-          itemBuilder: (context, index) => _buildCard(filtrados[index]),
-        );
-      },
+        ),
+        trailing: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+              decoration: BoxDecoration(
+                color: GridColors.primarySoft,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Text(
+                '${itens.length}',
+                style: const TextStyle(
+                    fontSize: 12,
+                    color: GridColors.primary,
+                    fontWeight: FontWeight.w600),
+              ),
+            ),
+            const Icon(Icons.expand_more),
+          ],
+        ),
+        children: [
+          LayoutBuilder(
+            builder: (ctx, constraints) {
+              final largura = constraints.maxWidth;
+              final colunas =
+                  largura < 480 ? 2 : largura < 900 ? 3 : 4;
+              return GridView.builder(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                padding: const EdgeInsets.all(10),
+                gridDelegate:
+                    SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: colunas,
+                  crossAxisSpacing: 10,
+                  mainAxisSpacing: 10,
+                  childAspectRatio: 0.85,
+                ),
+                itemCount: itens.length,
+                itemBuilder: (context, index) =>
+                    _buildCard(itens[index]),
+              );
+            },
+          ),
+        ],
+      ),
     );
   }
 
@@ -848,7 +927,7 @@ class _GedArquivosScreenState extends State<GedArquivosScreen> {
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(
       content: Text(msg),
-      backgroundColor: erro ? Colors.red : GridColors.secondary,
+      backgroundColor: erro ? GridColors.error : GridColors.success,
       duration: const Duration(seconds: 3),
     ));
   }

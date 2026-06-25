@@ -1079,6 +1079,8 @@ class ApiLinks {
       '$_baseUrlNew/api/financeiro/extrato-importacao/confirmar';
   static String get extratoImportacoes =>
       '$_baseUrlNew/api/financeiro/extrato-importacao';
+  static String excluirExtratoImportacao(int id) =>
+      '$_baseUrlNew/api/financeiro/extrato-importacao/$id';
 
   // Dashboard Financeiro Gerencial
   static const String dashboardFinanceiro =

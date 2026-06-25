@@ -53,28 +53,18 @@ class _ChatMessageScreenState extends State<ChatMessageScreen> {
   String get _loggedUserEmail =>
       AuthUtility.userInfo?.login?.email ?? widget.userName;
 
-  bool get _isNewChat => widget.chatId == '0' || widget.chatId.isEmpty;
-
   @override
   void initState() {
     super.initState();
-    if (_isNewChat) {
+    _loadInitialMessages().then((_) {
       _initDone = true;
       _connectWebSocket();
-    } else {
-      _loadInitialMessages().then((_) {
-        _initDone = true;
-        _connectWebSocket();
-      });
-    }
+    });
   }
 
   bool _isDuplicate(ChatMessage msg) {
-    return msg.chatId != null &&
-        _messages.any((m) =>
-            m.content == msg.content &&
-            m.sender == msg.sender &&
-            m.timestamp == msg.timestamp);
+    return msg.chatId != null && _messages.any((m) =>
+      m.content == msg.content && m.sender == msg.sender && m.timestamp == msg.timestamp);
   }
 
   void _connectWebSocket() {
@@ -117,12 +107,8 @@ class _ChatMessageScreenState extends State<ChatMessageScreen> {
   void _scheduleReconnect() {
     _retryCount++;
     if (!mounted || _retryCount >= _maxRetries) return;
-    final delay = Duration(
-        seconds:
-            (_retryCount > 5 ? 30 : 3 * (1 << (_retryCount - 1))).clamp(3, 30));
-    Future.delayed(delay, () {
-      if (mounted) _connectWebSocket();
-    });
+    final delay = Duration(seconds: (_retryCount > 5 ? 30 : 3 * (1 << (_retryCount - 1))).clamp(3, 30));
+    Future.delayed(delay, () { if (mounted) _connectWebSocket(); });
   }
 
   Future<void> _loadInitialMessages() async {
@@ -411,33 +397,6 @@ class _ChatMessageScreenState extends State<ChatMessageScreen> {
     return '${time.hour.toString().padLeft(2, '0')}:${time.minute.toString().padLeft(2, '0')}';
   }
 
-  Future<void> _finalizarChat() async {
-    final confirmar = await showDialog<bool>(
-      context: context,
-      builder: (_) => AlertDialog(
-        title: const Text('Finalizar atendimento'),
-        content: const Text('Deseja realmente finalizar este atendimento?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancelar'),
-          ),
-          FilledButton(
-            style: FilledButton.styleFrom(
-              backgroundColor: GridColors.error,
-            ),
-            onPressed: () => Navigator.pop(context, true),
-            child: const Text('Finalizar'),
-          ),
-        ],
-      ),
-    );
-    if (confirmar != true || !mounted) return;
-    _channel?.sink.close();
-    _showSnack('Atendimento finalizado');
-    Navigator.pop(context, true);
-  }
-
   void _showSnack(String message, {bool error = false}) {
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
@@ -446,6 +405,57 @@ class _ChatMessageScreenState extends State<ChatMessageScreen> {
         content: Text(message),
       ),
     );
+  }
+
+  Future<void> _finalizarChat() async {
+    final confirmar = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Finalizar atendimento'),
+        content: const Text(
+          'Deseja encerrar este atendimento? Esta ação não pode ser desfeita.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: const Text('Cancelar'),
+          ),
+          FilledButton(
+            style: FilledButton.styleFrom(
+              backgroundColor: GridColors.error,
+              foregroundColor: Colors.white,
+            ),
+            onPressed: () => Navigator.of(ctx).pop(true),
+            child: const Text('Finalizar'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmar != true || !mounted) return;
+
+    try {
+      final url = TenantContext.applyToUrl(ApiLinks.chatFinalize(widget.chatId));
+      final response = await http.put(
+        Uri.parse(url),
+        headers: TenantContext.headers,
+      );
+
+      if (!mounted) return;
+
+      if (response.statusCode == 200 || response.statusCode == 204) {
+        _showSnack('Atendimento finalizado com sucesso.');
+        Navigator.of(context).pop();
+      } else {
+        _showSnack(
+          'Não foi possível finalizar o atendimento (${response.statusCode}).',
+          error: true,
+        );
+      }
+    } catch (e) {
+      if (!mounted) return;
+      _showSnack('Erro ao finalizar atendimento: $e', error: true);
+    }
   }
 
   @override
@@ -459,60 +469,57 @@ class _ChatMessageScreenState extends State<ChatMessageScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: ChatSupportPalette.page,
-      body: SafeArea(
-        bottom: false,
-        child: Column(
-          children: [
-            ChatConversationHeader(
-              sector: widget.sector,
-              userName: _loggedUserEmail,
-              compact: true,
-              onBack: () => Navigator.pop(context),
-              onFinalize: _finalizarChat,
-            ),
-            if (_isLoading)
-              const LinearProgressIndicator(color: GridColors.primary),
-            Expanded(
-              child: _messages.isEmpty && !_isLoading
-                  ? ChatEmptyState(
-                      title: 'Conversa vazia',
-                      message:
-                          'Envie a primeira mensagem para iniciar o atendimento deste setor.',
-                    )
-                  : ListView.builder(
-                      controller: _scrollController,
-                      padding: const EdgeInsets.symmetric(vertical: 12),
-                      itemCount: _messages.length,
-                      itemBuilder: (context, index) {
-                        final message = _messages[index];
-                        return ChatMessageBubble(
-                          message: message,
-                          isMe: _isMine(message),
-                          displayName: _displayName(message),
-                          time: _formatTime(
-                              message.timestamp ?? message.uploadDate),
-                          onOpenFile: message.fileId == null
-                              ? null
-                              : () => _openOrDownload(
-                                    message.fileId!,
-                                    message.fileName ?? 'arquivo',
-                                    fileUrl: message.fileUrl,
-                                  ),
-                        );
-                      },
-                    ),
-            ),
-            ChatComposer(
-              controller: _messageController,
-              onAttach: _uploadAndSendFile,
-              onTicket: _createTicket,
-              onSend: _sendMessage,
-              onCorrect: _correctDraft,
-              onSummarize: _summarizeChat,
-            ),
-          ],
-        ),
+      backgroundColor: GridColors.background,
+      body: Column(
+        children: [
+          ChatConversationHeader(
+            sector: widget.sector,
+            userName: _loggedUserEmail,
+            compact: true,
+            onBack: () => Navigator.pop(context),
+            onFinalize: _finalizarChat,
+          ),
+          if (_isLoading)
+            const LinearProgressIndicator(color: GridColors.primary),
+          Expanded(
+            child: _messages.isEmpty && !_isLoading
+                ? ChatEmptyState(
+                    title: 'Conversa vazia',
+                    message:
+                        'Envie a primeira mensagem para iniciar o atendimento deste setor.',
+                  )
+                : ListView.builder(
+                    controller: _scrollController,
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    itemCount: _messages.length,
+                    itemBuilder: (context, index) {
+                      final message = _messages[index];
+                      return ChatMessageBubble(
+                        message: message,
+                        isMe: _isMine(message),
+                        displayName: _displayName(message),
+                        time: _formatTime(
+                            message.timestamp ?? message.uploadDate),
+                        onOpenFile: message.fileId == null
+                            ? null
+                            : () => _openOrDownload(
+                                  message.fileId!,
+                                  message.fileName ?? 'arquivo',
+                                  fileUrl: message.fileUrl,
+                                ),
+                      );
+                    },
+                  ),
+          ),
+          ChatComposer(
+            controller: _messageController,
+            onAttach: _uploadAndSendFile,
+            onTicket: _createTicket,
+            onSend: _sendMessage,
+            onCorrect: _correctDraft,
+            onSummarize: _summarizeChat,
+          ),
+        ],
       ),
     );
   }

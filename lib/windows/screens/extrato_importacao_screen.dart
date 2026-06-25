@@ -21,13 +21,84 @@ class _ExtratoImportacaoScreenState extends State<ExtratoImportacaoScreen> {
   PlatformFile? _arquivo;
   bool _carregandoPreview = false;
   bool _confirmando = false;
+  bool _importandoDireto = false;
   ExtratoImportResult? _previewResult;
   ExtratoImportResult? _confirmResult;
+
+  List<dynamic> _importacoes = [];
+  bool _carregandoLista = false;
 
   @override
   void initState() {
     super.initState();
     _carregarContas();
+    _carregarListagem();
+  }
+
+  Future<void> _carregarListagem() async {
+    setState(() => _carregandoLista = true);
+    final lista = await ExtratoImportCaller.listarImportacoes();
+    if (!mounted) return;
+    setState(() {
+      _importacoes = lista;
+      _carregandoLista = false;
+    });
+  }
+
+  Future<void> _importarDireto() async {
+    if (_contaSelecionada == null || _arquivo == null) return;
+    setState(() => _importandoDireto = true);
+    final result = await ExtratoImportCaller.confirmar(
+      contaBancariaId: _contaSelecionada!['id'] as int,
+      arquivo: _arquivo!,
+    );
+    if (!mounted) return;
+    setState(() {
+      _importandoDireto = false;
+      _confirmResult = result;
+    });
+    if (result.success) {
+      _snack('Importação concluída com sucesso!');
+      await _carregarListagem();
+    } else {
+      _snack(result.message ?? 'Erro na importação', error: true);
+    }
+  }
+
+  Future<void> _excluirImportacao(dynamic importacao) async {
+    final id = importacao['id'] as int?;
+    if (id == null) return;
+    final confirmar = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Excluir importação'),
+        content:
+            const Text('Remove apenas o registro de importação. As transações conciliadas não são afetadas.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Cancelar'),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: GridColors.error,
+              foregroundColor: Colors.white,
+            ),
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Excluir'),
+          ),
+        ],
+      ),
+    );
+    if (confirmar != true || !mounted) return;
+    final ok = await ExtratoImportCaller.excluirImportacao(id);
+    if (!mounted) return;
+    if (ok) {
+      _snack('Registro de importação excluído.');
+      await _carregarListagem();
+    } else {
+      _snack('Erro ao excluir importação.', error: true);
+    }
   }
 
   Future<void> _carregarContas() async {
@@ -39,7 +110,7 @@ class _ExtratoImportacaoScreenState extends State<ExtratoImportacaoScreen> {
   Future<void> _selecionarArquivo() async {
     final result = await FilePicker.pickFiles(
       type: FileType.custom,
-      allowedExtensions: ['ofx', 'csv'],
+      allowedExtensions: ['ofx', 'csv', 'xlsx', 'xls'],
       withData: true,
     );
     if (result == null || !mounted) return;
@@ -110,7 +181,7 @@ class _ExtratoImportacaoScreenState extends State<ExtratoImportacaoScreen> {
     return Scaffold(
       backgroundColor: Colors.grey[100],
       appBar: AppBar(
-        backgroundColor: GridColors.primary,
+        backgroundColor: GridColors.secondary,
         foregroundColor: Colors.white,
         title: const Text('Importação de Extrato Bancário'),
         elevation: 0,
@@ -125,6 +196,8 @@ class _ExtratoImportacaoScreenState extends State<ExtratoImportacaoScreen> {
             if (_previewResult != null && _previewResult!.success)
               _buildPreviewCard(),
             if (_confirmResult != null) _buildResultadoCard(),
+            const SizedBox(height: 24),
+            _buildListagemCard(),
           ],
         ),
       ),
@@ -172,7 +245,7 @@ class _ExtratoImportacaoScreenState extends State<ExtratoImportacaoScreen> {
                   label: Text(
                     _arquivo != null
                         ? '${_arquivo!.name} (${(_arquivo!.size / 1024).toStringAsFixed(1)} KB)'
-                        : 'Selecionar Arquivo OFX/CSV',
+                        : 'Selecionar Arquivo (OFX, CSV, XLSX, XLS)',
                   ),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: _arquivo != null
@@ -195,7 +268,9 @@ class _ExtratoImportacaoScreenState extends State<ExtratoImportacaoScreen> {
               ],
             ),
             const SizedBox(height: 24),
-            Row(
+            Wrap(
+              spacing: 12,
+              runSpacing: 8,
               children: [
                 ElevatedButton.icon(
                   onPressed: (_contaSelecionada != null && _arquivo != null &&
@@ -220,9 +295,32 @@ class _ExtratoImportacaoScreenState extends State<ExtratoImportacaoScreen> {
                     disabledBackgroundColor: Colors.grey.shade300,
                   ),
                 ),
+                ElevatedButton.icon(
+                  onPressed: (_contaSelecionada != null &&
+                          _arquivo != null &&
+                          !_importandoDireto &&
+                          _confirmResult == null)
+                      ? _importarDireto
+                      : null,
+                  icon: _importandoDireto
+                      ? const SizedBox(
+                          width: 18,
+                          height: 18,
+                          child: CircularProgressIndicator(
+                              strokeWidth: 2, color: Colors.white),
+                        )
+                      : const Icon(Icons.save_alt, size: 18),
+                  label: Text(_importandoDireto ? 'Salvando...' : 'Salvar / Importar Direto'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: GridColors.primary,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 24, vertical: 14),
+                    disabledBackgroundColor: Colors.grey.shade300,
+                  ),
+                ),
                 if (_previewResult != null && _previewResult!.success &&
-                    _confirmResult == null) ...[
-                  const SizedBox(width: 12),
+                    _confirmResult == null)
                   ElevatedButton.icon(
                     onPressed: _confirmando ? null : _confirmarImportacao,
                     icon: _confirmando
@@ -243,7 +341,6 @@ class _ExtratoImportacaoScreenState extends State<ExtratoImportacaoScreen> {
                       disabledBackgroundColor: Colors.grey.shade300,
                     ),
                   ),
-                ],
               ],
             ),
           ],
@@ -281,34 +378,127 @@ class _ExtratoImportacaoScreenState extends State<ExtratoImportacaoScreen> {
             _buildResumo(totalLinhas, totalDebitos, totalCreditos),
             const SizedBox(height: 16),
             if (linhas.isNotEmpty)
-              SingleChildScrollView(
-                scrollDirection: Axis.horizontal,
-                child: DataTable(
-                  columnSpacing: 20,
-                  headingRowColor:
-                      WidgetStateProperty.all(GridColors.secondaryLight),
-                  headingTextStyle: const TextStyle(
-                      color: Colors.white, fontWeight: FontWeight.bold),
-                  columns: const [
-                    DataColumn(label: Text('Data')),
-                    DataColumn(label: Text('Descrição')),
-                    DataColumn(label: Text('Valor'), numeric: true),
-                    DataColumn(label: Text('Tipo')),
-                  ],
-                  rows: linhas.take(100).map((linha) {
-                    return DataRow(cells: [
-                      DataCell(Text(linha['data']?.toString() ?? '')),
-                      DataCell(Text(linha['descricao']?.toString() ??
-                          linha['descricao']?.toString() ??
-                          '')),
-                      DataCell(Text(_formatValor(
-                          (linha['valor'] ?? 0.0).toDouble()))),
-                      DataCell(Text(linha['tipo']?.toString() ??
-                          linha['debitoCredito']?.toString() ??
-                          '')),
-                    ]);
-                  }).toList(),
+              GridView.builder(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: 2,
+                  childAspectRatio: 1.1,
+                  crossAxisSpacing: 8,
+                  mainAxisSpacing: 8,
                 ),
+                itemCount: linhas.take(100).length,
+                itemBuilder: (context, index) {
+                  final linha = linhas[index];
+                  final tipo = linha['tipo']?.toString() ??
+                      linha['debitoCredito']?.toString() ??
+                      '';
+                  final valor = (linha['valor'] ?? 0.0).toDouble();
+                  final ehCredito = tipo == 'CREDITO' ||
+                      tipo == 'C' ||
+                      (tipo.isEmpty && valor > 0);
+                  final ehDebito = tipo == 'DEBITO' ||
+                      tipo == 'D' ||
+                      (tipo.isEmpty && valor < 0);
+                  final corTipo = ehCredito
+                      ? GridColors.success
+                      : ehDebito
+                          ? GridColors.error
+                          : Colors.grey;
+                  final iconeTipo = ehCredito
+                      ? Icons.arrow_downward
+                      : ehDebito
+                          ? Icons.arrow_upward
+                          : Icons.swap_horiz;
+                  final tipoLabel = ehCredito
+                      ? 'CRÉDITO'
+                      : ehDebito
+                          ? 'DÉBITO'
+                          : tipo.toUpperCase();
+                  final valorFormatado =
+                      'R\$ ${valor.abs().toStringAsFixed(2).replaceAll('.', ',')}';
+                  final descricao =
+                      linha['descricao']?.toString() ?? '';
+                  final data = linha['data']?.toString() ?? '';
+
+                  return Container(
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border(
+                        left: BorderSide(color: corTipo, width: 4),
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: corTipo.withValues(alpha: 0.15),
+                          blurRadius: 5,
+                        ),
+                      ],
+                    ),
+                    padding: const EdgeInsets.all(12),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // Cabeçalho: ícone + tipo + badge valor
+                        Row(
+                          children: [
+                            Icon(iconeTipo, size: 20, color: corTipo),
+                            const SizedBox(width: 4),
+                            Text(
+                              tipoLabel,
+                              style: TextStyle(
+                                fontSize: 10,
+                                color: corTipo,
+                                fontWeight: FontWeight.w600,
+                                letterSpacing: 0.5,
+                              ),
+                            ),
+                            const Spacer(),
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 8, vertical: 4),
+                              decoration: BoxDecoration(
+                                color: corTipo.withValues(alpha: 0.1),
+                                borderRadius: BorderRadius.circular(6),
+                              ),
+                              child: Text(
+                                valorFormatado,
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.bold,
+                                  color: corTipo,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 6),
+                        // Descrição
+                        Text(
+                          descricao,
+                          style: const TextStyle(
+                              fontSize: 12, fontWeight: FontWeight.bold),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        const SizedBox(height: 4),
+                        // Data
+                        Row(
+                          children: [
+                            const Icon(Icons.calendar_today,
+                                size: 11, color: Colors.grey),
+                            const SizedBox(width: 4),
+                            Text(
+                              data,
+                              style: const TextStyle(
+                                  fontSize: 11, color: Colors.grey),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  );
+                },
               ),
             if (linhas.length > 100)
               Padding(
@@ -451,6 +641,127 @@ class _ExtratoImportacaoScreenState extends State<ExtratoImportacaoScreen> {
               icon: const Icon(Icons.refresh, size: 18),
               label: const Text('Nova Importação'),
             ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildListagemCard() {
+    return Card(
+      elevation: 2,
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                const Icon(Icons.history, color: GridColors.primary, size: 20),
+                const SizedBox(width: 8),
+                const Expanded(
+                  child: Text(
+                    'Extratos Importados',
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+                  ),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.refresh, size: 18),
+                  tooltip: 'Atualizar lista',
+                  onPressed: _carregandoLista ? null : _carregarListagem,
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            if (_carregandoLista)
+              const Center(child: CircularProgressIndicator())
+            else if (_importacoes.isEmpty)
+              const Text(
+                'Nenhum extrato importado ainda.',
+                style: TextStyle(color: Colors.grey),
+              )
+            else
+              ...(_importacoes.map((imp) {
+                final id = imp['id'];
+                final nomeArq = imp['arquivoNome'] ?? '—';
+                final formato = imp['formato'] ?? '';
+                final status = imp['status'] ?? '';
+                final totalLinhas = imp['totalLinhas'] ?? 0;
+                final importadas = imp['importadas'] ?? 0;
+                final criadoAt = imp['createdAt']?.toString() ?? '';
+                final dataStr = criadoAt.isNotEmpty
+                    ? criadoAt.substring(0, 10)
+                    : '—';
+
+                final corStatus = status == 'CONCLUIDO'
+                    ? GridColors.success
+                    : status == 'ERRO'
+                        ? GridColors.error
+                        : Colors.orange;
+
+                return Container(
+                  margin: const EdgeInsets.only(bottom: 8),
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 12, vertical: 10),
+                  decoration: BoxDecoration(
+                    color: GridColors.background,
+                    borderRadius: BorderRadius.circular(8),
+                    border: const BorderSide(
+                            color: GridColors.divider, width: 1)
+                        .style ==
+                        BorderStyle.solid
+                        ? Border.all(color: GridColors.divider)
+                        : null,
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.file_present,
+                          size: 18, color: GridColors.primary),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              nomeArq,
+                              style: const TextStyle(
+                                  fontWeight: FontWeight.w600, fontSize: 13),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            Text(
+                              '$dataStr · $formato · $importadas/$totalLinhas linhas',
+                              style: const TextStyle(
+                                  fontSize: 11, color: Colors.grey),
+                            ),
+                          ],
+                        ),
+                      ),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 8, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: corStatus.withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        child: Text(
+                          status,
+                          style: TextStyle(
+                              fontSize: 11,
+                              color: corStatus,
+                              fontWeight: FontWeight.w600),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      IconButton(
+                        icon: const Icon(Icons.delete_outline,
+                            size: 18, color: GridColors.error),
+                        tooltip: 'Excluir registro de importação',
+                        onPressed: () => _excluirImportacao(imp),
+                      ),
+                    ],
+                  ),
+                );
+              }).toList()),
           ],
         ),
       ),
