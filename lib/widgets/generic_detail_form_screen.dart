@@ -267,16 +267,21 @@ class _GenericDetailFormScreenState extends State<GenericDetailFormScreen>
         body[entry.key] = entry.value.map((v) => {'id': v}).toList();
       }
 
-      final endpoint =
-          tela.updateEndpoint.replaceAll(':id', id?.toString() ?? '');
+      final isCreate = id == null;
+      final endpoint = isCreate
+          ? tela.createEndpoint
+          : tela.updateEndpoint.replaceAll(':id', id?.toString() ?? '');
       final url =
           endpoint.startsWith('http') ? endpoint : ApiLinks.baseUrl + endpoint;
-      final resp = await NetworkCaller().putRequest(url, body);
+      final resp = isCreate
+          ? await NetworkCaller().postRequest(url, body)
+          : await NetworkCaller().putRequest(url, body);
       if (!mounted) return;
       if (resp.isSuccess) {
+        final msg = isCreate ? 'Criado com sucesso' : 'Salvo com sucesso';
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-              content: Text('Salvo com sucesso'),
+          SnackBar(
+              content: Text(msg),
               backgroundColor: GridColors.secondary),
         );
       } else {
