@@ -40,7 +40,7 @@ import 'conta_bancaria_grid_screen.dart';
 import 'parceiro_grid_screen.dart';
 import 'nfse_consulta_screen.dart';
 import 'nfse_serie_screen.dart';
-import '../../windows/screens/extrato_importacao_screen.dart';
+import 'extrato_importacao_screen.dart' show MobileExtratoImportacaoScreen;
 import '../../web/screens/cobranca_automatica_screen.dart';
 import '../../widgets/user_banners.dart';
 import '../../widgets/dashboard_area/placeholder/dashboard_atendimento_placeholder_screen.dart';
@@ -958,7 +958,7 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
         nav = Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (_) => const ExtratoImportacaoScreen(),
+            builder: (_) => const MobileExtratoImportacaoScreen(),
           ),
         );
         break;

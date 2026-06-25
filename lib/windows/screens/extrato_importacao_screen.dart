@@ -110,7 +110,7 @@ class _ExtratoImportacaoScreenState extends State<ExtratoImportacaoScreen> {
   Future<void> _selecionarArquivo() async {
     final result = await FilePicker.pickFiles(
       type: FileType.custom,
-      allowedExtensions: ['ofx', 'csv', 'xlsx', 'xls'],
+      allowedExtensions: ['ofx', 'csv', 'xlsx', 'xls', 'pdf'],
       withData: true,
     );
     if (result == null || !mounted) return;
