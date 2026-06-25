@@ -1082,6 +1082,16 @@ class ApiLinks {
   static String excluirExtratoImportacao(int id) =>
       '$_baseUrlNew/api/financeiro/extrato-importacao/$id';
 
+  // Importação em lote de boletos de mensalidade
+  static String get boletoLoteIniciar =>
+      '$_baseUrlNew/api/importacao/boletos-mensalidade/lote';
+  static String boletoLoteArquivos(String loteId) =>
+      '$_baseUrlNew/api/importacao/boletos-mensalidade/lote/$loteId/arquivos';
+  static String boletoLoteListar(String loteId) =>
+      '$_baseUrlNew/api/importacao/boletos-mensalidade/lote/$loteId';
+  static String boletoLoteConfirmar(String loteId) =>
+      '$_baseUrlNew/api/importacao/boletos-mensalidade/lote/$loteId/confirmar';
+
   // Dashboard Financeiro Gerencial
   static const String dashboardFinanceiro =
       '$_baseUrlNew/api/financeiro/dashboard';

@@ -455,6 +455,11 @@ class MenuConfig {
             icon: FontAwesomeIcons.fileImport,
             screenIndex: 89),
         MenuItem(
+            id: 'importar_boletos_lote',
+            label: 'Importar Boletos (Lote)',
+            icon: FontAwesomeIcons.filePdf,
+            screenIndex: 148),
+        MenuItem(
             id: 'conciliacao_bancaria',
             label: 'Conciliação Bancária',
             icon: FontAwesomeIcons.arrowsRotate,
