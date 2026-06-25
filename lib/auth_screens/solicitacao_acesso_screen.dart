@@ -127,12 +127,16 @@ class _SolicitacaoAcessoScreenState extends State<SolicitacaoAcessoScreen> {
             mensagem = err;
           }
         } catch (_) {}
+      } else {
+        debugPrint(
+            '[SolicitacaoAcessoScreen] erro inesperado statusCode=${response.statusCode} body=${response.body}');
       }
       setState(() {
         _enviando = false;
         _erroServidor = mensagem;
       });
-    } catch (_) {
+    } catch (e) {
+      debugPrint('[SolicitacaoAcessoScreen] falha ao enviar solicitação: $e');
       if (!mounted) return;
       setState(() {
         _enviando = false;
