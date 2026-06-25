@@ -679,6 +679,30 @@ class InstagramService {
     return null;
   }
 
+  /// Apaga o histórico de Timeline (instagram_event) de um perfil monitorado.
+  static Future<bool> limparTimeline(String username) async {
+    try {
+      final r = await http.delete(
+        Uri.parse('"'$_backendUrl/api/instagram/timeline/${Uri.encodeComponent(username)}'"'),
+        headers: await AuthService().jsonHeaders(),
+      ).timeout(const Duration(seconds: 15));
+      return r.statusCode == 204 || r.statusCode == 200;
+    } catch (_) {}
+    return false;
+  }
+
+  /// Apaga o histórico de Change Logs (instagram_change_log) de um perfil monitorado.
+  static Future<bool> limparChangeLogs(String username) async {
+    try {
+      final r = await http.delete(
+        Uri.parse('"'$_backendUrl/api/instagram/change-logs/${Uri.encodeComponent(username)}'"'),
+        headers: await AuthService().jsonHeaders(),
+      ).timeout(const Duration(seconds: 15));
+      return r.statusCode == 204 || r.statusCode == 200;
+    } catch (_) {}
+    return false;
+  }
+
   /// Retorna curtidas e comentários detectados para o username monitorado.
   static Future<Map<String, dynamic>?> fetchInteracoes(String username, {int limit = 20}) async {
     try {

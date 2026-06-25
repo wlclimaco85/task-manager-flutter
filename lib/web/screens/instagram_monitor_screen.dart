@@ -432,6 +432,124 @@ class _InstagramMonitorScreenState extends State<InstagramMonitorScreen> with Ti
     }
   }
 
+  /// Abre dialog de confirmacao para apagar timeline
+  void _confirmarApagarTimeline() {
+    showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text('Apagar Timeline?'),
+        content: Text(
+          'Isso removerá o histórico de eventos (curtidas, comentários, bio) de um perfil. Esta ação não pode ser desfeita.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancelar'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.pop(context);
+              _apagarTimeline();
+            },
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+            child: const Text('Apagar', style: TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Apaga timeline do perfil monitorado
+  Future<void> _apagarTimeline() async {
+    try {
+      final sucesso = await InstagramService.limparTimeline(_currentUsername);
+      if (sucesso && mounted) {
+        setState(() => _events = []);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Timeline apagada com sucesso'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      } else if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Erro ao apagar timeline'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Erro: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
+  /// Abre dialog de confirmacao para apagar logs
+  void _confirmarApagarLogs() {
+    showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text('Apagar Logs?'),
+        content: Text(
+          'Isso removerá o histórico de mudanças de um perfil. Esta ação não pode ser desfeita.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancelar'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.pop(context);
+              _apagarLogs();
+            },
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+            child: const Text('Apagar', style: TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Apaga change logs do perfil monitorado
+  Future<void> _apagarLogs() async {
+    try {
+      final sucesso = await InstagramService.limparChangeLogs(_currentUsername);
+      if (sucesso && mounted) {
+        _loadChangeLogs(_currentUsername);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Logs apagados com sucesso'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      } else if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Erro ao apagar logs'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Erro: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
   // --- Painel de perfis monitorados (20% da altura, scroll horizontal) ---
 
   Widget _buildPainelMonitorados(double alturaPanel) {
@@ -1237,11 +1355,49 @@ class _InstagramMonitorScreenState extends State<InstagramMonitorScreen> with Ti
           ),
           SingleChildScrollView(
             padding: const EdgeInsets.all(16),
-            child: _events.isEmpty ? _buildEmptyTimeline() : _buildTimelineList(),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: ElevatedButton.icon(
+                    onPressed: _events.isEmpty ? null : () => _confirmarApagarTimeline(),
+                    icon: const Icon(Icons.delete_outline, size: 16),
+                    label: const Text('Apagar Timeline'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.red,
+                      foregroundColor: Colors.white,
+                      disabledBackgroundColor: Colors.grey[300],
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                _events.isEmpty ? _buildEmptyTimeline() : _buildTimelineList(),
+              ],
+            ),
           ),
           SingleChildScrollView(
             padding: const EdgeInsets.all(16),
-            child: _buildChangeLogsSection(),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: ElevatedButton.icon(
+                    onPressed: _events.isEmpty ? null : () => _confirmarApagarLogs(),
+                    icon: const Icon(Icons.delete_outline, size: 16),
+                    label: const Text('Apagar Logs'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.red,
+                      foregroundColor: Colors.white,
+                      disabledBackgroundColor: Colors.grey[300],
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                _buildChangeLogsSection(),
+              ],
+            ),
           ),
           _buildDashboardTab(),
           _buildHistoricoTab(),
