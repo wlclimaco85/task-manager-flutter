@@ -51,6 +51,7 @@ class GridFormDialog extends StatefulWidget {
 class _GridFormDialogState extends State<GridFormDialog> {
   final Map<String, TextEditingController> _controllers = {};
   final Map<String, List<PlatformFile>> _fileCache = {};
+  final _formKey = GlobalKey<FormState>();
   bool _saving = false;
 
   @override
@@ -117,15 +118,18 @@ class _GridFormDialogState extends State<GridFormDialog> {
             const Divider(height: 20, thickness: 1, color: Color(0xFFEEEEEE)),
             // ── Campos ─────────────────────────────────────────────────────
             Expanded(
-              child: SingleChildScrollView(
-                child: Column(
-                  children: widget.fieldConfigs
-                      .where((c) => c.isInForm)
-                      .map((c) => Padding(
-                            padding: const EdgeInsets.only(bottom: 12),
-                            child: _buildFormField(c),
-                          ))
-                      .toList(),
+              child: Form(
+                key: _formKey,
+                child: SingleChildScrollView(
+                  child: Column(
+                    children: widget.fieldConfigs
+                        .where((c) => c.isInForm)
+                        .map((c) => Padding(
+                              padding: const EdgeInsets.only(bottom: 12),
+                              child: _buildFormField(c),
+                            ))
+                        .toList(),
+                  ),
                 ),
               ),
             ),
@@ -230,11 +234,17 @@ class _GridFormDialogState extends State<GridFormDialog> {
 
   Widget _textField(FieldConfig c, TextEditingController ctrl,
       {int? maxLines}) {
-    return TextField(
+    return TextFormField(
       controller: ctrl,
       enabled: c.enabled,
       maxLines: maxLines ?? c.maxLines,
       style: const TextStyle(color: Color(0xFF212121)),
+      validator: (v) {
+        if (c.isRequired && (v?.isEmpty ?? true)) {
+          return '${c.label} é obrigatório';
+        }
+        return c.validator?.call(v);
+      },
       decoration: InputDecoration(
         labelText: c.label + (c.isRequired ? ' *' : ''),
         labelStyle: const TextStyle(color: Color(0xFF757575)),
@@ -260,11 +270,17 @@ class _GridFormDialogState extends State<GridFormDialog> {
           _buscarCepEPreencher(cep);
         }
       },
-      child: TextField(
+      child: TextFormField(
         controller: ctrl,
         enabled: c.enabled,
         maxLines: 1,
         style: const TextStyle(color: Color(0xFF212121)),
+        validator: (v) {
+          if (c.isRequired && (v?.isEmpty ?? true)) {
+            return '${c.label} é obrigatório';
+          }
+          return c.validator?.call(v);
+        },
         decoration: InputDecoration(
           labelText: c.label + (c.isRequired ? ' *' : ''),
           labelStyle: const TextStyle(color: Color(0xFF757575)),
@@ -570,6 +586,10 @@ class _GridFormDialogState extends State<GridFormDialog> {
 
   Future<void> _save() async {
     if (_saving) return;
+    if (!(_formKey.currentState?.validate() ?? false)) {
+      setState(() => _saving = false);
+      return;
+    }
     setState(() => _saving = true);
 
     try {
