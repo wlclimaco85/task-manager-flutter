@@ -690,7 +690,7 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
     }
 
     // Último item = Mais
-    addItem(icon: Icons.more_horiz, label: "Mais");
+    addItem(icon: Icons.apps_rounded, label: "Mais");
 
     return items;
   }

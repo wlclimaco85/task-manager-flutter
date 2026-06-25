@@ -754,8 +754,28 @@ class _WindowsCalendarScreenState extends State<WindowsCalendarScreen> {
             padding: const EdgeInsets.fromLTRB(8, 4, 8, 6),
             child: Row(
               children: [
-                // Espaço espelho à esquerda para manter os toggles centrados
-                const SizedBox(width: 60),
+                // Botão refresh à esquerda — simétrico com "Hoje" à direita
+                SizedBox(
+                  width: 60,
+                  child: _loadingMonth
+                      ? const Center(
+                          child: SizedBox(
+                            width: 16,
+                            height: 16,
+                            child: CircularProgressIndicator(
+                              color: Colors.white,
+                              strokeWidth: 2,
+                            ),
+                          ),
+                        )
+                      : IconButton(
+                          icon: const Icon(Icons.refresh,
+                              color: Colors.white, size: 20),
+                          tooltip: 'Atualizar',
+                          padding: EdgeInsets.zero,
+                          onPressed: () => _loadMonthMarkers(_currentMonth),
+                        ),
+                ),
                 // Toggles centralizados sem sobreposição
                 Expanded(
                   child: Row(
