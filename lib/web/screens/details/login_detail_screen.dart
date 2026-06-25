@@ -13,6 +13,9 @@ class WebLoginDetailScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final loginId = item.id?.toString() ?? '';
+    final empresaId = item.empresaId?.toString() ?? '';
+    final parceiroId = item.parceiroId?.toString() ?? '';
+
     return GenericDetailFormScreen(
       item: item.toJson(),
       telaNome: 'login',
@@ -22,7 +25,7 @@ class WebLoginDetailScreen extends StatelessWidget {
           title: 'Roles',
           icon: Icons.security,
           telaNome: 'role',
-          extraParams: {'loginId': loginId},
+          extraParams: {'loginId': loginId, 'empresaId': empresaId, 'parceiroId': parceiroId},
           // "Excluir" nesta aba DESVINCULA a role do login (não apaga a role).
           // Backend: DELETE /api/logins/{loginId}/roles/{roleId} (removerRole).
           deleteEndpointOverride:
