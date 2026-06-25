@@ -683,7 +683,7 @@ class InstagramService {
   static Future<bool> limparTimeline(String username) async {
     try {
       final r = await http.delete(
-        Uri.parse('"'$_backendUrl/api/instagram/timeline/${Uri.encodeComponent(username)}'"'),
+        Uri.parse('$_backendUrl/api/instagram/timeline/${Uri.encodeComponent(username)}'),
         headers: await AuthService().jsonHeaders(),
       ).timeout(const Duration(seconds: 15));
       return r.statusCode == 204 || r.statusCode == 200;
@@ -695,7 +695,7 @@ class InstagramService {
   static Future<bool> limparChangeLogs(String username) async {
     try {
       final r = await http.delete(
-        Uri.parse('"'$_backendUrl/api/instagram/change-logs/${Uri.encodeComponent(username)}'"'),
+        Uri.parse('$_backendUrl/api/instagram/change-logs/${Uri.encodeComponent(username)}'),
         headers: await AuthService().jsonHeaders(),
       ).timeout(const Duration(seconds: 15));
       return r.statusCode == 204 || r.statusCode == 200;

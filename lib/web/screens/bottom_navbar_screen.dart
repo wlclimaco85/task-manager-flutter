@@ -215,6 +215,7 @@ class _WebBottomNavBarScreenState extends State<WebBottomNavBarScreen> {
         child: _screens[widgetIndex],
       ),
       screenIndex: screenIndex,
+      openedAt: DateTime.now(),
     );
   }
 

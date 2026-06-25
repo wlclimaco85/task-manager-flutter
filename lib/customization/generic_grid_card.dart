@@ -31,6 +31,8 @@ enum FieldType {
   phone,
   cpf,
   cnpj,
+  cpfCnpj,
+  cep,
   currency,
   percentage,
   url,

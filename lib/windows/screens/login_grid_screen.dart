@@ -15,16 +15,14 @@ class WindowsLoginGridScreen extends StatelessWidget {
   const WindowsLoginGridScreen({super.key, required this.hasPermission});
 
   static Future<List<Map<String, dynamic>>> loadRoles() async {
-    final response = await NetworkCaller().getRequest('${ApiLinks.baseUrl}/api/role');
+    final response = await NetworkCaller().getRequest('${ApiLinks.baseUrl}/api/role/disponiveis');
     if (response.isSuccess && response.body != null) {
-      final body = response.body!;
+      final dynamic body = response.body;
       List lista = [];
-      if (body['data'] is Map && body['data']['dados'] is List) {
-        lista = body['data']['dados'] as List;
-      } else if (body['data'] is List) {
+      if (body is List) {
+        lista = body;
+      } else if (body is Map && body['data'] is List) {
         lista = body['data'] as List;
-      } else if (body is List) {
-        lista = body as List;
       }
       return lista
           .map((e) {

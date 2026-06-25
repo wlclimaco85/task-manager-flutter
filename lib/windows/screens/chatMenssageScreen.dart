@@ -266,50 +266,6 @@ class _WindowsChatMessageScreenState extends State<WindowsChatMessageScreen> {
     _showSnack('Solicitacao de chamado enviada');
   }
 
-  Future<void> _correctDraft() async {
-    final text = _messageController.text.trim();
-    if (text.isEmpty) return;
-    try {
-      final result = await AiAssistantService().correctMessage(text: text);
-      _messageController.text = result.correctedText;
-      _messageController.selection = TextSelection.collapsed(
-        offset: _messageController.text.length,
-      );
-    } catch (e) {
-      _showSnack('Erro ao corrigir mensagem: $e', error: true);
-    }
-  }
-
-  Future<void> _summarizeChat() async {
-    try {
-      final result = await AiAssistantService().summarizeChat(
-        chatId: widget.chatId,
-        messages: _messages
-            .map((m) => m.content.isNotEmpty ? m.content : (m.text ?? ''))
-            .where((m) => m.trim().isNotEmpty)
-            .toList(),
-      );
-      if (!mounted) return;
-      showDialog<void>(
-        context: context,
-        builder: (_) => AlertDialog(
-          title: const Text('Resumo do atendimento'),
-          content: Text(
-            '${result.summary}\n\nPrioridade: ${result.priority}\nSentimento: ${result.sentiment}',
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('Fechar'),
-            ),
-          ],
-        ),
-      );
-    } catch (e) {
-      _showSnack('Erro ao resumir atendimento: $e', error: true);
-    }
-  }
-
   Future<void> _downloadFile(int fileId, String fileName) async {
     try {
       final response = await http.get(
@@ -423,8 +379,6 @@ class _WindowsChatMessageScreenState extends State<WindowsChatMessageScreen> {
           onAttach: _uploadAndSendFile,
           onTicket: _createTicket,
           onSend: _sendMessage,
-          onCorrect: _correctDraft,
-          onSummarize: _summarizeChat,
         ),
       ],
     );
