@@ -41,7 +41,7 @@ enum AppScreen {
   unidadeMedida, catalogoProduto, nfeSerie, pdvNfce, configFiscal,
   // NFS-e (Notas Fiscais de Servico — modulo separado de Notas Fiscais NF-e)
   nfse,
-  nfseLista, nfseSerie,
+  nfseLista, nfseSerie, nfseServico,
   // Dashboards por área (Fase 171 — fundação)
   dashAtendimentoArea, dashFinanceiroArea, dashComercialArea,
   dashDpArea, dashFiscalArea,

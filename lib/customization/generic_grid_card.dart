@@ -147,12 +147,14 @@ class CustomAction<T> {
   final String label;
   final void Function(BuildContext context, T item) onPressed;
   final bool Function(T item)? isVisible;
+  final int Function(T item)? badgeCount;
 
   const CustomAction({
     required this.icon,
     required this.label,
     required this.onPressed,
     this.isVisible,
+    this.badgeCount,
   });
 }
 
@@ -186,6 +188,7 @@ class GenericMobileGridScreen<T> extends StatefulWidget {
   // NOVA PROPRIEDADE SIMPLES
   final Map<String, dynamic>? additionalFormData;
   final Map<String, dynamic> Function(T? item)? dynamicAdditionalFormData;
+  final Widget? infoBanner;
 
   const GenericMobileGridScreen({
     super.key,
@@ -215,6 +218,7 @@ class GenericMobileGridScreen<T> extends StatefulWidget {
     this.onBannerRefresh,
     this.additionalFormData, // NOVO PARÂMETRO
     this.dynamicAdditionalFormData, // NOVO: Para dados dinâmicos
+    this.infoBanner,
   });
 
   @override

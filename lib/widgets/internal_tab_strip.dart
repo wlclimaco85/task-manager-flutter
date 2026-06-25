@@ -179,6 +179,78 @@ class _TabChipState extends State<_TabChip> {
   }
 }
 
+/// Exibe um diálogo de seleção múltipla de abas para fechamento.
+///
+/// Retorna os índices das abas marcadas, ou `null` se o usuário cancelar.
+/// Usado quando o limite de abas abertas é atingido e o usuário precisa
+/// escolher quais fechar antes de abrir uma nova.
+Future<List<int>?> showTabLimitDialog({
+  required BuildContext context,
+  required List<OpenTab> tabs,
+  required String newTabLabel,
+  bool isCompact = false,
+}) {
+  final selected = <int>{};
+  return showDialog<List<int>>(
+    context: context,
+    builder: (ctx) {
+      return StatefulBuilder(
+        builder: (context, setState) {
+          return AlertDialog(
+            title: Text('Abrir "$newTabLabel"'),
+            content: SizedBox(
+              width: double.maxFinite,
+              child: ListView(
+                shrinkWrap: true,
+                children: [
+                  const Text('Selecione as abas que deseja fechar:'),
+                  const SizedBox(height: 8),
+                  ...List.generate(tabs.length, (i) {
+                    final tab = tabs[i];
+                    return CheckboxListTile(
+                      value: selected.contains(i),
+                      onChanged: (val) {
+                        setState(() {
+                          if (val == true) {
+                            selected.add(i);
+                          } else {
+                            selected.remove(i);
+                          }
+                        });
+                      },
+                      title: Text(tab.label),
+                      secondary: FaIcon(tab.icon, size: 16),
+                      dense: isCompact,
+                    );
+                  }),
+                ],
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(ctx).pop(null),
+                child: const Text('Cancelar'),
+              ),
+              TextButton(
+                onPressed: () => Navigator.of(ctx).pop(
+                  List.generate(tabs.length, (i) => i),
+                ),
+                child: const Text('Fechar todas e abrir'),
+              ),
+              FilledButton(
+                onPressed: selected.isEmpty
+                    ? null
+                    : () => Navigator.of(ctx).pop(selected.toList()),
+                child: const Text('Fechar selecionadas e abrir'),
+              ),
+            ],
+          );
+        },
+      );
+    },
+  );
+}
+
 /// Retorna o índice da aba aberta há mais tempo (menor [OpenTab.openedAt]).
 ///
 /// "Mais antiga" aqui significa ordem de abertura (openedAt), não último

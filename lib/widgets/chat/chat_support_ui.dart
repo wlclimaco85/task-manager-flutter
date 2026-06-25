@@ -347,6 +347,8 @@ class ChatComposer extends StatelessWidget {
   final VoidCallback onAttach;
   final VoidCallback onTicket;
   final VoidCallback onSend;
+  final VoidCallback? onCorrect;
+  final VoidCallback? onSummarize;
 
   const ChatComposer({
     super.key,
@@ -354,6 +356,8 @@ class ChatComposer extends StatelessWidget {
     required this.onAttach,
     required this.onTicket,
     required this.onSend,
+    this.onCorrect,
+    this.onSummarize,
   });
 
   @override

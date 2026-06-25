@@ -965,6 +965,10 @@ class ApiLinks {
   static String nfse(String id) => '$_baseUrlNew/api/nfse/$id';
   static String get allNfseSerie => '$_baseUrlNew/api/nfse_serie';
   static String nfseSerie(String id) => '$_baseUrlNew/api/nfse_serie/$id';
+  // NFS-e config
+  static String nfseConfig(int empresaId) =>
+      '$_baseUrlNew/api/nfse-config?empresaId=$empresaId';
+  static String get nfseConfigSalvar => '$_baseUrlNew/api/nfse-config';
 
   // Dashboard de mensalidades/modulos (pago/atrasado/pendente) + relatorio PDF
   static String get mensalidadeDashboard =>
