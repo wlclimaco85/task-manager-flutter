@@ -124,16 +124,6 @@ class MobileAlvaraScreen extends StatelessWidget {
         availableRowsPerPage: [10, 25, 50],
       ),
       storageKey: 'alvara_mobile_grid',
-      customActions: () => [
-        CustomAction<AlvaraModel>(
-          icon: Icons.edit,
-          label: 'Editar',
-          isVisible: (item) => item.id != null,
-          onPressed: (context, item) {
-            // O GenericMobileGridScreen trata edição via swipe/menu interno
-          },
-        ),
-      ],
     );
   }
 }

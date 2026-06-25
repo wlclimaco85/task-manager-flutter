@@ -43,6 +43,7 @@ import 'nfse_serie_screen.dart';
 import 'extrato_importacao_screen.dart' show MobileExtratoImportacaoScreen;
 import '../../web/screens/cobranca_automatica_screen.dart';
 import '../../widgets/user_banners.dart';
+import 'alvara_screen.dart';
 import '../../widgets/dashboard_area/placeholder/dashboard_atendimento_placeholder_screen.dart';
 
 class BottomNavBarScreen extends StatefulWidget {
@@ -943,9 +944,9 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
         );
         break;
       case "Alvarás":
-        nav = _pushDynamicGrid(
-          telaNome: 'alvara',
-          sec: sec,
+        nav = Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => const MobileAlvaraScreen()),
         );
         break;
       case "Meu Perfil":
