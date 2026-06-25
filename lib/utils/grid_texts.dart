@@ -349,7 +349,8 @@ class GridTexts {
   static const String execute = 'Executar';
   static const String generateMockData = 'Gerar Dados Mock';
   static const String generateMockDataDesc =
-      'Popula: Parceiros, Funcionários, Pontos, NF-e, Chamados, Contas, Comunicados';
+      'Histórico integrado: Comercial, Contábil, Financeiro, Produtos, DP, '
+      'Chat, OS, GED, NFC-e e NFS-e';
   static const String companyIdOptionalCreate =
       'Empresa ID (vazio = criar nova)';
   static const String baseQuantity = 'Quantidade base';

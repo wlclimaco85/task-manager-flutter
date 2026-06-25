@@ -243,7 +243,8 @@ class _ConfiguracoesSistemaScreenState
                         style: TextStyle(
                             fontWeight: FontWeight.w600, fontSize: 14)),
                     Text(
-                        'Popula: Parceiros, Funcionarios, Pontos, NF-e, Chamados, Contas, Comunicados',
+                        'Histórico integrado: Comercial, Contábil, Financeiro, '
+                        'Produtos, DP, Chat, OS, GED, NFC-e e NFS-e',
                         style: TextStyle(fontSize: 11, color: Colors.grey)),
                   ])),
             ]),
