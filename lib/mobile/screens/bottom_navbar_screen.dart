@@ -7,8 +7,6 @@ import 'package:task_manager_flutter/models/auth_utility.dart';
 import 'package:task_manager_flutter/services/alert_caller.dart';
 import 'package:task_manager_flutter/utils/grid_colors.dart';
 import 'package:task_manager_flutter/utils/security_matrix.dart';
-import 'package:task_manager_flutter/utils/module_priority.dart';
-import 'package:task_manager_flutter/widgets/contextual_home_screen.dart';
 
 import '../../customization/dynamic_grid_dynamic_screen.dart';
 import '../../customization/generic_grid/grid_models.dart'
@@ -41,6 +39,7 @@ import 'parceiro_grid_screen.dart';
 import 'login_grid_screen.dart';
 import 'nfse_consulta_screen.dart';
 import 'nfse_serie_screen.dart';
+import 'nfse_config_screen.dart';
 import 'extrato_importacao_screen.dart' show MobileExtratoImportacaoScreen;
 import '../../web/screens/cobranca_automatica_screen.dart';
 import '../../widgets/user_banners.dart';
@@ -186,11 +185,12 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
   List<Widget> _buildScreens(SecurityMatrix sec) {
     final items = <Widget>[];
 
-    // 1. Início (sempre visível)
-    items.add(ContextualHomeScreen(
-      key: const ValueKey('inicio'),
-      onNavigate: (rota) => _navigateFromInicio(rota, sec),
-    ));
+    // 1. Início = Calendário Financeiro (gateado)
+    items.add(
+      sec.canView(AppScreen.calendario)
+          ? const CalendarScreen(key: ValueKey('inicio_calendario'))
+          : _buildGatedPlaceholder('Calendário indisponível'),
+    );
 
     // 2. Chat (gateado)
     items.add(
@@ -212,15 +212,21 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
           : _buildGatedPlaceholder('Comunicados indisponível'),
     );
 
-    // 4. Slot dinâmico do módulo de maior prioridade (gateado)
-    final slot = _dynamicSlotInfo();
-    if (slot != null) {
-      items.add(_buildDynamicModuleScreen(slot.rota, sec));
-    } else {
-      items.add(_buildGatedPlaceholder('Nenhum módulo disponível'));
-    }
+    // 4. Chamados (gateado)
+    items.add(
+      sec.canView(AppScreen.chamados)
+          ? _chamadoGridInline(sec: sec)
+          : _buildGatedPlaceholder('Chamados indisponível'),
+    );
 
-    // 5. Mais (sempre presente — abre bottom sheet)
+    // 5. GED (gateado)
+    items.add(
+      sec.canView(AppScreen.ged)
+          ? _gedDynamicGrid(sec)
+          : _buildGatedPlaceholder('GED indisponível'),
+    );
+
+    // 6. Mais (sempre presente — abre bottom sheet)
     items.add(Container(key: const ValueKey('mais')));
 
     return items;
@@ -229,106 +235,6 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
   /// Placeholder para slots sem permissão (evita IndexedStack quebrar).
   Widget _buildGatedPlaceholder(String msg) {
     return const SizedBox.shrink();
-  }
-
-  /// Constrói o widget do slot dinâmico baseado na rota do módulo.
-  Widget _buildDynamicModuleScreen(String rota, SecurityMatrix sec) {
-    switch (rota) {
-      case 'pdv':
-        return const PdvScreen(key: ValueKey('dynamic_pdv'));
-      case 'nfse':
-        return NfseConsultaScreen(
-          key: const ValueKey('dynamic_nfse'),
-          hasPermission: (action) =>
-              _hasPermissionFor(sec, AppScreen.nfseLista, action),
-        );
-      case 'contas_pagar':
-        return ContaPagarGridScreen(
-          key: const ValueKey('dynamic_contas_pagar'),
-          hasPermission: (action) =>
-              _hasPermissionFor(sec, AppScreen.contasPagar, action),
-        );
-      case 'calendario':
-        return const CalendarScreen(key: ValueKey('dynamic_calendario'));
-      case 'ponto':
-        return const PontoScreen(key: ValueKey('dynamic_ponto'));
-      case 'pedidos_venda':
-        return Container(key: const ValueKey('dynamic_pedidos_venda'));
-      default:
-        return _buildGatedPlaceholder('Módulo não disponível');
-    }
-  }
-
-  /// Navega a partir dos atalhos da ContextualHomeScreen para a tela correta
-  /// ou para o slot dinâmico na BottomNav.
-  void _navigateFromInicio(String rota, SecurityMatrix sec) {
-    // Se a rota for uma das telas dos slots fixos, muda o tab.
-    final slotIndexMap = <String, int>{
-      'chat': 1,
-    };
-    if (slotIndexMap.containsKey(rota)) {
-      setState(() => selectedIndex = slotIndexMap[rota]!);
-      return;
-    }
-
-    // Tenta encontrar o índice do slot dinâmico
-    final slot = _dynamicSlotInfo();
-    if (slot != null && slot.rota == rota) {
-      // O slot dinâmico está na posição 3 (após Inicio=0, Chat=1, Comunicados=2)
-      setState(() => selectedIndex = 3);
-      return;
-    }
-
-    // Fallback: navegação push normal
-    onMenuOptionSelected(_rotaParaLabel(rota), sec);
-  }
-
-  /// Mapa auxiliar: rota → label que o onMenuOptionSelected entende.
-  String _rotaParaLabel(String rota) {
-    return switch (rota) {
-      'pdv' => 'PDV',
-      'nfse' => 'Notas de Serviço (NFS-e)',
-      'contas_pagar' => 'Contas Pagar',
-      'calendario' => 'Calendario',
-      'ponto' => 'Bater Ponto',
-      'produtos' => 'Produtos',
-      'parceiros' => 'Parceiros',
-      'pedidos_venda' => 'Pedidos Venda',
-      'dashboard' => 'Dashboard',
-      'chat' => 'Chat',
-      'comunicados' => 'Comunicados',
-      'chamados' => 'Chamados',
-      _ => rota,
-    };
-  }
-
-  /// Retorna informações do slot dinâmico baseado no módulo de maior prioridade.
-  _DynamicSlot? _dynamicSlotInfo() {
-    final contratados = ModuloAccess.modulosContratados;
-    final modulo = ModulePriority.highest(contratados);
-
-    if (modulo == null) return null;
-    final limitado =
-        modulo == 'Financeiro' && SecurityMatrix.current().isFinanceiroLimitado;
-
-    return switch (modulo) {
-      'Comercial' => _DynamicSlot(Icons.point_of_sale, 'PDV', 'pdv'),
-      'NFS-e' => _DynamicSlot(Icons.description, 'NFS-e', 'nfse'),
-      'Financeiro' => limitado
-          ? _DynamicSlot(Icons.payments, 'Contas Pagar', 'contas_pagar')
-          : _DynamicSlot(Icons.calendar_month, 'Calendário', 'calendario'),
-      'Departamento Pessoal' =>
-        _DynamicSlot(Icons.access_time, 'Bater Ponto', 'ponto'),
-      _ => _DynamicSlot(Icons.apps, modulo, modulo),
-    };
-  }
-
-  /// Navega a partir do slot dinâmico da BottomNav.
-  void _onDynamicSlotTap() {
-    final slot = _dynamicSlotInfo();
-    if (slot != null) {
-      onMenuOptionSelected(slot.label, SecurityMatrix.current());
-    }
   }
 
   Widget _gedDynamicGrid(SecurityMatrix sec) {
@@ -678,18 +584,12 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
       ));
     }
 
-    // 4 slots fixos
+    // 6 slots fixos
     addItem(icon: Icons.home, label: "Início");
     addItem(icon: Icons.chat, label: "Chat");
     addItem(icon: Icons.campaign, label: "Comunicados");
-
-    // Slot dinâmico do módulo de maior prioridade
-    final slot = _dynamicSlotInfo();
-    if (slot != null) {
-      addItem(icon: slot.icon, label: slot.label);
-    } else {
-      addItem(icon: Icons.apps, label: "Módulo");
-    }
+    addItem(icon: Icons.support_agent, label: "Chamados");
+    addItem(icon: Icons.folder_open, label: "GED");
 
     // Último item = Mais
     addItem(icon: Icons.apps_rounded, label: "Mais");
@@ -862,6 +762,12 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
                   _hasPermissionFor(sec, AppScreen.nfseSerie, action),
             ),
           ),
+        );
+        break;
+      case "Config ISS":
+        nav = Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => const NfseConfigScreen()),
         );
         break;
       case "Produtos":
@@ -1074,16 +980,10 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
           showUnselectedLabels: true,
           type: BottomNavigationBarType.fixed,
           onTap: (int index) {
-            // Índice fixo: 0=Início, 1=Chat, 2=Comunicados, 3=Slot Dinâmico, 4=Mais
-            if (index == 4) {
+            // Índice fixo: 0=Início(Calendário), 1=Chat, 2=Comunicados, 3=Chamados, 4=GED, 5=Mais
+            if (index == 5) {
               // Último slot = Mais → abre bottom sheet agrupado
               _showMenuOptions(context, sec);
-            } else if (index == 3) {
-              // Slot dinâmico: verifica permissão antes de navegar
-              final slot = _dynamicSlotInfo();
-              if (slot != null) {
-                setState(() => selectedIndex = 3);
-              }
             } else {
               setState(() => selectedIndex = index);
             }
@@ -1147,6 +1047,8 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
             _MoreMenuAction(Icons.file_copy, 'Notas de Serviço (NFS-e)'),
           if (sec.canView(AppScreen.nfseSerie))
             _MoreMenuAction(Icons.tag, 'Séries NFS-e'),
+          if (sec.canView(AppScreen.configFiscal))
+            _MoreMenuAction(Icons.settings, 'Config ISS'),
         ],
       ),
       _ModuloGroup(
@@ -1420,12 +1322,4 @@ class _ModuloGroup {
   final List<_MoreMenuAction> items;
 
   const _ModuloGroup(this.nome, this.icon, this.items);
-}
-
-/// Informações do slot dinâmico da BottomNavBar.
-class _DynamicSlot {
-  final IconData icon;
-  final String label;
-  final String rota;
-  const _DynamicSlot(this.icon, this.label, this.rota);
 }
