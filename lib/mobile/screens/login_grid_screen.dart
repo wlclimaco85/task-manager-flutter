@@ -2,9 +2,11 @@ import 'package:flutter/material.dart';
 
 import '../../customization/dynamic_grid_dynamic_screen.dart';
 import '../../customization/generic_grid/grid_models.dart';
+import '../../models/login_model.dart';
 import '../../models/network_response.dart';
 import '../../services/network_caller.dart';
 import '../../utils/api_links.dart';
+import 'details/login_detail_screen.dart';
 
 class LoginGridScreen extends StatelessWidget {
   final SecurityCheck hasPermission;
@@ -87,6 +89,10 @@ class LoginGridScreen extends StatelessWidget {
       telaNome: 'login',
       hasPermission: hasPermission,
       onUserBannerTapped: onUserBannerTapped,
+      detailScreenBuilder: (item) => MobileLoginDetailScreen(
+        item: Login.fromJson(item as Map<String, dynamic>),
+        hasPermission: hasPermission,
+      ),
       fieldOverrides: [
         FieldConfig(
           label: 'Roles',
