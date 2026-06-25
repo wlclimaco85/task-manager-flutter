@@ -38,6 +38,7 @@ import 'conta_pagar_grid_screen.dart';
 import 'conta_receber_grid_screen.dart';
 import 'conta_bancaria_grid_screen.dart';
 import 'parceiro_grid_screen.dart';
+import 'login_grid_screen.dart';
 import 'nfse_consulta_screen.dart';
 import 'nfse_serie_screen.dart';
 import 'extrato_importacao_screen.dart' show MobileExtratoImportacaoScreen;
@@ -830,6 +831,17 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
           ),
         );
         break;
+      case "Usuários":
+        nav = Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => LoginGridScreen(
+              hasPermission: (action) =>
+                  _hasPermissionFor(sec, AppScreen.logins, action),
+            ),
+          ),
+        );
+        break;
       case "Notas de Serviço (NFS-e)":
         nav = Navigator.push(
           context,
@@ -1147,6 +1159,8 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
             _MoreMenuAction(Icons.support_agent, 'Atendimento'),
           if (sec.canView(AppScreen.mensalidades))
             _MoreMenuAction(Icons.receipt_long, 'Mensalidades'),
+          if (sec.canView(AppScreen.logins))
+            _MoreMenuAction(Icons.manage_accounts, 'Usuários'),
           _MoreMenuAction(Icons.verified_user, 'Alvarás'),
           _MoreMenuAction(Icons.account_circle, 'Meu Perfil'),
           _MoreMenuAction(Icons.settings, 'Config Fiscal'),
