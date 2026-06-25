@@ -116,9 +116,12 @@ class _SolicitacaoAcessoScreenState extends State<SolicitacaoAcessoScreen> {
         final msg = (body['response'] as Map<String, dynamic>?)?['message']
             ?.toString();
         if (msg != null && msg.isNotEmpty) mensagem = msg;
-      } catch (_) {}
+      } catch (e) {
+        debugPrint('[SolicitacaoAcessoScreen] falha ao parsear corpo do erro: $e');
+      }
 
-      if (response.statusCode != 400 && response.statusCode != 409) {
+      // Controller atual so retorna 201 ou 409; qualquer outro status e inesperado.
+      if (response.statusCode != 409) {
         debugPrint(
             '[SolicitacaoAcessoScreen] erro inesperado statusCode=${response.statusCode} body=${response.body}');
       }
