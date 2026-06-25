@@ -482,6 +482,7 @@ const Map<String, Set<AppScreen>> _moduloToScreens = {
 
 class ModuloAccess {
   static List<String> _modulosContratados = [];
+  static List<String> get modulosContratados => _modulosContratados;
   static bool _loaded = false;
 
   static Future<void> load() async {
@@ -533,8 +534,6 @@ class ModuloAccess {
 
   static List<AppScreen> filter(List<AppScreen> screens) =>
       screens.where((s) => isScreenAllowed(s)).toList();
-
-  static List<String> get modulosContratados => _modulosContratados;
 
   static void reset() { _modulosContratados = []; _loaded = false; }
 

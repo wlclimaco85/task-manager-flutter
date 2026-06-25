@@ -90,7 +90,7 @@ class LoginGridScreen extends StatelessWidget {
       hasPermission: hasPermission,
       onUserBannerTapped: onUserBannerTapped,
       detailScreenBuilder: (item) => MobileLoginDetailScreen(
-        item: Login.fromJson(item as Map<String, dynamic>),
+        item: Login.fromJson(item),
         hasPermission: hasPermission,
       ),
       fieldOverrides: [
