@@ -47,6 +47,8 @@ enum AppScreen {
   dashDpArea, dashFiscalArea,
   // Dashboard de mensalidades do escritorio
   dashMensalidadeArea,
+  // Importação de boletos em lote
+  boletoImportacaoLote,
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -141,6 +143,7 @@ const _escritorioScreens = {
   AppScreen.ged:        _all,
   AppScreen.chat:       _all,
   AppScreen.perfil:     _all,
+  AppScreen.boletoImportacaoLote: _allFinanceiro,
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
