@@ -45,6 +45,13 @@ class ApiLinks {
   // static String login = '$_baseUrl/rest/auth/login';
 
   static String login = '$_baseUrlNew/rest/auth/login';
+  static String get solicitacaoAcesso => '$_baseUrlNew/api/solicitacao-acesso';
+  static String get solicitacaoAcessoPendentes =>
+      '$_baseUrlNew/api/solicitacao-acesso/pendentes';
+  static String solicitacaoAcessoAprovar(int id) =>
+      '$_baseUrlNew/api/solicitacao-acesso/$id/aprovar';
+  static String solicitacaoAcessoRejeitar(int id) =>
+      '$_baseUrlNew/api/solicitacao-acesso/$id/rejeitar';
   static String recoverVerifyEmail(String email) =>
       '$_baseUrl/RecoverVerifyEmail/$email';
   static String recoverVerifyOTP(String email, String otp) =>
@@ -1081,6 +1088,16 @@ class ApiLinks {
       '$_baseUrlNew/api/financeiro/extrato-importacao';
   static String excluirExtratoImportacao(int id) =>
       '$_baseUrlNew/api/financeiro/extrato-importacao/$id';
+
+  // Importação em lote de boletos de mensalidade
+  static String get boletoLoteIniciar =>
+      '$_baseUrlNew/api/importacao/boletos-mensalidade/lote';
+  static String boletoLoteArquivos(String loteId) =>
+      '$_baseUrlNew/api/importacao/boletos-mensalidade/lote/$loteId/arquivos';
+  static String boletoLoteListar(String loteId) =>
+      '$_baseUrlNew/api/importacao/boletos-mensalidade/lote/$loteId';
+  static String boletoLoteConfirmar(String loteId) =>
+      '$_baseUrlNew/api/importacao/boletos-mensalidade/lote/$loteId/confirmar';
 
   // Dashboard Financeiro Gerencial
   static const String dashboardFinanceiro =

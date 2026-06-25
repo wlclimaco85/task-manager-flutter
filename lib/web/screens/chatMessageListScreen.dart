@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
 
 import '../../../models/chamado_model.dart';
+import '../../../utils/api_links.dart';
 import '../../../utils/grid_colors.dart';
+import '../../../utils/tenant_context.dart';
 import '../../../widgets/chat/chat_support_ui.dart';
 import '../../services/chat_caller.dart';
 import './chatMenssageScreen.dart';
@@ -198,28 +201,48 @@ class _WebChatListScreenState extends State<WebChatListScreen> {
     );
   }
 
-  void _finalizeChat(Chat chat) {
-    setState(() {
-      final index = _chats.indexWhere((item) => item.chatId == chat.chatId);
-      if (index >= 0) {
-        _chats[index] = Chat(
-          chatId: chat.chatId,
-          sector: chat.sector,
-          lastMessage: chat.lastMessage,
-          timestamp: chat.timestamp,
-          status: 'Finalizado',
-        );
+  Future<void> _finalizeChat(Chat chat) async {
+    try {
+      final url = TenantContext.applyToUrl(ApiLinks.chatFinalize(chat.chatId));
+      final response = await http.put(Uri.parse(url), headers: TenantContext.headers);
+      if (response.statusCode == 200 || response.statusCode == 204) {
+        setState(() {
+          final index = _chats.indexWhere((item) => item.chatId == chat.chatId);
+          if (index >= 0) {
+            _chats[index] = Chat(
+              chatId: chat.chatId,
+              sector: chat.sector,
+              lastMessage: chat.lastMessage,
+              timestamp: chat.timestamp,
+              status: 'Finalizado',
+            );
+          }
+        });
+        _showSnack('Chat finalizado com sucesso');
+      } else {
+        _showSnack('Erro ao finalizar (${response.statusCode})', error: true);
       }
-    });
-    _showSnack('Chat finalizado com sucesso');
+    } catch (e) {
+      _showSnack('Erro ao finalizar: $e', error: true);
+    }
   }
 
-  void _deleteChat(Chat chat) {
-    setState(() {
-      _chats.removeWhere((item) => item.chatId == chat.chatId);
-      if (_selectedChat?.chatId == chat.chatId) _selectedChat = null;
-    });
-    _showSnack('Chat excluido com sucesso');
+  Future<void> _deleteChat(Chat chat) async {
+    try {
+      final url = TenantContext.applyToUrl(ApiLinks.chatDelete(chat.chatId));
+      final response = await http.delete(Uri.parse(url), headers: TenantContext.headers);
+      if (response.statusCode == 200 || response.statusCode == 204) {
+        setState(() {
+          _chats.removeWhere((item) => item.chatId == chat.chatId);
+          if (_selectedChat?.chatId == chat.chatId) _selectedChat = null;
+        });
+        _showSnack('Chat excluído com sucesso');
+      } else {
+        _showSnack('Erro ao excluir (${response.statusCode})', error: true);
+      }
+    } catch (e) {
+      _showSnack('Erro ao excluir: $e', error: true);
+    }
   }
 
   void _showSnack(String message, {bool error = false}) {
