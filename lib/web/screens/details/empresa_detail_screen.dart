@@ -52,7 +52,7 @@ class WebEmpresaDetailScreen extends StatelessWidget {
   /// Persiste os módulos selecionados após salvar o parceiro.
   /// Envia formato {parceiroId, modulos:[{id, valor}]} para o backend gerar
   /// ContaReceber automaticamente em módulos novos com valor > 0.
-  static Future<void> _salvarModulos(Map<String, dynamic> formData) async {
+  static Future<void> _salvarModulos(Map<String, dynamic> formData, Map<String, dynamic>? item) async {
     final parceiroId = formData['id'];
     if (parceiroId == null) return;
     final raw = formData['modulosServico'] as String? ?? '';
@@ -109,7 +109,7 @@ class WebEmpresaDetailScreen extends StatelessWidget {
           icon: Icons.people,
           telaNome: 'parceiro',
           extraParams: {'empresa': id},
-          onEditItem: _prePopularModulos,
+          prefetchExtraFields: _prePopularModulos,
           onAfterSave: _salvarModulos,
           fieldOverrides: [
             // Ambiente NFS-e do parceiro: enum PRODUCAO/HOMOLOGACAO
