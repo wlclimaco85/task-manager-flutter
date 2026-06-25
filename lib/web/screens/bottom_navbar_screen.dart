@@ -37,6 +37,7 @@ import '../../widgets/dashboard_area/placeholder/dashboard_comercial_placeholder
 import '../../widgets/dashboard_area/placeholder/dashboard_fiscal_placeholder_screen.dart';
 import './dashboard_mensalidade_screen.dart';
 import '../../widgets/boleto_importacao_lote_screen.dart';
+import '../../widgets/solicitacao_acesso_aprovacao_screen.dart';
 import './conta_receber_grid_screen.dart';
 import './lancamento_financeiro_grid_screen.dart';
 import './diretorio_grid_screen.dart';
@@ -472,6 +473,7 @@ class _WebBottomNavBarScreenState extends State<WebBottomNavBarScreen> {
       const DashboardFiscalPlaceholderScreen(), // 146: Dashboard Fiscal (Área)
       const WebDashboardMensalidadeScreen(), // 147: Dashboard de Mensalidades
       const BoletoImportacaoLoteScreen(), // 148: Importação Boletos Lote
+      const SolicitacaoAcessoAprovacaoScreen(), // 149: Solicitações de Acesso
     ];
   }
 

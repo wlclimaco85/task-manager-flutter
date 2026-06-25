@@ -331,6 +331,11 @@ class MenuConfig {
             icon: FontAwesomeIcons.userLock,
             screenIndex: 4),
         MenuItem(
+            id: 'solicitacoes_acesso',
+            label: 'Solicitações de Acesso',
+            icon: FontAwesomeIcons.userCheck,
+            screenIndex: 149),
+        MenuItem(
             id: 'obrigacoes_fiscais',
             label: 'Obrigações Fiscais',
             icon: FontAwesomeIcons.fileInvoiceDollar,
