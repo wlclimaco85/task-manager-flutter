@@ -166,7 +166,7 @@ class _SolicitacaoAcessoScreenState extends State<SolicitacaoAcessoScreen> {
           padding: const EdgeInsets.fromLTRB(24, 24, 24, 28),
           child: ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: 420),
-            child: _buildCard(context, lightInputs: false),
+            child: _buildCard(context, lightInputs: true),
           ),
         ),
       ),
