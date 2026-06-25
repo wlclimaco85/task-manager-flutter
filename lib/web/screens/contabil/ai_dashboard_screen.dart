@@ -22,7 +22,7 @@ class _WebAiDashboardScreenState extends State<WebAiDashboardScreen> {
   final _aiService = AiAnaliseService();
   final _periodoService = PeriodoContabilService();
   final _lancamentoService = LancamentoContabilService();
-  String _periodo = '${DateTime.now().year}-${DateTime.now().month.toString().padLeft(2, '0')}';
+  final String _periodo = '${DateTime.now().year}-${DateTime.now().month.toString().padLeft(2, '0')}';
   Map<String, dynamic>? _dre;
   List<Map<String, dynamic>>? _anomalias;
   Map<String, dynamic>? _obrigacoes;

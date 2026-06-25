@@ -276,7 +276,7 @@ void main() {
           );
           if (cr.statusCode == 200 || cr.statusCode == 201) {
             final dec = jsonDecode(cr.body);
-            _empId = _extractId(dec as Map<String, dynamic>, 'id');
+            _empId = _extractId(dec, 'id');
           }
         } catch (_) {}
         _empId ??= await _firstId(ApiLinks.allEmpresas);
@@ -292,29 +292,27 @@ void main() {
             body: jsonEncode({
               'nome': 'Academia Teste ${_ts()}',
               if (_empId != null) 'codEmpresa': _empId,
-              'audit': {},
+              'audit': const {},
             }),
           );
           if (cr.statusCode == 200 || cr.statusCode == 201) {
             final dec = jsonDecode(cr.body);
-            _academiaId = _extractId(dec as Map<String, dynamic>, 'id');
+            _academiaId = _extractId(dec, 'id');
           }
         } catch (_) {}
         _academiaId ??= await _firstId(ApiLinks.allAcademia);
       }
 
       // ── Busca IDs reais para FKs obrigatórias ───────────────────────────
-      _alunoId = await _firstId('${ApiLinks.baseUrl}/aluno');
-      if (_alunoId == null) {
-        _alunoId = await _postFirstId('${ApiLinks.baseUrl}/aluno', {
-          'nome': _uid('Aluno'),
-          'cpf': _ts().padLeft(11, '0').substring(0, 11),
-          'email': 'aluno${_ts()}@teste.com',
-        });
-      }
-      _parceiroId = await _firstId(ApiLinks.allParceiros);
-      _personalId = await _firstId('${ApiLinks.baseUrl}/api/personal');
-      _nutricionistaId =
+      _alunoId ??= await _firstId('${ApiLinks.baseUrl}/aluno');
+      _alunoId ??= await _postFirstId('${ApiLinks.baseUrl}/aluno', {
+        'nome': _uid('Aluno'),
+        'cpf': _ts().padLeft(11, '0').substring(0, 11),
+        'email': 'aluno${_ts()}@teste.com',
+      });
+      _parceiroId ??= await _firstId(ApiLinks.allParceiros);
+      _personalId ??= await _firstId('${ApiLinks.baseUrl}/api/personal');
+      _nutricionistaId ??=
           await _firstId('${ApiLinks.baseUrl}/api/nutricionistas');
       if (_nutricionistaId == null) {
         _nutricionistaId = await _postFirstId(

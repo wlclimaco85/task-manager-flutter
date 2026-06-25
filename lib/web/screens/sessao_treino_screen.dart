@@ -155,7 +155,7 @@ class _SessaoTreinoScreenState extends State<SessaoTreinoScreen> {
         'repeticoes': int.tryParse(_ctrlRepeticoes.text) ?? 0,
       };
       final resposta = await TenantContext.post(
-        '${ApiLinks.baseUrl}/api/sessoes-treino/${_sessaoId}/series',
+        '${ApiLinks.baseUrl}/api/sessoes-treino/$_sessaoId/series',
         body,
       );
 
@@ -212,7 +212,7 @@ class _SessaoTreinoScreenState extends State<SessaoTreinoScreen> {
         'feedbackTexto': _ctrlFeedbackTexto.text.trim(),
       };
       final resposta = await TenantContext.put(
-        '${ApiLinks.baseUrl}/api/sessoes-treino/${_sessaoId}/finalizar',
+        '${ApiLinks.baseUrl}/api/sessoes-treino/$_sessaoId/finalizar',
         body,
       );
 

@@ -66,7 +66,7 @@ class _WebDreScreenState extends State<WebDreScreen> {
     if (body.containsKey('content') && body['content'] is List) {
       return List<Map<String, dynamic>>.from(body['content']);
     }
-    final values = body.values.where((v) => v is List);
+    final values = body.values.whereType<List>();
     if (values.isNotEmpty) {
       return List<Map<String, dynamic>>.from(values.first);
     }

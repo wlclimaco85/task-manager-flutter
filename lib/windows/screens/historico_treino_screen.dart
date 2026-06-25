@@ -86,7 +86,7 @@ class _HistoricoTreinoScreenState extends State<HistoricoTreinoScreen> {
       final m = dt.month.toString().padLeft(2, '0');
       final h = dt.hour.toString().padLeft(2, '0');
       final min = dt.minute.toString().padLeft(2, '0');
-      return '$d/${m}/${dt.year} $h:$min';
+      return '$d/$m/${dt.year} $h:$min';
     } catch (_) {
       return dataIso.toString();
     }

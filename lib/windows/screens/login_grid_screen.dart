@@ -134,7 +134,7 @@ class WindowsLoginGridScreen extends StatelessWidget {
           isFilterable: true,
           isRequired: true,
         ),
-        const FieldConfigWindows(
+        FieldConfigWindows(
           label: 'Trocar senha no próximo login',
           fieldName: 'trocarSenhaProximoLogin',
           icon: Icons.lock_reset,
