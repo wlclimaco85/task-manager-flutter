@@ -23,6 +23,7 @@ import '../../../web/dialogs/anexo_upload_dialog.dart';
 import '../../../web/dialogs/export_power_bi_dialog.dart';
 import '../../../widgets/finance/boleto_widget.dart';
 import '../../../utils/grid_texts.dart';
+import '../../../utils/security_matrix.dart';
 
 class WebContaPagarGridScreen extends StatefulWidget {
   final SecurityCheck hasPermission;
@@ -314,10 +315,39 @@ class _WebContaPagarGridScreenState extends State<WebContaPagarGridScreen> {
       );
   }
 
+  bool get _isFinanceiroLimitado =>
+      !ModuloAccess.isModuloContratado('Financeiro') &&
+      ModuloAccess.isModuloContratado('Financeiro Limitado');
+
+  Widget _buildBannerLimitado() {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+      color: GridColors.background,
+      child: Row(
+        children: [
+          const Icon(Icons.info_outline, size: 16, color: GridColors.secondary),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              'Estas contas são lançadas pelo seu escritório contábil. '
+              'Você pode visualizar e dar baixa nas contas em aberto.',
+              style: TextStyle(
+                fontSize: 12,
+                color: GridColors.textSecondary.withValues(alpha: 0.75),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Column(
       children: [
+        if (_isFinanceiroLimitado) _buildBannerLimitado(),
         _buildFilterBar(),
         const SizedBox(height: 8),
         Expanded(

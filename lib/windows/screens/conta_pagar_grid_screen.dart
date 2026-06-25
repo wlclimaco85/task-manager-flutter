@@ -15,6 +15,7 @@ import '../../../utils/api_links.dart';
 import '../../../utils/grid_colors.dart';
 import '../../../utils/tenant_context.dart';
 import '../../../utils/grid_texts.dart';
+import '../../../utils/security_matrix.dart';
 import '../../../windows/screens/baixa_dialog.dart';
 import '../../../windows/dialogs/parcelar_conta_dialog.dart';
 import '../../../windows/dialogs/recorrencia_conta_dialog.dart';
@@ -264,10 +265,39 @@ class _WindowsContaPagarGridScreenState
     ];
   }
 
+  bool get _isFinanceiroLimitado =>
+      !ModuloAccess.isModuloContratado('Financeiro') &&
+      ModuloAccess.isModuloContratado('Financeiro Limitado');
+
+  Widget _buildBannerLimitado() {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+      color: GridColors.background,
+      child: Row(
+        children: [
+          const Icon(Icons.info_outline, size: 16, color: GridColors.secondary),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              'Estas contas são lançadas pelo seu escritório contábil. '
+              'Você pode visualizar e dar baixa nas contas em aberto.',
+              style: TextStyle(
+                fontSize: 12,
+                color: GridColors.textSecondary.withValues(alpha: 0.75),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Column(
       children: [
+        if (_isFinanceiroLimitado) _buildBannerLimitado(),
         ..._buildFilterBar(),
         const SizedBox(height: 8),
         Expanded(

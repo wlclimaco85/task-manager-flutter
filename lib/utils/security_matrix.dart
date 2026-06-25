@@ -378,6 +378,10 @@ class SecurityMatrix {
     return hasRoleKey('ROLE_ADMIN') || hasRoleKey('ROLE_FISCAL');
   }
 
+  bool get isFinanceiroLimitado =>
+      !ModuloAccess.isModuloContratado('Financeiro') &&
+      ModuloAccess.isModuloContratado('Financeiro Limitado');
+
   bool hasAnyAccess(AppScreen screen) {
     if (profile == UserProfile.system || tipoLogin == LoginEnum.MASTER) return true;
     if (_backendPerms.isNotEmpty) return (_backendPerms[screen.name]?.isNotEmpty) ?? false;
