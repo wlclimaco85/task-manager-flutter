@@ -19,7 +19,7 @@ import '../../utils/security_matrix.dart';
 import '../../widgets/home_screen.dart';
 import '../services/network_caller.dart';
 import 'email_verification_screeen.dart';
-import 'signup_form_screen.dart';
+import 'solicitacao_acesso_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -299,8 +299,8 @@ class _LoginScreenState extends State<LoginScreen>
       onLogin: _login,
       onForgot: () => Navigator.push(context,
           MaterialPageRoute(builder: (_) => const EmailVarificationScreeen())),
-      onRequestAccess: () => Navigator.push(
-          context, MaterialPageRoute(builder: (_) => const SignUpFormScreen())),
+      onRequestAccess: () => Navigator.push(context,
+          MaterialPageRoute(builder: (_) => const SolicitacaoAcessoScreen())),
       fullHeightCompact: !_showNoticias,
     );
 

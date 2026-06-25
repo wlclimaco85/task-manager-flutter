@@ -45,6 +45,13 @@ class ApiLinks {
   // static String login = '$_baseUrl/rest/auth/login';
 
   static String login = '$_baseUrlNew/rest/auth/login';
+  static String get solicitacaoAcesso => '$_baseUrlNew/api/solicitacao-acesso';
+  static String get solicitacaoAcessoPendentes =>
+      '$_baseUrlNew/api/solicitacao-acesso/pendentes';
+  static String solicitacaoAcessoAprovar(int id) =>
+      '$_baseUrlNew/api/solicitacao-acesso/$id/aprovar';
+  static String solicitacaoAcessoRejeitar(int id) =>
+      '$_baseUrlNew/api/solicitacao-acesso/$id/rejeitar';
   static String recoverVerifyEmail(String email) =>
       '$_baseUrl/RecoverVerifyEmail/$email';
   static String recoverVerifyOTP(String email, String otp) =>
