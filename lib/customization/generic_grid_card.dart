@@ -517,8 +517,12 @@ class _GenericMobileGridScreenState<T>
     final Map<String, TextEditingController> formControllers = {};
 
     for (final config in widget.fieldConfigs.where((c) => c.isInForm)) {
-      final initialValue =
-          _getNestedValue(itemData, config.fieldName)?.toString() ?? '';
+      // Campos de senha nunca sao pre-populados na edicao, mesmo que o
+      // backend retorne algum valor (ex: hash) — evita exibir/reenviar
+      // segredo sem alteracao intencional do usuario.
+      final initialValue = config.fieldType == FieldType.password
+          ? ''
+          : _getNestedValue(itemData, config.fieldName)?.toString() ?? '';
       formControllers[config.fieldName] =
           TextEditingController(text: initialValue);
     }
