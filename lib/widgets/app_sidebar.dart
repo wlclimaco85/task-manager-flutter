@@ -58,8 +58,9 @@ class _AppSidebarState extends State<AppSidebar> {
 
   /// true se o item pode aparecer no menu para o usuario logado.
   bool _canSee(MenuItem item) {
-    // Match e Timeline so para wlclimaco@gmail.com
-    if (item.id == 'match' || item.id == 'timeline') {
+    // Itens exclusivos do dono do sistema (wlclimaco@gmail.com).
+    const ownerOnly = {'match', 'timeline', 'instagram_monitor'};
+    if (ownerOnly.contains(item.id)) {
       final email = widget.userEmail.toLowerCase();
       return email == 'wlclimaco@gmail.com';
     }
