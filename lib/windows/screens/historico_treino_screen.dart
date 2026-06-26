@@ -2,6 +2,8 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 
+import '../../../models/auth_utility.dart';
+import '../../../services/pdf_export_service.dart';
 import '../../../utils/api_links.dart';
 import '../../../utils/grid_colors.dart';
 import '../../../utils/tenant_context.dart';
@@ -77,6 +79,58 @@ class _HistoricoTreinoScreenState extends State<HistoricoTreinoScreen> {
     return '$mm:$ss';
   }
 
+  // ── Exporta PDF com o histórico de sessões ──────────────────────────────────
+  Future<void> _exportarPdf() async {
+    final sessoes = await _futureSessoes;
+    final nomeAluno = AuthUtility.userInfo?.data?.codDadosPessoal?.nome ?? 'Aluno';
+    final linhas = sessoes.map((s) {
+      return [
+        _formatarData(s['dataInicio'] ?? s['createdAt']),
+        _formatarDuracao(s['duracaoSegundos']),
+        '${(s['feedbackNota'] as num?)?.toInt() ?? 0}/5',
+        s['feedbackTexto']?.toString() ?? '',
+      ];
+    }).toList();
+    await PdfExportService.exportar(
+      titulo: 'Histórico de Treinos — $nomeAluno',
+      cabecalhos: const ['Data', 'Duração', 'Nota', 'Feedback'],
+      linhas: linhas,
+    );
+  }
+
+  // ── Exporta ficha de uma sessão específica ────────────────────────────────────
+  Future<void> _exportarFichaSessao(dynamic sessaoId) async {
+    try {
+      ScaffoldMessenger.of(context)
+          .showSnackBar(const SnackBar(content: Text('Gerando ficha...')));
+
+      final url = '${ApiLinks.baseUrl}/api/sessoes-treino/$sessaoId/ficha-export';
+      final resposta = await TenantContext.get(url);
+
+      if (resposta.statusCode == 200) {
+        final body = jsonDecode(resposta.body);
+        final ficha = body is Map ? (body['data'] ?? body) : body;
+
+        await PdfExportService.exportarFichaTreino(
+          sessao: Map<String, dynamic>.from(ficha),
+          series: (ficha['series'] as List?)
+                  ?.map((s) => Map<String, dynamic>.from(s))
+                  .toList() ??
+              [],
+        );
+        ScaffoldMessenger.of(context).clearSnackBars();
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Erro: HTTP ${resposta.statusCode}')),
+        );
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text('Erro: $e')));
+      L.d('Erro ao exportar ficha: $e');
+    }
+  }
+
   // ── Formata data ISO para DD/MM/YYYY HH:MM ──────────────────────────────────
   String _formatarData(dynamic dataIso) {
     if (dataIso == null) return '—';
@@ -100,6 +154,27 @@ class _HistoricoTreinoScreenState extends State<HistoricoTreinoScreen> {
         title: const Text('Histórico de Treinos'),
         backgroundColor: GridColors.primary,
         foregroundColor: GridColors.textPrimary,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.description),
+            tooltip: 'Exportar Ficha (última)',
+            onPressed: () async {
+              final sessoes = await _futureSessoes;
+              if (sessoes.isNotEmpty) {
+                _exportarFichaSessao(sessoes.first['id']);
+              } else {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Nenhuma sessão disponível')),
+                );
+              }
+            },
+          ),
+          IconButton(
+            icon: const Icon(Icons.picture_as_pdf),
+            tooltip: 'Exportar Histórico PDF',
+            onPressed: () => _exportarPdf(),
+          ),
+        ],
       ),
       body: FutureBuilder<List<Map<String, dynamic>>>(
         future: _futureSessoes,

@@ -98,6 +98,39 @@ class _HistoricoTreinoScreenState extends State<HistoricoTreinoScreen> {
     );
   }
 
+  // ── Exporta ficha de uma sessão específica ────────────────────────────────────
+  Future<void> _exportarFichaSessao(dynamic sessaoId) async {
+    try {
+      ScaffoldMessenger.of(context)
+          .showSnackBar(const SnackBar(content: Text('Gerando ficha...')));
+
+      final url = '${ApiLinks.baseUrl}/api/sessoes-treino/$sessaoId/ficha-export';
+      final resposta = await TenantContext.get(url);
+
+      if (resposta.statusCode == 200) {
+        final body = jsonDecode(resposta.body);
+        final ficha = body is Map ? (body['data'] ?? body) : body;
+
+        await PdfExportService.exportarFichaTreino(
+          sessao: Map<String, dynamic>.from(ficha),
+          series: (ficha['series'] as List?)
+                  ?.map((s) => Map<String, dynamic>.from(s))
+                  .toList() ??
+              [],
+        );
+        ScaffoldMessenger.of(context).clearSnackBars();
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Erro: HTTP ${resposta.statusCode}')),
+        );
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text('Erro: $e')));
+      L.d('Erro ao exportar ficha: $e');
+    }
+  }
+
   // ── Formata data ISO para DD/MM/YYYY HH:MM ──────────────────────────────────
   String _formatarData(dynamic dataIso) {
     if (dataIso == null) return '—';
@@ -123,8 +156,22 @@ class _HistoricoTreinoScreenState extends State<HistoricoTreinoScreen> {
         foregroundColor: GridColors.textPrimary,
         actions: [
           IconButton(
+            icon: const Icon(Icons.description),
+            tooltip: 'Exportar Ficha (última)',
+            onPressed: () async {
+              final sessoes = await _futureSessoes;
+              if (sessoes.isNotEmpty) {
+                _exportarFichaSessao(sessoes.first['id']);
+              } else {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Nenhuma sessão disponível')),
+                );
+              }
+            },
+          ),
+          IconButton(
             icon: const Icon(Icons.picture_as_pdf),
-            tooltip: 'Exportar PDF',
+            tooltip: 'Exportar Histórico PDF',
             onPressed: () => _exportarPdf(),
           ),
         ],
