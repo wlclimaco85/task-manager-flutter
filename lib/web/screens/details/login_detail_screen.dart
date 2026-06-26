@@ -35,9 +35,7 @@ class WebLoginDetailScreen extends StatelessWidget {
           title: 'Setores',
           icon: Icons.business_center,
           telaNome: 'setor',
-          extraParams: {'loginId': loginId},
-          // "Excluir" nesta aba DESVINCULA o setor do login (não apaga o setor).
-          // Backend: DELETE /api/login/{loginId}/setores/{setorId}
+          extraParams: {'loginId': loginId, 'empresaId': empresaId, 'parceiroId': parceiroId},
           deleteEndpointOverride:
               '${ApiLinks.baseUrl}/api/login/$loginId/setores/:id',
         ),
@@ -45,7 +43,7 @@ class WebLoginDetailScreen extends StatelessWidget {
           title: 'Chamados',
           icon: Icons.support_agent,
           telaNome: 'chamado',
-          extraParams: {'usuarioAberturaId': loginId},
+          extraParams: {'usuarioAberturaId': loginId, 'empresaId': empresaId, 'parceiroId': parceiroId},
         ),
       ],
     );

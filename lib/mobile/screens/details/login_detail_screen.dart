@@ -17,6 +17,8 @@ class MobileLoginDetailScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final loginId = item.id?.toString() ?? '';
+    final empresaId = item.empresa?.id?.toString() ?? '';
+    final parceiroId = item.parceiro?.id?.toString() ?? '';
 
     return GenericDetailFormScreen(
       item: item.toJson(),
@@ -27,9 +29,7 @@ class MobileLoginDetailScreen extends StatelessWidget {
           title: 'Roles',
           icon: Icons.security,
           telaNome: 'role',
-          extraParams: {'loginId': loginId},
-          // "Excluir" nesta aba DESVINCULA a role do login (não apaga a role).
-          // Backend: DELETE /api/logins/{loginId}/roles/{roleId} (removerRole).
+          extraParams: {'loginId': loginId, 'empresaId': empresaId, 'parceiroId': parceiroId},
           deleteEndpointOverride:
               '${ApiLinks.baseUrl}/api/logins/$loginId/roles/:id',
         ),
@@ -37,9 +37,7 @@ class MobileLoginDetailScreen extends StatelessWidget {
           title: 'Setores',
           icon: Icons.business_center,
           telaNome: 'setor',
-          extraParams: {'loginId': loginId},
-          // "Excluir" nesta aba DESVINCULA o setor do login (não apaga o setor).
-          // Backend: DELETE /api/login/{loginId}/setores/{setorId}
+          extraParams: {'loginId': loginId, 'empresaId': empresaId, 'parceiroId': parceiroId},
           deleteEndpointOverride:
               '${ApiLinks.baseUrl}/api/login/$loginId/setores/:id',
         ),
@@ -47,7 +45,7 @@ class MobileLoginDetailScreen extends StatelessWidget {
           title: 'Chamados',
           icon: Icons.support_agent,
           telaNome: 'chamado',
-          extraParams: {'usuarioAberturaId': loginId},
+          extraParams: {'usuarioAberturaId': loginId, 'empresaId': empresaId, 'parceiroId': parceiroId},
         ),
       ],
     );
