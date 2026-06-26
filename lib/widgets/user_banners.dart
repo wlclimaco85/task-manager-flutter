@@ -352,16 +352,6 @@ class _UserBannerAppBarState extends State<UserBannerAppBar> {
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Image.asset(
-              'assets/images/logo_contabilidade.jpg',
-              width: 36,
-              height: 36,
-              fit: BoxFit.contain,
-              errorBuilder: (_, __, ___) {
-                return const Icon(Icons.apps, color: GridColors.textPrimary);
-              },
-            ),
-            const SizedBox(width: 12),
             if (isLoggedIn) ...[
               Flexible(
                 child: Row(
@@ -426,36 +416,6 @@ class _UserBannerAppBarState extends State<UserBannerAppBar> {
                                 color: GridColors.primary,
                                 size: 16,
                               ),
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Flexible(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Text(
-                            AuthUtility.userInfo?.data?.codDadosPessoal?.nome ??
-                                AuthUtility.userInfo?.login?.nome ??
-                                "Usuário",
-                            style: const TextStyle(
-                              fontSize: 12,
-                              fontWeight: FontWeight.bold,
-                              color: GridColors.textPrimary,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                            maxLines: 1,
-                          ),
-                          Text(
-                            _getCompanyName(),
-                            style: const TextStyle(
-                              fontSize: 10,
-                              color: GridColors.textPrimary,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                            maxLines: 1,
-                          ),
-                        ],
                       ),
                     ),
                   ],
