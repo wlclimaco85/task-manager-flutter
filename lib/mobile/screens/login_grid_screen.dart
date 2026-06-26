@@ -92,6 +92,7 @@ class LoginGridScreen extends StatelessWidget {
       createEndpointOverride: ApiLinks.createLogin,
       updateEndpointOverride: ApiLinks.updateLogin(':id'),
       deleteEndpointOverride: ApiLinks.deleteLogin(':id'),
+      additionalFormData: const {'ativo': true, 'trocarSenhaProximoLogin': true},
       detailScreenBuilder: (item) => MobileLoginDetailScreen(
         item: Login.fromJson(item),
         hasPermission: hasPermission,
