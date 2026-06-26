@@ -208,7 +208,7 @@ class _WindowsPedidoVendaGridScreenState
                 icon: const Icon(Icons.transform, size: 18),
                 label: const Text(GridTexts.createFromBudget),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.teal,
+                  backgroundColor: GridColors.secondary,
                   foregroundColor: Colors.white,
                   padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                 ),

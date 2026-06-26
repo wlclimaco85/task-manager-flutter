@@ -178,7 +178,7 @@ class _WebPedidoVendaGridScreenState extends State<WebPedidoVendaGridScreen> {
                 icon: const Icon(Icons.transform, size: 18),
                 label: const Text('Criar de Orçamento'),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.teal,
+                  backgroundColor: GridColors.secondary,
                   foregroundColor: Colors.white,
                   padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                 ),
