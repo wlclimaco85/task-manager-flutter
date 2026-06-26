@@ -77,6 +77,7 @@ class MenuGroup {
 /// 113:ContaContabil 114:LancamentoContabil 115:Balancete
 /// 116:FechamentoPeriodo 117:AiDashboard 118:AiAssistente 119:TradingCorretora
 /// 124:Academia
+/// 136:InstagramMonitor
 
 class MenuConfig {
   MenuConfig._();
@@ -318,6 +319,11 @@ class MenuConfig {
             label: 'Kanban',
             icon: FontAwesomeIcons.trello,
             screenIndex: 51),
+        MenuItem(
+            id: 'instagram_monitor',
+            label: 'Instagram Monitor',
+            icon: FontAwesomeIcons.instagram,
+            screenIndex: 136),
       ],
     ),
     MenuGroup(
