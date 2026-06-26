@@ -651,7 +651,7 @@ class _WindowsNfeGridScreenState extends State<WindowsNfeGridScreen> {
                   label: const Text('+ Nova c/ TOP',
                       style: TextStyle(fontSize: 12)),
                   style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF1A237E),
+                      backgroundColor: GridColors.primary,
                       foregroundColor: Colors.white,
                       padding: const EdgeInsets.symmetric(vertical: 8)),
                 )),
@@ -664,7 +664,7 @@ class _WindowsNfeGridScreenState extends State<WindowsNfeGridScreen> {
                   label: const Text('Exportar XML',
                       style: TextStyle(fontSize: 12)),
                   style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF1565C0),
+                      backgroundColor: GridColors.secondary,
                       foregroundColor: Colors.white,
                       padding: const EdgeInsets.symmetric(vertical: 8)),
                 )),
@@ -679,7 +679,7 @@ class _WindowsNfeGridScreenState extends State<WindowsNfeGridScreen> {
                   label: const Text('Importar Receita',
                       style: TextStyle(fontSize: 12)),
                   style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF1565C0),
+                      backgroundColor: GridColors.secondary,
                       foregroundColor: Colors.white,
                       padding: const EdgeInsets.symmetric(vertical: 8)),
                 )),

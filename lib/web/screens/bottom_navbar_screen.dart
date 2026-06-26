@@ -112,6 +112,13 @@ import '../../windows/screens/reserva_estoque_screen.dart';
 import '../../windows/screens/deposito_screen.dart';
 import '../../windows/screens/renegociacao_screen.dart';
 import '../../windows/screens/devolucao_grid_screen.dart';
+import '../../windows/screens/rateio_financeiro_screen.dart';
+import '../../windows/screens/aprovacao_pagamento_screen.dart';
+import '../../windows/screens/baixa_automatica_screen.dart';
+import '../../windows/screens/cobranca_screen.dart';
+import './aprovacao_compra_screen.dart';
+import './dre_screen.dart';
+import './tabela_preco_screen.dart';
 import './extrato_importacao_screen.dart';
 import './conciliacao_screen.dart';
 import './integracoes_financeiras_screen.dart';
@@ -422,15 +429,15 @@ class _WebBottomNavBarScreenState extends State<WebBottomNavBarScreen> {
       const NfseScreen(), // 99: NFSe
       const ReservaEstoqueScreen(), // 100: ReservaEstoque
       const DepositoScreen(), // 101: Multi-depósito
-      const SizedBox.shrink(), // 102: Rateio Financeiro (web)
-      const SizedBox.shrink(), // 103: Aprovação de Pagamentos (web)
-      const SizedBox.shrink(), // 104: Baixa Automática (web)
-      const SizedBox.shrink(), // 105: Cobrança (web)
+      const RateioFinanceiroScreen(), // 102: Rateio Financeiro
+      const AprovacaoPagamentoScreen(), // 103: Aprovação de Pagamentos
+      const BaixaAutomaticaScreen(), // 104: Baixa Automática de Recebíveis
+      const CobrancaScreen(), // 105: Inadimplência e Cobrança
       const RenegociacaoScreen(), // 106: Renegociação de Títulos
-      const WindowsDevolucaoGridScreen(), // 107: Devoluções
-      const SizedBox.shrink(), // 108
-      const SizedBox.shrink(), // 109
-      const SizedBox.shrink(), // 110
+      const WebDreScreen(), // 107: DRE Gerencial
+      WebTabelaPrecoScreen(hasPermission: (p) => true), // 108: Tabela de Preços e Descontos
+      const WebAprovacaoCompraScreen(), // 109: Aprovação de Compras
+      const WindowsDevolucaoGridScreen(), // 110: Devoluções
       const CancelamentoCceScreen(), // 111: Cancelamento e CC-e
       const SizedBox.shrink(), // 112: RegraFiscal (web vago)
       WebContaContabilGridScreen(

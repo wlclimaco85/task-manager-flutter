@@ -136,7 +136,7 @@ class _WebConciliacaoScreenState extends State<WebConciliacaoScreen> {
       child: Scaffold(
         backgroundColor: Colors.grey[100],
         appBar: AppBar(
-          backgroundColor: GridColors.secondary,
+          backgroundColor: GridColors.primary,
           foregroundColor: Colors.white,
           title: const Text('Conciliacao Bancaria'),
           elevation: 0,
@@ -231,7 +231,7 @@ class _WebConciliacaoScreenState extends State<WebConciliacaoScreen> {
                       ? 'Auto-conciliando...'
                       : 'Auto-conciliar'),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: GridColors.secondary,
+                    backgroundColor: GridColors.primary,
                     foregroundColor: Colors.white,
                     padding: const EdgeInsets.symmetric(
                         horizontal: 16, vertical: 12),

@@ -3,7 +3,7 @@ import '../../../models/auth_utility.dart';
 import '../../../services/conta_contabil_service.dart';
 import '../../../widgets/generic_grid_windows_screen.dart' show SecurityCheck;
 
-const _primary = Color(0xFF1A237E);
+const _primary = Color(0xFF93070A); // GridColors.primary
 const _bg = Color(0xFFF5F5F5);
 const _green = Color(0xFF005826);
 const _red = Color(0xFF93070A);
