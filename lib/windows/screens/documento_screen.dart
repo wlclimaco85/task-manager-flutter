@@ -754,9 +754,9 @@ class _WindowsCalendarScreenState extends State<WindowsCalendarScreen> {
             padding: const EdgeInsets.fromLTRB(8, 4, 8, 6),
             child: Row(
               children: [
-                // Botão refresh à esquerda — simétrico com "Hoje" à direita
+                // Botão refresh à esquerda — fixo 68px para não sobrepor toggles
                 SizedBox(
-                  width: 60,
+                  width: 68,
                   child: _loadingMonth
                       ? const Center(
                           child: SizedBox(

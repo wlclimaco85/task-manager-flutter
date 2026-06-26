@@ -592,7 +592,7 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
     addItem(icon: Icons.folder_open, label: "GED");
 
     // Último item = Mais
-    addItem(icon: Icons.apps_rounded, label: "Mais");
+    addItem(icon: Icons.more_horiz, label: "Mais");
 
     return items;
   }
