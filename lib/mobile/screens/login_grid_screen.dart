@@ -89,6 +89,9 @@ class LoginGridScreen extends StatelessWidget {
       telaNome: 'login',
       hasPermission: hasPermission,
       onUserBannerTapped: onUserBannerTapped,
+      createEndpointOverride: ApiLinks.createLogin,
+      updateEndpointOverride: ApiLinks.updateLogin(':id'),
+      deleteEndpointOverride: ApiLinks.deleteLogin(':id'),
       detailScreenBuilder: (item) => MobileLoginDetailScreen(
         item: Login.fromJson(item),
         hasPermission: hasPermission,
@@ -102,6 +105,12 @@ class LoginGridScreen extends StatelessWidget {
           isInForm: true,
           isFilterable: true,
           isRequired: true,
+          validator: (v) {
+            if (v != null && v.isNotEmpty && !v.contains('@')) {
+              return 'E-mail inválido';
+            }
+            return null;
+          },
         ),
         FieldConfig(
           label: 'Nome',
@@ -167,6 +176,7 @@ class LoginGridScreen extends StatelessWidget {
           fieldType: FieldType.password,
           isInForm: true,
           isFilterable: false,
+          requiredOnCreate: true,
         ),
         FieldConfig(
           label: 'Trocar senha no próximo login',

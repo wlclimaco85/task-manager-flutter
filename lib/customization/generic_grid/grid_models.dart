@@ -57,6 +57,7 @@ class FieldConfig {
   final String dropdownValueField;
   final String dropdownDisplayField;
   final bool isRequired;
+  final bool requiredOnCreate;
   final String? Function(String?)? validator;
   final String? displayFieldName;
   final bool isVisibleByDefault;
@@ -86,6 +87,7 @@ class FieldConfig {
     this.dropdownValueField = 'value',
     this.dropdownDisplayField = 'label',
     this.isRequired = false,
+    this.requiredOnCreate = false,
     this.validator,
     this.displayFieldName,
     this.isVisibleByDefault = true,

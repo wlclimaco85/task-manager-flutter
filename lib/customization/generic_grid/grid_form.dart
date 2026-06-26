@@ -54,6 +54,9 @@ class _GridFormDialogState extends State<GridFormDialog> {
   final _formKey = GlobalKey<FormState>();
   bool _saving = false;
 
+  bool _req(FieldConfig c) =>
+      c.isRequired || (c.requiredOnCreate && widget.editingItem == null);
+
   @override
   void initState() {
     super.initState();
@@ -240,13 +243,13 @@ class _GridFormDialogState extends State<GridFormDialog> {
       maxLines: maxLines ?? c.maxLines,
       style: const TextStyle(color: Color(0xFF212121)),
       validator: (v) {
-        if (c.isRequired && (v?.isEmpty ?? true)) {
+        if (_req(c) && (v?.isEmpty ?? true)) {
           return '${c.label} é obrigatório';
         }
         return c.validator?.call(v);
       },
       decoration: InputDecoration(
-        labelText: c.label + (c.isRequired ? ' *' : ''),
+        labelText: c.label + (_req(c) ? ' *' : ''),
         labelStyle: const TextStyle(color: Color(0xFF757575)),
         filled: true,
         fillColor: c.enabled ? Colors.white : const Color(0xFFF5F5F5),
@@ -276,13 +279,13 @@ class _GridFormDialogState extends State<GridFormDialog> {
         maxLines: 1,
         style: const TextStyle(color: Color(0xFF212121)),
         validator: (v) {
-          if (c.isRequired && (v?.isEmpty ?? true)) {
+          if (_req(c) && (v?.isEmpty ?? true)) {
             return '${c.label} é obrigatório';
           }
           return c.validator?.call(v);
         },
         decoration: InputDecoration(
-          labelText: c.label + (c.isRequired ? ' *' : ''),
+          labelText: c.label + (_req(c) ? ' *' : ''),
           labelStyle: const TextStyle(color: Color(0xFF757575)),
           suffixIcon:
               const Icon(Icons.search, color: GridColors.primary, size: 18),
@@ -336,7 +339,7 @@ class _GridFormDialogState extends State<GridFormDialog> {
       enabled: c.enabled,
       style: const TextStyle(color: Color(0xFF212121)),
       decoration: InputDecoration(
-        labelText: c.label + (c.isRequired ? ' *' : ''),
+        labelText: c.label + (_req(c) ? ' *' : ''),
         labelStyle: const TextStyle(color: Color(0xFF757575)),
         suffixIcon: const Icon(Icons.calendar_today,
             color: GridColors.primary, size: 18),
@@ -504,6 +507,7 @@ class _GridFormDialogState extends State<GridFormDialog> {
           initialLabel: initLabel,
           defaultBorder: _defaultBorder(),
           focusedBorder: _focusedBorder(),
+          isEditing: widget.editingItem != null,
           onChanged: (v) {
             ctrl.text = v ?? '';
             setState(() {});
@@ -560,7 +564,7 @@ class _GridFormDialogState extends State<GridFormDialog> {
           },
           child: InputDecorator(
             decoration: InputDecoration(
-              labelText: c.label + (c.isRequired ? ' *' : ''),
+              labelText: c.label + (_req(c) ? ' *' : ''),
               labelStyle: const TextStyle(color: Color(0xFF757575)),
               filled: true,
               fillColor: Colors.white,
@@ -975,6 +979,7 @@ class _SearchableDropdownForm extends StatefulWidget {
   final InputBorder defaultBorder;
   final InputBorder focusedBorder;
   final void Function(String?) onChanged;
+  final bool isEditing;
 
   const _SearchableDropdownForm({
     required this.config,
@@ -985,6 +990,7 @@ class _SearchableDropdownForm extends StatefulWidget {
     required this.defaultBorder,
     required this.focusedBorder,
     required this.onChanged,
+    required this.isEditing,
     this.initialLabel,
   });
 
@@ -1024,7 +1030,8 @@ class _SearchableDropdownFormState extends State<_SearchableDropdownForm> {
 
   @override
   Widget build(BuildContext context) {
-    final label = widget.config.label + (widget.config.isRequired ? ' *' : '');
+    final effReq = widget.config.isRequired || (widget.config.requiredOnCreate && !widget.isEditing);
+    final label = widget.config.label + (effReq ? ' *' : '');
     final display = _label ?? widget.controller.text;
     final isEmpty = display.isEmpty;
     final isDisabled = !widget.config.enabled;
@@ -1032,7 +1039,7 @@ class _SearchableDropdownFormState extends State<_SearchableDropdownForm> {
     return FormField<String>(
       initialValue: widget.controller.text,
       validator: (v) {
-        if (widget.config.isRequired && (widget.controller.text.isEmpty)) {
+        if (effReq && (widget.controller.text.isEmpty)) {
           return '${widget.config.label} é obrigatório';
         }
         return widget.config.validator?.call(widget.controller.text);
