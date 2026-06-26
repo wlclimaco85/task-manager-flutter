@@ -66,7 +66,7 @@ class _BoletoImportacaoLoteScreenState
     });
 
     if (todosItens.isEmpty) {
-      _snack('Nenhum boleto processado', error: true);
+      _snack('Nenhum boleto processado — os PDFs podem ser invalidos ou o OCR nao conseguiu ler', error: true);
     }
   }
 

@@ -135,8 +135,8 @@ class _ConciliacaoScreenState extends State<ConciliacaoScreen> {
       child: Scaffold(
         backgroundColor: GridColors.pageBackground,
         appBar: AppBar(
-          backgroundColor: GridColors.secondary,
-          foregroundColor: GridColors.textPrimary,
+        backgroundColor: GridColors.primary,
+        foregroundColor: GridColors.textPrimary,
           title: const Text('Conciliação Bancária'),
           elevation: 0,
           bottom: const TabBar(

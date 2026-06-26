@@ -8,6 +8,7 @@ import 'package:http/http.dart' as http;
 import '../../../models/auth_utility.dart';
 import '../../../utils/api_links.dart';
 import '../../../utils/tenant_context.dart';
+import 'session_expired_handler.dart';
 
 class BoletoLoteItem {
   final String itemId;
@@ -76,6 +77,9 @@ class BoletoLoteCaller {
         final data = jsonDecode(response.body) as Map<String, dynamic>;
         return data['loteId'] as String?;
       }
+      if (response.statusCode == 401) {
+        await SessionExpiredHandler.handle();
+      }
     } catch (_) {}
     return null;
   }
@@ -118,6 +122,9 @@ class BoletoLoteCaller {
             .map((e) => BoletoLoteItem.fromJson(e as Map<String, dynamic>))
             .toList();
       }
+      if (streamed.statusCode == 401) {
+        await SessionExpiredHandler.handle();
+      }
     } catch (_) {}
     return [];
   }
@@ -150,6 +157,9 @@ class BoletoLoteCaller {
       );
       if (response.statusCode == 200) {
         return jsonDecode(response.body) as Map<String, dynamic>;
+      }
+      if (response.statusCode == 401) {
+        await SessionExpiredHandler.handle();
       }
     } catch (_) {}
     return null;

@@ -22,7 +22,7 @@ class NfceAutorizadaScreen extends StatelessWidget {
       backgroundColor: Colors.white,
       appBar: AppBar(
         title: const Text('NFC-e Autorizada'),
-        backgroundColor: GridColors.secondary,
+        backgroundColor: GridColors.primary,
         foregroundColor: Colors.white,
         automaticallyImplyLeading: false,
       ),

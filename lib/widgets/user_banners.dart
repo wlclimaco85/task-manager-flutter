@@ -191,10 +191,16 @@ class _UserBannerAppBarState extends State<UserBannerAppBar> {
     return DateFormat('dd/MM').format(parsed);
   }
 
+  void _safeRemoveOverlay() {
+    try {
+      notificationOverlay?.remove();
+    } catch (_) {}
+    notificationOverlay = null;
+  }
+
   void showNotificationDropdown(BuildContext context) {
     if (notificationOverlay != null) {
-      notificationOverlay!.remove();
-      notificationOverlay = null;
+      _safeRemoveOverlay();
       return;
     }
 
@@ -214,48 +220,47 @@ class _UserBannerAppBarState extends State<UserBannerAppBar> {
     final topOffset = widget.preferredSize.height + (hasBottomBar ? 16 : 12);
 
     notificationOverlay = OverlayEntry(
-      builder: (ctx) => GestureDetector(
-        behavior: HitTestBehavior.translucent,
-        onTap: () {
-          notificationOverlay?.remove();
-          notificationOverlay = null;
-        },
-        child: Stack(
-          children: [
-            Positioned(
-              top: topOffset,
-              right: 8,
-              child: GestureDetector(
-                onTap: () {}, // impede fechar ao clicar no painel
-                child: _NotificationPanel(
-                  notifications: notifications,
-                  onMarcarLida: (id) {
-                    markNotificationAsRead(id);
-                    notificationOverlay?.remove();
-                    notificationOverlay = null;
-                  },
-                  onDeletar: (id) {
-                    deleteNotification(id);
-                    notificationOverlay?.remove();
-                    notificationOverlay = null;
-                  },
-                  onMarcarTodas: () {
-                    deleteAllNotifications();
-                    notificationOverlay?.remove();
-                    notificationOverlay = null;
-                  },
-                  onFechar: () {
-                    notificationOverlay?.remove();
-                    notificationOverlay = null;
-                  },
-                  resolverTipo: _resolverTipo,
-                  dataRelativa: _dataRelativa,
+      builder: (ctx) {
+        // Bloqueia overlay preso se o builder lançar exceção
+        try {
+          return GestureDetector(
+            behavior: HitTestBehavior.translucent,
+            onTap: _safeRemoveOverlay,
+            child: Stack(
+              children: [
+                Positioned(
+                  top: topOffset,
+                  right: 8,
+                  child: GestureDetector(
+                    onTap: () {}, // impede fechar ao clicar no painel
+                    child: _NotificationPanel(
+                      notifications: notifications,
+                      onMarcarLida: (id) {
+                        markNotificationAsRead(id);
+                        _safeRemoveOverlay();
+                      },
+                      onDeletar: (id) {
+                        deleteNotification(id);
+                        _safeRemoveOverlay();
+                      },
+                      onMarcarTodas: () {
+                        deleteAllNotifications();
+                        _safeRemoveOverlay();
+                      },
+                      onFechar: _safeRemoveOverlay,
+                      resolverTipo: _resolverTipo,
+                      dataRelativa: _dataRelativa,
+                    ),
+                  ),
                 ),
-              ),
+              ],
             ),
-          ],
-        ),
-      ),
+          );
+        } catch (_) {
+          _safeRemoveOverlay();
+          rethrow;
+        }
+      },
     );
 
     overlay.insert(notificationOverlay!);
@@ -334,7 +339,7 @@ class _UserBannerAppBarState extends State<UserBannerAppBar> {
 
   @override
   void dispose() {
-    notificationOverlay?.remove();
+    _safeRemoveOverlay();
     _timer?.cancel();
     super.dispose();
   }

@@ -163,7 +163,7 @@ class _NfeImportScreenState extends State<NfeImportScreen> {
     return Scaffold(
       backgroundColor: Colors.grey[100],
       appBar: AppBar(
-        backgroundColor: GridColors.secondary,
+        backgroundColor: GridColors.primary,
         foregroundColor: Colors.white,
         title: const Text('Importação de NF-e via CSV'),
         elevation: 0,

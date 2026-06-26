@@ -176,7 +176,7 @@ class _CancelamentoCceScreenState extends State<CancelamentoCceScreen> {
     return Scaffold(
       backgroundColor: Colors.grey[100],
       appBar: AppBar(
-        backgroundColor: GridColors.secondary,
+        backgroundColor: GridColors.primary,
         foregroundColor: Colors.white,
         title: const Text('Cancelamento e CC-e'),
         elevation: 0,

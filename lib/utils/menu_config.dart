@@ -78,6 +78,8 @@ class MenuGroup {
 /// 116:FechamentoPeriodo 117:AiDashboard 118:AiAssistente 119:TradingCorretora
 /// 124:Academia
 /// 136:InstagramMonitor
+/// 139:DiarioNutricional
+/// 150:QueryBuilder
 
 class MenuConfig {
   MenuConfig._();
@@ -108,6 +110,11 @@ class MenuConfig {
             label: 'Dietas',
             icon: FontAwesomeIcons.bowlFood,
             screenIndex: 10),
+        MenuItem(
+            id: 'diario_nutricional',
+            label: 'Diário Nutricional',
+            icon: FontAwesomeIcons.noteSticky,
+            screenIndex: 139),
         MenuItem(
             id: 'exercicios',
             label: 'Exercícios',
@@ -688,6 +695,11 @@ class MenuConfig {
             label: 'Permissões',
             icon: FontAwesomeIcons.shieldHalved,
             screenIndex: 59),
+        MenuItem(
+            id: 'query_builder',
+            label: 'Query Builder',
+            icon: FontAwesomeIcons.database,
+            screenIndex: 150),
         MenuItem(
             id: 'teste_endpoints',
             label: 'Teste de Endpoints',

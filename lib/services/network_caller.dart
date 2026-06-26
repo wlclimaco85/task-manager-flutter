@@ -9,6 +9,7 @@ import '../../../utils/api_links.dart';
 import '../../../utils/tenant_context.dart';
 import '../../../models/login_model.dart';
 import '../../../utils/app_logger.dart';
+import 'session_expired_handler.dart';
 
 class NetworkCaller {
   Future<NetworkResponse> getRequest(String url) async {
@@ -38,6 +39,10 @@ class NetworkCaller {
         AppLogger.i.info(statusMsg);
       }
 
+      if (response.statusCode == 401) {
+        await SessionExpiredHandler.handle();
+        return NetworkResponse(false, response.statusCode, null);
+      }
       if (response.statusCode == 200) {
         return NetworkResponse(
           true,
@@ -176,6 +181,10 @@ class NetworkCaller {
         body: jsonEncode(body),
       );
 
+      if (response.statusCode == 401) {
+        await SessionExpiredHandler.handle();
+        return NetworkResponse(false, response.statusCode, null);
+      }
       if (response.statusCode == 200) {
         return NetworkResponse(
           true,
@@ -204,6 +213,10 @@ class NetworkCaller {
         body: jsonEncode(body),
       );
 
+      if (response.statusCode == 401) {
+        await SessionExpiredHandler.handle();
+        return NetworkResponse(false, response.statusCode, null);
+      }
       if (response.statusCode == 200 || response.statusCode == 204) {
         final responseBody =
             response.body.isNotEmpty ? jsonDecode(response.body) : null;
@@ -278,6 +291,10 @@ class NetworkCaller {
       AppLogger.i.info(
           '📥 [POST] status=${response.statusCode} | body=${response.body}');
 
+      if (response.statusCode == 401) {
+        await SessionExpiredHandler.handle();
+        return NetworkResponse(false, response.statusCode, null);
+      }
       if (response.statusCode == 200 || response.statusCode == 201) {
         return NetworkResponse(
           true,
@@ -321,6 +338,10 @@ class NetworkCaller {
 
       AppLogger.i.info('🗑️ [DELETE] $uri | status=${response.statusCode}');
 
+      if (response.statusCode == 401) {
+        await SessionExpiredHandler.handle();
+        return NetworkResponse(false, response.statusCode, null);
+      }
       if (response.statusCode == 200 || response.statusCode == 204) {
         final body =
             response.body.isNotEmpty ? jsonDecode(response.body) : null;

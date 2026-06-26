@@ -144,6 +144,7 @@ import './atividade_diaria_screen.dart';
 import './diario_refeicao_screen.dart';
 import './home_saude_aluno_screen.dart';
 import './historico_treino_screen.dart';
+import './query_builder_window_screen.dart';
 
 class WindowsBottomNavBarScreen extends StatefulWidget {
   const WindowsBottomNavBarScreen({super.key});
@@ -454,6 +455,7 @@ class _WindowsBottomNavBarScreenState extends State<WindowsBottomNavBarScreen> {
         const WebDashboardMensalidadeScreen(), // 147: Dashboard de Mensalidades
         const BoletoImportacaoLoteScreen(), // 148: Importação Boletos Lote
         const SolicitacaoAcessoAprovacaoScreen(), // 149: Solicitações de Acesso
+        const QueryBuilderWindowScreen(), // 150: Query Builder
       ];
 
   String get userName {

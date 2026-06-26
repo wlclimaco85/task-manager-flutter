@@ -234,7 +234,7 @@ class _ManifestacaoDestinatarioScreenState
     return Scaffold(
       backgroundColor: Colors.grey[100],
       appBar: AppBar(
-        backgroundColor: GridColors.secondary,
+        backgroundColor: GridColors.primary,
         foregroundColor: Colors.white,
         title: const Text('Manifestação do Destinatário'),
         elevation: 0,

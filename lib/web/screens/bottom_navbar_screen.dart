@@ -481,6 +481,7 @@ class _WebBottomNavBarScreenState extends State<WebBottomNavBarScreen> {
       const WebDashboardMensalidadeScreen(), // 147: Dashboard de Mensalidades
       const BoletoImportacaoLoteScreen(), // 148: Importação Boletos Lote
       const SolicitacaoAcessoAprovacaoScreen(), // 149: Solicitações de Acesso
+      const SizedBox.shrink(), // 150: Query Builder
     ];
   }
 
@@ -519,7 +520,9 @@ class _WebBottomNavBarScreenState extends State<WebBottomNavBarScreen> {
   }
 
   void closeNotificationDropdown() {
-    notificationOverlay?.remove();
+    try {
+      notificationOverlay?.remove();
+    } catch (_) {}
     notificationOverlay = null;
   }
 
@@ -533,45 +536,47 @@ class _WebBottomNavBarScreenState extends State<WebBottomNavBarScreen> {
     final int totalNaoLidas = notifications.length;
 
     notificationOverlay = OverlayEntry(
-      builder: (ctx) => Stack(
-        children: [
-          // Camada transparente para fechar ao clicar fora
-          Positioned.fill(
-            child: GestureDetector(
-              onTap: closeNotificationDropdown,
-              behavior: HitTestBehavior.translucent,
-              child: const SizedBox.expand(),
-            ),
-          ),
-          Positioned(
-            top: position.dy + 48,
-            left: esquerda,
-            child: Material(
-              elevation: 8,
-              borderRadius: BorderRadius.circular(12),
-              shadowColor: GridColors.shadow,
-              child: Container(
-                width: 340,
-                constraints: const BoxConstraints(maxHeight: 480),
-                decoration: BoxDecoration(
-                  color: GridColors.card,
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: GridColors.divider, width: 1),
+      builder: (ctx) {
+        try {
+          return Stack(
+            children: [
+              // Camada transparente para fechar ao clicar fora
+              Positioned.fill(
+                child: GestureDetector(
+                  onTap: closeNotificationDropdown,
+                  behavior: HitTestBehavior.translucent,
+                  child: const SizedBox.expand(),
                 ),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    // ── Cabeçalho ──────────────────────────────────────────
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 16, vertical: 12),
-                      decoration: const BoxDecoration(
-                        color: GridColors.primary,
-                        borderRadius: BorderRadius.only(
-                          topLeft: Radius.circular(12),
-                          topRight: Radius.circular(12),
-                        ),
-                      ),
+              ),
+              Positioned(
+                top: position.dy + 48,
+                left: esquerda,
+                child: Material(
+                  elevation: 8,
+                  borderRadius: BorderRadius.circular(12),
+                  shadowColor: GridColors.shadow,
+                  child: Container(
+                    width: 340,
+                    constraints: const BoxConstraints(maxHeight: 480),
+                    decoration: BoxDecoration(
+                      color: GridColors.card,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: GridColors.divider, width: 1),
+                    ),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        // ── Cabeçalho ──────────────────────────────────────────
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 16, vertical: 12),
+                          decoration: const BoxDecoration(
+                            color: GridColors.primary,
+                            borderRadius: BorderRadius.only(
+                              topLeft: Radius.circular(12),
+                              topRight: Radius.circular(12),
+                            ),
+                          ),
                       child: Row(
                         children: [
                           const Icon(Icons.notifications_outlined,
@@ -768,7 +773,12 @@ class _WebBottomNavBarScreenState extends State<WebBottomNavBarScreen> {
             ),
           ),
         ],
-      ),
+      );
+        } catch (_) {
+          closeNotificationDropdown();
+          rethrow;
+        }
+      },
     );
     overlay.insert(notificationOverlay!);
   }
@@ -888,7 +898,7 @@ class _WebBottomNavBarScreenState extends State<WebBottomNavBarScreen> {
   @override
   void dispose() {
     _periodicTimer?.cancel();
-    notificationOverlay?.remove();
+    closeNotificationDropdown();
     super.dispose();
   }
 

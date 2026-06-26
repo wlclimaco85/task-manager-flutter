@@ -23,7 +23,7 @@ class NfceAutorizadaScreen extends StatelessWidget {
       backgroundColor: Colors.white,
       appBar: AppBar(
         title: const Text(GridTexts.nfceAuthorizedTitle),
-        backgroundColor: GridColors.secondary,
+        backgroundColor: GridColors.primary,
         foregroundColor: Colors.white,
         automaticallyImplyLeading: false,
       ),

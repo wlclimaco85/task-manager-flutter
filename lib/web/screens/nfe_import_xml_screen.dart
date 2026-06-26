@@ -109,7 +109,7 @@ class _WebNfeImportXmlScreenState extends State<WebNfeImportXmlScreen> {
     return Scaffold(
       backgroundColor: Colors.grey[100],
       appBar: AppBar(
-        backgroundColor: GridColors.secondary,
+        backgroundColor: GridColors.primary,
         foregroundColor: Colors.white,
         title: const Text('Importar XML NF-e'),
         elevation: 0,

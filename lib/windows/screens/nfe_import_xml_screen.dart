@@ -110,7 +110,7 @@ class _WindowsNfeImportXmlScreenState extends State<WindowsNfeImportXmlScreen> {
     return Scaffold(
       backgroundColor: Colors.grey[100],
       appBar: AppBar(
-        backgroundColor: GridColors.secondary,
+        backgroundColor: GridColors.primary,
         foregroundColor: Colors.white,
         title: const Text('Importar XML NF-e'),
         elevation: 0,

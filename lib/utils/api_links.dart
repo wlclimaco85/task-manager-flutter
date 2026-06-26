@@ -1329,6 +1329,16 @@ class ApiLinks {
   static String perguntarAiUrl(String empresaId, String pergunta) =>
       '$_baseUrlNew/api/ai/perguntar?empresaId=$empresaId&pergunta=${Uri.encodeComponent(pergunta)}';
 
+  // Query Builder — Ferramenta de consulta SQL
+  static const String queryBuilder = '$_baseUrlNew/api/ferramentas/query-builder';
+  static String get queryBuilderSchemas => '$queryBuilder/schemas';
+  static String get queryBuilderTabelas => '$queryBuilder/tabelas';
+  static String queryBuilderColunas(String schema, String tabela) => '$queryBuilder/tabelas/$schema/$tabela/colunas';
+  static String get queryBuilderExecutar => '$queryBuilder/executar';
+  static String get queryBuilderAtualizar => '$queryBuilder/atualizar';
+  static String get queryBuilderQueries => '$queryBuilder/queries';
+  static String queryBuilderQuery(int id) => '$queryBuilder/queries/$id';
+
   // ── Dashboards por área (Fase 171 — fundação) ──────────────────────────
   // Rotas kebab-case distintas das legadas (/api/dashboard/financeiro,
   // /api/dp/dashboard) para não colidir. empresaId é resolvido no backend

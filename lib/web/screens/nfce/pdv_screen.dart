@@ -207,7 +207,7 @@ class _PdvScreenState extends State<PdvScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('PDV / NFC-e'),
-        backgroundColor: GridColors.secondary,
+        backgroundColor: GridColors.primary,
         foregroundColor: Colors.white,
         actions: [
           if (TenantContext.empresaId != null)

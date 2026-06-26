@@ -357,7 +357,7 @@ class _ConfigFiscalScreenState extends State<ConfigFiscalScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text(GridTexts.nfceFiscalConfigTitle),
-        backgroundColor: GridColors.secondary,
+        backgroundColor: GridColors.primary,
         foregroundColor: Colors.white,
       ),
       body: SingleChildScrollView(

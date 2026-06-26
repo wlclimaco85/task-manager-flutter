@@ -236,7 +236,7 @@ class _ManifestacaoDestinatarioScreenState
     return Scaffold(
       backgroundColor: GridColors.pageBackground,
       appBar: AppBar(
-        backgroundColor: GridColors.secondary,
+        backgroundColor: GridColors.primary,
         foregroundColor: GridColors.textPrimary,
         title: const Text(GridTexts.manifestRecipientTitle),
         elevation: 0,

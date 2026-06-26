@@ -12,6 +12,7 @@ import 'package:intl/date_symbol_data_local.dart';
 
 import 'models/auth_utility.dart';
 import 'auth_screens/login_screen.dart';
+import 'services/session_expired_handler.dart';
 import 'utils/grid_colors.dart';
 import 'utils/security_matrix.dart';
 import 'utils/app_logger.dart';
@@ -139,14 +140,30 @@ class TaskManagerApp extends StatelessWidget {
     }
 
     return MaterialApp(
+      navigatorKey: SessionExpiredHandler.navigatorKey,
       debugShowCheckedModeBanner: false,
       title: 'Abraço Contabilidade',
       theme: ThemeData(
-        // Sobrescreve surface/background do Material 3 para evitar o fundo rosa
-        // gerado automaticamente pelo fromSeed com seed vermelho
+        // Sobrescreve surface/container do Material 3 para evitar o fundo rosa
+        // gerado automaticamente pelo fromSeed com seed vermelho (#93070A).
+        // O fromSeed gera tons rosa/magenta para primaryContainer, tertiary,
+        // surfaceContainer*, surfaceTint etc — todos explicitamente override.
         colorScheme: ColorScheme.fromSeed(
           seedColor: GridColors.primary,
           surface: GridColors.background,
+        ).copyWith(
+          primaryContainer: GridColors.primarySoft,
+          onPrimaryContainer: GridColors.primaryDark,
+          secondaryContainer: GridColors.secondarySoft,
+          onSecondaryContainer: GridColors.secondaryDark,
+          tertiary: GridColors.secondary,
+          onTertiary: Colors.white,
+          surfaceContainerLowest: Colors.white,
+          surfaceContainerLow: GridColors.filterBackground,
+          surfaceContainer: GridColors.background,
+          surfaceContainerHigh: GridColors.gridHeader,
+          surfaceContainerHighest: GridColors.divider,
+          surfaceTint: GridColors.primary,
         ),
         scaffoldBackgroundColor: GridColors.background,
         useMaterial3: true,

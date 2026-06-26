@@ -37,7 +37,7 @@ class WindowsParceiroDetailScreen extends StatelessWidget {
           title: 'Logins',
           icon: Icons.person,
           telaNome: 'login',
-          extraParams: {'parcId': id},
+          extraParams: {'parcId': id, 'empresaId': empresaId},
           fieldOverrides: [
             const FieldConfigWindows(
               label: 'Tipo Login',
@@ -78,19 +78,19 @@ class WindowsParceiroDetailScreen extends StatelessWidget {
           title: 'Contas a Pagar',
           icon: Icons.money_off,
           telaNome: 'conta_pagar',
-          extraParams: {'parceiro': id},
+          extraParams: {'parceiro': id, 'empresaId': empresaId},
         ),
         RelatedGridTab(
           title: 'Contas a Receber',
           icon: Icons.attach_money,
           telaNome: 'conta_receber',
-          extraParams: {'parceiroId': id},
+          extraParams: {'parceiroId': id, 'empresaId': empresaId},
         ),
         RelatedGridTab(
           title: 'Chamados',
           icon: Icons.support_agent,
           telaNome: 'chamado',
-          extraParams: {'parceiroId': id},
+          extraParams: {'parceiroId': id, 'empresaId': empresaId},
         ),
         RelatedGridTab(
           title: 'Comunicados',
@@ -112,7 +112,7 @@ class WindowsParceiroDetailScreen extends StatelessWidget {
           title: 'Series NF-e',
           icon: Icons.format_list_numbered,
           telaNome: 'nfe_serie',
-          extraParams: {'parcId': id},
+          extraParams: {'parcId': id, 'empresaId': empresaId},
         ),
         RelatedGridTab(
           title: 'GED',

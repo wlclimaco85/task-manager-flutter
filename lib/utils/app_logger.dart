@@ -413,7 +413,7 @@ class _ConsolePanelState extends State<_ConsolePanel> {
                   width: panelW,
                   margin: const EdgeInsets.only(bottom: 10),
                   decoration: BoxDecoration(
-                    color: theme.colorScheme.surface,
+                    color: GridColors.background,
                     borderRadius: BorderRadius.circular(16),
                     boxShadow: [
                       BoxShadow(
