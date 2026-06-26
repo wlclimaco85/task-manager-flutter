@@ -6,10 +6,10 @@ class ChatSupportPalette {
   ChatSupportPalette._();
 
   static const Color surface = GridColors.card;
-  static const Color page = Color(0xFFF6F7F8);
-  static const Color subtle = Color(0xFFE9EEF0);
-  static const Color outbound = Color(0xFFEAF6EF);
-  static const Color inbound = Colors.white;
+  static const Color page = Color(0xFFEAF5EE); // verde institucional suave (GridColors.secondarySoft)
+  static const Color subtle = Color(0xFFD4EAD8);
+  static const Color outbound = Color(0xFFCDE8D2); // minha mensagem — verde mais vivo
+  static const Color inbound = Color(0xFFF9FAFB); // mensagem recebida — off-white
 }
 
 class ChatStatusPill extends StatelessWidget {
