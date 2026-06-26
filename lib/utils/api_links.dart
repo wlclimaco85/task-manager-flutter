@@ -33,8 +33,6 @@ class ApiLinks {
   static const String allSuplementoAluno =
       '$_baseUrlNew/suplemento/findByIdAluno';
   static const String insertAluno = '$_baseUrlNew/rest/auth/inserirAluno';
-  static String regestration = '$_baseUrl/registration';
-  static String profileUpdate = '$_baseUrl/profileUpdate';
   static const String insertExame = '$_baseUrlNew/exame/inserir';
   static const String findByIdAluno = '$_baseUrlNew/exame/findByParceiros';
   static const String insertMedicamento = '$_baseUrlNew/medicamento/inserir';
