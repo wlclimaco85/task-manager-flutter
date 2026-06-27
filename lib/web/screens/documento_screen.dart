@@ -1,4 +1,6 @@
 // ignore_for_file: library_private_types_in_public_api
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import '../../utils/grid_colors.dart';
 import 'package:intl/intl.dart';
@@ -9,8 +11,8 @@ import '../../../widgets/anexo_financeiro_widget.dart';
 import '../../../widgets/user_banners.dart';
 import '../../../models/conta_pagar_model.dart';
 import '../../../models/conta_receber_model.dart';
-import 'baixa_dialog.dart';
-import 'baixa_dialog_receber.dart';
+import '../../../windows/screens/baixa_dialog.dart';
+import '../../../mobile/screens/baixa_dialog_receber.dart';
 
 // ─── Internal data models ────────────────────────────────────────────────────
 
@@ -672,18 +674,54 @@ class _WindowsCalendarScreenState extends State<WindowsCalendarScreen> {
     );
   }
 
+  Future<dynamic> _fetchFinancialJson(String url) async {
+    try {
+      final response = await TenantContext.get(url);
+      if (response.statusCode == 200) {
+        return jsonDecode(utf8.decode(response.bodyBytes));
+      }
+    } catch (_) {}
+    return null;
+  }
+
   // Abre o popup de baixa da conta (a partir do item do calendário).
-  void _abrirBaixaConta(Map<String, dynamic> item, {required bool isPagar}) {
-    showDialog(
-      context: context,
-      builder: (_) => isPagar
-          ? WebBaixaDialog(conta: ContaPagar.fromJson(item))
-          : WebBaixaDialogReceber(conta: ContaReceber.fromJson(item)),
-    ).then((_) {
-      final day = _selectedDay ?? DateTime.now();
-      _loadMonthMarkers(_currentMonth);
-      _loadDayData(day);
-    });
+  Future<void> _abrirBaixaConta(Map<String, dynamic> item, {required bool isPagar}) async {
+    final id = item['id']?.toString();
+    if (id == null || id.isEmpty) return;
+
+    try {
+      final url = isPagar
+          ? ApiLinks.updateContaPagar(id)
+          : ApiLinks.updateContaReceber(id);
+      dynamic body = await _fetchFinancialJson(url);
+      while (body is Map && body.containsKey('data')) {
+        body = body['data'];
+      }
+      if (body is! Map) {
+        throw StateError('Conta não encontrada.');
+      }
+
+      final result = await showDialog<bool>(
+        context: context,
+        builder: (_) => isPagar
+            ? BaixaDialog(
+                conta: ContaPagar.fromJson(Map<String, dynamic>.from(body)),
+              )
+            : BaixaDialogReceber(
+                conta: ContaReceber.fromJson(Map<String, dynamic>.from(body)),
+              ),
+      );
+
+      if (result == true && _selectedDay != null) {
+        await _loadDayData(_selectedDay!);
+        await _loadMonthMarkers(_currentMonth);
+      }
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Não foi possível abrir a baixa da conta.')),
+      );
+    }
   }
 
   // Abre o visualizador de anexos da conta (ver/baixar).
