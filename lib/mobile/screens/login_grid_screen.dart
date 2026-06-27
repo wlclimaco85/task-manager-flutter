@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
 import '../../customization/dynamic_grid_dynamic_screen.dart';
+import '../../models/role_model.dart';
+import '../../services/role_caller.dart';
 import '../../customization/generic_grid/grid_models.dart';
 import '../../models/login_model.dart';
 import '../../models/network_response.dart';
@@ -170,24 +172,107 @@ class LoginGridScreen extends StatelessWidget {
           isFilterable: true,
           isRequired: true,
         ),
-        FieldConfig(
-          label: 'Senha',
-          fieldName: 'senha',
-          icon: Icons.lock,
-          fieldType: FieldType.password,
-          isInForm: true,
-          isFilterable: false,
-          requiredOnCreate: true,
+      ],
+      customActions: () => [
+        // Botão de permissões será adicionado no dialog mobile específico
+      ],
+    );
+  }
+
+}
+
+class _MobileRoleDialog extends StatefulWidget {
+  final dynamic loginId;
+
+  const _MobileRoleDialog({required this.loginId});
+
+  @override
+  State<_MobileRoleDialog> createState() => _MobileRoleDialogState();
+}
+
+class _MobileRoleDialogState extends State<_MobileRoleDialog> {
+  late Future<List<Role>> _rolesFuture;
+  final Set<int> _selectedRoleIds = {};
+
+  @override
+  void initState() {
+    super.initState();
+    _rolesFuture = RoleCaller().getRoles();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Text('Gerenciar Permissões'),
+      content: FutureBuilder<List<Role>>(
+        future: _rolesFuture,
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const SizedBox(
+              height: 200,
+              child: Center(child: CircularProgressIndicator()),
+            );
+          }
+          if (snapshot.hasError) {
+            return Text('Erro: ${snapshot.error}');
+          }
+          final roles = snapshot.data ?? [];
+          return SizedBox(
+            height: 300,
+            width: 400,
+            child: ListView.builder(
+              itemCount: roles.length,
+              itemBuilder: (context, index) {
+                final role = roles[index];
+                return CheckboxListTile(
+                  title: Text(role.key ?? 'Role #${role.id}'),
+                  subtitle: Text(role.description ?? ''),
+                  value: _selectedRoleIds.contains(role.id),
+                  onChanged: (bool? value) {
+                    setState(() {
+                      if (value == true) {
+                        _selectedRoleIds.add(role.id ?? 0);
+                      } else {
+                        _selectedRoleIds.remove(role.id);
+                      }
+                    });
+                  },
+                );
+              },
+            ),
+          );
+        },
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text('Cancelar'),
         ),
-        FieldConfig(
-          label: 'Trocar senha no próximo login',
-          fieldName: 'trocarSenhaProximoLogin',
-          icon: Icons.lock_reset,
-          fieldType: FieldType.boolean,
-          isInForm: true,
-          isFilterable: false,
+        ElevatedButton(
+          onPressed: _saveRoleChanges,
+          child: const Text('Salvar'),
         ),
       ],
     );
+  }
+
+  Future<void> _saveRoleChanges() async {
+    try {
+      for (final roleId in _selectedRoleIds) {
+        await RoleCaller().associateRoleToLogin(widget.loginId, roleId);
+      }
+      if (mounted) {
+        Navigator.pop(context);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Permissões atualizadas com sucesso')),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Erro ao atualizar permissões: $e')),
+        );
+      }
+    }
   }
 }
