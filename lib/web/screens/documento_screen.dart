@@ -11,8 +11,8 @@ import '../../../widgets/anexo_financeiro_widget.dart';
 import '../../../widgets/user_banners.dart';
 import '../../../models/conta_pagar_model.dart';
 import '../../../models/conta_receber_model.dart';
-import '../../../windows/screens/baixa_dialog.dart';
-import '../../../mobile/screens/baixa_dialog_receber.dart';
+import 'baixa_dialog.dart';
+import 'baixa_dialog_receber.dart';
 
 // ─── Internal data models ────────────────────────────────────────────────────
 
@@ -704,10 +704,10 @@ class _WindowsCalendarScreenState extends State<WindowsCalendarScreen> {
       final result = await showDialog<bool>(
         context: context,
         builder: (_) => isPagar
-            ? BaixaDialog(
+            ? WebBaixaDialog(
                 conta: ContaPagar.fromJson(Map<String, dynamic>.from(body)),
               )
-            : BaixaDialogReceber(
+            : WebBaixaDialogReceber(
                 conta: ContaReceber.fromJson(Map<String, dynamic>.from(body)),
               ),
       );
