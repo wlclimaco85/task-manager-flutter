@@ -2,7 +2,8 @@ import 'package:flutter/material.dart';
 import '../../../models/login_model.dart';
 import '../../../utils/api_links.dart';
 import '../../../widgets/generic_detail_form_screen.dart';
-import '../../../widgets/generic_grid_windows_screen.dart' show SecurityCheck;
+import '../../../widgets/generic_grid_windows_screen.dart' show SecurityCheck, FieldType, FieldConfigWindows;
+import '../../../services/network_caller.dart';
 
 class MobileLoginDetailScreen extends StatelessWidget {
   final Login item;
@@ -14,16 +15,56 @@ class MobileLoginDetailScreen extends StatelessWidget {
     required this.hasPermission,
   });
 
+  /// Carrega roles disponíveis filtradas por parceiroId/empresaId
+  Future<List<Map<String, dynamic>>> _loadRolesDisponiveis(
+    String? parceiroId,
+    String? empresaId,
+  ) async {
+    try {
+      final endpoint = parceiroId?.isNotEmpty == true
+          ? '${ApiLinks.baseUrl}/api/role/disponiveis?parceiroId=$parceiroId'
+          : empresaId?.isNotEmpty == true
+              ? '${ApiLinks.baseUrl}/api/role/disponiveis?empresaId=$empresaId'
+              : '${ApiLinks.baseUrl}/api/role/disponiveis';
+
+      final response = await NetworkCaller().getRequest(endpoint);
+      if (response.isSuccess && response.body is List) {
+        return (response.body as List)
+            .map((r) => r is Map<String, dynamic> ? r : <String, dynamic>{})
+            .toList();
+      }
+      return [];
+    } catch (e) {
+      return [];
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final loginId = item.id?.toString() ?? '';
     final empresaId = item.empresa?.id?.toString() ?? '';
     final parceiroId = item.parceiro?.id?.toString() ?? '';
 
+    // fieldOverride para dropdown de Roles filtrado por parceiro
+    // Usa dropdownFutureBuilder para carregar via GET /api/role/disponiveis?parceiroId={parceiroId}
+    final fieldOverrides = [
+      FieldConfigWindows(
+        fieldName: 'roles',
+        label: 'Roles',
+        fieldType: FieldType.multiselect,
+        isRequired: false,
+        dropdownValueField: 'id',
+        dropdownDisplayField: 'description',
+        dropdownFutureBuilder: () =>
+            _loadRolesDisponiveis(parceiroId, empresaId),
+      ),
+    ];
+
     return GenericDetailFormScreen(
       item: item.toJson(),
       telaNome: 'login',
       hasPermission: hasPermission,
+      fieldOverrides: fieldOverrides,
       relatedTabs: [
         RelatedGridTab(
           title: 'Roles',
