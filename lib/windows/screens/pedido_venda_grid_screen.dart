@@ -4,7 +4,7 @@ import '../../../services/pedido_venda_service.dart';
 import '../../../services/network_caller.dart';
 import '../../../utils/api_links.dart';
 import '../../../constants/custom_colors.dart';
-import '../../../windows/dialogs/pedido_venda_form_dialog.dart';
+import './details/pedido_venda_detail_screen.dart';
 import '../../../windows/dialogs/pedido_venda_historico_dialog.dart';
 import '../../../windows/dialogs/faturar_dialog.dart';
 import '../../utils/grid_texts.dart';
@@ -77,10 +77,10 @@ class _WindowsPedidoVendaGridScreenState
   }
 
   void _openForm(Map<String, dynamic>? item) {
-    showDialog(
-      context: context,
-      builder: (_) => PedidoVendaFormDialog(item: item, onSaved: _load),
-    );
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => PedidoVendaDetailScreen(item: item ?? {})),
+    ).then((_) => _load());
   }
 
   void _showHistorico(List<PedidoVendaHistorico> historico) {

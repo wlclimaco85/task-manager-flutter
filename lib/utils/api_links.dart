@@ -745,6 +745,10 @@ class ApiLinks {
       '$_baseUrlNew/api/comercial/pedidos-venda/$id/cancelar';
   static String criarPedidoVendaDeOrcamento(String orcamentoId) =>
       '$_baseUrlNew/api/comercial/pedidos-venda/criar-de-orcamento/$orcamentoId';
+  static String pedidoVendaItens(int id) =>
+      '$_baseUrlNew/api/comercial/pedidos-venda/$id/itens';
+  static String pedidoVendaHistorico(int id) =>
+      '$_baseUrlNew/api/comercial/pedidos-venda/$id/historico';
 
   // Pedido de Compra
   static const String pedidosCompra = '$_baseUrlNew/api/compras/pedidos';

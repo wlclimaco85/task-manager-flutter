@@ -1,5 +1,8 @@
+import 'dart:convert';
 import '../../../utils/api_links.dart';
 import '../../services/network_caller.dart';
+import '../models/pedido_venda_model.dart';
+import '../utils/tenant_context.dart';
 
 class PedidoVendaService {
   static Future<List<Map<String, dynamic>>> fetchAll({
@@ -110,5 +113,39 @@ class PedidoVendaService {
     } catch (_) {
       return false;
     }
+  }
+
+  static Future<List<PedidoVendaItem>> fetchItens(int pedidoId) async {
+    try {
+      final response = await TenantContext.get(ApiLinks.pedidoVendaItens(pedidoId));
+      if (response.statusCode == 200) {
+        final body = jsonDecode(response.body);
+        List<dynamic> raw = [];
+        if (body is List) {
+          raw = body;
+        } else if (body is Map) {
+          raw = body['data'] ?? body['dados'] ?? body['itens'] ?? [];
+        }
+        return raw.whereType<Map>().map((e) => PedidoVendaItem.fromJson(Map<String, dynamic>.from(e))).toList();
+      }
+    } catch (_) {}
+    return [];
+  }
+
+  static Future<List<PedidoVendaHistorico>> fetchHistorico(int pedidoId) async {
+    try {
+      final response = await TenantContext.get(ApiLinks.pedidoVendaHistorico(pedidoId));
+      if (response.statusCode == 200) {
+        final body = jsonDecode(response.body);
+        List<dynamic> raw = [];
+        if (body is List) {
+          raw = body;
+        } else if (body is Map) {
+          raw = body['data'] ?? body['dados'] ?? body['historico'] ?? [];
+        }
+        return raw.whereType<Map>().map((e) => PedidoVendaHistorico.fromJson(Map<String, dynamic>.from(e))).toList();
+      }
+    } catch (_) {}
+    return [];
   }
 }
