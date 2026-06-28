@@ -4,8 +4,9 @@ import 'dart:typed_data';
 import 'package:http/http.dart' as http;
 import '../../../models/auth_utility.dart';
 import '../../services/network_caller.dart';
-import '../../../utils/api_links.dart';
-import '../../../utils/utils.dart';
+import '../utils/api_links.dart';
+import '../utils/utils.dart';
+import '../utils/tenant_context.dart';
 
 
 import 'package:task_manager_flutter/utils/app_logger.dart';
@@ -105,8 +106,10 @@ class FileCaller {
     try {
       var request = http.MultipartRequest(
         'POST',
-        Uri.parse(ApiLinks.uploadArquivo),
+        Uri.parse(TenantContext.applyToUrl(ApiLinks.uploadArquivo)),
       );
+
+      request.headers.addAll(TenantContext.headers);
 
       // Adiciona o arquivo
       request.files.add(http.MultipartFile.fromBytes('fileData', fileBytes,

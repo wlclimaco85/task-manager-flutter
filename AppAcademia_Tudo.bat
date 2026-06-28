@@ -10,6 +10,8 @@ set "FLUTTER_CLIENT_DIR=%APP_ROOT%\task_manager_flutter"
 set "FLUTTER_BASE_DIR=%APP_ROOT%\task_manager_flutter_merged_final"
 set "FLUTTER_V003_DIR=%APP_ROOT%\task_manager_AppAcademiaV003"
 set "FLUTTER_DANIEL_DIR=%APP_ROOT%\task_manager_appDaniel"
+set "BOLSA_BACKEND_DIR=%APP_ROOT%\bolsa-app-backend"
+set "BOLSA_FLUTTER_DIR=%APP_ROOT%\bolsa-app-flutter"
 set "SELENIUM_DIR=%APP_ROOT%\.selenium-app-academia-e2e"
 set "DESKTOP=%USERPROFILE%\Desktop"
 set "ADB=%LOCALAPPDATA%\Android\Sdk\platform-tools\adb.exe"
@@ -65,6 +67,8 @@ echo  [J] Build AAB (Play Store) com backend Railway + auto-incrementa versao
 echo  [P] Build APK unico com backend deployado
 echo  [K] Commitar tudo nos repositorios
 echo  [L] Subir Instagram API (Python local, porta 8500)
+echo  [G] Git: Pull + Commit + Push (tudo junto)
+echo  [M] Subir Backend Bolsa (porta 9002) + Flutter Web
 echo  [0] Sair
 echo.
 set "OP="
@@ -157,6 +161,14 @@ if /i "%OP%"=="K" (
 )
 if /i "%OP%"=="L" (
     call :START_INSTAGRAM_API
+    goto END_MENU
+)
+if /i "%OP%"=="G" (
+    call :GIT_PULL_COMMIT_PUSH_ALL
+    goto END_MENU
+)
+if /i "%OP%"=="M" (
+    call :START_BOLSA_APP
     goto END_MENU
 )
 goto MENU
@@ -1056,7 +1068,7 @@ set "MSG=%DEFAULT_MSG%"
 set /p "MSG=Mensagem de commit (Enter para usar '%DEFAULT_MSG%'): "
 if "%MSG%"=="" set "MSG=%DEFAULT_MSG%"
 echo.
-set "REPOS=%APP_ROOT%\AppAcademia %APP_ROOT%\task_manager_flutter %APP_ROOT%\task_manager_flutter_merged_final %APP_ROOT%\task_manager_AppAcademiaV003 %APP_ROOT%\task_manager_appDaniel %APP_ROOT%\entusiasta-tributario"
+set "REPOS=%APP_ROOT%\AppAcademia %APP_ROOT%\task_manager_flutter %APP_ROOT%\task_manager_flutter_merged_final %APP_ROOT%\task_manager_AppAcademiaV003 %APP_ROOT%\task_manager_appDaniel %APP_ROOT%\entusiasta-tributario %APP_ROOT%\bolsa-app-backend %APP_ROOT%\bolsa-app-flutter"
 for %%R in (%REPOS%) do (
     if exist "%%R\.git" (
         echo ----------------------------------------
@@ -1097,7 +1109,7 @@ echo ============================================
 echo  Atualizando todos os repositorios
 echo ============================================
 echo.
-set "REPOS=%APP_ROOT%\AppAcademia %APP_ROOT%\task_manager_flutter %APP_ROOT%\task_manager_flutter_merged_final %APP_ROOT%\task_manager_AppAcademiaV003 %APP_ROOT%\task_manager_appDaniel %APP_ROOT%\entusiasta-tributario"
+set "REPOS=%APP_ROOT%\AppAcademia %APP_ROOT%\task_manager_flutter %APP_ROOT%\task_manager_flutter_merged_final %APP_ROOT%\task_manager_AppAcademiaV003 %APP_ROOT%\task_manager_appDaniel %APP_ROOT%\entusiasta-tributario %APP_ROOT%\bolsa-app-backend %APP_ROOT%\bolsa-app-flutter"
 for %%R in (%REPOS%) do (
     if exist "%%R\.git" (
         echo ----------------------------------------
@@ -1128,6 +1140,120 @@ call :START_ALL_WITH_ANDROID
 if errorlevel 1 exit /b 1
 call :RUN_TESTS all
 if errorlevel 1 exit /b 1
+exit /b 0
+
+:GIT_PULL_COMMIT_PUSH_ALL
+echo.
+echo ============================================
+echo  Git: Pull + Commit + Push (tudo junto)
+echo ============================================
+echo.
+set "DEFAULT_MSG=atualizacao geral"
+set "MSG=%DEFAULT_MSG%"
+set /p "MSG=Mensagem de commit (Enter para usar '%DEFAULT_MSG%'): "
+if "%MSG%"=="" set "MSG=%DEFAULT_MSG%"
+echo.
+set "REPOS=%APP_ROOT%\AppAcademia %APP_ROOT%\task_manager_flutter %APP_ROOT%\task_manager_flutter_merged_final %APP_ROOT%\task_manager_AppAcademiaV003 %APP_ROOT%\task_manager_appDaniel %APP_ROOT%\entusiasta-tributario %APP_ROOT%\bolsa-app-backend %APP_ROOT%\bolsa-app-flutter"
+for %%R in (%REPOS%) do (
+    if exist "%%R\.git" (
+        echo ----------------------------------------
+        echo Repositorio: %%~nxR
+        echo ----------------------------------------
+        cd /d "%%R"
+        git checkout main 2>nul || git checkout master 2>nul
+
+        echo [1/3] Fazendo pull...
+        git pull --rebase --autostash
+        if errorlevel 1 (
+            echo [ATENCAO] Falha ao fazer pull em %%~nxR
+            echo.
+            goto NEXT_REPO
+        )
+
+        set "HAS_CHANGES=0"
+        for /f "tokens=*" %%C in ('git status --porcelain 2^>nul') do set "HAS_CHANGES=1"
+
+        if "!HAS_CHANGES!"=="1" (
+            echo [2/3] Commitando...
+            git add -A
+            git commit -m "%MSG%"
+            if errorlevel 1 (
+                echo [ERRO] Falha ao commitar %%~nxR
+            ) else (
+                echo [3/3] Fazendo push...
+                git push origin main 2>nul || git push origin master 2>nul
+                if errorlevel 1 (
+                    echo [ERRO] Falha ao push %%~nxR
+                ) else (
+                    echo OK - pull + commit + push realizado
+                )
+            )
+        ) else (
+            echo [2/3] Nada para commitar (ja esta atualizado)
+        )
+
+        :NEXT_REPO
+        echo.
+    ) else (
+        echo [AVISO] %%R nao e um repositorio git
+        echo.
+    )
+)
+cd /d "%APP_ROOT%"
+echo ============================================
+echo  Git: Pull + Commit + Push finalizado!
+echo ============================================
+exit /b 0
+
+:START_BOLSA_APP
+echo.
+echo ============================================
+echo  Subir Backend Bolsa (9002) + Flutter Web
+echo ============================================
+echo.
+if not exist "%BOLSA_BACKEND_DIR%" (
+    echo [ERRO] Pasta do backend Bolsa nao encontrada: %BOLSA_BACKEND_DIR%
+    echo Verifique se o repositorio foi clonado em %BOLSA_BACKEND_DIR%
+    pause
+    exit /b 1
+)
+if not exist "%BOLSA_FLUTTER_DIR%" (
+    echo [ERRO] Pasta do Flutter Bolsa nao encontrada: %BOLSA_FLUTTER_DIR%
+    echo Verifique se o repositorio foi clonado em %BOLSA_FLUTTER_DIR%
+    pause
+    exit /b 1
+)
+
+echo [1/2] Compilando backend Bolsa...
+cd /d "%BOLSA_BACKEND_DIR%"
+call mvnw.cmd clean package -DskipTests
+if errorlevel 1 (
+    echo [ERRO] Falha na compilacao do backend Bolsa!
+    pause
+    exit /b 1
+)
+echo Backend Bolsa compilado com sucesso.
+
+echo.
+echo [2/2] Iniciando backend Bolsa na porta 9002 e Flutter Web...
+echo ATENCAO: o Spring Boot leva ~30 segundos para subir.
+echo.
+
+start "Bolsa-Backend" cmd /k "cd /d %BOLSA_BACKEND_DIR% && java -Djava.io.tmpdir=C:\Temp -Djdk.net.unixdomain.tmpdir=C:\Temp -Dspring.devtools.restart.enabled=false -jar target\bolsa-app-backend.jar --server.port=9002 --server.address=0.0.0.0"
+
+echo Backend Bolsa iniciando na porta 9002...
+timeout /t 3 /nobreak >nul
+
+start "Bolsa-Flutter" cmd /k "cd /d %BOLSA_FLUTTER_DIR% && flutter pub get && flutter run -d chrome --web-port 8085 --dart-define=BACKEND_URL=http://127.0.0.1:9002"
+echo Flutter Bolsa iniciando no Chrome na porta 8085...
+
+echo.
+echo ============================================
+echo  Bolsa App iniciada com sucesso!
+echo ============================================
+echo Backend (Spring Boot) : http://localhost:9002
+echo Flutter (Chrome)      : http://localhost:8085
+echo.
 exit /b 0
 
 :DETECT_HOST_IP

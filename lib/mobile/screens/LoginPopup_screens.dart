@@ -21,6 +21,12 @@ class _LoginPopupState extends State<LoginPopup> {
   String? errorMessage; // Armazena mensagens de erro
   bool isLoading = false;
 
+  /// Validador de email com regex RFC 5322 básico
+  bool _isValidEmail(String email) {
+    final emailRegex = RegExp(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$');
+    return emailRegex.hasMatch(email);
+  }
+
   Future<void> loginss(String username, String password) async {
     setState(() {
       isLoading = true;
@@ -48,34 +54,73 @@ class _LoginPopupState extends State<LoginPopup> {
           AuthUtility.userInfo?.token = model.token;
           Navigator.of(context).pop();
         }
-      } else if (response.statusCode == 400) {
+      } else if (response.statusCode == 400 || response.statusCode == 401) {
         setState(() {
           errorMessage = GridTexts.loginPopupInvalidCredentials;
         });
+        // Exibir SnackBar de erro
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(errorMessage ?? 'Erro ao fazer login'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
       } else {
         setState(() {
           errorMessage = 'Erro: ${response.statusCode}';
         });
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(errorMessage ?? 'Erro desconhecido'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
       }
     } catch (e) {
       setState(() {
         isLoading = false;
         errorMessage = 'Erro: $e';
       });
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(errorMessage ?? 'Erro de conexão'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
     }
   }
 
   Future<void> _submitLogin() async {
-    String username = _usernameController.text;
+    String username = _usernameController.text.trim();
     String password = _passwordController.text;
 
-    if (username.isNotEmpty && password.isNotEmpty) {
-      await loginss(username, password);
-    } else {
+    if (username.isEmpty || password.isEmpty) {
       setState(() {
         errorMessage = GridTexts.loginPopupFillFields;
       });
+      return;
     }
+
+    if (!_isValidEmail(username)) {
+      setState(() {
+        errorMessage = 'Email inválido';
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Por favor, insira um email válido'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    await loginss(username, password);
   }
 
   void _navigateToForgotPassword() {

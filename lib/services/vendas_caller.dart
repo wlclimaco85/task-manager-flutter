@@ -5,6 +5,7 @@ import '../../../models/negotiation_model.dart';
 import '../../../utils/api_links.dart';
 import '../../../models/network_response.dart';
 import '../../services/network_caller.dart';
+import '../utils/tenant_context.dart';
 import '../../../models/auth_utility.dart';
 import '../../mobile/screens/LoginPopup_screens.dart';
 import 'dart:io';
@@ -12,7 +13,6 @@ import 'package:path_provider/path_provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import 'package:task_manager_flutter/utils/app_logger.dart';
-import 'package:http/http.dart' as http;
 
 class VendasCaller {
   Future<List<Produto>> fetchCotacoes(BuildContext context) async {
@@ -161,16 +161,9 @@ class VendasCaller {
   }
 
   void downloadContrato(int contratoId, BuildContext context) async {
-    final url = "${ApiLinks.downloadContrato}/$contratoId";
-    final token = AuthUtility.userInfo?.token;
-
     try {
-      final response = await http.get(
-        Uri.parse(url),
-        headers: {
-          'Authorization': 'Bearer $token',
-          'Accept': 'application/json',
-        },
+      final response = await TenantContext.get(
+        "${ApiLinks.downloadContrato}/$contratoId",
       );
 
       if (response.statusCode == 200) {

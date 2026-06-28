@@ -7,8 +7,8 @@ import 'package:file_picker/file_picker.dart';
 import 'package:http/http.dart' as http;
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
-import '../../../models/auth_utility.dart';
-import '../../../utils/api_links.dart';
+import '../utils/api_links.dart';
+import '../utils/tenant_context.dart';
 
 
 import 'package:task_manager_flutter/utils/app_logger.dart';
@@ -17,14 +17,12 @@ class UploadFileCaller {
     String itemId,
     Map<String, List<PlatformFile>> filesToUpload,
   ) async {
-    final String authToken = '${AuthUtility.userInfo?.token}';
-
     if (filesToUpload.isEmpty) return 0;
 
     try {
       var request = http.MultipartRequest(
         'POST',
-        Uri.parse(ApiLinks.uploadFile),
+        Uri.parse(TenantContext.applyToUrl(ApiLinks.uploadFile)),
       );
 
       request.fields['itemId'] = itemId;
@@ -55,10 +53,7 @@ class UploadFileCaller {
         }
       }
 
-      // Adicionar headers de autenticação
-      if (authToken.isNotEmpty) {
-        request.headers['Authorization'] = 'Bearer $authToken';
-      }
+      request.headers.addAll(TenantContext.headers);
 
       // Enviar a requisição
       final response = await request.send();
@@ -80,13 +75,8 @@ class UploadFileCaller {
 
   Future<int> downloadFile(int fileId, String fileName) async {
     try {
-      final String authToken = '${AuthUtility.userInfo?.token}';
-
-      final response = await http.get(
-        Uri.parse(
-          ApiLinks.downloadFile(fileId.toString()),
-        ),
-        headers: {'Authorization': 'Bearer $authToken'},
+      final response = await TenantContext.get(
+        ApiLinks.downloadFile(fileId.toString()),
       );
 
       if (response.statusCode == 200) {

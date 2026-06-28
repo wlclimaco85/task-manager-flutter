@@ -579,6 +579,9 @@ class ModuloAccess {
     } else {
       _modulosContratados = _moduloToScreens.keys.toList();
     }
+    if (_modulosContratados.isNotEmpty && !_modulosContratados.contains('Financeiro')) {
+      _modulosContratados.add('Financeiro Limitado');
+    }
     _loaded = true;
   }
 
