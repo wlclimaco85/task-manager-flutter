@@ -231,27 +231,48 @@ class _WebAprovacaoCompraScreenState extends State<WebAprovacaoCompraScreen>
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text(GridTexts.purchaseApprovalTitle),
-        bottom: TabBar(
-          controller: _tabCtrl,
-          onTap: (i) {
-            if (i == 0) _carregarFila();
-          },
-          tabs: const [
-            Tab(text: GridTexts.approvalQueueTab),
-            Tab(text: GridTexts.orderDetailsTab),
-          ],
+    return Column(
+      children: [
+        Container(
+          height: 56,
+          color: GridColors.primary,
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          child: Row(
+            children: [
+              const Icon(Icons.verified_user, color: Colors.white, size: 20),
+              const SizedBox(width: 10),
+              const Text(
+                GridTexts.purchaseApprovalTitle,
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const Spacer(),
+              TabBar(
+                controller: _tabCtrl,
+                indicatorColor: Colors.white,
+                labelColor: Colors.white,
+                unselectedLabelColor: Colors.white70,
+                tabs: const [
+                  Tab(text: GridTexts.approvalQueueTab),
+                  Tab(text: GridTexts.orderDetailsTab),
+                ],
+              ),
+            ],
+          ),
         ),
-      ),
-      body: TabBarView(
-        controller: _tabCtrl,
-        children: [
-          _buildFilaTab(),
-          _buildDetalheTab(),
-        ],
-      ),
+        Expanded(
+          child: TabBarView(
+            controller: _tabCtrl,
+            children: [
+              _buildFilaTab(),
+              _buildDetalheTab(),
+            ],
+          ),
+        ),
+      ],
     );
   }
 
