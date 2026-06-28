@@ -81,7 +81,7 @@ class _ChamadosScreenDinamicState extends State<ChamadosScreenDinamic> {
   Map<String, List<Chamado>> _groupBySector() {
     final grouped = <String, List<Chamado>>{};
     for (final chamado in chamados) {
-      final setorNome = chamado.setor?.descricao ?? 'Sem setor';
+      final setorNome = chamado.setor?.nome ?? 'Sem setor';
       grouped.putIfAbsent(setorNome, () => []).add(chamado);
     }
     return grouped;
@@ -91,11 +91,11 @@ class _ChamadosScreenDinamicState extends State<ChamadosScreenDinamic> {
     switch (status) {
       case StatusChamadoEnum.ABERTO:
         return GridColors.secondary;
+      case StatusChamadoEnum.EM_ANDAMENTO:
+        return const Color(0xFFFFA500);
       case StatusChamadoEnum.FECHADO:
         return GridColors.primary;
-      case StatusChamadoEnum.AGUARDANDO:
-        return const Color(0xFFFFA500);
-      default:
+      case StatusChamadoEnum.CANCELADO:
         return GridColors.divider;
     }
   }
@@ -377,7 +377,7 @@ class _ChamadosScreenDinamicState extends State<ChamadosScreenDinamic> {
                       const SizedBox(width: 4),
                       Expanded(
                         child: Text(
-                          chamado.usuarioAbertura!.usuario,
+                          chamado.usuarioAbertura!.nome ?? chamado.usuarioAbertura!.email ?? 'Sem nome',
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: const TextStyle(
