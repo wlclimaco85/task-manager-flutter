@@ -277,6 +277,8 @@ class ApiLinks {
       '$_baseUrlNew/api/importacao/conta-pagar';
   static String get importacaoContaReceber =>
       '$_baseUrlNew/api/importacao/conta-receber';
+  static String get importacaoBoletos =>
+      '$_baseUrlNew/api/importacao/boletos';
   static String get importacaoPreview => '$_baseUrlNew/api/importacao/preview';
 
   // Contas a Pagar
