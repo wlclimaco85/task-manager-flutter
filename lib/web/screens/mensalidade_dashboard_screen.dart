@@ -4,10 +4,13 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
 
+import '../../models/mes_cobranca_model.dart';
+import '../../services/dashboard_mensalidade_caller.dart';
 import '../../services/network_caller.dart';
 import '../../utils/api_links.dart';
 import '../../utils/grid_colors.dart';
 import '../../utils/tenant_context.dart';
+import '../../widgets/dashboard_tendencia_chart.dart';
 
 /// Dashboard de pagamentos de mensalidade do escritório + módulos: gráfico
 /// pago/atrasado/pendente num período + exportação de relatório PDF
@@ -24,6 +27,7 @@ class _WebMensalidadeDashboardScreenState
     extends State<WebMensalidadeDashboardScreen> {
   final NumberFormat _currency =
       NumberFormat.currency(locale: 'pt_BR', symbol: 'R\$');
+  final DashboardMensalidadeCaller _caller = DashboardMensalidadeCaller();
 
   bool _loading = true;
   bool _exportando = false;
@@ -34,6 +38,7 @@ class _WebMensalidadeDashboardScreenState
 
   int _pagos = 0, _atrasados = 0, _pendentes = 0;
   double _valorPago = 0, _valorAtrasado = 0, _valorPendente = 0;
+  List<MesCobranca> _tendencia = [];
 
   @override
   void initState() {
@@ -60,6 +65,10 @@ class _WebMensalidadeDashboardScreenState
         throw Exception('Falha ao carregar (status ${resp.statusCode})');
       }
       final data = resp.body!;
+
+      // Carregar tendência em paralelo
+      final tendencia = await _caller.fetchTendencia6Meses();
+
       setState(() {
         _pagos = (data['pagos'] as num?)?.toInt() ?? 0;
         _atrasados = (data['atrasados'] as num?)?.toInt() ?? 0;
@@ -67,6 +76,7 @@ class _WebMensalidadeDashboardScreenState
         _valorPago = (data['valorPago'] as num?)?.toDouble() ?? 0;
         _valorAtrasado = (data['valorAtrasado'] as num?)?.toDouble() ?? 0;
         _valorPendente = (data['valorPendente'] as num?)?.toDouble() ?? 0;
+        _tendencia = tendencia;
       });
     } catch (e) {
       if (mounted) setState(() => _error = 'Erro: $e');
@@ -160,6 +170,8 @@ class _WebMensalidadeDashboardScreenState
                       _buildResumoCards(),
                       const SizedBox(height: 24),
                       _buildPieChartCard(),
+                      const SizedBox(height: 24),
+                      DashboardTendenciaChart(dados: _tendencia),
                       const SizedBox(height: 24),
                       ElevatedButton.icon(
                         onPressed: _exportando ? null : _exportarPdf,
