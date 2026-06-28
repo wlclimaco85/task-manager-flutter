@@ -4,6 +4,7 @@ import '../../../widgets/generic_grid_windows_screen.dart'
     show SecurityCheck, FieldConfigWindows, FieldType;
 import 'package:task_manager_flutter/web/screens/certificado_empresa_screen.dart';
 import '../ged_arquivos_screen.dart';
+import 'modulo_cobranca_screen.dart';
 
 class WebParceiroDetailScreen extends StatelessWidget {
   final Map<String, dynamic> item;
@@ -119,6 +120,17 @@ class WebParceiroDetailScreen extends StatelessWidget {
           icon: Icons.format_list_numbered,
           telaNome: 'nfe_serie',
           extraParams: {'parcId': id, 'empresaId': empresaId},
+        ),
+        // ── Cobrança de Módulos ───────────────────────────────────────
+        RelatedGridTab(
+          title: 'Cobrança de Módulos',
+          icon: Icons.attach_money,
+          customWidget: parceiroId > 0
+              ? ModuloCobrancaScreen(
+                  parceiroId: parceiroId,
+                  parceiroNome: parceiroNome,
+                )
+              : const Center(child: Text('ID do parceiro não disponível')),
         ),
         // ── GED — documentos do parceiro (H5-21) ─────────────────────────
         RelatedGridTab(

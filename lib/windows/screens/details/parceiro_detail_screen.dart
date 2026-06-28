@@ -4,6 +4,7 @@ import '../../../widgets/generic_grid_windows_screen.dart'
     show SecurityCheck, FieldConfigWindows, FieldType;
 import '../certificado_empresa_screen.dart';
 import '../ged_arquivos_screen.dart';
+import 'modulo_cobranca_screen.dart';
 
 class WindowsParceiroDetailScreen extends StatelessWidget {
   final Map<String, dynamic> item;
@@ -113,6 +114,16 @@ class WindowsParceiroDetailScreen extends StatelessWidget {
           icon: Icons.format_list_numbered,
           telaNome: 'nfe_serie',
           extraParams: {'parcId': id, 'empresaId': empresaId},
+        ),
+        RelatedGridTab(
+          title: 'Cobranca de Modulos',
+          icon: Icons.attach_money,
+          customWidget: parceiroId > 0
+              ? WindowsModuloCobrancaScreen(
+                  parceiroId: parceiroId,
+                  parceiroNome: parceiroNome,
+                )
+              : const Center(child: Text('ID do parceiro nao disponivel')),
         ),
         RelatedGridTab(
           title: 'GED',
