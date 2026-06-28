@@ -151,40 +151,56 @@ class _CobrancaScreenState extends State<CobrancaScreen> {
   Widget build(BuildContext context) {
     return DefaultTabController(
       length: 3,
-      child: Scaffold(
-        backgroundColor: Colors.grey[100],
-        appBar: AppBar(
-          backgroundColor: GridColors.secondary,
-          foregroundColor: GridColors.buttonText,
-          title: const Text('Inadimplência e Cobrança'),
-          elevation: 0,
-          actions: [
-            IconButton(
-              icon: _executandoRegua
-                  ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: GridColors.buttonText))
-                  : const Icon(Icons.play_arrow),
-              tooltip: GridTexts.executeRule,
-              onPressed: _executandoRegua ? null : _executarRegua,
+      child: Column(
+        children: [
+          Container(
+            height: 56,
+            color: GridColors.primary,
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: Row(
+              children: [
+                const Icon(Icons.money_off, color: Colors.white, size: 20),
+                const SizedBox(width: 10),
+                const Text('Inadimplência e Cobrança',
+                    style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold)),
+                const Spacer(),
+                IconButton(
+                  icon: _executandoRegua
+                      ? const SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(
+                              strokeWidth: 2, color: Colors.white))
+                      : const Icon(Icons.play_arrow, color: Colors.white),
+                  tooltip: GridTexts.executeRule,
+                  onPressed: _executandoRegua ? null : _executarRegua,
+                ),
+                const TabBar(
+                  labelColor: Colors.white,
+                  unselectedLabelColor: Colors.white70,
+                  indicatorColor: Colors.white,
+                  tabs: [
+                    Tab(text: 'Vencidos'),
+                    Tab(text: 'Ações'),
+                    Tab(text: 'Régua'),
+                  ],
+                ),
+              ],
             ),
-          ],
-          bottom: const TabBar(
-            labelColor: GridColors.textPrimary,
-            unselectedLabelColor: GridColors.textPrimaryMuted,
-            indicatorColor: GridColors.textPrimary,
-            tabs: [
-              Tab(text: 'Vencidos'),
-              Tab(text: 'Ações'),
-              Tab(text: 'Régua'),
-            ],
           ),
-        ),
-        body: TabBarView(
-          children: [
-            _buildVencidosTab(),
-            _buildAcoesTab(),
-            _buildReguaTab(),
-          ],
-        ),
+          Expanded(
+            child: TabBarView(
+              children: [
+                _buildVencidosTab(),
+                _buildAcoesTab(),
+                _buildReguaTab(),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }

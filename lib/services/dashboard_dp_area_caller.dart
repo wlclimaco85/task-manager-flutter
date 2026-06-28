@@ -1,5 +1,6 @@
 import 'dart:convert';
 import '../models/kpi_dashboard_model.dart';
+import '../models/tendencia_horas_extras_model.dart';
 import '../utils/api_links.dart';
 import '../utils/tenant_context.dart';
 
@@ -31,6 +32,25 @@ class DashboardDpAreaCaller {
       }
     } catch (_) {
       // Fallback silencioso — mesmo padrão já usado em SaudeDiariaCaller.
+    }
+    return null;
+  }
+
+  /// Retorna tendência de horas extras dos últimos 6 meses.
+  Future<List<TendenciaHorasExtrasModel>?> fetchHorasExtras() async {
+    try {
+      final resp = await TenantContext.get('${ApiLinks.baseUrl}/dashboard/dp-area/horas-extras');
+      if (resp.statusCode == 200 && resp.bodyBytes.isNotEmpty) {
+        final body = jsonDecode(utf8.decode(resp.bodyBytes));
+        if (body is List) {
+          return body
+              .whereType<Map>()
+              .map((e) => TendenciaHorasExtrasModel.fromJson(Map<String, dynamic>.from(e)))
+              .toList();
+        }
+      }
+    } catch (_) {
+      // Fallback silencioso
     }
     return null;
   }

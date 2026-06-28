@@ -527,29 +527,56 @@ class ModuloAccess {
   static bool _loaded = false;
 
   static Future<void> load() async {
-    final parceiroId = AuthUtility.userInfo?.login?.parceiro?.id;
-    final tipoLogin = AuthUtility.userInfo?.login?.tipoLogin;
+    final login = AuthUtility.userInfo?.login;
+    final parceiroId = login?.parceiro?.id;
+    final empresaId = login?.empresa?.id;
+    final tipoLogin = login?.tipoLogin;
 
-    if (parceiroId == null || tipoLogin == LoginEnum.MASTER) {
+    if (tipoLogin == LoginEnum.MASTER) {
       _modulosContratados = _moduloToScreens.keys.toList();
       _loaded = true;
       return;
     }
-    try {
-      final token = AuthUtility.userInfo?.token;
-      final url = '${ApiLinks.baseUrl}/api/parceiro-modulo?parceiroId=$parceiroId';
-      final resp = await http.get(Uri.parse(url), headers: {
-        if (token != null) 'Authorization': 'Bearer $token',
-        'Accept': 'application/json',
-      }).timeout(const Duration(seconds: 5));
+    final token = AuthUtility.userInfo?.token;
+    final headers = {
+      if (token != null) 'Authorization': 'Bearer $token',
+      'Accept': 'application/json',
+    };
 
-      if (resp.statusCode == 200) {
-        final List<dynamic> data = jsonDecode(resp.body);
-        _modulosContratados = data.map((m) => m['nome']?.toString() ?? '').toList();
-      } else {
-        _modulosContratados = _moduloToScreens.keys.toList();
-      }
-    } catch (_) {
+    Set<String> empresaModulos = {};
+    Set<String> parceiroModulos = {};
+
+    if (empresaId != null) {
+      try {
+        final url = '${ApiLinks.baseUrl}/api/empresa-modulo?empresaId=$empresaId';
+        final resp = await http.get(Uri.parse(url), headers: headers)
+            .timeout(const Duration(seconds: 5));
+        if (resp.statusCode == 200) {
+          final List<dynamic> data = jsonDecode(resp.body);
+          empresaModulos = data.map((m) => m['nome']?.toString() ?? '').toSet();
+        }
+      } catch (_) {}
+    }
+
+    if (parceiroId != null) {
+      try {
+        final url = '${ApiLinks.baseUrl}/api/parceiro-modulo?parceiroId=$parceiroId';
+        final resp = await http.get(Uri.parse(url), headers: headers)
+            .timeout(const Duration(seconds: 5));
+        if (resp.statusCode == 200) {
+          final List<dynamic> data = jsonDecode(resp.body);
+          parceiroModulos = data.map((m) => m['nome']?.toString() ?? '').toSet();
+        }
+      } catch (_) {}
+    }
+
+    if (empresaModulos.isNotEmpty && parceiroModulos.isNotEmpty) {
+      _modulosContratados = empresaModulos.intersection(parceiroModulos).toList();
+    } else if (empresaModulos.isNotEmpty) {
+      _modulosContratados = empresaModulos.toList();
+    } else if (parceiroModulos.isNotEmpty) {
+      _modulosContratados = parceiroModulos.toList();
+    } else {
       _modulosContratados = _moduloToScreens.keys.toList();
     }
     _loaded = true;

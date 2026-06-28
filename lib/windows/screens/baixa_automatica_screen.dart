@@ -185,29 +185,50 @@ class _BaixaAutomaticaScreenState extends State<BaixaAutomaticaScreen>
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text(GridTexts.autoReceiveTitle),
-        bottom: TabBar(
-          controller: _tabCtrl,
-          onTap: (i) {
-            if (i == 1) _carregarPendentes();
-          },
-          tabs: const [
-            Tab(text: GridTexts.importTab),
-            Tab(text: GridTexts.conferenceTab),
-            Tab(text: GridTexts.history),
-          ],
+    return Column(
+      children: [
+        Container(
+          height: 56,
+          color: GridColors.primary,
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          child: Row(
+            children: [
+              const Icon(Icons.autorenew, color: Colors.white, size: 20),
+              const SizedBox(width: 10),
+              Text(GridTexts.autoReceiveTitle,
+                  style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold)),
+              const Spacer(),
+              TabBar(
+                controller: _tabCtrl,
+                onTap: (i) {
+                  if (i == 1) _carregarPendentes();
+                },
+                indicatorColor: Colors.white,
+                labelColor: Colors.white,
+                unselectedLabelColor: Colors.white70,
+                tabs: const [
+                  Tab(text: GridTexts.importTab),
+                  Tab(text: GridTexts.conferenceTab),
+                  Tab(text: GridTexts.history),
+                ],
+              ),
+            ],
+          ),
         ),
-      ),
-      body: TabBarView(
-        controller: _tabCtrl,
-        children: [
-          _buildImportarTab(),
-          _buildConferenciaTab(),
-          _buildHistoricoTab(),
-        ],
-      ),
+        Expanded(
+          child: TabBarView(
+            controller: _tabCtrl,
+            children: [
+              _buildImportarTab(),
+              _buildConferenciaTab(),
+              _buildHistoricoTab(),
+            ],
+          ),
+        ),
+      ],
     );
   }
 

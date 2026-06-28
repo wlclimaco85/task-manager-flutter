@@ -165,27 +165,48 @@ class _RateioFinanceiroScreenState extends State<RateioFinanceiroScreen>
   @override
   Widget build(BuildContext context) {
     final colors = CustomColors();
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Rateio Financeiro'),
-        bottom: TabBar(
-          controller: _tabCtrl,
-          onTap: (i) {
-            if (i == 1) _carregarHistorico();
-          },
-          tabs: const [
-            Tab(text: 'Rateio'),
-            Tab(text: 'Histórico'),
-          ],
+    return Column(
+      children: [
+        Container(
+          height: 56,
+          color: GridColors.primary,
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          child: Row(
+            children: [
+              const Icon(Icons.account_balance, color: Colors.white, size: 20),
+              const SizedBox(width: 10),
+              const Text('Rateio Financeiro',
+                  style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold)),
+              const Spacer(),
+              TabBar(
+                controller: _tabCtrl,
+                onTap: (i) {
+                  if (i == 1) _carregarHistorico();
+                },
+                indicatorColor: Colors.white,
+                labelColor: Colors.white,
+                unselectedLabelColor: Colors.white70,
+                tabs: const [
+                  Tab(text: 'Rateio'),
+                  Tab(text: 'Histórico'),
+                ],
+              ),
+            ],
+          ),
         ),
-      ),
-      body: TabBarView(
-        controller: _tabCtrl,
-        children: [
-          _buildRateioTab(colors),
-          _buildHistoricoTab(colors),
-        ],
-      ),
+        Expanded(
+          child: TabBarView(
+            controller: _tabCtrl,
+            children: [
+              _buildRateioTab(colors),
+              _buildHistoricoTab(colors),
+            ],
+          ),
+        ),
+      ],
     );
   }
 

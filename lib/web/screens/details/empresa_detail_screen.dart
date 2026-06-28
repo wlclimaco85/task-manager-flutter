@@ -7,11 +7,38 @@ import '../../../widgets/generic_grid_windows_screen.dart'
 import '../certificado_empresa_screen.dart';
 import '../login_grid_screen.dart' show WebLoginGridScreen;
 
-class WebEmpresaDetailScreen extends StatelessWidget {
+class WebEmpresaDetailScreen extends StatefulWidget {
   final Map<String, dynamic> item;
   final SecurityCheck hasPermission;
 
   const WebEmpresaDetailScreen({super.key, required this.item, required this.hasPermission});
+
+  @override
+  State<WebEmpresaDetailScreen> createState() => _WebEmpresaDetailScreenState();
+}
+
+class _WebEmpresaDetailScreenState extends State<WebEmpresaDetailScreen> {
+  late Map<String, dynamic> _item;
+
+  @override
+  void initState() {
+    super.initState();
+    _item = Map<String, dynamic>.from(widget.item);
+    _preCarregarModulos();
+  }
+
+  Future<void> _preCarregarModulos() async {
+    final id = _item['id'];
+    if (id == null) return;
+    final r = await NetworkCaller().getRequest(
+      '${ApiLinks.baseUrl}/api/empresa-modulo?empresaId=$id',
+    );
+    if (!r.isSuccess || r.body == null) return;
+    final raw = r.body is List ? r.body : (r.body?['data'] ?? r.body?['content'] ?? []);
+    if (raw is! List) return;
+    final ids = raw.map((e) => e['id']?.toString() ?? '').where((s) => s.isNotEmpty).join(', ');
+    if (mounted) setState(() => _item['modulosServico'] = ids);
+  }
 
   static Future<List<Map<String, dynamic>>> _loadTiposParceiro() async {
     final r = await NetworkCaller().getRequest(ApiLinks.allTipoParceiro);
@@ -68,20 +95,37 @@ class WebEmpresaDetailScreen extends StatelessWidget {
     );
   }
 
+  /// Persiste os módulos selecionados da EMPRESA após salvar.
+  Future<void> _salvarModulosEmpresa(Map<String, dynamic> formData, Map<String, dynamic>? item) async {
+    final empresaId = formData['id'];
+    if (empresaId == null) return;
+    final raw = formData['modulosServico'] as String? ?? '';
+    final moduloIds = raw
+        .split(',')
+        .map((s) => int.tryParse(s.trim()))
+        .whereType<int>()
+        .toList();
+    await NetworkCaller().postRequest(
+      '${ApiLinks.baseUrl}/api/empresa-modulo',
+      {'empresaId': empresaId, 'moduloIds': moduloIds},
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    final id = item['id']?.toString() ?? '';
-    final empresaId = item['id'] as int? ?? 0;
-    final empresaNome = item['nome']?.toString() ?? item['razaoSocial']?.toString() ?? 'Empresa';
+    final id = _item['id']?.toString() ?? '';
+    final empresaId = _item['id'] as int? ?? 0;
+    final empresaNome = _item['nome']?.toString() ?? _item['razaoSocial']?.toString() ?? 'Empresa';
 
     return GenericDetailFormScreen(
-      item: item,
+      item: _item,
       telaNome: 'empresa',
-      hasPermission: hasPermission,
-      fieldOverrides: const [
+      hasPermission: widget.hasPermission,
+      onAfterSave: _salvarModulosEmpresa,
+      fieldOverrides: [
         // fileAttachment: dropdown FK que envia "" quando vazio → 500 no backend
         // Ocultado do formulário — upload de arquivo tem tela própria
-        FieldConfigWindows(
+        const FieldConfigWindows(
           label: 'File Attachments',
           fieldName: 'fileAttachment',
           isInForm: false,
@@ -89,7 +133,7 @@ class WebEmpresaDetailScreen extends StatelessWidget {
           enabled: false,
         ),
         // Ambiente: inteiro 1=Produção / 2=Homologação — exibir label
-        FieldConfigWindows(
+        const FieldConfigWindows(
           label: 'Ambiente',
           fieldName: 'ambiente',
           icon: Icons.cloud_outlined,
@@ -101,6 +145,18 @@ class WebEmpresaDetailScreen extends StatelessWidget {
           dropdownValueField: 'value',
           dropdownDisplayField: 'label',
           isInForm: true,
+        ),
+        // Módulos de serviço contratados pela empresa (M:N via empresa_modulo)
+        FieldConfigWindows(
+          label: 'Modulo Servicos',
+          fieldName: 'modulosServico',
+          icon: Icons.settings_outlined,
+          fieldType: FieldType.multiselect,
+          dropdownFutureBuilder: _loadModulosServico,
+          dropdownValueField: 'value',
+          dropdownDisplayField: 'label',
+          isInForm: true,
+          isFilterable: false,
         ),
       ],
       relatedTabs: [

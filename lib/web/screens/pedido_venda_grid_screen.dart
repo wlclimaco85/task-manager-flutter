@@ -8,6 +8,7 @@ import 'details/pedido_venda_detail_screen.dart';
 import '../../../windows/dialogs/pedido_venda_historico_dialog.dart';
 import '../../../windows/dialogs/faturar_dialog.dart';
 import '../../utils/grid_texts.dart';
+import '../../../widgets/gated_button.dart';
 
 class WebPedidoVendaGridScreen extends StatefulWidget {
   const WebPedidoVendaGridScreen({super.key});
@@ -326,17 +327,30 @@ class _WebPedidoVendaGridScreenState extends State<WebPedidoVendaGridScreen> {
     if (id == null) return const SizedBox.shrink();
     return Row(mainAxisSize: MainAxisSize.min, children: [
       _actionIcon(Icons.visibility, 'Visualizar', GridColors.info, () => _openForm(_pedidos.firstWhere((o) => o['id'] == id))),
-      if (status == 'RASCUNHO') ...[
-        _actionIcon(Icons.edit, 'Editar', GridColors.secondary, () => _openForm(_pedidos.firstWhere((o) => o['id'] == id))),
-        _actionIcon(Icons.check_circle, 'Aprovar', Colors.green, () => _confirmAction('Aprovar Pedido', 'Deseja aprovar este pedido?', () => PedidoVendaService.aprovar(id))),
-        _actionIcon(Icons.cancel, 'Rejeitar', Colors.red, () => _confirmAction('Rejeitar Pedido', 'Deseja rejeitar este pedido?', () => PedidoVendaService.rejeitar(id))),
-      ],
-      if (status == 'APROVADO') ...[
-        _actionIcon(Icons.payment, 'Faturar Parcial', Colors.orange, () => _showFaturarParcial(pedido)),
-        _actionIcon(Icons.done_all, 'Faturar Total', Colors.blue, () => _confirmAction('Faturar Total', 'Deseja faturar totalmente este pedido?', () => PedidoVendaService.faturarTotal(id))),
-      ],
-      if (status == 'FATURADO_PARCIAL')
-        _actionIcon(Icons.done_all, 'Faturar Total', Colors.blue, () => _confirmAction('Faturar Total', 'Deseja faturar totalmente este pedido?', () => PedidoVendaService.faturarTotal(id))),
+      GatedButton(
+        enabled: status == 'RASCUNHO',
+        child: _actionIcon(Icons.edit, 'Editar', GridColors.secondary, () => _openForm(_pedidos.firstWhere((o) => o['id'] == id))),
+      ),
+      GatedButton(
+        enabled: status == 'RASCUNHO',
+        child: _actionIcon(Icons.check_circle, 'Aprovar', Colors.green, () => _confirmAction('Aprovar Pedido', 'Deseja aprovar este pedido?', () => PedidoVendaService.aprovar(id))),
+      ),
+      GatedButton(
+        enabled: status == 'RASCUNHO',
+        child: _actionIcon(Icons.cancel, 'Rejeitar', Colors.red, () => _confirmAction('Rejeitar Pedido', 'Deseja rejeitar este pedido?', () => PedidoVendaService.rejeitar(id))),
+      ),
+      GatedButton(
+        enabled: status == 'APROVADO',
+        child: _actionIcon(Icons.payment, 'Faturar Parcial', Colors.orange, () => _showFaturarParcial(pedido)),
+      ),
+      GatedButton(
+        enabled: status == 'APROVADO',
+        child: _actionIcon(Icons.done_all, 'Faturar Total', Colors.blue, () => _confirmAction('Faturar Total', 'Deseja faturar totalmente este pedido?', () => PedidoVendaService.faturarTotal(id))),
+      ),
+      GatedButton(
+        enabled: status == 'FATURADO_PARCIAL',
+        child: _actionIcon(Icons.done_all, 'Faturar Total', Colors.blue, () => _confirmAction('Faturar Total', 'Deseja faturar totalmente este pedido?', () => PedidoVendaService.faturarTotal(id))),
+      ),
       _actionIcon(Icons.block, 'Cancelar', Colors.brown, () => _confirmAction('Cancelar Pedido', 'Deseja cancelar este pedido?', () => PedidoVendaService.cancelar(id))),
       _actionIcon(Icons.history, 'Histórico', Colors.brown, () => _showHistorico(historico)),
     ]);

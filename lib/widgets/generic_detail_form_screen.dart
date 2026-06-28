@@ -96,6 +96,9 @@ class GenericDetailFormScreen extends StatefulWidget {
   /// Explicit related grid tabs (e.g. roles, chamados).
   final List<RelatedGridTab>? relatedTabs;
 
+  /// Callback após salvar o formulário principal.
+  final Future<void> Function(Map<String, dynamic> formData, Map<String, dynamic>? item)? onAfterSave;
+
   const GenericDetailFormScreen({
     super.key,
     required this.item,
@@ -103,6 +106,7 @@ class GenericDetailFormScreen extends StatefulWidget {
     required this.hasPermission,
     this.fieldOverrides,
     this.relatedTabs,
+    this.onAfterSave,
   });
 
   @override
@@ -284,6 +288,9 @@ class _GenericDetailFormScreenState extends State<GenericDetailFormScreen>
               content: Text(msg),
               backgroundColor: GridColors.secondary),
         );
+        if (widget.onAfterSave != null) {
+          await widget.onAfterSave!(body, widget.item);
+        }
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(

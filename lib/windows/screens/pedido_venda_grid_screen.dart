@@ -8,6 +8,7 @@ import './details/pedido_venda_detail_screen.dart';
 import '../../../windows/dialogs/pedido_venda_historico_dialog.dart';
 import '../../../windows/dialogs/faturar_dialog.dart';
 import '../../utils/grid_texts.dart';
+import '../../../widgets/gated_button.dart';
 
 class WindowsPedidoVendaGridScreen extends StatefulWidget {
   const WindowsPedidoVendaGridScreen({super.key});
@@ -399,21 +400,34 @@ class _WindowsPedidoVendaGridScreenState
       mainAxisSize: MainAxisSize.min,
       children: [
         _actionIcon(Icons.visibility, GridTexts.view, GridColors.info, () => _openForm(_pedidos.firstWhere((o) => o['id'] == id))),
-        if (status == 'RASCUNHO') ...[
-          _actionIcon(Icons.edit, GridTexts.edit, GridColors.secondary, () => _openForm(_pedidos.firstWhere((o) => o['id'] == id))),
-          _actionIcon(Icons.check_circle, GridTexts.approve, Colors.green, () => _confirmAction(
+        GatedButton(
+          enabled: status == 'RASCUNHO',
+          child: _actionIcon(Icons.edit, GridTexts.edit, GridColors.secondary, () => _openForm(_pedidos.firstWhere((o) => o['id'] == id))),
+        ),
+        GatedButton(
+          enabled: status == 'RASCUNHO',
+          child: _actionIcon(Icons.check_circle, GridTexts.approve, Colors.green, () => _confirmAction(
             GridTexts.approveOrderTitle, GridTexts.approveOrderQuestion, () => PedidoVendaService.aprovar(id))),
-          _actionIcon(Icons.cancel, GridTexts.reject, Colors.red, () => _confirmAction(
+        ),
+        GatedButton(
+          enabled: status == 'RASCUNHO',
+          child: _actionIcon(Icons.cancel, GridTexts.reject, Colors.red, () => _confirmAction(
             GridTexts.rejectOrderTitle, GridTexts.rejectOrderQuestion, () => PedidoVendaService.rejeitar(id))),
-        ],
-        if (status == 'APROVADO') ...[
-          _actionIcon(Icons.payment, GridTexts.partialBilling, Colors.orange, () => _showFaturarParcial(pedido)),
-          _actionIcon(Icons.done_all, GridTexts.totalBilling, Colors.blue, () => _confirmAction(
+        ),
+        GatedButton(
+          enabled: status == 'APROVADO',
+          child: _actionIcon(Icons.payment, GridTexts.partialBilling, Colors.orange, () => _showFaturarParcial(pedido)),
+        ),
+        GatedButton(
+          enabled: status == 'APROVADO',
+          child: _actionIcon(Icons.done_all, GridTexts.totalBilling, Colors.blue, () => _confirmAction(
             GridTexts.totalBilling, GridTexts.totalBillingQuestion, () => PedidoVendaService.faturarTotal(id))),
-        ],
-        if (status == 'FATURADO_PARCIAL')
-          _actionIcon(Icons.done_all, GridTexts.totalBilling, Colors.blue, () => _confirmAction(
+        ),
+        GatedButton(
+          enabled: status == 'FATURADO_PARCIAL',
+          child: _actionIcon(Icons.done_all, GridTexts.totalBilling, Colors.blue, () => _confirmAction(
             GridTexts.totalBilling, GridTexts.totalBillingQuestion, () => PedidoVendaService.faturarTotal(id))),
+        ),
         _actionIcon(Icons.block, GridTexts.cancel, Colors.brown, () => _confirmAction(
           GridTexts.cancelOrderTitle, GridTexts.cancelOrderQuestion, () => PedidoVendaService.cancelar(id))),
         _actionIcon(Icons.history, GridTexts.viewHistory, Colors.brown, () => _showHistorico(historico)),

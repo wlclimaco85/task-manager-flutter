@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import '../../../models/kpi_dashboard_model.dart';
+import '../../../models/tendencia_emissoes_model.dart';
 import '../../../services/dashboard_fiscal_caller.dart';
+import '../../../utils/grid_colors.dart';
 import '../dashboard_area_scaffold.dart';
 import '../dashboard_state.dart';
 import '../drill_down_router.dart';
@@ -17,6 +19,7 @@ class _DashboardFiscalPlaceholderScreenState
     extends State<DashboardFiscalPlaceholderScreen> {
   DashboardAreaState<List<KpiDashboardModel>> _state =
       const DashboardAreaState.loading();
+  List<TendenciaEmissoesModel> _emissoes = [];
   DateTime? _periodoInicio;
   DateTime? _periodoFim;
 
@@ -28,11 +31,19 @@ class _DashboardFiscalPlaceholderScreenState
 
   Future<void> _carregar() async {
     setState(() => _state = const DashboardAreaState.loading());
-    final resposta = await DashboardFiscalCaller().fetchKpis(
-      periodoInicio: _periodoInicio,
-      periodoFim: _periodoFim,
-    );
+
+    // Carregar KPIs e tendência em paralelo
+    final caller = DashboardFiscalCaller();
+    final kpisResponses = await Future.wait([
+      caller.fetchKpis(periodoInicio: _periodoInicio, periodoFim: _periodoFim),
+      caller.fetchEmissoes(),
+    ]);
+
     if (!mounted) return;
+
+    final resposta = kpisResponses[0] as DashboardAreaResponseModel?;
+    final emissoes = kpisResponses[1] as List<TendenciaEmissoesModel>?;
+
     if (resposta == null) {
       setState(() => _state =
           const DashboardAreaState.erro('Nao foi possivel carregar os dados.'));
@@ -42,7 +53,11 @@ class _DashboardFiscalPlaceholderScreenState
       setState(() => _state = const DashboardAreaState.vazio());
       return;
     }
-    setState(() => _state = DashboardAreaState.sucesso(resposta.kpis));
+
+    setState(() {
+      _state = DashboardAreaState.sucesso(resposta.kpis);
+      _emissoes = emissoes ?? [];
+    });
   }
 
   String get _periodoLabel {
@@ -90,18 +105,100 @@ class _DashboardFiscalPlaceholderScreenState
             ),
           ),
           Expanded(
-            child: DashboardAreaScaffold(
-              titulo: 'Dashboard Fiscal',
-              state: _state,
-              periodoInicio: _periodoInicio,
-              periodoFim: _periodoFim,
-              onKpiTap: (periodoInicio, periodoFim, drillDownRota) =>
-                  DrillDownRouter.navigate(
-                      context, drillDownRota, periodoInicio, periodoFim),
-              onRetry: _carregar,
+            child: SingleChildScrollView(
+              child: Column(
+                children: [
+                  // KPIs em grid
+                  DashboardAreaScaffold(
+                    titulo: 'Dashboard Fiscal',
+                    state: _state,
+                    periodoInicio: _periodoInicio,
+                    periodoFim: _periodoFim,
+                    onKpiTap: (periodoInicio, periodoFim, drillDownRota) =>
+                        DrillDownRouter.navigate(
+                            context, drillDownRota, periodoInicio, periodoFim),
+                    onRetry: _carregar,
+                  ),
+                  // Gráfico de emissões (6 meses)
+                  if (_emissoes.isNotEmpty)
+                    Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: _buildGraficoEmissoes(),
+                    ),
+                ],
+              ),
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  /// Gráfico de barras simples (6 meses emissões).
+  Widget _buildGraficoEmissoes() {
+    final maxValor = _emissoes
+        .fold<int>(0, (max, e) => e.quantidade > max ? e.quantidade : max)
+        .toDouble();
+    final escala = maxValor > 0 ? 1.0 / maxValor : 1.0;
+
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Tendência de Emissões (6 meses)',
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 16),
+            SizedBox(
+              height: 200,
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: _emissoes.map((item) {
+                  final altura = item.quantidade * escala * 150; // altura máxima 150px
+                  final mes = item.mes.split('-')[1]; // extrai mês de "2026-01"
+                  return Expanded(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      children: [
+                        // Barra
+                        Container(
+                          width: double.infinity,
+                          height: altura,
+                          margin: const EdgeInsets.symmetric(horizontal: 4),
+                          decoration: BoxDecoration(
+                            color: GridColors.secondary, // Verde institucional
+                            borderRadius: const BorderRadius.vertical(
+                              top: Radius.circular(4),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        // Label mês
+                        Text(
+                          mes,
+                          style: const TextStyle(fontSize: 10),
+                        ),
+                      ],
+                    ),
+                  );
+                }).toList(),
+              ),
+            ),
+            const SizedBox(height: 8),
+            // Legenda valor máximo
+            Align(
+              alignment: Alignment.centerRight,
+              child: Text(
+                'Máx: ${maxValor.toStringAsFixed(0).replaceAll('.0', '')} emissões',
+                style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

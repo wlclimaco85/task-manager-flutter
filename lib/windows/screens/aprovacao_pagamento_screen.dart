@@ -159,27 +159,48 @@ class _AprovacaoPagamentoScreenState extends State<AprovacaoPagamentoScreen>
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text(GridTexts.paymentApprovalTitle),
-        bottom: TabBar(
-          controller: _tabCtrl,
-          onTap: (i) {
-            if (i == 0) _carregarFila();
-          },
-          tabs: const [
-            Tab(text: GridTexts.queue),
-            Tab(text: GridTexts.history),
-          ],
+    return Column(
+      children: [
+        Container(
+          height: 56,
+          color: GridColors.primary,
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          child: Row(
+            children: [
+              const Icon(Icons.checklist, color: Colors.white, size: 20),
+              const SizedBox(width: 10),
+              Text(GridTexts.paymentApprovalTitle,
+                  style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold)),
+              const Spacer(),
+              TabBar(
+                controller: _tabCtrl,
+                onTap: (i) {
+                  if (i == 0) _carregarFila();
+                },
+                indicatorColor: Colors.white,
+                labelColor: Colors.white,
+                unselectedLabelColor: Colors.white70,
+                tabs: const [
+                  Tab(text: GridTexts.queue),
+                  Tab(text: GridTexts.history),
+                ],
+              ),
+            ],
+          ),
         ),
-      ),
-      body: TabBarView(
-        controller: _tabCtrl,
-        children: [
-          _buildFilaTab(),
-          _buildHistoricoTab(),
-        ],
-      ),
+        Expanded(
+          child: TabBarView(
+            controller: _tabCtrl,
+            children: [
+              _buildFilaTab(),
+              _buildHistoricoTab(),
+            ],
+          ),
+        ),
+      ],
     );
   }
 

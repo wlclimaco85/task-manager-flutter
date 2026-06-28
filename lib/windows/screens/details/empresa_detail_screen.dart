@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../services/network_caller.dart';
 import '../../../utils/api_links.dart';
 import '../../../widgets/generic_detail_form_screen.dart';
 import '../../../widgets/generic_grid_windows_screen.dart'
@@ -6,7 +7,7 @@ import '../../../widgets/generic_grid_windows_screen.dart'
 import '../certificado_empresa_screen.dart';
 import '../login_grid_screen.dart' show WindowsLoginGridScreen;
 
-class WindowsEmpresaDetailScreen extends StatelessWidget {
+class WindowsEmpresaDetailScreen extends StatefulWidget {
   final Map<String, dynamic> item;
   final SecurityCheck hasPermission;
 
@@ -17,25 +18,81 @@ class WindowsEmpresaDetailScreen extends StatelessWidget {
   });
 
   @override
+  State<WindowsEmpresaDetailScreen> createState() =>
+      _WindowsEmpresaDetailScreenState();
+}
+
+class _WindowsEmpresaDetailScreenState
+    extends State<WindowsEmpresaDetailScreen> {
+  late Map<String, dynamic> _item;
+
+  @override
+  void initState() {
+    super.initState();
+    _item = Map<String, dynamic>.from(widget.item);
+    _preCarregarModulos();
+  }
+
+  static Future<List<Map<String, dynamic>>> _loadModulosServico() async {
+    final r = await NetworkCaller().getRequest(ApiLinks.allModuloServico);
+    if (!r.isSuccess || r.body == null) return [];
+    final raw = r.body!['data']?['dados'] ?? r.body!['data'] ?? r.body!['content'] ?? r.body;
+    if (raw is! List) return [];
+    return raw.map<Map<String, dynamic>>((e) {
+      final label = e['descricao']?.toString() ?? e['nome']?.toString() ?? e['id']?.toString() ?? '';
+      return {'value': e['id']?.toString() ?? '', 'label': label};
+    }).where((m) => m['value']!.isNotEmpty).toList();
+  }
+
+  Future<void> _preCarregarModulos() async {
+    final id = _item['id'];
+    if (id == null) return;
+    final r = await NetworkCaller().getRequest(
+      '${ApiLinks.baseUrl}/api/empresa-modulo?empresaId=$id',
+    );
+    if (!r.isSuccess || r.body == null) return;
+    final raw = r.body is List ? r.body : (r.body?['data'] ?? r.body?['content'] ?? []);
+    if (raw is! List) return;
+    final ids = raw.map((e) => e['id']?.toString() ?? '').where((s) => s.isNotEmpty).join(', ');
+    if (mounted) setState(() => _item['modulosServico'] = ids);
+  }
+
+  Future<void> _salvarModulos(Map<String, dynamic> formData, Map<String, dynamic>? item) async {
+    final empresaId = formData['id'];
+    if (empresaId == null) return;
+    final raw = formData['modulosServico'] as String? ?? '';
+    final moduloIds = raw
+        .split(',')
+        .map((s) => int.tryParse(s.trim()))
+        .whereType<int>()
+        .toList();
+    await NetworkCaller().postRequest(
+      '${ApiLinks.baseUrl}/api/empresa-modulo',
+      {'empresaId': empresaId, 'moduloIds': moduloIds},
+    );
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final id = item['id']?.toString() ?? '';
-    final empresaId = item['id'] as int? ?? 0;
+    final id = _item['id']?.toString() ?? '';
+    final empresaId = _item['id'] as int? ?? 0;
     final empresaNome =
-        item['nome']?.toString() ?? item['razaoSocial']?.toString() ?? 'Empresa';
+        _item['nome']?.toString() ?? _item['razaoSocial']?.toString() ?? 'Empresa';
 
     return GenericDetailFormScreen(
-      item: item,
+      item: _item,
       telaNome: 'empresa',
-      hasPermission: hasPermission,
-      fieldOverrides: const [
-        FieldConfigWindows(
+      hasPermission: widget.hasPermission,
+      onAfterSave: _salvarModulos,
+      fieldOverrides: [
+        const FieldConfigWindows(
           label: 'File Attachments',
           fieldName: 'fileAttachment',
           isInForm: false,
           isVisibleByDefault: false,
           enabled: false,
         ),
-        FieldConfigWindows(
+        const FieldConfigWindows(
           label: 'Ambiente',
           fieldName: 'ambiente',
           icon: Icons.cloud_outlined,
@@ -47,6 +104,17 @@ class WindowsEmpresaDetailScreen extends StatelessWidget {
           dropdownValueField: 'value',
           dropdownDisplayField: 'label',
           isInForm: true,
+        ),
+        FieldConfigWindows(
+          label: 'Modulo Servicos',
+          fieldName: 'modulosServico',
+          icon: Icons.settings_outlined,
+          fieldType: FieldType.multiselect,
+          dropdownFutureBuilder: _loadModulosServico,
+          dropdownValueField: 'value',
+          dropdownDisplayField: 'label',
+          isInForm: true,
+          isFilterable: false,
         ),
       ],
       relatedTabs: [

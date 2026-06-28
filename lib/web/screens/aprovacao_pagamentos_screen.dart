@@ -274,88 +274,103 @@ class _WebAprovacaoPagamentosScreenState
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.grey[100],
-      appBar: AppBar(
-        backgroundColor: GridColors.primary,
-        foregroundColor: Colors.white,
-        title: const Text(GridTexts.paymentApprovalTitle),
-        elevation: 0,
-        bottom: TabBar(
-          controller: _tabCtrl,
-          labelColor: Colors.white,
-          unselectedLabelColor: Colors.white70,
-          indicatorColor: Colors.white,
-          tabs: const [
-            Tab(text: GridTexts.approvalQueueTab),
-            Tab(text: GridTexts.history),
-          ],
-        ),
-        actions: [
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                SizedBox(
-                  width: 140,
-                  height: 36,
-                  child: TextField(
-                    controller: _contaPagarIdCtrl,
-                    decoration: InputDecoration(
-                      hintText: GridTexts.accountPayableId,
-                      hintStyle: const TextStyle(
-                          color: Colors.white70, fontSize: 12),
-                      contentPadding:
-                          const EdgeInsets.symmetric(horizontal: 10),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(4),
+    return Column(
+      children: [
+        Container(
+          height: 56,
+          color: GridColors.primary,
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          child: Row(
+            children: [
+              const Icon(Icons.checklist, color: Colors.white, size: 20),
+              const SizedBox(width: 10),
+              const Text(GridTexts.paymentApprovalTitle,
+                  style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold)),
+              const Spacer(),
+              Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    SizedBox(
+                      width: 140,
+                      height: 36,
+                      child: TextField(
+                        controller: _contaPagarIdCtrl,
+                        decoration: InputDecoration(
+                          hintText: GridTexts.accountPayableId,
+                          hintStyle: const TextStyle(
+                              color: Colors.white70, fontSize: 12),
+                          contentPadding:
+                              const EdgeInsets.symmetric(horizontal: 10),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(4),
+                            borderSide:
+                                const BorderSide(color: Colors.white38),
+                          ),
+                          fillColor: Colors.white12,
+                          filled: true,
+                        ),
+                        style:
+                            const TextStyle(color: Colors.white, fontSize: 12),
                       ),
-                      enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(4),
-                        borderSide: const BorderSide(color: Colors.white38),
-                      ),
-                      fillColor: Colors.white12,
-                      filled: true,
                     ),
-                    style: const TextStyle(color: Colors.white, fontSize: 12),
-                  ),
+                    const SizedBox(width: 4),
+                    ElevatedButton.icon(
+                      onPressed: _solicitarAprovacao,
+                      icon: const Icon(Icons.send, size: 14),
+                      label: const Text(GridTexts.requestApproval,
+                          style: TextStyle(fontSize: 11)),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: GridColors.secondary,
+                        foregroundColor: Colors.white,
+                      ),
+                    ),
+                  ],
                 ),
-                const SizedBox(width: 4),
-                ElevatedButton.icon(
-                  onPressed: _solicitarAprovacao,
-                  icon: const Icon(Icons.send, size: 14),
-                  label: const Text(GridTexts.requestApproval,
-                      style: TextStyle(fontSize: 11)),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: GridColors.secondary,
-                    foregroundColor: Colors.white,
-                  ),
-                ),
-              ],
-            ),
+              ),
+              IconButton(
+                onPressed: () {
+                  if (_tabCtrl.index == 0) {
+                    _carregarFila();
+                  } else {
+                    _carregarHistorico();
+                  }
+                },
+                icon: const Icon(Icons.refresh, color: Colors.white),
+                tooltip: GridTexts.refresh,
+              ),
+              const SizedBox(width: 8),
+              TabBar(
+                controller: _tabCtrl,
+                labelColor: Colors.white,
+                unselectedLabelColor: Colors.white70,
+                indicatorColor: Colors.white,
+                tabs: const [
+                  Tab(text: GridTexts.approvalQueueTab),
+                  Tab(text: GridTexts.history),
+                ],
+              ),
+            ],
           ),
-          IconButton(
-            onPressed: () {
-              if (_tabCtrl.index == 0) {
-                _carregarFila();
-              } else {
-                _carregarHistorico();
-              }
-            },
-            icon: const Icon(Icons.refresh),
-            tooltip: GridTexts.refresh,
+        ),
+        Expanded(
+          child: TabBarView(
+            controller: _tabCtrl,
+            children: [
+              _buildFilaTab(),
+              _buildHistoricoTab(),
+            ],
           ),
-          const SizedBox(width: 8),
-        ],
-      ),
-      body: TabBarView(
-        controller: _tabCtrl,
-        children: [
-          _buildFilaTab(),
-          _buildHistoricoTab(),
-        ],
-      ),
+        ),
+      ],
     );
   }
 
