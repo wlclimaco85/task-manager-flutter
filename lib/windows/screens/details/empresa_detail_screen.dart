@@ -6,6 +6,7 @@ import '../../../widgets/generic_grid_windows_screen.dart'
     show SecurityCheck, FieldConfigWindows, FieldType;
 import '../certificado_empresa_screen.dart';
 import '../login_grid_screen.dart' show WindowsLoginGridScreen;
+import 'empresa_modulos_tab.dart';
 
 class WindowsEmpresaDetailScreen extends StatefulWidget {
   final Map<String, dynamic> item;
@@ -185,6 +186,14 @@ class _WindowsEmpresaDetailScreenState
           icon: Icons.format_list_numbered,
           telaNome: 'nfe_serie',
           extraParams: {'empId': id},
+        ),
+        RelatedGridTab(
+          title: 'Modulos',
+          icon: Icons.settings,
+          customWidget: EmpresaModulosTab(
+            empresaId: empresaId,
+            onModulosChanged: (_) {},
+          ),
         ),
       ],
     );
