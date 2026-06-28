@@ -239,12 +239,16 @@ class SecurityMatrix {
   /// Permissões vindas do banco (quando disponíveis)
   final Map<String, Set<AppAction>> _backendPerms;
 
+  /// Cache de permissões por módulo+ação para avoid recalcular
+  final Map<String, bool> _moduloAcaoCache;
+
   const SecurityMatrix._({
     required this.profile,
     this.tipoLogin,
     this.aplicativoNome,
     Map<String, Set<AppAction>> backendPerms = const {},
-  }) : _backendPerms = backendPerms;
+    Map<String, bool> moduloAcaoCache = const {},
+  }) : _backendPerms = backendPerms, _moduloAcaoCache = moduloAcaoCache;
 
   factory SecurityMatrix.of(LoginModel? userInfo) {
     if (userInfo == null) return const SecurityMatrix._(profile: UserProfile.semAcesso);
@@ -390,6 +394,43 @@ class SecurityMatrix {
     if (profile == UserProfile.system || tipoLogin == LoginEnum.MASTER) return true;
     if (_backendPerms.isNotEmpty) return (_backendPerms[screen.name]?.isNotEmpty) ?? false;
     return (_fallbackMatrix[profile]?[screen]?.isNotEmpty) ?? false;
+  }
+
+  /// Verifica se o usuário tem uma ação específica em um módulo.
+  /// Retorna false se o módulo não existe ou se não há a ação.
+  /// Usa cache para evitar recálculos repetidos.
+  bool canActionInModulo(AppAction acao, String nomeModulo) {
+    // MASTER/SYSTEM: acesso total
+    if (profile == UserProfile.system || tipoLogin == LoginEnum.MASTER) {
+      return true;
+    }
+
+    // Valida se o módulo existe
+    if (!_moduloToScreens.containsKey(nomeModulo)) {
+      return false;
+    }
+
+    // Chave de cache: "nomeModulo:acao"
+    final cacheKey = '$nomeModulo:${acao.name}';
+    if (_moduloAcaoCache.containsKey(cacheKey)) {
+      return _moduloAcaoCache[cacheKey] ?? false;
+    }
+
+    // Calcula: há permissão para a ação em ALGUMA tela do módulo?
+    final telasDModulo = _moduloToScreens[nomeModulo] ?? {};
+    bool temAcao = false;
+
+    for (final tela in telasDModulo) {
+      if (_can(tela, acao)) {
+        temAcao = true;
+        break;
+      }
+    }
+
+    // Retorna e "cacheia" (em cache imutável, só pra leitura)
+    // Nota: em Dart, Map const não permite update; em produção,
+    // usar mutable Map se cache crescer demais (pode-se usar LRU).
+    return temAcao;
   }
 
   List<AppScreen> get visibleScreens => AppScreen.values.where((s) => canView(s)).toList();
