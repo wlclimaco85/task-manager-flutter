@@ -19,7 +19,7 @@ void main() {
 
       // Verifica títulos dos KPIs
       expect(find.text('Saldo'), findsOneWidget);
-      expect(find.text('Documentos Pendentes'), findsOneWidget);
+      expect(find.text('Documentos'), findsOneWidget);
       expect(find.text('Alertas'), findsOneWidget);
 
       // Verifica valores iniciais (mock)
@@ -64,9 +64,9 @@ void main() {
       await tester.pumpWidget(_wrap(const PortalClienteScreen()));
       await tester.pumpAndSettle();
 
-      // Verifica presença de Container/Row/Column
-      expect(find.byType(Container), findsWidgets);
-      expect(find.byType(SingleChildScrollView), findsWidgets);
+      // Verifica presença de Row/Column
+      expect(find.byType(Row), findsOneWidget);
+      expect(find.byType(SingleChildScrollView), findsOneWidget);
     });
   });
 }

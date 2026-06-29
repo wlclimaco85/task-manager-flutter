@@ -17,78 +17,69 @@ class PortalClienteScreen extends StatelessWidget {
             ),
           ),
           Padding(
-            padding: const EdgeInsets.all(16.0),
+            padding: const EdgeInsets.all(8.0),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [
-                // Card 1: Saldo
-                Card(
-                  child: Container(
-                    width: 100,
-                    height: 120,
-                    color: Colors.blue.shade50,
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(Icons.wallet, size: 32, color: Colors.blue),
-                        const SizedBox(height: 8),
-                        const Text('Saldo'),
-                        const SizedBox(height: 4),
-                        const Text('R\$ 0,00',
-                            style: TextStyle(
-                                fontWeight: FontWeight.bold, fontSize: 16)),
-                      ],
-                    ),
+                Flexible(
+                  child: _buildKpiCard(
+                    icon: Icons.wallet,
+                    iconColor: Colors.blue,
+                    bgColor: Colors.blue.shade50,
+                    title: 'Saldo',
+                    value: 'R\$ 0,00',
                   ),
                 ),
-                // Card 2: Documentos Pendentes
-                Card(
-                  child: Container(
-                    width: 100,
-                    height: 120,
-                    color: Colors.orange.shade50,
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(Icons.insert_drive_file,
-                            size: 32, color: Colors.orange),
-                        const SizedBox(height: 8),
-                        const Text('Documentos\nPendentes',
-                            textAlign: TextAlign.center,
-                            style: TextStyle(fontSize: 11)),
-                        const SizedBox(height: 4),
-                        const Text('0',
-                            style: TextStyle(
-                                fontWeight: FontWeight.bold, fontSize: 16)),
-                      ],
-                    ),
+                Flexible(
+                  child: _buildKpiCard(
+                    icon: Icons.insert_drive_file,
+                    iconColor: Colors.orange,
+                    bgColor: Colors.orange.shade50,
+                    title: 'Documentos',
+                    value: '0',
                   ),
                 ),
-                // Card 3: Alertas
-                Card(
-                  child: Container(
-                    width: 100,
-                    height: 120,
-                    color: Colors.red.shade50,
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(Icons.notifications_active,
-                            size: 32, color: Colors.red),
-                        const SizedBox(height: 8),
-                        const Text('Alertas'),
-                        const SizedBox(height: 4),
-                        const Text('0',
-                            style: TextStyle(
-                                fontWeight: FontWeight.bold, fontSize: 16)),
-                      ],
-                    ),
+                Flexible(
+                  child: _buildKpiCard(
+                    icon: Icons.notifications_active,
+                    iconColor: Colors.red,
+                    bgColor: Colors.red.shade50,
+                    title: 'Alertas',
+                    value: '0',
                   ),
                 ),
               ],
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildKpiCard({
+    required IconData icon,
+    required Color iconColor,
+    required Color bgColor,
+    required String title,
+    required String value,
+  }) {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(8.0),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, size: 24, color: iconColor),
+            const SizedBox(height: 4),
+            Text(title,
+                textAlign: TextAlign.center,
+                style: const TextStyle(fontSize: 11)),
+            const SizedBox(height: 2),
+            Text(value,
+                style:
+                    const TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+          ],
+        ),
       ),
     );
   }
