@@ -304,10 +304,19 @@ class _AppSidebarState extends State<AppSidebar> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(widget.userName, maxLines: 1, overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(color: _textColor, fontWeight: FontWeight.bold, fontSize: 13)),
-                    Text(widget.userEmail, maxLines: 1, overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(color: _textMuted, fontSize: 11)),
+                    Text(
+                      widget.userName.isNotEmpty ? widget.userName : 'Usuário',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(color: _textColor, fontWeight: FontWeight.bold, fontSize: 13),
+                    ),
+                    if (widget.userEmail.isNotEmpty)
+                      Text(
+                        widget.userEmail,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(color: _textMuted, fontSize: 11),
+                      ),
                   ],
                 ),
               ),

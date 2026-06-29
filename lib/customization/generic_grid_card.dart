@@ -250,6 +250,7 @@ class _GenericMobileGridScreenState<T>
 
   final Map<String, bool> _fieldVisibility = {};
   List<CustomAction<T>> _customActions = [];
+  int _fieldVisibilityVersion = 0;
 
   bool _isSelectionMode = false;
   final Map<String, bool> _cardSelection = {};
@@ -1640,7 +1641,9 @@ class _GenericMobileGridScreenState<T>
               width: double.maxFinite,
               child: ListView(
                 shrinkWrap: true,
-                children: widget.fieldConfigs.map((config) {
+                children: widget.fieldConfigs
+                  .where((c) => c.showInCard)
+                  .map((config) {
                   return CheckboxListTile(
                     title: Text(config.label),
                     value: _fieldVisibility[config.fieldName] ??
@@ -1663,11 +1666,14 @@ class _GenericMobileGridScreenState<T>
                 child: const Text(GridTexts.cancel),
               ),
               ElevatedButton(
-                onPressed: () {
-                  _saveFieldPreferences();
-                  // Chama setState do widget pai para atualizar os cards
-                  setState(() {});
-                  Navigator.pop(ctx);
+                onPressed: () async {
+                  await _saveFieldPreferences();
+                  if (context.mounted) {
+                    setState(() {
+                      _fieldVisibilityVersion++;
+                    });
+                    Navigator.pop(ctx);
+                  }
                 },
                 child: const Text('Aplicar'),
               ),

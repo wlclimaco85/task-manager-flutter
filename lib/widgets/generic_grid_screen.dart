@@ -905,6 +905,7 @@ class GenericGridScreen<T> extends StatefulWidget {
   final Widget Function(T item)? detailScreenBuilder;
   final Map<String, dynamic>? extraParams;
   final String? helpTelaNome;
+  final List<Widget>? headerActions;
 
   const GenericGridScreen({
     super.key,
@@ -938,6 +939,7 @@ class GenericGridScreen<T> extends StatefulWidget {
     this.detailScreenBuilder,
     this.extraParams,
     this.helpTelaNome,
+    this.headerActions,
   });
 
   @override
@@ -1004,7 +1006,7 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
   Future<void> _loadColumnPreferences() async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      final key = '${widget.storageKey}_${widget.title}';
+      final key = widget.storageKey;
 
       for (final config in widget.fieldConfigs) {
         final savedValue = prefs.getBool('$key${config.fieldName}');
@@ -1022,7 +1024,7 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
   Future<void> _saveColumnPreferences() async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      final key = '${widget.storageKey}_${widget.title}';
+      final key = widget.storageKey;
 
       for (final config in widget.fieldConfigs) {
         await prefs.setBool(
@@ -2545,6 +2547,10 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
             return Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
+                if (widget.headerActions != null) ...[
+                  ...widget.headerActions!,
+                  const SizedBox(height: 8),
+                ],
                 buildPrimaryActions(),
                 const SizedBox(height: 10),
                 Align(
@@ -2557,6 +2563,10 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
 
           return Row(
             children: [
+              if (widget.headerActions != null) ...[
+                ...widget.headerActions!,
+                const SizedBox(width: 12),
+              ],
               Expanded(child: buildPrimaryActions()),
               buildUtilityActions(),
             ],

@@ -40,6 +40,7 @@ import 'login_grid_screen.dart';
 import 'nfse_consulta_screen.dart';
 import 'nfse_serie_screen.dart';
 import 'nfse_config_screen.dart';
+import 'nfse_servico_screen.dart';
 import 'extrato_importacao_screen.dart' show MobileExtratoImportacaoScreen;
 import '../../web/screens/cobranca_automatica_screen.dart';
 import '../../widgets/user_banners.dart';
@@ -768,6 +769,17 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
         nav = Navigator.push(
           context,
           MaterialPageRoute(builder: (_) => const NfseConfigScreen()),
+        );
+        break;
+      case "Nova Nota de Serviço":
+        nav = Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => NfseServicoScreen(
+              hasPermission: (action) =>
+                  _hasPermissionFor(sec, AppScreen.nfseLista, action),
+            ),
+          ),
         );
         break;
       case "Produtos":

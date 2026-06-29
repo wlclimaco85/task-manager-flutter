@@ -3,8 +3,10 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:url_launcher/url_launcher.dart';
 import '../../../utils/api_links.dart';
+import '../../../utils/grid_colors.dart';
 import '../../../utils/tenant_context.dart';
 import '../../../widgets/generic_grid_screen.dart';
+import '../../../widgets/importacao_boletos_dialog.dart';
 import '../../../models/mensalidade_model.dart';
 
 class WebMensalidadeGridScreen extends StatefulWidget {
@@ -118,6 +120,19 @@ class _WebMensalidadeGridScreenState extends State<WebMensalidadeGridScreen> {
       ),
       enableSearch: true,
       enableColumnReorder: true,
+      headerActions: [
+        OutlinedButton.icon(
+          onPressed: () => _importarBoletos(),
+          icon: const Icon(Icons.upload_file, size: 18),
+          label: const Text('Importar Boletos'),
+          style: OutlinedButton.styleFrom(
+            foregroundColor: GridColors.secondary,
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+            side: const BorderSide(color: GridColors.divider),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
+          ),
+        ),
+      ],
       customActions: () => [
         CustomAction<Mensalidade>(
           icon: Icons.check_circle_outline,
@@ -133,6 +148,15 @@ class _WebMensalidadeGridScreenState extends State<WebMensalidadeGridScreen> {
           onPressed: (ctx, m) => _abrirBoleto(m),
         ),
       ],
+    );
+  }
+
+  void _importarBoletos() {
+    showDialog(
+      context: context,
+      builder: (_) => ImportacaoBoletosDialog(
+        onSuccess: () => setState(() => _chaveReload++),
+      ),
     );
   }
 }

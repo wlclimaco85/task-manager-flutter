@@ -890,7 +890,9 @@ class _WindowsBottomNavBarScreenState extends State<WindowsBottomNavBarScreen> {
             },
             onLogout: _handleLogout,
             userName: userName,
-            userEmail: AuthUtility.userInfo?.data?.codDadosPessoal?.email ?? '',
+            userEmail: AuthUtility.userInfo?.data?.codDadosPessoal?.email ??
+                AuthUtility.userInfo?.login?.email ??
+                '',
           ),
           // Main Content: faixa de abas internas + IndexedStack preservando estado
           Expanded(

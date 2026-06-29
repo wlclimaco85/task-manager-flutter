@@ -1917,19 +1917,21 @@ class _GenericMobileGridScreenState extends State<GenericMobileGridScreen> {
             width: double.maxFinite,
             child: ListView(
               shrinkWrap: true,
-              children: widget.fieldConfigs.map((c) {
-                return CheckboxListTile(
-                  title: Text(c.label),
-                  value: _fieldVisibility[c.fieldName] ?? c.isVisibleByDefault,
-                  onChanged: c.isFixed
-                      ? null
-                      : (v) {
-                          setSt(() {
-                            _fieldVisibility[c.fieldName] = v ?? false;
-                          });
-                        },
-                );
-              }).toList(),
+              children: widget.fieldConfigs
+                  .where((c) => c.showInCard)
+                  .map((c) {
+                  return CheckboxListTile(
+                    title: Text(c.label),
+                    value: _fieldVisibility[c.fieldName] ?? c.isVisibleByDefault,
+                    onChanged: c.isFixed
+                        ? null
+                        : (v) {
+                            setSt(() {
+                              _fieldVisibility[c.fieldName] = v ?? false;
+                            });
+                          },
+                  );
+                }).toList(),
             ),
           ),
           actions: [
