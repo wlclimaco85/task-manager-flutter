@@ -141,7 +141,7 @@ import '../../web/screens/kanban_pagamentos_screen.dart';
 import '../../web/screens/aprovacao_pagamentos_screen.dart';
 import '../../web/screens/instagram_monitor_screen.dart';
 import './atividade_diaria_screen.dart';
-import './diario_refeicao_screen.dart';
+import '../../features/diario_nutricional/diario_nutricional_screen.dart';
 import './home_saude_aluno_screen.dart';
 import './historico_treino_screen.dart';
 import './query_builder_window_screen.dart';
@@ -442,7 +442,7 @@ class _WindowsBottomNavBarScreenState extends State<WindowsBottomNavBarScreen> {
         const InstagramMonitorScreen(), // 136: Instagram Monitor
         const SizedBox.shrink(), // 137
         const WindowsAtividadeDiariaScreen(), // 138: Atividade Diaria
-        const WindowsDiarioRefeicaoScreen(), // 139: Diario Nutricional
+        const DiarioNutricionalScreen(), // 139: Diario Nutricional
         const WindowsHomeSaudeAlunoScreen(), // 140: Home Saude do Aluno
         HistoricoTreinoScreen(
           alunoId: AuthUtility.userInfo?.data?.id ?? 0,

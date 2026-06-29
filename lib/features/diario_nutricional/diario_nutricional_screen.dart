@@ -7,6 +7,7 @@ import 'package:image_picker/image_picker.dart';
 import '../../models/alimento_model.dart';
 import '../../models/diario_nutricional_model.dart';
 import '../../services/diario_nutricional_service.dart';
+import '../../utils/grid_colors.dart';
 
 class DiarioNutricionalScreen extends StatefulWidget {
   const DiarioNutricionalScreen({super.key});
@@ -394,6 +395,11 @@ class _ResumoMacrosCard extends StatelessWidget {
 
   const _ResumoMacrosCard({required this.resumo});
 
+  static const _metaCalorias = 2000.0;
+  static const _metaProteinas = 150.0;
+  static const _metaCarboidratos = 250.0;
+  static const _metaGorduras = 65.0;
+
   @override
   Widget build(BuildContext context) {
     return Card(
@@ -410,18 +416,33 @@ class _ResumoMacrosCard extends StatelessWidget {
               style: Theme.of(context).textTheme.headlineMedium,
             ),
             const SizedBox(height: 16),
-            _MacroLine(
+            _BarraProgresso(
+                label: 'Calorias',
+                valor: resumo.totalCalorias,
+                meta: _metaCalorias,
+                unidade: 'kcal',
+                cor: Colors.red),
+            const SizedBox(height: 12),
+            _BarraProgresso(
                 label: 'Proteinas',
-                value: resumo.totalProteinas,
-                color: Colors.blue),
-            _MacroLine(
+                valor: resumo.totalProteinas,
+                meta: _metaProteinas,
+                unidade: 'g',
+                cor: Colors.blue),
+            const SizedBox(height: 12),
+            _BarraProgresso(
                 label: 'Carboidratos',
-                value: resumo.totalCarboidratos,
-                color: Colors.orange),
-            _MacroLine(
+                valor: resumo.totalCarboidratos,
+                meta: _metaCarboidratos,
+                unidade: 'g',
+                cor: Colors.orange),
+            const SizedBox(height: 12),
+            _BarraProgresso(
                 label: 'Gorduras',
-                value: resumo.totalGorduras,
-                color: Colors.purple),
+                valor: resumo.totalGorduras,
+                meta: _metaGorduras,
+                unidade: 'g',
+                cor: Colors.purple),
           ],
         ),
       ),
@@ -429,29 +450,49 @@ class _ResumoMacrosCard extends StatelessWidget {
   }
 }
 
-class _MacroLine extends StatelessWidget {
+class _BarraProgresso extends StatelessWidget {
   final String label;
-  final double value;
-  final Color color;
+  final double valor;
+  final double meta;
+  final String unidade;
+  final Color cor;
 
-  const _MacroLine(
-      {required this.label, required this.value, required this.color});
+  const _BarraProgresso({
+    required this.label,
+    required this.valor,
+    required this.meta,
+    required this.unidade,
+    required this.cor,
+  });
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 10),
-      child: Row(
-        children: [
-          Container(
-              width: 10,
-              height: 10,
-              decoration: BoxDecoration(color: color, shape: BoxShape.circle)),
-          const SizedBox(width: 8),
-          Expanded(child: Text(label)),
-          Text('${value.toStringAsFixed(1)} g'),
-        ],
-      ),
+    final progresso = (valor / meta).clamp(0.0, 1.0);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(label,
+                style: const TextStyle(
+                    fontSize: 12, color: GridColors.textMuted)),
+            Text(
+              '${valor.toStringAsFixed(1)} / ${meta.toStringAsFixed(0)} $unidade',
+              style: const TextStyle(
+                  fontSize: 12, fontWeight: FontWeight.w600),
+            ),
+          ],
+        ),
+        const SizedBox(height: 4),
+        LinearProgressIndicator(
+          value: progresso,
+          backgroundColor: GridColors.secondarySoft,
+          color: cor,
+          minHeight: 8,
+          borderRadius: BorderRadius.circular(4),
+        ),
+      ],
     );
   }
 }

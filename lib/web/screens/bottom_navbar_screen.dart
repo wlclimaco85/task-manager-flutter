@@ -138,7 +138,7 @@ import './kanban_pagamentos_screen.dart';
 import './aprovacao_pagamentos_screen.dart';
 import './instagram_monitor_screen.dart';
 import './atividade_diaria_screen.dart';
-import './diario_refeicao_screen.dart';
+import '../../features/diario_nutricional/diario_nutricional_screen.dart';
 import './home_saude_aluno_screen.dart';
 import './historico_treino_screen.dart';
 
@@ -468,7 +468,7 @@ class _WebBottomNavBarScreenState extends State<WebBottomNavBarScreen> {
       const InstagramMonitorScreen(), // 136: Instagram Monitor
       const SizedBox.shrink(), // 137
       const WebAtividadeDiariaScreen(), // 138: Atividade Diaria
-      const WebDiarioRefeicaoScreen(), // 139: Diario Nutricional
+      const DiarioNutricionalScreen(), // 139: Diario Nutricional
       const WebHomeSaudeAlunoScreen(), // 140: Home Saude do Aluno
       HistoricoTreinoScreen(
         alunoId: AuthUtility.userInfo?.data?.id ?? 0,

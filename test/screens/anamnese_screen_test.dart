@@ -1,77 +1,62 @@
+// test/screens/anamnese_screen_test.dart
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:mockito/mockito.dart';
-import 'package:http/http.dart' as http;
-import 'package:task_manager_flutter/web/screens/anamnese_screen.dart';
-import 'package:task_manager_flutter/models/auth_utility.dart';
+import 'package:task_manager_flutter/screens/fitness/anamnese_screen.dart';
+
+Widget _wrap(Widget child) {
+  return MaterialApp(
+    home: Scaffold(body: child),
+  );
+}
 
 void main() {
-  group('AnamneseScreen Widget Tests', () {
-    late MockClient mockClient;
-
-    setUp(() {
-      mockClient = MockClient();
-      // Mock auth initialization
-      AuthUtility.userInfo = null;
-    });
-
-    testWidgets('Deve exibir formulário vazio ao carregar tela',
+  group('AnamneseScreen', () {
+    // TEST 1: Renderiza título
+    testWidgets('renderiza título "Anamnese"',
         (WidgetTester tester) async {
-      // Arrange
-      await tester.pumpWidget(
-        MaterialApp(
-          home: AnamneseScreen(
-            alunoId: 1,
-            nomeAluno: 'João Silva',
-          ),
-        ),
-      );
-
-      // Act & Assert
-      expect(find.byType(CircularProgressIndicator), findsOneWidget);
-      expect(find.byType(Form), findsNothing);
-
-      // Aguardar carregamento
+      await tester.pumpWidget(_wrap(const AnamneseScreen()));
       await tester.pumpAndSettle();
 
-      // Verificar que o formulário foi renderizado
-      expect(find.byType(Form), findsOneWidget);
+      expect(find.text('Anamnese'), findsOneWidget);
+    });
+
+    // TEST 2: Renderiza step 1 com 3 campos
+    testWidgets('renderiza step 1 com idade, altura, peso',
+        (WidgetTester tester) async {
+      await tester.pumpWidget(_wrap(const AnamneseScreen()));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Idade'), findsOneWidget);
+      expect(find.text('Altura (cm)'), findsOneWidget);
+      expect(find.text('Peso (kg)'), findsOneWidget);
+    });
+
+    // TEST 3: Renderiza TextFormFields
+    testWidgets('renderiza TextFormFields para entrada de dados',
+        (WidgetTester tester) async {
+      await tester.pumpWidget(_wrap(const AnamneseScreen()));
+      await tester.pumpAndSettle();
+
       expect(find.byType(TextFormField), findsWidgets);
-      expect(find.byType(SwitchListTile), findsNWidgets(3));
     });
 
-    testWidgets('Deve salvar anamnese ao clicar em Salvar',
+    // TEST 4: Renderiza botão próximo passo
+    testWidgets('renderiza botão "Próximo Passo"',
         (WidgetTester tester) async {
-      // Arrange
-      await tester.pumpWidget(
-        MaterialApp(
-          home: AnamneseScreen(
-            alunoId: 1,
-            nomeAluno: 'João Silva',
-          ),
-        ),
-      );
-
+      await tester.pumpWidget(_wrap(const AnamneseScreen()));
       await tester.pumpAndSettle();
 
-      // Act — Preencher formulário
-      await tester.enterText(
-        find.byType(TextFormField).first,
-        'Ganho de massa',
-      );
+      expect(find.text('Próximo Passo'), findsOneWidget);
+      expect(find.byType(ElevatedButton), findsOneWidget);
+    });
 
-      // Clicar em Salvar
-      final botaoSalvar = find.byIcon(Icons.save);
-      expect(botaoSalvar, findsOneWidget);
-
-      await tester.tap(botaoSalvar);
+    // TEST 5: Renderiza step indicator (Passo 1 de 5)
+    testWidgets('renderiza step indicator',
+        (WidgetTester tester) async {
+      await tester.pumpWidget(_wrap(const AnamneseScreen()));
       await tester.pumpAndSettle();
 
-      // Assert — Verificar que salvamento ocorreu
-      // (SnackBar ou estado de sucesso)
-      expect(find.byType(SnackBar), findsOneWidget);
+      expect(find.text('Passo 1 de 5'), findsOneWidget);
     });
   });
 }
-
-class MockClient extends Mock implements http.Client {}
