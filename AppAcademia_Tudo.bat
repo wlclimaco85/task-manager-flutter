@@ -240,28 +240,23 @@ java -version
 echo [DIAG] Dir: %BACKEND_DIR%
 
 echo.
-echo [1/3] Compilando backend...
-cd /d %BACKEND_DIR%
-call mvnw.cmd clean package -DskipTests
-if errorlevel 1 (
-    echo.
-    echo [ERRO] Falha na compilacao do backend! Veja o erro acima.
-    pause
-    exit /b 1
-)
-echo Backend compilado com sucesso.
-
-echo.
-echo [2/3] Iniciando backend na porta %BACKEND_PORT%...
+echo [1/2] Iniciando backend na porta %BACKEND_PORT% via spring-boot:run...
 echo ATENCAO: o Spring Boot leva ~45 segundos para subir.
 echo Acompanhe o progresso na janela "AppAcademia-Backend" que vai abrir.
 echo Aguarde a mensagem: Started AppAcademiaApplication
 echo.
 
-start "AppAcademia-Backend" cmd /k "cd /d %BACKEND_DIR% && java -Djava.io.tmpdir=C:\Temp -Djdk.net.unixdomain.tmpdir=C:\Temp -Dspring.devtools.restart.enabled=false -DJWT_SECRET=%JWT_SECRET% -DACCOUNT_SECRET=%ACCOUNT_SECRET% -jar target\AppAcademia.jar --server.port=%BACKEND_PORT% --server.address=0.0.0.0 --app.base-url=%ANDROID_BACKEND_URL%/boletobancos --spring.profiles.active=dev --spring.datasource.url=jdbc:postgresql://localhost:5432/boletobancos --spring.datasource.username=postgres --spring.datasource.password=admin --logging.level.root=INFO --logging.level.br.com.appAcademia=INFO"
+set "JVM_ARGS=-Djava.io.tmpdir=C:\Temp -Djdk.net.unixdomain.tmpdir=C:\Temp -Dspring.devtools.restart.enabled=false -DJWT_SECRET=%JWT_SECRET% -DACCOUNT_SECRET=%ACCOUNT_SECRET%"
+set "APP_ARGS=--server.port=%BACKEND_PORT% --server.address=0.0.0.0 --app.base-url=%ANDROID_BACKEND_URL%/boletobancos --spring.profiles.active=dev --spring.datasource.url=jdbc:postgresql://localhost:5432/boletobancos --spring.datasource.username=postgres --spring.datasource.password=admin --logging.level.root=INFO --logging.level.br.com.appAcademia=INFO"
+(
+echo @echo off
+echo cd /d "%BACKEND_DIR%"
+echo mvnw.cmd spring-boot:run -Dmaven.test.skip=true "-Dspring-boot.run.jvmArguments=%JVM_ARGS%" "-Dspring-boot.run.arguments=%APP_ARGS%"
+) > "%TEMP%\run-backend.bat"
+start "AppAcademia-Backend" cmd /k "%TEMP%\run-backend.bat"
 
 echo.
-echo [3/3] Flutter no Chrome...
+echo [2/2] Flutter no Chrome...
 start "AppAcademia-Flutter" cmd /k "cd /d %FLUTTER_DIR% && flutter pub get && flutter run -d chrome"
 echo Flutter iniciando em janela propria.
 
@@ -1224,22 +1219,16 @@ if not exist "%BOLSA_FLUTTER_DIR%" (
     exit /b 1
 )
 
-echo [1/2] Compilando backend Bolsa...
-cd /d "%BOLSA_BACKEND_DIR%"
-call mvnw.cmd clean package -DskipTests
-if errorlevel 1 (
-    echo [ERRO] Falha na compilacao do backend Bolsa!
-    pause
-    exit /b 1
-)
-echo Backend Bolsa compilado com sucesso.
-
-echo.
-echo [2/2] Iniciando backend Bolsa na porta 9002 e Flutter Web...
+echo [1/2] Iniciando backend Bolsa na porta 9002 via spring-boot:run...
 echo ATENCAO: o Spring Boot leva ~30 segundos para subir.
 echo.
 
-start "Bolsa-Backend" cmd /k "cd /d %BOLSA_BACKEND_DIR% && java -Djava.io.tmpdir=C:\Temp -Djdk.net.unixdomain.tmpdir=C:\Temp -Dspring.devtools.restart.enabled=false -jar target\bolsa-app-backend.jar --server.port=9002 --server.address=0.0.0.0"
+(
+echo @echo off
+echo cd /d "%BOLSA_BACKEND_DIR%"
+echo mvnw.cmd spring-boot:run -Dmaven.test.skip=true "-Dspring-boot.run.jvmArguments=-Djava.io.tmpdir=C:\Temp -Djdk.net.unixdomain.tmpdir=C:\Temp -Dspring.devtools.restart.enabled=false" "-Dspring-boot.run.arguments=--server.port=9002 --server.address=0.0.0.0"
+) > "%TEMP%\run-bolsa-backend.bat"
+start "Bolsa-Backend" cmd /k "%TEMP%\run-bolsa-backend.bat"
 
 echo Backend Bolsa iniciando na porta 9002...
 timeout /t 3 /nobreak >nul
