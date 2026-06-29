@@ -2086,8 +2086,7 @@ class _GenericMobileGridScreenState<T>
     return Scaffold(
       backgroundColor: GridColors.pageBackground,
       appBar: resolvedAppBar,
-      floatingActionButton:
-          widget.hasPermission('create') ? _buildFloatingActionButton() : null,
+      floatingActionButton: widget.detailScreenBuilder == null && widget.hasPermission('create') ? _buildFloatingActionButton() : null,
       body: Column(
         children: [
           // Filtros (quando abertos)
