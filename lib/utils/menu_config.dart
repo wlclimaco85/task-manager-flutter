@@ -151,6 +151,11 @@ class MenuConfig {
             icon: FontAwesomeIcons.userTie,
             screenIndex: 20),
         MenuItem(
+            id: 'registro_carga',
+            label: 'Registro de Carga',
+            icon: FontAwesomeIcons.dumbbell,
+            screenIndex: 154),
+        MenuItem(
             id: 'suplementos',
             label: 'Suplementos',
             icon: FontAwesomeIcons.capsules,
