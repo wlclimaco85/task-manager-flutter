@@ -504,42 +504,63 @@ class _WindowsCalendarScreenState extends State<WindowsCalendarScreen> {
     required bool isPagar,
   }) async {
     final id = item['id']?.toString();
-    if (id == null || id.isEmpty) return;
+    if (id == null || id.isEmpty) {
+      _mostrarErro('ID da conta não encontrado');
+      return;
+    }
+
+    final isTitulo = item['documentoFiscal'] == true;
 
     try {
-      final url = isPagar
-          ? ApiLinks.updateContaPagar(id)
-          : ApiLinks.updateContaReceber(id);
-      dynamic body = await _fetchFinancialJson(url);
-      while (body is Map && body.containsKey('data')) {
-        body = body['data'];
-      }
-      if (body is! Map) {
-        throw StateError('Conta não encontrada.');
+      Map<String, dynamic> body;
+
+      if (isTitulo) {
+        body = Map<String, dynamic>.from(item);
+      } else {
+        final url = isPagar
+            ? ApiLinks.updateContaPagar(id)
+            : ApiLinks.updateContaReceber(id);
+        dynamic fetchedBody = await _fetchFinancialJson(url);
+        while (fetchedBody is Map && fetchedBody.containsKey('data')) {
+          fetchedBody = fetchedBody['data'];
+        }
+        if (fetchedBody is! Map) {
+          _mostrarErro('Dados da conta não encontrados na resposta');
+          return;
+        }
+        body = Map<String, dynamic>.from(fetchedBody);
       }
 
-      final result = await showDialog<bool>(
-        context: context,
-        builder: (_) => isPagar
-            ? BaixaDialog(
-                conta: ContaPagar.fromJson(Map<String, dynamic>.from(body)),
-              )
-            : BaixaDialogReceber(
-                conta: ContaReceber.fromJson(Map<String, dynamic>.from(body)),
-              ),
-      );
+      try {
+        final result = await showDialog<bool>(
+          context: context,
+          builder: (_) => isPagar
+              ? BaixaDialog(
+                  conta: ContaPagar.fromJson(body),
+                )
+              : BaixaDialogReceber(
+                  conta: ContaReceber.fromJson(body),
+                ),
+        );
 
-      if (result == true && _selectedDay != null) {
-        await _loadDayData(_selectedDay!);
-        await _loadMonthMarkers(_currentMonth);
+        if (result == true && _selectedDay != null) {
+          await _loadDayData(_selectedDay!);
+          await _loadMonthMarkers(_currentMonth);
+        }
+      } catch (e) {
+        _mostrarErro('Erro ao parsejar dados da conta: $e');
       }
-    } catch (_) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-            content: Text('Não foi possível abrir a baixa da conta.')),
-      );
+    } catch (e) {
+      _mostrarErro('Erro ao carregar dados: $e');
     }
+  }
+
+  void _mostrarErro(String mensagem) {
+    if (!mounted) return;
+    print('[DOCUMENTO_SCREEN] Erro ao abrir baixa: $mensagem');
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(mensagem)),
+    );
   }
 
   Future<void> _abrirPdfAnexo(Map<String, dynamic> item) async {

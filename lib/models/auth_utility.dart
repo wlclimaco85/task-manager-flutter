@@ -75,6 +75,23 @@ class AuthUtility {
     userInfo = null;
   }
 
+  /// Retorna o LoginModel do usuário logado (lê de SharedPreferences se necessário).
+  static Future<LoginModel?> obterLogin() async {
+    if (userInfo != null) return userInfo;
+    return getUserInfo();
+  }
+
+  /// Headers HTTP com autenticação + tenant.
+  static Future<Map<String, String>> obterHeaders() async {
+    final token = userInfo?.token;
+    if (token == null) await getUserInfo();
+    final Map<String, String> headers = {};
+    if (userInfo?.token != null) {
+      headers['Authorization'] = 'Bearer ${userInfo!.token}';
+    }
+    return headers;
+  }
+
   static Future<bool> isUserLoggedIn() async {
     SharedPreferences _sharedPreferences =
         await SharedPreferences.getInstance();

@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'package:task_manager_flutter/config/environment.dart';
-import 'package:task_manager_flutter/pages/login/login_model.dart';
-import 'package:task_manager_flutter/shared/auth_utility.dart';
-import 'package:task_manager_flutter/shared/grid_colors.dart';
+import 'package:task_manager_flutter/models/auth_utility.dart';
+import 'package:task_manager_flutter/utils/grid_colors.dart';
+import 'package:task_manager_flutter/utils/api_links.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 
@@ -26,13 +25,12 @@ class _FrequenciaScreenState extends State<FrequenciaScreen> {
   Future<List<FrequenciaWeek>> _carregarFrequencia() async {
     try {
       final login = await AuthUtility.obterLogin();
-      if (login == null || login.aluno == null) {
+      final alunoId = login?.data?.id ?? login?.login?.parceiro?.id;
+      if (alunoId == null) {
         throw Exception('Aluno não identificado');
       }
-
-      final alunoId = login.aluno!.id;
       final url = Uri.parse(
-        '${Environment.backendUrl}/api/sessoes-treino/aluno/$alunoId/frequencia',
+        '${ApiLinks.baseUrl}/api/sessoes-treino/aluno/$alunoId/frequencia',
       );
 
       final headers = await AuthUtility.obterHeaders();

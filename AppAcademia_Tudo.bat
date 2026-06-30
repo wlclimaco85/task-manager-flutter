@@ -256,6 +256,14 @@ echo mvnw.cmd spring-boot:run -Dmaven.test.skip=true "-Dspring-boot.run.jvmArgum
 start "AppAcademia-Backend" cmd /k "%TEMP%\run-backend.bat"
 
 echo.
+echo Aguardando backend ficar pronto (pode levar ate 2 minutos)...
+call :WAIT_BACKEND
+if errorlevel 1 (
+    echo [ERRO] Backend nao respondeu em tempo. Verifique a porta 9001.
+    exit /b 1
+)
+
+echo.
 echo [2/2] Flutter no Chrome...
 start "AppAcademia-Flutter" cmd /k "cd /d %FLUTTER_DIR% && flutter pub get && flutter run -d chrome"
 echo Flutter iniciando em janela propria.

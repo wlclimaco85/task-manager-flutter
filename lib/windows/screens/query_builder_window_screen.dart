@@ -71,17 +71,27 @@ class _QueryBuilderWindowScreenState extends State<QueryBuilderWindowScreen> {
 
   Future<void> _carregarSchemas() async {
     setState(() => _carregandoSchemas = true);
-    final schemas = await QueryBuilderCaller.listarSchemas();
-    if (!mounted) return;
-    setState(() {
-      _schemas = schemas;
-      _carregandoSchemas = false;
-      if (schemas.isNotEmpty) {
-        _schemaSelecionado = schemas.first.toString();
+    try {
+      final schemas = await QueryBuilderCaller.listarSchemas();
+      if (!mounted) return;
+      setState(() {
+        _schemas = schemas;
+        _carregandoSchemas = false;
+        _mensagemErro = schemas.isEmpty ? 'Nenhum schema disponível' : null;
+        if (schemas.isNotEmpty) {
+          _schemaSelecionado = schemas.first.toString();
+        }
+      });
+      if (_schemaSelecionado != null) {
+        await _carregarTabelas(_schemaSelecionado!);
       }
-    });
-    if (_schemaSelecionado != null) {
-      await _carregarTabelas(_schemaSelecionado!);
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _carregandoSchemas = false;
+        _mensagemErro = 'Erro ao carregar schemas: $e';
+      });
+      debugPrint('[QueryBuilder] Erro ao carregar schemas: $e');
     }
   }
 
@@ -91,30 +101,53 @@ class _QueryBuilderWindowScreenState extends State<QueryBuilderWindowScreen> {
       _tabelas = [];
       _tabelaSelecionada = null;
       _colunas = [];
+      _mensagemErro = null;
     });
-    final tabelas = await QueryBuilderCaller.listarTabelas();
-    if (!mounted) return;
-    setState(() {
-      _tabelas = tabelas;
-      _carregandoTabelas = false;
-    });
+    try {
+      final tabelas = await QueryBuilderCaller.listarTabelas();
+      if (!mounted) return;
+      setState(() {
+        _tabelas = tabelas;
+        _carregandoTabelas = false;
+        if (tabelas.isEmpty) {
+          _mensagemErro = 'Nenhuma tabela encontrada no schema $schema';
+        }
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _carregandoTabelas = false;
+        _mensagemErro = 'Erro ao carregar tabelas: $e';
+      });
+      debugPrint('[QueryBuilder] Erro ao carregar tabelas: $e');
+    }
   }
 
   Future<void> _carregarColunas(String schema, String tabela) async {
     setState(() {
       _carregandoColunas = true;
       _colunas = [];
+      _mensagemErro = null;
     });
-    final colunas = await QueryBuilderCaller.listarColunas(schema, tabela);
-    if (!mounted) return;
-    setState(() {
-      _colunas = colunas.map((c) {
-        if (c is Map<String, dynamic>) return c;
-        if (c is String) return {'nome': c};
-        return {'nome': c.toString()};
-      }).toList();
-      _carregandoColunas = false;
-    });
+    try {
+      final colunas = await QueryBuilderCaller.listarColunas(schema, tabela);
+      if (!mounted) return;
+      setState(() {
+        _colunas = colunas.map((c) {
+          if (c is Map<String, dynamic>) return c;
+          if (c is String) return {'nome': c};
+          return {'nome': c.toString()};
+        }).toList();
+        _carregandoColunas = false;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _carregandoColunas = false;
+        _mensagemErro = 'Erro ao carregar colunas: $e';
+      });
+      debugPrint('[QueryBuilder] Erro ao carregar colunas: $e');
+    }
   }
 
   // ── Execução ────────────────────────────────────────────────────────
@@ -406,6 +439,32 @@ class _QueryBuilderWindowScreenState extends State<QueryBuilderWindowScreen> {
   }
 
   Widget _buildBody() {
+    if (_mensagemErro != null && _carregandoSchemas) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.error_outline, size: 64, color: GridColors.error),
+            const SizedBox(height: 16),
+            Text(
+              _mensagemErro!,
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                color: GridColors.error,
+                fontSize: 16,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+            const SizedBox(height: 24),
+            ElevatedButton(
+              onPressed: _carregarSchemas,
+              child: const Text('Tentar Novamente'),
+            ),
+          ],
+        ),
+      );
+    }
+
     return Row(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [

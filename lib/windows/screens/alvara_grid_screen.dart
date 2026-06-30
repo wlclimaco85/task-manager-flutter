@@ -5,6 +5,7 @@ import '../../utils/grid_colors.dart';
 import '../../utils/grid_texts.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../customization/dynamic_grid_windows_screen.dart';
 import '../../models/alvara_model.dart';
@@ -338,11 +339,9 @@ class WindowsAlvaraGridScreen extends StatelessWidget {
                     label: const Text(GridTexts.openPdf),
                     style: ElevatedButton.styleFrom(
                         backgroundColor: GridColors.primary),
-                    onPressed: () {
-                      // Para web: abre URL no browser
-                      // Para desktop: usa url_launcher
-                      _abrirUrl(url);
-                      Navigator.pop(context);
+                    onPressed: () async {
+                      await _abrirUrl(url);
+                      if (context.mounted) Navigator.pop(context);
                     },
                   ),
                 ],
@@ -354,15 +353,17 @@ class WindowsAlvaraGridScreen extends StatelessWidget {
     );
   }
 
-  static void _abrirUrl(String url) {
-    // Tenta usar url_launcher se disponível; ignora se não estiver
+  static Future<void> _abrirUrl(String url) async {
     try {
-      // ignore: avoid_dynamic_calls
-      // Em builds com url_launcher: launchUrl(Uri.parse(url));
-      // Para web basta uma chamada JS (window.open) via dart:html
-      // Este método é suficiente para que a tela compile em todos os targets.
-      debugPrint('Abrir URL: $url');
-    } catch (_) {}
+      final uri = Uri.parse(url);
+      if (await canLaunchUrl(uri)) {
+        await launchUrl(uri, mode: LaunchMode.externalApplication);
+      } else {
+        debugPrint('Não foi possível abrir URL: $url');
+      }
+    } catch (e) {
+      debugPrint('Erro ao abrir URL: $e');
+    }
   }
 
   static void _snack(BuildContext context, String msg, Color color) {

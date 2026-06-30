@@ -512,6 +512,7 @@ class ApiLinks {
       '$_baseUrlNew/api/dashboard/finance/alerts/dueSoon';
 
   static String get kpis => '$_baseUrlNew/api/dashboard/kpis';
+  static String get portalClienteResumo => '$_baseUrlNew/api/portal-cliente/resumo';
   static String get marketOverview => '$_baseUrlNew/api/cotacoes/mercado';
   static String get marketCollectorOverview =>
       '$_baseUrlNew/api/market/overview';
