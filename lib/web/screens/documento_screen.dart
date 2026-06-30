@@ -9,6 +9,7 @@ import '../../../utils/api_links.dart';
 import '../../../utils/tenant_context.dart';
 import '../../../widgets/anexo_financeiro_widget.dart';
 import '../../../widgets/user_banners.dart';
+import '../../../utils/document_baixa_helper.dart';
 import '../../../models/conta_pagar_model.dart';
 import '../../../models/conta_receber_model.dart';
 import 'baixa_dialog.dart';
@@ -687,7 +688,7 @@ class _WindowsCalendarScreenState extends State<WindowsCalendarScreen> {
   // Abre o popup de baixa da conta (a partir do item do calendário).
   Future<void> _abrirBaixaConta(Map<String, dynamic> item, {required bool isPagar}) async {
     final id = item['id']?.toString();
-    if (id == null || id.isEmpty) {
+    if (!DocumentoBaixaHelper.itemIdValido(id)) {
       _mostrarErro('ID da conta não encontrado');
       return;
     }
@@ -701,17 +702,15 @@ class _WindowsCalendarScreenState extends State<WindowsCalendarScreen> {
         body = Map<String, dynamic>.from(item);
       } else {
         final url = isPagar
-            ? ApiLinks.updateContaPagar(id)
-            : ApiLinks.updateContaReceber(id);
+            ? ApiLinks.updateContaPagar(id!)
+            : ApiLinks.updateContaReceber(id!);
         dynamic fetchedBody = await _fetchFinancialJson(url);
-        while (fetchedBody is Map && fetchedBody.containsKey('data')) {
-          fetchedBody = fetchedBody['data'];
-        }
-        if (fetchedBody is! Map) {
+        final parsedBody = DocumentoBaixaHelper.parseContaBody(fetchedBody);
+        if (parsedBody == null) {
           _mostrarErro('Dados da conta não encontrados na resposta');
           return;
         }
-        body = Map<String, dynamic>.from(fetchedBody);
+        body = parsedBody;
       }
 
       try {

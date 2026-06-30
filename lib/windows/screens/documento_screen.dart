@@ -12,8 +12,8 @@ import '../../../utils/document_baixa_helper.dart';
 import '../../../utils/grid_colors.dart';
 import '../../../utils/tenant_context.dart';
 import '../../../widgets/user_banners.dart';
-import '../../../windows/screens/baixa_dialog.dart';
-import '../../../mobile/screens/baixa_dialog_receber.dart';
+import './baixa_dialog.dart';
+import './baixa_dialog_receber.dart';
 
 // ─── Internal data models ────────────────────────────────────────────────────
 
@@ -519,8 +519,8 @@ class _WindowsCalendarScreenState extends State<WindowsCalendarScreen> {
         body = Map<String, dynamic>.from(item);
       } else {
         final url = isPagar
-            ? ApiLinks.updateContaPagar(id)
-            : ApiLinks.updateContaReceber(id);
+            ? ApiLinks.updateContaPagar(id!)
+            : ApiLinks.updateContaReceber(id!);
         dynamic fetchedBody = await _fetchFinancialJson(url);
         final parsedBody = DocumentoBaixaHelper.parseContaBody(fetchedBody);
         if (parsedBody == null) {

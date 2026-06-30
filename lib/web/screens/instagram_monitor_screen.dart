@@ -315,7 +315,7 @@ class _InstagramMonitorScreenState extends State<InstagramMonitorScreen> with Ti
           _timelineTotal = 0;
           _timelineTemMais = false;
           _showMonitorButtons = false;
-          _error = erroFetch ?? 'Perfil @$username nao esta monitorado. A busca usa apenas dados ja coletados no banco.';
+          _error = erroFetch ?? 'Perfil @$username nao encontrado. Verifique o nome ou as credenciais RapidAPI.';
         });
       }
       return;

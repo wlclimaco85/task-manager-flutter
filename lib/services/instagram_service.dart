@@ -323,7 +323,7 @@ class InstagramService {
       }
 
       if (r.statusCode == 404) {
-        throw InstagramException('Perfil @$clean nao esta monitorado. A busca manual usa apenas dados ja coletados no banco.');
+        throw InstagramException('Perfil @$clean nao encontrado. Verifique o nome ou as credenciais RapidAPI.');
       }
 
       if (r.statusCode == 401 || r.statusCode == 403) {
