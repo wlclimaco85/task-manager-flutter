@@ -5,8 +5,13 @@
 // ações por item (editar/excluir/servidor) e suporte a tela de detalhes.
 // -----------------------------------------------------------------------------
 import 'dart:convert';
+import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
+import 'package:pdf/pdf.dart';
+import 'package:pdf/widgets.dart' as pw;
+import 'package:printing/printing.dart';
+
 import '../../../models/network_response.dart';
 import '../../services/network_caller.dart';
 import '../../../utils/app_logger.dart'; // L.d/L.i/L.w/L.e
@@ -987,20 +992,22 @@ class _GridListScreenState extends State<GridListScreen> {
           tooltip: 'Ver JSON',
           onPressed: () => _showAllFieldsDebug(context, item),
         ),
-      if (widget.detailScreenBuilder != null &&
-          _can('view') &&
-          widget.hasPermission('view'))
+      if (_can('view') && widget.hasPermission('view'))
         iconBtn(
           icon: Icons.visibility_outlined,
           color: GridColors.secondary,
           tooltip: 'Ver detalhes',
           onPressed: () {
             L.d('[GridList] abrir detalhes do item ${getNestedValue(item, widget.idFieldName)}');
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                  builder: (_) => widget.detailScreenBuilder!(item)),
-            );
+            if (widget.detailScreenBuilder != null) {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                    builder: (_) => widget.detailScreenBuilder!(item)),
+              );
+            } else {
+              _openDetailPage(item);
+            }
           },
         ),
       if (_can('edit') && widget.hasPermission('edit'))
@@ -1215,6 +1222,24 @@ class _GridListScreenState extends State<GridListScreen> {
   }
 
   // ---------------------------------------------------------------------------
+  // 📄 Página de Detalhes com Exportação PDF
+  // ---------------------------------------------------------------------------
+
+  void _openDetailPage(Map<String, dynamic> item) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => _DetailPage(
+          titulo: widget.title,
+          item: item,
+          fieldConfigs: widget.fieldConfigs,
+          idFieldName: widget.idFieldName,
+        ),
+      ),
+    );
+  }
+
+  // ---------------------------------------------------------------------------
   // Outras UIs utilitárias
   // ---------------------------------------------------------------------------
   void _showAllFieldsDebug(BuildContext context, Map<String, dynamic> item) {
@@ -1398,6 +1423,233 @@ class GridFormManager {
           ),
         ],
       ),
+    );
+  }
+}
+
+// -----------------------------------------------------------------------------
+// 📄 Página de detalhes de um item com exportação PDF
+// -----------------------------------------------------------------------------
+class _DetailPage extends StatelessWidget {
+  final String titulo;
+  final Map<String, dynamic> item;
+  final List<FieldConfig> fieldConfigs;
+  final String idFieldName;
+
+  const _DetailPage({
+    required this.titulo,
+    required this.item,
+    required this.fieldConfigs,
+    required this.idFieldName,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final visibleFields = fieldConfigs
+        .where((f) => f.isInForm || f.showInCard)
+        .toList();
+
+    return Scaffold(
+      backgroundColor: GridColors.background,
+      appBar: AppBar(
+        backgroundColor: GridColors.primary,
+        foregroundColor: Colors.white,
+        title: Text(
+          titulo,
+          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+        ),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.picture_as_pdf),
+            tooltip: 'Exportar PDF',
+            onPressed: () => _exportPdf(context, visibleFields),
+          ),
+        ],
+      ),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          children: visibleFields.map((f) => _buildFieldCard(f)).toList(),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildFieldCard(FieldConfig campo) {
+    final valor = _resolveValue(campo);
+    return Card(
+      margin: const EdgeInsets.only(bottom: 8),
+      elevation: 0,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(8),
+        side: BorderSide(color: GridColors.divider),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Icon(
+              campo.icon ?? Icons.label_outline,
+              size: 18,
+              color: GridColors.secondary,
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    campo.label,
+                    style: const TextStyle(
+                      fontSize: 11,
+                      color: GridColors.secondary,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    valor,
+                    style: const TextStyle(
+                      fontSize: 14,
+                      color: GridColors.textSecondary,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  String _resolveValue(FieldConfig campo) {
+    dynamic raw = getNestedValue(item, campo.fieldName);
+    if (raw == null) return '—';
+
+    if (campo.fieldType == FieldType.boolean) {
+      return raw == true || raw == 'true' ? 'Sim' : 'Não';
+    }
+    if (campo.fieldType == FieldType.date) {
+      try {
+        final dt = DateTime.parse(raw.toString());
+        return '${dt.day.toString().padLeft(2, '0')}/${dt.month.toString().padLeft(2, '0')}/${dt.year}';
+      } catch (_) {}
+    }
+    if (campo.fieldType == FieldType.dropdown) {
+      final displayField = campo.displayFieldName ?? campo.dropdownDisplayField;
+      if (raw is Map && raw.containsKey(displayField)) {
+        return raw[displayField].toString();
+      }
+      final options = campo.dropdownOptions ?? [];
+      for (final opt in options) {
+        if (opt[campo.dropdownValueField].toString() == raw.toString()) {
+          return opt[displayField]?.toString() ?? raw.toString();
+        }
+      }
+    }
+    return raw.toString();
+  }
+
+  Future<void> _exportPdf(
+      BuildContext context, List<FieldConfig> campos) async {
+    final doc = pw.Document();
+
+    final linhas = campos
+        .map((f) => MapEntry(f.label, _resolveValue(f)))
+        .where((e) => e.value != '—')
+        .toList();
+
+    doc.addPage(
+      pw.Page(
+        pageFormat: PdfPageFormat.a4,
+        margin: const pw.EdgeInsets.all(24),
+        build: (pw.Context ctx) {
+          return pw.Column(
+            crossAxisAlignment: pw.CrossAxisAlignment.start,
+            children: [
+              pw.Text(
+                titulo,
+                style: pw.TextStyle(
+                  fontSize: 18,
+                  fontWeight: pw.FontWeight.bold,
+                ),
+              ),
+              pw.SizedBox(height: 16),
+              pw.Table(
+                border: pw.TableBorder.all(color: PdfColors.grey300),
+                columnWidths: {
+                  0: const pw.FlexColumnWidth(1),
+                  1: const pw.FlexColumnWidth(2),
+                },
+                children: [
+                  pw.TableRow(
+                    decoration:
+                        const pw.BoxDecoration(color: PdfColors.green900),
+                    children: [
+                      pw.Padding(
+                        padding: const pw.EdgeInsets.all(6),
+                        child: pw.Text(
+                          'Campo',
+                          style: pw.TextStyle(
+                            color: PdfColors.white,
+                            fontWeight: pw.FontWeight.bold,
+                            fontSize: 10,
+                          ),
+                        ),
+                      ),
+                      pw.Padding(
+                        padding: const pw.EdgeInsets.all(6),
+                        child: pw.Text(
+                          'Valor',
+                          style: pw.TextStyle(
+                            color: PdfColors.white,
+                            fontWeight: pw.FontWeight.bold,
+                            fontSize: 10,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  ...linhas.asMap().entries.map((entry) {
+                    final par = entry.key.isEven;
+                    return pw.TableRow(
+                      decoration: pw.BoxDecoration(
+                        color: par ? PdfColors.grey50 : PdfColors.white,
+                      ),
+                      children: [
+                        pw.Padding(
+                          padding: const pw.EdgeInsets.all(6),
+                          child: pw.Text(
+                            entry.value.key,
+                            style: const pw.TextStyle(fontSize: 9),
+                          ),
+                        ),
+                        pw.Padding(
+                          padding: const pw.EdgeInsets.all(6),
+                          child: pw.Text(
+                            entry.value.value,
+                            style: const pw.TextStyle(fontSize: 9),
+                          ),
+                        ),
+                      ],
+                    );
+                  }),
+                ],
+              ),
+            ],
+          );
+        },
+      ),
+    );
+
+    final Uint8List bytes = await doc.save();
+    if (!context.mounted) return;
+
+    await Printing.layoutPdf(
+      onLayout: (_) async => bytes,
+      name: '$titulo.pdf',
     );
   }
 }

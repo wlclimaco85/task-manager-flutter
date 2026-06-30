@@ -45,10 +45,22 @@ enum AppScreen {
   // Dashboards por área (Fase 171 — fundação)
   dashAtendimentoArea, dashFinanceiroArea, dashComercialArea,
   dashDpArea, dashFiscalArea,
+  // Chat Kanban
+  chatKanban,
   // Dashboard de mensalidades do escritorio
   dashMensalidadeArea,
   // Importação de boletos em lote
   boletoImportacaoLote,
+  // Módulo Financeiro Avançado (gating helper)
+  cobranca, dreGerencial, conciliacaoBancaria, importarExtrato,
+  lancamentosFinanceiros, integracoesFinanceiras,
+  // Compras e Estoque
+  fornecedores, tabelaPreco, devolucoes, aprovacaoCompra,
+  reservaEstoque, multiDeposito,
+  // IA / Análise Inteligente
+  aiDashboard, aiAssistente,
+  // Módulo Contábil
+  lancamentoContabil, balancete, fechamentoPeriodo,
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -114,6 +126,7 @@ const _escritorioScreens = {
   AppScreen.nfeEntrada:         _all,
   AppScreen.nfeSaida:           _all,
   AppScreen.nfse:               _all,
+  AppScreen.nfseServico:        _all,
   AppScreen.pdvNfce:            _all,
   AppScreen.configFiscal:       _all,
   AppScreen.dashKpis:                  _ro,
@@ -142,6 +155,7 @@ const _escritorioScreens = {
   AppScreen.ajustePonto:               _all,
   AppScreen.ged:        _all,
   AppScreen.chat:       _all,
+  AppScreen.chatKanban: _all,
   AppScreen.perfil:     _all,
   AppScreen.boletoImportacaoLote: _allFinanceiro,
 };
@@ -166,6 +180,7 @@ final Map<UserProfile, Map<AppScreen, Set<AppAction>>> _fallbackMatrix = {
     AppScreen.nfeEntrada:      _all,
     AppScreen.nfeSaida:        _all,
     AppScreen.nfse:            _all,
+    AppScreen.nfseServico:     _all,
     AppScreen.pdvNfce:         _all,
     AppScreen.configFiscal:    _all,
     AppScreen.dashboard:       _ro,
@@ -202,6 +217,7 @@ final Map<UserProfile, Map<AppScreen, Set<AppAction>>> _fallbackMatrix = {
     AppScreen.nfeEntrada:      _all,
     AppScreen.nfeSaida:        _all,
     AppScreen.nfse:            _all,
+    AppScreen.nfseServico:     _all,
     AppScreen.pdvNfce:         _all,
     AppScreen.configFiscal:    _all,
     AppScreen.noticias:        _ro,
@@ -443,7 +459,7 @@ class SecurityMatrix {
     AppScreen.calendario, AppScreen.obrigacoesFiscais, AppScreen.pedidos,
     AppScreen.configuracoesAdmin, AppScreen.contasBancarias, AppScreen.contaBancaria,
     AppScreen.dashboard, AppScreen.feriados, AppScreen.funcionarios,
-    AppScreen.kanbanChamados, AppScreen.nfeEntrada, AppScreen.nfeSaida, AppScreen.pdvNfce, AppScreen.configFiscal,
+    AppScreen.kanbanChamados, AppScreen.chatKanban, AppScreen.nfeEntrada, AppScreen.nfeSaida, AppScreen.pdvNfce, AppScreen.configFiscal,
     AppScreen.pontoWeb, AppScreen.solicitacaoAjustePonto, AppScreen.ajustePonto,
     AppScreen.noticias, AppScreen.perfil, AppScreen.roles,
     AppScreen.produto, AppScreen.unidadeMedida, AppScreen.catalogoProduto, AppScreen.nfeSerie,
@@ -499,7 +515,7 @@ const Map<String, Set<AppScreen>> _moduloToScreens = {
     AppScreen.contasPagar,
   },
   'Comunicados': { AppScreen.comunicados },
-  'Chat': { AppScreen.chat, AppScreen.dashChatsLinha, AppScreen.dashChatsDiario },
+  'Chat': { AppScreen.chat, AppScreen.chatKanban, AppScreen.dashChatsLinha, AppScreen.dashChatsDiario },
   'GED': { AppScreen.ged, AppScreen.diretorios, AppScreen.arquivos },
   'Dashboard': { AppScreen.dashboard, AppScreen.dashKpis, AppScreen.dashAlertas, AppScreen.dashDistribuicaoClientes },
   // Modulo NFS-e separado de 'Notas Fiscais' (produto). Keystone [P0][ARQUITETURA].

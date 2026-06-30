@@ -178,6 +178,8 @@ class ApiLinks {
       '$_baseUrlNew/api/mensalidades/update/$id';
   static String deleteMensalidade(String id) =>
       '$_baseUrlNew/api/mensalidades/delete/$id';
+  static String registrarBaixaMensalidade(String id) =>
+      '$_baseUrlNew/api/mensalidades/$id/baixa';
 
   // Modalidade
   static String allModalidades = '$_baseUrlNew/api/modalidades';
@@ -472,6 +474,12 @@ class ApiLinks {
 
   static String chatFinalize(dynamic id) => '$_baseUrlNew/api/chat/$id';
   static String chatDelete(dynamic id) => '$_baseUrlNew/api/chat/$id';
+
+  // Chat Kanban
+  static String get chatKanban => '$_baseUrlNew/api/chat/kanban';
+  static String chatTransfer(dynamic id) => '$_baseUrlNew/api/chat/$id/transferir';
+  static String chatMarkAsRead(dynamic id) => '$_baseUrlNew/api/chat/$id/ler';
+  static String get chatUsuariosSetor => '$_baseUrlNew/api/chat/usuarios-setor';
 
   static String getAllTelas(String nome, {int? empId, int? clienteId}) {
     final params = <String, String>{};

@@ -926,8 +926,25 @@ class _GedArquivosScreenState extends State<GedArquivosScreen> {
   void _snack(String msg, {bool erro = false}) {
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-      content: Text(msg),
-      backgroundColor: erro ? GridColors.error : GridColors.success,
+      content: Row(
+        children: [
+          Icon(
+            erro ? Icons.error_outline : Icons.check_circle_outline,
+            color: erro ? Colors.white : GridColors.successDark,
+            size: 20,
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              msg,
+              style: TextStyle(
+                color: erro ? Colors.white : GridColors.textSecondary,
+              ),
+            ),
+          ),
+        ],
+      ),
+      backgroundColor: erro ? GridColors.error : GridColors.successLight,
       duration: const Duration(seconds: 3),
     ));
   }

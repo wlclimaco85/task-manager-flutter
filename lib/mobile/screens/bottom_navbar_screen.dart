@@ -39,13 +39,17 @@ import 'parceiro_grid_screen.dart';
 import 'login_grid_screen.dart';
 import 'nfse_consulta_screen.dart';
 import 'nfse_serie_screen.dart';
-import 'nfse_config_screen.dart';
 import 'nfse_servico_screen.dart';
+import 'nfse_config_screen.dart';
 import 'extrato_importacao_screen.dart' show MobileExtratoImportacaoScreen;
 import '../../web/screens/cobranca_automatica_screen.dart';
 import '../../widgets/user_banners.dart';
 import 'alvara_screen.dart';
 import '../../widgets/dashboard_area/placeholder/dashboard_atendimento_placeholder_screen.dart';
+import '../../widgets/dashboard_area/placeholder/dashboard_financeiro_area_placeholder_screen.dart';
+import '../../widgets/dashboard_area/placeholder/dashboard_comercial_placeholder_screen.dart';
+import '../../widgets/dashboard_area/placeholder/dashboard_fiscal_placeholder_screen.dart';
+import '../../widgets/dashboard_area/placeholder/dashboard_dp_area_placeholder_screen.dart';
 
 class BottomNavBarScreen extends StatefulWidget {
   const BottomNavBarScreen({super.key});
@@ -593,7 +597,7 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
     addItem(icon: Icons.folder_open, label: "GED");
 
     // Último item = Mais
-    addItem(icon: Icons.more_horiz, label: "Mais");
+    addItem(icon: Icons.apps_rounded, label: "Mais");
 
     return items;
   }
@@ -771,13 +775,13 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
           MaterialPageRoute(builder: (_) => const NfseConfigScreen()),
         );
         break;
-      case "Nova Nota de Serviço":
+      case "Serviços NFS-e":
         nav = Navigator.push(
           context,
           MaterialPageRoute(
             builder: (_) => NfseServicoScreen(
               hasPermission: (action) =>
-                  _hasPermissionFor(sec, AppScreen.nfseLista, action),
+                  _hasPermissionFor(sec, AppScreen.nfseServico, action),
             ),
           ),
         );
@@ -793,6 +797,39 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
         nav = Navigator.push(
           context,
           MaterialPageRoute(builder: (_) => const DashboardPage()),
+        );
+        break;
+      case "Dashboard Financeiro":
+        nav = Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) =>
+                const DashboardFinanceiroAreaPlaceholderScreen(),
+          ),
+        );
+        break;
+      case "Dashboard Comercial":
+        nav = Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => const DashboardComercialPlaceholderScreen(),
+          ),
+        );
+        break;
+      case "Dashboard Fiscal":
+        nav = Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => const DashboardFiscalPlaceholderScreen(),
+          ),
+        );
+        break;
+      case "Dashboard DP":
+        nav = Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => const DashboardDpAreaPlaceholderScreen(),
+          ),
         );
         break;
       case "Atendimento":
@@ -1021,6 +1058,8 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
             _MoreMenuAction(Icons.inventory, 'Produtos'),
           if (sec.canView(AppScreen.parceiros))
             _MoreMenuAction(Icons.people, 'Parceiros'),
+          if (sec.canView(AppScreen.dashComercialArea))
+            _MoreMenuAction(Icons.trending_up, 'Dashboard Comercial'),
         ],
       ),
       _ModuloGroup(
@@ -1035,6 +1074,8 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
             _MoreMenuAction(Icons.account_balance, 'Contas Bancarias'),
           if (sec.canView(AppScreen.dashboard))
             _MoreMenuAction(Icons.bar_chart, 'Dashboard'),
+          if (sec.canView(AppScreen.dashFinanceiroArea))
+            _MoreMenuAction(Icons.account_balance_wallet, 'Dashboard Financeiro'),
           if (sec.canView(AppScreen.contasReceber))
             _MoreMenuAction(Icons.notifications_active, 'Régua de Cobrança'),
           if (sec.canView(AppScreen.contasBancarias))
@@ -1049,6 +1090,8 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
             _MoreMenuAction(Icons.access_time, 'Bater Ponto'),
           if (sec.canView(AppScreen.funcionarios))
             _MoreMenuAction(Icons.people_outline, 'Funcionários'),
+          if (sec.canView(AppScreen.dashDpArea))
+            _MoreMenuAction(Icons.badge, 'Dashboard DP'),
         ],
       ),
       _ModuloGroup(
@@ -1059,8 +1102,18 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
             _MoreMenuAction(Icons.file_copy, 'Notas de Serviço (NFS-e)'),
           if (sec.canView(AppScreen.nfseSerie))
             _MoreMenuAction(Icons.tag, 'Séries NFS-e'),
+          if (sec.canView(AppScreen.nfseServico))
+            _MoreMenuAction(Icons.work, 'Serviços NFS-e'),
           if (sec.canView(AppScreen.configFiscal))
             _MoreMenuAction(Icons.settings, 'Config ISS'),
+        ],
+      ),
+      _ModuloGroup(
+        'Fiscal',
+        Icons.receipt,
+        [
+          if (sec.canView(AppScreen.dashFiscalArea))
+            _MoreMenuAction(Icons.bar_chart, 'Dashboard Fiscal'),
         ],
       ),
       _ModuloGroup(

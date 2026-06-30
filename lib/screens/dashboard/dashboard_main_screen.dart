@@ -41,23 +41,36 @@ class _DashboardMainScreenState extends State<DashboardMainScreen> {
       // Busca série de 12 meses (Finance Trend)
       final trendResponse = await NetworkCaller().getRequest(ApiLinks.trend);
       if (trendResponse.isSuccess) {
-        final data = trendResponse.body;
-        setState(() => trendData = (data is List) ? data : []);
+        final raw = trendResponse.body?['data'];
+        if (raw is List) {
+          setState(() => trendData = List<dynamic>.from(raw));
+        } else if (trendResponse.body != null) {
+          setState(() => trendData = [trendResponse.body]);
+        } else {
+          setState(() => trendData = []);
+        }
       }
 
       // Busca top 3 parceiros (Client Distribution)
       final clientResponse = await NetworkCaller().getRequest(ApiLinks.clientDistribution);
       if (clientResponse.isSuccess) {
-        final data = clientResponse.body;
-        final list = (data is List) ? data : [];
-        setState(() => clientDistribution = list.take(3).toList());
+        final raw = clientResponse.body?['data'];
+        if (raw is List) {
+          setState(() => clientDistribution = List<dynamic>.from(raw).take(3).toList());
+        } else {
+          setState(() => clientDistribution = []);
+        }
       }
 
       // Busca status counts
       final statusResponse = await NetworkCaller().getRequest(ApiLinks.statusCounts);
       if (statusResponse.isSuccess) {
-        final data = statusResponse.body;
-        setState(() => statusCounts = (data is List) ? data : []);
+        final raw = statusResponse.body?['data'];
+        if (raw is List) {
+          setState(() => statusCounts = List<dynamic>.from(raw));
+        } else {
+          setState(() => statusCounts = []);
+        }
       }
     } catch (e) {
       debugPrint('Erro ao carregar dashboard: $e');
@@ -345,7 +358,8 @@ class _DashboardMainScreenState extends State<DashboardMainScreen> {
   String _formatCurrency(dynamic value) {
     if (value == null) return 'R\$ 0,00';
     final double doubleValue = (value is double) ? value : (value as int).toDouble();
-    return 'R\$ ${doubleValue.toStringAsFixed(2).replaceAll('.', ',').replaceAll(RegExp(r',\d{3}(?!:)'), (m) => '.${m.group(0)!.substring(1)}')}';
+    final formatted = doubleValue.toStringAsFixed(2).replaceAll('.', ',');
+    return 'R\$ ${formatted.replaceAllMapped(RegExp(r',(\d{3})(?=,)'), (Match m) => '.${m.group(1)!}')}';
   }
 
   String _formatPercent(dynamic value) {

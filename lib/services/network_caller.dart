@@ -6,19 +6,18 @@ import '../../../models/auth_utility.dart';
 import '../../../models/network_response.dart';
 import '../../mobile/screens/LoginPopup_screens.dart';
 import '../../../utils/api_links.dart';
-import '../../../utils/tenant_context.dart';
+import '../../utils/tenant_helper.dart';
 import '../../../models/login_model.dart';
 import '../../../utils/app_logger.dart';
-import 'session_expired_handler.dart';
 
 class NetworkCaller {
   Future<NetworkResponse> getRequest(String url) async {
     try {
-      final enrichedUrl = TenantContext.applyToUrl(url);
+      final enrichedUrl = TenantHelper.applyToUrl(url) ?? url;
       final uri = Uri.parse(enrichedUrl);
 
       AppLogger.i.info(
-          '[GET] tenant=${TenantContext.debugInfo} | url=${uri.toString()}');
+          '[GET] tenant=${TenantHelper.debugInfo} | url=${uri.toString()}');
 
       Response response = await get(
         uri,
@@ -26,6 +25,7 @@ class NetworkCaller {
           if (AuthUtility.userInfo?.token != null)
             'Authorization': 'Bearer ${AuthUtility.userInfo!.token}',
           'Accept-Encoding': 'gzip',
+          ...TenantHelper.tenantHeaders,
         },
       );
 
@@ -39,10 +39,6 @@ class NetworkCaller {
         AppLogger.i.info(statusMsg);
       }
 
-      if (response.statusCode == 401) {
-        await SessionExpiredHandler.handle();
-        return NetworkResponse(false, response.statusCode, null);
-      }
       if (response.statusCode == 200) {
         return NetworkResponse(
           true,
@@ -60,21 +56,16 @@ class NetworkCaller {
 
   Future<NetworkResponse> getRequests(String url, BuildContext context) async {
     try {
-      final user = AuthUtility.userInfo?.data;
+      final enrichedUrl = TenantHelper.applyToUrl(url) ?? url;
+      Uri uri = Uri.parse(enrichedUrl);
 
-      // Adiciona empresa, parceiro e aplicativo como query params
-      Uri uri = Uri.parse(url).replace(
-        queryParameters: {
-          ...Uri.parse(url).queryParameters, // mantém query existentes
-          'empresa': {'id': user?.login?.empresa?.id?.toString()},
-          'parceiro': {'id': user?.login?.parceiro?.id?.toString()},
-          'aplicativo': {'id': user?.login?.aplicativo?.id?.toString()},
-        },
-      );
       if (AuthUtility.userInfo?.data?.id != 1) {
         Response response = await get(
           uri,
-          headers: {'Authorization': 'Bearer ${AuthUtility.userInfo?.token}'},
+          headers: {
+            'Authorization': 'Bearer ${AuthUtility.userInfo?.token}',
+            ...TenantHelper.tenantHeaders,
+          },
         );
         if (response.statusCode == 200) {
           return NetworkResponse(
@@ -93,9 +84,10 @@ class NetworkCaller {
             // Tenta novamente após login bem-sucedido
             if (AuthUtility.userInfo?.data?.id != 1) {
               Response response = await get(
-                Uri.parse(url),
+                uri,
                 headers: {
                   'Authorization': 'Bearer ${AuthUtility.userInfo?.token}',
+                  ...TenantHelper.tenantHeaders,
                 },
               );
               if (response.statusCode == 200) {
@@ -123,9 +115,10 @@ class NetworkCaller {
           // Tenta novamente após login bem-sucedido
           if (AuthUtility.userInfo?.data?.id != 1) {
             Response response = await get(
-              Uri.parse(url),
+              uri,
               headers: {
                 'Authorization': 'Bearer ${AuthUtility.userInfo?.token}',
+                ...TenantHelper.tenantHeaders,
               },
             );
             if (response.statusCode == 200) {
@@ -170,21 +163,18 @@ class NetworkCaller {
 
   Future<NetworkResponse> putRequest(String url, dynamic body) async {
     try {
-      final enrichedUrl = TenantContext.applyToUrl(url);
+      final enrichedUrl = TenantHelper.applyToUrl(url) ?? url;
       final response = await put(
         Uri.parse(enrichedUrl),
         headers: {
           'Authorization': 'Bearer ${AuthUtility.userInfo?.token}',
+          ...TenantHelper.tenantHeaders,
           'Accept-Encoding': 'gzip',
           'Content-Type': 'application/json',
         },
         body: jsonEncode(body),
       );
 
-      if (response.statusCode == 401) {
-        await SessionExpiredHandler.handle();
-        return NetworkResponse(false, response.statusCode, null);
-      }
       if (response.statusCode == 200) {
         return NetworkResponse(
           true,
@@ -202,21 +192,18 @@ class NetworkCaller {
 
   Future<NetworkResponse> patchRequest(String url, dynamic body) async {
     try {
-      final enrichedUrl = TenantContext.applyToUrl(url);
+      final enrichedUrl = TenantHelper.applyToUrl(url) ?? url;
       final response = await patch(
         Uri.parse(enrichedUrl),
         headers: {
           'Authorization': 'Bearer ${AuthUtility.userInfo?.token}',
+          ...TenantHelper.tenantHeaders,
           'Accept-Encoding': 'gzip',
           'Content-Type': 'application/json',
         },
         body: jsonEncode(body),
       );
 
-      if (response.statusCode == 401) {
-        await SessionExpiredHandler.handle();
-        return NetworkResponse(false, response.statusCode, null);
-      }
       if (response.statusCode == 200 || response.statusCode == 204) {
         final responseBody =
             response.body.isNotEmpty ? jsonDecode(response.body) : null;
@@ -252,20 +239,23 @@ class NetworkCaller {
           uriPath.contains('inserirAluno');
 
       if (!isAuthRequest && body != null) {
-        // Usa TenantContext para injetar empresa/parceiro/aplicativo no body
-        body = TenantContext.applyToBody(body);
-        // Garante audit no body
-        body['audit'] ??= {};
-        body['audit']['empresaId'] = user?.empresa?.id;
-        body['audit']['appId'] = user?.aplicativo?.id;
-        body['audit']['userLogadoId'] = user?.id;
-        if (user?.parceiro?.id != null) {
-          body['audit']['parceiroId'] = user!.parceiro!.id;
+        // Usa TenantHelper para injetar empresa/parceiro/aplicativo no body
+        final enrichedBody = TenantHelper.applyToBody(body);
+        // Garante audit no body (apenas para não-admin)
+        if (!TenantHelper.isAdmin) {
+          enrichedBody['audit'] ??= {};
+          enrichedBody['audit']['empresaId'] = user?.empresa?.id;
+          enrichedBody['audit']['appId'] = user?.aplicativo?.id;
+          enrichedBody['audit']['userLogadoId'] = user?.id;
+          if (user?.parceiro?.id != null) {
+            enrichedBody['audit']['parceiroId'] = user!.parceiro!.id;
+          }
         }
+        body = enrichedBody;
       }
 
       // Injeta tenant params na URL também (para controllers que lêem da query)
-      final enrichedUrl = isAuthRequest ? url : TenantContext.applyToUrl(url);
+      final enrichedUrl = isAuthRequest ? url : TenantHelper.applyToUrl(url) ?? url;
 
       AppLogger.i.info('📤 [POST] url=$enrichedUrl | body=${jsonEncode(body)}');
 
@@ -275,6 +265,7 @@ class NetworkCaller {
       }
       final Map<String, String> headers = {
         'Content-Type': 'application/json;charset=UTF-8',
+        ...TenantHelper.tenantHeaders,
       };
       if (isAuthRequest) {
         headers['Authorization'] = 'c2Fua2h5YTpzdXA=';
@@ -291,10 +282,6 @@ class NetworkCaller {
       AppLogger.i.info(
           '📥 [POST] status=${response.statusCode} | body=${response.body}');
 
-      if (response.statusCode == 401) {
-        await SessionExpiredHandler.handle();
-        return NetworkResponse(false, response.statusCode, null);
-      }
       if (response.statusCode == 200 || response.statusCode == 201) {
         return NetworkResponse(
           true,
@@ -315,8 +302,8 @@ class NetworkCaller {
     Map<String, dynamic>? queryParams,
   }) async {
     try {
-      // Injeta tenant params via TenantContext
-      final enrichedUrl = TenantContext.applyToUrl(url);
+      // Injeta tenant params via TenantHelper
+      final enrichedUrl = TenantHelper.applyToUrl(url) ?? url;
       Uri uri = Uri.parse(enrichedUrl);
 
       // Adiciona queryParams extras se fornecidos
@@ -333,15 +320,12 @@ class NetworkCaller {
         headers: {
           'Content-Type': 'application/json;charset=UTF-8',
           'Authorization': 'Bearer ${AuthUtility.userInfo?.token}',
+          ...TenantHelper.tenantHeaders,
         },
       );
 
       AppLogger.i.info('🗑️ [DELETE] $uri | status=${response.statusCode}');
 
-      if (response.statusCode == 401) {
-        await SessionExpiredHandler.handle();
-        return NetworkResponse(false, response.statusCode, null);
-      }
       if (response.statusCode == 200 || response.statusCode == 204) {
         final body =
             response.body.isNotEmpty ? jsonDecode(response.body) : null;
