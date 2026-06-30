@@ -28,17 +28,17 @@ class _RolePermissaoScreenState extends State<RolePermissaoScreen> {
   }
 
   Future<void> _carregarDados() async {
-    final token = AuthUtility.getToken();
-    final tenantId = TenantContext.getTenantId();
+    final token = AuthUtility.userInfo?.token ?? '';
+    final tenantId = TenantContext.empresaId?.toString() ?? '';
 
     try {
       final resPermissoes = await http.get(
-        Uri.parse('$BACKEND_URL/api/role-permissao/all'),
+        Uri.parse('${ApiLinks.baseUrl}/api/role-permissao/all'),
         headers: {'Authorization': 'Bearer $token', 'X-Tenant-ID': '$tenantId'},
       );
 
       final resRoles = await http.get(
-        Uri.parse('$BACKEND_URL/api/role'),
+        Uri.parse('${ApiLinks.baseUrl}/api/role'),
         headers: {'Authorization': 'Bearer $token', 'X-Tenant-ID': '$tenantId'},
       );
 
@@ -53,7 +53,7 @@ class _RolePermissaoScreenState extends State<RolePermissaoScreen> {
           _roles = ((rolesData['data']?['dados'] ?? []) as List)
               .map((r) => {'id': r['id'], 'description': r['description']})
               .toList();
-          if (_roles.isNotEmpty) _roleId = _roles.first['id'];
+          if (_roles.isNotEmpty) _roleId = _roles.first['id'] as int?;
           _carregando = false;
         });
       }
@@ -64,12 +64,12 @@ class _RolePermissaoScreenState extends State<RolePermissaoScreen> {
   }
 
   Future<void> _salvar(int roleId, String telaNome, String campo, bool valor) async {
-    final token = AuthUtility.getToken();
-    final tenantId = TenantContext.getTenantId();
+    final token = AuthUtility.userInfo?.token ?? '';
+    final tenantId = TenantContext.empresaId?.toString() ?? '';
 
     try {
       await http.put(
-        Uri.parse('$BACKEND_URL/api/role-permissao/$roleId/$telaNome'),
+        Uri.parse('${ApiLinks.baseUrl}/api/role-permissao/$roleId/$telaNome'),
         headers: {
           'Authorization': 'Bearer $token',
           'X-Tenant-ID': '$tenantId',
@@ -119,8 +119,8 @@ class _RolePermissaoScreenState extends State<RolePermissaoScreen> {
                         value: _roleId,
                         isExpanded: true,
                         items: _roles
-                            .map((r) => DropdownMenuItem(
-                                  value: r['id'],
+                            .map((r) => DropdownMenuItem<int>(
+                                  value: r['id'] as int?,
                                   child: Text(r['description'] ?? ''),
                                 ))
                             .toList(),
