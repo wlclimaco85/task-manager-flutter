@@ -307,6 +307,11 @@ class MenuConfig {
             icon: FontAwesomeIcons.newspaper,
             screenIndex: 0),
         MenuItem(
+            id: 'comunicados_circular',
+            label: 'Circular',
+            icon: FontAwesomeIcons.envelope,
+            screenIndex: 153),
+        MenuItem(
             id: 'chamados',
             label: 'Chamados',
             icon: FontAwesomeIcons.ticketSimple,

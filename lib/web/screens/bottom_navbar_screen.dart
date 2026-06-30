@@ -13,6 +13,7 @@ import '../../../auth_screens/login_screen.dart';
 import './chamado_grid_screen.dart';
 import './alimento_grid_screen.dart';
 import './comunicado_componente_screen.dart';
+import './comunicado_circular_screen.dart';
 import './dieta_grid_screen.dart';
 import './empresa_grid_screen.dart';
 import './exame_grid_screen.dart';
@@ -489,6 +490,7 @@ class _WebBottomNavBarScreenState extends State<WebBottomNavBarScreen> {
         nomeAluno: AuthUtility.userInfo?.data?.name,
       ), // 151: Anamnese Digital
       const CalendarioTributarioScreen(), // 152: Calendario Tributario
+      const ComunicadoCircularScreen(), // 153: Comunicados Circular
     ];
   }
 
