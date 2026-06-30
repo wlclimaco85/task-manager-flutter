@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:task_manager_flutter/models/mes_cobranca_model.dart';
 import 'package:task_manager_flutter/utils/grid_colors.dart';
+import 'package:fl_chart/fl_chart.dart';
 import 'package:task_manager_flutter/widgets/dashboard_tendencia_chart.dart';
 
 void main() {

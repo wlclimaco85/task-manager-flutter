@@ -6,14 +6,14 @@ import '../../../models/auth_utility.dart';
 import '../../../models/network_response.dart';
 import '../../mobile/screens/LoginPopup_screens.dart';
 import '../../../utils/api_links.dart';
-import '../../../utils/tenant_helper.dart';
+import '../../utils/tenant_helper.dart';
 import '../../../models/login_model.dart';
 import '../../../utils/app_logger.dart';
 
 class NetworkCaller {
   Future<NetworkResponse> getRequest(String url) async {
     try {
-      final enrichedUrl = TenantHelper.applyToUrl(url);
+      final enrichedUrl = TenantHelper.applyToUrl(url) ?? url;
       final uri = Uri.parse(enrichedUrl);
 
       AppLogger.i.info(
@@ -56,7 +56,7 @@ class NetworkCaller {
 
   Future<NetworkResponse> getRequests(String url, BuildContext context) async {
     try {
-      final enrichedUrl = TenantHelper.applyToUrl(url);
+      final enrichedUrl = TenantHelper.applyToUrl(url) ?? url;
       Uri uri = Uri.parse(enrichedUrl);
 
       if (AuthUtility.userInfo?.data?.id != 1) {
@@ -163,7 +163,7 @@ class NetworkCaller {
 
   Future<NetworkResponse> putRequest(String url, dynamic body) async {
     try {
-      final enrichedUrl = TenantHelper.applyToUrl(url);
+      final enrichedUrl = TenantHelper.applyToUrl(url) ?? url;
       final response = await put(
         Uri.parse(enrichedUrl),
         headers: {
@@ -192,7 +192,7 @@ class NetworkCaller {
 
   Future<NetworkResponse> patchRequest(String url, dynamic body) async {
     try {
-      final enrichedUrl = TenantHelper.applyToUrl(url);
+      final enrichedUrl = TenantHelper.applyToUrl(url) ?? url;
       final response = await patch(
         Uri.parse(enrichedUrl),
         headers: {
@@ -255,7 +255,7 @@ class NetworkCaller {
       }
 
       // Injeta tenant params na URL também (para controllers que lêem da query)
-      final enrichedUrl = isAuthRequest ? url : TenantHelper.applyToUrl(url);
+      final enrichedUrl = isAuthRequest ? url : TenantHelper.applyToUrl(url) ?? url;
 
       AppLogger.i.info('📤 [POST] url=$enrichedUrl | body=${jsonEncode(body)}');
 
@@ -303,7 +303,7 @@ class NetworkCaller {
   }) async {
     try {
       // Injeta tenant params via TenantHelper
-      final enrichedUrl = TenantHelper.applyToUrl(url);
+      final enrichedUrl = TenantHelper.applyToUrl(url) ?? url;
       Uri uri = Uri.parse(enrichedUrl);
 
       // Adiciona queryParams extras se fornecidos

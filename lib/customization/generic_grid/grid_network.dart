@@ -63,7 +63,7 @@ Map<String, dynamic> _prepareBody(Map<String, dynamic> body) {
 
 Future<NetworkResponse> getJson(String url,
     {Map<String, String>? headers}) async {
-  final enrichedUrl = TenantHelper.applyToUrl(url);
+  final enrichedUrl = TenantHelper.applyToUrl(url) ?? url;
   L.d('[GET] $enrichedUrl');
   final resp = await http.get(
     Uri.parse(enrichedUrl),
@@ -98,7 +98,7 @@ Future<NetworkResponse> putJson(String url, Map<String, dynamic> body,
 
 Future<NetworkResponse> deleteJson(String url,
     {Map<String, String>? headers}) async {
-  final enrichedUrl = TenantHelper.applyToUrl(url);
+  final enrichedUrl = TenantHelper.applyToUrl(url) ?? url;
   L.d('[DELETE] $enrichedUrl');
   final resp = await http.delete(
     Uri.parse(enrichedUrl),
