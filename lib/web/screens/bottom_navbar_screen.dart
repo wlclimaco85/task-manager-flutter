@@ -487,7 +487,7 @@ class _WebBottomNavBarScreenState extends State<WebBottomNavBarScreen> {
       const SizedBox.shrink(), // 150: Query Builder
       AnamneseScreen(
         alunoId: AuthUtility.userInfo?.data?.id ?? 0,
-        nomeAluno: AuthUtility.userInfo?.data?.name,
+        nomeAluno: userName,
       ), // 151: Anamnese Digital
       const CalendarioTributarioScreen(), // 152: Calendario Tributario
       const ComunicadoCircularScreen(), // 153: Comunicados Circular

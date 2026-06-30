@@ -461,7 +461,7 @@ class _WindowsBottomNavBarScreenState extends State<WindowsBottomNavBarScreen> {
         const QueryBuilderWindowScreen(), // 150: Query Builder
         AnamneseScreen(
           alunoId: userInfo?.id ?? 0,
-          nomeAluno: userInfo?.name,
+          nomeAluno: userName,
         ), // 151: Anamnese Digital
         const CalendarioTributarioScreen(), // 152: Calendario Tributario
         const ComunicadoCircularScreen(), // 153: Comunicados Circular
