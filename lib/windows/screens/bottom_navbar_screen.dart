@@ -143,6 +143,7 @@ import '../../web/screens/instagram_monitor_screen.dart';
 import './atividade_diaria_screen.dart';
 import '../../features/diario_nutricional/diario_nutricional_screen.dart';
 import './anamnese_screen.dart';
+import './calendario_tributario_screen.dart';
 import './home_saude_aluno_screen.dart';
 import './historico_treino_screen.dart';
 import './query_builder_window_screen.dart';
@@ -461,6 +462,7 @@ class _WindowsBottomNavBarScreenState extends State<WindowsBottomNavBarScreen> {
           alunoId: userInfo?.id ?? 0,
           nomeAluno: userInfo?.name,
         ), // 151: Anamnese Digital
+        const CalendarioTributarioScreen(), // 152: Calendario Tributario
       ];
 
   String get userName {

@@ -428,6 +428,11 @@ class MenuConfig {
             icon: FontAwesomeIcons.calendarDays,
             screenIndex: 35),
         MenuItem(
+            id: 'calendario_tributario',
+            label: 'Calendário Tributário',
+            icon: FontAwesomeIcons.calendarCheck,
+            screenIndex: 152),
+        MenuItem(
             id: 'conta_bancaria',
             label: 'Conta Bancária',
             icon: FontAwesomeIcons.buildingColumns,
