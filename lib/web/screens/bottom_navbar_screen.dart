@@ -143,6 +143,7 @@ import '../../features/diario_nutricional/diario_nutricional_screen.dart';
 import './anamnese_screen.dart';
 import './calendario_tributario_screen.dart';
 import './registro_carga_screen.dart';
+import './frequencia_screen.dart';
 import './home_saude_aluno_screen.dart';
 import './historico_treino_screen.dart';
 
@@ -493,6 +494,7 @@ class _WebBottomNavBarScreenState extends State<WebBottomNavBarScreen> {
       const CalendarioTributarioScreen(), // 152: Calendario Tributario
       const ComunicadoCircularScreen(), // 153: Comunicados Circular
       const RegistroCargaScreen(sessionId: 0), // 154: Registro de Carga (placeholder sessionId)
+      const FrequenciaScreen(), // 155: Frequencia Semanal
     ];
   }
 

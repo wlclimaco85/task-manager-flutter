@@ -156,6 +156,11 @@ class MenuConfig {
             icon: FontAwesomeIcons.dumbbell,
             screenIndex: 154),
         MenuItem(
+            id: 'frequencia_semanal',
+            label: 'Frequência Semanal',
+            icon: FontAwesomeIcons.calendarCheck,
+            screenIndex: 155),
+        MenuItem(
             id: 'suplementos',
             label: 'Suplementos',
             icon: FontAwesomeIcons.capsules,
