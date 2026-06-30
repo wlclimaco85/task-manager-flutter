@@ -127,6 +127,7 @@ import './orcamento_grid_screen.dart';
 import './pedido_venda_grid_screen.dart';
 import './pedido_compra_grid_screen.dart';
 import '../../windows/screens/nfse_screen.dart';
+import '../../windows/screens/query_builder_window_screen.dart';
 import './cancelamento_cce_screen.dart';
 import 'contabil/conta_contabil_grid_screen.dart';
 import 'contabil/lancamento_contabil_grid_screen.dart';
@@ -486,7 +487,7 @@ class _WebBottomNavBarScreenState extends State<WebBottomNavBarScreen> {
       const WebDashboardMensalidadeScreen(), // 147: Dashboard de Mensalidades
       const BoletoImportacaoLoteScreen(), // 148: Importação Boletos Lote
       const SolicitacaoAcessoAprovacaoScreen(), // 149: Solicitações de Acesso
-      const SizedBox.shrink(), // 150: Query Builder
+      const QueryBuilderWindowScreen(), // 150: Query Builder
       AnamneseScreen(
         alunoId: AuthUtility.userInfo?.data?.id ?? 0,
         nomeAluno: userName,
