@@ -96,6 +96,11 @@ class MenuConfig {
             icon: FontAwesomeIcons.building,
             screenIndex: 124),
         MenuItem(
+            id: 'anamnese_digital',
+            label: 'Anamnese Digital',
+            icon: FontAwesomeIcons.heartPulse,
+            screenIndex: 151),
+        MenuItem(
             id: 'alimentos',
             label: 'Alimentos',
             icon: FontAwesomeIcons.appleWhole,

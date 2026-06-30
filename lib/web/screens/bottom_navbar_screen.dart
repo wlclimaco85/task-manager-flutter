@@ -139,6 +139,7 @@ import './aprovacao_pagamentos_screen.dart';
 import './instagram_monitor_screen.dart';
 import './atividade_diaria_screen.dart';
 import '../../features/diario_nutricional/diario_nutricional_screen.dart';
+import './anamnese_screen.dart';
 import './home_saude_aluno_screen.dart';
 import './historico_treino_screen.dart';
 
@@ -482,6 +483,10 @@ class _WebBottomNavBarScreenState extends State<WebBottomNavBarScreen> {
       const BoletoImportacaoLoteScreen(), // 148: Importação Boletos Lote
       const SolicitacaoAcessoAprovacaoScreen(), // 149: Solicitações de Acesso
       const SizedBox.shrink(), // 150: Query Builder
+      AnamneseScreen(
+        alunoId: AuthUtility.userInfo?.data?.id ?? 0,
+        nomeAluno: AuthUtility.userInfo?.data?.name,
+      ), // 151: Anamnese Digital
     ];
   }
 
