@@ -293,6 +293,17 @@ class _WindowsContaPagarGridScreenState
     );
   }
 
+  // Em modo limitado, bloqueia create/edit/delete no DynamicGridWindowsScreen
+  bool _checkPermission(String permission) {
+    if (_isFinanceiroLimitado) {
+      if (permission == 'create' || permission == 'edit' ||
+          permission == 'delete' || permission == 'deleteMultiple') {
+        return false;
+      }
+    }
+    return widget.hasPermission(permission);
+  }
+
   @override
   Widget build(BuildContext context) {
     return Column(
@@ -304,7 +315,7 @@ class _WindowsContaPagarGridScreenState
           child: DynamicGridWindowsScreen<ContaPagar>(
             key: _gridKey,
             telaNome: 'conta_pagar',
-            hasPermission: widget.hasPermission,
+            hasPermission: _checkPermission,
             fromJson: (json) => ContaPagar.fromJson(json),
             toJson: (a) => a.toJson(),
             fetchEndpointOverride: ApiLinks.allContasPagar,
@@ -458,25 +469,26 @@ class _WindowsContaPagarGridScreenState
                   enabled: false),
             ],
             headerActions: [
-              OutlinedButton.icon(
-                onPressed: _importing ? null : _importarBoleto,
-                icon: _importing
-                    ? const SizedBox(
-                        width: 16,
-                        height: 16,
-                        child: CircularProgressIndicator(
-                            strokeWidth: 2, color: GridColors.secondary),
-                      )
-                    : const Icon(Icons.upload_file, size: 18),
-                label: const Text(GridTexts.importBoleto),
-                style: OutlinedButton.styleFrom(
-                  foregroundColor: GridColors.secondary,
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                  side: const BorderSide(color: GridColors.divider),
-                  shape:
-                      RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
+              if (!_isFinanceiroLimitado)
+                OutlinedButton.icon(
+                  onPressed: _importing ? null : _importarBoleto,
+                  icon: _importing
+                      ? const SizedBox(
+                          width: 16,
+                          height: 16,
+                          child: CircularProgressIndicator(
+                              strokeWidth: 2, color: GridColors.secondary),
+                        )
+                      : const Icon(Icons.upload_file, size: 18),
+                  label: const Text(GridTexts.importBoleto),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: GridColors.secondary,
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                    side: const BorderSide(color: GridColors.divider),
+                    shape:
+                        RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
+                  ),
                 ),
-              ),
             ],
             customActions: () => [
               CustomAction<ContaPagar>(
@@ -485,24 +497,26 @@ class _WindowsContaPagarGridScreenState
                 onPressed: (context, object) => _showBaixaDialog(context, object),
                 isVisible: (_) => true,
               ),
-              CustomAction<ContaPagar>(
-                icon: Icons.credit_card,
-                label: GridTexts.installment,
-                onPressed: (context, object) => _showParcelarDialog(context, object),
-                isVisible: (c) => c.status == StatusConta.ABERTA,
-              ),
-              CustomAction<ContaPagar>(
-                icon: Icons.repeat,
-                label: GridTexts.recurrence,
-                onPressed: (context, object) => _showRecorrenciaDialog(context, object),
-                isVisible: (c) => c.status == StatusConta.ABERTA,
-              ),
-              CustomAction<ContaPagar>(
-                icon: Icons.swap_horiz,
-                label: GridTexts.renegotiate,
-                onPressed: (context, object) => _showRenegociacaoDialog(context, object),
-                isVisible: (c) => c.status == StatusConta.ABERTA,
-              ),
+              if (!_isFinanceiroLimitado) ...[
+                CustomAction<ContaPagar>(
+                  icon: Icons.credit_card,
+                  label: GridTexts.installment,
+                  onPressed: (context, object) => _showParcelarDialog(context, object),
+                  isVisible: (c) => c.status == StatusConta.ABERTA,
+                ),
+                CustomAction<ContaPagar>(
+                  icon: Icons.repeat,
+                  label: GridTexts.recurrence,
+                  onPressed: (context, object) => _showRecorrenciaDialog(context, object),
+                  isVisible: (c) => c.status == StatusConta.ABERTA,
+                ),
+                CustomAction<ContaPagar>(
+                  icon: Icons.swap_horiz,
+                  label: GridTexts.renegotiate,
+                  onPressed: (context, object) => _showRenegociacaoDialog(context, object),
+                  isVisible: (c) => c.status == StatusConta.ABERTA,
+                ),
+              ],
               CustomAction<ContaPagar>(
                 icon: Icons.attach_file,
                 label: GridTexts.attachments,

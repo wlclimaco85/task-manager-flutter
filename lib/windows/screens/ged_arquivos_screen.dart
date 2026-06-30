@@ -213,7 +213,15 @@ class _GedArquivosScreenState extends State<GedArquivosScreen> {
         if (raw is List) {
           _arquivos = raw
               .map<Map<String, dynamic>>((e) => Map<String, dynamic>.from(e))
-              .toList();
+              .toList()
+            ..sort((a, b) {
+              final da = DateTime.tryParse(a['uploadDate']?.toString() ?? '');
+              final db = DateTime.tryParse(b['uploadDate']?.toString() ?? '');
+              if (da == null && db == null) return 0;
+              if (da == null) return 1;
+              if (db == null) return -1;
+              return db.compareTo(da);
+            });
         }
       } else {
         _arquivos = [];
@@ -515,7 +523,7 @@ class _GedArquivosScreenState extends State<GedArquivosScreen> {
     );
   }
 
-  // ── Grid ──────────────────────────────────────────────────────────────────
+  // ── Grid / Árvore de Diretórios ────────────────────────────────────────────
   Widget _buildGrid() {
     if (_carregando) {
       return const Center(child: CircularProgressIndicator());
@@ -544,121 +552,194 @@ class _GedArquivosScreenState extends State<GedArquivosScreen> {
       );
     }
 
+    // Agrupa por diretório (null/vazio → "Sem pasta")
+    final Map<String, List<Map<String, dynamic>>> grupos = {};
+    for (final arq in filtrados) {
+      final dir = arq['diretorioNome']?.toString().trim();
+      final chave = (dir == null || dir.isEmpty) ? 'Sem pasta' : dir;
+      grupos.putIfAbsent(chave, () => []).add(arq);
+    }
+
+    // Ordena as chaves: "Sem pasta" por último
+    final chaves = grupos.keys.toList()
+      ..sort((a, b) {
+        if (a == 'Sem pasta') return 1;
+        if (b == 'Sem pasta') return -1;
+        return a.compareTo(b);
+      });
+
+    return ListView(
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      children: chaves.map((chave) {
+        final itens = grupos[chave]!;
+        return _buildDiretorioSecao(chave, itens);
+      }).toList(),
+    );
+  }
+
+  Widget _buildDiretorioSecao(
+      String nomeDir, List<Map<String, dynamic>> itens) {
     final fmt = DateFormat('dd/MM/yyyy HH:mm');
 
     return Card(
-      margin: const EdgeInsets.all(12),
-      elevation: 2,
-      child: DataTable2(
-        columnSpacing: 16,
-        horizontalMargin: 16,
-        minWidth: 900,
-        headingRowColor: WidgetStateProperty.all(GridColors.secondary),
-        headingTextStyle:
-            const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-        columns: const [
-          DataColumn2(label: Text('Nome do Arquivo'), size: ColumnSize.L),
-          DataColumn2(label: Text('Tipo'), size: ColumnSize.S),
-          DataColumn2(label: Text('Diretório'), size: ColumnSize.M),
-          DataColumn2(label: Text('Parceiro'), size: ColumnSize.M),
-          DataColumn2(label: Text('Data Upload'), size: ColumnSize.M),
-          DataColumn2(label: Text('Ações'), size: ColumnSize.M, numeric: false),
-        ],
-        rows: filtrados.map((arq) {
-          final isEditando = _editando?['id'] == arq['id'];
-          return DataRow2(
-            cells: [
-              // Nome — editável inline
-              DataCell(
-                isEditando
-                    ? SizedBox(
-                        width: 200,
-                        child: TextField(
-                          controller: _nomeCtrl,
-                          autofocus: true,
-                          onSubmitted: (_) => _salvarEdicao(),
-                          decoration: const InputDecoration(
-                              isDense: true, border: OutlineInputBorder()),
-                        ),
-                      )
-                    : Text(arq['fileName']?.toString() ?? '—',
-                        overflow: TextOverflow.ellipsis),
-              ),
-              // Tipo
-              DataCell(_chipTipo(arq['fileType']?.toString() ?? '')),
-              // Diretório
-              DataCell(Text(arq['diretorioNome']?.toString() ?? '—')),
-              // Parceiro
-              DataCell(Text(arq['parceiroNome']?.toString() ?? '—')),
-              // Data
-              DataCell(Text(arq['uploadDate'] != null
-                  ? _formatarData(arq['uploadDate'].toString(), fmt)
-                  : '—')),
-              // Ações
-              DataCell(Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  // Download
-                  IconButton(
-                    icon: const Icon(Icons.download, color: Colors.blue),
-                    tooltip: 'Download',
-                    onPressed: () => _baixarArquivo(arq),
-                    constraints: const BoxConstraints(),
-                    padding: const EdgeInsets.all(4),
-                  ),
-                  IconButton(
-                    icon: const Icon(Icons.auto_awesome, color: Colors.purple),
-                    tooltip: 'Classificar com IA',
-                    onPressed: () => _classificarArquivo(arq),
-                    constraints: const BoxConstraints(),
-                    padding: const EdgeInsets.all(4),
-                  ),
-                  // Editar / Confirmar edição
-                  isEditando
-                      ? IconButton(
-                          icon: const Icon(Icons.check, color: Colors.green),
-                          tooltip: 'Salvar',
-                          onPressed: _salvarEdicao,
-                          constraints: const BoxConstraints(),
-                          padding: const EdgeInsets.all(4),
-                        )
-                      : IconButton(
-                          icon: const Icon(Icons.edit, color: Colors.orange),
-                          tooltip: 'Renomear',
-                          onPressed: () {
-                            setState(() {
-                              _editando = arq;
-                              _nomeCtrl.text =
-                                  arq['fileName']?.toString() ?? '';
-                            });
-                          },
-                          constraints: const BoxConstraints(),
-                          padding: const EdgeInsets.all(4),
-                        ),
-                  // Cancelar edição
-                  if (isEditando)
-                    IconButton(
-                      icon: const Icon(Icons.close, color: Colors.grey),
-                      tooltip: 'Cancelar',
-                      onPressed: () => setState(() => _editando = null),
-                      constraints: const BoxConstraints(),
-                      padding: const EdgeInsets.all(4),
-                    ),
-                  // Deletar
-                  if (!isEditando)
-                    IconButton(
-                      icon: const Icon(Icons.delete, color: Colors.red),
-                      tooltip: 'Excluir',
-                      onPressed: () => _confirmarDelete(arq),
-                      constraints: const BoxConstraints(),
-                      padding: const EdgeInsets.all(4),
-                    ),
-                ],
-              )),
-            ],
-          );
-        }).toList(),
+      margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+      elevation: 0,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(8),
+        side: const BorderSide(color: GridColors.divider),
       ),
+      child: ExpansionTile(
+        initiallyExpanded: true,
+        leading: Icon(
+          nomeDir == 'Sem pasta' ? Icons.inbox : Icons.folder,
+          color: nomeDir == 'Sem pasta' ? Colors.grey : GridColors.secondary,
+        ),
+        title: Text(
+          nomeDir,
+          style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
+        ),
+        trailing: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+              decoration: BoxDecoration(
+                color: GridColors.primarySoft,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Text(
+                '${itens.length}',
+                style: const TextStyle(
+                    fontSize: 12,
+                    color: GridColors.primary,
+                    fontWeight: FontWeight.w600),
+              ),
+            ),
+            const Icon(Icons.expand_more),
+          ],
+        ),
+        children: [
+          ClipRRect(
+            borderRadius: const BorderRadius.only(
+              bottomLeft: Radius.circular(8),
+              bottomRight: Radius.circular(8),
+            ),
+            child: DataTable2(
+              columnSpacing: 16,
+              horizontalMargin: 16,
+              minWidth: 600,
+              headingRowColor: WidgetStateProperty.all(
+                  GridColors.secondary.withValues(alpha: 0.1)),
+              headingTextStyle: const TextStyle(
+                color: GridColors.textSecondary,
+                fontWeight: FontWeight.bold,
+                fontSize: 13,
+              ),
+              columns: const [
+                DataColumn2(label: Text('Nome do Arquivo'), size: ColumnSize.L),
+                DataColumn2(label: Text('Tipo'), size: ColumnSize.S),
+                DataColumn2(label: Text('Parceiro'), size: ColumnSize.M),
+                DataColumn2(label: Text('Data Upload'), size: ColumnSize.M),
+                DataColumn2(
+                    label: Text('Ações'), size: ColumnSize.M, numeric: false),
+              ],
+              rows: itens.map((arq) => _buildRow(arq, fmt)).toList(),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  DataRow2 _buildRow(Map<String, dynamic> arq, DateFormat fmt) {
+    final isEditando = _editando?['id'] == arq['id'];
+    return DataRow2(
+      cells: [
+        // Nome — editável inline
+        DataCell(
+          isEditando
+              ? SizedBox(
+                  width: 200,
+                  child: TextField(
+                    controller: _nomeCtrl,
+                    autofocus: true,
+                    onSubmitted: (_) => _salvarEdicao(),
+                    decoration: const InputDecoration(
+                        isDense: true, border: OutlineInputBorder()),
+                  ),
+                )
+              : Text(arq['fileName']?.toString() ?? '—',
+                  overflow: TextOverflow.ellipsis),
+        ),
+        // Tipo
+        DataCell(_chipTipo(arq['fileType']?.toString() ?? '')),
+        // Parceiro
+        DataCell(Text(arq['parceiroNome']?.toString() ?? '—')),
+        // Data
+        DataCell(Text(arq['uploadDate'] != null
+            ? _formatarData(arq['uploadDate'].toString(), fmt)
+            : '—')),
+        // Ações
+        DataCell(Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Download
+            IconButton(
+              icon: const Icon(Icons.download, color: Colors.blue),
+              tooltip: 'Download',
+              onPressed: () => _baixarArquivo(arq),
+              constraints: const BoxConstraints(),
+              padding: const EdgeInsets.all(4),
+            ),
+            IconButton(
+              icon: const Icon(Icons.auto_awesome, color: Colors.purple),
+              tooltip: 'Classificar com IA',
+              onPressed: () => _classificarArquivo(arq),
+              constraints: const BoxConstraints(),
+              padding: const EdgeInsets.all(4),
+            ),
+            // Editar / Confirmar edição
+            isEditando
+                ? IconButton(
+                    icon: const Icon(Icons.check, color: Colors.green),
+                    tooltip: 'Salvar',
+                    onPressed: _salvarEdicao,
+                    constraints: const BoxConstraints(),
+                    padding: const EdgeInsets.all(4),
+                  )
+                : IconButton(
+                    icon: const Icon(Icons.edit, color: Colors.orange),
+                    tooltip: 'Renomear',
+                    onPressed: () {
+                      setState(() {
+                        _editando = arq;
+                        _nomeCtrl.text = arq['fileName']?.toString() ?? '';
+                      });
+                    },
+                    constraints: const BoxConstraints(),
+                    padding: const EdgeInsets.all(4),
+                  ),
+            // Cancelar edição
+            if (isEditando)
+              IconButton(
+                icon: const Icon(Icons.close, color: Colors.grey),
+                tooltip: 'Cancelar',
+                onPressed: () => setState(() => _editando = null),
+                constraints: const BoxConstraints(),
+                padding: const EdgeInsets.all(4),
+              ),
+            // Deletar
+            if (!isEditando)
+              IconButton(
+                icon: const Icon(Icons.delete, color: Colors.red),
+                tooltip: 'Excluir',
+                onPressed: () => _confirmarDelete(arq),
+                constraints: const BoxConstraints(),
+                padding: const EdgeInsets.all(4),
+              ),
+          ],
+        )),
+      ],
     );
   }
 
@@ -915,8 +996,25 @@ class _GedArquivosScreenState extends State<GedArquivosScreen> {
   void _snack(String msg, {bool erro = false}) {
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-      content: Text(msg),
-      backgroundColor: erro ? Colors.red : GridColors.secondary,
+      content: Row(
+        children: [
+          Icon(
+            erro ? Icons.error_outline : Icons.check_circle_outline,
+            color: erro ? Colors.white : GridColors.successDark,
+            size: 20,
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              msg,
+              style: TextStyle(
+                color: erro ? Colors.white : GridColors.textSecondary,
+              ),
+            ),
+          ),
+        ],
+      ),
+      backgroundColor: erro ? GridColors.error : GridColors.successLight,
       duration: const Duration(seconds: 3),
     ));
   }

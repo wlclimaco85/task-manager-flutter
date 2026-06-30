@@ -1,9 +1,11 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import '../../../models/chat_model.dart';
 import '../../../utils/api_links.dart';
 import '../../../models/network_response.dart';
 import '../../services/network_caller.dart';
 import '../../../models/auth_utility.dart';
+import '../../../utils/tenant_context.dart';
 
 import 'package:task_manager_flutter/utils/app_logger.dart';
 
@@ -56,5 +58,99 @@ class ChatCaller {
       throw Exception('Erro ao carregar cotações: $e');
     }
     return model;
+  }
+
+  // ── Chat Kanban ──────────────────────────────────────────────────────────
+  Future<List<ChatKanbanItem>> fetchChatsKanban() async {
+    try {
+      final url = ApiLinks.chatKanban;
+      final resp = await TenantContext.get(url);
+      if (resp.statusCode == 200) {
+        final body = jsonDecode(resp.body);
+        List lista = [];
+        if (body is Map) {
+          final d = body['data'] ?? body;
+          if (d is List) {
+            lista = d;
+          } else if (d is Map) {
+            lista = d['dados'] ?? d['content'] ?? [];
+          }
+        } else if (body is List) {
+          lista = body;
+        }
+        return lista
+            .whereType<Map>()
+            .map((e) => ChatKanbanItem.fromJson(Map<String, dynamic>.from(e)))
+            .toList();
+      }
+    } catch (e) {
+      L.d('Erro ao carregar kanban de chats: $e');
+    }
+    return [];
+  }
+
+  // ── Transferir Chat ──────────────────────────────────────────────────────
+  Future<bool> transferChat(String chatId, String usuarioDestinoId) async {
+    try {
+      final url = ApiLinks.chatTransfer(chatId);
+      final body = {'usuarioDestinoId': usuarioDestinoId};
+      final resp = await TenantContext.put(url, body);
+      if (resp.statusCode == 200 || resp.statusCode == 204) return true;
+      L.d('Erro ao transferir chat: ${resp.statusCode}');
+    } catch (e) {
+      L.d('Erro ao transferir chat: $e');
+    }
+    return false;
+  }
+
+  // ── Marcar como lido ─────────────────────────────────────────────────────
+  Future<bool> marcarComoLido(String chatId) async {
+    try {
+      final url = ApiLinks.chatMarkAsRead(chatId);
+      final resp = await TenantContext.put(url, {});
+      if (resp.statusCode == 200 || resp.statusCode == 204) return true;
+    } catch (e) {
+      L.d('Erro ao marcar chat como lido: $e');
+    }
+    return false;
+  }
+
+  // ── Usuários do setor para transferência ─────────────────────────────────
+  Future<List<Map<String, String>>> fetchUsuariosSetor(String setorId) async {
+    try {
+      final url = '${ApiLinks.chatUsuariosSetor}?setorId=${Uri.encodeComponent(setorId)}';
+      final resp = await TenantContext.get(url);
+      if (resp.statusCode == 200) {
+        final body = jsonDecode(resp.body);
+        List lista = [];
+        if (body is Map) {
+          final d = body['data'] ?? body;
+          if (d is List) lista = d;
+          else if (d is Map) lista = d['dados'] ?? d['content'] ?? [];
+        } else if (body is List) {
+          lista = body;
+        }
+        return lista.whereType<Map>().map((e) => {
+          'id': (e['id'] ?? e['usuarioId']).toString(),
+          'nome': (e['nome'] ?? e['login'] ?? e['email'] ?? 'Usuário').toString(),
+        }).toList();
+      }
+    } catch (e) {
+      L.d('Erro ao carregar usuários do setor: $e');
+    }
+    return [];
+  }
+
+  // ── Atualizar status do chat ─────────────────────────────────────────────
+  Future<bool> atualizarStatus(String chatId, String novoStatus) async {
+    try {
+      final url = ApiLinks.chatFinalize(chatId);
+      final body = {'status': novoStatus};
+      final resp = await TenantContext.put(url, body);
+      if (resp.statusCode == 200 || resp.statusCode == 204) return true;
+    } catch (e) {
+      L.d('Erro ao atualizar status do chat: $e');
+    }
+    return false;
   }
 }

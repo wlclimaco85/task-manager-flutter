@@ -33,6 +33,17 @@ class TenantContext {
       AuthUtility.userInfo?.login?.tipoLogin?.name == 'MASTER' ||
       AuthUtility.userInfo?.data?.login?.tipoLogin?.name == 'MASTER';
 
+  /// `true` se o email do login corresponde ao dono do sistema.
+  /// O dono (wlclimaco@gmail.com) enxerga todas as empresas.
+  static bool get isAdminEmail {
+    final email = AuthUtility.userInfo?.login?.email ??
+        AuthUtility.userInfo?.data?.email;
+    return email != null && email.toLowerCase() == 'wlclimaco@gmail.com';
+  }
+
+  /// `true` se o usuário é admin (MASTER ou dono do sistema por email).
+  static bool get isAdmin => isMaster || isAdminEmail;
+
   static bool _flag(String? value) {
     if (value == null) return false;
     final normalized = value.toLowerCase().trim();
@@ -43,9 +54,10 @@ class TenantContext {
   }
 
   // ── Headers ──────────────────────────────────────────────────────────────
+  /// Headers padrão com auth token. Inclui X-Tenant-ID apenas para não-admin.
   static Map<String, String> get headers {
     final token = AuthUtility.userInfo?.token;
-    final tenantId = empresaId?.toString();
+    final tenantId = !isAdmin ? empresaId?.toString() : null;
     return {
       if (token != null) 'Authorization': 'Bearer $token',
       if (tenantId != null) 'X-Tenant-ID': tenantId,
@@ -53,9 +65,10 @@ class TenantContext {
     };
   }
 
+  /// Headers JSON com auth token. Inclui X-Tenant-ID apenas para não-admin.
   static Map<String, String> get jsonHeaders {
     final token = AuthUtility.userInfo?.token;
-    final tenantId = empresaId?.toString();
+    final tenantId = !isAdmin ? empresaId?.toString() : null;
     return {
       if (token != null) 'Authorization': 'Bearer $token',
       if (tenantId != null) 'X-Tenant-ID': tenantId,
@@ -83,7 +96,7 @@ class TenantContext {
 
     // Empresa: injeta o tenant logado apenas quando a chamada não trouxe um
     // escopo explícito, como acontece nas abas de detalhe de uma empresa.
-    if (!isMaster &&
+    if (!isAdmin &&
         hasEmpresa &&
         !hasExplicitEmpresaScope &&
         !skipEmpresaScope) {
@@ -98,7 +111,7 @@ class TenantContext {
 
     // Parceiro/Cliente: mesmo princípio, evita misturar filtro de aba com
     // parceiro do login atual.
-    if (!isMaster && hasParceiro && !hasExplicitParceiroScope && !skipParceiroScope) {
+    if (!isAdmin && hasParceiro && !hasExplicitParceiroScope && !skipParceiroScope) {
       params['parceiro'] = parceiroId.toString();
       params['parceiroId'] = parceiroId.toString();
       params['parcId'] = parceiroId.toString();
@@ -117,10 +130,10 @@ class TenantContext {
   // ── Injeção no body ──────────────────────────────────────────────────────
   static Map<String, dynamic> applyToBody(Map<String, dynamic> body) {
     final result = Map<String, dynamic>.from(body);
-    if (!isMaster && hasEmpresa && result['empresa'] == null) {
+    if (!isAdmin && hasEmpresa && result['empresa'] == null) {
       result['empresa'] = {'id': empresaId};
     }
-    if (!isMaster && hasParceiro && result['parceiro'] == null) {
+    if (!isAdmin && hasParceiro && result['parceiro'] == null) {
       result['parceiro'] = {'id': parceiroId};
     }
     if (aplicativoId != null && result['aplicativo'] == null) {
@@ -182,5 +195,5 @@ class TenantContext {
 
   // ── Debug ────────────────────────────────────────────────────────────────
   static String get debugInfo =>
-      'empresaId=$empresaId | parceiroId=$parceiroId | userId=$userId';
+      'empresaId=$empresaId | parceiroId=$parceiroId | userId=$userId | admin=$isAdmin';
 }

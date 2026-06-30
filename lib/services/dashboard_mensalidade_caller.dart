@@ -24,6 +24,20 @@ class DashboardMensalidadeCaller {
     return null;
   }
 
+  Future<List<Map<String, dynamic>>?> fetchSerieMensal({int meses = 12}) async {
+    try {
+      final url = '$_base/serie-mensal?meses=$meses';
+      final resp = await TenantContext.get(url);
+      if (resp.statusCode == 200) {
+        final list = jsonDecode(utf8.decode(resp.bodyBytes)) as List;
+        return list.cast<Map<String, dynamic>>();
+      }
+    } catch (e) {
+      debugPrint('[DashboardMensalidadeCaller] fetchSerieMensal: $e');
+    }
+    return null;
+  }
+
   Future<Uint8List?> baixarPdf({String? mesInicio, String? mesFim}) async {
     try {
       final params = <String>[];

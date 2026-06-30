@@ -6,6 +6,7 @@ import 'package:http/http.dart' as http;
 import '../../../utils/api_links.dart';
 import '../../../utils/grid_colors.dart';
 import '../../../utils/tenant_context.dart';
+import '../../../utils/security_matrix.dart';
 import '../../customization/generic_grid_card.dart';
 import '../../../models/conta_pagar_model.dart';
 import '../../../widgets/anexo_financeiro_widget.dart';
@@ -30,11 +31,40 @@ class ContaPagarGridScreen extends StatefulWidget {
 class _ContaPagarGridScreenState extends State<ContaPagarGridScreen> {
   bool _importing = false;
 
+  bool get _isFinanceiroLimitado =>
+      !ModuloAccess.isModuloContratado('Financeiro') &&
+      ModuloAccess.isModuloContratado('Financeiro Limitado');
+
+  Widget _buildBannerLimitado() {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+      color: GridColors.pageBackground,
+      child: const Row(
+        children: [
+          Icon(Icons.info_outline, size: 16, color: GridColors.textMuted),
+          SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              'Estas contas são lançadas pelo seu escritório contábil. '
+              'Você pode consultá-las e registrar a baixa.',
+              style: TextStyle(fontSize: 12, color: GridColors.textMuted),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Stack(
       children: [
-        GenericMobileGridScreen<ContaPagar>(
+        Column(
+          children: [
+            if (_isFinanceiroLimitado) _buildBannerLimitado(),
+            Expanded(
+              child: GenericMobileGridScreen<ContaPagar>(
           title: "Contas a Pagar",
           fetchEndpoint: ApiLinks.allContasPagar,
           createEndpoint: ApiLinks.createContaPagar,
@@ -93,6 +123,9 @@ class _ContaPagarGridScreenState extends State<ContaPagarGridScreen> {
             availableRowsPerPage: [10, 25, 50],
           ),
           enableSearch: true,
+        ),
+        ),
+        ],
         ),
         // FAB de importacao (cria contas) — só com permissão de inserir; some no
         // modo Financeiro limitado.

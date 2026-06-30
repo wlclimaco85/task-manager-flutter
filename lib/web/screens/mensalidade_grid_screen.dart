@@ -1,13 +1,9 @@
-import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
 import 'package:url_launcher/url_launcher.dart';
 import '../../../utils/api_links.dart';
-import '../../../utils/grid_colors.dart';
-import '../../../utils/tenant_context.dart';
 import '../../../widgets/generic_grid_screen.dart';
-import '../../../widgets/importacao_boletos_dialog.dart';
 import '../../../models/mensalidade_model.dart';
+import 'baixa_dialog_mensalidade.dart';
 
 class WebMensalidadeGridScreen extends StatefulWidget {
   final SecurityCheck hasPermission;
@@ -24,69 +20,12 @@ class _WebMensalidadeGridScreenState extends State<WebMensalidadeGridScreen> {
   int _chaveReload = 0;
 
   Future<void> _darBaixa(BuildContext context, Mensalidade mensalidade) async {
-    final confirmado = await showDialog<bool>(
+    final result = await showDialog<bool>(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Confirmar Baixa'),
-        content: const Text(
-          'Confirmar baixa desta mensalidade? '
-          'A data de pagamento será definida como hoje.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(false),
-            child: const Text('Cancelar'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(true),
-            child: const Text('Confirmar'),
-          ),
-        ],
-      ),
+      builder: (_) => WebBaixaDialogMensalidade(mensalidade: mensalidade),
     );
-
-    if (confirmado != true) return;
-
-    final payload = mensalidade.toJson()
-      ..['dtPagamento'] = DateTime.now().toIso8601String();
-
-    final url = TenantContext.applyToUrl(
-      ApiLinks.updateMensalidade(mensalidade.id.toString()),
-    );
-
-    try {
-      final resposta = await http.put(
-        Uri.parse(url),
-        headers: TenantContext.jsonHeaders,
-        body: jsonEncode(payload),
-      );
-
-      if (!context.mounted) return;
-
-      if (resposta.statusCode >= 200 && resposta.statusCode < 300) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Baixa registrada com sucesso.'),
-            backgroundColor: Color(0xFF18B86A),
-          ),
-        );
-        setState(() => _chaveReload++);
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Erro ao registrar baixa: ${resposta.statusCode}'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
-    } catch (e) {
-      if (!context.mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Falha na requisição: $e'),
-          backgroundColor: Colors.red,
-        ),
-      );
+    if (result == true && context.mounted) {
+      setState(() => _chaveReload++);
     }
   }
 
@@ -120,19 +59,6 @@ class _WebMensalidadeGridScreenState extends State<WebMensalidadeGridScreen> {
       ),
       enableSearch: true,
       enableColumnReorder: true,
-      headerActions: [
-        OutlinedButton.icon(
-          onPressed: () => _importarBoletos(),
-          icon: const Icon(Icons.upload_file, size: 18),
-          label: const Text('Importar Boletos'),
-          style: OutlinedButton.styleFrom(
-            foregroundColor: GridColors.secondary,
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-            side: const BorderSide(color: GridColors.divider),
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
-          ),
-        ),
-      ],
       customActions: () => [
         CustomAction<Mensalidade>(
           icon: Icons.check_circle_outline,
@@ -148,15 +74,6 @@ class _WebMensalidadeGridScreenState extends State<WebMensalidadeGridScreen> {
           onPressed: (ctx, m) => _abrirBoleto(m),
         ),
       ],
-    );
-  }
-
-  void _importarBoletos() {
-    showDialog(
-      context: context,
-      builder: (_) => ImportacaoBoletosDialog(
-        onSuccess: () => setState(() => _chaveReload++),
-      ),
     );
   }
 }

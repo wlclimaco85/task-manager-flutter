@@ -1340,7 +1340,7 @@ class _InstagramMonitorScreenState extends State<InstagramMonitorScreen> with Ti
                 Align(
                   alignment: Alignment.centerRight,
                   child: ElevatedButton.icon(
-                    onPressed: _events.isEmpty ? null : () => _confirmarApagarLogs(),
+                    onPressed: _changeLogs.isEmpty ? null : () => _confirmarApagarLogs(),
                     icon: const Icon(Icons.delete_outline, size: 16),
                     label: const Text('Apagar Logs'),
                     style: ElevatedButton.styleFrom(

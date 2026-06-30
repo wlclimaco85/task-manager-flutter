@@ -7,6 +7,7 @@ import 'package:http_parser/http_parser.dart';
 import '../../../models/auth_utility.dart';
 import '../../../utils/app_logger.dart';
 import '../../../utils/tenant_context.dart';
+import '../../../utils/tenant_helper.dart';
 
 /// Estrutura de resposta simplificada
 class NetworkResponse {
@@ -23,10 +24,11 @@ class NetworkResponse {
 
 Map<String, String> _defaultHeaders({Map<String, String>? extra}) {
   final token = AuthUtility.userInfo?.token;
-  final tenantId = TenantContext.empresaId?.toString();
+  final tenantId = TenantHelper.isAdmin ? null : TenantContext.empresaId?.toString();
   return {
     if (token != null && token.isNotEmpty) 'Authorization': 'Bearer $token',
     if (tenantId != null) 'X-Tenant-ID': tenantId,
+    ...TenantHelper.tenantHeaders,
     ...?extra,
   };
 }
@@ -61,9 +63,10 @@ Map<String, dynamic> _prepareBody(Map<String, dynamic> body) {
 
 Future<NetworkResponse> getJson(String url,
     {Map<String, String>? headers}) async {
-  L.d('[GET] $url');
+  final enrichedUrl = TenantHelper.applyToUrl(url);
+  L.d('[GET] $enrichedUrl');
   final resp = await http.get(
-    Uri.parse(url),
+    Uri.parse(enrichedUrl),
     headers: _defaultHeaders(extra: headers),
   );
   return _parseResponse(resp);
@@ -95,9 +98,10 @@ Future<NetworkResponse> putJson(String url, Map<String, dynamic> body,
 
 Future<NetworkResponse> deleteJson(String url,
     {Map<String, String>? headers}) async {
-  L.d('[DELETE] $url');
+  final enrichedUrl = TenantHelper.applyToUrl(url);
+  L.d('[DELETE] $enrichedUrl');
   final resp = await http.delete(
-    Uri.parse(url),
+    Uri.parse(enrichedUrl),
     headers: _defaultHeaders(extra: headers),
   );
   return _parseResponse(resp);

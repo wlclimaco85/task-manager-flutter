@@ -140,6 +140,7 @@ import '../../web/screens/cobranca_automatica_screen.dart';
 import '../../web/screens/kanban_pagamentos_screen.dart';
 import '../../web/screens/aprovacao_pagamentos_screen.dart';
 import '../../web/screens/instagram_monitor_screen.dart';
+import '../../widgets/chat/chat_kanban_screen.dart';
 import './atividade_diaria_screen.dart';
 import '../../features/diario_nutricional/diario_nutricional_screen.dart';
 import './anamnese_screen.dart';
@@ -445,7 +446,7 @@ class _WindowsBottomNavBarScreenState extends State<WindowsBottomNavBarScreen> {
         const SizedBox.shrink(), // 134
         const SizedBox.shrink(), // 135
         const InstagramMonitorScreen(), // 136: Instagram Monitor
-        const SizedBox.shrink(), // 137
+        const ChatKanbanScreen(), // 137: Kanban Chat
         const WindowsAtividadeDiariaScreen(), // 138: Atividade Diaria
         const DiarioNutricionalScreen(), // 139: Diario Nutricional
         const WindowsHomeSaudeAlunoScreen(), // 140: Home Saude do Aluno
