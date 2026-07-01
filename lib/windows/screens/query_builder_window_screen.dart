@@ -51,7 +51,7 @@ class _QueryBuilderWindowScreenState extends State<QueryBuilderWindowScreen> {
   String? _mensagemErro;
   int _totalRegistros = 0;
   int _paginaAtual = 1;
-  static const int _tamanhoPagina = 50;
+  static const int _tamanhoPagina = 0;
 
   String? _nomeQueryAtual;
 
@@ -870,31 +870,12 @@ class _QueryBuilderWindowScreenState extends State<QueryBuilderWindowScreen> {
                 const Spacer(),
                 if (_totalRegistros > 0)
                   Text(
-                    '$_totalRegistros registro(s) — Página $_paginaAtual',
+                    '$_totalRegistros registro(s)',
                     style: const TextStyle(
                       fontSize: 11,
                       color: GridColors.textMuted,
                     ),
                   ),
-                if (_totalRegistros > _tamanhoPagina) ...[
-                  const SizedBox(width: 8),
-                  IconButton(
-                    icon: const Icon(Icons.chevron_left, size: 18),
-                    onPressed: _paginaAtual > 1
-                        ? () => _executarQuery(pagina: _paginaAtual - 1)
-                        : null,
-                    tooltip: 'Página anterior',
-                    visualDensity: VisualDensity.compact,
-                  ),
-                  IconButton(
-                    icon: const Icon(Icons.chevron_right, size: 18),
-                    onPressed: _paginaAtual * _tamanhoPagina < _totalRegistros
-                        ? () => _executarQuery(pagina: _paginaAtual + 1)
-                        : null,
-                    tooltip: 'Próxima página',
-                    visualDensity: VisualDensity.compact,
-                  ),
-                ],
               ],
             ),
           ),
