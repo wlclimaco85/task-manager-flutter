@@ -1976,8 +1976,11 @@ class _GenericMobileGridScreenState extends State<GenericMobileGridScreen> {
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(msg),
-        backgroundColor: error ? GridColors.error : GridColors.success,
+        content: Text(
+          msg,
+          style: TextStyle(color: error ? Colors.white : GridColors.textSecondary),
+        ),
+        backgroundColor: error ? GridColors.error : GridColors.successLight,
         behavior: SnackBarBehavior.floating,
         action: error
             ? SnackBarAction(

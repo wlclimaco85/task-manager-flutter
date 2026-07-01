@@ -469,7 +469,7 @@ class _ChatMessageScreenState extends State<ChatMessageScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: GridColors.background,
+      backgroundColor: ChatSupportPalette.page,
       body: Column(
         children: [
           ChatConversationHeader(

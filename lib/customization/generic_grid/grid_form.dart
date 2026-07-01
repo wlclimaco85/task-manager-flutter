@@ -767,8 +767,8 @@ class _GridFormDialogState extends State<GridFormDialog> {
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(msg),
-        backgroundColor: GridColors.success,
+        content: Text(msg, style: const TextStyle(color: GridColors.textSecondary)),
+        backgroundColor: GridColors.successLight,
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
       ),
