@@ -333,7 +333,7 @@ class _GedArquivosScreenState extends State<GedArquivosScreen> {
           title: const Text('Classificação do documento'),
           content: Text(
             'Categoria: ${result.category}\n'
-            'Confiança: ${(double.tryParse(result.confidence.toString()) ?? 0) * 100).toStringAsFixed(0)}%\n'
+            'Confiança: ${((double.tryParse(result.confidence.toString()) ?? 0) * 100).toStringAsFixed(0)}%\n'
             'Status sugerido: ${result.suggestedStatus}\n'
             'Tags: ${result.tags.join(', ')}',
           ),
