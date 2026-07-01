@@ -282,13 +282,19 @@ class LoginModel {
   LoginModel({this.status, this.token, this.data, this.login, this.permissoes});
 
   LoginModel.fromJson(Map<String, dynamic> json) {
-    status = json['status'];
-    // backend pode retornar 'access_token' ou 'token'
-    token = json['access_token'] ?? json['token'];
-    data = json['data'] != null ? Data.fromJson(json['data']) : null;
-    login = json['login'] != null ? Login.fromJson(json['login']) : null;
-    if (json['permissoes'] is List) {
-      permissoes = (json['permissoes'] as List)
+    // envelope: { data: { access_token, login, permissoes }, response: {...} }
+    final inner = (json['data'] is Map)
+        ? Map<String, dynamic>.from(json['data'] as Map)
+        : json;
+
+    status = (json['response']?['status'] ?? json['status'])?.toString();
+    token = inner['access_token'] ?? inner['token'] ?? json['access_token'] ?? json['token'];
+    data = inner['data'] != null ? Data.fromJson(inner['data']) : null;
+    login = inner['login'] != null ? Login.fromJson(inner['login']) : null;
+
+    final permList = inner['permissoes'] ?? json['permissoes'];
+    if (permList is List) {
+      permissoes = permList
           .whereType<Map>()
           .map((e) => RolePermissaoItem.fromJson(Map<String, dynamic>.from(e)))
           .toList();

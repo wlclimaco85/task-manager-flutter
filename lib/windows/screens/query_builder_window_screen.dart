@@ -174,8 +174,10 @@ class _QueryBuilderWindowScreenState extends State<QueryBuilderWindowScreen> {
 
     if (!mounted) return;
 
-    if (resultado.containsKey('erro') || resultado.containsKey('error')) {
-      final erro = resultado['erro'] ?? resultado['error'] ?? 'Erro desconhecido';
+    final dados = resultado['data'] is Map ? Map<String, dynamic>.from(resultado['data']) : resultado;
+
+    if (dados.containsKey('erro') || dados.containsKey('error')) {
+      final erro = dados['erro'] ?? dados['error'] ?? 'Erro desconhecido';
       setState(() {
         _mensagemErro = erro.toString();
         _executando = false;
@@ -185,11 +187,11 @@ class _QueryBuilderWindowScreenState extends State<QueryBuilderWindowScreen> {
 
     setState(() {
       _paginaAtual = pagina;
-      _totalRegistros = (resultado['total'] ?? 0) as int;
+      _totalRegistros = (dados['totalLinhas'] ?? dados['total'] ?? 0) as int;
       _executando = false;
 
       // Colunas do resultado
-      final cols = resultado['colunas'];
+      final cols = dados['colunas'];
       if (cols is List) {
         _colunasResultado = cols
             .map((c) => c is Map<String, dynamic>
@@ -201,7 +203,7 @@ class _QueryBuilderWindowScreenState extends State<QueryBuilderWindowScreen> {
       }
 
       // Linhas do resultado
-      final linhas = resultado['linhas'] ?? resultado['data'] ?? resultado['rows'];
+      final linhas = dados['linhas'] ?? dados['data'] ?? dados['rows'];
       if (linhas is List) {
         _linhasResultado = linhas
             .map((linha) {
@@ -349,7 +351,7 @@ class _QueryBuilderWindowScreenState extends State<QueryBuilderWindowScreen> {
 
     final result = await QueryBuilderCaller.salvarQuery({
       'nome': nome,
-      'sql_texto': sql,
+      'sqlTexto': sql,
     });
 
     if (mounted) {
@@ -370,7 +372,7 @@ class _QueryBuilderWindowScreenState extends State<QueryBuilderWindowScreen> {
     if (queryData == null || !mounted) return;
 
     setState(() {
-      _sqlController.text = queryData['sql_texto']?.toString() ?? '';
+      _sqlController.text = queryData['sqlTexto']?.toString() ?? '';
       _nomeQueryAtual = queryData['nome']?.toString();
       _colunasResultado = [];
       _linhasResultado = [];
@@ -439,7 +441,7 @@ class _QueryBuilderWindowScreenState extends State<QueryBuilderWindowScreen> {
   }
 
   Widget _buildBody() {
-    if (_mensagemErro != null && _carregandoSchemas) {
+    if (_mensagemErro != null && !_carregandoSchemas && _schemas.isEmpty) {
       return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -696,11 +698,18 @@ class _QueryBuilderWindowScreenState extends State<QueryBuilderWindowScreen> {
       final isPk = col['pk'] == true ||
           col['primaryKey'] == true ||
           col['isPrimaryKey'] == true;
-      return _buildColunaNode(nome, isPk);
+      final isFk = col['fk'] == true || col['foreignKey'] == true;
+      final tipo = col['tipo']?.toString() ?? '';
+      final tamanho = col['tamanho'];
+      final nullable = col['nullable'] == true;
+      return _buildColunaNode(nome, isPk, isFk, tipo, tamanho, nullable);
     }).toList();
   }
 
-  Widget _buildColunaNode(String nome, bool isPk) {
+  Widget _buildColunaNode(String nome, bool isPk, bool isFk, String tipo, dynamic tamanho, bool nullable) {
+    final tipoStr = tipo.isNotEmpty ? tipo.toUpperCase() : '';
+    final tamStr = (tamanho != null && tamanho is int && tamanho > 0) ? '($tamanho)' : '';
+    final suf = '$tipoStr$tamStr';
     return InkWell(
       onTap: () => _inserirNoEditor(nome),
       onSecondaryTap: () => _inserirNoEditor('"$nome"'),
@@ -709,18 +718,25 @@ class _QueryBuilderWindowScreenState extends State<QueryBuilderWindowScreen> {
         child: Row(
           children: [
             Icon(
-              isPk ? Icons.vpn_key : Icons.arrow_right,
+              isPk ? Icons.vpn_key : (isFk ? Icons.link : Icons.arrow_right),
               size: 12,
-              color: isPk ? GridColors.warning : GridColors.textMuted,
+              color: isPk ? GridColors.warning : (isFk ? GridColors.info : GridColors.textMuted),
             ),
             const SizedBox(width: 4),
             Expanded(
-              child: Text(
-                nome,
-                style: TextStyle(
-                  fontSize: 11,
-                  fontFamily: 'monospace',
-                  color: isPk ? GridColors.warningDark : GridColors.textMuted,
+              child: Text.rich(
+                TextSpan(
+                  children: [
+                    TextSpan(text: nome, style: TextStyle(
+                      fontSize: 11,
+                      fontFamily: 'monospace',
+                      color: isPk ? GridColors.warningDark : GridColors.textMuted,
+                    )),
+                    if (suf.isNotEmpty) TextSpan(
+                      text: ' ($suf${nullable ? ', nullable' : ''})',
+                      style: const TextStyle(fontSize: 10, fontFamily: 'monospace', color: GridColors.textMuted),
+                    ),
+                  ],
                 ),
                 overflow: TextOverflow.ellipsis,
               ),

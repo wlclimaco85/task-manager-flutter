@@ -1351,8 +1351,8 @@ class ApiLinks {
   static String queryBuilderColunas(String schema, String tabela) => '$queryBuilder/tabelas/$schema/$tabela/colunas';
   static String get queryBuilderExecutar => '$queryBuilder/executar';
   static String get queryBuilderAtualizar => '$queryBuilder/atualizar';
-  static String get queryBuilderQueries => '$queryBuilder/queries';
-  static String queryBuilderQuery(int id) => '$queryBuilder/queries/$id';
+  static String get queryBuilderQueries => '$queryBuilder/queries-salvas';
+  static String queryBuilderQuery(int id) => '$queryBuilder/queries-salvas/$id';
 
   // ── Dashboards por área (Fase 171 — fundação) ──────────────────────────
   // Rotas kebab-case distintas das legadas (/api/dashboard/financeiro,

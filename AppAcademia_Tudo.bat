@@ -45,8 +45,8 @@ echo ============================================
 echo  Hub Apps - Menu Unico
 echo ============================================
 echo.
-echo  [1] Subir backend + Abraco Contabilidade (Chrome)
-echo  [2] Reiniciar backend + Abraco (matar e subir)
+echo  [1] Subir backend + Abraco Contabilidade (Chrome) [mvn clean - Java 17]
+echo  [2] Reiniciar backend + Abraco (matar e subir) [mvn clean - Java 17]
 echo  [3] Rodar testes Selenium
 echo  [4] Rodar testes Flutter HTTP
 echo  [5] Rodar todos os testes
@@ -60,15 +60,14 @@ echo  [C] Subir um Flutter especifico no Chrome
 echo  [D] Subir um Flutter especifico no Android/simulador
 echo  [E] Subir tudo: backend + 2 Chrome + Meu Treino/Safra no BlueStacks
 echo  [F] Build 4 APKs com backend deployado + instalar no BlueStacks
-echo  [G] Build Android APK de um projeto (backend local)
-echo  [H] Atualizar todos os repositorios (git pull)
+echo  [G] Build Android APK de um projeto (backend local - inclui Bolsa)
+echo  [H] Atualizar todos os repositorios (git pull - inclui Bolsa)
 echo  [I] Subir Flutter (Chrome) apontando para Railway (sem backend local)
 echo  [J] Build AAB (Play Store) com backend Railway + auto-incrementa versao
 echo  [P] Build APK unico com backend deployado
-echo  [K] Commitar tudo nos repositorios
+echo  [K] Commitar tudo nos repositorios (inclui Bolsa)
 echo  [L] Subir Instagram API (Python local, porta 8500)
-echo  [G] Git: Pull + Commit + Push (tudo junto)
-echo  [M] Subir Backend Bolsa (porta 9002) + Flutter Web
+echo  [R] Hot Restart Flutter (escolhe projeto - web e mobile)
 echo  [0] Sair
 echo.
 set "OP="
@@ -163,12 +162,8 @@ if /i "%OP%"=="L" (
     call :START_INSTAGRAM_API
     goto END_MENU
 )
-if /i "%OP%"=="G" (
-    call :GIT_PULL_COMMIT_PUSH_ALL
-    goto END_MENU
-)
-if /i "%OP%"=="M" (
-    call :START_BOLSA_APP
+if /i "%OP%"=="R" (
+    call :HOT_RESTART_FLUTTER
     goto END_MENU
 )
 goto MENU
@@ -223,24 +218,40 @@ timeout /t 2 /nobreak >nul
 exit /b 0
 
 :START_APP
+echo [DEBUG] Iniciando START_APP com parametro: %~1
 call :CHECK_PATHS
 if errorlevel 1 (
     echo [ERRO] CHECK_PATHS falhou - veja acima qual pasta nao existe.
     pause
     exit /b 1
 )
+echo [DEBUG] CHECK_PATHS passou.
 
 set "RESTART=%~1"
-if "%RESTART%"=="1" call :KILL_APP
+if "%RESTART%"=="1" (
+    call :KILL_APP
+)
 
 echo.
 echo [DIAG] JAVA_HOME = %JAVA_HOME%
 echo [DIAG] Java:
-java -version
+"%JAVA_HOME%\bin\java.exe" -version
 echo [DIAG] Dir: %BACKEND_DIR%
 
 echo.
-echo [1/2] Iniciando backend na porta %BACKEND_PORT% via spring-boot:run...
+echo [1/2] Limpando cache Maven (mvn clean)...
+pushd "%BACKEND_DIR%"
+call mvnw.cmd clean
+set "CLEAN_ERR=%ERRORLEVEL%"
+popd
+if "%CLEAN_ERR%"=="1" (
+    echo [ERRO] mvn clean falhou. Verifique Java 17 e Maven.
+    pause
+    exit /b 1
+)
+echo [OK] mvn clean concluido.
+
+echo [2/2] Iniciando backend na porta %BACKEND_PORT% via spring-boot:run...
 echo ATENCAO: o Spring Boot leva ~45 segundos para subir.
 echo Acompanhe o progresso na janela "AppAcademia-Backend" que vai abrir.
 echo Aguarde a mensagem: Started AppAcademiaApplication
@@ -248,10 +259,14 @@ echo.
 
 set "JVM_ARGS=-Djava.io.tmpdir=C:\Temp -Djdk.net.unixdomain.tmpdir=C:\Temp -Dspring.devtools.restart.enabled=false -DJWT_SECRET=%JWT_SECRET% -DACCOUNT_SECRET=%ACCOUNT_SECRET%"
 set "APP_ARGS=--server.port=%BACKEND_PORT% --server.address=0.0.0.0 --app.base-url=%ANDROID_BACKEND_URL%/boletobancos --spring.profiles.active=dev --spring.datasource.url=jdbc:postgresql://localhost:5432/boletobancos --spring.datasource.username=postgres --spring.datasource.password=admin --logging.level.root=INFO --logging.level.br.com.appAcademia=INFO"
+set "JAVA17_BIN=C:\Program Files\Java\jdk-17\bin"
 (
 echo @echo off
+echo set "JAVA_HOME=C:\Program Files\Java\jdk-17"
+echo set "PATH=C:\Program Files\Java\jdk-17\bin;%%PATH%%"
 echo cd /d "%BACKEND_DIR%"
-echo mvnw.cmd spring-boot:run -Dmaven.test.skip=true "-Dspring-boot.run.jvmArguments=%JVM_ARGS%" "-Dspring-boot.run.arguments=%APP_ARGS%"
+echo call mvnw.cmd spring-boot:run -Dmaven.test.skip=true "-Dspring-boot.run.jvmArguments=%JVM_ARGS%" "-Dspring-boot.run.arguments=%APP_ARGS%"
+echo pause
 ) > "%TEMP%\run-backend.bat"
 start "AppAcademia-Backend" cmd /k "%TEMP%\run-backend.bat"
 
@@ -260,6 +275,7 @@ echo Aguardando backend ficar pronto (pode levar ate 2 minutos)...
 call :WAIT_BACKEND
 if errorlevel 1 (
     echo [ERRO] Backend nao respondeu em tempo. Verifique a porta 9001.
+    pause
     exit /b 1
 )
 
@@ -377,9 +393,10 @@ echo  [1] Abraco Contabilidade (task_manager_flutter)
 echo  [2] Portal Contabilidade (task_manager_flutter_merged_final)
 echo  [3] Meu Treino (task_manager_AppAcademiaV003)
 echo  [4] Safra Direto (task_manager_appDaniel)
+echo  [5] Bolsa de Valores (bolsa-app-flutter)
 echo  [0] Voltar
-choice /c 12340 /n /m "Projeto: "
-if "%ERRORLEVEL%"=="5" exit /b 1
+choice /c 123450 /n /m "Projeto: "
+if "%ERRORLEVEL%"=="6" exit /b 1
 call :SET_FLUTTER_PROJECT_FULL %ERRORLEVEL%
 exit /b %ERRORLEVEL%
 
@@ -412,6 +429,12 @@ if "%PROJECT_KEY%"=="4" (
     set "PROJECT_DIR=%FLUTTER_DANIEL_DIR%"
     set "PROJECT_APK_PREFIX=SafraDireto"
     set "PROJECT_PACKAGE=%APP_PACKAGE_SAFRA%"
+)
+if "%PROJECT_KEY%"=="5" (
+    set "PROJECT_LABEL=Bolsa de Valores"
+    set "PROJECT_DIR=%BOLSA_FLUTTER_DIR%"
+    set "PROJECT_APK_PREFIX=Bolsa"
+    set "PROJECT_PACKAGE=br.com.bolsa.app"
 )
 if not defined PROJECT_DIR (
     echo [ERRO] Projeto invalido: %PROJECT_KEY%
@@ -536,13 +559,14 @@ echo Aguardando backend em %BACKEND_URL% ...
 set /a TENTATIVA=0
 :WAIT_BACKEND_LOOP
 set /a TENTATIVA+=1
-curl -s --max-time 3 %BACKEND_URL%/boletobancos/rest/auth/login >nul 2>&1
+curl -s --max-time 3 -o nul -w "%%{http_code}" %BACKEND_URL%/boletobancos/healthz 2>nul | findstr /r "^200" >nul 2>&1
 if not errorlevel 1 (
-    echo Backend OK.
+    echo Backend OK na porta %BACKEND_PORT%.
     exit /b 0
 )
 if %TENTATIVA% GEQ 24 (
-    echo [ERRO] Backend nao respondeu em 2 minutos.
+    echo [ERRO] Backend nao respondeu em 2 minutos. Verifique a janela AppAcademia-Backend.
+    pause
     exit /b 1
 )
 echo [%TENTATIVA%/24] Backend ainda iniciando... aguardando 5s
@@ -1137,6 +1161,7 @@ echo  Todos os repositorios atualizados!
 echo ============================================
 exit /b 0
 
+
 :RUN_ALL
 call :KILL_APP
 call :START_ALL_WITH_ANDROID
@@ -1298,4 +1323,37 @@ echo.
 start "Instagram-API" cmd /k "title Instagram API - Porta 8500 && cd /d %IG_DIR% && call venv\Scripts\activate.bat && python server.py"
 echo Instagram API iniciado em http://localhost:8500
 echo Endpoints: /health, /profile, /posts, /likers, /followers, /following
+exit /b 0
+
+:HOT_RESTART_FLUTTER
+echo.
+echo ============================================
+echo  Hot Restart Flutter
+echo ============================================
+echo  O app precisa estar rodando (opcao 1, C ou D).
+echo  Funciona em Chrome (web) e Android/mobile.
+echo.
+echo Qual janela Flutter quer reiniciar?
+echo  [1] AppAcademia-Flutter        (opcao 1/2)
+echo  [2] AppAcademia-Abraco-Web     (opcao C - Abraco Chrome)
+echo  [3] AppAcademia-Portal-Web     (opcao C - Portal Chrome)
+echo  [4] AppAcademia-Abraco-Android (opcao D - Abraco Android)
+echo  [5] AppAcademia-Portal-Android (opcao D - Portal Android)
+echo  [6] Bolsa-Flutter              (Bolsa de Valores)
+echo  [0] Voltar
+echo.
+choice /c 1234560 /n /m "Janela: "
+set "HR_ERR=%ERRORLEVEL%"
+if "%HR_ERR%"=="7" exit /b 0
+
+if "%HR_ERR%"=="1" set "WIN_TITLE=AppAcademia-Flutter"
+if "%HR_ERR%"=="2" set "WIN_TITLE=AppAcademia-Abraco Contabilidade-Web"
+if "%HR_ERR%"=="3" set "WIN_TITLE=AppAcademia-Portal-Web"
+if "%HR_ERR%"=="4" set "WIN_TITLE=AppAcademia-Abraco Contabilidade-Android"
+if "%HR_ERR%"=="5" set "WIN_TITLE=AppAcademia-Portal-Android"
+if "%HR_ERR%"=="6" set "WIN_TITLE=Bolsa-Flutter"
+
+echo.
+echo Enviando Hot Restart para: %WIN_TITLE%
+powershell -NoProfile -ExecutionPolicy Bypass -Command "$wshell = New-Object -ComObject wscript.shell; if ($wshell.AppActivate('%WIN_TITLE%')) { Start-Sleep -Milliseconds 500; $wshell.SendKeys('R'); Write-Host 'Hot Restart enviado com sucesso!' } else { Write-Host '[ERRO] Janela nao encontrada: %WIN_TITLE%'; Write-Host 'Verifique se o Flutter esta rodando nessa janela.' }"
 exit /b 0

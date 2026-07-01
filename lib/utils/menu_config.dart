@@ -597,6 +597,11 @@ class MenuConfig {
             label: 'Teste de Endpoints',
             icon: FontAwesomeIcons.vials,
             screenIndex: 65),
+        MenuItem(
+            id: 'query_builder',
+            label: 'Query Builder',
+            icon: FontAwesomeIcons.database,
+            screenIndex: 150),
       ],
     ),
     MenuGroup(

@@ -66,7 +66,7 @@ class QueryBuilderCaller {
   }) async {
     try {
       final body = {
-        'sql_texto': sql,
+        'sql': sql,
         'pagina': pagina,
         'tamanhoPagina': tamanhoPagina,
       };

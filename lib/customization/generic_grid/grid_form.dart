@@ -182,7 +182,8 @@ class _GridFormDialogState extends State<GridFormDialog> {
   }
 
   Widget _buildFormField(FieldConfig c) {
-    final ctrl = _controllers[c.fieldName]!;
+    final ctrl = _controllers[c.fieldName];
+    if (ctrl == null) return const Text('Campo não inicializado');
 
     switch (c.fieldType) {
       case FieldType.dropdown:
@@ -412,10 +413,10 @@ class _GridFormDialogState extends State<GridFormDialog> {
                   onPressed: () {
                     setState(() {
                       _fileCache[c.fieldName]?.remove(f);
-                      if (_fileCache[c.fieldName]!.isEmpty) {
+                      if (_fileCache[c.fieldName]?.isEmpty ?? false) {
                         _fileCache.remove(c.fieldName);
                       }
-                      ctrl.clear();
+                      ctrl?.clear();
                     });
                   },
                 ),
@@ -768,7 +769,7 @@ class _GridFormDialogState extends State<GridFormDialog> {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(msg, style: const TextStyle(color: GridColors.textSecondary)),
-        backgroundColor: GridColors.successLight,
+        backgroundColor: GridColors.secondarySoft,
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
       ),

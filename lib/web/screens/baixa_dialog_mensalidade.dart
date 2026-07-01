@@ -54,10 +54,10 @@ class _WebBaixaDialogMensalidadeState extends State<WebBaixaDialogMensalidade> {
         'Content-Type': 'application/json',
       };
 
-      final url = TenantContext.applyToUrl('${ApiLinks.baseUrl}/api/mensalidades/${m.id}/baixa');
+      final url = TenantContext.applyToUrl('${ApiLinks.baseUrl}/api/mensalidades/${m!.id}/baixa');
       final body = jsonEncode({
         'dataBaixa': _dataController.text,
-        'valorBaixa': m.valor,
+        'valorBaixa': m!.valor,
       });
 
       final response = await http.post(Uri.parse(url), headers: headers, body: body);

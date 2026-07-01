@@ -135,7 +135,7 @@ class _LoadQueryDialogState extends State<_LoadQueryDialog> {
     final q = _busca.toLowerCase();
     return widget.queryList.where((item) {
       final nome = (item['nome']?.toString() ?? '').toLowerCase();
-      final sql = (item['sql_texto']?.toString() ?? '').toLowerCase();
+      final sql = (item['sqlTexto']?.toString() ?? '').toLowerCase();
       return nome.contains(q) || sql.contains(q);
     }).toList();
   }
@@ -254,7 +254,7 @@ class _LoadQueryDialogState extends State<_LoadQueryDialog> {
                             final query = _queriesFiltradas[i];
                             final nome =
                                 query['nome']?.toString() ?? 'Sem nome';
-                            final sql = query['sql_texto']?.toString() ?? '';
+                            final sql = query['sqlTexto']?.toString() ?? '';
                             final selecionado =
                                 i == _querySelecionada;
 
