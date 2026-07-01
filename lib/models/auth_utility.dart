@@ -4,7 +4,6 @@ import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../../models/login_model.dart';
 
-
 import 'package:task_manager_flutter/utils/app_logger.dart';
 
 // ---------------------------------------------------------------------------
@@ -28,8 +27,57 @@ bool _isJwtExpired(String token) {
     return true; // se não conseguir decodificar, considera expirado
   }
 }
+
 class AuthUtility {
   static LoginModel? userInfo;
+
+  static Map<String, dynamic> _persistableSessionJson(LoginModel model) {
+    final json = model.toJson();
+
+    void stripLargeMedia(dynamic value) {
+      if (value is Map) {
+        for (final key in List<dynamic>.from(value.keys)) {
+          final normalized = key.toString().toLowerCase();
+          if (normalized == 'foto' ||
+              normalized == 'photo' ||
+              normalized == 'imagembytes') {
+            value.remove(key);
+          } else {
+            stripLargeMedia(value[key]);
+          }
+        }
+      } else if (value is List) {
+        for (final item in value) {
+          stripLargeMedia(item);
+        }
+      }
+    }
+
+    stripLargeMedia(json);
+    return json;
+  }
+
+  static Map<String, dynamic> _minimalSessionJson(LoginModel model) => {
+        'status': model.status,
+        'token': model.token,
+        if (model.login != null)
+          'login': {
+            'id': model.login!.id,
+            'email': model.login!.email,
+            'nome': model.login!.nome,
+            'tipoLogin': model.login!.tipoLogin?.name,
+            'trocarSenhaProximoLogin': model.login!.trocarSenhaProximoLogin,
+            if (model.login!.aplicativo != null)
+              'aplicativo': model.login!.aplicativo!.toJson(),
+            if (model.login!.empresa != null)
+              'empresa': model.login!.empresa!.toJson(),
+            if (model.login!.parceiro != null)
+              'parceiro': model.login!.parceiro!.toJson(),
+            if (model.login!.roles != null)
+              'roles':
+                  model.login!.roles!.map((role) => role.toJson()).toList(),
+          },
+      };
 
   /// Considera o usuário autenticado quando há sessão com token OU identidade.
   ///
@@ -46,10 +94,26 @@ class AuthUtility {
   }
 
   static Future<void> setUserInfo(LoginModel model) async {
+    userInfo = model;
     SharedPreferences _sharedPreferences =
         await SharedPreferences.getInstance();
-    await _sharedPreferences.setString("user_data", jsonEncode(model.toJson()));
-    userInfo = model;
+    try {
+      await _sharedPreferences.setString(
+        "user_data",
+        jsonEncode(_persistableSessionJson(model)),
+      );
+    } catch (e) {
+      L.w('[AuthUtility] falha ao persistir sessao completa; salvando sessao minima: $e');
+      try {
+        await _sharedPreferences.remove("user_data");
+        await _sharedPreferences.setString(
+          "user_data",
+          jsonEncode(_minimalSessionJson(model)),
+        );
+      } catch (fallbackError) {
+        L.w('[AuthUtility] falha ao persistir sessao minima: $fallbackError');
+      }
+    }
   }
 
   static Future<LoginModel?> getUserInfo() async {

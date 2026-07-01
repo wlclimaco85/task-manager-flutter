@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:task_manager_flutter/models/auth_utility.dart';
 import 'package:task_manager_flutter/models/login_model.dart';
@@ -26,6 +27,26 @@ void main() {
     expect(restored, isNotNull);
     expect(restored?.token, equals('token-test'));
     expect(restored?.login?.empresa?.id, equals(5));
+  });
+
+  test('setUserInfo nao persiste imagens base64 grandes', () async {
+    final model = LoginModel(
+      token: 'token-test',
+      login: Login(
+        id: 1,
+        email: 'user@test.com',
+        foto: 'base64-muito-grande',
+      ),
+    );
+
+    await AuthUtility.setUserInfo(model);
+
+    expect(AuthUtility.userInfo?.login?.foto, equals('base64-muito-grande'));
+
+    final prefs = await SharedPreferences.getInstance();
+    final stored =
+        jsonDecode(prefs.getString('user_data')!) as Map<String, dynamic>;
+    expect(stored['login'], isNot(contains('foto')));
   });
 
   test('clearUserInfo remove SharedPreferences e limpa userInfo', () async {

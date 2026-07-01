@@ -188,7 +188,8 @@ class _WindowsBottomNavBarScreenState extends State<WindowsBottomNavBarScreen> {
     await AuthUtility.isUserLoggedIn();
     if (!mounted) return;
     final userInfo = AuthUtility.userInfo?.data;
-    if (userInfo == null || userInfo.id == null) {
+    final loginInfo = AuthUtility.userInfo?.login;
+    if ((userInfo?.id == null) && (loginInfo?.id == null)) {
       Navigator.pushAndRemoveUntil(
         context,
         MaterialPageRoute(builder: (_) => const LoginScreen()),
@@ -197,7 +198,7 @@ class _WindowsBottomNavBarScreenState extends State<WindowsBottomNavBarScreen> {
       return;
     }
     setState(() {
-      _screens = _buildScreens(userInfo);
+      _screens = _buildScreens(userInfo ?? loginInfo);
       _isLoading = false;
       _openInitialTab();
     });
@@ -468,7 +469,8 @@ class _WindowsBottomNavBarScreenState extends State<WindowsBottomNavBarScreen> {
         ), // 151: Anamnese Digital
         const CalendarioTributarioScreen(), // 152: Calendario Tributario
         const ComunicadoCircularScreen(), // 153: Comunicados Circular
-        const RegistroCargaScreen(sessionId: 0), // 154: Registro de Carga (placeholder sessionId)
+        const RegistroCargaScreen(
+            sessionId: 0), // 154: Registro de Carga (placeholder sessionId)
         const FrequenciaScreen(), // 155: Frequencia Semanal
       ];
 
@@ -616,8 +618,7 @@ class _WindowsBottomNavBarScreenState extends State<WindowsBottomNavBarScreen> {
                     ),
                     if (notifications.isNotEmpty)
                       InkWell(
-                        onTap: () =>
-                            deleteAllNotifications(context, position),
+                        onTap: () => deleteAllNotifications(context, position),
                         child: Container(
                           padding: const EdgeInsets.symmetric(
                               horizontal: 16, vertical: 10),
@@ -649,8 +650,7 @@ class _WindowsBottomNavBarScreenState extends State<WindowsBottomNavBarScreen> {
                         ? Flexible(
                             child: ListView.separated(
                               shrinkWrap: true,
-                              padding:
-                                  const EdgeInsets.symmetric(vertical: 4),
+                              padding: const EdgeInsets.symmetric(vertical: 4),
                               itemCount: notifications.length,
                               separatorBuilder: (_, __) => const Divider(
                                   height: 1,
@@ -675,8 +675,7 @@ class _WindowsBottomNavBarScreenState extends State<WindowsBottomNavBarScreen> {
                                         width: 36,
                                         height: 36,
                                         decoration: BoxDecoration(
-                                          color:
-                                              corIcone.withOpacity(0.12),
+                                          color: corIcone.withOpacity(0.12),
                                           borderRadius:
                                               BorderRadius.circular(8),
                                         ),
@@ -693,13 +692,11 @@ class _WindowsBottomNavBarScreenState extends State<WindowsBottomNavBarScreen> {
                                               n.texto,
                                               style: const TextStyle(
                                                 fontSize: 13,
-                                                color:
-                                                    GridColors.textSecondary,
+                                                color: GridColors.textSecondary,
                                                 fontWeight: FontWeight.w500,
                                               ),
                                               maxLines: 3,
-                                              overflow:
-                                                  TextOverflow.ellipsis,
+                                              overflow: TextOverflow.ellipsis,
                                             ),
                                             const SizedBox(height: 3),
                                             Text(
@@ -713,10 +710,8 @@ class _WindowsBottomNavBarScreenState extends State<WindowsBottomNavBarScreen> {
                                         ),
                                       ),
                                       InkWell(
-                                        onTap: () =>
-                                            deleteNotification(n),
-                                        borderRadius:
-                                            BorderRadius.circular(20),
+                                        onTap: () => deleteNotification(n),
+                                        borderRadius: BorderRadius.circular(20),
                                         child: const Padding(
                                           padding: EdgeInsets.all(6),
                                           child: Icon(

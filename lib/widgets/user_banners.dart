@@ -331,7 +331,15 @@ class _UserBannerAppBarState extends State<UserBannerAppBar> {
   }
 
   String _getCompanyName() {
-    return AuthUtility.userInfo?.login?.empresa?.nome ?? "Empresa";
+    return AuthUtility.userInfo?.login?.empresa?.nome ??
+        AuthUtility.userInfo?.login?.parceiro?.nome ??
+        "Empresa";
+  }
+
+  String _getUserName() {
+    return AuthUtility.userInfo?.login?.nome ??
+        AuthUtility.userInfo?.data?.codDadosPessoal?.nome ??
+        "Usuário";
   }
 
   @override
@@ -359,6 +367,19 @@ class _UserBannerAppBarState extends State<UserBannerAppBar> {
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
+                    // Logo do escritório
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(6),
+                      child: Image.asset(
+                        'assets/images/logo_contabilidade.jpg',
+                        width: 28,
+                        height: 28,
+                        fit: BoxFit.cover,
+                        errorBuilder: (context, error, stackTrace) =>
+                            const SizedBox(width: 28, height: 28),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
                     // CORREÇÃO: GestureDetector apenas no CircleAvatar
                     GestureDetector(
                       onTap: () {
@@ -418,6 +439,35 @@ class _UserBannerAppBarState extends State<UserBannerAppBar> {
                                 color: GridColors.primary,
                                 size: 16,
                               ),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    // Nome do usuário + empresa/cliente
+                    Flexible(
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            _getUserName(),
+                            style: const TextStyle(
+                              color: GridColors.textPrimary,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 13,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            maxLines: 1,
+                          ),
+                          Text(
+                            _getCompanyName(),
+                            style: TextStyle(
+                              color: GridColors.textPrimary.withValues(alpha: 0.75),
+                              fontSize: 11,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            maxLines: 1,
+                          ),
+                        ],
                       ),
                     ),
                   ],
