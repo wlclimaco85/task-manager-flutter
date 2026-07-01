@@ -276,6 +276,7 @@ class LoginModel {
   String? token;
   Data? data;
   Login? login;
+
   /// Permissões retornadas pelo backend no login — substitui security_matrix.dart
   List<RolePermissaoItem>? permissoes;
 
@@ -283,13 +284,26 @@ class LoginModel {
 
   LoginModel.fromJson(Map<String, dynamic> json) {
     // envelope: { data: { access_token, login, permissoes }, response: {...} }
-    final inner = (json['data'] is Map)
+    final dataMap = json['data'] is Map
         ? Map<String, dynamic>.from(json['data'] as Map)
-        : json;
+        : null;
+    bool hasPayloadValue(String key) =>
+        dataMap?[key] != null &&
+        (dataMap![key] is! String || (dataMap[key] as String).isNotEmpty);
+    final isBackendEnvelope = dataMap != null &&
+        (hasPayloadValue('access_token') ||
+            hasPayloadValue('token') ||
+            hasPayloadValue('login') ||
+            hasPayloadValue('permissoes'));
+    final inner = isBackendEnvelope ? dataMap : json;
 
     status = (json['response']?['status'] ?? json['status'])?.toString();
-    token = inner['access_token'] ?? inner['token'] ?? json['access_token'] ?? json['token'];
-    data = inner['login'] != null ? Data.fromJson(inner['login']) : null;
+    token = inner['access_token'] ??
+        inner['token'] ??
+        json['access_token'] ??
+        json['token'];
+    final dataJson = inner['data'] ?? inner['login'];
+    data = dataJson != null ? Data.fromJson(dataJson) : null;
     login = inner['login'] != null ? Login.fromJson(inner['login']) : null;
 
     final permList = inner['permissoes'] ?? json['permissoes'];
@@ -349,31 +363,32 @@ class RolePermissaoItem {
     this.podeBaixar = false,
   });
 
-  factory RolePermissaoItem.fromJson(Map<String, dynamic> json) => RolePermissaoItem(
-    id: json['id'] as int?,
-    roleId: json['roleId'] as int?,
-    roleKey: json['roleKey'] as String?,
-    roleDescription: json['roleDescription'] as String?,
-    telaNome: json['telaNome']?.toString() ?? '',
-    podeVer: json['podeVer'] == true,
-    podeInserir: json['podeInserir'] == true,
-    podeEditar: json['podeEditar'] == true,
-    podeDeletar: json['podeDeletar'] == true,
-    podeBaixar: json['podeBaixar'] == true,
-  );
+  factory RolePermissaoItem.fromJson(Map<String, dynamic> json) =>
+      RolePermissaoItem(
+        id: json['id'] as int?,
+        roleId: json['roleId'] as int?,
+        roleKey: json['roleKey'] as String?,
+        roleDescription: json['roleDescription'] as String?,
+        telaNome: json['telaNome']?.toString() ?? '',
+        podeVer: json['podeVer'] == true,
+        podeInserir: json['podeInserir'] == true,
+        podeEditar: json['podeEditar'] == true,
+        podeDeletar: json['podeDeletar'] == true,
+        podeBaixar: json['podeBaixar'] == true,
+      );
 
   Map<String, dynamic> toJson() => {
-    'id': id,
-    'roleId': roleId,
-    'roleKey': roleKey,
-    'roleDescription': roleDescription,
-    'telaNome': telaNome,
-    'podeVer': podeVer,
-    'podeInserir': podeInserir,
-    'podeEditar': podeEditar,
-    'podeDeletar': podeDeletar,
-    'podeBaixar': podeBaixar,
-  };
+        'id': id,
+        'roleId': roleId,
+        'roleKey': roleKey,
+        'roleDescription': roleDescription,
+        'telaNome': telaNome,
+        'podeVer': podeVer,
+        'podeInserir': podeInserir,
+        'podeEditar': podeEditar,
+        'podeDeletar': podeDeletar,
+        'podeBaixar': podeBaixar,
+      };
 }
 
 class Data {

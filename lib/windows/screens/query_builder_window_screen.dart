@@ -174,10 +174,14 @@ class _QueryBuilderWindowScreenState extends State<QueryBuilderWindowScreen> {
 
     if (!mounted) return;
 
-    final dados = resultado['data'] is Map ? Map<String, dynamic>.from(resultado['data']) : resultado;
+    final dados = resultado['data'] is Map
+        ? Map<String, dynamic>.from(resultado['data'])
+        : resultado;
 
-    if (dados.containsKey('erro') || dados.containsKey('error')) {
-      final erro = dados['erro'] ?? dados['error'] ?? 'Erro desconhecido';
+    final erro = dados['erro'] ?? dados['error'];
+    final temErro =
+        erro != null && erro != false && erro.toString().trim().isNotEmpty;
+    if (temErro) {
       setState(() {
         _mensagemErro = erro.toString();
         _executando = false;
@@ -194,9 +198,7 @@ class _QueryBuilderWindowScreenState extends State<QueryBuilderWindowScreen> {
       final cols = dados['colunas'];
       if (cols is List) {
         _colunasResultado = cols
-            .map((c) => c is Map<String, dynamic>
-                ? c
-                : {'nome': c.toString()})
+            .map((c) => c is Map<String, dynamic> ? c : {'nome': c.toString()})
             .toList();
       } else {
         _colunasResultado = [];
@@ -205,19 +207,16 @@ class _QueryBuilderWindowScreenState extends State<QueryBuilderWindowScreen> {
       // Linhas do resultado
       final linhas = dados['linhas'] ?? dados['data'] ?? dados['rows'];
       if (linhas is List) {
-        _linhasResultado = linhas
-            .map((linha) {
-              if (linha is List) return linha;
-              if (linha is Map<String, dynamic>) {
-                return _colunasResultado
-                    .map((c) => linha.containsKey(c['nome'])
-                        ? linha[c['nome']]
-                        : null)
-                    .toList();
-              }
-              return <dynamic>[];
-            })
-            .toList();
+        _linhasResultado = linhas.map((linha) {
+          if (linha is List) return linha;
+          if (linha is Map<String, dynamic>) {
+            return _colunasResultado
+                .map((c) =>
+                    linha.containsKey(c['nome']) ? linha[c['nome']] : null)
+                .toList();
+          }
+          return <dynamic>[];
+        }).toList();
       } else {
         _linhasResultado = [];
       }
@@ -280,8 +279,9 @@ class _QueryBuilderWindowScreenState extends State<QueryBuilderWindowScreen> {
       final buffer = StringBuffer();
 
       // Cabeçalho
-      final headers =
-          _colunasResultado.map((c) => _escaparCsv(c['nome']?.toString() ?? '')).join(',');
+      final headers = _colunasResultado
+          .map((c) => _escaparCsv(c['nome']?.toString() ?? ''))
+          .join(',');
       buffer.writeln(headers);
 
       // Linhas
@@ -355,7 +355,9 @@ class _QueryBuilderWindowScreenState extends State<QueryBuilderWindowScreen> {
     });
 
     if (mounted) {
-      if (result.isNotEmpty && !result.containsKey('erro') && !result.containsKey('error')) {
+      if (result.isNotEmpty &&
+          !result.containsKey('erro') &&
+          !result.containsKey('error')) {
         setState(() => _nomeQueryAtual = nome);
         _mostrarSnackBar('Query "$nome" salva com sucesso.');
       } else {
@@ -472,7 +474,8 @@ class _QueryBuilderWindowScreenState extends State<QueryBuilderWindowScreen> {
       children: [
         // ── Painel esquerdo: Database Explorer ─────────────────────
         _buildDatabaseExplorer(),
-        const VerticalDivider(width: 1, thickness: 1, color: GridColors.divider),
+        const VerticalDivider(
+            width: 1, thickness: 1, color: GridColors.divider),
         // ── Painel direito: Editor + Resultados ────────────────────
         Expanded(
           child: Column(
@@ -577,7 +580,8 @@ class _QueryBuilderWindowScreenState extends State<QueryBuilderWindowScreen> {
                   nome,
                   style: TextStyle(
                     fontSize: 13,
-                    fontWeight: selecionado ? FontWeight.w600 : FontWeight.normal,
+                    fontWeight:
+                        selecionado ? FontWeight.w600 : FontWeight.normal,
                     color: selecionado
                         ? GridColors.textSecondary
                         : GridColors.textMuted,
@@ -587,8 +591,7 @@ class _QueryBuilderWindowScreenState extends State<QueryBuilderWindowScreen> {
             ),
           ),
         ),
-        if (selecionado && _arvoreExpandida)
-          ..._buildTabelasNodes(),
+        if (selecionado && _arvoreExpandida) ..._buildTabelasNodes(),
       ],
     );
   }
@@ -633,25 +636,22 @@ class _QueryBuilderWindowScreenState extends State<QueryBuilderWindowScreen> {
         InkWell(
           onTap: () {
             setState(() {
-              _tabelaSelecionada =
-                  _tabelaSelecionada == nome ? null : nome;
+              _tabelaSelecionada = _tabelaSelecionada == nome ? null : nome;
             });
             if (_tabelaSelecionada == nome) {
               _carregarColunas(_schemaSelecionado ?? 'public', nome);
             }
           },
           child: Container(
-            padding: const EdgeInsets.only(left: 48, top: 4, bottom: 4, right: 8),
+            padding:
+                const EdgeInsets.only(left: 48, top: 4, bottom: 4, right: 8),
             child: Row(
               children: [
                 Icon(
-                  selecionada
-                      ? Icons.table_chart
-                      : Icons.table_chart_outlined,
+                  selecionada ? Icons.table_chart : Icons.table_chart_outlined,
                   size: 14,
-                  color: selecionada
-                      ? GridColors.secondary
-                      : GridColors.textMuted,
+                  color:
+                      selecionada ? GridColors.secondary : GridColors.textMuted,
                 ),
                 const SizedBox(width: 6),
                 Expanded(
@@ -692,9 +692,8 @@ class _QueryBuilderWindowScreenState extends State<QueryBuilderWindowScreen> {
     }
 
     return _colunas.map((col) {
-      final nome = col['nome']?.toString() ??
-          col['column_name']?.toString() ??
-          '?';
+      final nome =
+          col['nome']?.toString() ?? col['column_name']?.toString() ?? '?';
       final isPk = col['pk'] == true ||
           col['primaryKey'] == true ||
           col['isPrimaryKey'] == true;
@@ -706,9 +705,11 @@ class _QueryBuilderWindowScreenState extends State<QueryBuilderWindowScreen> {
     }).toList();
   }
 
-  Widget _buildColunaNode(String nome, bool isPk, bool isFk, String tipo, dynamic tamanho, bool nullable) {
+  Widget _buildColunaNode(String nome, bool isPk, bool isFk, String tipo,
+      dynamic tamanho, bool nullable) {
     final tipoStr = tipo.isNotEmpty ? tipo.toUpperCase() : '';
-    final tamStr = (tamanho != null && tamanho is int && tamanho > 0) ? '($tamanho)' : '';
+    final tamStr =
+        (tamanho != null && tamanho is int && tamanho > 0) ? '($tamanho)' : '';
     final suf = '$tipoStr$tamStr';
     return InkWell(
       onTap: () => _inserirNoEditor(nome),
@@ -720,22 +721,32 @@ class _QueryBuilderWindowScreenState extends State<QueryBuilderWindowScreen> {
             Icon(
               isPk ? Icons.vpn_key : (isFk ? Icons.link : Icons.arrow_right),
               size: 12,
-              color: isPk ? GridColors.warning : (isFk ? GridColors.info : GridColors.textMuted),
+              color: isPk
+                  ? GridColors.warning
+                  : (isFk ? GridColors.info : GridColors.textMuted),
             ),
             const SizedBox(width: 4),
             Expanded(
               child: Text.rich(
                 TextSpan(
                   children: [
-                    TextSpan(text: nome, style: TextStyle(
-                      fontSize: 11,
-                      fontFamily: 'monospace',
-                      color: isPk ? GridColors.warningDark : GridColors.textMuted,
-                    )),
-                    if (suf.isNotEmpty) TextSpan(
-                      text: ' ($suf${nullable ? ', nullable' : ''})',
-                      style: const TextStyle(fontSize: 10, fontFamily: 'monospace', color: GridColors.textMuted),
-                    ),
+                    TextSpan(
+                        text: nome,
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontFamily: 'monospace',
+                          color: isPk
+                              ? GridColors.warningDark
+                              : GridColors.textMuted,
+                        )),
+                    if (suf.isNotEmpty)
+                      TextSpan(
+                        text: ' ($suf${nullable ? ', nullable' : ''})',
+                        style: const TextStyle(
+                            fontSize: 10,
+                            fontFamily: 'monospace',
+                            color: GridColors.textMuted),
+                      ),
                   ],
                 ),
                 overflow: TextOverflow.ellipsis,
@@ -798,7 +809,8 @@ class _QueryBuilderWindowScreenState extends State<QueryBuilderWindowScreen> {
                     },
                     child: const Padding(
                       padding: EdgeInsets.all(4),
-                      child: Icon(Icons.clear, size: 16, color: GridColors.textMuted),
+                      child: Icon(Icons.clear,
+                          size: 16, color: GridColors.textMuted),
                     ),
                   ),
                 ),
@@ -810,8 +822,8 @@ class _QueryBuilderWindowScreenState extends State<QueryBuilderWindowScreen> {
             height: 120,
             child: CallbackShortcuts(
               bindings: {
-                const SingleActivator(LogicalKeyboardKey.enter,
-                    control: true): () => _executarQuery(),
+                const SingleActivator(LogicalKeyboardKey.enter, control: true):
+                    () => _executarQuery(),
               },
               child: Focus(
                 autofocus: false,
@@ -1009,8 +1021,7 @@ class _QueryBuilderWindowScreenState extends State<QueryBuilderWindowScreen> {
       child: SingleChildScrollView(
         scrollDirection: Axis.horizontal,
         child: DataTable(
-          headingRowColor:
-              WidgetStateProperty.all(GridColors.gridHeader),
+          headingRowColor: WidgetStateProperty.all(GridColors.gridHeader),
           dataRowColor: WidgetStateProperty.resolveWith((states) {
             if (states.contains(WidgetState.hovered)) {
               return GridColors.hover;

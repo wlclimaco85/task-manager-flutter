@@ -49,6 +49,25 @@ void main() {
     expect(stored['login'], isNot(contains('foto')));
   });
 
+  test('getUserInfo restaura sessao persistida com data e login top-level',
+      () async {
+    final model = LoginModel(
+      status: 'success',
+      token: 'token-test',
+      data: Data(id: 99),
+      login: Login(id: 1, email: 'user@test.com', empresa: Empresa(id: 5)),
+    );
+
+    await AuthUtility.setUserInfo(model);
+    AuthUtility.userInfo = null;
+
+    final restored = await AuthUtility.getUserInfo();
+
+    expect(restored?.token, equals('token-test'));
+    expect(restored?.login?.id, equals(1));
+    expect(restored?.login?.empresa?.id, equals(5));
+  });
+
   test('clearUserInfo remove SharedPreferences e limpa userInfo', () async {
     final model = LoginModel(token: 'token-test', login: Login(id: 1));
     await AuthUtility.setUserInfo(model);

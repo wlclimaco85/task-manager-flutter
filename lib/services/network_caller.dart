@@ -11,6 +11,11 @@ import '../../../models/login_model.dart';
 import '../../../utils/app_logger.dart';
 
 class NetworkCaller {
+  String _previewResponseBody(String body) {
+    if (body.length <= 1200) return body;
+    return '${body.substring(0, 1200)}... [truncated ${body.length} chars]';
+  }
+
   Future<NetworkResponse> getRequest(String url) async {
     try {
       final enrichedUrl = TenantHelper.applyToUrl(url) ?? url;
@@ -255,13 +260,15 @@ class NetworkCaller {
       }
 
       // Injeta tenant params na URL também (para controllers que lêem da query)
-      final enrichedUrl = isAuthRequest ? url : TenantHelper.applyToUrl(url) ?? url;
+      final enrichedUrl =
+          isAuthRequest ? url : TenantHelper.applyToUrl(url) ?? url;
 
       AppLogger.i.info('📤 [POST] url=$enrichedUrl | body=${jsonEncode(body)}');
 
       final token = AuthUtility.userInfo?.token;
       if (!isAuthRequest && (token == null || token.isEmpty)) {
-        AppLogger.i.warn('[POST] AVISO: token ausente para requisição protegida. url=$enrichedUrl');
+        AppLogger.i.warn(
+            '[POST] AVISO: token ausente para requisição protegida. url=$enrichedUrl');
       }
       final Map<String, String> headers = {
         'Content-Type': 'application/json;charset=UTF-8',
@@ -280,7 +287,7 @@ class NetworkCaller {
       );
 
       AppLogger.i.info(
-          '📥 [POST] status=${response.statusCode} | body=${response.body}');
+          '📥 [POST] status=${response.statusCode} | body=${_previewResponseBody(response.body)}');
 
       if (response.statusCode == 200 || response.statusCode == 201) {
         return NetworkResponse(
