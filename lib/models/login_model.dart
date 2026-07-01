@@ -392,7 +392,7 @@ class Data {
   });
 
   Data.fromJson(Map<String, dynamic> json) {
-    id = json['id'];
+    id = int.tryParse(json['id'].toString()) ?? 0;
     email = json['email'];
     firstName = json['firstName'];
     lastName = json['lastName'];

@@ -75,6 +75,7 @@ class _GedFileCardState extends State<GedFileCard> {
     final uploadDate = widget.arq['uploadDate']?.toString();
 
     return Container(
+      key: ValueKey(widget.arq['id']),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(10),

@@ -71,9 +71,6 @@ class _UserBannerAppBarState extends State<UserBannerAppBar> {
   }
 
   void _startPeriodicFetch() {
-    _timer = Timer.periodic(const Duration(minutes: 1), (timer) {
-      fetchAlerts();
-    });
     fetchAlerts();
   }
 
