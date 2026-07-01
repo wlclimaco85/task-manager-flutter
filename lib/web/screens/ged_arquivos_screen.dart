@@ -204,11 +204,9 @@ class _GedArquivosScreenState extends State<GedArquivosScreen> {
               if (db == null) return -1;
               return db.compareTo(da);
             });
-          print('[GED] _arquivos atualizado: ${_arquivos.length} itens, _busca="${_busca}"');
         }
       } else {
         _arquivos = [];
-        print('[GED] Falha ao carregar: r.isSuccess=${r.isSuccess}, body=${r.body}');
       }
     });
   }
