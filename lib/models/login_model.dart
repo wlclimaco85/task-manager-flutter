@@ -289,7 +289,7 @@ class LoginModel {
 
     status = (json['response']?['status'] ?? json['status'])?.toString();
     token = inner['access_token'] ?? inner['token'] ?? json['access_token'] ?? json['token'];
-    data = inner['login'] != null ? Data.fromJson(inner['login']) : null;
+    data = inner['data'] != null ? Data.fromJson(inner['data']) : null;
     login = inner['login'] != null ? Login.fromJson(inner['login']) : null;
 
     final permList = inner['permissoes'] ?? json['permissoes'];
