@@ -232,13 +232,13 @@ class _CalendarHeader extends StatelessWidget {
             ),
           ),
           IconButton(
-            icon: const Icon(Icons.calendar_today, size: 20.0),
+            icon: const Icon(Icons.calendar_today, size: 20.0, color: GridColors.primary),
             visualDensity: VisualDensity.compact,
             onPressed: onTodayButtonTap,
           ),
           if (clearButtonVisible)
             IconButton(
-              icon: const Icon(Icons.clear, size: 20.0),
+              icon: const Icon(Icons.clear, size: 20.0, color: GridColors.primary),
               visualDensity: VisualDensity.compact,
               onPressed: onClearButtonTap,
             ),

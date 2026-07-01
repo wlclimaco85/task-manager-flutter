@@ -160,7 +160,7 @@ class ChatListTileCard extends StatelessWidget {
                               tooltip: 'Mais opcoes',
                               padding: EdgeInsets.zero,
                               icon: const Icon(Icons.more_horiz, size: 18),
-                              color: GridColors.secondary,
+                              color: Colors.grey,
                               onPressed: onMore,
                             ),
                           ),
