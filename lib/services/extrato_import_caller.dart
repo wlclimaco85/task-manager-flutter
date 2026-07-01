@@ -55,6 +55,7 @@ class ExtratoImportCaller {
         filename: arquivo.name,
       ));
       request.fields['contaBancariaId'] = contaBancariaId.toString();
+      request.fields['empresaId'] = TenantContext.empresaId?.toString() ?? '0';
 
       final streamed = await request.send();
       final resp = await http.Response.fromStream(streamed);
@@ -122,6 +123,7 @@ class ExtratoImportCaller {
         filename: arquivo.name,
       ));
       request.fields['contaBancariaId'] = contaBancariaId.toString();
+      request.fields['empresaId'] = TenantContext.empresaId?.toString() ?? '0';
 
       final streamed = await request.send();
       final resp = await http.Response.fromStream(streamed);
