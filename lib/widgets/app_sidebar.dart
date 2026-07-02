@@ -7,6 +7,7 @@ import '../models/auth_utility.dart';
 import '../services/favorites_service.dart';
 import '../utils/menu_config.dart';
 import '../utils/security_matrix.dart';
+import '../utils/string_utils.dart';
 
 /// Sidebar com submenus, busca e favoritos.
 /// Usado tanto no Windows quanto no Web (drawer).
@@ -64,7 +65,9 @@ class _AppSidebarState extends State<AppSidebar> {
       final email = widget.userEmail.toLowerCase();
       return email == 'wlclimaco@gmail.com';
     }
-    return _allowedIds == null || _allowedIds!.contains(item.id);
+    // Converte item.id (snake_case) para camelCase para comparar com telaNome (backend).
+    final camelCaseId = StringUtils.snakeToCamelCase(item.id);
+    return _allowedIds == null || _allowedIds!.contains(camelCaseId);
   }
 
   @override
