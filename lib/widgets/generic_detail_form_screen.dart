@@ -131,6 +131,7 @@ class _GenericDetailFormScreenState extends State<GenericDetailFormScreen>
   final _dropdownFutures = <String, Future<List<Map<String, dynamic>>>>{};
 
   bool _saving = false;
+  bool _initialized = false;
 
   Map<String, FieldConfigWindows> _overrideMap = {};
   Set<String> _suppressedFkFields = {};
@@ -338,7 +339,10 @@ class _GenericDetailFormScreenState extends State<GenericDetailFormScreen>
           return Scaffold(body: Center(child: Text('Erro: ${snap.error}')));
         }
         final tela = snap.data!;
-        _initControllers(tela);
+        if (!_initialized) {
+          _initControllers(tela);
+          _initialized = true;
+        }
 
         // Explicit relatedTabs from widget (highest priority)
         final explicitTabs = (widget.relatedTabs ?? []).map((rt) {
