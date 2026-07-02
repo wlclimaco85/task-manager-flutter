@@ -223,13 +223,17 @@ class TimelineEvent {
 
   String get typeLabel {
     switch (type) {
-      case 'new_follower': return 'Comecou a seguir voce';
-      case 'unfollowed': return 'Deixou de seguir voce';
-      case 'you_followed': return 'Voce comecou a seguir';
-      case 'unfollowed_by_you': return 'Voce deixou de seguir';
+      case 'new_follower': return 'Começou a seguir você';
+      case 'unfollowed': return 'Deixou de seguir você';
+      case 'you_followed': return 'Você começou a seguir';
+      case 'unfollowed_by_you': return 'Você deixou de seguir';
       case 'liked_post': return 'Curtiu sua foto';
       case 'unliked_post': return 'Deixou de curtir sua foto';
       case 'comment': return 'Comentou';
+      case 'bio_updated': return 'Bio atualizada';
+      case 'followers_count': return 'Mudança de seguidores';
+      case 'following_count': return 'Mudança de seguindo';
+      case 'posts_count': return 'Mudança de posts';
       default: return type;
     }
   }
@@ -243,6 +247,10 @@ class TimelineEvent {
       case 'liked_post': return '\u{2764}\u{FE0F}';
       case 'unliked_post': return '\u{1F941}';
       case 'comment': return '\u{1F4AC}';
+      case 'bio_updated': return '\u{1F4DD}';
+      case 'followers_count': return '\u{1F465}';
+      case 'following_count': return '\u{1F441}';
+      case 'posts_count': return '\u{1F4F8}';
       default: return '\u{1F514}';
     }
   }

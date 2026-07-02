@@ -2634,12 +2634,16 @@ class _InstagramMonitorScreenState extends State<InstagramMonitorScreen> with Ti
       );
     }
 
+    final itensVisiveis = _historico
+        .where((i) => !i.tipoAcao.endsWith('_collection_status'))
+        .toList();
+
     return ListView.separated(
       padding: const EdgeInsets.all(12),
-      itemCount: _historico.length + (_historicoTemMais ? 1 : 0),
+      itemCount: itensVisiveis.length + (_historicoTemMais ? 1 : 0),
       separatorBuilder: (_, __) => const SizedBox(height: 6),
       itemBuilder: (context, index) {
-        if (index == _historico.length) {
+        if (index == itensVisiveis.length) {
           return Padding(
             padding: const EdgeInsets.symmetric(vertical: 12),
             child: Center(
@@ -2654,7 +2658,7 @@ class _InstagramMonitorScreenState extends State<InstagramMonitorScreen> with Ti
                         await _loadHistorico(_currentUsername, resetar: false);
                       },
                       icon: const Icon(Icons.expand_more, size: 18),
-                      label: Text('Carregar mais (${_historico.length} de $_historicoTotal)'),
+                      label: Text('Carregar mais (${itensVisiveis.length} de $_historicoTotal)'),
                       style: OutlinedButton.styleFrom(
                         foregroundColor: const Color(0xFFE1306C),
                         side: const BorderSide(color: Color(0xFFE1306C)),
@@ -2664,7 +2668,7 @@ class _InstagramMonitorScreenState extends State<InstagramMonitorScreen> with Ti
             ),
           );
         }
-        return _buildHistoricoItem(_historico[index]);
+        return _buildHistoricoItem(itensVisiveis[index]);
       },
     );
   }
@@ -2702,6 +2706,10 @@ class _InstagramMonitorScreenState extends State<InstagramMonitorScreen> with Ti
         return 'Contagem seguindo';
       case 'posts_count':
         return 'Contagem posts';
+      case 'followers_collection_status':
+        return 'Status coleta seguidores';
+      case 'following_collection_status':
+        return 'Status coleta seguindo';
       default:
         return tipoAcao;
     }
