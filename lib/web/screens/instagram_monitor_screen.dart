@@ -2743,6 +2743,11 @@ class _InstagramMonitorScreenState extends State<InstagramMonitorScreen> with Ti
       }
     }
 
+    // Eventos de estatística do próprio perfil não têm "autor" relevante para exibir
+    final bool ehEventoEstat = const {
+      'bio_updated', 'followers_count', 'following_count', 'posts_count'
+    }.contains(item.tipoAcao);
+
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
@@ -2797,14 +2802,24 @@ class _InstagramMonitorScreenState extends State<InstagramMonitorScreen> with Ti
                       ),
                     ],
                   ),
-                  if (item.atorUsername != null && item.atorUsername!.isNotEmpty) ...[
+                  // Para eventos de interação: mostra quem fez a ação (seguiu, curtiu, comentou)
+                  if (!ehEventoEstat && item.atorUsername != null && item.atorUsername!.isNotEmpty) ...[
                     const SizedBox(height: 4),
                     Text(
                       '@${item.atorUsername}${item.atorFullName != null && item.atorFullName!.isNotEmpty ? '  ${item.atorFullName}' : ''}',
                       style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF262626)),
                     ),
                   ],
-                  if (item.texto != null && item.texto!.isNotEmpty) ...[
+                  // Para eventos de estatística: mostra a variação numérica (ex: "100 → 103")
+                  if (ehEventoEstat && item.texto != null && item.texto!.isNotEmpty) ...[
+                    const SizedBox(height: 4),
+                    Text(
+                      item.texto!.replaceAll(' -> ', ' → '),
+                      style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: cor),
+                    ),
+                  ],
+                  // Para comentários e interações com texto: exibe o conteúdo em caixa cinza
+                  if (!ehEventoEstat && item.texto != null && item.texto!.isNotEmpty) ...[
                     const SizedBox(height: 4),
                     Container(
                       width: double.infinity,
