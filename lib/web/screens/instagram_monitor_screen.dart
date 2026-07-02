@@ -2055,6 +2055,11 @@ class _InstagramMonitorScreenState extends State<InstagramMonitorScreen> with Ti
 
   Widget _buildEventCard(TimelineEvent event) {
     final color = _eventColor(event.type);
+    // Eventos de estatística do próprio perfil: "ator" é o perfil monitorado, não uma pessoa
+    final bool ehStatEvent = const {
+      'bio_updated', 'followers_count', 'following_count', 'posts_count'
+    }.contains(event.type);
+
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
       decoration: BoxDecoration(
@@ -2088,18 +2093,26 @@ class _InstagramMonitorScreenState extends State<InstagramMonitorScreen> with Ti
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Row(
-                    children: [
-                      Expanded(
-                        child: Text(
-                          '@${event.username}',
-                          style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14, color: Color(0xFF262626)),
+                  // Eventos de interação: mostra @username da pessoa que agiu
+                  if (!ehStatEvent)
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            '@${event.username}',
+                            style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14, color: Color(0xFF262626)),
+                          ),
                         ),
-                      ),
-                      Text(event.timeAgo, style: TextStyle(fontSize: 11, color: Colors.grey[500])),
-                    ],
-                  ),
-                  if (event.fullName.isNotEmpty) ...[
+                        Text(event.timeAgo, style: TextStyle(fontSize: 11, color: Colors.grey[500])),
+                      ],
+                    ),
+                  // Eventos de estatística: só mostra o horário no cabeçalho
+                  if (ehStatEvent)
+                    Align(
+                      alignment: Alignment.centerRight,
+                      child: Text(event.timeAgo, style: TextStyle(fontSize: 11, color: Colors.grey[500])),
+                    ),
+                  if (!ehStatEvent && event.fullName.isNotEmpty) ...[
                     const SizedBox(height: 2),
                     Text(event.fullName, style: TextStyle(fontSize: 12, color: Colors.grey[500])),
                   ],
@@ -2115,7 +2128,16 @@ class _InstagramMonitorScreenState extends State<InstagramMonitorScreen> with Ti
                       style: TextStyle(fontSize: 11, color: color, fontWeight: FontWeight.w600),
                     ),
                   ),
-                  if (event.text != null && event.text!.isNotEmpty) ...[
+                  // Variação numérica para eventos de estatística (ex: "100 → 103")
+                  if (ehStatEvent && event.text != null && event.text!.isNotEmpty) ...[
+                    const SizedBox(height: 6),
+                    Text(
+                      event.text!.replaceAll(' -> ', ' → '),
+                      style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: color),
+                    ),
+                  ],
+                  // Texto de comentário ou conteúdo para eventos de interação
+                  if (!ehStatEvent && event.text != null && event.text!.isNotEmpty) ...[
                     const SizedBox(height: 8),
                     Container(
                       width: double.infinity,
@@ -2525,11 +2547,31 @@ class _InstagramMonitorScreenState extends State<InstagramMonitorScreen> with Ti
         color = const Color(0xFFF77737);
         acao = 'bio atualizada';
         break;
+      case 'followers_count':
+        icon = Icons.people;
+        color = const Color(0xFF3897F0);
+        acao = 'mudança de seguidores';
+        break;
+      case 'following_count':
+        icon = Icons.visibility;
+        color = const Color(0xFF833AB4);
+        acao = 'mudança de seguindo';
+        break;
+      case 'posts_count':
+        icon = Icons.photo_camera;
+        color = const Color(0xFF405DE6);
+        acao = 'mudança de posts';
+        break;
       default:
         icon = Icons.info_outline;
         color = Colors.grey;
         acao = type.isNotEmpty ? type : 'evento';
     }
+
+    // Eventos de estatística do próprio perfil: não há "ator" relevante para exibir
+    final bool ehStatEvent = const {
+      'bio_updated', 'followers_count', 'following_count', 'posts_count'
+    }.contains(type);
 
     String dateStr = '';
     if (createdAt.isNotEmpty) {
@@ -2562,26 +2604,47 @@ class _InstagramMonitorScreenState extends State<InstagramMonitorScreen> with Ti
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                RichText(
-                  text: TextSpan(
-                    style: const TextStyle(fontSize: 13, color: Colors.black87),
-                    children: [
-                      TextSpan(
-                        text: fullName.isNotEmpty ? fullName : username,
-                        style: const TextStyle(fontWeight: FontWeight.w700),
-                      ),
-                      if (username.isNotEmpty && fullName != username) ...[
-                        const TextSpan(text: ' '),
+                // Eventos de interação: mostra quem fez a ação (nome + @username)
+                if (!ehStatEvent)
+                  RichText(
+                    text: TextSpan(
+                      style: const TextStyle(fontSize: 13, color: Colors.black87),
+                      children: [
                         TextSpan(
-                          text: '@$username',
-                          style: TextStyle(color: Colors.grey[600], fontSize: 11),
+                          text: fullName.isNotEmpty ? fullName : username,
+                          style: const TextStyle(fontWeight: FontWeight.w700),
                         ),
+                        if (username.isNotEmpty && fullName != username) ...[
+                          const TextSpan(text: ' '),
+                          TextSpan(
+                            text: '@$username',
+                            style: TextStyle(color: Colors.grey[600], fontSize: 11),
+                          ),
+                        ],
+                        TextSpan(text: '  $acao'),
                       ],
-                      TextSpan(text: '  $acao'),
-                    ],
+                    ),
                   ),
-                ),
-                if (commentText.isNotEmpty) ...[
+                // Eventos de estatística: mostra só a ação com variação numérica
+                if (ehStatEvent)
+                  RichText(
+                    text: TextSpan(
+                      style: const TextStyle(fontSize: 13, color: Colors.black87),
+                      children: [
+                        TextSpan(
+                          text: acao,
+                          style: TextStyle(fontWeight: FontWeight.w700, color: color),
+                        ),
+                        if (commentText.isNotEmpty)
+                          TextSpan(
+                            text: '  ${commentText.replaceAll(' -> ', ' → ')}',
+                            style: const TextStyle(fontWeight: FontWeight.w600),
+                          ),
+                      ],
+                    ),
+                  ),
+                // Texto de comentário (só para eventos de interação)
+                if (!ehStatEvent && commentText.isNotEmpty) ...[
                   const SizedBox(height: 4),
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
