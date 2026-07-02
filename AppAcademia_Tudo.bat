@@ -10,8 +10,6 @@ set "FLUTTER_CLIENT_DIR=%APP_ROOT%\task_manager_flutter"
 set "FLUTTER_BASE_DIR=%APP_ROOT%\task_manager_flutter_merged_final"
 set "FLUTTER_V003_DIR=%APP_ROOT%\task_manager_AppAcademiaV003"
 set "FLUTTER_DANIEL_DIR=%APP_ROOT%\task_manager_appDaniel"
-set "BOLSA_BACKEND_DIR=%APP_ROOT%\bolsa-app-backend"
-set "BOLSA_FLUTTER_DIR=%APP_ROOT%\bolsa-app-flutter"
 set "SELENIUM_DIR=%APP_ROOT%\.selenium-app-academia-e2e"
 set "DESKTOP=%USERPROFILE%\Desktop"
 set "ADB=%LOCALAPPDATA%\Android\Sdk\platform-tools\adb.exe"
@@ -45,8 +43,8 @@ echo ============================================
 echo  Hub Apps - Menu Unico
 echo ============================================
 echo.
-echo  [1] Subir backend + Abraco Contabilidade (Chrome) [mvn clean - Java 17]
-echo  [2] Reiniciar backend + Abraco (matar e subir) [mvn clean - Java 17]
+echo  [1] Subir backend + Abraco Contabilidade (Chrome)
+echo  [2] Reiniciar backend + Abraco (matar e subir)
 echo  [3] Rodar testes Selenium
 echo  [4] Rodar testes Flutter HTTP
 echo  [5] Rodar todos os testes
@@ -60,14 +58,13 @@ echo  [C] Subir um Flutter especifico no Chrome
 echo  [D] Subir um Flutter especifico no Android/simulador
 echo  [E] Subir tudo: backend + 2 Chrome + Meu Treino/Safra no BlueStacks
 echo  [F] Build 4 APKs com backend deployado + instalar no BlueStacks
-echo  [G] Build Android APK de um projeto (backend local - inclui Bolsa)
-echo  [H] Atualizar todos os repositorios (git pull - inclui Bolsa)
+echo  [G] Build Android APK de um projeto (backend local)
+echo  [H] Atualizar todos os repositorios (git pull)
 echo  [I] Subir Flutter (Chrome) apontando para Railway (sem backend local)
 echo  [J] Build AAB (Play Store) com backend Railway + auto-incrementa versao
 echo  [P] Build APK unico com backend deployado
-echo  [K] Commitar tudo nos repositorios (inclui Bolsa)
+echo  [K] Commitar tudo nos repositorios
 echo  [L] Subir Instagram API (Python local, porta 8500)
-echo  [R] Hot Restart Flutter (escolhe projeto - web e mobile)
 echo  [0] Sair
 echo.
 set "OP="
@@ -162,10 +159,6 @@ if /i "%OP%"=="L" (
     call :START_INSTAGRAM_API
     goto END_MENU
 )
-if /i "%OP%"=="R" (
-    call :HOT_RESTART_FLUTTER
-    goto END_MENU
-)
 goto MENU
 
 :END_MENU
@@ -191,12 +184,10 @@ if not exist "%FLUTTER_BASE_DIR%" (
     exit /b 1
 )
 if not exist "%FLUTTER_V003_DIR%" (
-    echo [ERRO] Pasta do Flutter V003 nao encontrada: %FLUTTER_V003_DIR%
-    exit /b 1
+    echo [AVISO] Pasta do Flutter V003 nao encontrada: %FLUTTER_V003_DIR%
 )
 if not exist "%FLUTTER_DANIEL_DIR%" (
-    echo [ERRO] Pasta do Flutter Daniel nao encontrada: %FLUTTER_DANIEL_DIR%
-    exit /b 1
+    echo [AVISO] Pasta do Flutter Daniel nao encontrada: %FLUTTER_DANIEL_DIR%
 )
 exit /b 0
 
@@ -218,72 +209,56 @@ timeout /t 2 /nobreak >nul
 exit /b 0
 
 :START_APP
-echo [DEBUG] Iniciando START_APP com parametro: %~1
 call :CHECK_PATHS
 if errorlevel 1 (
     echo [ERRO] CHECK_PATHS falhou - veja acima qual pasta nao existe.
     pause
     exit /b 1
 )
-echo [DEBUG] CHECK_PATHS passou.
 
 set "RESTART=%~1"
-if "%RESTART%"=="1" (
-    call :KILL_APP
-)
+if "%RESTART%"=="1" call :KILL_APP
 
 echo.
 echo [DIAG] JAVA_HOME = %JAVA_HOME%
 echo [DIAG] Java:
-"%JAVA_HOME%\bin\java.exe" -version
+java -version
 echo [DIAG] Dir: %BACKEND_DIR%
 
 echo.
-echo [1/2] Limpando cache Maven (mvn clean)...
-pushd "%BACKEND_DIR%"
+echo [1/3] Compilando backend...
+cd /d %BACKEND_DIR%
 echo [PRE-CLEAN] Removendo generated-sources e classes antigos para evitar bug MapStruct...
 rmdir /s /q "target\generated-sources" 2>nul
 rmdir /s /q "target\classes" 2>nul
-call mvnw.cmd clean
-set "CLEAN_ERR=%ERRORLEVEL%"
-popd
-if "%CLEAN_ERR%"=="1" (
-    echo [ERRO] mvn clean falhou. Verifique Java 17 e Maven.
+call mvnw.cmd clean package -DskipTests
+if errorlevel 1 (
+    echo.
+    echo [ERRO] Falha na compilacao do backend! Veja o erro acima.
     pause
     exit /b 1
 )
-echo [OK] mvn clean concluido.
+echo Backend compilado com sucesso.
 
-echo [2/2] Iniciando backend na porta %BACKEND_PORT% via spring-boot:run...
+echo.
+echo [2/3] Iniciando backend na porta %BACKEND_PORT%...
 echo ATENCAO: o Spring Boot leva ~45 segundos para subir.
 echo Acompanhe o progresso na janela "AppAcademia-Backend" que vai abrir.
 echo Aguarde a mensagem: Started AppAcademiaApplication
 echo.
 
-set "JVM_ARGS=-Djava.io.tmpdir=C:\Temp -Djdk.net.unixdomain.tmpdir=C:\Temp -Dspring.devtools.restart.enabled=false -DJWT_SECRET=%JWT_SECRET% -DACCOUNT_SECRET=%ACCOUNT_SECRET%"
-set "APP_ARGS=--server.port=%BACKEND_PORT% --server.address=0.0.0.0 --app.base-url=%ANDROID_BACKEND_URL%/boletobancos --spring.profiles.active=dev --spring.datasource.url=jdbc:postgresql://localhost:5432/boletobancos --spring.datasource.username=postgres --spring.datasource.password=admin --logging.level.root=INFO --logging.level.br.com.appAcademia=INFO"
-set "JAVA17_BIN=C:\Program Files\Java\jdk-17\bin"
-(
-echo @echo off
-echo set "JAVA_HOME=C:\Program Files\Java\jdk-17"
-echo set "PATH=C:\Program Files\Java\jdk-17\bin;%%PATH%%"
-echo cd /d "%BACKEND_DIR%"
-echo call mvnw.cmd spring-boot:run -Dmaven.test.skip=true "-Dspring-boot.run.jvmArguments=%JVM_ARGS%" "-Dspring-boot.run.arguments=%APP_ARGS%"
-echo pause
-) > "%TEMP%\run-backend.bat"
-start "AppAcademia-Backend" cmd /k "%TEMP%\run-backend.bat"
+start "AppAcademia-Backend" cmd /k "cd /d %BACKEND_DIR% && java -Djava.io.tmpdir=C:\Temp -Djdk.net.unixdomain.tmpdir=C:\Temp -Dspring.devtools.restart.enabled=false -DJWT_SECRET=%JWT_SECRET% -DACCOUNT_SECRET=%ACCOUNT_SECRET% -jar target\AppAcademia.jar --server.port=%BACKEND_PORT% --server.address=0.0.0.0 --app.base-url=%ANDROID_BACKEND_URL%/boletobancos --spring.profiles.active=dev --spring.datasource.url=jdbc:postgresql://localhost:5432/boletobancos --spring.datasource.username=postgres --spring.datasource.password=admin --logging.level.root=INFO --logging.level.br.com.appAcademia=INFO"
 
 echo.
 echo Aguardando backend ficar pronto (pode levar ate 2 minutos)...
 call :WAIT_BACKEND
 if errorlevel 1 (
     echo [ERRO] Backend nao respondeu em tempo. Verifique a porta 9001.
-    pause
     exit /b 1
 )
 
 echo.
-echo [2/2] Flutter no Chrome...
+echo [3/3] Flutter no Chrome...
 start "AppAcademia-Flutter" cmd /k "cd /d %FLUTTER_DIR% && flutter pub get && flutter run -d chrome"
 echo Flutter iniciando em janela propria.
 
@@ -396,10 +371,9 @@ echo  [1] Abraco Contabilidade (task_manager_flutter)
 echo  [2] Portal Contabilidade (task_manager_flutter_merged_final)
 echo  [3] Meu Treino (task_manager_AppAcademiaV003)
 echo  [4] Safra Direto (task_manager_appDaniel)
-echo  [5] Bolsa de Valores (bolsa-app-flutter)
 echo  [0] Voltar
-choice /c 123450 /n /m "Projeto: "
-if "%ERRORLEVEL%"=="6" exit /b 1
+choice /c 12340 /n /m "Projeto: "
+if "%ERRORLEVEL%"=="5" exit /b 1
 call :SET_FLUTTER_PROJECT_FULL %ERRORLEVEL%
 exit /b %ERRORLEVEL%
 
@@ -432,12 +406,6 @@ if "%PROJECT_KEY%"=="4" (
     set "PROJECT_DIR=%FLUTTER_DANIEL_DIR%"
     set "PROJECT_APK_PREFIX=SafraDireto"
     set "PROJECT_PACKAGE=%APP_PACKAGE_SAFRA%"
-)
-if "%PROJECT_KEY%"=="5" (
-    set "PROJECT_LABEL=Bolsa de Valores"
-    set "PROJECT_DIR=%BOLSA_FLUTTER_DIR%"
-    set "PROJECT_APK_PREFIX=Bolsa"
-    set "PROJECT_PACKAGE=br.com.bolsa.app"
 )
 if not defined PROJECT_DIR (
     echo [ERRO] Projeto invalido: %PROJECT_KEY%
@@ -562,14 +530,13 @@ echo Aguardando backend em %BACKEND_URL% ...
 set /a TENTATIVA=0
 :WAIT_BACKEND_LOOP
 set /a TENTATIVA+=1
-curl -s --max-time 3 -o nul -w "%%{http_code}" %BACKEND_URL%/boletobancos/healthz 2>nul | findstr /r "^200" >nul 2>&1
+curl -s --max-time 3 %BACKEND_URL%/boletobancos/rest/auth/login >nul 2>&1
 if not errorlevel 1 (
-    echo Backend OK na porta %BACKEND_PORT%.
+    echo Backend OK.
     exit /b 0
 )
 if %TENTATIVA% GEQ 24 (
-    echo [ERRO] Backend nao respondeu em 2 minutos. Verifique a janela AppAcademia-Backend.
-    pause
+    echo [ERRO] Backend nao respondeu em 2 minutos.
     exit /b 1
 )
 echo [%TENTATIVA%/24] Backend ainda iniciando... aguardando 5s
@@ -635,7 +602,7 @@ if /i "%MODE%"=="flutter" goto TEST_SUMMARY
 :TEST_SELENIUM
 echo.
 echo ============================================
-echo  Testes Selenium UI
+echo  Testes Selenium (Python + pytest)
 echo ============================================
 where python >nul 2>&1
 if errorlevel 1 (
@@ -643,24 +610,26 @@ if errorlevel 1 (
     set "SELENIUM_STATUS=ERRO-PYTHON"
     goto TEST_SUMMARY
 )
-rem — Verifica se Flutter Web ja esta rodando na porta 5200 (necessario para Selenium)
-set "FLUTTER_WEB_STARTED=0"
-curl -s --max-time 3 http://localhost:5200 >nul 2>&1
+where pytest >nul 2>&1
 if errorlevel 1 (
-    echo Flutter Web nao detectado na porta 5200 - iniciando automaticamente...
-    call :START_FLUTTER_WEB_HEADLESS
-    call :WAIT_FLUTTER_WEB
-    if errorlevel 1 (
-        echo [AVISO] Flutter Web nao subiu - testes Selenium vao falhar com ERR_CONNECTION_REFUSED
-        echo [AVISO] Inicie manualmente: flutter run -d web-server --web-port 5200
-    ) else (
-        set "FLUTTER_WEB_STARTED=1"
-    )
-) else (
-    echo Flutter Web ja esta rodando na porta 5200.
+    echo [AVISO] pytest nao encontrado. Instalando dependencias...
+    cd /d "%APP_ROOT%\tests_selenium"
+    python -m pip install -r requirements.txt --quiet
 )
-set "APP_ACADEMIA_BASE_URL=http://localhost:5200"
-powershell -NoProfile -ExecutionPolicy Bypass -File "%SELENIUM_DIR%\run_selenium_tests.ps1" -Browser chrome -Projects "client,base"
+rem — Verifica se backend esta respondendo (necessario para Selenium)
+curl -s --max-time 3 %BACKEND_URL%/boletobancos/rest/auth/login >nul 2>&1
+if errorlevel 1 (
+    echo [ERRO] Backend nao respondeu em %BACKEND_URL%
+    echo [AVISO] Certifique-se que backend esta rodando (opcao 1 ou 2)
+    set "SELENIUM_STATUS=ERRO-BACKEND"
+    goto TEST_SUMMARY
+)
+echo Backend respondendo OK em %BACKEND_URL%
+echo.
+echo Iniciando suite Selenium (12 testes, ~15 minutos)...
+echo.
+cd /d "%APP_ROOT%\tests_selenium"
+pytest test_*.py -v --tb=short
 if errorlevel 1 (
     set "SELENIUM_STATUS=FALHOU"
 ) else (
@@ -1098,7 +1067,7 @@ set "MSG=%DEFAULT_MSG%"
 set /p "MSG=Mensagem de commit (Enter para usar '%DEFAULT_MSG%'): "
 if "%MSG%"=="" set "MSG=%DEFAULT_MSG%"
 echo.
-set "REPOS=%APP_ROOT%\AppAcademia %APP_ROOT%\task_manager_flutter %APP_ROOT%\task_manager_flutter_merged_final %APP_ROOT%\task_manager_AppAcademiaV003 %APP_ROOT%\task_manager_appDaniel %APP_ROOT%\entusiasta-tributario %APP_ROOT%\bolsa-app-backend %APP_ROOT%\bolsa-app-flutter"
+set "REPOS=%APP_ROOT%\AppAcademia %APP_ROOT%\task_manager_flutter %APP_ROOT%\task_manager_flutter_merged_final %APP_ROOT%\task_manager_AppAcademiaV003 %APP_ROOT%\task_manager_appDaniel %APP_ROOT%\entusiasta-tributario"
 for %%R in (%REPOS%) do (
     if exist "%%R\.git" (
         echo ----------------------------------------
@@ -1139,7 +1108,7 @@ echo ============================================
 echo  Atualizando todos os repositorios
 echo ============================================
 echo.
-set "REPOS=%APP_ROOT%\AppAcademia %APP_ROOT%\task_manager_flutter %APP_ROOT%\task_manager_flutter_merged_final %APP_ROOT%\task_manager_AppAcademiaV003 %APP_ROOT%\task_manager_appDaniel %APP_ROOT%\entusiasta-tributario %APP_ROOT%\bolsa-app-backend %APP_ROOT%\bolsa-app-flutter"
+set "REPOS=%APP_ROOT%\AppAcademia %APP_ROOT%\task_manager_flutter %APP_ROOT%\task_manager_flutter_merged_final %APP_ROOT%\task_manager_AppAcademiaV003 %APP_ROOT%\task_manager_appDaniel %APP_ROOT%\entusiasta-tributario"
 for %%R in (%REPOS%) do (
     if exist "%%R\.git" (
         echo ----------------------------------------
@@ -1164,121 +1133,12 @@ echo  Todos os repositorios atualizados!
 echo ============================================
 exit /b 0
 
-
 :RUN_ALL
 call :KILL_APP
 call :START_ALL_WITH_ANDROID
 if errorlevel 1 exit /b 1
 call :RUN_TESTS all
 if errorlevel 1 exit /b 1
-exit /b 0
-
-:GIT_PULL_COMMIT_PUSH_ALL
-echo.
-echo ============================================
-echo  Git: Pull + Commit + Push (tudo junto)
-echo ============================================
-echo.
-set "DEFAULT_MSG=atualizacao geral"
-set "MSG=%DEFAULT_MSG%"
-set /p "MSG=Mensagem de commit (Enter para usar '%DEFAULT_MSG%'): "
-if "%MSG%"=="" set "MSG=%DEFAULT_MSG%"
-echo.
-set "REPOS=%APP_ROOT%\AppAcademia %APP_ROOT%\task_manager_flutter %APP_ROOT%\task_manager_flutter_merged_final %APP_ROOT%\task_manager_AppAcademiaV003 %APP_ROOT%\task_manager_appDaniel %APP_ROOT%\entusiasta-tributario %APP_ROOT%\bolsa-app-backend %APP_ROOT%\bolsa-app-flutter"
-for %%R in (%REPOS%) do (
-    if exist "%%R\.git" (
-        echo ----------------------------------------
-        echo Repositorio: %%~nxR
-        echo ----------------------------------------
-        cd /d "%%R"
-        git checkout main 2>nul || git checkout master 2>nul
-
-        echo [1/3] Fazendo pull...
-        git pull --rebase --autostash
-        if errorlevel 1 (
-            echo [ATENCAO] Falha ao fazer pull em %%~nxR
-            echo.
-            goto NEXT_REPO
-        )
-
-        set "HAS_CHANGES=0"
-        for /f "tokens=*" %%C in ('git status --porcelain 2^>nul') do set "HAS_CHANGES=1"
-
-        if "!HAS_CHANGES!"=="1" (
-            echo [2/3] Commitando...
-            git add -A
-            git commit -m "%MSG%"
-            if errorlevel 1 (
-                echo [ERRO] Falha ao commitar %%~nxR
-            ) else (
-                echo [3/3] Fazendo push...
-                git push origin main 2>nul || git push origin master 2>nul
-                if errorlevel 1 (
-                    echo [ERRO] Falha ao push %%~nxR
-                ) else (
-                    echo OK - pull + commit + push realizado
-                )
-            )
-        ) else (
-            echo [2/3] Nada para commitar (ja esta atualizado)
-        )
-
-        :NEXT_REPO
-        echo.
-    ) else (
-        echo [AVISO] %%R nao e um repositorio git
-        echo.
-    )
-)
-cd /d "%APP_ROOT%"
-echo ============================================
-echo  Git: Pull + Commit + Push finalizado!
-echo ============================================
-exit /b 0
-
-:START_BOLSA_APP
-echo.
-echo ============================================
-echo  Subir Backend Bolsa (9002) + Flutter Web
-echo ============================================
-echo.
-if not exist "%BOLSA_BACKEND_DIR%" (
-    echo [ERRO] Pasta do backend Bolsa nao encontrada: %BOLSA_BACKEND_DIR%
-    echo Verifique se o repositorio foi clonado em %BOLSA_BACKEND_DIR%
-    pause
-    exit /b 1
-)
-if not exist "%BOLSA_FLUTTER_DIR%" (
-    echo [ERRO] Pasta do Flutter Bolsa nao encontrada: %BOLSA_FLUTTER_DIR%
-    echo Verifique se o repositorio foi clonado em %BOLSA_FLUTTER_DIR%
-    pause
-    exit /b 1
-)
-
-echo [1/2] Iniciando backend Bolsa na porta 9002 via spring-boot:run...
-echo ATENCAO: o Spring Boot leva ~30 segundos para subir.
-echo.
-
-(
-echo @echo off
-echo cd /d "%BOLSA_BACKEND_DIR%"
-echo mvnw.cmd spring-boot:run -Dmaven.test.skip=true "-Dspring-boot.run.jvmArguments=-Djava.io.tmpdir=C:\Temp -Djdk.net.unixdomain.tmpdir=C:\Temp -Dspring.devtools.restart.enabled=false" "-Dspring-boot.run.arguments=--server.port=9002 --server.address=0.0.0.0"
-) > "%TEMP%\run-bolsa-backend.bat"
-start "Bolsa-Backend" cmd /k "%TEMP%\run-bolsa-backend.bat"
-
-echo Backend Bolsa iniciando na porta 9002...
-timeout /t 3 /nobreak >nul
-
-start "Bolsa-Flutter" cmd /k "cd /d %BOLSA_FLUTTER_DIR% && flutter pub get && flutter run -d chrome --web-port 8085 --dart-define=BACKEND_URL=http://127.0.0.1:9002"
-echo Flutter Bolsa iniciando no Chrome na porta 8085...
-
-echo.
-echo ============================================
-echo  Bolsa App iniciada com sucesso!
-echo ============================================
-echo Backend (Spring Boot) : http://localhost:9002
-echo Flutter (Chrome)      : http://localhost:8085
-echo.
 exit /b 0
 
 :DETECT_HOST_IP
@@ -1326,37 +1186,4 @@ echo.
 start "Instagram-API" cmd /k "title Instagram API - Porta 8500 && cd /d %IG_DIR% && call venv\Scripts\activate.bat && python server.py"
 echo Instagram API iniciado em http://localhost:8500
 echo Endpoints: /health, /profile, /posts, /likers, /followers, /following
-exit /b 0
-
-:HOT_RESTART_FLUTTER
-echo.
-echo ============================================
-echo  Hot Restart Flutter
-echo ============================================
-echo  O app precisa estar rodando (opcao 1, C ou D).
-echo  Funciona em Chrome (web) e Android/mobile.
-echo.
-echo Qual janela Flutter quer reiniciar?
-echo  [1] AppAcademia-Flutter        (opcao 1/2)
-echo  [2] AppAcademia-Abraco-Web     (opcao C - Abraco Chrome)
-echo  [3] AppAcademia-Portal-Web     (opcao C - Portal Chrome)
-echo  [4] AppAcademia-Abraco-Android (opcao D - Abraco Android)
-echo  [5] AppAcademia-Portal-Android (opcao D - Portal Android)
-echo  [6] Bolsa-Flutter              (Bolsa de Valores)
-echo  [0] Voltar
-echo.
-choice /c 1234560 /n /m "Janela: "
-set "HR_ERR=%ERRORLEVEL%"
-if "%HR_ERR%"=="7" exit /b 0
-
-if "%HR_ERR%"=="1" set "WIN_TITLE=AppAcademia-Flutter"
-if "%HR_ERR%"=="2" set "WIN_TITLE=AppAcademia-Abraco Contabilidade-Web"
-if "%HR_ERR%"=="3" set "WIN_TITLE=AppAcademia-Portal-Web"
-if "%HR_ERR%"=="4" set "WIN_TITLE=AppAcademia-Abraco Contabilidade-Android"
-if "%HR_ERR%"=="5" set "WIN_TITLE=AppAcademia-Portal-Android"
-if "%HR_ERR%"=="6" set "WIN_TITLE=Bolsa-Flutter"
-
-echo.
-echo Enviando Hot Restart para: %WIN_TITLE%
-powershell -NoProfile -ExecutionPolicy Bypass -Command "$wshell = New-Object -ComObject wscript.shell; if ($wshell.AppActivate('%WIN_TITLE%')) { Start-Sleep -Milliseconds 500; $wshell.SendKeys('R'); Write-Host 'Hot Restart enviado com sucesso!' } else { Write-Host '[ERRO] Janela nao encontrada: %WIN_TITLE%'; Write-Host 'Verifique se o Flutter esta rodando nessa janela.' }"
 exit /b 0
