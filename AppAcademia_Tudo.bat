@@ -241,6 +241,9 @@ echo [DIAG] Dir: %BACKEND_DIR%
 echo.
 echo [1/2] Limpando cache Maven (mvn clean)...
 pushd "%BACKEND_DIR%"
+echo [PRE-CLEAN] Removendo generated-sources e classes antigos para evitar bug MapStruct...
+rmdir /s /q "target\generated-sources" 2>nul
+rmdir /s /q "target\classes" 2>nul
 call mvnw.cmd clean
 set "CLEAN_ERR=%ERRORLEVEL%"
 popd

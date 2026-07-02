@@ -738,139 +738,116 @@ class _WindowsCalendarScreenState extends State<WindowsCalendarScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: GridColors.divider,
-      appBar: AppBar(
-        backgroundColor: GridColors.primary,
-        elevation: 0,
-        automaticallyImplyLeading: false,
-        titleSpacing: 12,
-        title: const Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(Icons.calendar_month_rounded, color: Colors.white, size: 20),
-            SizedBox(width: 8),
-            Flexible(
-              child: Text(
-                'Calendário Financeiro',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 16,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                maxLines: 1,
-              ),
-            ),
-          ],
-        ),
-        actions: const [
-          AppBarActions(),
-          SizedBox(width: 4),
-        ],
-        // Linha de formato: [Dia | Mês | Ano centralizados] + [Hoje à direita]
-        bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(44),
-          child: Container(
-            color: GridColors.primary,
-            padding: const EdgeInsets.fromLTRB(8, 4, 8, 6),
-            child: Row(
-              children: [
-                // Botão refresh à esquerda — fixo 68px para não sobrepor toggles
-                SizedBox(
-                  width: 68,
-                  child: _loadingMonth
-                      ? const Center(
-                          child: SizedBox(
-                            width: 16,
-                            height: 16,
-                            child: CircularProgressIndicator(
-                              color: Colors.white,
-                              strokeWidth: 2,
-                            ),
-                          ),
-                        )
-                      : IconButton(
-                          icon: const Icon(Icons.refresh,
-                              color: Colors.white, size: 20),
-                          tooltip: 'Atualizar',
-                          padding: EdgeInsets.zero,
-                          onPressed: () => _loadMonthMarkers(_currentMonth),
-                        ),
-                ),
-                // Toggles centralizados sem sobreposição
-                Expanded(
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      _buildToggleBtn(
-                        icon: Icons.calendar_view_day,
-                        label: 'Dia',
-                        active: _viewMode == 'day',
-                        onTap: () {
-                          final day = _selectedDay ?? DateTime.now();
-                          setState(() {
-                            _viewMode = 'day';
-                            _selectedDay = day;
-                            _currentMonth = DateTime(day.year, day.month);
-                          });
-                          _loadMonthMarkers(_currentMonth);
-                          _loadDayData(day);
-                        },
-                      ),
-                      const SizedBox(width: 6),
-                      _buildToggleBtn(
-                        icon: Icons.calendar_view_month,
-                        label: 'Mês',
-                        active: _viewMode == 'month',
-                        onTap: () => setState(() => _viewMode = 'month'),
-                      ),
-                      const SizedBox(width: 6),
-                      _buildToggleBtn(
-                        icon: Icons.calendar_month,
-                        label: 'Ano',
-                        active: _viewMode == 'year',
-                        onTap: () {
-                          setState(() => _viewMode = 'year');
-                          _autoCarregarResumoAno(_currentMonth.year);
-                        },
-                      ),
-                    ],
-                  ),
-                ),
-                // Hoje alinhado à direita — nunca sobrepõe os toggles
-                TextButton(
-                  style: TextButton.styleFrom(
-                    backgroundColor: Colors.white24,
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 10, vertical: 4),
-                    shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(6)),
-                    minimumSize: Size.zero,
-                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                  ),
-                  onPressed: () {
-                    final today = DateTime.now();
-                    setState(() {
-                      _selectedDay = today;
-                      _currentMonth = DateTime(today.year, today.month);
-                    });
-                    _loadMonthMarkers(_currentMonth);
-                    _loadDayData(today);
-                  },
-                  child: const Text('Hoje',
-                      style: TextStyle(
-                          fontWeight: FontWeight.bold, fontSize: 13)),
-                ),
-              ],
-            ),
-          ),
-        ),
+      appBar: const SimpleAppBar(
+        title: 'Calendário Financeiro',
+        icon: Icons.calendar_month_rounded,
       ),
-      body: _viewMode == 'day'
-          ? _buildSingleDayView()
-          : _viewMode == 'year'
-              ? _buildMonthView()
-              : _buildDayView(),
+      body: Column(
+        children: [
+          _buildToolbar(),
+          Expanded(
+            child: _viewMode == 'day'
+                ? _buildSingleDayView()
+                : _viewMode == 'year'
+                    ? _buildMonthView()
+                    : _buildDayView(),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildToolbar() {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        border: Border(bottom: BorderSide(color: GridColors.divider)),
+      ),
+      padding: const EdgeInsets.fromLTRB(8, 6, 8, 6),
+      child: Row(
+        children: [
+          // Refresh
+          SizedBox(
+            width: 40,
+            child: _loadingMonth
+                ? const Center(
+                    child: SizedBox(
+                      width: 16,
+                      height: 16,
+                      child: CircularProgressIndicator(
+                        color: GridColors.primary,
+                        strokeWidth: 2,
+                      ),
+                    ),
+                  )
+                : IconButton(
+                    icon: const Icon(Icons.refresh,
+                        color: GridColors.primary, size: 20),
+                    tooltip: 'Atualizar',
+                    padding: EdgeInsets.zero,
+                    onPressed: () => _loadMonthMarkers(_currentMonth),
+                  ),
+          ),
+          const SizedBox(width: 8),
+          // Toggles
+          _buildToggleBtn(
+            icon: Icons.calendar_view_day,
+            label: 'Dia',
+            active: _viewMode == 'day',
+            onTap: () {
+              final day = _selectedDay ?? DateTime.now();
+              setState(() {
+                _viewMode = 'day';
+                _selectedDay = day;
+                _currentMonth = DateTime(day.year, day.month);
+              });
+              _loadMonthMarkers(_currentMonth);
+              _loadDayData(day);
+            },
+          ),
+          const SizedBox(width: 6),
+          _buildToggleBtn(
+            icon: Icons.calendar_view_month,
+            label: 'Mês',
+            active: _viewMode == 'month',
+            onTap: () => setState(() => _viewMode = 'month'),
+          ),
+          const SizedBox(width: 6),
+          _buildToggleBtn(
+            icon: Icons.calendar_month,
+            label: 'Ano',
+            active: _viewMode == 'year',
+            onTap: () {
+              setState(() => _viewMode = 'year');
+              _autoCarregarResumoAno(_currentMonth.year);
+            },
+          ),
+          const Spacer(),
+          // Hoje
+          TextButton(
+            style: TextButton.styleFrom(
+              backgroundColor: GridColors.primary,
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(6)),
+              minimumSize: Size.zero,
+              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+            ),
+            onPressed: () {
+              final today = DateTime.now();
+              setState(() {
+                _selectedDay = today;
+                _currentMonth = DateTime(today.year, today.month);
+              });
+              _loadMonthMarkers(_currentMonth);
+              _loadDayData(today);
+            },
+            child: const Text('Hoje',
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+          ),
+        ],
+      ),
     );
   }
 
@@ -886,20 +863,22 @@ class _WindowsCalendarScreenState extends State<WindowsCalendarScreen> {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
         decoration: BoxDecoration(
-          color: active ? Colors.white : Colors.transparent,
+          color: active ? GridColors.primarySoft : Colors.transparent,
           borderRadius: BorderRadius.circular(6),
-          border: Border.all(color: Colors.white54),
+          border: Border.all(
+              color: active ? GridColors.primary : GridColors.divider),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
             Icon(icon,
-                size: 16, color: active ? GridColors.error : Colors.white),
+                size: 16,
+                color: active ? GridColors.primary : GridColors.textSecondary),
             const SizedBox(width: 4),
             Text(
               label,
               style: TextStyle(
-                color: active ? GridColors.error : Colors.white,
+                color: active ? GridColors.primary : GridColors.textSecondary,
                 fontSize: 12,
                 fontWeight: FontWeight.w600,
               ),

@@ -573,29 +573,29 @@ class _WindowsCalendarScreenState extends State<WindowsCalendarScreen> {
     return Scaffold(
       backgroundColor: _grey,
       appBar: widget.useLightHeader
-          ? SimpleAppBar(
+          ? const SimpleAppBar(
               title: 'Calendário Financeiro',
               icon: Icons.calendar_month,
-              bottom: PreferredSize(
-                preferredSize: const Size.fromHeight(52),
-                child: _buildToolbar(),
-              ),
             )
-          : UserBannerAppBar(
+          : const UserBannerAppBar(
               screenTitle: 'Calendário Financeiro',
-              customBottom: PreferredSize(
-                preferredSize: const Size.fromHeight(52),
-                child: _buildToolbar(),
-              ),
             ),
-      body: _viewMode == 'day' ? _buildDayView() : _buildMonthView(),
+      body: Column(
+        children: [
+          _buildToolbar(),
+          Expanded(child: _viewMode == 'day' ? _buildDayView() : _buildMonthView()),
+        ],
+      ),
     );
   }
 
   // ── Barra de toggle Dia/Mês + Hoje + refresh (título agora no UserBannerAppBar) ──
   Widget _buildToolbar() {
     return Container(
-      color: _red,
+      decoration: BoxDecoration(
+        color: Colors.white,
+        border: Border(bottom: BorderSide(color: _greyBorder)),
+      ),
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
       child: Row(
         children: [
@@ -614,10 +614,10 @@ class _WindowsCalendarScreenState extends State<WindowsCalendarScreen> {
             onTap: () => setState(() => _viewMode = 'month'),
           ),
           const Spacer(),
-          // Right: Hoje button
+          // Hoje button
           TextButton(
             style: TextButton.styleFrom(
-              backgroundColor: Colors.white24,
+              backgroundColor: _red,
               foregroundColor: Colors.white,
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
               shape: RoundedRectangleBorder(
@@ -646,7 +646,7 @@ class _WindowsCalendarScreenState extends State<WindowsCalendarScreen> {
   Widget _buildRefreshBtn() {
     final carregando = _loadingDay || _loadingMonth;
     return Material(
-      color: Colors.white24,
+      color: _redLight,
       shape: const CircleBorder(),
       child: InkWell(
         customBorder: const CircleBorder(),
@@ -666,9 +666,9 @@ class _WindowsCalendarScreenState extends State<WindowsCalendarScreen> {
                     width: 16,
                     height: 16,
                     child: CircularProgressIndicator(
-                        strokeWidth: 2, color: Colors.white),
+                        strokeWidth: 2, color: _red),
                   )
-                : const Icon(Icons.refresh, size: 20, color: Colors.white),
+                : const Icon(Icons.refresh, size: 20, color: _red),
           ),
         ),
       ),
@@ -801,19 +801,19 @@ class _WindowsCalendarScreenState extends State<WindowsCalendarScreen> {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
         decoration: BoxDecoration(
-          color: active ? Colors.white : Colors.transparent,
+          color: active ? _redLight : Colors.transparent,
           borderRadius: BorderRadius.circular(6),
-          border: Border.all(color: Colors.white54),
+          border: Border.all(color: active ? _red : _greyBorder),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(icon, size: 16, color: active ? _red : Colors.white),
+            Icon(icon, size: 16, color: active ? _red : _dark),
             const SizedBox(width: 4),
             Text(
               label,
               style: TextStyle(
-                color: active ? _red : Colors.white,
+                color: active ? _red : _dark,
                 fontSize: 12,
                 fontWeight: FontWeight.w600,
               ),
