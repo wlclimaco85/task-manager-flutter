@@ -186,9 +186,7 @@ if not exist "%FLUTTER_BASE_DIR%" (
 if not exist "%FLUTTER_V003_DIR%" (
     echo [AVISO] Pasta do Flutter V003 nao encontrada: %FLUTTER_V003_DIR%
 )
-if not exist "%FLUTTER_DANIEL_DIR%" (
-    echo [AVISO] Pasta do Flutter Daniel nao encontrada: %FLUTTER_DANIEL_DIR%
-)
+rem Ignorar FLUTTER_DANIEL_DIR - projeto fora do escopo
 exit /b 0
 
 :CHECK_SELENIUM
