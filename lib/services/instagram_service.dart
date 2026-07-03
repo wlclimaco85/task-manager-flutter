@@ -212,8 +212,8 @@ class TimelineEvent {
   factory TimelineEvent.fromJson(Map<String, dynamic> json) {
     return TimelineEvent(
       type: json['type'] ?? '',
-      username: json['username'] ?? '',
-      fullName: json['full_name'] ?? '',
+      username: json['atorUsername'] ?? json['username'] ?? '',
+      fullName: json['atorFullName'] ?? json['full_name'] ?? '',
       date: json['date'] ?? '',
       postId: json['post_id'],
       text: json['text'],
