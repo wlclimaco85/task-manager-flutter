@@ -672,6 +672,17 @@ class _GridFormDialogState extends State<GridFormDialog> {
         }
       }
 
+      // Guarda: impede envio JSON quando há campo de arquivo obrigatório sem
+      // arquivo selecionado — o validator do FormField não re-executa aqui.
+      for (final c
+          in widget.fieldConfigs.where((x) => x.fieldType == FieldType.file)) {
+        if (_req(c) && (_fileCache[c.fieldName]?.isEmpty ?? true)) {
+          _snack('${c.label} é obrigatório — selecione um arquivo antes de salvar.');
+          if (mounted) setState(() => _saving = false);
+          return;
+        }
+      }
+
       dynamic resp;
       if (filesToUpload.isNotEmpty) {
         _prepareMultipartFields(formData, filesToUpload);

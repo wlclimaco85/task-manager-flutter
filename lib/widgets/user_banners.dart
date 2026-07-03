@@ -333,13 +333,21 @@ class _UserBannerAppBarState extends State<UserBannerAppBar> {
   String _getCompanyName() {
     return AuthUtility.userInfo?.login?.empresa?.nome ??
         AuthUtility.userInfo?.login?.parceiro?.nome ??
-        "Empresa";
+        '';
   }
 
   String _getUserName() {
     return AuthUtility.userInfo?.login?.nome ??
         AuthUtility.userInfo?.data?.codDadosPessoal?.nome ??
-        "Usuário";
+        '';
+  }
+
+  String _avatarInitial() {
+    final email = AuthUtility.userInfo?.login?.email ?? '';
+    if (email.isNotEmpty) return email[0].toUpperCase();
+    final name = _getUserName();
+    if (name.isNotEmpty) return name[0].toUpperCase();
+    return 'U';
   }
 
   @override
@@ -416,7 +424,7 @@ class _UserBannerAppBarState extends State<UserBannerAppBar> {
                       },
                       child: CircleAvatar(
                         radius: 16,
-                        backgroundColor: Colors.white,
+                        backgroundColor: GridColors.primary,
                         child: _getUserAvatar().isNotEmpty
                             ? ClipOval(
                                 child: Image.memory(
@@ -424,20 +432,24 @@ class _UserBannerAppBarState extends State<UserBannerAppBar> {
                                   width: 32,
                                   height: 32,
                                   fit: BoxFit.cover,
-                                  // CORREÇÃO: Adicionar errorBuilder para evitar NaN
-                                  errorBuilder: (context, error, stackTrace) {
-                                    return const Icon(
-                                      Icons.person,
-                                      color: GridColors.primary,
-                                      size: 16,
-                                    );
-                                  },
+                                  errorBuilder: (context, error, stackTrace) =>
+                                      Text(
+                                    _avatarInitial(),
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 14,
+                                    ),
+                                  ),
                                 ),
                               )
-                            : const Icon(
-                                Icons.person,
-                                color: GridColors.primary,
-                                size: 16,
+                            : Text(
+                                _avatarInitial(),
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 14,
+                                ),
                               ),
                       ),
                     ),
@@ -449,7 +461,9 @@ class _UserBannerAppBarState extends State<UserBannerAppBar> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            _getUserName(),
+                            _getUserName().isNotEmpty
+                                ? _getUserName()
+                                : (AuthUtility.userInfo?.login?.email ?? ''),
                             style: const TextStyle(
                               color: GridColors.textPrimary,
                               fontWeight: FontWeight.bold,
@@ -458,15 +472,16 @@ class _UserBannerAppBarState extends State<UserBannerAppBar> {
                             ),
                             maxLines: 1,
                           ),
-                          Text(
-                            _getCompanyName(),
-                            style: TextStyle(
-                              color: GridColors.textPrimary.withValues(alpha: 0.75),
-                              fontSize: 11,
-                              overflow: TextOverflow.ellipsis,
+                          if (_getCompanyName().isNotEmpty)
+                            Text(
+                              _getCompanyName(),
+                              style: TextStyle(
+                                color: GridColors.textPrimary.withValues(alpha: 0.75),
+                                fontSize: 11,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                              maxLines: 1,
                             ),
-                            maxLines: 1,
-                          ),
                         ],
                       ),
                     ),
