@@ -330,7 +330,7 @@ class _GridListScreenState extends State<GridListScreen> {
         // Quando backend retorna array direto (List), acessar rawBody['data']
         // lançaria "type 'String' is not a subtype of type 'int' of 'index'".
         final body = rawBody is Map
-            ? Map<String, dynamic>.from(rawBody as Map)
+            ? Map<String, dynamic>.from(rawBody)
             : <String, dynamic>{};
         final list = rawBody is List
             ? extractAnyList(rawBody)

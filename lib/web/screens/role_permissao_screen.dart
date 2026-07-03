@@ -34,12 +34,12 @@ class _RolePermissaoScreenState extends State<RolePermissaoScreen> {
     try {
       final resPermissoes = await http.get(
         Uri.parse('${ApiLinks.baseUrl}/api/role-permissao/all'),
-        headers: {'Authorization': 'Bearer $token', 'X-Tenant-ID': '$tenantId'},
+        headers: {'Authorization': 'Bearer $token', 'X-Tenant-ID': tenantId},
       );
 
       final resRoles = await http.get(
         Uri.parse('${ApiLinks.baseUrl}/api/role'),
-        headers: {'Authorization': 'Bearer $token', 'X-Tenant-ID': '$tenantId'},
+        headers: {'Authorization': 'Bearer $token', 'X-Tenant-ID': tenantId},
       );
 
       if (resPermissoes.statusCode == 200 && resRoles.statusCode == 200) {
@@ -72,7 +72,7 @@ class _RolePermissaoScreenState extends State<RolePermissaoScreen> {
         Uri.parse('${ApiLinks.baseUrl}/api/role-permissao/$roleId/$telaNome'),
         headers: {
           'Authorization': 'Bearer $token',
-          'X-Tenant-ID': '$tenantId',
+          'X-Tenant-ID': tenantId,
           'Content-Type': 'application/json',
         },
         body: jsonEncode({campo: valor}),

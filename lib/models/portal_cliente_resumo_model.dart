@@ -1,5 +1,4 @@
 // lib/models/portal_cliente_resumo_model.dart
-import 'package:flutter/material.dart';
 
 /// Model para resumo do Portal do Cliente
 /// Espelha PortalClienteResumoDto do backend

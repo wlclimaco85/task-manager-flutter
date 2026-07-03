@@ -3,7 +3,6 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:task_manager_flutter/models/auth_utility.dart';
 import 'package:task_manager_flutter/models/login_model.dart';
-import 'package:task_manager_flutter/models/role_model.dart';
 import 'package:task_manager_flutter/utils/menu_config.dart';
 import 'package:task_manager_flutter/widgets/app_sidebar.dart';
 

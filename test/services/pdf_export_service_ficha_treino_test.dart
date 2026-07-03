@@ -1,6 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:pdf/pdf.dart';
-import '../../lib/services/pdf_export_service.dart';
+import 'package:task_manager_flutter/services/pdf_export_service.dart';
 import '../fixtures/sessao_treino_fixtures.dart';
 
 void main() {

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../widgets/generic_grid_windows_screen.dart'
-    show CustomAction, FieldConfigWindows, FieldType, SecurityCheck;
+    show CustomAction, FieldConfigWindows, FieldType, FileConfig, SecurityCheck;
 import '../../../customization/dynamic_grid_windows_screen.dart'
     hide SecurityCheck;
 import '../../../models/login_model.dart';
@@ -15,7 +15,8 @@ class WindowsLoginGridScreen extends StatelessWidget {
   const WindowsLoginGridScreen({super.key, required this.hasPermission});
 
   static Future<List<Map<String, dynamic>>> loadRoles() async {
-    final response = await NetworkCaller().getRequest('${ApiLinks.baseUrl}/api/role/disponiveis');
+    final response = await NetworkCaller()
+        .getRequest('${ApiLinks.baseUrl}/api/role/disponiveis');
     if (response.isSuccess && response.body != null) {
       final dynamic body = response.body;
       List lista = [];
@@ -24,18 +25,16 @@ class WindowsLoginGridScreen extends StatelessWidget {
       } else if (body is Map && body['data'] is List) {
         lista = body['data'] as List;
       }
-      return lista
-          .map((e) {
-                final desc = e['description']?.toString();
-                final key  = e['key']?.toString() ?? e['name']?.toString();
-                final label = (desc != null && desc.isNotEmpty)
-                    ? desc
-                    : (key != null && key.isNotEmpty)
-                        ? key
-                        : 'Role #${e['id']}';
-                return {'value': e['id'].toString(), 'label': label};
-              })
-          .toList();
+      return lista.map((e) {
+        final desc = e['description']?.toString();
+        final key = e['key']?.toString() ?? e['name']?.toString();
+        final label = (desc != null && desc.isNotEmpty)
+            ? desc
+            : (key != null && key.isNotEmpty)
+                ? key
+                : 'Role #${e['id']}';
+        return {'value': e['id'].toString(), 'label': label};
+      }).toList();
     }
     return [];
   }
@@ -63,7 +62,8 @@ class WindowsLoginGridScreen extends StatelessWidget {
   }
 
   static Future<List<Map<String, dynamic>>> _loadAplicativos() async {
-    final response = await NetworkCaller().getRequest('${ApiLinks.baseUrl}/api/aplicativo');
+    final response =
+        await NetworkCaller().getRequest('${ApiLinks.baseUrl}/api/aplicativo');
     if (response.isSuccess && response.body != null) {
       final lista = response.body!['data']['dados'] as List;
       return lista
@@ -81,9 +81,53 @@ class WindowsLoginGridScreen extends StatelessWidget {
       fromJson: (json) => Login.fromJson(json),
       toJson: (a) => a.toJson(),
       extraParams: const {'skipTenantParceiro': 'true'},
+      additionalFormData: const {'trocarSenhaProximoLogin': true},
       fieldOverrides: const [
         // Dropdowns reais — os campos FK (empresa_id, parceiro_id, aplicativo_id)
         // e datas automáticas são ocultados automaticamente pelo _convert
+        FieldConfigWindows(
+          label: 'Tipo Login',
+          fieldName: 'tipoLogin',
+          isInForm: false,
+          isInGrid: false,
+        ),
+        FieldConfigWindows(
+          label: 'Trocar Senha',
+          fieldName: 'trocarSenhaProximoLogin',
+          isInForm: false,
+          isInGrid: false,
+        ),
+        FieldConfigWindows(
+          label: 'Ativo',
+          fieldName: 'ativo',
+          isInForm: false,
+          isInGrid: false,
+        ),
+        FieldConfigWindows(
+          label: 'Criado em',
+          fieldName: 'dhCreatedAt',
+          isInForm: false,
+          isInGrid: false,
+        ),
+        FieldConfigWindows(
+          label: 'Atualizado em',
+          fieldName: 'dhUpdatedAt',
+          isInForm: false,
+          isInGrid: false,
+        ),
+        FieldConfigWindows(
+          label: 'Foto',
+          fieldName: 'foto',
+          icon: Icons.photo_camera,
+          fieldType: FieldType.file,
+          fileConfig: FileConfig(
+            allowedExtensions: ['jpg', 'jpeg', 'png', 'webp'],
+            maxFileSize: 2 * 1024 * 1024,
+          ),
+          isInForm: true,
+          isInGrid: false,
+          isFilterable: false,
+        ),
         FieldConfigWindows(
           label: 'Roles',
           fieldName: 'roles',

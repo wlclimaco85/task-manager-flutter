@@ -2,7 +2,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:task_manager_flutter/models/portal_cliente_resumo_model.dart';
-import 'package:task_manager_flutter/services/portal_cliente_caller.dart';
 import 'package:task_manager_flutter/screens/contabil/portal_cliente_resumo_screen.dart';
 
 Widget _wrap(Widget child) {

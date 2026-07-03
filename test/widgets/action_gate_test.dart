@@ -4,7 +4,6 @@ import 'package:task_manager_flutter/models/auth_utility.dart';
 import 'package:task_manager_flutter/models/login_model.dart';
 import 'package:task_manager_flutter/models/parceiro_model.dart';
 import 'package:task_manager_flutter/models/role_model.dart';
-import 'package:task_manager_flutter/utils/permissao_helper.dart';
 import 'package:task_manager_flutter/utils/security_matrix.dart';
 import 'package:task_manager_flutter/widgets/action_gate.dart';
 

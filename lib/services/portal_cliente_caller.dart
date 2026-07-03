@@ -1,10 +1,8 @@
 // lib/services/portal_cliente_caller.dart
-import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:task_manager_flutter/models/portal_cliente_resumo_model.dart';
 import 'package:task_manager_flutter/utils/api_links.dart';
 import 'package:task_manager_flutter/services/network_caller.dart';
-import 'package:task_manager_flutter/models/auth_utility.dart';
 import 'package:task_manager_flutter/utils/app_logger.dart';
 
 class PortalClienteCaller {

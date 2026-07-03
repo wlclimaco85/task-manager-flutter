@@ -14,9 +14,6 @@ import 'package:task_manager_flutter/models/login_model.dart';
 import 'package:task_manager_flutter/models/role_model.dart';
 import 'package:task_manager_flutter/models/parceiro_model.dart';
 import 'package:task_manager_flutter/models/empresa_model.dart';
-import 'package:task_manager_flutter/widgets/generic_detail_form_screen.dart';
-import 'package:task_manager_flutter/widgets/generic_grid_windows_screen.dart'
-    show FieldType;
 
 // Mock simples do SecurityCheck — permite todas as operações
 bool alwaysAllow(String permission) => true;

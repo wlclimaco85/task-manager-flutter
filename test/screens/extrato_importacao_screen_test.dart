@@ -1,9 +1,6 @@
 // test/screens/extrato_importacao_screen_test.dart
 // Testes RED: validação de tenant (empresaId) em upload de extrato
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:file_picker/file_picker.dart';
-import 'package:task_manager_flutter/services/extrato_import_caller.dart';
 import 'package:task_manager_flutter/utils/tenant_context.dart';
 import 'package:task_manager_flutter/utils/api_links.dart';
 import 'dart:typed_data';

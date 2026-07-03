@@ -1,5 +1,3 @@
-import 'package:flutter/material.dart';
-
 class MesCobranca {
   String mes;
   int quantidade;
