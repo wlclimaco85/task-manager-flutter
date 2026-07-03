@@ -523,6 +523,177 @@ class _CrudTestTabState extends State<_CrudTestTab> {
   }
 
 
+  // ── Teste dinâmico de todos os endpoints ──────────────────────
+
+  Future<void> _fetchAndRunAllTests() async {
+    setState(() {
+      _isRunning = true;
+      _logs.clear();
+      _errorReport.clear();
+      _progress = 0.0;
+      _progressLabel = 'Carregando endpoints...';
+      _testsRun = 0;
+      _successCount = 0;
+      _failCount = 0;
+      _skipCount = 0;
+    });
+
+    _addLog(_LogEntry('🔵 CARREGANDO TODOS OS ENDPOINTS DO SISTEMA...', _LogType.info));
+
+    final token = AuthUtility.userInfo?.token;
+    if (token == null) {
+      _addLog(_LogEntry('❌ Token não encontrado.', _LogType.error));
+      setState(() => _isRunning = false);
+      return;
+    }
+
+    final headers = {
+      'Content-Type': 'application/json;charset=UTF-8',
+      'Authorization': 'Bearer $token',
+    };
+    final base = ApiLinks.baseUrl;
+
+    List<dynamic> endpoints;
+    try {
+      final res = await http
+          .get(Uri.parse('$base/api/admin/endpoints'), headers: headers)
+          .timeout(const Duration(seconds: 15));
+      if (res.statusCode != 200) {
+        _addLog(_LogEntry('❌ Falha ao carregar endpoints (${res.statusCode})', _LogType.error));
+        setState(() => _isRunning = false);
+        return;
+      }
+      final body = jsonDecode(res.body);
+      final data = body['data'] as Map? ?? body;
+      endpoints = data['endpoints'] as List? ?? [];
+    } catch (e) {
+      _addLog(_LogEntry('❌ Erro ao carregar endpoints: $e', _LogType.error));
+      setState(() => _isRunning = false);
+      return;
+    }
+
+    _addLog(_LogEntry('📦 ${endpoints.length} endpoints carregados.', _LogType.success));
+
+    // Agrupa por controller
+    final Map<String, List<Map<String, dynamic>>> byController = {};
+    for (final ep in endpoints) {
+      final ctrl = ep['controller']?.toString() ?? 'Desconhecido';
+      byController.putIfAbsent(ctrl, () => []).add(Map<String, dynamic>.from(ep));
+    }
+
+    _addLog(_LogEntry('📋 ${byController.length} controllers encontrados.', _LogType.info));
+    _totalTests = byController.entries.fold<int>(0, (sum, e) => sum + e.value.length);
+
+    for (final entry in byController.entries) {
+      final ctrlName = entry.key;
+      final eps = entry.value;
+
+      _addLog(_LogEntry('', _LogType.divider));
+      _addLog(_LogEntry('📁 $ctrlName (${eps.length} endpoints)', _LogType.section));
+
+      for (final ep in eps) {
+        final paths = (ep['paths'] as List?)?.map((p) => p.toString()).toList() ?? [];
+        final httpMethods = (ep['httpMethods'] as List?)?.map((m) => m.toString()).toList() ?? ['GET'];
+        final methodName = ep['metodo']?.toString() ?? '?';
+
+        for (final path in paths) {
+          for (final httpMethod in httpMethods) {
+            final stepName = '$httpMethod $path ($methodName)';
+            _updateProgress('$ctrlName → $stepName');
+
+            final uri = Uri.parse('$base$path');
+            http.Response res;
+
+            try {
+              switch (httpMethod) {
+                case 'POST':
+                  final payload = _buildDynamicPayload(path, ctrlName);
+                  res = await http.post(uri, headers: headers, body: jsonEncode(payload))
+                      .timeout(const Duration(seconds: 15));
+                  break;
+                case 'PUT':
+                  res = await http.put(uri, headers: headers)
+                      .timeout(const Duration(seconds: 15));
+                  break;
+                case 'DELETE':
+                  res = await http.delete(uri, headers: headers)
+                      .timeout(const Duration(seconds: 15));
+                  break;
+                default:
+                  res = await http.get(uri, headers: headers)
+                      .timeout(const Duration(seconds: 15));
+              }
+
+              if (res.statusCode >= 200 && res.statusCode < 300) {
+                _addLog(_LogEntry('  ✅ $stepName → ${res.statusCode}', _LogType.success));
+                _successCount++;
+              } else {
+                _addLog(_LogEntry('  ❌ $stepName → ${res.statusCode}', _LogType.error));
+                _addToErrorReport(
+                  scenarioName: ctrlName,
+                  stepName: stepName,
+                  expectedStatus: 200,
+                  actualStatus: res.statusCode,
+                  responseBody: res.body.length > 300 ? '${res.body.substring(0, 300)}...' : res.body,
+                );
+                _failCount++;
+              }
+            } catch (e) {
+              _addLog(_LogEntry('  ❌ $stepName → ERRO: $e', _LogType.error));
+              _failCount++;
+            }
+          }
+        }
+      }
+    }
+
+    _addLog(_LogEntry('', _LogType.divider));
+    _addLog(_LogEntry(
+      '🏁 CONCLUÍDO — ✅ $_successCount sucesso  ❌ $_failCount falha  ⚠️ $_skipCount ignorado',
+      _LogType.info,
+    ));
+
+    setState(() {
+      _isRunning = false;
+      _progressLabel = 'Concluído';
+      _progress = 1.0;
+    });
+  }
+
+  Map<String, dynamic> _buildDynamicPayload(String path, String controllerName) {
+    final ts = DateTime.now().millisecondsSinceEpoch;
+    final ctrl = controllerName.replaceAll('Controller', '').toLowerCase();
+    final nomeEntity = ctrl.endsWith('s') ? ctrl : '${ctrl}teste$ts';
+
+    // Tenta inferir o nome do campo principal baseado no controller
+    final Map<String, String> fieldMap = {
+      'login': 'login',
+      'noticia': 'titulo',
+      'comunicado': 'titulo',
+      'chamado': 'titulo',
+      'alimento': 'nome',
+      'cargo': 'nome',
+      'departamento': 'nome',
+      'centro_custo': 'nome',
+      'exercicio': 'nome',
+      'modalidade': 'nome',
+      'objetivo': 'nome',
+      'parceiro': 'nome',
+      'produto': 'nome',
+      'categoria': 'nome',
+      'role': 'name',
+    };
+    final campoNome = fieldMap.entries.firstWhere(
+      (e) => ctrl.contains(e.key),
+      orElse: () => const MapEntry('nome', 'nome'),
+    ).value;
+
+    return {
+      campoNome: '$nomeEntity $ts',
+      'descricao': 'Criado por teste automático $ts',
+    };
+  }
+
   @override
   Widget build(BuildContext context) {
     return Column(
@@ -649,21 +820,37 @@ class _CrudTestTabState extends State<_CrudTestTab> {
               ],
             ),
           ),
-          ElevatedButton.icon(
-            onPressed: _isRunning ? null : _runTests,
-            icon: _isRunning
-                ? const SizedBox(
-                    width: 14,
-                    height: 14,
-                    child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
-                  )
-                : const Icon(Icons.play_arrow, size: 18),
-            label: Text(_isRunning ? 'Executando...' : 'Iniciar Testes'),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: _isRunning ? Colors.grey[700] : GridColors.success,
-              foregroundColor: Colors.white,
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-            ),
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ElevatedButton.icon(
+                onPressed: _isRunning ? null : _runTests,
+                icon: _isRunning
+                    ? const SizedBox(
+                        width: 14,
+                        height: 14,
+                        child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                      )
+                    : const Icon(Icons.play_arrow, size: 18),
+                label: Text(_isRunning ? 'Executando...' : 'Iniciar Testes'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: _isRunning ? Colors.grey[700] : GridColors.success,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                ),
+              ),
+              const SizedBox(width: 8),
+              ElevatedButton.icon(
+                onPressed: _isRunning ? null : _fetchAndRunAllTests,
+                icon: const Icon(Icons.playlist_add_check, size: 18),
+                label: const Text('Testar Todos'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF1565C0),
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                ),
+              ),
+            ],
           ),
         ],
       ),
