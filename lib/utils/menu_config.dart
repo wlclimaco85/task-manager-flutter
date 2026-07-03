@@ -368,7 +368,7 @@ class MenuConfig {
             icon: FontAwesomeIcons.umbrellaBeach,
             screenIndex: 46),
         MenuItem(
-            id: 'funcionarios',
+            id: 'funcionario',
             label: 'Funcionários',
             icon: FontAwesomeIcons.idCard,
             screenIndex: 50),
