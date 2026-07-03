@@ -40,12 +40,13 @@ class AppSidebar extends StatefulWidget {
 }
 
 class _AppSidebarState extends State<AppSidebar> {
-  static const _primary    = GridColors.primary;   // vermelho — bordas e destaques
-  static const _bg         = GridColors.secondary;   // verde escuro — fundo sidebar
-  static const _bgItem     = Color(0xFF004a20);   // verde mais escuro — hover
-  static const _bgSelected = Color(0xFF003d1a);   // verde escuríssimo — selecionado
-  static const _textColor  = Colors.white;        // branco — texto principal
-  static const _textMuted  = Color(0xFFa8d5b5);   // verde claro — texto secundário
+  static const _primary = GridColors.primary; // vermelho — bordas e destaques
+  static const _bg = GridColors.secondary; // verde escuro — fundo sidebar
+  static const _bgItem = Color(0xFF004a20); // verde mais escuro — hover
+  static const _bgSelected =
+      Color(0xFF003d1a); // verde escuríssimo — selecionado
+  static const _textColor = Colors.white; // branco — texto principal
+  static const _textMuted = Color(0xFFa8d5b5); // verde claro — texto secundário
 
   final TextEditingController _searchCtrl = TextEditingController();
   String _searchQuery = '';
@@ -79,6 +80,16 @@ class _AppSidebarState extends State<AppSidebar> {
     _searchCtrl.addListener(() {
       setState(() => _searchQuery = _searchCtrl.text);
     });
+  }
+
+  @override
+  void didUpdateWidget(covariant AppSidebar oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.selectedIndex != widget.selectedIndex ||
+        oldWidget.userEmail != widget.userEmail) {
+      _computeAllowed();
+      _applyDefaultExpansion();
+    }
   }
 
   /// Grupos com pelo menos um item visível ao usuário (após filtro de módulo/
@@ -182,8 +193,14 @@ class _AppSidebarState extends State<AppSidebar> {
       width: widget.isCollapsed ? 64 : 260,
       decoration: BoxDecoration(
         color: _bg,
-        border: const Border(right: BorderSide(color: Color(0xFF004a20), width: 1)),
-        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.3), blurRadius: 4, offset: const Offset(2, 0))],
+        border:
+            const Border(right: BorderSide(color: Color(0xFF004a20), width: 1)),
+        boxShadow: [
+          BoxShadow(
+              color: Colors.black.withValues(alpha: 0.3),
+              blurRadius: 4,
+              offset: const Offset(2, 0))
+        ],
       ),
       child: Column(
         children: [
@@ -258,7 +275,11 @@ class _AppSidebarState extends State<AppSidebar> {
             const SizedBox(height: 10),
             _buildUserAvatar(18),
             const SizedBox(height: 8),
-            _iconBtn(Icons.notifications, widget.unreadAlerts > 0 ? _primary : _textMuted, widget.onNotificationTap, badge: widget.unreadAlerts),
+            _iconBtn(
+                Icons.notifications,
+                widget.unreadAlerts > 0 ? _primary : _textMuted,
+                widget.onNotificationTap,
+                badge: widget.unreadAlerts),
             const SizedBox(height: 4),
             _iconBtn(Icons.logout, _textMuted, widget.onLogout),
           ],
@@ -293,7 +314,10 @@ class _AppSidebarState extends State<AppSidebar> {
                   'Abraço Contabilidade',
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: TextStyle(color: _textColor, fontWeight: FontWeight.w700, fontSize: 13),
+                  style: TextStyle(
+                      color: _textColor,
+                      fontWeight: FontWeight.w700,
+                      fontSize: 13),
                 ),
               ),
             ],
@@ -311,7 +335,10 @@ class _AppSidebarState extends State<AppSidebar> {
                       widget.userName.isNotEmpty ? widget.userName : 'Usuário',
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(color: _textColor, fontWeight: FontWeight.bold, fontSize: 13),
+                      style: const TextStyle(
+                          color: _textColor,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 13),
                     ),
                     if (widget.userEmail.isNotEmpty)
                       Text(
@@ -323,7 +350,11 @@ class _AppSidebarState extends State<AppSidebar> {
                   ],
                 ),
               ),
-              _iconBtn(Icons.notifications, widget.unreadAlerts > 0 ? _primary : _textMuted, widget.onNotificationTap, badge: widget.unreadAlerts),
+              _iconBtn(
+                  Icons.notifications,
+                  widget.unreadAlerts > 0 ? _primary : _textMuted,
+                  widget.onNotificationTap,
+                  badge: widget.unreadAlerts),
               const SizedBox(width: 4),
               _iconBtn(Icons.logout, _textMuted, widget.onLogout),
             ],
@@ -333,7 +364,8 @@ class _AppSidebarState extends State<AppSidebar> {
     );
   }
 
-  Widget _iconBtn(IconData icon, Color color, VoidCallback onTap, {int badge = 0}) {
+  Widget _iconBtn(IconData icon, Color color, VoidCallback onTap,
+      {int badge = 0}) {
     return GestureDetector(
       onTap: onTap,
       child: Stack(
@@ -345,12 +377,19 @@ class _AppSidebarState extends State<AppSidebar> {
           ),
           if (badge > 0)
             Positioned(
-              right: -2, top: -2,
+              right: -2,
+              top: -2,
               child: Container(
                 padding: const EdgeInsets.all(2),
-                decoration: const BoxDecoration(color: Colors.red, shape: BoxShape.circle),
+                decoration: const BoxDecoration(
+                    color: Colors.red, shape: BoxShape.circle),
                 constraints: const BoxConstraints(minWidth: 14, minHeight: 14),
-                child: Text('$badge', style: const TextStyle(color: Colors.white, fontSize: 9, fontWeight: FontWeight.bold), textAlign: TextAlign.center),
+                child: Text('$badge',
+                    style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 9,
+                        fontWeight: FontWeight.bold),
+                    textAlign: TextAlign.center),
               ),
             ),
         ],
@@ -377,8 +416,11 @@ class _AppSidebarState extends State<AppSidebar> {
               : null,
           filled: true,
           fillColor: _bgItem,
-          contentPadding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
-          border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide.none),
+          contentPadding:
+              const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+          border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(8),
+              borderSide: BorderSide.none),
         ),
       ),
     );
@@ -388,11 +430,14 @@ class _AppSidebarState extends State<AppSidebar> {
   Widget _buildSearchResults() {
     final results = MenuConfig.search(_searchQuery).where(_canSee).toList();
     if (results.isEmpty) {
-      return const Center(child: Text('Nenhuma tela encontrada', style: TextStyle(color: _textMuted, fontSize: 12)));
+      return const Center(
+          child: Text('Nenhuma tela encontrada',
+              style: TextStyle(color: _textMuted, fontSize: 12)));
     }
     return ListView(
       padding: const EdgeInsets.symmetric(vertical: 4),
-      children: results.map((item) => _buildMenuItem(item, indent: false)).toList(),
+      children:
+          results.map((item) => _buildMenuItem(item, indent: false)).toList(),
     );
   }
 
@@ -411,7 +456,9 @@ class _AppSidebarState extends State<AppSidebar> {
         // renderiza os itens direto (sem cabeçalho), evitando ruído quando o
         // cliente tem um único módulo.
         if (_visibleGroups().length == 1)
-          ..._visibleGroups().first.items
+          ..._visibleGroups()
+              .first
+              .items
               .where(_canSee)
               .map((item) => _buildMenuItem(item, indent: true))
         else
@@ -432,14 +479,19 @@ class _AppSidebarState extends State<AppSidebar> {
     return Padding(
       padding: const EdgeInsets.fromLTRB(14, 8, 14, 4),
       child: Text(title.toUpperCase(),
-          style: const TextStyle(color: _textMuted, fontSize: 10, fontWeight: FontWeight.w700, letterSpacing: 0.8)),
+          style: const TextStyle(
+              color: _textMuted,
+              fontSize: 10,
+              fontWeight: FontWeight.w700,
+              letterSpacing: 0.8)),
     );
   }
 
   Widget _buildGroup(MenuGroup group) {
     final isExpanded = _expandedGroups.contains(group.id);
     // Verifica se algum item do grupo está selecionado
-    final hasSelected = group.items.any((i) => i.screenIndex == widget.selectedIndex);
+    final hasSelected =
+        group.items.any((i) => i.screenIndex == widget.selectedIndex);
     // Verifica se algum item do grupo é favorito
     final hasFavorite = group.items.any((i) => _favorites.contains(i.id));
 
@@ -452,26 +504,33 @@ class _AppSidebarState extends State<AppSidebar> {
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
             decoration: BoxDecoration(
-              color: hasSelected ? _bgSelected.withValues(alpha: 0.5) : Colors.transparent,
+              color: hasSelected
+                  ? _bgSelected.withValues(alpha: 0.5)
+                  : Colors.transparent,
             ),
             child: Row(
               children: [
-                FaIcon(group.icon, size: 14, color: hasSelected ? _primary : _textMuted),
+                FaIcon(group.icon,
+                    size: 14, color: hasSelected ? _primary : _textMuted),
                 const SizedBox(width: 10),
                 Expanded(
                   child: Text(group.label,
                       style: TextStyle(
                         color: hasSelected ? _primary : _textColor,
                         fontSize: 13,
-                        fontWeight: hasSelected ? FontWeight.w700 : FontWeight.w500,
+                        fontWeight:
+                            hasSelected ? FontWeight.w700 : FontWeight.w500,
                       )),
                 ),
                 if (hasFavorite)
                   const Icon(Icons.star, size: 10, color: Colors.amber),
                 const SizedBox(width: 4),
                 Icon(
-                  isExpanded ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down,
-                  color: _textMuted, size: 16,
+                  isExpanded
+                      ? Icons.keyboard_arrow_up
+                      : Icons.keyboard_arrow_down,
+                  color: _textMuted,
+                  size: 16,
                 ),
               ],
             ),
@@ -487,7 +546,8 @@ class _AppSidebarState extends State<AppSidebar> {
   }
 
   Widget _buildMenuItem(MenuItem item, {required bool indent}) {
-    final isSelected = item.screenIndex == widget.selectedIndex && item.screenIndex >= 0;
+    final isSelected =
+        item.screenIndex == widget.selectedIndex && item.screenIndex >= 0;
     final isFav = _favorites.contains(item.id);
 
     return InkWell(
@@ -507,15 +567,25 @@ class _AppSidebarState extends State<AppSidebar> {
         ),
         child: Row(
           children: [
-            FaIcon(item.icon, size: 13,
-                color: isSelected ? _primary : item.screenIndex < 0 ? _textMuted.withValues(alpha: 0.5) : _textMuted),
+            FaIcon(item.icon,
+                size: 13,
+                color: isSelected
+                    ? _primary
+                    : item.screenIndex < 0
+                        ? _textMuted.withValues(alpha: 0.5)
+                        : _textMuted),
             const SizedBox(width: 10),
             Expanded(
               child: Text(item.label,
                   style: TextStyle(
-                    color: isSelected ? _primary : item.screenIndex < 0 ? _textMuted.withValues(alpha: 0.5) : _textColor,
+                    color: isSelected
+                        ? _primary
+                        : item.screenIndex < 0
+                            ? _textMuted.withValues(alpha: 0.5)
+                            : _textColor,
                     fontSize: 13,
-                    fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+                    fontWeight:
+                        isSelected ? FontWeight.w600 : FontWeight.normal,
                   )),
             ),
             // Estrela de favorito
@@ -526,7 +596,8 @@ class _AppSidebarState extends State<AppSidebar> {
                 child: Icon(
                   isFav ? Icons.star : Icons.star_border,
                   size: 14,
-                  color: isFav ? Colors.amber : _textMuted.withValues(alpha: 0.4),
+                  color:
+                      isFav ? Colors.amber : _textMuted.withValues(alpha: 0.4),
                 ),
               ),
             ),
@@ -538,35 +609,36 @@ class _AppSidebarState extends State<AppSidebar> {
 
   // ── Lista colapsada (só ícones) ───────────────────────────────────────────
   Widget _buildCollapsedList() {
-    final allItems = [...MenuConfig.groups.expand((g) => g.items), ...MenuConfig.loose];
+    final allItems = [
+      ...MenuConfig.groups.expand((g) => g.items),
+      ...MenuConfig.loose
+    ];
     return ListView(
       padding: const EdgeInsets.symmetric(vertical: 4),
-      children: allItems
-          .where((i) => i.screenIndex >= 0 && _canSee(i))
-          .map((item) {
-            final isSelected = item.screenIndex == widget.selectedIndex;
-            return Tooltip(
-              message: item.label,
-              preferBelow: false,
-              child: InkWell(
-                onTap: () => _navigate(item),
-                child: Container(
-                  padding: const EdgeInsets.symmetric(vertical: 10),
-                  decoration: BoxDecoration(
-                    color: isSelected ? _bgSelected : Colors.transparent,
-                    border: isSelected
-                        ? const Border(left: BorderSide(color: _primary, width: 3))
-                        : null,
-                  ),
-                  child: Center(
-                    child: FaIcon(item.icon, size: 16,
-                        color: isSelected ? _primary : _textMuted),
-                  ),
-                ),
+      children:
+          allItems.where((i) => i.screenIndex >= 0 && _canSee(i)).map((item) {
+        final isSelected = item.screenIndex == widget.selectedIndex;
+        return Tooltip(
+          message: item.label,
+          preferBelow: false,
+          child: InkWell(
+            onTap: () => _navigate(item),
+            child: Container(
+              padding: const EdgeInsets.symmetric(vertical: 10),
+              decoration: BoxDecoration(
+                color: isSelected ? _bgSelected : Colors.transparent,
+                border: isSelected
+                    ? const Border(left: BorderSide(color: _primary, width: 3))
+                    : null,
               ),
-            );
-          })
-          .toList(),
+              child: Center(
+                child: FaIcon(item.icon,
+                    size: 16, color: isSelected ? _primary : _textMuted),
+              ),
+            ),
+          ),
+        );
+      }).toList(),
     );
   }
 
@@ -582,15 +654,11 @@ class _AppSidebarState extends State<AppSidebar> {
         child: Center(
           child: Icon(
             widget.isCollapsed ? Icons.chevron_right : Icons.chevron_left,
-            color: _textMuted, size: 20,
+            color: _textMuted,
+            size: 20,
           ),
         ),
       ),
     );
   }
 }
-
-
-
-
-
