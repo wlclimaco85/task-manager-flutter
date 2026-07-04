@@ -1,5 +1,8 @@
 // lib/screens/contabil/calendario_screen.dart
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+import 'package:task_manager_flutter/services/auth_service.dart';
+import 'package:task_manager_flutter/helpers/download_helper.dart';
 
 class CalendarioScreen extends StatefulWidget {
   const CalendarioScreen({Key? key}) : super(key: key);
@@ -10,6 +13,9 @@ class CalendarioScreen extends StatefulWidget {
 
 class _CalendarioScreenState extends State<CalendarioScreen> {
   String _filtroTipo = 'Todos';
+  int _mesAtual = DateTime.now().month;
+  int _anoAtual = DateTime.now().year;
+  bool _carregando = false;
 
   @override
   Widget build(BuildContext context) {
@@ -43,6 +49,87 @@ class _CalendarioScreenState extends State<CalendarioScreen> {
               },
             ),
           ),
+          // ─────────────────────────────────────────────────────────────────────
+          // CARD #276: Filtros de Exportação (Mês e Ano)
+          // ─────────────────────────────────────────────────────────────────────
+          Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Row(
+              children: [
+                // Dropdown Mês
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text('Mês'),
+                      const SizedBox(height: 8),
+                      DropdownButton<int>(
+                        value: _mesAtual,
+                        isExpanded: true,
+                        items: List.generate(12, (i) => i + 1)
+                            .map((int mes) {
+                          return DropdownMenuItem<int>(
+                            value: mes,
+                            child: Text('$mes'),
+                          );
+                        }).toList(),
+                        onChanged: (int? newValue) {
+                          if (newValue != null) {
+                            setState(() {
+                              _mesAtual = newValue;
+                            });
+                          }
+                        },
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 16),
+                // Dropdown Ano
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text('Ano'),
+                      const SizedBox(height: 8),
+                      DropdownButton<int>(
+                        value: _anoAtual,
+                        isExpanded: true,
+                        items: List.generate(4, (i) => 2024 + i)
+                            .map((int ano) {
+                          return DropdownMenuItem<int>(
+                            value: ano,
+                            child: Text('$ano'),
+                          );
+                        }).toList(),
+                        onChanged: (int? newValue) {
+                          if (newValue != null) {
+                            setState(() {
+                              _anoAtual = newValue;
+                            });
+                          }
+                        },
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+          // Botão Exportar CSV
+          Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: ElevatedButton(
+              onPressed: _carregando ? null : _exportarCalendario,
+              child: _carregando
+                  ? const SizedBox(
+                      height: 20,
+                      width: 20,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : const Text('Exportar CSV'),
+            ),
+          ),
           Padding(
             padding: const EdgeInsets.all(16.0),
             child: _buildCalendarTable(),
@@ -50,6 +137,71 @@ class _CalendarioScreenState extends State<CalendarioScreen> {
         ],
       ),
     );
+  }
+
+  /// Exportar calendário em CSV via API
+  Future<void> _exportarCalendario() async {
+    try {
+      setState(() {
+        _carregando = true;
+      });
+
+      // Montar URL com parâmetros
+      final baseUrl = 'http://localhost:9001'; // Ajuste conforme ambiente
+      final url = Uri.parse(
+        '$baseUrl/api/calendario-guias/export/csv?mes=$_mesAtual&ano=$_anoAtual',
+      );
+
+      // Headers com autenticação
+      final authService = AuthService();
+      final headers = await authService.jsonHeaders();
+
+      // Fazer request
+      final response = await http.get(url, headers: headers);
+
+      if (response.statusCode == 200) {
+        // Download CSV
+        final csvBytes = response.bodyBytes;
+        final filename = 'calendario_guias_${_mesAtual}_${_anoAtual}.csv';
+        await downloadCsvBytes(csvBytes, filename);
+
+        // Feedback ao usuário
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Arquivo "$filename" baixado com sucesso!'),
+              duration: const Duration(seconds: 3),
+            ),
+          );
+        }
+      } else {
+        // Erro na API
+        final errorMsg = 'Erro ao exportar: ${response.statusCode}';
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(errorMsg),
+              duration: const Duration(seconds: 3),
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      // Erro de conexão ou processamento
+      final errorMsg = 'Erro ao exportar: $e';
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(errorMsg),
+            duration: const Duration(seconds: 3),
+          ),
+        );
+      }
+    } finally {
+      setState(() {
+        _carregando = false;
+      });
+    }
   }
 
   Widget _buildCalendarTable() {
