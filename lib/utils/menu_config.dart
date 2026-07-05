@@ -723,6 +723,169 @@ class MenuConfig {
             screenIndex: 120),
       ],
     ),
+    MenuGroup(
+      id: 'gme',
+      label: 'GME',
+      icon: FontAwesomeIcons.gears,
+      items: [
+        MenuItem(
+            id: 'dashboard_gme',
+            label: 'Dashboard GME',
+            icon: FontAwesomeIcons.chartPie,
+            screenIndex: 156),
+        MenuItem(
+            id: 'contrato',
+            label: 'Contratos',
+            icon: FontAwesomeIcons.fileContract,
+            screenIndex: 157),
+        MenuItem(
+            id: 'equipamento',
+            label: 'Equipamentos',
+            icon: FontAwesomeIcons.toolbox,
+            screenIndex: 158),
+        MenuItem(
+            id: 'ordem_servico',
+            label: 'Ordens de Serviço',
+            icon: FontAwesomeIcons.clipboardList,
+            screenIndex: 159),
+        MenuItem(
+            id: 'plano_manutencao',
+            label: 'Planos de Manutenção',
+            icon: FontAwesomeIcons.calendarCheck,
+            screenIndex: 160),
+        MenuItem(
+            id: 'horimetro',
+            label: 'Horímetro',
+            icon: FontAwesomeIcons.gauge,
+            screenIndex: 161),
+        MenuItem(
+            id: 'historico_manutencao',
+            label: 'Histórico Manutenção',
+            icon: FontAwesomeIcons.clockRotateLeft,
+            screenIndex: 162),
+        MenuItem(
+            id: 'tecnico_manutencao',
+            label: 'Técnicos',
+            icon: FontAwesomeIcons.userGear,
+            screenIndex: 163),
+      ],
+    ),
+    MenuGroup(
+      id: 'service_desk',
+      label: 'Service Desk',
+      icon: FontAwesomeIcons.headset,
+      items: [
+        MenuItem(
+            id: 'dashboard_service',
+            label: 'Dashboard Service',
+            icon: FontAwesomeIcons.chartPie,
+            screenIndex: 164),
+        MenuItem(
+            id: 'sla',
+            label: 'SLA',
+            icon: FontAwesomeIcons.stopwatch,
+            screenIndex: 165),
+        MenuItem(
+            id: 'fila_atendimento',
+            label: 'Filas de Atendimento',
+            icon: FontAwesomeIcons.peopleArrows,
+            screenIndex: 166),
+        MenuItem(
+            id: 'categoria_chamado',
+            label: 'Categorias Chamado',
+            icon: FontAwesomeIcons.layerGroup,
+            screenIndex: 167),
+        MenuItem(
+            id: 'chamado_avaliacao',
+            label: 'Avaliações',
+            icon: FontAwesomeIcons.star,
+            screenIndex: 168),
+      ],
+    ),
+    MenuGroup(
+      id: 'projetos',
+      label: 'Projetos',
+      icon: FontAwesomeIcons.diagramProject,
+      items: [
+        MenuItem(
+            id: 'dashboard_projetos',
+            label: 'Dashboard Projetos',
+            icon: FontAwesomeIcons.chartPie,
+            screenIndex: 169),
+        MenuItem(
+            id: 'projeto',
+            label: 'Projetos',
+            icon: FontAwesomeIcons.folderOpen,
+            screenIndex: 170),
+        MenuItem(
+            id: 'projeto_etapa',
+            label: 'Etapas',
+            icon: FontAwesomeIcons.listOl,
+            screenIndex: 171),
+        MenuItem(
+            id: 'projeto_recurso',
+            label: 'Recursos',
+            icon: FontAwesomeIcons.users,
+            screenIndex: 172),
+        MenuItem(
+            id: 'projeto_apontamento',
+            label: 'Apontamentos',
+            icon: FontAwesomeIcons.penToSquare,
+            screenIndex: 173),
+        MenuItem(
+            id: 'projeto_medicao',
+            label: 'Medições',
+            icon: FontAwesomeIcons.ruler,
+            screenIndex: 174),
+        MenuItem(
+            id: 'cargo_recurso',
+            label: 'Cargos/Recursos',
+            icon: FontAwesomeIcons.idBadge,
+            screenIndex: 175),
+      ],
+    ),
+    MenuGroup(
+      id: 'precificacao',
+      label: 'Precificação',
+      icon: FontAwesomeIcons.calculator,
+      items: [
+        MenuItem(
+            id: 'dashboard_precificacao',
+            label: 'Dashboard Precificação',
+            icon: FontAwesomeIcons.chartPie,
+            screenIndex: 176),
+        MenuItem(
+            id: 'precificacao',
+            label: 'Precificações',
+            icon: FontAwesomeIcons.fileInvoiceDollar,
+            screenIndex: 177),
+        MenuItem(
+            id: 'custo_direto',
+            label: 'Custos Diretos',
+            icon: FontAwesomeIcons.coins,
+            screenIndex: 178),
+        MenuItem(
+            id: 'mao_de_obra',
+            label: 'Mão de Obra',
+            icon: FontAwesomeIcons.personDigging,
+            screenIndex: 179),
+        MenuItem(
+            id: 'precificacao_servico',
+            label: 'Serviços',
+            icon: FontAwesomeIcons.screwdriverWrench,
+            screenIndex: 180),
+        MenuItem(
+            id: 'condicao_pagamento',
+            label: 'Condições Pagamento',
+            icon: FontAwesomeIcons.moneyBill,
+            screenIndex: 181),
+        MenuItem(
+            id: 'proposta_comercial',
+            label: 'Propostas Comerciais',
+            icon: FontAwesomeIcons.filePen,
+            screenIndex: 182),
+      ],
+    ),
   ];
 
   static const List<MenuItem> loose = [
