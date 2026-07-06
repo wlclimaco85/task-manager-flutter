@@ -418,20 +418,18 @@ class _GridListScreenState extends State<GridListScreen> {
       backgroundColor: GridColors.background,
       appBar: widget.showAppBar
           ? (widget.useUserBannerAppBar
-              ? PreferredSize(
-                  preferredSize: Size.fromHeight(
-                      widget.useUserBannerAppBar ? 94 : kToolbarHeight),
-                  child: UserBannerAppBar(
-                    screenTitle: widget.title,
-                    onTapped: widget.onUserBannerTapped,
-                    onUserTap: widget.onUserBannerTapped,
-                    onRefresh:
-                        widget.onBannerRefresh ?? () => _load(reset: true),
-                    isLoading: _loading,
-                    onFilterToggle: () =>
-                        setState(() => _filtersOpen = !_filtersOpen),
-                    showFilterButton: widget.useUserBannerAppBar,
-                  ),
+              // UserBannerAppBar ja e PreferredSizeWidget e calcula a propria
+              // altura (banner + subheader verde). NAO embrulhar em PreferredSize
+              // com altura fixa, senao o subheader (FilterActionBar) e cortado.
+              ? UserBannerAppBar(
+                  screenTitle: widget.title,
+                  onTapped: widget.onUserBannerTapped,
+                  onUserTap: widget.onUserBannerTapped,
+                  onRefresh: widget.onBannerRefresh ?? () => _load(reset: true),
+                  isLoading: _loading,
+                  onFilterToggle: () =>
+                      setState(() => _filtersOpen = !_filtersOpen),
+                  showFilterButton: widget.useUserBannerAppBar,
                 )
               : (_selectionMode ? _selectionAppBar() : _normalAppBar()))
           : null,

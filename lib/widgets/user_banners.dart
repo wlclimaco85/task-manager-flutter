@@ -1158,7 +1158,7 @@ class FilterActionBar extends StatelessWidget {
       height: 52,
       padding: const EdgeInsets.only(left: 16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: GridColors.secondary, // verde Abraço (subheader)
         border: const Border(
           bottom: BorderSide(color: GridColors.divider, width: 1),
         ),
@@ -1195,23 +1195,23 @@ class FilterActionBar extends StatelessWidget {
                       child: CircularProgressIndicator(
                         strokeWidth: 2,
                         valueColor:
-                            AlwaysStoppedAnimation<Color>(GridColors.primary),
+                            AlwaysStoppedAnimation<Color>(GridColors.textPrimary),
                       ),
                     )
-                  : const Icon(Icons.refresh, color: GridColors.primary),
+                  : const Icon(Icons.refresh, color: GridColors.textPrimary),
               onPressed: isLoading ?? false ? null : onRefresh,
               tooltip: 'Recarregar dados',
             ),
           if (onColumns != null)
             IconButton(
               iconSize: 28,
-              icon: const Icon(Icons.view_column, color: GridColors.primary),
+              icon: const Icon(Icons.view_column, color: GridColors.textPrimary),
               onPressed: onColumns,
               tooltip: 'Configurar campos visíveis',
             ),
           IconButton(
             iconSize: 28,
-            icon: const Icon(Icons.filter_list, color: GridColors.primary),
+            icon: const Icon(Icons.filter_list, color: GridColors.textPrimary),
             onPressed: onFilterToggle,
             tooltip: 'Mostrar/ocultar filtros',
           ),
