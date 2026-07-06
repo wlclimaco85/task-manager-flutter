@@ -1,4 +1,5 @@
 import 'dart:convert';
+import '../../widgets/user_banners.dart';
 import 'dart:typed_data';
 import 'package:file_picker/file_picker.dart';
 import 'package:file_saver/file_saver.dart';
@@ -74,22 +75,8 @@ class _MobileNfeGridScreenState extends State<MobileNfeGridScreen> {
   Widget build(BuildContext context) {
     final titulo = widget.entrada ? 'NF-e Entrada' : 'NF-e Saída';
     return Scaffold(
-      appBar: AppBar(
-        backgroundColor: GridColors.error,
-        title: Row(
-          children: [
-            Icon(widget.entrada ? Icons.file_download : Icons.file_upload,
-                color: Colors.white, size: 20),
-            const SizedBox(width: 10),
-            Expanded(
-              child: Text(titulo,
-                  style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold)),
-            ),
-          ],
-        ),
+      appBar: UserBannerAppBar(
+        screenTitle: titulo,
         actions: [
           IconButton(
             icon: const Icon(Icons.add, color: Colors.white),

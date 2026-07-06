@@ -1,4 +1,5 @@
 import 'dart:convert';
+import '../../widgets/user_banners.dart';
 import 'package:flutter/material.dart';
 import '../../../models/auth_utility.dart';
 import '../../../utils/api_links.dart';
@@ -97,10 +98,10 @@ class _NfseConfigScreenState extends State<NfseConfigScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Config ISS - NFS-e'),
-        backgroundColor: GridColors.primary,
-        foregroundColor: Colors.white,
+      appBar: UserBannerAppBar(
+        screenTitle: 'Config ISS - NFS-e',
+        onRefresh: _carregar,
+        isLoading: _carregando,
         actions: [
           TextButton.icon(
             onPressed: _salvando ? null : _salvar,

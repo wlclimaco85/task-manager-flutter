@@ -1,8 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../../customization/dynamic_grid_dynamic_screen.dart';
-import '../../../models/auth_utility.dart';
-import '../../../utils/app_logger.dart';
-import '../../../utils/security_matrix.dart';
+import '../../widgets/user_banners.dart';
 
 /// Tela stub para formulário de nova Nota de Serviço (NFS-e).
 /// Reusa DynamicGridDynamicScreen em modo "create only" (sem listagem).
@@ -17,9 +14,8 @@ class NfseServicoScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Nova Nota de Serviço'),
-        centerTitle: true,
+      appBar: const UserBannerAppBar(
+        screenTitle: 'Nova Nota de Serviço',
       ),
       body: const Center(
         child: Text('Formulário de NFS-e em desenvolvimento'),

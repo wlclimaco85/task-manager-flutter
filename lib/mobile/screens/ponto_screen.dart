@@ -1,4 +1,5 @@
 import 'dart:async';
+import '../../widgets/user_banners.dart';
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
@@ -138,16 +139,9 @@ class _PontoScreenState extends State<PontoScreen> {
 
     return Scaffold(
       backgroundColor: GridColors.background,
-      appBar: AppBar(
-        backgroundColor: GridColors.primary,
-        title: const Text(
-          'Registro de Ponto',
-          style: TextStyle(
-            color: GridColors.textPrimary,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        centerTitle: true,
+      appBar: UserBannerAppBar(
+        screenTitle: 'Registro de Ponto',
+        onRefresh: _carregarPontos,
       ),
       body: RefreshIndicator(
         onRefresh: _carregarPontos,

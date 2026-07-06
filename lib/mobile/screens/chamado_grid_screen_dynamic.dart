@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../widgets/user_banners.dart';
 import 'package:task_manager_flutter/utils/api_links.dart';
 import 'package:task_manager_flutter/utils/grid_colors.dart';
 import '../../../utils/security_matrix.dart';
@@ -119,11 +120,9 @@ class _ChamadosScreenDinamicState extends State<ChamadosScreenDinamic> {
 
     return Scaffold(
       backgroundColor: GridColors.pageBackground,
-      appBar: AppBar(
-        title: const Text('Solicitações / Chamados'),
-        backgroundColor: GridColors.primary,
-        foregroundColor: Colors.white,
-        elevation: 0,
+      appBar: UserBannerAppBar(
+        screenTitle: 'Solicitações / Chamados',
+        onRefresh: _loadChamados,
       ),
       floatingActionButton: _hasPermission('create')
           ? FloatingActionButton(

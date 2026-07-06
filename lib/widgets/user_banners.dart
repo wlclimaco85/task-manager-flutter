@@ -24,6 +24,10 @@ class UserBannerAppBar extends StatefulWidget implements PreferredSizeWidget {
   final VoidCallback? onColumns;
   final bool? showFilterButton;
 
+  /// Botoes de acao especificos da tela (ex.: salvar), exibidos antes dos
+  /// icones fixos de notificacoes e logout no header.
+  final List<Widget>? actions;
+
   /// Substitui a FilterActionBar padrão por uma barra inferior própria (ex.:
   /// toggle Dia/Mês/Ano do Calendário Financeiro). Quando informado, ignora
   /// showFilterButton/onFilterToggle/onColumns/onRefresh — quem passa um
@@ -41,6 +45,7 @@ class UserBannerAppBar extends StatefulWidget implements PreferredSizeWidget {
     this.onFilterToggle,
     this.onColumns,
     this.showFilterButton = true,
+    this.actions,
     this.customBottom,
   });
 
@@ -506,6 +511,7 @@ class _UserBannerAppBarState extends State<UserBannerAppBar> {
         ),
       ),
       actions: [
+        ...(widget.actions ?? const []),
         if (isLoggedIn) ...[
           Stack(
             alignment: Alignment.center,
