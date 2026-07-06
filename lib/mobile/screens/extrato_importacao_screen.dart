@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import '../../../services/conta_bancaria_caller.dart';
 import '../../../services/extrato_import_caller.dart';
 import '../../../utils/grid_colors.dart';
+import '../../widgets/user_banners.dart';
 
 class MobileExtratoImportacaoScreen extends StatefulWidget {
   const MobileExtratoImportacaoScreen({super.key});
@@ -137,18 +138,12 @@ class _MobileExtratoImportacaoScreenState
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: GridColors.background,
-      appBar: AppBar(
-        backgroundColor: GridColors.secondary,
-        foregroundColor: Colors.white,
-        title: const Text('Importar Extrato'),
-        elevation: 0,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh),
-            onPressed: _carregarLista,
-            tooltip: 'Atualizar lista',
-          ),
-        ],
+      // Padrao mobile: header (banner do usuario) + subheader com nome e refresh.
+      // Tela sem grid -> sem botao de filtro nem de personalizar colunas.
+      appBar: UserBannerAppBar(
+        screenTitle: 'Importar Extrato',
+        onRefresh: _carregarLista,
+        isLoading: _carregandoLista,
       ),
       body: RefreshIndicator(
         onRefresh: _carregarLista,

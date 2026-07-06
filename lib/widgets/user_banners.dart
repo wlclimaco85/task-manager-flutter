@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:typed_data';
 
+import 'package:flutter/foundation.dart' show kIsWeb, defaultTargetPlatform, TargetPlatform;
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../../../models/alert_model.dart';
@@ -1154,11 +1155,19 @@ class FilterActionBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Verde/nome-visivel APENAS no mobile nativo. Web/Windows mantem o visual
+    // branco original (nao alterar fora do mobile).
+    final bool isMobile = !kIsWeb &&
+        (defaultTargetPlatform == TargetPlatform.android ||
+            defaultTargetPlatform == TargetPlatform.iOS);
+    final Color bg = isMobile ? GridColors.secondary : Colors.white;
+    final Color fg = isMobile ? GridColors.textPrimary : GridColors.primary;
+
     return Container(
       height: 52,
       padding: const EdgeInsets.only(left: 16),
       decoration: BoxDecoration(
-        color: GridColors.secondary, // verde Abraço (subheader)
+        color: bg,
         border: const Border(
           bottom: BorderSide(color: GridColors.divider, width: 1),
         ),
@@ -1176,10 +1185,10 @@ class FilterActionBar extends StatelessWidget {
           Expanded(
             child: Text(
               screenTitle ?? "",
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.bold,
-                color: GridColors.textPrimary,
+                color: fg,
               ),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
@@ -1189,32 +1198,34 @@ class FilterActionBar extends StatelessWidget {
             IconButton(
               iconSize: 28,
               icon: isLoading ?? false
-                  ? const SizedBox(
+                  ? SizedBox(
                       width: 20,
                       height: 20,
                       child: CircularProgressIndicator(
                         strokeWidth: 2,
-                        valueColor:
-                            AlwaysStoppedAnimation<Color>(GridColors.textPrimary),
+                        valueColor: AlwaysStoppedAnimation<Color>(fg),
                       ),
                     )
-                  : const Icon(Icons.refresh, color: GridColors.textPrimary),
+                  : Icon(Icons.refresh, color: fg),
               onPressed: isLoading ?? false ? null : onRefresh,
               tooltip: 'Recarregar dados',
             ),
+          // Botao de personalizar grid: so quando ha grid (onColumns != null)
           if (onColumns != null)
             IconButton(
               iconSize: 28,
-              icon: const Icon(Icons.view_column, color: GridColors.textPrimary),
+              icon: Icon(Icons.view_column, color: fg),
               onPressed: onColumns,
               tooltip: 'Configurar campos visíveis',
             ),
-          IconButton(
-            iconSize: 28,
-            icon: const Icon(Icons.filter_list, color: GridColors.textPrimary),
-            onPressed: onFilterToggle,
-            tooltip: 'Mostrar/ocultar filtros',
-          ),
+          // Botao de filtro: so quando ha grid/filtros (onFilterToggle != null)
+          if (onFilterToggle != null)
+            IconButton(
+              iconSize: 28,
+              icon: Icon(Icons.filter_list, color: fg),
+              onPressed: onFilterToggle,
+              tooltip: 'Mostrar/ocultar filtros',
+            ),
         ],
       ),
     );
