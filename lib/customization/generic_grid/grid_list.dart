@@ -326,15 +326,10 @@ class _GridListScreenState extends State<GridListScreen> {
     try {
       final resp = await NetworkCaller().getRequest(url);
       if (resp.statusCode == 200 && resp.body != null) {
-        final rawBody = resp.body!;
-        // Quando backend retorna array direto (List), acessar rawBody['data']
-        // lançaria "type 'String' is not a subtype of type 'int' of 'index'".
-        final body = rawBody is Map
-            ? Map<String, dynamic>.from(rawBody)
-            : <String, dynamic>{};
-        final list = rawBody is List
-            ? extractAnyList(rawBody)
-            : extractAnyList(body['data'] ?? body['dados'] ?? body);
+        // NetworkResponse._toMap já normaliza List do backend em {'data': [...]},
+        // então body é sempre Map e a lista sai de data/dados.
+        final body = resp.body ?? <String, dynamic>{};
+        final list = extractAnyList(body['data'] ?? body['dados'] ?? body);
         final total = ((body['totalElements'] ??
                 body['total'] ??
                 (body['data'] is Map ? body['data']['totalElements'] : null) ??
