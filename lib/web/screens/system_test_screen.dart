@@ -84,7 +84,7 @@ class _SystemTestScreenState extends State<SystemTestScreen>
           tabs: const [
             Tab(icon: Icon(Icons.api, size: 16), text: 'Endpoints CRUD'),
             Tab(icon: Icon(Icons.table_chart, size: 16), text: 'Telas Dinâmicas'),
-            Tab(icon: Icon(Icons.test_attr, size: 16), text: 'Teste Endpoints'),
+            Tab(icon: Icon(Icons.http, size: 16), text: 'Teste Endpoints'),
           ],
         ),
       ),
@@ -1698,7 +1698,7 @@ class _EndpointsTestTabState extends State<_EndpointsTestTab> {
     try {
       final String baseUrl = ApiLinks.baseUrl.replaceFirst('/api', '');
       final String fullUrl = '$baseUrl$endpoint';
-      final headers = {'Authorization': 'Bearer ${AuthUtility.token}'};
+      final headers = {'Authorization': 'Bearer ${AuthUtility.userInfo?.token ?? ''}'};
 
       http.Response response;
       switch (_selectedMethod) {
