@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../widgets/user_banners.dart';
 import '../../utils/grid_colors.dart';
 import 'package:flutter_html/flutter_html.dart';
 import '../../services/checkout_caller.dart';
@@ -211,10 +212,9 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     final valorTotal = widget.productQnt * widget.productValue;
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Finalização da Compra',
-            style: TextStyle(fontWeight: FontWeight.bold)),
-        centerTitle: true,
+      appBar: const UserBannerAppBar(
+        screenTitle: 'Finalização da Compra',
+        showBackButton: true,
       ),
       body: Container(
         color: _fundoVerdeClaro,

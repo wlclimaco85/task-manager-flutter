@@ -1,4 +1,5 @@
 import 'dart:convert';
+import '../../widgets/user_banners.dart';
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
@@ -142,10 +143,9 @@ class _MeuPerfilScreenState extends State<MeuPerfilScreen> {
 
     return Scaffold(
       backgroundColor: GridColors.card,
-      appBar: AppBar(
-        title: const Text('Meu Perfil'),
-        backgroundColor: GridColors.primary,
-        foregroundColor: Colors.white,
+      appBar: const UserBannerAppBar(
+        screenTitle: 'Meu Perfil',
+        showBackButton: true,
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),

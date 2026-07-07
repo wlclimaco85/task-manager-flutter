@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../widgets/user_banners.dart';
 import '../../services/network_caller.dart';
 import 'dart:io';
 import 'package:image_picker/image_picker.dart';
@@ -340,20 +341,12 @@ class _UserEditScreenState extends State<UserEditScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: GridColors.background,
-      appBar: AppBar(
-        title: const Text(
-          'Editar Perfil',
-          style: TextStyle(
-            color: GridColors.textPrimary,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        backgroundColor: GridColors.primary,
-        iconTheme: const IconThemeData(color: GridColors.textPrimary),
-        elevation: 0,
+      appBar: UserBannerAppBar(
+        screenTitle: 'Editar Perfil',
+        showBackButton: true,
         actions: [
           IconButton(
-            icon: const Icon(Icons.save),
+            icon: const Icon(Icons.save, color: Colors.white),
             onPressed: _saveForm,
           ),
         ],

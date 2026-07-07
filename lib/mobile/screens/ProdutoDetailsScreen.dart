@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../widgets/user_banners.dart';
 import 'dart:convert';
 import 'dart:typed_data';
 import '../../services/vendas_caller.dart';
@@ -71,20 +72,10 @@ class _ProdutoDetailsScreenState extends State<ProdutoDetailsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        backgroundColor: CustomColors().getLightGreenBackground(),
-        elevation: 0,
-        iconTheme: const IconThemeData(color: Colors.black),
-        title: const Text(
-          'Detalhes do Produto',
-          style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
-        ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh, color: Colors.black),
-            onPressed: _refresh,
-          ),
-        ],
+      appBar: UserBannerAppBar(
+        screenTitle: 'Detalhes do Produto',
+        showBackButton: true,
+        onRefresh: _refresh,
       ),
       backgroundColor: CustomColors().getLightGreenBackground(),
       body: FutureBuilder<List<Produto>>(

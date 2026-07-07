@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../widgets/user_banners.dart';
 import '../../../models/auth_utility.dart';
 import '../../services/vendas_caller.dart';
 import '../../../utils/api_links.dart';
@@ -59,23 +60,11 @@ class _ProductCatalogPageVendasState extends State<ProductCatalogPageVendas> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text(widget.title),
-        actions: [
-          if (isLoading)
-            const Padding(
-              padding: EdgeInsets.only(right: 16),
-              child: CircularProgressIndicator(
-                color: Colors.white,
-                strokeWidth: 2,
-              ),
-            ),
-          IconButton(
-            icon: const Icon(Icons.refresh),
-            tooltip: 'Atualizar',
-            onPressed: fetchProducts,
-          ),
-        ],
+      appBar: UserBannerAppBar(
+        screenTitle: widget.title,
+        showBackButton: true,
+        onRefresh: fetchProducts,
+        isLoading: isLoading,
       ),
       body: Container(
         color: CustomColors().getLightGreenBackground(),

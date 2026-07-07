@@ -28,6 +28,10 @@ class UserBannerAppBar extends StatefulWidget implements PreferredSizeWidget {
   /// icones fixos de notificacoes e logout no header.
   final List<Widget>? actions;
 
+  /// Exibe uma seta de voltar no inicio do header. Use em sub-paginas abertas
+  /// via Navigator.push (edicao/detalhe) que precisam voltar.
+  final bool showBackButton;
+
   /// Substitui a FilterActionBar padrão por uma barra inferior própria (ex.:
   /// toggle Dia/Mês/Ano do Calendário Financeiro). Quando informado, ignora
   /// showFilterButton/onFilterToggle/onColumns/onRefresh — quem passa um
@@ -46,6 +50,7 @@ class UserBannerAppBar extends StatefulWidget implements PreferredSizeWidget {
     this.onColumns,
     this.showFilterButton = true,
     this.actions,
+    this.showBackButton = false,
     this.customBottom,
   });
 
@@ -369,6 +374,14 @@ class _UserBannerAppBarState extends State<UserBannerAppBar> {
 
     return AppBar(
       backgroundColor: GridColors.primary,
+      automaticallyImplyLeading: false,
+      leading: widget.showBackButton
+          ? IconButton(
+              icon: const Icon(Icons.arrow_back, color: GridColors.textPrimary),
+              onPressed: () => Navigator.maybePop(context),
+              tooltip: 'Voltar',
+            )
+          : null,
       title: Container(
         constraints: BoxConstraints(
           maxWidth: MediaQuery.of(context).size.width - 120,

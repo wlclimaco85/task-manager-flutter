@@ -1,4 +1,5 @@
 import 'dart:io';
+import '../../widgets/user_banners.dart';
 import 'package:flutter/material.dart';
 import 'package:task_manager_flutter/services/network_caller.dart';
 import 'package:task_manager_flutter/utils/api_links.dart';
@@ -197,12 +198,14 @@ class _ParceiroEditScreenState extends State<ParceiroEditScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: GridColors.background,
-      appBar: AppBar(
-        title: const Text('Editar Parceiro',
-            style: TextStyle(color: GridColors.textPrimary, fontWeight: FontWeight.bold)),
-        backgroundColor: GridColors.primary,
-        iconTheme: const IconThemeData(color: GridColors.textPrimary),
-        actions: [IconButton(icon: const Icon(Icons.save), onPressed: _save)],
+      appBar: UserBannerAppBar(
+        screenTitle: 'Editar Parceiro',
+        showBackButton: true,
+        actions: [
+          IconButton(
+              icon: const Icon(Icons.save, color: Colors.white),
+              onPressed: _save),
+        ],
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),

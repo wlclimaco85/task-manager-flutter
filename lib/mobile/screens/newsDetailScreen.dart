@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../widgets/user_banners.dart';
 import 'package:intl/intl.dart';
 import '../../../models/noticias_model.dart';
 
@@ -10,8 +11,9 @@ class NewsDetailScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text(news.titulo ?? 'Detalhes da Notícia'),
+      appBar: UserBannerAppBar(
+        screenTitle: news.titulo ?? 'Detalhes da Notícia',
+        showBackButton: true,
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
