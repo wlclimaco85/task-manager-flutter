@@ -1166,7 +1166,21 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
                     ),
                   ),
                 ),
-                const SizedBox(height: 16),
+                const SizedBox(height: 8),
+                // Voltar no topo (antes so tinha embaixo, exigindo rolar tudo)
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: TextButton.icon(
+                    onPressed: () => Navigator.pop(sheetContext),
+                    icon: const Icon(Icons.arrow_back, size: 20),
+                    label: const Text('Voltar'),
+                    style: TextButton.styleFrom(
+                      foregroundColor: GridColors.textSecondary,
+                      padding: const EdgeInsets.symmetric(horizontal: 4),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 8),
                 Row(
                   children: [
                     Container(
