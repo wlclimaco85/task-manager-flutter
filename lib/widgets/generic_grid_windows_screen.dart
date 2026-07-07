@@ -64,6 +64,24 @@ class FileConfig {
 }
 
 // Configuração avançada de campo
+Future<String?> platformFileToDataUri(PlatformFile file) async {
+  Uint8List? bytes = file.bytes;
+  if (bytes == null && file.path != null) {
+    bytes = await File(file.path!).readAsBytes();
+  }
+  if (bytes == null || bytes.isEmpty) return null;
+
+  return 'data:${_mimeFromFileName(file.name)};base64,${base64Encode(bytes)}';
+}
+
+String _mimeFromFileName(String name) {
+  final lower = name.toLowerCase();
+  if (lower.endsWith('.jpg') || lower.endsWith('.jpeg')) return 'image/jpeg';
+  if (lower.endsWith('.png')) return 'image/png';
+  if (lower.endsWith('.webp')) return 'image/webp';
+  return 'application/octet-stream';
+}
+
 class FieldConfigWindows {
   final String label;
   final String fieldName;
@@ -1140,7 +1158,8 @@ class FieldFactory {
       // buscar internamente via dropdownFutureBuilder (cache miss).
       // Nunca cria um novo Future aqui — evita reiniciar a cada rebuild.
       initialOptions: cached,
-      dropdownFutureBuilder: cached == null ? config.dropdownFutureBuilder : null,
+      dropdownFutureBuilder:
+          cached == null ? config.dropdownFutureBuilder : null,
       dropdownOptions: cached == null && config.dropdownFutureBuilder == null
           ? (config.dropdownOptions ?? [])
           : null,
@@ -1604,6 +1623,7 @@ class GenericGridScreen<T> extends StatefulWidget {
   final String storageKey;
   final Widget Function(T item)? detailScreenBuilder;
   final Map<String, dynamic>? extraParams;
+  final Map<String, dynamic>? additionalFormData;
   final bool showAppBar;
   final List<Widget>? headerActions;
   final String? helpTelaNome;
@@ -1657,6 +1677,7 @@ class GenericGridScreen<T> extends StatefulWidget {
     this.storageKey = 'generic_grid_settings',
     this.detailScreenBuilder,
     this.extraParams,
+    this.additionalFormData,
     this.showAppBar = true,
     this.headerActions,
     this.helpTelaNome,
@@ -2132,7 +2153,8 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
               TenantContext.hasEmpresa) {
             initialValue = TenantContext.empresaId.toString();
             preFilledFields.add(config.fieldName);
-          } else if ((fn == 'parceiro' || fn.contains('parceiro') ||
+          } else if ((fn == 'parceiro' ||
+                  fn.contains('parceiro') ||
                   fn == 'cliente') &&
               TenantContext.hasParceiro) {
             initialValue = TenantContext.parceiroId.toString();
@@ -2658,6 +2680,10 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
     final Map<String, dynamic> enrichedFormData =
         Map.from(normalizeFormData(formData));
 
+    if (widget.additionalFormData != null) {
+      enrichedFormData.addAll(widget.additionalFormData!);
+    }
+
     if (widget.extraParams != null) {
       enrichedFormData.addAll(widget.extraParams!);
     }
@@ -2689,9 +2715,16 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
       return value;
     });
 
-    int fileId = 0;
+    final fotoFiles = filesToUpload.remove('foto');
+    if (fotoFiles != null && fotoFiles.isNotEmpty) {
+      final dataUri = await platformFileToDataUri(fotoFiles.first);
+      if (dataUri != null) {
+        enrichedFormData['foto'] = dataUri;
+      }
+    }
+
     if (filesToUpload.isNotEmpty) {
-      fileId = await _uploadFiles("", filesToUpload);
+      final fileId = await _uploadFiles("", filesToUpload);
       enrichedFormData["file"] = {"id": fileId};
     }
 
@@ -2825,7 +2858,41 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
       );
       return false;
     }
-    final adjustedFormData = normalizeFormData(formData);
+    final adjustedFormData =
+        Map<String, dynamic>.from(normalizeFormData(formData));
+
+    if (widget.additionalFormData != null) {
+      adjustedFormData.addAll(widget.additionalFormData!);
+    }
+
+    final filesToUpload = <String, List<PlatformFile>>{};
+    final keysToRemove = <String>[];
+    for (final entry in adjustedFormData.entries) {
+      final value = entry.value;
+      if (value is List<PlatformFile>) {
+        filesToUpload[entry.key] = value;
+        keysToRemove.add(entry.key);
+      }
+    }
+    for (final key in keysToRemove) {
+      adjustedFormData.remove(key);
+    }
+
+    final fotoFiles = filesToUpload.remove('foto');
+    if (fotoFiles != null && fotoFiles.isNotEmpty) {
+      final dataUri = await platformFileToDataUri(fotoFiles.first);
+      if (dataUri != null) {
+        adjustedFormData['foto'] = dataUri;
+      }
+    }
+
+    if (filesToUpload.isNotEmpty) {
+      final fileId = await _uploadFiles(
+        adjustedFormData[widget.idFieldName]?.toString(),
+        filesToUpload,
+      );
+      adjustedFormData["file"] = {"id": fileId};
+    }
 
     final response = await NetworkCaller().putRequest(
       widget.updateEndpoint.replaceAll(
@@ -3099,17 +3166,16 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
   }
 
   List<FieldConfigWindows> get _visibleFilterConfigs {
-    final all = widget.FieldConfigWindowss
-        .where((c) => c.isFilterable && !_isTechnicalFilter(c))
-        .toList();
+    final all = widget.FieldConfigWindowss.where(
+        (c) => c.isFilterable && !_isTechnicalFilter(c)).toList();
     // Prioriza campos dropdown/boolean (empresa, parceiro, status, etc.)
     // para aparecerem ANTES dos campos texto livres — evita que sejam
     // cortados pelo limite quando há muitos filtros de texto.
     all.sort((a, b) {
-      final aIsDropdown = a.fieldType == FieldType.dropdown ||
-          a.fieldType == FieldType.boolean;
-      final bIsDropdown = b.fieldType == FieldType.dropdown ||
-          b.fieldType == FieldType.boolean;
+      final aIsDropdown =
+          a.fieldType == FieldType.dropdown || a.fieldType == FieldType.boolean;
+      final bIsDropdown =
+          b.fieldType == FieldType.dropdown || b.fieldType == FieldType.boolean;
       if (aIsDropdown == bIsDropdown) return 0;
       return aIsDropdown ? -1 : 1; // dropdowns primeiro
     });
@@ -3268,22 +3334,25 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
         isDense: true,
         filled: true,
         fillColor: GridColors.card,
-        suffixIcon: (_filterControllers[config.fieldName]?.text.isNotEmpty ??
-                false)
-            ? IconButton(
-                icon: const Icon(Icons.clear, size: 16),
-                onPressed: () {
-                  _filterControllers[config.fieldName]?.clear();
-                  _applyFilters();
-                },
-              )
-            : null,
-        border:
-            OutlineInputBorder(borderRadius: BorderRadius.circular(6), borderSide: const BorderSide(color: GridColors.divider)),
-        enabledBorder:
-            OutlineInputBorder(borderRadius: BorderRadius.circular(6), borderSide: const BorderSide(color: GridColors.divider)),
-        focusedBorder:
-            OutlineInputBorder(borderRadius: BorderRadius.circular(6), borderSide: const BorderSide(color: GridColors.primary)),
+        suffixIcon:
+            (_filterControllers[config.fieldName]?.text.isNotEmpty ?? false)
+                ? IconButton(
+                    icon: const Icon(Icons.clear, size: 16),
+                    onPressed: () {
+                      _filterControllers[config.fieldName]?.clear();
+                      _applyFilters();
+                    },
+                  )
+                : null,
+        border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(6),
+            borderSide: const BorderSide(color: GridColors.divider)),
+        enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(6),
+            borderSide: const BorderSide(color: GridColors.divider)),
+        focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(6),
+            borderSide: const BorderSide(color: GridColors.primary)),
       ),
       onChanged: (_) {
         setState(() {});
@@ -3306,10 +3375,10 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
       ];
       final currentValue = _filterControllers[config.fieldName]?.text;
       final hasValue = currentValue != null && currentValue.isNotEmpty;
-      final validValue = hasValue &&
-              boolOptions.any((o) => o['value'] == currentValue)
-          ? currentValue
-          : null;
+      final validValue =
+          hasValue && boolOptions.any((o) => o['value'] == currentValue)
+              ? currentValue
+              : null;
       return InputDecorator(
         decoration: InputDecoration(
           labelText: config.label,
@@ -3317,14 +3386,21 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
           isDense: true,
           filled: true,
           fillColor: GridColors.card,
-          border: OutlineInputBorder(borderRadius: BorderRadius.circular(6), borderSide: const BorderSide(color: GridColors.divider)),
-          enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(6), borderSide: const BorderSide(color: GridColors.divider)),
-          focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(6), borderSide: const BorderSide(color: GridColors.primary)),
+          border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(6),
+              borderSide: const BorderSide(color: GridColors.divider)),
+          enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(6),
+              borderSide: const BorderSide(color: GridColors.divider)),
+          focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(6),
+              borderSide: const BorderSide(color: GridColors.primary)),
           suffixIcon: hasValue
               ? IconButton(
                   icon: const Icon(Icons.clear, size: 16),
                   padding: EdgeInsets.zero,
-                  constraints: const BoxConstraints(minWidth: 24, minHeight: 24),
+                  constraints:
+                      const BoxConstraints(minWidth: 24, minHeight: 24),
                   onPressed: () {
                     setState(() {
                       _filterControllers[config.fieldName]?.clear();
@@ -3341,12 +3417,18 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
             value: validValue,
             isDense: true,
             isExpanded: true,
-            hint: Text('Todos', style: TextStyle(fontSize: 14, color: Colors.grey.shade500)),
+            hint: Text('Todos',
+                style: TextStyle(fontSize: 14, color: Colors.grey.shade500)),
             items: [
-              DropdownMenuItem<String>(value: '', child: Text('Todos', style: TextStyle(fontSize: 14, color: Colors.grey.shade600))),
+              DropdownMenuItem<String>(
+                  value: '',
+                  child: Text('Todos',
+                      style: TextStyle(
+                          fontSize: 14, color: Colors.grey.shade600))),
               ...boolOptions.map((opt) => DropdownMenuItem<String>(
                     value: opt['value']!,
-                    child: Text(opt['label']!, style: const TextStyle(fontSize: 14)),
+                    child: Text(opt['label']!,
+                        style: const TextStyle(fontSize: 14)),
                   )),
             ],
             onChanged: (val) {
@@ -3359,8 +3441,8 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
                   _filterControllers[config.fieldName]!.text = val;
                   _filterDropdownValues[config.fieldName] = val;
                   _filterDropdownLabels[config.fieldName] =
-                      boolOptions.firstWhere((o) => o['value'] == val, orElse: () => {})[
-                          'label'] ??
+                      boolOptions.firstWhere((o) => o['value'] == val,
+                              orElse: () => {})['label'] ??
                           val;
                 }
               });
@@ -3383,15 +3465,22 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
           filled: true,
           fillColor: GridColors.card,
           border: OutlineInputBorder(borderRadius: BorderRadius.circular(6)),
-          enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(6), borderSide: const BorderSide(color: GridColors.divider)),
+          enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(6),
+              borderSide: const BorderSide(color: GridColors.divider)),
         ),
-        child: const SizedBox(height: 18, child: LinearProgressIndicator(minHeight: 2)),
+        child: const SizedBox(
+            height: 18, child: LinearProgressIndicator(minHeight: 2)),
       );
     }
 
     final options = cached;
-    final vf = config.dropdownValueField.isNotEmpty ? config.dropdownValueField : 'value';
-    final df = config.dropdownDisplayField.isNotEmpty ? config.dropdownDisplayField : 'label';
+    final vf = config.dropdownValueField.isNotEmpty
+        ? config.dropdownValueField
+        : 'value';
+    final df = config.dropdownDisplayField.isNotEmpty
+        ? config.dropdownDisplayField
+        : 'label';
     final currentLabel = _filterDropdownLabels[config.fieldName] ?? '';
     final hasValue = currentLabel.isNotEmpty;
 
@@ -3420,7 +3509,8 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
           } else {
             _filterControllers[config.fieldName]!.text = val;
             _filterDropdownValues[config.fieldName] = val;
-            _filterDropdownLabels[config.fieldName] = result[df]?.toString() ?? val;
+            _filterDropdownLabels[config.fieldName] =
+                result[df]?.toString() ?? val;
           }
         });
         _applyFilters();
@@ -3432,19 +3522,27 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
           isDense: true,
           filled: true,
           fillColor: GridColors.card,
-          border: OutlineInputBorder(borderRadius: BorderRadius.circular(6), borderSide: const BorderSide(color: GridColors.divider)),
-          enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(6), borderSide: const BorderSide(color: GridColors.divider)),
-          focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(6), borderSide: const BorderSide(color: GridColors.primary)),
+          border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(6),
+              borderSide: const BorderSide(color: GridColors.divider)),
+          enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(6),
+              borderSide: const BorderSide(color: GridColors.divider)),
+          focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(6),
+              borderSide: const BorderSide(color: GridColors.primary)),
           suffixIcon: hasValue
               ? IconButton(
                   icon: const Icon(Icons.clear, size: 16),
                   padding: EdgeInsets.zero,
-                  constraints: const BoxConstraints(minWidth: 24, minHeight: 24),
+                  constraints:
+                      const BoxConstraints(minWidth: 24, minHeight: 24),
                   onPressed: clearFilter,
                 )
               : const Padding(
                   padding: EdgeInsets.all(8),
-                  child: Icon(Icons.search, size: 18, color: GridColors.inputBorder),
+                  child: Icon(Icons.search,
+                      size: 18, color: GridColors.inputBorder),
                 ),
         ),
         child: Text(
@@ -5162,11 +5260,13 @@ class _FilterSearchDialogState extends State<_FilterSearchDialog> {
                 style: const TextStyle(fontSize: 13),
                 decoration: InputDecoration(
                   hintText: 'Buscar...',
-                  prefixIcon: const Icon(Icons.search, size: 18, color: GridColors.inputBorder),
+                  prefixIcon: const Icon(Icons.search,
+                      size: 18, color: GridColors.inputBorder),
                   isDense: true,
                   filled: true,
                   fillColor: GridColors.card,
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                  contentPadding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                   border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(8),
                       borderSide: const BorderSide(color: GridColors.divider)),
@@ -5175,7 +5275,8 @@ class _FilterSearchDialogState extends State<_FilterSearchDialog> {
                       borderSide: const BorderSide(color: GridColors.divider)),
                   focusedBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(8),
-                      borderSide: const BorderSide(color: GridColors.secondary)),
+                      borderSide:
+                          const BorderSide(color: GridColors.secondary)),
                 ),
                 onChanged: (v) => setState(() => _query = v),
               ),
@@ -5191,11 +5292,13 @@ class _FilterSearchDialogState extends State<_FilterSearchDialog> {
                   ListTile(
                     dense: true,
                     visualDensity: VisualDensity.compact,
-                    leading: const Icon(Icons.clear_all, size: 18, color: GridColors.textSecondary),
+                    leading: const Icon(Icons.clear_all,
+                        size: 18, color: GridColors.textSecondary),
                     title: const Text('Todos',
-                        style: TextStyle(fontSize: 13, color: GridColors.textSecondary)),
-                    onTap: () => Navigator.pop(
-                        context, {widget.vf: '', widget.df: ''}),
+                        style: TextStyle(
+                            fontSize: 13, color: GridColors.textSecondary)),
+                    onTap: () =>
+                        Navigator.pop(context, {widget.vf: '', widget.df: ''}),
                   ),
                   const Divider(height: 1, color: GridColors.divider),
                   ...filtered.map((opt) {
@@ -5216,7 +5319,8 @@ class _FilterSearchDialogState extends State<_FilterSearchDialog> {
                       padding: EdgeInsets.symmetric(vertical: 16),
                       child: Center(
                         child: Text('Nenhum resultado',
-                            style: TextStyle(fontSize: 12, color: GridColors.textSecondary)),
+                            style: TextStyle(
+                                fontSize: 12, color: GridColors.textSecondary)),
                       ),
                     ),
                 ],
@@ -5231,7 +5335,8 @@ class _FilterSearchDialogState extends State<_FilterSearchDialog> {
                 child: TextButton(
                   onPressed: () => Navigator.pop(context),
                   child: const Text('Cancelar',
-                      style: TextStyle(color: GridColors.textSecondary, fontSize: 13)),
+                      style: TextStyle(
+                          color: GridColors.textSecondary, fontSize: 13)),
                 ),
               ),
             ),

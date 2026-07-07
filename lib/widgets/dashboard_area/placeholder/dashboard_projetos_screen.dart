@@ -31,6 +31,7 @@ class _DashboardProjetosScreenState extends State<DashboardProjetosScreen> {
     try {
       final resp =
           await TenantContext.get('${ApiLinks.baseUrl}/dashboard/projetos');
+      if (!mounted) return;
       if (resp.statusCode == 200 && resp.bodyBytes.isNotEmpty) {
         final body = jsonDecode(utf8.decode(resp.bodyBytes));
         if (body is Map && body['data'] is Map) {

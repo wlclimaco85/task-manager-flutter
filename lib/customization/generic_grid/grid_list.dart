@@ -11,6 +11,7 @@ import 'package:flutter/material.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../models/network_response.dart';
 import '../../services/network_caller.dart';
@@ -61,6 +62,20 @@ class GridListScreen extends StatefulWidget {
   final bool showAppBar;
   final bool showFab;
 
+  /// Chamado uma vez após a inicialização, entregando ao pai uma referência
+  /// para abrir o diálogo "Campos visíveis" desta tela — usado quando o
+  /// AppBar (ex.: UserBannerAppBar) é renderizado por um widget pai que não
+  /// tem acesso direto ao estado de visibilidade de campos, que vive aqui.
+  final ValueChanged<VoidCallback>? onFieldSettingsReady;
+  final ValueChanged<VoidCallback>? onFilterToggleReady;
+
+  /// Notifica o pai sempre que o estado de customização (filtros preenchidos
+  /// e/ou campos ocultos em relação ao padrão) mudar — usado para mostrar um
+  /// indicador visual nos ícones de filtro/colunas do AppBar.
+  final void Function(
+      {required bool hasActiveFilters,
+      required bool hasCustomColumns})? onCustomizationStateChanged;
+
   const GridListScreen({
     super.key,
     required this.title,
@@ -91,6 +106,9 @@ class GridListScreen extends StatefulWidget {
     this.serverActions = const [],
     this.showAppBar = true,
     this.showFab = true,
+    this.onFieldSettingsReady,
+    this.onFilterToggleReady,
+    this.onCustomizationStateChanged,
   });
 
   @override
@@ -124,8 +142,12 @@ class _GridListScreenState extends State<GridListScreen> {
   void initState() {
     super.initState();
     L.i('[GridList] init for "${widget.title}"');
+    widget.onFieldSettingsReady?.call(_showFieldSettings);
+    widget.onFilterToggleReady?.call(_toggleFilters);
     _init();
   }
+
+  void _toggleFilters() => setState(() => _filtersOpen = !_filtersOpen);
 
   Future<void> _init() async {
     // visibilidade default dos campos + filtros
@@ -133,12 +155,18 @@ class _GridListScreenState extends State<GridListScreen> {
       _fieldVisibility[c.fieldName] = c.isVisibleByDefault;
       if (c.isFilterable) _filterCtrls[c.fieldName] = TextEditingController();
     }
-    // filtros iniciais
+
+    // restaura preferências salvas (campos visíveis e filtros digitados)
+    await _loadFieldPreferences();
+    await _loadFilterPreferences();
+
+    // filtros iniciais explícitos do chamador têm prioridade sobre o salvo
     widget.initialFilters?.forEach((k, v) {
       if (_filterCtrls.containsKey(k)) {
         _filterCtrls[k]!.text = v?.toString() ?? '';
       }
     });
+    _notifyCustomizationState();
 
     _customActions =
         widget.customActions != null ? widget.customActions!() : [];
@@ -151,6 +179,76 @@ class _GridListScreenState extends State<GridListScreen> {
 
     // primeira carga
     await _load(reset: true);
+  }
+
+  String get _prefsKeyBase => '${widget.storageKey}_${widget.title}';
+
+  Future<void> _loadFieldPreferences() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      for (final c in widget.fieldConfigs) {
+        final saved = prefs.getBool('${_prefsKeyBase}_field_${c.fieldName}');
+        if (saved != null) _fieldVisibility[c.fieldName] = saved;
+      }
+    } catch (e) {
+      L.w('[GridList] load field prefs fail: $e');
+    }
+  }
+
+  Future<void> _saveFieldPreferences() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      for (final c in widget.fieldConfigs) {
+        await prefs.setBool(
+          '${_prefsKeyBase}_field_${c.fieldName}',
+          _fieldVisibility[c.fieldName] ?? c.isVisibleByDefault,
+        );
+      }
+    } catch (e) {
+      L.w('[GridList] save field prefs fail: $e');
+    }
+  }
+
+  Future<void> _loadFilterPreferences() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      for (final entry in _filterCtrls.entries) {
+        final saved = prefs.getString('${_prefsKeyBase}_filter_${entry.key}');
+        if (saved != null && saved.isNotEmpty) entry.value.text = saved;
+      }
+    } catch (e) {
+      L.w('[GridList] load filter prefs fail: $e');
+    }
+  }
+
+  Future<void> _saveFilterPreferences() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      for (final entry in _filterCtrls.entries) {
+        final key = '${_prefsKeyBase}_filter_${entry.key}';
+        if (entry.value.text.isEmpty) {
+          await prefs.remove(key);
+        } else {
+          await prefs.setString(key, entry.value.text);
+        }
+      }
+    } catch (e) {
+      L.w('[GridList] save filter prefs fail: $e');
+    }
+  }
+
+  /// Recalcula se há filtros preenchidos e/ou campos ocultos em relação ao
+  /// padrão, e avisa o pai (usado para o indicador visual nos ícones do AppBar).
+  void _notifyCustomizationState() {
+    final hasActiveFilters =
+        _filterCtrls.values.any((c) => c.text.trim().isNotEmpty);
+    final hasCustomColumns = widget.fieldConfigs.any((c) =>
+        (_fieldVisibility[c.fieldName] ?? c.isVisibleByDefault) !=
+        c.isVisibleByDefault);
+    widget.onCustomizationStateChanged?.call(
+      hasActiveFilters: hasActiveFilters,
+      hasCustomColumns: hasCustomColumns,
+    );
   }
 
   Future<void> _resolveAsyncPerms() async {
@@ -228,7 +326,9 @@ class _GridListScreenState extends State<GridListScreen> {
     try {
       final resp = await NetworkCaller().getRequest(url);
       if (resp.statusCode == 200 && resp.body != null) {
-        final body = resp.body ?? {};
+        // NetworkResponse._toMap já normaliza List do backend em {'data': [...]},
+        // então body é sempre Map e a lista sai de data/dados.
+        final body = resp.body ?? <String, dynamic>{};
         final list = extractAnyList(body['data'] ?? body['dados'] ?? body);
         final total = ((body['totalElements'] ??
                 body['total'] ??
@@ -318,20 +418,18 @@ class _GridListScreenState extends State<GridListScreen> {
       backgroundColor: GridColors.background,
       appBar: widget.showAppBar
           ? (widget.useUserBannerAppBar
-              ? PreferredSize(
-                  preferredSize: Size.fromHeight(
-                      widget.useUserBannerAppBar ? 94 : kToolbarHeight),
-                  child: UserBannerAppBar(
-                    screenTitle: widget.title,
-                    onTapped: widget.onUserBannerTapped,
-                    onUserTap: widget.onUserBannerTapped,
-                    onRefresh:
-                        widget.onBannerRefresh ?? () => _load(reset: true),
-                    isLoading: _loading,
-                    onFilterToggle: () =>
-                        setState(() => _filtersOpen = !_filtersOpen),
-                    showFilterButton: widget.useUserBannerAppBar,
-                  ),
+              // UserBannerAppBar ja e PreferredSizeWidget e calcula a propria
+              // altura (banner + subheader verde). NAO embrulhar em PreferredSize
+              // com altura fixa, senao o subheader (FilterActionBar) e cortado.
+              ? UserBannerAppBar(
+                  screenTitle: widget.title,
+                  onTapped: widget.onUserBannerTapped,
+                  onUserTap: widget.onUserBannerTapped,
+                  onRefresh: widget.onBannerRefresh ?? () => _load(reset: true),
+                  isLoading: _loading,
+                  onFilterToggle: () =>
+                      setState(() => _filtersOpen = !_filtersOpen),
+                  showFilterButton: widget.useUserBannerAppBar,
                 )
               : (_selectionMode ? _selectionAppBar() : _normalAppBar()))
           : null,
@@ -704,6 +802,8 @@ class _GridListScreenState extends State<GridListScreen> {
   }
 
   void _applyFilters() async {
+    await _saveFilterPreferences();
+    _notifyCustomizationState();
     // aqui mantemos a semântica anterior (recarregar do backend)
     await _load(reset: true);
   }
@@ -1299,9 +1399,11 @@ class _GridListScreenState extends State<GridListScreen> {
                 onPressed: () => Navigator.pop(ctx),
                 child: const Text(GridTexts.cancel)),
             ElevatedButton(
-              onPressed: () {
-                if (mounted) setState(() {});
+              onPressed: () async {
+                await _saveFieldPreferences();
+                _notifyCustomizationState();
                 Navigator.pop(ctx);
+                if (mounted) setState(() {});
               },
               child: const Text('Aplicar'),
             ),
@@ -1445,9 +1547,8 @@ class _DetailPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final visibleFields = fieldConfigs
-        .where((f) => f.isInForm || f.showInCard)
-        .toList();
+    final visibleFields =
+        fieldConfigs.where((f) => f.isInForm || f.showInCard).toList();
 
     return Scaffold(
       backgroundColor: GridColors.background,

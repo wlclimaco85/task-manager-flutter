@@ -31,6 +31,7 @@ class DynamicGridWindowsScreen<T> extends StatefulWidget {
   final Map<String, dynamic> Function(T) toJson;
   final Widget Function(T item)? detailScreenBuilder;
   final Map<String, dynamic>? extraParams;
+  final Map<String, dynamic>? additionalFormData;
   final CustomActionsBuilder<T>? customActions;
   final List<FieldConfigWindows>? fieldOverrides;
   final bool showAppBar;
@@ -41,8 +42,10 @@ class DynamicGridWindowsScreen<T> extends StatefulWidget {
   final String? deleteEndpointOverride;
   final List<Widget>? headerActions;
   final void Function()? onAfterCreate;
-  final Future<void> Function(Map<String, dynamic> formData, T? item)? onAfterSave;
-  final void Function(Set<String> ids, List<Map<String, dynamic>> selectedData)? onSelectedRowsChanged;
+  final Future<void> Function(Map<String, dynamic> formData, T? item)?
+      onAfterSave;
+  final void Function(Set<String> ids, List<Map<String, dynamic>> selectedData)?
+      onSelectedRowsChanged;
 
   /// Ver GenericGridScreen.prefetchExtraFields/onAfterSave — repassados como
   /// estão, sem lógica própria neste nível (só plumbing).
@@ -56,6 +59,7 @@ class DynamicGridWindowsScreen<T> extends StatefulWidget {
     required this.toJson,
     this.detailScreenBuilder,
     this.extraParams,
+    this.additionalFormData,
     this.customActions,
     this.fieldOverrides,
     this.showAppBar = true,
@@ -89,12 +93,12 @@ class _DynamicGridWindowsScreenState<T>
     // Tenta até 5 vezes com delay crescente antes de desistir
     const maxTentativas = 5;
     for (int i = 1; i <= maxTentativas; i++) {
-      final tela = await TelaService(networkCaller: NetworkCaller())
-          .getTelaFromCache(
-            widget.telaNome,
-            empId: TenantContext.empresaId,
-            clienteId: TenantContext.parceiroId,
-          );
+      final tela =
+          await TelaService(networkCaller: NetworkCaller()).getTelaFromCache(
+        widget.telaNome,
+        empId: TenantContext.empresaId,
+        clienteId: TenantContext.parceiroId,
+      );
       if (tela != null) return tela;
       if (i < maxTentativas) {
         await Future.delayed(Duration(seconds: i * 2)); // 2s, 4s, 6s, 8s
@@ -105,7 +109,8 @@ class _DynamicGridWindowsScreenState<T>
 
   // ─────────────────────────────────────────────────────────────────────────
   List<FieldConfigWindows> _convert(List<TelaField> fields) {
-    final overrides = widget.fieldOverrides ?? kScreenFieldOverrides[widget.telaNome] ?? [];
+    final overrides =
+        widget.fieldOverrides ?? kScreenFieldOverrides[widget.telaNome] ?? [];
 
     // Overrides de SUPRESSÃO: isInForm=false — apenas ocultam o campo bruto
     final suppressMap = <String, FieldConfigWindows>{
@@ -124,11 +129,14 @@ class _DynamicGridWindowsScreenState<T>
       for (final o in overrides.where((o) => o.isInForm)) o.fieldName: o,
     };
     final replaceMapLower = <String, FieldConfigWindows>{
-      for (final o in overrides.where((o) => o.isInForm)) o.fieldName.toLowerCase(): o,
+      for (final o in overrides.where((o) => o.isInForm))
+        o.fieldName.toLowerCase(): o,
     };
     final dropdownReplaceNames = overrides
-        .where((o) => o.isInForm &&
-            (o.fieldType == FieldType.dropdown || o.fieldType == FieldType.multiselect))
+        .where((o) =>
+            o.isInForm &&
+            (o.fieldType == FieldType.dropdown ||
+                o.fieldType == FieldType.multiselect))
         .map((o) => o.fieldName.toLowerCase())
         .toSet();
 
@@ -159,7 +167,8 @@ class _DynamicGridWindowsScreenState<T>
         // Verifica se existe um replace override correspondente para adicionar
         // Ex: app_id suprimido → adiciona dropdown "aplicativo"
         final base = _extractBase(fnLower);
-        if (base != null && dropdownReplaceNames.contains(base) &&
+        if (base != null &&
+            dropdownReplaceNames.contains(base) &&
             !insertedReplace.contains(base)) {
           insertedReplace.add(base);
           converted.add(replaceMapLower[base]!);
@@ -169,9 +178,9 @@ class _DynamicGridWindowsScreenState<T>
 
       // ── 2. Override de substituição exato ─────────────────────────────
       final fnNormKey = fnNorm;
-      final matchedReplace = replaceMap[fn]
-          ?? replaceMapLower[fnLower]
-          ?? replaceMapLower.entries
+      final matchedReplace = replaceMap[fn] ??
+          replaceMapLower[fnLower] ??
+          replaceMapLower.entries
               .where((e) => e.key.replaceAll('_', '') == fnNormKey)
               .map((e) => e.value)
               .firstOrNull;
@@ -199,8 +208,11 @@ class _DynamicGridWindowsScreenState<T>
       if (base != null) {
         final baseNorm = base.replaceAll('_', '');
         final matchName = dropdownReplaceNames.firstWhere(
-          (n) => n.replaceAll('_', '') == baseNorm || n.contains(base) || base.contains(n),
-          orElse: () => '');
+            (n) =>
+                n.replaceAll('_', '') == baseNorm ||
+                n.contains(base) ||
+                base.contains(n),
+            orElse: () => '');
         if (matchName.isNotEmpty && !insertedReplace.contains(matchName)) {
           insertedReplace.add(matchName);
           converted.add(replaceMapLower[matchName]!);
@@ -209,11 +221,17 @@ class _DynamicGridWindowsScreenState<T>
       }
 
       // ── 4. Campos de data automática → ocultar ─────────────────────────
-      if (fnLower == 'dh_created_at' || fnLower == 'dh_updated_at' ||
-          fnLower == 'dhcreatedat' || fnLower == 'dhupdatedat' ||
-          fnLower == 'created_at' || fnLower == 'updated_at') {
+      if (fnLower == 'dh_created_at' ||
+          fnLower == 'dh_updated_at' ||
+          fnLower == 'dhcreatedat' ||
+          fnLower == 'dhupdatedat' ||
+          fnLower == 'created_at' ||
+          fnLower == 'updated_at') {
         converted.add(FieldConfigWindows(
-          label: f.label, fieldName: fn, isInForm: false, isVisibleByDefault: false));
+            label: f.label,
+            fieldName: fn,
+            isInForm: false,
+            isVisibleByDefault: false));
         continue;
       }
 
@@ -221,8 +239,11 @@ class _DynamicGridWindowsScreenState<T>
       if (_isRawFkIdField(fnLower, allDropdownNames)) continue;
 
       // ── 6. Auto-dropdown / auto-multiselect do backend ─────────────────
-      final isAutoFk = f.dropdownEndpoint != null && f.dropdownEndpoint!.isNotEmpty && !f.multiSelect;
-      final isAutoMs = f.multiSelect || f.fieldType == TelaFieldType.multiselect;
+      final isAutoFk = f.dropdownEndpoint != null &&
+          f.dropdownEndpoint!.isNotEmpty &&
+          !f.multiSelect;
+      final isAutoMs =
+          f.multiSelect || f.fieldType == TelaFieldType.multiselect;
 
       converted.add(FieldConfigWindows(
         label: f.label,
@@ -234,29 +255,44 @@ class _DynamicGridWindowsScreenState<T>
         maxLines: f.maxLines,
         icon: f.iconData,
         isSortable: f.isSortable,
-        fieldType: isAutoMs ? FieldType.multiselect
-            : isAutoFk ? FieldType.dropdown
-            : _telaType(f.fieldType, fn),
-        dropdownValueField: f.dropdownValueField.isNotEmpty ? f.dropdownValueField : 'value',
-        dropdownDisplayField: f.dropdownDisplayField.isNotEmpty ? f.dropdownDisplayField : 'label',
-        dropdownOptions: f.dropdownOptions.map((opt) => {
-          'value': opt.optionValue,
-          'label': opt.optionLabel ?? opt.optionValue.toString(),
-        }).toList(),
-        dropdownFutureBuilder: (isAutoFk || isAutoMs) && f.dropdownEndpoint != null
-            ? _makeFuture(f.dropdownEndpoint!) : null,
+        fieldType: isAutoMs
+            ? FieldType.multiselect
+            : isAutoFk
+                ? FieldType.dropdown
+                : _telaType(f.fieldType, fn),
+        dropdownValueField:
+            f.dropdownValueField.isNotEmpty ? f.dropdownValueField : 'value',
+        dropdownDisplayField: f.dropdownDisplayField.isNotEmpty
+            ? f.dropdownDisplayField
+            : 'label',
+        dropdownOptions: f.dropdownOptions
+            .map((opt) => {
+                  'value': opt.optionValue,
+                  'label': opt.optionLabel ?? opt.optionValue.toString(),
+                })
+            .toList(),
+        dropdownFutureBuilder:
+            (isAutoFk || isAutoMs) && f.dropdownEndpoint != null
+                ? _makeFuture(f.dropdownEndpoint!)
+                : null,
         isRequired: f.isRequired,
-        validator: (v) => (f.isRequired && (v == null || v.isEmpty)) ? '${f.label} é obrigatório' : null,
+        validator: (v) => (f.isRequired && (v == null || v.isEmpty))
+            ? '${f.label} é obrigatório'
+            : null,
         isVisibleByDefault: f.isVisibleByDefault,
         isFixed: f.isFixed,
-        enabled: (isAutoFk || isAutoMs) ? true
-            : (f.fieldType == TelaFieldType.boolean) ? true
-            : f.enabled,
+        enabled: (isAutoFk || isAutoMs)
+            ? true
+            : (f.fieldType == TelaFieldType.boolean)
+                ? true
+                : f.enabled,
         defaultValue: f.defaultValue,
         fileConfig: f.fieldType == TelaFieldType.file
-            ? FileConfig(allowedExtensions: f.allowedExtensions,
+            ? FileConfig(
+                allowedExtensions: f.allowedExtensions,
                 allowMultiple: f.allowMultipleFiles,
-                maxFileSize: f.maxFileSize, fileFieldName: f.fileFieldName)
+                maxFileSize: f.maxFileSize,
+                fileFieldName: f.fileFieldName)
             : null,
         dropdownSelectedValue: f.defaultValue,
         fieldOrder: f.fieldOrder > 0 ? f.fieldOrder : null,
@@ -292,10 +328,15 @@ class _DynamicGridWindowsScreenState<T>
 
   /// Extrai o nome base de um campo ID (ex: "app_id" → "app", "cod_app" → "app")
   static String? _extractBase(String fnLower) {
-    if (fnLower.endsWith('_id') && fnLower.length > 3) return fnLower.substring(0, fnLower.length - 3);
-    if (fnLower.startsWith('id_') && fnLower.length > 3) return fnLower.substring(3);
-    if (fnLower.startsWith('cod_') && fnLower.length > 4) return fnLower.substring(4);
-    if (fnLower.endsWith('id') && fnLower.length > 2 && !fnLower.contains('_')) {
+    if (fnLower.endsWith('_id') && fnLower.length > 3)
+      return fnLower.substring(0, fnLower.length - 3);
+    if (fnLower.startsWith('id_') && fnLower.length > 3)
+      return fnLower.substring(3);
+    if (fnLower.startsWith('cod_') && fnLower.length > 4)
+      return fnLower.substring(4);
+    if (fnLower.endsWith('id') &&
+        fnLower.length > 2 &&
+        !fnLower.contains('_')) {
       return fnLower.substring(0, fnLower.length - 2);
     }
     return null;
@@ -304,8 +345,15 @@ class _DynamicGridWindowsScreenState<T>
   /// Retorna true se o campo é um ID bruto de FK que deve ser suprimido
   static bool _isRawFkIdField(String fnLower, Set<String> allDropdownNames) {
     const alwaysHide = {
-      'file_id', 'foto_id', 'foto_perfil_id', 'academia_id',
-      'cod_personal', 'cod_produtor', 'parent_id', 'user_id', 'audit_id',
+      'file_id',
+      'foto_id',
+      'foto_perfil_id',
+      'academia_id',
+      'cod_personal',
+      'cod_produtor',
+      'parent_id',
+      'user_id',
+      'audit_id',
     };
     if (alwaysHide.contains(fnLower)) return true;
 
@@ -313,7 +361,9 @@ class _DynamicGridWindowsScreenState<T>
     if (base == null || base.length < 2) return false;
 
     for (final name in allDropdownNames) {
-      if (name == base || name.contains(base) || base.contains(name) ||
+      if (name == base ||
+          name.contains(base) ||
+          base.contains(name) ||
           name.replaceAll('_', '') == base.replaceAll('_', '')) {
         return true;
       }
@@ -323,13 +373,16 @@ class _DynamicGridWindowsScreenState<T>
 
   FieldType _telaType(TelaFieldType tft, String fn) {
     final f = fn.toLowerCase();
-    if (f == 'senha' || f.endsWith('_senha') || f == 'password') return FieldType.password;
+    if (f == 'senha' || f.endsWith('_senha') || f == 'password')
+      return FieldType.password;
     if (f == 'email' || f.endsWith('_email')) return FieldType.email;
     if (f == 'cpf' || f.endsWith('_cpf')) return FieldType.cpfCnpj;
     if (f == 'cnpj' || f.endsWith('_cnpj')) return FieldType.cpfCnpj;
-    if (f == 'cpfcnpj' || f == 'cpf_cnpj' || f == 'documento') return FieldType.cpfCnpj;
+    if (f == 'cpfcnpj' || f == 'cpf_cnpj' || f == 'documento')
+      return FieldType.cpfCnpj;
     if (f == 'cep' || f.endsWith('_cep')) return FieldType.cep;
-    if (f == 'telefone' || f == 'celular' || f.endsWith('_telefone')) return FieldType.phone;
+    if (f == 'telefone' || f == 'celular' || f.endsWith('_telefone'))
+      return FieldType.phone;
     if (tft.index < FieldType.values.length) return FieldType.values[tft.index];
     return FieldType.text;
   }
@@ -337,23 +390,31 @@ class _DynamicGridWindowsScreenState<T>
   Future<List<Map<String, dynamic>>> Function() _makeFuture(String endpoint) {
     return () async {
       try {
-        final url = endpoint.startsWith('http') ? endpoint : ApiLinks.baseUrl + endpoint;
+        final url = endpoint.startsWith('http')
+            ? endpoint
+            : ApiLinks.baseUrl + endpoint;
         final resp = await NetworkCaller().getRequest(url);
         if (resp.isSuccess && resp.body != null) return _extractList(resp.body);
-      } catch (e) { L.e('Dropdown error: $e'); }
+      } catch (e) {
+        L.e('Dropdown error: $e');
+      }
       return [];
     };
   }
 
   List<Map<String, dynamic>> _extractList(dynamic data) {
     try {
-      if (data is List) return data.map((e) => Map<String, dynamic>.from(e)).toList();
+      if (data is List)
+        return data.map((e) => Map<String, dynamic>.from(e)).toList();
       if (data is Map) {
-        final d1 = data['data'] ?? data['dados'] ?? data['items'] ?? data['content'];
-        if (d1 is List) return d1.map((e) => Map<String, dynamic>.from(e)).toList();
+        final d1 =
+            data['data'] ?? data['dados'] ?? data['items'] ?? data['content'];
+        if (d1 is List)
+          return d1.map((e) => Map<String, dynamic>.from(e)).toList();
         if (d1 is Map) {
           final d2 = d1['dados'] ?? d1['content'] ?? d1['items'];
-          if (d2 is List) return d2.map((e) => Map<String, dynamic>.from(e)).toList();
+          if (d2 is List)
+            return d2.map((e) => Map<String, dynamic>.from(e)).toList();
         }
       }
       if (data is String) return _extractList(jsonDecode(data));
@@ -375,7 +436,8 @@ class _DynamicGridWindowsScreenState<T>
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    const Icon(Icons.error_outline, color: Colors.red, size: 48),
+                    const Icon(Icons.error_outline,
+                        color: Colors.red, size: 48),
                     const SizedBox(height: 12),
                     Text(
                       'Tela "${widget.telaNome}" não encontrada.',
@@ -409,10 +471,14 @@ class _DynamicGridWindowsScreenState<T>
 
         return GenericGridScreen<T>(
           title: tela.titulo,
-          fetchEndpoint: widget.fetchEndpointOverride ?? (ApiLinks.baseUrl + tela.fetchEndpoint),
-          createEndpoint: widget.createEndpointOverride ?? (ApiLinks.baseUrl + tela.createEndpoint),
-          updateEndpoint: widget.updateEndpointOverride ?? (ApiLinks.baseUrl + tela.updateEndpoint),
-          deleteEndpoint: widget.deleteEndpointOverride ?? (ApiLinks.baseUrl + tela.deleteEndpoint),
+          fetchEndpoint: widget.fetchEndpointOverride ??
+              (ApiLinks.baseUrl + tela.fetchEndpoint),
+          createEndpoint: widget.createEndpointOverride ??
+              (ApiLinks.baseUrl + tela.createEndpoint),
+          updateEndpoint: widget.updateEndpointOverride ??
+              (ApiLinks.baseUrl + tela.updateEndpoint),
+          deleteEndpoint: widget.deleteEndpointOverride ??
+              (ApiLinks.baseUrl + tela.deleteEndpoint),
           fromJson: widget.fromJson,
           toJson: widget.toJson,
           hasPermission: widget.hasPermission,
@@ -421,15 +487,19 @@ class _DynamicGridWindowsScreenState<T>
           dateFieldName: tela.dateFieldName ?? 'createdAt',
           enableSearch: tela.enableSearch,
           enableColumnReorder: true,
-          exportConfig: const ExportConfig(enableCsvExport: true, filenamePrefix: 'dynamic'),
+          exportConfig: const ExportConfig(
+              enableCsvExport: true, filenamePrefix: 'dynamic'),
           paginationConfig: const PaginationConfig(),
           detailScreenBuilder: widget.detailScreenBuilder,
           extraParams: widget.extraParams,
+          additionalFormData: widget.additionalFormData,
           customActions: widget.customActions,
           showAppBar: widget.showAppBar,
           headerActions: widget.headerActions,
           helpTelaNome: tela.nome,
-          onAfterCreate: widget.onAfterCreate != null ? () => widget.onAfterCreate!() : null,
+          onAfterCreate: widget.onAfterCreate != null
+              ? () => widget.onAfterCreate!()
+              : null,
           onAfterSave: widget.onAfterSave,
           onSelectedRowsChanged: widget.onSelectedRowsChanged,
           prefetchExtraFields: widget.prefetchExtraFields,

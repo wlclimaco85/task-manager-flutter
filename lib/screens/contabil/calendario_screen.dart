@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:task_manager_flutter/services/auth_service.dart';
 import 'package:task_manager_flutter/helpers/download_helper.dart';
+import 'package:task_manager_flutter/utils/api_links.dart';
 
 class CalendarioScreen extends StatefulWidget {
   const CalendarioScreen({Key? key}) : super(key: key);
@@ -95,7 +96,7 @@ class _CalendarioScreenState extends State<CalendarioScreen> {
                       DropdownButton<int>(
                         value: _anoAtual,
                         isExpanded: true,
-                        items: List.generate(4, (i) => 2024 + i)
+                        items: List.generate(5, (i) => DateTime.now().year - 2 + i)
                             .map((int ano) {
                           return DropdownMenuItem<int>(
                             value: ano,
@@ -147,7 +148,7 @@ class _CalendarioScreenState extends State<CalendarioScreen> {
       });
 
       // Montar URL com parâmetros
-      final baseUrl = 'http://localhost:9001'; // Ajuste conforme ambiente
+      final baseUrl = ApiLinks.baseUrl;
       final url = Uri.parse(
         '$baseUrl/api/calendario-guias/export/csv?mes=$_mesAtual&ano=$_anoAtual',
       );
@@ -198,9 +199,11 @@ class _CalendarioScreenState extends State<CalendarioScreen> {
         );
       }
     } finally {
-      setState(() {
-        _carregando = false;
-      });
+      if (mounted) {
+        setState(() {
+          _carregando = false;
+        });
+      }
     }
   }
 
