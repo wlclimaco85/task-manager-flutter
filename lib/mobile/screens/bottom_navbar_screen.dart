@@ -50,6 +50,10 @@ import '../../widgets/dashboard_area/placeholder/dashboard_financeiro_area_place
 import '../../widgets/dashboard_area/placeholder/dashboard_comercial_placeholder_screen.dart';
 import '../../widgets/dashboard_area/placeholder/dashboard_fiscal_placeholder_screen.dart';
 import '../../widgets/dashboard_area/placeholder/dashboard_dp_area_placeholder_screen.dart';
+import '../../widgets/dashboard_area/placeholder/dashboard_gme_screen.dart';
+import '../../widgets/dashboard_area/placeholder/dashboard_projetos_screen.dart';
+import '../../widgets/dashboard_area/placeholder/dashboard_precificacao_screen.dart';
+import '../../widgets/dashboard_area/placeholder/dashboard_service_screen.dart';
 
 class BottomNavBarScreen extends StatefulWidget {
   const BottomNavBarScreen({super.key});
@@ -930,6 +934,103 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
           ),
         );
         break;
+      // GME
+      case "Dashboard GME":
+        nav = Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => const DashboardGmeScreen()),
+        );
+        break;
+      case "Contratos GME":
+        nav = _pushDynamicGrid(telaNome: 'contrato_screen', sec: sec);
+        break;
+      case "Equipamentos":
+        nav = _pushDynamicGrid(telaNome: 'equipamento_screen', sec: sec);
+        break;
+      case "Ordens de Serviço":
+        nav = _pushDynamicGrid(telaNome: 'ordem_servico_screen', sec: sec);
+        break;
+      case "Planos Manutenção":
+        nav = _pushDynamicGrid(telaNome: 'plano_manutencao_screen', sec: sec);
+        break;
+      case "Horímetro":
+        nav = _pushDynamicGrid(telaNome: 'horimetro_screen', sec: sec);
+        break;
+      case "Histórico Manutenção":
+        nav = _pushDynamicGrid(telaNome: 'historico_manutencao_screen', sec: sec);
+        break;
+      case "Técnicos":
+        nav = _pushDynamicGrid(telaNome: 'tecnico_manutencao_screen', sec: sec);
+        break;
+      // Service Desk
+      case "Dashboard Service":
+        nav = Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => const DashboardServiceScreen()),
+        );
+        break;
+      case "SLA":
+        nav = _pushDynamicGrid(telaNome: 'sla_screen', sec: sec);
+        break;
+      case "Filas Atendimento":
+        nav = _pushDynamicGrid(telaNome: 'fila_atendimento_screen', sec: sec);
+        break;
+      case "Categorias Chamado":
+        nav = _pushDynamicGrid(telaNome: 'categoria_chamado_screen', sec: sec);
+        break;
+      case "Avaliações":
+        nav = _pushDynamicGrid(telaNome: 'chamado_avaliacao_screen', sec: sec);
+        break;
+      // Projetos
+      case "Dashboard Projetos":
+        nav = Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => const DashboardProjetosScreen()),
+        );
+        break;
+      case "Projetos":
+        nav = _pushDynamicGrid(telaNome: 'projeto_screen', sec: sec);
+        break;
+      case "Etapas Projeto":
+        nav = _pushDynamicGrid(telaNome: 'projeto_etapa_screen', sec: sec);
+        break;
+      case "Recursos Projeto":
+        nav = _pushDynamicGrid(telaNome: 'projeto_recurso_screen', sec: sec);
+        break;
+      case "Apontamentos":
+        nav = _pushDynamicGrid(telaNome: 'projeto_apontamento_screen', sec: sec);
+        break;
+      case "Medições":
+        nav = _pushDynamicGrid(telaNome: 'projeto_medicao_screen', sec: sec);
+        break;
+      case "Cargos/Recursos":
+        nav = _pushDynamicGrid(telaNome: 'cargo_recurso_screen', sec: sec);
+        break;
+      // Precificação
+      case "Dashboard Precificação":
+        nav = Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => const DashboardPrecificacaoScreen()),
+        );
+        break;
+      case "Precificações":
+        nav = _pushDynamicGrid(telaNome: 'precificacao_screen', sec: sec);
+        break;
+      case "Custos Diretos":
+        nav = _pushDynamicGrid(telaNome: 'precificacao_custo_direto_screen', sec: sec);
+        break;
+      case "Mão de Obra":
+        nav = _pushDynamicGrid(telaNome: 'precificacao_mao_de_obra_screen', sec: sec);
+        break;
+      case "Serviços Precificação":
+        nav = _pushDynamicGrid(telaNome: 'precificacao_servico_screen', sec: sec);
+        break;
+      case "Condições Pagamento":
+        nav = _pushDynamicGrid(telaNome: 'precificacao_condicao_pagamento_screen', sec: sec);
+        break;
+      case "Propostas Comerciais":
+        nav = _pushDynamicGrid(telaNome: 'proposta_comercial_screen', sec: sec);
+        break;
       case "Voltar":
         return;
       case "Sair":
@@ -1114,6 +1215,57 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
         [
           if (sec.canView(AppScreen.dashFiscalArea))
             _MoreMenuAction(Icons.bar_chart, 'Dashboard Fiscal'),
+        ],
+      ),
+      _ModuloGroup(
+        'GME',
+        Icons.precision_manufacturing,
+        [
+          _MoreMenuAction(Icons.bar_chart, 'Dashboard GME'),
+          _MoreMenuAction(Icons.description, 'Contratos GME'),
+          _MoreMenuAction(Icons.build, 'Equipamentos'),
+          _MoreMenuAction(Icons.assignment, 'Ordens de Serviço'),
+          _MoreMenuAction(Icons.event_note, 'Planos Manutenção'),
+          _MoreMenuAction(Icons.timer, 'Horímetro'),
+          _MoreMenuAction(Icons.history, 'Histórico Manutenção'),
+          _MoreMenuAction(Icons.engineering, 'Técnicos'),
+        ],
+      ),
+      _ModuloGroup(
+        'Service Desk',
+        Icons.support_agent,
+        [
+          _MoreMenuAction(Icons.bar_chart, 'Dashboard Service'),
+          _MoreMenuAction(Icons.timer, 'SLA'),
+          _MoreMenuAction(Icons.queue, 'Filas Atendimento'),
+          _MoreMenuAction(Icons.category, 'Categorias Chamado'),
+          _MoreMenuAction(Icons.star, 'Avaliações'),
+        ],
+      ),
+      _ModuloGroup(
+        'Projetos',
+        Icons.folder_special,
+        [
+          _MoreMenuAction(Icons.bar_chart, 'Dashboard Projetos'),
+          _MoreMenuAction(Icons.folder, 'Projetos'),
+          _MoreMenuAction(Icons.list_alt, 'Etapas Projeto'),
+          _MoreMenuAction(Icons.people, 'Recursos Projeto'),
+          _MoreMenuAction(Icons.edit_note, 'Apontamentos'),
+          _MoreMenuAction(Icons.straighten, 'Medições'),
+          _MoreMenuAction(Icons.work, 'Cargos/Recursos'),
+        ],
+      ),
+      _ModuloGroup(
+        'Precificação',
+        Icons.calculate,
+        [
+          _MoreMenuAction(Icons.bar_chart, 'Dashboard Precificação'),
+          _MoreMenuAction(Icons.request_quote, 'Precificações'),
+          _MoreMenuAction(Icons.attach_money, 'Custos Diretos'),
+          _MoreMenuAction(Icons.person, 'Mão de Obra'),
+          _MoreMenuAction(Icons.miscellaneous_services, 'Serviços Precificação'),
+          _MoreMenuAction(Icons.payment, 'Condições Pagamento'),
+          _MoreMenuAction(Icons.description, 'Propostas Comerciais'),
         ],
       ),
       _ModuloGroup(
