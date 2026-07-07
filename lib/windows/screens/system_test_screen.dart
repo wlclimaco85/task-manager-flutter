@@ -1235,7 +1235,7 @@ class _TelasTestTabState extends State<_TelasTestTab> {
       );
 
       // ── STEP 2: CREATE ─────────────────────────────────────
-      final payload = _buildPayload(tela);
+      final payload = await _buildPayload(tela, base, headers);
       final payloadJson = jsonEncode(payload);
       await _testStep(
         label: 'POST ${tela.createEndpoint}',
@@ -1366,8 +1366,47 @@ class _TelasTestTabState extends State<_TelasTestTab> {
     }
   }
 
-  /// Gera um payload mínimo baseado nos campos da tela
-  Map<String, dynamic> _buildPayload(TelaConfig tela) {
+  /// Cache de ids reais resolvidos por endpoint de dropdown (evita GETs repetidos).
+  final Map<String, int?> _fkIdCache = {};
+
+  /// Resolve um id REAL existente consultando o endpoint do dropdown/FK,
+  /// em vez de cravar id=1 (que pode não existir no banco).
+  Future<int?> _resolveFkId(
+      String endpoint, String base, Map<String, String> headers) async {
+    if (_fkIdCache.containsKey(endpoint)) return _fkIdCache[endpoint];
+    int? id;
+    try {
+      final url = endpoint.startsWith('http') ? endpoint : base + endpoint;
+      final res = await http
+          .get(Uri.parse(url), headers: headers)
+          .timeout(const Duration(seconds: 10));
+      if (res.statusCode == 200) {
+        final data = jsonDecode(res.body);
+        List? lista;
+        if (data is List) {
+          lista = data;
+        } else if (data is Map) {
+          final inner = data['data'] ?? data['content'] ?? data['items'];
+          if (inner is List) {
+            lista = inner;
+          } else if (inner is Map) {
+            lista = (inner['dados'] ?? inner['content'] ?? inner['items']) as List?;
+          }
+        }
+        if (lista != null && lista.isNotEmpty) {
+          final first = lista.first;
+          if (first is Map && first['id'] is int) id = first['id'] as int;
+        }
+      }
+    } catch (_) {}
+    _fkIdCache[endpoint] = id;
+    return id;
+  }
+
+  /// Gera um payload mínimo baseado nos campos da tela.
+  /// Para dropdowns/FKs, resolve um id REAL existente (não crava id=1).
+  Future<Map<String, dynamic>> _buildPayload(
+      TelaConfig tela, String base, Map<String, String> headers) async {
     final ts = DateTime.now().millisecondsSinceEpoch;
     final Map<String, dynamic> payload = {};
 
@@ -1389,8 +1428,14 @@ class _TelasTestTabState extends State<_TelasTestTab> {
           payload[fn] = DateTime.now().toIso8601String();
           break;
         case TelaFieldType.dropdown:
-          // envia objeto mínimo com id=1
-          payload[fn] = {'id': 1};
+          // resolve um id REAL do endpoint do dropdown; fallback id=1
+          int fkId = 1;
+          final ep = f.dropdownEndpoint;
+          if (ep != null && ep.isNotEmpty) {
+            final real = await _resolveFkId(ep, base, headers);
+            if (real != null) fkId = real;
+          }
+          payload[fn] = {'id': fkId};
           break;
         case TelaFieldType.email:
           payload[fn] = 'teste$ts@teste.com';
