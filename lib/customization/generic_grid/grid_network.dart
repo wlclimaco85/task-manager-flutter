@@ -22,8 +22,15 @@ class NetworkResponse {
 /// HEADERS PADRÃO (Bearer token + tenant)
 /// ---------------------------------------------------------------------------
 
-Map<String, String> _defaultHeaders({Map<String, String>? extra}) {
-  final token = AuthUtility.userInfo?.token;
+Future<Map<String, String>> _defaultHeaders({Map<String, String>? extra}) async {
+  // Se a sessão ainda não foi reidratada em memória (ex.: logo após F5 no
+  // Flutter Web, antes do bootstrap terminar), busca no local storage
+  // (SharedPreferences — localStorage no Web) em vez de mandar sem token.
+  String? token = AuthUtility.userInfo?.token;
+  if (token == null) {
+    final model = await AuthUtility.obterLogin();
+    token = model?.token;
+  }
   final tenantId = TenantHelper.isAdmin ? null : TenantContext.empresaId?.toString();
   return {
     if (token != null && token.isNotEmpty) 'Authorization': 'Bearer $token',
@@ -67,7 +74,7 @@ Future<NetworkResponse> getJson(String url,
   L.d('[GET] $enrichedUrl');
   final resp = await http.get(
     Uri.parse(enrichedUrl),
-    headers: _defaultHeaders(extra: headers),
+    headers: await _defaultHeaders(extra: headers),
   );
   return _parseResponse(resp);
 }
@@ -78,7 +85,7 @@ Future<NetworkResponse> postJson(String url, Map<String, dynamic> body,
   L.d('[POST] $url | body=${jsonEncode(prepared)}');
   final resp = await http.post(
     Uri.parse(TenantContext.applyToUrl(url)),
-    headers: _defaultHeaders(extra: {'Content-Type': 'application/json', ...?headers}),
+    headers: await _defaultHeaders(extra: {'Content-Type': 'application/json', ...?headers}),
     body: jsonEncode(prepared),
   );
   return _parseResponse(resp);
@@ -90,7 +97,7 @@ Future<NetworkResponse> putJson(String url, Map<String, dynamic> body,
   L.d('[PUT] $url | body=${jsonEncode(prepared)}');
   final resp = await http.put(
     Uri.parse(TenantContext.applyToUrl(url)),
-    headers: _defaultHeaders(extra: {'Content-Type': 'application/json', ...?headers}),
+    headers: await _defaultHeaders(extra: {'Content-Type': 'application/json', ...?headers}),
     body: jsonEncode(prepared),
   );
   return _parseResponse(resp);
@@ -102,7 +109,7 @@ Future<NetworkResponse> deleteJson(String url,
   L.d('[DELETE] $enrichedUrl');
   final resp = await http.delete(
     Uri.parse(enrichedUrl),
-    headers: _defaultHeaders(extra: headers),
+    headers: await _defaultHeaders(extra: headers),
   );
   return _parseResponse(resp);
 }
@@ -155,7 +162,7 @@ Future<NetworkResponse> sendMultipart({
     if (authHeadersProvider != null) {
       req.headers.addAll(await authHeadersProvider());
     } else {
-      req.headers.addAll(_defaultHeaders());
+      req.headers.addAll(await _defaultHeaders());
     }
 
     for (final f in files) {
