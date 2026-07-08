@@ -443,7 +443,7 @@ class _GridFormDialogState extends State<GridFormDialog> {
                         .where((f) => f.size <= cfg.maxFileSize)
                         .toList();
                     if (valid.length != res.files.length) {
-                      _snack('Alguns arquivos excedem o tamanho permitido.');
+                      _snack('Alguns arquivos excedem o tamanho permitido.', true);
                     }
                     setState(() {
                       _fileCache[c.fieldName] = valid;
@@ -451,7 +451,7 @@ class _GridFormDialogState extends State<GridFormDialog> {
                     });
                   }
                 } catch (e) {
-                  _snack('Erro ao selecionar arquivo: $e');
+                  _snack('Erro ao selecionar arquivo: $e', true);
                 }
               }
             : null,
@@ -702,7 +702,7 @@ class _GridFormDialogState extends State<GridFormDialog> {
       for (final c
           in widget.fieldConfigs.where((x) => x.fieldType == FieldType.file)) {
         if (_req(c) && (_fileCache[c.fieldName]?.isEmpty ?? true)) {
-          _snack('${c.label} é obrigatório — selecione um arquivo antes de salvar.');
+          _snack('${c.label} é obrigatório — selecione um arquivo antes de salvar.', true);
           if (mounted) setState(() => _saving = false);
           return;
         }
@@ -800,12 +800,12 @@ class _GridFormDialogState extends State<GridFormDialog> {
     return 'application/octet-stream';
   }
 
-  void _snack(String msg) {
+  void _snack(String msg, [bool error = false]) {
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(msg, style: const TextStyle(color: GridColors.textSecondary)),
-        backgroundColor: GridColors.secondarySoft,
+        content: Text(msg, style: const TextStyle(color: Colors.white)),
+        backgroundColor: error ? GridColors.error : GridColors.success,
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
       ),
@@ -814,7 +814,7 @@ class _GridFormDialogState extends State<GridFormDialog> {
 
   Future<void> _showSaveError(String msg) async {
     if (!mounted) return;
-    _snack(msg);
+    _snack(msg, true);
     await showDialog<void>(
       context: context,
       builder: (ctx) => AlertDialog(

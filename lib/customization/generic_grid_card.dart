@@ -2794,8 +2794,8 @@ class _GenericMobileGridScreenState<T>
   void _showSnackBar(String message, {bool isError = false}) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(message),
-        backgroundColor: isError ? GridColors.error : GridColors.primary,
+        content: Text(message, style: const TextStyle(color: Colors.white)),
+        backgroundColor: isError ? GridColors.error : GridColors.success,
         behavior: SnackBarBehavior.floating,
         action: isError
             ? SnackBarAction(

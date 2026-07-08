@@ -290,8 +290,8 @@ class _GenericDetailFormScreenState extends State<GenericDetailFormScreen>
         final msg = isCreate ? 'Criado com sucesso' : 'Salvo com sucesso';
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-              content: Text(msg),
-              backgroundColor: GridColors.secondary),
+              content: Text(msg, style: const TextStyle(color: Colors.white)),
+              backgroundColor: GridColors.success),
         );
         if (widget.onAfterSave != null) {
           await widget.onAfterSave!(body, widget.item);
@@ -299,14 +299,14 @@ class _GenericDetailFormScreenState extends State<GenericDetailFormScreen>
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-              content: Text('Erro ao salvar: ${resp.statusCode}'),
-              backgroundColor: Colors.red),
+              content: Text('Erro ao salvar: ${resp.statusCode}', style: const TextStyle(color: Colors.white)),
+              backgroundColor: GridColors.error),
         );
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Erro: $e'), backgroundColor: Colors.red),
+          SnackBar(content: Text('Erro: $e', style: const TextStyle(color: Colors.white)), backgroundColor: GridColors.error),
         );
       }
     } finally {

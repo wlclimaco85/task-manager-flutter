@@ -263,11 +263,11 @@ class _GenericMobileGridScreenState extends State<GenericMobileGridScreen> {
           _currentPage++;
         });
       } else {
-        _snack('Erro ao carregar: ${resp.statusCode}');
+        _snack('Erro ao carregar: ${resp.statusCode}', true);
       }
     } catch (e, st) {
       L.e('[GridPage] loadItems error: $e', st);
-      _snack('Erro ao carregar: $e');
+      _snack('Erro ao carregar: $e', true);
     } finally {
       if (mounted) setState(() => _loading = false);
     }
@@ -311,10 +311,10 @@ class _GenericMobileGridScreenState extends State<GenericMobileGridScreen> {
         _snack('Item excluído!');
         await _loadItems(reset: true);
       } else {
-        _snack('Erro ao excluir: ${resp.statusCode}');
+        _snack('Erro ao excluir: ${resp.statusCode}', true);
       }
     } catch (e) {
-      _snack('Erro ao excluir: $e');
+      _snack('Erro ao excluir: $e', true);
     }
   }
 
@@ -338,10 +338,10 @@ class _GenericMobileGridScreenState extends State<GenericMobileGridScreen> {
         _snack('Ação "${action.label}" executada com sucesso!');
         await _loadItems(reset: true);
       } else {
-        _snack('Falha em "${action.label}": ${resp.statusCode}');
+        _snack('Falha em "${action.label}": ${resp.statusCode}', true);
       }
     } catch (e) {
-      _snack('Erro ao executar ação: $e');
+      _snack('Erro ao executar ação: $e', true);
     }
   }
 
@@ -622,13 +622,14 @@ class _GenericMobileGridScreenState extends State<GenericMobileGridScreen> {
     );
   }
 
-  void _snack(String msg) {
+  void _snack(String msg, [bool error = false]) {
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(msg),
-        backgroundColor: GridColors.primary,
+        content: Text(msg, style: const TextStyle(color: Colors.white)),
+        backgroundColor: error ? GridColors.error : GridColors.success,
         behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
       ),
     );
   }

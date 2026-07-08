@@ -747,7 +747,7 @@ class FieldFactory {
     final cep = cepController.text.replaceAll(RegExp(r'\D'), '');
     if (cep.length != 8) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('CEP deve ter 8 dígitos')),
+        const SnackBar(content: Text('CEP deve ter 8 dígitos', style: TextStyle(color: Colors.white)), backgroundColor: GridColors.error),
       );
       return;
     }
@@ -759,25 +759,25 @@ class FieldFactory {
         if (data['erro'] == true) {
           if (context.mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('CEP não encontrado')),
+              const SnackBar(content: Text('CEP não encontrado', style: TextStyle(color: Colors.white)), backgroundColor: GridColors.warning),
             );
           }
           return;
         }
-        // Notifica o form para preencher os campos via callback
         _cepResultCallback?.call(data);
         if (context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
                 content: Text(
-                    'CEP encontrado: ${data['logradouro'] ?? ''}, ${data['localidade'] ?? ''}')),
+                    'CEP encontrado: ${data['logradouro'] ?? ''}, ${data['localidade'] ?? ''}', style: const TextStyle(color: Colors.white)),
+                backgroundColor: GridColors.success),
           );
         }
       }
     } catch (e) {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Erro ao buscar CEP: $e')),
+          SnackBar(content: Text('Erro ao buscar CEP: $e', style: const TextStyle(color: Colors.white)), backgroundColor: GridColors.error),
         );
       }
     }
@@ -2712,7 +2712,7 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
         !widget.buttonPermissions['create']!) {
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(const SnackBar(content: Text('Sem permissão para criar')));
+      ).showSnackBar(const SnackBar(content: Text('Sem permissão para criar', style: TextStyle(color: Colors.white)), backgroundColor: GridColors.error));
       return false;
     }
 
@@ -2903,7 +2903,7 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
   Future<bool> _updateItem(Map<String, dynamic> formData) async {
     if (!widget.hasPermission('edit') || !widget.buttonPermissions['edit']!) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Sem permissão para editar')),
+        const SnackBar(content: Text('Sem permissão para editar', style: TextStyle(color: Colors.white)), backgroundColor: GridColors.error),
       );
       return false;
     }
@@ -2984,7 +2984,7 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
     if (!widget.hasPermission('delete') ||
         !widget.buttonPermissions['delete']!) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Sem permissão para excluir')),
+        const SnackBar(content: Text('Sem permissão para excluir', style: TextStyle(color: Colors.white)), backgroundColor: GridColors.error),
       );
       return;
     }
@@ -3020,7 +3020,8 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
         !widget.buttonPermissions['deleteMultiple']!) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Sem permissão para excluir múltiplos itens'),
+          content: Text('Sem permissão para excluir múltiplos itens', style: TextStyle(color: Colors.white)),
+          backgroundColor: GridColors.error,
         ),
       );
       return;
@@ -3058,7 +3059,7 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
     if (!widget.hasPermission('export') ||
         !widget.buttonPermissions['export']!) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Sem permissão para exportar')),
+        const SnackBar(content: Text('Sem permissão para exportar', style: TextStyle(color: Colors.white)), backgroundColor: GridColors.error),
       );
       return;
     }
