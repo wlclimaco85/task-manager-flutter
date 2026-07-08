@@ -76,7 +76,9 @@ class ContaReceber {
       valorJuros: json['valorJuros']?.toDouble(),
       valorDesconto: json['valorDesconto']?.toDouble(),
       status: _parseStatus(json['status']),
-      empresa: Empresa.fromJson(json['empresa']),
+      empresa: json['empresa'] != null
+          ? Empresa.fromJson(json['empresa'])
+          : Empresa(),
       cliente:
           json['cliente'] != null ? Parceiro.fromJson(json['cliente']) : null,
       clienteDev: json['clienteDev'] != null

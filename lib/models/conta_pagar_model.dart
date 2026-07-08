@@ -76,7 +76,9 @@ class ContaPagar {
       valorJuros: json['valorJuros']?.toDouble(),
       valorDesconto: json['valorDesconto']?.toDouble(),
       status: _parseStatus(json['status']),
-      empresa: Empresa.fromJson(json['empresa']),
+      empresa: json['empresa'] != null
+          ? Empresa.fromJson(json['empresa'])
+          : Empresa(),
       parceiro:
           json['parceiro'] != null ? Parceiro.fromJson(json['parceiro']) : null,
       parceiroDev: json['parceiroDev'] != null
