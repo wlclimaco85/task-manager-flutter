@@ -26,6 +26,11 @@ class GridFormDialog extends StatefulWidget {
   final Map<String, dynamic>? additionalFormData;
   final Map<String, dynamic> Function(Map<String, dynamic>? item)?
       dynamicAdditionalFormData;
+  /// Hook opcional para ajustar o formData final (já com os valores dos
+  /// controllers) antes do envio — ex.: copiar um campo do form para outro
+  /// campo fixo do payload. Não afeta telas que não o utilizarem.
+  final Map<String, dynamic> Function(Map<String, dynamic> formData)?
+      transformFormData;
   final Map<String, dynamic>? editingItem;
   final String idFieldName;
 
@@ -40,6 +45,7 @@ class GridFormDialog extends StatefulWidget {
     this.baseUrlForMultipart,
     this.additionalFormData,
     this.dynamicAdditionalFormData,
+    this.transformFormData,
     required this.editingItem,
     required this.idFieldName,
   });
@@ -655,6 +661,14 @@ class _GridFormDialogState extends State<GridFormDialog> {
         if (!formData.containsKey(c.fieldName)) {
           addToFormData(formData, c.fieldName, false);
         }
+      }
+
+      // ajuste final do formData (já com os valores digitados no form)
+      if (widget.transformFormData != null) {
+        final transformed = widget.transformFormData!(formData);
+        formData
+          ..clear()
+          ..addAll(transformed);
       }
 
       // arquivos

@@ -54,6 +54,8 @@ class GridListScreen extends StatefulWidget {
   final Map<String, dynamic>? additionalFormData;
   final Map<String, dynamic> Function(Map<String, dynamic>? item)?
       dynamicAdditionalFormData;
+  final Map<String, dynamic> Function(Map<String, dynamic> formData)?
+      transformFormData;
 
   final String? baseUrlForMultipart;
   final Future<Map<String, String>> Function()? authHeadersProvider;
@@ -101,6 +103,7 @@ class GridListScreen extends StatefulWidget {
     this.onBannerRefresh,
     this.additionalFormData,
     this.dynamicAdditionalFormData,
+    this.transformFormData,
     this.baseUrlForMultipart,
     this.authHeadersProvider,
     this.serverActions = const [],
@@ -1173,6 +1176,7 @@ class _GridListScreenState extends State<GridListScreen> {
         baseUrlForMultipart: widget.baseUrlForMultipart,
         additionalFormData: widget.additionalFormData,
         dynamicAdditionalFormData: widget.dynamicAdditionalFormData,
+        transformFormData: widget.transformFormData,
         editingItem: editingItem,
         idFieldName: widget.idFieldName,
       ),

@@ -32,6 +32,9 @@ class DynamicGridWindowsScreen<T> extends StatefulWidget {
   final Widget Function(T item)? detailScreenBuilder;
   final Map<String, dynamic>? extraParams;
   final Map<String, dynamic>? additionalFormData;
+  /// Ver GenericGridScreen.transformFormData — repassado como está.
+  final Map<String, dynamic> Function(Map<String, dynamic> formData)?
+      transformFormData;
   final CustomActionsBuilder<T>? customActions;
   final List<FieldConfigWindows>? fieldOverrides;
   final bool showAppBar;
@@ -60,6 +63,7 @@ class DynamicGridWindowsScreen<T> extends StatefulWidget {
     this.detailScreenBuilder,
     this.extraParams,
     this.additionalFormData,
+    this.transformFormData,
     this.customActions,
     this.fieldOverrides,
     this.showAppBar = true,
@@ -493,6 +497,7 @@ class _DynamicGridWindowsScreenState<T>
           detailScreenBuilder: widget.detailScreenBuilder,
           extraParams: widget.extraParams,
           additionalFormData: widget.additionalFormData,
+          transformFormData: widget.transformFormData,
           customActions: widget.customActions,
           showAppBar: widget.showAppBar,
           headerActions: widget.headerActions,

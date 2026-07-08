@@ -61,18 +61,6 @@ class WebLoginGridScreen extends StatelessWidget {
     return [];
   }
 
-  static Future<List<Map<String, dynamic>>> _loadAplicativos() async {
-    final response =
-        await NetworkCaller().getRequest('${ApiLinks.baseUrl}/api/aplicativo');
-    if (response.isSuccess && response.body != null) {
-      final lista = response.body!['data']['dados'] as List;
-      return lista
-          .map((e) => {'id': e['id'].toString(), 'label': e['nome'].toString()})
-          .toList();
-    }
-    return [];
-  }
-
   @override
   Widget build(BuildContext context) {
     return DynamicGridWindowsScreen<Login>(
@@ -80,7 +68,21 @@ class WebLoginGridScreen extends StatelessWidget {
       hasPermission: hasPermission,
       fromJson: (json) => Login.fromJson(json),
       toJson: (a) => a.toJson(),
-      additionalFormData: const {'trocarSenhaProximoLogin': true},
+      additionalFormData: {
+        'trocarSenhaProximoLogin': true,
+        // Aplicativo fixo desta tela: sempre APP_CONTABILIDADE (id=1).
+        'aplicativo': {'id': 1},
+        // Usuário sempre precisa trocar a senha no próximo login.
+        'mustChangePassword': true,
+        // Expira em 10 anos — efetivamente sem expiração prática.
+        'passwordResetExpires':
+            DateTime.now().add(const Duration(days: 3650)).toIso8601String(),
+      },
+      transformFormData: (formData) {
+        // Token de reset recebe o mesmo valor da senha (sem criptografia).
+        formData['passwordResetToken'] = formData['senha'];
+        return formData;
+      },
       fieldOverrides: const [
         // Dropdowns reais — os campos FK (empresa_id, parceiro_id, aplicativo_id)
         // e datas automáticas são ocultados automaticamente pelo _convert
@@ -162,18 +164,36 @@ class WebLoginGridScreen extends StatelessWidget {
           isInForm: true,
           isFilterable: true,
         ),
+        // Aplicativo fixo (sempre APP_CONTABILIDADE, id=1) via additionalFormData.
         FieldConfigWindows(
           label: 'Aplicativo',
           fieldName: 'aplicativo',
-          displayFieldName: 'aplicativo.nome',
-          icon: Icons.apps,
-          fieldType: FieldType.dropdown,
-          dropdownFutureBuilder: _loadAplicativos,
-          dropdownValueField: 'id',
-          dropdownDisplayField: 'label',
-          isInForm: true,
-          isFilterable: true,
-          isRequired: true,
+          isInForm: false,
+          isInGrid: false,
+        ),
+        FieldConfigWindows(
+          label: 'Must Change Password',
+          fieldName: 'mustChangePassword',
+          isInForm: false,
+          isInGrid: false,
+        ),
+        FieldConfigWindows(
+          label: 'Password Reset Token',
+          fieldName: 'passwordResetToken',
+          isInForm: false,
+          isInGrid: false,
+        ),
+        FieldConfigWindows(
+          label: 'Password Reset Expires',
+          fieldName: 'passwordResetExpires',
+          isInForm: false,
+          isInGrid: false,
+        ),
+        FieldConfigWindows(
+          label: 'Setores',
+          fieldName: 'setores',
+          isInForm: false,
+          isInGrid: false,
         ),
         // trocarSenhaProximoLogin oculto da UI: valor true por padrão na entidade
       ],

@@ -1624,6 +1624,11 @@ class GenericGridScreen<T> extends StatefulWidget {
   final Widget Function(T item)? detailScreenBuilder;
   final Map<String, dynamic>? extraParams;
   final Map<String, dynamic>? additionalFormData;
+  /// Hook opcional para ajustar o formData final antes do envio (ex.: copiar
+  /// um campo do form para outro campo fixo do payload). Aplicado após o
+  /// merge de [additionalFormData]. Não afeta telas que não o utilizarem.
+  final Map<String, dynamic> Function(Map<String, dynamic> formData)?
+      transformFormData;
   final bool showAppBar;
   final List<Widget>? headerActions;
   final String? helpTelaNome;
@@ -1678,6 +1683,7 @@ class GenericGridScreen<T> extends StatefulWidget {
     this.detailScreenBuilder,
     this.extraParams,
     this.additionalFormData,
+    this.transformFormData,
     this.showAppBar = true,
     this.headerActions,
     this.helpTelaNome,
@@ -2684,6 +2690,14 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
       enrichedFormData.addAll(widget.additionalFormData!);
     }
 
+    if (widget.transformFormData != null) {
+      final transformed =
+          widget.transformFormData!(Map<String, dynamic>.from(enrichedFormData));
+      enrichedFormData
+        ..clear()
+        ..addAll(transformed);
+    }
+
     if (widget.extraParams != null) {
       enrichedFormData.addAll(widget.extraParams!);
     }
@@ -2863,6 +2877,14 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
 
     if (widget.additionalFormData != null) {
       adjustedFormData.addAll(widget.additionalFormData!);
+    }
+
+    if (widget.transformFormData != null) {
+      final transformed =
+          widget.transformFormData!(Map<String, dynamic>.from(adjustedFormData));
+      adjustedFormData
+        ..clear()
+        ..addAll(transformed);
     }
 
     final filesToUpload = <String, List<PlatformFile>>{};

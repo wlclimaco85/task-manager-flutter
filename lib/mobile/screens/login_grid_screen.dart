@@ -51,14 +51,6 @@ class LoginGridScreen extends StatelessWidget {
         .toList();
   }
 
-  static Future<List<Map<String, dynamic>>> _loadAplicativos() async {
-    final response =
-        await NetworkCaller().getRequest('${ApiLinks.baseUrl}/api/aplicativo');
-    return _extractList(response)
-        .map((e) => {'id': e['id'].toString(), 'label': e['nome'].toString()})
-        .toList();
-  }
-
   static List<Map<String, dynamic>> _extractList(NetworkResponse response) {
     if (!response.isSuccess || response.body == null) return [];
     return _extractFrom(response.body);
@@ -94,7 +86,22 @@ class LoginGridScreen extends StatelessWidget {
       createEndpointOverride: ApiLinks.createLogin,
       updateEndpointOverride: ApiLinks.updateLogin(':id'),
       deleteEndpointOverride: ApiLinks.deleteLogin(':id'),
-      additionalFormData: const {'ativo': true, 'trocarSenhaProximoLogin': true},
+      additionalFormData: {
+        'ativo': true,
+        'trocarSenhaProximoLogin': true,
+        // Aplicativo fixo desta tela: sempre APP_CONTABILIDADE (id=1).
+        'aplicativo': {'id': 1},
+        // Usuário sempre precisa trocar a senha no próximo login.
+        'mustChangePassword': true,
+        // Expira em 10 anos — efetivamente sem expiração prática.
+        'passwordResetExpires':
+            DateTime.now().add(const Duration(days: 3650)).toIso8601String(),
+      },
+      transformFormData: (formData) {
+        // Token de reset recebe o mesmo valor da senha (sem criptografia).
+        formData['passwordResetToken'] = formData['senha'];
+        return formData;
+      },
       detailScreenBuilder: (item) => MobileLoginDetailScreen(
         item: Login.fromJson(item),
         hasPermission: hasPermission,
@@ -159,18 +166,48 @@ class LoginGridScreen extends StatelessWidget {
           isInForm: true,
           isFilterable: true,
         ),
+        // Aplicativo fixo (sempre APP_CONTABILIDADE, id=1) via additionalFormData.
         FieldConfig(
           label: 'Aplicativo',
           fieldName: 'aplicativo',
-          displayFieldName: 'aplicativo.nome',
-          icon: Icons.apps,
-          fieldType: FieldType.dropdown,
-          dropdownFutureBuilder: _loadAplicativos,
-          dropdownValueField: 'id',
-          dropdownDisplayField: 'label',
+          isInForm: false,
+        ),
+        FieldConfig(
+          label: 'Tipo Login',
+          fieldName: 'tipoLogin',
+          isInForm: false,
+        ),
+        FieldConfig(
+          label: 'Must Change Password',
+          fieldName: 'mustChangePassword',
+          isInForm: false,
+        ),
+        FieldConfig(
+          label: 'Password Reset Token',
+          fieldName: 'passwordResetToken',
+          isInForm: false,
+        ),
+        FieldConfig(
+          label: 'Password Reset Expires',
+          fieldName: 'passwordResetExpires',
+          isInForm: false,
+        ),
+        FieldConfig(
+          label: 'Setores',
+          fieldName: 'setores',
+          isInForm: false,
+        ),
+        const FieldConfig(
+          label: 'Foto',
+          fieldName: 'foto',
+          icon: Icons.photo_camera,
+          fieldType: FieldType.file,
+          fileConfig: FileConfig(
+            allowedExtensions: ['jpg', 'jpeg', 'png', 'webp'],
+            maxFileSize: 2 * 1024 * 1024,
+          ),
           isInForm: true,
-          isFilterable: true,
-          isRequired: true,
+          isFilterable: false,
         ),
       ],
       customActions: () => [

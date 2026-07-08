@@ -32,6 +32,9 @@ class DynamicGridDynamicScreen extends StatefulWidget {
   final Map<String, dynamic>? additionalFormData;
   final Map<String, dynamic> Function(Map<String, dynamic>? item)?
       dynamicAdditionalFormData;
+  /// Ver GridFormDialog.transformFormData — repassado como está.
+  final Map<String, dynamic> Function(Map<String, dynamic> formData)?
+      transformFormData;
   final List<FieldConfig>? fieldOverrides;
   final List<CustomAction> Function()? customActions;
   final String? fetchEndpointOverride;
@@ -52,6 +55,7 @@ class DynamicGridDynamicScreen extends StatefulWidget {
     this.onBannerRefresh,
     this.additionalFormData,
     this.dynamicAdditionalFormData,
+    this.transformFormData,
     this.fieldOverrides,
     this.customActions,
     this.fetchEndpointOverride,
@@ -859,6 +863,7 @@ class _DynamicGridDynamicScreenState extends State<DynamicGridDynamicScreen> {
               onBannerRefresh: widget.onBannerRefresh,
               additionalFormData: widget.additionalFormData,
               dynamicAdditionalFormData: widget.dynamicAdditionalFormData,
+              transformFormData: widget.transformFormData,
               customActions: widget.customActions,
               serverActions: serverActions,
             );
