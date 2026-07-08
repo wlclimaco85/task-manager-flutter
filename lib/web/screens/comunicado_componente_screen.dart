@@ -39,17 +39,14 @@ class WebComunicadoGridComponentesScreen extends StatelessWidget {
         isRequired: true,
         fieldOrder: 1,
       ),
-      // Aplicativo: pre-selecionado e sempre desabilitado
+      // Aplicativo: fixo pelo aplicativo da sessão — payload only (oculto do form).
       FieldConfigWindows(
         label: 'Aplicativo',
         fieldName: 'aplicativo',
-        displayFieldName: 'aplicativo.nome',
         fieldType: FieldType.dropdown,
-        dropdownValueField: 'id',
-        dropdownDisplayField: 'nome',
         dropdownSelectedValue: aplicativoId?.toString(),
-        dropdownFutureBuilder: DropdownHelpers.aplicativos,
-        enabled: false,
+        isInForm: false,
+        isInGrid: false,
         fieldOrder: 2,
       ),
     ];

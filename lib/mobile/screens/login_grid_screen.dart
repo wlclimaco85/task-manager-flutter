@@ -86,22 +86,15 @@ class LoginGridScreen extends StatelessWidget {
       createEndpointOverride: ApiLinks.createLogin,
       updateEndpointOverride: ApiLinks.updateLogin(':id'),
       deleteEndpointOverride: ApiLinks.deleteLogin(':id'),
-      additionalFormData: {
+      additionalFormData: const {
         'ativo': true,
         'trocarSenhaProximoLogin': true,
         // Aplicativo fixo desta tela: sempre APP_CONTABILIDADE (id=1).
         'aplicativo': {'id': 1},
-        // Usuário sempre precisa trocar a senha no próximo login.
-        'mustChangePassword': true,
-        // Expira em 10 anos — efetivamente sem expiração prática.
-        'passwordResetExpires':
-            DateTime.now().add(const Duration(days: 3650)).toIso8601String(),
       },
-      transformFormData: (formData) {
-        // Token de reset recebe o mesmo valor da senha (sem criptografia).
-        formData['passwordResetToken'] = formData['senha'];
-        return formData;
-      },
+      // mustChangePassword / passwordResetToken / passwordResetExpires são
+      // derivados pelo backend a cada troca de senha (ver LoginController) —
+      // não precisam mais ser calculados/enviados pelo Flutter.
       detailScreenBuilder: (item) => MobileLoginDetailScreen(
         item: Login.fromJson(item),
         hasPermission: hasPermission,
