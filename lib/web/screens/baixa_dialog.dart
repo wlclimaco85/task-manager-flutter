@@ -5,8 +5,12 @@ import '../../../models/forma_pagamento_model.dart';
 import '../../services/network_caller.dart';
 import '../../../models/network_response.dart';
 import '../../../utils/api_links.dart';
+import '../../utils/grid_colors.dart';
 import '../../utils/grid_texts.dart';
 
+/// Popup "Registrar Baixa" de Conta a Pagar (Web).
+/// Funcional: posta em [ApiLinks.registrarBaixaContaPagar] e retorna
+/// `true` via Navigator.pop quando a baixa é confirmada com sucesso.
 class WebBaixaDialog extends StatefulWidget {
   final ContaPagar conta;
 
@@ -20,20 +24,21 @@ class _WebBaixaDialogState extends State<WebBaixaDialog> {
   final _formKey = GlobalKey<FormState>();
   final _valorController = TextEditingController();
   DateTime _dataBaixa = DateTime.now();
-  int? _formaPagamentoId; // Armazena o ID selecionado
+  int? _formaPagamentoId;
   bool _isLoading = true;
+  bool _isSaving = false;
   List<FormaPagamento> _formasPagamento = [];
 
   @override
   void initState() {
     super.initState();
-    _valorController.text = widget.conta.valor.toString();
+    _valorController.text = widget.conta.valor.toStringAsFixed(2);
     _loadFormasPagamento();
   }
 
   Future<void> _loadFormasPagamento() async {
     final List<Map<String, dynamic>> formasMap =
-        await FormaPagamento.loadFormasPagamento(); // retorna List<Map>
+        await FormaPagamento.loadFormasPagamento();
 
     final List<FormaPagamento> formas = formasMap
         .map(
@@ -46,6 +51,7 @@ class _WebBaixaDialogState extends State<WebBaixaDialog> {
           ),
         )
         .toList();
+    if (!mounted) return;
     setState(() {
       _formasPagamento = formas;
       _isLoading = false;
@@ -54,96 +60,125 @@ class _WebBaixaDialogState extends State<WebBaixaDialog> {
 
   @override
   Widget build(BuildContext context) {
-    return AlertDialog(
-      title: const Text('Registrar Baixa'),
-      content: SingleChildScrollView(
-        child: Form(
-          key: _formKey,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              // Campo Valor da Baixa
-              TextFormField(
-                controller: _valorController,
-                decoration: const InputDecoration(
-                  labelText: 'Valor da Baixa',
-                  prefixIcon: Icon(Icons.attach_money),
-                ),
-                keyboardType: TextInputType.number,
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Informe o valor da baixa';
-                  }
-                  final valor = double.tryParse(value);
-                  if (valor == null || valor <= 0) {
-                    return 'Valor deve ser maior que zero';
-                  }
-                  return null;
-                },
-              ),
-              const SizedBox(height: 16),
-
-              // Dropdown Formas de Pagamento
-              _isLoading
-                  ? const CircularProgressIndicator()
-                  : DropdownButtonFormField<int>(
-                      initialValue: _formaPagamentoId,
-                      decoration: const InputDecoration(
-                        labelText: 'Forma de Pagamento',
-                        prefixIcon: Icon(Icons.payment),
+    return Dialog(
+      backgroundColor: GridColors.dialogBackground,
+      clipBehavior: Clip.antiAlias,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      insetPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 460),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            _BaixaHeader(
+              onClose: _isSaving ? null : () => Navigator.pop(context),
+            ),
+            Flexible(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.fromLTRB(24, 20, 24, 8),
+                child: Form(
+                  key: _formKey,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      _ContaPagarResumo(conta: widget.conta),
+                      const SizedBox(height: 20),
+                      _campoLabel('Valor da baixa'),
+                      const SizedBox(height: 6),
+                      TextFormField(
+                        controller: _valorController,
+                        decoration: _inputDecoration(
+                          hint: '0,00',
+                          icon: Icons.attach_money,
+                        ),
+                        keyboardType: const TextInputType.numberWithOptions(
+                            decimal: true),
+                        validator: (value) {
+                          if (value == null || value.isEmpty) {
+                            return 'Informe o valor da baixa';
+                          }
+                          final valor =
+                              double.tryParse(value.replaceAll(',', '.'));
+                          if (valor == null || valor <= 0) {
+                            return 'Valor deve ser maior que zero';
+                          }
+                          return null;
+                        },
                       ),
-                      items: _formasPagamento.map((forma) {
-                        return DropdownMenuItem<int>(
-                          value: forma.id, // Acessa o ID do objeto
+                      const SizedBox(height: 16),
+                      _campoLabel('Forma de pagamento'),
+                      const SizedBox(height: 6),
+                      _isLoading
+                          ? const SizedBox(
+                              height: 52,
+                              child: Center(
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  color: GridColors.primary,
+                                ),
+                              ),
+                            )
+                          : DropdownButtonFormField<int>(
+                              initialValue: _formaPagamentoId,
+                              decoration: _inputDecoration(
+                                hint: 'Selecione',
+                                icon: Icons.payment,
+                              ),
+                              icon: const Icon(Icons.keyboard_arrow_down,
+                                  color: GridColors.neutral),
+                              items: _formasPagamento.map((forma) {
+                                return DropdownMenuItem<int>(
+                                  value: forma.id,
+                                  child: Text(forma.nome ?? ''),
+                                );
+                              }).toList(),
+                              onChanged: (newValue) {
+                                setState(() {
+                                  _formaPagamentoId = newValue;
+                                });
+                              },
+                              validator: (value) {
+                                if (value == null) {
+                                  return 'Selecione a forma de pagamento';
+                                }
+                                return null;
+                              },
+                            ),
+                      const SizedBox(height: 16),
+                      _campoLabel('Data da baixa'),
+                      const SizedBox(height: 6),
+                      InkWell(
+                        onTap: () => _selectDate(context),
+                        borderRadius: BorderRadius.circular(10),
+                        child: InputDecorator(
+                          decoration: _inputDecoration(
+                            icon: Icons.calendar_today,
+                          ),
                           child: Text(
-                            forma.nome ?? '',
-                          ), // Acessa o nome do objeto
-                        );
-                      }).toList(),
-                      onChanged: (newValue) {
-                        setState(() {
-                          _formaPagamentoId = newValue;
-                        });
-                      },
-                      validator: (value) {
-                        if (value == null) {
-                          return 'Selecione a forma de pagamento';
-                        }
-                        return null;
-                      },
-                    ),
-              const SizedBox(height: 16),
-
-              // Seletor de Data
-              Row(
-                children: [
-                  const Icon(Icons.calendar_today, size: 20),
-                  const SizedBox(width: 8),
-                  const Text('Data da Baixa:'),
-                  const SizedBox(width: 8),
-                  TextButton(
-                    onPressed: () => _selectDate(context),
-                    child: Text(
-                      '${_dataBaixa.day}/${_dataBaixa.month}/${_dataBaixa.year}',
-                      style: const TextStyle(fontWeight: FontWeight.bold),
-                    ),
+                            '${_dataBaixa.day.toString().padLeft(2, '0')}/'
+                            '${_dataBaixa.month.toString().padLeft(2, '0')}/'
+                            '${_dataBaixa.year}',
+                            style: const TextStyle(
+                              fontSize: 15,
+                              color: GridColors.textSecondary,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
-                ],
+                ),
               ),
-            ],
-          ),
+            ),
+            _BaixaFooter(
+              isSaving: _isSaving,
+              onCancel: _isSaving ? null : () => Navigator.of(context).pop(),
+              onConfirm: (_isLoading || _isSaving) ? null : _submitBaixa,
+            ),
+          ],
         ),
       ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.of(context).pop(),
-          child: const Text(GridTexts.cancel),
-        ),
-        ElevatedButton(
-          onPressed: _submitBaixa,
-          child: const Text('Confirmar Baixa'),
-        ),
-      ],
     );
   }
 
@@ -153,6 +188,16 @@ class _WebBaixaDialogState extends State<WebBaixaDialog> {
       initialDate: _dataBaixa,
       firstDate: DateTime(2000),
       lastDate: DateTime(2100),
+      builder: (context, child) => Theme(
+        data: Theme.of(context).copyWith(
+          colorScheme: const ColorScheme.light(
+            primary: GridColors.primary,
+            onPrimary: Colors.white,
+            onSurface: GridColors.textSecondary,
+          ),
+        ),
+        child: child!,
+      ),
     );
     if (picked != null && picked != _dataBaixa) {
       setState(() {
@@ -162,38 +207,265 @@ class _WebBaixaDialogState extends State<WebBaixaDialog> {
   }
 
   void _submitBaixa() async {
-    if (_formKey.currentState!.validate()) {
-      final valorBaixa = double.parse(_valorController.text);
+    if (!_formKey.currentState!.validate()) return;
 
-      final NetworkResponse response = await NetworkCaller().postRequest(
-        ApiLinks.registrarBaixaContaPagar(widget.conta.id.toString()),
-        {
-          'dataBaixa': _dataBaixa.toIso8601String(),
-          'valorBaixa': valorBaixa,
-          'formaPagamentoId': _formaPagamentoId,
-        },
-      );
+    setState(() => _isSaving = true);
 
-      if (response.isSuccess) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Baixa registrada com sucesso!')),
-        );
-        Navigator.of(context).pop(true);
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              'Erro ao registrar baixa: ${response ?? response.statusCode}',
-            ),
-          ),
-        );
-      }
-    }
+    final valorBaixa =
+        double.parse(_valorController.text.replaceAll(',', '.'));
+
+    final NetworkResponse response = await NetworkCaller().postRequest(
+      ApiLinks.registrarBaixaContaPagar(widget.conta.id.toString()),
+      {
+        'dataBaixa': _dataBaixa.toIso8601String(),
+        'valorBaixa': valorBaixa,
+        'formaPagamentoId': _formaPagamentoId,
+      },
+    );
+
+    if (!mounted) return;
+    setState(() => _isSaving = false);
+
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+      content: Text(response.isSuccess
+          ? 'Baixa registrada com sucesso!'
+          : 'Erro ao registrar baixa: ${response.statusCode}'),
+      backgroundColor:
+          response.isSuccess ? GridColors.success : GridColors.error,
+    ));
+
+    if (response.isSuccess) Navigator.of(context).pop(true);
   }
 
   @override
   void dispose() {
     _valorController.dispose();
     super.dispose();
+  }
+}
+
+/// Rótulo padrão dos campos do formulário de baixa.
+Widget _campoLabel(String text) => Text(
+      text,
+      style: const TextStyle(
+        fontSize: 13,
+        fontWeight: FontWeight.w600,
+        color: GridColors.textSecondary,
+      ),
+    );
+
+/// Decoração consistente para inputs e dropdowns do formulário.
+InputDecoration _inputDecoration({String? hint, IconData? icon}) {
+  return InputDecoration(
+    hintText: hint,
+    hintStyle: const TextStyle(color: GridColors.neutral, fontSize: 14),
+    isDense: true,
+    filled: true,
+    fillColor: GridColors.inputBackground,
+    prefixIcon:
+        icon == null ? null : Icon(icon, size: 20, color: GridColors.neutral),
+    contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+    enabledBorder: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(10),
+      borderSide: const BorderSide(color: GridColors.borderSubtle),
+    ),
+    focusedBorder: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(10),
+      borderSide: const BorderSide(color: GridColors.primary, width: 1.5),
+    ),
+    errorBorder: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(10),
+      borderSide: const BorderSide(color: GridColors.error),
+    ),
+    focusedErrorBorder: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(10),
+      borderSide: const BorderSide(color: GridColors.error, width: 1.5),
+    ),
+  );
+}
+
+/// Cabeçalho vermelho com identidade AppAcademia.
+class _BaixaHeader extends StatelessWidget {
+  final VoidCallback? onClose;
+
+  const _BaixaHeader({this.onClose});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.fromLTRB(24, 20, 16, 20),
+      decoration: const BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [GridColors.primary, GridColors.primaryDark],
+        ),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 44,
+            height: 44,
+            decoration: BoxDecoration(
+              color: Colors.white.withValues(alpha: 0.18),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: const Icon(Icons.payments_outlined,
+                color: Colors.white, size: 24),
+          ),
+          const SizedBox(width: 14),
+          const Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Registrar Baixa',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                SizedBox(height: 2),
+                Text(
+                  'Conta a Pagar',
+                  style: TextStyle(
+                    color: GridColors.textPrimaryMuted,
+                    fontSize: 13,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          if (onClose != null)
+            IconButton(
+              onPressed: onClose,
+              icon: const Icon(Icons.close, color: Colors.white),
+              tooltip: 'Fechar',
+              splashRadius: 20,
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Cartão de resumo com descrição e valor original em destaque.
+class _ContaPagarResumo extends StatelessWidget {
+  final ContaPagar conta;
+
+  const _ContaPagarResumo({required this.conta});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: GridColors.primarySoft,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: GridColors.primary.withValues(alpha: 0.12)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            conta.descricao,
+            style: const TextStyle(
+              fontWeight: FontWeight.w600,
+              fontSize: 15,
+              color: GridColors.textSecondary,
+            ),
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+          ),
+          const SizedBox(height: 10),
+          Text(
+            'VALOR ORIGINAL',
+            style: TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.w700,
+              letterSpacing: 0.5,
+              color: GridColors.neutral,
+            ),
+          ),
+          const SizedBox(height: 2),
+          Text(
+            'R\$ ${conta.valor.toStringAsFixed(2)}',
+            style: const TextStyle(
+              fontSize: 24,
+              fontWeight: FontWeight.bold,
+              color: GridColors.primary,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Rodapé com ações Cancelar / Confirmar Baixa.
+class _BaixaFooter extends StatelessWidget {
+  final bool isSaving;
+  final VoidCallback? onCancel;
+  final VoidCallback? onConfirm;
+
+  const _BaixaFooter({
+    required this.isSaving,
+    required this.onCancel,
+    required this.onConfirm,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.fromLTRB(24, 12, 24, 16),
+      decoration: const BoxDecoration(
+        border: Border(top: BorderSide(color: GridColors.borderSubtle)),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.end,
+        children: [
+          TextButton(
+            onPressed: onCancel,
+            style: TextButton.styleFrom(
+              foregroundColor: GridColors.neutral,
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+            ),
+            child: const Text(GridTexts.cancel),
+          ),
+          const SizedBox(width: 8),
+          ElevatedButton.icon(
+            onPressed: onConfirm,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: GridColors.primary,
+              foregroundColor: Colors.white,
+              disabledBackgroundColor:
+                  GridColors.primary.withValues(alpha: 0.4),
+              disabledForegroundColor: Colors.white70,
+              elevation: 0,
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 22, vertical: 14),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10),
+              ),
+            ),
+            icon: isSaving
+                ? const SizedBox(
+                    height: 18,
+                    width: 18,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: Colors.white,
+                    ),
+                  )
+                : const Icon(Icons.check_circle_outline, size: 20),
+            label: Text(isSaving ? 'Registrando...' : 'Confirmar Baixa'),
+          ),
+        ],
+      ),
+    );
   }
 }

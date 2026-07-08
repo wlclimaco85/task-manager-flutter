@@ -91,7 +91,11 @@ class _BaixaDialogState extends State<BaixaDialog> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
       decoration: const BoxDecoration(
-        color: GridColors.primary,
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [GridColors.primary, GridColors.primaryDark],
+        ),
       ),
       child: Row(
         children: [
@@ -99,7 +103,7 @@ class _BaixaDialogState extends State<BaixaDialog> {
             width: 36,
             height: 36,
             decoration: BoxDecoration(
-              color: GridColors.primaryDark,
+              color: Colors.white.withValues(alpha: 0.18),
               borderRadius: BorderRadius.circular(8),
             ),
             child: const Icon(
