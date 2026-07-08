@@ -37,6 +37,7 @@ class FileAttachmentGridScreen extends StatelessWidget {
         availableRowsPerPage: [10, 25, 50],
       ),
       enableSearch: true,
+      useUserBannerAppBar: true,
     );
   }
 

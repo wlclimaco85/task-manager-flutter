@@ -2076,6 +2076,7 @@ class _GenericMobileGridScreenState<T>
         onRefresh: widget.onBannerRefresh ?? () => _loadItems(reset: true),
         isLoading: isLoading,
         onFilterToggle: () => setState(() => filtrosAbertos = !filtrosAbertos),
+        onColumns: _showFieldSettings,
         showFilterButton: true,
       );
     } else {

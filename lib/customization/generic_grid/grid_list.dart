@@ -432,6 +432,7 @@ class _GridListScreenState extends State<GridListScreen> {
                   isLoading: _loading,
                   onFilterToggle: () =>
                       setState(() => _filtersOpen = !_filtersOpen),
+                  onColumns: _showFieldSettings,
                   showFilterButton: widget.useUserBannerAppBar,
                 )
               : (_selectionMode ? _selectionAppBar() : _normalAppBar()))
