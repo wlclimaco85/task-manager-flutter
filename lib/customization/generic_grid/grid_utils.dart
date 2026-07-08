@@ -13,6 +13,31 @@ import 'grid_models.dart'; // 👈 adiciona este import
 String prettyJson(Map<String, dynamic> obj) =>
     const JsonEncoder.withIndent('  ').convert(obj);
 
+/// Resolve o valor fixo de payload de um campo (TelaField.defaultValue),
+/// aceitando os templates especiais:
+///   - `{{now+Nd}}`      → data/hora atual + N dias, ISO 8601
+///   - `{{campo:xxx}}`   → copia o valor já coletado do campo `xxx` no formData
+/// Qualquer outro valor (String, bool, num, Map) é usado literalmente.
+final RegExp _templateNowRegExp = RegExp(r'^\{\{now\+(\d+)d\}\}$');
+final RegExp _templateCampoRegExp = RegExp(r'^\{\{campo:([\w.]+)\}\}$');
+
+dynamic resolveFieldDefaultTemplate(
+  dynamic value,
+  Map<String, dynamic> formData,
+) {
+  if (value is! String) return value;
+  final nowMatch = _templateNowRegExp.firstMatch(value);
+  if (nowMatch != null) {
+    final dias = int.parse(nowMatch.group(1)!);
+    return DateTime.now().add(Duration(days: dias)).toIso8601String();
+  }
+  final campoMatch = _templateCampoRegExp.firstMatch(value);
+  if (campoMatch != null) {
+    return getNestedValue(formData, campoMatch.group(1)!);
+  }
+  return value;
+}
+
 dynamic getNestedValue(Map<String, dynamic>? obj, String fieldPath) {
   if (obj == null) return null;
   if (!fieldPath.contains('.')) return obj[fieldPath];

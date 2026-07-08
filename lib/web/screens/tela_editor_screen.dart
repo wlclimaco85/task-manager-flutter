@@ -437,6 +437,7 @@ class _FieldPropertiesPanelState extends State<_FieldPropertiesPanel> {
   late TextEditingController _maxLinesCtrl;
   late TextEditingController _fieldOrderCtrl;
   late TextEditingController _maskCtrl;
+  late TextEditingController _defaultValueCtrl;
 
   static const _fieldTypes = [
     'text', 'number', 'email', 'date', 'multiline', 'dropdown',
@@ -465,11 +466,45 @@ class _FieldPropertiesPanelState extends State<_FieldPropertiesPanel> {
     _maxLinesCtrl = TextEditingController(text: _f['maxLines']?.toString() ?? '1');
     _fieldOrderCtrl = TextEditingController(text: _f['fieldOrder']?.toString() ?? '0');
     _maskCtrl = TextEditingController(text: _f['mask']?.toString() ?? '');
+    final dv = _f['defaultValue'];
+    _defaultValueCtrl = TextEditingController(
+      text: dv == null
+          ? ''
+          : (dv is String ? dv : jsonEncode(dv)),
+    );
   }
 
   void _update(String key, dynamic value) {
     setState(() { _f[key] = value; });
     widget.onChanged(_f);
+  }
+
+  /// Converte o texto digitado em "Valor Fixo (Payload)" para o tipo mais
+  /// adequado: JSON (objeto/lista) se começar com `{`/`[`, bool, num, ou
+  /// String literal (inclui os templates `{{now+Nd}}` / `{{campo:xxx}}`).
+  void _updateDefaultValue(String text) {
+    if (text.isEmpty) {
+      _update('defaultValue', null);
+      return;
+    }
+    if (text.startsWith('{{') || (!text.startsWith('{') && !text.startsWith('['))) {
+      if (text == 'true' || text == 'false') {
+        _update('defaultValue', text == 'true');
+        return;
+      }
+      final asNum = num.tryParse(text);
+      if (asNum != null) {
+        _update('defaultValue', asNum);
+        return;
+      }
+      _update('defaultValue', text);
+      return;
+    }
+    try {
+      _update('defaultValue', jsonDecode(text));
+    } catch (_) {
+      _update('defaultValue', text);
+    }
   }
 
   @override
@@ -532,6 +567,23 @@ class _FieldPropertiesPanelState extends State<_FieldPropertiesPanel> {
           _switch('Habilitado (editável)', _f['enabled'] != false, (v) => _update('enabled', v)),
           _switch('Fixo (não ocultar)', _f['isFixed'] == true, (v) => _update('isFixed', v)),
           _switch('Multi-select', _f['multiSelect'] == true, (v) => _update('multiSelect', v)),
+
+          // ── Payload ────────────────────────────────────────────────────
+          _section('Payload'),
+          _textField(
+            'Valor Fixo (Payload)',
+            _defaultValueCtrl,
+            _updateDefaultValue,
+          ),
+          const Padding(
+            padding: EdgeInsets.only(bottom: 12),
+            child: Text(
+              'Enviado no salvar mesmo com o campo oculto do form '
+              '(Visível no Form = desligado). Aceita texto, número, true/false, '
+              'JSON ({"id": 1}) ou os templates {{now+Nd}} e {{campo:xxx}}.',
+              style: TextStyle(color: Colors.white38, fontSize: 10),
+            ),
+          ),
 
           const SizedBox(height: 32),
         ],

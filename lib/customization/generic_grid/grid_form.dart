@@ -663,6 +663,17 @@ class _GridFormDialogState extends State<GridFormDialog> {
         }
       }
 
+      // valor fixo de payload (TelaField.defaultValue) — preenche campos sem
+      // valor (tipicamente ocultos do form via isInForm=false configurado no
+      // Editor de Telas), suportando templates {{now+Nd}} e {{campo:xxx}}.
+      for (final c in widget.fieldConfigs) {
+        if (c.defaultValue == null) continue;
+        final atual = getNestedValue(formData, c.fieldName);
+        if (atual != null && atual.toString().isNotEmpty) continue;
+        final resolvido = resolveFieldDefaultTemplate(c.defaultValue, formData);
+        addToFormData(formData, c.fieldName, resolvido);
+      }
+
       // ajuste final do formData (já com os valores digitados no form)
       if (widget.transformFormData != null) {
         final transformed = widget.transformFormData!(formData);

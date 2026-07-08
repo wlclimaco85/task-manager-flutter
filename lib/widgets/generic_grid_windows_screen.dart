@@ -2654,6 +2654,37 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
     setState(() => _isUpdating = false);
   }
 
+  /// Preenche, no formData já coletado do form, o valor fixo de payload
+  /// (TelaField.defaultValue) de todo campo que ainda não tenha valor —
+  /// tipicamente campos ocultos do form (isInForm=false) configurados no
+  /// Editor de Telas. Suporta os templates `{{now+Nd}}` e `{{campo:xxx}}`.
+  void _applyFieldDefaultValues(Map<String, dynamic> formData) {
+    for (final c in widget.FieldConfigWindowss) {
+      if (c.defaultValue == null) continue;
+      final atual = _getNestedRawValue(formData, c.fieldName);
+      if (atual != null && atual.toString().isNotEmpty) continue;
+      final resolvido = _resolveFieldDefaultTemplate(c.defaultValue, formData);
+      _setNestedValue(formData, c.fieldName.split('.'), resolvido);
+    }
+  }
+
+  dynamic _resolveFieldDefaultTemplate(
+    dynamic value,
+    Map<String, dynamic> formData,
+  ) {
+    if (value is! String) return value;
+    final nowMatch = RegExp(r'^\{\{now\+(\d+)d\}\}$').firstMatch(value);
+    if (nowMatch != null) {
+      final dias = int.parse(nowMatch.group(1)!);
+      return DateTime.now().add(Duration(days: dias)).toIso8601String();
+    }
+    final campoMatch = RegExp(r'^\{\{campo:([\w.]+)\}\}$').firstMatch(value);
+    if (campoMatch != null) {
+      return _getNestedRawValue(formData, campoMatch.group(1)!);
+    }
+    return value;
+  }
+
   void _setNestedValue(
     Map<String, dynamic> map,
     List<String> parts,
@@ -2685,6 +2716,8 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
 
     final Map<String, dynamic> enrichedFormData =
         Map.from(normalizeFormData(formData));
+
+    _applyFieldDefaultValues(enrichedFormData);
 
     if (widget.additionalFormData != null) {
       enrichedFormData.addAll(widget.additionalFormData!);
@@ -2874,6 +2907,8 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
     }
     final adjustedFormData =
         Map<String, dynamic>.from(normalizeFormData(formData));
+
+    _applyFieldDefaultValues(adjustedFormData);
 
     if (widget.additionalFormData != null) {
       adjustedFormData.addAll(widget.additionalFormData!);
