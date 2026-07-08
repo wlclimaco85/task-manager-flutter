@@ -2,6 +2,7 @@
 import 'package:flutter/material.dart';
 import '../../../models/conta_pagar_model.dart';
 import '../../../models/forma_pagamento_model.dart';
+import '../../services/conta_bancaria_caller.dart';
 import '../../services/network_caller.dart';
 import '../../../models/network_response.dart';
 import '../../../utils/api_links.dart';
@@ -25,20 +26,22 @@ class _WebBaixaDialogState extends State<WebBaixaDialog> {
   final _valorController = TextEditingController();
   DateTime _dataBaixa = DateTime.now();
   int? _formaPagamentoId;
+  int? _contaId;
   bool _isLoading = true;
   bool _isSaving = false;
   List<FormaPagamento> _formasPagamento = [];
+  List<Map<String, dynamic>> _contas = [];
 
   @override
   void initState() {
     super.initState();
     _valorController.text = widget.conta.valor.toStringAsFixed(2);
-    _loadFormasPagamento();
+    _loadDados();
   }
 
-  Future<void> _loadFormasPagamento() async {
-    final List<Map<String, dynamic>> formasMap =
-        await FormaPagamento.loadFormasPagamento();
+  Future<void> _loadDados() async {
+    final formasMap = await FormaPagamento.loadFormasPagamento();
+    final contas = await ContaBancariaCaller.loadContas();
 
     final List<FormaPagamento> formas = formasMap
         .map(
@@ -54,6 +57,7 @@ class _WebBaixaDialogState extends State<WebBaixaDialog> {
     if (!mounted) return;
     setState(() {
       _formasPagamento = formas;
+      _contas = contas;
       _isLoading = false;
     });
   }
@@ -146,6 +150,49 @@ class _WebBaixaDialogState extends State<WebBaixaDialog> {
                               },
                             ),
                       const SizedBox(height: 16),
+                      _campoLabel('Conta bancária'),
+                      const SizedBox(height: 6),
+                      _isLoading
+                          ? const SizedBox(
+                              height: 52,
+                              child: Center(
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  color: GridColors.primary,
+                                ),
+                              ),
+                            )
+                          : DropdownButtonFormField<int>(
+                              initialValue: _contaId,
+                              isExpanded: true,
+                              decoration: _inputDecoration(
+                                hint: 'Selecione',
+                                icon: Icons.account_balance,
+                              ),
+                              icon: const Icon(Icons.keyboard_arrow_down,
+                                  color: GridColors.neutral),
+                              items: _contas
+                                  .map<DropdownMenuItem<int>>(
+                                    (c) => DropdownMenuItem<int>(
+                                      value: c['value'] as int,
+                                      child: Text(c['label'],
+                                          overflow: TextOverflow.ellipsis),
+                                    ),
+                                  )
+                                  .toList(),
+                              onChanged: (newValue) {
+                                setState(() {
+                                  _contaId = newValue;
+                                });
+                              },
+                              validator: (value) {
+                                if (value == null) {
+                                  return 'Selecione a conta bancária';
+                                }
+                                return null;
+                              },
+                            ),
+                      const SizedBox(height: 16),
                       _campoLabel('Data da baixa'),
                       const SizedBox(height: 6),
                       InkWell(
@@ -220,6 +267,7 @@ class _WebBaixaDialogState extends State<WebBaixaDialog> {
         'dataBaixa': _dataBaixa.toIso8601String(),
         'valorBaixa': valorBaixa,
         'formaPagamentoId': _formaPagamentoId,
+        'contaId': _contaId,
       },
     );
 

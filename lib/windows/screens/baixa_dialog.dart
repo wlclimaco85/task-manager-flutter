@@ -2,6 +2,7 @@
 import 'package:flutter/material.dart';
 import '../../../models/conta_pagar_model.dart';
 import '../../../models/forma_pagamento_model.dart';
+import '../../services/conta_bancaria_caller.dart';
 import '../../services/network_caller.dart';
 import '../../../models/network_response.dart';
 import '../../../utils/api_links.dart';
@@ -22,20 +23,22 @@ class _BaixaDialogState extends State<BaixaDialog> {
   final _valorController = TextEditingController();
   DateTime _dataBaixa = DateTime.now();
   int? _formaPagamentoId;
+  int? _contaId;
   bool _isLoading = true;
   bool _isSubmitting = false;
   List<FormaPagamento> _formasPagamento = [];
+  List<Map<String, dynamic>> _contas = [];
 
   @override
   void initState() {
     super.initState();
     _valorController.text = widget.conta.valor.toString();
-    _loadFormasPagamento();
+    _loadDados();
   }
 
-  Future<void> _loadFormasPagamento() async {
-    final List<Map<String, dynamic>> formasMap =
-        await FormaPagamento.loadFormasPagamento();
+  Future<void> _loadDados() async {
+    final formasMap = await FormaPagamento.loadFormasPagamento();
+    final contas = await ContaBancariaCaller.loadContas();
 
     final List<FormaPagamento> formas = formasMap
         .map(
@@ -48,8 +51,10 @@ class _BaixaDialogState extends State<BaixaDialog> {
           ),
         )
         .toList();
+    if (!mounted) return;
     setState(() {
       _formasPagamento = formas;
+      _contas = contas;
       _isLoading = false;
     });
   }
@@ -278,6 +283,79 @@ class _BaixaDialogState extends State<BaixaDialog> {
                   ),
             const SizedBox(height: 14),
 
+            // Dropdown Conta Bancária
+            _isLoading
+                ? Container(
+                    height: 56,
+                    decoration: BoxDecoration(
+                      color: GridColors.inputBackground,
+                      border: Border.all(color: GridColors.borderSubtle),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: const Center(
+                      child: SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: GridColors.primary,
+                        ),
+                      ),
+                    ),
+                  )
+                : DropdownButtonFormField<int>(
+                    initialValue: _contaId,
+                    decoration: InputDecoration(
+                      labelText: 'Conta Bancária',
+                      prefixIcon: const Icon(Icons.account_balance, size: 20),
+                      prefixIconColor: GridColors.primary,
+                      floatingLabelStyle: const TextStyle(color: GridColors.primary),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8),
+                        borderSide: const BorderSide(color: GridColors.borderSubtle),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8),
+                        borderSide: const BorderSide(color: GridColors.primary, width: 1.5),
+                      ),
+                      errorBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8),
+                        borderSide: const BorderSide(color: GridColors.error),
+                      ),
+                      focusedErrorBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8),
+                        borderSide: const BorderSide(color: GridColors.error, width: 1.5),
+                      ),
+                      filled: true,
+                      fillColor: GridColors.inputBackground,
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+                    ),
+                    isExpanded: true,
+                    items: _contas
+                        .map<DropdownMenuItem<int>>(
+                          (c) => DropdownMenuItem<int>(
+                            value: c['value'] as int,
+                            child: Text(c['label'], overflow: TextOverflow.ellipsis),
+                          ),
+                        )
+                        .toList(),
+                    onChanged: (newValue) {
+                      setState(() {
+                        _contaId = newValue;
+                      });
+                    },
+                    validator: (value) {
+                      if (value == null) {
+                        return 'Selecione a conta bancária';
+                      }
+                      return null;
+                    },
+                  ),
+            const SizedBox(height: 14),
+
             // Campo Data da Baixa (estilo InputDecoration completo)
             InkWell(
               onTap: () => _selectDate(context),
@@ -403,6 +481,7 @@ class _BaixaDialogState extends State<BaixaDialog> {
           'dataBaixa': _dataBaixa.toIso8601String(),
           'valorBaixa': valorBaixa,
           'formaPagamentoId': _formaPagamentoId,
+          'contaId': _contaId,
         },
       );
 
