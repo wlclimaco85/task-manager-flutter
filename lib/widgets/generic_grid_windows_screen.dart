@@ -66,7 +66,8 @@ class FileConfig {
 // Configuração avançada de campo
 Future<String?> platformFileToDataUri(PlatformFile file) async {
   Uint8List? bytes = file.bytes;
-  if (bytes == null && file.path != null) {
+  // dart:io File nao existe no Flutter Web — so tenta ler por path fora do Web.
+  if (bytes == null && file.path != null && !kIsWeb) {
     bytes = await File(file.path!).readAsBytes();
   }
   if (bytes == null || bytes.isEmpty) return null;
@@ -968,6 +969,7 @@ class FieldFactory {
         type: FileType.custom,
         allowedExtensions: fileConfig.allowedExtensions,
         allowMultiple: fileConfig.allowMultiple,
+        withData: true,
       );
 
       if (result != null && result.files.isNotEmpty) {
