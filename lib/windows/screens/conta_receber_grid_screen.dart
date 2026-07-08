@@ -605,6 +605,7 @@ class _WindowsContaReceberGridScreenState extends State<WindowsContaReceberGridS
                     child: BoletoWidget(
                       lancamentoId: conta.id!,
                       lancamentoTipo: 'RECEBER',
+                      showHeader: false,
                     ),
                   ),
                 ],

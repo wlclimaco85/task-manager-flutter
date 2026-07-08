@@ -659,6 +659,7 @@ class _WindowsContaPagarGridScreenState
                     child: BoletoWidget(
                       lancamentoId: conta.id!,
                       lancamentoTipo: 'PAGAR',
+                      showHeader: false,
                     ),
                   ),
                 ],

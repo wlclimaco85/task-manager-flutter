@@ -661,6 +661,7 @@ class _WebContaPagarGridScreenState extends State<WebContaPagarGridScreen> {
                                   child: BoletoWidget(
                                     lancamentoId: id is int ? id : int.tryParse('$id') ?? 0,
                                     lancamentoTipo: 'PAGAR',
+                                    showHeader: false,
                                   ),
                                 ),
                               ],

@@ -589,6 +589,7 @@ class _WebContaReceberGridScreenState extends State<WebContaReceberGridScreen> {
                                   child: BoletoWidget(
                                     lancamentoId: id is int ? id : int.tryParse('$id') ?? 0,
                                     lancamentoTipo: 'RECEBER',
+                                    showHeader: false,
                                   ),
                                 ),
                               ],

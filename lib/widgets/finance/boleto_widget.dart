@@ -36,11 +36,17 @@ class BoletoWidget extends StatefulWidget {
   /// Link do boleto já existente (pode ser nulo).
   final String? boletoLink;
 
+  /// Controla se o cabeçalho interno ("Boleto" + ícone + botão fechar) é
+  /// renderizado. Deve ser `false` quando o widget já está dentro de um
+  /// dialog que desenha seu próprio cabeçalho (evita cabeçalho duplicado).
+  final bool showHeader;
+
   const BoletoWidget({
     super.key,
     required this.lancamentoId,
     required this.lancamentoTipo,
     this.boletoLink,
+    this.showHeader = true,
   });
 
   @override
@@ -62,9 +68,9 @@ class _BoletoWidgetState extends State<BoletoWidget> {
   String get _uploadEndpoint {
     final base = ApiLinks.baseUrl;
     if (widget.lancamentoTipo == 'PAGAR') {
-      return '$base/boletobancos/rest/boleto/upload?contaPagarId=${widget.lancamentoId}';
+      return '$base/rest/boleto/upload?contaPagarId=${widget.lancamentoId}';
     }
-    return '$base/boletobancos/rest/boleto/upload?contaReceberId=${widget.lancamentoId}';
+    return '$base/rest/boleto/upload?contaReceberId=${widget.lancamentoId}';
   }
 
   Future<void> _fazerUpload() async {
@@ -197,7 +203,7 @@ class _BoletoWidgetState extends State<BoletoWidget> {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          _buildHeader(),
+          if (widget.showHeader) _buildHeader(),
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
             child: Column(
