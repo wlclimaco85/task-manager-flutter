@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../utils/app_logger.dart';
+import '../../../widgets/user_banners.dart';
 import 'grid_filters.dart';
 import 'grid_form.dart';
 import 'grid_list.dart';
@@ -348,7 +349,11 @@ class _GenericMobileGridScreenState extends State<GenericMobileGridScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: GridColors.background,
-      appBar: widget.showAppBar ? _buildAppBar(context) : null,
+      appBar: widget.showAppBar
+          ? (widget.useUserBannerAppBar
+              ? _buildUserBannerAppBar()
+              : _buildAppBar(context))
+          : null,
       floatingActionButton: _buildFab(),
       body: Column(
         children: [
@@ -362,7 +367,6 @@ class _GenericMobileGridScreenState extends State<GenericMobileGridScreen> {
               onClear: _clearFilters,
               onClose: () => setState(() => _filtersOpen = false),
             ),
-
           Expanded(
             child: GridListScreen(
               title: widget.title,
@@ -437,6 +441,26 @@ class _GenericMobileGridScreenState extends State<GenericMobileGridScreen> {
       foregroundColor: GridColors.textPrimary,
       tooltip: 'Adicionar',
       child: const Icon(Icons.add),
+    );
+  }
+
+  /// Header padrao mobile (logo, empresa, usuario, notificacoes e sair) — usado
+  /// quando useUserBannerAppBar=true. Mantem refresh/colunas/filtro via a
+  /// FilterActionBar do proprio UserBannerAppBar em vez das actions do AppBar
+  /// generico, para nao duplicar cabecalho nem perder essas acoes.
+  UserBannerAppBar _buildUserBannerAppBar() {
+    return UserBannerAppBar(
+      screenTitle: widget.title,
+      onUserTap: widget.onUserBannerTapped,
+      onRefresh: _loading
+          ? null
+          : () {
+              _loadItems(reset: true);
+              widget.onBannerRefresh?.call();
+            },
+      isLoading: _loading,
+      onColumns: _showFieldSettings,
+      onFilterToggle: () => setState(() => _filtersOpen = !_filtersOpen),
     );
   }
 

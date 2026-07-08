@@ -361,16 +361,14 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
   /// hasPermission retorna false para tudo — bloqueia todos os botoes automaticos
   /// (server actions, detailScreenBuilder). Os customActions nao sao afetados.
   Widget _comunicadoGridInline({required SecurityMatrix sec}) {
-    return Scaffold(
-      appBar: const SimpleAppBar(title: 'Comunicados', icon: Icons.campaign),
-      body: DynamicGridDynamicScreen(
-        key: const ValueKey('mobile_dynamic_inline_comunicado'),
-        telaNome: 'comunicado',
-        hasPermission: (action) => false,
-        storageKey: 'mobile_dynamic_comunicado',
-        showAppBar: false,
-        customActions: _comunicadoActionsBuilder,
-      ),
+    // Header padrao mobile (UserBannerAppBar) — mesmo cabecalho usado nas
+    // demais telas do app, em vez do SimpleAppBar antigo (sem dados do usuario).
+    return DynamicGridDynamicScreen(
+      key: const ValueKey('mobile_dynamic_inline_comunicado'),
+      telaNome: 'comunicado',
+      hasPermission: (action) => false,
+      storageKey: 'mobile_dynamic_comunicado',
+      customActions: _comunicadoActionsBuilder,
     );
   }
 
@@ -378,66 +376,62 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
   /// hasPermission retorna false para tudo exceto insert/create — bloqueia server actions
   /// e detailScreenBuilder. Os customActions nao sao afetados pelo hasPermission.
   Widget _chamadoGridInline({required SecurityMatrix sec}) {
-    return Scaffold(
-      appBar:
-          const SimpleAppBar(title: 'Solicitacoes', icon: Icons.support_agent),
-      body: DynamicGridDynamicScreen(
-        key: const ValueKey('mobile_dynamic_inline_chamado'),
-        telaNome: 'chamado',
-        hasPermission: (action) {
-          final lower = action.toLowerCase();
-          // Permite criar chamados no mobile
-          if (lower == 'insert' || lower == 'create') {
-            return _hasPermissionFor(sec, AppScreen.chamados, action);
-          }
-          // Bloqueia todos os outros botoes automaticos — acoes via customActions
-          return false;
-        },
-        storageKey: 'mobile_dynamic_chamado',
-        showAppBar: false,
-        customActions: () => [
-          CustomAction(
-            icon: Icons.open_in_new_outlined,
-            label: 'Visualizar chamado',
-            onPressed: (ctx, item) => _mostrarDetalheChamado(ctx, item),
-            isVisible: (_) => true,
-          ),
-          CustomAction(
-            icon: Icons.task_alt_outlined,
-            label: 'Fechar chamado',
-            onPressed: (ctx, item) {
-              final id = item['id'];
-              if (id == null) return;
-              final chamadoId =
-                  id is int ? id : int.tryParse(id.toString()) ?? 0;
-              if (chamadoId == 0) return;
-              showDialog(
-                context: ctx,
-                builder: (_) => FecharChamadoDialog(chamadoId: chamadoId),
-              );
-            },
-            isVisible: (item) {
-              final status = (item['status'] ?? '').toString().toLowerCase();
-              return status != 'fechado' &&
-                  status != 'cancelado' &&
-                  status != '3' &&
-                  status != '4';
-            },
-          ),
-          CustomAction(
-            icon: Icons.replay_outlined,
-            label: 'Reabrir chamado',
-            onPressed: (ctx, item) => _mostrarReabrirChamadoDialog(ctx, item),
-            isVisible: (item) {
-              final status = (item['status'] ?? '').toString().toLowerCase();
-              return status == 'fechado' ||
-                  status == 'cancelado' ||
-                  status == '3' ||
-                  status == '4';
-            },
-          ),
-        ],
-      ),
+    // Header padrao mobile (UserBannerAppBar) — mesmo cabecalho usado nas
+    // demais telas do app, em vez do SimpleAppBar antigo (sem dados do usuario).
+    return DynamicGridDynamicScreen(
+      key: const ValueKey('mobile_dynamic_inline_chamado'),
+      telaNome: 'chamado',
+      hasPermission: (action) {
+        final lower = action.toLowerCase();
+        // Permite criar chamados no mobile
+        if (lower == 'insert' || lower == 'create') {
+          return _hasPermissionFor(sec, AppScreen.chamados, action);
+        }
+        // Bloqueia todos os outros botoes automaticos — acoes via customActions
+        return false;
+      },
+      storageKey: 'mobile_dynamic_chamado',
+      customActions: () => [
+        CustomAction(
+          icon: Icons.open_in_new_outlined,
+          label: 'Visualizar chamado',
+          onPressed: (ctx, item) => _mostrarDetalheChamado(ctx, item),
+          isVisible: (_) => true,
+        ),
+        CustomAction(
+          icon: Icons.task_alt_outlined,
+          label: 'Fechar chamado',
+          onPressed: (ctx, item) {
+            final id = item['id'];
+            if (id == null) return;
+            final chamadoId = id is int ? id : int.tryParse(id.toString()) ?? 0;
+            if (chamadoId == 0) return;
+            showDialog(
+              context: ctx,
+              builder: (_) => FecharChamadoDialog(chamadoId: chamadoId),
+            );
+          },
+          isVisible: (item) {
+            final status = (item['status'] ?? '').toString().toLowerCase();
+            return status != 'fechado' &&
+                status != 'cancelado' &&
+                status != '3' &&
+                status != '4';
+          },
+        ),
+        CustomAction(
+          icon: Icons.replay_outlined,
+          label: 'Reabrir chamado',
+          onPressed: (ctx, item) => _mostrarReabrirChamadoDialog(ctx, item),
+          isVisible: (item) {
+            final status = (item['status'] ?? '').toString().toLowerCase();
+            return status == 'fechado' ||
+                status == 'cancelado' ||
+                status == '3' ||
+                status == '4';
+          },
+        ),
+      ],
     );
   }
 
@@ -807,8 +801,7 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
         nav = Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (_) =>
-                const DashboardFinanceiroAreaPlaceholderScreen(),
+            builder: (_) => const DashboardFinanceiroAreaPlaceholderScreen(),
           ),
         );
         break;
@@ -957,7 +950,8 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
         nav = _pushDynamicGrid(telaNome: 'horimetro_screen', sec: sec);
         break;
       case "Histórico Manutenção":
-        nav = _pushDynamicGrid(telaNome: 'historico_manutencao_screen', sec: sec);
+        nav =
+            _pushDynamicGrid(telaNome: 'historico_manutencao_screen', sec: sec);
         break;
       case "Técnicos":
         nav = _pushDynamicGrid(telaNome: 'tecnico_manutencao_screen', sec: sec);
@@ -998,7 +992,8 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
         nav = _pushDynamicGrid(telaNome: 'projeto_recurso_screen', sec: sec);
         break;
       case "Apontamentos":
-        nav = _pushDynamicGrid(telaNome: 'projeto_apontamento_screen', sec: sec);
+        nav =
+            _pushDynamicGrid(telaNome: 'projeto_apontamento_screen', sec: sec);
         break;
       case "Medições":
         nav = _pushDynamicGrid(telaNome: 'projeto_medicao_screen', sec: sec);
@@ -1010,23 +1005,28 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
       case "Dashboard Precificação":
         nav = Navigator.push(
           context,
-          MaterialPageRoute(builder: (_) => const DashboardPrecificacaoScreen()),
+          MaterialPageRoute(
+              builder: (_) => const DashboardPrecificacaoScreen()),
         );
         break;
       case "Precificações":
         nav = _pushDynamicGrid(telaNome: 'precificacao_screen', sec: sec);
         break;
       case "Custos Diretos":
-        nav = _pushDynamicGrid(telaNome: 'precificacao_custo_direto_screen', sec: sec);
+        nav = _pushDynamicGrid(
+            telaNome: 'precificacao_custo_direto_screen', sec: sec);
         break;
       case "Mão de Obra":
-        nav = _pushDynamicGrid(telaNome: 'precificacao_mao_de_obra_screen', sec: sec);
+        nav = _pushDynamicGrid(
+            telaNome: 'precificacao_mao_de_obra_screen', sec: sec);
         break;
       case "Serviços Precificação":
-        nav = _pushDynamicGrid(telaNome: 'precificacao_servico_screen', sec: sec);
+        nav =
+            _pushDynamicGrid(telaNome: 'precificacao_servico_screen', sec: sec);
         break;
       case "Condições Pagamento":
-        nav = _pushDynamicGrid(telaNome: 'precificacao_condicao_pagamento_screen', sec: sec);
+        nav = _pushDynamicGrid(
+            telaNome: 'precificacao_condicao_pagamento_screen', sec: sec);
         break;
       case "Propostas Comerciais":
         nav = _pushDynamicGrid(telaNome: 'proposta_comercial_screen', sec: sec);
@@ -1176,7 +1176,8 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
           if (sec.canView(AppScreen.dashboard))
             _MoreMenuAction(Icons.bar_chart, 'Dashboard'),
           if (sec.canView(AppScreen.dashFinanceiroArea))
-            _MoreMenuAction(Icons.account_balance_wallet, 'Dashboard Financeiro'),
+            _MoreMenuAction(
+                Icons.account_balance_wallet, 'Dashboard Financeiro'),
           if (sec.canView(AppScreen.contasReceber))
             _MoreMenuAction(Icons.notifications_active, 'Régua de Cobrança'),
           if (sec.canView(AppScreen.contasBancarias))
@@ -1263,7 +1264,8 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
           _MoreMenuAction(Icons.request_quote, 'Precificações'),
           _MoreMenuAction(Icons.attach_money, 'Custos Diretos'),
           _MoreMenuAction(Icons.person, 'Mão de Obra'),
-          _MoreMenuAction(Icons.miscellaneous_services, 'Serviços Precificação'),
+          _MoreMenuAction(
+              Icons.miscellaneous_services, 'Serviços Precificação'),
           _MoreMenuAction(Icons.payment, 'Condições Pagamento'),
           _MoreMenuAction(Icons.description, 'Propostas Comerciais'),
         ],
