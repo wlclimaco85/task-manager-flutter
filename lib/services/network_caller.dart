@@ -48,7 +48,7 @@ class NetworkCaller {
         return NetworkResponse(
           true,
           response.statusCode,
-          jsonDecode(response.body),
+          jsonDecode(utf8.decode(response.bodyBytes)),
         );
       }
       return NetworkResponse(false, response.statusCode, null);
@@ -175,7 +175,7 @@ class NetworkCaller {
           'Authorization': 'Bearer ${AuthUtility.userInfo?.token}',
           ...TenantHelper.tenantHeaders,
           'Accept-Encoding': 'gzip',
-          'Content-Type': 'application/json',
+          'Content-Type': 'application/json;charset=UTF-8',
         },
         body: jsonEncode(body),
       );
@@ -184,7 +184,7 @@ class NetworkCaller {
         return NetworkResponse(
           true,
           response.statusCode,
-          jsonDecode(response.body),
+          jsonDecode(utf8.decode(response.bodyBytes)),
         );
       } else {
         return NetworkResponse(false, response.statusCode, null);
@@ -204,14 +204,15 @@ class NetworkCaller {
           'Authorization': 'Bearer ${AuthUtility.userInfo?.token}',
           ...TenantHelper.tenantHeaders,
           'Accept-Encoding': 'gzip',
-          'Content-Type': 'application/json',
+          'Content-Type': 'application/json;charset=UTF-8',
         },
         body: jsonEncode(body),
       );
 
       if (response.statusCode == 200 || response.statusCode == 204) {
-        final responseBody =
-            response.body.isNotEmpty ? jsonDecode(response.body) : null;
+        final responseBody = response.bodyBytes.isNotEmpty
+            ? jsonDecode(utf8.decode(response.bodyBytes))
+            : null;
         return NetworkResponse(
           true,
           response.statusCode,
@@ -293,7 +294,7 @@ class NetworkCaller {
         return NetworkResponse(
           true,
           response.statusCode,
-          jsonDecode(response.body),
+          jsonDecode(utf8.decode(response.bodyBytes)),
         );
       } else {
         return NetworkResponse(false, response.statusCode, null);
@@ -334,8 +335,9 @@ class NetworkCaller {
       AppLogger.i.info('🗑️ [DELETE] $uri | status=${response.statusCode}');
 
       if (response.statusCode == 200 || response.statusCode == 204) {
-        final body =
-            response.body.isNotEmpty ? jsonDecode(response.body) : null;
+        final body = response.bodyBytes.isNotEmpty
+            ? jsonDecode(utf8.decode(response.bodyBytes))
+            : null;
         return NetworkResponse(true, response.statusCode, body);
       } else {
         return NetworkResponse(false, response.statusCode, null);
