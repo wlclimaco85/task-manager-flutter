@@ -159,37 +159,17 @@ class LoginGridScreen extends StatelessWidget {
           isInForm: true,
           isFilterable: true,
         ),
-        // Aplicativo fixo (sempre APP_CONTABILIDADE, id=1) via additionalFormData.
-        FieldConfig(
-          label: 'Aplicativo',
-          fieldName: 'aplicativo',
-          isInForm: false,
-        ),
-        FieldConfig(
-          label: 'Tipo Login',
-          fieldName: 'tipoLogin',
-          isInForm: false,
-        ),
-        FieldConfig(
-          label: 'Must Change Password',
-          fieldName: 'mustChangePassword',
-          isInForm: false,
-        ),
-        FieldConfig(
-          label: 'Password Reset Token',
-          fieldName: 'passwordResetToken',
-          isInForm: false,
-        ),
-        FieldConfig(
-          label: 'Password Reset Expires',
-          fieldName: 'passwordResetExpires',
-          isInForm: false,
-        ),
-        FieldConfig(
-          label: 'Setores',
-          fieldName: 'setores',
-          isInForm: false,
-        ),
+        FieldConfig(label: 'Aplicativo', fieldName: 'aplicativo', isInForm: false),
+        FieldConfig(label: 'Aplicativo Empresa', fieldName: 'aplicativoEmpresa', isInForm: false),
+        FieldConfig(label: 'Tipo Login', fieldName: 'tipoLogin', isInForm: false),
+        FieldConfig(label: 'Trocar Senha', fieldName: 'trocarSenhaProximoLogin', isInForm: false),
+        FieldConfig(label: 'Ativo', fieldName: 'ativo', isInForm: false),
+        FieldConfig(label: 'Criado em', fieldName: 'dhCreatedAt', isInForm: false),
+        FieldConfig(label: 'Atualizado em', fieldName: 'dhUpdatedAt', isInForm: false),
+        FieldConfig(label: 'Must Change Password', fieldName: 'mustChangePassword', isInForm: false),
+        FieldConfig(label: 'Password Reset Token', fieldName: 'passwordResetToken', isInForm: false),
+        FieldConfig(label: 'Password Reset Expires', fieldName: 'passwordResetExpires', isInForm: false),
+        FieldConfig(label: 'Setores', fieldName: 'setores', isInForm: false),
         const FieldConfig(
           label: 'Foto',
           fieldName: 'foto',

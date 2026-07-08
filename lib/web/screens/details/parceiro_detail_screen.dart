@@ -4,6 +4,7 @@ import '../../../widgets/generic_grid_windows_screen.dart'
     show SecurityCheck, FieldConfigWindows, FieldType;
 import 'package:task_manager_flutter/web/screens/certificado_empresa_screen.dart';
 import '../ged_arquivos_screen.dart';
+import '../login_grid_screen.dart' show WebLoginGridScreen;
 import 'modulo_cobranca_screen.dart';
 
 class WebParceiroDetailScreen extends StatelessWidget {
@@ -34,30 +35,14 @@ class WebParceiroDetailScreen extends StatelessWidget {
       telaNome: 'parceiro',
       hasPermission: hasPermission,
       relatedTabs: [
-        // ── Logins — esconde tipoLogin e aplicativo, pré-popula parceiro ──
         RelatedGridTab(
           title: 'Logins',
           icon: Icons.person,
           telaNome: 'login',
           extraParams: {'parcId': id, 'empresaId': empresaId},
+          additionalFormData: WebLoginGridScreen.additionalFormData,
           fieldOverrides: [
-            // Esconde tipoLogin — vem da sessão
-            const FieldConfigWindows(
-              label: 'Tipo Login',
-              fieldName: 'tipoLogin',
-              isInForm: false,
-              isVisibleByDefault: false,
-              enabled: false,
-            ),
-            // Esconde aplicativo — vem da sessão
-            const FieldConfigWindows(
-              label: 'Aplicativo',
-              fieldName: 'aplicativo',
-              isInForm: false,
-              isVisibleByDefault: false,
-              enabled: false,
-            ),
-            // Parceiro: disabled mas pré-populado com o parceiro atual
+            ...WebLoginGridScreen.loginHiddenFields,
             FieldConfigWindows(
               label: 'Parceiro',
               fieldName: 'parceiro',
@@ -75,7 +60,7 @@ class WebParceiroDetailScreen extends StatelessWidget {
                   parceiroId > 0 ? parceiroId.toString() : null,
               isInForm: true,
               isFilterable: false,
-              enabled: false, // disabled — valor fixo
+              enabled: false,
             ),
           ],
         ),

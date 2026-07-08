@@ -62,6 +62,9 @@ class RelatedGridTab {
   /// apagar a entidade (ex.: aba Roles do login → DELETE /api/logins/{loginId}/roles/:id).
   final String? deleteEndpointOverride;
 
+  /// Dados fixos injetados no payload ao salvar (ex.: aplicativo fixo).
+  final Map<String, dynamic>? additionalFormData;
+
   /// Widget customizado — quando informado, ignora telaNome e exibe este widget na aba
   final Widget? customWidget;
 
@@ -79,6 +82,7 @@ class RelatedGridTab {
     this.telaNome,
     this.extraParams,
     this.fieldOverrides,
+    this.additionalFormData,
     this.deleteEndpointOverride,
     this.customWidget,
     this.prefetchExtraFields,
@@ -352,6 +356,7 @@ class _GenericDetailFormScreenState extends State<GenericDetailFormScreen>
             gridTelaNome: rt.telaNome,
             extraParams: rt.extraParams,
             fieldOverrides: rt.fieldOverrides,
+            additionalFormData: rt.additionalFormData,
             deleteEndpointOverride: rt.deleteEndpointOverride,
             customWidget: rt.customWidget,
             prefetchExtraFields: rt.prefetchExtraFields,
@@ -739,6 +744,7 @@ class _GenericDetailFormScreenState extends State<GenericDetailFormScreen>
         toJson: (obj) => obj,
         extraParams: tab.extraParams,
         fieldOverrides: tab.fieldOverrides,
+        additionalFormData: tab.additionalFormData,
         deleteEndpointOverride: tab.deleteEndpointOverride,
         showAppBar: false,
         prefetchExtraFields: tab.prefetchExtraFields,
@@ -1270,6 +1276,7 @@ class _AutoTab {
   final String? gridTelaNome;
   final Map<String, dynamic>? extraParams;
   final List<FieldConfigWindows>? fieldOverrides;
+  final Map<String, dynamic>? additionalFormData;
   final String? deleteEndpointOverride;
   final Widget? customWidget;
   final Future<Map<String, dynamic>> Function(Map<String, dynamic> item)?
@@ -1283,6 +1290,7 @@ class _AutoTab {
       this.gridTelaNome,
       this.extraParams,
       this.fieldOverrides,
+      this.additionalFormData,
       this.deleteEndpointOverride,
       this.customWidget,
       this.prefetchExtraFields,

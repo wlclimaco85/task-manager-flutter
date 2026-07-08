@@ -6,6 +6,7 @@ import '../../../customization/dynamic_grid_windows_screen.dart'
 import '../../../models/login_model.dart';
 import '../../../utils/api_links.dart';
 import '../../../services/network_caller.dart';
+import '../../web/screens/login_grid_screen.dart' show WebLoginGridScreen;
 import 'details/login_detail_screen.dart';
 import 'role_dialog.dart';
 
@@ -61,6 +62,14 @@ class WindowsLoginGridScreen extends StatelessWidget {
     return [];
   }
 
+  static const Map<String, dynamic> additionalFormData = {
+    'trocarSenhaProximoLogin': true,
+    'aplicativo': {'id': 1},
+  };
+
+  static const List<FieldConfigWindows> loginHiddenFields =
+      WebLoginGridScreen.loginHiddenFields;
+
   @override
   Widget build(BuildContext context) {
     return DynamicGridWindowsScreen<Login>(
@@ -69,48 +78,10 @@ class WindowsLoginGridScreen extends StatelessWidget {
       fromJson: (json) => Login.fromJson(json),
       toJson: (a) => a.toJson(),
       extraParams: const {'skipTenantParceiro': 'true'},
-      additionalFormData: const {
-        'trocarSenhaProximoLogin': true,
-        // Aplicativo fixo desta tela: sempre APP_CONTABILIDADE (id=1).
-        'aplicativo': {'id': 1},
-      },
-      // mustChangePassword / passwordResetToken / passwordResetExpires são
-      // derivados pelo backend a cada troca de senha (ver LoginController) —
-      // não precisam mais ser calculados/enviados pelo Flutter.
-      fieldOverrides: const [
-        // Dropdowns reais — os campos FK (empresa_id, parceiro_id, aplicativo_id)
-        // e datas automáticas são ocultados automaticamente pelo _convert
-        FieldConfigWindows(
-          label: 'Tipo Login',
-          fieldName: 'tipoLogin',
-          isInForm: false,
-          isInGrid: false,
-        ),
-        FieldConfigWindows(
-          label: 'Trocar Senha',
-          fieldName: 'trocarSenhaProximoLogin',
-          isInForm: false,
-          isInGrid: false,
-        ),
-        FieldConfigWindows(
-          label: 'Ativo',
-          fieldName: 'ativo',
-          isInForm: false,
-          isInGrid: false,
-        ),
-        FieldConfigWindows(
-          label: 'Criado em',
-          fieldName: 'dhCreatedAt',
-          isInForm: false,
-          isInGrid: false,
-        ),
-        FieldConfigWindows(
-          label: 'Atualizado em',
-          fieldName: 'dhUpdatedAt',
-          isInForm: false,
-          isInGrid: false,
-        ),
-        FieldConfigWindows(
+      additionalFormData: additionalFormData,
+      fieldOverrides: [
+        ...loginHiddenFields,
+        const FieldConfigWindows(
           label: 'Foto',
           fieldName: 'foto',
           icon: Icons.photo_camera,
@@ -123,7 +94,7 @@ class WindowsLoginGridScreen extends StatelessWidget {
           isInGrid: false,
           isFilterable: false,
         ),
-        FieldConfigWindows(
+        const FieldConfigWindows(
           label: 'Roles',
           fieldName: 'roles',
           icon: Icons.security,
@@ -158,38 +129,6 @@ class WindowsLoginGridScreen extends StatelessWidget {
           isInForm: true,
           isFilterable: true,
         ),
-        // Aplicativo fixo (sempre APP_CONTABILIDADE, id=1) via additionalFormData.
-        FieldConfigWindows(
-          label: 'Aplicativo',
-          fieldName: 'aplicativo',
-          isInForm: false,
-          isInGrid: false,
-        ),
-        FieldConfigWindows(
-          label: 'Must Change Password',
-          fieldName: 'mustChangePassword',
-          isInForm: false,
-          isInGrid: false,
-        ),
-        FieldConfigWindows(
-          label: 'Password Reset Token',
-          fieldName: 'passwordResetToken',
-          isInForm: false,
-          isInGrid: false,
-        ),
-        FieldConfigWindows(
-          label: 'Password Reset Expires',
-          fieldName: 'passwordResetExpires',
-          isInForm: false,
-          isInGrid: false,
-        ),
-        FieldConfigWindows(
-          label: 'Setores',
-          fieldName: 'setores',
-          isInForm: false,
-          isInGrid: false,
-        ),
-        // trocarSenhaProximoLogin oculto da UI: valor true por padrão na entidade
       ],
       customActions: () => [
         CustomAction<Login>(

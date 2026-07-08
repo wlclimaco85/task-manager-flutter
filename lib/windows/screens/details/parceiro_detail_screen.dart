@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../../widgets/generic_detail_form_screen.dart';
 import '../../../widgets/generic_grid_windows_screen.dart'
     show SecurityCheck, FieldConfigWindows, FieldType;
+import '../../../web/screens/login_grid_screen.dart' show WebLoginGridScreen;
 import '../certificado_empresa_screen.dart';
 import '../ged_arquivos_screen.dart';
 import 'modulo_cobranca_screen.dart';
@@ -39,21 +40,9 @@ class WindowsParceiroDetailScreen extends StatelessWidget {
           icon: Icons.person,
           telaNome: 'login',
           extraParams: {'parcId': id, 'empresaId': empresaId},
+          additionalFormData: WebLoginGridScreen.additionalFormData,
           fieldOverrides: [
-            const FieldConfigWindows(
-              label: 'Tipo Login',
-              fieldName: 'tipoLogin',
-              isInForm: false,
-              isVisibleByDefault: false,
-              enabled: false,
-            ),
-            const FieldConfigWindows(
-              label: 'Aplicativo',
-              fieldName: 'aplicativo',
-              isInForm: false,
-              isVisibleByDefault: false,
-              enabled: false,
-            ),
+            ...WebLoginGridScreen.loginHiddenFields,
             FieldConfigWindows(
               label: 'Parceiro',
               fieldName: 'parceiro',

@@ -130,11 +130,11 @@ class _WindowsEmpresaDetailScreenState
           icon: Icons.person,
           telaNome: 'login',
           extraParams: {'empId': id},
-          // "Excluir" nesta aba INATIVA o login (soft-delete), não apaga.
-          // Backend: DELETE /api/logins/{id}/inativar (inativarLogin).
           deleteEndpointOverride: '${ApiLinks.baseUrl}/api/logins/:id/inativar',
-          fieldOverrides: const [
-            FieldConfigWindows(
+          additionalFormData: WindowsLoginGridScreen.additionalFormData,
+          fieldOverrides: [
+            ...WindowsLoginGridScreen.loginHiddenFields,
+            const FieldConfigWindows(
               label: 'Roles',
               fieldName: 'roles',
               icon: Icons.security,

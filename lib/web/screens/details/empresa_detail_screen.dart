@@ -214,11 +214,11 @@ class _WebEmpresaDetailScreenState extends State<WebEmpresaDetailScreen> {
           icon: Icons.person,
           telaNome: 'login',
           extraParams: {'empId': id},
-          // "Excluir" nesta aba INATIVA o login (soft-delete), não apaga.
-          // Backend: DELETE /api/logins/{id}/inativar (inativarLogin).
           deleteEndpointOverride: '${ApiLinks.baseUrl}/api/logins/:id/inativar',
-          fieldOverrides: const [
-            FieldConfigWindows(
+          additionalFormData: WebLoginGridScreen.additionalFormData,
+          fieldOverrides: [
+            ...WebLoginGridScreen.loginHiddenFields,
+            const FieldConfigWindows(
               label: 'Roles',
               fieldName: 'roles',
               icon: Icons.security,
