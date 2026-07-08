@@ -247,6 +247,8 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
   }
 
   Widget _gedDynamicGrid(SecurityMatrix sec) {
+    final empId = TenantContext.empresaId;
+    final parcId = TenantContext.parceiroId;
     return DynamicGridDynamicScreen(
       key: const ValueKey('mobile_dynamic_inline_ged_arquivo'),
       telaNome: 'arquivo',
@@ -256,6 +258,10 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
       createEndpointOverride: ApiLinks.uploadArquivo,
       updateEndpointOverride: ApiLinks.updateArquivo(':id'),
       deleteEndpointOverride: ApiLinks.deleteArquivo(':id'),
+      extraParams: {
+        if (empId != null) 'empresaId': empId.toString(),
+        if (parcId != null) 'parceiroId': parcId.toString(),
+      },
       fieldOverrides: _gedFieldOverrides(),
     );
   }
