@@ -29,6 +29,10 @@ class ChatCaller {
       if (response.statusCode == 200 && response.body != null) {
         models = ChatMessageModel.fromJson(response.body!);
         model.addAll(models.messages ?? []);
+      } else {
+        // Fix card #442: antes falhava silenciosamente (sem log nenhum),
+        // dificultando diagnosticar quando o backend retorna erro.
+        L.d('ChatCaller: falha ao carregar chats (status ${response.statusCode})');
       }
     } catch (e) {
       L.d('Erro ao carregar chats: $e');
