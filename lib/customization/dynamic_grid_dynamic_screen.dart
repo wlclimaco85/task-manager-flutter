@@ -14,6 +14,33 @@ import '../widgets/generic_detail_form_screen.dart';
 import 'generic_grid/grid_models.dart';
 import 'generic_grid/grid_page.dart';
 
+/// Extrai a base do endpoint no formato "/api/recurso" (ignora ":id" e demais
+/// segmentos). Usado para comparar se uma action pertence de fato à tela que
+/// a exibe.
+String _endpointBase(String endpoint) {
+  final segments = endpoint.split('/').where((s) => s.isNotEmpty).toList();
+  if (segments.length < 2) return endpoint;
+  return '/${segments[0]}/${segments[1]}';
+}
+
+/// Defesa em profundidade contra actions "órfãs" vazando de outra tela
+/// (bug #425 — cards do GED mostrando botões "Finalizar"/"Reabrir" de
+/// Chamados). O backend não deveria enviar actions para telas sem actions
+/// configuradas (ex: "arquivo"/GED), mas cache stale de TelaConfig em
+/// SharedPreferences ou bug de query pode fazer actions de outra tela
+/// aparecerem. Aqui só mantemos actions cujo endpoint bate com o endpoint
+/// de fetch da própria tela (mesma base "/api/recurso").
+List<TelaAction> filterActionsForTela(
+  List<TelaAction> actions,
+  String telaFetchEndpoint,
+) {
+  final telaBase = _endpointBase(telaFetchEndpoint);
+  return actions.where((a) {
+    final actionBase = _endpointBase(a.endpoint);
+    return actionBase == telaBase;
+  }).toList();
+}
+
 typedef SecurityCheck = bool Function(String permission);
 typedef OnItemTap = void Function(
   Map<String, dynamic> item,
@@ -43,6 +70,12 @@ class DynamicGridDynamicScreen extends StatefulWidget {
   final String? deleteEndpointOverride;
   final bool showAppBar;
 
+  /// Quando true, ignora as acoes de servidor configuradas no backend para a
+  /// tela (tela.actions) — usado por telas mobile que definem suas proprias
+  /// customActions e nao devem herdar botoes de outra entidade (ex.: GED nao
+  /// deve mostrar acoes que pertencem ao modulo de Chamados).
+  final bool suppressServerActions;
+
   const DynamicGridDynamicScreen({
     super.key,
     required this.telaNome,
@@ -63,6 +96,7 @@ class DynamicGridDynamicScreen extends StatefulWidget {
     this.updateEndpointOverride,
     this.deleteEndpointOverride,
     this.showAppBar = true,
+    this.suppressServerActions = false,
   });
 
   @override
@@ -807,16 +841,21 @@ class _DynamicGridDynamicScreenState extends State<DynamicGridDynamicScreen> {
             }
 
             final tela = snapshot.data!;
-            final serverActions = tela.actions.map((a) {
-              return ServerAction(
-                label: a.label,
-                icon: _iconFromName(a.icon),
-                method: a.method,
-                endpoint: _endpoint(null, a.endpoint),
-                confirmMessage: a.confirmMessage,
-                requiredPermission: a.requiredPermission,
-              );
-            }).toList();
+            // Defesa em profundidade contra actions órfãs de outra tela (bug #425).
+            final safeActions =
+                filterActionsForTela(tela.actions, tela.fetchEndpoint);
+            final serverActions = widget.suppressServerActions
+                ? <ServerAction>[]
+                : safeActions.map((a) {
+                    return ServerAction(
+                      label: a.label,
+                      icon: _iconFromName(a.icon),
+                      method: a.method,
+                      endpoint: _endpoint(null, a.endpoint),
+                      confirmMessage: a.confirmMessage,
+                      requiredPermission: a.requiredPermission,
+                    );
+                  }).toList();
 
             return GenericMobileGridScreen(
               title: tela.titulo,
