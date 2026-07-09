@@ -401,6 +401,20 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
         ),
       ),
       FieldConfig(
+        label: 'Empresa',
+        fieldName: 'empresa',
+        fieldType: FieldType.dropdown,
+        // Fix card #435: filtro "Empresa" nao tinha override no GED mobile
+        // e caia no fallback de texto livre (diferente do Web, que ja lista
+        // as empresas do usuario logado via dropdown).
+        dropdownFutureBuilder: () => _dropdownFromEndpoint(
+          ApiLinks.allEmpresas,
+          labelKeys: const ['nome', 'razaoSocial', 'label'],
+        ),
+        dropdownValueField: 'value',
+        dropdownDisplayField: 'label',
+      ),
+      FieldConfig(
         label: 'Diretorio',
         fieldName: 'diretorio',
         fieldType: FieldType.dropdown,
