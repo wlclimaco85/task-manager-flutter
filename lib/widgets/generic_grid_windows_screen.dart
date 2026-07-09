@@ -1763,7 +1763,18 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
         _dropdownCache[cacheKey] = config.dropdownOptions!;
       } else if (config.dropdownFutureBuilder != null) {
         config.dropdownFutureBuilder!().then((opts) {
-          if (mounted) setState(() => _dropdownCache[cacheKey] = opts);
+          // Fix card #434: defesa contra duplicidade nas opcoes retornadas
+          // pelo endpoint (dado duplicado no banco e/ou resposta com
+          // registros repetidos) — dedupe por valueField antes de exibir,
+          // independente da causa raiz no backend/dados.
+          final deduped = <String, Map<String, dynamic>>{};
+          for (final opt in opts) {
+            final key = opt[config.dropdownValueField]?.toString();
+            if (key != null) deduped[key] = opt;
+          }
+          if (mounted) {
+            setState(() => _dropdownCache[cacheKey] = deduped.values.toList());
+          }
         });
       } else if (config.dropdownOptions != null) {
         _dropdownCache[cacheKey] = config.dropdownOptions!;
