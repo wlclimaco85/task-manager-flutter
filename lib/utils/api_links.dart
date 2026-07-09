@@ -574,13 +574,14 @@ class ApiLinks {
   static String get financeFluxoDiario =>
       '$_baseUrlNew/api/dashboard/finance/fluxo-diario';
 
-  static String get financeFluxoDiarioSaldo => '$_baseUrlNew/api/contas/saldos';
+  static String get financeFluxoDiarioSaldo =>
+      '$_baseUrlNew/api/contas-bancaria/saldos';
 
   static String financeFluxoEvolucao(int fileId) =>
-      '$_baseUrlNew/api/contas/$fileId/evolucao/';
+      '$_baseUrlNew/api/contas-bancaria/$fileId/evolucao';
 
   static String get financeFluxoDiarioPdf =>
-      '$_baseUrlNew/api/contas/extrato/pdf';
+      '$_baseUrlNew/api/contas-bancaria/extrato/pdf';
 
   static String get financeExtratoOperacional =>
       '$_baseUrlNew/api/dashboard/finance/extrato-operacional';
