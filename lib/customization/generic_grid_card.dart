@@ -373,9 +373,10 @@ class _GenericMobileGridScreenState<T>
             : responseData ?? [];
 
         final processedData = data.map((json) {
-          final itemMap = json is Map ? Map<String, dynamic>.from(json) : {};
+          final itemMap =
+              json is Map ? Map<String, dynamic>.from(json) : <String, dynamic>{};
 
-          if (json['file'] != null) {
+          if (itemMap['file'] != null) {
             for (final config in widget.fieldConfigs.where(
               (c) => c.fieldType == FieldType.file,
             )) {
