@@ -14,6 +14,7 @@ import '../../../utils/app_logger.dart';
 import '../../../utils/grid_colors.dart';
 import '../../../utils/tenant_context.dart';
 import '../../../widgets/chat/chat_support_ui.dart';
+import '../../../widgets/chat/finalizar_atendimento_dialog.dart';
 import '../../../widgets/ticket_form_dialog.dart';
 import '../../services/ai_assistant_service.dart';
 import '../../services/chat_caller.dart';
@@ -22,12 +23,17 @@ class WebChatMessageScreen extends StatefulWidget {
   final String sector;
   final String userName;
   final String chatId;
+  // Fix card #444: chamado apos finalizar com sucesso, para o container
+  // (lista de atendimento) voltar para a lista em vez de manter a
+  // conversa finalizada aberta.
+  final VoidCallback? onFinalized;
 
   const WebChatMessageScreen({
     super.key,
     required this.sector,
     required this.userName,
     required this.chatId,
+    this.onFinalized,
   });
 
   @override
@@ -428,41 +434,33 @@ class _WebChatMessageScreenState extends State<WebChatMessageScreen> {
   }
 
   Future<void> _finalizarChat() async {
-    final confirmar = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Finalizar atendimento'),
-        content: const Text(
-          'Deseja encerrar este atendimento? Esta ação não pode ser desfeita.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(false),
-            child: const Text('Cancelar'),
-          ),
-          FilledButton(
-            style: FilledButton.styleFrom(
-              backgroundColor: GridColors.error,
-              foregroundColor: Colors.white,
-            ),
-            onPressed: () => Navigator.of(ctx).pop(true),
-            child: const Text('Finalizar'),
-          ),
-        ],
-      ),
-    );
-    if (confirmar != true || !mounted) return;
     if (_effectiveChatId.isEmpty || _effectiveChatId == '0') {
       _showSnack('Envie ao menos uma mensagem antes de finalizar.', error: true);
       return;
     }
+    // Fix card #444: popup de finalizar substituido por pesquisa de
+    // satisfacao (resolvido/parcial/nao resolvido) + nota 1-10 + opcao de
+    // abrir chamado, design ui-ux-pro-max.
+    final resultado = await showFinalizarAtendimentoDialog(
+      context,
+      sectorDescricao: widget.sector,
+      historicoConversa: _buildHistoricoChat(),
+    );
+    if (resultado == null || !mounted) return;
     try {
       final url = TenantContext.applyToUrl(
-          ApiLinks.chatFinalizarConversa(_effectiveChatId));
+          ApiLinks.chatFinalizarConversa(
+            _effectiveChatId,
+            satisfacao: resultado.satisfacao.valor,
+            nota: resultado.nota,
+          ));
       final response = await http.put(Uri.parse(url), headers: TenantContext.headers);
       if (!mounted) return;
       if (response.statusCode == 200 || response.statusCode == 204) {
         _showSnack('Atendimento finalizado com sucesso.');
+        // Fix card #444: apos finalizar, volta para a lista de atendimentos
+        // em vez de manter a conversa finalizada aberta.
+        widget.onFinalized?.call();
       } else {
         _showSnack('Não foi possível finalizar (${response.statusCode}).', error: true);
       }

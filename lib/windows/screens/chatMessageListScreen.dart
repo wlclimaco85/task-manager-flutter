@@ -40,6 +40,9 @@ class _WindowsChatListScreenState extends State<WindowsChatListScreen> {
   final List<Map<String, dynamic>> _setores = [];
   bool _isLoading = false;
   Chat? _selectedChat;
+  // Fix card #444: filtro Abertos/Finalizados (antes nao existia nenhum
+  // filtro nem status real vindo do backend).
+  bool _mostrarFinalizados = false;
 
   static const List<String> _fallbackSectors = [
     'Financeiro',
@@ -86,7 +89,11 @@ class _WindowsChatListScreenState extends State<WindowsChatListScreen> {
               timestamp:
                   DateTime.tryParse(msg.uploadDate ?? msg.timestamp ?? '') ??
                       DateTime.now(),
-              status: 'Ativo',
+              // Fix card #444: status real vindo do backend (agrupado por
+              // chatId), antes hardcoded 'Ativo' para toda conversa.
+              status: (msg.status ?? '').toLowerCase().startsWith('final')
+                  ? 'Finalizado'
+                  : 'Ativo',
             ),
           )
           .toList();
@@ -105,6 +112,11 @@ class _WindowsChatListScreenState extends State<WindowsChatListScreen> {
       _showSnack('Erro ao carregar chats: $e', error: true);
     }
   }
+
+  List<Chat> get _filteredChats => _chats
+      .where((c) =>
+          (c.status == 'Finalizado') == _mostrarFinalizados)
+      .toList();
 
   List<String> get _sectorLabels {
     final labels = _setores
@@ -202,8 +214,16 @@ class _WindowsChatListScreenState extends State<WindowsChatListScreen> {
   }
 
   Future<void> _finalizeChat(Chat chat) async {
+    if (chat.chatId.isEmpty || chat.chatId == '0') {
+      _showSnack('Envie ao menos uma mensagem antes de finalizar.', error: true);
+      return;
+    }
     try {
-      final url = TenantContext.applyToUrl(ApiLinks.chatFinalize(chat.chatId));
+      // Fix card #444: usava ApiLinks.chatFinalize (PUT /api/chat/{id} sem
+      // corpo, id Integer de mensagem) -- mesmo bug ja corrigido no card
+      // #430 dentro da tela de conversa, mas nao replicado aqui na lista.
+      final url = TenantContext.applyToUrl(
+          ApiLinks.chatFinalizarConversa(chat.chatId));
       final response = await http.put(Uri.parse(url), headers: TenantContext.headers);
       if (response.statusCode == 200 || response.statusCode == 204) {
         setState(() {
@@ -280,6 +300,12 @@ class _WindowsChatListScreenState extends State<WindowsChatListScreen> {
                     sector: _selectedChat!.sector,
                     userName: widget.userName,
                     chatId: _selectedChat!.chatId,
+                    // Fix card #444: ao finalizar dentro da conversa, volta
+                    // para a lista de atendimentos.
+                    onFinalized: () {
+                      setState(() => _selectedChat = null);
+                      _loadChats();
+                    },
                   ),
           ),
         ],
@@ -312,7 +338,7 @@ class _WindowsChatListScreenState extends State<WindowsChatListScreen> {
                         ),
                       ),
                       Text(
-                        '${_chats.length} conversas',
+                        '${_filteredChats.length} conversas',
                         style: TextStyle(
                           color: Colors.black.withValues(alpha: 0.55),
                           fontSize: 12,
@@ -340,22 +366,49 @@ class _WindowsChatListScreenState extends State<WindowsChatListScreen> {
               ],
             ),
           ),
+          // Fix card #444: filtro Abertos/Finalizados (antes toda conversa
+          // aparecia junta, sem forma de ver/reabrir uma ja finalizada).
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 10),
+            child: Row(
+              children: [
+                Expanded(
+                  child: _FiltroChip(
+                    label: 'Abertos',
+                    selected: !_mostrarFinalizados,
+                    onTap: () => setState(() => _mostrarFinalizados = false),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: _FiltroChip(
+                    label: 'Finalizados',
+                    selected: _mostrarFinalizados,
+                    onTap: () => setState(() => _mostrarFinalizados = true),
+                  ),
+                ),
+              ],
+            ),
+          ),
           const Divider(height: 1),
           if (_isLoading)
             const LinearProgressIndicator(color: GridColors.primary),
           Expanded(
-            child: _chats.isEmpty && !_isLoading
+            child: _filteredChats.isEmpty && !_isLoading
                 ? ChatEmptyState(
-                    title: 'Nenhum chat iniciado',
-                    message:
-                        'Abra um atendimento para falar com o setor responsavel.',
-                    onStart: _showSectorSelectionDialog,
+                    title: _mostrarFinalizados
+                        ? 'Nenhum chat finalizado'
+                        : 'Nenhum chat iniciado',
+                    message: _mostrarFinalizados
+                        ? 'Conversas finalizadas aparecem aqui.'
+                        : 'Abra um atendimento para falar com o setor responsavel.',
+                    onStart: _mostrarFinalizados ? null : _showSectorSelectionDialog,
                   )
                 : ListView.builder(
                     padding: const EdgeInsets.symmetric(vertical: 8),
-                    itemCount: _chats.length,
+                    itemCount: _filteredChats.length,
                     itemBuilder: (context, index) {
-                      final chat = _chats[index];
+                      final chat = _filteredChats[index];
                       return ChatListTileCard(
                         title: chat.sector,
                         subtitle: chat.lastMessage,
@@ -369,6 +422,46 @@ class _WindowsChatListScreenState extends State<WindowsChatListScreen> {
                   ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+/// Fix card #444: chip de filtro Abertos/Finalizados na lista de atendimento.
+class _FiltroChip extends StatelessWidget {
+  final String label;
+  final bool selected;
+  final VoidCallback onTap;
+
+  const _FiltroChip({
+    required this.label,
+    required this.selected,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(8),
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 8),
+        alignment: Alignment.center,
+        decoration: BoxDecoration(
+          color: selected ? GridColors.primary : GridColors.card,
+          border: Border.all(
+            color: selected ? GridColors.primary : GridColors.divider,
+          ),
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            color: selected ? Colors.white : GridColors.textSecondary,
+            fontWeight: FontWeight.w700,
+            fontSize: 13,
+          ),
+        ),
       ),
     );
   }

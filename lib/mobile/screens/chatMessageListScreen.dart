@@ -40,6 +40,9 @@ class _ChatListScreenState extends State<ChatListScreen> {
   final List<Chat> _chats = [];
   final List<Map<String, dynamic>> _setores = [];
   bool _isLoading = false;
+  // Fix card #444: filtro Abertos/Finalizados (antes nao existia nenhum
+  // filtro nem status real vindo do backend).
+  bool _mostrarFinalizados = false;
 
   static const List<String> _fallbackSectors = [
     'Financeiro',
@@ -88,7 +91,11 @@ class _ChatListScreenState extends State<ChatListScreen> {
               timestamp:
                   DateTime.tryParse(msg.uploadDate ?? msg.timestamp ?? '') ??
                       DateTime.now(),
-              status: 'Ativo',
+              // Fix card #444: status real vindo do backend (agrupado por
+              // chatId), antes hardcoded 'Ativo' para toda conversa.
+              status: (msg.status ?? '').toLowerCase().startsWith('final')
+                  ? 'Finalizado'
+                  : 'Ativo',
             ),
           )
           .toList();
@@ -103,6 +110,11 @@ class _ChatListScreenState extends State<ChatListScreen> {
       _showSnack('Erro ao carregar chats: $e', error: true);
     }
   }
+
+  List<Chat> get _filteredChats => _chats
+      .where((c) =>
+          (c.status == 'Finalizado') == _mostrarFinalizados)
+      .toList();
 
   List<String> get _sectorLabels {
     final labels = _setores
@@ -124,7 +136,9 @@ class _ChatListScreenState extends State<ChatListScreen> {
           chatId: '0',
         ),
       ),
-    );
+      // Fix card #444: ao voltar da conversa (ex.: apos finalizar), recarrega
+      // a lista para refletir o status real.
+    ).then((_) => _bootstrap());
   }
 
   Future<void> _showSectorSelectionDialog() async {
@@ -238,12 +252,20 @@ class _ChatListScreenState extends State<ChatListScreen> {
           chatId: chat.chatId,
         ),
       ),
-    );
+    ).then((_) => _bootstrap());
   }
 
   Future<void> _finalizeChat(Chat chat) async {
+    if (chat.chatId.isEmpty || chat.chatId == '0') {
+      _showSnack('Envie ao menos uma mensagem antes de finalizar.', error: true);
+      return;
+    }
     try {
-      final url = TenantContext.applyToUrl(ApiLinks.chatFinalize(chat.chatId));
+      // Fix card #444: usava ApiLinks.chatFinalize (PUT /api/chat/{id} sem
+      // corpo, id Integer de mensagem) -- mesmo bug ja corrigido no card
+      // #430 dentro da tela de conversa, mas nao replicado aqui na lista.
+      final url = TenantContext.applyToUrl(
+          ApiLinks.chatFinalizarConversa(chat.chatId));
       final response = await http.put(Uri.parse(url), headers: TenantContext.headers);
       if (response.statusCode == 200 || response.statusCode == 204) {
         setState(() {
@@ -302,42 +324,116 @@ class _ChatListScreenState extends State<ChatListScreen> {
         isLoading: _isLoading,
         showFilterButton: false,
       ),
-      body: _isLoading
-          ? const Center(
-              child: CircularProgressIndicator(color: GridColors.primary))
-          : _chats.isEmpty
-              ? ChatEmptyState(
-                  title: 'Nenhum chat iniciado',
-                  message:
-                      'Abra um atendimento para falar com o setor responsavel.',
-                  onStart: _showSectorSelectionDialog,
-                )
-              : RefreshIndicator(
-                  color: GridColors.primary,
-                  onRefresh: _bootstrap,
-                  child: ListView.builder(
-                    padding: const EdgeInsets.fromLTRB(6, 10, 6, 88),
-                    itemCount: _chats.length,
-                    itemBuilder: (context, index) {
-                      final chat = _chats[index];
-                      return ChatListTileCard(
-                        title: chat.sector,
-                        subtitle: chat.lastMessage,
-                        time: DateFormat('HH:mm').format(chat.timestamp),
-                        status: chat.status,
-                        selected: false,
-                        onTap: () => _openChat(chat),
-                        onMore: () => _showChatActions(context, chat),
-                      );
-                    },
+      body: Column(
+        children: [
+          // Fix card #444: filtro Abertos/Finalizados (antes toda conversa
+          // aparecia junta, sem forma de ver/reabrir uma ja finalizada).
+          Padding(
+            padding: const EdgeInsets.fromLTRB(12, 10, 12, 4),
+            child: Row(
+              children: [
+                Expanded(
+                  child: _FiltroChip(
+                    label: 'Abertos',
+                    selected: !_mostrarFinalizados,
+                    onTap: () => setState(() => _mostrarFinalizados = false),
                   ),
                 ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: _FiltroChip(
+                    label: 'Finalizados',
+                    selected: _mostrarFinalizados,
+                    onTap: () => setState(() => _mostrarFinalizados = true),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Expanded(
+            child: _isLoading
+                ? const Center(
+                    child: CircularProgressIndicator(color: GridColors.primary))
+                : _filteredChats.isEmpty
+                    ? ChatEmptyState(
+                        title: _mostrarFinalizados
+                            ? 'Nenhum chat finalizado'
+                            : 'Nenhum chat iniciado',
+                        message: _mostrarFinalizados
+                            ? 'Conversas finalizadas aparecem aqui.'
+                            : 'Abra um atendimento para falar com o setor responsavel.',
+                        onStart:
+                            _mostrarFinalizados ? null : _showSectorSelectionDialog,
+                      )
+                    : RefreshIndicator(
+                        color: GridColors.primary,
+                        onRefresh: _bootstrap,
+                        child: ListView.builder(
+                          padding: const EdgeInsets.fromLTRB(6, 10, 6, 88),
+                          itemCount: _filteredChats.length,
+                          itemBuilder: (context, index) {
+                            final chat = _filteredChats[index];
+                            return ChatListTileCard(
+                              title: chat.sector,
+                              subtitle: chat.lastMessage,
+                              time: DateFormat('HH:mm').format(chat.timestamp),
+                              status: chat.status,
+                              selected: false,
+                              onTap: () => _openChat(chat),
+                              onMore: () => _showChatActions(context, chat),
+                            );
+                          },
+                        ),
+                      ),
+          ),
+        ],
+      ),
       floatingActionButton: FloatingActionButton(
         onPressed: _showSectorSelectionDialog,
         tooltip: 'Novo atendimento',
         backgroundColor: GridColors.primary,
         foregroundColor: Colors.white,
         child: const Icon(Icons.add_comment_outlined),
+      ),
+    );
+  }
+}
+
+/// Fix card #444: chip de filtro Abertos/Finalizados na lista de atendimento.
+class _FiltroChip extends StatelessWidget {
+  final String label;
+  final bool selected;
+  final VoidCallback onTap;
+
+  const _FiltroChip({
+    required this.label,
+    required this.selected,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(8),
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 8),
+        alignment: Alignment.center,
+        decoration: BoxDecoration(
+          color: selected ? GridColors.primary : GridColors.card,
+          border: Border.all(
+            color: selected ? GridColors.primary : GridColors.divider,
+          ),
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            color: selected ? Colors.white : GridColors.textSecondary,
+            fontWeight: FontWeight.w700,
+            fontSize: 13,
+          ),
+        ),
       ),
     );
   }

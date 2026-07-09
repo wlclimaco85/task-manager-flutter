@@ -477,8 +477,12 @@ class ApiLinks {
   // Fix card #430: finaliza a conversa inteira por chatId (String), distinto
   // de chatFinalize acima (que atualiza uma ChatMessage especifica por id
   // Integer, usado pelo Kanban).
-  static String chatFinalizarConversa(String chatId) =>
-      '$_baseUrlNew/api/chat/finalizar/$chatId';
+  static String chatFinalizarConversa(String chatId,
+      {String? satisfacao, int? nota}) {
+    final base = '$_baseUrlNew/api/chat/finalizar/$chatId';
+    if (satisfacao == null || nota == null) return base;
+    return '$base?satisfacao=${Uri.encodeComponent(satisfacao)}&nota=$nota';
+  }
 
   // Chat Kanban
   static String get chatKanban => '$_baseUrlNew/api/chat/kanban';
