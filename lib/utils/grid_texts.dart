@@ -270,7 +270,11 @@ class GridTexts {
   static const String end = 'Fim';
   static const String filter = 'Filtrar';
   static const String importBoleto = 'Importar Boleto';
-  static const String billingTicket = 'Boleto';
+  // Fix card #426: endpoint /rest/boleto/upload nunca existiu no backend
+  // (feature 100% orfa). Opcao C (recomendada no card): redirecionar para o
+  // fluxo de Anexo ja funcional (AnexoFinanceiroService/api/files), so
+  // renomeando o rotulo do botao para deixar claro que agora e um anexo.
+  static const String billingTicket = 'Anexo Boleto';
   static const String charge = 'Cobrar';
   static const String lower = 'Baixar';
   static const String installment = 'Parcelar';

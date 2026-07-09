@@ -19,7 +19,6 @@ import '../../../windows/dialogs/parcelar_receber_dialog.dart';
 import '../../../windows/dialogs/recorrencia_receber_dialog.dart';
 import '../../../windows/dialogs/renegociacao_receber_dialog.dart';
 import '../../../widgets/anexo_financeiro_widget.dart';
-import '../../../widgets/finance/boleto_widget.dart';
 import 'package:http/http.dart' as http;
 
 class WindowsContaReceberGridScreen extends StatefulWidget {
@@ -558,57 +557,23 @@ class _WindowsContaReceberGridScreenState extends State<WindowsContaReceberGridS
   void _showBoletoDialog(BuildContext context, ContaReceber conta) {
     showDialog(
       context: context,
+      // Fix card #426 (Opcao C): "Boleto" era feature orfa (endpoint
+      // /rest/boleto/upload nunca existiu). Agora reaproveita o fluxo de
+      // Anexo ja funcional. O widget ja tem seu proprio header/close.
       builder: (_) => Dialog(
         backgroundColor: Colors.transparent,
         insetPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
-        child: SizedBox(
-          width: 500,
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 500, maxHeight: 560),
           child: ClipRRect(
             borderRadius: BorderRadius.circular(12),
             child: Material(
               color: GridColors.dialogBackground,
               elevation: 8,
               shadowColor: GridColors.shadow,
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
-                    decoration: const BoxDecoration(
-                      color: GridColors.primary,
-                    ),
-                    child: Row(
-                      children: [
-                        const Icon(Icons.receipt, color: GridColors.textPrimary, size: 20),
-                        const SizedBox(width: 10),
-                        const Expanded(
-                          child: Text(
-                            'Boleto',
-                            style: TextStyle(
-                              color: GridColors.textPrimary,
-                              fontSize: 16,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ),
-                        IconButton(
-                          onPressed: () => Navigator.of(context).pop(),
-                          icon: const Icon(Icons.close, color: GridColors.textPrimaryMuted, size: 20),
-                          padding: EdgeInsets.zero,
-                          constraints: const BoxConstraints(minWidth: 28, minHeight: 28),
-                        ),
-                      ],
-                    ),
-                  ),
-                  SizedBox(
-                    height: 350,
-                    child: BoletoWidget(
-                      lancamentoId: conta.id!,
-                      lancamentoTipo: 'RECEBER',
-                      showHeader: false,
-                    ),
-                  ),
-                ],
+              child: AnexoFinanceiroWidget(
+                lancamentoId: conta.id!,
+                lancamentoTipo: 'RECEBER',
               ),
             ),
           ),
