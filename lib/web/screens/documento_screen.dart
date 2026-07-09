@@ -776,7 +776,11 @@ class _WindowsCalendarScreenState extends State<WindowsCalendarScreen> {
   Future<void> _abrirBoletoViewer(Map<String, dynamic> item, {required bool isPagar}) async {
     final id = (item['id'] as num?)?.toInt();
     if (id == null) return;
-    final empresaId = (item['empresa']?['id'] as num?)?.toInt();
+    // Fix card #443: itens do Calendario Financeiro (CalendarioFinanceiroItemDTO)
+    // expoem empresaId achatado, nao aninhado como 'empresa': {'id': ...}
+    // (formato usado pelas grids de Contas a Pagar/Receber).
+    final empresaId = (item['empresa']?['id'] as num?)?.toInt() ??
+        (item['empresaId'] as num?)?.toInt();
     try {
       final anexos = await AnexoFinanceiroService().listar(
         id,
