@@ -345,9 +345,9 @@ class _WindowsContaReceberGridScreenState extends State<WindowsContaReceberGridS
                       headers: {'Authorization': 'Bearer $token'},
                     );
                     if (resp.statusCode == 200) {
-                      final list = (jsonDecode(resp.body) is List)
-                          ? jsonDecode(resp.body) as List
-                          : (jsonDecode(resp.body)['data'] as List? ?? []);
+                      final decoded = jsonDecode(resp.body);
+                      final raw = decoded is List ? decoded : (decoded is Map ? decoded['data'] : null);
+                      final list = (raw is List) ? raw : <dynamic>[];
                       return list.map<Map<String, dynamic>>((e) => {
                         'value': e['descricao'] ?? e['nome'] ?? '',
                         'label': e['descricao'] ?? e['nome'] ?? '',
@@ -376,9 +376,9 @@ class _WindowsContaReceberGridScreenState extends State<WindowsContaReceberGridS
                       headers: {'Authorization': 'Bearer $token'},
                     );
                     if (resp.statusCode == 200) {
-                      final list = (jsonDecode(resp.body) is List)
-                          ? jsonDecode(resp.body) as List
-                          : (jsonDecode(resp.body)['data'] as List? ?? []);
+                      final decoded = jsonDecode(resp.body);
+                      final raw = decoded is List ? decoded : (decoded is Map ? decoded['data'] : null);
+                      final list = (raw is List) ? raw : <dynamic>[];
                       return list.map<Map<String, dynamic>>((e) => {
                         'value': e['value'] ?? e,
                         'label': e['label'] ?? e['value'] ?? e.toString(),
