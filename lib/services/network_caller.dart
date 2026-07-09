@@ -237,11 +237,17 @@ class NetworkCaller {
       // Não adiciona campos extras para login/auth endpoints.
       // Usa verificação por path específico para evitar falso-positivo
       // em URLs que contenham a palavra 'login' como prefixo de base URL.
+      //
+      // Fix: uriPath.endsWith('/login') tambem casava com /api/login (CRUD de
+      // criacao de Login, tela.createEndpoint), nao so /rest/auth/login (auth
+      // real). Isso fazia POST /api/login (criar Login a partir de
+      // Empresa/Parceiro>Logins) ser tratado como requisicao de auth: header
+      // Authorization era sobrescrito com um valor fixo ('c2Fua2h5YTpzdXA=',
+      // resquicio de outro projeto) em vez do Bearer token real, causando 401
+      // sempre. /rest/auth/ ja cobre o endpoint real de autenticacao.
       final uri = Uri.tryParse(url);
       final String uriPath = uri?.path ?? '';
       final bool isAuthRequest = uriPath.contains('/rest/auth/') ||
-          uriPath.contains('/rest/auth/login') ||
-          uriPath.endsWith('/login') ||
           uriPath.contains('inserirAluno');
 
       if (!isAuthRequest && body != null) {
