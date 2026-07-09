@@ -40,7 +40,7 @@ class WindowsLoginGridScreen extends StatelessWidget {
     return [];
   }
 
-  static Future<List<Map<String, dynamic>>> _loadEmpresas() async {
+  static Future<List<Map<String, dynamic>>> loadEmpresas() async {
     final response = await NetworkCaller().getRequest(ApiLinks.allEmpresas);
     if (response.isSuccess && response.body != null) {
       final lista = response.body!['data']['dados'] as List;
@@ -51,7 +51,7 @@ class WindowsLoginGridScreen extends StatelessWidget {
     return [];
   }
 
-  static Future<List<Map<String, dynamic>>> _loadParceiros() async {
+  static Future<List<Map<String, dynamic>>> loadParceiros() async {
     final response = await NetworkCaller().getRequest(ApiLinks.allParceiros);
     if (response.isSuccess && response.body != null) {
       final lista = response.body!['data']['dados'] as List;
@@ -70,16 +70,7 @@ class WindowsLoginGridScreen extends StatelessWidget {
   static const List<FieldConfigWindows> loginHiddenFields =
       WebLoginGridScreen.loginHiddenFields;
 
-  @override
-  Widget build(BuildContext context) {
-    return DynamicGridWindowsScreen<Login>(
-      telaNome: 'Login',
-      hasPermission: hasPermission,
-      fromJson: (json) => Login.fromJson(json),
-      toJson: (a) => a.toJson(),
-      extraParams: const {'skipTenantParceiro': 'true'},
-      additionalFormData: additionalFormData,
-      fieldOverrides: [
+  static List<FieldConfigWindows> fieldOverrides() => [
         ...loginHiddenFields,
         const FieldConfigWindows(
           label: 'Foto',
@@ -111,7 +102,7 @@ class WindowsLoginGridScreen extends StatelessWidget {
           displayFieldName: 'empresa.nome',
           icon: Icons.business,
           fieldType: FieldType.dropdown,
-          dropdownFutureBuilder: _loadEmpresas,
+          dropdownFutureBuilder: loadEmpresas,
           dropdownValueField: 'id',
           dropdownDisplayField: 'label',
           isInForm: true,
@@ -123,13 +114,24 @@ class WindowsLoginGridScreen extends StatelessWidget {
           displayFieldName: 'parceiro.nome',
           icon: Icons.person_outline,
           fieldType: FieldType.dropdown,
-          dropdownFutureBuilder: _loadParceiros,
+          dropdownFutureBuilder: loadParceiros,
           dropdownValueField: 'id',
           dropdownDisplayField: 'label',
           isInForm: true,
           isFilterable: true,
         ),
-      ],
+      ];
+
+  @override
+  Widget build(BuildContext context) {
+    return DynamicGridWindowsScreen<Login>(
+      telaNome: 'Login',
+      hasPermission: hasPermission,
+      fromJson: (json) => Login.fromJson(json),
+      toJson: (a) => a.toJson(),
+      extraParams: const {'skipTenantParceiro': 'true'},
+      additionalFormData: additionalFormData,
+      fieldOverrides: fieldOverrides(),
       customActions: () => [
         CustomAction<Login>(
           icon: Icons.admin_panel_settings,

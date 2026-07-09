@@ -39,7 +39,7 @@ class WebLoginGridScreen extends StatelessWidget {
     return [];
   }
 
-  static Future<List<Map<String, dynamic>>> _loadEmpresas() async {
+  static Future<List<Map<String, dynamic>>> loadEmpresas() async {
     final response = await NetworkCaller().getRequest(ApiLinks.allEmpresas);
     if (response.isSuccess && response.body != null) {
       final lista = response.body!['data']['dados'] as List;
@@ -50,7 +50,7 @@ class WebLoginGridScreen extends StatelessWidget {
     return [];
   }
 
-  static Future<List<Map<String, dynamic>>> _loadParceiros() async {
+  static Future<List<Map<String, dynamic>>> loadParceiros() async {
     final response = await NetworkCaller().getRequest(ApiLinks.allParceiros);
     if (response.isSuccess && response.body != null) {
       final lista = response.body!['data']['dados'] as List;
@@ -112,7 +112,7 @@ class WebLoginGridScreen extends StatelessWidget {
           displayFieldName: 'empresa.nome',
           icon: Icons.business,
           fieldType: FieldType.dropdown,
-          dropdownFutureBuilder: _loadEmpresas,
+          dropdownFutureBuilder: loadEmpresas,
           dropdownValueField: 'id',
           dropdownDisplayField: 'label',
           isInForm: true,
@@ -124,7 +124,7 @@ class WebLoginGridScreen extends StatelessWidget {
           displayFieldName: 'parceiro.nome',
           icon: Icons.person_outline,
           fieldType: FieldType.dropdown,
-          dropdownFutureBuilder: _loadParceiros,
+          dropdownFutureBuilder: loadParceiros,
           dropdownValueField: 'id',
           dropdownDisplayField: 'label',
           isInForm: true,

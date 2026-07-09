@@ -132,20 +132,7 @@ class _WindowsEmpresaDetailScreenState
           extraParams: {'empId': id},
           deleteEndpointOverride: '${ApiLinks.baseUrl}/api/logins/:id/inativar',
           additionalFormData: WindowsLoginGridScreen.additionalFormData,
-          fieldOverrides: [
-            ...WindowsLoginGridScreen.loginHiddenFields,
-            const FieldConfigWindows(
-              label: 'Roles',
-              fieldName: 'roles',
-              icon: Icons.security,
-              fieldType: FieldType.multiselect,
-              dropdownFutureBuilder: WindowsLoginGridScreen.loadRoles,
-              dropdownValueField: 'value',
-              dropdownDisplayField: 'label',
-              isInForm: true,
-              isFilterable: false,
-            ),
-          ],
+          fieldOverrides: WindowsLoginGridScreen.fieldOverrides(),
         ),
         RelatedGridTab(
           title: 'Contas a Pagar',
