@@ -276,6 +276,32 @@ class _ChatMessageScreenState extends State<ChatMessageScreen> {
     }
   }
 
+  /// Historico da conversa formatado como texto, para pre-preencher a
+  /// descricao do chamado (card #432).
+  String _buildHistoricoChat() {
+    return _messages
+        .where((m) => (m.content.isNotEmpty ? m.content : (m.text ?? ''))
+            .trim()
+            .isNotEmpty)
+        .map((m) =>
+            '${m.sender}: ${m.content.isNotEmpty ? m.content : (m.text ?? '')}')
+        .join('\n');
+  }
+
+  /// Imagens anexadas na conversa (mensagens tipo 'file' com extensao de
+  /// imagem), para reanexar automaticamente ao chamado (card #432).
+  List<Map<String, dynamic>> _buildImagensChat() {
+    const extensoesImagem = ['jpg', 'jpeg', 'png'];
+    return _messages
+        .where((m) =>
+            m.type == 'file' &&
+            m.fileId != null &&
+            extensoesImagem.contains(
+                (m.fileName ?? '').split('.').last.toLowerCase()))
+        .map((m) => {'fileId': m.fileId, 'fileName': m.fileName})
+        .toList();
+  }
+
   Future<void> _createTicket() async {
     final result = await showModalBottomSheet(
       context: context,
@@ -293,7 +319,11 @@ class _ChatMessageScreenState extends State<ChatMessageScreen> {
           ),
           child: SingleChildScrollView(
             controller: controller,
-            child: TicketFormBottomSheet(sectorDescricao: widget.sector),
+            child: TicketFormBottomSheet(
+              sectorDescricao: widget.sector,
+              initialDescricao: _buildHistoricoChat(),
+              anexosChat: _buildImagensChat(),
+            ),
           ),
         ),
       ),

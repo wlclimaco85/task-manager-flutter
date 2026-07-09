@@ -1,10 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
 import '../../../models/chamado_model.dart';
 import '../../services/chamado_caller.dart';
+import '../../services/anexo_financeiro_service.dart';
 import '../../../models/auth_utility.dart';
 import '../../../models/empresa_model.dart';
 import '../../../models/setor_model.dart';
 import '../../../models/login_model.dart';
+import '../../../utils/api_links.dart';
+import '../../../utils/tenant_context.dart';
 import '../../../utils/utils.dart';
 // ★ adicionando paleta de cores
 import '../../../utils/grid_colors.dart';
@@ -13,7 +17,19 @@ import '../../utils/grid_texts.dart';
 class TicketFormBottomSheet extends StatefulWidget {
   final String sectorDescricao; // nome do setor vindo do chat
 
-  const TicketFormBottomSheet({super.key, required this.sectorDescricao});
+  /// Historico do chat, usado para pre-preencher a descricao (card #432).
+  final String initialDescricao;
+
+  /// Imagens anexadas na conversa ({'fileId', 'fileName'}), reanexadas ao
+  /// chamado apos a criacao (card #432).
+  final List<Map<String, dynamic>> anexosChat;
+
+  const TicketFormBottomSheet({
+    super.key,
+    required this.sectorDescricao,
+    this.initialDescricao = '',
+    this.anexosChat = const [],
+  });
 
   @override
   State<TicketFormBottomSheet> createState() => _TicketFormBottomSheetState();
@@ -22,7 +38,7 @@ class TicketFormBottomSheet extends StatefulWidget {
 class _TicketFormBottomSheetState extends State<TicketFormBottomSheet> {
   final _formKey = GlobalKey<FormState>();
   final _titulo = TextEditingController();
-  final _descricao = TextEditingController();
+  late final TextEditingController _descricao;
 
   String _status = 'ABERTO';
   String _prioridade = 'MEDIA';
@@ -31,11 +47,13 @@ class _TicketFormBottomSheetState extends State<TicketFormBottomSheet> {
   String? _setorDesc;
 
   bool _submitting = false;
+  String? _progresso;
   List<Map<String, dynamic>> _setores = [];
 
   @override
   void initState() {
     super.initState();
+    _descricao = TextEditingController(text: widget.initialDescricao);
     _carregarSetores();
   }
 
@@ -87,6 +105,8 @@ class _TicketFormBottomSheetState extends State<TicketFormBottomSheet> {
 
       final criado = await ChamadoCaller().createChamado(chamado, token: token);
 
+      await _anexarImagensDoChat(criado.id!);
+
       if (mounted) {
         Navigator.pop(context, criado);
         ScaffoldMessenger.of(context).showSnackBar(
@@ -111,6 +131,35 @@ class _TicketFormBottomSheetState extends State<TicketFormBottomSheet> {
       }
     } finally {
       if (mounted) setState(() => _submitting = false);
+    }
+  }
+
+  /// Baixa cada imagem da conversa (ja hospedada no GED via /api/arquivos) e
+  /// reenvia como anexo do chamado recem-criado. Falha em um anexo nao
+  /// interrompe o fluxo — o chamado ja foi criado, e o essencial.
+  Future<void> _anexarImagensDoChat(int chamadoId) async {
+    for (var i = 0; i < widget.anexosChat.length; i++) {
+      final anexo = widget.anexosChat[i];
+      final fileId = anexo['fileId'];
+      final fileName = (anexo['fileName'] ?? 'anexo_$i').toString();
+      if (fileId == null) continue;
+      if (mounted) {
+        setState(() =>
+            _progresso = 'Anexando ${i + 1}/${widget.anexosChat.length}...');
+      }
+      try {
+        final resp = await http.get(
+          Uri.parse(TenantContext.applyToUrl(
+              ApiLinks.downloadArquivo(fileId.toString()))),
+          headers: TenantContext.headers,
+        );
+        if (resp.statusCode == 200) {
+          await AnexoFinanceiroService()
+              .uploadBytes(chamadoId, 'CHAMADO', resp.bodyBytes, fileName);
+        }
+      } catch (_) {
+        // Anexo individual falhou — nao bloqueia o restante do fluxo.
+      }
     }
   }
 
@@ -226,6 +275,28 @@ class _TicketFormBottomSheetState extends State<TicketFormBottomSheet> {
                     },
                     validator: (v) => v == null ? 'Selecione um setor' : null,
                   ),
+                  if (widget.anexosChat.isNotEmpty) ...[
+                    const SizedBox(height: 8),
+                    Row(
+                      children: [
+                        const Icon(Icons.attach_file,
+                            size: 16, color: GridColors.textSecondary),
+                        const SizedBox(width: 6),
+                        Text(
+                          '${widget.anexosChat.length} '
+                          '${widget.anexosChat.length == 1 ? 'imagem do chat sera anexada' : 'imagens do chat serao anexadas'}',
+                          style: const TextStyle(
+                              fontSize: 12, color: GridColors.textSecondary),
+                        ),
+                      ],
+                    ),
+                  ],
+                  if (_progresso != null) ...[
+                    const SizedBox(height: 6),
+                    Text(_progresso!,
+                        style: const TextStyle(
+                            fontSize: 12, color: GridColors.info)),
+                  ],
                 ],
               ),
             ),

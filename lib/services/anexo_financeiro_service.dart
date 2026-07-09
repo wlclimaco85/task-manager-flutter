@@ -57,6 +57,32 @@ class AnexoFinanceiroService {
     throw AnexoException('Erro ao enviar anexo (${streamed.statusCode})');
   }
 
+  /// Envia um anexo a partir de bytes ja em memoria (ex.: imagem baixada do
+  /// chat ao abrir um chamado — ver card #432), sem depender de FilePicker.
+  Future<AnexoFinanceiro> uploadBytes(
+      int lancamentoId, String tipo, Uint8List bytes, String fileName) async {
+    final request = http.MultipartRequest(
+      'POST',
+      Uri.parse(TenantContext.applyToUrl(ApiLinks.anexosFinanceiros)),
+    );
+    request.headers.addAll(TenantContext.headers);
+    request.fields['lancamentoId'] = lancamentoId.toString();
+    request.fields['tipo'] = tipo;
+    request.files.add(http.MultipartFile.fromBytes(
+      'file',
+      bytes,
+      filename: fileName,
+      contentType: _inferirMimeType(fileName),
+    ));
+
+    final streamed = await request.send();
+    final body = await streamed.stream.bytesToString();
+    if (streamed.statusCode == 200 || streamed.statusCode == 201) {
+      return AnexoFinanceiro.fromJson(jsonDecode(body) as Map<String, dynamic>);
+    }
+    throw AnexoException('Erro ao enviar anexo (${streamed.statusCode})');
+  }
+
   Future<Uint8List> download(int id) async {
     final token = AuthUtility.userInfo?.token;
     final resp = await http.get(

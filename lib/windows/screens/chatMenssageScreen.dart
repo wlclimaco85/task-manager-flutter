@@ -16,6 +16,7 @@ import '../../../utils/app_logger.dart';
 import '../../../utils/grid_colors.dart';
 import '../../../utils/tenant_context.dart';
 import '../../../widgets/chat/chat_support_ui.dart';
+import '../../../widgets/ticket_form_dialog.dart';
 import '../../services/chat_caller.dart';
 
 class WindowsChatMessageScreen extends StatefulWidget {
@@ -278,20 +279,56 @@ class _WindowsChatMessageScreenState extends State<WindowsChatMessageScreen> {
     }
   }
 
-  void _createTicket() {
+  /// Historico da conversa formatado como texto, para pre-preencher a
+  /// descricao do chamado (card #432).
+  String _buildHistoricoChat() {
+    return _messages
+        .where((m) => (m.content.isNotEmpty ? m.content : (m.text ?? ''))
+            .trim()
+            .isNotEmpty)
+        .map((m) =>
+            '${m.sender}: ${m.content.isNotEmpty ? m.content : (m.text ?? '')}')
+        .join('\n');
+  }
+
+  /// Imagens anexadas na conversa (mensagens tipo 'file' com extensao de
+  /// imagem), para reanexar automaticamente ao chamado (card #432).
+  List<Map<String, dynamic>> _buildImagensChat() {
+    const extensoesImagem = ['jpg', 'jpeg', 'png'];
+    return _messages
+        .where((m) =>
+            m.type == 'file' &&
+            m.fileId != null &&
+            extensoesImagem.contains(
+                (m.fileName ?? '').split('.').last.toLowerCase()))
+        .map((m) => {'fileId': m.fileId, 'fileName': m.fileName})
+        .toList();
+  }
+
+  Future<void> _createTicket() async {
     if (_channel == null) return;
+    final criado = await showDialog(
+      context: context,
+      builder: (_) => TicketFormDialog(
+        sectorDescricao: widget.sector,
+        initialDescricao: _buildHistoricoChat(),
+        anexosChat: _buildImagensChat(),
+      ),
+    );
+    if (criado == null || !mounted) return;
+    final id = (criado as dynamic).id;
     _channel!.sink.add(json.encode({
       'sender': _loggedUserName,
       'senderName': _loggedUserName,
       'senderEmail': _loggedUserEmail,
-      'content': 'Solicitacao de abertura de chamado',
+      'content': 'Chamado numero $id foi aberto',
       'sector': widget.sector,
       'type': 'ticket',
+      'ticketId': id,
       'timestamp': DateTime.now().toIso8601String(),
       'chatId': _effectiveChatId,
       if (TenantContext.empresaId != null) 'empId': TenantContext.empresaId,
     }));
-    _showSnack('Solicitacao de chamado enviada');
   }
 
   Future<void> _downloadFile(int fileId, String fileName) async {
