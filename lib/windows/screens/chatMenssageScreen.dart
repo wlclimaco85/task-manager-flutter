@@ -47,6 +47,14 @@ class _WindowsChatMessageScreenState extends State<WindowsChatMessageScreen> {
   static const int _maxRetries = 10;
   bool _initDone = false;
 
+  // Fix card #430: widget.chatId chega como '0' (placeholder) quando o chat
+  // e novo; o backend so atribui o id real na primeira mensagem, que volta
+  // pelo proprio WebSocket. _effectiveChatId comeca igual a widget.chatId e
+  // e atualizado assim que uma mensagem com chatId real chega — e ele (nao
+  // widget.chatId) que deve ser usado em toda chamada que precise do id
+  // (enviar mensagem, upload, finalizar chat).
+  late String _effectiveChatId = widget.chatId;
+
   String get _loggedUserName =>
       AuthUtility.userInfo?.login?.nome ?? widget.userName;
   String get _loggedUserEmail =>
@@ -66,6 +74,16 @@ class _WindowsChatMessageScreenState extends State<WindowsChatMessageScreen> {
       m.content == msg.content && m.sender == msg.sender && m.timestamp == msg.timestamp);
   }
 
+  void _adoptRealChatIdIfNeeded(ChatMessage msg) {
+    final realId = msg.chatId;
+    if (realId != null &&
+        realId.isNotEmpty &&
+        realId != '0' &&
+        realId != _effectiveChatId) {
+      setState(() => _effectiveChatId = realId);
+    }
+  }
+
   void _connectWebSocket() {
     if (!mounted || _retryCount >= _maxRetries) return;
     try {
@@ -82,6 +100,7 @@ class _WindowsChatMessageScreenState extends State<WindowsChatMessageScreen> {
           try {
             final decoded = json.decode(message) as Map<String, dynamic>;
             final msg = ChatMessage.fromJson(decoded);
+            _adoptRealChatIdIfNeeded(msg);
             if (!_isDuplicate(msg)) {
               setState(() => _messages.add(msg));
             }
@@ -162,7 +181,7 @@ class _WindowsChatMessageScreenState extends State<WindowsChatMessageScreen> {
       'sector': widget.sector,
       'type': 'text',
       'timestamp': DateTime.now().toIso8601String(),
-      'chatId': widget.chatId,
+      'chatId': _effectiveChatId,
       if (TenantContext.empresaId != null) 'empId': TenantContext.empresaId,
       if (TenantContext.aplicativoId != null)
         'codApp': TenantContext.aplicativoId,
@@ -203,7 +222,7 @@ class _WindowsChatMessageScreenState extends State<WindowsChatMessageScreen> {
         'userEmail': _loggedUserEmail,
         'userName': _loggedUserName,
         'sector': widget.sector,
-        'chatId': widget.chatId,
+        'chatId': _effectiveChatId,
         if (TenantContext.empresaId != null)
           'empId': TenantContext.empresaId.toString(),
         if (TenantContext.parceiroId != null)
@@ -241,7 +260,7 @@ class _WindowsChatMessageScreenState extends State<WindowsChatMessageScreen> {
         'fileId': fileId,
         'fileUrl': fileUrl ?? ApiLinks.publicFileUrl(fileId),
         'timestamp': DateTime.now().toIso8601String(),
-        'chatId': widget.chatId,
+        'chatId': _effectiveChatId,
         if (TenantContext.empresaId != null) 'empId': TenantContext.empresaId,
       }));
     } catch (e) {
@@ -259,7 +278,7 @@ class _WindowsChatMessageScreenState extends State<WindowsChatMessageScreen> {
       'sector': widget.sector,
       'type': 'ticket',
       'timestamp': DateTime.now().toIso8601String(),
-      'chatId': widget.chatId,
+      'chatId': _effectiveChatId,
       if (TenantContext.empresaId != null) 'empId': TenantContext.empresaId,
     }));
     _showSnack('Solicitacao de chamado enviada');
@@ -348,7 +367,7 @@ class _WindowsChatMessageScreenState extends State<WindowsChatMessageScreen> {
     );
     if (confirmar != true || !mounted) return;
     try {
-      final url = TenantContext.applyToUrl(ApiLinks.chatFinalize(widget.chatId));
+      final url = TenantContext.applyToUrl(ApiLinks.chatFinalize(_effectiveChatId));
       final response = await http.put(Uri.parse(url), headers: TenantContext.headers);
       if (!mounted) return;
       if (response.statusCode == 200 || response.statusCode == 204) {

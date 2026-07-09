@@ -48,6 +48,14 @@ class _ChatMessageScreenState extends State<ChatMessageScreen> {
   static const int _maxRetries = 10;
   bool _initDone = false;
 
+  // Fix card #430: widget.chatId chega como '0' (placeholder) quando o chat
+  // e novo; o backend so atribui o id real na primeira mensagem, que volta
+  // pelo proprio WebSocket. _effectiveChatId comeca igual a widget.chatId e
+  // e atualizado assim que uma mensagem com chatId real chega — e ele (nao
+  // widget.chatId) que deve ser usado em toda chamada que precise do id
+  // (enviar mensagem, upload, finalizar chat).
+  late String _effectiveChatId = widget.chatId;
+
   String get _loggedUserName =>
       AuthUtility.userInfo?.login?.nome ?? widget.userName;
   String get _loggedUserEmail =>
@@ -67,6 +75,16 @@ class _ChatMessageScreenState extends State<ChatMessageScreen> {
       m.content == msg.content && m.sender == msg.sender && m.timestamp == msg.timestamp);
   }
 
+  void _adoptRealChatIdIfNeeded(ChatMessage msg) {
+    final realId = msg.chatId;
+    if (realId != null &&
+        realId.isNotEmpty &&
+        realId != '0' &&
+        realId != _effectiveChatId) {
+      setState(() => _effectiveChatId = realId);
+    }
+  }
+
   void _connectWebSocket() {
     if (!mounted || _retryCount >= _maxRetries) return;
     try {
@@ -83,6 +101,7 @@ class _ChatMessageScreenState extends State<ChatMessageScreen> {
           try {
             final decoded = json.decode(message) as Map<String, dynamic>;
             final msg = ChatMessage.fromJson(decoded);
+            _adoptRealChatIdIfNeeded(msg);
             if (!_isDuplicate(msg)) {
               setState(() => _messages.add(msg));
             }
@@ -160,7 +179,7 @@ class _ChatMessageScreenState extends State<ChatMessageScreen> {
       'sector': widget.sector,
       'type': 'text',
       'timestamp': DateTime.now().toIso8601String(),
-      'chatId': widget.chatId,
+      'chatId': _effectiveChatId,
       if (TenantContext.empresaId != null) 'empId': TenantContext.empresaId,
       if (TenantContext.aplicativoId != null)
         'codApp': TenantContext.aplicativoId,
@@ -201,7 +220,7 @@ class _ChatMessageScreenState extends State<ChatMessageScreen> {
         'userEmail': _loggedUserEmail,
         'userName': _loggedUserName,
         'sector': widget.sector,
-        'chatId': widget.chatId,
+        'chatId': _effectiveChatId,
         if (TenantContext.empresaId != null)
           'empId': TenantContext.empresaId.toString(),
         if (TenantContext.parceiroId != null)
@@ -239,7 +258,7 @@ class _ChatMessageScreenState extends State<ChatMessageScreen> {
         'fileId': fileId,
         'fileUrl': fileUrl ?? ApiLinks.publicFileUrl(fileId),
         'timestamp': DateTime.now().toIso8601String(),
-        'chatId': widget.chatId,
+        'chatId': _effectiveChatId,
         if (TenantContext.empresaId != null) 'empId': TenantContext.empresaId,
       }));
     } catch (e) {
@@ -282,7 +301,7 @@ class _ChatMessageScreenState extends State<ChatMessageScreen> {
         'type': 'ticket',
         'ticketId': id,
         'timestamp': DateTime.now().toIso8601String(),
-        'chatId': widget.chatId,
+        'chatId': _effectiveChatId,
         if (TenantContext.empresaId != null) 'empId': TenantContext.empresaId,
       }));
     } catch (_) {}
@@ -305,7 +324,7 @@ class _ChatMessageScreenState extends State<ChatMessageScreen> {
   Future<void> _summarizeChat() async {
     try {
       final result = await AiAssistantService().summarizeChat(
-        chatId: widget.chatId,
+        chatId: _effectiveChatId,
         messages: _messages
             .map((m) => m.content.isNotEmpty ? m.content : (m.text ?? ''))
             .where((m) => m.trim().isNotEmpty)
@@ -435,7 +454,7 @@ class _ChatMessageScreenState extends State<ChatMessageScreen> {
     if (confirmar != true || !mounted) return;
 
     try {
-      final url = TenantContext.applyToUrl(ApiLinks.chatFinalize(widget.chatId));
+      final url = TenantContext.applyToUrl(ApiLinks.chatFinalize(_effectiveChatId));
       final response = await http.put(
         Uri.parse(url),
         headers: TenantContext.headers,
