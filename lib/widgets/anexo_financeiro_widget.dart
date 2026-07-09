@@ -1,6 +1,8 @@
 import 'package:file_picker/file_picker.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:share_plus/share_plus.dart';
 import 'dart:io';
 
 import '../models/anexo_financeiro_model.dart';
@@ -110,7 +112,13 @@ class _AnexoFinanceiroWidgetState extends State<AnexoFinanceiroWidget> {
       final dir = await getTemporaryDirectory();
       final file = File('${dir.path}/${anexo.fileName}');
       await file.writeAsBytes(bytes);
-      if (mounted) {
+      if (!mounted) return;
+      if (!kIsWeb && (Platform.isAndroid || Platform.isIOS)) {
+        // Mobile: gravar so em pasta temporaria e inutil, o usuario nao
+        // acessa esse diretorio. Abre o menu nativo de compartilhar/salvar
+        // (mesmo padrao ja usado em outros fluxos de download do app).
+        await Share.shareXFiles([XFile(file.path)]);
+      } else {
         _snackbar('Salvo em ${file.path}', sucesso: true);
       }
     } catch (e) {

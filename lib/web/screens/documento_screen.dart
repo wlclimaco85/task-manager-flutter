@@ -8,6 +8,8 @@ import '../../../services/network_caller.dart';
 import '../../../utils/api_links.dart';
 import '../../../utils/tenant_context.dart';
 import '../../../widgets/anexo_financeiro_widget.dart';
+import '../../../widgets/boleto_viewer_widget.dart';
+import '../../../services/anexo_financeiro_service.dart';
 import '../../../widgets/user_banners.dart';
 import '../../../utils/document_baixa_helper.dart';
 import '../../../models/conta_pagar_model.dart';
@@ -769,6 +771,35 @@ class _WindowsCalendarScreenState extends State<WindowsCalendarScreen> {
     );
   }
 
+  // Abre o Boleto Viewer (card #440): busca o primeiro anexo do lancamento
+  // e mostra a linha digitavel (copiar) + baixar o PDF.
+  Future<void> _abrirBoletoViewer(Map<String, dynamic> item, {required bool isPagar}) async {
+    final id = (item['id'] as num?)?.toInt();
+    if (id == null) return;
+    final empresaId = (item['empresa']?['id'] as num?)?.toInt();
+    try {
+      final anexos = await AnexoFinanceiroService().listar(
+        id,
+        isPagar ? 'PAGAR' : 'RECEBER',
+        empresaId: empresaId,
+      );
+      if (anexos.isEmpty) {
+        _mostrarErro('Nenhum anexo encontrado para este lançamento.');
+        return;
+      }
+      final anexo = anexos.first;
+      if (!mounted || anexo.id == null) return;
+      await showBoletoViewerDialog(
+        context,
+        anexoId: anexo.id!,
+        fileName: anexo.fileName,
+        empresaId: empresaId,
+      );
+    } catch (e) {
+      _mostrarErro('Erro ao abrir boleto: $e');
+    }
+  }
+
   // Ícone de ação compacto usado nos itens do detalhe do dia.
   Widget _miniActionBtn({
     required IconData icon,
@@ -1309,7 +1340,7 @@ class _WindowsCalendarScreenState extends State<WindowsCalendarScreen> {
                   Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      if (qtdAnexos > 0)
+                      if (qtdAnexos > 0) ...[
                         _miniActionBtn(
                           icon: Icons.attach_file,
                           color:
@@ -1318,6 +1349,15 @@ class _WindowsCalendarScreenState extends State<WindowsCalendarScreen> {
                           onTap: () =>
                               _abrirAnexosConta(item, isPagar: isPagar),
                         ),
+                        const SizedBox(width: 2),
+                        _miniActionBtn(
+                          icon: Icons.receipt_long,
+                          color: GridColors.primary,
+                          tooltip: 'Boleto viewer',
+                          onTap: () =>
+                              _abrirBoletoViewer(item, isPagar: isPagar),
+                        ),
+                      ],
                       if (status == 'ABERTA') ...[
                         const SizedBox(width: 2),
                         _miniActionBtn(
