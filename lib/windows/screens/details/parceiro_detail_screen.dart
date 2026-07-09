@@ -3,6 +3,8 @@ import '../../../widgets/generic_detail_form_screen.dart';
 import '../../../widgets/generic_grid_windows_screen.dart'
     show SecurityCheck, FieldConfigWindows, FieldType;
 import '../../../web/screens/login_grid_screen.dart' show WebLoginGridScreen;
+import '../../../web/screens/comunicado_componente_screen.dart'
+    show WebComunicadoGridComponentesScreen;
 import '../certificado_empresa_screen.dart';
 import '../ged_arquivos_screen.dart';
 import 'modulo_cobranca_screen.dart';
@@ -87,6 +89,7 @@ class WindowsParceiroDetailScreen extends StatelessWidget {
           icon: Icons.campaign,
           telaNome: 'comunicado',
           extraParams: {'empId': empresaId},
+          transformFormData: WebComunicadoGridComponentesScreen.transformFormData,
         ),
         RelatedGridTab(
           title: 'Certificado Digital',

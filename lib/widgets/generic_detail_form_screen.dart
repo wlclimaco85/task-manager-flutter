@@ -65,6 +65,11 @@ class RelatedGridTab {
   /// Dados fixos injetados no payload ao salvar (ex.: aplicativo fixo).
   final Map<String, dynamic>? additionalFormData;
 
+  /// Transforma o formData final antes do submit (ex.: ajustar formato de
+  /// data para o tipo esperado pelo backend). Ver card #431.
+  final Map<String, dynamic> Function(Map<String, dynamic> formData)?
+      transformFormData;
+
   /// Widget customizado — quando informado, ignora telaNome e exibe este widget na aba
   final Widget? customWidget;
 
@@ -83,6 +88,7 @@ class RelatedGridTab {
     this.extraParams,
     this.fieldOverrides,
     this.additionalFormData,
+    this.transformFormData,
     this.deleteEndpointOverride,
     this.customWidget,
     this.prefetchExtraFields,
@@ -357,6 +363,7 @@ class _GenericDetailFormScreenState extends State<GenericDetailFormScreen>
             extraParams: rt.extraParams,
             fieldOverrides: rt.fieldOverrides,
             additionalFormData: rt.additionalFormData,
+            transformFormData: rt.transformFormData,
             deleteEndpointOverride: rt.deleteEndpointOverride,
             customWidget: rt.customWidget,
             prefetchExtraFields: rt.prefetchExtraFields,
@@ -745,6 +752,7 @@ class _GenericDetailFormScreenState extends State<GenericDetailFormScreen>
         extraParams: tab.extraParams,
         fieldOverrides: tab.fieldOverrides,
         additionalFormData: tab.additionalFormData,
+        transformFormData: tab.transformFormData,
         deleteEndpointOverride: tab.deleteEndpointOverride,
         showAppBar: false,
         prefetchExtraFields: tab.prefetchExtraFields,
@@ -1277,6 +1285,8 @@ class _AutoTab {
   final Map<String, dynamic>? extraParams;
   final List<FieldConfigWindows>? fieldOverrides;
   final Map<String, dynamic>? additionalFormData;
+  final Map<String, dynamic> Function(Map<String, dynamic> formData)?
+      transformFormData;
   final String? deleteEndpointOverride;
   final Widget? customWidget;
   final Future<Map<String, dynamic>> Function(Map<String, dynamic> item)?
@@ -1291,6 +1301,7 @@ class _AutoTab {
       this.extraParams,
       this.fieldOverrides,
       this.additionalFormData,
+      this.transformFormData,
       this.deleteEndpointOverride,
       this.customWidget,
       this.prefetchExtraFields,

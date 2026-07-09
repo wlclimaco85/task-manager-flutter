@@ -20,6 +20,20 @@ class WebComunicadoGridComponentesScreen extends StatelessWidget {
     required this.hasPermission,
   });
 
+  /// Fix card #431: backend espera dataPublicacao como LocalDateTime
+  /// (yyyy-MM-ddTHH:mm:ss), mas o form generico (field_factory.dart) so
+  /// formata data pura (yyyy-MM-dd) no picker. Completa a hora no submit
+  /// sem alterar o widget compartilhado (evita regressao em outras telas
+  /// que usam LocalDate puro). Reutilizavel por qualquer tela/aba que
+  /// monte o form de 'comunicado' (standalone ou RelatedGridTab).
+  static Map<String, dynamic> transformFormData(Map<String, dynamic> formData) {
+    final raw = formData['dataPublicacao'];
+    if (raw is String && raw.isNotEmpty && !raw.contains('T')) {
+      formData['dataPublicacao'] = '${raw}T00:00:00';
+    }
+    return formData;
+  }
+
   List<FieldConfigWindows> get _fieldOverrides {
     final empresaId = TenantContext.empresaId;
     final aplicativoId = TenantContext.aplicativoId;
@@ -60,6 +74,7 @@ class WebComunicadoGridComponentesScreen extends StatelessWidget {
       fromJson: (json) => json,
       toJson: (a) => a,
       fieldOverrides: _fieldOverrides,
+      transformFormData: transformFormData,
       // Apenas a acao "Visualizar comunicado" — sem botao de editar duplicado
       customActions: () => [
         CustomAction<Map<String, dynamic>>(

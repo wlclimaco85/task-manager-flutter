@@ -6,6 +6,8 @@ import '../../../widgets/generic_grid_windows_screen.dart'
     show SecurityCheck, FieldConfigWindows, FieldType;
 import '../certificado_empresa_screen.dart';
 import '../login_grid_screen.dart' show WebLoginGridScreen;
+import '../comunicado_componente_screen.dart'
+    show WebComunicadoGridComponentesScreen;
 import 'empresa_modulos_tab.dart';
 
 class WebEmpresaDetailScreen extends StatefulWidget {
@@ -241,6 +243,7 @@ class _WebEmpresaDetailScreenState extends State<WebEmpresaDetailScreen> {
           icon: Icons.campaign,
           telaNome: 'comunicado',
           extraParams: {'empId': id},
+          transformFormData: WebComunicadoGridComponentesScreen.transformFormData,
         ),
         RelatedGridTab(
           title: 'Certificado Digital',

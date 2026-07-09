@@ -6,6 +6,8 @@ import '../../../utils/dropdown_helpers.dart';
 import '../../../widgets/generic_grid_windows_screen.dart'
     show CustomAction, FieldConfigWindows, FieldType;
 import './comunicado_detalhe_screen.dart';
+import '../../web/screens/comunicado_componente_screen.dart'
+    show WebComunicadoGridComponentesScreen;
 
 /// Tela principal de Comunicados (versao Windows).
 /// - Apenas botao "Visualizar comunicado" na coluna de acoes.
@@ -59,6 +61,7 @@ class WindowsComunicadoGridComponentesScreen extends StatelessWidget {
       fromJson: (json) => json,
       toJson: (a) => a,
       fieldOverrides: _fieldOverrides,
+      transformFormData: WebComunicadoGridComponentesScreen.transformFormData,
       customActions: () => [
         CustomAction<Map<String, dynamic>>(
           icon: Icons.visibility,

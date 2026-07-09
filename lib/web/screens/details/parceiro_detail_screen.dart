@@ -5,6 +5,8 @@ import '../../../widgets/generic_grid_windows_screen.dart'
 import 'package:task_manager_flutter/web/screens/certificado_empresa_screen.dart';
 import '../ged_arquivos_screen.dart';
 import '../login_grid_screen.dart' show WebLoginGridScreen;
+import '../comunicado_componente_screen.dart'
+    show WebComunicadoGridComponentesScreen;
 import 'modulo_cobranca_screen.dart';
 
 class WebParceiroDetailScreen extends StatelessWidget {
@@ -87,6 +89,7 @@ class WebParceiroDetailScreen extends StatelessWidget {
           icon: Icons.campaign,
           telaNome: 'comunicado',
           extraParams: {'empId': empresaId},
+          transformFormData: WebComunicadoGridComponentesScreen.transformFormData,
         ),
         // ── Certificado Digital do Parceiro ──────────────────────────────
         RelatedGridTab(
