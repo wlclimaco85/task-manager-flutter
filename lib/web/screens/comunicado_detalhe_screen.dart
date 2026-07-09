@@ -26,7 +26,12 @@ class ComunicadoDetalheScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final titulo = _text('titulo').isNotEmpty ? _text('titulo') : 'Comunicado';
     final conteudo = _text('conteudo');
-    final categoria = _text('categoria');
+    // Fix card #452: 'categoria' nunca existiu no backend (Comunicado.java
+    // tem 'setor', nao 'categoria') -- chip ficava sempre vazio e o Setor
+    // real (dado relevante) nunca era exibido.
+    final setor = (comunicado['setor'] is Map)
+        ? (comunicado['setor']['descricao']?.toString() ?? '')
+        : '';
     final autor = _text('autor');
     final dataStr = comunicado['dhCreatedAt'] ?? comunicado['createdAt'];
 
@@ -60,8 +65,8 @@ class ComunicadoDetalheScreen extends StatelessWidget {
               spacing: 24,
               runSpacing: 8,
               children: [
-                if (categoria.isNotEmpty)
-                  _Chip(label: categoria, icon: Icons.category),
+                if (setor.isNotEmpty)
+                  _Chip(label: setor, icon: Icons.groups_outlined),
                 if (autor.isNotEmpty)
                   _Chip(label: 'Por: $autor', icon: Icons.person),
                 if (dataStr != null)
