@@ -2,7 +2,7 @@ import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:file_picker/file_picker.dart';
-import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:file_saver/file_saver.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:web_socket_channel/web_socket_channel.dart';
@@ -379,16 +379,20 @@ class _WebChatMessageScreenState extends State<WebChatMessageScreen> {
 
   Future<void> _downloadFile(int fileId, String fileName) async {
     try {
+      // Fix card #446: ApiLinks.getFile(id) => '/api/files/$id' so existe
+      // como PUT/DELETE no backend (405 no GET). O download real e via
+      // ApiLinks.downloadArquivo, mesmo endpoint ja usado pelo GED.
       final response = await http.get(
-        Uri.parse(TenantContext.applyToUrl(ApiLinks.getFile(fileId))),
+        Uri.parse(TenantContext.applyToUrl(
+            ApiLinks.downloadArquivo(fileId.toString()))),
         headers: TenantContext.headers,
       );
       if (response.statusCode == 200) {
-        _showSnack(kIsWeb
-            ? 'Arquivo $fileName recebido para download'
-            : 'Arquivo $fileName baixado');
+        await FileSaver.instance
+            .saveFile(name: fileName, bytes: response.bodyBytes);
+        _showSnack('Arquivo $fileName baixado');
       } else {
-        _showSnack('Falha ao baixar o arquivo', error: true);
+        _showSnack('Falha ao baixar o arquivo (${response.statusCode})', error: true);
       }
     } catch (e) {
       _showSnack('Erro ao baixar o arquivo: $e', error: true);

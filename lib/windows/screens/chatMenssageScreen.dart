@@ -338,8 +338,12 @@ class _WindowsChatMessageScreenState extends State<WindowsChatMessageScreen> {
 
   Future<void> _downloadFile(int fileId, String fileName) async {
     try {
+      // Fix card #446: ApiLinks.getFile(id) => '/api/files/$id' so existe
+      // como PUT/DELETE no backend (405 no GET). O download real e via
+      // ApiLinks.downloadArquivo, mesmo endpoint ja usado pelo GED.
       final response = await http.get(
-        Uri.parse(TenantContext.applyToUrl(ApiLinks.getFile(fileId))),
+        Uri.parse(TenantContext.applyToUrl(
+            ApiLinks.downloadArquivo(fileId.toString()))),
         headers: TenantContext.headers,
       );
       if (response.statusCode == 200) {

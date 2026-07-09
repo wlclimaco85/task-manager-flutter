@@ -277,18 +277,19 @@ class _FinalizarAtendimentoDialogState
                     alignment: Alignment.center,
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
-                      color: selecionado ? cor : GridColors.card,
-                      border: Border.all(
-                        color: selecionado ? cor : GridColors.divider,
-                        width: selecionado ? 0 : 1,
-                      ),
+                      // Fix (pedido do usuario): os numeros ja nascem
+                      // coloridos por faixa (vermelho/amarelo/verde),
+                      // nao so quando selecionados -- reforca a escala
+                      // visual de nota ruim -> excelente.
+                      color: selecionado ? cor : cor.withValues(alpha: 0.10),
+                      border: Border.all(color: cor, width: selecionado ? 0 : 1.5),
                     ),
                     child: Text(
                       '$valorNota',
                       style: TextStyle(
-                        color: selecionado ? Colors.white : GridColors.textSecondary,
+                        color: selecionado ? Colors.white : cor,
                         fontWeight:
-                            selecionado ? FontWeight.w700 : FontWeight.w500,
+                            selecionado ? FontWeight.w700 : FontWeight.w600,
                         fontSize: 14,
                       ),
                     ),
