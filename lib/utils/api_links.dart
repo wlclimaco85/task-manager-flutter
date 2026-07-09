@@ -474,6 +474,11 @@ class ApiLinks {
 
   static String chatFinalize(dynamic id) => '$_baseUrlNew/api/chat/$id';
   static String chatDelete(dynamic id) => '$_baseUrlNew/api/chat/$id';
+  // Fix card #430: finaliza a conversa inteira por chatId (String), distinto
+  // de chatFinalize acima (que atualiza uma ChatMessage especifica por id
+  // Integer, usado pelo Kanban).
+  static String chatFinalizarConversa(String chatId) =>
+      '$_baseUrlNew/api/chat/finalizar/$chatId';
 
   // Chat Kanban
   static String get chatKanban => '$_baseUrlNew/api/chat/kanban';

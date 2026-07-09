@@ -452,8 +452,13 @@ class _WebChatMessageScreenState extends State<WebChatMessageScreen> {
       ),
     );
     if (confirmar != true || !mounted) return;
+    if (_effectiveChatId.isEmpty || _effectiveChatId == '0') {
+      _showSnack('Envie ao menos uma mensagem antes de finalizar.', error: true);
+      return;
+    }
     try {
-      final url = TenantContext.applyToUrl(ApiLinks.chatFinalize(_effectiveChatId));
+      final url = TenantContext.applyToUrl(
+          ApiLinks.chatFinalizarConversa(_effectiveChatId));
       final response = await http.put(Uri.parse(url), headers: TenantContext.headers);
       if (!mounted) return;
       if (response.statusCode == 200 || response.statusCode == 204) {

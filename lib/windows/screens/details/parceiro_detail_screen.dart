@@ -43,8 +43,14 @@ class WindowsParceiroDetailScreen extends StatelessWidget {
           telaNome: 'login',
           extraParams: {'parcId': id, 'empresaId': empresaId},
           additionalFormData: WebLoginGridScreen.additionalFormData,
+          // Fix card #427 (reincidencia): faltavam os overrides de Foto
+          // (FieldType.file) e Roles (multiselect) que a tela direta ja
+          // usa via fieldOverrides(). Sem eles o form aqui dentro de
+          // Parceiro renderiza Foto como texto simples e usa a config
+          // padrao (do banco) para os demais campos, causando ordem/tipo
+          // diferentes e falha 400 ao salvar.
           fieldOverrides: [
-            ...WebLoginGridScreen.loginHiddenFields,
+            ...WebLoginGridScreen.fieldOverrides(),
             FieldConfigWindows(
               label: 'Parceiro',
               fieldName: 'parceiro',
