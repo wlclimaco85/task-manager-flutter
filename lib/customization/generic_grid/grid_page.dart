@@ -467,6 +467,11 @@ class _GenericMobileGridScreenState extends State<GenericMobileGridScreen> {
   UserBannerAppBar _buildUserBannerAppBar() {
     return UserBannerAppBar(
       screenTitle: widget.title,
+      // Fix card #428: telas empilhadas via Navigator.push (ex.: itens do
+      // menu mobile "Mais opções") perdiam a seta de voltar quando este
+      // widget passou a suprimir automaticallyImplyLeading. showBackButton
+      // reativa a affordance visual sempre que ha rota para dar pop.
+      showBackButton: Navigator.canPop(context),
       onUserTap: widget.onUserBannerTapped,
       onRefresh: _loading
           ? null

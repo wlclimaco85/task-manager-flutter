@@ -823,9 +823,12 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
               // Header principal padrao (logo, empresa, usuario, alertas e sair).
               // showFilterButton: false — a tela tem cabecalho proprio com
               // Atualizar/Nova etapa/Executar, nao usa a barra de grid.
+              // showBackButton: true — tela sempre empilhada via Navigator.push
+              // a partir do menu "Mais opções" (fix card #428).
               appBar: UserBannerAppBar(
                 screenTitle: 'Régua de Cobrança',
                 showFilterButton: false,
+                showBackButton: true,
               ),
               body: SafeArea(child: CobrancaAutomaticaScreen()),
             ),
