@@ -225,6 +225,16 @@ class _ChatMessageScreenState extends State<ChatMessageScreen> {
           'empId': TenantContext.empresaId.toString(),
         if (TenantContext.parceiroId != null)
           'parceiroId': TenantContext.parceiroId.toString(),
+        // Fix card #429: FileController.uploadFile exige estes 5 campos
+        // (fileName/fileType/diretorio/empresa/parceiro), nenhum era enviado
+        // pelo chat -> 400. diretorio:{"id":0} e o mesmo default usado pelo
+        // GED (ged_arquivos_screen.dart) quando nenhum diretorio e escolhido.
+        'fileName': file.name,
+        'fileType': (file.extension ?? '').toLowerCase(),
+        'diretorio': '{"id":0}',
+        'empresa': '{"id":${TenantContext.empresaId ?? 0}}',
+        'parceiro': '{"id":${TenantContext.parceiroId ?? 0}}',
+        'modulo': 'chat',
       });
 
       final response = await request.send();
