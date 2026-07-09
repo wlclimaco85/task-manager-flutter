@@ -5,6 +5,7 @@ import '../../services/dashboard_financeiro_caller.dart';
 import '../../services/conta_bancaria_caller.dart';
 import '../../services/empresa_caller.dart';
 import '../../utils/utils.dart';
+import '../../utils/grid_colors.dart';
 
 class WindowsDashboardFinanceiroScreen extends StatefulWidget {
   const WindowsDashboardFinanceiroScreen({super.key});
@@ -145,7 +146,11 @@ class _WindowsDashboardFinanceiroScreenState
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Dashboard Financeiro Gerencial')),
+      appBar: AppBar(
+        title: const Text('Dashboard Financeiro Gerencial'),
+        backgroundColor: GridColors.primary,
+        foregroundColor: Colors.white,
+      ),
       body: _buildBody(),
     );
   }

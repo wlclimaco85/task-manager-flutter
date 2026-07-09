@@ -199,7 +199,11 @@ class _WebDashboardFinanceiroScreenState
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Dashboard Financeiro Gerencial')),
+      appBar: AppBar(
+        title: const Text('Dashboard Financeiro Gerencial'),
+        backgroundColor: GridColors.primary,
+        foregroundColor: Colors.white,
+      ),
       body: _buildBody(),
     );
   }
