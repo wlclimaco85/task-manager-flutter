@@ -2804,12 +2804,22 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Falha ao criar item: ${response.statusCode}'),
+          content: Text(_mensagemErroBackend(response, 'criar')),
           backgroundColor: GridColors.error,
         ),
       );
       return false;
     }
+  }
+
+  /// Extrai a mensagem de erro real retornada pelo backend (campo 'message'
+  /// de ExceptionResponse/GlobalException, ex.: validacoes de negocio como
+  /// CNPJ/CPF duplicado) em vez de so mostrar o status code, que nao explica
+  /// o motivo da falha ao usuario.
+  String _mensagemErroBackend(dynamic response, String acao) {
+    final msg = response.body?['message'];
+    if (msg is String && msg.trim().isNotEmpty) return msg;
+    return 'Falha ao $acao item: ${response.statusCode}';
   }
 
   Future<int> _uploadFiles(
@@ -2983,7 +2993,7 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Falha ao atualizar item: ${response.statusCode}'),
+          content: Text(_mensagemErroBackend(response, 'atualizar')),
           backgroundColor: GridColors.error,
         ),
       );

@@ -732,7 +732,15 @@ class _GridFormDialogState extends State<GridFormDialog> {
         if (mounted) Navigator.pop(context, true);
         _snack(isEditing ? 'Item atualizado!' : 'Item criado!');
       } else {
-        _showSaveError('Erro ao salvar: ${respBody(resp) ?? respStatus(resp)}');
+        // Extrai apenas a mensagem de erro real do backend (campo 'message'
+        // de ExceptionResponse/GlobalException, ex.: validacoes de negocio
+        // como CNPJ/CPF duplicado) em vez de despejar o Map inteiro ou so
+        // o status code, que nao explicam o motivo ao usuario.
+        final body = respBody(resp);
+        final mensagem = (body is Map && body['message'] is String)
+            ? body['message'] as String
+            : (body ?? respStatus(resp)).toString();
+        _showSaveError('Erro ao salvar: $mensagem');
       }
     } catch (e, st) {
       L.e('[GridForm] save error: $e', st);
