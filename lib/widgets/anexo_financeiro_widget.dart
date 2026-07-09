@@ -20,10 +20,17 @@ class AnexoFinanceiroWidget extends StatefulWidget {
   final int lancamentoId;
   final String lancamentoTipo; // "PAGAR" ou "RECEBER"
 
+  /// Empresa dona do lancamento. Obrigatorio na pratica para usuarios MASTER
+  /// (TenantContext deles nunca tem empresaId — ver TenantContextPopulator no
+  /// backend), sem isso o backend nao sabe de qual empresa sao os anexos e
+  /// retorna 500. Passe sempre que souber (ex.: conta.empresa.id).
+  final int? empresaId;
+
   const AnexoFinanceiroWidget({
     super.key,
     required this.lancamentoId,
     required this.lancamentoTipo,
+    this.empresaId,
   });
 
   @override
@@ -56,7 +63,7 @@ class _AnexoFinanceiroWidgetState extends State<AnexoFinanceiroWidget> {
     });
     try {
       _anexos = await _service.listar(
-          widget.lancamentoId, widget.lancamentoTipo);
+          widget.lancamentoId, widget.lancamentoTipo, empresaId: widget.empresaId);
     } catch (e) {
       _erro = e.toString();
     } finally {
@@ -84,7 +91,7 @@ class _AnexoFinanceiroWidgetState extends State<AnexoFinanceiroWidget> {
     });
     try {
       final novo = await _service.upload(
-          widget.lancamentoId, widget.lancamentoTipo, arquivo);
+          widget.lancamentoId, widget.lancamentoTipo, arquivo, empresaId: widget.empresaId);
       setState(() => _anexos.add(novo));
       _snackbar('Comprovante anexado com sucesso', sucesso: true);
     } catch (e) {
@@ -99,7 +106,7 @@ class _AnexoFinanceiroWidgetState extends State<AnexoFinanceiroWidget> {
     if (anexo.id == null) return;
     setState(() => _carregando = true);
     try {
-      final bytes = await _service.download(anexo.id!);
+      final bytes = await _service.download(anexo.id!, empresaId: widget.empresaId);
       final dir = await getTemporaryDirectory();
       final file = File('${dir.path}/${anexo.fileName}');
       await file.writeAsBytes(bytes);
@@ -138,7 +145,7 @@ class _AnexoFinanceiroWidgetState extends State<AnexoFinanceiroWidget> {
 
     setState(() => _carregando = true);
     try {
-      await _service.remover(anexo.id!);
+      await _service.remover(anexo.id!, empresaId: widget.empresaId);
       setState(() => _anexos.removeWhere((a) => a.id == anexo.id));
       _snackbar('Comprovante removido', sucesso: true);
     } catch (e) {

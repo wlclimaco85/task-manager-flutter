@@ -597,6 +597,7 @@ class _WindowsContaPagarGridScreenState
                     child: AnexoFinanceiroWidget(
                       lancamentoId: conta.id!,
                       lancamentoTipo: 'PAGAR',
+                      empresaId: conta.empresa.id,
                     ),
                   ),
                 ],
@@ -628,6 +629,7 @@ class _WindowsContaPagarGridScreenState
               child: AnexoFinanceiroWidget(
                 lancamentoId: conta.id!,
                 lancamentoTipo: 'PAGAR',
+                empresaId: conta.empresa.id,
               ),
             ),
           ),

@@ -569,6 +569,7 @@ class _WebContaReceberGridScreenState extends State<WebContaReceberGridScreen> {
                             child: AnexoFinanceiroWidget(
                               lancamentoId: id is int ? id : int.tryParse('$id') ?? 0,
                               lancamentoTipo: 'RECEBER',
+                              empresaId: (object['empresa']?['id'] as num?)?.toInt(),
                             ),
                           ),
                         ),

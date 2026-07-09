@@ -14,20 +14,27 @@ const int _maxBytes = 10 * 1024 * 1024; // 10MB
 const List<String> _allowedExtensions = ['pdf', 'jpg', 'jpeg', 'png', 'xml'];
 
 class AnexoFinanceiroService {
-  Future<List<AnexoFinanceiro>> listar(int lancamentoId, String tipo) async {
+  /// [empresaId] e opcional (a maioria dos usuarios ja tem empresa fixada no
+  /// TenantContext no backend) mas OBRIGATORIO na pratica para usuarios
+  /// MASTER — o TenantContext deles nunca tem empresaId (por definicao, ver
+  /// TenantContextPopulator), e sem esse parametro o backend nao tem como
+  /// saber de qual empresa sao os anexos, causando 500. Passe sempre que
+  /// souber a empresa do lancamento (ex.: conta.empresa.id).
+  Future<List<AnexoFinanceiro>> listar(int lancamentoId, String tipo, {int? empresaId}) async {
     final uri = Uri.parse(
       TenantContext.applyToUrl(ApiLinks.anexosFinanceiros) +
-          '&lancamentoId=$lancamentoId&tipo=$tipo',
+          '&lancamentoId=$lancamentoId&tipo=$tipo'
+          '${empresaId != null ? '&empresaId=$empresaId' : ''}',
     );
     final resp = await http.get(uri, headers: TenantContext.jsonHeaders);
     if (resp.statusCode == 200) {
       final list = jsonDecode(resp.body) as List;
       return list.map((e) => AnexoFinanceiro.fromJson(e as Map<String, dynamic>)).toList();
     }
-    throw AnexoException('Erro ao listar anexos (${resp.statusCode})');
+    throw AnexoException(_mensagemErro(resp.body, resp.statusCode, 'listar anexos'));
   }
 
-  Future<AnexoFinanceiro> upload(int lancamentoId, String tipo, PlatformFile file) async {
+  Future<AnexoFinanceiro> upload(int lancamentoId, String tipo, PlatformFile file, {int? empresaId}) async {
     _validarArquivo(file);
 
     final request = http.MultipartRequest(
@@ -37,6 +44,7 @@ class AnexoFinanceiroService {
     request.headers.addAll(TenantContext.headers);
     request.fields['lancamentoId'] = lancamentoId.toString();
     request.fields['tipo'] = tipo;
+    if (empresaId != null) request.fields['empresaId'] = empresaId.toString();
 
     final bytes = file.bytes;
     if (bytes == null) throw const AnexoException('Não foi possível ler o arquivo. Use withData: true no FilePicker.');
@@ -54,13 +62,13 @@ class AnexoFinanceiroService {
     if (streamed.statusCode == 200 || streamed.statusCode == 201) {
       return AnexoFinanceiro.fromJson(jsonDecode(body) as Map<String, dynamic>);
     }
-    throw AnexoException('Erro ao enviar anexo (${streamed.statusCode})');
+    throw AnexoException(_mensagemErro(body, streamed.statusCode, 'enviar anexo'));
   }
 
   /// Envia um anexo a partir de bytes ja em memoria (ex.: imagem baixada do
   /// chat ao abrir um chamado — ver card #432), sem depender de FilePicker.
   Future<AnexoFinanceiro> uploadBytes(
-      int lancamentoId, String tipo, Uint8List bytes, String fileName) async {
+      int lancamentoId, String tipo, Uint8List bytes, String fileName, {int? empresaId}) async {
     final request = http.MultipartRequest(
       'POST',
       Uri.parse(TenantContext.applyToUrl(ApiLinks.anexosFinanceiros)),
@@ -68,6 +76,7 @@ class AnexoFinanceiroService {
     request.headers.addAll(TenantContext.headers);
     request.fields['lancamentoId'] = lancamentoId.toString();
     request.fields['tipo'] = tipo;
+    if (empresaId != null) request.fields['empresaId'] = empresaId.toString();
     request.files.add(http.MultipartFile.fromBytes(
       'file',
       bytes,
@@ -80,27 +89,41 @@ class AnexoFinanceiroService {
     if (streamed.statusCode == 200 || streamed.statusCode == 201) {
       return AnexoFinanceiro.fromJson(jsonDecode(body) as Map<String, dynamic>);
     }
-    throw AnexoException('Erro ao enviar anexo (${streamed.statusCode})');
+    throw AnexoException(_mensagemErro(body, streamed.statusCode, 'enviar anexo'));
   }
 
-  Future<Uint8List> download(int id) async {
+  Future<Uint8List> download(int id, {int? empresaId}) async {
     final token = AuthUtility.userInfo?.token;
     final resp = await http.get(
-      Uri.parse(TenantContext.applyToUrl(ApiLinks.anexoFinanceiroDownload(id.toString()))),
+      Uri.parse(TenantContext.applyToUrl(ApiLinks.anexoFinanceiroDownload(id.toString())) +
+          (empresaId != null ? '&empresaId=$empresaId' : '')),
       headers: {if (token != null) 'Authorization': 'Bearer $token'},
     );
     if (resp.statusCode == 200) return resp.bodyBytes;
-    throw AnexoException('Erro ao baixar anexo (${resp.statusCode})');
+    throw AnexoException(_mensagemErro(resp.body, resp.statusCode, 'baixar anexo'));
   }
 
-  Future<void> remover(int id) async {
+  Future<void> remover(int id, {int? empresaId}) async {
     final resp = await http.delete(
-      Uri.parse(TenantContext.applyToUrl(ApiLinks.anexoFinanceiro(id.toString()))),
+      Uri.parse(TenantContext.applyToUrl(ApiLinks.anexoFinanceiro(id.toString())) +
+          (empresaId != null ? '&empresaId=$empresaId' : '')),
       headers: TenantContext.headers,
     );
     if (resp.statusCode != 200 && resp.statusCode != 204) {
-      throw AnexoException('Erro ao remover anexo (${resp.statusCode})');
+      throw AnexoException(_mensagemErro(resp.body, resp.statusCode, 'remover anexo'));
     }
+  }
+
+  /// Extrai a mensagem real do backend (campo 'message' de ExceptionResponse/
+  /// GlobalException) em vez de so mostrar o status code.
+  String _mensagemErro(String rawBody, int statusCode, String acao) {
+    try {
+      final decoded = jsonDecode(rawBody);
+      if (decoded is Map && decoded['message'] is String) {
+        return decoded['message'] as String;
+      }
+    } catch (_) {}
+    return 'Erro ao $acao ($statusCode)';
   }
 
   void _validarArquivo(PlatformFile file) {

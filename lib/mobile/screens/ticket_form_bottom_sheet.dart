@@ -105,7 +105,7 @@ class _TicketFormBottomSheetState extends State<TicketFormBottomSheet> {
 
       final criado = await ChamadoCaller().createChamado(chamado, token: token);
 
-      await _anexarImagensDoChat(criado.id!);
+      await _anexarImagensDoChat(criado.id!, criado.empresa.id);
 
       if (mounted) {
         Navigator.pop(context, criado);
@@ -137,7 +137,7 @@ class _TicketFormBottomSheetState extends State<TicketFormBottomSheet> {
   /// Baixa cada imagem da conversa (ja hospedada no GED via /api/arquivos) e
   /// reenvia como anexo do chamado recem-criado. Falha em um anexo nao
   /// interrompe o fluxo — o chamado ja foi criado, e o essencial.
-  Future<void> _anexarImagensDoChat(int chamadoId) async {
+  Future<void> _anexarImagensDoChat(int chamadoId, int? empresaId) async {
     for (var i = 0; i < widget.anexosChat.length; i++) {
       final anexo = widget.anexosChat[i];
       final fileId = anexo['fileId'];
@@ -154,8 +154,9 @@ class _TicketFormBottomSheetState extends State<TicketFormBottomSheet> {
           headers: TenantContext.headers,
         );
         if (resp.statusCode == 200) {
-          await AnexoFinanceiroService()
-              .uploadBytes(chamadoId, 'CHAMADO', resp.bodyBytes, fileName);
+          await AnexoFinanceiroService().uploadBytes(
+              chamadoId, 'CHAMADO', resp.bodyBytes, fileName,
+              empresaId: empresaId);
         }
       } catch (_) {
         // Anexo individual falhou — nao bloqueia o restante do fluxo.

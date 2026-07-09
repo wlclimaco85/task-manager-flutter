@@ -94,6 +94,7 @@ class ContaReceberGridScreen extends StatelessWidget {
           child: AnexoFinanceiroWidget(
             lancamentoId: conta.id!,
             lancamentoTipo: 'RECEBER',
+            empresaId: conta.empresa.id,
           ),
         ),
       ),

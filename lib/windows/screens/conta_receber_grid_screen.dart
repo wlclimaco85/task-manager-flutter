@@ -543,6 +543,7 @@ class _WindowsContaReceberGridScreenState extends State<WindowsContaReceberGridS
                     child: AnexoFinanceiroWidget(
                       lancamentoId: conta.id!,
                       lancamentoTipo: 'RECEBER',
+                      empresaId: conta.empresa.id,
                     ),
                   ),
                 ],
@@ -574,6 +575,7 @@ class _WindowsContaReceberGridScreenState extends State<WindowsContaReceberGridS
               child: AnexoFinanceiroWidget(
                 lancamentoId: conta.id!,
                 lancamentoTipo: 'RECEBER',
+                empresaId: conta.empresa.id,
               ),
             ),
           ),

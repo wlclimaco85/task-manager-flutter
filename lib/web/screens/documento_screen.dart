@@ -762,6 +762,7 @@ class _WindowsCalendarScreenState extends State<WindowsCalendarScreen> {
           child: AnexoFinanceiroWidget(
             lancamentoId: id,
             lancamentoTipo: isPagar ? 'PAGAR' : 'RECEBER',
+            empresaId: (item['empresa']?['id'] as num?)?.toInt(),
           ),
         ),
       ),

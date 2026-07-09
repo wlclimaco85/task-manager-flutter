@@ -220,6 +220,7 @@ class _ContaPagarGridScreenState extends State<ContaPagarGridScreen> {
           child: AnexoFinanceiroWidget(
             lancamentoId: conta.id!,
             lancamentoTipo: 'PAGAR',
+            empresaId: conta.empresa.id,
           ),
         ),
       ),

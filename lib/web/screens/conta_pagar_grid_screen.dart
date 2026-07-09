@@ -641,6 +641,7 @@ class _WebContaPagarGridScreenState extends State<WebContaPagarGridScreen> {
                             child: AnexoFinanceiroWidget(
                               lancamentoId: id is int ? id : int.tryParse('$id') ?? 0,
                               lancamentoTipo: 'PAGAR',
+                              empresaId: (object['empresa']?['id'] as num?)?.toInt(),
                             ),
                           ),
                         ),
