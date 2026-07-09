@@ -15,6 +15,7 @@ import '../../../utils/api_links.dart';
 import '../../../utils/app_logger.dart';
 import '../../../utils/grid_colors.dart';
 import '../../../utils/tenant_context.dart';
+import '../../../widgets/chat/anexo_preview_dialog.dart';
 import '../../../widgets/chat/chat_support_ui.dart';
 import '../../../widgets/chat/finalizar_atendimento_dialog.dart';
 import '../../../widgets/ticket_form_dialog.dart';
@@ -475,9 +476,14 @@ class _WindowsChatMessageScreenState extends State<WindowsChatMessageScreen> {
                             message.timestamp ?? message.uploadDate),
                         onOpenFile: message.fileId == null
                             ? null
-                            : () => _downloadFile(
-                                  message.fileId!,
-                                  message.fileName ?? 'arquivo',
+                            : () => showAnexoPreviewDialog(
+                                  context,
+                                  fileId: message.fileId!,
+                                  fileName: message.fileName ?? 'arquivo',
+                                  onBaixar: () => _downloadFile(
+                                    message.fileId!,
+                                    message.fileName ?? 'arquivo',
+                                  ),
                                 ),
                       );
                     },

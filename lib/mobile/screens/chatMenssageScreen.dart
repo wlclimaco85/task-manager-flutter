@@ -15,6 +15,7 @@ import '../../../models/chat_model.dart';
 import '../../../utils/api_links.dart';
 import '../../../utils/grid_colors.dart';
 import '../../../utils/tenant_context.dart';
+import '../../../widgets/chat/anexo_preview_dialog.dart';
 import '../../../widgets/chat/chat_support_ui.dart';
 import '../../../widgets/chat/finalizar_atendimento_dialog.dart';
 import '../../services/ai_assistant_service.dart';
@@ -559,12 +560,19 @@ class _ChatMessageScreenState extends State<ChatMessageScreen> {
                         displayName: _displayName(message),
                         time: _formatTime(
                             message.timestamp ?? message.uploadDate),
+                        // Fix card #454: abre popup de pre-visualizacao em
+                        // vez de baixar/abrir direto ao clicar no anexo.
                         onOpenFile: message.fileId == null
                             ? null
-                            : () => _openOrDownload(
-                                  message.fileId!,
-                                  message.fileName ?? 'arquivo',
-                                  fileUrl: message.fileUrl,
+                            : () => showAnexoPreviewDialog(
+                                  context,
+                                  fileId: message.fileId!,
+                                  fileName: message.fileName ?? 'arquivo',
+                                  onBaixar: () => _openOrDownload(
+                                    message.fileId!,
+                                    message.fileName ?? 'arquivo',
+                                    fileUrl: message.fileUrl,
+                                  ),
                                 ),
                       );
                     },

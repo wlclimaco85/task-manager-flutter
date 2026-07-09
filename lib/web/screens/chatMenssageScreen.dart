@@ -13,6 +13,7 @@ import '../../../utils/api_links.dart';
 import '../../../utils/app_logger.dart';
 import '../../../utils/grid_colors.dart';
 import '../../../utils/tenant_context.dart';
+import '../../../widgets/chat/anexo_preview_dialog.dart';
 import '../../../widgets/chat/chat_support_ui.dart';
 import '../../../widgets/chat/finalizar_atendimento_dialog.dart';
 import '../../../widgets/ticket_form_dialog.dart';
@@ -515,11 +516,18 @@ class _WebChatMessageScreenState extends State<WebChatMessageScreen> {
                         displayName: _displayName(message),
                         time: _formatTime(
                             message.timestamp ?? message.uploadDate),
+                        // Fix card #454: abre popup de pre-visualizacao em
+                        // vez de baixar direto ao clicar no anexo.
                         onOpenFile: message.fileId == null
                             ? null
-                            : () => _downloadFile(
-                                  message.fileId!,
-                                  message.fileName ?? 'arquivo',
+                            : () => showAnexoPreviewDialog(
+                                  context,
+                                  fileId: message.fileId!,
+                                  fileName: message.fileName ?? 'arquivo',
+                                  onBaixar: () => _downloadFile(
+                                    message.fileId!,
+                                    message.fileName ?? 'arquivo',
+                                  ),
                                 ),
                       );
                     },
