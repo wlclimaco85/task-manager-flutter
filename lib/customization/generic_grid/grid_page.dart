@@ -105,9 +105,20 @@ class _GenericMobileGridScreenState extends State<GenericMobileGridScreen> {
   bool _loading = false;
   bool _filtersOpen = false;
 
+  // @deprecated: mapa nao usado para renderizar nada — a renderizacao real dos
+  // cards e feita por GridListScreen._fieldVisibility (estado separado). Mantido
+  // apenas como fallback caso os callbacks abaixo nao sejam entregues a tempo.
+  // Ver bug #425 (card-425-grid-mobile-bugs.md).
   final Map<String, bool> _fieldVisibility = {};
   final Map<String, bool> _permCache = {};
   bool _permsResolved = true;
+
+  // Referencias para as funcoes internas corretas de GridListScreen, entregues
+  // via callbacks onFieldSettingsReady/onFilterToggleReady. Sao elas que devem
+  // ser chamadas pelo AppBar mobile, pois GridListScreen e quem de fato
+  // renderiza os cards e mantem o _fieldVisibility valido (fix bug #425).
+  VoidCallback? _childShowFieldSettings;
+  VoidCallback? _childToggleFilters;
 
   Map<String, dynamic>? _editingItem;
 
@@ -398,6 +409,11 @@ class _GenericMobileGridScreenState extends State<GenericMobileGridScreen> {
               // Evita Scaffold aninhado: AppBar e FAB já existem no Scaffold pai
               showAppBar: false,
               showFab: false,
+              // Conecta as funcoes internas corretas do GridListScreen (fix bug #425):
+              // o popup "Campos visiveis" e o toggle de filtros do AppBar mobile
+              // devem operar sobre o estado que de fato renderiza os cards.
+              onFieldSettingsReady: (fn) => _childShowFieldSettings = fn,
+              onFilterToggleReady: (fn) => _childToggleFilters = fn,
             ),
           ),
         ],
@@ -459,8 +475,16 @@ class _GenericMobileGridScreenState extends State<GenericMobileGridScreen> {
               widget.onBannerRefresh?.call();
             },
       isLoading: _loading,
-      onColumns: _showFieldSettings,
-      onFilterToggle: () => setState(() => _filtersOpen = !_filtersOpen),
+      // Usa a funcao correta vinda do GridListScreen (fix bug #425); fallback
+      // para o metodo local (morto) so se o callback ainda nao chegou.
+      onColumns: _childShowFieldSettings ?? _showFieldSettings,
+      onFilterToggle: () {
+        if (_childToggleFilters != null) {
+          _childToggleFilters!.call();
+        } else {
+          setState(() => _filtersOpen = !_filtersOpen);
+        }
+      },
     );
   }
 

@@ -252,7 +252,16 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
     return DynamicGridDynamicScreen(
       key: const ValueKey('mobile_dynamic_inline_ged_arquivo'),
       telaNome: 'arquivo',
-      hasPermission: (action) => _hasPermissionFor(sec, AppScreen.ged, action),
+      // GED mobile so permite visualizar e excluir automaticamente; editar
+      // arquivo nao faz sentido (substituicao e feita via novo upload) e as
+      // acoes de servidor da tela nao pertencem a este modulo (ver acoes
+      // customizadas abaixo, ex.: Baixar).
+      hasPermission: (action) {
+        final lower = action.toLowerCase();
+        if (lower == 'update' || lower == 'edit') return false;
+        return _hasPermissionFor(sec, AppScreen.ged, action);
+      },
+      suppressServerActions: true,
       storageKey: 'mobile_dynamic_ged_arquivo',
       fetchEndpointOverride: ApiLinks.allArquivos,
       createEndpointOverride: ApiLinks.uploadArquivo,
@@ -263,7 +272,101 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
         if (parcId != null) 'parceiroId': parcId.toString(),
       },
       fieldOverrides: _gedFieldOverrides(),
+      customActions: () => [
+        CustomAction(
+          icon: Icons.download_outlined,
+          label: 'Baixar arquivo',
+          onPressed: (ctx, item) => _baixarArquivo(ctx, item),
+          isVisible: (_) => true,
+        ),
+        CustomAction(
+          icon: Icons.drive_file_rename_outline,
+          label: 'Renomear',
+          onPressed: (ctx, item) => _renomearArquivo(ctx, item),
+          isVisible: (_) => true,
+        ),
+      ],
     );
+  }
+
+  /// Baixa o arquivo do GED (mobile) — mesma acao ja existente no Web.
+  Future<void> _baixarArquivo(
+      BuildContext ctx, Map<String, dynamic> item) async {
+    final id = item['id'];
+    if (id == null) return;
+    try {
+      final response = await NetworkCaller().getRequest(
+        ApiLinks.downloadArquivo(id.toString()),
+      );
+      if (!ctx.mounted) return;
+      if (response.isSuccess) {
+        ScaffoldMessenger.of(ctx).showSnackBar(
+          const SnackBar(content: Text('Download iniciado.')),
+        );
+      } else {
+        ScaffoldMessenger.of(ctx).showSnackBar(
+          SnackBar(content: Text('Erro ao baixar arquivo: ${response.statusCode}')),
+        );
+      }
+    } catch (e) {
+      if (!ctx.mounted) return;
+      ScaffoldMessenger.of(ctx)
+          .showSnackBar(SnackBar(content: Text('Erro ao baixar arquivo: $e')));
+    }
+  }
+
+  /// Renomeia o arquivo do GED (mobile) — mesma acao ja existente no Web
+  /// (ver ged_arquivos_screen.dart._salvarEdicaoNome), via PUT em
+  /// ApiLinks.updateArquivo enviando apenas o campo fileName.
+  Future<void> _renomearArquivo(
+      BuildContext ctx, Map<String, dynamic> item) async {
+    final id = item['id'];
+    if (id == null) return;
+    final nomeAtual = (item['fileName'] ?? item['nome'] ?? '').toString();
+    final controller = TextEditingController(text: nomeAtual);
+    final novoNome = await showDialog<String>(
+      context: ctx,
+      builder: (dialogCtx) => AlertDialog(
+        title: const Text('Renomear arquivo'),
+        content: TextField(
+          controller: controller,
+          autofocus: true,
+          decoration: const InputDecoration(labelText: 'Nome do arquivo'),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogCtx),
+            child: const Text('Cancelar'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(dialogCtx, controller.text.trim()),
+            child: const Text('Salvar'),
+          ),
+        ],
+      ),
+    );
+    if (novoNome == null || novoNome.isEmpty || novoNome == nomeAtual) return;
+    if (!ctx.mounted) return;
+    try {
+      final response = await NetworkCaller().putRequest(
+        ApiLinks.updateArquivo(id.toString()),
+        {'fileName': novoNome},
+      );
+      if (!ctx.mounted) return;
+      if (response.isSuccess) {
+        ScaffoldMessenger.of(ctx).showSnackBar(
+          const SnackBar(content: Text('Nome atualizado.')),
+        );
+      } else {
+        ScaffoldMessenger.of(ctx).showSnackBar(
+          SnackBar(content: Text('Erro ao renomear: ${response.statusCode}')),
+        );
+      }
+    } catch (e) {
+      if (!ctx.mounted) return;
+      ScaffoldMessenger.of(ctx)
+          .showSnackBar(SnackBar(content: Text('Erro ao renomear: $e')));
+    }
   }
 
   List<FieldConfig> _gedFieldOverrides() {
