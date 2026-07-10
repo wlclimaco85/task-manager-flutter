@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../models/chat_model.dart';
+import '../../models/auth_utility.dart';
 import '../../services/chat_caller.dart';
 import '../../utils/grid_colors.dart';
 import 'chat_support_ui.dart';
@@ -32,6 +33,29 @@ class _ChatKanbanScreenState extends State<ChatKanbanScreen> {
 
   List<ChatKanbanItem> _itensDaColuna(String coluna) {
     return _items.where((i) => i.status.toUpperCase() == coluna).toList();
+  }
+
+  // Card #448 Fase 1: funcionario do setor pega o atendimento aguardando.
+  Future<void> _pegarAtendimento(ChatKanbanItem item) async {
+    final usuarioId = AuthUtility.userInfo?.login?.id;
+    if (usuarioId == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Usuario nao identificado, faca login novamente.')),
+      );
+      return;
+    }
+    final ok = await _caller.pegarAtendimento(item.chatId, usuarioId);
+    if (!mounted) return;
+    if (ok) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Atendimento assumido com sucesso.')),
+      );
+      _carregar();
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Atendimento ja possui responsavel ou ocorreu um erro.')),
+      );
+    }
   }
 
   @override
@@ -70,14 +94,18 @@ class _ChatKanbanScreenState extends State<ChatKanbanScreen> {
             padding: const EdgeInsets.all(12),
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
-              children: _colunas.map((c) => _ColunaCard(c, _itensDaColuna(c))).toList(),
+              children: _colunas
+                  .map((c) => _ColunaCard(c, _itensDaColuna(c), onPegar: _pegarAtendimento))
+                  .toList(),
             ),
           );
         }
         return SingleChildScrollView(
           padding: const EdgeInsets.all(12),
           child: Column(
-            children: _colunas.map((c) => _ColunaCard(c, _itensDaColuna(c))).toList(),
+            children: _colunas
+                .map((c) => _ColunaCard(c, _itensDaColuna(c), onPegar: _pegarAtendimento))
+                .toList(),
           ),
         );
       },
@@ -88,8 +116,9 @@ class _ChatKanbanScreenState extends State<ChatKanbanScreen> {
 class _ColunaCard extends StatelessWidget {
   final String titulo;
   final List<ChatKanbanItem> itens;
+  final void Function(ChatKanbanItem item) onPegar;
 
-  const _ColunaCard(this.titulo, this.itens);
+  const _ColunaCard(this.titulo, this.itens, {required this.onPegar});
 
   Color get _corCabecalho {
     switch (titulo) {
@@ -168,7 +197,7 @@ class _ColunaCard extends StatelessWidget {
                 child: Text('Nenhum item', style: TextStyle(color: GridColors.textMuted)),
               )
             else
-              ...itens.map((item) => _ItemCard(item: item)),
+              ...itens.map((item) => _ItemCard(item: item, onPegar: onPegar)),
           ],
         ),
       ),
@@ -190,8 +219,9 @@ class _ColunaCard extends StatelessWidget {
 
 class _ItemCard extends StatelessWidget {
   final ChatKanbanItem item;
+  final void Function(ChatKanbanItem item) onPegar;
 
-  const _ItemCard({required this.item});
+  const _ItemCard({required this.item, required this.onPegar});
 
   @override
   Widget build(BuildContext context) {
@@ -264,6 +294,24 @@ class _ItemCard extends StatelessWidget {
                       ),
                   ],
                 ),
+                // Card #448 Fase 1: so mostra "Pegar atendimento" quando
+                // ainda nao ha responsavel (usuarioResponsavelId nulo).
+                if (item.usuarioResponsavelId == null ||
+                    item.usuarioResponsavelId!.isEmpty) ...[
+                  const SizedBox(height: 8),
+                  SizedBox(
+                    width: double.infinity,
+                    child: OutlinedButton(
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: GridColors.primary,
+                        side: BorderSide(color: GridColors.primary),
+                        padding: const EdgeInsets.symmetric(vertical: 6),
+                      ),
+                      onPressed: () => onPegar(item),
+                      child: const Text('Pegar atendimento', style: TextStyle(fontSize: 12)),
+                    ),
+                  ),
+                ],
               ],
             ),
           ),

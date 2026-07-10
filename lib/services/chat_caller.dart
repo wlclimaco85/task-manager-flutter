@@ -145,6 +145,23 @@ class ChatCaller {
     return [];
   }
 
+  // ── Pegar atendimento (Card #448 Fase 1) ─────────────────────────────────
+  Future<bool> pegarAtendimento(String chatId, int usuarioId) async {
+    try {
+      final url = ApiLinks.chatPickup(chatId, usuarioId);
+      final resp = await TenantContext.put(url, {});
+      if (resp.statusCode == 200) return true;
+      if (resp.statusCode == 409) {
+        L.d('Atendimento $chatId ja possui responsavel');
+      } else {
+        L.d('Erro ao pegar atendimento: ${resp.statusCode}');
+      }
+    } catch (e) {
+      L.d('Erro ao pegar atendimento: $e');
+    }
+    return false;
+  }
+
   // ── Atualizar status do chat ─────────────────────────────────────────────
   Future<bool> atualizarStatus(String chatId, String novoStatus) async {
     try {

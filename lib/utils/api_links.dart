@@ -489,6 +489,9 @@ class ApiLinks {
   static String chatTransfer(dynamic id) => '$_baseUrlNew/api/chat/$id/transferir';
   static String chatMarkAsRead(dynamic id) => '$_baseUrlNew/api/chat/$id/ler';
   static String get chatUsuariosSetor => '$_baseUrlNew/api/chat/usuarios-setor';
+  // Card #448 Fase 1: funcionario "pega" atendimento aguardando no setor.
+  static String chatPickup(String chatId, int usuarioId) =>
+      '$_baseUrlNew/api/chat/$chatId/pickup?usuarioId=$usuarioId';
 
   static String getAllTelas(String nome, {int? empId, int? clienteId}) {
     final params = <String, String>{};
