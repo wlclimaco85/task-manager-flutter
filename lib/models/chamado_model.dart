@@ -28,10 +28,22 @@ enum StatusChamadoEnum {
   const StatusChamadoEnum(this.value, this.label);
 
   static StatusChamadoEnum fromValue(int v) =>
-      values.firstWhere((e) => e.value == v);
+      values.firstWhere((e) => e.value == v, orElse: () => ABERTO);
 
-  static StatusChamadoEnum fromString(String s) =>
-      values.firstWhere((e) => e.name.toUpperCase() == s.toUpperCase());
+  // Fix card #451 (crash "Nao foi possivel carregar o sistema" ao clicar
+  // em Visualizar): varios chamados existentes tem status nulo no banco
+  // (visivel como celula em branco na coluna Status do grid). fromString
+  // recebia String nao-nulo e chamava s.toUpperCase() direto -- com
+  // status: null vindo do JSON dinamico, isso lancava NoSuchMethodError
+  // nao capturado durante Chamado.fromJson, quebrando toda a arvore de
+  // widgets do Flutter Web (sem error boundary).
+  static StatusChamadoEnum fromString(String? s) {
+    if (s == null || s.isEmpty) return ABERTO;
+    return values.firstWhere(
+      (e) => e.name.toUpperCase() == s.toUpperCase(),
+      orElse: () => ABERTO,
+    );
+  }
 }
 
 enum PrioridadeChamadoEnum {
@@ -45,10 +57,17 @@ enum PrioridadeChamadoEnum {
   const PrioridadeChamadoEnum(this.value, this.label);
 
   static PrioridadeChamadoEnum fromValue(int v) =>
-      values.firstWhere((e) => e.value == v);
+      values.firstWhere((e) => e.value == v, orElse: () => BAIXA);
 
-  static PrioridadeChamadoEnum fromString(String s) =>
-      values.firstWhere((e) => e.name.toUpperCase() == s.toUpperCase());
+  // Fix card #451: mesmo problema de StatusChamadoEnum.fromString --
+  // chamados com prioridade nula no banco quebravam Chamado.fromJson.
+  static PrioridadeChamadoEnum fromString(String? s) {
+    if (s == null || s.isEmpty) return BAIXA;
+    return values.firstWhere(
+      (e) => e.name.toUpperCase() == s.toUpperCase(),
+      orElse: () => BAIXA,
+    );
+  }
 }
 
 // =========================================================
@@ -92,12 +111,18 @@ class Chamado {
   factory Chamado.fromJson(Map<String, dynamic> json) {
     return Chamado(
       id: json['id'],
-      titulo: json['titulo'],
-      descricao: json['descricao'],
+      // Fix card #451: titulo/descricao sao tipados nao-nulos (String), mas
+      // json e Map<String,dynamic> -- sem fallback, um chamado com esses
+      // campos nulos no banco tambem quebraria Chamado.fromJson.
+      titulo: json['titulo'] ?? '',
+      descricao: json['descricao'] ?? '',
       motivoFechamento: json['motivoFechamento'],
       status: StatusChamadoEnum.fromString(json['status']),
       prioridade: PrioridadeChamadoEnum.fromString(json['prioridade']),
-      empresa: Empresa.fromJson(json['empresa']),
+      // Fix card #451: alguns chamados existentes nao tem empresa vinculada
+      // (coluna Empresa em branco no grid) -- Empresa.fromJson(null)
+      // quebraria com type error (espera Map<String,dynamic> nao-nulo).
+      empresa: json['empresa'] != null ? Empresa.fromJson(json['empresa']) : Empresa(),
       usuarioAbertura: json['usuarioAbertura'] != null
           ? Login.fromJson(json['usuarioAbertura'])
           : null,
