@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 import '../models/auth_utility.dart';
 import '../models/chamado_model.dart';
 import '../services/chamado_caller.dart';
+import '../services/chat_caller.dart';
 import '../utils/grid_colors.dart';
 import 'anexo_financeiro_widget.dart';
 
@@ -128,20 +129,14 @@ class _ChamadoDetalheScreenState extends State<ChamadoDetalheScreen> {
   }
 
   Future<void> _atribuir() async {
-    final idStr = await _pedirTexto(
-        titulo: 'Atribuir chamado', label: 'ID do usuário destino', numerico: true);
-    final destino = int.tryParse(idStr ?? '');
+    final destino = await _pedirUsuarioDoSetor('Atribuir chamado');
     if (destino == null) return;
     await _executarAcao(
         () => _caller.atribuirChamado(_chamado.id!, destino), 'Chamado atribuído');
   }
 
   Future<void> _transferir() async {
-    final idStr = await _pedirTexto(
-        titulo: 'Transferir chamado',
-        label: 'ID do usuário destino',
-        numerico: true);
-    final destino = int.tryParse(idStr ?? '');
+    final destino = await _pedirUsuarioDoSetor('Transferir chamado');
     if (destino == null) return;
     await _executarAcao(
         () => _caller.transferirChamado(_chamado.id!, destino, _usuarioId),
@@ -149,15 +144,63 @@ class _ChamadoDetalheScreenState extends State<ChamadoDetalheScreen> {
   }
 
   Future<void> _retornar() async {
-    final idStr = await _pedirTexto(
-        titulo: 'Retornar chamado',
-        label: 'ID do usuário destino',
-        numerico: true);
-    final destino = int.tryParse(idStr ?? '');
+    final destino = await _pedirUsuarioDoSetor('Retornar chamado');
     if (destino == null) return;
     await _executarAcao(
         () => _caller.retornarChamado(_chamado.id!, _usuarioId, destino),
         'Chamado retornado');
+  }
+
+  // Dropdown com os funcionarios do setor do chamado (em vez de pedir o ID
+  // do usuario destino digitado a mao) -- reaproveita
+  // ChatCaller.fetchUsuariosSetor, ja usado no dialogo de transferencia de
+  // chat (chat_transfer_dialog.dart).
+  Future<int?> _pedirUsuarioDoSetor(String titulo) async {
+    final setorNome = _chamado.setor?.nome;
+    if (setorNome == null || setorNome.isEmpty) {
+      _mostrarSnack('Chamado sem setor definido — não é possível listar funcionários.',
+          erro: true);
+      return null;
+    }
+    final usuarios = await ChatCaller().fetchUsuariosSetor(setorNome);
+    if (!mounted) return null;
+    if (usuarios.isEmpty) {
+      _mostrarSnack('Nenhum funcionário encontrado no setor "$setorNome".', erro: true);
+      return null;
+    }
+
+    String? selecionado;
+    final result = await showDialog<String>(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setStateDialog) => AlertDialog(
+          title: Text(titulo),
+          content: DropdownButtonFormField<String>(
+            value: selecionado,
+            isExpanded: true,
+            decoration: const InputDecoration(
+              labelText: 'Funcionário',
+              border: OutlineInputBorder(),
+            ),
+            items: usuarios
+                .map((u) => DropdownMenuItem(value: u['id'], child: Text(u['nome'] ?? '')))
+                .toList(),
+            onChanged: (v) => setStateDialog(() => selecionado = v),
+          ),
+          actions: [
+            TextButton(
+                onPressed: () => Navigator.pop(ctx), child: const Text('Cancelar')),
+            ElevatedButton(
+              onPressed: selecionado == null ? null : () => Navigator.pop(ctx, selecionado),
+              style: ElevatedButton.styleFrom(
+                  backgroundColor: GridColors.primary, foregroundColor: Colors.white),
+              child: const Text('Confirmar'),
+            ),
+          ],
+        ),
+      ),
+    );
+    return int.tryParse(result ?? '');
   }
 
   Future<String?> _pedirTexto({
