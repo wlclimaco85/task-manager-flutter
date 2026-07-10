@@ -88,4 +88,35 @@ class ChamadoCaller {
     }
     throw Exception('Erro ao buscar histórico (${response.statusCode})');
   }
+
+  // 🔹 Retornar chamado (card #451)
+  Future<bool> retornarChamado(int id, int usuarioOrigem, int usuarioDestino) async {
+    final response = await NetworkCaller().postRequest(
+        "${ApiLinks.workflowChamados}/$id/retornar?origemId=$usuarioOrigem&destinoId=$usuarioDestino",
+        {});
+    return response.isSuccess;
+  }
+
+  // 🔹 Reabrir chamado (card #451)
+  Future<bool> reabrirChamado(int id, int usuarioId) async {
+    final response = await NetworkCaller().postRequest(
+        "${ApiLinks.workflowChamados}/$id/reabrir?usuarioId=$usuarioId", {});
+    return response.isSuccess;
+  }
+
+  // 🔹 Comentar chamado — timeline (card #451)
+  Future<bool> comentarChamado(int id, int usuarioId, String observacao) async {
+    final response = await NetworkCaller().postRequest(
+        "${ApiLinks.workflowChamados}/$id/comentario?usuarioId=$usuarioId&observacao=${Uri.encodeQueryComponent(observacao)}",
+        {});
+    return response.isSuccess;
+  }
+
+  // 🔹 Notificar toda a empresa sobre o chamado (card #451)
+  Future<bool> notificarEmpresaChamado(int id, int usuarioId) async {
+    final response = await NetworkCaller().postRequest(
+        "${ApiLinks.workflowChamados}/$id/notificar-empresa?usuarioId=$usuarioId",
+        {});
+    return response.isSuccess;
+  }
 }

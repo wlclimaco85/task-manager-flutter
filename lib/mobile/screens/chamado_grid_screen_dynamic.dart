@@ -6,6 +6,8 @@ import '../../../utils/security_matrix.dart';
 import 'chamado_grid_screen.dart';
 import '../../services/network_caller.dart';
 import '../../models/network_response.dart';
+import '../../widgets/chamado_detalhe_screen.dart';
+import '../../models/chamado_model.dart' as chamado_model;
 
 class ChamadosScreenDinamic extends StatefulWidget {
   const ChamadosScreenDinamic({super.key});
@@ -286,8 +288,23 @@ class _ChamadosScreenDinamicState extends State<ChamadosScreenDinamic> {
     );
   }
 
+  void _abrirDetalheChamado(Chamado chamado) {
+    // A tela dinâmica mobile usa a classe Chamado local (duplicada) —
+    // convertemos para o model canônico (lib/models/chamado_model.dart)
+    // via toJson/fromJson, que é o tipo esperado por ChamadoDetalheScreen.
+    final chamadoModel = chamado_model.Chamado.fromJson(chamado.toJson());
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => ChamadoDetalheScreen(chamado: chamadoModel),
+      ),
+    ).then((_) => _loadChamados());
+  }
+
   Widget _buildChamadoTile(Chamado chamado) {
-    return Container(
+    return InkWell(
+      onTap: () => _abrirDetalheChamado(chamado),
+      borderRadius: BorderRadius.circular(8),
+      child: Container(
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
@@ -391,6 +408,7 @@ class _ChamadosScreenDinamicState extends State<ChamadosScreenDinamic> {
             ],
           ),
         ],
+      ),
       ),
     );
   }

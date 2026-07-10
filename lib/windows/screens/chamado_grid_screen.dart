@@ -4,6 +4,7 @@ import '../../../customization/dynamic_grid_windows_screen.dart';
 import '../../../models/chamado_model.dart';
 // 🔥 Importa só o CustomAction do grid do Windows
 import '../../../widgets/generic_grid_windows_screen.dart' show CustomAction;
+import '../../../widgets/chamado_detalhe_screen.dart';
 import '../../../windows/screens/fechar_chamado_dialog.dart';
 
 class WindowsChamadoGridScreen extends StatelessWidget {
@@ -18,6 +19,10 @@ class WindowsChamadoGridScreen extends StatelessWidget {
       hasPermission: hasPermission,
       fromJson: (json) => Chamado.fromJson(json),
       toJson: (a) => a.toJson(),
+
+      // Card #451: abre a tela de detalhe/timeline do chamado.
+      detailScreenBuilder: (chamado) =>
+          ChamadoDetalheScreen(chamado: chamado),
 
       // 🔥 AQUI entram os botões extras por linha
       customActions: () => [
