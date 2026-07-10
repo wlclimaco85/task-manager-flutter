@@ -1,16 +1,20 @@
 // ignore_for_file: library_private_types_in_public_api
 import 'dart:convert';
+import 'dart:io' show Platform;
 
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'package:url_launcher/url_launcher.dart';
 import '../../../models/conta_pagar_model.dart';
 import '../../../models/conta_receber_model.dart';
+import '../../../services/anexo_financeiro_service.dart';
 import '../../../utils/api_links.dart';
 import '../../../utils/app_logger.dart';
 import '../../../utils/document_baixa_helper.dart';
 import '../../../utils/grid_colors.dart';
 import '../../../utils/tenant_context.dart';
+import '../../../widgets/anexo_financeiro_widget.dart';
+import '../../../widgets/boleto_viewer_widget.dart';
 import '../../../widgets/user_banners.dart';
 import './baixa_dialog.dart';
 import './baixa_dialog_receber.dart';
@@ -360,12 +364,6 @@ bool _hasDocumentoFiscal(Map<String, dynamic> item) {
   return value == true || value.toString().toLowerCase() == 'true';
 }
 
-bool _hasPdfAttachment(Map<String, dynamic> item) {
-  final value = item['anexoPdf'] ?? item['anexo_pdf'];
-  if (value == null) return false;
-  return value == true || value.toString().toLowerCase() == 'true';
-}
-
 bool _hasTipo(Map<String, dynamic> item) {
   return _stringValue(item, const [
     '_calendarioTipo',
@@ -562,18 +560,89 @@ class _WindowsCalendarScreenState extends State<WindowsCalendarScreen> {
     );
   }
 
-  Future<void> _abrirPdfAnexo(Map<String, dynamic> item) async {
-    final fileId = item['fileId'] ?? item['file_id'];
-    if (fileId == null || !_hasPdfAttachment(item)) return;
+  bool get _isMobile => !kIsWeb && (Platform.isAndroid || Platform.isIOS);
 
-    final opened = await launchUrl(
-      Uri.parse(ApiLinks.downloadFile(fileId)),
-      mode: LaunchMode.externalApplication,
+  // Fix card #440: esta tela (windows/screens/documento_screen.dart) e
+  // reutilizada tambem pelo Mobile (mobile/screens/documento_screen.dart ->
+  // WindowsCalendarScreen), mas nunca recebeu o Boleto Viewer (copiar linha
+  // digitavel + baixar) nem o "Ver anexo" (AnexoFinanceiro) ja implementados
+  // no arquivo web/screens/documento_screen.dart -- so tinha o mecanismo
+  // legado _abrirPdfAnexo (launchUrl sem header de autenticacao, so
+  // funcionava por acaso no Web/Windows abrindo nova aba, nunca funcionou no
+  // Mobile). Portado abaixo o mesmo padrao ja usado e validado no arquivo web.
+
+  // Abre o visualizador de anexos da conta (ver/baixar).
+  void _abrirAnexosConta(Map<String, dynamic> item, {required bool isPagar}) {
+    final id = (item['id'] as num?)?.toInt();
+    if (id == null) return;
+    final empresaId = (item['empresa']?['id'] as num?)?.toInt() ??
+        (item['empresaId'] as num?)?.toInt();
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => DraggableScrollableSheet(
+        initialChildSize: 0.65,
+        minChildSize: 0.4,
+        maxChildSize: 0.92,
+        builder: (ctx, _) => ClipRRect(
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+          child: AnexoFinanceiroWidget(
+            lancamentoId: id,
+            lancamentoTipo: isPagar ? 'PAGAR' : 'RECEBER',
+            empresaId: empresaId,
+          ),
+        ),
+      ),
     );
-    if (!opened && mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Não foi possível abrir o PDF anexado.')),
+  }
+
+  // Abre o Boleto Viewer (card #440): busca o primeiro anexo do lancamento
+  // e mostra a linha digitavel (copiar) + baixar o PDF. Funciona em
+  // Web/Windows (Dialog) e Mobile (bottom sheet), ver showBoletoViewerDialog/
+  // showBoletoViewerBottomSheet em boleto_viewer_widget.dart.
+  Future<void> _abrirBoletoViewer(Map<String, dynamic> item, {required bool isPagar}) async {
+    final id = (item['id'] as num?)?.toInt();
+    if (id == null) return;
+    final empresaId = (item['empresa']?['id'] as num?)?.toInt() ??
+        (item['empresaId'] as num?)?.toInt();
+    try {
+      final anexos = await AnexoFinanceiroService().listar(
+        id,
+        isPagar ? 'PAGAR' : 'RECEBER',
+        empresaId: empresaId,
       );
+      if (anexos.isEmpty) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Nenhum anexo encontrado para este lançamento.')),
+          );
+        }
+        return;
+      }
+      final anexo = anexos.first;
+      if (!mounted || anexo.id == null) return;
+      if (_isMobile) {
+        await showBoletoViewerBottomSheet(
+          context,
+          anexoId: anexo.id!,
+          fileName: anexo.fileName,
+          empresaId: empresaId,
+        );
+      } else {
+        await showBoletoViewerDialog(
+          context,
+          anexoId: anexo.id!,
+          fileName: anexo.fileName,
+          empresaId: empresaId,
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Erro ao abrir boleto: $e')),
+        );
+      }
     }
   }
 
@@ -1338,7 +1407,7 @@ class _WindowsCalendarScreenState extends State<WindowsCalendarScreen> {
         item['parceiroNome'] as String? ??
         '';
 
-    final hasAnexoPdf = _hasPdfAttachment(item);
+    final qtdAnexos = (item['qtdAnexos'] as num?)?.toInt() ?? 0;
 
     final today = DateTime.now();
     final vencStr = _dateKey(item);
@@ -1433,13 +1502,26 @@ class _WindowsCalendarScreenState extends State<WindowsCalendarScreen> {
                 onTap: () => _abrirBaixaConta(item, isPagar: isPagar),
               ),
             ],
-            if (hasAnexoPdf) ...[
+            // Fix card #440: substituido o mecanismo legado (_abrirPdfAnexo,
+            // baseado em fileId/launchUrl sem autenticacao -- so funcionava
+            // por acaso no Web/Windows, nunca no Mobile) pelo par Ver anexo +
+            // Boleto viewer ja usado no arquivo web/screens/documento_screen.dart,
+            // baseado em AnexoFinanceiro (qtdAnexos), com download autenticado
+            // e compartilhamento real no Mobile via share_plus.
+            if (qtdAnexos > 0) ...[
               const SizedBox(width: 4),
               _contaActionButton(
                 icon: Icons.attach_file,
                 color: GridColors.info,
-                tooltip: 'Abrir PDF anexado',
-                onTap: () => _abrirPdfAnexo(item),
+                tooltip: 'Ver anexo',
+                onTap: () => _abrirAnexosConta(item, isPagar: isPagar),
+              ),
+              const SizedBox(width: 4),
+              _contaActionButton(
+                icon: Icons.receipt_long,
+                color: GridColors.primary,
+                tooltip: 'Boleto viewer',
+                onTap: () => _abrirBoletoViewer(item, isPagar: isPagar),
               ),
             ],
             const SizedBox(width: 6),
