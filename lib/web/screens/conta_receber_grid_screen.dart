@@ -26,7 +26,16 @@ import '../../../models/auth_utility.dart';
 
 class WebContaReceberGridScreen extends StatefulWidget {
   final SecurityCheck hasPermission;
-  const WebContaReceberGridScreen({super.key, required this.hasPermission});
+  // Fix card #453: permite instanciar esta grid ja filtrada por categoria
+  // financeira fixa (ex.: 'Receita de Assinatura' para a tela Mensalidades),
+  // reaproveitando toda a infraestrutura existente (listagem, dar baixa,
+  // anexos) em vez de duplicar uma tela nova do zero.
+  final int? categoriaFinanceiraIdFixa;
+  const WebContaReceberGridScreen({
+    super.key,
+    required this.hasPermission,
+    this.categoriaFinanceiraIdFixa,
+  });
 
   @override
   State<WebContaReceberGridScreen> createState() =>
@@ -55,6 +64,10 @@ class _WebContaReceberGridScreenState extends State<WebContaReceberGridScreen> {
     if (_dataFim != null) params['dataFim'] = _dataFim!.toIso8601String().substring(0, 10);
     if (_parceiroId != null) params['parceiroId'] = _parceiroId.toString();
     if (_tipoFilter != 'Todos') params['tipo'] = _tipoFilter;
+    if (widget.categoriaFinanceiraIdFixa != null) {
+      params['categoriaFinanceiraId'] =
+          widget.categoriaFinanceiraIdFixa.toString();
+    }
     return params;
   }
 

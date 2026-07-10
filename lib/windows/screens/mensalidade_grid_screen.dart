@@ -1,43 +1,25 @@
 import 'package:flutter/material.dart';
-import '../../../customization/dynamic_grid_windows_screen.dart';
-import '../../../models/mensalidade_model.dart';
-import '../../../widgets/importacao_boletos_dialog.dart';
+import '../../../widgets/generic_grid_windows_screen.dart' show SecurityCheck;
+import 'conta_receber_grid_screen.dart';
 
-class WindowsMensalidadeGridScreen extends StatefulWidget {
+/// Fix card #453: a tela "Mensalidades" apontava para o dominio errado
+/// (mensalidade de aluno/plano de academia, V003 Fitness), sem nenhuma
+/// relacao com empresa cliente do escritorio de contabilidade. Substituida
+/// por uma view filtrada de Contas a Receber (categoria financeira
+/// "Receita de Assinatura", id=293, ja cadastrada), reaproveitando toda a
+/// infraestrutura existente (listagem, dar baixa, anexos).
+class WindowsMensalidadeGridScreen extends StatelessWidget {
   final SecurityCheck hasPermission;
+
   const WindowsMensalidadeGridScreen({super.key, required this.hasPermission});
 
-  @override
-  State<WindowsMensalidadeGridScreen> createState() => _WindowsMensalidadeGridScreenState();
-}
-
-class _WindowsMensalidadeGridScreenState extends State<WindowsMensalidadeGridScreen> {
-  int _chaveReload = 0;
+  static const int categoriaFinanceiraMensalidade = 293;
 
   @override
   Widget build(BuildContext context) {
-    return DynamicGridWindowsScreen<Mensalidade>(
-      key: ValueKey(_chaveReload),
-      telaNome: 'Mensalidades',
-      hasPermission: widget.hasPermission,
-      fromJson: (json) => Mensalidade.fromJson(json),
-      toJson: (item) => item.toJson(),
-      headerActions: [
-        OutlinedButton.icon(
-          onPressed: () => _importarBoletos(),
-          icon: const Icon(Icons.upload_file, size: 18),
-          label: const Text('Importar Boletos'),
-        ),
-      ],
-    );
-  }
-
-  void _importarBoletos() {
-    showDialog(
-      context: context,
-      builder: (_) => ImportacaoBoletosDialog(
-        onSuccess: () => setState(() => _chaveReload++),
-      ),
+    return WindowsContaReceberGridScreen(
+      hasPermission: hasPermission,
+      categoriaFinanceiraIdFixa: categoriaFinanceiraMensalidade,
     );
   }
 }

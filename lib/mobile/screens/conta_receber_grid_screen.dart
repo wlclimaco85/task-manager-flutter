@@ -10,18 +10,26 @@ import '../screens/desfazer_baixa_dialog.dart';
 class ContaReceberGridScreen extends StatelessWidget {
   final SecurityCheck hasPermission;
   final VoidCallback? onUserBannerTapped;
+  // Fix card #453: filtro fixo de categoria financeira (tela Mensalidades).
+  final int? categoriaFinanceiraIdFixa;
+  final String? tituloOverride;
 
   const ContaReceberGridScreen({
     super.key,
     required this.hasPermission,
     this.onUserBannerTapped,
+    this.categoriaFinanceiraIdFixa,
+    this.tituloOverride,
   });
 
   @override
   Widget build(BuildContext context) {
     return GenericMobileGridScreen<ContaReceber>(
-      title: "Contas a Receber",
+      title: tituloOverride ?? "Contas a Receber",
       fetchEndpoint: ApiLinks.allContasReceber,
+      extraParams: categoriaFinanceiraIdFixa == null
+          ? null
+          : {'categoriaFinanceiraId': categoriaFinanceiraIdFixa.toString()},
       createEndpoint: ApiLinks.createContaReceber,
       updateEndpoint: ApiLinks.updateContaReceber(":id"),
       deleteEndpoint: ApiLinks.deleteContaReceber(":id"),

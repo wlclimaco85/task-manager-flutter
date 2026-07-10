@@ -23,8 +23,14 @@ import 'package:http/http.dart' as http;
 
 class WindowsContaReceberGridScreen extends StatefulWidget {
   final SecurityCheck hasPermission;
+  // Fix card #453: filtro fixo de categoria financeira (tela Mensalidades).
+  final int? categoriaFinanceiraIdFixa;
 
-  const WindowsContaReceberGridScreen({super.key, required this.hasPermission});
+  const WindowsContaReceberGridScreen({
+    super.key,
+    required this.hasPermission,
+    this.categoriaFinanceiraIdFixa,
+  });
 
   @override
   State<WindowsContaReceberGridScreen> createState() =>
@@ -63,6 +69,10 @@ class _WindowsContaReceberGridScreenState extends State<WindowsContaReceberGridS
     if (_dataFim != null) params['dataFim'] = _dataFim!.toIso8601String().substring(0, 10);
     if (_parceiroId != null) params['parceiroId'] = _parceiroId.toString();
     if (_tipoFilter != GridTexts.all) params['tipo'] = _tipoFilter;
+    if (widget.categoriaFinanceiraIdFixa != null) {
+      params['categoriaFinanceiraId'] =
+          widget.categoriaFinanceiraIdFixa.toString();
+    }
     return params;
   }
 
