@@ -110,7 +110,17 @@ class ApiLinks {
   static String fecthCidadeByEstado = '$_baseUrlNew/api/cidade/by-estado/';
   static String fecthCalcFrete = '$_baseUrlNew/api/rota/calcular';
   static String fecthChats = '$_baseUrlNew/api/chat/user';
-  static String fecthChatById = '$_baseUrlNew/api/chat/messages?chatId=';
+  // Fix: backend so tem GET /api/chat/{chatId} (path variable, ver
+  // ChatController.findByChatIdByOrderByTimestampDesc), nao um endpoint
+  // /messages com query param chatId=. A URL antiga concatenada com o
+  // chatId real (ver ChatCaller.fetchChatsById) virava
+  // /api/chat/messages?chatId=<uuid-real> -- o Spring casava "messages"
+  // (literal) como o path variable {chatId} e IGNORAVA a query string,
+  // sempre buscando um chatId inexistente "messages" -> 0 resultados,
+  // sempre "Conversa vazia" mesmo com mensagens persistidas no banco
+  // (confirmado ao vivo: endpoint correto retorna os dados, esta URL errada
+  // retorna sempre {"dados":[],"totalElements":0}).
+  static String fecthChatById = '$_baseUrlNew/api/chat/';
   static String getCategorias = '$_baseUrlNew/api/setor';
 
   // Comunicado
