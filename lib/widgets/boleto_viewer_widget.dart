@@ -221,21 +221,30 @@ class _BoletoViewerContentState extends State<BoletoViewerContent> {
           ),
         );
       case _Estado.erro:
+        // Fix card #455: falha ao extrair a linha digitavel (500/rede/timeout)
+        // nao pode bloquear o acesso ao PDF do boleto -- ele pode estar
+        // perfeitamente acessivel mesmo com a extracao falhando. Estado
+        // tratado como variacao de `vazio` (mesma estrutura, botoes de
+        // download sempre visiveis em _buildRodape), diferindo so no
+        // icone/cor (vermelho, sinaliza falha real) e oferecendo "Tentar
+        // novamente" como acao secundaria (TextButton), nao como unica saida.
         return Column(
           children: [
             const Icon(Icons.error_outline, color: GridColors.error, size: 32),
             const SizedBox(height: 8),
-            const Text('Não foi possível carregar o boleto',
+            const Text('Não foi possível verificar a linha digitável',
+                textAlign: TextAlign.center,
                 style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: GridColors.textSecondary)),
             const SizedBox(height: 4),
-            const Text('Verifique a conexão e tente novamente.',
+            const Text('Ocorreu uma falha ao processar o boleto. Você ainda pode baixar o PDF original abaixo.',
+                textAlign: TextAlign.center,
                 style: TextStyle(fontSize: 12, color: GridColors.textMuted)),
-            const SizedBox(height: 12),
-            OutlinedButton.icon(
+            const SizedBox(height: 8),
+            TextButton.icon(
               onPressed: _carregarLinhaDigitavel,
-              icon: const Icon(Icons.refresh, size: 18),
+              icon: const Icon(Icons.refresh, size: 16),
               label: const Text('Tentar novamente'),
-              style: OutlinedButton.styleFrom(foregroundColor: GridColors.error, side: const BorderSide(color: GridColors.error)),
+              style: TextButton.styleFrom(foregroundColor: GridColors.primary, padding: EdgeInsets.zero, visualDensity: VisualDensity.compact),
             ),
           ],
         );
@@ -295,7 +304,10 @@ class _BoletoViewerContentState extends State<BoletoViewerContent> {
   }
 
   Widget _buildRodape() {
-    if (_estado == _Estado.erro) return const SizedBox.shrink();
+    // Fix card #455: antes, o estado de erro escondia completamente o
+    // rodape (nenhum botao de baixar/fechar), bloqueando o usuario mesmo
+    // quando o PDF em si estava acessivel. Agora o rodape (baixar +
+    // fechar) aparece em erro/vazio/sucesso, igual ao estado vazio.
     final baixarBtn = ElevatedButton.icon(
       onPressed: _baixando ? null : _baixarOuCompartilhar,
       icon: _baixando
