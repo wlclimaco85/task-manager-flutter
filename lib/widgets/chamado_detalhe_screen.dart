@@ -481,6 +481,15 @@ class _ChamadoDetalheScreenState extends State<ChamadoDetalheScreen> {
               _badge(_chamado.prioridade.label, _corPrioridade(_chamado.prioridade)),
             ]),
             const Divider(height: 24),
+            // Fix: usuario pediu para trazer TODOS os dados do chamado no
+            // painel lateral -- antes so mostrava um subconjunto (aberto
+            // por, data abertura, setor, empresa, parceiro se houver).
+            // Adicionados: número do chamado, prioridade com rótulo (antes
+            // so aparecia como badge sem legenda), e os campos de
+            // fechamento (fechado por/data/motivo), visíveis somente
+            // quando o chamado já foi fechado.
+            _linhaInfo(Icons.tag, 'Nº do chamado', '#${_chamado.id ?? '—'}'),
+            _linhaInfo(Icons.flag_outlined, 'Prioridade', _chamado.prioridade.label),
             _linhaInfo(Icons.person_outline, 'Aberto por',
                 _chamado.usuarioAbertura?.nome ?? _chamado.usuarioAbertura?.email ?? '—'),
             _linhaInfo(Icons.calendar_today, 'Data abertura',
@@ -490,6 +499,17 @@ class _ChamadoDetalheScreenState extends State<ChamadoDetalheScreen> {
                 _chamado.empresa.nome ?? _chamado.empresa.razaoSocial ?? '—'),
             if (_chamado.parceiro != null)
               _linhaInfo(Icons.handshake, 'Parceiro', _chamado.parceiro?.nome ?? '—'),
+            if (_chamado.usuarioFechamento != null)
+              _linhaInfo(Icons.person_off_outlined, 'Fechado por',
+                  _chamado.usuarioFechamento?.nome ??
+                      _chamado.usuarioFechamento?.email ??
+                      '—'),
+            if (_chamado.dataFechamento != null)
+              _linhaInfo(Icons.event_available, 'Data fechamento',
+                  _formatarData(_chamado.dataFechamento!.toIso8601String())),
+            if (_chamado.motivoFechamento != null &&
+                _chamado.motivoFechamento!.isNotEmpty)
+              _linhaInfo(Icons.notes, 'Motivo fechamento', _chamado.motivoFechamento!),
           ],
         ),
       ),
