@@ -3,6 +3,7 @@ import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
 
 import '../../../models/chamado_model.dart';
+import '../../../models/auth_utility.dart';
 import '../../../utils/api_links.dart';
 import '../../../utils/tenant_context.dart';
 import '../../../utils/grid_colors.dart';
@@ -26,6 +27,9 @@ class Chat {
   final String lastMessage;
   final DateTime timestamp;
   final String status;
+  // Card #448 Fase 1: id do funcionario responsavel (codUsuDest do grupo).
+  // Nulo = atendimento aguardando, ainda sem ninguem assumido.
+  final int? responsavelId;
 
   Chat({
     required this.chatId,
@@ -33,6 +37,7 @@ class Chat {
     required this.lastMessage,
     required this.timestamp,
     required this.status,
+    this.responsavelId,
   });
 }
 
@@ -96,6 +101,7 @@ class _ChatListScreenState extends State<ChatListScreen> {
               status: (msg.status ?? '').toLowerCase().startsWith('final')
                   ? 'Finalizado'
                   : 'Ativo',
+              responsavelId: msg.codUsuDest,
             ),
           )
           .toList();
@@ -217,6 +223,17 @@ class _ChatListScreenState extends State<ChatListScreen> {
                   _openChat(chat);
                 },
               ),
+              // Card #448 Fase 1: funcionario do setor pega o atendimento
+              // aguardando (so quando ainda nao ha responsavel).
+              if (chat.responsavelId == null)
+                ListTile(
+                  leading: const Icon(Icons.pan_tool_outlined, color: GridColors.primary),
+                  title: const Text('Pegar atendimento'),
+                  onTap: () {
+                    Navigator.pop(context);
+                    _pegarAtendimento(chat);
+                  },
+                ),
               ListTile(
                 leading: const Icon(Icons.check_circle_outline,
                     color: GridColors.success),
@@ -277,6 +294,7 @@ class _ChatListScreenState extends State<ChatListScreen> {
               lastMessage: chat.lastMessage,
               timestamp: chat.timestamp,
               status: 'Finalizado',
+              responsavelId: chat.responsavelId,
             );
           }
         });
@@ -286,6 +304,23 @@ class _ChatListScreenState extends State<ChatListScreen> {
       }
     } catch (e) {
       _showSnack('Erro ao finalizar: $e', error: true);
+    }
+  }
+
+  // Card #448 Fase 1: funcionario assume o atendimento aguardando.
+  Future<void> _pegarAtendimento(Chat chat) async {
+    final usuarioId = AuthUtility.userInfo?.login?.id;
+    if (usuarioId == null) {
+      _showSnack('Usuario nao identificado, faca login novamente.', error: true);
+      return;
+    }
+    final ok = await ChatCaller().pegarAtendimento(chat.chatId, usuarioId);
+    if (!mounted) return;
+    if (ok) {
+      _showSnack('Atendimento assumido com sucesso.');
+      _bootstrap();
+    } else {
+      _showSnack('Atendimento ja possui responsavel ou ocorreu um erro.', error: true);
     }
   }
 
