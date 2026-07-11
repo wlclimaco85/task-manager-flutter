@@ -45,6 +45,30 @@ enum FieldType {
   multiselect,
 }
 
+// Fix (card #459): campos de relacionamento (@ManyToOne/@JoinColumn no
+// backend) precisam ir como objeto {"id": N}, mas os dropdowns deste widget
+// legado guardam so o id escalar (String/int). A conversao so acontece
+// quando o valor ainda e String/num (idempotente, nao mexe em quem ja
+// chega pronto como objeto).
+const entityRelationshipFields = [
+  'empresa', 'parceiro', 'aplicativo', 'fornecedor', 'cliente',
+  'contaBancaria', 'setor', 'centroCusto', 'formaPagamento',
+];
+
+Map<String, dynamic> normalizeEntityRelationships(
+    Map<String, dynamic> formData) {
+  final updated = Map<String, dynamic>.from(formData);
+  for (final field in entityRelationshipFields) {
+    final value = updated[field];
+    if (value is String && value.isNotEmpty) {
+      updated[field] = {'id': int.tryParse(value) ?? value};
+    } else if (value is num) {
+      updated[field] = {'id': value.toInt()};
+    }
+  }
+  return updated;
+}
+
 // Configuração de arquivo
 class FileConfig {
   final List<String> allowedExtensions;
@@ -1583,7 +1607,7 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
 
     final response = await NetworkCaller().postRequest(
       widget.createEndpoint,
-      enrichedFormData,
+      normalizeEntityRelationships(enrichedFormData),
     );
 
     if (response.isSuccess) {
@@ -1713,7 +1737,7 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
         ':id',
         adjustedFormData[widget.idFieldName].toString(),
       ),
-      adjustedFormData,
+      normalizeEntityRelationships(adjustedFormData),
     );
 
     if (response.isSuccess) {
