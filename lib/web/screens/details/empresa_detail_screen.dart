@@ -76,7 +76,7 @@ class _WebEmpresaDetailScreenState extends State<WebEmpresaDetailScreen> {
     final raw = body is List ? body : (body?['data'] ?? body?['content'] ?? []);
     if (raw is! List) return itemMap;
     final ids = raw.map((e) => e['id']?.toString() ?? '').where((s) => s.isNotEmpty).join(', ');
-    return {...itemMap, 'modulosServico': ids};
+    return {...itemMap, 'modulo_servicos': ids};
   }
 
   /// Persiste os módulos selecionados após salvar o parceiro.
@@ -85,7 +85,7 @@ class _WebEmpresaDetailScreenState extends State<WebEmpresaDetailScreen> {
   static Future<void> _salvarModulos(Map<String, dynamic> formData, Map<String, dynamic>? item) async {
     final parceiroId = formData['id'];
     if (parceiroId == null) return;
-    final raw = formData['modulosServico'] as String? ?? '';
+    final raw = formData['modulo_servicos'] as String? ?? '';
     final modulos = raw
         .split(',')
         .map((s) => int.tryParse(s.trim()))
@@ -185,10 +185,17 @@ class _WebEmpresaDetailScreenState extends State<WebEmpresaDetailScreen> {
               dropdownDisplayField: 'label',
               isInForm: true,
             ),
-            // Tipos de parceiro (multiselect M:N)
+            // Tipos de parceiro (multiselect M:N).
+            // Fix (card #466): fieldName precisa bater EXATAMENTE (normalizado)
+            // com o fieldName que o backend ja retorna para a tela 'parceiro'
+            // (GET /api/telas/parceiro -> 'tipo_parceiros'). Com nomes
+            // diferentes (antes: 'tiposParceiro'), o campo bruto do backend e
+            // este override eram tratados como dois campos distintos pela
+            // logica de merge em dynamic_grid_windows_screen.dart, causando
+            // duplicacao visual no formulario.
             FieldConfigWindows(
               label: 'Tipo Parceiros',
-              fieldName: 'tiposParceiro',
+              fieldName: 'tipo_parceiros',
               icon: Icons.category_outlined,
               fieldType: FieldType.multiselect,
               dropdownFutureBuilder: _loadTiposParceiro,
@@ -197,10 +204,12 @@ class _WebEmpresaDetailScreenState extends State<WebEmpresaDetailScreen> {
               isInForm: true,
               isFilterable: false,
             ),
-            // Módulos de serviço contratados (multiselect M:N via parceiro_modulo)
+            // Módulos de serviço contratados (multiselect M:N via parceiro_modulo).
+            // Fix (card #466): mesmo motivo acima -- backend retorna
+            // 'modulo_servicos' para a tela 'parceiro'.
             FieldConfigWindows(
               label: 'Modulo Servicos',
-              fieldName: 'modulosServico',
+              fieldName: 'modulo_servicos',
               icon: Icons.settings_outlined,
               fieldType: FieldType.multiselect,
               dropdownFutureBuilder: _loadModulosServico,
