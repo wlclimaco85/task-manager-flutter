@@ -9,11 +9,29 @@ import '../../../utils/api_links.dart';
 import '../../utils/tenant_helper.dart';
 import '../../../models/login_model.dart';
 import '../../../utils/app_logger.dart';
+import 'session_expired_handler.dart';
 
 class NetworkCaller {
   String _previewResponseBody(String body) {
     if (body.length <= 1200) return body;
     return '${body.substring(0, 1200)}... [truncated ${body.length} chars]';
+  }
+
+  // Fix (card #467): dispara logout automatico + volta para LoginScreen em
+  // qualquer 401 de rota autenticada. Exclui rotas publicas (login,
+  // solicitacao de acesso, noticias publicas) para nao deslogar quem ainda
+  // nem esta logado.
+  static const _publicRoutePatterns = [
+    '/rest/auth/',
+    '/api/solicitacao-acesso',
+    '/api/public/',
+  ];
+
+  static void _handleUnauthorized(int statusCode, String url) {
+    if (statusCode != 401) return;
+    final path = Uri.tryParse(url)?.path ?? url;
+    if (_publicRoutePatterns.any((p) => path.contains(p))) return;
+    SessionExpiredHandler.handle();
   }
 
   Future<NetworkResponse> getRequest(String url) async {
@@ -51,6 +69,7 @@ class NetworkCaller {
           jsonDecode(utf8.decode(response.bodyBytes)),
         );
       }
+      _handleUnauthorized(response.statusCode, enrichedUrl);
       return NetworkResponse(false, response.statusCode, null);
     } catch (e, st) {
       AppLogger.i.error('[GET] erro: $e', st);
@@ -102,11 +121,13 @@ class NetworkCaller {
                   jsonDecode(response.body),
                 );
               } else {
+                _handleUnauthorized(response.statusCode, enrichedUrl);
                 return NetworkResponse(false, response.statusCode, null);
               }
             }
           }
         } else {
+          _handleUnauthorized(response.statusCode, enrichedUrl);
           return NetworkResponse(false, response.statusCode, null);
         }
       } else {
@@ -133,6 +154,7 @@ class NetworkCaller {
                 jsonDecode(response.body),
               );
             } else {
+              _handleUnauthorized(response.statusCode, enrichedUrl);
               return NetworkResponse(false, response.statusCode, null);
             }
           }
@@ -187,6 +209,7 @@ class NetworkCaller {
           jsonDecode(utf8.decode(response.bodyBytes)),
         );
       } else {
+        _handleUnauthorized(response.statusCode, enrichedUrl);
         return NetworkResponse(false, response.statusCode, null);
       }
     } catch (e) {
@@ -219,6 +242,7 @@ class NetworkCaller {
           responseBody,
         );
       } else {
+        _handleUnauthorized(response.statusCode, enrichedUrl);
         return NetworkResponse(false, response.statusCode, null);
       }
     } catch (e) {
@@ -303,6 +327,7 @@ class NetworkCaller {
           jsonDecode(utf8.decode(response.bodyBytes)),
         );
       } else {
+        if (!isAuthRequest) _handleUnauthorized(response.statusCode, enrichedUrl);
         return NetworkResponse(false, response.statusCode, null);
       }
     } catch (e, stack) {
@@ -346,6 +371,7 @@ class NetworkCaller {
             : null;
         return NetworkResponse(true, response.statusCode, body);
       } else {
+        _handleUnauthorized(response.statusCode, enrichedUrl);
         return NetworkResponse(false, response.statusCode, null);
       }
     } catch (e) {

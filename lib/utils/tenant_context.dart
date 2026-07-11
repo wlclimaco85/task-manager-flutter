@@ -1,6 +1,7 @@
 import 'dart:convert';
 import '../models/auth_utility.dart';
 import 'package:http/http.dart' as http;
+import '../services/session_expired_handler.dart';
 
 /// Contexto de tenant do usuário logado.
 /// Injeta empresa, parceiro e userId em TODAS as chamadas HTTP.
@@ -143,31 +144,55 @@ class TenantContext {
   }
 
   // ── Helpers HTTP com tenant automático ──────────────────────────────────
-  static Future<http.Response> get(String url) {
-    return http.get(Uri.parse(applyToUrl(url)), headers: headers);
+
+  // Fix (card #467): mesmo mecanismo do NetworkCaller -- 401 em rota
+  // autenticada dispara logout automatico + volta para LoginScreen.
+  static const _publicRoutePatterns = [
+    '/rest/auth/',
+    '/api/solicitacao-acesso',
+    '/api/public/',
+  ];
+
+  static void _handleUnauthorized(http.Response response) {
+    if (response.statusCode != 401) return;
+    final path = response.request?.url.path ?? '';
+    if (_publicRoutePatterns.any((p) => path.contains(p))) return;
+    SessionExpiredHandler.handle();
   }
 
-  static Future<http.Response> put(String url, Map<String, dynamic> body) {
-    return http.put(
+  static Future<http.Response> get(String url) async {
+    final response = await http.get(Uri.parse(applyToUrl(url)), headers: headers);
+    _handleUnauthorized(response);
+    return response;
+  }
+
+  static Future<http.Response> put(String url, Map<String, dynamic> body) async {
+    final response = await http.put(
       Uri.parse(applyToUrl(url)),
       headers: jsonHeaders,
       body: jsonEncode(applyToBody(body)),
     );
+    _handleUnauthorized(response);
+    return response;
   }
 
-  static Future<http.Response> post(String url, Map<String, dynamic> body) {
-    return http.post(
+  static Future<http.Response> post(String url, Map<String, dynamic> body) async {
+    final response = await http.post(
       Uri.parse(applyToUrl(url)),
       headers: jsonHeaders,
       body: jsonEncode(applyToBody(body)),
     );
+    _handleUnauthorized(response);
+    return response;
   }
 
-  static Future<http.Response> delete(String url) {
-    return http.delete(
+  static Future<http.Response> delete(String url) async {
+    final response = await http.delete(
       Uri.parse(applyToUrl(url)),
       headers: jsonHeaders,
     );
+    _handleUnauthorized(response);
+    return response;
   }
 
   /// Envia um arquivo via multipart/form-data com headers de autenticação.
