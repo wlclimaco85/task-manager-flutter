@@ -6,6 +6,7 @@ import 'dart:math' as math;
 import 'dart:ui' show PlatformDispatcher;
 
 import 'package:flutter/foundation.dart' show kIsWeb, defaultTargetPlatform, TargetPlatform;
+import 'package:flutter/gestures.dart' show GestureBinding;
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:hive_flutter/hive_flutter.dart';
@@ -32,6 +33,20 @@ void main() {
   runZonedGuarded(() async {
     WidgetsFlutterBinding.ensureInitialized();
     _log('WidgetsFlutterBinding pronto');
+
+    // Desliga o resampling de eventos de ponteiro (Flutter guarda amostras e
+    // as reproduz num callback do scheduler para suavizar toques). O crash
+    // reportado pelo cliente ("Null check operator... gestures library...
+    // while handling a pointer data packet" e, no mesmo main.dart.js, a
+    // MESMA funcao interna disparada via "scheduler library... during a
+    // scheduler callback") bate exatamente com esse mecanismo: e reproduzido
+    // tanto direto no roteamento do ponteiro quanto num callback do
+    // scheduler, que e como o resampler funciona por dentro. Desabilitar
+    // troca suavizacao de toque por robustez -- sem perda perceptivel de UX
+    // num app de formulario/grid (nao ha animacao de arrastar dependente
+    // disso).
+    GestureBinding.instance.resamplingEnabled = false;
+    _log('resamplingEnabled = false');
 
     // Terceira camada de captura (faltava): erros que vem do engine/platform
     // channel -- ex.: falhas no roteamento de ponteiro/gesto reportadas pelo
