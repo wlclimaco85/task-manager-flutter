@@ -125,7 +125,11 @@ class _AppSidebarState extends State<AppSidebar> {
   }
 
   void _computeAllowed() {
-    final allMenuIds = MenuConfig.allItems.map((m) => m.id).toSet();
+    // Converte ids dos itens de menu (snake_case) para camelCase para corresponder
+    // aos nomes de telas do SecurityMatrix
+    final allMenuIds = MenuConfig.allItems
+        .map((m) => StringUtils.snakeToCamelCase(m.id))
+        .toSet();
     _allowedIds = SecurityMatrix.current().allowedTelaIds(allMenuIds);
   }
 
