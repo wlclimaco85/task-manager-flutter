@@ -386,6 +386,11 @@ class FieldFactory {
     required Map<String, List<PlatformFile>> fileCache,
     required Map<String, List<Map<String, dynamic>>> dropdownCache,
     dynamic item,
+
+    /// Fix (card #458): chamado apos selecionar/remover arquivo em campos
+    /// FieldType.file, para forcar o rebuild do dialog (ver showDialog em
+    /// _showFormDialog/StatefulBuilder).
+    VoidCallback? onFileChanged,
   }) {
     if (item == null &&
         config.fieldType == FieldType.dropdown &&
@@ -400,6 +405,7 @@ class FieldFactory {
       context,
       fileCache,
       dropdownCache,
+      onFileChanged: onFileChanged,
     );
 
     return AbsorbPointer(
@@ -413,8 +419,9 @@ class FieldFactory {
     TextEditingController controller,
     BuildContext context,
     Map<String, List<PlatformFile>> fileCache,
-    Map<String, List<Map<String, dynamic>>> dropdownCache,
-  ) {
+    Map<String, List<Map<String, dynamic>>> dropdownCache, {
+    VoidCallback? onFileChanged,
+  }) {
     switch (config.fieldType) {
       case FieldType.number:
         return _buildNumberField(config, controller);
@@ -435,7 +442,8 @@ class FieldFactory {
       case FieldType.dropdown:
         return _buildDropdownField(config, controller, dropdownCache);
       case FieldType.file:
-        return _buildFileField(config, controller, fileCache, context);
+        return _buildFileField(config, controller, fileCache, context,
+            onFileChanged: onFileChanged);
       case FieldType.boolean:
         return _buildBooleanField(config, controller);
       default:
@@ -727,8 +735,9 @@ class FieldFactory {
     FieldConfig config,
     TextEditingController controller,
     Map<String, List<PlatformFile>> fileCache,
-    BuildContext context,
-  ) {
+    BuildContext context, {
+    VoidCallback? onFileChanged,
+  }) {
     final fileConfig = config.fileConfig ?? const FileConfig();
     final currentFiles = fileCache[config.fieldName] ?? [];
 
@@ -745,12 +754,14 @@ class FieldFactory {
                 onPressed: () {
                   fileCache[config.fieldName]?.remove(file);
                   controller.text = '';
+                  onFileChanged?.call();
                 },
               ),
             ),
           ),
         ElevatedButton.icon(
-          onPressed: () => _selectFiles(config, controller, fileCache, context),
+          onPressed: () =>
+              _selectFiles(config, controller, fileCache, context, onFileChanged),
           icon: const Icon(Icons.attach_file),
           label: Text(
             currentFiles.isEmpty
@@ -781,8 +792,9 @@ class FieldFactory {
     FieldConfig config,
     TextEditingController controller,
     Map<String, List<PlatformFile>> fileCache,
-    BuildContext context,
-  ) async {
+    BuildContext context, [
+    VoidCallback? onFileChanged,
+  ]) async {
     final fileConfig = config.fileConfig ?? const FileConfig();
 
     try {
@@ -795,6 +807,7 @@ class FieldFactory {
       if (result != null && result.files.isNotEmpty) {
         fileCache[config.fieldName] = result.files;
         controller.text = result.files.map((f) => f.name).join(', ');
+        onFileChanged?.call();
       }
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -1298,9 +1311,19 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
       controllers[config.fieldName] = TextEditingController(text: initialValue);
     }
 
+    // Fix (card #458): sem StatefulBuilder, o Dialog retornado por
+    // _buildForm() e construido UMA UNICA VEZ quando o showDialog abre --
+    // mutar fileCache (campo da tela por tras do dialog) depois disso nao
+    // reconstroi o dialog, entao o arquivo selecionado nunca aparecia na
+    // tela mesmo com o picker retornando com sucesso. setDialogState()
+    // e passado adiante ate _selectFiles() para forcar o rebuild do
+    // dialog especificamente apos a selecao/remocao de arquivo.
     showDialog(
       context: context,
-      builder: (ctx) => _buildForm(ctx, item, controllers),
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setDialogState) =>
+            _buildForm(ctx, item, controllers, setDialogState),
+      ),
     );
   }
 
@@ -1308,6 +1331,7 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
     BuildContext context,
     T? item,
     Map<String, TextEditingController> controllers,
+    StateSetter setDialogState,
   ) {
     return Dialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6.0)),
@@ -1390,6 +1414,7 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
                           fileCache: _fileCache,
                           dropdownCache: _dropdownCache,
                           item: item,
+                          onFileChanged: () => setDialogState(() {}),
                         ),
                       );
                     }),

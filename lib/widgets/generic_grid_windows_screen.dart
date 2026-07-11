@@ -456,6 +456,11 @@ class FieldFactory {
 
     /// Mapa de todos os controllers do formulário — necessário para cascading.
     Map<String, TextEditingController>? allControllers,
+
+    /// Fix (card #458): chamado apos selecionar/remover arquivo em campos
+    /// FieldType.file, para forcar o rebuild do dialog (ver showDialog em
+    /// _showFormDialog/StatefulBuilder).
+    VoidCallback? onFileChanged,
   }) {
     if (item == null &&
         config.fieldType == FieldType.dropdown &&
@@ -471,6 +476,7 @@ class FieldFactory {
       fileCache,
       dropdownCache,
       allControllers: allControllers,
+      onFileChanged: onFileChanged,
     );
 
     // Boolean fields are always interactive — never absorb pointer
@@ -490,6 +496,7 @@ class FieldFactory {
     Map<String, List<PlatformFile>> fileCache,
     Map<String, List<Map<String, dynamic>>> dropdownCache, {
     Map<String, TextEditingController>? allControllers,
+    VoidCallback? onFileChanged,
   }) {
     switch (config.fieldType) {
       case FieldType.number:
@@ -520,7 +527,8 @@ class FieldFactory {
         return _buildDropdownField(config, controller, dropdownCache,
             dependsOnController: dependsOnCtrl);
       case FieldType.file:
-        return _buildFileField(config, controller, fileCache, context);
+        return _buildFileField(config, controller, fileCache, context,
+            onFileChanged: onFileChanged);
       case FieldType.boolean:
         return _buildBooleanField(config, controller);
       case FieldType.currency:
@@ -931,8 +939,9 @@ class FieldFactory {
     FieldConfigWindows config,
     TextEditingController controller,
     Map<String, List<PlatformFile>> fileCache,
-    BuildContext context,
-  ) {
+    BuildContext context, {
+    VoidCallback? onFileChanged,
+  }) {
     final fileConfig = config.fileConfig ?? const FileConfig();
     final currentFiles = fileCache[config.fieldName] ?? [];
 
@@ -949,12 +958,14 @@ class FieldFactory {
                 onPressed: () {
                   fileCache[config.fieldName]?.remove(file);
                   controller.text = '';
+                  onFileChanged?.call();
                 },
               ),
             ),
           ),
         ElevatedButton.icon(
-          onPressed: () => _selectFiles(config, controller, fileCache, context),
+          onPressed: () =>
+              _selectFiles(config, controller, fileCache, context, onFileChanged),
           icon: const Icon(Icons.attach_file),
           label: Text(
             currentFiles.isEmpty
@@ -985,8 +996,9 @@ class FieldFactory {
     FieldConfigWindows config,
     TextEditingController controller,
     Map<String, List<PlatformFile>> fileCache,
-    BuildContext context,
-  ) async {
+    BuildContext context, [
+    VoidCallback? onFileChanged,
+  ]) async {
     final fileConfig = config.fileConfig ?? const FileConfig();
 
     try {
@@ -1000,6 +1012,7 @@ class FieldFactory {
       if (result != null && result.files.isNotEmpty) {
         fileCache[config.fieldName] = result.files;
         controller.text = result.files.map((f) => f.name).join(', ');
+        onFileChanged?.call();
       }
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -2214,9 +2227,19 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
       }
     }
 
+    // Fix (card #458): sem StatefulBuilder, o Dialog retornado por
+    // _buildForm() e construido UMA UNICA VEZ quando o showDialog abre --
+    // mutar _fileCache (campo da tela por tras do dialog) depois disso nao
+    // reconstroi o dialog, entao o arquivo selecionado nunca aparecia na
+    // tela mesmo com o picker retornando com sucesso. setDialogState()
+    // e passado adiante ate _selectFiles() para forcar o rebuild do
+    // dialog especificamente apos a selecao/remocao de arquivo.
     showDialog(
       context: context,
-      builder: (ctx) => _buildForm(ctx, item, controllers, preFilledFields),
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setDialogState) =>
+            _buildForm(ctx, item, controllers, preFilledFields, setDialogState),
+      ),
     );
   }
 
@@ -2225,6 +2248,7 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
     T? item,
     Map<String, TextEditingController> controllers,
     Set<String> preFilledFields,
+    StateSetter setDialogState,
   ) {
     final preFilledFields0 = preFilledFields;
 
@@ -2388,6 +2412,7 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
                     dropdownCache: _dropdownCache,
                     item: item,
                     allControllers: controllers,
+                    onFileChanged: () => setDialogState(() {}),
                   ),
                 );
 
