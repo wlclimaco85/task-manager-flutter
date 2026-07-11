@@ -17,6 +17,7 @@ import '../../../utils/grid_colors.dart';
 import '../../../utils/tenant_context.dart';
 import '../../../widgets/chat/anexo_preview_dialog.dart';
 import '../../../widgets/chat/chat_support_ui.dart';
+import '../../../widgets/chat/chat_transfer_dialog.dart';
 import '../../../widgets/chat/finalizar_atendimento_dialog.dart';
 import '../../services/ai_assistant_service.dart';
 import '../../services/chat_caller.dart';
@@ -473,6 +474,23 @@ class _ChatMessageScreenState extends State<ChatMessageScreen> {
     );
   }
 
+  // Fase 2 da fila de atendimento (card #448): permite transferir a
+  // conversa para outro funcionario do setor. ChatTransferDialog ja
+  // existia, so faltava a ligacao com a tela real de chat.
+  Future<void> _transferirChat() async {
+    if (_effectiveChatId.isEmpty || _effectiveChatId == '0') {
+      _showSnack('Envie ao menos uma mensagem antes de transferir.', error: true);
+      return;
+    }
+    final transferido = await showDialog<bool>(
+      context: context,
+      builder: (_) => ChatTransferDialog(chatId: _effectiveChatId),
+    );
+    if (transferido == true && mounted) {
+      widget.onFinalized?.call();
+    }
+  }
+
   Future<void> _finalizarChat() async {
     if (_effectiveChatId.isEmpty || _effectiveChatId == '0') {
       _showSnack('Envie ao menos uma mensagem antes de finalizar.', error: true);
@@ -544,6 +562,7 @@ class _ChatMessageScreenState extends State<ChatMessageScreen> {
             userName: _loggedUserEmail,
             compact: true,
             onBack: () => Navigator.pop(context),
+            onTransfer: _transferirChat,
             onFinalize: _finalizarChat,
           ),
           if (_isLoading)

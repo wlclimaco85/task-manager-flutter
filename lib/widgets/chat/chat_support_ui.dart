@@ -258,6 +258,7 @@ class ChatConversationHeader extends StatelessWidget {
   final bool compact;
   final VoidCallback? onBack;
   final VoidCallback? onFinalize;
+  final VoidCallback? onTransfer;
 
   const ChatConversationHeader({
     super.key,
@@ -266,6 +267,7 @@ class ChatConversationHeader extends StatelessWidget {
     this.compact = false,
     this.onBack,
     this.onFinalize,
+    this.onTransfer,
   });
 
   @override
@@ -327,6 +329,15 @@ class ChatConversationHeader extends StatelessWidget {
             ),
           ),
           const ChatStatusPill(status: 'Ativo'),
+          if (onTransfer != null) ...[
+            const SizedBox(width: 8),
+            IconButton(
+              tooltip: 'Transferir chat',
+              onPressed: onTransfer,
+              icon: const Icon(Icons.swap_horiz),
+              color: GridColors.secondary,
+            ),
+          ],
           if (onFinalize != null) ...[
             const SizedBox(width: 8),
             IconButton(
