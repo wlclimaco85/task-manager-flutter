@@ -10,6 +10,7 @@ import 'package:dio/dio.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:http/http.dart' as http;
+import 'package:task_manager_flutter/services/auth_interceptor.dart';
 
 class CheckoutCaller {
   static Future<String> carregarTermos() async {
@@ -77,7 +78,9 @@ class CheckoutCaller {
         PlatformFile file = result.files.first;
         File uploadedFile = File(file.path!);
 
+        // Usa Dio com interceptador de autenticação
         final dio = Dio();
+        dio.interceptors.add(AuthInterceptor());
         final url = ApiLinks.upLoadContrato;
 
         FormData formData = FormData.fromMap({
@@ -89,11 +92,6 @@ class CheckoutCaller {
         await dio.post(
           url,
           data: formData,
-          options: Options(
-            headers: {
-              'Authorization': 'Bearer SEU_TOKEN',
-            },
-          ),
         );
       }
     } catch (_) {}
