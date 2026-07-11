@@ -4,7 +4,6 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:url_launcher/url_launcher.dart';
-import '../utils/web_image_helper.dart';
 
 import '../../mobile/screens/bottom_navbar_screen.dart';
 import '../../windows/screens/bottom_navbar_screen.dart';
@@ -928,16 +927,18 @@ class _MultiUrlImageState extends State<_MultiUrlImage> {
     if (_idx >= widget.urls.length) return widget.placeholder;
     final url = widget.urls[_idx];
 
-    // No web, usa <div> com background-image CSS para evitar CORS
-    if (kIsWeb) {
-      return buildPlatformImage(
-        url: url,
-        placeholder: widget.placeholder,
-        width: double.infinity,
-        height: double.infinity,
-      );
-    }
-
+    // Fix (card #463): antes, no web, isso usava HtmlElementView (<div> com
+    // background-image CSS) para contornar CORS. O proxy do backend
+    // (NoticiasImagemController, primeira URL da cascata em
+    // _buildImageUrls) ja responde com Access-Control-Allow-Origin: *,
+    // entao o workaround de CORS nao e mais necessario. HtmlElementView e
+    // um PlatformView (elemento DOM fora do canvas do Flutter) e essa tela
+    // chega a ter ate 48 instancias simultaneas (uma por card de noticia)
+    // -- roteamento de ponteiro entre o canvas do Flutter e elementos DOM
+    // embutidos e uma causa bem documentada de crashes tipo "Null check
+    // operator... gestures library... while handling a pointer data
+    // packet" no Flutter Web, exatamente o erro reportado em producao.
+    // Usar Image.network em todas as plataformas elimina os PlatformViews.
     return Image.network(
       url,
       key: ValueKey('${url}_$_idx'),
