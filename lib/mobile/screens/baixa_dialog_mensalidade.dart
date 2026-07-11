@@ -20,6 +20,7 @@ class _BaixaDialogMensalidadeState extends State<BaixaDialogMensalidade> {
   final _dataController = TextEditingController();
   bool _isLoading = false;
   String? _erro;
+  bool _disposed = false;
 
   @override
   void initState() {
@@ -38,11 +39,11 @@ class _BaixaDialogMensalidadeState extends State<BaixaDialogMensalidade> {
   Future<void> _confirmarBaixa() async {
     final m = _casted;
     if (m?.id == null) {
-      setState(() => _erro = 'ID da mensalidade não encontrado');
+      if (mounted && !_disposed) setState(() => _erro = 'ID da mensalidade não encontrado');
       return;
     }
 
-    setState(() {
+    if (mounted && !_disposed) setState(() {
       _isLoading = true;
       _erro = null;
     });
@@ -62,22 +63,23 @@ class _BaixaDialogMensalidadeState extends State<BaixaDialogMensalidade> {
 
       final response = await http.post(Uri.parse(url), headers: headers, body: body);
 
-      if (!mounted) return;
+      if (!mounted || _disposed) return;
 
       if (response.statusCode == 200) {
         Navigator.of(context).pop(true);
       } else {
-        setState(() => _erro = 'Erro ao registrar baixa: ${response.statusCode}');
+        if (mounted && !_disposed) setState(() => _erro = 'Erro ao registrar baixa: ${response.statusCode}');
       }
     } catch (e) {
-      if (mounted) setState(() => _erro = 'Erro: $e');
+      if (mounted && !_disposed) setState(() => _erro = 'Erro: $e');
     } finally {
-      if (mounted) setState(() => _isLoading = false);
+      if (mounted && !_disposed) setState(() => _isLoading = false);
     }
   }
 
   @override
   void dispose() {
+    _disposed = true;
     _dataController.dispose();
     super.dispose();
   }
@@ -86,7 +88,7 @@ class _BaixaDialogMensalidadeState extends State<BaixaDialogMensalidade> {
   Widget build(BuildContext context) {
     final m = _casted;
     return AlertDialog(
-      title: const Text('Confirmar Baixa'),
+      title: const Text('Registrar Baixa de Mensalidade'),
       content: SingleChildScrollView(
         child: Column(
           mainAxisSize: MainAxisSize.min,

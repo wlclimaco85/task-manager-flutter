@@ -59,6 +59,7 @@ Future<String> loginAndGetToken() async {
   _cachedToken = decoded['token'] ??
       decoded['access_token'] ??
       decoded['data']?['token'] ??
+      decoded['data']?['access_token'] ??
       decoded['login']?['token'];
 
   expect(_cachedToken, isNotNull,

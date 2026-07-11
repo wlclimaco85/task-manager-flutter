@@ -4,6 +4,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:task_manager_flutter/models/auth_utility.dart';
 import 'package:task_manager_flutter/models/login_model.dart';
 import 'package:task_manager_flutter/utils/menu_config.dart';
+import 'package:task_manager_flutter/utils/string_utils.dart';
 import 'package:task_manager_flutter/widgets/app_sidebar.dart';
 
 void main() {
@@ -46,13 +47,17 @@ void main() {
           tipoLogin: LoginEnum.APP_ABRACO,
         ),
         permissoes: ids
-            .map((id) => RolePermissaoItem(
-                  telaNome: id,
-                  podeVer: true,
-                  podeInserir: false,
-                  podeEditar: false,
-                  podeDeletar: false,
-                ))
+            .map((id) {
+              // Converter snake_case para camelCase para corresponder aos AppScreen names
+              final camelCase = StringUtils.snakeToCamelCase(id);
+              return RolePermissaoItem(
+                telaNome: camelCase,
+                podeVer: true,
+                podeInserir: false,
+                podeEditar: false,
+                podeDeletar: false,
+              );
+            })
             .toList(),
       );
     }

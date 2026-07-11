@@ -53,6 +53,7 @@ class _ChatMessageScreenState extends State<ChatMessageScreen> {
   int _retryCount = 0;
   static const int _maxRetries = 10;
   bool _initDone = false;
+  bool _disposed = false;
 
   // Fix card #430: widget.chatId chega como '0' (placeholder) quando o chat
   // e novo; o backend so atribui o id real na primeira mensagem, que volta
@@ -87,12 +88,12 @@ class _ChatMessageScreenState extends State<ChatMessageScreen> {
         realId.isNotEmpty &&
         realId != '0' &&
         realId != _effectiveChatId) {
-      setState(() => _effectiveChatId = realId);
+      if (mounted && !_disposed) setState(() => _effectiveChatId = realId);
     }
   }
 
   void _connectWebSocket() {
-    if (!mounted || _retryCount >= _maxRetries) return;
+    if (!mounted || _retryCount >= _maxRetries || _disposed) return;
     try {
       _channel?.sink.close();
       _channel = IOWebSocketChannel.connect(
@@ -100,7 +101,7 @@ class _ChatMessageScreenState extends State<ChatMessageScreen> {
             ApiLinks.chatStart(_loggedUserEmail, widget.sector)),
       );
       _retryCount = 0;
-      setState(() => _wsConnected = true);
+      if (mounted && !_disposed) setState(() => _wsConnected = true);
 
       _channel!.stream.listen(
         (message) {
@@ -109,38 +110,38 @@ class _ChatMessageScreenState extends State<ChatMessageScreen> {
             final msg = ChatMessage.fromJson(decoded);
             _adoptRealChatIdIfNeeded(msg);
             if (!_isDuplicate(msg)) {
-              setState(() => _messages.add(msg));
+              if (mounted && !_disposed) setState(() => _messages.add(msg));
             }
             _scrollToBottom();
           } catch (_) {}
         },
         onError: (error) {
-          setState(() => _wsConnected = false);
+          if (mounted && !_disposed) setState(() => _wsConnected = false);
           _scheduleReconnect();
         },
         onDone: () {
-          setState(() => _wsConnected = false);
+          if (mounted && !_disposed) setState(() => _wsConnected = false);
           _scheduleReconnect();
         },
       );
     } catch (_) {
-      setState(() => _wsConnected = false);
+      if (mounted && !_disposed) setState(() => _wsConnected = false);
       _scheduleReconnect();
     }
   }
 
   void _scheduleReconnect() {
     _retryCount++;
-    if (!mounted || _retryCount >= _maxRetries) return;
+    if (!mounted || _retryCount >= _maxRetries || _disposed) return;
     final delay = Duration(seconds: (_retryCount > 5 ? 30 : 3 * (1 << (_retryCount - 1))).clamp(3, 30));
-    Future.delayed(delay, () { if (mounted) _connectWebSocket(); });
+    Future.delayed(delay, () { if (mounted && !_disposed) _connectWebSocket(); });
   }
 
   Future<void> _loadInitialMessages() async {
-    setState(() => _isLoading = true);
+    if (mounted && !_disposed) setState(() => _isLoading = true);
     try {
       final data = await ChatCaller().fetchChatsById(context, widget.chatId);
-      setState(() {
+      if (mounted && !_disposed) setState(() {
         _messages
           ..clear()
           ..addAll(data.map(_normalizeMessage));
@@ -149,7 +150,7 @@ class _ChatMessageScreenState extends State<ChatMessageScreen> {
     } catch (e) {
       _showSnack('Erro ao carregar mensagens: $e', error: true);
     } finally {
-      if (mounted) setState(() => _isLoading = false);
+      if (mounted && !_disposed) setState(() => _isLoading = false);
     }
   }
 
@@ -335,7 +336,7 @@ class _ChatMessageScreenState extends State<ChatMessageScreen> {
       ),
     );
 
-    if (result == null || _channel == null || !mounted) return;
+    if (result == null || _channel == null || !mounted || _disposed) return;
     try {
       final id = (result as dynamic).id;
       _channel!.sink.add(json.encode({
@@ -376,7 +377,7 @@ class _ChatMessageScreenState extends State<ChatMessageScreen> {
             .where((m) => m.trim().isNotEmpty)
             .toList(),
       );
-      if (!mounted) return;
+      if (!mounted || _disposed) return;
       showDialog<void>(
         context: context,
         builder: (_) => AlertDialog(
@@ -463,7 +464,7 @@ class _ChatMessageScreenState extends State<ChatMessageScreen> {
   }
 
   void _showSnack(String message, {bool error = false}) {
-    if (!mounted) return;
+    if (!mounted || _disposed) return;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         backgroundColor: error ? GridColors.error : GridColors.success,
@@ -486,7 +487,7 @@ class _ChatMessageScreenState extends State<ChatMessageScreen> {
       sectorDescricao: widget.sector,
       historicoConversa: _buildHistoricoChat(),
     );
-    if (resultado == null || !mounted) return;
+    if (resultado == null || !mounted || _disposed) return;
 
     try {
       final url = TenantContext.applyToUrl(
@@ -500,7 +501,7 @@ class _ChatMessageScreenState extends State<ChatMessageScreen> {
         headers: TenantContext.headers,
       );
 
-      if (!mounted) return;
+      if (!mounted || _disposed) return;
 
       if (response.statusCode == 200 || response.statusCode == 204) {
         _showSnack('Atendimento finalizado com sucesso.');
@@ -513,15 +514,21 @@ class _ChatMessageScreenState extends State<ChatMessageScreen> {
         );
       }
     } catch (e) {
-      if (!mounted) return;
+      if (!mounted || _disposed) return;
       _showSnack('Erro ao finalizar atendimento: $e', error: true);
     }
   }
 
   @override
   void dispose() {
+    _disposed = true;
     _scrollController.dispose();
-    _channel?.sink.close();
+    // Fechar o channel de forma segura para evitar setState() apos dispose
+    try {
+      _channel?.sink.close();
+    } catch (_) {
+      // Ignorar erros ao fechar o channel
+    }
     _messageController.dispose();
     super.dispose();
   }

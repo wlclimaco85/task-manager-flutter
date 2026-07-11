@@ -9,7 +9,10 @@ Widget _wrap(Widget w) => MaterialApp(home: Scaffold(body: w));
 void main() {
   group('FilterActionBar', () {
     testWidgets('renderiza com botoes de refresh e filtro', (tester) async {
-      await tester.pumpWidget(_wrap(FilterActionBar(onRefresh: () {})));
+      await tester.pumpWidget(_wrap(FilterActionBar(
+        onRefresh: () {},
+        onFilterToggle: () {},
+      )));
       expect(find.byIcon(Icons.refresh), findsOneWidget);
       expect(find.byIcon(Icons.filter_list), findsOneWidget);
     });

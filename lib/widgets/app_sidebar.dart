@@ -53,6 +53,7 @@ class _AppSidebarState extends State<AppSidebar> {
   Set<String> _favorites = {};
   final Set<String> _expandedGroups = {};
   String _userId = '';
+  bool _disposed = false;
 
   // Permissão: ids de tela liberados. `null` = mostrar tudo (MASTER ou
   // anti-lockout — ver SecurityMatrix.allowedTelaIds).
@@ -78,7 +79,7 @@ class _AppSidebarState extends State<AppSidebar> {
     _applyDefaultExpansion();
     _loadFavorites();
     _searchCtrl.addListener(() {
-      setState(() => _searchQuery = _searchCtrl.text);
+      if (mounted && !_disposed) setState(() => _searchQuery = _searchCtrl.text);
     });
   }
 
@@ -120,6 +121,7 @@ class _AppSidebarState extends State<AppSidebar> {
 
   @override
   void dispose() {
+    _disposed = true;
     _searchCtrl.dispose();
     super.dispose();
   }
@@ -136,12 +138,12 @@ class _AppSidebarState extends State<AppSidebar> {
   Future<void> _loadFavorites() async {
     _userId = AuthUtility.userInfo?.data?.id?.toString() ?? 'guest';
     final favs = await FavoritesService.load(_userId);
-    if (mounted) setState(() => _favorites = favs);
+    if (mounted && !_disposed) setState(() => _favorites = favs);
   }
 
   Future<void> _toggleFavorite(String itemId) async {
     final newState = await FavoritesService.toggle(_userId, itemId);
-    setState(() {
+    if (mounted && !_disposed) setState(() {
       if (newState) {
         _favorites.add(itemId);
       } else {
@@ -151,7 +153,7 @@ class _AppSidebarState extends State<AppSidebar> {
   }
 
   void _toggleGroup(String groupId) {
-    setState(() {
+    if (mounted && !_disposed) setState(() {
       if (_expandedGroups.contains(groupId)) {
         _expandedGroups.remove(groupId);
       } else {

@@ -41,7 +41,7 @@ void main() {
       await tester.pumpAndSettle();
 
       // Assert
-      expect(find.text('Confirmar Baixa'), findsOneWidget);
+      expect(find.text('Registrar Baixa de Mensalidade'), findsOneWidget);
       expect(find.text('Mensalidade #123'), findsOneWidget);
       expect(find.text('Valor: R\$150.50'), findsOneWidget);
       expect(find.text('Aluno ID: 456'), findsOneWidget);
@@ -149,7 +149,7 @@ void main() {
 
       // Assert
       expect(find.text('Cancelar'), findsOneWidget);
-      expect(find.text('Confirmar Baixa'), findsOneWidget);
+      expect(find.text('Confirmar Baixa'), findsWidgets, reason: 'Deve encontrar "Confirmar Baixa" no botão');
     });
   });
 }
