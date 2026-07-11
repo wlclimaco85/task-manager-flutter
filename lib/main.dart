@@ -3,6 +3,7 @@
 // ignore_for_file: avoid_print
 import 'dart:async';
 import 'dart:math' as math;
+import 'dart:ui' show PlatformDispatcher;
 
 import 'package:flutter/foundation.dart' show kIsWeb, defaultTargetPlatform, TargetPlatform;
 import 'package:flutter/material.dart';
@@ -31,6 +32,20 @@ void main() {
   runZonedGuarded(() async {
     WidgetsFlutterBinding.ensureInitialized();
     _log('WidgetsFlutterBinding pronto');
+
+    // Terceira camada de captura (faltava): erros que vem do engine/platform
+    // channel -- ex.: falhas no roteamento de ponteiro/gesto reportadas pelo
+    // GestureBinding ("Null check operator... gestures library... while
+    // handling a pointer data packet") passam por aqui, nao por
+    // FlutterError.onError (erros de build) nem pelo onError do
+    // runZonedGuarded (erros assincronos Dart). Sem essa camada esses erros
+    // ficavam sem handler explicito e podiam propagar como excecao JS nao
+    // tratada ate o `window` do navegador. Retornar true marca como tratado.
+    PlatformDispatcher.instance.onError = (Object error, StackTrace stack) {
+      print('[APP-ERROR] PlatformDispatcher (engine/gestures): $error');
+      print('[APP-ERROR] stack:\n$stack');
+      return true;
+    };
 
     // Erros do framework -> console (com biblioteca/contexto/stack, que apontam o widget).
     FlutterError.onError = (FlutterErrorDetails details) {
