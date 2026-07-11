@@ -657,7 +657,7 @@ class FieldFactory {
       return _buildDropdownContent(
         config: config,
         controller: controller,
-        options: dropdownCache[cacheKey]!,
+        options: dropdownCache[cacheKey] ?? [],
       );
     } else if (config.dropdownFutureBuilder != null) {
       return FutureBuilder<List<Map<String, dynamic>>>(
