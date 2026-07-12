@@ -112,6 +112,14 @@ class ChamadoCaller {
     return response.isSuccess;
   }
 
+  // 🔹 Registrar anexo/comprovante na timeline do chamado (card #468)
+  Future<bool> registrarAnexoChamado(int id, int usuarioId, String nomeArquivo) async {
+    final response = await NetworkCaller().postRequest(
+        "${ApiLinks.workflowChamados}/$id/anexo?usuarioId=$usuarioId&nomeArquivo=${Uri.encodeQueryComponent(nomeArquivo)}",
+        {});
+    return response.isSuccess;
+  }
+
   // 🔹 Notificar toda a empresa sobre o chamado (card #451)
   Future<bool> notificarEmpresaChamado(int id, int usuarioId) async {
     final response = await NetworkCaller().postRequest(

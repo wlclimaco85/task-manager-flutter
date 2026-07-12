@@ -263,6 +263,14 @@ class _ChamadoDetalheScreenState extends State<ChamadoDetalheScreen> {
             lancamentoId: _chamado.id!,
             lancamentoTipo: 'CHAMADO',
             empresaId: _chamado.empresa.id,
+            // Fix (card #468): anexo era salvo mas nunca aparecia na
+            // timeline "Histórico e comentários" -- registra o evento no
+            // backend e recarrega o histórico assim que o upload confirma.
+            onAnexoSalvo: (nomeArquivo) async {
+              await _caller.registrarAnexoChamado(
+                  _chamado.id!, _usuarioId, nomeArquivo);
+              await _carregarHistorico();
+            },
           ),
         ),
       ),
@@ -319,6 +327,8 @@ class _ChamadoDetalheScreenState extends State<ChamadoDetalheScreen> {
       case 'NOTIFICACAO_EMPRESA':
       case 'NOTIFICAÇÃO_EMPRESA':
         return (icone: Icons.mail_outline, cor: GridColors.info);
+      case 'ANEXO':
+        return (icone: Icons.attach_file, cor: GridColors.secondary);
       default:
         return (icone: Icons.history, cor: GridColors.neutral);
     }

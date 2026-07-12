@@ -28,11 +28,19 @@ class AnexoFinanceiroWidget extends StatefulWidget {
   /// retorna 500. Passe sempre que souber (ex.: conta.empresa.id).
   final int? empresaId;
 
+  /// Fix (card #468): callback opcional, disparado após upload confirmado
+  /// com o nome do arquivo. Usado por telas que precisam refletir o anexo
+  /// em algo além da lista de comprovantes (ex.: chamado_detalhe_screen.dart
+  /// registra o evento na timeline "Histórico e comentários", que antes
+  /// nunca sabia que um anexo tinha sido adicionado).
+  final void Function(String nomeArquivo)? onAnexoSalvo;
+
   const AnexoFinanceiroWidget({
     super.key,
     required this.lancamentoId,
     required this.lancamentoTipo,
     this.empresaId,
+    this.onAnexoSalvo,
   });
 
   @override
@@ -96,6 +104,7 @@ class _AnexoFinanceiroWidgetState extends State<AnexoFinanceiroWidget> {
           widget.lancamentoId, widget.lancamentoTipo, arquivo, empresaId: widget.empresaId);
       setState(() => _anexos.add(novo));
       _snackbar('Comprovante anexado com sucesso', sucesso: true);
+      widget.onAnexoSalvo?.call(arquivo.name);
     } catch (e) {
       setState(() => _erro = e.toString());
       _snackbar('Erro ao enviar: $e', sucesso: false);
