@@ -21,6 +21,11 @@ class WebMensalidadeGridScreen extends StatelessWidget {
     return WebContaReceberGridScreen(
       hasPermission: hasPermission,
       categoriaFinanceiraIdFixa: categoriaFinanceiraMensalidade,
+      // Fix card #470: rótulo "Conta Receber" era exibido mesmo dentro da
+      // tela Mensalidades (mesmo widget reaproveitado, filtrado por
+      // categoria) -- confuso para o usuário, que via "Conta Receber" no
+      // cabeçalho ao entrar pelo menu Mensalidades.
+      tituloOverride: 'Mensalidades',
     );
   }
 }

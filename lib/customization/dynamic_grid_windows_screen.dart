@@ -44,6 +44,12 @@ class DynamicGridWindowsScreen<T> extends StatefulWidget {
   final String? updateEndpointOverride;
   final String? deleteEndpointOverride;
   final List<Widget>? headerActions;
+  // Fix card #470: permite exibir um titulo diferente do gerado
+  // automaticamente a partir de telaNome (ex.: "conta_receber" -> "Conta
+  // Receber"), sem duplicar toda a config de tela. Usado pela tela
+  // Mensalidades, que reaproveita telaNome='conta_receber' filtrado por
+  // categoria financeira mas precisa exibir "Mensalidades" no cabeçalho.
+  final String? tituloOverride;
   final void Function()? onAfterCreate;
   final Future<void> Function(Map<String, dynamic> formData, T? item)?
       onAfterSave;
@@ -72,6 +78,7 @@ class DynamicGridWindowsScreen<T> extends StatefulWidget {
     this.updateEndpointOverride,
     this.deleteEndpointOverride,
     this.headerActions,
+    this.tituloOverride,
     this.onAfterCreate,
     this.onAfterSave,
     this.onSelectedRowsChanged,
@@ -474,7 +481,7 @@ class _DynamicGridWindowsScreenState<T>
         final fields = _convert(tela.fields);
 
         return GenericGridScreen<T>(
-          title: tela.titulo,
+          title: widget.tituloOverride ?? tela.titulo,
           fetchEndpoint: widget.fetchEndpointOverride ??
               (ApiLinks.baseUrl + tela.fetchEndpoint),
           createEndpoint: widget.createEndpointOverride ??

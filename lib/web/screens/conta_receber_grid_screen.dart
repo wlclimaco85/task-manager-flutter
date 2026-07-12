@@ -9,6 +9,7 @@ import '../../../utils/api_links.dart';
 import '../../../utils/grid_colors.dart';
 import '../../../utils/tenant_context.dart';
 import '../../../widgets/finance/billing_charge_dialog.dart';
+import '../../../widgets/boleto_importacao_lote_screen.dart';
 import '../../../widgets/generic_grid_windows_screen.dart' show CustomAction, FieldConfigWindows, FieldType;
 import '../../../web/screens/baixa_dialog_receber.dart';
 import '../../../web/dialogs/baixa_lote_dialog.dart';
@@ -31,10 +32,15 @@ class WebContaReceberGridScreen extends StatefulWidget {
   // reaproveitando toda a infraestrutura existente (listagem, dar baixa,
   // anexos) em vez de duplicar uma tela nova do zero.
   final int? categoriaFinanceiraIdFixa;
+  // Fix card #470: titulo do cabeçalho vem do backend a partir de telaNome
+  // ("conta_receber" -> "Conta Receber"), mas a tela Mensalidades reaproveita
+  // essa mesma grid filtrada e precisa exibir "Mensalidades".
+  final String? tituloOverride;
   const WebContaReceberGridScreen({
     super.key,
     required this.hasPermission,
     this.categoriaFinanceiraIdFixa,
+    this.tituloOverride,
   });
 
   @override
@@ -298,6 +304,7 @@ class _WebContaReceberGridScreenState extends State<WebContaReceberGridScreen> {
           child: DynamicGridWindowsScreen<Map<String, dynamic>>(
             key: _gridKey,
             telaNome: 'conta_receber',
+            tituloOverride: widget.tituloOverride,
             hasPermission: widget.hasPermission,
             fromJson: (json) => json,
             toJson: (a) => a,
@@ -441,6 +448,12 @@ class _WebContaReceberGridScreenState extends State<WebContaReceberGridScreen> {
                   fieldOrder: 58),
             ],
             headerActions: [
+              // Fix card #470: este botão importava arquivo de retorno
+              // bancário (CSV/REM/RET/TXT via /api/importacao/conta-receber),
+              // mas estava rotulado "Importar Boleto" -- confundia com
+              // importação de PDF de boleto (fluxo diferente, ver botão
+              // "Importar Boletos (PDF)" abaixo). Renomeado para refletir o
+              // que ele de fato faz.
               OutlinedButton.icon(
                 onPressed: _importing ? null : _importarBoleto,
                 icon: _importing
@@ -450,9 +463,52 @@ class _WebContaReceberGridScreenState extends State<WebContaReceberGridScreen> {
                         child: CircularProgressIndicator(strokeWidth: 2, color: GridColors.secondary),
                       )
                     : const Icon(Icons.upload_file, size: 18),
-                label: const Text('Importar Boleto'),
+                label: const Text('Importar Retorno CSV'),
                 style: OutlinedButton.styleFrom(
                   foregroundColor: GridColors.secondary,
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                  side: const BorderSide(color: GridColors.divider),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
+                ),
+              ),
+              // Fix card #470: import multi-arquivo de boletos PDF com
+              // leitura automática (CNPJ/valor/vencimento) e preview antes de
+              // confirmar -- reaproveita a tela BoletoImportacaoLoteScreen já
+              // existente (antes só acessível pelo menu "Importação Boletos
+              // Lote"), agora também disponível direto na tela de Mensalidades.
+              OutlinedButton.icon(
+                onPressed: () async {
+                  await showDialog<void>(
+                    context: context,
+                    builder: (dialogContext) => Dialog(
+                      child: ConstrainedBox(
+                        constraints: const BoxConstraints(maxWidth: 900, maxHeight: 700),
+                        child: Stack(
+                          children: [
+                            const BoletoImportacaoLoteScreen(),
+                            Positioned(
+                              top: 4,
+                              right: 4,
+                              child: IconButton(
+                                icon: const Icon(Icons.close),
+                                tooltip: 'Fechar',
+                                onPressed: () => Navigator.of(dialogContext).pop(),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  );
+                  // Recarrega a grid ao fechar o dialog -- barato mesmo se
+                  // nada foi confirmado, e garante que mensalidades recem
+                  // criadas apareçam sem precisar de refresh manual.
+                  if (mounted) setState(() => _gridKey = UniqueKey());
+                },
+                icon: const Icon(Icons.picture_as_pdf, size: 18),
+                label: const Text('Importar Boletos (PDF)'),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: GridColors.primary,
                   padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                   side: const BorderSide(color: GridColors.divider),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
