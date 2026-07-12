@@ -91,7 +91,11 @@ class _WindowsChatListScreenState extends State<WindowsChatListScreen> {
                       DateTime.now(),
               // Fix card #444: status real vindo do backend (agrupado por
               // chatId), antes hardcoded 'Ativo' para toda conversa.
-              status: (msg.status ?? '').toLowerCase().startsWith('final')
+              // Fix card #469: backend usa o enum FECHADO (nao "Finalizado")
+              // para marcar conversa encerrada -- startsWith('final') nunca
+              // batia com nenhum valor real, entao a conversa nunca saia de
+              // "Abertos" mesmo apos finalizar com sucesso.
+              status: (msg.status ?? '').toUpperCase() == 'FECHADO'
                   ? 'Finalizado'
                   : 'Ativo',
             ),
