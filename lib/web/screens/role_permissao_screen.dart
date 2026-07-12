@@ -37,6 +37,19 @@ String toBackendTelaNome(String menuItemId) {
   return buffer.toString();
 }
 
+// Fix (card #471): confirmado via consulta direta ao banco de dev que
+// role_permissao.tela_nome NÃO segue uma convenção única -- registros
+// diferentes usam snake_case ('nfe_entrada', 'equipamento') e camelCase
+// ('nfeEntrada', 'contasBancarias') dependendo de quando/como foram
+// gravados (seeds diferentes ao longo do tempo). O match exato contra
+// toBackendTelaNome() (sempre camelCase) por isso perdia registros
+// snake_case legados -- a tela aparecia desmarcada mesmo quando a
+// permissão já existia no banco. Normalizando (lowercase + remove "_")
+// dos dois lados, o match funciona independente de qual convenção o
+// registro específico usa.
+String _normalizeTelaNome(String s) =>
+    s.toLowerCase().replaceAll('_', '');
+
 class RolePermissaoScreen extends StatefulWidget {
   const RolePermissaoScreen({super.key});
 
@@ -168,8 +181,11 @@ class _RolePermissaoScreenState extends State<RolePermissaoScreen> {
 
   RolePermissao _permissaoDe(MenuItem t) {
     final telaNome = toBackendTelaNome(t.id);
+    final telaNomeNormalizado = _normalizeTelaNome(t.id);
     return _permissoes.firstWhere(
-      (p) => p.roleId == _roleId && p.telaNome == telaNome,
+      (p) =>
+          p.roleId == _roleId &&
+          _normalizeTelaNome(p.telaNome) == telaNomeNormalizado,
       orElse: () => RolePermissao(
         id: 0,
         roleId: _roleId!,
