@@ -98,6 +98,17 @@ class _KanbanChatScreenState extends State<KanbanChatScreen> {
     _carregar();
   }
 
+  // Fix (card #475): endpoint GET /api/chat/kanban sempre retornou uma
+  // lista PLANA de itens (GenericResponseDTO<List<ChatKanbanItemDTO>> ->
+  // {"data": {"dados": [...], "totalElements": N}}), nunca o Map aninhado
+  // (setor -> status -> lista) que esta tela sempre esperou. O parsing
+  // antigo checava `data is Map` -- {dados, totalElements} É um Map, então
+  // passava pelo `if`, mas tratava "dados"/"totalElements" como se fossem
+  // nomes de setor, e o valor de "dados" (uma List) falhava no `is Map`
+  // interno, então nenhum chat era agrupado -- o kanban sempre ficava
+  // populado só com setores fantasma vazios, e a tela mostrava
+  // "Nenhum chat encontrado". Corrigido para ler `data['dados']` como a
+  // lista plana real e agrupar por setor/status aqui no frontend.
   Future<void> _carregar() async {
     setState(() {
       _loading = true;
@@ -107,32 +118,28 @@ class _KanbanChatScreenState extends State<KanbanChatScreen> {
       final resp = await TenantContext.get('${ApiLinks.baseUrl}/api/chat/kanban');
       if (resp.statusCode == 200) {
         final body = jsonDecode(resp.body);
-        final data = body['data'] ?? {};
+        final data = body['data'];
+        final erroBackend = body['response']?['error'] == true;
+        if (erroBackend) {
+          setState(() => _erro =
+              body['response']?['message'] ?? 'Erro ao carregar dados do kanban');
+          return;
+        }
+        final List<dynamic> itens =
+            (data is Map ? data['dados'] : null) ?? const [];
 
         final kanban = <String, Map<String, List<ChatMsg>>>{};
-        if (data is Map) {
-          data.forEach((setorKey, setorValue) {
-            final setor = setorKey.toString();
-            kanban[setor] = {};
-
-            if (setorValue is Map) {
-              setorValue.forEach((statusKey, statusList) {
-                final statusName = statusKey.toString();
-                kanban[setor]![statusName] = [];
-
-                if (statusList is List) {
-                  for (final item in statusList) {
-                    if (item is Map) {
-                      try {
-                        kanban[setor]![statusName]!
-                            .add(ChatMsg.fromJson(Map<String, dynamic>.from(item)));
-                      } catch (_) {}
-                    }
-                  }
-                }
-              });
-            }
-          });
+        for (final item in itens) {
+          if (item is! Map) continue;
+          try {
+            final msg = ChatMsg.fromJson(Map<String, dynamic>.from(item));
+            final setor = msg.sector?.trim().isNotEmpty == true
+                ? msg.sector!
+                : 'Sem setor';
+            kanban.putIfAbsent(setor, () => {});
+            kanban[setor]!.putIfAbsent(msg.status.name, () => []);
+            kanban[setor]![msg.status.name]!.add(msg);
+          } catch (_) {}
         }
 
         setState(() => _kanban = kanban);

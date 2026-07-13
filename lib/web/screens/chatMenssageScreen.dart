@@ -310,8 +310,13 @@ class _WebChatMessageScreenState extends State<WebChatMessageScreen> {
         .toList();
   }
 
+  // Fix (card #475): dialog demora (upload de imagens do chat pode levar
+  // vários segundos) -- se o WebSocket cair ou o widget for desmontado
+  // nesse meio tempo, a mensagem de confirmação nunca era enviada e o
+  // usuário não tinha NENHUM aviso, nem no chat nem em outro lugar, de que
+  // o chamado (que já foi criado com sucesso) existia. Agora sempre mostra
+  // um SnackBar de fallback, e a frase no chat ficou mais amigável.
   Future<void> _createTicket() async {
-    if (_channel == null) return;
     final criado = await showDialog(
       context: context,
       builder: (_) => TicketFormDialog(
@@ -322,18 +327,36 @@ class _WebChatMessageScreenState extends State<WebChatMessageScreen> {
     );
     if (criado == null || !mounted) return;
     final id = (criado as dynamic).id;
-    _channel!.sink.add(json.encode({
-      'sender': _loggedUserName,
-      'senderName': _loggedUserName,
-      'senderEmail': _loggedUserEmail,
-      'content': 'Chamado numero $id foi aberto',
-      'sector': widget.sector,
-      'type': 'ticket',
-      'ticketId': id,
-      'timestamp': DateTime.now().toIso8601String(),
-      'chatId': _effectiveChatId,
-      if (TenantContext.empresaId != null) 'empId': TenantContext.empresaId,
-    }));
+    final mensagem =
+        '🎫 Chamado #$id aberto com sucesso! Você será notificado assim que houver andamento.';
+
+    bool enviouNoChat = false;
+    if (_channel != null) {
+      try {
+        _channel!.sink.add(json.encode({
+          'sender': _loggedUserName,
+          'senderName': _loggedUserName,
+          'senderEmail': _loggedUserEmail,
+          'content': mensagem,
+          'sector': widget.sector,
+          'type': 'ticket',
+          'ticketId': id,
+          'timestamp': DateTime.now().toIso8601String(),
+          'chatId': _effectiveChatId,
+          if (TenantContext.empresaId != null) 'empId': TenantContext.empresaId,
+        }));
+        enviouNoChat = true;
+      } catch (e) {
+        L.d('Erro ao enviar confirmação de chamado no chat: $e');
+      }
+    }
+
+    if (!mounted) return;
+    if (!enviouNoChat) {
+      // Fallback: garante que o usuário saiba do número do chamado mesmo se
+      // a conexão de chat tiver caído.
+      _showSnack(mensagem, error: false);
+    }
   }
 
   Future<void> _correctDraft() async {
