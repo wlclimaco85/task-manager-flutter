@@ -18,6 +18,7 @@ import '../../../utils/tenant_context.dart';
 import '../../../widgets/chat/anexo_preview_dialog.dart';
 import '../../../widgets/chat/chat_support_ui.dart';
 import '../../../widgets/chat/chat_transfer_dialog.dart';
+import '../../../widgets/chat/chat_add_participant_dialog.dart';
 import '../../../widgets/chat/finalizar_atendimento_dialog.dart';
 import '../../services/ai_assistant_service.dart';
 import '../../services/chat_caller.dart';
@@ -491,6 +492,18 @@ class _ChatMessageScreenState extends State<ChatMessageScreen> {
     }
   }
 
+  // Card #474 (Fase 3 fila de atendimento).
+  Future<void> _incluirParticipante() async {
+    if (_effectiveChatId.isEmpty || _effectiveChatId == '0') {
+      _showSnack('Envie ao menos uma mensagem antes de incluir participante.', error: true);
+      return;
+    }
+    await showDialog<bool>(
+      context: context,
+      builder: (_) => ChatAddParticipantDialog(chatId: _effectiveChatId),
+    );
+  }
+
   Future<void> _finalizarChat() async {
     if (_effectiveChatId.isEmpty || _effectiveChatId == '0') {
       _showSnack('Envie ao menos uma mensagem antes de finalizar.', error: true);
@@ -568,6 +581,7 @@ class _ChatMessageScreenState extends State<ChatMessageScreen> {
             compact: true,
             onBack: () => Navigator.pop(context),
             onTransfer: _transferirChat,
+            onAddParticipant: _incluirParticipante,
             onFinalize: _finalizarChat,
           ),
           if (_isLoading)

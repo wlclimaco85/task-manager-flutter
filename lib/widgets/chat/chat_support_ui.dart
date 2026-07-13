@@ -259,6 +259,8 @@ class ChatConversationHeader extends StatelessWidget {
   final VoidCallback? onBack;
   final VoidCallback? onFinalize;
   final VoidCallback? onTransfer;
+  // Card #474 (Fase 3 fila de atendimento): inclui participante adicional.
+  final VoidCallback? onAddParticipant;
 
   const ChatConversationHeader({
     super.key,
@@ -268,6 +270,7 @@ class ChatConversationHeader extends StatelessWidget {
     this.onBack,
     this.onFinalize,
     this.onTransfer,
+    this.onAddParticipant,
   });
 
   @override
@@ -335,6 +338,15 @@ class ChatConversationHeader extends StatelessWidget {
               tooltip: 'Transferir chat',
               onPressed: onTransfer,
               icon: const Icon(Icons.swap_horiz),
+              color: GridColors.secondary,
+            ),
+          ],
+          if (onAddParticipant != null) ...[
+            const SizedBox(width: 8),
+            IconButton(
+              tooltip: 'Incluir participante',
+              onPressed: onAddParticipant,
+              icon: const Icon(Icons.person_add_alt),
               color: GridColors.secondary,
             ),
           ],

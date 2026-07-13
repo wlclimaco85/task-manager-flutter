@@ -127,6 +127,24 @@ class ChatCaller {
     return false;
   }
 
+  // ── Incluir participante (card #474, Fase 3) ────────────────────────────
+  Future<bool> incluirParticipante(String chatId, String loginId) async {
+    try {
+      final requerenteId = (AuthUtility.userInfo?.login?.id ??
+              AuthUtility.userInfo?.data?.id)
+          ?.toString() ??
+          '';
+      final url =
+          '${ApiLinks.baseUrl}/api/chat/$chatId/participantes?loginId=$loginId&requerenteId=$requerenteId';
+      final resp = await TenantContext.post(url, {});
+      if (resp.statusCode == 200 || resp.statusCode == 204) return true;
+      L.d('Erro ao incluir participante: ${resp.statusCode}');
+    } catch (e) {
+      L.d('Erro ao incluir participante: $e');
+    }
+    return false;
+  }
+
   // ── Marcar como lido ─────────────────────────────────────────────────────
   Future<bool> marcarComoLido(String chatId) async {
     try {
