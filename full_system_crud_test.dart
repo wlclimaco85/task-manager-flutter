@@ -31,6 +31,7 @@ int? _academiaId; // ID da primeira academia disponível
 int? _parceiroId; // ID do primeiro parceiro disponível
 int? _personalId; // ID do primeiro personal disponível
 int? _nutricionistaId; // ID do primeiro nutricionista disponível
+int? _tipoProdutoId; // ID do primeiro tipo de produto disponível (FK obrigatória de Classificacao)
 
 Map<String, dynamic> _ref(int id) => {'id': id};
 
@@ -325,8 +326,20 @@ void main() {
         );
       }
 
-      print(
-          '✅ Autenticado | empresaId=$_empId | academiaId=$_academiaId | alunoId=$_alunoId | parceiroId=$_parceiroId\n');
+      _tipoProdutoId ??= await _firstId(ApiLinks.allTiposProduto);
+      if (_tipoProdutoId == null) {
+        _tipoProdutoId = await _postFirstId(ApiLinks.createTipoProduto, {
+          'tipo_produto': _uid('TipoProduto'),
+        });
+      }
+      if (_tipoProdutoId == null) {
+        print(
+            '⚠️  _tipoProdutoId não resolvido no bootstrap — cenário "Classificação" '
+            'vai falhar no POST (FK tipo_produto_id obrigatória ficará ausente)');
+      }
+
+      print('✅ Autenticado | empresaId=$_empId | academiaId=$_academiaId | '
+          'alunoId=$_alunoId | parceiroId=$_parceiroId | tipoProdutoId=$_tipoProdutoId\n');
     });
 
     // ─────────────────────────────────────────────────────────────────────
@@ -1039,11 +1052,12 @@ void main() {
           createPayload: () => {
             'nome': _uid('Regime'),
             'descricao': 'Regime tributário de teste',
-            'codigo': 'SN',
+            'codigo': _uid('SN'),
           },
           updatePayload: (id) => {
             'nome': _uid('Regime EDIT'),
-            'codigo': 'SN', // NOT NULL — backend não faz merge, precisa enviar
+            // codigo único — coluna tem UNIQUE constraint e update() não trata duplicidade
+            'codigo': _uid('SN-EDIT'),
           },
         ),
         CrudScenario(
@@ -1190,7 +1204,8 @@ void main() {
             'descricao': 'Banco do Brasil',
             'precoAlvo': 55.00,
           },
-          updatePayload: (id) => {'precoAlvo': 60.00},
+          // assetSymbol (alias 'ticker') é @NotBlank no WatchlistItemRequest
+          updatePayload: (id) => {'ticker': 'BBAS3', 'notes': 'Atualizado'},
         ),
         CrudScenario(
           name: 'Trading Alerta',
@@ -1227,14 +1242,14 @@ void main() {
           updateUrl: (id) => '${ApiLinks.allCrmDeals}/$id',
           deleteUrl: (id) => '${ApiLinks.allCrmDeals}/$id',
           updateMethod: 'PUT',
+          // Campos em inglês — CrmDeal.java usa title/amount/stage, não titulo/valor/estagio
           createPayload: () => {
-            'titulo': _uid('Deal'),
-            'valor': 10000.00,
-            'estagio': 'PROSPECCAO',
-            'probabilidade': 30,
+            'title': _uid('Deal'),
+            'amount': 10000.00,
+            'stage': 'LEAD',
           },
           updatePayload: (id) =>
-              {'titulo': _uid('Deal EDIT'), 'estagio': 'NEGOCIACAO'},
+              {'title': _uid('Deal EDIT'), 'stage': 'NEGOTIATION'},
         ),
         CrudScenario(
           name: 'Contrato Recorrente',
@@ -1243,15 +1258,20 @@ void main() {
           updateUrl: (id) => '${ApiLinks.allRecurringContracts}/$id',
           deleteUrl: (id) => '${ApiLinks.allRecurringContracts}/$id',
           updateMethod: 'PUT',
+          // Campos em inglês — RecurringContract.java usa monthlyValue/nextDueDate/customerName/planName
           createPayload: () => {
-            'descricao': _uid('Contrato'),
-            'valor': 500.00,
-            'periodicidade': 'MENSAL',
-            'dataInicio': _isoDate(),
+            'customerName': _uid('Cliente'),
+            'planName': 'Plano Mensal',
+            'monthlyValue': 500.00,
+            'nextDueDate': _isoDate(),
             'status': 'ATIVO',
           },
-          updatePayload: (id) =>
-              {'descricao': _uid('Contrato EDIT'), 'valor': 550.00},
+          updatePayload: (id) => {
+            'customerName': _uid('Cliente EDIT'),
+            'planName': 'Plano Mensal',
+            'monthlyValue': 550.00,
+            'nextDueDate': _isoDate(),
+          },
         ),
       ];
 
@@ -1306,11 +1326,13 @@ void main() {
           updateUrl: (id) => ApiLinks.updateClassificacao(id),
           deleteUrl: (id) => ApiLinks.deleteClassificacao(id),
           updateMethod: 'PUT',
+          // Classificacao.java só tem tipo_produto_id (NOT NULL) e valores — sem nome/descricao
           createPayload: () => {
-            'nome': _uid('Classificacao'),
-            'descricao': 'Desc classificação',
+            if (_tipoProdutoId != null) 'tipo_produto_id': _tipoProdutoId,
           },
-          updatePayload: (id) => {'nome': _uid('Classificacao EDIT')},
+          updatePayload: (id) => {
+            if (_tipoProdutoId != null) 'tipo_produto_id': _tipoProdutoId,
+          },
         ),
         // noticias_grid_screen
         CrudScenario(
@@ -1499,7 +1521,7 @@ void main() {
         'Dashboard Tickets Trend': ApiLinks.ticketsTrend,
         'Dashboard Financeiro': ApiLinks.dashboardFinanceiro,
         'Fluxo de Caixa': ApiLinks.financeFluxoDiario,
-        'Saldo Contas': ApiLinks.financeFluxoDiarioPdf,
+        'Saldo Contas': ApiLinks.financeFluxoDiarioSaldo,
         'Extrato Operacional': ApiLinks.financeExtratoOperacional,
         'DRE': ApiLinks.dre,
         'DRE Períodos': ApiLinks.drePeriodos,
@@ -1539,7 +1561,6 @@ void main() {
         'Workflow Chamados': ApiLinks.workflowChamados,
         'Chats Usuário': ApiLinks.fecthChats,
         'Academia — Listar': ApiLinks.allAcademia,
-        'Modalidade — Listar': ApiLinks.allModalidade,
       };
 
       getOnlyUrls.forEach((name, url) {
@@ -1554,6 +1575,24 @@ void main() {
             rethrow;
           }
         });
+      });
+
+      // ApiLinks.allModalidade (singular) é POST-only (@PostMapping("/findAll")
+      // com @RequestBody obrigatório no backend) — usado de fato em produção por
+      // custom_selected_padrao.dart via NetworkCaller().postRequest(). Não cabe
+      // no map GET-only acima (checado com http.get e sempre retornava 405).
+      test('POST Modalidade — Listar (findAll)', () async {
+        const name = 'Modalidade — Listar';
+        try {
+          final r = await http.post(Uri.parse(ApiLinks.allModalidade),
+              headers: _h, body: jsonEncode({}));
+          final ok = r.statusCode == 200 || r.statusCode == 204;
+          _log(name, 'POST', ok, ok ? null : '${r.statusCode} ${r.body}');
+          if (!ok) fail('$name → ${r.statusCode}');
+        } catch (e) {
+          _log(name, 'POST', false, e.toString());
+          rethrow;
+        }
       });
     });
 

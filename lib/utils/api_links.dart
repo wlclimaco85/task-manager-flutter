@@ -258,9 +258,9 @@ class ApiLinks {
   static String allSuplementos = '$_baseUrlNew/api/suplementos';
   static String createSuplemento = '$_baseUrlNew/api/suplementos/insert';
   static String updateSuplemento(String id) =>
-      '$_baseUrlNew/api/suplementos/update/$id';
+      '$_baseUrlNew/api/suplementos/$id';
   static String deleteSuplemento(String id) =>
-      '$_baseUrlNew/api/suplementos/delete/$id';
+      '$_baseUrlNew/api/suplementos/$id';
 
   // Suplemento
   static String allAplicativos = '$_baseUrlNew/api/aplicativos';
