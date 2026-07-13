@@ -8,6 +8,9 @@ import '../../services/network_caller.dart';
 import '../../models/network_response.dart';
 import '../../widgets/chamado_detalhe_screen.dart';
 import '../../models/chamado_model.dart' as chamado_model;
+import '../../models/auth_utility.dart';
+import '../../services/chat_caller.dart';
+import 'chatMessageListScreen.dart';
 
 class ChamadosScreenDinamic extends StatefulWidget {
   const ChamadosScreenDinamic({super.key});
@@ -295,7 +298,27 @@ class _ChamadosScreenDinamicState extends State<ChamadosScreenDinamic> {
     final chamadoModel = chamado_model.Chamado.fromJson(chamado.toJson());
     Navigator.of(context).push(
       MaterialPageRoute(
-        builder: (_) => ChamadoDetalheScreen(chamado: chamadoModel),
+        builder: (_) => ChamadoDetalheScreen(
+          chamado: chamadoModel,
+          // Fix (card #473): navega para a tela real de Chat/Atendimento
+          // já com a conversa deste chamado selecionada.
+          onAbrirChat: (context, chamado) {
+            final chatId = buildChamadoChatId(chamado.empresa.id ?? 0,
+                chamado.parceiro!.id ?? 0, chamado.id ?? 0);
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => ChatListScreen(
+                  userName: AuthUtility.userInfo?.login?.email ??
+                      AuthUtility.userInfo?.data?.email ??
+                      '',
+                  initialChatId: chatId,
+                  initialSector: chamado.setor?.nome,
+                ),
+              ),
+            );
+          },
+        ),
       ),
     ).then((_) => _loadChamados());
   }

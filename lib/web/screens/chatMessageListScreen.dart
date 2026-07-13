@@ -13,7 +13,18 @@ import './chatMenssageScreen.dart';
 class WebChatListScreen extends StatefulWidget {
   final String userName;
 
-  const WebChatListScreen({super.key, required this.userName});
+  /// Fix (card #473): quando informado (ex.: navegação a partir da tela de
+  /// detalhe do chamado), abre direto nesta conversa em vez da lista vazia,
+  /// sem precisar passar pelo diálogo de seleção de setor.
+  final String? initialChatId;
+  final String? initialSector;
+
+  const WebChatListScreen({
+    super.key,
+    required this.userName,
+    this.initialChatId,
+    this.initialSector,
+  });
 
   @override
   State<WebChatListScreen> createState() => _WebChatListScreenState();
@@ -60,6 +71,23 @@ class _WebChatListScreenState extends State<WebChatListScreen> {
     setState(() => _isLoading = true);
     try {
       await Future.wait([_loadSetores(), _loadChats()]);
+      // Fix (card #473): se veio de navegação com uma conversa específica
+      // (ex.: botão "Abrir Chat" na tela do chamado), seleciona direto --
+      // não precisa existir na lista ainda (pode ser a primeira mensagem).
+      if (widget.initialChatId != null && mounted) {
+        setState(() {
+          _selectedChat = _chats.firstWhere(
+            (c) => c.chatId == widget.initialChatId,
+            orElse: () => Chat(
+              chatId: widget.initialChatId!,
+              sector: widget.initialSector ?? 'Atendimento',
+              lastMessage: '',
+              timestamp: DateTime.now(),
+              status: 'Ativo',
+            ),
+          );
+        });
+      }
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
@@ -414,8 +442,11 @@ class _WebChatListScreenState extends State<WebChatListScreen> {
                     itemCount: _filteredChats.length,
                     itemBuilder: (context, index) {
                       final chat = _filteredChats[index];
+                      final chamadoId = extrairChamadoIdDoChatId(chat.chatId);
                       return ChatListTileCard(
-                        title: chat.sector,
+                        title: chamadoId != null
+                            ? 'Chamado #$chamadoId · ${chat.sector}'
+                            : chat.sector,
                         subtitle: chat.lastMessage,
                         time: DateFormat('HH:mm').format(chat.timestamp),
                         status: chat.status,

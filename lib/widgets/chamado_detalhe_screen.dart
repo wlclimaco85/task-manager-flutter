@@ -21,7 +21,14 @@ import 'anexo_financeiro_widget.dart';
 class ChamadoDetalheScreen extends StatefulWidget {
   final Chamado chamado;
 
-  const ChamadoDetalheScreen({super.key, required this.chamado});
+  /// Fix (card #473): callback opcional que abre a tela de Chat/Atendimento
+  /// (específica por plataforma) já com a conversa deste chamado
+  /// selecionada. Cada tela de plataforma (web/windows/mobile) que
+  /// instancia ChamadoDetalheScreen fornece sua própria navegação -- este
+  /// widget compartilhado não importa nenhuma tela de chat diretamente.
+  final void Function(BuildContext context, Chamado chamado)? onAbrirChat;
+
+  const ChamadoDetalheScreen({super.key, required this.chamado, this.onAbrirChat});
 
   @override
   State<ChamadoDetalheScreen> createState() => _ChamadoDetalheScreenState();
@@ -359,6 +366,12 @@ class _ChamadoDetalheScreenState extends State<ChamadoDetalheScreen> {
         backgroundColor: GridColors.primary,
         foregroundColor: Colors.white,
         actions: [
+          if (widget.onAbrirChat != null && _chamado.parceiro?.id != null)
+            IconButton(
+              icon: const Icon(Icons.chat_bubble_outline),
+              tooltip: 'Abrir Chat',
+              onPressed: () => widget.onAbrirChat!(context, _chamado),
+            ),
           IconButton(
             icon: const Icon(Icons.attach_file),
             tooltip: 'Anexos',

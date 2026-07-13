@@ -9,6 +9,26 @@ import '../../../utils/tenant_context.dart';
 
 import 'package:task_manager_flutter/utils/app_logger.dart';
 
+/// Fix (card #473): chatId determinístico para a conversa vinculada a um
+/// chamado específico. Distinto do chatId padrão de atendimento
+/// ("empresa-X-parceiro-Y", 1 conversa perene por cliente) -- cada chamado
+/// tem sua própria conversa separada, permitindo exibir o número do
+/// chamado na tela de chat (basta parsear de volta o final da string).
+/// Backend não precisa de nenhuma coluna nova: ChatWebSocketHandler só gera
+/// um chatId novo quando recebe null/vazio/"0" (ver card #430) -- qualquer
+/// outro valor, incluindo este, é usado como está.
+String buildChamadoChatId(int empresaId, int parceiroId, int chamadoId) =>
+    'empresa-$empresaId-parceiro-$parceiroId-chamado-$chamadoId';
+
+/// Extrai o número do chamado de um chatId no formato de [buildChamadoChatId],
+/// ou null se o chatId não seguir esse padrão (conversa comum, não vinculada
+/// a nenhum chamado).
+int? extrairChamadoIdDoChatId(String chatId) {
+  final match = RegExp(r'-chamado-(\d+)$').firstMatch(chatId);
+  if (match == null) return null;
+  return int.tryParse(match.group(1)!);
+}
+
 class ChatCaller {
   Future<List<ChatMessage>> fetchChats(BuildContext context) async {
     List<ChatMessage>? model = [];

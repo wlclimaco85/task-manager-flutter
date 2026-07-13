@@ -506,7 +506,12 @@ class _WebChatMessageScreenState extends State<WebChatMessageScreen> {
     return Column(
       children: [
         ChatConversationHeader(
-          sector: widget.sector,
+          // Fix (card #473): se a conversa foi aberta a partir de um
+          // chamado, o número dele fica embutido no chatId
+          // ("...-chamado-Z") -- extrai e mostra no cabeçalho.
+          sector: extrairChamadoIdDoChatId(_effectiveChatId) != null
+              ? 'Chamado #${extrairChamadoIdDoChatId(_effectiveChatId)} · ${widget.sector}'
+              : widget.sector,
           userName: _loggedUserEmail,
           onTransfer: _transferirChat,
           onFinalize: _finalizarChat,

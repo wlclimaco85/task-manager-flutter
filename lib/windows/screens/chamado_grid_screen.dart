@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
 
 import '../../../customization/dynamic_grid_windows_screen.dart';
+import '../../../models/auth_utility.dart';
 import '../../../models/chamado_model.dart';
+import '../../../services/chat_caller.dart';
 // 🔥 Importa só o CustomAction do grid do Windows
 import '../../../widgets/generic_grid_windows_screen.dart' show CustomAction;
 import '../../../widgets/chamado_detalhe_screen.dart';
+import '../../../windows/screens/chatMessageListScreen.dart';
 import '../../../windows/screens/fechar_chamado_dialog.dart';
 
 class WindowsChamadoGridScreen extends StatelessWidget {
@@ -21,8 +24,27 @@ class WindowsChamadoGridScreen extends StatelessWidget {
       toJson: (a) => a.toJson(),
 
       // Card #451: abre a tela de detalhe/timeline do chamado.
-      detailScreenBuilder: (chamado) =>
-          ChamadoDetalheScreen(chamado: chamado),
+      detailScreenBuilder: (chamado) => ChamadoDetalheScreen(
+        chamado: chamado,
+        // Fix (card #473): navega para a tela real de Chat/Atendimento já
+        // com a conversa deste chamado selecionada.
+        onAbrirChat: (context, chamado) {
+          final chatId = buildChamadoChatId(
+              chamado.empresa.id ?? 0, chamado.parceiro!.id ?? 0, chamado.id ?? 0);
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) => WindowsChatListScreen(
+                userName: AuthUtility.userInfo?.login?.email ??
+                    AuthUtility.userInfo?.data?.email ??
+                    '',
+                initialChatId: chatId,
+                initialSector: chamado.setor?.nome,
+              ),
+            ),
+          );
+        },
+      ),
 
       // 🔥 AQUI entram os botões extras por linha
       customActions: () => [
