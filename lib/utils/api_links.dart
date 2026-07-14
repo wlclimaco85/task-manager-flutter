@@ -21,7 +21,7 @@ class ApiLinks {
   // para evitar recriar a string a cada chamada de chatStart().
   static final String _chatId = '$_wsUrl/boletobancos';
   static const String _baseUrl = 'https://task.teamrabbil.com/api/v1';
-  static const String _baseUrlNew = '$_baseIp/boletobancos';
+  static const String _baseUrlNew = _baseIp;
   static const String allPersonal = '$_baseUrlNew/personal/findAll';
   static const String allAcademia = '$_baseUrlNew/academia/findAll';
   static const String allModalidade = '$_baseUrlNew/modalidade/findAll';
