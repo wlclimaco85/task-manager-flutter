@@ -251,7 +251,7 @@ class _DynamicGridDynamicScreenState extends State<DynamicGridDynamicScreen> {
             fieldName: 'tipoAlvara',
             fieldType: TelaFieldType.dropdown,
             dropdownEndpoint:
-                '/boletobancos/rest/dicionario/listar?tipo=TIPO_ALVARA',
+                '/rest/dicionario/listar?tipo=TIPO_ALVARA',
             dropdownValueField: 'valor',
             dropdownDisplayField: 'descricao',
             fieldOrder: 3,
@@ -268,7 +268,7 @@ class _DynamicGridDynamicScreenState extends State<DynamicGridDynamicScreen> {
             fieldName: 'status',
             fieldType: TelaFieldType.dropdown,
             dropdownEndpoint:
-                '/boletobancos/rest/dicionario/listar?tipo=STATUS_ALVARA',
+                '/rest/dicionario/listar?tipo=STATUS_ALVARA',
             dropdownValueField: 'valor',
             dropdownDisplayField: 'descricao',
             defaultValue: 'Pendente',

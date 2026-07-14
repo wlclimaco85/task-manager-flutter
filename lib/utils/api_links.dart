@@ -9,7 +9,12 @@ class ApiLinks {
     defaultValue: 'http://127.0.0.1:9001',
   );
 
-  static const String _baseIp = _backendUrl;
+  // O backend sempre roda sob o context-path /boletobancos (dev local E
+  // producao Railway — confirmado ao vivo nos dois: sem esse prefixo toda
+  // rota da API responde 404). BACKEND_URL continua sendo so o host:porta
+  // (ver comentario acima) para nao precisar repetir o prefixo em cada
+  // --dart-define; ele e concatenado uma unica vez aqui.
+  static const String _baseIp = '$_backendUrl/boletobancos';
 
   // WebSocket: converte http→ws e https→wss
   static String get _wsUrl => _backendUrl
