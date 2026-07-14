@@ -190,7 +190,8 @@ class _GridListScreenState extends State<GridListScreen> {
     try {
       final prefs = await SharedPreferences.getInstance();
       for (final c in widget.fieldConfigs) {
-        final saved = prefs.getBool('${_prefsKeyBase}_field_${c.fieldName}');
+        // Sincroniza com grid_page.dart: chave sem "_field_" no meio (card #425)
+        final saved = prefs.getBool('$_prefsKeyBase${c.fieldName}');
         if (saved != null) _fieldVisibility[c.fieldName] = saved;
       }
     } catch (e) {
@@ -202,8 +203,9 @@ class _GridListScreenState extends State<GridListScreen> {
     try {
       final prefs = await SharedPreferences.getInstance();
       for (final c in widget.fieldConfigs) {
+        // Sincroniza com grid_page.dart: chave sem "_field_" no meio (card #425)
         await prefs.setBool(
-          '${_prefsKeyBase}_field_${c.fieldName}',
+          '$_prefsKeyBase${c.fieldName}',
           _fieldVisibility[c.fieldName] ?? c.isVisibleByDefault,
         );
       }
