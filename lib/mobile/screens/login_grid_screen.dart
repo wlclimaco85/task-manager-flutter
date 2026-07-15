@@ -243,9 +243,17 @@ class _MobileRoleDialogState extends State<_MobileRoleDialog> {
               itemCount: roles.length,
               itemBuilder: (context, index) {
                 final role = roles[index];
+                // CARD #319: Exibir descrição legível em vez de chave técnica bruta
+                final displayTitle = (role.description != null && role.description!.isNotEmpty)
+                    ? role.description!
+                    : (role.key ?? 'Role #${role.id}');
+                final displaySubtitle = (role.description != null && role.description!.isNotEmpty)
+                    ? role.key ?? ''
+                    : '';
+
                 return CheckboxListTile(
-                  title: Text(role.key ?? 'Role #${role.id}'),
-                  subtitle: Text(role.description ?? ''),
+                  title: Text(displayTitle),
+                  subtitle: displaySubtitle.isNotEmpty ? Text(displaySubtitle) : null,
                   value: _selectedRoleIds.contains(role.id),
                   onChanged: (bool? value) {
                     setState(() {
