@@ -141,6 +141,7 @@ class _PontoScreenState extends State<PontoScreen> {
       backgroundColor: GridColors.background,
       appBar: UserBannerAppBar(
         screenTitle: 'Registro de Ponto',
+        showBackButton: Navigator.canPop(context),
         onRefresh: _carregarPontos,
       ),
       body: RefreshIndicator(

@@ -131,6 +131,7 @@ class _DashboardPageState extends State<DashboardPage> {
         appBar: UserBannerAppBar(
           screenTitle: 'Dashboard',
           showFilterButton: false,
+          showBackButton: Navigator.canPop(context),
           onUserTap: widget.onUserBannerTapped,
         ),
         body: Center(
@@ -157,6 +158,7 @@ class _DashboardPageState extends State<DashboardPage> {
       appBar: UserBannerAppBar(
         screenTitle: 'Dashboard',
         showFilterButton: false,
+        showBackButton: Navigator.canPop(context),
         onUserTap: widget.onUserBannerTapped,
       ),
       body: RefreshIndicator(

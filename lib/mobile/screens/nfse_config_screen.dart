@@ -100,6 +100,7 @@ class _NfseConfigScreenState extends State<NfseConfigScreen> {
     return Scaffold(
       appBar: UserBannerAppBar(
         screenTitle: 'Config ISS - NFS-e',
+        showBackButton: Navigator.canPop(context),
         onRefresh: _carregar,
         isLoading: _carregando,
         actions: [

@@ -142,6 +142,7 @@ class _MobileExtratoImportacaoScreenState
       // Tela sem grid -> sem botao de filtro nem de personalizar colunas.
       appBar: UserBannerAppBar(
         screenTitle: 'Importar Extrato',
+        showBackButton: Navigator.canPop(context),
         onRefresh: _carregarLista,
         isLoading: _carregandoLista,
       ),
