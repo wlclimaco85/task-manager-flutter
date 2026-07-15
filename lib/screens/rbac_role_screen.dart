@@ -4,20 +4,37 @@
 import 'package:flutter/material.dart';
 import '../widgets/rbac_role_checkbox_tile.dart';
 import '../utils/app_logger.dart';
+import '../services/role_caller.dart';
 
 /// Serviço para interagir com backend de RBAC
 class RoleProvisioningService {
+  final RoleCaller _roleCaller = RoleCaller();
+
   /// Buscar roles disponíveis para uma empresa/parceiro
   Future<List<RoleItem>> getAvailableRoles(
       {required int loginId, int? empresaId, int? parceiroId}) async {
     try {
-      L.d('[RBAC] Buscando roles disponíveis para login=$loginId');
-      // TODO: Implementar chamada real ao backend
-      // GET /api/role/disponiveis?empresaId=X&parceiroId=Y
-      return _mockRoles();
+      L.d('[RBAC] Buscando roles disponíveis para login=$loginId, empresaId=$empresaId, parceiroId=$parceiroId');
+
+      // Chamar novo endpoint /api/role/disponiveis
+      final rolesFromBackend = await _roleCaller.getRolesDisponiveis(
+        empresaId: empresaId,
+        parceiroId: parceiroId,
+      );
+
+      // Converter Role model para RoleItem (compatível com UI)
+      return rolesFromBackend
+          .map((role) => RoleItem(
+                roleKey: role.key ?? '',
+                roleLabel: role.description ?? 'Sem descrição',
+                description: '${role.moduloNecessario != null ? 'Módulo: ${role.moduloNecessario}' : 'Sempre disponível'}',
+                isSelected: false,
+              ))
+          .toList();
     } catch (e) {
       L.e('[RBAC] Erro ao buscar roles: $e');
-      return [];
+      // Fallback para mock em erro
+      return _mockRoles();
     }
   }
 
