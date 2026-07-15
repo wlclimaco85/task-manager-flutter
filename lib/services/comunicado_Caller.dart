@@ -54,7 +54,7 @@ class ComunicadoCaller {
   /// Atualiza comunicado existente
   Future<bool> updateComunicado(Comunicado comunicado) async {
     final response = await NetworkCaller().putRequest(
-      "${ApiLinks.updateComunicado}/${comunicado.id}",
+      ApiLinks.updateComunicado(comunicado.id.toString()),
       comunicado.toJson(),
     );
     return response.isSuccess;
@@ -63,7 +63,7 @@ class ComunicadoCaller {
   /// Exclui comunicado
   Future<bool> deleteComunicado(int id) async {
     final response = await NetworkCaller().deleteRequest(
-      "${ApiLinks.deleteComunicado}/$id",
+      ApiLinks.deleteComunicado(id.toString()),
     );
     return response.isSuccess;
   }

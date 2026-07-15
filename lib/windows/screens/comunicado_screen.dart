@@ -439,7 +439,7 @@ class _WindowsComunicadoGridScreenState extends State<WindowsComunicadoGridScree
     });
 
     try {
-      final response = await NetworkCaller().postRequest(
+      final response = await NetworkCaller().putRequest(
         ApiLinks.updateComunicado(comunicado.id),
         comunicado.toJson(),
       );
