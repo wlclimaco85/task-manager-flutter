@@ -349,7 +349,7 @@ class ApiLinks {
 
   // Contas BancÃ¡rias
   static const String contasBancarias = '$_baseUrlNew/api/contas-bancaria';
-  static const String allContasBancarias = '$contasBancarias/saldos';
+  static const String allContasBancarias = '$_baseUrlNew/api/contas/saldos';
   static const String createContaBancaria = contasBancarias;
   static String updateContaBancaria(String id) => '$contasBancarias/$id';
   static String deleteContaBancaria(String id) => '$contasBancarias/$id';
