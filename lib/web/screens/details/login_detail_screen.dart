@@ -28,8 +28,9 @@ class WebLoginDetailScreen extends StatelessWidget {
           extraParams: {'loginId': loginId, 'empresaId': empresaId, 'parceiroId': parceiroId},
           // "Excluir" nesta aba DESVINCULA a role do login (não apaga a role).
           // Backend: DELETE /api/logins/{loginId}/roles/{roleId} (removerRole).
+          // Usa endpoint com /boletobancos (extrai base do rolesDisponiveis)
           deleteEndpointOverride:
-              '${ApiLinks.baseUrl}/api/logins/$loginId/roles/:id',
+              '${ApiLinks.rolesDisponiveis.replaceAll('/api/role/disponiveis', '')}/api/logins/$loginId/roles/:id',
         ),
         RelatedGridTab(
           title: 'Setores',
@@ -37,7 +38,7 @@ class WebLoginDetailScreen extends StatelessWidget {
           telaNome: 'setor',
           extraParams: {'loginId': loginId, 'empresaId': empresaId, 'parceiroId': parceiroId},
           deleteEndpointOverride:
-              '${ApiLinks.baseUrl}/api/login/$loginId/setores/:id',
+              '${ApiLinks.rolesDisponiveis.replaceAll('/api/role/disponiveis', '')}/api/login/$loginId/setores/:id',
         ),
         RelatedGridTab(
           title: 'Chamados',

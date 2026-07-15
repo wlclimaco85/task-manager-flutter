@@ -21,11 +21,18 @@ class MobileLoginDetailScreen extends StatelessWidget {
     String? empresaId,
   ) async {
     try {
-      final endpoint = parceiroId?.isNotEmpty == true
-          ? '${ApiLinks.baseUrl}/api/role/disponiveis?parceiroId=$parceiroId'
-          : empresaId?.isNotEmpty == true
-              ? '${ApiLinks.baseUrl}/api/role/disponiveis?empresaId=$empresaId'
-              : '${ApiLinks.baseUrl}/api/role/disponiveis';
+      // Constrói URL correta usando ApiLinks.rolesDisponiveis (com /boletobancos)
+      String endpoint = ApiLinks.rolesDisponiveis;
+      List<String> params = [];
+      if (parceiroId?.isNotEmpty == true) {
+        params.add('parceiroId=$parceiroId');
+      }
+      if (empresaId?.isNotEmpty == true) {
+        params.add('empresaId=$empresaId');
+      }
+      if (params.isNotEmpty) {
+        endpoint += '?' + params.join('&');
+      }
 
       final response = await NetworkCaller().getRequest(endpoint);
       if (response.isSuccess && response.body is List) {
@@ -71,16 +78,18 @@ class MobileLoginDetailScreen extends StatelessWidget {
           icon: Icons.security,
           telaNome: 'role',
           extraParams: {'loginId': loginId, 'empresaId': empresaId, 'parceiroId': parceiroId},
+          // Endpoint com /boletobancos (extrai base do rolesDisponiveis)
           deleteEndpointOverride:
-              '${ApiLinks.baseUrl}/api/logins/$loginId/roles/:id',
+              '${ApiLinks.rolesDisponiveis.replaceAll('/api/role/disponiveis', '')}/api/logins/$loginId/roles/:id',
         ),
         RelatedGridTab(
           title: 'Setores',
           icon: Icons.business_center,
           telaNome: 'setor',
           extraParams: {'loginId': loginId, 'empresaId': empresaId, 'parceiroId': parceiroId},
+          // Endpoint com /boletobancos
           deleteEndpointOverride:
-              '${ApiLinks.baseUrl}/api/login/$loginId/setores/:id',
+              '${ApiLinks.rolesDisponiveis.replaceAll('/api/role/disponiveis', '')}/api/login/$loginId/setores/:id',
         ),
         RelatedGridTab(
           title: 'Chamados',

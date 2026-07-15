@@ -25,8 +25,9 @@ class WindowsLoginDetailScreen extends StatelessWidget {
           icon: Icons.security,
           telaNome: 'role',
           extraParams: {'loginId': loginId, 'empresaId': empresaId, 'parceiroId': parceiroId},
+          // Usa endpoint com /boletobancos (extrai base do rolesDisponiveis)
           deleteEndpointOverride:
-              '${ApiLinks.baseUrl}/api/logins/$loginId/roles/:id',
+              '${ApiLinks.rolesDisponiveis.replaceAll('/api/role/disponiveis', '')}/api/logins/$loginId/roles/:id',
         ),
         RelatedGridTab(
           title: 'Setores',
@@ -34,7 +35,7 @@ class WindowsLoginDetailScreen extends StatelessWidget {
           telaNome: 'setor',
           extraParams: {'loginId': loginId, 'empresaId': empresaId, 'parceiroId': parceiroId},
           deleteEndpointOverride:
-              '${ApiLinks.baseUrl}/api/login/$loginId/setores/:id',
+              '${ApiLinks.rolesDisponiveis.replaceAll('/api/role/disponiveis', '')}/api/login/$loginId/setores/:id',
         ),
         RelatedGridTab(
           title: 'Chamados',
