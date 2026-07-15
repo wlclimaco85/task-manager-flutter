@@ -52,6 +52,13 @@ class GenericMobileGridScreen extends StatefulWidget {
   final List<ServerAction>? serverActions;
   final bool showAppBar;
 
+  /// Notifica o pai sempre que o estado de customização (filtros preenchidos
+  /// e/ou campos ocultos em relação ao padrão) mudar — usado para mostrar um
+  /// indicador visual nos ícones de filtro/colunas do AppBar.
+  final void Function(
+      {required bool hasActiveFilters,
+      required bool hasCustomColumns})? onCustomizationStateChanged;
+
   const GenericMobileGridScreen({
     super.key,
     required this.title,
@@ -83,6 +90,7 @@ class GenericMobileGridScreen extends StatefulWidget {
     this.authHeadersProvider,
     this.serverActions = const [],
     this.showAppBar = true,
+    this.onCustomizationStateChanged,
   });
 
   @override
@@ -114,9 +122,6 @@ class _GenericMobileGridScreenState extends State<GenericMobileGridScreen> {
   VoidCallback? _childShowFieldSettings;
   VoidCallback? _childToggleFilters;
 
-  // Notificacao de mudancas de customizacao (filtros/colunas) — usado para
-  // indicadores visuais no AppBar e para sincronizar pai com filho.
-  void Function({required bool hasActiveFilters, required bool hasCustomColumns})? _onCustomizationStateChanged;
 
   Map<String, dynamic>? _editingItem;
 
@@ -386,12 +391,10 @@ class _GenericMobileGridScreenState extends State<GenericMobileGridScreen> {
               // Notifica mudancas de customizacao (filtros/colunas) — permite
               // sincronizar indicadores visuais no AppBar (fix bug #425, actions orphan)
               onCustomizationStateChanged: ({required bool hasActiveFilters, required bool hasCustomColumns}) {
-                setState(() {
-                  _onCustomizationStateChanged?.call(
-                    hasActiveFilters: hasActiveFilters,
-                    hasCustomColumns: hasCustomColumns,
-                  );
-                });
+                widget.onCustomizationStateChanged?.call(
+                  hasActiveFilters: hasActiveFilters,
+                  hasCustomColumns: hasCustomColumns,
+                );
               },
             ),
           ),
@@ -495,7 +498,7 @@ class _GenericMobileGridScreenState extends State<GenericMobileGridScreen> {
               : const Icon(Icons.refresh),
         ),
         IconButton(
-          onPressed: _childShowFieldSettings,
+          onPressed: _childShowFieldSettings ?? () {},
           icon: const Icon(Icons.view_column),
           tooltip: 'Configurar campos',
         ),
