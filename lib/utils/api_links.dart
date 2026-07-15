@@ -532,8 +532,6 @@ class ApiLinks {
       '$_baseUrlNew/api/parceiro/atualizar/$fileId';
 
   static String get getFinance => '$_baseUrlNew/api/dashboard/finance/series';
-  // DEPRECATED: statusCounts não é utilizado após remoção de DashboardMainScreen e placeholders (Sprint 1A)
-  static String get statusCounts => '$_baseUrlNew/api/dashboard/statusCounts';
   static String get chatDaily => '$_baseUrlNew/api/dashboard/chats/daily';
 
   static String get chatDailys => '$_baseUrlNew/api/dashboard/chats/dailys';

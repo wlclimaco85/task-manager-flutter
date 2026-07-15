@@ -507,7 +507,6 @@ class _CrudTestTabState extends State<_CrudTestTab> {
 
       // ================= Dashboard (requer empresaId=1) =================
       createGetList('Dashboard - Finance Series', '/api/dashboard/finance/series?empresaId=1'),
-      createGetList('Dashboard - Status Counts', '/api/dashboard/statusCounts?empresaId=1'),
       createGetList('Dashboard - Chat Daily', '/api/dashboard/chats/dailys?empresaId=1'),
       createGetList('Dashboard - Tickets Trend', '/api/dashboard/tickets/trend?empresaId=1'),
       createGetList('Dashboard - Finance Fluxo', '/api/dashboard/finance/fluxo-diario?empresaId=1'),

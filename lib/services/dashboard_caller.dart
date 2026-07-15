@@ -106,32 +106,6 @@ class DashboardApiClient {
       ..sort((a, b) => a.day.compareTo(b.day));
   }
 
-  Future<TicketStatusCounts> fetchTicketStatusCounts() async {
-    final res = await http.get(
-      Uri.parse(ApiLinks.statusCounts).replace(queryParameters: _qp()),
-      headers: {
-        'Authorization': 'Bearer $token',
-        'Accept': 'application/json',
-      },
-    );
-
-    debugPrint('[fetchTicketStatusCounts] status=${res.statusCode}');
-    debugPrint('[fetchTicketStatusCounts] body=${res.body}');
-
-    if (res.statusCode != 200) {
-      throw Exception('Ticket counts error ${res.statusCode}');
-    }
-
-    final decoded = jsonDecode(res.body);
-    if (decoded is! Map) {
-      throw StateError(
-        '[fetchTicketStatusCounts] payload não é objeto: ${decoded.runtimeType}',
-      );
-    }
-
-    return TicketStatusCounts.fromJson(Map<String, dynamic>.from(decoded));
-  }
-
   Future<List<ChatsDailyPoint>> fetchChatsDaily({int days = 7}) async {
     final res = await http.get(
       Uri.parse(ApiLinks.chatDailys)
