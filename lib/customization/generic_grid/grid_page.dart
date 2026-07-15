@@ -105,11 +105,6 @@ class _GenericMobileGridScreenState extends State<GenericMobileGridScreen> {
   bool _loading = false;
   bool _filtersOpen = false;
 
-  // @deprecated: mapa nao usado para renderizar nada — a renderizacao real dos
-  // cards e feita por GridListScreen._fieldVisibility (estado separado). Mantido
-  // apenas como fallback caso os callbacks abaixo nao sejam entregues a tempo.
-  // Ver bug #425 (card-425-grid-mobile-bugs.md).
-  final Map<String, bool> _fieldVisibility = {};
   final Map<String, bool> _permCache = {};
   bool _permsResolved = true;
 
@@ -119,6 +114,10 @@ class _GenericMobileGridScreenState extends State<GenericMobileGridScreen> {
   // renderiza os cards e mantem o _fieldVisibility valido (fix bug #425).
   VoidCallback? _childShowFieldSettings;
   VoidCallback? _childToggleFilters;
+
+  // Notificacao de mudancas de customizacao (filtros/colunas) — usado para
+  // indicadores visuais no AppBar e para sincronizar pai com filho.
+  void Function({required bool hasActiveFilters, required bool hasCustomColumns})? _onCustomizationStateChanged;
 
   Map<String, dynamic>? _editingItem;
 
@@ -131,7 +130,6 @@ class _GenericMobileGridScreenState extends State<GenericMobileGridScreen> {
   Future<void> _init() async {
     L.i('[GridPage] init "${widget.title}"');
     for (final c in widget.fieldConfigs) {
-      _fieldVisibility[c.fieldName] = c.isVisibleByDefault;
       if (c.isFilterable) {
         _filterControllers[c.fieldName] = TextEditingController();
       }
@@ -414,6 +412,16 @@ class _GenericMobileGridScreenState extends State<GenericMobileGridScreen> {
               // devem operar sobre o estado que de fato renderiza os cards.
               onFieldSettingsReady: (fn) => _childShowFieldSettings = fn,
               onFilterToggleReady: (fn) => _childToggleFilters = fn,
+              // Notifica mudancas de customizacao (filtros/colunas) — permite
+              // sincronizar indicadores visuais no AppBar (fix bug #425, actions orphan)
+              onCustomizationStateChanged: ({required bool hasActiveFilters, required bool hasCustomColumns}) {
+                setState(() {
+                  _onCustomizationStateChanged?.call(
+                    hasActiveFilters: hasActiveFilters,
+                    hasCustomColumns: hasCustomColumns,
+                  );
+                });
+              },
             ),
           ),
         ],
