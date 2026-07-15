@@ -160,7 +160,11 @@ class WebLoginGridScreen extends StatelessWidget {
     showDialog(
       context: context,
       builder: (BuildContext context) {
-        return WebRoleDialog(loginId: conta.id ?? 0);
+        return WebRoleDialog(
+          loginId: conta.id ?? 0,
+          empresaId: conta.empresa?.id,
+          parceiroId: conta.parceiro?.id,
+        );
       },
     );
   }

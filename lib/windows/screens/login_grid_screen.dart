@@ -151,7 +151,11 @@ class WindowsLoginGridScreen extends StatelessWidget {
     showDialog(
       context: context,
       builder: (BuildContext context) {
-        return RoleDialog(loginId: conta.id ?? 0);
+        return RoleDialog(
+          loginId: conta.id ?? 0,
+          empresaId: conta.empresa?.id,
+          parceiroId: conta.parceiro?.id,
+        );
       },
     );
   }

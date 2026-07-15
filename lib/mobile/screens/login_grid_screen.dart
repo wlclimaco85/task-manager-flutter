@@ -21,8 +21,8 @@ class LoginGridScreen extends StatelessWidget {
   });
 
   static Future<List<Map<String, dynamic>>> _loadRoles() async {
-    final response =
-        await NetworkCaller().getRequest('${ApiLinks.baseUrl}/api/role');
+    final response = await NetworkCaller()
+        .getRequest('${ApiLinks.baseUrl}/api/role/disponiveis');
     if (!response.isSuccess || response.body == null) return [];
     final lista = _extractList(response);
     return lista.map((e) {
@@ -193,8 +193,14 @@ class LoginGridScreen extends StatelessWidget {
 
 class _MobileRoleDialog extends StatefulWidget {
   final dynamic loginId;
+  final int? empresaId;
+  final int? parceiroId;
 
-  const _MobileRoleDialog({required this.loginId});
+  const _MobileRoleDialog({
+    required this.loginId,
+    this.empresaId,
+    this.parceiroId,
+  });
 
   @override
   State<_MobileRoleDialog> createState() => _MobileRoleDialogState();
@@ -207,7 +213,10 @@ class _MobileRoleDialogState extends State<_MobileRoleDialog> {
   @override
   void initState() {
     super.initState();
-    _rolesFuture = RoleCaller().getRoles();
+    _rolesFuture = RoleCaller().getRolesDisponiveis(
+      empresaId: widget.empresaId,
+      parceiroId: widget.parceiroId,
+    );
   }
 
   @override

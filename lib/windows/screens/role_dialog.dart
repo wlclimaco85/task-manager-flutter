@@ -7,8 +7,15 @@ import '../../services/role_caller.dart';
 
 class RoleDialog extends StatefulWidget {
   final int loginId;
+  final int? empresaId;
+  final int? parceiroId;
 
-  const RoleDialog({super.key, required this.loginId});
+  const RoleDialog({
+    super.key,
+    required this.loginId,
+    this.empresaId,
+    this.parceiroId,
+  });
 
   @override
   _RoleDialogState createState() => _RoleDialogState();
@@ -28,7 +35,10 @@ class _RoleDialogState extends State<RoleDialog> {
 
   _loadRoles() async {
     try {
-      final roles = await RoleCaller().getRoles();
+      final roles = await RoleCaller().getRolesDisponiveis(
+        empresaId: widget.empresaId,
+        parceiroId: widget.parceiroId,
+      );
       setState(() {
         _roles = roles;
         _isLoading = false;
