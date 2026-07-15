@@ -7,6 +7,7 @@ import '../../constants/custom_colors.dart';
 import '../../../models/alert_model.dart';
 import '../../../models/auth_utility.dart';
 import '../../../models/login_model.dart';
+import '../../../utils/security_matrix.dart';
 import '../../services/alert_caller.dart';
 import '../../../windows/screens/alimento_grid_screen.dart';
 import '../../../windows/screens/aplicativo_screen.dart';
@@ -293,16 +294,37 @@ class _WindowsBottomNavBarScreenState extends State<WindowsBottomNavBarScreen> {
     });
   }
 
+  /// Card #483: hasPermission real para o grid de Comunicado — antes vinha
+  /// hardcoded como `(permission) => true`, mostrando os botões Novo/Excluir
+  /// mesmo para logins sem permissão (ex.: cliente APP_ABRACO), o que gerava
+  /// um popup de erro 403 confuso (o backend já bloqueia corretamente via
+  /// @PreAuthorize em ComunicadosController). Usa a SecurityMatrix (mesma
+  /// fonte de permissões do backend) para espelhar a regra no client.
+  bool _comunicadoHasPermission(String permission) {
+    final matrix = SecurityMatrix.current();
+    switch (permission) {
+      case 'create':
+        return matrix.canInsert(AppScreen.comunicados);
+      case 'edit':
+        return matrix.canUpdate(AppScreen.comunicados);
+      case 'delete':
+      case 'deleteMultiple':
+        return matrix.canDelete(AppScreen.comunicados);
+      default:
+        return matrix.canView(AppScreen.comunicados);
+    }
+  }
+
   List<Widget> _buildScreens(dynamic userInfo) => [
         WindowsComunicadoGridComponentesScreen(
-            hasPermission: (permission) => true),
+            hasPermission: _comunicadoHasPermission),
         const WindowsChatMessageScreen(
           sector: 'Financeiro',
           userName: 'Usuário',
           chatId: '0',
         ),
         WindowsComunicadoGridComponentesScreen(
-            hasPermission: (permission) => true),
+            hasPermission: _comunicadoHasPermission),
         WindowsAplicativoGridScreen(hasPermission: (permission) => true),
         WindowsLoginGridScreen(hasPermission: (permission) => true),
         WindowsChatListScreen(userName: userInfo.email ?? 'Usuário'),

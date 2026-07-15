@@ -7,6 +7,7 @@ import '../../constants/custom_colors.dart';
 import '../../../models/alert_model.dart';
 import '../../../models/auth_utility.dart';
 import '../../../models/login_model.dart';
+import '../../../utils/security_matrix.dart';
 import '../../services/alert_caller.dart';
 import './aplicativo_screen.dart';
 import '../../../auth_screens/login_screen.dart';
@@ -306,6 +307,27 @@ class _WebBottomNavBarScreenState extends State<WebBottomNavBarScreen> {
     return 'Usuário';
   }
 
+  /// Card #483: hasPermission real para o grid de Comunicado — antes vinha
+  /// hardcoded como `(p) => true`, mostrando os botões Novo/Excluir mesmo
+  /// para logins sem permissão (ex.: cliente APP_ABRACO), o que gerava um
+  /// popup de erro 403 confuso (o backend já bloqueia corretamente via
+  /// @PreAuthorize em ComunicadosController). Usa a SecurityMatrix (mesma
+  /// fonte de permissões do backend) para espelhar a regra no client.
+  bool _comunicadoHasPermission(String permission) {
+    final matrix = SecurityMatrix.current();
+    switch (permission) {
+      case 'create':
+        return matrix.canInsert(AppScreen.comunicados);
+      case 'edit':
+        return matrix.canUpdate(AppScreen.comunicados);
+      case 'delete':
+      case 'deleteMultiple':
+        return matrix.canDelete(AppScreen.comunicados);
+      default:
+        return matrix.canView(AppScreen.comunicados);
+    }
+  }
+
   List<Widget> _buildScreensList() {
     final userInfo = AuthUtility.userInfo?.data;
     final loginInfo = AuthUtility.userInfo?.login;
@@ -313,11 +335,11 @@ class _WebBottomNavBarScreenState extends State<WebBottomNavBarScreen> {
     if (!isLoggedIn) return [const LoginScreen()];
     return [
       WebComunicadoGridComponentesScreen(
-          hasPermission: (p) => true), // 0:  Comunicados
+          hasPermission: _comunicadoHasPermission), // 0:  Comunicados
       WebChatListScreen(
           userName: AuthUtility.userInfo?.login?.email ?? 'Usuário'), // 1: Chat
       WebComunicadoGridComponentesScreen(
-          hasPermission: (p) => true), // 2:  ComunicadoComp
+          hasPermission: _comunicadoHasPermission), // 2:  ComunicadoComp
       WebAplicativoGridScreen(hasPermission: (p) => true), // 3:  Aplicativo
       WebLoginGridScreen(hasPermission: (p) => true), // 4:  Logins
       WebChatListScreen(
