@@ -63,4 +63,47 @@ class RoleCaller {
       return false;
     }
   }
+
+  /// Busca roles disponíveis filtradas por módulos contratados
+  /// da empresa/parceiro informado.
+  ///
+  /// @param empresaId ID da empresa (prioridade baixa)
+  /// @param parceiroId ID do parceiro (prioridade alta)
+  /// @return List<Role> contendo apenas roles compatíveis
+  Future<List<Role>> getRolesDisponiveis({
+    int? empresaId,
+    int? parceiroId,
+  }) async {
+    List<Role> roles = [];
+    try {
+      String url = ApiLinks.rolesDisponiveis;
+
+      // Monta query string
+      List<String> params = [];
+      if (empresaId != null) params.add('empresaId=$empresaId');
+      if (parceiroId != null) params.add('parceiroId=$parceiroId');
+      if (params.isNotEmpty) url += '?' + params.join('&');
+
+      final NetworkResponse response = await NetworkCaller().getRequest(url);
+
+      if (response.statusCode == 200 && response.body != null) {
+        // Resposta é List<Role> direto, não envolvida em "data"
+        final body = response.body;
+        List<dynamic> data = body is List ? body as List<dynamic> : [body];
+        roles = data
+            .map((r) => Role.fromJson(r as Map<String, dynamic>))
+            .toList();
+      } else if (response.statusCode == 403) {
+        // Anti-IDOR: usuário não tem acesso ao tenant informado
+        throw Exception('Sem acesso ao tenant (403)');
+      } else {
+        throw Exception('Falha ao carregar roles: ${response.statusCode}');
+      }
+    } catch (e) {
+      L.d('Erro ao buscar roles disponíveis: $e');
+      // Fallback: não bloqueia, retorna vazio
+      return [];
+    }
+    return roles;
+  }
 }

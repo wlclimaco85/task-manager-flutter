@@ -635,6 +635,9 @@ class ApiLinks {
   static String getAllRoles =
       '$_baseUrlNew/api/role?size=1000'; // Aumentamos o size para pegar todas as roles
 
+  /// GET /api/role/disponiveis — roles filtradas por módulos contratados
+  static String get rolesDisponiveis => '$_baseUrlNew/api/role/disponiveis';
+
   static String associateRoleToLogin(int loginId, int roleId) {
     return '$_baseUrlNew/api/logins/$loginId/roles/$roleId';
   }
