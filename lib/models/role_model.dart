@@ -11,8 +11,16 @@ class Role {
   bool? available;
   String? key;
   Aplicativo? aplicativo;
+  String? moduloNecessario;
 
-  Role({this.id, this.description, this.available, this.key, this.aplicativo});
+  Role({
+    this.id,
+    this.description,
+    this.available,
+    this.key,
+    this.aplicativo,
+    this.moduloNecessario,
+  });
 
   Role.fromJson(Map<String, dynamic> json) {
     id = json['id'];
@@ -22,6 +30,7 @@ class Role {
     aplicativo = json['aplicativo'] != null
         ? Aplicativo.fromJson(json['aplicativo'])
         : null;
+    moduloNecessario = json['moduloNecessario'];
   }
 
   Map<String, dynamic> toJson() {
@@ -31,6 +40,7 @@ class Role {
       'available': available,
       'key': key,
       'aplicativo': aplicativo?.toJson(),
+      'moduloNecessario': moduloNecessario,
     };
   }
 
