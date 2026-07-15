@@ -45,15 +45,6 @@ import 'extrato_importacao_screen.dart' show MobileExtratoImportacaoScreen;
 import '../../web/screens/cobranca_automatica_screen.dart';
 import '../../widgets/user_banners.dart';
 import 'alvara_screen.dart';
-import '../../widgets/dashboard_area/placeholder/dashboard_atendimento_placeholder_screen.dart';
-import '../../widgets/dashboard_area/placeholder/dashboard_financeiro_area_placeholder_screen.dart';
-import '../../widgets/dashboard_area/placeholder/dashboard_comercial_placeholder_screen.dart';
-import '../../widgets/dashboard_area/placeholder/dashboard_fiscal_placeholder_screen.dart';
-import '../../widgets/dashboard_area/placeholder/dashboard_dp_area_placeholder_screen.dart';
-import '../../widgets/dashboard_area/placeholder/dashboard_gme_screen.dart';
-import '../../widgets/dashboard_area/placeholder/dashboard_projetos_screen.dart';
-import '../../widgets/dashboard_area/placeholder/dashboard_precificacao_screen.dart';
-import '../../widgets/dashboard_area/placeholder/dashboard_service_screen.dart';
 
 class BottomNavBarScreen extends StatefulWidget {
   const BottomNavBarScreen({super.key});
@@ -923,45 +914,6 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
           MaterialPageRoute(builder: (_) => const DashboardPage()),
         );
         break;
-      case "Dashboard Financeiro":
-        nav = Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (_) => const DashboardFinanceiroAreaPlaceholderScreen(),
-          ),
-        );
-        break;
-      case "Dashboard Comercial":
-        nav = Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (_) => const DashboardComercialPlaceholderScreen(),
-          ),
-        );
-        break;
-      case "Dashboard Fiscal":
-        nav = Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (_) => const DashboardFiscalPlaceholderScreen(),
-          ),
-        );
-        break;
-      case "Dashboard DP":
-        nav = Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (_) => const DashboardDpAreaPlaceholderScreen(),
-          ),
-        );
-        break;
-      case "Atendimento":
-        nav = Navigator.push(
-          context,
-          MaterialPageRoute(
-              builder: (_) => const DashboardAtendimentoPlaceholderScreen()),
-        );
-        break;
       case "Trading":
         nav = Navigator.push(
           context,
@@ -1054,12 +1006,6 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
         );
         break;
       // GME
-      case "Dashboard GME":
-        nav = Navigator.push(
-          context,
-          MaterialPageRoute(builder: (_) => const DashboardGmeScreen()),
-        );
-        break;
       case "Contratos GME":
         nav = _pushDynamicGrid(telaNome: 'contrato_screen', sec: sec);
         break;
@@ -1083,12 +1029,6 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
         nav = _pushDynamicGrid(telaNome: 'tecnico_manutencao_screen', sec: sec);
         break;
       // Service Desk
-      case "Dashboard Service":
-        nav = Navigator.push(
-          context,
-          MaterialPageRoute(builder: (_) => const DashboardServiceScreen()),
-        );
-        break;
       case "SLA":
         nav = _pushDynamicGrid(telaNome: 'sla_screen', sec: sec);
         break;
@@ -1102,12 +1042,6 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
         nav = _pushDynamicGrid(telaNome: 'chamado_avaliacao_screen', sec: sec);
         break;
       // Projetos
-      case "Dashboard Projetos":
-        nav = Navigator.push(
-          context,
-          MaterialPageRoute(builder: (_) => const DashboardProjetosScreen()),
-        );
-        break;
       case "Projetos":
         nav = _pushDynamicGrid(telaNome: 'projeto_screen', sec: sec);
         break;
@@ -1128,13 +1062,6 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
         nav = _pushDynamicGrid(telaNome: 'cargo_recurso_screen', sec: sec);
         break;
       // Precificação
-      case "Dashboard Precificação":
-        nav = Navigator.push(
-          context,
-          MaterialPageRoute(
-              builder: (_) => const DashboardPrecificacaoScreen()),
-        );
-        break;
       case "Precificações":
         nav = _pushDynamicGrid(telaNome: 'precificacao_screen', sec: sec);
         break;

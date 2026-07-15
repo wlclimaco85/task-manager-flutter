@@ -32,11 +32,6 @@ import './regime_grid_screen.dart';
 import './noticias_grid_screen.dart';
 import './conta_pagar_grid_screen.dart';
 import './dashboard_financeiro_screen.dart';
-import '../../widgets/dashboard_area/placeholder/dashboard_financeiro_area_placeholder_screen.dart';
-import '../../widgets/dashboard_area/placeholder/dashboard_dp_area_placeholder_screen.dart';
-import '../../widgets/dashboard_area/placeholder/dashboard_atendimento_placeholder_screen.dart';
-import '../../widgets/dashboard_area/placeholder/dashboard_comercial_placeholder_screen.dart';
-import '../../widgets/dashboard_area/placeholder/dashboard_fiscal_placeholder_screen.dart';
 import './dashboard_mensalidade_screen.dart';
 import '../../widgets/boleto_importacao_lote_screen.dart';
 import '../../widgets/solicitacao_acesso_aprovacao_screen.dart';
@@ -149,10 +144,6 @@ import './registro_carga_screen.dart';
 import './frequencia_screen.dart';
 import './home_saude_aluno_screen.dart';
 import './historico_treino_screen.dart';
-import '../../widgets/dashboard_area/placeholder/dashboard_gme_screen.dart';
-import '../../widgets/dashboard_area/placeholder/dashboard_projetos_screen.dart';
-import '../../widgets/dashboard_area/placeholder/dashboard_precificacao_screen.dart';
-import '../../widgets/dashboard_area/placeholder/dashboard_service_screen.dart';
 import '../../customization/dynamic_grid_dynamic_screen.dart';
 
 class WebBottomNavBarScreen extends StatefulWidget {
@@ -507,12 +498,7 @@ class _WebBottomNavBarScreenState extends State<WebBottomNavBarScreen> {
       HistoricoTreinoScreen(
         alunoId: AuthUtility.userInfo?.data?.id ?? 0,
       ), // 141: Historico de Treinos
-      const DashboardFinanceiroAreaPlaceholderScreen(), // 142: Dashboard Financeiro (Área)
-      const DashboardDpAreaPlaceholderScreen(), // 143: Dashboard DP (Área)
-      const DashboardAtendimentoPlaceholderScreen(), // 144: Dashboard Atendimento (Área)
-      const DashboardComercialPlaceholderScreen(), // 145: Dashboard Comercial (Área)
-      const DashboardFiscalPlaceholderScreen(), // 146: Dashboard Fiscal (Área)
-      const WebDashboardMensalidadeScreen(), // 147: Dashboard de Mensalidades
+      const WebDashboardMensalidadeScreen(), // 142: Dashboard de Mensalidades
       const BoletoImportacaoLoteScreen(), // 148: Importação Boletos Lote
       const SolicitacaoAcessoAprovacaoScreen(), // 149: Solicitações de Acesso
       const QueryBuilderWindowScreen(), // 150: Query Builder
@@ -524,28 +510,24 @@ class _WebBottomNavBarScreenState extends State<WebBottomNavBarScreen> {
       const ComunicadoCircularScreen(), // 153: Comunicados Circular
       const RegistroCargaScreen(sessionId: 0), // 154: Registro de Carga (placeholder sessionId)
       const FrequenciaScreen(), // 155: Frequencia Semanal
-      const DashboardGmeScreen(), // 156: Dashboard GME
-      DynamicGridDynamicScreen(telaNome: 'contrato_screen', hasPermission: (p) => true), // 157: Contratos
+      DynamicGridDynamicScreen(telaNome: 'contrato_screen', hasPermission: (p) => true), // 156: Contratos
       DynamicGridDynamicScreen(telaNome: 'equipamento_screen', hasPermission: (p) => true), // 158: Equipamentos
       DynamicGridDynamicScreen(telaNome: 'ordem_servico_screen', hasPermission: (p) => true), // 159: Ordens de Serviço
       DynamicGridDynamicScreen(telaNome: 'plano_manutencao_screen', hasPermission: (p) => true), // 160: Planos Manutenção
       DynamicGridDynamicScreen(telaNome: 'horimetro_screen', hasPermission: (p) => true), // 161: Horímetro
       DynamicGridDynamicScreen(telaNome: 'historico_manutencao_screen', hasPermission: (p) => true), // 162: Histórico Manutenção
       DynamicGridDynamicScreen(telaNome: 'tecnico_manutencao_screen', hasPermission: (p) => true), // 163: Técnicos
-      const DashboardServiceScreen(), // 164: Dashboard Service
-      DynamicGridDynamicScreen(telaNome: 'sla_screen', hasPermission: (p) => true), // 165: SLA
+      DynamicGridDynamicScreen(telaNome: 'sla_screen', hasPermission: (p) => true), // 164: SLA
       DynamicGridDynamicScreen(telaNome: 'fila_atendimento_screen', hasPermission: (p) => true), // 166: Filas Atendimento
       DynamicGridDynamicScreen(telaNome: 'categoria_chamado_screen', hasPermission: (p) => true), // 167: Categorias Chamado
       DynamicGridDynamicScreen(telaNome: 'chamado_avaliacao_screen', hasPermission: (p) => true), // 168: Avaliações
-      const DashboardProjetosScreen(), // 169: Dashboard Projetos
-      DynamicGridDynamicScreen(telaNome: 'projeto_screen', hasPermission: (p) => true), // 170: Projetos
+      DynamicGridDynamicScreen(telaNome: 'projeto_screen', hasPermission: (p) => true), // 169: Projetos
       DynamicGridDynamicScreen(telaNome: 'projeto_etapa_screen', hasPermission: (p) => true), // 171: Etapas
       DynamicGridDynamicScreen(telaNome: 'projeto_recurso_screen', hasPermission: (p) => true), // 172: Recursos
       DynamicGridDynamicScreen(telaNome: 'projeto_apontamento_screen', hasPermission: (p) => true), // 173: Apontamentos
       DynamicGridDynamicScreen(telaNome: 'projeto_medicao_screen', hasPermission: (p) => true), // 174: Medições
       DynamicGridDynamicScreen(telaNome: 'cargo_recurso_screen', hasPermission: (p) => true), // 175: Cargos/Recursos
-      const DashboardPrecificacaoScreen(), // 176: Dashboard Precificação
-      DynamicGridDynamicScreen(telaNome: 'precificacao_screen', hasPermission: (p) => true), // 177: Precificações
+      DynamicGridDynamicScreen(telaNome: 'precificacao_screen', hasPermission: (p) => true), // 176: Precificações
       DynamicGridDynamicScreen(telaNome: 'precificacao_custo_direto_screen', hasPermission: (p) => true), // 178: Custos Diretos
       DynamicGridDynamicScreen(telaNome: 'precificacao_mao_de_obra_screen', hasPermission: (p) => true), // 179: Mão de Obra
       DynamicGridDynamicScreen(telaNome: 'precificacao_servico_screen', hasPermission: (p) => true), // 180: Serviços
