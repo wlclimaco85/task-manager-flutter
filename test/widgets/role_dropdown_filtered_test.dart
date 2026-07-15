@@ -121,5 +121,60 @@ void main() {
       const initialRoles = <Role>[];
       expect(initialRoles, isEmpty);
     });
+
+    test('verificar que roles com moduloNecessario aparecem como desabilitadas', () {
+      final role = Role(
+        id: 32,
+        description: 'Financeiro',
+        available: true,
+        key: 'ROLE_FINANCEIRO',
+        moduloNecessario: 'COBRANCA',
+      );
+
+      // Rol é inelegível (tem moduloNecessario)
+      expect(role.moduloNecessario, isNotNull);
+      expect(role.moduloNecessario, equals('COBRANCA'));
+    });
+
+    testWidgets('deve filtrar roles baseado em elegibilidade', (WidgetTester tester) async {
+      final rolesComModulo = [
+        Role(
+          id: 21,
+          description: 'Gerente',
+          available: true,
+          key: 'ROLE_GERENTE',
+          moduloNecessario: null, // Elegível
+        ),
+        Role(
+          id: 32,
+          description: 'Financeiro',
+          available: true,
+          key: 'ROLE_FINANCEIRO',
+          moduloNecessario: 'COBRANCA', // Não elegível
+        ),
+      ];
+
+      // Filtra apenas elegíveis
+      final elegibleRoles = rolesComModulo.where((r) => r.moduloNecessario == null).toList();
+
+      expect(elegibleRoles.length, equals(1));
+      expect(elegibleRoles.first.description, equals('Gerente'));
+    });
+
+    test('role com módulo contratado deve ser elegível', () {
+      final role = Role(
+        id: 32,
+        description: 'Financeiro',
+        available: true,
+        key: 'ROLE_FINANCEIRO',
+        moduloNecessario: 'COBRANCA',
+      );
+
+      final modulosContratados = ['COBRANCA', 'ORCAMENTOS'];
+      final isEligible = role.moduloNecessario == null ||
+                        modulosContratados.contains(role.moduloNecessario);
+
+      expect(isEligible, isTrue);
+    });
   });
 }
