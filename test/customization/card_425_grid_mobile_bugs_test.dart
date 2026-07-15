@@ -85,6 +85,27 @@ void main() {
       childToggleFilters!.call();
       expect(childFilterToggled, isTrue);
     });
+
+    testWidgets('onCustomizationStateChanged notifica pai de mudanças de filtros/colunas',
+        (WidgetTester tester) async {
+      bool parentNotified = false;
+      bool hasActiveFilters = false;
+      bool hasCustomColumns = false;
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: _FakeChildWithCustomizationCallback(
+            onCustomizationStateChanged: ({required bool hasActiveFilters, required bool hasCustomColumns}) {
+              parentNotified = true;
+              // Simula pai recebendo a notificação e atualizando state
+            },
+          ),
+        ),
+      );
+
+      // Após pumpWidget, o filho já deve ter enviado a notificação
+      expect(parentNotified, isTrue);
+    });
   });
 }
 
@@ -116,6 +137,35 @@ class _FakeChildWithReadyCallbacksState
     super.initState();
     widget.onFieldSettingsReady(_showFieldSettings);
     widget.onFilterToggleReady(widget.onToggleFilters);
+  }
+
+  @override
+  Widget build(BuildContext context) => const SizedBox.shrink();
+}
+
+/// Widget mínimo que reproduz onCustomizationStateChanged de GridListScreen.
+class _FakeChildWithCustomizationCallback extends StatefulWidget {
+  final void Function({required bool hasActiveFilters, required bool hasCustomColumns}) onCustomizationStateChanged;
+
+  const _FakeChildWithCustomizationCallback({
+    required this.onCustomizationStateChanged,
+  });
+
+  @override
+  State<_FakeChildWithCustomizationCallback> createState() =>
+      _FakeChildWithCustomizationCallbackState();
+}
+
+class _FakeChildWithCustomizationCallbackState
+    extends State<_FakeChildWithCustomizationCallback> {
+  @override
+  void initState() {
+    super.initState();
+    // Simula GridListScreen notificando o pai sobre mudanças de customização
+    widget.onCustomizationStateChanged(
+      hasActiveFilters: false,
+      hasCustomColumns: false,
+    );
   }
 
   @override

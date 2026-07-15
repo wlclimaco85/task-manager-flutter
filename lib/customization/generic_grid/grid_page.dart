@@ -1,6 +1,5 @@
 // lib/data/customization/grid_page.dart
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../utils/app_logger.dart';
 import '../../../widgets/user_banners.dart';
@@ -143,7 +142,6 @@ class _GenericMobileGridScreenState extends State<GenericMobileGridScreen> {
       });
     }
 
-    await _loadFieldPreferences();
     _scrollController.addListener(_onScroll);
 
     await _resolveAsyncPermissions();
@@ -194,33 +192,6 @@ class _GenericMobileGridScreenState extends State<GenericMobileGridScreen> {
     super.dispose();
   }
 
-  Future<void> _loadFieldPreferences() async {
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      final key = '${widget.storageKey}_${widget.title}';
-      for (final c in widget.fieldConfigs) {
-        final saved = prefs.getBool('$key${c.fieldName}');
-        if (saved != null) _fieldVisibility[c.fieldName] = saved;
-      }
-    } catch (e) {
-      L.w('[GridPage] load prefs fail: $e');
-    }
-  }
-
-  Future<void> _saveFieldPreferences() async {
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      final key = '${widget.storageKey}_${widget.title}';
-      for (final c in widget.fieldConfigs) {
-        await prefs.setBool(
-          '$key${c.fieldName}',
-          _fieldVisibility[c.fieldName] ?? c.isVisibleByDefault,
-        );
-      }
-    } catch (e) {
-      L.w('[GridPage] save prefs fail: $e');
-    }
-  }
 
   void _onScroll() {
     if (_scrollController.position.pixels >=
@@ -488,9 +459,8 @@ class _GenericMobileGridScreenState extends State<GenericMobileGridScreen> {
               widget.onBannerRefresh?.call();
             },
       isLoading: _loading,
-      // Usa a funcao correta vinda do GridListScreen (fix bug #425); fallback
-      // para o metodo local (morto) so se o callback ainda nao chegou.
-      onColumns: _childShowFieldSettings ?? _showFieldSettings,
+      // Usa a funcao correta vinda do GridListScreen (fix bug #425)
+      onColumns: _childShowFieldSettings ?? () {},
       onFilterToggle: () {
         if (_childToggleFilters != null) {
           _childToggleFilters!.call();
@@ -525,7 +495,7 @@ class _GenericMobileGridScreenState extends State<GenericMobileGridScreen> {
               : const Icon(Icons.refresh),
         ),
         IconButton(
-          onPressed: _showFieldSettings,
+          onPressed: _childShowFieldSettings,
           icon: const Icon(Icons.view_column),
           tooltip: 'Configurar campos',
         ),
@@ -567,48 +537,6 @@ class _GenericMobileGridScreenState extends State<GenericMobileGridScreen> {
     );
   }
 
-  void _showFieldSettings() {
-    showDialog(
-      context: context,
-      builder: (ctx) => StatefulBuilder(builder: (ctx, setSt) {
-        return AlertDialog(
-          title: const Text('Campos visíveis'),
-          content: SizedBox(
-            width: double.maxFinite,
-            child: ListView(
-              shrinkWrap: true,
-              children: widget.fieldConfigs.map((c) {
-                return CheckboxListTile(
-                  title: Text(c.label),
-                  value: _fieldVisibility[c.fieldName] ?? c.isVisibleByDefault,
-                  onChanged: c.isFixed
-                      ? null
-                      : (v) {
-                          setSt(() {
-                            _fieldVisibility[c.fieldName] = v ?? false;
-                          });
-                        },
-                );
-              }).toList(),
-            ),
-          ),
-          actions: [
-            TextButton(
-                onPressed: () => Navigator.pop(ctx),
-                child: const Text(GridTexts.cancel)),
-            ElevatedButton(
-              onPressed: () async {
-                await _saveFieldPreferences();
-                if (mounted) setState(() {});
-                Navigator.pop(ctx);
-              },
-              child: const Text('Aplicar'),
-            ),
-          ],
-        );
-      }),
-    );
-  }
 
   Future<void> _openForm({Map<String, dynamic>? editingItem}) async {
     _editingItem = editingItem;
