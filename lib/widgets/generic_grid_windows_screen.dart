@@ -3118,7 +3118,8 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
               }
               setState(() => selectedRows.clear());
             },
-            style: ElevatedButton.styleFrom(backgroundColor: GridColors.error),
+            style: ElevatedButton.styleFrom(
+                backgroundColor: GridColors.error, foregroundColor: Colors.white),
             child: const Text('Excluir'),
           ),
         ],
