@@ -2,21 +2,31 @@ import 'package:flutter_test/flutter_test.dart';
 
 /// Serviço de Calendário
 class CalendarService {
-  static const List<int> feriados = [
-    101,  // 1º de janeiro
-    411,  // Tiradentes (21/4)
-    501,  // Dia do trabalho (1º/5)
-    907,  // Independência (7/9)
-    1002, // Nossa Senhora (12/10)
-    1102, // Finados (2/11)
-    1104, // República (15/11)
-    1225, // Natal (25/12)
+  static const Map<int, int> feriados = {
+    1: 1,   // 1º de janeiro
+    4: 21,  // Tiradentes (21/4)
+    5: 1,   // Dia do trabalho (1º/5)
+    9: 7,   // Independência (7/9)
+    10: 12, // Nossa Senhora (12/10)
+    11: 2,  // Finados (2/11)
+    11: 15, // República (15/11) — sobrescreve finados, usar lista depois
+    12: 25, // Natal (25/12)
+  };
+
+  static final List<(int, int)> feriadosList = [
+    (1, 1),   // 1º de janeiro
+    (21, 4),  // Tiradentes (21/4)
+    (1, 5),   // Dia do trabalho (1º/5)
+    (7, 9),   // Independência (7/9)
+    (12, 10), // Nossa Senhora (12/10)
+    (2, 11),  // Finados (2/11)
+    (15, 11), // República (15/11)
+    (25, 12), // Natal (25/12)
   ];
 
   /// Verifica se um dia é um feriado
   static bool ehFeriado(int dia, int mes) {
-    final codigo = mes * 100 + dia;
-    return feriados.contains(codigo);
+    return feriadosList.contains((dia, mes));
   }
 
   /// Verifica se uma data é fim de semana (0 = domingo, 6 = sábado)
