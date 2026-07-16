@@ -15,6 +15,7 @@ import '../../utils/grid_colors.dart';
 import '../../utils/tenant_context.dart';
 import '../../utils/utils.dart';
 import '../../widgets/user_banners.dart';
+import '../../widgets/responsive_widget.dart';
 import '../screens/dashboard_alerts_screen.dart';
 import '../screens/dashboard_client_distribution_screen.dart';
 import '../screens/dashboard_conta_evolucao_screen.dart';
@@ -161,11 +162,20 @@ class _DashboardPageState extends State<DashboardPage> {
         showBackButton: Navigator.canPop(context),
         onUserTap: widget.onUserBannerTapped,
       ),
-      body: RefreshIndicator(
-        onRefresh: _load,
-        child: ListView(
-          padding: const EdgeInsets.all(16),
-          children: [
+      body: ResponsiveWidget(
+        mobileBuilder: (context, width) => _buildDashboardBody(16.0),
+        tabletBuilder: (context, width) => _buildDashboardBody(24.0),
+        desktopBuilder: (context, width) => _buildDashboardBody(32.0),
+      ),
+    );
+  }
+
+  Widget _buildDashboardBody(double padding) {
+    return RefreshIndicator(
+      onRefresh: _load,
+      child: ListView(
+        padding: EdgeInsets.all(padding),
+        children: [
             _sectionTitle('Indicadores-chave'),
             const SizedBox(height: 8),
             KpiCards(empresaId: empresaId, parceiroId: parceiroId),
@@ -214,8 +224,7 @@ class _DashboardPageState extends State<DashboardPage> {
             const SizedBox(height: 28),
           ],
         ),
-      ),
-    );
+      );
   }
 
   Widget _sectionTitle(String title) {

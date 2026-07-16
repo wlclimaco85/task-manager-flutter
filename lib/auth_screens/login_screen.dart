@@ -16,6 +16,7 @@ import '../../utils/grid_colors.dart';
 import '../../utils/grid_texts.dart';
 import '../../utils/security_matrix.dart';
 import '../../widgets/home_screen.dart';
+import '../../widgets/responsive_widget.dart';
 import '../services/network_caller.dart';
 import 'email_verification_screeen.dart';
 import 'solicitacao_acesso_screen.dart';
@@ -305,15 +306,34 @@ class _LoginScreenState extends State<LoginScreen>
 
     return Scaffold(
       backgroundColor: GridColors.secondary,
-      body: _showNoticias
-          ? Column(children: [
-              loginBanner,
-              Expanded(
-                  child: _NoticiasGrid(
-                      noticias: _noticias, loading: _loadingNoticias)),
-              const _EmpresaFooter(),
-            ])
-          : SafeArea(child: loginBanner),
+      body: ResponsiveWidget(
+        mobileBuilder: (context, width) => SafeArea(child: loginBanner),
+        tabletBuilder: (context, width) => _showNoticias
+            ? Column(children: [
+                Expanded(child: SafeArea(child: loginBanner)),
+                Expanded(
+                    child: _NoticiasGrid(
+                        noticias: _noticias, loading: _loadingNoticias)),
+              ])
+            : SafeArea(child: loginBanner),
+        desktopBuilder: (context, width) => _showNoticias
+            ? Row(children: [
+                Expanded(
+                  flex: 1,
+                  child: SafeArea(child: loginBanner),
+                ),
+                Expanded(
+                  flex: 1,
+                  child: Column(children: [
+                    Expanded(
+                        child: _NoticiasGrid(
+                            noticias: _noticias, loading: _loadingNoticias)),
+                    const _EmpresaFooter(),
+                  ]),
+                ),
+              ])
+            : SafeArea(child: loginBanner),
+      ),
     );
   }
 }

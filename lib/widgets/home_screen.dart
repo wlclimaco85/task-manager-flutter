@@ -1,5 +1,6 @@
 import '../../../widgets/stagger_animation.dart';
 import 'package:flutter/material.dart';
+import '../../widgets/responsive_widget.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -29,6 +30,30 @@ class _HomeScreenState extends State<HomeScreen>
 
   @override
   Widget build(BuildContext context) {
-    return StaggerAnimation(controller: _controller);
+    return ResponsiveWidget(
+      mobileBuilder: (context, width) => StaggerAnimation(controller: _controller),
+      tabletBuilder: (context, width) => SingleChildScrollView(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const SizedBox(height: 32),
+            StaggerAnimation(controller: _controller),
+            const SizedBox(height: 32),
+          ],
+        ),
+      ),
+      desktopBuilder: (context, width) => Center(
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const SizedBox(height: 64),
+              StaggerAnimation(controller: _controller),
+              const SizedBox(height: 64),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 }
