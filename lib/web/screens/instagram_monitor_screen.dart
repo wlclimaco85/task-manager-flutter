@@ -1957,8 +1957,8 @@ class _InstagramMonitorScreenState extends State<InstagramMonitorScreen> with Ti
           const SizedBox(height: 8),
           Text(
             temBaseline
-                ? 'Snapshot de $_lastSnapshotTime salvo como linha de base.\nTome outro snapshot depois de atividade no Instagram para ver as mudanças aqui.'
-                : 'Faca um snapshot para comecar a monitorar',
+                ? 'Snapshot de $_lastSnapshotTime salvo como linha de base.\nTome outro snapshot depois de atividade no Instagram para ver as mudancas aqui.'
+                : 'Faca um snapshot para comecar a monitorar.\n\nSe voce realizou acoes recentes e nada apareceu,\na sessao do Instagram pode estar expirada.',
             style: TextStyle(fontSize: 12, color: Colors.grey[500]),
             textAlign: TextAlign.center,
           ),
@@ -2874,12 +2874,55 @@ class _InstagramMonitorScreenState extends State<InstagramMonitorScreen> with Ti
                     ),
                   ],
                   // Para eventos de estatística: mostra a variação numérica (ex: "100 → 103")
-                  if (ehEventoEstat && item.texto != null && item.texto!.isNotEmpty) ...[
+                  // Prioriza valorAntes/valorDepois; para bio_updated mostra o conteudo real
+                  if (ehEventoEstat) ...[
                     const SizedBox(height: 4),
-                    Text(
-                      item.texto!.replaceAll(' -> ', ' → '),
-                      style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: cor),
-                    ),
+                    if (item.tipoAcao == 'bio_updated') ...[
+                      if (item.valorDepois != null && item.valorDepois!.isNotEmpty)
+                        Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: Colors.grey[50],
+                            borderRadius: BorderRadius.circular(6),
+                            border: Border.all(color: Colors.grey[200]!),
+                          ),
+                          child: Text(
+                            item.valorDepois!,
+                            style: const TextStyle(fontSize: 12, color: Color(0xFF262626), height: 1.4),
+                            maxLines: 3,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        )
+                      else if (item.texto != null && item.texto!.isNotEmpty)
+                        Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: Colors.grey[50],
+                            borderRadius: BorderRadius.circular(6),
+                            border: Border.all(color: Colors.grey[200]!),
+                          ),
+                          child: Text(
+                            item.texto!,
+                            style: const TextStyle(fontSize: 12, color: Color(0xFF262626), height: 1.4),
+                            maxLines: 3,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                    ] else ...[
+                      if (item.valorAntes != null && item.valorAntes!.isNotEmpty &&
+                          item.valorDepois != null && item.valorDepois!.isNotEmpty)
+                        Text(
+                          '${item.valorAntes} → ${item.valorDepois}',
+                          style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: cor),
+                        )
+                      else if (item.texto != null && item.texto!.isNotEmpty)
+                        Text(
+                          item.texto!.replaceAll(' -> ', ' → '),
+                          style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: cor),
+                        ),
+                    ],
                   ],
                   // Para comentários e interações com texto: exibe o conteúdo em caixa cinza
                   if (!ehEventoEstat && item.texto != null && item.texto!.isNotEmpty) ...[
