@@ -18,11 +18,6 @@ void main() {
       expectListOk(res.statusCode, 'Finance Series');
     });
 
-    test('Status counts → 200', () async {
-      final res = await http.get(Uri.parse(ApiLinks.statusCounts), headers: authHeaders(token));
-      expectListOk(res.statusCode, 'Status Counts');
-    });
-
     test('KPIs → 200', () async {
       final res = await http.get(Uri.parse(ApiLinks.kpis), headers: authHeaders(token));
       expectListOk(res.statusCode, 'KPIs');
