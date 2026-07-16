@@ -151,7 +151,7 @@ void main() {
     });
 
     test(
-        'dashAtendimentoArea/dashComercialArea/dashFiscalArea pertencem a modulos (Chamados/Comercial/Notas Fiscais) — deny quando modulo nao contratado',
+        'dashAtendimentoArea/dashComercialArea/dashFiscalArea — RBAC prevalece quando nenhum modulo configurado',
         () {
       final userInfo = buildUserInfo(permissoes: [
         permissao('dashAtendimentoArea'),
@@ -160,15 +160,30 @@ void main() {
       ]);
       final matrix = SecurityMatrix.of(userInfo);
 
-      // Sem modulos contratados: deny-by-default para telas de modulo
+      // Sem modulos configurados: RBAC prevalece (hasModulosConfigurados = false)
       ModuloAccess.setContratadosParaTeste([]);
 
+      expect(matrix.canView(AppScreen.dashAtendimentoArea), isTrue,
+          reason: 'Sem modulos configurados, RBAC prevalece');
+      expect(matrix.canView(AppScreen.dashComercialArea), isTrue,
+          reason: 'Sem modulos configurados, RBAC prevalece');
+      expect(matrix.canView(AppScreen.dashFiscalArea), isTrue,
+          reason: 'Sem modulos configurados, RBAC prevalece');
+    });
+
+    test(
+        'dashAtendimentoArea deny quando modulo configurado mas nao inclui Chamados',
+        () {
+      final userInfo = buildUserInfo(permissoes: [
+        permissao('dashAtendimentoArea'),
+      ]);
+      final matrix = SecurityMatrix.of(userInfo);
+
+      // Modulo configurado (Financeiro), mas Chamados nao contratado: deny
+      ModuloAccess.setContratadosParaTeste(['Financeiro']);
+
       expect(matrix.canView(AppScreen.dashAtendimentoArea), isFalse,
-          reason: 'dashAtendimentoArea pertence ao modulo Chamados');
-      expect(matrix.canView(AppScreen.dashComercialArea), isFalse,
-          reason: 'dashComercialArea pertence ao modulo Comercial');
-      expect(matrix.canView(AppScreen.dashFiscalArea), isFalse,
-          reason: 'dashFiscalArea pertence ao modulo Notas Fiscais');
+          reason: 'dashAtendimentoArea pertence ao modulo Chamados que nao esta contratado');
     });
 
     test(

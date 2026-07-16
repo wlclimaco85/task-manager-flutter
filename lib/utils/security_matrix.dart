@@ -337,17 +337,20 @@ class SecurityMatrix {
       return action == AppAction.view || action == AppAction.baixar;
     }
 
-    // Se backend retornou permissões, usa elas
+    // Se backend retornou permissões, usa elas (fonte de verdade RBAC).
+    // ModuloAccess só filtra quando módulos estão efetivamente configurados;
+    // se a API retornou lista vazia, a permissão RBAC prevalece.
     if (_backendPerms.isNotEmpty) {
       final perms = _backendPerms[screen.name];
       if (perms == null) return false;
-      return perms.contains(action) && ModuloAccess.isScreenAllowed(screen);
+      if (!perms.contains(action)) return false;
+      return !ModuloAccess.hasModulosConfigurados || ModuloAccess.isScreenAllowed(screen);
     }
 
     // Fallback: matrix hardcoded
     final hasRole = _fallbackMatrix[profile]?[screen]?.contains(action) ?? false;
     if (!hasRole) return false;
-    return ModuloAccess.isScreenAllowed(screen);
+    return !ModuloAccess.hasModulosConfigurados || ModuloAccess.isScreenAllowed(screen);
   }
 
   bool canView(AppScreen screen)   => _can(screen, AppAction.view);
@@ -365,15 +368,16 @@ class SecurityMatrix {
   bool get isMaster =>
       profile == UserProfile.system || tipoLogin == LoginEnum.MASTER;
 
-  /// IDs de tela (telaNome) que o usuário pode VISUALIZAR, vindas do backend,
-  /// filtradas também por acesso de módulo contratado.
+  /// IDs de tela (telaNome) que o usuário pode VISUALIZAR, vindas do backend.
+  /// Só filtra por módulo quando módulos estão efetivamente configurados.
   Set<String> get viewableTelaIds {
     final result = <String>{};
     _backendPerms.forEach((tela, actions) {
       if (!actions.contains(AppAction.view)) return;
-      // Filtra telas de módulos não contratados
-      final screen = AppScreen.values.where((s) => s.name == tela).firstOrNull;
-      if (screen != null && !ModuloAccess.isScreenAllowed(screen)) return;
+      if (ModuloAccess.hasModulosConfigurados) {
+        final screen = AppScreen.values.where((s) => s.name == tela).firstOrNull;
+        if (screen != null && !ModuloAccess.isScreenAllowed(screen)) return;
+      }
       result.add(tela);
     });
     return result;
@@ -629,6 +633,10 @@ class ModuloAccess {
     // Tela pertence a modulo mas nenhum modulo contratado a cobre: NEGAR
     return false;
   }
+
+  /// Indica se algum módulo foi efetivamente configurado na API.
+  /// Quando false, o filtro de módulo não deve bloquear telas com permissão RBAC.
+  static bool get hasModulosConfigurados => _loaded && _modulosContratados.isNotEmpty;
 
   static bool isModuloContratado(String nome) =>
       _loaded && _modulosContratados.contains(nome);
