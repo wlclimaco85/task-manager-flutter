@@ -22,8 +22,7 @@ class LoginScreen extends StatefulWidget {
   State<LoginScreen> createState() => _LoginScreenState();
 }
 
-class _LoginScreenState extends State<LoginScreen>
-    with SingleTickerProviderStateMixin {
+class _LoginScreenState extends State<LoginScreen> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   final _formKey = GlobalKey<FormState>();
@@ -31,26 +30,9 @@ class _LoginScreenState extends State<LoginScreen>
   bool _loginInProgress = false;
   bool _obscurePassword = true;
 
-  late AnimationController _animCtrl;
-
   @override
   void initState() {
     super.initState();
-    _animCtrl =
-        AnimationController(vsync: this, duration: const Duration(seconds: 2))
-          ..addStatusListener((s) {
-            if (s == AnimationStatus.completed && mounted) {
-              Navigator.of(context).pushReplacement(
-                  MaterialPageRoute(builder: (_) => const HomeScreen()));
-            }
-          });
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted && MediaQuery.of(context).disableAnimations) {
-        _animCtrl
-          ..duration = Duration.zero
-          ..forward();
-      }
-    });
   }
 
   void _goHome() {
@@ -73,7 +55,7 @@ class _LoginScreenState extends State<LoginScreen>
   }
 
   Future<void> _login() async {
-    if (!_formKey.currentState!.validate()) return;
+    if (_formKey.currentState == null || !_formKey.currentState!.validate()) return;
     setState(() => _loginInProgress = true);
     final resp = await NetworkCaller().postRequest(ApiLinks.login, {
       'email': _emailController.text.trim(),
@@ -82,7 +64,7 @@ class _LoginScreenState extends State<LoginScreen>
     setState(() => _loginInProgress = false);
     if (resp.isSuccess && resp.body != null) {
       final model = LoginModel.fromJson(resp.body!);
-      if (model.token == null || model.token!.isEmpty) {
+      if ((model.token ?? "").isEmpty) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(content: Text(GridTexts.loginTokenMissing)));
@@ -93,7 +75,10 @@ class _LoginScreenState extends State<LoginScreen>
       await ModuloAccess.load();
       if (!mounted) return;
       if (model.login?.trocarSenhaProximoLogin == true) {
-        await _showTrocarSenhaDialog(model.login!.email ?? '');
+        final email = model.login?.email ?? '';
+        if (email.isNotEmpty) {
+          await _showTrocarSenhaDialog(email);
+        }
         return;
       }
       _goHome();
