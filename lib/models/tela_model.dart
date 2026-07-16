@@ -13,7 +13,6 @@ class Tela {
   factory Tela.fromJson(Map<String, dynamic> json) {
     final idRaw = json['id'];
     if (idRaw == null) {
-      L.e('Tela.fromJson: missing required field "id"');
       throw FormatException('Tela requires non-null id');
     }
 
@@ -23,11 +22,9 @@ class Tela {
     } else if (idRaw is String) {
       id = int.tryParse(idRaw) ?? 0;
       if (id <= 0) {
-        L.e('Tela.fromJson: invalid id "$idRaw" cannot be parsed to positive int');
         throw FormatException('Tela id must be a positive integer');
       }
     } else {
-      L.e('Tela.fromJson: invalid id type ${idRaw.runtimeType}');
       throw FormatException('Tela id must be int or String');
     }
 

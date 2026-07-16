@@ -148,7 +148,6 @@ class LoginGridScreen extends StatelessWidget {
           dropdownDisplayField: 'label',
           isInForm: true,
           isFilterable: true,
-          enabledOnEdit: false, // CARD #492: Campo imutável após seleção
         ),
         FieldConfig(
           label: 'Parceiro',

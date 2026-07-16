@@ -3,8 +3,8 @@
   "configurations": [
     {
       "name": "flutter-web",
-      "runtimeExecutable": "flutter",
-      "runtimeArgs": ["run", "-d", "chrome", "--web-port", "59520"],
+      "runtimeExecutable": "cmd",
+      "runtimeArgs": ["/c", "cd", "C:\\App_Academia\\task_manager_flutter", "&&", "flutter", "run", "-d", "web-server", "--web-port", "59520", "--web-hostname", "localhost"],
       "port": 59520
     }
   ]

@@ -25,16 +25,18 @@ class TelaService {
               .toList();
         }
       }
+      return [];
     } catch (e, st) {
       if (e is FormatException) {
-        L.e('TelaService.listarTelas: JSON parsing failed', error: e, stackTrace: st);
+        // JSON parsing failed
+        rethrow;
       } else if (e is SocketException) {
-        L.e('TelaService.listarTelas: Network error', error: e, stackTrace: st);
+        // Network error
+        rethrow;
       } else {
-        L.e('TelaService.listarTelas: Unknown error', error: e, stackTrace: st);
+        // Unknown error
+        rethrow;
       }
-      // Rethrow para que caller possa diferenciar erro vs sucesso vazio
-      rethrow;
     }
   }
 }
