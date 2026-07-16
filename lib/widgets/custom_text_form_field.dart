@@ -1,6 +1,10 @@
 // ignore_for_file: public_member_api_docs, sort_constructors_first
 import 'package:flutter/material.dart';
+import 'custom_input_form_consolidated.dart';
 
+/// DEPRECATED: Use CustomInputFormConsolidated instead.
+/// This class is maintained for backwards compatibility.
+/// Redirect to CustomInputFormConsolidated with compatible parameters.
 class CustomTextFormField extends StatelessWidget {
   const CustomTextFormField({
     super.key,
@@ -18,30 +22,28 @@ class CustomTextFormField extends StatelessWidget {
   final TextEditingController controller;
   final bool? obscureText;
   final int? maxLines;
-  final Function(String?)? validator;
+  final String? Function(String?)? validator;
   final bool? readOnly;
   final TextInputType textInputType;
   final Icons? icon;
 
   @override
   Widget build(BuildContext context) {
-    return TextFormField(
+    // Redirect to consolidated form with compatible parameters
+    return CustomInputFormConsolidated(
+      controller: controller,
+      label: hintText,
+      hint: hintText,
+      validator: validator,
+      inputType: textInputType,
+      isPassword: obscureText ?? false,
       maxLines: maxLines ?? 1,
       readOnly: readOnly ?? false,
-      validator: (value) {
-        if (validator != null) {
-          return validator!(value);
-        }
-        return null;
-      },
-      controller: controller,
-      obscureText: obscureText ?? false,
-      decoration: InputDecoration(
-        fillColor: Colors.white,
-        hintText: hintText,
-        filled: true,
-        border: const OutlineInputBorder(borderSide: BorderSide.none),
-      ),
+      icon: icon as IconData?,
+      fillColor: Colors.white,
+      borderRadius: 0.0, // Flat border like original
+      borderColor: Colors.transparent,
+      borderWidth: 0.0,
     );
   }
 }
