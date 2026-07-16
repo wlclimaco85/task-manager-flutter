@@ -20,6 +20,8 @@ class LoginGridScreen extends StatelessWidget {
     this.onUserBannerTapped,
   });
 
+  static const String _defaultRoleLabel = 'Sem descrição';
+
   static Future<List<Map<String, dynamic>>> _loadRoles() async {
     final response = await NetworkCaller()
         .getRequest('${ApiLinks.baseUrl}/api/role/disponiveis');
@@ -32,7 +34,7 @@ class LoginGridScreen extends StatelessWidget {
           ? desc
           : (key != null && key.isNotEmpty)
               ? key
-              : 'Role #${e['id']}';
+              : _defaultRoleLabel;
       return {'value': e['id'].toString(), 'label': label};
     }).toList();
   }
