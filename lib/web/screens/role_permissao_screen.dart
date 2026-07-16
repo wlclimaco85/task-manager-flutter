@@ -3,50 +3,16 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 import '../../models/role_permissao_model.dart';
 import '../../models/auth_utility.dart';
+import '../../models/tela_model.dart';
 import '../../utils/api_links.dart';
 import '../../utils/grid_colors.dart';
 import '../../utils/tenant_context.dart';
-import '../../utils/menu_config.dart';
+import '../../services/tela_service.dart';
 
-// Fix (card #460): converte o id de menu (snake_case, ex.: 'nfe_entrada')
-// para o formato usado pelo backend em role_permissao.tela_nome (camelCase,
-// ex.: 'nfeEntrada'). Os dois catalogos evoluiram separadamente -- o match
-// por igualdade direta (t.id == p.telaNome) nunca encontrava a permissao
-// real, entao a tabela sempre aparecia toda desmarcada.
-//
-// LIMITACAO CONHECIDA: esta conversao mecanica cobre o padrao regular
-// (snake_case -> camelCase) usado pela maioria das telas do seed
-// (V101__Role_permissao.sql), mas o backend usa em alguns casos vocabulario
-// proprio nao-mecanico (ex.: 'ged' em vez de 'diretorios'/'arquivos',
-// 'kanbanChamados' em vez de 'chamados', 'pontoWeb' em vez de 'ponto').
-// Alem disso, varias telas visiveis no MenuConfig (Planos, Orcamentos,
-// Pedidos de Venda/Compra, Aprovacao de Compras, Tabela de Precos,
-// Devolucoes, Dashboard Comercial) nao tem nenhuma linha de seed em
-// V101__Role_permissao.sql -- para essas, a tela aparecera desmarcada ate
-// que uma migration adicione o seed correspondente (fora do escopo deste
-// fix, que e sobre o mecanismo de match, nao sobre dados faltantes).
-String toBackendTelaNome(String menuItemId) {
-  final parts = menuItemId.split('_');
-  if (parts.isEmpty) return menuItemId;
-  final buffer = StringBuffer(parts.first);
-  for (final part in parts.skip(1)) {
-    if (part.isEmpty) continue;
-    buffer.write(part[0].toUpperCase());
-    buffer.write(part.substring(1));
-  }
-  return buffer.toString();
-}
-
-// Fix (card #471): confirmado via consulta direta ao banco de dev que
-// role_permissao.tela_nome NÃO segue uma convenção única -- registros
-// diferentes usam snake_case ('nfe_entrada', 'equipamento') e camelCase
-// ('nfeEntrada', 'contasBancarias') dependendo de quando/como foram
-// gravados (seeds diferentes ao longo do tempo). O match exato contra
-// toBackendTelaNome() (sempre camelCase) por isso perdia registros
-// snake_case legados -- a tela aparecia desmarcada mesmo quando a
-// permissão já existia no banco. Normalizando (lowercase + remove "_")
-// dos dois lados, o match funciona independente de qual convenção o
-// registro específico usa.
+// Fix (card #471): normalizacao de nomes de tela (lowercase + remove "_")
+// permite match independente de qual convencao (snake_case vs camelCase)
+// o registro especifico usar no banco. Necessario porque role_permissao.tela_nome
+// usa multiplas convencoes historicamente.
 String _normalizeTelaNome(String s) =>
     s.toLowerCase().replaceAll('_', '');
 
@@ -60,6 +26,7 @@ class RolePermissaoScreen extends StatefulWidget {
 class _RolePermissaoScreenState extends State<RolePermissaoScreen> {
   List<RolePermissao> _permissoes = [];
   List<Map<String, dynamic>> _roles = [];
+  List<Tela> _telas = [];
   int? _roleId;
   bool _carregando = true;
 
@@ -67,6 +34,7 @@ class _RolePermissaoScreenState extends State<RolePermissaoScreen> {
   void initState() {
     super.initState();
     _carregarDados();
+    _carregarTelas();
   }
 
   Future<void> _carregarDados() async {
@@ -105,14 +73,33 @@ class _RolePermissaoScreenState extends State<RolePermissaoScreen> {
     }
   }
 
+  /// Carrega a lista dinâmica de telas do backend via TelaService
+  Future<void> _carregarTelas() async {
+    try {
+      final telas = await TelaService.listarTelas();
+      if (mounted) {
+        setState(() {
+          _telas = telas;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Erro ao carregar telas: $e'), backgroundColor: Colors.red),
+        );
+      }
+    }
+  }
+
   // Fix (card #460, sintoma 3): apos o PUT bem-sucedido, atualiza
   // _permissoes localmente (upsert do registro alterado) e chama setState,
   // em vez de deixar o estado antigo intocado -- antes disso o checkbox
   // nao refletia o clique ate o usuario trocar de role e voltar.
-  Future<void> _salvar(String menuItemId, String campo, bool valor) async {
+  // Fix (card #493): refatorado para receber telaNome diretamente (ja no formato
+  // correto do backend) em vez de menuItemId que precisa conversao.
+  Future<void> _salvar(String telaNome, String campo, bool valor) async {
     if (_roleId == null) return;
     final roleId = _roleId!;
-    final telaNome = toBackendTelaNome(menuItemId);
     final token = AuthUtility.userInfo?.token ?? '';
     final tenantId = TenantContext.empresaId?.toString() ?? '';
 
@@ -138,7 +125,7 @@ class _RolePermissaoScreenState extends State<RolePermissaoScreen> {
 
       setState(() {
         final index = _permissoes.indexWhere(
-          (p) => p.roleId == roleId && p.telaNome == telaNome,
+          (p) => p.roleId == roleId && _normalizeTelaNome(p.telaNome) == _normalizeTelaNome(telaNome),
         );
         if (index >= 0) {
           final atual = _permissoes[index];
@@ -179,9 +166,11 @@ class _RolePermissaoScreenState extends State<RolePermissaoScreen> {
     }
   }
 
-  RolePermissao _permissaoDe(MenuItem t) {
-    final telaNome = toBackendTelaNome(t.id);
-    final telaNomeNormalizado = _normalizeTelaNome(t.id);
+  /// Fix (card #493): refatorado para receber Tela diretamente
+  /// em vez de MenuItem. Usa tela.nome (ja no formato do backend)
+  /// para fazer match com permissoes armazenadas.
+  RolePermissao _permissaoDe(Tela tela) {
+    final telaNomeNormalizado = _normalizeTelaNome(tela.nome);
     return _permissoes.firstWhere(
       (p) =>
           p.roleId == _roleId &&
@@ -191,7 +180,7 @@ class _RolePermissaoScreenState extends State<RolePermissaoScreen> {
         roleId: _roleId!,
         roleKey: '',
         roleDescription: '',
-        telaNome: telaNome,
+        telaNome: tela.nome,
         podeVer: false,
         podeInserir: false,
         podeEditar: false,
@@ -234,10 +223,10 @@ class _RolePermissaoScreenState extends State<RolePermissaoScreen> {
     );
   }
 
-  // Fix (card #460, sintoma 2): antes iterava MenuConfig.groups achatando
-  // tudo numa lista plana (telas.addAll(g.items)), descartando a estrutura
-  // de grupo. Agora preserva os grupos e insere uma TableRow de cabecalho
-  // de secao (g.label) antes das telas de cada grupo.
+  /// Fix (card #493): refatorado para iterar _telas (carregadas dinamicamente
+  /// do backend via /api/telas) em vez de MenuConfig.groups (hardcoded).
+  /// Isso permite que novas telas adicionadas ao banco sejam automaticamente
+  /// listadas no controle de acesso, sem necessidade de rebuild do app.
   Widget _buildTabela() {
     if (_roleId == null) return const SizedBox();
 
@@ -255,18 +244,26 @@ class _RolePermissaoScreenState extends State<RolePermissaoScreen> {
       ),
     ];
 
-    for (final grupo in MenuConfig.groups) {
-      if (grupo.items.isEmpty) continue;
+    // Itera telas carregadas dinamicamente do backend
+    for (final tela in _telas) {
+      final p = _permissaoDe(tela);
       rows.add(TableRow(
-        decoration: BoxDecoration(color: GridColors.primary.withOpacity(0.04)),
         children: [
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-            child: Text(
-              grupo.label,
-              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
-            ),
-          ),
+          _cell(tela.descricao.isNotEmpty ? tela.descricao : tela.nome),
+          _check(p.podeVer, () => _salvar(tela.nome, 'podeVer', !p.podeVer)),
+          _check(p.podeInserir, () => _salvar(tela.nome, 'podeInserir', !p.podeInserir)),
+          _check(p.podeEditar, () => _salvar(tela.nome, 'podeEditar', !p.podeEditar)),
+          _check(p.podeDeletar, () => _salvar(tela.nome, 'podeDeletar', !p.podeDeletar)),
+          _check(p.podeBaixar, () => _salvar(tela.nome, 'podeBaixar', !p.podeBaixar)),
+        ],
+      ));
+    }
+
+    // Se nenhuma tela foi carregada, mostra mensagem
+    if (_telas.isEmpty) {
+      rows.add(TableRow(
+        children: [
+          _cell('Nenhuma tela disponível'),
           const SizedBox(),
           const SizedBox(),
           const SizedBox(),
@@ -274,19 +271,6 @@ class _RolePermissaoScreenState extends State<RolePermissaoScreen> {
           const SizedBox(),
         ],
       ));
-      for (final t in grupo.items) {
-        final p = _permissaoDe(t);
-        rows.add(TableRow(
-          children: [
-            _cell('   ${t.label}'),
-            _check(p.podeVer, () => _salvar(t.id, 'podeVer', !p.podeVer)),
-            _check(p.podeInserir, () => _salvar(t.id, 'podeInserir', !p.podeInserir)),
-            _check(p.podeEditar, () => _salvar(t.id, 'podeEditar', !p.podeEditar)),
-            _check(p.podeDeletar, () => _salvar(t.id, 'podeDeletar', !p.podeDeletar)),
-            _check(p.podeBaixar, () => _salvar(t.id, 'podeBaixar', !p.podeBaixar)),
-          ],
-        ));
-      }
     }
 
     return SingleChildScrollView(
