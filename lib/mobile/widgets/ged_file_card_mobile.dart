@@ -226,63 +226,66 @@ class _GedFileCardMobileState extends State<GedFileCardMobile> {
 
   /// Constrói row com botões de ação
   Widget _buildAcoes() {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        // Botão Baixar
-        IconButton(
-          icon: const Icon(Icons.download, color: Colors.blue, size: 18),
-          tooltip: 'Baixar',
-          onPressed: widget.onDownload,
-          constraints: const BoxConstraints(),
-          padding: const EdgeInsets.all(4),
-        ),
-        // Menu com Renomear, Excluir, Classificar
-        PopupMenuButton<String>(
-          icon: const Icon(Icons.more_vert, size: 18),
-          tooltip: 'Mais ações',
-          onSelected: (acao) {
-            if (acao == 'renomear') {
-              setState(() => _editando = true);
-            } else if (acao == 'excluir') {
-              widget.onDelete();
-            } else if (acao == 'classificar') {
-              widget.onClassify?.call();
-            }
-          },
-          itemBuilder: (context) => [
-            // Excluir (apenas se podeExcluir)
-            if (widget.podeExcluir)
+    return SizedBox(
+      height: 40,
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // Botão Baixar
+          IconButton(
+            icon: const Icon(Icons.download, color: Colors.blue, size: 18),
+            tooltip: 'Baixar',
+            onPressed: widget.onDownload,
+            constraints: const BoxConstraints(),
+            padding: const EdgeInsets.all(4),
+          ),
+          // Menu com Renomear, Excluir, Classificar
+          PopupMenuButton<String>(
+            icon: const Icon(Icons.more_vert, size: 18),
+            tooltip: 'Mais ações',
+            onSelected: (acao) {
+              if (acao == 'renomear') {
+                setState(() => _editando = true);
+              } else if (acao == 'excluir') {
+                widget.onDelete();
+              } else if (acao == 'classificar') {
+                widget.onClassify?.call();
+              }
+            },
+            itemBuilder: (context) => [
+              // Excluir (apenas se podeExcluir)
+              if (widget.podeExcluir)
+                const PopupMenuItem<String>(
+                  value: 'excluir',
+                  child: ListTile(
+                    leading: Icon(Icons.delete_outline, color: Colors.red),
+                    title: Text('Excluir'),
+                    dense: true,
+                  ),
+                ),
+              // Renomear
               const PopupMenuItem<String>(
-                value: 'excluir',
+                value: 'renomear',
                 child: ListTile(
-                  leading: Icon(Icons.delete_outline, color: Colors.red),
-                  title: Text('Excluir'),
+                  leading: Icon(Icons.edit),
+                  title: Text('Renomear'),
                   dense: true,
                 ),
               ),
-            // Renomear
-            const PopupMenuItem<String>(
-              value: 'renomear',
-              child: ListTile(
-                leading: Icon(Icons.edit),
-                title: Text('Renomear'),
-                dense: true,
-              ),
-            ),
-            // Classificar com IA (opcional)
-            if (widget.onClassify != null)
-              const PopupMenuItem<String>(
-                value: 'classificar',
-                child: ListTile(
-                  leading: Icon(Icons.auto_awesome),
-                  title: Text('Classificar com IA'),
-                  dense: true,
+              // Classificar com IA (opcional)
+              if (widget.onClassify != null)
+                const PopupMenuItem<String>(
+                  value: 'classificar',
+                  child: ListTile(
+                    leading: Icon(Icons.auto_awesome),
+                    title: Text('Classificar com IA'),
+                    dense: true,
+                  ),
                 ),
-              ),
-          ],
-        ),
-      ],
+            ],
+          ),
+        ],
+      ),
     );
   }
 }

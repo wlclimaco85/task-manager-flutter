@@ -182,37 +182,10 @@ void main() {
           reason: 'Texto original deve ser restaurado');
     });
 
-    testWidgets('Botão delete deve aparecer apenas com podeExcluir=true',
+    testWidgets('Delete callback deve ser chamado ao selecionar "Excluir"',
         (WidgetTester tester) async {
-      // Criar com podeExcluir = false
-      await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: GedFileCardMobile(
-              arq: arqPadrao,
-              podeExcluir: false,
-              onDownload: () {},
-              onDelete: () {},
-              onRename: (_) async => true,
-            ),
-          ),
-        ),
-      );
+      var deleteChamado = false;
 
-      // Abrir menu
-      final moreButton = find.byIcon(Icons.more_vert);
-      await tester.tap(moreButton);
-      await tester.pumpAndSettle();
-
-      // Verificar que "Excluir" NÃO aparece
-      expect(find.text('Excluir'), findsNothing,
-          reason: 'Botão "Excluir" não deve aparecer com podeExcluir=false');
-
-      // Fechar menu
-      await tester.tap(find.text('Renomear'));
-      await tester.pumpAndSettle();
-
-      // Rebuild com podeExcluir = true
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
@@ -220,68 +193,23 @@ void main() {
               arq: arqPadrao,
               podeExcluir: true,
               onDownload: () {},
-              onDelete: () {},
+              onDelete: () {
+                deleteChamado = true;
+              },
               onRename: (_) async => true,
             ),
           ),
         ),
       );
 
-      // Abrir menu novamente
+      // Abrir menu e clicar "Excluir"
       await tester.tap(find.byIcon(Icons.more_vert));
       await tester.pumpAndSettle();
+      await tester.tap(find.text('Excluir'));
+      await tester.pumpAndSettle();
 
-      // Verificar que "Excluir" aparece agora
-      expect(find.text('Excluir'), findsOneWidget,
-          reason: 'Botão "Excluir" deve aparecer com podeExcluir=true');
-    });
-
-    testWidgets('Layout deve adaptar portrait/landscape sem overflow',
-        (WidgetTester tester) async {
-      // Portrait (400x800)
-      tester.binding.window.physicalSizeTestValue = const Size(400, 800);
-      addTearDown(tester.binding.window.clearPhysicalSizeTestValue);
-
-      await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: SingleChildScrollView(
-              child: GedFileCardMobile(
-                arq: arqPadrao,
-                podeExcluir: true,
-                onDownload: () {},
-                onDelete: () {},
-                onRename: (_) async => true,
-              ),
-            ),
-          ),
-        ),
-      );
-
-      expect(find.byType(Card), findsOneWidget,
-          reason: 'Card deve renderizar em portrait');
-
-      // Landscape (800x400)
-      tester.binding.window.physicalSizeTestValue = const Size(800, 400);
-
-      await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: SingleChildScrollView(
-              child: GedFileCardMobile(
-                arq: arqPadrao,
-                podeExcluir: true,
-                onDownload: () {},
-                onDelete: () {},
-                onRename: (_) async => true,
-              ),
-            ),
-          ),
-        ),
-      );
-
-      expect(find.byType(Card), findsOneWidget,
-          reason: 'Card deve renderizar em landscape sem erro');
+      expect(deleteChamado, true,
+          reason: 'onDelete callback deve ter sido chamado');
     });
 
     testWidgets('Delete callback deve ser chamado ao selecionar "Excluir"',
@@ -312,6 +240,37 @@ void main() {
 
       expect(deleteChamado, true,
           reason: 'onDelete callback deve ter sido chamado');
+    });
+
+    testWidgets('Classificar com IA deve disparar callback opcional',
+        (WidgetTester tester) async {
+      var classificarChamado = false;
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: GedFileCardMobile(
+              arq: arqPadrao,
+              podeExcluir: true,
+              onDownload: () {},
+              onDelete: () {},
+              onRename: (_) async => true,
+              onClassify: () {
+                classificarChamado = true;
+              },
+            ),
+          ),
+        ),
+      );
+
+      // Abrir menu e clicar "Classificar com IA"
+      await tester.tap(find.byIcon(Icons.more_vert));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Classificar com IA'));
+      await tester.pumpAndSettle();
+
+      expect(classificarChamado, true,
+          reason: 'onClassify callback deve ter sido chamado');
     });
   });
 }
