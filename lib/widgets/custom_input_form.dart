@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 import '../../constants/custom_colors.dart';
-import '../../../utils/ensure_visible_when_focused.dart';
+import 'custom_input_form_consolidated.dart';
 // Copyright 2019 Aleksander Woźniak
 // SPDX-License-Identifier: Apache-2.0
 
+/// DEPRECATED: Use CustomInputFormConsolidated instead.
+/// This class is maintained for backwards compatibility.
+/// Redirect to CustomInputFormConsolidated with compatible parameters.
 class CustomInputForm extends StatelessWidget {
   String? Function(String?)? validator;
   late FocusNode focusNode;
@@ -24,38 +27,18 @@ class CustomInputForm extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final platform = Theme.of(context).platform;
-
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 3),
-      child: EnsureVisibleWhenFocused(
-        focusNode: focusNode,
-        child: TextFormField(
-          controller: controller,
-          key: Key(keyField),
-          keyboardType: type ?? TextInputType.text,
-          decoration: InputDecoration(
-            fillColor: CustomColors().getLightGreenBackground(),
-            filled: true,
-            border: const OutlineInputBorder(
-              borderRadius: BorderRadius.all(
-                Radius.circular(8.0),
-              ),
-              borderSide: BorderSide(
-                color: Colors.yellow,
-                width: 3.0,
-              ),
-            ),
-            labelStyle: TextStyle(
-                color: CustomColors().getLightGreenBackground(),
-                fontSize: 16.0),
-            hintText: keyField,
-          ),
-          onChanged: onPressed,
-          //    onChanged: (value) => title = value,
-          validator: validator,
-        ),
-      ),
+    // Redirect to consolidated form with compatible parameters
+    return CustomInputFormConsolidated(
+      controller: controller,
+      label: keyField,
+      hint: keyField,
+      validator: validator,
+      onChanged: onPressed,
+      inputType: type ?? TextInputType.text,
+      focusNode: focusNode,
+      fillColor: CustomColors().getLightGreenBackground(),
+      borderColor: Colors.yellow,
+      borderWidth: 3.0,
     );
   }
 }
