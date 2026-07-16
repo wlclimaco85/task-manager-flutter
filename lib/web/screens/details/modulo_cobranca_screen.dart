@@ -62,7 +62,7 @@ class _ModuloCobrancaScreenState extends State<ModuloCobrancaScreen> {
     try {
       final token = AuthUtility.userInfo?.token;
       final resp = await http.get(
-        Uri.parse('${ApiLinks.baseUrl}/api/parceiro-modulo'),
+        Uri.parse('${ApiLinks.baseUrl}/api/parceiro-modulo?parceiroId=${widget.parceiroId}'),
         headers: {if (token != null) 'Authorization': 'Bearer $token'},
       );
 

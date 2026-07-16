@@ -94,7 +94,7 @@ class WindowsParceiroDetailScreen extends StatelessWidget {
           title: 'Comunicados',
           icon: Icons.campaign,
           telaNome: 'comunicado',
-          extraParams: {'empId': empresaId},
+          extraParams: {'empId': empresaId, 'parceiroId': id},
           transformFormData: WebComunicadoGridComponentesScreen.transformFormData,
         ),
         RelatedGridTab(
