@@ -270,3 +270,153 @@ class Chamado {
     }).toList();
   }
 }
+
+// =========================================================
+// CARD #318: Botão Reabrir/Fechar Chamado (Card-318)
+// =========================================================
+
+/// Widget de ação para reabrir/fechar um Chamado
+/// - Status FECHADO → mostra "Reabrir" (verde)
+/// - Status ABERTO/EM_ANDAMENTO → mostra "Fechar" (vermelho)
+/// - Status CANCELADO → desabilitado (cinzento)
+class ChamadoStatusButton extends StatefulWidget {
+  final Chamado chamado;
+  final VoidCallback onStatusChanged;
+
+  const ChamadoStatusButton({
+    Key? key,
+    required this.chamado,
+    required this.onStatusChanged,
+  }) : super(key: key);
+
+  @override
+  _ChamadoStatusButtonState createState() => _ChamadoStatusButtonState();
+}
+
+class _ChamadoStatusButtonState extends State<ChamadoStatusButton> {
+  bool _isLoading = false;
+
+  // Mapa: Status → Label do Botão
+  static const Map<StatusChamadoEnum, String> statusLabels = {
+    StatusChamadoEnum.FECHADO: "Reabrir",
+    StatusChamadoEnum.ABERTO: "Fechar",
+    StatusChamadoEnum.EM_ANDAMENTO: "Fechar",
+    StatusChamadoEnum.CANCELADO: "---",
+  };
+
+  // Mapa: Status → Cor do Botão
+  static const Map<StatusChamadoEnum, Color> statusColors = {
+    StatusChamadoEnum.FECHADO: Colors.green, // Reabrir
+    StatusChamadoEnum.ABERTO: Colors.red, // Fechar
+    StatusChamadoEnum.EM_ANDAMENTO: Colors.red, // Fechar
+    StatusChamadoEnum.CANCELADO: Colors.grey, // Desabilitado
+  };
+
+  String _getLabel() => statusLabels[widget.chamado.status] ?? "---";
+
+  Color _getColor() => statusColors[widget.chamado.status] ?? Colors.grey;
+
+  StatusChamadoEnum _getNovoStatus() {
+    if (widget.chamado.status == StatusChamadoEnum.FECHADO) {
+      return StatusChamadoEnum.ABERTO; // Reabrir
+    } else if (widget.chamado.status == StatusChamadoEnum.CANCELADO) {
+      return widget.chamado.status; // Não muda
+    } else {
+      return StatusChamadoEnum.FECHADO; // Fechar
+    }
+  }
+
+  bool _isDisabled() => widget.chamado.status == StatusChamadoEnum.CANCELADO;
+
+  Future<void> _updateStatus() async {
+    if (_isDisabled() || widget.chamado.id == null) return;
+
+    setState(() => _isLoading = true);
+
+    try {
+      final novoStatus = _getNovoStatus();
+      final url =
+          '${ApiLinks.baseProdUrl}/api/chamado/${widget.chamado.id}/status?status=${novoStatus.name}';
+
+      final response = await NetworkCaller().patchRequest(url, {});
+
+      if (response.isSuccess) {
+        // Atualiza status local
+        widget.chamado.status = novoStatus;
+
+        // Notifica parent
+        widget.onStatusChanged();
+
+        // Feedback visual
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'Status atualizado para "${novoStatus.label}"',
+              style: const TextStyle(color: Colors.white),
+            ),
+            backgroundColor: Colors.green,
+            duration: const Duration(seconds: 2),
+          ),
+        );
+      } else {
+        // Erro na API
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'Erro ao atualizar: ${response.statusCode}',
+              style: const TextStyle(color: Colors.white),
+            ),
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 3),
+          ),
+        );
+      }
+    } catch (e) {
+      // Erro de rede/exceção
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'Erro de conexão: $e',
+            style: const TextStyle(color: Colors.white),
+          ),
+          backgroundColor: Colors.red,
+          duration: const Duration(seconds: 3),
+        ),
+      );
+    } finally {
+      setState(() => _isLoading = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return ElevatedButton(
+      onPressed: _isDisabled() || _isLoading ? null : _updateStatus,
+      style: ElevatedButton.styleFrom(
+        backgroundColor: _getColor(),
+        disabledBackgroundColor: Colors.grey[300],
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+        minimumSize: const Size(60, 30),
+      ),
+      child: _isLoading
+          ? const SizedBox(
+              height: 16,
+              width: 16,
+              child: CircularProgressIndicator(
+                strokeWidth: 2,
+                valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+              ),
+            )
+          : Text(
+              _getLabel(),
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 12,
+                fontWeight: FontWeight.bold,
+              ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+    );
+  }
+}

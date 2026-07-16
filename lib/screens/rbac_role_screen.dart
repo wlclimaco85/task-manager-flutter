@@ -171,15 +171,15 @@ class _RBACRoleScreenState extends State<RBACRoleScreen> {
       future: _rolesFuture,
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Scaffold(
-            appBar: AppBar(title: Text('Roles')),
-            body: Center(child: CircularProgressIndicator()),
+          return Scaffold(
+            appBar: AppBar(title: const Text('Roles')),
+            body: const Center(child: CircularProgressIndicator()),
           );
         }
 
         if (snapshot.hasError) {
           return Scaffold(
-            appBar: const AppBar(title: Text('Roles')),
+            appBar: AppBar(title: const Text('Roles')),
             body: Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
