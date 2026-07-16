@@ -154,7 +154,7 @@ class _DynamicGridWindowsScreenState<T>
     // Pré-computa todos os nomes de dropdown (replace + backend)
     final allDropdownNames = <String>{...dropdownReplaceNames};
     for (final f in fields) {
-      if (f.dropdownEndpoint != null && f.dropdownEndpoint!.isNotEmpty) {
+      if ((f.dropdownEndpoint?.isNotEmpty ?? false)) {
         allDropdownNames.add(f.fieldName.toLowerCase());
       }
     }
@@ -182,7 +182,10 @@ class _DynamicGridWindowsScreenState<T>
             dropdownReplaceNames.contains(base) &&
             !insertedReplace.contains(base)) {
           insertedReplace.add(base);
-          converted.add(replaceMapLower[base]!);
+          final fieldConfig = replaceMapLower[base];
+          if (fieldConfig != null) {
+            converted.add(fieldConfig);
+          }
         }
         continue;
       }
@@ -211,7 +214,10 @@ class _DynamicGridWindowsScreenState<T>
         backendFieldNames.add(base);
         if (!insertedReplace.contains(base)) {
           insertedReplace.add(base);
-          converted.add(replaceMapLower[base]!);
+          final fieldConfig = replaceMapLower[base];
+          if (fieldConfig != null) {
+            converted.add(fieldConfig);
+          }
         }
         continue;
       }
@@ -226,7 +232,10 @@ class _DynamicGridWindowsScreenState<T>
             orElse: () => '');
         if (matchName.isNotEmpty && !insertedReplace.contains(matchName)) {
           insertedReplace.add(matchName);
-          converted.add(replaceMapLower[matchName]!);
+          final fieldConfig = replaceMapLower[matchName];
+          if (fieldConfig != null) {
+            converted.add(fieldConfig);
+          }
           continue;
         }
       }
@@ -250,8 +259,7 @@ class _DynamicGridWindowsScreenState<T>
       if (_isRawFkIdField(fnLower, allDropdownNames)) continue;
 
       // ── 6. Auto-dropdown / auto-multiselect do backend ─────────────────
-      final isAutoFk = f.dropdownEndpoint != null &&
-          f.dropdownEndpoint!.isNotEmpty &&
+      final isAutoFk = (f.dropdownEndpoint?.isNotEmpty ?? false) &&
           !f.multiSelect;
       final isAutoMs =
           f.multiSelect || f.fieldType == TelaFieldType.multiselect;
@@ -284,7 +292,7 @@ class _DynamicGridWindowsScreenState<T>
             .toList(),
         dropdownFutureBuilder:
             (isAutoFk || isAutoMs) && f.dropdownEndpoint != null
-                ? _makeFuture(f.dropdownEndpoint!)
+                ? _makeFuture(f.dropdownEndpoint ?? '')
                 : null,
         isRequired: f.isRequired,
         validator: (v) => (f.isRequired && (v == null || v.isEmpty))
@@ -477,7 +485,12 @@ class _DynamicGridWindowsScreenState<T>
           );
         }
 
-        final tela = snap.data!;
+        final tela = snap.data;
+        if (tela == null) {
+          return const Scaffold(
+            body: Center(child: Text('Erro: dados indisponíveis')),
+          );
+        }
         final fields = _convert(tela.fields);
 
         return GenericGridScreen<T>(
@@ -510,7 +523,7 @@ class _DynamicGridWindowsScreenState<T>
           headerActions: widget.headerActions,
           helpTelaNome: tela.nome,
           onAfterCreate: widget.onAfterCreate != null
-              ? () => widget.onAfterCreate!()
+              ? () => widget.onAfterCreate?.call()
               : null,
           onAfterSave: widget.onAfterSave,
           onSelectedRowsChanged: widget.onSelectedRowsChanged,

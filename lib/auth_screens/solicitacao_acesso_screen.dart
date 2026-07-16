@@ -77,7 +77,7 @@ class _SolicitacaoAcessoScreenState extends State<SolicitacaoAcessoScreen> {
   }
 
   Future<void> _enviar() async {
-    if (!_formKey.currentState!.validate()) return;
+    if (!(_formKey.currentState?.validate() ?? false)) return;
     setState(() {
       _enviando = true;
       _erroServidor = null;
@@ -303,7 +303,7 @@ class _SolicitacaoAcessoScreenState extends State<SolicitacaoAcessoScreen> {
               ),
               child: Semantics(
                 liveRegion: true,
-                child: Text(_erroServidor!,
+                child: Text(_erroServidor ?? '',
                     style: const TextStyle(color: GridColors.errorDark, fontSize: 12)),
               ),
             ),

@@ -147,14 +147,12 @@ class CustomAction<T> {
   final String label;
   final void Function(BuildContext context, T item) onPressed;
   final bool Function(T item)? isVisible;
-  final int Function(T item)? badgeCount;
 
   const CustomAction({
     required this.icon,
     required this.label,
     required this.onPressed,
     this.isVisible,
-    this.badgeCount,
   });
 }
 
@@ -188,7 +186,6 @@ class GenericMobileGridScreen<T> extends StatefulWidget {
   // NOVA PROPRIEDADE SIMPLES
   final Map<String, dynamic>? additionalFormData;
   final Map<String, dynamic> Function(T? item)? dynamicAdditionalFormData;
-  final Widget? infoBanner;
 
   const GenericMobileGridScreen({
     super.key,
@@ -218,7 +215,6 @@ class GenericMobileGridScreen<T> extends StatefulWidget {
     this.onBannerRefresh,
     this.additionalFormData, // NOVO PARÂMETRO
     this.dynamicAdditionalFormData, // NOVO: Para dados dinâmicos
-    this.infoBanner,
   });
 
   @override
@@ -250,7 +246,6 @@ class _GenericMobileGridScreenState<T>
 
   final Map<String, bool> _fieldVisibility = {};
   List<CustomAction<T>> _customActions = [];
-  int _fieldVisibilityVersion = 0;
 
   bool _isSelectionMode = false;
   final Map<String, bool> _cardSelection = {};
@@ -272,11 +267,17 @@ class _GenericMobileGridScreenState<T>
     }
 
     if (widget.initialFilters != null) {
-      widget.initialFilters!.forEach((key, value) {
-        if (_filterControllers.containsKey(key)) {
-          _filterControllers[key]!.text = value.toString();
-        }
-      });
+      final filters = widget.initialFilters;
+      if (filters != null) {
+        filters.forEach((key, value) {
+          if (_filterControllers.containsKey(key)) {
+            final ctrl = _filterControllers[key];
+            if (ctrl != null) {
+              ctrl.text = value.toString();
+            }
+          }
+        });
+      }
     }
 
     _loadFieldPreferences().then((_) {
@@ -284,7 +285,7 @@ class _GenericMobileGridScreenState<T>
     });
 
     if (widget.customActions != null) {
-      _customActions = widget.customActions!();
+      _customActions = widget.customActions?.call() ?? [];
     }
 
     if (widget.enableDebugMode) {
@@ -367,16 +368,15 @@ class _GenericMobileGridScreenState<T>
       final NetworkResponse response = await NetworkCaller().getRequest(url);
 
       if (response.statusCode == 200 && response.body != null) {
-        final responseData = response.body!['data'];
+        final responseData = response.body?['data'];
         final List<dynamic> data = responseData is Map
             ? responseData['dados'] ?? []
             : responseData ?? [];
 
         final processedData = data.map((json) {
-          final itemMap =
-              json is Map ? Map<String, dynamic>.from(json) : <String, dynamic>{};
+          final itemMap = json is Map ? Map<String, dynamic>.from(json) : {};
 
-          if (itemMap['file'] != null) {
+          if (json is Map && json['file'] != null) {
             for (final config in widget.fieldConfigs.where(
               (c) => c.fieldType == FieldType.file,
             )) {
@@ -444,9 +444,12 @@ class _GenericMobileGridScreenState<T>
     }
 
     if (widget.extraParams != null) {
-      widget.extraParams!.forEach((key, value) {
-        url += '&$key=${Uri.encodeComponent(value.toString())}';
-      });
+      final params = widget.extraParams;
+      if (params != null) {
+        params.forEach((key, value) {
+          url += '&$key=${Uri.encodeComponent(value.toString())}';
+        });
+      }
     }
 
     return url;
@@ -504,13 +507,16 @@ class _GenericMobileGridScreenState<T>
     });
   }
 
-  void _openForm({T? item}) {
+  Future<void> _openForm({T? item}) async {
     _itemParaEditar = item;
-    showDialog(
+    final result = await showDialog<bool>(
       context: context,
       barrierColor: Colors.black54,
       builder: (context) => _buildFormDialog(item),
     );
+    if (result == true && mounted) {
+      _loadItems(reset: true);
+    }
   }
 
   Widget _buildFormDialog(T? item) {
@@ -692,7 +698,8 @@ class _GenericMobileGridScreenState<T>
                     onPressed: () {
                       setState(() {
                         _fileCache[config.fieldName]?.remove(file);
-                        if (_fileCache[config.fieldName]!.isEmpty) {
+                        final cached = _fileCache[config.fieldName];
+                        if (cached?.isEmpty ?? false) {
                           _fileCache.remove(config.fieldName);
                         }
                         controller.clear();
@@ -1013,10 +1020,10 @@ class _GenericMobileGridScreenState<T>
     }
 
     // Campos com opções estáticas também usam SearchableDropdownField
-    if (config.dropdownOptions != null && config.dropdownOptions!.isNotEmpty) {
+    if ((config.dropdownOptions?.isNotEmpty ?? false)) {
       return SearchableDropdownField(
         label: config.label + (config.isRequired ? ' *' : ''),
-        items: config.dropdownOptions!,
+        items: config.dropdownOptions ?? [],
         valueField: config.dropdownValueField,
         displayField: config.dropdownDisplayField,
         value: controller.text.isNotEmpty ? controller.text : null,
@@ -1308,14 +1315,17 @@ class _GenericMobileGridScreenState<T>
       // ADICIONA DADOS ADICIONAIS FIXOS
       // ==================================================
       if (widget.additionalFormData != null) {
-        _addAllNested(formData, widget.additionalFormData!);
+        final data = widget.additionalFormData;
+        if (data != null) {
+          _addAllNested(formData, data);
 
-        if (widget.enableDebugMode) {
-          L.d('=== DADOS ADICIONAIS DO FORMULÁRIO ===');
-          widget.additionalFormData!.forEach((key, value) {
-            L.d('$key: $value (${value.runtimeType})');
-          });
-          L.d('=====================================');
+          if (widget.enableDebugMode) {
+            L.d('=== DADOS ADICIONAIS DO FORMULÁRIO ===');
+            data.forEach((key, value) {
+              L.d('$key: $value (${value.runtimeType})');
+            });
+            L.d('=====================================');
+          }
         }
       }
 
@@ -1323,7 +1333,7 @@ class _GenericMobileGridScreenState<T>
       // ADICIONA DADOS DINÂMICOS (create vs update)
       // ==================================================
       if (widget.dynamicAdditionalFormData != null) {
-        final dynamicData = widget.dynamicAdditionalFormData!(item);
+        final dynamicData = widget.dynamicAdditionalFormData?.call(item) ?? {};
         _addAllNested(formData, dynamicData);
       }
 
@@ -1642,9 +1652,7 @@ class _GenericMobileGridScreenState<T>
               width: double.maxFinite,
               child: ListView(
                 shrinkWrap: true,
-                children: widget.fieldConfigs
-                  .where((c) => c.showInCard)
-                  .map((config) {
+                children: widget.fieldConfigs.map((config) {
                   return CheckboxListTile(
                     title: Text(config.label),
                     value: _fieldVisibility[config.fieldName] ??
@@ -1667,14 +1675,11 @@ class _GenericMobileGridScreenState<T>
                 child: const Text(GridTexts.cancel),
               ),
               ElevatedButton(
-                onPressed: () async {
-                  await _saveFieldPreferences();
-                  if (context.mounted) {
-                    setState(() {
-                      _fieldVisibilityVersion++;
-                    });
-                    Navigator.pop(ctx);
-                  }
+                onPressed: () {
+                  _saveFieldPreferences();
+                  // Chama setState do widget pai para atualizar os cards
+                  setState(() {});
+                  Navigator.pop(ctx);
                 },
                 child: const Text('Aplicar'),
               ),
@@ -1789,16 +1794,15 @@ class _GenericMobileGridScreenState<T>
                   return SizedBox(
                     width: 250,
                     child: FutureBuilder<List<Map<String, dynamic>>>(
-                      future: config.dropdownFutureBuilder!(),
+                      future: config.dropdownFutureBuilder?.call() ?? Future.value([]),
                       builder: (context, snapshot) {
                         return SearchableDropdownField(
                           label: config.label,
                           items: snapshot.data ?? [],
                           valueField: config.dropdownValueField,
                           displayField: config.dropdownDisplayField,
-                          value: _filterControllers[config.fieldName]?.text
-                              .isNotEmpty == true
-                              ? _filterControllers[config.fieldName]!.text
+                          value: (_filterControllers[config.fieldName]?.text.isNotEmpty ?? false)
+                              ? _filterControllers[config.fieldName]?.text
                               : null,
                           onChanged: (v) {
                             _filterControllers[config.fieldName]?.text =
@@ -2088,7 +2092,8 @@ class _GenericMobileGridScreenState<T>
     return Scaffold(
       backgroundColor: GridColors.pageBackground,
       appBar: resolvedAppBar,
-      floatingActionButton: widget.detailScreenBuilder == null && widget.hasPermission('create') ? _buildFloatingActionButton() : null,
+      floatingActionButton:
+          widget.hasPermission('create') ? _buildFloatingActionButton() : null,
       body: Column(
         children: [
           // Filtros (quando abertos)
@@ -2732,7 +2737,7 @@ class _GenericMobileGridScreenState<T>
               () => Navigator.push(
                   context,
                   MaterialPageRoute(
-                      builder: (_) => widget.detailScreenBuilder!(item))),
+                      builder: (_) => widget.detailScreenBuilder?.call(item) ?? const SizedBox())),
               'Visualizar',
             ),
             const SizedBox(width: 4),

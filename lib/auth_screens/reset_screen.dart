@@ -106,7 +106,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                   validator: (String? value) {
                     if (value?.isEmpty ?? true) {
                       return "Please enter confirm password";
-                    } else if (value! != _passwordTEController.text) {
+                    } else if ((value ?? '') != _passwordTEController.text) {
                       return "Password does not match";
                     }
                     return null;
@@ -127,7 +127,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                     ),
                     child: ElevatedButton(
                       onPressed: () {
-                        if (_resetFormKey.currentState!.validate() &&
+                        if ((_resetFormKey.currentState?.validate() ?? false) &&
                             _passwordTEController.text ==
                                 _confirmPasswordTEController.text) {
                           resetPassword();

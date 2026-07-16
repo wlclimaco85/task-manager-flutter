@@ -93,9 +93,9 @@ class _EmailVarificationScreeenState extends State<EmailVarificationScreeen> {
                     key: _emailFormKey,
                     child: CustomTextFormField(
                       validator: (value) {
-                        if (value!.isEmpty ||
+                        if ((value ?? '').isEmpty ||
                             !RegExp(r'^[\w-.]+@([\w-]+\.)+\w{2,5}')
-                                .hasMatch(value)) {
+                                .hasMatch(value ?? '')) {
                           return "please Enter your correct Email";
                         } else {
                           return null;
@@ -115,7 +115,7 @@ class _EmailVarificationScreeenState extends State<EmailVarificationScreeen> {
                     ),
                     child: ElevatedButton(
                       onPressed: () {
-                        if (_emailFormKey.currentState!.validate()) {
+                        if (_emailFormKey.currentState?.validate() ?? false) {
                           emailVerify(_emailTEController.text.trim());
                         }
                       },

@@ -41,7 +41,7 @@ class _EsqueciSenhaScreenState extends State<EsqueciSenhaScreen> {
   }
 
   Future<void> _enviar() async {
-    if (!_formKey.currentState!.validate()) {
+    if (!(_formKey.currentState?.validate() ?? false)) {
       return;
     }
     setState(() {

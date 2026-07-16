@@ -70,10 +70,16 @@ class DynamicGridDynamicScreen extends StatefulWidget {
   final String? deleteEndpointOverride;
   final bool showAppBar;
 
+  /// Sobrescreve a decisão automática (tela.useUserBannerAppBar || !kIsWeb).
+  /// Use quando o chamador sabe com certeza que é uma tela mobile e quer
+  /// garantir o header com logo/foto/nome/empresa, sem depender de detecção
+  /// de plataforma ou config de tela vinda do backend.
+  final bool? useUserBannerAppBar;
+
   /// Quando true, ignora as acoes de servidor configuradas no backend para a
   /// tela (tela.actions) — usado por telas mobile que definem suas proprias
   /// customActions e nao devem herdar botoes de outra entidade (ex.: GED nao
-  /// deve mostrar acoes que pertencem ao modulo de Chamados).
+  /// deve mostrar acoes que pertencem ao modulo de Chamados). Fix bug #425.
   final bool suppressServerActions;
 
   const DynamicGridDynamicScreen({
@@ -96,6 +102,7 @@ class DynamicGridDynamicScreen extends StatefulWidget {
     this.updateEndpointOverride,
     this.deleteEndpointOverride,
     this.showAppBar = true,
+    this.useUserBannerAppBar,
     this.suppressServerActions = false,
   });
 
@@ -475,7 +482,7 @@ class _DynamicGridDynamicScreenState extends State<DynamicGridDynamicScreen> {
 
     final allDropdownNames = <String>{...dropdownReplaceNames};
     for (final f in fields) {
-      if (f.dropdownEndpoint != null && f.dropdownEndpoint!.isNotEmpty) {
+      if ((f.dropdownEndpoint?.isNotEmpty ?? false)) {
         allDropdownNames.add(f.fieldName.toLowerCase());
       }
     }
@@ -495,7 +502,10 @@ class _DynamicGridDynamicScreenState extends State<DynamicGridDynamicScreen> {
         converted.add(suppress);
         final base = _extractBase(fnLower);
         if (base != null && replaceMap.containsKey(base)) {
-          _addOverrideOnce(converted, insertedOverrides, replaceMap[base]!);
+          final override = replaceMap[base];
+          if (override != null) {
+            _addOverrideOnce(converted, insertedOverrides, override);
+          }
         }
         continue;
       }
@@ -512,7 +522,10 @@ class _DynamicGridDynamicScreenState extends State<DynamicGridDynamicScreen> {
 
       final base = _extractBase(fnLower);
       if (base != null && dropdownReplaceNames.contains(base)) {
-        _addOverrideOnce(converted, insertedOverrides, replaceMap[base]!);
+        final override = replaceMap[base];
+        if (override != null) {
+          _addOverrideOnce(converted, insertedOverrides, override);
+        }
         continue;
       }
 
@@ -545,7 +558,7 @@ class _DynamicGridDynamicScreenState extends State<DynamicGridDynamicScreen> {
 
   FieldConfig _toFieldConfig(TelaField f) {
     final isAutoDropdown =
-        f.dropdownEndpoint != null && f.dropdownEndpoint!.isNotEmpty;
+        (f.dropdownEndpoint?.isNotEmpty ?? false);
     final isMulti = f.multiSelect || f.fieldType == TelaFieldType.multiselect;
 
     List<Map<String, dynamic>>? dropdownOptions;
@@ -574,8 +587,8 @@ class _DynamicGridDynamicScreenState extends State<DynamicGridDynamicScreen> {
               ? FieldType.dropdown
               : _telaType(f.fieldType, f.fieldName),
       dropdownOptions: dropdownOptions,
-      dropdownFutureBuilder: isAutoDropdown
-          ? _createDropdownFutureBuilder(f.dropdownEndpoint!)
+      dropdownFutureBuilder: isAutoDropdown && f.dropdownEndpoint != null
+          ? _createDropdownFutureBuilder(f.dropdownEndpoint ?? '')
           : null,
       dropdownValueField:
           f.dropdownValueField.isNotEmpty ? f.dropdownValueField : 'id',
@@ -840,7 +853,12 @@ class _DynamicGridDynamicScreenState extends State<DynamicGridDynamicScreen> {
               );
             }
 
-            final tela = snapshot.data!;
+            final tela = snapshot.data;
+            if (tela == null) {
+              return const Scaffold(
+                body: Center(child: Text('Erro: dados indisponíveis')),
+              );
+            }
             // Defesa em profundidade contra actions órfãs de outra tela (bug #425).
             final safeActions =
                 filterActionsForTela(tela.actions, tela.fetchEndpoint);
@@ -896,8 +914,11 @@ class _DynamicGridDynamicScreenState extends State<DynamicGridDynamicScreen> {
               showAppBar: widget.showAppBar,
               // No mobile, sempre usa UserBannerAppBar para mostrar notificações e logout.
               // Na web/windows, respeita a config da tela (tela.useUserBannerAppBar).
-              useUserBannerAppBar:
-                  widget.showAppBar && (tela.useUserBannerAppBar || !kIsWeb),
+              // widget.useUserBannerAppBar permite ao chamador forçar o valor,
+              // ignorando a detecção automática (usado pelas telas da bottom nav mobile).
+              useUserBannerAppBar: widget.showAppBar &&
+                  (widget.useUserBannerAppBar ??
+                      (tela.useUserBannerAppBar || !kIsWeb)),
               onUserBannerTapped: widget.onUserBannerTapped,
               onBannerRefresh: widget.onBannerRefresh,
               additionalFormData: widget.additionalFormData,

@@ -290,15 +290,21 @@ class _GenericMobileGridScreenState extends State<GenericMobileGridScreen> {
     }
 
     if (widget.initialFilters != null) {
-      widget.initialFilters!.forEach((k, v) {
-        if (_filterControllers.containsKey(k)) {
-          _filterControllers[k]!.text = v?.toString() ?? '';
-        }
-      });
+      final filters = widget.initialFilters;
+      if (filters != null) {
+        filters.forEach((k, v) {
+          if (_filterControllers.containsKey(k)) {
+            final ctrl = _filterControllers[k];
+            if (ctrl != null) {
+              ctrl.text = v?.toString() ?? '';
+            }
+          }
+        });
+      }
     }
 
     _customActions =
-        widget.customActions != null ? widget.customActions!() : [];
+        widget.customActions?.call() ?? [];
 
     await _loadFieldPreferences();
     _scrollController.addListener(_onScroll);
@@ -320,8 +326,11 @@ class _GenericMobileGridScreenState extends State<GenericMobileGridScreen> {
         'view': true,
       });
       for (final a in widget.serverActions ?? []) {
-        if (a.requiredPermission != null && a.requiredPermission!.isNotEmpty) {
-          _asyncPermCache[a.requiredPermission!] = true;
+        if ((a.requiredPermission?.isNotEmpty ?? false)) {
+          final perm = a.requiredPermission;
+          if (perm != null) {
+            _asyncPermCache[perm] = true;
+          }
         }
       }
       setState(() {
@@ -486,9 +495,12 @@ class _GenericMobileGridScreenState extends State<GenericMobileGridScreen> {
     }
 
     if (widget.extraParams != null) {
-      widget.extraParams!.forEach((k, v) {
-        url += '&$k=${Uri.encodeComponent(v.toString())}';
-      });
+      final params = widget.extraParams;
+      if (params != null) {
+        params.forEach((k, v) {
+          url += '&$k=${Uri.encodeComponent(v.toString())}';
+        });
+      }
     }
 
     return url;
@@ -503,10 +515,13 @@ class _GenericMobileGridScreenState extends State<GenericMobileGridScreen> {
       final formData = <String, dynamic>{};
 
       if (widget.additionalFormData != null) {
-        _addAllNested(formData, widget.additionalFormData!);
+        final data = widget.additionalFormData;
+        if (data != null) {
+          _addAllNested(formData, data);
+        }
       }
       if (widget.dynamicAdditionalFormData != null) {
-        final dyn = widget.dynamicAdditionalFormData!(editingItem);
+        final dyn = widget.dynamicAdditionalFormData?.call(editingItem) ?? {};
         _addAllNested(formData, dyn);
       }
 
@@ -638,7 +653,7 @@ class _GenericMobileGridScreenState extends State<GenericMobileGridScreen> {
     final request = http.MultipartRequest(isUpdate ? 'PUT' : 'POST', uri);
 
     if (widget.authHeadersProvider != null) {
-      final headers = await widget.authHeadersProvider!();
+      final headers = await widget.authHeadersProvider?.call() ?? {};
       request.headers.addAll(headers);
     } else {
       // Fallback: injeta Bearer token para uploads sem authHeadersProvider (ex. GED dinamico)
@@ -688,9 +703,8 @@ class _GenericMobileGridScreenState extends State<GenericMobileGridScreen> {
     if (endpoint.startsWith('http://') || endpoint.startsWith('https://')) {
       return Uri.parse(endpoint);
     }
-    if (widget.baseUrlForMultipart != null &&
-        widget.baseUrlForMultipart!.isNotEmpty) {
-      final base = widget.baseUrlForMultipart!;
+    if ((widget.baseUrlForMultipart?.isNotEmpty ?? false)) {
+      final base = widget.baseUrlForMultipart ?? '';
       final sep = base.endsWith('/') || endpoint.startsWith('/') ? '' : '/';
       return Uri.parse('$base$sep$endpoint');
     }
@@ -1338,7 +1352,7 @@ class _GenericMobileGridScreenState extends State<GenericMobileGridScreen> {
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                    builder: (_) => widget.detailScreenBuilder!(item)),
+                    builder: (_) => widget.detailScreenBuilder?.call(item) ?? const SizedBox()),
               );
             } else {
               _openDetailPage(item);
@@ -1675,7 +1689,8 @@ class _GenericMobileGridScreenState extends State<GenericMobileGridScreen> {
                   onPressed: () {
                     setState(() {
                       _fileCache[c.fieldName]?.remove(f);
-                      if (_fileCache[c.fieldName]!.isEmpty) {
+                      final cached = _fileCache[c.fieldName];
+                      if (cached?.isEmpty ?? false) {
                         _fileCache.remove(c.fieldName);
                       }
                       ctrl.clear();
@@ -1731,7 +1746,7 @@ class _GenericMobileGridScreenState extends State<GenericMobileGridScreen> {
   Widget _buildDropdown(FieldConfig c, TextEditingController ctrl) {
     Future<List<Map<String, dynamic>>> fetchOptions() async {
       if (c.dropdownFutureBuilder != null) {
-        return await c.dropdownFutureBuilder!();
+        return await c.dropdownFutureBuilder?.call() ?? [];
       }
       return c.dropdownOptions ?? [];
     }
@@ -1937,21 +1952,19 @@ class _GenericMobileGridScreenState extends State<GenericMobileGridScreen> {
             width: double.maxFinite,
             child: ListView(
               shrinkWrap: true,
-              children: widget.fieldConfigs
-                  .where((c) => c.showInCard)
-                  .map((c) {
-                  return CheckboxListTile(
-                    title: Text(c.label),
-                    value: _fieldVisibility[c.fieldName] ?? c.isVisibleByDefault,
-                    onChanged: c.isFixed
-                        ? null
-                        : (v) {
-                            setSt(() {
-                              _fieldVisibility[c.fieldName] = v ?? false;
-                            });
-                          },
-                  );
-                }).toList(),
+              children: widget.fieldConfigs.map((c) {
+                return CheckboxListTile(
+                  title: Text(c.label),
+                  value: _fieldVisibility[c.fieldName] ?? c.isVisibleByDefault,
+                  onChanged: c.isFixed
+                      ? null
+                      : (v) {
+                          setSt(() {
+                            _fieldVisibility[c.fieldName] = v ?? false;
+                          });
+                        },
+                );
+              }).toList(),
             ),
           ),
           actions: [
@@ -1976,11 +1989,8 @@ class _GenericMobileGridScreenState extends State<GenericMobileGridScreen> {
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(
-          msg,
-          style: TextStyle(color: error ? Colors.white : GridColors.textSecondary),
-        ),
-        backgroundColor: error ? GridColors.error : GridColors.successLight,
+        content: Text(msg),
+        backgroundColor: error ? GridColors.error : GridColors.success,
         behavior: SnackBarBehavior.floating,
         action: error
             ? SnackBarAction(
