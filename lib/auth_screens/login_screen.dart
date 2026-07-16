@@ -305,25 +305,34 @@ class _LoginScreenState extends State<LoginScreen>
     );
 
     return Scaffold(
-      backgroundColor: GridColors.secondary,
       body: ResponsiveWidget(
-        mobileBuilder: (context, width) => SafeArea(child: loginBanner),
+        mobileBuilder: (context, width) => Container(
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [GridColors.secondary, GridColors.secondaryDark],
+            ),
+          ),
+          child: SafeArea(child: loginBanner),
+        ),
         tabletBuilder: (context, width) => _showNoticias
             ? Column(children: [
-                Expanded(child: SafeArea(child: loginBanner)),
                 Expanded(
-                    child: _NoticiasGrid(
-                        noticias: _noticias, loading: _loadingNoticias)),
-              ])
-            : SafeArea(child: loginBanner),
-        desktopBuilder: (context, width) => _showNoticias
-            ? Row(children: [
-                Expanded(
-                  flex: 1,
-                  child: SafeArea(child: loginBanner),
+                  flex: 3,
+                  child: Container(
+                    decoration: const BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                        colors: [GridColors.secondary, GridColors.secondaryDark],
+                      ),
+                    ),
+                    child: SafeArea(child: loginBanner),
+                  ),
                 ),
                 Expanded(
-                  flex: 1,
+                  flex: 2,
                   child: Column(children: [
                     Expanded(
                         child: _NoticiasGrid(
@@ -332,7 +341,51 @@ class _LoginScreenState extends State<LoginScreen>
                   ]),
                 ),
               ])
-            : SafeArea(child: loginBanner),
+            : Container(
+                decoration: const BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [GridColors.secondary, GridColors.secondaryDark],
+                  ),
+                ),
+                child: SafeArea(child: loginBanner),
+              ),
+        desktopBuilder: (context, width) => _showNoticias
+            ? Row(children: [
+                Expanded(
+                  flex: 5,
+                  child: Container(
+                    decoration: const BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                        colors: [GridColors.secondary, GridColors.secondaryDark],
+                      ),
+                    ),
+                    child: SafeArea(child: loginBanner),
+                  ),
+                ),
+                Expanded(
+                  flex: 6,
+                  child: Column(children: [
+                    Expanded(
+                        child: _NoticiasGrid(
+                            noticias: _noticias, loading: _loadingNoticias)),
+                    const _EmpresaFooter(),
+                  ]),
+                ),
+              ])
+            : Container(
+                decoration: const BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [GridColors.secondary, GridColors.secondaryDark],
+                  ),
+                ),
+                child: SafeArea(child: loginBanner),
+              ),
       ),
     );
   }
@@ -367,124 +420,205 @@ class _LoginBanner extends StatelessWidget {
         isMobile || MediaQuery.sizeOf(context).width < 720;
     if (isCompact) return _buildCompact(context);
 
-    return Container(
-      color: GridColors.secondary,
-      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-      child: Row(crossAxisAlignment: CrossAxisAlignment.center, children: [
-        Container(
-          decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(10),
-              boxShadow: [
-                BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.2),
-                    blurRadius: 6,
-                    offset: const Offset(0, 2))
-              ]),
-          padding: const EdgeInsets.all(8),
-          child: _SafeLogoWidget(size: 80),
-        ),
-        const SizedBox(width: 16),
-        const Text(GridTexts.appTitle,
-            textAlign: TextAlign.left,
-            maxLines: 1,
-            softWrap: false,
-            overflow: TextOverflow.ellipsis,
-            style: TextStyle(
-                color: Colors.white,
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-                letterSpacing: 1.5,
-                height: 1.3)),
-        const SizedBox(width: 32),
-        Expanded(
-            child: Form(
-                key: formKey,
-                child: Row(
+    // Desktop/Web: layout vertical centralizado com logo grande em cima
+    final minHeight = MediaQuery.sizeOf(context).height -
+        MediaQuery.paddingOf(context).vertical;
+
+    return SizedBox.expand(
+      child: SingleChildScrollView(
+        child: ConstrainedBox(
+          constraints: BoxConstraints(minHeight: minHeight),
+          child: Center(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 48, vertical: 40),
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 400),
+                child: Form(
+                  key: formKey,
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
                     crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
-                      Expanded(
-                          child:
-                              Column(mainAxisSize: MainAxisSize.min, children: [
-                        _field(
-                            ctrl: emailCtrl,
-                            hint: GridTexts.loginUserHint,
-                            icon: Icons.person_outline,
-                            keyboardType: TextInputType.emailAddress,
-                            autofillHints: const [AutofillHints.username],
-                            textInputAction: TextInputAction.next,
-                            onFieldSubmitted: (_) =>
-                                FocusScope.of(context).nextFocus(),
-                            validator: (v) => (v == null || v.isEmpty)
-                                ? GridTexts.loginUserRequired
-                                : null),
-                        const SizedBox(height: 8),
-                        _field(
-                            ctrl: passCtrl,
-                            hint: GridTexts.loginPasswordHint,
-                            icon: Icons.lock_outline,
-                            obscure: obscure,
-                            autofillHints: const [AutofillHints.password],
-                            textInputAction: TextInputAction.done,
-                            onFieldSubmitted: (_) {
-                              if (!loading) onLogin();
-                            },
-                            suffix: IconButton(
-                                onPressed: onToggleObscure,
-                                icon: Icon(
-                                    obscure
-                                        ? Icons.visibility_off
-                                        : Icons.visibility,
-                                    color: Colors.white60,
-                                    size: 18)),
-                            validator: (v) => (v == null || v.isEmpty)
-                                ? GridTexts.loginPasswordRequired
-                                : null),
-                      ])),
-                      const SizedBox(width: 16),
-                      Column(mainAxisSize: MainAxisSize.min, children: [
-                        SizedBox(
-                            height: 44,
-                            child: ElevatedButton(
-                              style: ElevatedButton.styleFrom(
-                                  backgroundColor: GridColors.primary,
-                                  foregroundColor: Colors.white,
-                                  padding: const EdgeInsets.symmetric(
-                                      horizontal: 24),
-                                  shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(8))),
-                              onPressed: loading ? null : onLogin,
-                              child: loading
-                                  ? const SizedBox(
-                                      width: 18,
-                                      height: 18,
-                                      child: CircularProgressIndicator(
-                                          color: Colors.white, strokeWidth: 2))
-                                  : const Text(GridTexts.loginAction,
-                                      style: TextStyle(
-                                          fontWeight: FontWeight.bold)),
-                            )),
-                        TextButton(
+                      // Logo grande com moldura branca e sombra
+                      Container(
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(20),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withValues(alpha: 0.2),
+                              blurRadius: 24,
+                              offset: const Offset(0, 8),
+                            ),
+                          ],
+                        ),
+                        padding: const EdgeInsets.all(12),
+                        child: _SafeLogoWidget(size: 120),
+                      ),
+                      const SizedBox(height: 24),
+
+                      // Nome da empresa
+                      const Text(
+                        GridTexts.appTitle,
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 26,
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: 1.0,
+                          height: 1.2,
+                        ),
+                      ),
+                      const SizedBox(height: 6),
+
+                      // Tagline
+                      Text(
+                        GridTexts.companyTagline,
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          color: Colors.white.withValues(alpha: 0.7),
+                          fontSize: 14,
+                          fontWeight: FontWeight.w400,
+                          letterSpacing: 0.3,
+                        ),
+                      ),
+                      const SizedBox(height: 40),
+
+                      // Campos de login
+                      _field(
+                        ctrl: emailCtrl,
+                        hint: GridTexts.loginUserHint,
+                        icon: Icons.person_outline,
+                        keyboardType: TextInputType.emailAddress,
+                        autofillHints: const [AutofillHints.username],
+                        textInputAction: TextInputAction.next,
+                        onFieldSubmitted: (_) =>
+                            FocusScope.of(context).nextFocus(),
+                        validator: (v) => (v == null || v.isEmpty)
+                            ? GridTexts.loginUserRequired
+                            : null,
+                      ),
+                      const SizedBox(height: 16),
+                      _field(
+                        ctrl: passCtrl,
+                        hint: GridTexts.loginPasswordHint,
+                        icon: Icons.lock_outline,
+                        obscure: obscure,
+                        autofillHints: const [AutofillHints.password],
+                        textInputAction: TextInputAction.done,
+                        onFieldSubmitted: (_) {
+                          if (!loading) onLogin();
+                        },
+                        suffix: IconButton(
+                          onPressed: onToggleObscure,
+                          icon: Icon(
+                            obscure
+                                ? Icons.visibility_off
+                                : Icons.visibility,
+                            color: GridColors.textMuted,
+                            size: 20,
+                          ),
+                        ),
+                        validator: (v) => (v == null || v.isEmpty)
+                            ? GridTexts.loginPasswordRequired
+                            : null,
+                      ),
+                      const SizedBox(height: 24),
+
+                      // Botao Acessar
+                      SizedBox(
+                        width: double.infinity,
+                        height: 52,
+                        child: ElevatedButton(
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: GridColors.primary,
+                            foregroundColor: Colors.white,
+                            elevation: 4,
+                            shadowColor: GridColors.primary.withValues(alpha: 0.4),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                          onPressed: loading ? null : onLogin,
+                          child: loading
+                              ? const SizedBox(
+                                  width: 22,
+                                  height: 22,
+                                  child: CircularProgressIndicator(
+                                    color: Colors.white,
+                                    strokeWidth: 2.5,
+                                  ),
+                                )
+                              : const Text(
+                                  GridTexts.loginAction,
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w700,
+                                    letterSpacing: 0.5,
+                                  ),
+                                ),
+                        ),
+                      ),
+                      const SizedBox(height: 20),
+
+                      // Links secundarios
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          TextButton(
                             onPressed: onForgot,
                             style: TextButton.styleFrom(
-                                padding: const EdgeInsets.symmetric(
-                                    horizontal: 4, vertical: 2),
-                                minimumSize: Size.zero),
-                            child: const Text(GridTexts.forgotPassword,
-                                style: TextStyle(
-                                    color: Colors.white54, fontSize: 10))),
-                        TextButton(
+                              foregroundColor: Colors.white,
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 12, vertical: 8),
+                            ),
+                            child: Text(
+                              GridTexts.forgotPassword,
+                              style: TextStyle(
+                                color: Colors.white.withValues(alpha: 0.85),
+                                fontSize: 13,
+                                decoration: TextDecoration.underline,
+                                decorationColor: Colors.white.withValues(alpha: 0.5),
+                              ),
+                            ),
+                          ),
+                          Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 4),
+                            child: Text(
+                              '|',
+                              style: TextStyle(
+                                color: Colors.white.withValues(alpha: 0.4),
+                                fontSize: 13,
+                              ),
+                            ),
+                          ),
+                          TextButton(
                             onPressed: onRequestAccess,
                             style: TextButton.styleFrom(
-                                padding: const EdgeInsets.symmetric(
-                                    horizontal: 4, vertical: 2),
-                                minimumSize: Size.zero),
-                            child: const Text(GridTexts.requestAccess,
-                                style: TextStyle(
-                                    color: Colors.white70, fontSize: 10))),
-                      ]),
-                    ]))),
-      ]),
+                              foregroundColor: Colors.white,
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 12, vertical: 8),
+                            ),
+                            child: Text(
+                              GridTexts.requestAccess,
+                              style: TextStyle(
+                                color: Colors.white.withValues(alpha: 0.85),
+                                fontSize: 13,
+                                decoration: TextDecoration.underline,
+                                decorationColor: Colors.white.withValues(alpha: 0.5),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
     );
   }
 
@@ -492,122 +626,180 @@ class _LoginBanner extends StatelessWidget {
     final minHeight = MediaQuery.sizeOf(context).height -
         MediaQuery.paddingOf(context).vertical;
 
-    // SingleChildScrollView com ConstrainedBox(minHeight) + Center interno
-    // garante centralização vertical quando há espaço e scroll quando necessário.
-    return Container(
-      width: double.infinity,
-      color: GridColors.secondary,
+    return SizedBox.expand(
       child: SingleChildScrollView(
         child: ConstrainedBox(
           constraints: BoxConstraints(
               minHeight: fullHeightCompact ? minHeight : 0),
           child: Center(
             child: Padding(
-              padding: const EdgeInsets.fromLTRB(24, 20, 24, 28),
+              padding: const EdgeInsets.fromLTRB(28, 48, 28, 36),
               child: ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 420),
+                constraints: const BoxConstraints(maxWidth: 400),
                 child: Form(
                   key: formKey,
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
-                      Row(
-                        children: [
-                          Container(
-                            decoration: BoxDecoration(
-                                color: Colors.white,
-                                borderRadius: BorderRadius.circular(12),
-                                boxShadow: [
-                                  BoxShadow(
-                                      color: Colors.black.withValues(alpha: 0.2),
-                                      blurRadius: 10,
-                                      offset: const Offset(0, 4))
-                                ]),
-                            padding: const EdgeInsets.all(8),
-                            child: _SafeLogoWidget(size: 86),
-                          ),
-                          const SizedBox(width: 18),
-                          const Expanded(
-                            child: Text(
-                              GridTexts.appShortTitle,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 20,
-                                  fontWeight: FontWeight.w800,
-                                  letterSpacing: 1.2,
-                                  height: 1.25),
+                      // Logo centralizado grande
+                      Container(
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(20),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withValues(alpha: 0.2),
+                              blurRadius: 20,
+                              offset: const Offset(0, 6),
                             ),
-                          ),
-                        ],
+                          ],
+                        ),
+                        padding: const EdgeInsets.all(12),
+                        child: _SafeLogoWidget(size: 100),
                       ),
-                      const SizedBox(height: 34),
+                      const SizedBox(height: 20),
+
+                      // Nome
+                      const Text(
+                        GridTexts.appTitle,
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 22,
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: 0.8,
+                          height: 1.2,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+
+                      // Tagline
+                      Text(
+                        GridTexts.companyTagline,
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          color: Colors.white.withValues(alpha: 0.65),
+                          fontSize: 13,
+                          fontWeight: FontWeight.w400,
+                        ),
+                      ),
+                      const SizedBox(height: 36),
+
+                      // Campo usuario
                       _field(
-                          ctrl: emailCtrl,
-                          hint: GridTexts.loginUserHint,
-                          icon: Icons.person_outline,
-                          textInputAction: TextInputAction.next,
-                          onFieldSubmitted: (_) =>
-                              FocusScope.of(context).nextFocus(),
-                          validator: (v) => (v == null || v.isEmpty)
-                              ? GridTexts.loginUserRequired
-                              : null),
+                        ctrl: emailCtrl,
+                        hint: GridTexts.loginUserHint,
+                        icon: Icons.person_outline,
+                        textInputAction: TextInputAction.next,
+                        onFieldSubmitted: (_) =>
+                            FocusScope.of(context).nextFocus(),
+                        validator: (v) => (v == null || v.isEmpty)
+                            ? GridTexts.loginUserRequired
+                            : null,
+                      ),
                       const SizedBox(height: 14),
+
+                      // Campo senha
                       _field(
-                          ctrl: passCtrl,
-                          hint: GridTexts.loginPasswordHint,
-                          icon: Icons.lock_outline,
-                          obscure: obscure,
-                          textInputAction: TextInputAction.done,
-                          onFieldSubmitted: (_) {
-                            if (!loading) onLogin();
-                          },
-                          suffix: IconButton(
-                              onPressed: onToggleObscure,
-                              icon: Icon(
-                                  obscure ? Icons.visibility_off : Icons.visibility,
-                                  color: Colors.white60,
-                                  size: 20)),
-                          validator: (v) =>
-                              (v == null || v.isEmpty) ? GridTexts.loginPasswordRequired : null),
-                      const SizedBox(height: 18),
+                        ctrl: passCtrl,
+                        hint: GridTexts.loginPasswordHint,
+                        icon: Icons.lock_outline,
+                        obscure: obscure,
+                        textInputAction: TextInputAction.done,
+                        onFieldSubmitted: (_) {
+                          if (!loading) onLogin();
+                        },
+                        suffix: IconButton(
+                          onPressed: onToggleObscure,
+                          icon: Icon(
+                            obscure ? Icons.visibility_off : Icons.visibility,
+                            color: GridColors.textMuted,
+                            size: 20,
+                          ),
+                        ),
+                        validator: (v) => (v == null || v.isEmpty)
+                            ? GridTexts.loginPasswordRequired
+                            : null,
+                      ),
+                      const SizedBox(height: 22),
+
+                      // Botao Acessar
                       SizedBox(
-                        height: 48,
+                        width: double.infinity,
+                        height: 52,
                         child: ElevatedButton(
                           style: ElevatedButton.styleFrom(
-                              backgroundColor: GridColors.primary,
-                              foregroundColor: Colors.white,
-                              shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(10))),
+                            backgroundColor: GridColors.primary,
+                            foregroundColor: Colors.white,
+                            elevation: 4,
+                            shadowColor: GridColors.primary.withValues(alpha: 0.4),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
                           onPressed: loading ? null : onLogin,
                           child: loading
                               ? const SizedBox(
-                                  width: 20,
-                                  height: 20,
+                                  width: 22,
+                                  height: 22,
                                   child: CircularProgressIndicator(
-                                      color: Colors.white, strokeWidth: 2))
-                              : const Text(GridTexts.loginAction,
+                                    color: Colors.white,
+                                    strokeWidth: 2.5,
+                                  ),
+                                )
+                              : const Text(
+                                  GridTexts.loginAction,
                                   style: TextStyle(
-                                      fontSize: 15, fontWeight: FontWeight.w700)),
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w700,
+                                    letterSpacing: 0.5,
+                                  ),
+                                ),
                         ),
                       ),
-                      const SizedBox(height: 10),
+                      const SizedBox(height: 16),
+
+                      // Links
                       Wrap(
                         alignment: WrapAlignment.center,
-                        spacing: 10,
+                        spacing: 6,
                         runSpacing: 0,
                         children: [
                           TextButton(
                             onPressed: onForgot,
-                            child: const Text(GridTexts.forgotPassword,
-                                style: TextStyle(color: Colors.white70)),
+                            style: TextButton.styleFrom(
+                              foregroundColor: Colors.white,
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 10, vertical: 6),
+                            ),
+                            child: Text(
+                              GridTexts.forgotPassword,
+                              style: TextStyle(
+                                color: Colors.white.withValues(alpha: 0.85),
+                                fontSize: 13,
+                                decoration: TextDecoration.underline,
+                                decorationColor: Colors.white.withValues(alpha: 0.5),
+                              ),
+                            ),
                           ),
                           TextButton(
                             onPressed: onRequestAccess,
-                            child: const Text(GridTexts.requestAccess,
-                                style: TextStyle(color: Colors.white)),
+                            style: TextButton.styleFrom(
+                              foregroundColor: Colors.white,
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 10, vertical: 6),
+                            ),
+                            child: Text(
+                              GridTexts.requestAccess,
+                              style: TextStyle(
+                                color: Colors.white.withValues(alpha: 0.85),
+                                fontSize: 13,
+                                fontWeight: FontWeight.w600,
+                                decoration: TextDecoration.underline,
+                                decorationColor: Colors.white.withValues(alpha: 0.5),
+                              ),
+                            ),
                           ),
                         ],
                       ),
@@ -640,31 +832,33 @@ class _LoginBanner extends StatelessWidget {
       autofillHints: autofillHints,
       textInputAction: textInputAction,
       onFieldSubmitted: onFieldSubmitted,
-      style: const TextStyle(color: Colors.white, fontSize: 13),
+      style: const TextStyle(color: GridColors.textSecondary, fontSize: 15),
       validator: validator,
       decoration: InputDecoration(
         hintText: hint,
-        hintStyle: const TextStyle(color: Colors.white38, fontSize: 13),
-        prefixIcon: Icon(icon, color: Colors.white54, size: 18),
+        hintStyle: const TextStyle(color: GridColors.textMuted, fontSize: 14),
+        prefixIcon: Icon(icon, color: GridColors.secondary, size: 22),
         suffixIcon: suffix,
-        isDense: true,
+        isDense: false,
         contentPadding:
-            const EdgeInsets.symmetric(horizontal: 10, vertical: 12),
+            const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
         filled: true,
-        fillColor: Colors.white.withValues(alpha: 0.1),
+        fillColor: Colors.white,
         enabledBorder: OutlineInputBorder(
-            borderSide: const BorderSide(color: GridColors.primary, width: 1.5),
-            borderRadius: BorderRadius.circular(8)),
+            borderSide: BorderSide(
+                color: GridColors.divider, width: 1.5),
+            borderRadius: BorderRadius.circular(12)),
         focusedBorder: OutlineInputBorder(
-            borderSide: const BorderSide(color: GridColors.primary, width: 2),
-            borderRadius: BorderRadius.circular(8)),
+            borderSide: const BorderSide(
+                color: GridColors.secondary, width: 2),
+            borderRadius: BorderRadius.circular(12)),
         errorBorder: OutlineInputBorder(
-            borderSide: const BorderSide(color: Colors.orange, width: 1.5),
-            borderRadius: BorderRadius.circular(8)),
+            borderSide: const BorderSide(color: GridColors.error, width: 1.5),
+            borderRadius: BorderRadius.circular(12)),
         focusedErrorBorder: OutlineInputBorder(
-            borderSide: const BorderSide(color: Colors.orange, width: 2),
-            borderRadius: BorderRadius.circular(8)),
-        errorStyle: const TextStyle(color: Colors.orange, fontSize: 10),
+            borderSide: const BorderSide(color: GridColors.error, width: 2),
+            borderRadius: BorderRadius.circular(12)),
+        errorStyle: const TextStyle(color: Colors.orange, fontSize: 11),
       ),
     );
   }
