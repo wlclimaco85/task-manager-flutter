@@ -4359,15 +4359,30 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
 
         // CARD #492: Quando dropdown usa dropdownFutureBuilder (dinamico),
         // displayValue pode ser um Map (ex: {id: 1, nome: "Acme"}).
-        // Extrair a propriedade correta neste caso.
+        // Extrair a propriedade correta neste caso com validação defensiva.
         if (displayValue is Map &&
             config.fieldType == FieldType.dropdown &&
             config.dropdownDisplayField.isNotEmpty) {
-          displayValue = displayValue[config.dropdownDisplayField] ??
-              displayValue['nome'] ??
-              displayValue['name'] ??
-              displayValue['label'] ??
-              displayValue['id'];
+          // CR-02: Verificar se chave existe antes de acessar
+          final displayField = displayValue.containsKey(config.dropdownDisplayField)
+              ? displayValue[config.dropdownDisplayField]
+              : null;
+          if (displayField != null) {
+            displayValue = displayField;
+          } else if (displayValue.containsKey('nome') && displayValue['nome'] != null) {
+            displayValue = displayValue['nome'];
+          } else if (displayValue.containsKey('name') && displayValue['name'] != null) {
+            displayValue = displayValue['name'];
+          } else if (displayValue.containsKey('label') && displayValue['label'] != null) {
+            displayValue = displayValue['label'];
+          } else {
+            // CR-01: Log warning se nenhum field de display foi encontrado
+            L.w('No display field found for dropdown. Map keys: ${(displayValue as Map).keys.join(", ")}');
+            // Fallback seguro: se houver id, converter para string; senão usar placeholder
+            displayValue = displayValue.containsKey('id') && displayValue['id'] != null
+                ? displayValue['id'].toString()
+                : '---';
+          }
         }
 
         // Renderiza listas (ex: roles) como chips coloridos
