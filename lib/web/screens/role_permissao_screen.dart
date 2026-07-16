@@ -104,8 +104,14 @@ class _RolePermissaoScreenState extends State<RolePermissaoScreen> {
     final tenantId = TenantContext.empresaId?.toString() ?? '';
 
     try {
+      // CR-05: Usar Uri.encodeComponent() para telaNome para evitar caracteres especiais malformarem a URL
+      final baseUri = Uri.parse(ApiLinks.baseUrl);
+      final requestUri = baseUri.replace(
+        path: '${baseUri.path}/api/role-permissao/$roleId/${Uri.encodeComponent(telaNome)}',
+      );
+
       final response = await http.put(
-        Uri.parse('${ApiLinks.baseUrl}/api/role-permissao/$roleId/$telaNome'),
+        requestUri,
         headers: {
           'Authorization': 'Bearer $token',
           'X-Tenant-ID': tenantId,
