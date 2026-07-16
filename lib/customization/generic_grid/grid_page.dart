@@ -1,5 +1,7 @@
 // lib/data/customization/grid_page.dart
+import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../utils/app_logger.dart';
 import '../../../widgets/user_banners.dart';
@@ -139,6 +141,10 @@ class _GenericMobileGridScreenState extends State<GenericMobileGridScreen> {
       }
     }
 
+    // Carregar filtros salvos da sessão anterior
+    await _loadSavedFilters();
+
+    // Se não houver filtros salvos, usar initialFilters
     if (widget.initialFilters != null) {
       widget.initialFilters!.forEach((k, v) {
         if (_filterControllers.containsKey(k)) {
@@ -277,13 +283,81 @@ class _GenericMobileGridScreenState extends State<GenericMobileGridScreen> {
     return url;
   }
 
-  void _applyFilters() => _loadItems(reset: true);
+  Future<void> _saveFilters() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final filtersMap = <String, String>{};
 
-  void _clearFilters() {
+      // Salvar valores dos filtros
+      _filterControllers.forEach((key, controller) {
+        if (controller.text.isNotEmpty) {
+          filtersMap[key] = controller.text;
+        }
+      });
+
+      // Salvar busca global se não vazia
+      if (_searchController.text.isNotEmpty) {
+        filtersMap['_search'] = _searchController.text;
+      }
+
+      // Serializar em JSON e salvar em SharedPreferences
+      final jsonStr = jsonEncode(filtersMap);
+      await prefs.setString('${widget.storageKey}_filters', jsonStr);
+      L.d('[GridPage] Filtros salvos: ${filtersMap.keys.join(", ")}');
+    } catch (e) {
+      L.e('[GridPage] Erro ao salvar filtros: $e');
+    }
+  }
+
+  Future<void> _loadSavedFilters() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final savedFiltersStr = prefs.getString('${widget.storageKey}_filters');
+
+      if (savedFiltersStr == null || savedFiltersStr.isEmpty) {
+        L.d('[GridPage] Nenhum filtro salvo encontrado');
+        return;
+      }
+
+      // Desserializar JSON
+      final filtersMap = Map<String, dynamic>.from(jsonDecode(savedFiltersStr) ?? {});
+
+      for (final entry in filtersMap.entries) {
+        final key = entry.key;
+        final value = entry.value.toString();
+
+        if (key == '_search') {
+          _searchController.text = value;
+        } else if (_filterControllers.containsKey(key)) {
+          _filterControllers[key]!.text = value;
+        }
+      }
+
+      L.d('[GridPage] Filtros restaurados de sessão anterior');
+    } catch (e) {
+      L.e('[GridPage] Erro ao restaurar filtros: $e');
+    }
+  }
+
+  void _applyFilters() {
+    _saveFilters().then((_) => _loadItems(reset: true));
+  }
+
+  void _clearFilters() async {
     for (final c in _filterControllers.values) {
       c.clear();
     }
     _searchController.clear();
+
+    // Limpar também da persistência
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.remove('${widget.storageKey}_filters');
+      L.d('[GridPage] Filtros limpos da persistência');
+    } catch (e) {
+      L.e('[GridPage] Erro ao limpar filtros: $e');
+    }
+
     _applyFilters();
   }
 
