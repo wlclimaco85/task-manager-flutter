@@ -1761,6 +1761,7 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
   // consistência no DropdownButton) e o label para exibição nas tags de filtro.
   final Map<String, String?> _filterDropdownValues = {};
   final Map<String, String> _filterDropdownLabels = {};
+  final Set<String> _lockedFilters = {};
   final ScrollController _tableScrollController = ScrollController();
 
   int? sortColumnIndex;
@@ -1848,12 +1849,42 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
       });
     }
 
+    _applyTenantFilters();
+
     _loadColumnPreferences().then((_) {
       _loadItems(_currentPage, rowsPerPage);
     });
 
     if (widget.customActions != null) {
       _customActions = widget.customActions!();
+    }
+  }
+
+  void _applyTenantFilters() {
+    final empresaId = TenantContext.empresaId;
+    final parceiroId = TenantContext.parceiroId;
+    final empresaNome = AuthUtility.userInfo?.login?.empresa?.nome ??
+        AuthUtility.userInfo?.login?.empresa?.razaoSocial ?? '';
+    final parceiroNome = AuthUtility.userInfo?.login?.parceiro?.nome ??
+        AuthUtility.userInfo?.login?.parceiro?.razaoSocial ?? '';
+
+    const empresaKeys = {'empresa', 'empresaId', 'empresa.id', 'empId'};
+    const parceiroKeys = {'parceiro', 'parceiroId', 'parceiro.id', 'parcId'};
+
+    for (final config in widget.FieldConfigWindowss.where((c) => c.isFilterable)) {
+      final fn = config.fieldName;
+      if (empresaId != null && empresaKeys.contains(fn)) {
+        _filterControllers[fn]?.text = empresaId.toString();
+        _filterDropdownValues[fn] = empresaId.toString();
+        _filterDropdownLabels[fn] = empresaNome;
+        _lockedFilters.add(fn);
+      }
+      if (parceiroId != null && parceiroId != 0 && parceiroKeys.contains(fn)) {
+        _filterControllers[fn]?.text = parceiroId.toString();
+        _filterDropdownValues[fn] = parceiroId.toString();
+        _filterDropdownLabels[fn] = parceiroNome;
+        _lockedFilters.add(fn);
+      }
     }
   }
 
@@ -3625,8 +3656,10 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
       _applyFilters();
     }
 
+    final isLocked = _lockedFilters.contains(config.fieldName);
+
     return GestureDetector(
-      onTap: () async {
+      onTap: isLocked ? null : () async {
         final result = await showDialog<Map<String, dynamic>>(
           context: context,
           builder: (_) => _FilterSearchDialog(options: options, vf: vf, df: df),
@@ -3663,7 +3696,7 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
           focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(6),
               borderSide: const BorderSide(color: GridColors.primary)),
-          suffixIcon: hasValue
+          suffixIcon: hasValue && !isLocked
               ? IconButton(
                   icon: const Icon(Icons.clear, size: 16),
                   padding: EdgeInsets.zero,
@@ -3671,18 +3704,24 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
                       const BoxConstraints(minWidth: 24, minHeight: 24),
                   onPressed: clearFilter,
                 )
-              : const Padding(
-                  padding: EdgeInsets.all(8),
-                  child: Icon(Icons.search,
-                      size: 18, color: GridColors.inputBorder),
-                ),
+              : isLocked
+                  ? const Padding(
+                      padding: EdgeInsets.all(8),
+                      child: Icon(Icons.lock_outline,
+                          size: 16, color: Colors.grey),
+                    )
+                  : const Padding(
+                      padding: EdgeInsets.all(8),
+                      child: Icon(Icons.search,
+                          size: 18, color: GridColors.inputBorder),
+                    ),
         ),
         child: Text(
           hasValue ? currentLabel : 'Todos',
           overflow: TextOverflow.ellipsis,
           style: TextStyle(
             fontSize: 14,
-            color: hasValue ? null : Colors.grey.shade500,
+            color: isLocked ? Colors.grey.shade600 : (hasValue ? null : Colors.grey.shade500),
           ),
         ),
       ),
