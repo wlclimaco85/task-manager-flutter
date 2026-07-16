@@ -31,6 +31,7 @@ class _DashboardFinanceiroMobileScreenState
   List<Map<String, dynamic>> _contasBancarias = [];
 
   int? _empresaId;
+  int? _parceiroId;
   int? _contaBancariaId;
   DateTime? _dataInicio;
   DateTime? _dataFim;
@@ -66,6 +67,7 @@ class _DashboardFinanceiroMobileScreenState
     _empresas = await EmpresaCaller.loadEmpresas();
     _contasBancarias = await ContaBancariaCaller.loadContas();
     _empresaId = pegarEmpresaLogada();
+    _parceiroId = pegarParceiroLogada();
     if (_empresas.length == 1) _empresaId = _empresas.first['value'] as int?;
     if (!mounted) return;
     setState(() {});
@@ -82,15 +84,17 @@ class _DashboardFinanceiroMobileScreenState
       final results = await Future.wait([
         DashboardFinanceiroCaller().obterDashboard(
           empresaId: _empresaId,
+          parceiroId: _parceiroId,
           contaBancariaId: _contaBancariaId,
           dataInicio: _dataInicio?.toIso8601String().split('T').first,
           dataFim: _dataFim?.toIso8601String().split('T').first,
         ),
-        DashboardFinanceiroCaller().obterKpis(empresaId: _empresaId),
+        DashboardFinanceiroCaller().obterKpis(empresaId: _empresaId, parceiroId: _parceiroId),
       ]);
 
       final projecaoRaw = await DashboardFinanceiroCaller().obterProjecao(
         empresaId: _empresaId,
+        parceiroId: _parceiroId,
       );
 
       if (!mounted) return;

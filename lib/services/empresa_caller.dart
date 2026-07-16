@@ -11,7 +11,7 @@ class EmpresaCaller {
       final List<dynamic> data = response.body!['data']['dados'] ?? [];
       return data
           .map((item) =>
-              {'value': item['id'], 'label': item['nomeFantasia'].toString()})
+              {'value': item['id'], 'label': item['nomeFantasia']?.toString() ?? ''})
           .toList();
     }
     return [];

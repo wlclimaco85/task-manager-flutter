@@ -5,12 +5,14 @@ import '../utils/api_links.dart';
 class DashboardFinanceiroCaller {
   Future<Map<String, dynamic>> obterDashboard({
     int? empresaId,
+    int? parceiroId,
     int? contaBancariaId,
     String? dataInicio,
     String? dataFim,
   }) async {
     final params = <String, String>{};
     if (empresaId != null) params['empresaId'] = empresaId.toString();
+    if (parceiroId != null) params['parceiroId'] = parceiroId.toString();
     if (contaBancariaId != null) {
       params['contaBancariaId'] = contaBancariaId.toString();
     }
@@ -30,9 +32,10 @@ class DashboardFinanceiroCaller {
     return {};
   }
 
-  Future<Map<String, dynamic>> obterKpis({int? empresaId, int? dias}) async {
+  Future<Map<String, dynamic>> obterKpis({int? empresaId, int? parceiroId, int? dias}) async {
     final url = ApiLinks.dashboardFinanceiroKpis(
       empresaId: empresaId?.toString(),
+      parceiroId: parceiroId?.toString(),
       dias: dias,
     );
     final NetworkResponse response = await NetworkCaller().getRequest(url);
@@ -42,9 +45,10 @@ class DashboardFinanceiroCaller {
     return {};
   }
 
-  Future<List<dynamic>> obterProjecao({int? empresaId, int? meses}) async {
+  Future<List<dynamic>> obterProjecao({int? empresaId, int? parceiroId, int? meses}) async {
     final url = ApiLinks.dashboardFinanceiroProjecao(
       empresaId: empresaId?.toString(),
+      parceiroId: parceiroId?.toString(),
       meses: meses,
     );
     final NetworkResponse response = await NetworkCaller().getRequest(url);

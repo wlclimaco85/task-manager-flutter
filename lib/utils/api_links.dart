@@ -1229,18 +1229,19 @@ class ApiLinks {
       '$_baseUrlNew/api/financeiro/conciliacao/importar-ofx';
 
   // Dashboard Financeiro KPIs
-  static String dashboardFinanceiroKpis({String? empresaId, int? dias}) =>
-      '$_baseUrlNew/api/financeiro/dashboard/kpis${_buildQueryParams(empresaId: empresaId, dias: dias)}';
-  static String dashboardFinanceiroProjecao({String? empresaId, int? meses}) =>
-      '$_baseUrlNew/api/financeiro/dashboard/projecao${_buildQueryParams(empresaId: empresaId, meses: meses)}';
+  static String dashboardFinanceiroKpis({String? empresaId, String? parceiroId, int? dias}) =>
+      '$_baseUrlNew/api/financeiro/dashboard/kpis${_buildQueryParams(empresaId: empresaId, parceiroId: parceiroId, dias: dias)}';
+  static String dashboardFinanceiroProjecao({String? empresaId, String? parceiroId, int? meses}) =>
+      '$_baseUrlNew/api/financeiro/dashboard/projecao${_buildQueryParams(empresaId: empresaId, parceiroId: parceiroId, meses: meses)}';
 
   // Exportação Power BI / CSV
   static String exportarCsv(String tipo) =>
       '$_baseUrlNew/api/financeiro/exportar/$tipo';
 
-  static String _buildQueryParams({String? empresaId, int? dias, int? meses}) {
+  static String _buildQueryParams({String? empresaId, String? parceiroId, int? dias, int? meses}) {
     final params = <String>[];
     if (empresaId != null) params.add('empresaId=$empresaId');
+    if (parceiroId != null) params.add('parceiroId=$parceiroId');
     if (dias != null) params.add('dias=$dias');
     if (meses != null) params.add('meses=$meses');
     return params.isEmpty ? '' : '?${params.join('&')}';

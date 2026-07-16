@@ -57,28 +57,14 @@ bool isSameDay(DateTime? a, DateTime? b) {
   return a.year == b.year && a.month == b.month && a.day == b.day;
 }
 
-dynamic pegarEmpresaLogada() {
-  final user = AuthUtility.userInfo?.login;
-  final empresaId = user?.empresa?.id;
-
-  // Debug para verificar o que está retornando
-  L.d('Usuário: ${AuthUtility.userInfo}');
-  L.d('Empresa ID: $empresaId');
-
-  // Se 0 não for um valor válido, retorne null
+int? pegarEmpresaLogada() {
+  final empresaId = AuthUtility.userInfo?.login?.empresa?.id;
   return (empresaId != null && empresaId != 0) ? empresaId : null;
 }
 
-dynamic pegarParceiroLogada() {
-  final user = AuthUtility.userInfo?.login;
-  final empresaId = user?.parceiro?.id;
-
-  // Debug para verificar o que está retornando
-  L.d('Usuário: ${AuthUtility.userInfo}');
-  L.d('Empresa ID: $empresaId');
-
-  // Se 0 não for um valor válido, retorne null
-  return (empresaId != null && empresaId != 0) ? empresaId : null;
+int? pegarParceiroLogada() {
+  final parceiroId = AuthUtility.userInfo?.login?.parceiro?.id;
+  return (parceiroId != null && parceiroId != 0) ? parceiroId : null;
 }
 
 int? pegarUsuarioLogado() {
