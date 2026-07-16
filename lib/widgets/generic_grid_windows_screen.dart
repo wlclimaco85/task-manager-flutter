@@ -4357,6 +4357,19 @@ class _GenericGridScreenState<T> extends State<GenericGridScreen<T>> {
           }
         }
 
+        // CARD #492: Quando dropdown usa dropdownFutureBuilder (dinamico),
+        // displayValue pode ser um Map (ex: {id: 1, nome: "Acme"}).
+        // Extrair a propriedade correta neste caso.
+        if (displayValue is Map &&
+            config.fieldType == FieldType.dropdown &&
+            config.dropdownDisplayField.isNotEmpty) {
+          displayValue = displayValue[config.dropdownDisplayField] ??
+              displayValue['nome'] ??
+              displayValue['name'] ??
+              displayValue['label'] ??
+              displayValue['id'];
+        }
+
         // Renderiza listas (ex: roles) como chips coloridos
         if (displayValue is List && displayValue.isNotEmpty) {
           final chips = displayValue.map((e) {
