@@ -151,7 +151,7 @@ void main() {
     });
 
     test(
-        'dashAtendimentoArea/dashComercialArea/dashFiscalArea ficam fora de _moduloToScreens -> nao bloqueados por modulo (liberado por padrao quando role_permissao permite)',
+        'dashAtendimentoArea/dashComercialArea/dashFiscalArea pertencem a modulos (Chamados/Comercial/Notas Fiscais) — deny quando modulo nao contratado',
         () {
       final userInfo = buildUserInfo(permissoes: [
         permissao('dashAtendimentoArea'),
@@ -160,10 +160,28 @@ void main() {
       ]);
       final matrix = SecurityMatrix.of(userInfo);
 
-      // Nenhum modulo contratado, mas como essas 3 telas nao pertencem a
-      // nenhuma entrada de _moduloToScreens (decisao registrada na Tarefa
-      // F3b/F3c), o bloqueio por modulo nao se aplica a elas.
+      // Sem modulos contratados: deny-by-default para telas de modulo
       ModuloAccess.setContratadosParaTeste([]);
+
+      expect(matrix.canView(AppScreen.dashAtendimentoArea), isFalse,
+          reason: 'dashAtendimentoArea pertence ao modulo Chamados');
+      expect(matrix.canView(AppScreen.dashComercialArea), isFalse,
+          reason: 'dashComercialArea pertence ao modulo Comercial');
+      expect(matrix.canView(AppScreen.dashFiscalArea), isFalse,
+          reason: 'dashFiscalArea pertence ao modulo Notas Fiscais');
+    });
+
+    test(
+        'dashAtendimentoArea/dashComercialArea/dashFiscalArea PERMITIDAS quando modulos contratados',
+        () {
+      final userInfo = buildUserInfo(permissoes: [
+        permissao('dashAtendimentoArea'),
+        permissao('dashComercialArea'),
+        permissao('dashFiscalArea'),
+      ]);
+      final matrix = SecurityMatrix.of(userInfo);
+
+      ModuloAccess.setContratadosParaTeste(['Chamados', 'Comercial', 'Notas Fiscais']);
 
       expect(matrix.canView(AppScreen.dashAtendimentoArea), isTrue);
       expect(matrix.canView(AppScreen.dashComercialArea), isTrue);

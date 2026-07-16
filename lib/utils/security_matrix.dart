@@ -380,15 +380,24 @@ class SecurityMatrix {
   }
 
   /// Calcula quais [allKnownIds] (ids do menu) o usuário pode ver.
-  /// Retorna `null` quando NÃO deve filtrar (mostrar tudo) — casos anti-lockout:
-  ///  - usuário MASTER/SYSTEM;
-  ///  - role sem nenhuma permissão de view aplicável ao menu (não configurada
-  ///    ou apenas com dados legados que não casam com nenhum id do menu).
-  /// Caso contrário retorna o conjunto de ids liberados.
+  /// Retorna `null` apenas para MASTER/SYSTEM (mostrar tudo).
+  /// Para demais usuarios, retorna o conjunto de ids liberados (pode ser vazio).
+  /// Deny-by-default: sem permissoes = sem acesso ao menu.
   Set<String>? allowedTelaIds(Set<String> allKnownIds) {
     if (isMaster) return null;
+    // Se nao ha permissoes do backend, usa fallback da matrix hardcoded
+    if (_backendPerms.isEmpty) {
+      // Usa a matrix fallback para determinar telas visiveis
+      final fallbackViewable = <String>{};
+      for (final id in allKnownIds) {
+        final screen = AppScreen.values.where((s) => s.name == id).firstOrNull;
+        if (screen != null && canView(screen)) {
+          fallbackViewable.add(id);
+        }
+      }
+      return fallbackViewable;
+    }
     final viewable = viewableTelaIds.intersection(allKnownIds);
-    if (viewable.isEmpty) return null; // anti-lockout
     return viewable;
   }
 
@@ -593,7 +602,10 @@ class ModuloAccess {
     } else if (parceiroModulos.isNotEmpty) {
       _modulosContratados = parceiroModulos.toList();
     } else {
-      _modulosContratados = _moduloToScreens.keys.toList();
+      // Deny-by-default: sem modulos contratados = sem acesso a telas de modulo.
+      // Antes era permissivo (_moduloToScreens.keys.toList() = acesso total).
+      // MASTER ja e tratado acima e nunca chega aqui.
+      _modulosContratados = [];
     }
     if (_modulosContratados.isNotEmpty && !_modulosContratados.contains('Financeiro')) {
       _modulosContratados.add('Financeiro Limitado');
@@ -603,8 +615,8 @@ class ModuloAccess {
 
   static bool isScreenAllowed(AppScreen screen) {
     if (!_loaded) return true;
-    if (_modulosContratados.isEmpty) return true;
 
+    // Verifica se a tela pertence a algum modulo
     bool pertenceAAlgumModulo = false;
     for (final entry in _moduloToScreens.entries) {
       if (entry.value.contains(screen)) {
@@ -612,7 +624,9 @@ class ModuloAccess {
         if (_modulosContratados.contains(entry.key)) return true;
       }
     }
+    // Tela que nao pertence a nenhum modulo e livre (ex: perfil, logins)
     if (!pertenceAAlgumModulo) return true;
+    // Tela pertence a modulo mas nenhum modulo contratado a cobre: NEGAR
     return false;
   }
 
