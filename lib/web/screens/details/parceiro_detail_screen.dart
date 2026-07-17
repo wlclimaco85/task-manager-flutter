@@ -28,9 +28,11 @@ class WebParceiroDetailScreen extends StatelessWidget {
                 ?.toString() ??
             '';
     final empresaIdInt = int.tryParse(empresaId);
-
-    // Dados da sessão — disponível para uso futuro (ex: pré-popular tipoLogin)
-    // final sessao = AuthUtility.userInfo?.login;
+    final empresaNome = item['empresa'] is Map
+        ? (item['empresa']['nome']?.toString() ??
+            item['empresa']['razaoSocial']?.toString() ??
+            '')
+        : '';
 
     return GenericDetailFormScreen(
       item: item,
@@ -51,6 +53,24 @@ class WebParceiroDetailScreen extends StatelessWidget {
           // causando ordem/tipo diferentes e falha 400 ao salvar.
           fieldOverrides: [
             ...WebLoginGridScreen.fieldOverrides(),
+            FieldConfigWindows(
+              label: 'Empresa (Nome)',
+              fieldName: 'empresa',
+              displayFieldName: 'empresa.nome',
+              icon: Icons.business,
+              fieldType: FieldType.dropdown,
+              dropdownOptions: empresaId.isNotEmpty
+                  ? [
+                      {'id': empresaId, 'label': empresaNome.isNotEmpty ? empresaNome : 'Empresa #$empresaId'}
+                    ]
+                  : [],
+              dropdownValueField: 'id',
+              dropdownDisplayField: 'label',
+              dropdownSelectedValue: empresaId.isNotEmpty ? empresaId : null,
+              isInForm: true,
+              isFilterable: false,
+              enabled: false,
+            ),
             FieldConfigWindows(
               label: 'Parceiro',
               fieldName: 'parceiro',

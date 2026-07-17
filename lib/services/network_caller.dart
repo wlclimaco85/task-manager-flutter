@@ -63,11 +63,15 @@ class NetworkCaller {
       }
 
       if (response.statusCode == 200) {
+        SessionExpiredHandler.resetForbiddenCount();
         return NetworkResponse(
           true,
           response.statusCode,
           jsonDecode(utf8.decode(response.bodyBytes)),
         );
+      }
+      if (response.statusCode == 403) {
+        SessionExpiredHandler.handleForbidden();
       }
       _handleUnauthorized(response.statusCode, enrichedUrl);
       return NetworkResponse(false, response.statusCode, null);
