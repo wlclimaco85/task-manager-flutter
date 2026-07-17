@@ -11,7 +11,6 @@ import '../../utils/assets_utils.dart';
 import '../../utils/grid_colors.dart';
 import '../../utils/grid_texts.dart';
 import '../../utils/security_matrix.dart';
-import '../../widgets/home_screen.dart';
 import '../services/network_caller.dart';
 import 'email_verification_screeen.dart';
 import 'solicitacao_acesso_screen.dart';
@@ -338,7 +337,7 @@ class _LoginBanner extends StatelessWidget {
                         GridTexts.companyTagline,
                         textAlign: TextAlign.center,
                         style: TextStyle(
-                          color: Colors.white.withValues(alpha: 0.65),
+                          color: Colors.white.withValues(alpha: 0.95),
                           fontSize: 13,
                           fontWeight: FontWeight.w400,
                         ),
@@ -520,7 +519,7 @@ class _LoginBanner extends StatelessWidget {
         focusedErrorBorder: OutlineInputBorder(
             borderSide: const BorderSide(color: GridColors.error, width: 2),
             borderRadius: BorderRadius.circular(12)),
-        errorStyle: const TextStyle(color: Colors.orange, fontSize: 11),
+        errorStyle: const TextStyle(color: GridColors.error, fontSize: 11),
       ),
     );
   }
