@@ -148,6 +148,7 @@ import './home_saude_aluno_screen.dart';
 import './historico_treino_screen.dart';
 import './query_builder_window_screen.dart';
 import '../../customization/dynamic_grid_dynamic_screen.dart';
+import '../../widgets/dp/dp_dashboard_screen.dart';
 
 class WindowsBottomNavBarScreen extends StatefulWidget {
   const WindowsBottomNavBarScreen({super.key});
@@ -473,6 +474,11 @@ class _WindowsBottomNavBarScreenState extends State<WindowsBottomNavBarScreen> {
           alunoId: AuthUtility.userInfo?.data?.id ?? 0,
         ), // 141: Historico de Treinos
         const WebDashboardMensalidadeScreen(), // 142: Dashboard de Mensalidades
+        const DpDashboardScreen(), // 143: Dashboard DP
+        const SizedBox.shrink(), // 144: reservado
+        const SizedBox.shrink(), // 145: Dashboard Comercial (placeholder)
+        const SizedBox.shrink(), // 146: Dashboard Fiscal (placeholder)
+        const SizedBox.shrink(), // 147: reservado
         const BoletoImportacaoLoteScreen(), // 148: Importação Boletos Lote
         const SolicitacaoAcessoAprovacaoScreen(), // 149: Solicitações de Acesso
         const QueryBuilderWindowScreen(), // 150: Query Builder
@@ -486,6 +492,7 @@ class _WindowsBottomNavBarScreenState extends State<WindowsBottomNavBarScreen> {
             sessionId: 0), // 154: Registro de Carga (placeholder sessionId)
         const FrequenciaScreen(), // 155: Frequencia Semanal
         DynamicGridDynamicScreen(telaNome: 'contrato_screen', hasPermission: (p) => true), // 156: Contratos
+        const SizedBox.shrink(), // 157: reservado
         DynamicGridDynamicScreen(telaNome: 'equipamento_screen', hasPermission: (p) => true), // 158: Equipamentos
         DynamicGridDynamicScreen(telaNome: 'ordem_servico_screen', hasPermission: (p) => true), // 159: Ordens de Serviço
         DynamicGridDynamicScreen(telaNome: 'plano_manutencao_screen', hasPermission: (p) => true), // 160: Planos Manutenção
@@ -493,16 +500,19 @@ class _WindowsBottomNavBarScreenState extends State<WindowsBottomNavBarScreen> {
         DynamicGridDynamicScreen(telaNome: 'historico_manutencao_screen', hasPermission: (p) => true), // 162: Histórico Manutenção
         DynamicGridDynamicScreen(telaNome: 'tecnico_manutencao_screen', hasPermission: (p) => true), // 163: Técnicos
         DynamicGridDynamicScreen(telaNome: 'sla_screen', hasPermission: (p) => true), // 164: SLA
+        const SizedBox.shrink(), // 165: reservado
         DynamicGridDynamicScreen(telaNome: 'fila_atendimento_screen', hasPermission: (p) => true), // 166: Filas Atendimento
         DynamicGridDynamicScreen(telaNome: 'categoria_chamado_screen', hasPermission: (p) => true), // 167: Categorias Chamado
         DynamicGridDynamicScreen(telaNome: 'chamado_avaliacao_screen', hasPermission: (p) => true), // 168: Avaliações
         DynamicGridDynamicScreen(telaNome: 'projeto_screen', hasPermission: (p) => true), // 169: Projetos
+        const SizedBox.shrink(), // 170: reservado
         DynamicGridDynamicScreen(telaNome: 'projeto_etapa_screen', hasPermission: (p) => true), // 171: Etapas
         DynamicGridDynamicScreen(telaNome: 'projeto_recurso_screen', hasPermission: (p) => true), // 172: Recursos
         DynamicGridDynamicScreen(telaNome: 'projeto_apontamento_screen', hasPermission: (p) => true), // 173: Apontamentos
         DynamicGridDynamicScreen(telaNome: 'projeto_medicao_screen', hasPermission: (p) => true), // 174: Medições
         DynamicGridDynamicScreen(telaNome: 'cargo_recurso_screen', hasPermission: (p) => true), // 175: Cargos/Recursos
         DynamicGridDynamicScreen(telaNome: 'precificacao_screen', hasPermission: (p) => true), // 176: Precificações
+        const SizedBox.shrink(), // 177: reservado
         DynamicGridDynamicScreen(telaNome: 'precificacao_custo_direto_screen', hasPermission: (p) => true), // 178: Custos Diretos
         DynamicGridDynamicScreen(telaNome: 'precificacao_mao_de_obra_screen', hasPermission: (p) => true), // 179: Mão de Obra
         DynamicGridDynamicScreen(telaNome: 'precificacao_servico_screen', hasPermission: (p) => true), // 180: Serviços
