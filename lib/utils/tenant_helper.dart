@@ -7,7 +7,7 @@ class TenantHelper {
   
   static Map<String, String> get tenantHeaders {
     final headers = <String, String>{};
-    if (!isAdmin && empresaId != null) {
+    if (empresaId != null) {
       headers['X-Empresa-Id'] = empresaId!;
     }
     if (parceiroId != null) {
@@ -18,7 +18,7 @@ class TenantHelper {
   
   static String? applyToUrl(String? url) => url;
   static Map<String, dynamic> applyToBody(Map<String, dynamic> body) {
-    if (!isAdmin && empresaId != null) {
+    if (empresaId != null) {
       body['empresaId'] = int.tryParse(empresaId!);
     }
     if (parceiroId != null) {

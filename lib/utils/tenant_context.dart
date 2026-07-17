@@ -55,10 +55,9 @@ class TenantContext {
   }
 
   // ── Headers ──────────────────────────────────────────────────────────────
-  /// Headers padrão com auth token. Inclui X-Tenant-ID apenas para não-admin.
   static Map<String, String> get headers {
     final token = AuthUtility.userInfo?.token;
-    final tenantId = !isAdmin ? empresaId?.toString() : null;
+    final tenantId = empresaId?.toString();
     return {
       if (token != null) 'Authorization': 'Bearer $token',
       if (tenantId != null) 'X-Tenant-ID': tenantId,
@@ -66,10 +65,9 @@ class TenantContext {
     };
   }
 
-  /// Headers JSON com auth token. Inclui X-Tenant-ID apenas para não-admin.
   static Map<String, String> get jsonHeaders {
     final token = AuthUtility.userInfo?.token;
-    final tenantId = !isAdmin ? empresaId?.toString() : null;
+    final tenantId = empresaId?.toString();
     return {
       if (token != null) 'Authorization': 'Bearer $token',
       if (tenantId != null) 'X-Tenant-ID': tenantId,
@@ -95,15 +93,9 @@ class TenantContext {
         params.containsKey('empresaIds') ||
         params.containsKey('empIds');
 
-    // Empresa: injeta o tenant logado apenas quando a chamada não trouxe um
-    // escopo explícito, como acontece nas abas de detalhe de uma empresa.
-    if (!isAdmin &&
-        hasEmpresa &&
-        !hasExplicitEmpresaScope &&
-        !skipEmpresaScope) {
+    if (hasEmpresa && !hasExplicitEmpresaScope && !skipEmpresaScope) {
       params['empId'] = empresaId.toString();
     }
-    // Sem empresa → não injeta filtro (admin sem empresa vê tudo)
 
     final hasExplicitParceiroScope = params.containsKey('parceiro') ||
         params.containsKey('parceiroId') ||
@@ -112,7 +104,7 @@ class TenantContext {
 
     // Parceiro/Cliente: mesmo princípio, evita misturar filtro de aba com
     // parceiro do login atual.
-    if (!isAdmin && hasParceiro && !hasExplicitParceiroScope && !skipParceiroScope) {
+    if (hasParceiro && !hasExplicitParceiroScope && !skipParceiroScope) {
       params['parceiro'] = parceiroId.toString();
       params['parceiroId'] = parceiroId.toString();
       params['parcId'] = parceiroId.toString();
@@ -131,10 +123,10 @@ class TenantContext {
   // ── Injeção no body ──────────────────────────────────────────────────────
   static Map<String, dynamic> applyToBody(Map<String, dynamic> body) {
     final result = Map<String, dynamic>.from(body);
-    if (!isAdmin && hasEmpresa && result['empresa'] == null) {
+    if (hasEmpresa && result['empresa'] == null) {
       result['empresa'] = {'id': empresaId};
     }
-    if (!isAdmin && hasParceiro && result['parceiro'] == null) {
+    if (hasParceiro && result['parceiro'] == null) {
       result['parceiro'] = {'id': parceiroId};
     }
     if (aplicativoId != null && result['aplicativo'] == null) {

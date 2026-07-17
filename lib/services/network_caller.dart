@@ -281,15 +281,12 @@ class NetworkCaller {
       if (!isAuthRequest && body != null) {
         // Usa TenantHelper para injetar empresa/parceiro/aplicativo no body
         final enrichedBody = TenantHelper.applyToBody(body);
-        // Garante audit no body (apenas para não-admin)
-        if (!TenantHelper.isAdmin) {
-          enrichedBody['audit'] ??= {};
-          enrichedBody['audit']['empresaId'] = user?.empresa?.id;
-          enrichedBody['audit']['appId'] = user?.aplicativo?.id;
-          enrichedBody['audit']['userLogadoId'] = user?.id;
-          if (user?.parceiro?.id != null) {
-            enrichedBody['audit']['parceiroId'] = user!.parceiro!.id;
-          }
+        enrichedBody['audit'] ??= {};
+        enrichedBody['audit']['empresaId'] = user?.empresa?.id;
+        enrichedBody['audit']['appId'] = user?.aplicativo?.id;
+        enrichedBody['audit']['userLogadoId'] = user?.id;
+        if (user?.parceiro?.id != null) {
+          enrichedBody['audit']['parceiroId'] = user!.parceiro!.id;
         }
         body = enrichedBody;
       }
