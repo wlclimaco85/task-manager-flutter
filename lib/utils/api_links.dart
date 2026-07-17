@@ -70,6 +70,8 @@ class ApiLinks {
   static String updateTask(String id, String status) =>
       '$_baseUrl/updateTaskStatus/$id/$status';
   static String taskStatusCount = '$_baseUrl/listTaskByStatus/taskStatusCount';
+  static String get statusCounts => '$_baseUrlNew/api/task/status-count';
+  static String get baseProdUrl => _baseUrlNew;
   static String deleteTask(String taskId) => '$_baseUrl/deleteTask/$taskId';
   static String allNoticias = '$_baseUrlNew/api/noticias';
   static String get noticiasPublicas =>
