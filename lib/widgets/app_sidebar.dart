@@ -5,6 +5,7 @@ import '../utils/grid_colors.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import '../models/auth_utility.dart';
 import '../services/favorites_service.dart';
+import '../services/permission_service.dart';
 import '../utils/menu_config.dart';
 import '../utils/security_matrix.dart';
 import '../utils/string_utils.dart';
@@ -67,6 +68,11 @@ class _AppSidebarState extends State<AppSidebar> {
       final email = widget.userEmail.toLowerCase();
       return email == 'wlclimaco@gmail.com';
     }
+    // Primeiro: verificar permissões dinâmicas do backend via PermissionService
+    if (PermissionService().canViewScreen(item.id)) {
+      return true;
+    }
+    // Fallback: manter compatibilidade com SecurityMatrix (módulos legados)
     // Converte item.id (snake_case) para camelCase para comparar com telaNome (backend).
     final camelCaseId = StringUtils.snakeToCamelCase(item.id);
     return _allowedIds == null || _allowedIds!.contains(camelCaseId);

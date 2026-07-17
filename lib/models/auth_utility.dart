@@ -3,6 +3,7 @@
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../../models/login_model.dart';
+import 'package:task_manager_flutter/services/permission_service.dart';
 
 import 'package:task_manager_flutter/utils/app_logger.dart';
 
@@ -95,6 +96,8 @@ class AuthUtility {
 
   static Future<void> setUserInfo(LoginModel model) async {
     userInfo = model;
+    // Atualizar permissões do usuário no PermissionService (menu dinâmico)
+    PermissionService().setPermissoes(model.permissoes);
     SharedPreferences _sharedPreferences =
         await SharedPreferences.getInstance();
     try {
@@ -137,6 +140,8 @@ class AuthUtility {
         await SharedPreferences.getInstance();
     await _sharedPreferences.remove("user_data");
     userInfo = null;
+    // Limpar permissões ao fazer logout
+    PermissionService().clear();
   }
 
   /// Retorna o LoginModel do usuário logado (lê de SharedPreferences se necessário).
@@ -168,6 +173,10 @@ class AuthUtility {
         L.w('[AuthUtility] token expirado — limpando sessão e forçando re-login');
         await clearUserInfo();
         return false;
+      }
+      // Sincronizar permissões ao recuperar do cache
+      if (userInfo != null) {
+        PermissionService().setPermissoes(userInfo!.permissoes);
       }
     }
 
