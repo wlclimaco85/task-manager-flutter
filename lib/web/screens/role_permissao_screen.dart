@@ -16,6 +16,29 @@ import '../../services/tela_service.dart';
 String _normalizeTelaNome(String s) =>
     s.toLowerCase().replaceAll('_', '');
 
+/// Converte nomes de tela de snake_case para camelCase (formato backend)
+/// Exemplo: 'nfe_entrada' → 'nfeEntrada', 'chat' → 'chat'
+/// Fix (card #460, regressao): MenuConfig usa snake_case (nfe_entrada),
+/// mas role_permissao.tela_nome no backend usa camelCase (nfeEntrada).
+/// Esta conversao permite matching correto entre IDs de menu e permissoes armazenadas.
+String toBackendTelaNome(String screenName) {
+  if (!screenName.contains('_')) {
+    return screenName; // Já está em camelCase ou é simples
+  }
+
+  final parts = screenName.split('_');
+  final buffer = StringBuffer(parts[0]); // Primeira palavra em minúscula
+
+  for (int i = 1; i < parts.length; i++) {
+    final part = parts[i];
+    if (part.isNotEmpty) {
+      buffer.write(part[0].toUpperCase() + part.substring(1));
+    }
+  }
+
+  return buffer.toString();
+}
+
 class RolePermissaoScreen extends StatefulWidget {
   const RolePermissaoScreen({super.key});
 
