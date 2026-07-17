@@ -1,5 +1,3 @@
-import 'package:flutter/material.dart';
-
 enum Breakpoint { mobile, tablet, desktop }
 
 class ResponsiveHelper {
