@@ -24,7 +24,7 @@ enum AppScreen {
   noticias, logins, cotacao, trading, comprar, aplicativo, vender, perfil,
   regimeTributario, alimentos, dietas, empresas, exames, exercicios,
   gruposMusculares, medicamentos, mensalidades, modalidades, objetivos,
-  personais, planos, roles, setores, suplementos,
+  personais, planos, roles, rolesPermissoes, setores, suplementos,
   formasPagamento, diretorios, arquivos, obrigacoesFiscais,
   // Novas telas
   pedidos, configuracoesAdmin, contaBancaria, feriados,
@@ -102,6 +102,7 @@ const _escritorioScreens = {
   AppScreen.empresas:           _all,
   AppScreen.parceiros:          _all,
   AppScreen.setores:            _all,
+  AppScreen.rolesPermissoes:    _all,
   AppScreen.produto:            _all,
   AppScreen.unidadeMedida:      _all,
   AppScreen.catalogoProduto:    _all,

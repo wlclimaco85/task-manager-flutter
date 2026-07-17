@@ -45,6 +45,7 @@ import 'extrato_importacao_screen.dart' show MobileExtratoImportacaoScreen;
 import '../../web/screens/cobranca_automatica_screen.dart';
 import '../../widgets/user_banners.dart';
 import 'alvara_screen.dart';
+import 'role_permissao_mobile_screen.dart';
 
 class BottomNavBarScreen extends StatefulWidget {
   const BottomNavBarScreen({super.key});
@@ -997,6 +998,12 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
           MaterialPageRoute(builder: (_) => const MeuPerfilScreen()),
         );
         break;
+      case "Controle de Acesso":
+        nav = Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => const RolePermissaoMobileScreen()),
+        );
+        break;
       case "Importar Extratos":
         nav = Navigator.push(
           context,
@@ -1337,6 +1344,8 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
             _MoreMenuAction(Icons.manage_accounts, 'Usuários'),
           _MoreMenuAction(Icons.verified_user, 'Alvarás'),
           _MoreMenuAction(Icons.account_circle, 'Meu Perfil'),
+          if (sec.canView(AppScreen.rolesPermissoes))
+            _MoreMenuAction(Icons.lock, 'Controle de Acesso'),
           _MoreMenuAction(Icons.settings, 'Config Fiscal'),
           _MoreMenuAction(Icons.exit_to_app, 'Sair', isDestructive: true),
         ],
