@@ -97,21 +97,63 @@ class DesignTokens {
   static const Color info = Color(0xFF1976D2);
 
   // ─────────────────────────────────────────────────────────────────────────────
+  // 🌈 GRADIENTES — Linear Gradients padrão do app
+  // ─────────────────────────────────────────────────────────────────────────────
+
+  /// Gradiente primário RED → GREEN (header, card accent)
+  static const LinearGradient gradientPrimaryRedGreen = LinearGradient(
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+    colors: [
+      Color(0xFF93070A), // RED primary
+      Color(0xFF005826), // GREEN secondary
+    ],
+    stops: [0.0, 1.0],
+  );
+
+  /// Gradiente suave: primarySoft → secondarySoft
+  static const LinearGradient gradientSoft = LinearGradient(
+    begin: Alignment.topCenter,
+    end: Alignment.bottomCenter,
+    colors: [
+      Color(0xFFFCEDEE), // primarySoft
+      Color(0xFFEAF5EE), // secondarySoft
+    ],
+    stops: [0.0, 1.0],
+  );
+
+  /// Gradiente sucesso (para badges/status positivo)
+  static const LinearGradient gradientSuccess = LinearGradient(
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+    colors: [
+      Color(0xFF2E7D32), // success
+      Color(0xFF1B5E20), // successDark
+    ],
+    stops: [0.0, 1.0],
+  );
+
+  // ─────────────────────────────────────────────────────────────────────────────
   // 📏 TIPOGRAFIA RESPONSIVA — Por Breakpoint
   // ─────────────────────────────────────────────────────────────────────────────
 
   // Logo — Responsivo para 3 breakpoints
-  static const double logoSizeMobile = 32;
-  static const double logoSizeTablet = 36;
-  static const double logoSizeDesktop = 40;
+  static const double logoFontSizeMobile = 32;
+  static const double logoFontSizeTablet = 36;
+  static const double logoFontSizeDesktop = 40;
+  static const FontWeight logoFontWeight = FontWeight.w600;
 
   // Heading 1 (H1) — Principal
-  static const double h1SizeMobile = 24;
-  static const double h1SizeTabletDesktop = 28;
+  static const double h1FontSizeMobile = 24;
+  static const double h1FontSizeTablet = 28;
+  static const double h1FontSizeDesktop = 28;
+  static const FontWeight h1FontWeight = FontWeight.w700;
+  static const Color h1Color = Color(0xFF17211B); // textSecondary
 
   // Tagline — Subtítulo/descrição
   static const double taglineFontSize = 14;
   static const FontWeight taglineFontWeight = FontWeight.w400;
+  static const Color taglineColor = Color(0xFF64756A); // textMuted
 
   // Rótulo de botão/botão
   static const double buttonLabelFontSize = 14;
