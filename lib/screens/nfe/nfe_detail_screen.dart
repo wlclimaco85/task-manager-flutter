@@ -386,7 +386,7 @@ class _NfeDetailScreenState extends State<NfeDetailScreen> with TickerProviderSt
   Widget _buildItensExpandable(BuildContext context, NfeModel nfe, Breakpoint breakpoint) {
     return Card(
       child: ExpansionTile(
-        title: const Text('Itens (${0})'),
+        title: Text('Itens (${nfe.itens.length})'),
         initiallyExpanded: false,
         children: [
           Padding(
