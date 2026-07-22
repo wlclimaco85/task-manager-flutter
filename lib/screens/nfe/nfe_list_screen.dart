@@ -283,20 +283,30 @@ class _NfeListScreenState extends State<NfeListScreen> {
               child: const Row(
                 children: [Icon(Icons.visibility, size: 18), SizedBox(width: 8), Text('Ver detalhes')],
               ),
-              onTap: () => _handleVerDetalhes(context, nfe),
+              onTap: () {
+                // Usar Future.microtask() para garantir execução async
+                // Permite que PopupMenu feche e erros sejam capturados corretamente
+                Future.microtask(() => _handleVerDetalhes(context, nfe));
+              },
             ),
             PopupMenuItem(
               child: const Row(
                 children: [Icon(Icons.print, size: 18), SizedBox(width: 8), Text('Reimprimir')],
               ),
-              onTap: () => _handleReimprimirNfe(context, nfe),
+              onTap: () {
+                // Usar Future.microtask() para garantir execução async
+                Future.microtask(() => _handleReimprimirNfe(context, nfe));
+              },
             ),
             if (nfe.statusNfe != NfeStatus.cancelada)
               PopupMenuItem(
                 child: const Row(
                   children: [Icon(Icons.cancel, size: 18, color: DesignTokens.error), SizedBox(width: 8), Text('Cancelar')],
                 ),
-                onTap: () => _handleCancelarNfe(context, nfe),
+                onTap: () {
+                  // Usar Future.microtask() para garantir execução async
+                  Future.microtask(() => _handleCancelarNfe(context, nfe));
+                },
               ),
           ],
         ),
