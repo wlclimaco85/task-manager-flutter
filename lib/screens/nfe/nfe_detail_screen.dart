@@ -31,7 +31,7 @@ class _NfeDetailScreenState extends State<NfeDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final isMobile = MediaQuery.of(context).size.width < 800;
+    final isMobile = MediaQuery.of(context).size.width < 768;
 
     return Scaffold(
       appBar: AppBar(
@@ -271,8 +271,8 @@ class _NfeDetailScreenState extends State<NfeDetailScreen> {
                   DataCell(Text(item.cfop ?? '-')),
                   DataCell(Text(item.descricao)),
                   DataCell(Text(item.quantidade.toString())),
-                  DataCell(Text('R\$ ${item.valorUnitario.toStringAsFixed(2)}')),
-                  DataCell(Text('R\$ ${item.valorTotal.toStringAsFixed(2)}')),
+                  DataCell(Text('R\$ ${item.precoUnitario.toStringAsFixed(2)}')),
+                  DataCell(Text('R\$ ${item.precoTotal.toStringAsFixed(2)}')),
                 ]);
               }).toList(),
             ),
@@ -316,7 +316,7 @@ class _NfeDetailScreenState extends State<NfeDetailScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            if (nfe.statusNfe == NfeStatus.rascunho)
+            if (nfe.statusNfe == NfeStatus.pendente)
               ElevatedButton.icon(
                 onPressed: () {
                   L.d('[NfeDetailScreen] Emitindo NFe ${nfe.id}');

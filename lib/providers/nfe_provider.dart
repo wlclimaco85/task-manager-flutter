@@ -8,7 +8,7 @@ import 'package:task_manager_flutter/repositories/nfe_repository.dart';
 /// Uso:
 /// ```dart
 /// ChangeNotifierProvider<NfeNotifier>(
-///   create: (_) => nfeProvider,
+///   create: (_) => NfeNotifier(NfeRepository()),
 ///   child: MyApp(),
 /// )
 /// ```
@@ -18,39 +18,34 @@ import 'package:task_manager_flutter/repositories/nfe_repository.dart';
 /// final notifier = Provider.of<NfeNotifier>(context);
 /// notifier.listarNfe();
 /// ```
-final nfeRepositoryProvider = Provider((ref) => NfeRepository());
+final nfeRepositoryProvider = Provider((_) => NfeRepository());
 
-final nfeNotifierProvider = ChangeNotifierProvider<NfeNotifier>((ref) {
+final nfeNotifierProvider = ChangeNotifierProvider<NfeNotifier>((_) {
   return NfeNotifier(NfeRepository());
 });
 
 /// Stream selector para o estado de NFes
 /// Usado com Consumer/Selector para otimizar rebuilds
-final nfeStateProvider = Provider<NfeState>((ref) {
-  final notifier = ref.watch(nfeNotifierProvider);
-  return notifier.state;
+final nfeStateProvider = Provider<NfeState>((_) {
+  throw UnimplementedError('Use nfeNotifierProvider.watch() instead');
 });
 
 /// Selector para verificar se está carregando
-final nfeLoadingProvider = Provider<bool>((ref) {
-  final state = ref.watch(nfeStateProvider);
-  return state.isLoading;
+final nfeLoadingProvider = Provider<bool>((_) {
+  throw UnimplementedError('Use nfeNotifierProvider.watch() instead');
 });
 
 /// Selector para verificar se há erro
-final nfeErrorProvider = Provider<String?>((ref) {
-  final state = ref.watch(nfeStateProvider);
-  return state.errorMessage;
+final nfeErrorProvider = Provider<String?>((_) {
+  throw UnimplementedError('Use nfeNotifierProvider.watch() instead');
 });
 
 /// Selector para lista de NFes
-final nfeListProvider = Provider<List>((ref) {
-  final state = ref.watch(nfeStateProvider);
-  return state.nfes;
+final nfeListProvider = Provider<List>((_) {
+  throw UnimplementedError('Use nfeNotifierProvider.watch() instead');
 });
 
 /// Selector para NFe selecionada
-final nfeSelectedProvider = Provider((ref) {
-  final state = ref.watch(nfeStateProvider);
-  return state.selected;
+final nfeSelectedProvider = Provider((_) {
+  throw UnimplementedError('Use nfeNotifierProvider.watch() instead');
 });
