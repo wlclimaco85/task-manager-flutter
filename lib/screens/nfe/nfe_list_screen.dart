@@ -283,30 +283,20 @@ class _NfeListScreenState extends State<NfeListScreen> {
               child: const Row(
                 children: [Icon(Icons.visibility, size: 18), SizedBox(width: 8), Text('Ver detalhes')],
               ),
-              onTap: () => L.d('[NfeListScreen] Navegando NFe ${nfe.id}'),
+              onTap: () => _handleVerDetalhes(context, nfe),
             ),
             PopupMenuItem(
               child: const Row(
                 children: [Icon(Icons.print, size: 18), SizedBox(width: 8), Text('Reimprimir')],
               ),
-              onTap: () {
-                L.d('[NfeListScreen] Reimprimindo NFe ${nfe.id}');
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Reimpressão iniciada')),
-                );
-              },
+              onTap: () => _handleReimprimirNfe(context, nfe),
             ),
             if (nfe.statusNfe != NfeStatus.cancelada)
               PopupMenuItem(
                 child: const Row(
                   children: [Icon(Icons.cancel, size: 18, color: DesignTokens.error), SizedBox(width: 8), Text('Cancelar')],
                 ),
-                onTap: () {
-                  L.d('[NfeListScreen] Cancelando NFe ${nfe.id}');
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Cancelamento iniciado')),
-                  );
-                },
+                onTap: () => _handleCancelarNfe(context, nfe),
               ),
           ],
         ),
@@ -597,5 +587,63 @@ class _NfeListScreenState extends State<NfeListScreen> {
             )
           : null,
     );
+  }
+
+  /// Handler para ver detalhes de uma NFe
+  void _handleVerDetalhes(BuildContext context, NfeModel nfe) {
+    try {
+      L.d('[NfeListScreen] Navegando para detalhes NFe ${nfe.id}');
+      Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (context) => NfeDetailScreen(nfe: nfe),
+        ),
+      );
+    } catch (e) {
+      L.e('[NfeListScreen] Erro ao navegador: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Erro ao abrir detalhes: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
+  /// Handler para reimprimir NFe
+  void _handleReimprimirNfe(BuildContext context, NfeModel nfe) {
+    try {
+      L.d('[NfeListScreen] Reimprimindo NFe ${nfe.id}');
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Reimpressão iniciada')),
+      );
+      // TODO: Implementar chamada para serviço de impressão
+    } catch (e) {
+      L.e('[NfeListScreen] Erro ao reimprimir: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Erro: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
+  /// Handler para cancelar NFe
+  void _handleCancelarNfe(BuildContext context, NfeModel nfe) {
+    try {
+      L.d('[NfeListScreen] Cancelando NFe ${nfe.id}');
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Cancelamento iniciado')),
+      );
+      // TODO: Implementar chamada para API de cancelamento
+    } catch (e) {
+      L.e('[NfeListScreen] Erro ao cancelar: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Erro: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
   }
 }
