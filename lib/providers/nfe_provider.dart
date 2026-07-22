@@ -18,34 +18,26 @@ import 'package:task_manager_flutter/repositories/nfe_repository.dart';
 /// final notifier = Provider.of<NfeNotifier>(context);
 /// notifier.listarNfe();
 /// ```
-final nfeRepositoryProvider = Provider((_) => NfeRepository());
-
-final nfeNotifierProvider = ChangeNotifierProvider<NfeNotifier>((_) {
+/// Função factory que cria um NfeNotifier com repositório
+NfeNotifier createNfeNotifier() {
   return NfeNotifier(NfeRepository());
-});
+}
 
-/// Stream selector para o estado de NFes
-/// Usado com Consumer/Selector para otimizar rebuilds
-final nfeStateProvider = Provider<NfeState>((_) {
-  throw UnimplementedError('Use nfeNotifierProvider.watch() instead');
-});
-
-/// Selector para verificar se está carregando
-final nfeLoadingProvider = Provider<bool>((_) {
-  throw UnimplementedError('Use nfeNotifierProvider.watch() instead');
-});
-
-/// Selector para verificar se há erro
-final nfeErrorProvider = Provider<String?>((_) {
-  throw UnimplementedError('Use nfeNotifierProvider.watch() instead');
-});
-
-/// Selector para lista de NFes
-final nfeListProvider = Provider<List>((_) {
-  throw UnimplementedError('Use nfeNotifierProvider.watch() instead');
-});
-
-/// Selector para NFe selecionada
-final nfeSelectedProvider = Provider((_) {
-  throw UnimplementedError('Use nfeNotifierProvider.watch() instead');
-});
+/// Provider para o notifier de NFes — gerencia estado
+///
+/// Uso em widget:
+/// ```dart
+/// ChangeNotifierProvider<NfeNotifier>(
+///   create: (_) => createNfeNotifier(),
+///   child: MyApp(),
+/// )
+/// ```
+///
+/// Ou no Consumer:
+/// ```dart
+/// Consumer<NfeNotifier>(
+///   builder: (context, notifier, child) {
+///     return Text(notifier.state.isLoading ? 'Carregando...' : 'Pronto');
+///   },
+/// )
+/// ```
