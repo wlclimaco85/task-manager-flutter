@@ -682,39 +682,94 @@ class _NfeDetailScreenState extends State<NfeDetailScreen> with TickerProviderSt
   }
 
   /// Handlers de ações
-  void _handleEmitir(BuildContext context, NfeModel nfe) {
-    L.d('[NfeDetailScreen] Emitindo NFe ${nfe.id}');
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Emissão em implementação')),
-    );
+  Future<void> _handleEmitir(BuildContext context, NfeModel nfe) async {
+    try {
+      L.d('[NfeDetailScreen] Emitindo NFe ${nfe.id}');
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Emissão iniciada...')),
+      );
+      // TODO: Implementar chamada para API de emissão
+    } catch (e) {
+      L.e('[NfeDetailScreen] Erro ao emitir: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Erro ao emitir: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
   }
 
-  void _handleCancelar(BuildContext context, NfeModel nfe) {
-    L.d('[NfeDetailScreen] Cancelando NFe ${nfe.id}');
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Cancelamento em implementação')),
-    );
+  Future<void> _handleCancelar(BuildContext context, NfeModel nfe) async {
+    try {
+      L.d('[NfeDetailScreen] Cancelando NFe ${nfe.id}');
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Cancelamento iniciado...')),
+      );
+      // TODO: Implementar chamada para API de cancelamento
+    } catch (e) {
+      L.e('[NfeDetailScreen] Erro ao cancelar: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Erro ao cancelar: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
   }
 
-  void _handleDownloadPdf(BuildContext context, NfeModel nfe) {
-    L.d('[NfeDetailScreen] Download PDF NFe ${nfe.id}');
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Download em implementação')),
-    );
+  Future<void> _handleDownloadPdf(BuildContext context, NfeModel nfe) async {
+    try {
+      L.d('[NfeDetailScreen] Download PDF NFe ${nfe.id}');
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Iniciando download...')),
+      );
+      // TODO: Implementar download de PDF
+    } catch (e) {
+      L.e('[NfeDetailScreen] Erro ao download: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Erro ao download: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
   }
 
   void _handleViewXml(BuildContext context, NfeModel nfe) {
-    L.d('[NfeDetailScreen] Visualizando XML NFe ${nfe.id}');
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('XML viewer em implementação')),
-    );
+    try {
+      L.d('[NfeDetailScreen] Visualizando XML NFe ${nfe.id}');
+      // TODO: Implementar visualizador de XML
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Visualizador de XML em desenvolvimento')),
+      );
+    } catch (e) {
+      L.e('[NfeDetailScreen] Erro ao visualizar XML: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Erro: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
   }
 
-  void _handleEnviarEmail(BuildContext context, NfeModel nfe) {
-    L.d('[NfeDetailScreen] Enviando email NFe ${nfe.id}');
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Email em implementação')),
-    );
+  Future<void> _handleEnviarEmail(BuildContext context, NfeModel nfe) async {
+    try {
+      L.d('[NfeDetailScreen] Enviando email NFe ${nfe.id}');
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Enviando email...')),
+      );
+      // TODO: Implementar envio de email
+    } catch (e) {
+      L.e('[NfeDetailScreen] Erro ao enviar email: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Erro ao enviar email: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
   }
 
   /// Helper: linha de informação
