@@ -146,6 +146,30 @@ class NfeRepository {
     }
   }
 
+  /// Cria uma nova NFe em rascunho
+  ///
+  /// [dados] - Map com os dados do formulário (tomador, itens, natureza, etc)
+  /// Retorna [NfeModel] criada ou lança [NfeRepositoryException]
+  Future<NfeModel> criarNfe(Map<String, dynamic> dados) async {
+    try {
+      final url = TenantContext.applyToUrl('$_baseUrl/criar');
+      L.d('[NfeRepository] POST $url com dados: $dados');
+
+      final response = await _dio.post(url, data: dados);
+      final nfe = NfeModel.fromJson(response.data as Map<String, dynamic>);
+
+      L.d('[NfeRepository] Criou NFe #${nfe.id} com sucesso (série ${nfe.serie}, número ${nfe.numero})');
+      return nfe;
+    } on DioException catch (e) {
+      final error = _extractErrorMessage(e);
+      L.e('[NfeRepository] Erro ao criar NFe: $error');
+      throw NfeRepositoryException(error);
+    } catch (e) {
+      L.e('[NfeRepository] Erro inesperado ao criar NFe: $e');
+      throw NfeRepositoryException('Erro inesperado: $e');
+    }
+  }
+
   /// Helper: extrai mensagem de erro de DioException
   ///
   /// Prioridade: response.data['message'] > response.statusMessage > e.message

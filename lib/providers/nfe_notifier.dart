@@ -4,7 +4,6 @@ import 'package:task_manager_flutter/models/nfe_state.dart';
 import 'package:task_manager_flutter/models/nfe/nfe_model.dart';
 import 'package:task_manager_flutter/repositories/nfe_repository.dart';
 import 'package:task_manager_flutter/utils/app_logger.dart';
-import 'package:task_manager_flutter/utils/tenant_context.dart';
 
 /// Notifier que gerencia o estado de NFes com Provider
 ///
@@ -165,6 +164,45 @@ class NfeNotifier extends ChangeNotifier {
       currentPage: 1,
       pageSize: 10,
     ));
+  }
+
+  /// Cria uma nova NFe com os dados do formulário
+  ///
+  /// [dados] - Map com tomador, itens, natureza, observações, etc
+  /// Retorna NfeModel criada ou lança NfeRepositoryException
+  Future<NfeModel> criarNfe(Map<String, dynamic> dados) async {
+    L.d('[NfeNotifier] Criando nova NFe com dados: $dados');
+
+    _setState(_state.copyWith(isLoading: true, errorMessage: null));
+
+    try {
+      final nfe = await _repository.criarNfe(dados);
+      L.d('[NfeNotifier] Criou NFe #${nfe.id} com sucesso');
+
+      // Atualiza estado com a NFe criada como selecionada
+      _setState(_state.copyWith(
+        selected: nfe,
+        isLoading: false,
+        errorMessage: null,
+      ));
+
+      return nfe;
+    } on NfeRepositoryException catch (e) {
+      L.e('[NfeNotifier] Erro ao criar NFe: ${e.message}');
+      _setState(_state.copyWith(
+        isLoading: false,
+        errorMessage: e.message,
+      ));
+      rethrow;
+    } catch (e) {
+      final errorMsg = 'Erro inesperado ao criar NFe: $e';
+      L.e('[NfeNotifier] $errorMsg');
+      _setState(_state.copyWith(
+        isLoading: false,
+        errorMessage: errorMsg,
+      ));
+      rethrow;
+    }
   }
 
   /// Avança para próxima página (se possível)
