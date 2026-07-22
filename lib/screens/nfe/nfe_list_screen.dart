@@ -112,8 +112,19 @@ class _NfeListScreenState extends State<NfeListScreen> {
     );
   }
 
-  String _formatCurrency(double value) =>
-      'R\$ ${value.toStringAsFixed(2).replaceAll('.', ',').replaceAll(',', '.')}';
+  String _formatCurrency(double value) {
+    final parts = value.toStringAsFixed(2).split('.');
+    final integer = parts[0];
+    final decimal = parts[1];
+
+    // Adiciona separador de milhares (ponto em pt_BR)
+    final formatted = integer.replaceAllMapped(
+      RegExp(r'\B(?=(\d{3})+(?!\d))'),
+      (match) => '.',
+    );
+
+    return 'R\$ $formatted,$decimal';
+  }
 
   String _formatDate(DateTime date) =>
       '${date.day.toString().padLeft(2, '0')}/${date.month.toString().padLeft(2, '0')}/${date.year}';
