@@ -49,6 +49,44 @@ class StubNfeRepository implements NfeRepository {
 
   @override
   Future<List<int>> downloadPdf(int id) async => [];
+
+  @override
+  Future<NfeModel> criarNfe(Map<String, dynamic> dados) async {
+    if (_shouldFail) throw Exception(_errorMessage);
+    final nfe = NfeModel(
+      id: 1,
+      empresaId: 200001,
+      numero: '000001',
+      serie: 1,
+      dataHora: DateTime.now(),
+      statusNfe: NfeStatus.pendente,
+      cnpjEmitente: '12345678901234',
+      uf: 'SP',
+      ambiente: 'HOMOLOGACAO',
+      tomador: NfeTomadorModel(
+        cnpjCpf: '98765432109876',
+        razaoSocial: dados['razaoSocial'] ?? 'Cliente',
+        endereco: 'Rua Teste',
+        numero: '123',
+        bairro: 'Centro',
+        cep: '01234567',
+        uf: 'SP',
+        municipio: 'São Paulo',
+      ),
+      itens: [],
+      valores: ValoresNfeModel(
+        subtotal: 1000,
+        totalIcms: 180,
+        totalPis: 65,
+        totalCofins: 300,
+        desconto: 0,
+        total: 1545,
+      ),
+      criadoEm: DateTime.now(),
+    );
+    _mockNfes.add(nfe);
+    return nfe;
+  }
 }
 
 void main() {

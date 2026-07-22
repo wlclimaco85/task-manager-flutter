@@ -35,6 +35,12 @@ class NfeNotifier extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Método público de teste para manipular estado
+  @visibleForTesting
+  void setTestState(NfeState newState) {
+    _setState(newState);
+  }
+
   /// Lista NFes com paginação e filtros opcionais
   ///
   /// [page] - número da página (começa em 1)
