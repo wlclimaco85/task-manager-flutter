@@ -7,7 +7,7 @@ class SessionExpiredHandler {
 
   static final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
   static int _consecutive403 = 0;
-  static const _max403BeforeLogout = 3;
+  static const _max403BeforeLogout = 1;
 
   static Future<void> handle() async {
     _consecutive403 = 0;

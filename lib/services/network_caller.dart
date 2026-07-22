@@ -62,12 +62,14 @@ class NetworkCaller {
         AppLogger.i.info(statusMsg);
       }
 
-      if (response.statusCode == 200) {
+      if (response.statusCode >= 200 && response.statusCode < 300) {
         SessionExpiredHandler.resetForbiddenCount();
         return NetworkResponse(
           true,
           response.statusCode,
-          jsonDecode(utf8.decode(response.bodyBytes)),
+          response.bodyBytes.isNotEmpty
+              ? jsonDecode(utf8.decode(response.bodyBytes))
+              : null,
         );
       }
       if (response.statusCode == 403) {
@@ -95,7 +97,7 @@ class NetworkCaller {
             ...TenantHelper.tenantHeaders,
           },
         );
-        if (response.statusCode == 200) {
+        if (response.statusCode >= 200 && response.statusCode < 300) {
           return NetworkResponse(
             true,
             response.statusCode,
@@ -118,7 +120,7 @@ class NetworkCaller {
                   ...TenantHelper.tenantHeaders,
                 },
               );
-              if (response.statusCode == 200) {
+              if (response.statusCode >= 200 && response.statusCode < 300) {
                 return NetworkResponse(
                   true,
                   response.statusCode,
@@ -206,11 +208,13 @@ class NetworkCaller {
         body: jsonEncode(body),
       );
 
-      if (response.statusCode == 200) {
+      if (response.statusCode >= 200 && response.statusCode < 300) {
         return NetworkResponse(
           true,
           response.statusCode,
-          jsonDecode(utf8.decode(response.bodyBytes)),
+          response.bodyBytes.isNotEmpty
+              ? jsonDecode(utf8.decode(response.bodyBytes))
+              : null,
         );
       } else {
         _handleUnauthorized(response.statusCode, enrichedUrl);
