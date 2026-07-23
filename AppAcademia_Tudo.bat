@@ -13,6 +13,7 @@ set "FLUTTER_DANIEL_DIR=%APP_ROOT%\task_manager_appDaniel"
 set "SELENIUM_DIR=%APP_ROOT%\.selenium-app-academia-e2e"
 set "DESKTOP=%USERPROFILE%\Desktop"
 set "ADB=%LOCALAPPDATA%\Android\Sdk\platform-tools\adb.exe"
+if not exist "%ADB%" set "ADB=C:\Program Files\BlueStacks_nxt\HD-Adb.exe"
 set "JAVA_HOME=C:\Program Files\Java\jdk-17"
 set "PATH=%JAVA_HOME%\bin;C:\flutter\bin;%PATH%"
 set "GRADLE_USER_HOME=%USERPROFILE%\.gradle"
@@ -427,14 +428,14 @@ echo.
 echo ============================================
 echo  Build Android - %BUILD_APP_LABEL% (backend local)
 echo ============================================
-echo Backend: %ANDROID_BACKEND_URL%
+echo Backend: http://127.0.0.1:%BACKEND_PORT% (via adb reverse)
 cd /d "%BUILD_APP_DIR%"
 call flutter pub get
 if errorlevel 1 (
     echo [ERRO] flutter pub get falhou em %BUILD_APP_LABEL%.
     exit /b 1
 )
-call flutter build apk --debug --dart-define=BACKEND_URL=%ANDROID_BACKEND_URL% --dart-define=WS_BACKEND_URL=%ANDROID_WS_BACKEND_URL%
+call flutter build apk --debug
 if errorlevel 1 (
     echo [ERRO] Build falhou em %BUILD_APP_LABEL%.
     exit /b 1
@@ -446,9 +447,30 @@ if errorlevel 1 (
 )
 echo.
 echo APK gerado: %BUILD_APK_DEST%
-echo Backend: %ANDROID_BACKEND_URL% (local)
+echo Backend: http://127.0.0.1:%BACKEND_PORT% (local, sem --dart-define)
 call :INSTALL_APK_FILE "%BUILD_APK_DEST%" "%BUILD_APP_PACKAGE%" "%BUILD_APP_LABEL%"
-exit /b %ERRORLEVEL%
+if errorlevel 1 exit /b 1
+echo.
+echo Configurando adb reverse para BlueStacks acessar backend local...
+"%ADB%" -s 127.0.0.1:5555 reverse tcp:%BACKEND_PORT% tcp:%BACKEND_PORT% >nul 2>&1
+if errorlevel 1 (
+    "%ADB%" reverse tcp:%BACKEND_PORT% tcp:%BACKEND_PORT% >nul 2>&1
+)
+echo adb reverse tcp:%BACKEND_PORT% configurado.
+echo.
+echo Limpando dados do app para forcar login limpo...
+"%ADB%" -s 127.0.0.1:5555 shell pm clear %BUILD_APP_PACKAGE% >nul 2>&1
+if errorlevel 1 (
+    "%ADB%" shell pm clear %BUILD_APP_PACKAGE% >nul 2>&1
+)
+echo Dados limpos - app vai abrir na tela de login.
+echo.
+echo Abrindo %BUILD_APP_LABEL%...
+"%ADB%" -s 127.0.0.1:5555 shell monkey -p %BUILD_APP_PACKAGE% -c android.intent.category.LAUNCHER 1 >nul 2>&1
+if errorlevel 1 (
+    "%ADB%" shell monkey -p %BUILD_APP_PACKAGE% -c android.intent.category.LAUNCHER 1 >nul 2>&1
+)
+exit /b 0
 
 :START_BACKEND_ONLY
 echo.
