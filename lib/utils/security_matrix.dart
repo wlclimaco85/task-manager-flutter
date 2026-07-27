@@ -584,8 +584,17 @@ class ModuloAccess {
         if (resp.statusCode == 200) {
           final List<dynamic> data = jsonDecode(resp.body);
           empresaModulos = data.map((m) => m['nome']?.toString() ?? '').toSet();
+        } else {
+          log.warning('API ${resp.statusCode} ao buscar empresa-módulos');
+          rethrow;
         }
-      } catch (_) {}
+      } on TimeoutException catch (e) {
+        log.error('Timeout ao buscar empresa-módulos');
+        rethrow;
+      } on Exception catch (e) {
+        log.error('Erro ao buscar empresa-módulos: $e');
+        rethrow;
+      }
     }
 
     if (parceiroId != null) {
@@ -596,8 +605,17 @@ class ModuloAccess {
         if (resp.statusCode == 200) {
           final List<dynamic> data = jsonDecode(resp.body);
           parceiroModulos = data.map((m) => m['nome']?.toString() ?? '').toSet();
+        } else {
+          log.warning('API ${resp.statusCode} ao buscar parceiro-módulos');
+          rethrow;
         }
-      } catch (_) {}
+      } on TimeoutException catch (e) {
+        log.error('Timeout ao buscar parceiro-módulos');
+        rethrow;
+      } on Exception catch (e) {
+        log.error('Erro ao buscar parceiro-módulos: $e');
+        rethrow;
+      }
     }
 
     if (empresaModulos.isNotEmpty && parceiroModulos.isNotEmpty) {
