@@ -94,8 +94,8 @@ class ManifestacaoNotifier extends ChangeNotifier {
         motivoRecusa: _manifestacao!.motivoRecusa,
       );
 
-      // Log do envio
-      print('Enviando manifestação: ${request.toJson()}');
+      // Log do envio (usar logger do projeto em produção)
+      // print('Enviando manifestação: ${request.toJson()}');
 
       _isSubmitting = false;
       _manifestacao = null; // Limpa após sucesso
