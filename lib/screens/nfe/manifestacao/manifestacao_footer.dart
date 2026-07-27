@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import '../../../providers/manifestacao_notifier.dart';
-import '../../../models/manifestacao/manifestacao_status.dart';
 import '../design_tokens.dart';
 
 /// Footer com botões de ação (Aceitar, Recusar, Parcial)

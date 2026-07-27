@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../models/manifestacao/manifestacao_status.dart';
 import '../../../providers/manifestacao_notifier.dart';
-import '../../../utils/manifestacao_validator.dart';
 import '../../../widgets/manifestacao/status_dropdown_widget.dart';
 import '../../../widgets/manifestacao/observacao_textfield_widget.dart';
 import '../design_tokens.dart';
