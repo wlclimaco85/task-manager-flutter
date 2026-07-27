@@ -83,8 +83,8 @@ class ManifestacaoNotifier extends ChangeNotifier {
     notifyListeners();
 
     try {
-      // Simulação de envio à API
-      await Future.delayed(Duration(seconds: 2));
+      // Simulação de envio à API (reduzido de 2s para 500ms para testes)
+      await Future.delayed(Duration(milliseconds: 500));
 
       final request = ManifestacaoRequest(
         nfeId: _manifestacao!.nfeId,
