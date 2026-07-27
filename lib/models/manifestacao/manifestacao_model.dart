@@ -24,13 +24,22 @@ class ManifestacaoModel {
     this.motivoRecusa,
   });
 
-  /// Valida se o formulário pode ser submetido
+  /// CR-06: Valida se o formulário pode ser submetido
+  /// Validação crítica de quantidade: > 0 e <= 999999
   bool get isValid {
     if (status == null) return false;
-    if (observacao.isEmpty && status == ManifestacaoStatus.recusar) return false;
-    if (status == ManifestacaoStatus.parcial && quantidadeRecebida == null) {
-      return false;
+    
+    if (status == ManifestacaoStatus.recusar) {
+      if (observacao.isEmpty) return false;
     }
+    
+    if (status == ManifestacaoStatus.parcial) {
+      // CR-06 VALIDAÇÃO CRÍTICA
+      if (quantidadeRecebida == null) return false;
+      if (quantidadeRecebida! <= 0) return false;      // ← REJEITA NEGATIVO
+      if (quantidadeRecebida! > 999999) return false;  // ← REJEITA > 999999
+    }
+    
     return true;
   }
 
