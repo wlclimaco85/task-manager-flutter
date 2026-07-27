@@ -16,7 +16,10 @@ class TenantHelper {
     return headers;
   }
   
-  static String? applyToUrl(String? url) => url;
+  static String? applyToUrl(String? url) {
+    if (url == null) return null;
+    return TenantContext.applyToUrl(url);
+  }
   static Map<String, dynamic> applyToBody(Map<String, dynamic> body) {
     if (empresaId != null) {
       body['empresaId'] = int.tryParse(empresaId!);

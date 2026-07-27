@@ -24,9 +24,24 @@ class NfeItemsTable extends StatelessWidget {
     this.onDelete,
   });
 
-  /// Formata valor monetário (BRL)
+  /// Formata valor monetário (BRL) com separador de milhares
+  /// Exemplo: 1234.56 → "R$ 1.234,56"
   String _formatCurrency(double value) {
-    return 'R\$ ${value.toStringAsFixed(2).replaceAll('.', ',').replaceAll(',', '.')}';
+    // Converter para string com 2 casas decimais
+    final parts = value.toStringAsFixed(2).split('.');
+    final integer = parts[0];
+    final decimal = parts[1];
+
+    // Adicionar separador de milhares (. em pt_BR) via regex
+    // \B(?=(\d{3})+(?!\d)) significa: position nao em word boundary,
+    // seguido de múltiplos de 3 dígitos até fim da string
+    final formatted = integer.replaceAllMapped(
+      RegExp(r'\B(?=(\d{3})+(?!\d))'),
+      (match) => '.',
+    );
+
+    // Retornar no formato pt_BR: 1.234,56
+    return 'R\$ $formatted,$decimal';
   }
 
   /// Constrói row para modo mobile/tablet
