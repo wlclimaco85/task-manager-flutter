@@ -286,7 +286,7 @@ class _State extends State<NfeSankhyaDetailScreen> {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Erro ${r.statusCode}'), backgroundColor: _red));
       }
     } catch (e) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Erro: $e'), backgroundColor: _red));
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Erro ao processar. Tente novamente.'), backgroundColor: _red));
     }
   }
 
@@ -301,7 +301,7 @@ class _State extends State<NfeSankhyaDetailScreen> {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Erro ${r.statusCode}'), backgroundColor: _red));
       }
     } catch (e) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Erro: $e'), backgroundColor: _red));
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Erro ao processar. Tente novamente.'), backgroundColor: _red));
     }
   }
 
@@ -323,7 +323,7 @@ class _State extends State<NfeSankhyaDetailScreen> {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Erro ${r.statusCode}'), backgroundColor: _red));
       }
     } catch (e) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Erro: $e'), backgroundColor: _red));
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Erro ao processar. Tente novamente.'), backgroundColor: _red));
     }
   }
 
@@ -349,7 +349,7 @@ class _State extends State<NfeSankhyaDetailScreen> {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Erro ${r.statusCode}'), backgroundColor: _red));
       }
     } catch (e) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Erro: $e'), backgroundColor: _red));
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Erro ao processar. Tente novamente.'), backgroundColor: _red));
     }
   }
 
@@ -364,7 +364,7 @@ class _State extends State<NfeSankhyaDetailScreen> {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Erro ${r.statusCode}'), backgroundColor: _red));
       }
     } catch (e) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Erro: $e'), backgroundColor: _red));
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Erro ao processar. Tente novamente.'), backgroundColor: _red));
     }
   }
 
@@ -391,10 +391,10 @@ class _State extends State<NfeSankhyaDetailScreen> {
       final r = await TenantContext.post('${ApiLinks.baseUrl}/api/nfe/$_nfeId/gerar-contas-pagar', {});
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text(r.statusCode == 200 ? 'Contas a Pagar geradas com sucesso!' : 'Erro ${r.statusCode}: ${r.body}'),
+        content: Text(r.statusCode == 200 ? 'Contas a Pagar geradas com sucesso!' : 'Erro ${r.statusCode}. Tente novamente.'),
         backgroundColor: r.statusCode == 200 ? _green : _red));
     } catch (e) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Erro: $e'), backgroundColor: _red));
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Erro ao processar. Tente novamente.'), backgroundColor: _red));
     }
   }
 
@@ -510,7 +510,7 @@ class _State extends State<NfeSankhyaDetailScreen> {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg), backgroundColor: _red));
       }
     } catch (e) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Erro: $e'), backgroundColor: _red));
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Erro ao processar. Tente novamente.'), backgroundColor: _red));
     }
   }
 
@@ -554,10 +554,10 @@ class _State extends State<NfeSankhyaDetailScreen> {
       final r = await TenantContext.post(ApiLinks.cancelarNfe(_nfeId), {'justificativa': motivoCtrl.text.trim()});
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text(r.statusCode == 200 ? 'NF-e cancelada!' : 'Erro ${r.statusCode}: ${r.body}'),
+        content: Text(r.statusCode == 200 ? 'NF-e cancelada!' : 'Erro ${r.statusCode}. Tente novamente.'),
         backgroundColor: r.statusCode == 200 ? _green : _red));
     } catch (e) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Erro: $e'), backgroundColor: _red));
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Erro ao processar. Tente novamente.'), backgroundColor: _red));
     }
   }
 
@@ -576,7 +576,7 @@ class _State extends State<NfeSankhyaDetailScreen> {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Erro ${r.statusCode}'), backgroundColor: _red));
       }
     } catch (e) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Erro: $e'), backgroundColor: _red));
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Erro ao processar. Tente novamente.'), backgroundColor: _red));
     }
   }
 
@@ -595,7 +595,7 @@ class _State extends State<NfeSankhyaDetailScreen> {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Erro ${r.statusCode}'), backgroundColor: _red));
       }
     } catch (e) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Erro: $e'), backgroundColor: _red));
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Erro ao processar. Tente novamente.'), backgroundColor: _red));
     }
   }
 
@@ -619,10 +619,10 @@ class _State extends State<NfeSankhyaDetailScreen> {
       );
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text(r.statusCode == 200 ? 'XML importado com sucesso!' : 'Erro ${r.statusCode}: ${r.body}'),
+        content: Text(r.statusCode == 200 ? 'XML importado com sucesso!' : 'Erro ${r.statusCode}. Tente novamente.'),
         backgroundColor: r.statusCode == 200 ? _green : _red));
     } catch (e) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Erro: $e'), backgroundColor: _red));
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Erro ao processar. Tente novamente.'), backgroundColor: _red));
     }
   }
 
@@ -651,7 +651,7 @@ class _State extends State<NfeSankhyaDetailScreen> {
         backgroundColor: r.statusCode == 200 ? _green : _red));
       if (r.statusCode == 200) setState(() => _statusVal = 'AUTORIZADA');
     } catch (e) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Erro: $e'), backgroundColor: _red));
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Erro ao processar. Tente novamente.'), backgroundColor: _red));
     }
   }
 
@@ -680,7 +680,7 @@ class _State extends State<NfeSankhyaDetailScreen> {
         backgroundColor: r.statusCode == 200 ? _green : _red));
       if (r.statusCode == 200) setState(() => _statusVal = 'CANCELADA');
     } catch (e) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Erro: $e'), backgroundColor: _red));
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Erro ao processar. Tente novamente.'), backgroundColor: _red));
     }
   }
 
@@ -897,7 +897,7 @@ class _State extends State<NfeSankhyaDetailScreen> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text('Erro: $e'), backgroundColor: _red));
+        content: Text('Erro ao processar. Tente novamente.'), backgroundColor: _red));
       }
     }
   }
@@ -939,7 +939,7 @@ class _State extends State<NfeSankhyaDetailScreen> {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Erro ${r.statusCode}'), backgroundColor: _red));
       }
     } catch (e) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Erro: $e'), backgroundColor: _red));
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Erro ao processar. Tente novamente.'), backgroundColor: _red));
     }
   }
 
@@ -1081,7 +1081,7 @@ class _State extends State<NfeSankhyaDetailScreen> {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Erro ${r.statusCode}'), backgroundColor: _red));
       }
     } catch (e) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Erro: $e'), backgroundColor: _red));
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Erro ao processar. Tente novamente.'), backgroundColor: _red));
     }
   }
 
@@ -1522,106 +1522,6 @@ class _State extends State<NfeSankhyaDetailScreen> {
 
   Widget _secTitle(String title) => Text(title,
     style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: _dark));
-}
-
-// ─── Widget de busca rápida para destinatário ─────────────────────────────────
-
-class _DestinatarioSearch extends StatefulWidget {
-  final List<Map<String, dynamic>> opts;
-  final String displayField;
-  final void Function(String id, String nome) onSelect;
-
-  const _DestinatarioSearch({
-    required this.opts,
-    required this.displayField,
-    required this.onSelect,
-  });
-
-  @override
-  State<_DestinatarioSearch> createState() => _DestinatarioSearchState();
-}
-
-class _DestinatarioSearchState extends State<_DestinatarioSearch> {
-  final _ctrl = TextEditingController();
-  List<Map<String, dynamic>> _filtered = [];
-  bool _show = false;
-
-  void _onChanged(String q) {
-    final query = q.toLowerCase().trim();
-    setState(() {
-      _show = query.isNotEmpty;
-      _filtered = query.isEmpty
-          ? []
-          : widget.opts
-              .where((o) => (o[widget.displayField]?.toString() ?? '')
-                  .toLowerCase()
-                  .contains(query))
-              .take(8)
-              .toList();
-    });
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        TextField(
-          controller: _ctrl,
-          onChanged: _onChanged,
-          style: const TextStyle(fontSize: 11),
-          decoration: InputDecoration(
-            hintText: 'Buscar destinatário...',
-            hintStyle: const TextStyle(fontSize: 11, color: Color(0xFF9E9E9E)),
-            prefixIcon: const Icon(Icons.search, size: 14, color: Color(0xFF9E9E9E)),
-            filled: true,
-            fillColor: const Color(0xFFFAFAFA),
-            isDense: true,
-            contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(4),
-              borderSide: const BorderSide(color: Color(0xFFDDDDDD)),
-            ),
-            enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(4),
-              borderSide: const BorderSide(color: Color(0xFFDDDDDD)),
-            ),
-          ),
-        ),
-        if (_show && _filtered.isNotEmpty)
-          Container(
-            margin: const EdgeInsets.only(top: 2),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              border: Border.all(color: const Color(0xFFDDDDDD)),
-              borderRadius: BorderRadius.circular(4),
-              boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.08), blurRadius: 4)],
-            ),
-            child: Column(
-              children: _filtered.map((o) {
-                final id = o['id']?.toString() ?? '';
-                final nome = o[widget.displayField]?.toString() ?? '';
-                return InkWell(
-                  onTap: () {
-                    widget.onSelect(id, nome);
-                    _ctrl.clear();
-                    setState(() { _show = false; _filtered = []; });
-                  },
-                  child: Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
-                    decoration: const BoxDecoration(
-                      border: Border(bottom: BorderSide(color: Color(0xFFF0F0F0))),
-                    ),
-                    child: Text(nome, style: const TextStyle(fontSize: 12)),
-                  ),
-                );
-              }).toList(),
-            ),
-          ),
-      ],
-    );
-  }
 }
 
 

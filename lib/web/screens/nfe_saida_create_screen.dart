@@ -40,10 +40,12 @@ class _NfeSaidaCreateScreenState extends State<NfeSaidaCreateScreen> {
   String? _finalidadeId;
   String? _serieVal;
 
+  final _formKey = GlobalKey<FormState>();
   final _numeroCtrl = TextEditingController();
   String? _ambienteVal = 'HOMOLOGACAO';
 
   bool _saving = false;
+  bool _isLoading = true;
 
   @override
   void initState() {
@@ -90,6 +92,7 @@ class _NfeSaidaCreateScreenState extends State<NfeSaidaCreateScreen> {
       _serieVal = currentSerie;
       _parceiros = results[4];
       _destinatarios = results[4];
+      _isLoading = false;
     });
   }
 
@@ -160,10 +163,31 @@ class _NfeSaidaCreateScreenState extends State<NfeSaidaCreateScreen> {
   }
 
   Future<void> _salvar() async {
-    if (_topSelected == null) {
-      _snack('Selecione um Tipo de Operação', _error);
+    final erros = <String>[];
+    if (_topSelected == null) erros.add('Tipo de Operação');
+    if (_empresaId == null || _empresaId!.isEmpty) erros.add('Empresa');
+    if (_serieVal == null || _serieVal!.isEmpty) erros.add('Série');
+    if (erros.isNotEmpty) {
+      _snack('Campos obrigatórios: ${erros.join(', ')}', _error);
       return;
     }
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text('Criar NF-e'),
+        content: const Text('Confirma a criação desta NF-e de Saída?'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancelar')),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: _success, foregroundColor: Colors.white),
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Criar'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) return;
 
     setState(() => _saving = true);
     try {
@@ -200,7 +224,7 @@ class _NfeSaidaCreateScreenState extends State<NfeSaidaCreateScreen> {
         _snack('Erro ao criar NF-e', _error);
       }
     } catch (e) {
-      if (mounted) _snack('Erro: $e', _error);
+      if (mounted) _snack('Erro ao processar. Tente novamente.', _error);
     } finally {
       if (mounted) setState(() => _saving = false);
     }
@@ -279,18 +303,22 @@ class _NfeSaidaCreateScreenState extends State<NfeSaidaCreateScreen> {
           ),
         ],
       ),
-      body: SingleChildScrollView(
+      body: _isLoading
+        ? const Center(child: CircularProgressIndicator())
+        : SingleChildScrollView(
         padding: const EdgeInsets.all(24),
         child: Center(
           child: ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: 800),
+            child: Form(
+            key: _formKey,
             child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               _section('Tipo de Operação', [
                 _twoCol(
                   SearchableDropdownField(
-                    label: 'Tipo de Operação',
+                    label: 'Tipo de Operação *',
                     value: _topSelected?['id']?.toString(),
                     items: _topList
                         .map((e) => {
@@ -327,7 +355,7 @@ class _NfeSaidaCreateScreenState extends State<NfeSaidaCreateScreen> {
               _section('Dados da NF-e', [
                 _twoCol(
                   SearchableDropdownField(
-                    label: 'Empresa',
+                    label: 'Empresa *',
                     value: _empresaId,
                     items: _empresas,
                     valueField: 'id',
@@ -375,7 +403,7 @@ class _NfeSaidaCreateScreenState extends State<NfeSaidaCreateScreen> {
                 const SizedBox(height: 16),
                 _twoCol(
                   SearchableDropdownField(
-                    label: 'Série',
+                    label: 'Série *',
                     value: _validDropdownValue(
                         _serieVal, _series.map(_serieValue)),
                     items: _series
@@ -501,6 +529,7 @@ class _NfeSaidaCreateScreenState extends State<NfeSaidaCreateScreen> {
               ),
               const SizedBox(height: 40),
             ],
+          ),
           ),
         ),
       ),

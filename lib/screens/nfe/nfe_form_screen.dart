@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:task_manager_flutter/core/design/design_tokens.dart';
@@ -5,9 +6,11 @@ import 'package:task_manager_flutter/core/responsive/responsive_helper.dart';
 import 'package:task_manager_flutter/models/nfe/nfe_item_model.dart';
 import 'package:task_manager_flutter/models/nfe/nfe_tomador_model.dart';
 import 'package:task_manager_flutter/providers/nfe_notifier.dart';
+import 'package:task_manager_flutter/utils/api_links.dart';
+import 'package:task_manager_flutter/utils/tenant_context.dart';
 import 'package:task_manager_flutter/widgets/nfe/nfe_items_table.dart';
 import 'package:task_manager_flutter/widgets/nfe/responsive_scaffold.dart';
-import 'package:task_manager_flutter/utils/app_logger.dart';
+
 
 /// Tela de criação/edição de NFe com layout responsivo
 ///
@@ -51,41 +54,9 @@ class _NfeFormScreenState extends State<NfeFormScreen> {
   // Natureza selecionada
   String? _naturezaSelecionada;
 
-  // Lista de clientes mock (em produção viria de API)
-  final List<NfeTomadorModel> _clientes = [
-    NfeTomadorModel(
-      cnpjCpf: '11222333000181',
-      razaoSocial: 'Cliente A Comércio Ltda',
-      endereco: 'Rua A',
-      numero: '100',
-      bairro: 'Centro',
-      cep: '01310100',
-      uf: 'SP',
-      municipio: 'São Paulo',
-      email: 'contato@clientea.com',
-      telefone: '1133334444',
-    ),
-    NfeTomadorModel(
-      cnpjCpf: '44555666000102',
-      razaoSocial: 'Cliente B Indústria Ltda',
-      endereco: 'Avenida B',
-      numero: '200',
-      bairro: 'Industrial',
-      cep: '01310200',
-      uf: 'SP',
-      municipio: 'São Paulo',
-      email: 'contato@clienteb.com',
-      telefone: '1144445555',
-    ),
-  ];
-
-  // Naturezas operação mock
-  final List<String> _naturezas = [
-    'Venda',
-    'Devolução',
-    'Transferência',
-    'Serviço',
-  ];
+  List<NfeTomadorModel> _clientes = [];
+  List<String> _naturezas = [];
+  bool _loadingDados = true;
 
   @override
   void initState() {
@@ -96,6 +67,50 @@ class _NfeFormScreenState extends State<NfeFormScreen> {
     _naturezaController = TextEditingController();
     _observacoesController = TextEditingController();
     _serieController = TextEditingController(text: '1');
+    _carregarDados();
+  }
+
+  Future<void> _carregarDados() async {
+    try {
+      final results = await Future.wait([
+        TenantContext.get('${ApiLinks.baseUrl}/api/parceiro?tamanho=500'),
+        TenantContext.get('${ApiLinks.baseUrl}/api/nfe-tipo-operacao?tamanho=50'),
+      ]);
+      if (!mounted) return;
+      final parceiros = _parseList(results[0].body);
+      final tipos = _parseList(results[1].body);
+      setState(() {
+        _clientes = parceiros.map((p) => NfeTomadorModel(
+          cnpjCpf: p['cnpj']?.toString() ?? p['cpf']?.toString() ?? '',
+          razaoSocial: p['nome']?.toString() ?? p['razaoSocial']?.toString() ?? '',
+          endereco: p['endereco']?.toString() ?? '',
+          numero: p['numero']?.toString() ?? '',
+          bairro: p['bairro']?.toString() ?? '',
+          cep: p['cep']?.toString() ?? '',
+          uf: p['uf']?.toString() ?? '',
+          municipio: p['municipio']?.toString() ?? '',
+          email: p['email']?.toString() ?? '',
+          telefone: p['telefone']?.toString() ?? '',
+        )).toList();
+        _naturezas = tipos.map((t) => t['descricao']?.toString() ?? '').where((n) => n.isNotEmpty).toList();
+        if (_naturezas.isEmpty) _naturezas = ['Venda', 'Devolução', 'Transferência', 'Serviço'];
+        _loadingDados = false;
+      });
+    } catch (e) {
+      debugPrint('[NfeFormScreen] Erro ao carregar dados: $e');
+      if (mounted) setState(() {
+        _naturezas = ['Venda', 'Devolução', 'Transferência', 'Serviço'];
+        _loadingDados = false;
+      });
+    }
+  }
+
+  List<Map<String, dynamic>> _parseList(String body) {
+    final b = jsonDecode(body);
+    if (b is List) return b.cast<Map<String, dynamic>>();
+    if (b is Map && b['data'] is List) return (b['data'] as List).cast<Map<String, dynamic>>();
+    if (b is Map && b['content'] is List) return (b['content'] as List).cast<Map<String, dynamic>>();
+    return [];
   }
 
   @override
@@ -289,7 +304,7 @@ class _NfeFormScreenState extends State<NfeFormScreen> {
         }).toList(),
       };
 
-      L.d('[NfeFormScreen] Enviando dados: $dados');
+      debugPrint('[NfeFormScreen] Enviando dados: $dados');
 
       // Chama notifier para criar NFe
       final nfeNotifier = context.read<NfeNotifier>();
@@ -312,7 +327,7 @@ class _NfeFormScreenState extends State<NfeFormScreen> {
         }
       }
     } catch (e) {
-      L.e('[NfeFormScreen] Erro ao criar NFe: $e');
+      debugPrint('[NfeFormScreen] Erro ao criar NFe: $e');
       if (mounted) {
         setState(() => _validationError = e.toString());
         ScaffoldMessenger.of(context).showSnackBar(
@@ -743,7 +758,9 @@ class _NfeFormScreenState extends State<NfeFormScreen> {
     return ResponsiveScaffold(
       title: 'Nova Nota Fiscal Eletrônica',
       breakpoint: breakpoint,
-      body: _buildForm(breakpoint),
+      body: _loadingDados
+          ? const Center(child: CircularProgressIndicator())
+          : _buildForm(breakpoint),
     );
   }
 }

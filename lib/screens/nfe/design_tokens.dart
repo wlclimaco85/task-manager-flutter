@@ -121,8 +121,8 @@ class ManifestacaoDesignTokens {
   static const double inputHeightLarge = 52;
 
   // ======== BREAKPOINTS (Responsive Design) ========
-  static const double breakpointMobile = 375;
-  static const double breakpointTablet = 600;
+  static const double breakpointMobile = 768;
+  static const double breakpointTablet = 768;
   static const double breakpointDesktop = 1024;
 
   // ======== TAP TARGET ========

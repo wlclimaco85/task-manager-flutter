@@ -185,7 +185,7 @@ class _State extends State<MobileNfeSankhyaDetailScreen> {
                     tabs: const [
                       Tab(text: 'Formulário', icon: Icon(Icons.description, size: 18)),
                       Tab(text: 'Itens', icon: Icon(Icons.list, size: 18)),
-                      Tab(text: 'Histórico', icon: Icon(Icons.history, size: 18)),
+                      Tab(text: 'Financeiro', icon: Icon(Icons.account_balance_wallet, size: 18)),
                     ],
                   ),
                   Expanded(
@@ -374,6 +374,7 @@ class _State extends State<MobileNfeSankhyaDetailScreen> {
       if (!mounted) return;
       if (r.statusCode == 200 || r.statusCode == 201) {
         setState(() => _statusVal = 'AUTORIZADA');
+        _loadItens();
         ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
             content: Text('NF-e emitida com sucesso!'), backgroundColor: _green));
       } else {
@@ -388,7 +389,7 @@ class _State extends State<MobileNfeSankhyaDetailScreen> {
     } catch (e) {
       if (mounted)
         ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Erro: $e'), backgroundColor: _red));
+            SnackBar(content: Text('Erro ao processar. Tente novamente.'), backgroundColor: _red));
     }
   }
 
@@ -432,13 +433,19 @@ class _State extends State<MobileNfeSankhyaDetailScreen> {
     try {
       final r = await TenantContext.post(ApiLinks.cancelarNfe(_nfeId), {'justificativa': motivoCtrl.text.trim()});
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text(r.statusCode == 200 ? 'NF-e cancelada!' : 'Erro ${r.statusCode}'),
-          backgroundColor: r.statusCode == 200 ? _green : _red));
+      if (r.statusCode == 200) {
+        setState(() => _statusVal = 'CANCELADA');
+        _loadItens();
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+            content: Text('NF-e cancelada!'), backgroundColor: _green));
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content: Text('Erro ${r.statusCode}'), backgroundColor: _red));
+      }
     } catch (e) {
       if (mounted)
         ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Erro: $e'), backgroundColor: _red));
+            SnackBar(content: Text('Erro ao processar. Tente novamente.'), backgroundColor: _red));
     }
   }
 
@@ -461,7 +468,7 @@ class _State extends State<MobileNfeSankhyaDetailScreen> {
     } catch (e) {
       if (mounted)
         ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Erro: $e'), backgroundColor: _red));
+            SnackBar(content: Text('Erro ao processar. Tente novamente.'), backgroundColor: _red));
     }
   }
 
@@ -484,7 +491,7 @@ class _State extends State<MobileNfeSankhyaDetailScreen> {
     } catch (e) {
       if (mounted)
         ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Erro: $e'), backgroundColor: _red));
+            SnackBar(content: Text('Erro ao processar. Tente novamente.'), backgroundColor: _red));
     }
   }
 
@@ -507,7 +514,7 @@ class _State extends State<MobileNfeSankhyaDetailScreen> {
     } catch (e) {
       if (mounted)
         ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Erro: $e'), backgroundColor: _red));
+            SnackBar(content: Text('Erro ao processar. Tente novamente.'), backgroundColor: _red));
     }
   }
 
@@ -531,13 +538,18 @@ class _State extends State<MobileNfeSankhyaDetailScreen> {
     try {
       final r = await TenantContext.post(ApiLinks.aceitarNfe(_nfeId), {});
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text(r.statusCode == 200 ? 'NF-e aceita!' : 'Erro ${r.statusCode}'),
-          backgroundColor: r.statusCode == 200 ? _green : _red));
+      if (r.statusCode == 200) {
+        _loadItens();
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+            content: Text('NF-e aceita!'), backgroundColor: _green));
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content: Text('Erro ${r.statusCode}'), backgroundColor: _red));
+      }
     } catch (e) {
       if (mounted)
         ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Erro: $e'), backgroundColor: _red));
+            SnackBar(content: Text('Erro ao processar. Tente novamente.'), backgroundColor: _red));
     }
   }
 
@@ -561,13 +573,18 @@ class _State extends State<MobileNfeSankhyaDetailScreen> {
     try {
       final r = await TenantContext.post(ApiLinks.recusarNfe(_nfeId), {});
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text(r.statusCode == 200 ? 'NF-e recusada!' : 'Erro ${r.statusCode}'),
-          backgroundColor: r.statusCode == 200 ? _green : _red));
+      if (r.statusCode == 200) {
+        _loadItens();
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+            content: Text('NF-e recusada!'), backgroundColor: _red));
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content: Text('Erro ${r.statusCode}'), backgroundColor: _red));
+      }
     } catch (e) {
       if (mounted)
         ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Erro: $e'), backgroundColor: _red));
+            SnackBar(content: Text('Erro ao processar. Tente novamente.'), backgroundColor: _red));
     }
   }
 
