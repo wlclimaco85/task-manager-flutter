@@ -133,14 +133,16 @@ void main() {
         expect(erros, isEmpty);
       });
 
-      test('Retorna mapa com múltiplos erros', () {
-        final erros = ManifestacaoValidator.validateAll(
-          status: null,
-          observacao: '',
-          quantidadeRecebida: 0,
-          motivoRecusa: null,
+      test('Lança ValidationException com múltiplos erros', () {
+        expect(
+          () => ManifestacaoValidator.validateAll(
+            status: null,
+            observacao: '',
+            quantidadeRecebida: 0,
+            motivoRecusa: null,
+          ),
+          throwsA(isA<ValidationException>()),
         );
-        expect(erros.isNotEmpty, isTrue);
       });
 
       test('Lança ValidationException quando há erros', () {

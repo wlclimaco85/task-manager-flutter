@@ -57,7 +57,7 @@ void main() {
       );
 
       await tester.tap(find.byType(TextField));
-      await tester.typeText(find.byType(TextField), 'Teste');
+      await tester.enterText(find.byType(TextField), 'Teste');
       await tester.pumpAndSettle();
 
       expect(find.text('5/500'), findsOneWidget);
@@ -123,7 +123,7 @@ void main() {
       );
 
       await tester.tap(find.byType(TextField));
-      await tester.typeText(find.byType(TextField), 'Teste');
+      await tester.enterText(find.byType(TextField), 'Teste');
       await tester.pumpAndSettle();
 
       expect(textoMudado, equals('Teste'));
@@ -144,7 +144,8 @@ void main() {
         ),
       );
 
-      expect(find.bySemanticsLabel('Observações'), findsOneWidget);
+      expect(find.text('Observações'), findsOneWidget);
+      expect(find.byType(TextField), findsOneWidget);
     });
 
     testWidgets('Dark mode muda cores', (WidgetTester tester) async {

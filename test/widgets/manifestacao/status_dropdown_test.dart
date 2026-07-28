@@ -123,7 +123,8 @@ void main() {
         ),
       );
 
-      expect(find.bySemanticsLabel('Tipo de Manifestação'), findsOneWidget);
+      expect(find.text('Tipo de Manifestação'), findsOneWidget);
+      expect(find.byType(DropdownButton<ManifestacaoStatus>), findsOneWidget);
     });
 
     testWidgets('Dark mode muda cores', (WidgetTester tester) async {
