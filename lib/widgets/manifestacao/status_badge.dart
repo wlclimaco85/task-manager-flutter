@@ -64,21 +64,21 @@ class StatusBadge extends StatelessWidget {
       label: 'Status: $label',
       enabled: true,
       child: Container(
-        height: 32,
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        height: 48,
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         decoration: BoxDecoration(
           color: cor,
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(24),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
             Icon(
               _getIcone(),
-              size: 16,
+              size: 20,
               color: Colors.white,
             ),
-            const SizedBox(width: 6),
+            const SizedBox(width: 8),
             Text(
               label,
               style: const TextStyle(
