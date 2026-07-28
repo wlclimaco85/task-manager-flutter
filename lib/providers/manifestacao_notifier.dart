@@ -1,6 +1,5 @@
 import 'package:flutter/foundation.dart';
 import '../models/manifestacao/manifestacao_model.dart';
-import '../models/manifestacao/manifestacao_request.dart';
 import '../models/manifestacao/manifestacao_status.dart';
 import '../services/manifestacao_caller.dart';
 
@@ -44,9 +43,11 @@ class ManifestacaoNotifier extends ChangeNotifier {
       if (result.success && result.list != null && result.list!.isNotEmpty) {
         final item = result.list!.firstWhere(
           (e) => e is Map && e['nfeId'] == nfeId,
-          orElse: () => result.list!.first,
+          orElse: () => null,
         );
-        if (item is Map<String, dynamic>) {
+        if (item == null) {
+          _errorMessage = 'NFe $nfeId não encontrada nas pendências';
+        } else if (item is Map<String, dynamic>) {
           _manifestacao = ManifestacaoModel.fromJson(item);
         } else {
           _errorMessage = 'Formato inesperado na resposta da API';

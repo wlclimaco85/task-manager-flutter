@@ -81,12 +81,12 @@ class _ManifestacaoScreenState extends State<ManifestacaoScreen> {
 
     _notifier.setStatus(ManifestacaoStatus.recusar);
 
-    // Valida antes de mostrar modal
+    final updated = _notifier.manifestacao!;
     final errors = ManifestacaoValidator.validateAll(
-      status: manifestacao.status,
-      observacao: manifestacao.observacao,
-      quantidadeRecebida: manifestacao.quantidadeRecebida,
-      motivoRecusa: manifestacao.motivoRecusa,
+      status: updated.status,
+      observacao: updated.observacao,
+      quantidadeRecebida: updated.quantidadeRecebida,
+      motivoRecusa: updated.motivoRecusa,
     );
 
     if (errors.isNotEmpty) {
@@ -137,12 +137,12 @@ class _ManifestacaoScreenState extends State<ManifestacaoScreen> {
 
     _notifier.setStatus(ManifestacaoStatus.parcial);
 
-    // Valida antes de submeter
+    final updated = _notifier.manifestacao!;
     final errors = ManifestacaoValidator.validateAll(
-      status: manifestacao.status,
-      observacao: manifestacao.observacao,
-      quantidadeRecebida: manifestacao.quantidadeRecebida,
-      motivoRecusa: manifestacao.motivoRecusa,
+      status: updated.status,
+      observacao: updated.observacao,
+      quantidadeRecebida: updated.quantidadeRecebida,
+      motivoRecusa: updated.motivoRecusa,
     );
 
     if (errors.isNotEmpty) {

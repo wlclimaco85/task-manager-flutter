@@ -7,10 +7,10 @@ class ManifestacaoModel {
   final String fornecedor;
   final String valor;
   final DateTime dataEmissao;
-  ManifestacaoStatus? status;
-  String observacao;
-  int? quantidadeRecebida;
-  String? motivoRecusa;
+  final ManifestacaoStatus? status;
+  final String observacao;
+  final int? quantidadeRecebida;
+  final String? motivoRecusa;
 
   ManifestacaoModel({
     required this.nfeId,
@@ -58,10 +58,10 @@ class ManifestacaoModel {
   /// Cria instância a partir de JSON
   factory ManifestacaoModel.fromJson(Map<String, dynamic> json) {
     return ManifestacaoModel(
-      nfeId: json['nfeId'] as String,
-      numero: json['numero'] as String,
-      fornecedor: json['fornecedor'] as String,
-      valor: json['valor'] as String,
+      nfeId: (json['nfeId'] as String?) ?? '',
+      numero: (json['numero'] as String?) ?? '',
+      fornecedor: (json['fornecedor'] as String?) ?? 'Desconhecido',
+      valor: (json['valor'] as String?) ?? 'R\$ 0,00',
       dataEmissao: json['dataEmissao'] != null
           ? DateTime.parse(json['dataEmissao'] as String)
           : DateTime.now(),
@@ -72,17 +72,18 @@ class ManifestacaoModel {
     );
   }
 
-  /// Cópia com novos valores
+  static const Object _sentinel = Object();
+
   ManifestacaoModel copyWith({
     String? nfeId,
     String? numero,
     String? fornecedor,
     String? valor,
     DateTime? dataEmissao,
-    ManifestacaoStatus? status,
+    Object? status = _sentinel,
     String? observacao,
-    int? quantidadeRecebida,
-    String? motivoRecusa,
+    Object? quantidadeRecebida = _sentinel,
+    Object? motivoRecusa = _sentinel,
   }) {
     return ManifestacaoModel(
       nfeId: nfeId ?? this.nfeId,
@@ -90,10 +91,14 @@ class ManifestacaoModel {
       fornecedor: fornecedor ?? this.fornecedor,
       valor: valor ?? this.valor,
       dataEmissao: dataEmissao ?? this.dataEmissao,
-      status: status ?? this.status,
+      status: status == _sentinel ? this.status : status as ManifestacaoStatus?,
       observacao: observacao ?? this.observacao,
-      quantidadeRecebida: quantidadeRecebida ?? this.quantidadeRecebida,
-      motivoRecusa: motivoRecusa ?? this.motivoRecusa,
+      quantidadeRecebida: quantidadeRecebida == _sentinel
+          ? this.quantidadeRecebida
+          : quantidadeRecebida as int?,
+      motivoRecusa: motivoRecusa == _sentinel
+          ? this.motivoRecusa
+          : motivoRecusa as String?,
     );
   }
 }
