@@ -5,14 +5,36 @@ import 'package:task_manager_flutter/models/manifestacao/manifestacao_status.dar
 import 'package:task_manager_flutter/providers/manifestacao_notifier.dart';
 import 'package:task_manager_flutter/screens/nfe/design_tokens.dart';
 import 'package:task_manager_flutter/screens/nfe/manifestacao_screen.dart';
+import 'package:task_manager_flutter/services/manifestacao_caller.dart';
 import 'package:task_manager_flutter/widgets/manifestacao/status_dropdown_widget.dart';
+
+ManifestacaoResult _mockListarPendentes() => ManifestacaoResult(
+      success: true,
+      list: [
+        {
+          'nfeId': 'nfe-001',
+          'numero': 'NFe 123456789',
+          'fornecedor': 'Fornecedor Exemplo Ltda',
+          'valor': 'R\$ 1.000,00',
+          'dataEmissao': '2026-07-27T10:00:00',
+        }
+      ],
+    );
 
 void main() {
   group('ManifestacaoScreen TDD - RED PHASE', () {
     late ManifestacaoNotifier notifier;
 
     setUp(() {
-      notifier = ManifestacaoNotifier();
+      notifier = ManifestacaoNotifier(
+        listarPendentes: () async => _mockListarPendentes(),
+        registrarManifestacao: ({
+          required String chave,
+          required String tipo,
+          String? justificativa,
+        }) async =>
+            ManifestacaoResult(success: true, data: {}),
+      );
     });
 
     tearDown(() {
@@ -400,11 +422,15 @@ void main() {
         ),
       );
 
-      // No início, deve estar carregando (primeira frame)
-      expect(find.byType(CircularProgressIndicator), findsWidgets);
+      // Dispara o postFrameCallback que inicia o loading
+      await tester.pump();
 
       // Aguarda carregar e completa
-      await tester.pumpAndSettle(Duration(seconds: 3));
+      await tester.pumpAndSettle(const Duration(seconds: 3));
+
+      // Após carregar, indicador some e dados aparecem
+      expect(notifier.isLoading, false);
+      expect(notifier.manifestacao, isNotNull);
     });
 
     /// Test 18: testDataDisplay

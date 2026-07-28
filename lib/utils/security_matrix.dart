@@ -1,5 +1,7 @@
 // lib/utils/security_matrix.dart
+import 'dart:async';
 import 'dart:convert';
+import 'dart:developer' as developer;
 import 'package:flutter/foundation.dart' show visibleForTesting;
 import 'package:http/http.dart' as http;
 import '../models/auth_utility.dart';
@@ -585,14 +587,14 @@ class ModuloAccess {
           final List<dynamic> data = jsonDecode(resp.body);
           empresaModulos = data.map((m) => m['nome']?.toString() ?? '').toSet();
         } else {
-          log.warning('API ${resp.statusCode} ao buscar empresa-módulos');
-          rethrow;
+          developer.log('API ${resp.statusCode} ao buscar empresa-módulos');
+          throw Exception('API ${resp.statusCode} empresa-módulos');
         }
-      } on TimeoutException catch (e) {
-        log.error('Timeout ao buscar empresa-módulos');
+      } on TimeoutException {
+        developer.log('Timeout ao buscar empresa-módulos');
         rethrow;
-      } on Exception catch (e) {
-        log.error('Erro ao buscar empresa-módulos: $e');
+      } on Exception {
+        developer.log('Erro ao buscar empresa-módulos');
         rethrow;
       }
     }
@@ -606,14 +608,14 @@ class ModuloAccess {
           final List<dynamic> data = jsonDecode(resp.body);
           parceiroModulos = data.map((m) => m['nome']?.toString() ?? '').toSet();
         } else {
-          log.warning('API ${resp.statusCode} ao buscar parceiro-módulos');
-          rethrow;
+          developer.log('API ${resp.statusCode} ao buscar parceiro-módulos');
+          throw Exception('API ${resp.statusCode} parceiro-módulos');
         }
-      } on TimeoutException catch (e) {
-        log.error('Timeout ao buscar parceiro-módulos');
+      } on TimeoutException {
+        developer.log('Timeout ao buscar parceiro-módulos');
         rethrow;
-      } on Exception catch (e) {
-        log.error('Erro ao buscar parceiro-módulos: $e');
+      } on Exception {
+        developer.log('Erro ao buscar parceiro-módulos');
         rethrow;
       }
     }

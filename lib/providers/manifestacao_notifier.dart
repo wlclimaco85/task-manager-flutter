@@ -2,13 +2,30 @@ import 'package:flutter/foundation.dart';
 import '../models/manifestacao/manifestacao_model.dart';
 import '../models/manifestacao/manifestacao_request.dart';
 import '../models/manifestacao/manifestacao_status.dart';
+import '../services/manifestacao_caller.dart';
 
-/// Notifier para gerenciar estado de manifestação
+typedef ListarPendentesFunc = Future<ManifestacaoResult> Function();
+typedef RegistrarManifestacaoFunc = Future<ManifestacaoResult> Function({
+  required String chave,
+  required String tipo,
+  String? justificativa,
+});
+
 class ManifestacaoNotifier extends ChangeNotifier {
+  final ListarPendentesFunc _listarPendentes;
+  final RegistrarManifestacaoFunc _registrarManifestacao;
+
   ManifestacaoModel? _manifestacao;
   bool _isLoading = false;
   String? _errorMessage;
   bool _isSubmitting = false;
+
+  ManifestacaoNotifier({
+    ListarPendentesFunc? listarPendentes,
+    RegistrarManifestacaoFunc? registrarManifestacao,
+  })  : _listarPendentes = listarPendentes ?? ManifestacaoCaller.listarPendentes,
+        _registrarManifestacao = registrarManifestacao ??
+            ManifestacaoCaller.registrarManifestacao;
 
   ManifestacaoModel? get manifestacao => _manifestacao;
   bool get isLoading => _isLoading;
@@ -17,23 +34,27 @@ class ManifestacaoNotifier extends ChangeNotifier {
 
   bool get isFormValid => _manifestacao?.isValid ?? false;
 
-  /// Carrega dados da manifestação (simulado)
   Future<void> loadManifestacao(String nfeId) async {
     _isLoading = true;
     _errorMessage = null;
     notifyListeners();
 
     try {
-      // Simulação de carregamento
-      await Future.delayed(Duration(milliseconds: 500));
-
-      _manifestacao = ManifestacaoModel(
-        nfeId: nfeId,
-        numero: 'NFe 123456789',
-        fornecedor: 'Fornecedor Exemplo Ltda',
-        valor: 'R\$ 1.000,00',
-        dataEmissao: DateTime.now(),
-      );
+      final result = await _listarPendentes();
+      if (result.success && result.list != null && result.list!.isNotEmpty) {
+        final item = result.list!.firstWhere(
+          (e) => e is Map && e['nfeId'] == nfeId,
+          orElse: () => result.list!.first,
+        );
+        if (item is Map<String, dynamic>) {
+          _manifestacao = ManifestacaoModel.fromJson(item);
+        } else {
+          _errorMessage = 'Formato inesperado na resposta da API';
+        }
+      } else {
+        _errorMessage =
+            result.message ?? 'Nenhuma manifestação pendente encontrada';
+      }
       _isLoading = false;
     } catch (e) {
       _errorMessage = 'Erro ao carregar manifestação: $e';
@@ -42,35 +63,30 @@ class ManifestacaoNotifier extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// Atualiza o status da manifestação
   void setStatus(ManifestacaoStatus? status) {
     if (_manifestacao == null) return;
     _manifestacao = _manifestacao!.copyWith(status: status);
     notifyListeners();
   }
 
-  /// Atualiza a observação
   void setObservacao(String obs) {
     if (_manifestacao == null) return;
     _manifestacao = _manifestacao!.copyWith(observacao: obs);
     notifyListeners();
   }
 
-  /// Atualiza a quantidade recebida (para parcial)
   void setQuantidadeRecebida(int? qtd) {
     if (_manifestacao == null) return;
     _manifestacao = _manifestacao!.copyWith(quantidadeRecebida: qtd);
     notifyListeners();
   }
 
-  /// Atualiza motivo da recusa
   void setMotivoRecusa(String? motivo) {
     if (_manifestacao == null) return;
     _manifestacao = _manifestacao!.copyWith(motivoRecusa: motivo);
     notifyListeners();
   }
 
-  /// Submete a manifestação (simulado)
   Future<bool> submitManifestacao() async {
     if (!isFormValid || _manifestacao == null) {
       _errorMessage = 'Formulário inválido';
@@ -83,22 +99,21 @@ class ManifestacaoNotifier extends ChangeNotifier {
     notifyListeners();
 
     try {
-      // Simulação de envio à API (reduzido de 2s para 500ms para testes)
-      await Future.delayed(Duration(milliseconds: 500));
-
-      final request = ManifestacaoRequest(
-        nfeId: _manifestacao!.nfeId,
-        statusCodigo: _manifestacao!.status!.codigo,
-        observacao: _manifestacao!.observacao,
-        quantidadeRecebida: _manifestacao!.quantidadeRecebida,
-        motivoRecusa: _manifestacao!.motivoRecusa,
+      final result = await _registrarManifestacao(
+        chave: _manifestacao!.nfeId,
+        tipo: _manifestacao!.status!.codigo,
+        justificativa: _manifestacao!.observacao.isNotEmpty
+            ? _manifestacao!.observacao
+            : null,
       );
 
-      // Log do envio (usar logger do projeto em produção)
-      // print('Enviando manifestação: ${request.toJson()}');
-
-      _isSubmitting = false;
-      _manifestacao = null; // Limpa após sucesso
+      if (result.success) {
+        _isSubmitting = false;
+        _manifestacao = null;
+      } else {
+        _errorMessage = result.message ?? 'Erro ao registrar manifestação';
+        _isSubmitting = false;
+      }
     } catch (e) {
       _errorMessage = 'Erro ao enviar manifestação: $e';
       _isSubmitting = false;
@@ -107,13 +122,11 @@ class ManifestacaoNotifier extends ChangeNotifier {
     return _errorMessage == null;
   }
 
-  /// Limpa o erro
   void clearError() {
     _errorMessage = null;
     notifyListeners();
   }
 
-  /// Reseta o formulário
   void reset() {
     _manifestacao = null;
     _errorMessage = null;

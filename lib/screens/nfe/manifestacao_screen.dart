@@ -24,18 +24,26 @@ class ManifestacaoScreen extends StatefulWidget {
 }
 
 class _ManifestacaoScreenState extends State<ManifestacaoScreen> {
-  late ManifestacaoNotifier _notifier;
+  ManifestacaoNotifier? _ownNotifier;
+
+  ManifestacaoNotifier get _notifier {
+    try {
+      return Provider.of<ManifestacaoNotifier>(context, listen: false);
+    } catch (_) {
+      _ownNotifier ??= ManifestacaoNotifier();
+      return _ownNotifier!;
+    }
+  }
 
   @override
   void initState() {
     super.initState();
-    _notifier = ManifestacaoNotifier();
-    _loadManifestacao();
+    WidgetsBinding.instance.addPostFrameCallback((_) => _loadManifestacao());
   }
 
   @override
   void dispose() {
-    _notifier.dispose();
+    _ownNotifier?.dispose();
     super.dispose();
   }
 
