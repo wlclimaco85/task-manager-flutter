@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import '../../../models/manifestacao/manifestacao_status.dart';
 import '../../../providers/manifestacao_notifier.dart';
-import '../../../widgets/manifestacao/status_dropdown_widget.dart';
-import '../../../widgets/manifestacao/observacao_textfield_widget.dart';
+import '../../../widgets/manifestacao/status_dropdown_compat.dart';
+import '../../../widgets/manifestacao/observacao_textfield_compat.dart';
 import '../design_tokens.dart';
 
 /// Formulário de manifestação com campos condicionais
@@ -43,7 +43,7 @@ class _ManifestacaoFormState extends State<ManifestacaoForm> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Status Dropdown
-          StatusDropdownWidget(
+          StatusDropdown(
             value: manifestacao.status,
             onChanged: (status) {
               widget.notifier.setStatus(status);
@@ -54,7 +54,7 @@ class _ManifestacaoFormState extends State<ManifestacaoForm> {
           SizedBox(height: ManifestacaoDesignTokens.spacing20),
 
           // Observação (sempre presente)
-          ObservacaoTextfieldWidget(
+          ObservacaoTextfield(
             value: manifestacao.observacao,
             onChanged: widget.notifier.setObservacao,
             errorText: _validationErrors['observacao'],
