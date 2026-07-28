@@ -406,28 +406,36 @@ class _State extends State<NfeSankhyaDetailScreen> {
         title: Text('NF-e #$_nfeId - ${widget.item['tipoOperacao'] ?? ''}',
             style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
         actions: _isEntrada ? _actionsEntrada() : _actionsSaida()),
-      body: Column(children: [
-        Expanded(child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          // Cabeçalho redimensionável
-          SizedBox(width: _cabWidth, child: _cabecalho()),
-          // Divisória arrastável
+      body: LayoutBuilder(builder: (context, constraints) {
+        if (constraints.maxWidth < 768) {
+          return SingleChildScrollView(child: Column(children: [
+            SizedBox(height: 400, child: _cabecalho()),
+            const Divider(height: 1),
+            SizedBox(height: 400, child: _itensPanel()),
+            const Divider(height: 1),
+            SizedBox(height: 300, child: _rodape()),
+          ]));
+        }
+        return Column(children: [
+          Expanded(child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            SizedBox(width: _cabWidth, child: _cabecalho()),
+            GestureDetector(
+              onHorizontalDragUpdate: (d) => setState(() => _cabWidth = (_cabWidth + d.delta.dx).clamp(200, 600)),
+              child: MouseRegion(cursor: SystemMouseCursors.resizeColumn,
+                child: Container(width: 6, color: _bord,
+                  child: const Center(child: Icon(Icons.drag_indicator, size: 14, color: _grey)))),
+            ),
+            Expanded(child: _itensPanel()),
+          ])),
           GestureDetector(
-            onHorizontalDragUpdate: (d) => setState(() => _cabWidth = (_cabWidth + d.delta.dx).clamp(200, 600)),
-            child: MouseRegion(cursor: SystemMouseCursors.resizeColumn,
-              child: Container(width: 6, color: _bord,
-                child: const Center(child: Icon(Icons.drag_indicator, size: 14, color: _grey)))),
+            onVerticalDragUpdate: (d) => setState(() => _rodapeHeight = (_rodapeHeight - d.delta.dy).clamp(120, 400)),
+            child: MouseRegion(cursor: SystemMouseCursors.resizeRow,
+              child: Container(height: 6, color: _bord,
+                child: const Center(child: Icon(Icons.drag_handle, size: 14, color: _grey)))),
           ),
-          Expanded(child: _itensPanel()),
-        ])),
-        // Divisória horizontal arrastável
-        GestureDetector(
-          onVerticalDragUpdate: (d) => setState(() => _rodapeHeight = (_rodapeHeight - d.delta.dy).clamp(120, 400)),
-          child: MouseRegion(cursor: SystemMouseCursors.resizeRow,
-            child: Container(height: 6, color: _bord,
-              child: const Center(child: Icon(Icons.drag_handle, size: 14, color: _grey)))),
-        ),
-        SizedBox(height: _rodapeHeight, child: _rodape()),
-      ]),
+          SizedBox(height: _rodapeHeight, child: _rodape()),
+        ]);
+      }),
     );
   }
 
@@ -1078,10 +1086,11 @@ class _State extends State<NfeSankhyaDetailScreen> {
   }
 
   Widget _iInp(String label, Map<String, dynamic> item, String k1, String k2) {
-    final ctrl = TextEditingController(text: item[k1]?.toString() ?? item[k2]?.toString() ?? '');
-    ctrl.addListener(() { item[k1] = ctrl.text; });
     return Padding(padding: const EdgeInsets.only(bottom: 8),
-      child: TextFormField(controller: ctrl, style: const TextStyle(fontSize: 12, color: _dark),
+      child: TextFormField(
+        initialValue: item[k1]?.toString() ?? item[k2]?.toString() ?? '',
+        onChanged: (v) { item[k1] = v; },
+        style: const TextStyle(fontSize: 12, color: _dark),
         decoration: InputDecoration(labelText: label, labelStyle: const TextStyle(fontSize: 11, color: _grey),
           border: OutlineInputBorder(borderRadius: BorderRadius.circular(4), borderSide: const BorderSide(color: _bord)),
           isDense: true, contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8))));
@@ -1382,7 +1391,7 @@ class _State extends State<NfeSankhyaDetailScreen> {
           child: Row(children: [
             SizedBox(width: 160,
               child: DropdownButtonFormField<String>(
-                initialValue: _novoPagTpag, isDense: true,
+                value: _novoPagTpag, isDense: true,
                 decoration: const InputDecoration(labelText: 'Tipo', isDense: true, contentPadding: EdgeInsets.symmetric(horizontal: 8, vertical: 6), border: OutlineInputBorder()),
                 style: const TextStyle(fontSize: 12, color: _dark),
                 items: NfePagamento.todosCodigos.map((c) => DropdownMenuItem(value: c, child: Text('$c - ${NfePagamento.labelTipo(c)}', style: const TextStyle(fontSize: 11)))).toList(),

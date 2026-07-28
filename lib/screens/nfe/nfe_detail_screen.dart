@@ -1,9 +1,14 @@
+import 'dart:convert';
+import 'dart:typed_data';
+import 'package:file_saver/file_saver.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:task_manager_flutter/core/responsive/responsive_helper.dart';
 import 'package:task_manager_flutter/models/nfe/nfe_model.dart';
 import 'package:task_manager_flutter/models/nfe/nfe_status.dart';
 import 'package:task_manager_flutter/providers/nfe_notifier.dart';
+import 'package:task_manager_flutter/utils/api_links.dart';
+import 'package:task_manager_flutter/utils/tenant_context.dart';
 import 'package:task_manager_flutter/widgets/nfe/nfe_items_table.dart';
 import 'package:task_manager_flutter/widgets/nfe/nfe_status_badge.dart';
 import 'package:task_manager_flutter/utils/app_logger.dart';
@@ -681,94 +686,149 @@ class _NfeDetailScreenState extends State<NfeDetailScreen> with TickerProviderSt
     );
   }
 
-  /// Handlers de ações
+  /// Handlers de ações — chamadas reais à API via TenantContext
   Future<void> _handleEmitir(BuildContext context, NfeModel nfe) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text('Emitir NF-e'),
+        content: Text('Confirma a emissão da NF-e #${nfe.id}?\nO XML será gerado e assinado digitalmente.'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancelar')),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Emitir'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) return;
     try {
       L.d('[NfeDetailScreen] Emitindo NFe ${nfe.id}');
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Emissão iniciada...')),
-      );
-      // TODO: Implementar chamada para API de emissão
+      final r = await TenantContext.post(ApiLinks.emitirNfe(nfe.id.toString()), {});
+      if (!mounted) return;
+      if (r.statusCode == 200 || r.statusCode == 201) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('NF-e emitida com sucesso!'), backgroundColor: Colors.green),
+        );
+        context.read<NfeNotifier>().obterNfe(nfe.id);
+      } else {
+        String msg = 'Erro ${r.statusCode}';
+        try { final b = jsonDecode(r.body); msg = b['message']?.toString() ?? b['error']?.toString() ?? msg; } catch (_) {}
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg), backgroundColor: Colors.red));
+      }
     } catch (e) {
       L.e('[NfeDetailScreen] Erro ao emitir: $e');
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Erro ao emitir: $e'),
-          backgroundColor: Colors.red,
-        ),
-      );
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Erro ao emitir: $e'), backgroundColor: Colors.red));
     }
   }
 
   Future<void> _handleCancelar(BuildContext context, NfeModel nfe) async {
+    final motivoCtrl = TextEditingController();
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text('Cancelar NF-e'),
+        content: SizedBox(width: 360, child: Column(mainAxisSize: MainAxisSize.min, children: [
+          Text('NF-e #${nfe.id}'),
+          const SizedBox(height: 12),
+          TextField(controller: motivoCtrl, maxLines: 3,
+            decoration: const InputDecoration(labelText: 'Motivo do cancelamento *', border: OutlineInputBorder(), isDense: true, hintText: 'Mínimo 15 caracteres')),
+        ])),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Voltar')),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.red, foregroundColor: Colors.white),
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Cancelar NF-e'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) return;
+    if (motivoCtrl.text.trim().length < 15) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Motivo deve ter pelo menos 15 caracteres'), backgroundColor: Colors.red));
+      return;
+    }
     try {
       L.d('[NfeDetailScreen] Cancelando NFe ${nfe.id}');
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Cancelamento iniciado...')),
-      );
-      // TODO: Implementar chamada para API de cancelamento
+      final r = await TenantContext.post(ApiLinks.cancelarNfe(nfe.id.toString()), {'justificativa': motivoCtrl.text.trim()});
+      if (!mounted) return;
+      if (r.statusCode == 200) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('NF-e cancelada!'), backgroundColor: Colors.green));
+        context.read<NfeNotifier>().obterNfe(nfe.id);
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Erro ${r.statusCode}: ${r.body}'), backgroundColor: Colors.red));
+      }
     } catch (e) {
       L.e('[NfeDetailScreen] Erro ao cancelar: $e');
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Erro ao cancelar: $e'),
-          backgroundColor: Colors.red,
-        ),
-      );
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Erro: $e'), backgroundColor: Colors.red));
     }
   }
 
   Future<void> _handleDownloadPdf(BuildContext context, NfeModel nfe) async {
     try {
-      L.d('[NfeDetailScreen] Download PDF NFe ${nfe.id}');
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Iniciando download...')),
-      );
-      // TODO: Implementar download de PDF
+      L.d('[NfeDetailScreen] Download DANFE NFe ${nfe.id}');
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Baixando DANFE...')));
+      final r = await TenantContext.get(ApiLinks.danfeNfe(nfe.id.toString()));
+      if (!mounted) return;
+      if (r.statusCode == 200) {
+        await FileSaver.instance.saveFile(name: 'danfe_${nfe.id}', bytes: r.bodyBytes, fileExtension: 'pdf');
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('DANFE baixado!'), backgroundColor: Colors.green));
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Erro ${r.statusCode}'), backgroundColor: Colors.red));
+      }
     } catch (e) {
       L.e('[NfeDetailScreen] Erro ao download: $e');
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Erro ao download: $e'),
-          backgroundColor: Colors.red,
-        ),
-      );
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Erro: $e'), backgroundColor: Colors.red));
     }
   }
 
-  void _handleViewXml(BuildContext context, NfeModel nfe) {
+  Future<void> _handleViewXml(BuildContext context, NfeModel nfe) async {
     try {
-      L.d('[NfeDetailScreen] Visualizando XML NFe ${nfe.id}');
-      // TODO: Implementar visualizador de XML
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Visualizador de XML em desenvolvimento')),
-      );
+      L.d('[NfeDetailScreen] Baixando XML NFe ${nfe.id}');
+      final r = await TenantContext.get(ApiLinks.xmlNfe(nfe.id.toString()));
+      if (!mounted) return;
+      if (r.statusCode == 200) {
+        await FileSaver.instance.saveFile(name: 'nfe_${nfe.id}', bytes: Uint8List.fromList(r.body.codeUnits), fileExtension: 'xml');
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('XML baixado!'), backgroundColor: Colors.green));
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Erro ${r.statusCode}'), backgroundColor: Colors.red));
+      }
     } catch (e) {
-      L.e('[NfeDetailScreen] Erro ao visualizar XML: $e');
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Erro: $e'),
-          backgroundColor: Colors.red,
-        ),
-      );
+      L.e('[NfeDetailScreen] Erro ao baixar XML: $e');
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Erro: $e'), backgroundColor: Colors.red));
     }
   }
 
   Future<void> _handleEnviarEmail(BuildContext context, NfeModel nfe) async {
+    final emailCtrl = TextEditingController();
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text('Enviar NF-e por E-mail'),
+        content: SizedBox(width: 360, child: TextField(controller: emailCtrl,
+          decoration: const InputDecoration(labelText: 'E-mail do destinatário', border: OutlineInputBorder(), isDense: true),
+          keyboardType: TextInputType.emailAddress)),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancelar')),
+          ElevatedButton(onPressed: () => Navigator.pop(context, true), child: const Text('Enviar')),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted || emailCtrl.text.trim().isEmpty) return;
     try {
       L.d('[NfeDetailScreen] Enviando email NFe ${nfe.id}');
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Enviando email...')),
-      );
-      // TODO: Implementar envio de email
+      final r = await TenantContext.post('${ApiLinks.xmlNfe(nfe.id.toString())}/email', {'email': emailCtrl.text.trim()});
+      if (!mounted) return;
+      if (r.statusCode == 200) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('E-mail enviado!'), backgroundColor: Colors.green));
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Erro ${r.statusCode}'), backgroundColor: Colors.red));
+      }
     } catch (e) {
       L.e('[NfeDetailScreen] Erro ao enviar email: $e');
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Erro ao enviar email: $e'),
-          backgroundColor: Colors.red,
-        ),
-      );
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Erro: $e'), backgroundColor: Colors.red));
     }
   }
 

@@ -4,14 +4,15 @@ import '../../models/auth_utility.dart';
 import '../../services/nfe_saida_service.dart';
 import '../../utils/api_links.dart';
 import '../../utils/tenant_context.dart';
+import '../../utils/grid_colors.dart';
 import '../../widgets/searchable_dropdown.dart';
 
-const _primary = Color(0xFF1A237E);
-const _success = Color(0xFF005826);
-const _error = Color(0xFF93070A);
-const _bg = Color(0xFFF5F5F5);
-const _cardBg = Colors.white;
-const _border = Color(0xFFDDDDDD);
+const _primary = GridColors.primary;
+const _success = GridColors.success;
+const _error = GridColors.error;
+const _bg = GridColors.pageBackground;
+const _cardBg = GridColors.card;
+const _border = GridColors.borderSubtle;
 
 class NfeSaidaCreateScreen extends StatefulWidget {
   const NfeSaidaCreateScreen({super.key});
@@ -233,11 +234,18 @@ class _NfeSaidaCreateScreenState extends State<NfeSaidaCreateScreen> {
   }
 
   Widget _twoCol(Widget left, Widget right) {
-    return Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      Expanded(child: left),
-      const SizedBox(width: 16),
-      Expanded(child: right),
-    ]);
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        if (constraints.maxWidth < 500) {
+          return Column(children: [left, const SizedBox(height: 12), right]);
+        }
+        return Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Expanded(child: left),
+          const SizedBox(width: 16),
+          Expanded(child: right),
+        ]);
+      },
+    );
   }
 
   @override
@@ -273,9 +281,10 @@ class _NfeSaidaCreateScreenState extends State<NfeSaidaCreateScreen> {
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(24),
-        child: SizedBox(
-          width: 800,
-          child: Column(
+        child: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 800),
+            child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               _section('Tipo de Operação', [
@@ -494,6 +503,7 @@ class _NfeSaidaCreateScreenState extends State<NfeSaidaCreateScreen> {
             ],
           ),
         ),
+      ),
       ),
     );
   }

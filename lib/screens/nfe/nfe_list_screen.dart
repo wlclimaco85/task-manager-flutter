@@ -1,3 +1,5 @@
+import 'dart:convert';
+import 'package:file_saver/file_saver.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:task_manager_flutter/core/design/design_tokens.dart';
@@ -5,8 +7,11 @@ import 'package:task_manager_flutter/core/responsive/responsive_helper.dart';
 import 'package:task_manager_flutter/models/nfe/nfe_model.dart';
 import 'package:task_manager_flutter/models/nfe/nfe_status.dart';
 import 'package:task_manager_flutter/providers/nfe_notifier.dart';
+import 'package:task_manager_flutter/utils/api_links.dart';
+import 'package:task_manager_flutter/utils/tenant_context.dart';
 import 'package:task_manager_flutter/widgets/nfe/nfe_status_badge.dart';
 import 'package:task_manager_flutter/widgets/nfe/nfe_filter_chip.dart';
+import 'package:task_manager_flutter/screens/nfe/nfe_detail_screen.dart';
 import 'package:task_manager_flutter/utils/app_logger.dart';
 
 /// Tela responsiva de listagem de NFes com 3 layouts
@@ -605,7 +610,7 @@ class _NfeListScreenState extends State<NfeListScreen> {
       L.d('[NfeListScreen] Navegando para detalhes NFe ${nfe.id}');
       Navigator.of(context).push(
         MaterialPageRoute(
-          builder: (context) => NfeDetailScreen(nfe: nfe),
+          builder: (context) => NfeDetailScreen(nfeId: nfe.id),
         ),
       );
     } catch (e) {
@@ -619,41 +624,66 @@ class _NfeListScreenState extends State<NfeListScreen> {
     }
   }
 
-  /// Handler para reimprimir NFe
-  void _handleReimprimirNfe(BuildContext context, NfeModel nfe) {
+  Future<void> _handleReimprimirNfe(BuildContext context, NfeModel nfe) async {
     try {
-      L.d('[NfeListScreen] Reimprimindo NFe ${nfe.id}');
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Reimpressão iniciada')),
-      );
-      // TODO: Implementar chamada para serviço de impressão
+      L.d('[NfeListScreen] Reimprimindo DANFE NFe ${nfe.id}');
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Baixando DANFE...')));
+      final r = await TenantContext.get(ApiLinks.danfeNfe(nfe.id.toString()));
+      if (!mounted) return;
+      if (r.statusCode == 200) {
+        await FileSaver.instance.saveFile(name: 'danfe_${nfe.id}', bytes: r.bodyBytes, fileExtension: 'pdf');
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('DANFE baixado!'), backgroundColor: Colors.green));
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Erro ${r.statusCode}'), backgroundColor: Colors.red));
+      }
     } catch (e) {
       L.e('[NfeListScreen] Erro ao reimprimir: $e');
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Erro: $e'),
-          backgroundColor: Colors.red,
-        ),
-      );
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Erro: $e'), backgroundColor: Colors.red));
     }
   }
 
-  /// Handler para cancelar NFe
-  void _handleCancelarNfe(BuildContext context, NfeModel nfe) {
+  Future<void> _handleCancelarNfe(BuildContext context, NfeModel nfe) async {
+    final motivoCtrl = TextEditingController();
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text('Cancelar NF-e'),
+        content: SizedBox(width: 360, child: Column(mainAxisSize: MainAxisSize.min, children: [
+          Text('NF-e #${nfe.id} - ${nfe.numero}'),
+          const SizedBox(height: 12),
+          TextField(controller: motivoCtrl, maxLines: 3,
+            decoration: const InputDecoration(labelText: 'Motivo do cancelamento *', border: OutlineInputBorder(), isDense: true, hintText: 'Mínimo 15 caracteres')),
+        ])),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Voltar')),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.red, foregroundColor: Colors.white),
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Cancelar NF-e'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) return;
+    if (motivoCtrl.text.trim().length < 15) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Motivo deve ter pelo menos 15 caracteres'), backgroundColor: Colors.red));
+      return;
+    }
     try {
       L.d('[NfeListScreen] Cancelando NFe ${nfe.id}');
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Cancelamento iniciado')),
-      );
-      // TODO: Implementar chamada para API de cancelamento
+      final r = await TenantContext.post(ApiLinks.cancelarNfe(nfe.id.toString()), {'justificativa': motivoCtrl.text.trim()});
+      if (!mounted) return;
+      if (r.statusCode == 200) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('NF-e cancelada!'), backgroundColor: Colors.green));
+        context.read<NfeNotifier>().listarNfe();
+      } else {
+        String msg = 'Erro ${r.statusCode}';
+        try { final b = jsonDecode(r.body); msg = b['message']?.toString() ?? msg; } catch (_) {}
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg), backgroundColor: Colors.red));
+      }
     } catch (e) {
       L.e('[NfeListScreen] Erro ao cancelar: $e');
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Erro: $e'),
-          backgroundColor: Colors.red,
-        ),
-      );
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Erro: $e'), backgroundColor: Colors.red));
     }
   }
 }

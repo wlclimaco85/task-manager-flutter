@@ -619,9 +619,9 @@ class _State extends State<MobileNfeSankhyaDetailScreen> {
   Widget _readField(String label, String val) =>
       Padding(
         padding: const EdgeInsets.only(bottom: 8),
-        child: TextField(
+        child: TextFormField(
           enabled: false,
-          controller: TextEditingController(text: val),
+          initialValue: val,
           style: const TextStyle(fontSize: 12),
           decoration: InputDecoration(
             labelText: label,
