@@ -320,6 +320,7 @@ class _WebDashboardFinanceiroScreenState
       width: 200,
       child: DropdownButtonFormField<int>(
         value: value,
+        isExpanded: true,
         decoration: InputDecoration(
           labelText: hint,
           isDense: true,
@@ -328,11 +329,14 @@ class _WebDashboardFinanceiroScreenState
         items: [
           DropdownMenuItem<int>(
             value: null,
-            child: Text('Todos', style: TextStyle(color: Colors.grey[500])),
+            child: Text('Todos',
+                style: TextStyle(color: Colors.grey[500]),
+                overflow: TextOverflow.ellipsis),
           ),
           ...items.map((e) => DropdownMenuItem<int>(
                 value: e['value'] as int?,
-                child: Text(e['label']?.toString() ?? ''),
+                child: Text(e['label']?.toString() ?? '',
+                    overflow: TextOverflow.ellipsis),
               )),
         ],
         onChanged: onChanged,
