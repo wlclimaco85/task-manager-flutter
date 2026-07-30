@@ -9,6 +9,7 @@ import '../../../../utils/api_links.dart';
 import '../../../../utils/tenant_context.dart';
 import '../../../../widgets/searchable_dropdown.dart';
 import '../../../../utils/grid_texts.dart';
+import '../../../../widgets/accessibility/index.dart';
 
 const _red = GridColors.primary;
 const _green = GridColors.secondary;
@@ -250,14 +251,15 @@ class _State extends State<MobileNfeSankhyaDetailScreen> {
           _readField('Empresa', _empresaNome ?? ''),
           _readField('Parceiro', _parceiroNome ?? ''),
           const SizedBox(height: 16),
-          ElevatedButton.icon(
-            onPressed: () {},
-            icon: const Icon(Icons.save, size: 16),
-            label: const Text('Salvar'),
-            style: ElevatedButton.styleFrom(
-                backgroundColor: _green,
-                foregroundColor: Colors.white,
-                minimumSize: const Size(double.infinity, 40)),
+          SizedBox(
+            width: double.infinity,
+            child: AccessibleButton(
+              label: 'Salvar NF-e',
+              hint: 'Salva as alterações da NF-e',
+              onPressed: () {},
+              isEnabled: !_isNovo,
+              backgroundColor: _green,
+            ),
           ),
         ],
       ),
@@ -348,24 +350,39 @@ class _State extends State<MobileNfeSankhyaDetailScreen> {
 
   Future<void> _emitir() async {
     if (_isNovo) {
-      ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Salve a NF-e antes de emitir'), backgroundColor: _red));
+      showAccessibleSnackBar(
+        context: context,
+        message: 'Salve a NF-e antes de emitir',
+        type: AccessibleSnackBarType.warning,
+      );
       return;
     }
     final confirmed = await showDialog<bool>(
       context: context,
-      builder: (_) => AlertDialog(
-        title: const Text('Emitir NF-e', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
-        content: Text('Confirma a emissão da NF-e #$_nfeId?',
-            style: const TextStyle(fontSize: 13)),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text(GridTexts.cancel)),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: _green, foregroundColor: Colors.white),
-            onPressed: () => Navigator.pop(context, true),
-            child: const Text('Emitir'),
+      builder: (_) => Semantics(
+        container: true,
+        label: 'Confirmar Emissão',
+        child: AlertDialog(
+          title: Semantics(
+            header: true,
+            label: 'Confirmar Emissão',
+            child: const Text('Confirmar Emissão', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
           ),
-        ],
+          content: Semantics(
+            liveRegion: true,
+            label: 'Deseja emitir a NF-e? Esta ação transmitirá os dados para a SEFAZ.',
+            child: Text('Deseja emitir a NF-e #$_nfeId?\n\nEsta ação transmitirá os dados para a SEFAZ.',
+                style: const TextStyle(fontSize: 14, height: 1.5)),
+          ),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Não emitir')),
+            TextButton(
+              style: TextButton.styleFrom(foregroundColor: _green),
+              onPressed: () => Navigator.pop(context, true),
+              child: const Text('Sim, emitir NF-e', style: TextStyle(fontWeight: FontWeight.w600)),
+            ),
+          ],
+        ),
       ),
     );
     if (confirmed != true || !mounted) return;
@@ -375,21 +392,30 @@ class _State extends State<MobileNfeSankhyaDetailScreen> {
       if (r.statusCode == 200 || r.statusCode == 201) {
         setState(() => _statusVal = 'AUTORIZADA');
         _loadItens();
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-            content: Text('NF-e emitida com sucesso!'), backgroundColor: _green));
+        showAccessibleSnackBar(
+          context: context,
+          message: 'NF-e emitida com sucesso!',
+          type: AccessibleSnackBarType.success,
+        );
       } else {
         String msg = 'Erro ${r.statusCode}';
         try {
           final body = jsonDecode(r.body);
           msg = body['message']?.toString() ?? body['mensagem']?.toString() ?? msg;
         } catch (_) {}
-        ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(msg), backgroundColor: _red));
+        showAccessibleSnackBar(
+          context: context,
+          message: msg,
+          type: AccessibleSnackBarType.error,
+        );
       }
     } catch (e) {
       if (mounted)
-        ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Erro ao processar. Tente novamente.'), backgroundColor: _red));
+        showAccessibleSnackBar(
+          context: context,
+          message: 'Erro ao processar. Tente novamente.',
+          type: AccessibleSnackBarType.error,
+        );
     }
   }
 
@@ -397,37 +423,48 @@ class _State extends State<MobileNfeSankhyaDetailScreen> {
     final motivoCtrl = TextEditingController();
     final confirmed = await showDialog<bool>(
       context: context,
-      builder: (_) => AlertDialog(
-        title: const Text('Cancelar NF-e', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
-        content: Column(mainAxisSize: MainAxisSize.min, children: [
-          Text('NF-e #$_nfeId', style: const TextStyle(fontSize: 12, color: _grey)),
-          const SizedBox(height: 12),
-          TextField(
-            controller: motivoCtrl,
-            maxLines: 3,
-            decoration: const InputDecoration(
-              labelText: 'Motivo do cancelamento *',
-              labelStyle: TextStyle(fontSize: 12),
-              border: OutlineInputBorder(),
-              isDense: true,
-              hintText: 'Mínimo 15 caracteres',
+      builder: (_) => Semantics(
+        container: true,
+        label: 'Cancelar NF-e',
+        child: AlertDialog(
+          title: Semantics(
+            header: true,
+            label: 'Cancelar NF-e',
+            child: const Text('Cancelar NF-e', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+          ),
+          content: SingleChildScrollView(
+            child: Column(mainAxisSize: MainAxisSize.min, children: [
+              Semantics(
+                label: 'NF-e #$_nfeId',
+                child: Text('NF-e #$_nfeId', style: const TextStyle(fontSize: 13, color: _grey)),
+              ),
+              const SizedBox(height: 16),
+              AccessibleTextField(
+                label: 'Motivo do cancelamento',
+                hint: 'Mínimo 15 caracteres',
+                controller: motivoCtrl,
+                maxLines: 3,
+              ),
+            ]),
+          ),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Voltar')),
+            TextButton(
+              style: TextButton.styleFrom(foregroundColor: _red),
+              onPressed: () => Navigator.pop(context, true),
+              child: const Text('Sim, cancelar NF-e', style: TextStyle(fontWeight: FontWeight.w600)),
             ),
-          ),
-        ]),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Voltar')),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: _red, foregroundColor: Colors.white),
-            onPressed: () => Navigator.pop(context, true),
-            child: const Text('Cancelar NF-e'),
-          ),
-        ],
+          ],
+        ),
       ),
     );
     if (confirmed != true || !mounted) return;
     if (motivoCtrl.text.trim().length < 15) {
-      ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Motivo deve ter pelo menos 15 caracteres'), backgroundColor: _red));
+      showAccessibleSnackBar(
+        context: context,
+        message: 'Motivo deve ter pelo menos 15 caracteres',
+        type: AccessibleSnackBarType.error,
+      );
       return;
     }
     try {
@@ -436,16 +473,25 @@ class _State extends State<MobileNfeSankhyaDetailScreen> {
       if (r.statusCode == 200) {
         setState(() => _statusVal = 'CANCELADA');
         _loadItens();
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-            content: Text('NF-e cancelada!'), backgroundColor: _green));
+        showAccessibleSnackBar(
+          context: context,
+          message: 'NF-e cancelada com sucesso!',
+          type: AccessibleSnackBarType.success,
+        );
       } else {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-            content: Text('Erro ${r.statusCode}'), backgroundColor: _red));
+        showAccessibleSnackBar(
+          context: context,
+          message: 'Erro ${r.statusCode}',
+          type: AccessibleSnackBarType.error,
+        );
       }
     } catch (e) {
       if (mounted)
-        ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Erro ao processar. Tente novamente.'), backgroundColor: _red));
+        showAccessibleSnackBar(
+          context: context,
+          message: 'Erro ao processar. Tente novamente.',
+          type: AccessibleSnackBarType.error,
+        );
     }
   }
 
@@ -459,16 +505,25 @@ class _State extends State<MobileNfeSankhyaDetailScreen> {
           bytes: r.bodyBytes,
           fileExtension: 'pdf',
         );
-        ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('DANFE baixado!'), backgroundColor: _green));
+        showAccessibleSnackBar(
+          context: context,
+          message: 'DANFE baixado com sucesso!',
+          type: AccessibleSnackBarType.success,
+        );
       } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Erro ${r.statusCode}'), backgroundColor: _red));
+        showAccessibleSnackBar(
+          context: context,
+          message: 'Erro ${r.statusCode}',
+          type: AccessibleSnackBarType.error,
+        );
       }
     } catch (e) {
       if (mounted)
-        ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Erro ao processar. Tente novamente.'), backgroundColor: _red));
+        showAccessibleSnackBar(
+          context: context,
+          message: 'Erro ao processar. Tente novamente.',
+          type: AccessibleSnackBarType.error,
+        );
     }
   }
 
@@ -482,16 +537,25 @@ class _State extends State<MobileNfeSankhyaDetailScreen> {
           bytes: Uint8List.fromList(r.body.codeUnits),
           fileExtension: 'xml',
         );
-        ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('XML baixado!'), backgroundColor: _green));
+        showAccessibleSnackBar(
+          context: context,
+          message: 'XML baixado com sucesso!',
+          type: AccessibleSnackBarType.success,
+        );
       } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Erro ${r.statusCode}'), backgroundColor: _red));
+        showAccessibleSnackBar(
+          context: context,
+          message: 'Erro ${r.statusCode}',
+          type: AccessibleSnackBarType.error,
+        );
       }
     } catch (e) {
       if (mounted)
-        ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Erro ao processar. Tente novamente.'), backgroundColor: _red));
+        showAccessibleSnackBar(
+          context: context,
+          message: 'Erro ao processar. Tente novamente.',
+          type: AccessibleSnackBarType.error,
+        );
     }
   }
 
@@ -508,30 +572,48 @@ class _State extends State<MobileNfeSankhyaDetailScreen> {
         fileField: 'xml',
       );
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text(r.statusCode == 200 ? 'XML importado!' : 'Erro ${r.statusCode}'),
-          backgroundColor: r.statusCode == 200 ? _green : _red));
+      showAccessibleSnackBar(
+        context: context,
+        message: r.statusCode == 200 ? 'XML importado com sucesso!' : 'Erro ${r.statusCode}',
+        type: r.statusCode == 200 ? AccessibleSnackBarType.success : AccessibleSnackBarType.error,
+      );
     } catch (e) {
       if (mounted)
-        ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Erro ao processar. Tente novamente.'), backgroundColor: _red));
+        showAccessibleSnackBar(
+          context: context,
+          message: 'Erro ao processar. Tente novamente.',
+          type: AccessibleSnackBarType.error,
+        );
     }
   }
 
   Future<void> _aceitar() async {
     final confirmed = await showDialog<bool>(
       context: context,
-      builder: (_) => AlertDialog(
-        title: const Text('Aceitar NF-e', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
-        content: Text('Confirma o aceite da NF-e #$_nfeId?', style: const TextStyle(fontSize: 13)),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text(GridTexts.cancel)),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: _green, foregroundColor: Colors.white),
-            onPressed: () => Navigator.pop(context, true),
-            child: const Text('Aceitar'),
+      builder: (_) => Semantics(
+        container: true,
+        label: 'Aceitar NF-e',
+        child: AlertDialog(
+          title: Semantics(
+            header: true,
+            label: 'Aceitar NF-e',
+            child: const Text('Aceitar NF-e', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
           ),
-        ],
+          content: Semantics(
+            liveRegion: true,
+            label: 'Deseja aceitar a NF-e?',
+            child: Text('Confirma o aceite da NF-e #$_nfeId?\n\nEsta ação não pode ser desfeita.',
+                style: const TextStyle(fontSize: 14, height: 1.5)),
+          ),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Não aceitar')),
+            TextButton(
+              style: TextButton.styleFrom(foregroundColor: _green),
+              onPressed: () => Navigator.pop(context, true),
+              child: const Text('Sim, aceitar', style: TextStyle(fontWeight: FontWeight.w600)),
+            ),
+          ],
+        ),
       ),
     );
     if (confirmed != true || !mounted) return;
@@ -540,33 +622,55 @@ class _State extends State<MobileNfeSankhyaDetailScreen> {
       if (!mounted) return;
       if (r.statusCode == 200) {
         _loadItens();
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-            content: Text('NF-e aceita!'), backgroundColor: _green));
+        showAccessibleSnackBar(
+          context: context,
+          message: 'NF-e aceita com sucesso!',
+          type: AccessibleSnackBarType.success,
+        );
       } else {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-            content: Text('Erro ${r.statusCode}'), backgroundColor: _red));
+        showAccessibleSnackBar(
+          context: context,
+          message: 'Erro ${r.statusCode}',
+          type: AccessibleSnackBarType.error,
+        );
       }
     } catch (e) {
       if (mounted)
-        ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Erro ao processar. Tente novamente.'), backgroundColor: _red));
+        showAccessibleSnackBar(
+          context: context,
+          message: 'Erro ao processar. Tente novamente.',
+          type: AccessibleSnackBarType.error,
+        );
     }
   }
 
   Future<void> _recusar() async {
     final confirmed = await showDialog<bool>(
       context: context,
-      builder: (_) => AlertDialog(
-        title: const Text('Recusar NF-e', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
-        content: Text('Confirma a recusa da NF-e #$_nfeId?', style: const TextStyle(fontSize: 13)),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text(GridTexts.cancel)),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: _red, foregroundColor: Colors.white),
-            onPressed: () => Navigator.pop(context, true),
-            child: const Text('Recusar'),
+      builder: (_) => Semantics(
+        container: true,
+        label: 'Recusar NF-e',
+        child: AlertDialog(
+          title: Semantics(
+            header: true,
+            label: 'Recusar NF-e',
+            child: const Text('Recusar NF-e', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
           ),
-        ],
+          content: Semantics(
+            liveRegion: true,
+            label: 'Deseja recusar a NF-e?',
+            child: Text('Confirma a recusa da NF-e #$_nfeId?\n\nEsta ação não pode ser desfeita.',
+                style: const TextStyle(fontSize: 14, height: 1.5)),
+          ),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Não recusar')),
+            TextButton(
+              style: TextButton.styleFrom(foregroundColor: _red),
+              onPressed: () => Navigator.pop(context, true),
+              child: const Text('Sim, recusar', style: TextStyle(fontWeight: FontWeight.w600)),
+            ),
+          ],
+        ),
       ),
     );
     if (confirmed != true || !mounted) return;
@@ -575,16 +679,25 @@ class _State extends State<MobileNfeSankhyaDetailScreen> {
       if (!mounted) return;
       if (r.statusCode == 200) {
         _loadItens();
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-            content: Text('NF-e recusada!'), backgroundColor: _red));
+        showAccessibleSnackBar(
+          context: context,
+          message: 'NF-e recusada com sucesso!',
+          type: AccessibleSnackBarType.warning,
+        );
       } else {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-            content: Text('Erro ${r.statusCode}'), backgroundColor: _red));
+        showAccessibleSnackBar(
+          context: context,
+          message: 'Erro ${r.statusCode}',
+          type: AccessibleSnackBarType.error,
+        );
       }
     } catch (e) {
       if (mounted)
-        ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Erro ao processar. Tente novamente.'), backgroundColor: _red));
+        showAccessibleSnackBar(
+          context: context,
+          message: 'Erro ao processar. Tente novamente.',
+          type: AccessibleSnackBarType.error,
+        );
     }
   }
 
@@ -592,23 +705,21 @@ class _State extends State<MobileNfeSankhyaDetailScreen> {
 
   Widget _section(String title) => Padding(
     padding: const EdgeInsets.only(bottom: 8, top: 8),
-    child: Text(title,
-        style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: _dark)),
+    child: Semantics(
+      header: true,
+      label: title,
+      child: Text(title,
+          style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: _dark, height: 1.2)),
+    ),
   );
 
   Widget _field(String label, TextEditingController ctrl, {int flex = 1}) =>
       Expanded(
         flex: flex,
-        child: TextField(
+        child: AccessibleTextField(
+          label: label,
           controller: ctrl,
-          style: const TextStyle(fontSize: 12),
-          decoration: InputDecoration(
-            labelText: label,
-            labelStyle: const TextStyle(fontSize: 11),
-            border: const OutlineInputBorder(),
-            isDense: true,
-            contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-          ),
+          keyboardType: TextInputType.text,
         ),
       );
 

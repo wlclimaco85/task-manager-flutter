@@ -189,5 +189,20 @@ class AgendamentoRepositoryImpl implements AgendamentoRepository {
   }
 }
 
-// Adapter Hive (placeholder)
-class AgendamentoModelAdapter {}
+/// Adapter Hive para persistência offline de [AgendamentoModel].
+/// Serializa via toJson/fromJson já existentes no model.
+class AgendamentoModelAdapter extends TypeAdapter<AgendamentoModel> {
+  @override
+  final int typeId = 40;
+
+  @override
+  AgendamentoModel read(BinaryReader reader) {
+    final json = Map<String, dynamic>.from(reader.readMap());
+    return AgendamentoModel.fromJson(json);
+  }
+
+  @override
+  void write(BinaryWriter writer, AgendamentoModel obj) {
+    writer.writeMap(obj.toJson());
+  }
+}

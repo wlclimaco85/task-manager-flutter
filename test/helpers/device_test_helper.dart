@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -51,8 +53,8 @@ class DeviceTestHelper {
     Widget widget,
     Size size,
   ) async {
-    addTearDown(tester.binding.window.clearPhysicalSizeTestValue);
-    tester.binding.window.physicalSizeTestValue = size;
+    addTearDown(tester.view.resetPhysicalSize);
+    tester.view.physicalSize = size;
 
     await tester.pumpWidget(widget);
     await tester.pumpAndSettle();
@@ -84,7 +86,7 @@ class DeviceTestHelper {
     await test(tester, true);
 
     // Limpa state
-    await tester.binding.window.clearPhysicalSizeTestValue();
+    tester.view.resetPhysicalSize();
 
     // Teste em paisagem
     await pumpWidgetWithSize(
@@ -179,7 +181,7 @@ class DeviceTestHelper {
   /// Desliza para cima em uma ListView/ScrollView
   static Future<void> scrollUp(WidgetTester tester, {int steps = 5}) async {
     for (int i = 0; i < steps; i++) {
-      await tester.scroll(
+      await tester.drag(
         find.byType(ListView),
         const Offset(0, -100),
       );
@@ -190,7 +192,7 @@ class DeviceTestHelper {
   /// Desliza para baixo em uma ListView/ScrollView
   static Future<void> scrollDown(WidgetTester tester, {int steps = 5}) async {
     for (int i = 0; i < steps; i++) {
-      await tester.scroll(
+      await tester.drag(
         find.byType(ListView),
         const Offset(0, 100),
       );
@@ -201,7 +203,7 @@ class DeviceTestHelper {
   /// Desliza para direita em uma ListView horizontal
   static Future<void> scrollRight(WidgetTester tester, {int steps = 5}) async {
     for (int i = 0; i < steps; i++) {
-      await tester.scroll(
+      await tester.drag(
         find.byType(ListView),
         const Offset(100, 0),
       );
@@ -212,7 +214,7 @@ class DeviceTestHelper {
   /// Desliza para esquerda em uma ListView horizontal
   static Future<void> scrollLeft(WidgetTester tester, {int steps = 5}) async {
     for (int i = 0; i < steps; i++) {
-      await tester.scroll(
+      await tester.drag(
         find.byType(ListView),
         const Offset(-100, 0),
       );

@@ -17,7 +17,7 @@ class DesktopBreakpointStyles {
   // ─────────────────────────────────────────────────────────────────────────────
 
   static const int minWidth = 1024;
-  static const int maxWidth = null; // Sem limite superior
+  static const int? maxWidth = null; // Sem limite superior
   static const String name = 'desktop';
 
   // ─────────────────────────────────────────────────────────────────────────────

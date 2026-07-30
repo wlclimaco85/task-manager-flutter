@@ -160,8 +160,8 @@ void main() {
     });
 
     testWidgets('Mobile: stack vertical', (WidgetTester tester) async {
-      addTearDown(tester.binding.window.reset);
-      tester.binding.window.physicalSizeTestValue = const Size(400, 800);
+      addTearDown(tester.view.reset);
+      tester.view.physicalSize = const Size(400, 800);
 
       await tester.pumpWidget(
         MaterialApp(

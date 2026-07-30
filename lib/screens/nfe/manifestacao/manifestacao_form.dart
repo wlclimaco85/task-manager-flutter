@@ -43,7 +43,7 @@ class _ManifestacaoFormState extends State<ManifestacaoForm> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Status Dropdown
-          StatusDropdown(
+          StatusDropdownWidget(
             value: manifestacao.status,
             onChanged: (status) {
               widget.notifier.setStatus(status);
@@ -54,7 +54,7 @@ class _ManifestacaoFormState extends State<ManifestacaoForm> {
           SizedBox(height: ManifestacaoDesignTokens.spacing20),
 
           // Observação (sempre presente)
-          ObservacaoTextfield(
+          ObservacaoTextfieldWidget(
             value: manifestacao.observacao,
             onChanged: widget.notifier.setObservacao,
             errorText: _validationErrors['observacao'],

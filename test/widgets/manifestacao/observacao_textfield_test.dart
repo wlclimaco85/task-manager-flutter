@@ -99,7 +99,7 @@ void main() {
       );
 
       await tester.tap(find.byType(TextField));
-      await tester.typeText(find.byType(TextField), 'Teste muito longo');
+      await tester.enterText(find.byType(TextField), 'Teste muito longo');
       await tester.pumpAndSettle();
 
       expect(controller.text.length, lessThanOrEqualTo(10));

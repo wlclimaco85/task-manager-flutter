@@ -11,6 +11,8 @@ class ManifestacaoModel {
   final String observacao;
   final int? quantidadeRecebida;
   final String? motivoRecusa;
+  final String? nomeEmpresa;
+  final String? cnpjEmpresa;
 
   ManifestacaoModel({
     required this.nfeId,
@@ -22,6 +24,8 @@ class ManifestacaoModel {
     this.observacao = '',
     this.quantidadeRecebida,
     this.motivoRecusa,
+    this.nomeEmpresa,
+    this.cnpjEmpresa,
   });
 
   /// CR-06: Valida se o formulário pode ser submetido
@@ -52,6 +56,8 @@ class ManifestacaoModel {
       'observacao': observacao,
       'quantidadeRecebida': quantidadeRecebida,
       'motivoRecusa': motivoRecusa,
+      'nomeEmpresa': nomeEmpresa,
+      'cnpjEmpresa': cnpjEmpresa,
     };
   }
 
@@ -69,6 +75,8 @@ class ManifestacaoModel {
       observacao: json['observacao'] as String? ?? '',
       quantidadeRecebida: json['quantidadeRecebida'] as int?,
       motivoRecusa: json['motivoRecusa'] as String?,
+      nomeEmpresa: json['nomeEmpresa'] as String?,
+      cnpjEmpresa: json['cnpjEmpresa'] as String?,
     );
   }
 
@@ -84,6 +92,8 @@ class ManifestacaoModel {
     String? observacao,
     Object? quantidadeRecebida = _sentinel,
     Object? motivoRecusa = _sentinel,
+    String? nomeEmpresa,
+    String? cnpjEmpresa,
   }) {
     return ManifestacaoModel(
       nfeId: nfeId ?? this.nfeId,
@@ -99,6 +109,8 @@ class ManifestacaoModel {
       motivoRecusa: motivoRecusa == _sentinel
           ? this.motivoRecusa
           : motivoRecusa as String?,
+      nomeEmpresa: nomeEmpresa ?? this.nomeEmpresa,
+      cnpjEmpresa: cnpjEmpresa ?? this.cnpjEmpresa,
     );
   }
 }
