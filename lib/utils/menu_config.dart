@@ -311,11 +311,6 @@ class MenuConfig {
             icon: FontAwesomeIcons.scaleBalanced,
             screenIndex: 102),
         MenuItem(
-            id: 'aprovacao_pagamento',
-            label: 'Aprovação de Pagamentos',
-            icon: FontAwesomeIcons.checkDouble,
-            screenIndex: 103),
-        MenuItem(
             id: 'baixa_automatica',
             label: 'Baixa Automática de Recebíveis',
             icon: FontAwesomeIcons.moneyBillWave,
