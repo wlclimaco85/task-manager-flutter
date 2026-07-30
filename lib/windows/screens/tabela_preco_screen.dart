@@ -99,16 +99,19 @@ class _TabelaPrecoScreenState extends State<TabelaPrecoScreen>
                 ),
               ),
               const Spacer(),
-              TabBar(
-                controller: _tabCtrl,
-                indicatorColor: Colors.white,
-                labelColor: Colors.white,
-                unselectedLabelColor: Colors.white70,
-                tabs: const [
-                  Tab(text: 'Tabelas'),
-                  Tab(text: 'Itens'),
-                  Tab(text: 'Descontos'),
-                ],
+              SizedBox(
+                width: 340,
+                child: TabBar(
+                  controller: _tabCtrl,
+                  indicatorColor: Colors.white,
+                  labelColor: Colors.white,
+                  unselectedLabelColor: Colors.white70,
+                  tabs: const [
+                    Tab(text: 'Tabelas'),
+                    Tab(text: 'Itens'),
+                    Tab(text: 'Descontos'),
+                  ],
+                ),
               ),
             ],
           ),

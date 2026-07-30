@@ -201,19 +201,22 @@ class _BaixaAutomaticaScreenState extends State<BaixaAutomaticaScreen>
                       fontSize: 18,
                       fontWeight: FontWeight.bold)),
               const Spacer(),
-              TabBar(
-                controller: _tabCtrl,
-                onTap: (i) {
-                  if (i == 1) _carregarPendentes();
-                },
-                indicatorColor: Colors.white,
-                labelColor: Colors.white,
-                unselectedLabelColor: Colors.white70,
-                tabs: const [
-                  Tab(text: GridTexts.importTab),
-                  Tab(text: GridTexts.conferenceTab),
-                  Tab(text: GridTexts.history),
-                ],
+              SizedBox(
+                width: 340,
+                child: TabBar(
+                  controller: _tabCtrl,
+                  onTap: (i) {
+                    if (i == 1) _carregarPendentes();
+                  },
+                  indicatorColor: Colors.white,
+                  labelColor: Colors.white,
+                  unselectedLabelColor: Colors.white70,
+                  tabs: const [
+                    Tab(text: GridTexts.importTab),
+                    Tab(text: GridTexts.conferenceTab),
+                    Tab(text: GridTexts.history),
+                  ],
+                ),
               ),
             ],
           ),

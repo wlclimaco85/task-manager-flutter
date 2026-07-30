@@ -227,15 +227,18 @@ class _AprovacaoCompraScreenState extends State<AprovacaoCompraScreen>
                 ),
               ),
               const Spacer(),
-              TabBar(
-                controller: _tabCtrl,
-                indicatorColor: Colors.white,
-                labelColor: Colors.white,
-                unselectedLabelColor: Colors.white70,
-                tabs: const [
-                  Tab(text: GridTexts.approvalQueueTab),
-                  Tab(text: GridTexts.orderDetailsTab),
-                ],
+              SizedBox(
+                width: 280,
+                child: TabBar(
+                  controller: _tabCtrl,
+                  indicatorColor: Colors.white,
+                  labelColor: Colors.white,
+                  unselectedLabelColor: Colors.white70,
+                  tabs: const [
+                    Tab(text: GridTexts.approvalQueueTab),
+                    Tab(text: GridTexts.orderDetailsTab),
+                  ],
+                ),
               ),
             ],
           ),

@@ -181,18 +181,21 @@ class _RateioFinanceiroScreenState extends State<RateioFinanceiroScreen>
                       fontSize: 18,
                       fontWeight: FontWeight.bold)),
               const Spacer(),
-              TabBar(
-                controller: _tabCtrl,
-                onTap: (i) {
-                  if (i == 1) _carregarHistorico();
-                },
-                indicatorColor: Colors.white,
-                labelColor: Colors.white,
-                unselectedLabelColor: Colors.white70,
-                tabs: const [
-                  Tab(text: 'Rateio'),
-                  Tab(text: 'Histórico'),
-                ],
+              SizedBox(
+                width: 280,
+                child: TabBar(
+                  controller: _tabCtrl,
+                  onTap: (i) {
+                    if (i == 1) _carregarHistorico();
+                  },
+                  indicatorColor: Colors.white,
+                  labelColor: Colors.white,
+                  unselectedLabelColor: Colors.white70,
+                  tabs: const [
+                    Tab(text: 'Rateio'),
+                    Tab(text: 'Histórico'),
+                  ],
+                ),
               ),
             ],
           ),

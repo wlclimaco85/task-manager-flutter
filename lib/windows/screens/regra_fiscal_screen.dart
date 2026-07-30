@@ -50,15 +50,18 @@ class _RegraFiscalScreenState extends State<RegraFiscalScreen>
                 ),
               ),
               const Spacer(),
-              TabBar(
-                controller: _tabCtrl,
-                indicatorColor: Colors.white,
-                labelColor: Colors.white,
-                unselectedLabelColor: Colors.white70,
-                tabs: const [
-                  Tab(text: 'Regras'),
-                  Tab(text: 'Validação Manual'),
-                ],
+              SizedBox(
+                width: 280,
+                child: TabBar(
+                  controller: _tabCtrl,
+                  indicatorColor: Colors.white,
+                  labelColor: Colors.white,
+                  unselectedLabelColor: Colors.white70,
+                  tabs: const [
+                    Tab(text: 'Regras'),
+                    Tab(text: 'Validação Manual'),
+                  ],
+                ),
               ),
             ],
           ),

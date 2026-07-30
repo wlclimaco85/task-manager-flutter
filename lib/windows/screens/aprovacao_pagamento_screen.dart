@@ -175,18 +175,21 @@ class _AprovacaoPagamentoScreenState extends State<AprovacaoPagamentoScreen>
                       fontSize: 18,
                       fontWeight: FontWeight.bold)),
               const Spacer(),
-              TabBar(
-                controller: _tabCtrl,
-                onTap: (i) {
-                  if (i == 0) _carregarFila();
-                },
-                indicatorColor: Colors.white,
-                labelColor: Colors.white,
-                unselectedLabelColor: Colors.white70,
-                tabs: const [
-                  Tab(text: GridTexts.queue),
-                  Tab(text: GridTexts.history),
-                ],
+              SizedBox(
+                width: 280,
+                child: TabBar(
+                  controller: _tabCtrl,
+                  onTap: (i) {
+                    if (i == 0) _carregarFila();
+                  },
+                  indicatorColor: Colors.white,
+                  labelColor: Colors.white,
+                  unselectedLabelColor: Colors.white70,
+                  tabs: const [
+                    Tab(text: GridTexts.queue),
+                    Tab(text: GridTexts.history),
+                  ],
+                ),
               ),
             ],
           ),

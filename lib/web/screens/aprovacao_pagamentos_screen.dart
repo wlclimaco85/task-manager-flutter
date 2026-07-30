@@ -348,15 +348,18 @@ class _WebAprovacaoPagamentosScreenState
                 tooltip: GridTexts.refresh,
               ),
               const SizedBox(width: 8),
-              TabBar(
-                controller: _tabCtrl,
-                labelColor: Colors.white,
-                unselectedLabelColor: Colors.white70,
-                indicatorColor: Colors.white,
-                tabs: const [
-                  Tab(text: GridTexts.approvalQueueTab),
-                  Tab(text: GridTexts.history),
-                ],
+              SizedBox(
+                width: 280,
+                child: TabBar(
+                  controller: _tabCtrl,
+                  labelColor: Colors.white,
+                  unselectedLabelColor: Colors.white70,
+                  indicatorColor: Colors.white,
+                  tabs: const [
+                    Tab(text: GridTexts.approvalQueueTab),
+                    Tab(text: GridTexts.history),
+                  ],
+                ),
               ),
             ],
           ),
