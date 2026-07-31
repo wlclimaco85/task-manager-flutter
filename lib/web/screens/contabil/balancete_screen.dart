@@ -14,8 +14,10 @@ class WebBalanceteScreen extends StatefulWidget {
   State<WebBalanceteScreen> createState() => _WebBalanceteScreenState();
 }
 
-class _WebBalanceteScreenState extends State<WebBalanceteScreen> {
+class _WebBalanceteScreenState extends State<WebBalanceteScreen>
+    with SingleTickerProviderStateMixin {
   final _service = LancamentoContabilService();
+  late final TabController _tabController;
   int _tab = 0;
   String _periodo = '${DateTime.now().year}-${DateTime.now().month.toString().padLeft(2, '0')}';
   List<Map<String, dynamic>> _linhas = [];
@@ -26,7 +28,14 @@ class _WebBalanceteScreenState extends State<WebBalanceteScreen> {
   @override
   void initState() {
     super.initState();
+    _tabController = TabController(length: 3, vsync: this);
     _carregar();
+  }
+
+  @override
+  void dispose() {
+    _tabController.dispose();
+    super.dispose();
   }
 
   Future<void> _carregar() async {
@@ -82,6 +91,7 @@ class _WebBalanceteScreenState extends State<WebBalanceteScreen> {
       ),
       body: Column(children: [
         TabBar(
+          controller: _tabController,
           tabs: const [
             Tab(text: 'Balancete'),
             Tab(text: 'Balanço Patrimonial'),
