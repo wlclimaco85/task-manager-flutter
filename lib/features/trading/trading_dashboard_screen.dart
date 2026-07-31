@@ -1458,7 +1458,10 @@ class _BrokerConfigTabState extends State<BrokerConfigTab>
         _config = config;
         _brokerLoginCtrl.text = config?.brokerLogin ?? '';
         _accountIdCtrl.text = config?.accountId ?? '';
-        _ambientePadrao = config?.ambientePadrao ?? 'TESTE';
+        _ambientePadrao = const {'TESTE', 'PRODUCAO'}
+                .contains(config?.ambientePadrao)
+            ? config!.ambientePadrao
+            : 'TESTE';
         _ativo = config?.ativo ?? true;
         _brokerPasswordCtrl.clear();
         _loading = false;
