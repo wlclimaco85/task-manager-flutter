@@ -272,36 +272,28 @@ class _KanbanChamadosScreenState extends State<KanbanChamadosScreen> {
         border: Border(bottom: BorderSide(color: _K.border)),
         boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 2, offset: Offset(0, 1))],
       ),
-      child: Row(children: [
+      child: Wrap(spacing: 8, runSpacing: 6, crossAxisAlignment: WrapCrossAlignment.center, children: [
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
           decoration: BoxDecoration(color: _K.primary, borderRadius: BorderRadius.circular(4)),
           child: const Text('FILTROS', style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold, letterSpacing: 1)),
         ),
-        const SizedBox(width: 12),
         _filterBtn(Icons.person_outline, 'Usuário', _filtroUsuario, _usuariosComChamados, (v) => setState(() => _filtroUsuario = v)),
-        const SizedBox(width: 8),
         _filterBtn(Icons.business_outlined, 'Setor', _filtroSetor, _setoresComChamados, (v) => setState(() => _filtroSetor = v)),
-        const SizedBox(width: 8),
         _filterBtn(Icons.flag_outlined, 'Prioridade', _filtroPrioridade,
           PrioridadeChamadoEnum.values.map((e) => {'id': e.name, 'nome': e.label}).toList(),
           (v) => setState(() => _filtroPrioridade = v)),
-        if (_filtroUsuario != null || _filtroSetor != null || _filtroPrioridade != null) ...[
-          const SizedBox(width: 8),
+        if (_filtroUsuario != null || _filtroSetor != null || _filtroPrioridade != null)
           TextButton.icon(
             onPressed: () => setState(() { _filtroUsuario = null; _filtroSetor = null; _filtroPrioridade = null; }),
             icon: const Icon(Icons.clear, size: 14),
             label: const Text('Limpar', style: TextStyle(fontSize: 12)),
             style: TextButton.styleFrom(foregroundColor: _K.primary),
           ),
-        ],
-        const Spacer(),
         ..._cols.map((col) {
           final count = _filtrados.where((r) => r.chamado.status.name == col.status).length;
-          return Padding(padding: const EdgeInsets.only(left: 8),
-            child: _badge(col.label, count, col.color));
+          return _badge(col.label, count, col.color);
         }),
-        const SizedBox(width: 8),
         Text('Total: $total', style: const TextStyle(color: _K.textGrey, fontSize: 12, fontWeight: FontWeight.w500)),
       ]),
     );

@@ -2,18 +2,16 @@ class ApiLinks {
   ApiLinks._();
 
   // URL do backend
-  // Dev local: flutter run (usa default http://127.0.0.1:9001)
+  // Dev local: flutter run (usa default http://127.0.0.1:8080)
   // Producao Railway: flutter run --dart-define=BACKEND_URL=https://appacademia-production-be7e.up.railway.app
   static const String _backendUrl = String.fromEnvironment(
     'BACKEND_URL',
-    defaultValue: 'http://127.0.0.1:9001',
+    defaultValue: 'http://127.0.0.1:8080',
   );
 
-  // O backend sempre roda sob o context-path /boletobancos (dev local E
-  // producao Railway — confirmado ao vivo nos dois: sem esse prefixo toda
-  // rota da API responde 404). BACKEND_URL continua sendo so o host:porta
-  // (ver comentario acima) para nao precisar repetir o prefixo em cada
-  // --dart-define; ele e concatenado uma unica vez aqui.
+  // Context-path do backend: server.servlet.context-path=/boletobancos
+  // (application.properties). Confirmado via curl: sem o prefixo as rotas
+  // retornam 404 real; com o prefixo respondem corretamente.
   static const String _baseIp = '$_backendUrl/boletobancos';
 
   // WebSocket: converte http→ws e https→wss
@@ -24,6 +22,8 @@ class ApiLinks {
   // _chatId usado apenas por chatStart (WebSocket) — derivada do host do backend.
   // Mantida como String get por causa do _wsUrl ser get; cacheada em static final
   // para evitar recriar a string a cada chamada de chatStart().
+  // server.servlet.context-path=/boletobancos se aplica tambem aos WebSocket
+  // handlers registrados via WebSocketConfigurer.
   static final String _chatId = '$_wsUrl/boletobancos';
   static const String _baseUrl = 'https://task.teamrabbil.com/api/v1';
   static const String _baseUrlNew = _baseIp;

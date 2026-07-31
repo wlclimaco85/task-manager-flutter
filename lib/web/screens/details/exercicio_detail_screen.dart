@@ -23,7 +23,7 @@ class ExercicioDetailScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return GenericDetailFormScreen(
       item: item,
-      telaNome: 'exercicio',
+      telaNome: 'exercicios',
       hasPermission: hasPermission,
       relatedTabs: [
         RelatedGridTab(

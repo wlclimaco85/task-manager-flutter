@@ -491,12 +491,12 @@ class _WindowsBottomNavBarScreenState extends State<WindowsBottomNavBarScreen> {
         const RegistroCargaScreen(
             sessionId: 0), // 154: Registro de Carga (placeholder sessionId)
         const FrequenciaScreen(), // 155: Frequencia Semanal
-        DynamicGridDynamicScreen(telaNome: 'contrato_screen', hasPermission: (p) => true), // 156: Contratos
+        DynamicGridDynamicScreen(telaNome: 'contrato', hasPermission: (p) => true), // 156: Contratos
         const SizedBox.shrink(), // 157: reservado
-        DynamicGridDynamicScreen(telaNome: 'equipamento_screen', hasPermission: (p) => true), // 158: Equipamentos
-        DynamicGridDynamicScreen(telaNome: 'ordem_servico_screen', hasPermission: (p) => true), // 159: Ordens de Serviço
-        DynamicGridDynamicScreen(telaNome: 'plano_manutencao_screen', hasPermission: (p) => true), // 160: Planos Manutenção
-        DynamicGridDynamicScreen(telaNome: 'horimetro_screen', hasPermission: (p) => true), // 161: Horímetro
+        DynamicGridDynamicScreen(telaNome: 'equipamento', hasPermission: (p) => true), // 158: Equipamentos
+        DynamicGridDynamicScreen(telaNome: 'ordem_servico', hasPermission: (p) => true), // 159: Ordens de Serviço
+        DynamicGridDynamicScreen(telaNome: 'plano_manutencao', hasPermission: (p) => true), // 160: Planos Manutenção
+        DynamicGridDynamicScreen(telaNome: 'horimetro', hasPermission: (p) => true), // 161: Horímetro
         DynamicGridDynamicScreen(telaNome: 'historico_manutencao_screen', hasPermission: (p) => true), // 162: Histórico Manutenção
         DynamicGridDynamicScreen(telaNome: 'tecnico_manutencao_screen', hasPermission: (p) => true), // 163: Técnicos
         DynamicGridDynamicScreen(telaNome: 'sla_screen', hasPermission: (p) => true), // 164: SLA
@@ -504,7 +504,7 @@ class _WindowsBottomNavBarScreenState extends State<WindowsBottomNavBarScreen> {
         DynamicGridDynamicScreen(telaNome: 'fila_atendimento_screen', hasPermission: (p) => true), // 166: Filas Atendimento
         DynamicGridDynamicScreen(telaNome: 'categoria_chamado_screen', hasPermission: (p) => true), // 167: Categorias Chamado
         DynamicGridDynamicScreen(telaNome: 'chamado_avaliacao_screen', hasPermission: (p) => true), // 168: Avaliações
-        DynamicGridDynamicScreen(telaNome: 'projeto_screen', hasPermission: (p) => true), // 169: Projetos
+        DynamicGridDynamicScreen(telaNome: 'projeto', hasPermission: (p) => true), // 169: Projetos
         const SizedBox.shrink(), // 170: reservado
         DynamicGridDynamicScreen(telaNome: 'projeto_etapa_screen', hasPermission: (p) => true), // 171: Etapas
         DynamicGridDynamicScreen(telaNome: 'projeto_recurso_screen', hasPermission: (p) => true), // 172: Recursos
@@ -514,7 +514,7 @@ class _WindowsBottomNavBarScreenState extends State<WindowsBottomNavBarScreen> {
         DynamicGridDynamicScreen(telaNome: 'precificacao_screen', hasPermission: (p) => true), // 176: Precificações
         const SizedBox.shrink(), // 177: reservado
         DynamicGridDynamicScreen(telaNome: 'precificacao_custo_direto_screen', hasPermission: (p) => true), // 178: Custos Diretos
-        DynamicGridDynamicScreen(telaNome: 'precificacao_mao_de_obra_screen', hasPermission: (p) => true), // 179: Mão de Obra
+        DynamicGridDynamicScreen(telaNome: 'precificacao_mao_de_obra', hasPermission: (p) => true), // 179: Mão de Obra
         DynamicGridDynamicScreen(telaNome: 'precificacao_servico_screen', hasPermission: (p) => true), // 180: Serviços
         DynamicGridDynamicScreen(telaNome: 'precificacao_condicao_pagamento_screen', hasPermission: (p) => true), // 181: Condições Pagamento
         DynamicGridDynamicScreen(telaNome: 'proposta_comercial_screen', hasPermission: (p) => true), // 182: Propostas Comerciais

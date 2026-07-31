@@ -1014,19 +1014,19 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
         break;
       // GME
       case "Contratos GME":
-        nav = _pushDynamicGrid(telaNome: 'contrato_screen', sec: sec);
+        nav = _pushDynamicGrid(telaNome: 'contrato', sec: sec);
         break;
       case "Equipamentos":
-        nav = _pushDynamicGrid(telaNome: 'equipamento_screen', sec: sec);
+        nav = _pushDynamicGrid(telaNome: 'equipamento', sec: sec);
         break;
       case "Ordens de Serviço":
-        nav = _pushDynamicGrid(telaNome: 'ordem_servico_screen', sec: sec);
+        nav = _pushDynamicGrid(telaNome: 'ordem_servico', sec: sec);
         break;
       case "Planos Manutenção":
-        nav = _pushDynamicGrid(telaNome: 'plano_manutencao_screen', sec: sec);
+        nav = _pushDynamicGrid(telaNome: 'plano_manutencao', sec: sec);
         break;
       case "Horímetro":
-        nav = _pushDynamicGrid(telaNome: 'horimetro_screen', sec: sec);
+        nav = _pushDynamicGrid(telaNome: 'horimetro', sec: sec);
         break;
       case "Histórico Manutenção":
         nav =
@@ -1050,7 +1050,7 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
         break;
       // Projetos
       case "Projetos":
-        nav = _pushDynamicGrid(telaNome: 'projeto_screen', sec: sec);
+        nav = _pushDynamicGrid(telaNome: 'projeto', sec: sec);
         break;
       case "Etapas Projeto":
         nav = _pushDynamicGrid(telaNome: 'projeto_etapa_screen', sec: sec);
@@ -1078,7 +1078,7 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
         break;
       case "Mão de Obra":
         nav = _pushDynamicGrid(
-            telaNome: 'precificacao_mao_de_obra_screen', sec: sec);
+            telaNome: 'precificacao_mao_de_obra', sec: sec);
         break;
       case "Serviços Precificação":
         nav =

@@ -14,7 +14,7 @@ class WebExercicioGridScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return DynamicGridWindowsScreen<Map<String, dynamic>>(
-      telaNome: 'exercicio',
+      telaNome: 'exercicios',
       hasPermission: hasPermission,
       fromJson: (json) => json,
       toJson: (a) => a,
