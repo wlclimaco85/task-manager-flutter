@@ -284,20 +284,22 @@ class _WebAprovacaoPagamentosScreenState
             children: [
               const Icon(Icons.checklist, color: Colors.white, size: 20),
               const SizedBox(width: 10),
-              const Text(GridTexts.paymentApprovalTitle,
-                  style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold)),
-              const Spacer(),
+              Expanded(
+                child: Text(GridTexts.paymentApprovalTitle,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold)),
+              ),
               Container(
                 padding:
-                    const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    const EdgeInsets.symmetric(horizontal: 6, vertical: 8),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     SizedBox(
-                      width: 140,
+                      width: 100,
                       height: 36,
                       child: TextField(
                         controller: _contaPagarIdCtrl,
