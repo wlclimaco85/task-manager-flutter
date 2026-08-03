@@ -1548,7 +1548,10 @@ class _State extends State<NfeSankhyaDetailScreen> {
   String _valorDecimal(dynamic value) {
     if (value == null) return '';
     if (value is num) return value.toString();
-    return value.toString().trim().replaceAll(',', '.');
+    final text = value.toString().trim();
+    return text.contains(',')
+        ? text.replaceAll('.', '').replaceAll(',', '.')
+        : text;
   }
 
   String _valorMonetario(double value) => value.toStringAsFixed(2);
