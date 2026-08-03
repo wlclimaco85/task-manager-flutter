@@ -858,6 +858,7 @@ class _State extends State<NfeSankhyaDetailScreen> {
 
   Future<void> _salvarItem(Map<String, dynamic> item) async {
     final isNew = item['id'] == null;
+    _prepararItemFiscal(item);
     final body = <String, dynamic>{
       if (!isNew) 'id': item['id'],
       'nfeId': item['nfe_id'] ?? int.tryParse(_nfeId),
@@ -866,9 +867,9 @@ class _State extends State<NfeSankhyaDetailScreen> {
       'ncm':      item['ncm']       ?? '',
       'cfop':     item['cfop']      ?? '',
       'uCom':     item['u_com']     ?? item['uCom']     ?? '',
-      'qCom':     double.tryParse((item['q_com']     ?? item['qCom']     ?? '').toString()),
-      'vUnCom':   double.tryParse((item['v_un_com']  ?? item['vUnCom']   ?? '').toString()),
-      'vProd':    double.tryParse((item['v_prod']    ?? item['vProd']    ?? '').toString()),
+      'qCom':     _asDouble(item['q_com']     ?? item['qCom']) ?? 1,
+      'vUnCom':   _asDouble(item['v_un_com']  ?? item['vUnCom']) ?? 0,
+      'vProd':    _asDouble(item['v_prod']    ?? item['vProd']) ?? 0,
       'cstIcms':  item['cst_icms']  ?? item['cstIcms']  ?? '',
       'aliqIcms': double.tryParse((item['aliq_icms'] ?? item['aliqIcms'] ?? '').toString()),
       'vIcms':    double.tryParse((item['v_icms']    ?? item['vIcms']    ?? '').toString()),
@@ -1001,10 +1002,16 @@ class _State extends State<NfeSankhyaDetailScreen> {
           item['produto'] = {'id': int.tryParse(v ?? '') ?? v};
           if (prod.isNotEmpty) {
             item['x_prod'] = prod['nome']?.toString() ?? '';
+            item['xProd'] = item['x_prod'];
             item['ncm'] = prod['ncm']?.toString() ?? '';
             item['cfop'] = prod['cfop']?.toString() ?? '';
             item['u_com'] = prod['unidade']?.toString() ?? '';
+            item['uCom'] = item['u_com'];
             item['v_un_com'] = prod['preco']?.toString() ?? '';
+            item['vUnCom'] = item['v_un_com'];
+            item['q_com'] = item['q_com'] ?? item['qCom'] ?? '1';
+            item['qCom'] = item['q_com'];
+            _recalcularTotalItem(item);
           }
         });
       }),
@@ -1034,13 +1041,13 @@ class _State extends State<NfeSankhyaDetailScreen> {
       _iInp('Alíq. ICMS', item, 'aliq_icms', 'aliqIcms'),
       _iInp('BC ICMS', item, 'v_bc_icms', 'vBcIcms'),
       _iInp('Vl. ICMS', item, 'v_icms', 'vIcms'),
-      // NF03: Botão Calcular ICMS
+      // NF03: Botão Calcular Impostos
       Padding(
         padding: const EdgeInsets.only(bottom: 8),
         child: SizedBox(width: double.infinity, child: OutlinedButton.icon(
           onPressed: () => _calcularIcms(item),
           icon: const Icon(Icons.calculate_outlined, size: 14),
-          label: const Text('Calcular ICMS', style: TextStyle(fontSize: 11)),
+          label: const Text('Calcular Impostos', style: TextStyle(fontSize: 11)),
           style: OutlinedButton.styleFrom(foregroundColor: _green, side: const BorderSide(color: _green),
             padding: const EdgeInsets.symmetric(vertical: 6)),
         )),
@@ -1057,13 +1064,14 @@ class _State extends State<NfeSankhyaDetailScreen> {
   // NF03: Calculadora ICMS
   Future<void> _calcularIcms(Map<String, dynamic> item) async {
     try {
+      _prepararItemFiscal(item);
       final body = <String, dynamic>{
         if (item['id'] != null) 'id': item['id'],
         'cstIcms': item['cst_icms'] ?? item['cstIcms'],
-        'aliqIcms': double.tryParse((item['aliq_icms'] ?? item['aliqIcms'] ?? '').toString()),
-        'vProd': double.tryParse((item['v_prod'] ?? item['vProd'] ?? '').toString()),
-        'qCom': double.tryParse((item['q_com'] ?? item['qCom'] ?? '').toString()),
-        'vUnCom': double.tryParse((item['v_un_com'] ?? item['vUnCom'] ?? '').toString()),
+        'aliqIcms': _asDouble(item['aliq_icms'] ?? item['aliqIcms']),
+        'vProd': _asDouble(item['v_prod'] ?? item['vProd']) ?? 0,
+        'qCom': _asDouble(item['q_com'] ?? item['qCom']) ?? 1,
+        'vUnCom': _asDouble(item['v_un_com'] ?? item['vUnCom']) ?? 0,
       };
       final r = await TenantContext.post('${ApiLinks.baseUrl}/api/nfe_item/calcular-icms', body);
       if (!mounted) return;
@@ -1088,8 +1096,21 @@ class _State extends State<NfeSankhyaDetailScreen> {
   Widget _iInp(String label, Map<String, dynamic> item, String k1, String k2) {
     return Padding(padding: const EdgeInsets.only(bottom: 8),
       child: TextFormField(
+        key: ValueKey('${_selItem}_${k1}_${item[k1] ?? item[k2] ?? ''}'),
         initialValue: item[k1]?.toString() ?? item[k2]?.toString() ?? '',
-        onChanged: (v) { item[k1] = v; },
+        onChanged: (v) {
+          item[k1] = v;
+          item[k2] = v;
+          if (k1 == 'q_com' || k1 == 'v_un_com') {
+            final quantidade = _asDouble(item['q_com'] ?? item['qCom']);
+            final valorUnitario = _asDouble(item['v_un_com'] ?? item['vUnCom']);
+            if (quantidade != null && valorUnitario != null) {
+              item['v_prod'] = _valorFiscal(quantidade * valorUnitario);
+              item['vProd'] = item['v_prod'];
+            }
+            setState(() {});
+          }
+        },
         style: const TextStyle(fontSize: 12, color: _dark),
         decoration: InputDecoration(labelText: label, labelStyle: const TextStyle(fontSize: 11, color: _grey),
           border: OutlineInputBorder(borderRadius: BorderRadius.circular(4), borderSide: const BorderSide(color: _bord)),
@@ -1155,8 +1176,49 @@ class _State extends State<NfeSankhyaDetailScreen> {
     );
   }
 
+  double? _asDouble(dynamic value) {
+    if (value == null) return null;
+    if (value is num) return value.toDouble();
+    final text = value.toString().trim();
+    if (text.isEmpty) return null;
+    final normalized = text.contains(',')
+        ? text.replaceAll('.', '').replaceAll(',', '.')
+        : text;
+    return double.tryParse(normalized);
+  }
+
+  String _valorFiscal(double value) => value.toStringAsFixed(2);
+
+  void _recalcularTotalItem(Map<String, dynamic> item) {
+    final quantidade = _asDouble(item['q_com'] ?? item['qCom']) ?? 1;
+    final valorUnitario = _asDouble(item['v_un_com'] ?? item['vUnCom']) ?? 0;
+    final total = quantidade * valorUnitario;
+    item['q_com'] = _valorFiscal(quantidade);
+    item['qCom'] = item['q_com'];
+    item['v_un_com'] = _valorFiscal(valorUnitario);
+    item['vUnCom'] = item['v_un_com'];
+    item['v_prod'] = _valorFiscal(total);
+    item['vProd'] = item['v_prod'];
+  }
+
+  void _prepararItemFiscal(Map<String, dynamic> item) {
+    item['x_prod'] = (item['x_prod'] ?? item['xProd'] ?? '').toString();
+    item['xProd'] = item['x_prod'];
+    item['u_com'] = (item['u_com'] ?? item['uCom'] ?? '').toString();
+    item['uCom'] = item['u_com'];
+    _recalcularTotalItem(item);
+  }
+
   void _novoItem() => setState(() {
-    final novoItem = <String, dynamic>{'nfe_id': int.tryParse(_nfeId) ?? 0};
+    final novoItem = <String, dynamic>{
+      'nfe_id': int.tryParse(_nfeId) ?? 0,
+      'q_com': '1.00',
+      'qCom': '1.00',
+      'v_un_com': '0.00',
+      'vUnCom': '0.00',
+      'v_prod': '0.00',
+      'vProd': '0.00',
+    };
     if (_topSelected.isNotEmpty) {
       novoItem['cfop'] = _topSelected['cfop']?.toString() ?? '';
       novoItem['cst_icms'] = _topSelected['cstIcms']?.toString() ?? '';
