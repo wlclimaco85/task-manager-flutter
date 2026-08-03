@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:file_saver/file_saver.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:qr_flutter/qr_flutter.dart';
 import 'package:task_manager_flutter/core/design/design_tokens.dart';
 import 'package:task_manager_flutter/core/responsive/responsive_helper.dart';
 import 'package:task_manager_flutter/models/nfe/nfe_model.dart';
@@ -198,7 +199,89 @@ class _NfeListScreenState extends State<NfeListScreen> {
     );
   }
 
-  Widget _buildNfeCard(NfeModel nfe) {
+  Widget _buildNfeCard(NfeModel nfe, {bool isGridView = false}) {
+    if (isGridView && _currentBreakpoint == Breakpoint.desktop) {
+      // Grid card for desktop
+      return Card(
+        clipBehavior: Clip.antiAlias,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // QR Code area (protocol/numero)
+            Container(
+              color: Colors.grey[100],
+              height: 120,
+              width: double.infinity,
+              child: Center(
+                child: nfe.protocolo != null && nfe.protocolo!.isNotEmpty
+                    ? QrImageView(
+                        data: nfe.protocolo!,
+                        version: QrVersions.auto,
+                        size: 100,
+                        gapless: false,
+                      )
+                    : const Icon(Icons.qr_code_2, color: Colors.grey, size: 40),
+              ),
+            ),
+            // Content area
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.all(DesignTokens.spacingSm),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'NFe ${nfe.numero}',
+                          style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          'S: ${nfe.serie} | ${_formatDate(nfe.dataHora)}',
+                          style: const TextStyle(fontSize: 10, color: DesignTokens.textMuted),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          _formatCurrency(nfe.valores.total),
+                          style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: DesignTokens.primary),
+                        ),
+                      ],
+                    ),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: NfeStatusBadge(status: nfe.statusNfe, expanded: false, breakpoint: _currentBreakpoint),
+                        ),
+                        const SizedBox(width: 4),
+                        Tooltip(
+                          message: 'Download PDF',
+                          child: SizedBox(
+                            width: 32,
+                            height: 32,
+                            child: IconButton(
+                              icon: const Icon(Icons.download, size: 14),
+                              padding: EdgeInsets.zero,
+                              onPressed: () => _handleReimprimirNfe(context, nfe),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    // List card for mobile/tablet
     return Card(
       margin: const EdgeInsets.symmetric(
         horizontal: DesignTokens.spacingMd,
@@ -469,6 +552,26 @@ class _NfeListScreenState extends State<NfeListScreen> {
       );
     }
 
+    // Grid virtualized for desktop
+    if (_currentBreakpoint == Breakpoint.desktop) {
+      return Padding(
+        padding: const EdgeInsets.all(DesignTokens.spacingMd),
+        child: GridView.builder(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: 4,
+            crossAxisSpacing: DesignTokens.spacingMd,
+            mainAxisSpacing: DesignTokens.spacingMd,
+            childAspectRatio: 0.75,
+          ),
+          itemCount: nfes.length,
+          itemBuilder: (context, index) => _buildNfeCard(nfes[index], isGridView: true),
+        ),
+      );
+    }
+
+    // List for mobile/tablet
     return ListView.builder(
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
