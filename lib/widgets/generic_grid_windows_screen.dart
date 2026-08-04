@@ -538,8 +538,13 @@ class FieldFactory {
       case FieldType.url:
         return _buildUrlField(config, controller);
       case FieldType.multiselect:
+        final dependsOnCtrl =
+            config.dependsOnField != null && allControllers != null
+                ? allControllers[config.dependsOnField]
+                : null;
         return _buildMultiselectField(
-            config, controller, dropdownCache, context);
+            config, controller, dropdownCache, context,
+            dependsOnController: dependsOnCtrl);
       default:
         return _buildTextField(config, controller);
     }
@@ -1187,8 +1192,9 @@ class FieldFactory {
     FieldConfigWindows config,
     TextEditingController controller,
     Map<String, List<Map<String, dynamic>>> dropdownCache,
-    BuildContext context,
-  ) {
+    BuildContext context, {
+    TextEditingController? dependsOnController,
+  }) {
     final cacheKey = '${config.fieldName}_dropdown';
     final cached = dropdownCache[cacheKey];
     return _MultiSelectField(
@@ -1200,10 +1206,14 @@ class FieldFactory {
       initialOptions: cached,
       dropdownFutureBuilder:
           cached == null ? config.dropdownFutureBuilder : null,
+      dropdownFutureBuilderWithParam: cached == null
+          ? config.dropdownFutureBuilderWithParam
+          : null,
       dropdownOptions: cached == null && config.dropdownFutureBuilder == null
           ? (config.dropdownOptions ?? [])
           : null,
       onOptionsLoaded: (opts) => dropdownCache[cacheKey] = opts,
+      dependsOnController: dependsOnController,
     );
   }
 
@@ -1234,18 +1244,26 @@ class _MultiSelectField extends StatefulWidget {
   /// [dropdownFutureBuilder] ou usa [dropdownOptions] estático.
   final List<Map<String, dynamic>>? initialOptions;
   final Future<List<Map<String, dynamic>>> Function()? dropdownFutureBuilder;
+  final Future<List<Map<String, dynamic>>> Function(String? param)?
+      dropdownFutureBuilderWithParam;
   final List<Map<String, dynamic>>? dropdownOptions;
 
   /// Callback para propagar o resultado carregado de volta ao cache externo.
   final void Function(List<Map<String, dynamic>> opts)? onOptionsLoaded;
+
+  /// Controller do campo pai (para cascade).
+  /// Quando o campo pai muda, este widget refaz o fetch com o novo valor.
+  final TextEditingController? dependsOnController;
 
   const _MultiSelectField({
     required this.config,
     required this.controller,
     this.initialOptions,
     this.dropdownFutureBuilder,
+    this.dropdownFutureBuilderWithParam,
     this.dropdownOptions,
     this.onOptionsLoaded,
+    this.dependsOnController,
   });
 
   @override
@@ -1256,6 +1274,7 @@ class _MultiSelectFieldState extends State<_MultiSelectField> {
   late List<String> _selectedValues;
   List<Map<String, dynamic>> _options = [];
   bool _loadingOptions = false;
+  String? _lastDependsOnValue;
 
   String get _valueField => widget.config.dropdownValueField.isNotEmpty
       ? widget.config.dropdownValueField
@@ -1269,6 +1288,13 @@ class _MultiSelectFieldState extends State<_MultiSelectField> {
     super.initState();
     _selectedValues = _parseController();
     widget.controller.addListener(_onControllerChanged);
+
+    // Se há cascade, registra listener para o campo pai
+    if (widget.dependsOnController != null) {
+      widget.dependsOnController!.addListener(_onDependencyChanged);
+      _lastDependsOnValue = widget.dependsOnController!.text;
+    }
+
     // Inicia carga de opções UMA ÚNICA VEZ — o Future fica cacheado no estado
     if (widget.initialOptions != null) {
       _options = widget.initialOptions!;
@@ -1283,6 +1309,10 @@ class _MultiSelectFieldState extends State<_MultiSelectField> {
           widget.onOptionsLoaded?.call(opts);
         }
       });
+    } else if (widget.dropdownFutureBuilderWithParam != null &&
+        widget.dependsOnController != null) {
+      _loadingOptions = true;
+      _fetchCascade(widget.dependsOnController!.text);
     } else {
       _options = widget.dropdownOptions ?? [];
     }
@@ -1301,6 +1331,7 @@ class _MultiSelectFieldState extends State<_MultiSelectField> {
   @override
   void dispose() {
     widget.controller.removeListener(_onControllerChanged);
+    widget.dependsOnController?.removeListener(_onDependencyChanged);
     super.dispose();
   }
 
@@ -1308,6 +1339,44 @@ class _MultiSelectFieldState extends State<_MultiSelectField> {
     final parsed = _parseController();
     if (mounted && parsed.join(',') != _selectedValues.join(',')) {
       setState(() => _selectedValues = parsed);
+    }
+  }
+
+  void _onDependencyChanged() {
+    final newVal = widget.dependsOnController!.text;
+    if (newVal == _lastDependsOnValue) return;
+    _lastDependsOnValue = newVal;
+    if (mounted) {
+      setState(() {
+        widget.controller.text = '';  // Limpa seleção anterior
+        _selectedValues = [];
+        _options = [];
+      });
+    }
+    _fetchCascade(newVal);
+  }
+
+  Future<void> _fetchCascade(String? paramValue) async {
+    if (widget.dropdownFutureBuilderWithParam == null) return;
+    if (!mounted) return;
+
+    setState(() => _loadingOptions = true);
+    try {
+      final opts = await widget.dropdownFutureBuilderWithParam!(paramValue);
+      if (mounted) {
+        setState(() {
+          _options = opts;
+          _loadingOptions = false;
+        });
+        widget.onOptionsLoaded?.call(opts);
+      }
+    } catch (_) {
+      if (mounted) {
+        setState(() {
+          _options = [];
+          _loadingOptions = false;
+        });
+      }
     }
   }
 

@@ -5,6 +5,7 @@ import '../../../customization/dynamic_grid_windows_screen.dart'
     hide SecurityCheck;
 import '../../../models/login_model.dart';
 import '../../../utils/api_links.dart';
+import '../../../utils/dropdown_helpers.dart';
 import '../../../services/network_caller.dart';
 import '../../web/screens/details/login_detail_screen.dart';
 import '../../web/screens/role_dialog.dart';
@@ -95,14 +96,15 @@ class WebLoginGridScreen extends StatelessWidget {
           isInGrid: false,
           isFilterable: false,
         ),
-        const FieldConfigWindows(
+        FieldConfigWindows(
           label: 'Roles',
           fieldName: 'roles',
           icon: Icons.security,
           fieldType: FieldType.multiselect,
-          dropdownFutureBuilder: WebLoginGridScreen.loadRoles,
-          dropdownValueField: 'value',
-          dropdownDisplayField: 'label',
+          dropdownFutureBuilderWithParam: DropdownHelpers.rolesPorEmpresa,
+          dropdownValueField: 'id',
+          dropdownDisplayField: 'description',
+          dependsOnField: 'empresa',
           isInForm: true,
           isFilterable: false,
         ),

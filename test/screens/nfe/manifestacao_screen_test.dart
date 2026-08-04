@@ -532,4 +532,5 @@ void main() {
       expect(find.byType(Scaffold), findsOneWidget);
     });
   });
+
 }

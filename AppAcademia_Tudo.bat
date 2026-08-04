@@ -5,6 +5,9 @@ color 0B
 
 set "APP_ROOT=C:\App_Academia"
 set "BACKEND_DIR=%APP_ROOT%\AppAcademia"
+if not exist "%BACKEND_DIR%\pom.xml" if exist "%BACKEND_DIR%\bin\pom.xml" set "BACKEND_DIR=%BACKEND_DIR%\bin"
+if not exist "%BACKEND_DIR%\pom.xml" if exist "%APP_ROOT%\bin\pom.xml" set "BACKEND_DIR=%APP_ROOT%\bin"
+set "BACKEND_JAR="
 set "FLUTTER_DIR=%APP_ROOT%\task_manager_flutter"
 set "FLUTTER_CLIENT_DIR=%APP_ROOT%\task_manager_flutter"
 set "FLUTTER_BASE_DIR=%APP_ROOT%\task_manager_flutter_merged_final"
@@ -176,6 +179,11 @@ if not exist "%BACKEND_DIR%" (
     echo [ERRO] Pasta do backend nao encontrada: %BACKEND_DIR%
     exit /b 1
 )
+if not exist "%BACKEND_DIR%\pom.xml" (
+    echo [ERRO] pom.xml do backend nao encontrado: %BACKEND_DIR%\pom.xml
+    echo [DICA] O menu tentou localizar automaticamente em AppAcademia\bin e bin.
+    exit /b 1
+)
 if not exist "%FLUTTER_DIR%" (
     echo [ERRO] Pasta do Flutter nao encontrada: %FLUTTER_DIR%
     exit /b 1
@@ -193,6 +201,32 @@ exit /b 0
 :CHECK_SELENIUM
 if not exist "%SELENIUM_DIR%\run_selenium_tests.ps1" (
     echo [ERRO] Harness Selenium nao encontrado: %SELENIUM_DIR%
+    exit /b 1
+)
+exit /b 0
+
+:RESOLVE_BACKEND_JAR
+set "BACKEND_JAR="
+if exist "%BACKEND_DIR%\target\boleto-service.jar" set "BACKEND_JAR=target\boleto-service.jar"
+if not defined BACKEND_JAR if exist "%BACKEND_DIR%\target\AppAcademia.jar" set "BACKEND_JAR=target\AppAcademia.jar"
+for /f "delims=" %%J in ('dir /b /a-d "%BACKEND_DIR%\target\*.jar" 2^>nul ^| findstr /v /i "\.original$ sources javadoc"') do (
+    if not defined BACKEND_JAR set "BACKEND_JAR=target\%%J"
+)
+if not defined BACKEND_JAR (
+    echo [ERRO] Nenhum jar executavel encontrado em %BACKEND_DIR%\target
+    exit /b 1
+)
+exit /b 0
+
+:CHECK_BACKEND_COMPILE_SOURCE
+if not exist "%BACKEND_DIR%\src\main\java" (
+    echo [ERRO] Fontes Java do backend nao encontradas: %BACKEND_DIR%\src\main\java
+    exit /b 1
+)
+findstr /s /m /c:"@SpringBootApplication" "%BACKEND_DIR%\src\main\java\*.java" >nul 2>&1
+if errorlevel 1 (
+    echo [ERRO] Classe principal Spring Boot nao encontrada em: %BACKEND_DIR%\src\main\java
+    echo [DICA] Esta copia local tem pom.xml, mas nao tem a aplicacao Spring Boot completa para gerar o jar executavel.
     exit /b 1
 )
 exit /b 0
@@ -226,7 +260,12 @@ echo [DIAG] Dir: %BACKEND_DIR%
 
 echo.
 echo [1/3] Compilando backend...
-cd /d %BACKEND_DIR%
+call :CHECK_BACKEND_COMPILE_SOURCE
+if errorlevel 1 (
+    pause
+    exit /b 1
+)
+cd /d "%BACKEND_DIR%"
 echo [PRE-CLEAN] Removendo generated-sources e classes antigos para evitar bug MapStruct...
 rmdir /s /q "target\generated-sources" 2>nul
 rmdir /s /q "target\classes" 2>nul
@@ -238,6 +277,11 @@ if errorlevel 1 (
     exit /b 1
 )
 echo Backend compilado com sucesso.
+call :RESOLVE_BACKEND_JAR
+if errorlevel 1 (
+    pause
+    exit /b 1
+)
 
 echo.
 echo [2/3] Iniciando backend na porta %BACKEND_PORT%...
@@ -246,7 +290,7 @@ echo Acompanhe o progresso na janela "AppAcademia-Backend" que vai abrir.
 echo Aguarde a mensagem: Started AppAcademiaApplication
 echo.
 
-start "AppAcademia-Backend" cmd /k "cd /d %BACKEND_DIR% && java -Djava.io.tmpdir=C:\Temp -Djdk.net.unixdomain.tmpdir=C:\Temp -Dspring.devtools.restart.enabled=false -DJWT_SECRET=%JWT_SECRET% -DACCOUNT_SECRET=%ACCOUNT_SECRET% -jar target\AppAcademia.jar --server.port=%BACKEND_PORT% --server.address=0.0.0.0 --app.base-url=%ANDROID_BACKEND_URL%/boletobancos --spring.profiles.active=dev --spring.datasource.url=jdbc:postgresql://localhost:5432/boletobancos --spring.datasource.username=postgres --spring.datasource.password=admin --logging.level.root=INFO --logging.level.br.com.appAcademia=INFO"
+start "AppAcademia-Backend" cmd /k "cd /d ""%BACKEND_DIR%"" && java -Djava.io.tmpdir=C:\Temp -Djdk.net.unixdomain.tmpdir=C:\Temp -Dspring.devtools.restart.enabled=false -DJWT_SECRET=%JWT_SECRET% -DACCOUNT_SECRET=%ACCOUNT_SECRET% -jar %BACKEND_JAR% --server.port=%BACKEND_PORT% --server.address=0.0.0.0 --app.base-url=%ANDROID_BACKEND_URL%/boletobancos --spring.profiles.active=dev --spring.datasource.url=jdbc:postgresql://localhost:5432/boletobancos --spring.datasource.username=postgres --spring.datasource.password=admin --logging.level.root=INFO --logging.level.br.com.appAcademia=INFO"
 
 echo.
 echo Aguardando backend ficar pronto (pode levar ate 2 minutos)...
@@ -477,7 +521,9 @@ echo.
 echo Backend na porta %BACKEND_PORT%...
 powershell -NoProfile -ExecutionPolicy Bypass -Command "if (Get-NetTCPConnection -LocalPort %BACKEND_PORT% -State Listen -ErrorAction SilentlyContinue) { exit 0 } else { exit 1 }"
 if errorlevel 1 (
-    start "AppAcademia-Backend" cmd /k "cd /d %BACKEND_DIR% && java -Djava.io.tmpdir=C:\Temp -Djdk.net.unixdomain.tmpdir=C:\Temp -Dspring.devtools.restart.enabled=false -DJWT_SECRET=%JWT_SECRET% -DACCOUNT_SECRET=%ACCOUNT_SECRET% -jar target\AppAcademia.jar --server.port=%BACKEND_PORT% --server.address=0.0.0.0 --app.base-url=%ANDROID_BACKEND_URL%/boletobancos --spring.profiles.active=dev --spring.datasource.url=jdbc:postgresql://localhost:5432/boletobancos --spring.datasource.username=postgres --spring.datasource.password=admin"
+    call :RESOLVE_BACKEND_JAR
+    if errorlevel 1 exit /b 1
+    start "AppAcademia-Backend" cmd /k "cd /d ""%BACKEND_DIR%"" && java -Djava.io.tmpdir=C:\Temp -Djdk.net.unixdomain.tmpdir=C:\Temp -Dspring.devtools.restart.enabled=false -DJWT_SECRET=%JWT_SECRET% -DACCOUNT_SECRET=%ACCOUNT_SECRET% -jar !BACKEND_JAR! --server.port=%BACKEND_PORT% --server.address=0.0.0.0 --app.base-url=%ANDROID_BACKEND_URL%/boletobancos --spring.profiles.active=dev --spring.datasource.url=jdbc:postgresql://localhost:5432/boletobancos --spring.datasource.username=postgres --spring.datasource.password=admin"
     echo Backend iniciando em janela propria.
 ) else (
     echo Backend ja esta rodando.
