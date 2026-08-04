@@ -176,6 +176,8 @@ pause
 goto MENU
 
 :CHECK_PATHS
+if not defined APP_ROOT set "APP_ROOT=C:\App_Academia"
+if not defined BACKEND_REPO_DIR set "BACKEND_REPO_DIR=%APP_ROOT%\AppAcademia"
 call :RESOLVE_BACKEND_DIR
 if not exist "%BACKEND_REPO_DIR%" (
     echo [ERRO] Pasta do repositorio backend nao encontrada: %BACKEND_REPO_DIR%
@@ -366,6 +368,8 @@ if not defined BACKEND_JAR (
 exit /b 0
 
 :RESOLVE_BACKEND_DIR
+if not defined APP_ROOT set "APP_ROOT=C:\App_Academia"
+if not defined BACKEND_REPO_DIR set "BACKEND_REPO_DIR=%APP_ROOT%\AppAcademia"
 set "BACKEND_DIR=%BACKEND_REPO_DIR%"
 if not exist "%BACKEND_DIR%\pom.xml" if exist "%BACKEND_REPO_DIR%\bin\pom.xml" set "BACKEND_DIR=%BACKEND_REPO_DIR%\bin"
 if not exist "%BACKEND_DIR%\pom.xml" if exist "%APP_ROOT%\bin\pom.xml" set "BACKEND_DIR=%APP_ROOT%\bin"
