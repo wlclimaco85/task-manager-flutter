@@ -4,8 +4,9 @@ title Hub Apps - Menu Unico
 color 0B
 
 set "APP_ROOT=C:\App_Academia"
-set "BACKEND_DIR=%APP_ROOT%\AppAcademia"
-if not exist "%BACKEND_DIR%\pom.xml" if exist "%BACKEND_DIR%\bin\pom.xml" set "BACKEND_DIR=%BACKEND_DIR%\bin"
+set "BACKEND_REPO_DIR=%APP_ROOT%\AppAcademia"
+set "BACKEND_DIR=%BACKEND_REPO_DIR%"
+if not exist "%BACKEND_DIR%\pom.xml" if exist "%BACKEND_REPO_DIR%\bin\pom.xml" set "BACKEND_DIR=%BACKEND_REPO_DIR%\bin"
 if not exist "%BACKEND_DIR%\pom.xml" if exist "%APP_ROOT%\bin\pom.xml" set "BACKEND_DIR=%APP_ROOT%\bin"
 set "BACKEND_JAR="
 set "FLUTTER_DIR=%APP_ROOT%\task_manager_flutter"
@@ -175,13 +176,14 @@ pause
 goto MENU
 
 :CHECK_PATHS
-if not exist "%BACKEND_DIR%" (
-    echo [ERRO] Pasta do backend nao encontrada: %BACKEND_DIR%
+call :RESOLVE_BACKEND_DIR
+if not exist "%BACKEND_REPO_DIR%" (
+    echo [ERRO] Pasta do repositorio backend nao encontrada: %BACKEND_REPO_DIR%
     exit /b 1
 )
 if not exist "%BACKEND_DIR%\pom.xml" (
     echo [ERRO] pom.xml do backend nao encontrado: %BACKEND_DIR%\pom.xml
-    echo [DICA] O menu tentou localizar automaticamente em AppAcademia\bin e bin.
+    echo [DICA] O backend Maven deve estar em C:\App_Academia\AppAcademia ou C:\App_Academia\AppAcademia\bin.
     exit /b 1
 )
 if not exist "%FLUTTER_DIR%" (
@@ -205,30 +207,168 @@ if not exist "%SELENIUM_DIR%\run_selenium_tests.ps1" (
 )
 exit /b 0
 
-:RESOLVE_BACKEND_JAR
-set "BACKEND_JAR="
-if exist "%BACKEND_DIR%\target\boleto-service.jar" set "BACKEND_JAR=target\boleto-service.jar"
-if not defined BACKEND_JAR if exist "%BACKEND_DIR%\target\AppAcademia.jar" set "BACKEND_JAR=target\AppAcademia.jar"
-for /f "delims=" %%J in ('dir /b /a-d "%BACKEND_DIR%\target\*.jar" 2^>nul ^| findstr /v /i "\.original$ sources javadoc"') do (
-    if not defined BACKEND_JAR set "BACKEND_JAR=target\%%J"
+:PREPARE_START_APP_REPOS
+call :CHOOSE_AND_UPDATE_REPO "Backend AppAcademia" "%BACKEND_REPO_DIR%"
+if errorlevel 1 exit /b 1
+call :RESOLVE_BACKEND_DIR
+if errorlevel 1 exit /b 1
+call :CHOOSE_AND_UPDATE_REPO "Flutter Abraco Contabilidade" "%FLUTTER_DIR%"
+if errorlevel 1 exit /b 1
+exit /b 0
+
+:CHOOSE_AND_UPDATE_REPO
+set "REPO_LABEL=%~1"
+set "REPO_DIR=%~2"
+set "SELECTED_BRANCH="
+set "BRANCH_SOURCE="
+set "REMOTE_BRANCH="
+set "CURRENT_BRANCH="
+set "BRANCH_COUNT=0"
+set "REMOTE_COUNT=0"
+
+if not exist "%REPO_DIR%\.git" (
+    echo [AVISO] %REPO_LABEL% nao e um repositorio git: %REPO_DIR%
+    exit /b 0
 )
-if not defined BACKEND_JAR (
-    echo [ERRO] Nenhum jar executavel encontrado em %BACKEND_DIR%\target
+
+echo.
+echo ============================================
+echo  Branch - %REPO_LABEL%
+echo ============================================
+echo Pasta: %REPO_DIR%
+cd /d "%REPO_DIR%"
+for /f "usebackq delims=" %%C in (`git branch --show-current 2^>nul`) do set "CURRENT_BRANCH=%%C"
+if defined CURRENT_BRANCH echo Atual: %CURRENT_BRANCH%
+echo.
+echo Branches locais disponiveis:
+for /f "usebackq delims=" %%B in (`git branch --format^="%%(refname:short)" 2^>nul`) do (
+    set /a BRANCH_COUNT+=1
+    set "LOCAL_BRANCH_!BRANCH_COUNT!=%%B"
+    echo  [!BRANCH_COUNT!] %%B
+)
+
+if "!BRANCH_COUNT!"=="0" (
+    echo Nenhuma branch local encontrada. Mostrando remotas.
+    echo.
+    echo Branches remotas disponiveis:
+    for /f "usebackq delims=" %%B in (`git branch -r --format^="%%(refname:short)" 2^>nul ^| findstr /v /i "origin/HEAD"`) do (
+        set /a REMOTE_COUNT+=1
+        set "REMOTE_BRANCH_!REMOTE_COUNT!=%%B"
+        set "REMOTE_LOCAL_!REMOTE_COUNT!=%%B"
+        set "REMOTE_LOCAL_!REMOTE_COUNT!=!REMOTE_LOCAL_!REMOTE_COUNT!:origin/=!"
+        echo  [!REMOTE_COUNT!] %%B
+    )
+    if "!REMOTE_COUNT!"=="0" (
+        echo [ERRO] Nenhuma branch local ou remota encontrada em %REPO_LABEL%.
+        exit /b 1
+    )
+    echo  [0] Voltar
+    set "BRANCH_CHOICE="
+    set /p "BRANCH_CHOICE=Escolha a branch remota por numero ou nome: "
+    if "!BRANCH_CHOICE!"=="0" exit /b 1
+    call :RESOLVE_REMOTE_BRANCH "!BRANCH_CHOICE!"
+    if errorlevel 1 exit /b 1
+) else (
+    echo  [0] Voltar
+    set "BRANCH_CHOICE="
+    set /p "BRANCH_CHOICE=Escolha a branch local por numero ou nome: "
+    if "!BRANCH_CHOICE!"=="0" exit /b 1
+    call :RESOLVE_LOCAL_BRANCH "!BRANCH_CHOICE!"
+    if errorlevel 1 exit /b 1
+)
+
+call :CHECKOUT_AND_PULL_SELECTED_BRANCH
+exit /b %ERRORLEVEL%
+
+:RESOLVE_LOCAL_BRANCH
+set "CHOICE=%~1"
+set "SELECTED_BRANCH="
+for /l %%I in (1,1,!BRANCH_COUNT!) do (
+    if "!CHOICE!"=="%%I" set "SELECTED_BRANCH=!LOCAL_BRANCH_%%I!"
+    if /i "!CHOICE!"=="!LOCAL_BRANCH_%%I!" set "SELECTED_BRANCH=!LOCAL_BRANCH_%%I!"
+)
+if not defined SELECTED_BRANCH (
+    echo [ERRO] Branch local invalida: !CHOICE!
+    exit /b 1
+)
+set "BRANCH_SOURCE=local"
+exit /b 0
+
+:RESOLVE_REMOTE_BRANCH
+set "CHOICE=%~1"
+set "SELECTED_BRANCH="
+set "REMOTE_BRANCH="
+for /l %%I in (1,1,!REMOTE_COUNT!) do (
+    if "!CHOICE!"=="%%I" (
+        set "REMOTE_BRANCH=!REMOTE_BRANCH_%%I!"
+        set "SELECTED_BRANCH=!REMOTE_LOCAL_%%I!"
+    )
+    if /i "!CHOICE!"=="!REMOTE_BRANCH_%%I!" (
+        set "REMOTE_BRANCH=!REMOTE_BRANCH_%%I!"
+        set "SELECTED_BRANCH=!REMOTE_LOCAL_%%I!"
+    )
+    if /i "!CHOICE!"=="!REMOTE_LOCAL_%%I!" (
+        set "REMOTE_BRANCH=!REMOTE_BRANCH_%%I!"
+        set "SELECTED_BRANCH=!REMOTE_LOCAL_%%I!"
+    )
+)
+if not defined SELECTED_BRANCH (
+    echo [ERRO] Branch remota invalida: !CHOICE!
+    exit /b 1
+)
+set "BRANCH_SOURCE=remota"
+exit /b 0
+
+:CHECKOUT_AND_PULL_SELECTED_BRANCH
+if /i "%CURRENT_BRANCH%"=="%SELECTED_BRANCH%" (
+    echo Branch %SELECTED_BRANCH% ja esta selecionada.
+) else (
+    set "HAS_CHANGES=0"
+    for /f "tokens=*" %%C in ('git status --porcelain 2^>nul') do set "HAS_CHANGES=1"
+    if "!HAS_CHANGES!"=="1" (
+        echo [ERRO] Ha alteracoes locais em %REPO_LABEL%.
+        echo Commite, descarte ou mova essas alteracoes antes de trocar de branch.
+        git status --short
+        exit /b 1
+    )
+    if /i "%BRANCH_SOURCE%"=="local" (
+        echo Trocando para %SELECTED_BRANCH%...
+        git checkout "%SELECTED_BRANCH%"
+    ) else (
+        echo Criando branch local %SELECTED_BRANCH% a partir de %REMOTE_BRANCH%...
+        git checkout -b "%SELECTED_BRANCH%" "%REMOTE_BRANCH%"
+    )
+    if errorlevel 1 (
+        echo [ERRO] Falha ao selecionar branch %SELECTED_BRANCH% em %REPO_LABEL%.
+        exit /b 1
+    )
+)
+
+echo Atualizando %SELECTED_BRANCH% antes de subir...
+git pull --rebase --autostash
+if errorlevel 1 (
+    echo [ERRO] Falha no pull de %SELECTED_BRANCH% em %REPO_LABEL%.
     exit /b 1
 )
 exit /b 0
 
-:CHECK_BACKEND_COMPILE_SOURCE
-if not exist "%BACKEND_DIR%\src\main\java" (
-    echo [ERRO] Fontes Java do backend nao encontradas: %BACKEND_DIR%\src\main\java
+:RESOLVE_BACKEND_JAR
+set "BACKEND_JAR="
+if exist "%BACKEND_DIR%\target\AppAcademia.jar" set "BACKEND_JAR=target\AppAcademia.jar"
+if not defined BACKEND_JAR if exist "%BACKEND_DIR%\target\boleto-service.jar" set "BACKEND_JAR=target\boleto-service.jar"
+for /f "delims=" %%J in ('dir /b /a-d "%BACKEND_DIR%\target\*.jar" 2^>nul ^| findstr /v /i "\.original$ sources javadoc"') do (
+    if not defined BACKEND_JAR set "BACKEND_JAR=target\%%J"
+)
+if not defined BACKEND_JAR (
+    echo [ERRO] Nenhum jar encontrado em %BACKEND_DIR%\target
     exit /b 1
 )
-findstr /s /m /c:"@SpringBootApplication" "%BACKEND_DIR%\src\main\java\*.java" >nul 2>&1
-if errorlevel 1 (
-    echo [ERRO] Classe principal Spring Boot nao encontrada em: %BACKEND_DIR%\src\main\java
-    echo [DICA] Esta copia local tem pom.xml, mas nao tem a aplicacao Spring Boot completa para gerar o jar executavel.
-    exit /b 1
-)
+exit /b 0
+
+:RESOLVE_BACKEND_DIR
+set "BACKEND_DIR=%BACKEND_REPO_DIR%"
+if not exist "%BACKEND_DIR%\pom.xml" if exist "%BACKEND_REPO_DIR%\bin\pom.xml" set "BACKEND_DIR=%BACKEND_REPO_DIR%\bin"
+if not exist "%BACKEND_DIR%\pom.xml" if exist "%APP_ROOT%\bin\pom.xml" set "BACKEND_DIR=%APP_ROOT%\bin"
 exit /b 0
 
 :KILL_APP
@@ -248,6 +388,12 @@ if errorlevel 1 (
     pause
     exit /b 1
 )
+call :PREPARE_START_APP_REPOS
+if errorlevel 1 (
+    echo [ERRO] Preparacao dos repositorios falhou - veja acima.
+    pause
+    exit /b 1
+)
 
 set "RESTART=%~1"
 if "%RESTART%"=="1" call :KILL_APP
@@ -260,11 +406,6 @@ echo [DIAG] Dir: %BACKEND_DIR%
 
 echo.
 echo [1/3] Compilando backend...
-call :CHECK_BACKEND_COMPILE_SOURCE
-if errorlevel 1 (
-    pause
-    exit /b 1
-)
 cd /d "%BACKEND_DIR%"
 echo [PRE-CLEAN] Removendo generated-sources e classes antigos para evitar bug MapStruct...
 rmdir /s /q "target\generated-sources" 2>nul
