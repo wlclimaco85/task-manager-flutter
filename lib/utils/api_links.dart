@@ -2,11 +2,11 @@ class ApiLinks {
   ApiLinks._();
 
   // URL do backend
-  // Dev local: flutter run (usa default http://127.0.0.1:8080)
+  // Dev local: flutter run usa base efetiva http://127.0.0.1:9001/boletobancos
   // Producao Railway: flutter run --dart-define=BACKEND_URL=https://appacademia-production-be7e.up.railway.app
   static const String _backendUrl = String.fromEnvironment(
     'BACKEND_URL',
-    defaultValue: 'http://127.0.0.1:8080',
+    defaultValue: 'http://127.0.0.1:9001',
   );
 
   // Context-path do backend: server.servlet.context-path=/boletobancos

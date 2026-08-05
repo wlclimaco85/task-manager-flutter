@@ -128,6 +128,19 @@ void main() {
     test('baseUrl expõe _baseUrlNew (contém /boletobancos)', () {
       expect(ApiLinks.baseUrl, contains('/boletobancos'));
     });
+
+    test('baseUrl local usa backend dev em 9001 com context-path', () {
+      expect(ApiLinks.baseUrl, equals('http://127.0.0.1:9001/boletobancos'));
+      expect(ApiLinks.baseUrl, isNot(contains(':8080')));
+    });
+
+    test('login aponta para o endpoint POST /rest/auth/login correto', () {
+      expect(
+        ApiLinks.login,
+        equals('http://127.0.0.1:9001/boletobancos/rest/auth/login'),
+      );
+      expect(ApiLinks.login, isNot(contains(':8080')));
+    });
   });
 
   group('ApiLinks — NFS-e', () {
