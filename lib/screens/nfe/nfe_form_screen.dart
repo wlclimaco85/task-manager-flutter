@@ -3,11 +3,15 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:task_manager_flutter/core/design/design_tokens.dart';
 import 'package:task_manager_flutter/core/responsive/responsive_helper.dart';
+import 'package:task_manager_flutter/models/auth_utility.dart';
 import 'package:task_manager_flutter/models/nfe/nfe_item_model.dart';
 import 'package:task_manager_flutter/models/nfe/nfe_tomador_model.dart';
 import 'package:task_manager_flutter/providers/nfe_notifier.dart';
+import 'package:task_manager_flutter/services/nfe_saida_service.dart';
 import 'package:task_manager_flutter/utils/api_links.dart';
+import 'package:task_manager_flutter/utils/nfe_totais_calculator.dart';
 import 'package:task_manager_flutter/utils/tenant_context.dart';
+import 'package:task_manager_flutter/widgets/nfe/nfe_item_form_dialog.dart';
 import 'package:task_manager_flutter/widgets/nfe/nfe_items_table.dart';
 import 'package:task_manager_flutter/widgets/nfe/responsive_scaffold.dart';
 
@@ -26,6 +30,8 @@ class NfeFormScreen extends StatefulWidget {
 }
 
 class _NfeFormScreenState extends State<NfeFormScreen> {
+  final _nfeSaidaService = NfeSaidaService();
+
   late GlobalKey<FormState> _formKey;
   late TextEditingController _clienteCnpjController;
   late TextEditingController _clienteRazaoSocialController;
@@ -36,13 +42,8 @@ class _NfeFormScreenState extends State<NfeFormScreen> {
   // Estado local dos itens
   final List<NfeItemModel> _items = [];
 
-  // Valores calculados
-  double _subtotal = 0.0;
-  double _icms = 0.0;
-  double _pis = 0.0;
-  double _cofins = 0.0;
-  double _desconto = 0.0;
-  double _total = 0.0;
+  // Totais calculados a partir dos itens (ver NfeTotaisCalculator)
+  NfeTotais _totais = NfeTotais.zero;
 
   // Estados
   bool _isSubmitting = false;
@@ -58,6 +59,22 @@ class _NfeFormScreenState extends State<NfeFormScreen> {
   List<String> _naturezas = [];
   bool _loadingDados = true;
 
+  // Tipo de Operação (TOP) — mesma fonte usada em Web/Windows
+  List<Map<String, dynamic>> _topList = [];
+  Map<String, dynamic>? _topSelecionado;
+
+  // Empresa (somente leitura, vem do usuário logado)
+  String? _empresaNome;
+
+  // Ambiente de emissão — default seguro: Homologação
+  String _ambienteSelecionado = 'HOMOLOGACAO';
+
+  // Finalidade e forma de pagamento
+  List<Map<String, dynamic>> _finalidades = [];
+  String? _finalidadeSelecionada;
+  List<Map<String, dynamic>> _formasPagamento = [];
+  String? _formaPagamentoSelecionada;
+
   @override
   void initState() {
     super.initState();
@@ -71,14 +88,21 @@ class _NfeFormScreenState extends State<NfeFormScreen> {
   }
 
   Future<void> _carregarDados() async {
+    _empresaNome = AuthUtility.userInfo?.login?.empresa?.nome;
+
     try {
       final results = await Future.wait([
         TenantContext.get('${ApiLinks.baseUrl}/api/parceiro?tamanho=500'),
         TenantContext.get('${ApiLinks.baseUrl}/api/nfe-tipo-operacao?tamanho=50'),
+        TenantContext.get('${ApiLinks.baseUrl}/api/nfe-finalidade?tamanho=50'),
+        TenantContext.get('${ApiLinks.baseUrl}/api/forma_pagamento?tamanho=100'),
       ]);
+      final tops = await _nfeSaidaService.carregarTiposOperacao();
       if (!mounted) return;
       final parceiros = _parseList(results[0].body);
       final tipos = _parseList(results[1].body);
+      final finalidades = _parseList(results[2].body);
+      final formasPagamento = _parseList(results[3].body);
       setState(() {
         _clientes = parceiros.map((p) => NfeTomadorModel(
           cnpjCpf: p['cnpj']?.toString() ?? p['cpf']?.toString() ?? '',
@@ -94,6 +118,9 @@ class _NfeFormScreenState extends State<NfeFormScreen> {
         )).toList();
         _naturezas = tipos.map((t) => t['descricao']?.toString() ?? '').where((n) => n.isNotEmpty).toList();
         if (_naturezas.isEmpty) _naturezas = ['Venda', 'Devolução', 'Transferência', 'Serviço'];
+        _topList = tops;
+        _finalidades = finalidades;
+        _formasPagamento = formasPagamento;
         _loadingDados = false;
       });
     } catch (e) {
@@ -165,51 +192,20 @@ class _NfeFormScreenState extends State<NfeFormScreen> {
 
   /// Recalcula totais com base nos itens
   void _recalcularTotais() {
-    _subtotal = 0.0;
-    for (final item in _items) {
-      _subtotal += item.precoTotal;
-    }
-
-    // Cálculos baseados em impostos dos itens (real)
-    _icms = 0.0;
-    _pis = 0.0;
-    _cofins = 0.0;
-    for (final item in _items) {
-      _icms += item.vlIcms;
-      _pis += item.vlPis;
-      _cofins += item.vlCofins;
-    }
-    _desconto = 0.0; // sem desconto por enquanto
-
-    _total = _subtotal + _icms + _pis + _cofins - _desconto;
-
-    setState(() {});
+    setState(() {
+      _totais = NfeTotaisCalculator.calcular(_items);
+    });
   }
 
-  /// Adiciona novo item vazio
-  void _adicionarItem() {
-    setState(() {
-      _items.add(
-        NfeItemModel(
-          sequencial: _items.length + 1,
-          codigoProduto: '',
-          descricao: 'Novo Item',
-          ncm: '',
-          quantidade: 1.0,
-          unidade: 'UN',
-          precoUnitario: 0.0,
-          precoTotal: 0.0,
-          cfop: '5102',
-          cstIcms: '00',
-          aliqIcms: 0.18,
-          vlIcms: 0.0,
-          aliqPis: 0.0165,
-          vlPis: 0.0,
-          aliqCofins: 0.076,
-          vlCofins: 0.0,
-        ),
-      );
-    });
+  /// Abre o dialog para adicionar um novo item
+  Future<void> _adicionarItem() async {
+    final item = await NfeItemFormDialog.show(
+      context,
+      proximoSequencial: _items.length + 1,
+    );
+    if (item == null) return;
+    setState(() => _items.add(item));
+    _recalcularTotais();
   }
 
   /// Remove item pelo índice
@@ -222,14 +218,17 @@ class _NfeFormScreenState extends State<NfeFormScreen> {
     }
   }
 
-  /// Edita item (atualiza no estado local)
-  void _editarItem(int index, NfeItemModel item) {
-    if (index >= 0 && index < _items.length) {
-      setState(() {
-        _items[index] = item;
-      });
-      _recalcularTotais();
-    }
+  /// Abre o dialog para editar um item existente
+  Future<void> _editarItem(int index) async {
+    if (index < 0 || index >= _items.length) return;
+    final item = await NfeItemFormDialog.show(
+      context,
+      item: _items[index],
+      proximoSequencial: _items[index].sequencial,
+    );
+    if (item == null) return;
+    setState(() => _items[index] = item);
+    _recalcularTotais();
   }
 
   /// Seleciona cliente
@@ -274,57 +273,72 @@ class _NfeFormScreenState extends State<NfeFormScreen> {
       return;
     }
 
+    if (_topSelecionado == null) {
+      setState(() => _validationError = 'Selecione o Tipo de Operação (TOP)');
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Selecione o Tipo de Operação (TOP)')),
+      );
+      return;
+    }
+
     setState(() {
       _isSubmitting = true;
       _validationError = null;
     });
 
     try {
-      // Prepara dados
+      // Prepara dados do cabeçalho da NFe (compatível com NfeCriacaoDTO —
+      // itens NÃO fazem parte deste payload, ver loop de criação abaixo)
       final dados = {
         'tomadorCnpjCpf': _clienteSelecionado!.cnpjCpf,
         'naturezaOperacao': _naturezaSelecionada,
+        'natOp': _topSelecionado!['natOp']?.toString(),
         'serie': int.tryParse(_serieController.text) ?? 1,
         'observacoes': _observacoesController.text.isNotEmpty ? _observacoesController.text : null,
-        'itens': _items.map((item) => {
-          'codigoProduto': item.codigoProduto,
-          'descricao': item.descricao,
-          'ncm': item.ncm,
-          'quantidade': item.quantidade,
-          'unidade': item.unidade,
-          'precoUnitario': item.precoUnitario,
-          'cfop': item.cfop,
-          'cstIcms': item.cstIcms,
-          'aliqIcms': item.aliqIcms,
-          'vlIcms': item.vlIcms,
-          'aliqPis': item.aliqPis,
-          'vlPis': item.vlPis,
-          'aliqCofins': item.aliqCofins,
-          'vlCofins': item.vlCofins,
-        }).toList(),
+        'ambiente': _ambienteSelecionado,
+        'nfeTipoOperacaoId': _topSelecionado!['id'],
+        if (_finalidadeSelecionada != null) 'finalidade': _finalidadeSelecionada,
+        if (_formaPagamentoSelecionada != null) 'formaPagamentoId': _formaPagamentoSelecionada,
       };
 
-      debugPrint('[NfeFormScreen] Enviando dados: $dados');
+      debugPrint('[NfeFormScreen] Enviando cabeçalho: $dados');
 
-      // Chama notifier para criar NFe
+      // Chama notifier para criar o cabeçalho da NFe
       final nfeNotifier = context.read<NfeNotifier>();
-      await nfeNotifier.criarNfe(dados);
+      final nfeCriada = await nfeNotifier.criarNfe(dados);
+
+      // Persiste cada item separadamente (endpoint de criação da NFe não
+      // aceita itens embutidos — ver NfeSaidaService.criarItem)
+      var itensComFalha = 0;
+      for (final item in _items) {
+        final ok = await _nfeSaidaService.criarItem(nfeCriada.id, item);
+        if (!ok) itensComFalha++;
+      }
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('NFe #${nfeNotifier.state.selected?.numero ?? ''} criada com sucesso!'),
-            backgroundColor: Colors.green,
-          ),
-        );
-
-        // Navega para detail screen
-        if (nfeNotifier.state.selected != null) {
-          Navigator.of(context).pushReplacementNamed(
-            '/nfe/detail',
-            arguments: nfeNotifier.state.selected!.id,
+        if (itensComFalha > 0) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                'NFe #${nfeCriada.numero} criada, mas $itensComFalha item(ns) falharam ao salvar. Verifique antes de emitir.',
+              ),
+              backgroundColor: DesignTokens.warning,
+            ),
+          );
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('NFe #${nfeCriada.numero} criada com sucesso!'),
+              backgroundColor: DesignTokens.success,
+            ),
           );
         }
+
+        // Navega para detail screen
+        Navigator.of(context).pushReplacementNamed(
+          '/nfe/detail',
+          arguments: nfeCriada.id,
+        );
       }
     } catch (e) {
       debugPrint('[NfeFormScreen] Erro ao criar NFe: $e');
@@ -362,9 +376,13 @@ class _NfeFormScreenState extends State<NfeFormScreen> {
             children: [
               _buildClienteSection(),
               const SizedBox(height: DesignTokens.spacingMd),
+              _buildTopSection(),
+              const SizedBox(height: DesignTokens.spacingMd),
               _buildNaturezaSection(),
               const SizedBox(height: DesignTokens.spacingMd),
               _buildSerieSection(),
+              const SizedBox(height: DesignTokens.spacingMd),
+              _buildConfigFiscalSection(),
               const SizedBox(height: DesignTokens.spacingMd),
               _buildObservacoesSection(),
               const SizedBox(height: DesignTokens.spacingMd),
@@ -397,9 +415,13 @@ class _NfeFormScreenState extends State<NfeFormScreen> {
                   children: [
                     _buildClienteSection(),
                     const SizedBox(height: DesignTokens.spacingMd),
+                    _buildTopSection(),
+                    const SizedBox(height: DesignTokens.spacingMd),
                     _buildNaturezaSection(),
                     const SizedBox(height: DesignTokens.spacingMd),
                     _buildSerieSection(),
+                    const SizedBox(height: DesignTokens.spacingMd),
+                    _buildConfigFiscalSection(),
                     const SizedBox(height: DesignTokens.spacingMd),
                     _buildObservacoesSection(),
                   ],
@@ -443,9 +465,13 @@ class _NfeFormScreenState extends State<NfeFormScreen> {
                   children: [
                     _buildClienteSection(),
                     const SizedBox(height: DesignTokens.spacingMd),
+                    _buildTopSection(),
+                    const SizedBox(height: DesignTokens.spacingMd),
                     _buildNaturezaSection(),
                     const SizedBox(height: DesignTokens.spacingMd),
                     _buildSerieSection(),
+                    const SizedBox(height: DesignTokens.spacingMd),
+                    _buildConfigFiscalSection(),
                     const SizedBox(height: DesignTokens.spacingMd),
                     _buildObservacoesSection(),
                   ],
@@ -527,6 +553,108 @@ class _NfeFormScreenState extends State<NfeFormScreen> {
           readOnly: true,
           decoration: InputDecoration(
             labelText: 'Razão Social',
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+            contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+          ),
+        ),
+      ],
+    );
+  }
+
+  /// Seção de Tipo de Operação (TOP), Empresa (somente leitura) e Ambiente.
+  ///
+  /// Equivalente ao que já existe em Web/Windows — antes ausente no Mobile.
+  Widget _buildTopSection() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'Tipo de Operação (TOP) *',
+          style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+        ),
+        const SizedBox(height: 8),
+        DropdownButtonFormField<Map<String, dynamic>>(
+          value: _topSelecionado,
+          hint: const Text('Selecione um TOP'),
+          items: _topList.map((top) {
+            return DropdownMenuItem(
+              value: top,
+              child: Text('${top['codigo'] ?? ''} - ${top['descricao'] ?? ''}'),
+            );
+          }).toList(),
+          onChanged: (top) => setState(() => _topSelecionado = top),
+          validator: (value) => value == null ? 'TOP obrigatório' : null,
+          decoration: InputDecoration(
+            hintText: 'Selecione um TOP',
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+            contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+          ),
+        ),
+        const SizedBox(height: 12),
+        TextFormField(
+          initialValue: _empresaNome ?? '',
+          readOnly: true,
+          decoration: InputDecoration(
+            labelText: 'Empresa',
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+            contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+          ),
+        ),
+        const SizedBox(height: 12),
+        DropdownButtonFormField<String>(
+          value: _ambienteSelecionado,
+          decoration: InputDecoration(
+            labelText: 'Ambiente',
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+            contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+          ),
+          items: const [
+            DropdownMenuItem(value: 'HOMOLOGACAO', child: Text('Homologação')),
+            DropdownMenuItem(value: 'PRODUCAO', child: Text('Produção')),
+          ],
+          onChanged: (v) => setState(() => _ambienteSelecionado = v ?? 'HOMOLOGACAO'),
+        ),
+      ],
+    );
+  }
+
+  /// Seção de Finalidade e Forma de Pagamento (Config. Fiscal).
+  ///
+  /// Equivalente ao que já existe em Web/Windows — antes ausente no Mobile.
+  Widget _buildConfigFiscalSection() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'Configuração Fiscal',
+          style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+        ),
+        const SizedBox(height: 8),
+        DropdownButtonFormField<String>(
+          value: _finalidadeSelecionada,
+          hint: const Text('Selecione a finalidade'),
+          items: _finalidades.map((f) {
+            final id = f['id']?.toString() ?? '';
+            return DropdownMenuItem(value: id, child: Text(f['descricao']?.toString() ?? id));
+          }).toList(),
+          onChanged: (v) => setState(() => _finalidadeSelecionada = v),
+          decoration: InputDecoration(
+            labelText: 'Finalidade',
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+            contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+          ),
+        ),
+        const SizedBox(height: 12),
+        DropdownButtonFormField<String>(
+          value: _formaPagamentoSelecionada,
+          hint: const Text('Selecione a forma de pagamento'),
+          items: _formasPagamento.map((f) {
+            final id = f['id']?.toString() ?? '';
+            return DropdownMenuItem(value: id, child: Text(f['descricao']?.toString() ?? id));
+          }).toList(),
+          onChanged: (v) => setState(() => _formaPagamentoSelecionada = v),
+          decoration: InputDecoration(
+            labelText: 'Forma de Pagamento',
             border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
             contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
           ),
@@ -643,7 +771,7 @@ class _NfeFormScreenState extends State<NfeFormScreen> {
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              border: Border.all(color: Colors.grey[300]!),
+              border: Border.all(color: DesignTokens.divider),
               borderRadius: BorderRadius.circular(8),
             ),
             child: const Center(
@@ -655,7 +783,7 @@ class _NfeFormScreenState extends State<NfeFormScreen> {
             items: _items,
             breakpoint: breakpoint,
             editable: true,
-            onEdit: (index) => _editarItem(index, _items[index]),
+            onEdit: (index) => _editarItem(index),
             onDelete: _removerItem,
           ),
       ],
@@ -667,25 +795,25 @@ class _NfeFormScreenState extends State<NfeFormScreen> {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        border: Border.all(color: Colors.grey[300]!),
+        border: Border.all(color: DesignTokens.divider),
         borderRadius: BorderRadius.circular(8),
-        color: Colors.grey[50],
+        color: DesignTokens.surfaceMuted,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const Text(
             'Resumo de Totais',
-            style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+            style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: DesignTokens.textSecondary),
           ),
-          const Divider(),
-          _buildTotalRow('Subtotal', _subtotal),
-          _buildTotalRow('ICMS (18%)', _icms),
-          _buildTotalRow('PIS (1,65%)', _pis),
-          _buildTotalRow('COFINS (7,6%)', _cofins),
-          _buildTotalRow('Desconto', -_desconto, isDiscount: true),
-          const Divider(),
-          _buildTotalRow('TOTAL', _total, isTotal: true),
+          const Divider(color: DesignTokens.divider),
+          _buildTotalRow('Subtotal', _totais.subtotal),
+          _buildTotalRow('ICMS', _totais.icms),
+          _buildTotalRow('PIS', _totais.pis),
+          _buildTotalRow('COFINS', _totais.cofins),
+          _buildTotalRow('Desconto', -_totais.desconto, isDiscount: true),
+          const Divider(color: DesignTokens.divider),
+          _buildTotalRow('TOTAL', _totais.total, isTotal: true),
         ],
       ),
     );
@@ -703,6 +831,7 @@ class _NfeFormScreenState extends State<NfeFormScreen> {
             style: TextStyle(
               fontSize: isTotal ? 16 : 14,
               fontWeight: isTotal ? FontWeight.w700 : FontWeight.w500,
+              color: DesignTokens.textSecondary,
             ),
           ),
           Text(
@@ -710,7 +839,7 @@ class _NfeFormScreenState extends State<NfeFormScreen> {
             style: TextStyle(
               fontSize: isTotal ? 16 : 14,
               fontWeight: isTotal ? FontWeight.w700 : FontWeight.w500,
-              color: isDiscount || isTotal ? Colors.green : Colors.black,
+              color: isDiscount || isTotal ? DesignTokens.success : DesignTokens.textSecondary,
             ),
           ),
         ],
@@ -726,8 +855,8 @@ class _NfeFormScreenState extends State<NfeFormScreen> {
       child: ElevatedButton(
         onPressed: _isSubmitting ? null : _submitForm,
         style: ElevatedButton.styleFrom(
-          backgroundColor: Colors.blue,
-          disabledBackgroundColor: Colors.grey[400],
+          backgroundColor: DesignTokens.primary,
+          disabledBackgroundColor: DesignTokens.textMuted,
         ),
         child: _isSubmitting
             ? const SizedBox(
@@ -735,12 +864,12 @@ class _NfeFormScreenState extends State<NfeFormScreen> {
                 height: 20,
                 child: CircularProgressIndicator(
                   strokeWidth: 2,
-                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                  valueColor: AlwaysStoppedAnimation<Color>(DesignTokens.textPrimary),
                 ),
               )
             : const Text(
                 'Criar NFe',
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Colors.white),
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: DesignTokens.textPrimary),
               ),
       ),
     );
