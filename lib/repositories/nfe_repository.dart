@@ -152,7 +152,10 @@ class NfeRepository {
   /// Retorna [NfeModel] criada ou lança [NfeRepositoryException]
   Future<NfeModel> criarNfe(Map<String, dynamic> dados) async {
     try {
-      final url = TenantContext.applyToUrl('$_baseUrl/criar');
+      // NfeController expõe a criação via POST na raiz de /api/nfe
+      // (@PostMapping sem sub-path). Não existe endpoint /api/nfe/criar —
+      // esse era o bug real por trás da falha silenciosa de criação no Mobile.
+      final url = TenantContext.applyToUrl(_baseUrl);
       L.d('[NfeRepository] POST $url com dados: $dados');
 
       final response = await _dio.post(url, data: dados);
