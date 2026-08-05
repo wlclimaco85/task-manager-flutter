@@ -11,13 +11,15 @@ import 'package:task_manager_flutter/utils/api_links.dart';
 import 'package:task_manager_flutter/utils/tenant_context.dart';
 import 'package:task_manager_flutter/widgets/nfe/nfe_status_badge.dart';
 import 'package:task_manager_flutter/widgets/nfe/nfe_filter_chip.dart';
+import 'package:task_manager_flutter/widgets/nfe/nfe_card.dart';
+import 'package:task_manager_flutter/widgets/nfe/nfe_pagination_bar.dart';
 import 'package:task_manager_flutter/screens/nfe/nfe_detail_screen.dart';
 import 'package:task_manager_flutter/utils/app_logger.dart';
 
-/// Tela responsiva de listagem de NFes com 3 layouts
-/// - Mobile (<600): FAB stack, lista vertical compacta
-/// - Tablet (600-1024): Card list, drawer navegação
-/// - Desktop (>=1024): DataTable com sorting, filtros inline
+/// Tela responsiva de listagem de NFes com grid 4-2-1
+/// - Mobile (<768): 1 coluna
+/// - Tablet (768-1200): 2 colunas
+/// - Desktop (>=1200): 4 colunas
 class NfeListScreen extends StatefulWidget {
   const NfeListScreen({super.key});
 
@@ -51,9 +53,9 @@ class _NfeListScreenState extends State<NfeListScreen> {
 
   void _determineBreakpoint() {
     final width = MediaQuery.of(context).size.width;
-    if (width < 600) {
+    if (width < 768) {
       _currentBreakpoint = Breakpoint.mobile;
-    } else if (width < 1024) {
+    } else if (width < 1200) {
       _currentBreakpoint = Breakpoint.tablet;
     } else {
       _currentBreakpoint = Breakpoint.desktop;
@@ -97,6 +99,36 @@ class _NfeListScreenState extends State<NfeListScreen> {
     _applyFilters();
   }
 
+  Future<void> _onStatusChanged(String? newStatus) async {
+    L.d('[NfeListScreen] Status filtro mudou para: $newStatus');
+    setState(() => _selectedStatus = newStatus);
+    await _applyFilters(); // Refetch com novo filtro
+  }
+
+  Future<void> _onDateRangeChanged(DateTime? inicio, DateTime? fim) async {
+    L.d('[NfeListScreen] Data range mudou: $inicio até $fim');
+    setState(() {
+      _dataInicio = inicio;
+      _dataFim = fim;
+    });
+    await _applyFilters(); // Refetch com novas datas
+  }
+
+  Future<void> _onClienteCnpjChanged(String? cnpj) async {
+    L.d('[NfeListScreen] Cliente CNPJ mudou para: $cnpj');
+    setState(() => _clienteCnpj = cnpj);
+    await _applyFilters(); // Refetch com novo cliente
+  }
+
+  Future<void> _onSortChanged(String sortField, bool ascending) async {
+    L.d('[NfeListScreen] Sort mudou para: $sortField (ascending=$ascending)');
+    setState(() {
+      _sortBy = sortField;
+      _sortAsc = ascending;
+    });
+    await _applyFilters(); // Refetch com novo sort
+  }
+
   Future<void> _nextPage(NfeNotifier notifier) async {
     L.d('[NfeListScreen] Próxima página');
     await notifier.proximaPagina(
@@ -122,7 +154,6 @@ class _NfeListScreenState extends State<NfeListScreen> {
     final integer = parts[0];
     final decimal = parts[1];
 
-    // Adiciona separador de milhares (ponto em pt_BR)
     final formatted = integer.replaceAllMapped(
       RegExp(r'\B(?=(\d{3})+(?!\d))'),
       (match) => '.',
@@ -198,352 +229,68 @@ class _NfeListScreenState extends State<NfeListScreen> {
     );
   }
 
-  Widget _buildNfeCard(NfeModel nfe) {
-    return Card(
-      margin: const EdgeInsets.symmetric(
-        horizontal: DesignTokens.spacingMd,
-        vertical: DesignTokens.spacingSm,
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(DesignTokens.spacingMd),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'NFe ${nfe.numero}',
-                        style: const TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        'Série ${nfe.serie}',
-                        style: const TextStyle(
-                          fontSize: 12,
-                          color: DesignTokens.textMuted,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                NfeStatusBadge(
-                  status: nfe.statusNfe,
-                  expanded: true,
-                  breakpoint: _currentBreakpoint,
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text('Data', style: TextStyle(fontSize: 12, color: DesignTokens.textMuted)),
-                    Text(_formatDate(nfe.dataHora), style: const TextStyle(fontSize: 13)),
-                  ],
-                ),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: [
-                    const Text('Valor', style: TextStyle(fontSize: 12, color: DesignTokens.textMuted)),
-                    Text(
-                      _formatCurrency(nfe.valores.total),
-                      style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: DesignTokens.primary),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            Text(
-              'Cliente: ${nfe.tomador.razaoSocial}',
-              style: const TextStyle(fontSize: 12),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
-            const SizedBox(height: 12),
-            _buildActionButtons(nfe),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildActionButtons(NfeModel nfe) {
-    if (_currentBreakpoint == Breakpoint.mobile) {
-      return Center(
-        child: PopupMenuButton(
-          itemBuilder: (context) => [
-            PopupMenuItem(
-              child: const Row(
-                children: [Icon(Icons.visibility, size: 18), SizedBox(width: 8), Text('Ver detalhes')],
-              ),
-              onTap: () {
-                // Usar Future.microtask() para garantir execução async
-                // Permite que PopupMenu feche e erros sejam capturados corretamente
-                Future.microtask(() => _handleVerDetalhes(context, nfe));
-              },
-            ),
-            PopupMenuItem(
-              child: const Row(
-                children: [Icon(Icons.print, size: 18), SizedBox(width: 8), Text('Reimprimir')],
-              ),
-              onTap: () {
-                // Usar Future.microtask() para garantir execução async
-                Future.microtask(() => _handleReimprimirNfe(context, nfe));
-              },
-            ),
-            if (nfe.statusNfe != NfeStatus.cancelada)
-              PopupMenuItem(
-                child: const Row(
-                  children: [Icon(Icons.cancel, size: 18, color: DesignTokens.error), SizedBox(width: 8), Text('Cancelar')],
-                ),
-                onTap: () {
-                  // Usar Future.microtask() para garantir execução async
-                  Future.microtask(() => _handleCancelarNfe(context, nfe));
-                },
-              ),
-          ],
-        ),
-      );
+  /// Determina o número de colunas para grid responsivo
+  int _getCrossAxisCount() {
+    final width = MediaQuery.of(context).size.width;
+    if (width >= 1200) {
+      return 4; // Desktop
+    } else if (width >= 768) {
+      return 2; // Tablet
+    } else {
+      return 1; // Mobile
     }
-
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.end,
-      children: [
-        OutlinedButton.icon(
-          onPressed: () => L.d('[NfeListScreen] Navegando NFe ${nfe.id}'),
-          icon: const Icon(Icons.visibility, size: 18),
-          label: const Text('Detalhes'),
-        ),
-        const SizedBox(width: 8),
-        OutlinedButton.icon(
-          onPressed: () {
-            L.d('[NfeListScreen] Reimprimindo NFe ${nfe.id}');
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Reimpressão iniciada')),
-            );
-          },
-          icon: const Icon(Icons.print, size: 18),
-          label: const Text('Reimprimir'),
-        ),
-        if (nfe.statusNfe != NfeStatus.cancelada) ...[
-          const SizedBox(width: 8),
-          OutlinedButton.icon(
-            onPressed: () {
-              L.d('[NfeListScreen] Cancelando NFe ${nfe.id}');
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Cancelamento iniciado')),
-              );
-            },
-            icon: const Icon(Icons.cancel, size: 18),
-            label: const Text('Cancelar'),
-          ),
-        ],
-      ],
-    );
   }
 
-  Widget _buildDesktopDataTable(List<NfeModel> nfes) {
-    return SingleChildScrollView(
-      scrollDirection: Axis.horizontal,
-      child: DataTable(
-        sortColumnIndex: _sortBy == 'dataHora' ? 0 : 4,
-        sortAscending: _sortAsc,
-        columns: [
-          DataColumn(
-            label: const Text('Data'),
-            onSort: (index, ascending) => setState(() {
-              _sortBy = 'dataHora';
-              _sortAsc = ascending;
-            }),
-          ),
-          const DataColumn(label: Text('NFe')),
-          const DataColumn(label: Text('Cliente')),
-          const DataColumn(label: Text('Status')),
-          DataColumn(
-            label: const Text('Valor'),
-            numeric: true,
-            onSort: (index, ascending) => setState(() {
-              _sortBy = 'valor';
-              _sortAsc = ascending;
-            }),
-          ),
-          const DataColumn(label: Text('Ações')),
-        ],
-        rows: nfes.map((nfe) {
-          return DataRow(
-            cells: [
-              DataCell(Text(_formatDate(nfe.dataHora))),
-              DataCell(Text('${nfe.numero}/${nfe.serie}')),
-              DataCell(
-                SizedBox(
-                  width: 200,
-                  child: Text(nfe.tomador.razaoSocial, maxLines: 1, overflow: TextOverflow.ellipsis),
-                ),
-              ),
-              DataCell(
-                NfeStatusBadge(status: nfe.statusNfe, expanded: false, breakpoint: _currentBreakpoint),
-              ),
-              DataCell(Text(_formatCurrency(nfe.valores.total))),
-              DataCell(
-                Row(
-                  children: [
-                    Tooltip(
-                      message: 'Ver detalhes',
-                      child: IconButton(
-                        icon: const Icon(Icons.visibility, size: 18),
-                        onPressed: () => L.d('[NfeListScreen] Navegando NFe ${nfe.id}'),
-                      ),
-                    ),
-                    Tooltip(
-                      message: 'Reimprimir',
-                      child: IconButton(
-                        icon: const Icon(Icons.print, size: 18),
-                        onPressed: () {
-                          L.d('[NfeListScreen] Reimprimindo NFe ${nfe.id}');
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('Reimpressão iniciada')),
-                          );
-                        },
-                      ),
-                    ),
-                    if (nfe.statusNfe != NfeStatus.cancelada)
-                      Tooltip(
-                        message: 'Cancelar',
-                        child: IconButton(
-                          icon: const Icon(Icons.cancel, size: 18, color: DesignTokens.error),
-                          onPressed: () {
-                            L.d('[NfeListScreen] Cancelando NFe ${nfe.id}');
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(content: Text('Cancelamento iniciado')),
-                            );
-                          },
-                        ),
-                      ),
-                  ],
-                ),
-              ),
-            ],
-          );
-        }).toList(),
-      ),
-    );
-  }
-
-  Widget _buildNfeList(List<NfeModel> nfes) {
-    if (nfes.isEmpty) {
-      return Center(
-        child: Padding(
-          padding: const EdgeInsets.all(DesignTokens.spacingLg),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(Icons.inbox, size: 64, color: DesignTokens.textMuted.withOpacity(0.5)),
-              const SizedBox(height: 16),
-              Text('Nenhuma NFe encontrada', style: Theme.of(context).textTheme.titleMedium),
-              const SizedBox(height: 8),
-              Text(
-                'Ajuste os filtros e tente novamente',
-                style: TextStyle(color: DesignTokens.textMuted, fontSize: 13),
-              ),
-              const SizedBox(height: 24),
-              ElevatedButton.icon(
-                onPressed: _clearFilters,
-                icon: const Icon(Icons.refresh),
-                label: const Text('Limpar filtros'),
-              ),
-            ],
-          ),
-        ),
-      );
-    }
-
-    return ListView.builder(
+  /// Constrói grid responsivo com NfeCard widgets
+  Widget _buildResponsiveGrid(List<NfeModel> nfes) {
+    return GridView.builder(
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
+      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: _getCrossAxisCount(),
+        crossAxisSpacing: 12,
+        mainAxisSpacing: 12,
+        childAspectRatio: 1.2,
+      ),
       itemCount: nfes.length,
-      itemBuilder: (context, index) => _buildNfeCard(nfes[index]),
+      itemBuilder: (context, index) {
+        final nfe = nfes[index];
+        return RepaintBoundary(
+          child: NfeCard(
+            nfe: nfe,
+            breakpoint: _currentBreakpoint,
+            onDetails: () => _handleVerDetalhes(context, nfe),
+            onReprint: () => _handleReimprimirNfe(context, nfe),
+            onCancel: () => _handleCancelarNfe(context, nfe),
+          ),
+        );
+      },
     );
   }
 
-  Widget _buildStateIndicator(NfeNotifier notifier) {
-    final state = notifier.state;
-
-    if (state.isLoading) {
-      return const Padding(
-        padding: EdgeInsets.all(DesignTokens.spacingMd),
-        child: CircularProgressIndicator(),
-      );
-    }
-
-    if (state.hasError) {
-      return Padding(
-        padding: const EdgeInsets.all(DesignTokens.spacingMd),
+  Widget _buildEmptyState() {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(DesignTokens.spacingLg),
         child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.error_outline, size: 48, color: DesignTokens.error),
-            const SizedBox(height: 12),
-            Text('Erro ao carregar NFes', style: Theme.of(context).textTheme.titleMedium),
+            Icon(Icons.inbox, size: 64, color: DesignTokens.textMuted.withOpacity(0.5)),
+            const SizedBox(height: 16),
+            Text('Nenhuma NFe encontrada', style: Theme.of(context).textTheme.titleMedium),
             const SizedBox(height: 8),
             Text(
-              state.errorMessage ?? 'Erro desconhecido',
-              textAlign: TextAlign.center,
-              style: TextStyle(color: DesignTokens.error, fontSize: 13),
+              'Ajuste os filtros e tente novamente',
+              style: TextStyle(color: DesignTokens.textMuted, fontSize: 13),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 24),
             ElevatedButton.icon(
-              onPressed: _loadNfes,
+              onPressed: _clearFilters,
               icon: const Icon(Icons.refresh),
-              label: const Text('Tentar novamente'),
+              label: const Text('Limpar filtros'),
             ),
           ],
         ),
-      );
-    }
-
-    if (state.isEmpty) return _buildNfeList([]);
-    return const SizedBox.shrink();
-  }
-
-  Widget _buildPaginationBar(NfeNotifier notifier) {
-    final state = notifier.state;
-    final canPrevious = state.canPreviousPage;
-    final canNext = state.canNextPage;
-    final currentPage = state.currentPage ?? 1;
-    final totalPages = state.totalPages;
-
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: DesignTokens.spacingMd, vertical: DesignTokens.spacingSm),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text('Página $currentPage de $totalPages', style: const TextStyle(fontSize: 13)),
-          Row(
-            children: [
-              IconButton(
-                icon: const Icon(Icons.chevron_left),
-                onPressed: canPrevious ? () => _previousPage(notifier) : null,
-                tooltip: 'Página anterior',
-              ),
-              IconButton(
-                icon: const Icon(Icons.chevron_right),
-                onPressed: canNext ? () => _nextPage(notifier) : null,
-                tooltip: 'Próxima página',
-              ),
-            ],
-          ),
-        ],
       ),
     );
   }
@@ -568,27 +315,87 @@ class _NfeListScreenState extends State<NfeListScreen> {
 
           return Column(
             children: [
-              if (_currentBreakpoint != Breakpoint.mobile) _buildFiltersBar(),
-              if (state.isLoading || state.hasError || state.isEmpty)
-                Expanded(
-                  child: SingleChildScrollView(
-                    child: _buildStateIndicator(notifier),
-                  ),
-                )
-              else
-                Expanded(
-                  child: SingleChildScrollView(
-                    controller: _scrollController,
-                    child: Column(
-                      children: [
-                        if (_currentBreakpoint == Breakpoint.desktop)
-                          _buildDesktopDataTable(nfes)
-                        else
-                          _buildNfeList(nfes),
-                        if (nfes.isNotEmpty) _buildPaginationBar(notifier),
+              // Filtros (ocultos em mobile)
+              if (_currentBreakpoint != Breakpoint.mobile)
+                _buildFiltersBar(),
+
+              // Conteúdo principal
+              Expanded(
+                child: SingleChildScrollView(
+                  controller: _scrollController,
+                  child: Column(
+                    children: [
+                      // Estados: Loading, Error, Empty
+                      if (state.isLoading)
+                        Padding(
+                          padding: const EdgeInsets.all(DesignTokens.spacingLg),
+                          child: Column(
+                            children: [
+                              const CircularProgressIndicator(),
+                              const SizedBox(height: 16),
+                              Text(
+                                'Carregando NFes...',
+                                style: Theme.of(context).textTheme.bodyMedium,
+                              ),
+                            ],
+                          ),
+                        )
+                      else if (state.hasError)
+                        Padding(
+                          padding: const EdgeInsets.all(DesignTokens.spacingMd),
+                          child: Column(
+                            children: [
+                              Icon(
+                                Icons.error_outline,
+                                size: 48,
+                                color: DesignTokens.error,
+                              ),
+                              const SizedBox(height: 12),
+                              Text(
+                                'Erro ao carregar NFes',
+                                style: Theme.of(context).textTheme.titleMedium,
+                              ),
+                              const SizedBox(height: 8),
+                              Text(
+                                state.errorMessage ?? 'Erro desconhecido',
+                                textAlign: TextAlign.center,
+                                style: TextStyle(
+                                  color: DesignTokens.error,
+                                  fontSize: 13,
+                                ),
+                              ),
+                              const SizedBox(height: 16),
+                              ElevatedButton.icon(
+                                onPressed: _loadNfes,
+                                icon: const Icon(Icons.refresh),
+                                label: const Text('Tentar novamente'),
+                              ),
+                            ],
+                          ),
+                        )
+                      else if (nfes.isEmpty)
+                        _buildEmptyState()
+                      else ...[
+                        // Grid responsivo
+                        Padding(
+                          padding: const EdgeInsets.all(DesignTokens.spacingMd),
+                          child: _buildResponsiveGrid(nfes),
+                        ),
                       ],
-                    ),
+                    ],
                   ),
+                ),
+              ),
+
+              // Pagination bar (sticky no bottom)
+              if (!state.isLoading && !state.hasError && nfes.isNotEmpty)
+                NfePaginationBar(
+                  currentPage: state.currentPage ?? 1,
+                  totalPages: state.totalPages,
+                  canPrevious: state.canPreviousPage,
+                  canNext: state.canNextPage,
+                  onPreviousPage: () => _previousPage(notifier),
+                  onNextPage: () => _nextPage(notifier),
                 ),
             ],
           );
@@ -614,7 +421,7 @@ class _NfeListScreenState extends State<NfeListScreen> {
         ),
       );
     } catch (e) {
-      L.e('[NfeListScreen] Erro ao navegador: $e');
+      L.e('[NfeListScreen] Erro ao navegar: $e');
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Erro ao abrir detalhes: $e'),
