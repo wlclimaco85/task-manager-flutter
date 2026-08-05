@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import '../utils/grid_colors.dart';
 
@@ -55,6 +56,20 @@ class SearchableDropdownField extends StatefulWidget {
   /// error message or [null] if valid.  Integrates with [Form] / [FormState].
   final String? Function(String?)? validator;
 
+  /// Optional server-side search callback. When provided, typing in the
+  /// dialog's search field debounces and calls this instead of filtering
+  /// [items] locally — necessary for lists too large to load entirely on
+  /// the client (ex: as cidades do IBGE, 5571 registros). While the query
+  /// is empty, [items] is still shown (useful for a small initial batch).
+  final Future<List<Map<String, dynamic>>> Function(String query)? onSearch;
+
+  /// Called with the full selected item map (or `null` on clear) whenever
+  /// a selection is made — including items that came from [onSearch] and
+  /// therefore are not present in [items]. Use this (instead of looking the
+  /// value back up in [items]) to read extra fields from the selected
+  /// record, since a remotely-searched item may not exist in the local list.
+  final ValueChanged<Map<String, dynamic>?>? onItemSelected;
+
   const SearchableDropdownField({
     super.key,
     required this.label,
@@ -69,6 +84,8 @@ class SearchableDropdownField extends StatefulWidget {
     this.nullLabel = '— Nenhum —',
     this.hintText,
     this.validator,
+    this.onSearch,
+    this.onItemSelected,
   });
 
   @override
@@ -79,6 +96,14 @@ class SearchableDropdownField extends StatefulWidget {
 class _SearchableDropdownFieldState extends State<SearchableDropdownField> {
   String? _displayLabel;
 
+  /// Último valor para o qual [_displayLabel] foi resolvido — inclui
+  /// resoluções feitas fora de [widget.items] (ex: item vindo de
+  /// [SearchableDropdownField.onSearch] em [_openSearch]). Evita que
+  /// [didUpdateWidget] sobrescreva um label recém-selecionado com `null`
+  /// só porque esse item ainda não está em [widget.items] — cenário comum
+  /// quando o callback onChanged do pai dispara um rebuild logo em seguida.
+  String? _lastResolvedValue;
+
   @override
   void initState() {
     super.initState();
@@ -88,12 +113,19 @@ class _SearchableDropdownFieldState extends State<SearchableDropdownField> {
   @override
   void didUpdateWidget(SearchableDropdownField oldWidget) {
     super.didUpdateWidget(oldWidget);
+    // Só pula a re-resolução quando já existe um label resolvido para esse
+    // valor (ex: seleção recente via busca remota, ainda fora de widget.items).
+    // Se o label ainda está null (ex: value setado antes de items carregar —
+    // caso comum de tela de edição com dropdown assíncrono), precisa tentar
+    // resolver de novo quando widget.items mudar.
+    if (widget.value == _lastResolvedValue && _displayLabel != null) return;
     if (oldWidget.value != widget.value || oldWidget.items != widget.items) {
       setState(() => _resolveLabel(widget.value));
     }
   }
 
   void _resolveLabel(String? val) {
+    _lastResolvedValue = val;
     if (val == null || val.isEmpty) {
       _displayLabel = null;
       return;
@@ -119,11 +151,23 @@ class _SearchableDropdownFieldState extends State<SearchableDropdownField> {
         currentValue: widget.value,
         nullable: widget.nullable,
         nullLabel: widget.nullLabel,
+        onSearch: widget.onSearch,
       ),
     );
     if (result == null) return; // dialog dismissed — no change
-    setState(() => _resolveLabel(result.value));
+    setState(() {
+      // Quando o item completo veio junto (seleção local ou via onSearch),
+      // usa o label dele diretamente — evita depender de widget.items conter
+      // o item (o que não é garantido para resultados de busca remota).
+      if (result.item != null) {
+        _displayLabel = result.item![widget.displayField]?.toString();
+        _lastResolvedValue = result.value;
+      } else {
+        _resolveLabel(result.value);
+      }
+    });
     widget.onChanged(result.value);
+    widget.onItemSelected?.call(result.item);
   }
 
   @override
@@ -205,7 +249,13 @@ class _SearchableDropdownFieldState extends State<SearchableDropdownField> {
 
 class _DropResult {
   final String? value;
-  const _DropResult(this.value);
+
+  /// Item completo selecionado (nulo quando o usuário limpou a seleção).
+  /// Carregado mesmo quando o item veio de [SearchableDropdownField.onSearch]
+  /// — nesse caso ele não está necessariamente em [SearchableDropdownField.items].
+  final Map<String, dynamic>? item;
+
+  const _DropResult(this.value, [this.item]);
 }
 
 // ─── Search dialog ────────────────────────────────────────────────────────────
@@ -218,6 +268,7 @@ class _SearchDialog extends StatefulWidget {
   final String? currentValue;
   final bool nullable;
   final String nullLabel;
+  final Future<List<Map<String, dynamic>>> Function(String query)? onSearch;
 
   const _SearchDialog({
     required this.title,
@@ -227,6 +278,7 @@ class _SearchDialog extends StatefulWidget {
     this.currentValue,
     this.nullable = false,
     this.nullLabel = '— Nenhum —',
+    this.onSearch,
   });
 
   @override
@@ -236,6 +288,9 @@ class _SearchDialog extends StatefulWidget {
 class _SearchDialogState extends State<_SearchDialog> {
   final _searchCtrl = TextEditingController();
   List<Map<String, dynamic>> _filtered = [];
+  Timer? _debounce;
+  bool _loading = false;
+  int _searchToken = 0;
 
   @override
   void initState() {
@@ -245,11 +300,16 @@ class _SearchDialogState extends State<_SearchDialog> {
 
   @override
   void dispose() {
+    _debounce?.cancel();
     _searchCtrl.dispose();
     super.dispose();
   }
 
   void _onSearch(String q) {
+    if (widget.onSearch != null) {
+      _onSearchRemote(q);
+      return;
+    }
     final query = q.toLowerCase().trim();
     setState(() {
       _filtered = query.isEmpty
@@ -259,6 +319,44 @@ class _SearchDialogState extends State<_SearchDialog> {
                   .toLowerCase()
                   .contains(query))
               .toList();
+    });
+  }
+
+  /// Busca server-side com debounce — usada quando a lista completa é
+  /// grande demais para carregar/filtrar no cliente (ex: popup de
+  /// Município, 5571 cidades do seed IBGE).
+  void _onSearchRemote(String q) {
+    final query = q.trim();
+    _debounce?.cancel();
+
+    if (query.isEmpty) {
+      // Invalida qualquer busca em andamento — sem isso, uma resposta tardia
+      // da busca anterior poderia sobrescrever a lista já limpa pelo usuário.
+      _searchToken++;
+      setState(() {
+        _loading = false;
+        _filtered = widget.items;
+      });
+      return;
+    }
+
+    setState(() => _loading = true);
+    _debounce = Timer(const Duration(milliseconds: 350), () async {
+      final token = ++_searchToken;
+      try {
+        final resultado = await widget.onSearch!(query);
+        if (!mounted || token != _searchToken) return;
+        setState(() {
+          _loading = false;
+          _filtered = resultado;
+        });
+      } catch (_) {
+        if (!mounted || token != _searchToken) return;
+        setState(() {
+          _loading = false;
+          _filtered = [];
+        });
+      }
     });
   }
 
@@ -348,7 +446,7 @@ class _SearchDialogState extends State<_SearchDialog> {
               child: Row(
                 children: [
                   Text(
-                    '${_filtered.length} resultado(s)',
+                    _loading ? 'Buscando...' : '${_filtered.length} resultado(s)',
                     style: const TextStyle(fontSize: 11, color: Colors.grey),
                   ),
                   const Spacer(),
@@ -368,7 +466,9 @@ class _SearchDialogState extends State<_SearchDialog> {
 
             // ── Results list ─────────────────────────────────────────────
             Expanded(
-              child: _filtered.isEmpty
+              child: _loading
+                  ? const Center(child: CircularProgressIndicator())
+                  : _filtered.isEmpty
                   ? const Center(
                       child: Text('Nenhum resultado',
                           style: TextStyle(color: Colors.grey)))
@@ -402,7 +502,7 @@ class _SearchDialogState extends State<_SearchDialog> {
                             ),
                           ),
                           onTap: () => Navigator.of(context)
-                              .pop(_DropResult(val)),
+                              .pop(_DropResult(val, o)),
                         );
                       },
                     ),
