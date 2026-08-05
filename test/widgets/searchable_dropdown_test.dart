@@ -291,6 +291,250 @@ void main() {
     });
   });
 
+  group('SearchableDropdownField — busca server-side (onSearch)', () {
+    // Regressão do bug de produção: popup "Município de Prestação" (NFSe)
+    // carregava só um lote local (antes: 5000 de 5571 cidades) e filtrava
+    // no cliente, então cidades fora do lote (ex: "Uberaba") nunca eram
+    // encontradas. Com onSearch, a busca digitada vai para o servidor.
+    const _loteLocal = [
+      {'id': '1', 'nome': 'Abadia dos Dourados'},
+      {'id': '2', 'nome': 'Abaeté'},
+    ];
+
+    testWidgets(
+        'com onSearch definido, encontra item que NÃO está no lote local (ex: Uberaba)',
+        (tester) async {
+      var chamadaRecebida = '';
+      await tester.pumpWidget(_wrap(
+        SearchableDropdownField(
+          label: 'Município de Prestação',
+          items: _loteLocal,
+          valueField: 'id',
+          displayField: 'nome',
+          onChanged: (_) {},
+          onSearch: (q) async {
+            chamadaRecebida = q;
+            return [
+              {'id': '9999', 'nome': 'Uberaba'},
+            ];
+          },
+        ),
+      ));
+
+      await tester.tap(find.byType(InkWell).first);
+      await tester.pumpAndSettle();
+
+      // Antes de digitar, mostra o lote local (não contém Uberaba)
+      expect(find.text('Uberaba'), findsNothing);
+
+      await tester.enterText(find.byType(TextField), 'uberaba');
+      // Aguarda o debounce (350ms) + o Future do onSearch
+      await tester.pump(const Duration(milliseconds: 400));
+      await tester.pumpAndSettle();
+
+      expect(chamadaRecebida, 'uberaba');
+      expect(find.text('Uberaba'), findsOneWidget);
+      // O lote local não deve mais aparecer — resultado veio do servidor
+      expect(find.text('Abadia dos Dourados'), findsNothing);
+    });
+
+    testWidgets('onSearch sem resultado exibe "Nenhum resultado"', (tester) async {
+      await tester.pumpWidget(_wrap(
+        SearchableDropdownField(
+          label: 'Município de Prestação',
+          items: _loteLocal,
+          valueField: 'id',
+          displayField: 'nome',
+          onChanged: (_) {},
+          onSearch: (q) async => [],
+        ),
+      ));
+
+      await tester.tap(find.byType(InkWell).first);
+      await tester.pumpAndSettle();
+
+      await tester.enterText(find.byType(TextField), 'cidade-inexistente-xyz');
+      await tester.pump(const Duration(milliseconds: 400));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Nenhum resultado'), findsOneWidget);
+    });
+
+    testWidgets('limpar o campo de busca volta a exibir o lote local',
+        (tester) async {
+      await tester.pumpWidget(_wrap(
+        SearchableDropdownField(
+          label: 'Município de Prestação',
+          items: _loteLocal,
+          valueField: 'id',
+          displayField: 'nome',
+          onChanged: (_) {},
+          onSearch: (q) async => [
+            {'id': '9999', 'nome': 'Uberaba'},
+          ],
+        ),
+      ));
+
+      await tester.tap(find.byType(InkWell).first);
+      await tester.pumpAndSettle();
+
+      await tester.enterText(find.byType(TextField), 'uberaba');
+      await tester.pump(const Duration(milliseconds: 400));
+      await tester.pumpAndSettle();
+      expect(find.text('Uberaba'), findsOneWidget);
+
+      await tester.enterText(find.byType(TextField), '');
+      await tester.pump();
+      await tester.pumpAndSettle();
+
+      expect(find.text('Abadia dos Dourados'), findsOneWidget);
+      expect(find.text('Abaeté'), findsOneWidget);
+    });
+
+    testWidgets('selecionar resultado da busca server-side chama onChanged com o id correto',
+        (tester) async {
+      String? valorSelecionado;
+
+      await tester.pumpWidget(_wrap(
+        StatefulBuilder(
+          builder: (context, setState) => SearchableDropdownField(
+            label: 'Município de Prestação',
+            items: _loteLocal,
+            valueField: 'id',
+            displayField: 'nome',
+            value: valorSelecionado,
+            onChanged: (v) => setState(() => valorSelecionado = v),
+            onSearch: (q) async => [
+              {'id': '9999', 'nome': 'Uberaba'},
+            ],
+          ),
+        ),
+      ));
+
+      await tester.tap(find.byType(InkWell).first);
+      await tester.pumpAndSettle();
+      await tester.enterText(find.byType(TextField), 'uberaba');
+      await tester.pump(const Duration(milliseconds: 400));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Uberaba'));
+      await tester.pumpAndSettle();
+
+      expect(valorSelecionado, equals('9999'));
+      // Regressão do bug original: o rótulo exibido no campo (já fechado o
+      // diálogo) precisa refletir a cidade escolhida via busca remota — não
+      // pode voltar a mostrar "— Selecione —" mesmo com o id correto internamente.
+      expect(find.text('Uberaba'), findsOneWidget);
+    });
+
+    testWidgets(
+        'onItemSelected recebe o item completo retornado pela busca remota '
+        '(inclusive campos extras não presentes no lote local, ex: codigoServicoMunicipal)',
+        (tester) async {
+      Map<String, dynamic>? itemRecebido;
+
+      await tester.pumpWidget(_wrap(
+        SearchableDropdownField(
+          label: 'Município de Prestação',
+          items: _loteLocal,
+          valueField: 'id',
+          displayField: 'nome',
+          onChanged: (_) {},
+          onItemSelected: (item) => itemRecebido = item,
+          onSearch: (q) async => [
+            {'id': '9999', 'nome': 'Uberaba', 'codigoServicoMunicipal': '101'},
+          ],
+        ),
+      ));
+
+      await tester.tap(find.byType(InkWell).first);
+      await tester.pumpAndSettle();
+      await tester.enterText(find.byType(TextField), 'uberaba');
+      await tester.pump(const Duration(milliseconds: 400));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Uberaba'));
+      await tester.pumpAndSettle();
+
+      expect(itemRecebido, isNotNull);
+      expect(itemRecebido!['id'], '9999');
+      expect(itemRecebido!['nome'], 'Uberaba');
+      expect(itemRecebido!['codigoServicoMunicipal'], '101');
+    });
+
+    testWidgets(
+        'quando value já vem preenchido (ex: editar NFSe existente) e items '
+        'chega depois de forma assíncrona (ex: fora do lote inicial), o '
+        'label é resolvido assim que items chegar — não fica preso em '
+        '"— Selecione —"',
+        (tester) async {
+      // Reproduz o fluxo real de nfse_detail_screen.dart: _initCabecalho()
+      // já define o _cidadeId de forma síncrona a partir do registro, mas
+      // _loadDropdowns()/_garantirCidadeSelecionadaNaLista() só popula
+      // _cidades (via setState) depois, de forma assíncrona.
+      var items = <Map<String, dynamic>>[];
+
+      await tester.pumpWidget(_wrap(
+        StatefulBuilder(
+          builder: (context, setState) => Column(
+            children: [
+              SearchableDropdownField(
+                label: 'Município de Prestação',
+                items: items,
+                valueField: 'id',
+                displayField: 'nome',
+                value: '9999', // já selecionado, mas ainda não está em items
+                onChanged: (_) {},
+              ),
+              TextButton(
+                key: const Key('carregar'),
+                onPressed: () => setState(() {
+                  items = [
+                    {'id': '9999', 'nome': 'Uberaba'},
+                  ];
+                }),
+                child: const Text('carregar'),
+              ),
+            ],
+          ),
+        ),
+      ));
+
+      // Antes de items chegar: sem label resolvido (não pode quebrar).
+      expect(find.text('Uberaba'), findsNothing);
+
+      // Simula a chegada assíncrona da lista de cidades contendo o item
+      // já selecionado (ex: _garantirCidadeSelecionadaNaLista).
+      await tester.tap(find.byKey(const Key('carregar')));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Uberaba'), findsOneWidget);
+    });
+
+    testWidgets('onItemSelected recebe null ao limpar a seleção', (tester) async {
+      Map<String, dynamic>? itemRecebido = {'id': '1', 'nome': 'x'};
+
+      await tester.pumpWidget(_wrap(
+        SearchableDropdownField(
+          label: 'Município de Prestação',
+          items: _loteLocal,
+          valueField: 'id',
+          displayField: 'nome',
+          value: '1',
+          nullable: true,
+          onChanged: (_) {},
+          onItemSelected: (item) => itemRecebido = item,
+        ),
+      ));
+
+      await tester.tap(find.byType(InkWell).first);
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('— Nenhum —'));
+      await tester.pumpAndSettle();
+
+      expect(itemRecebido, isNull);
+    });
+  });
+
   group('SearchableDropdownField — estado desabilitado', () {
     testWidgets('campo desabilitado não abre diálogo ao tocar', (tester) async {
       await tester.pumpWidget(_wrap(

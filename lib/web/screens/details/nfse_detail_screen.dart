@@ -145,9 +145,42 @@ class _NfseDetailScreenState extends State<NfseDetailScreen> {
       _loadProdutosServico(empId),
       _loadList('${ApiLinks.baseUrl}/api/nfse-serie?tamanho=100${empId != null ? '&empId=$empId' : ''}',
           (d) => setState(() => _series = d)),
-      _loadList('${ApiLinks.baseUrl}/api/cidade?tamanho=5000',
+      // Carrega apenas um lote inicial (primeiras cidades em ordem alfabética)
+      // para exibição rápida do dropdown. A base tem 5571 cidades (seed IBGE) —
+      // carregar tudo e filtrar no cliente truncava a lista e a busca por
+      // cidades fora desse corte (ex: "Uberaba") nunca encontrava resultado.
+      // A busca de fato acontece no servidor via _buscarCidadesServidor.
+      _loadList('${ApiLinks.baseUrl}/api/cidade?tamanho=100',
           (d) => setState(() => _cidades = d)),
     ]);
+    _garantirCidadeSelecionadaNaLista();
+  }
+
+  /// Garante que a cidade já selecionada (ex: ao editar uma NFSe existente)
+  /// apareça no dropdown mesmo que não esteja no lote inicial de 100 cidades
+  /// — usa o nome já salvo no registro (_municipioCtrl) como rótulo.
+  void _garantirCidadeSelecionadaNaLista() {
+    if (_cidadeId == null || _cidadeId!.isEmpty) return;
+    final jaPresente = _cidades.any((c) => c['id']?.toString() == _cidadeId);
+    if (jaPresente) return;
+    final nome = _municipioCtrl.text;
+    if (nome.isEmpty) return;
+    setState(() => _cidades = [
+          {'id': _cidadeId, 'nome': nome},
+          ..._cidades,
+        ]);
+  }
+
+  /// Busca cidades no servidor pelo termo digitado (debounce feito pelo
+  /// SearchableDropdownField). Usada pelo popup "Município de Prestação"
+  /// para não depender de carregar as 5571 cidades no cliente.
+  Future<List<Map<String, dynamic>>> _buscarCidadesServidor(String termo) async {
+    List<Map<String, dynamic>> resultado = [];
+    await _loadList(
+      '${ApiLinks.baseUrl}/api/cidade?nome=${Uri.encodeQueryComponent(termo)}&tamanho=50',
+      (d) => resultado = d,
+    );
+    return resultado;
   }
 
   /// Busca produtos de serviço via /api/produto_contabil (retorna entity completa com isServico)
@@ -473,21 +506,32 @@ class _NfseDetailScreenState extends State<NfseDetailScreen> {
         items: _cidades.map((c) => <String, dynamic>{
           'id': c['id']?.toString() ?? '',
           'nome': c['nome']?.toString() ?? '',
+          if (c['codigoServicoMunicipal'] != null)
+            'codigoServicoMunicipal': c['codigoServicoMunicipal'],
         }).toList(),
         valueField: 'id',
         displayField: 'nome',
         nullable: true,
         nullLabel: '— Selecione —',
-        onChanged: (v) {
-          setState(() => _cidadeId = v);
-          final c = _cidades.firstWhere((o) => o['id']?.toString() == v, orElse: () => {});
-          if (c.isNotEmpty) {
-            _municipioCtrl.text = c['nome']?.toString() ?? '';
-            // Auto-preencher código de serviço municipal se a cidade tiver
-            final codServico = c['codigoServicoMunicipal']?.toString();
-            if (codServico != null && codServico.isNotEmpty) {
-              _codigoServicoCtrl.text = codServico;
-            }
+        onSearch: _buscarCidadesServidor,
+        onChanged: (v) => setState(() => _cidadeId = v),
+        // Usa o item completo devolvido pelo widget (local ou vindo da busca
+        // server-side) em vez de procurá-lo em _cidades — a busca remota pode
+        // retornar cidades que ainda não estão no lote local (ex: "Uberaba").
+        onItemSelected: (item) {
+          if (item == null) return;
+          final id = item['id']?.toString();
+          final nome = item['nome']?.toString();
+          if (nome != null && nome.isNotEmpty) {
+            _municipioCtrl.text = nome;
+          }
+          if (id != null && !_cidades.any((o) => o['id']?.toString() == id)) {
+            setState(() => _cidades = [item, ..._cidades]);
+          }
+          // Auto-preencher código de serviço municipal se a cidade tiver
+          final codServico = item['codigoServicoMunicipal']?.toString();
+          if (codServico != null && codServico.isNotEmpty) {
+            _codigoServicoCtrl.text = codServico;
           }
         },
       ),
